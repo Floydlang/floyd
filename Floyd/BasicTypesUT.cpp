@@ -116,24 +116,28 @@ namespace {
 	}
 
 
-		TValueObjectState MakeValueObjectStateType1ValueA(const CRuntime& iRuntime){
+		VValueObjectRef MakeValueObjectType1ValueA(CRuntime& iRuntime){
 			std::vector<VValue> values;
 			values.push_back(VValue::MakeInt(1111));
 			values.push_back(VValue::MakeMachineString("2222"));
 			values.push_back(VValue::MakeInt(3333));
 			values.push_back(VValue::MakeMachineString("4444"));
 			TValueObjectState state(iRuntime.LookupValueObjectType("type1"), values);
-			return state;
+
+			VValueObjectRef result = iRuntime.MakeValueObject(state.first, state.second);
+			return result;
 		}
 
-		TValueObjectState MakeValueObjectStateType1ValueB(const CRuntime& iRuntime){
+		VValueObjectRef MakeValueObjectType1ValueB(CRuntime& iRuntime){
 			std::vector<VValue> values;
 			values.push_back(VValue::MakeInt(55));
 			values.push_back(VValue::MakeMachineString("66"));
 			values.push_back(VValue::MakeInt(77));
 			values.push_back(VValue::MakeMachineString("88"));
 			TValueObjectState state(iRuntime.LookupValueObjectType("type1"), values);
-			return state;
+
+			VValueObjectRef result = iRuntime.MakeValueObject(state.first, state.second);
+			return result;
 		}
 
 
@@ -141,8 +145,7 @@ namespace {
 	void ProveWorks_MakeRuntime__OneValueObjectRef__ResultsCorrectValueObjectRef(){
 		TTestValueObjectsFixture f;
 
-		TValueObjectState state = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
-		VValueObjectRef valueObjectRef = f.fRuntime->MakeValueObject(state.first, state.second);
+		VValueObjectRef valueObjectRef = MakeValueObjectType1ValueA(*f.fRuntime.get());
 
 		ASSERT(valueObjectRef.GetMember("member_a").GetInt() == 1111);
 		ASSERT(valueObjectRef.GetMember("member_b").GetMachineString() == "2222");
@@ -151,16 +154,13 @@ namespace {
 
 		ASSERT(f.fRuntime->fValueObjectRecords.size() == 1);
 		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 1);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fMeta == state.first);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fValues == state.second);
 	}
 
 	void ProveWorks_MakeRuntime__TwoIdenticalValueObjectRef__ResultsCorrectValueObjectRefs(){
 		TTestValueObjectsFixture f;
 
-		TValueObjectState state = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
-		VValueObjectRef valueObjectRefA = f.fRuntime->MakeValueObject(state.first, state.second);
-		VValueObjectRef valueObjectRefB = f.fRuntime->MakeValueObject(state.first, state.second);
+		VValueObjectRef valueObjectRefA = MakeValueObjectType1ValueA(*f.fRuntime.get());
+		VValueObjectRef valueObjectRefB = MakeValueObjectType1ValueA(*f.fRuntime.get());
 
 		ASSERT(valueObjectRefA.GetMember("member_a").GetInt() == 1111);
 		ASSERT(valueObjectRefA.GetMember("member_b").GetMachineString() == "2222");
@@ -174,28 +174,13 @@ namespace {
 
 		ASSERT(f.fRuntime->fValueObjectRecords.size() == 1);
 		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 2);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fMeta == state.first);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fValues == state.second);
 	}
 
 	void ProveWorks_MakeRuntime__TwoDifferentValueObjectRef__ResultsCorrectValueObjectRefs(){
 		TTestValueObjectsFixture f;
 
-		TValueObjectState state1A = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
-		TValueObjectState state1B = MakeValueObjectStateType1ValueB(*f.fRuntime.get());
-
-		VValueObjectRef valueObjectRefA = f.fRuntime->MakeValueObject(state1A.first, state1A.second);
-		VValueObjectRef valueObjectRefB = f.fRuntime->MakeValueObject(state1B.first, state1B.second);
-
-		ASSERT(f.fRuntime->fValueObjectRecords.size() == 2);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 1);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fMeta == state1A.first);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fValues == state1A.second);
-
-
-		ASSERT(f.fRuntime->fValueObjectRecords[1]->fRefCount == 1);
-		ASSERT(f.fRuntime->fValueObjectRecords[1]->fMeta == state1B.first);
-		ASSERT(f.fRuntime->fValueObjectRecords[1]->fValues == state1B.second);
+		VValueObjectRef valueObjectRefA = MakeValueObjectType1ValueA(*f.fRuntime.get());
+		VValueObjectRef valueObjectRefB = MakeValueObjectType1ValueB(*f.fRuntime.get());
 
 		ASSERT(valueObjectRefA.GetMember("member_a").GetInt() == 1111);
 		ASSERT(valueObjectRefA.GetMember("member_b").GetMachineString() == "2222");
@@ -206,6 +191,10 @@ namespace {
 		ASSERT(valueObjectRefB.GetMember("member_b").GetMachineString() == "66");
 		ASSERT(valueObjectRefB.GetMember("member_c").GetInt() == 77);
 		ASSERT(valueObjectRefB.GetMember("member_d").GetMachineString() == "88");
+
+		ASSERT(f.fRuntime->fValueObjectRecords.size() == 2);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 1);
+		ASSERT(f.fRuntime->fValueObjectRecords[1]->fRefCount == 1);
 	}
 
 
@@ -304,8 +293,7 @@ namespace {
 	void ProveWorks_VValue_MakeValueObjectRef__Simple__CanGetBackAgain(){
 		TTestValueObjectsFixture f;
 
-		TValueObjectState state = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
-		VValueObjectRef a = f.fRuntime->MakeValueObject(state.first, state.second);
+		VValueObjectRef a = MakeValueObjectType1ValueA(*f.fRuntime.get());
 
 		VValue b = VValue::MakeValueObjectRef(a);
 		ASSERT(b.IsValueObjectRef());
@@ -329,6 +317,33 @@ namespace {
 		VTableRef c = b.GetTableRef();
 
 		ASSERT(c == a);
+	}
+
+
+
+
+	void ProveWorks_VTableRef_Set__StoreValueObjectRef__CanGetBackAgain(){
+		TTestValueObjectsFixture f;
+
+		VTableRef tableRef = f.fRuntime->MakeEmptyTable();
+		VValueObjectRef valueObjectRef = MakeValueObjectType1ValueA(*f.fRuntime.get());
+		tableRef.Set("1", valueObjectRef);
+
+		ASSERT(tableRef.Get("1").GetValueObjectRef().GetMember("member_b").GetMachineString() == "2222");
+	}
+
+	void ProveWorks_VTableRef_Set__StoreTableRef__CanGetBackAgain(){
+		TTestValueObjectsFixture f;
+
+		VTableRef tableRefA = f.fRuntime->MakeEmptyTable();
+		tableRefA.Set("one", VValue::MakeInt(8));
+		tableRefA.Set("two", VValue::MakeInt(9));
+
+		VTableRef tableRefB = f.fRuntime->MakeEmptyTable();
+		tableRefB.Set("first", tableRefA);
+
+		ASSERT(tableRefB.Get("first").GetTableRef().Get("one").GetInt() == 8);
+		ASSERT(tableRefB.Get("first").GetTableRef().Get("two").GetInt() == 9);
 	}
 
 }
@@ -358,5 +373,8 @@ void TestBasicTypes(){
 
 	ProveWorks_VValue_MakeValueObjectRef__Simple__CanGetBackAgain();
 	ProveWorks_VValue_MakeTableRef__Simple__CanGetBackAgain();
+
+	ProveWorks_VTableRef_Set__StoreValueObjectRef__CanGetBackAgain();
+	ProveWorks_VTableRef_Set__StoreTableRef__CanGetBackAgain();
 }
 

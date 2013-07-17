@@ -187,6 +187,15 @@ VValue VValue::MakeMachineString(const std::string& iMachineString){
 	return temp;
 }
 
+VValue::VValue(const std::string& iMachineString) :
+	fType(kType_Nil)
+{
+	VValue temp = MakeMachineString(iMachineString);
+	temp.Swap(*this);
+
+	ASSERT(CheckInvariant());
+}
+
 std::string VValue::GetMachineString() const{
 	ASSERT(CheckInvariant());
 	ASSERT(fType == kType_MachineStringRef);
@@ -212,6 +221,15 @@ VValue VValue::MakeTableRef(const VTableRef& iTableRef){
 
 	ASSERT(result.CheckInvariant());
 	return result;
+}
+
+VValue::VValue(const VTableRef& iTableRef) :
+	fType(kType_Nil)
+{
+	VValue temp = MakeTableRef(iTableRef);
+	temp.Swap(*this);
+
+	ASSERT(CheckInvariant());
 }
 
 VTableRef VValue::GetTableRef() const{
@@ -241,6 +259,15 @@ VValue VValue::MakeValueObjectRef(const VValueObjectRef& iValueObjectRef){
 
 	ASSERT(result.CheckInvariant());
 	return result;
+}
+
+VValue::VValue(const VValueObjectRef& iValueObjectRef) :
+	fType(kType_Nil)
+{
+	VValue temp = MakeValueObjectRef(iValueObjectRef);
+	temp.Swap(*this);
+
+	ASSERT(CheckInvariant());
 }
 
 VValueObjectRef VValue::GetValueObjectRef() const{
@@ -733,6 +760,7 @@ bool CStaticDefinition::CheckInvariant() const{
 CRuntime::~CRuntime(){
 	ASSERT(CheckInvariant());
 
+	fTableRecords.clear();
 	FlushUnusedValueObjects();
 
 	ASSERT(fValueObjectRecords.empty());
@@ -823,6 +851,9 @@ void CRuntime::FlushUnusedValueObjects(){
 	while(it != fValueObjectRecords.end()){
 		if((*it)->fRefCount == 0){
 			it = fValueObjectRecords.erase(it);
+		}
+		else{
+			it++;
 		}
 	}
 

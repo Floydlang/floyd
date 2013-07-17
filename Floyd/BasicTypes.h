@@ -247,14 +247,17 @@ class VValue {
 	public: int64_t GetInt() const;
 
 	public: static VValue MakeMachineString(const std::string& iMachineString);
+	public: VValue(const std::string& iMachineString);
 	public: std::string GetMachineString() const;
 
 	public: bool IsTableRef() const;
 	public: static VValue MakeTableRef(const VTableRef& iTableRef);
+	public: VValue(const VTableRef& iTableRef);
 	public: VTableRef GetTableRef() const;
 
 	public: bool IsValueObjectRef() const;
 	public: static VValue MakeValueObjectRef(const VValueObjectRef& iValueObjectRef);
+	public: VValue(const VValueObjectRef& iValueObjectRef);
 	public: VValueObjectRef GetValueObjectRef() const;
 
 //	public: VValue MakeMotherboardRef(const VMotherboardRef& iMotherboardRef);
