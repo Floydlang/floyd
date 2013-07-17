@@ -133,48 +133,31 @@ bool operator==(const VTableRef& iA, const VTableRef& iB);
 
 
 class VValueObjectMeta {
-	public: VValueObjectMeta(const std::vector<VMemberMeta>& iMemberMetas);
+	public: VValueObjectMeta(const std::string& iTypeName, const std::vector<VMemberMeta>& iMemberMetas);
 	public: VValueObjectMeta(const VValueObjectMeta& iOther);
 	public: VValueObjectMeta& operator=(const VValueObjectMeta& iOther);
 	public: void Swap(VValueObjectMeta& ioOther);
 	public: bool CheckInvariant() const;
+
+	public: std::string GetTypeName() const;
 	public: long CountMembers() const;
 	public: const VMemberMeta& GetMember(long iIndex) const;
 
 	friend bool operator==(const VValueObjectMeta& iA, const VValueObjectMeta& iB);
 
 	///////////////////////		State.
+		private: std::string fTypeName;
 		private: std::vector<VMemberMeta> fMemberMetas;
 };
 
+inline bool operator!=(const VValueObjectMeta& iA, const VValueObjectMeta& iB){	return !(iA == iB); }
 bool operator==(const VValueObjectMeta& iA, const VValueObjectMeta& iB);
 
 
 
 
 
-
-
-////////////////////////		TValueObjectState
-
-
-
-class TValueObjectState {
-	public: TValueObjectState(const VValueObjectMeta& iMeta, const std::vector<VValue>& iValues);
-	public: TValueObjectState(const TValueObjectState& iOther);
-	private: TValueObjectState& operator=(const TValueObjectState& iOther);
-	public: ~TValueObjectState();
-	public: bool CheckInvariant() const;
-
-
-	///////////////////////		State.
-		public: const VValueObjectMeta* fMeta;
-		public: const std::vector<VValue> fValues;
-};
-
-bool operator==(const TValueObjectState& iA, const TValueObjectState& iB);
-inline bool operator!=(const TValueObjectState& iA, const TValueObjectState& iB){	return !(iA == iB); };
-
+typedef std::pair<const VValueObjectMeta&, const std::vector<VValue> > TValueObjectState;
 
 
 
@@ -184,14 +167,15 @@ inline bool operator!=(const TValueObjectState& iA, const TValueObjectState& iB)
 
 
 class CValueObjectRecord {
-	public: CValueObjectRecord(const TValueObjectState& iState);
+	public: CValueObjectRecord(const VValueObjectMeta& iMeta, const std::vector<VValue>& iValues);
 	public: bool CheckInvariant() const;
 
 	private: CValueObjectRecord(const CValueObjectRecord& iOther);
 	private: CValueObjectRecord& operator=(const CValueObjectRecord& iOther);
 
 	///////////////////////		State.
-		public: TValueObjectState fState;
+		public: const VValueObjectMeta& fMeta;
+		public: const std::vector<VValue> fValues;
 		public: long fRefCount;
 };
 
@@ -317,7 +301,10 @@ class CStaticRegitrat {
 
 class CStaticDefinition {
 	public: const VValueObjectMeta* LookupValueObjectMetaFromIndex(long iMetaIndex) const;
+	public: const VValueObjectMeta* LookupValueObjectMetaFromName(const std::string& iTypeName) const;
 	public: std::vector<VValueObjectMeta> GetValueObjectMetaCopy() const;
+
+
 	public: bool CheckInvariant() const;
 
 	friend CStaticDefinition* MakeStaticDefinition(const CStaticRegitrat& iRegistrat);
@@ -334,26 +321,24 @@ class CStaticDefinition {
 
 
 class CRuntime {
+	public: CRuntime(const CStaticDefinition& iStaticDefinition);
 	public: ~CRuntime();
 	public: bool CheckInvariant() const;
 
 	private: CRuntime& operator=(const CRuntime& iOther);
 	private: CRuntime(const CRuntime& iOther);
 
-	public: VValueObjectRef MakeValueObject(const TValueObjectState& iState);
+	public: const VValueObjectMeta& LookupValueObjectType(const std::string& iTypeName) const;
 	public: VValueObjectRef MakeValueObject(const VValueObjectMeta& iType, const std::vector<VValue>& iValues);
 
 	public: VTableRef MakeEmptyTable();
 
 	private: void FlushUnusedValueObjects();
 
-	public: CRuntime(const CStaticDefinition& iStaticDefinition);
-
 
 	///////////////////////		State.
-		public: const CStaticDefinition* fStaticDefinition;
+		private: const CStaticDefinition* fStaticDefinition;
 
-		//### Use hash of TValueObjectState as the key!
 		public: std::vector<std::shared_ptr<CValueObjectRecord> > fValueObjectRecords;
 
 		public: std::vector<std::shared_ptr<CTableRecord> > fTableRecords;

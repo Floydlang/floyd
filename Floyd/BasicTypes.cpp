@@ -466,12 +466,14 @@ bool operator==(const VValueObjectMeta& iA, const VValueObjectMeta& iB){
 	ASSERT(iA.CheckInvariant());
 	ASSERT(iB.CheckInvariant());
 
-	return iA.fMemberMetas == iB.fMemberMetas;
+	return iA.fTypeName == iB.fTypeName && iA.fMemberMetas == iB.fMemberMetas ? true : false;
 }
 
-VValueObjectMeta::VValueObjectMeta(const std::vector<VMemberMeta>& iMemberMetas) :
+VValueObjectMeta::VValueObjectMeta(const std::string& iTypeName, const std::vector<VMemberMeta>& iMemberMetas) :
+	fTypeName(iTypeName),
 	fMemberMetas(iMemberMetas)
 {
+	ASSERT(iTypeName.size() > 0);
 #if DEBUG
 	for(auto it = iMemberMetas.begin() ; it != iMemberMetas.end() ; it++){
 		ASSERT(it->fKey.size() > 0);
@@ -482,6 +484,7 @@ VValueObjectMeta::VValueObjectMeta(const std::vector<VMemberMeta>& iMemberMetas)
 }
 
 VValueObjectMeta::VValueObjectMeta(const VValueObjectMeta& iOther) :
+	fTypeName(iOther.fTypeName),
 	fMemberMetas(iOther.fMemberMetas)
 {
 	ASSERT(iOther.CheckInvariant());
@@ -505,6 +508,7 @@ void VValueObjectMeta::Swap(VValueObjectMeta& ioOther){
 	ASSERT(CheckInvariant());
 	ASSERT(ioOther.CheckInvariant());
 
+	fTypeName.swap(ioOther.fTypeName);
 	fMemberMetas.swap(ioOther.fMemberMetas);
 
 	ASSERT(CheckInvariant());
@@ -514,11 +518,19 @@ void VValueObjectMeta::Swap(VValueObjectMeta& ioOther){
 bool VValueObjectMeta::CheckInvariant() const{
 	ASSERT(this != NULL);
 
+	ASSERT(fTypeName.size() > 0);
+
 	for(auto it = fMemberMetas.begin() ; it != fMemberMetas.end() ; it++){
 		ASSERT(it->fKey.size() > 0);
 	}
 
 	return true;
+}
+
+std::string VValueObjectMeta::GetTypeName() const{
+	ASSERT(CheckInvariant());
+
+	return fTypeName;
 }
 
 long VValueObjectMeta::CountMembers() const{
@@ -536,104 +548,17 @@ const VMemberMeta& VValueObjectMeta::GetMember(long iIndex) const{
 
 
 
-////////////////////////		TValueObjectState
-
-
-
-
-TValueObjectState::TValueObjectState(const VValueObjectMeta& iMeta, const std::vector<VValue>& iValues) :
-	fMeta(&iMeta),
-	fValues(iValues)
-{
-	ASSERT(iMeta.CheckInvariant());
-
-	ASSERT(iValues.size() == iMeta.CountMembers());
-
-#if DEBUG
-	for(long i = 0 ; i < iValues.size() ; i++){
-		ASSERT(iValues[i].CheckInvariant());
-		ASSERT(iValues[i].GetType() == iMeta.GetMember(i).fType);
-	}
-#endif
-
-	ASSERT(CheckInvariant());
-}
-
-TValueObjectState::TValueObjectState(const TValueObjectState& iOther) :
-	fMeta(iOther.fMeta),
-	fValues(iOther.fValues)
-{
-	ASSERT(iOther.CheckInvariant());
-
-	ASSERT(CheckInvariant());
-}
-
-TValueObjectState::~TValueObjectState(){
-	ASSERT(CheckInvariant());
-}
-
-bool TValueObjectState::CheckInvariant() const{
-	ASSERT(this != NULL);
-	ASSERT(fMeta != NULL);
-	ASSERT(fMeta->CheckInvariant());
-
-	ASSERT(fValues.size() == fMeta->CountMembers());
-
-	for(long i = 0 ; i < fValues.size() ; i++){
-		ASSERT(fValues[i].CheckInvariant());
-		ASSERT(fValues[i].GetType() == fMeta->GetMember(i).fType);
-	}
-
-	return true;
-}
-
-/*
-bool operator<(const TValueObjectState& iA, const TValueObjectState& iB){
-	ASSERT(iA.CheckInvariant());
-	ASSERT(iB.CheckInvariant());
-
-	if(iA.fMeta < iB.fMeta){
-		return true;
-	}
-	else if(iA.fValues.size() < iB.fValues.size()){
-		return true;
-	}
-	else{
-		return false;
-	}
-}
-*/
-bool operator==(const TValueObjectState& iA, const TValueObjectState& iB){
-	ASSERT(iA.CheckInvariant());
-	ASSERT(iB.CheckInvariant());
-
-	if(iA.fMeta != iB.fMeta){
-		return false;
-	}
-
-	if(iA.fValues.size() != iB.fValues.size()){
-		return false;
-	}
-
-	for(long i = 0 ; i < iA.fValues.size() ; i++){
-		if(iA.fValues[i] != iB.fValues[i]){
-			return false;
-		}
-	}
-
-	return true;
-}
-
 
 ////////////////////////		CValueObjectRecord
 
 
 
-CValueObjectRecord::CValueObjectRecord(const TValueObjectState& iState) :
-	fState(iState),
+CValueObjectRecord::CValueObjectRecord(const VValueObjectMeta& iMeta, const std::vector<VValue>& iValues) :
+	fMeta(iMeta),
+	fValues(iValues),
 	fRefCount(0)
 {
-	ASSERT(iState.CheckInvariant());
+//	ASSERT(iState.CheckInvariant());
 
 	ASSERT(CheckInvariant());
 }
@@ -641,7 +566,7 @@ CValueObjectRecord::CValueObjectRecord(const TValueObjectState& iState) :
 bool CValueObjectRecord::CheckInvariant() const{
 	ASSERT(this != NULL);
 	ASSERT(fRefCount >= 0);
-	ASSERT(fState.CheckInvariant());
+//	ASSERT(fState.CheckInvariant());
 
 	return true;
 }
@@ -714,8 +639,8 @@ VValue VValueObjectRef::GetMember(const std::string& iKey) const{
 	ASSERT(iKey.size() > 0);
 
 	long memberIndex = 0;
-	long memberCount = fRecord->fState.fMeta->CountMembers();
-	while(memberIndex < memberCount && fRecord->fState.fMeta->GetMember(memberIndex).fKey != iKey){
+	long memberCount = fRecord->fMeta.CountMembers();
+	while(memberIndex < memberCount && fRecord->fMeta.GetMember(memberIndex).fKey != iKey){
 		memberIndex++;
 	}
 
@@ -724,7 +649,7 @@ VValue VValueObjectRef::GetMember(const std::string& iKey) const{
 		ASSERT(false);
 	}
 	else{
-		result = fRecord->fState.fValues[memberIndex];
+		result = fRecord->fValues[memberIndex];
 	}
 	ASSERT(result.CheckInvariant());
 
@@ -762,6 +687,24 @@ const VValueObjectMeta* CStaticDefinition::LookupValueObjectMetaFromIndex(long i
 	ASSERT(iMetaIndex < fValueObjectMetas.size());
 
 	return &fValueObjectMetas[iMetaIndex];
+}
+
+const VValueObjectMeta* CStaticDefinition::LookupValueObjectMetaFromName(const std::string& iTypeName) const{
+	ASSERT(CheckInvariant());
+	ASSERT(iTypeName.size() > 0);
+
+	const VValueObjectMeta* result = NULL;
+
+	auto it = fValueObjectMetas.begin();
+	while(it != fValueObjectMetas.end() && (*it).GetTypeName() != iTypeName){
+		 it++;
+	}
+	if(it != fValueObjectMetas.end()){
+		result = &(*it);
+	}
+
+	ASSERT(result == 0 || result->GetTypeName() == iTypeName);
+	return result;
 }
 
 std::vector<VValueObjectMeta> CStaticDefinition::GetValueObjectMetaCopy() const{
@@ -815,33 +758,29 @@ CRuntime::CRuntime(const CStaticDefinition& iStaticDefinition) :
 	ASSERT(CheckInvariant());
 }
 
-VValueObjectRef CRuntime::MakeValueObject(const TValueObjectState& iState){
+const VValueObjectMeta& CRuntime::LookupValueObjectType(const std::string& iTypeName) const{
 	ASSERT(CheckInvariant());
-	ASSERT(iState.CheckInvariant());
+	ASSERT(iTypeName.size() > 0);
 
-	VValueObjectRef result = MakeValueObject(*iState.fMeta, iState.fValues);
-	ASSERT(result.CheckInvariant());
-
-	ASSERT(CheckInvariant());
-	return result;
+	const VValueObjectMeta* meta = fStaticDefinition->LookupValueObjectMetaFromName(iTypeName);
+	ASSERT(meta != NULL);
+	return *meta;
 }
 
 VValueObjectRef CRuntime::MakeValueObject(const VValueObjectMeta& iType, const std::vector<VValue>& iValues){
 	ASSERT(CheckInvariant());
 	ASSERT(iType.CheckInvariant());
 
-	TValueObjectState state(iType, iValues);
-
 	CValueObjectRecord* record = NULL;
 
 	auto it = fValueObjectRecords.begin();
-	while(it != fValueObjectRecords.end() && (*it)->fState != state){
+	while(it != fValueObjectRecords.end() && !((*it)->fMeta == iType && (*it)->fValues == iValues)){
 		 it++;
 	}
 
 	//	This exact value object does not already exist to be reused - allocate one!
 	if(it == fValueObjectRecords.end()){
-		std::shared_ptr<CValueObjectRecord> r(new CValueObjectRecord(state));
+		std::shared_ptr<CValueObjectRecord> r(new CValueObjectRecord(iType, iValues));
 		record = r.get();
 		fValueObjectRecords.push_back(r);
 	}

@@ -69,14 +69,14 @@
 		2CF1F1031784FCCF00677E13 /* Floyd */ = {
 			isa = PBXGroup;
 			children = (
-				2CF1F1061784FCCF00677E13 /* Floyd.1 */,
-				2CF1F1041784FCCF00677E13 /* main.cpp */,
 				2CF1F10D1784FD0300677E13 /* BasicTypes.cpp */,
 				2CF1F10E1784FD0300677E13 /* BasicTypes.h */,
-				2C3D09CC1794C5F6001771B9 /* Quark.cpp */,
-				2C3D09CD1794C5F6001771B9 /* Quark.h */,
 				2C3D09C91794C4A5001771B9 /* BasicTypesUT.cpp */,
 				2C3D09CA1794C4A5001771B9 /* BasicTypesUT.h */,
+				2CF1F1061784FCCF00677E13 /* Floyd.1 */,
+				2CF1F1041784FCCF00677E13 /* main.cpp */,
+				2C3D09CC1794C5F6001771B9 /* Quark.cpp */,
+				2C3D09CD1794C5F6001771B9 /* Quark.h */,
 			);
 			path = Floyd;
 			sourceTree = "<group>";

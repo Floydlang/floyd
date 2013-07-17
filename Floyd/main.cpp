@@ -23,22 +23,22 @@ namespace {
 			members.push_back(VMemberMeta("x", kType_Int));
 			members.push_back(VMemberMeta("y", kType_Int));
 			members.push_back(VMemberMeta("z", kType_Int));
-			registrat.Register(VValueObjectMeta(members));
+			registrat.Register(VValueObjectMeta("Point3D", members));
 		}
 
 		std::auto_ptr<CStaticDefinition> staticDefinition(MakeStaticDefinition(registrat));
 		std::auto_ptr<CRuntime> runtime(MakeRuntime(*staticDefinition.get()));
 
-		const VValueObjectMeta* type = runtime->fStaticDefinition->LookupValueObjectMetaFromIndex(0);
+		const VValueObjectMeta& point3DType = runtime->LookupValueObjectType("Point3D");
 
 		std::vector<VValue> members;
 		members.push_back(VValue::MakeInt(1));
 		members.push_back(VValue::MakeInt(2));
 		members.push_back(VValue::MakeInt(3));
 
-		VValueObjectRef ref1 = runtime->MakeValueObject(*type, members);
-		VValueObjectRef ref2 = runtime->MakeValueObject(*type, members);
-		VValueObjectRef ref3 = runtime->MakeValueObject(*type, members);
+		VValueObjectRef ref1 = runtime->MakeValueObject(point3DType, members);
+		VValueObjectRef ref2 = runtime->MakeValueObject(point3DType, members);
+		VValueObjectRef ref3 = runtime->MakeValueObject(point3DType, members);
 
 		VValueObjectRef ref4 = ref1;
 

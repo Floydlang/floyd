@@ -57,7 +57,7 @@ namespace {
 			memberMetas.push_back(VMemberMeta("member_c", kType_Int));
 			memberMetas.push_back(VMemberMeta("member_d", kType_MachineStringRef));
 
-			VValueObjectMeta result(memberMetas);
+			VValueObjectMeta result("type1", memberMetas);
 			return result;
 		}
 
@@ -68,7 +68,7 @@ namespace {
 			memberMetas.push_back(VMemberMeta("member_3", kType_MachineStringRef));
 			memberMetas.push_back(VMemberMeta("member_4", kType_Int));
 
-			VValueObjectMeta result(memberMetas);
+			VValueObjectMeta result("type2", memberMetas);
 			return result;
 		}
 
@@ -122,7 +122,7 @@ namespace {
 			values.push_back(VValue::MakeMachineString("2222"));
 			values.push_back(VValue::MakeInt(3333));
 			values.push_back(VValue::MakeMachineString("4444"));
-			TValueObjectState state(*iRuntime.fStaticDefinition->LookupValueObjectMetaFromIndex(0), values);
+			TValueObjectState state(iRuntime.LookupValueObjectType("type1"), values);
 			return state;
 		}
 
@@ -132,7 +132,7 @@ namespace {
 			values.push_back(VValue::MakeMachineString("66"));
 			values.push_back(VValue::MakeInt(77));
 			values.push_back(VValue::MakeMachineString("88"));
-			TValueObjectState state(*iRuntime.fStaticDefinition->LookupValueObjectMetaFromIndex(0), values);
+			TValueObjectState state(iRuntime.LookupValueObjectType("type1"), values);
 			return state;
 		}
 
@@ -142,7 +142,7 @@ namespace {
 		TTestValueObjectsFixture f;
 
 		TValueObjectState state = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
-		VValueObjectRef valueObjectRef = f.fRuntime->MakeValueObject(state);
+		VValueObjectRef valueObjectRef = f.fRuntime->MakeValueObject(state.first, state.second);
 
 		ASSERT(valueObjectRef.GetMember("member_a").GetInt() == 1111);
 		ASSERT(valueObjectRef.GetMember("member_b").GetMachineString() == "2222");
@@ -151,15 +151,16 @@ namespace {
 
 		ASSERT(f.fRuntime->fValueObjectRecords.size() == 1);
 		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 1);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fState == state);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fMeta == state.first);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fValues == state.second);
 	}
 
 	void ProveWorks_MakeRuntime__TwoIdenticalValueObjectRef__ResultsCorrectValueObjectRefs(){
 		TTestValueObjectsFixture f;
 
 		TValueObjectState state = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
-		VValueObjectRef valueObjectRefA = f.fRuntime->MakeValueObject(state);
-		VValueObjectRef valueObjectRefB = f.fRuntime->MakeValueObject(state);
+		VValueObjectRef valueObjectRefA = f.fRuntime->MakeValueObject(state.first, state.second);
+		VValueObjectRef valueObjectRefB = f.fRuntime->MakeValueObject(state.first, state.second);
 
 		ASSERT(valueObjectRefA.GetMember("member_a").GetInt() == 1111);
 		ASSERT(valueObjectRefA.GetMember("member_b").GetMachineString() == "2222");
@@ -173,7 +174,8 @@ namespace {
 
 		ASSERT(f.fRuntime->fValueObjectRecords.size() == 1);
 		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 2);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fState == state);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fMeta == state.first);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fValues == state.second);
 	}
 
 	void ProveWorks_MakeRuntime__TwoDifferentValueObjectRef__ResultsCorrectValueObjectRefs(){
@@ -182,8 +184,18 @@ namespace {
 		TValueObjectState state1A = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
 		TValueObjectState state1B = MakeValueObjectStateType1ValueB(*f.fRuntime.get());
 
-		VValueObjectRef valueObjectRefA = f.fRuntime->MakeValueObject(state1A);
-		VValueObjectRef valueObjectRefB = f.fRuntime->MakeValueObject(state1B);
+		VValueObjectRef valueObjectRefA = f.fRuntime->MakeValueObject(state1A.first, state1A.second);
+		VValueObjectRef valueObjectRefB = f.fRuntime->MakeValueObject(state1B.first, state1B.second);
+
+		ASSERT(f.fRuntime->fValueObjectRecords.size() == 2);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 1);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fMeta == state1A.first);
+		ASSERT(f.fRuntime->fValueObjectRecords[0]->fValues == state1A.second);
+
+
+		ASSERT(f.fRuntime->fValueObjectRecords[1]->fRefCount == 1);
+		ASSERT(f.fRuntime->fValueObjectRecords[1]->fMeta == state1B.first);
+		ASSERT(f.fRuntime->fValueObjectRecords[1]->fValues == state1B.second);
 
 		ASSERT(valueObjectRefA.GetMember("member_a").GetInt() == 1111);
 		ASSERT(valueObjectRefA.GetMember("member_b").GetMachineString() == "2222");
@@ -194,12 +206,6 @@ namespace {
 		ASSERT(valueObjectRefB.GetMember("member_b").GetMachineString() == "66");
 		ASSERT(valueObjectRefB.GetMember("member_c").GetInt() == 77);
 		ASSERT(valueObjectRefB.GetMember("member_d").GetMachineString() == "88");
-
-		ASSERT(f.fRuntime->fValueObjectRecords.size() == 2);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fRefCount == 1);
-		ASSERT(f.fRuntime->fValueObjectRecords[0]->fState == state1A);
-		ASSERT(f.fRuntime->fValueObjectRecords[1]->fRefCount == 1);
-		ASSERT(f.fRuntime->fValueObjectRecords[1]->fState == state1B);
 	}
 
 
@@ -299,7 +305,7 @@ namespace {
 		TTestValueObjectsFixture f;
 
 		TValueObjectState state = MakeValueObjectStateType1ValueA(*f.fRuntime.get());
-		VValueObjectRef a = f.fRuntime->MakeValueObject(state);
+		VValueObjectRef a = f.fRuntime->MakeValueObject(state.first, state.second);
 
 		VValue b = VValue::MakeValueObjectRef(a);
 		ASSERT(b.IsValueObjectRef());
