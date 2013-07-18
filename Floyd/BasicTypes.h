@@ -20,6 +20,8 @@
 class CStaticDefinition;
 class VValue;
 
+typedef int64_t TInteger;
+
 
 
 ////////////////////////		Basic types
@@ -58,7 +60,6 @@ enum EValueType {
 
 
 
-
 ////////////////////////		VMemberMeta
 
 
@@ -74,6 +75,7 @@ class VMemberMeta {
 };
 
 bool operator==(const VMemberMeta& iA, const VMemberMeta& iB);
+
 
 
 
@@ -96,9 +98,7 @@ class CTableRecord {
 
 
 
-
 ////////////////////////		VTableRef
-
 
 
 
@@ -111,6 +111,8 @@ class VTableRef {
 
 	public: void Set(const std::string& iKey, const VValue& iValue);
 	public: VValue Get(const std::string& iKey) const;
+	public: VValue operator[](const std::string& iKey) const;
+
 	public: long GetSize() const;
 
 	//	MZ: Will increment reference counter inside record.
@@ -152,7 +154,6 @@ class VValueObjectMeta {
 
 inline bool operator!=(const VValueObjectMeta& iA, const VValueObjectMeta& iB){	return !(iA == iB); }
 bool operator==(const VValueObjectMeta& iA, const VValueObjectMeta& iB);
-
 
 
 
@@ -218,7 +219,7 @@ struct TInternalValue {
 
 	///////////////////////		State.
 //		bool fBoolean;
-		int64_t fInt;
+		TInteger fInt;
 //		double fFloat;
 //		int32_t fEnum;
 		std::string fMachineStringRef;
@@ -243,8 +244,8 @@ class VValue {
 	public: bool IsNil() const;
 
 	public: bool IsInt() const;
-	public: static VValue MakeInt(int64_t iInt);
-	public: int64_t GetInt() const;
+	public: static VValue MakeInt(TInteger iInt);
+	public: TInteger GetInt() const;
 
 	public: static VValue MakeMachineString(const std::string& iMachineString);
 	public: VValue(const std::string& iMachineString);
@@ -318,6 +319,7 @@ class CStaticDefinition {
 
 
 
+
 //////////////////////////			CRuntime
 
 
@@ -341,9 +343,7 @@ class CRuntime {
 
 	///////////////////////		State.
 		private: const CStaticDefinition* fStaticDefinition;
-
 		public: std::vector<std::shared_ptr<CValueObjectRecord> > fValueObjectRecords;
-
 		public: std::vector<std::shared_ptr<CTableRecord> > fTableRecords;
 };
 
@@ -351,7 +351,6 @@ class CRuntime {
 
 
 //////////////////////////			Free functions
-
 
 
 

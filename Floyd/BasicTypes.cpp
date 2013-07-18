@@ -28,8 +28,6 @@ TInternalValue::TInternalValue(const TInternalValue& iOther) :
 	fMachineStringRef(iOther.fMachineStringRef),
 	fTableRef(iOther.fTableRef),
 	fValueObjectRef(iOther.fValueObjectRef)
-//	fMotherboardRef(iOther.fMotherboardRef),
-//	fInterfaceRef(iOther.fInterfaceRef)
 {
 
 	ASSERT(CheckInvariant());
@@ -162,7 +160,7 @@ bool VValue::IsInt() const {
 	return GetType() == kType_Int;
 }
 
-VValue VValue::MakeInt(int64_t iInt){
+VValue VValue::MakeInt(TInteger iInt){
 	VValue temp;
 	temp.fInternalValue.fInt = iInt;
 	temp.fType = kType_Int;
@@ -171,7 +169,7 @@ VValue VValue::MakeInt(int64_t iInt){
 	return temp;
 }
 
-int64_t VValue::GetInt() const{
+TInteger VValue::GetInt() const{
 	ASSERT(CheckInvariant());
 	ASSERT(fType == kType_Int);
 
@@ -276,24 +274,6 @@ VValueObjectRef VValue::GetValueObjectRef() const{
 
 	return *fInternalValue.fValueObjectRef.get();
 }
-
-/*
-VValue VValue::MakeMotherboardRef(const VMotherboardRef& iMotherboardRef){
-	VValue temp;
-	temp.fInternalValue.fMotherboardRef = iMotherboardRef;
-	temp.fType = kType_MotherboardRef;
-
-	ASSERT(temp.CheckInvariant());
-	return temp;
-}
-
-VMotherboardRef VValue::GetMotherboardRef() const{
-	ASSERT(CheckInvariant());
-	ASSERT(fType == kType_MotherboardRef);
-
-	return fInternalValue.fMotherboardRef;
-}
-*/
 
 
 bool operator==(const VValue& iA, const VValue& iB){
@@ -464,6 +444,10 @@ VValue VTableRef::Get(const std::string& iKey) const{
 	VValue result = fRecord->fValues[iKey];
 
 	return result;
+}
+
+VValue VTableRef::operator[](const std::string& iKey) const{
+	return Get(iKey);
 }
 
 long VTableRef::GetSize() const{
@@ -748,10 +732,6 @@ bool CStaticDefinition::CheckInvariant() const{
 
 
 
-
-
-
-
 //////////////////////////			CRuntime
 
 
@@ -839,8 +819,6 @@ VTableRef CRuntime::MakeEmptyTable(){
 	ASSERT(CheckInvariant());
 
 	return result;
-
-
 }
 
 
