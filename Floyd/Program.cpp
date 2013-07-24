@@ -163,13 +163,15 @@ bool CProgram::CheckInvariant() const{
 	return true;
 }
 
-void CProgram::EvaluatePin(long iNodeIndex, TPin& iPin, long iGenerationID){
+void CProgram::EvaluatePin(long /*iNodeIndex*/, TPin& iPin, long iGenerationID){
 	if(iPin.fSourceNode != -1){
 		EvaluateNodeRecursively(iPin.fSourceNode, iGenerationID);
 		VValue newValue = fNodes[iPin.fSourceNode].fOutputPin.GetValue();
 		iPin.StoreValue(newValue);
 	}
 }
+
+namespace {
 
 bool IsTrue(const VValue& iValue){
 	if(iValue.IsNil()){
@@ -189,6 +191,9 @@ bool IsTrue(const VValue& iValue){
 		ASSERT(false);
 	}
 }
+
+}
+
 
 void CProgram::EvaluateNodeRecursively(long iNodeIndex, long iGenerationID){
 	CEvalNode& node = fNodes[iNodeIndex];
@@ -250,7 +255,7 @@ void CProgram::EvaluateNodeRecursively(long iNodeIndex, long iGenerationID){
 		}
 		else if(node.fType == CEvalNode::kNodeType_Add){
 			TInteger sum = 0;
-			for(long pinIndex = 0 ; pinIndex < node.fInputPins.size() ; pinIndex++){
+			for(std::vector<TPin>::size_type pinIndex = 0 ; pinIndex < node.fInputPins.size() ; pinIndex++){
 				EvaluatePin(iNodeIndex, node.fInputPins[pinIndex], iGenerationID);
 				VValue v = node.fInputPins[pinIndex].GetValue();
 				if(v.IsInt()){

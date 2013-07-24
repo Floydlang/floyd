@@ -11,7 +11,7 @@
 #include <cassert>
 
 
-void OnAssert(const char iFileName[], int iLineNumber){
+void OnAssert(const char /*iFileName*/[], int /*iLineNumber*/){
 	assert(false);
 }
 

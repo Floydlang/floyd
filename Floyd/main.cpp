@@ -95,7 +95,7 @@ namespace {
 
 
 
-int main(int argc, const char * argv[]){
+int main(int /*argc*/, const char * /*argv*/[]){
 	std::cout << "Start tests!\n";
 
 	try{

@@ -180,7 +180,7 @@ namespace {
 		std::vector<CEvalNode> nodes;
 
 		VRange range = table.GetRange();
-		VExpressionRef expressionRef;
+//		VExpressionRef expressionRef;
 
 //		nodes.push_back(CEvalNode::MakeLooper(VValue(range), VValue(3), VValue(4), expressionRef));
 /*CEvalNode CEvalNode::MakeLooper(const TPin& iRange,
