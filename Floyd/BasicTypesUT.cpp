@@ -235,12 +235,12 @@ namespace {
 		TTestTableFixture f;
 
 		VTableRef tableRef = f.fRuntime->MakeEmptyTable();
-		tableRef.Set("test_10", VValue::MakeInt(12345));
+		tableRef = tableRef.SetCopy("test_10", VValue::MakeInt(12345));
 		ASSERT(tableRef.Get("test_10").GetInt() == 12345);
 
-		ASSERT(f.fRuntime->fTableRecords.size() == 1);
-		ASSERT(f.fRuntime->fTableRecords[0]->fRefCount == 1);
-		ASSERT(f.fRuntime->fTableRecords[0]->fValues.size() == 1);
+//		ASSERT(f.fRuntime->fTableRecords.size() == 1);
+//		ASSERT(f.fRuntime->fTableRecords[0]->fRefCount == 1);
+//		ASSERT(f.fRuntime->fTableRecords[0]->fValues.size() == 1);
 	}
 
 	void ProveWorks_Table_GetSize__Empty__Returns0(){
@@ -254,9 +254,9 @@ namespace {
 		TTestTableFixture f;
 
 		VTableRef tableRef = f.fRuntime->MakeEmptyTable();
-		tableRef.Set("1", VValue::MakeInt(100));
-		tableRef.Set("2", VValue::MakeInt(200));
-		tableRef.Set("3", VValue::MakeInt(300));
+		tableRef = tableRef.SetCopy("1", VValue::MakeInt(100));
+		tableRef = tableRef.SetCopy("2", VValue::MakeInt(200));
+		tableRef = tableRef.SetCopy("3", VValue::MakeInt(300));
 
 		ASSERT(tableRef.GetSize() == 3);
 	}
@@ -265,8 +265,8 @@ namespace {
 		TTestTableFixture f;
 
 		VTableRef a = f.fRuntime->MakeEmptyTable();
-		a.Set("1", VValue::MakeInt(1000));
-		a.Set("2", VValue::MakeInt(2000));
+		a = a.SetCopy("1", VValue::MakeInt(1000));
+		a = a.SetCopy("2", VValue::MakeInt(2000));
 
 		VTableRef b(a);
 		ASSERT(b.Get("1").GetInt() == 1000);
@@ -277,8 +277,8 @@ namespace {
 		TTestTableFixture f;
 
 		VTableRef a = f.fRuntime->MakeEmptyTable();
-		a.Set("1", VValue::MakeInt(10000));
-		a.Set("2", VValue::MakeInt(20000));
+		a = a.SetCopy("1", VValue::MakeInt(10000));
+		a = a.SetCopy("2", VValue::MakeInt(20000));
 
 		VTableRef b = f.fRuntime->MakeEmptyTable();
 		b = a;
@@ -286,6 +286,42 @@ namespace {
 		ASSERT(b.Get("2").GetInt() == 20000);
 	}
 
+
+//	http://stackoverflow.com/questions/7410559/c-overloading-operators-based-on-the-side-of-assignment
+
+	void ProveWorks_MakeRange__EntireTableRange__GetEntries(){
+		TTestTableFixture f;
+
+		VTableRef tableRef = f.fRuntime->MakeEmptyTable();
+		tableRef = tableRef.SetCopy("1", 1000);
+		tableRef = tableRef.SetCopy("2", 2000);
+		tableRef = tableRef.SetCopy("3", 3000);
+		tableRef = tableRef.SetCopy("4", 4000);
+
+		VRange range = tableRef.GetRange();
+		ASSERT(!range.IsEmpty())
+
+		VValue x = range.GetFront();
+		ASSERT(x == 1000);
+		range.PopFront();
+		ASSERT(!range.IsEmpty())
+
+		x = range.GetFront();
+		ASSERT(x == 2000);
+		range.PopFront();
+		ASSERT(!range.IsEmpty())
+
+		x = range.GetFront();
+		ASSERT(x == 3000);
+		range.PopFront();
+		ASSERT(!range.IsEmpty())
+
+		x = range.GetFront();
+		ASSERT(x == 4000);
+		range.PopFront();
+
+		ASSERT(range.IsEmpty());
+	}
 
 
 
@@ -309,8 +345,8 @@ namespace {
 		TTestTableFixture f;
 
 		VTableRef a = f.fRuntime->MakeEmptyTable();
-		a.Set("1", VValue::MakeInt(1000));
-		a.Set("2", VValue::MakeInt(2000));
+		a = a.SetCopy("1", VValue::MakeInt(1000));
+		a = a.SetCopy("2", VValue::MakeInt(2000));
 
 		VValue b = VValue::MakeTableRef(a);
 		ASSERT(b.IsTableRef());
@@ -327,7 +363,7 @@ namespace {
 
 		VTableRef tableRef = f.fRuntime->MakeEmptyTable();
 		VValueObjectRef valueObjectRef = MakeValueObjectType1ValueA(*f.fRuntime.get());
-		tableRef.Set("1", valueObjectRef);
+		tableRef = tableRef.SetCopy("1", valueObjectRef);
 
 		ASSERT(tableRef.Get("1").GetValueObjectRef().GetMember("member_b").GetMachineString() == "2222");
 	}
@@ -336,11 +372,11 @@ namespace {
 		TTestValueObjectsFixture f;
 
 		VTableRef tableRefA = f.fRuntime->MakeEmptyTable();
-		tableRefA.Set("one", VValue::MakeInt(8));
-		tableRefA.Set("two", VValue::MakeInt(9));
+		tableRefA = tableRefA.SetCopy("one", VValue::MakeInt(8));
+		tableRefA = tableRefA.SetCopy("two", VValue::MakeInt(9));
 
 		VTableRef tableRefB = f.fRuntime->MakeEmptyTable();
-		tableRefB.Set("first", tableRefA);
+		tableRefB = tableRefB.SetCopy("first", tableRefA);
 
 		ASSERT(tableRefB.Get("first").GetTableRef().Get("one").GetInt() == 8);
 		ASSERT(tableRefB.Get("first").GetTableRef().Get("two").GetInt() == 9);
@@ -370,6 +406,8 @@ void TestBasicTypes(){
 	ProveWorks_Table_GetSize__3Entries__Returns3();
 	ProveWorks_Table_CopyConstructor__2Entries__CopyIsIdentical();
 	ProveWorks_Table_OperatorEquals__2Entries__CopyIsIdentical();
+
+	ProveWorks_MakeRange__EntireTableRange__GetEntries();
 
 	ProveWorks_VValue_MakeValueObjectRef__Simple__CanGetBackAgain();
 	ProveWorks_VValue_MakeTableRef__Simple__CanGetBackAgain();

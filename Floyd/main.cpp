@@ -46,8 +46,8 @@ namespace {
 
 
 		VTableRef tableRef = runtime->MakeEmptyTable();
-		tableRef.Set("a", VValue::MakeInt(4000));
-		tableRef.Set("b", VValue::MakeInt(5000));
+		tableRef = tableRef.SetCopy("a", VValue::MakeInt(4000));
+		tableRef = tableRef.SetCopy("b", VValue::MakeInt(5000));
 
 		ASSERT(tableRef["a"].GetInt() == 4000);
 		ASSERT(tableRef["b"].GetInt() == 5000);
@@ -84,8 +84,8 @@ namespace {
 
 
 		VTableRef tableRef = runtime->MakeEmptyTable();
-		tableRef.Set("a", VValue::MakeInt(4000));
-		tableRef.Set("b", VValue::MakeInt(5000));
+		tableRef = tableRef.SetCopy("a", VValue::MakeInt(4000));
+		tableRef = tableRef.SetCopy("b", VValue::MakeInt(5000));
 
 		ASSERT(tableRef["a"].GetInt() == 4000);
 		ASSERT(tableRef["b"].GetInt() == 5000);

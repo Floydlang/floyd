@@ -27,7 +27,9 @@ TInternalValue::TInternalValue(const TInternalValue& iOther) :
 	fInt(iOther.fInt),
 	fMachineStringRef(iOther.fMachineStringRef),
 	fTableRef(iOther.fTableRef),
-	fValueObjectRef(iOther.fValueObjectRef)
+	fRange(iOther.fRange),
+	fValueObjectRef(iOther.fValueObjectRef),
+	fExpressionRef(iOther.fExpressionRef)
 {
 
 	ASSERT(CheckInvariant());
@@ -54,7 +56,9 @@ void TInternalValue::Swap(TInternalValue& ioOther){
 	std::swap(fInt, ioOther.fInt);
 	fMachineStringRef.swap(ioOther.fMachineStringRef);
 	fTableRef.swap(ioOther.fTableRef);
+	fRange.swap(ioOther.fRange);
 	fValueObjectRef.swap(ioOther.fValueObjectRef);
+	fExpressionRef.swap(ioOther.fExpressionRef);
 
 	ASSERT(CheckInvariant());
 	ASSERT(ioOther.CheckInvariant());
@@ -169,6 +173,15 @@ VValue VValue::MakeInt(TInteger iInt){
 	return temp;
 }
 
+VValue::VValue(TInteger iInt) :
+	fType(kType_Nil)
+{
+	VValue temp = MakeInt(iInt);
+	temp.Swap(*this);
+
+	ASSERT(CheckInvariant());
+}
+
 TInteger VValue::GetInt() const{
 	ASSERT(CheckInvariant());
 	ASSERT(fType == kType_Int);
@@ -236,6 +249,46 @@ VTableRef VValue::GetTableRef() const{
 
 	return *fInternalValue.fTableRef.get();
 }
+
+
+
+
+
+bool VValue::IsRange() const{
+	ASSERT(CheckInvariant());
+
+	return fType == kType_Range;
+}
+
+VValue VValue::MakeRange(const VRange& iRange){
+	ASSERT(iRange.CheckInvariant());
+
+	std::shared_ptr<VRange> temp(new VRange(iRange));
+
+	VValue result;
+	result.fInternalValue.fRange = temp;
+	result.fType = kType_Range;
+
+	ASSERT(result.CheckInvariant());
+	return result;
+}
+VValue::VValue(const VRange& iRange) :
+	fType(kType_Nil)
+{
+	VValue temp = MakeRange(iRange);
+	temp.Swap(*this);
+
+	ASSERT(CheckInvariant());
+}
+
+VRange VValue::GetRange() const{
+	ASSERT(CheckInvariant());
+	ASSERT(fType == kType_Range);
+
+	return *fInternalValue.fRange.get();
+}
+
+
 
 
 
@@ -352,15 +405,17 @@ bool operator==(const VMemberMeta& iA, const VMemberMeta& iB){
 
 
 
-CTableRecord::CTableRecord(const std::map<std::string, VValue>& iValues) :
+CTableRecord::CTableRecord(CRuntime& iRuntime, const std::map<std::string, VValue>& iValues) :
 	fValues(iValues),
-	fRefCount(0)
+	fRefCount(0),
+	fRuntime(&iRuntime)
 {
 }
 
 bool CTableRecord::CheckInvariant() const{
 	ASSERT(this != NULL);
 
+	ASSERT(fRuntime != NULL);
 	return true;
 }
 
@@ -427,14 +482,16 @@ void VTableRef::Swap(VTableRef& ioOther){
 	ASSERT(ioOther.CheckInvariant());
 }
 
-void VTableRef::Set(const std::string& iKey, const VValue& iValue){
+VTableRef VTableRef::SetCopy(const std::string& iKey, const VValue& iValue) const{
 	ASSERT(CheckInvariant());
 	ASSERT(iKey.size() > 0);
 	ASSERT(iValue.CheckInvariant());
 
-	fRecord->fValues[iKey] = iValue;
-
-	ASSERT(CheckInvariant());
+	std::map<std::string, VValue> values = fRecord->fValues;
+	values[iKey] = iValue;
+	VTableRef result = fRecord->fRuntime->MakeTableWithValues(values);
+	ASSERT(result.CheckInvariant());
+	return result;
 }
 
 VValue VTableRef::Get(const std::string& iKey) const{
@@ -446,7 +503,7 @@ VValue VTableRef::Get(const std::string& iKey) const{
 	return result;
 }
 
-VValue VTableRef::operator[](const std::string& iKey) const{
+const VValue VTableRef::operator[](const std::string& iKey) const{
 	return Get(iKey);
 }
 
@@ -454,6 +511,21 @@ long VTableRef::GetSize() const{
 	ASSERT(CheckInvariant());
 
 	return fRecord->fValues.size();
+}
+
+VRange VTableRef::GetRange() const{
+	ASSERT(CheckInvariant());
+
+	std::map<std::string, VValue>::const_iterator begin = fRecord->fValues.begin();
+	std::map<std::string, VValue>::const_iterator end = fRecord->fValues.end();
+	VRange result(*this, begin, end);
+	return result;
+}
+
+CTableRecord& VTableRef::GetRecord() const{
+	ASSERT(CheckInvariant());
+
+	return *fRecord;
 }
 
 
@@ -669,6 +741,73 @@ VValue VValueObjectRef::GetMember(const std::string& iKey) const{
 
 
 
+
+////////////////////////		VRange
+
+
+VRange::VRange(const VTableRef& iTableRef,
+	std::map<std::string, VValue>::const_iterator& iBegin,
+	std::map<std::string, VValue>::const_iterator& iEnd)
+:
+	fTableRef(iTableRef),
+	fBegin(iBegin),
+	fEnd(iEnd)
+{
+	ASSERT(CheckInvariant());
+}
+
+
+bool VRange::CheckInvariant() const{
+	ASSERT(this != NULL);
+
+/*
+	ASSERT(fTableRef.CheckInvariant());
+	std::map<std::string, VValue>::const_iterator it = fBegin;
+xxx
+	while(it != entireRange.fEnd && it != fBegin){
+		it++;
+	}
+	ASSERT(it == fBegin);
+
+	while(it != entireRange.fEnd && it != fEnd){
+		it++;
+	}
+	ASSERT(it == fEnd);
+*/
+
+	return true;
+}
+
+/*
+std::size_t VRange::GetSize() const{
+	ASSERT(CheckInvariant());
+
+	return std::distance(fBegin, fEnd);
+}
+*/
+
+bool VRange::IsEmpty() const{
+	ASSERT(CheckInvariant());
+
+	return fBegin == fEnd;
+}
+
+void VRange::PopFront(){
+	ASSERT(CheckInvariant());
+
+	ASSERT(fBegin != fEnd);
+	fBegin++;
+}
+
+const VValue& VRange::GetFront() const{
+	ASSERT(CheckInvariant());
+	ASSERT(fBegin != fEnd);
+
+	return fBegin->second;
+}
+
+
+
 //////////////////////////			CStaticRegitrat
 
 
@@ -810,15 +949,33 @@ VValueObjectRef CRuntime::MakeValueObject(const VValueObjectMeta& iType, const s
 VTableRef CRuntime::MakeEmptyTable(){
 	ASSERT(CheckInvariant());
 
-	std::shared_ptr<CTableRecord> record(new CTableRecord(std::map<std::string, VValue>()));
-	fTableRecords.push_back(record);
+	std::map<std::string, VValue> values;
+	return MakeTableWithValues(values);
+}
 
-	VTableRef result(record.get());
-	ASSERT(result.CheckInvariant());
-
+VTableRef CRuntime::MakeTableWithValues(const std::map<std::string, VValue>& iValues){
 	ASSERT(CheckInvariant());
 
-	return result;
+	auto it = fTableRecords.begin();
+	while(it != fTableRecords.end() && (*it)->fValues != iValues){
+		it++;
+	}
+
+	if(it != fTableRecords.end()){
+		VTableRef result((*it).get());
+		ASSERT(result.CheckInvariant());
+		ASSERT(CheckInvariant());
+		return result;
+	}
+	else{
+		std::shared_ptr<CTableRecord> record(new CTableRecord(*this, iValues));
+		fTableRecords.push_back(record);
+
+		VTableRef result(record.get());
+		ASSERT(result.CheckInvariant());
+		ASSERT(CheckInvariant());
+		return result;
+	}
 }
 
 

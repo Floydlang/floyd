@@ -16,41 +16,43 @@
 
 
 
-struct CEvaluationNode;
-
+class CEvalNode;
+class CProgram;
 
 
 //////////////////////////			TPin
 
 
 /**
-	@brief a one-value socket where you can connect a wire.
+	@brief This is a one-value socket where you can connect a wire.
 	If fNode is NULL the fCurrentValue is the constant in fCurrentValue. 
 */
 
 class TPin {
-	public: TPin() :
-		fSourceNode(-1)
-	{
-	};
+	public: TPin();
+	public: TPin(const VValue& iCurrentValue);
+	public: TPin(const VValue& iCurrentValue, long iSourceNode);
+	public: bool CheckInvariant() const;
+	public: VValue GetValue() const;
+	public: void StoreValue(const VValue& iValue);
 
-	VValue fCurrentValue;
-	long fSourceNode;
+
+	private: VValue fCurrentValue;
+	public: long fSourceNode;
 };
 
 
 
-//////////////////////////			CEvaluationNode
+//////////////////////////			CEvalNode
 
 
 
 /**
-	@brief a one-value socket where you can connect a wire.
-	If fNode is NULL the fCurrentValue is the constant in fCurrentValue. 
+	@brief This is a node in the evaluation graph that has inputs + output + operation.
 */
 
 
-class CEvaluationNode {
+class CEvalNode {
 	public: enum EComparison {
 		kComparison_QuestionIsTrue,
 		kComparison_QuestionIsFalse,
@@ -88,15 +90,22 @@ class CEvaluationNode {
 		kNodeType_Multiply
 	};
 
-	public: ~CEvaluationNode();
+	public: ~CEvalNode();
 	public: bool CheckInvariant() const;
 
+	public: static CEvalNode MakeLooper(const TPin& iRange,
+		const TPin& iStartValue,
+		const TPin& iContext,
+		const VExpressionRef& iExpressionRef);
 
-	public: static CEvaluationNode MakeConditional(const TPin iInputPins[3], EComparison comparison);
-	public: static CEvaluationNode MakeAdd(const TPin iInputPins[3]);
+	public: static CEvalNode MakeConditional(EComparison comparison, const TPin iQuestion, const TPin iA, const TPin iB);
+	public: static CEvalNode MakeConditional(EComparison comparison, const TPin iInputPins[3]);
+
+	public: static CEvalNode MakeAdd(const TPin& iA, const TPin& iB, const TPin& iC);
+	public: static CEvalNode MakeAdd(const TPin iInputPins[3]);
 
 	///////////////////////		Internals.
-		private: CEvaluationNode(ENodeType iType);
+		private: CEvalNode(ENodeType iType);
 
 	///////////////////////		State.
 		public: TPin fOutputPin;
@@ -105,7 +114,7 @@ class CEvaluationNode {
 		public: ENodeType fType;
 
 		public: EComparison fComparison;
-		public: CEvaluationNode* fPerEntryExpression;
+		public: std::shared_ptr<VExpressionRef> fExpressionRef;
 		public: long fGenerationID;
 };
 
@@ -116,17 +125,17 @@ class CEvaluationNode {
 
 
 class CProgram {
-	public: CProgram(CRuntime& iRuntime, const std::vector<CEvaluationNode>& iNodes);
+	public: CProgram(CRuntime& iRuntime, const std::vector<CEvalNode>& iNodes);
 	public: ~CProgram();
 	public: bool CheckInvariant() const;
 	public: void Evaluate();
 
 	private: void EvaluateNodeRecursively(long iNodeIndex, long iGenerationID);
-	private: void TouchPin(long iNodeIndex, TPin& iPin, long iGenerationID);
+	private: void EvaluatePin(long iNodeIndex, TPin& iPin, long iGenerationID);
 
 	///////////////////////		State.
 		public: CRuntime* fRuntime;
-		public: std::vector<CEvaluationNode> fNodes;
+		public: std::vector<CEvalNode> fNodes;
 		public: long fGenerationID;
 };
 

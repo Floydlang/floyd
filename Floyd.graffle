@@ -168,6 +168,112 @@
 	<array>
 		<dict>
 			<key>Bounds</key>
+			<string>{{765, 1431}, {144, 90}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Color</key>
+				<dict>
+					<key>w</key>
+					<string>0</string>
+				</dict>
+				<key>Font</key>
+				<string>Helvetica</string>
+				<key>NSKern</key>
+				<real>0.0</real>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>2250</integer>
+			<key>Shape</key>
+			<string>NoteShape</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<string>0.4</string>
+						<key>g</key>
+						<string>1</string>
+						<key>r</key>
+						<string>1</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\deftab720
+\pard\pardeftab720
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+Type-safe! Use Tagged union to get dynamic type!}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{855, 13779}, {234, 135}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Color</key>
+				<dict>
+					<key>w</key>
+					<string>0</string>
+				</dict>
+				<key>Font</key>
+				<string>Helvetica</string>
+				<key>NSKern</key>
+				<real>0.0</real>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>2249</integer>
+			<key>Shape</key>
+			<string>NoteShape</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<string>0.4</string>
+						<key>g</key>
+						<string>1</string>
+						<key>r</key>
+						<string>1</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\deftab720
+\pard\pardeftab720
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+Incompaibile connections etc are allowed (so you can edit step by step) but are highlighted. You get tools that allows user to correct in different ways.}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
 			<string>{{450, 14319}, {153, 90}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
@@ -43095,8 +43201,8 @@ Read about ADA\
 			<integer>355</integer>
 			<key>Points</key>
 			<array>
-				<string>{1727.5163793350514, 3643.9762063875087}</string>
-				<string>{1683.4833583291015, 3632.4194561028644}</string>
+				<string>{1727.516434037916, 3643.9428695213614}</string>
+				<string>{1683.4834757977683, 3632.3658752136876}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -46882,8 +46988,8 @@ Fast refactoring, by renaming in one place, moving functions between classes, au
 			<integer>252</integer>
 			<key>Points</key>
 			<array>
-				<string>{800.50005720491697, 3363.7462074604814}</string>
-				<string>{720.49994896633586, 3362.5361154045618}</string>
+				<string>{800.500056142782, 3363.7668673976145}</string>
+				<string>{720.49994577078053, 3362.5678679212297}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -62799,7 +62905,7 @@ Find value&lt;T&gt;}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2013-07-17 23:52:33 +0000</string>
+	<string>2013-07-21 09:08:53 +0000</string>
 	<key>Modifier</key>
 	<string>Marcus Zetterquist</string>
 	<key>NotesVisible</key>
@@ -62835,7 +62941,7 @@ Find value&lt;T&gt;}</string>
 		<key>NSPaperName</key>
 		<array>
 			<string>string</string>
-			<string>iso-a3</string>
+			<string>2725AC8F-9556-4335-B638-B5DF07F44A77</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>
@@ -62890,7 +62996,7 @@ Find value&lt;T&gt;}</string>
 			</dict>
 		</array>
 		<key>Frame</key>
-		<string>{{1275, 21}, {2094, 1397}}</string>
+		<string>{{0, 0}, {1319, 746}}</string>
 		<key>ListView</key>
 		<true/>
 		<key>OutlineWidth</key>
@@ -62904,15 +63010,15 @@ Find value&lt;T&gt;}</string>
 		<key>SidebarWidth</key>
 		<integer>120</integer>
 		<key>VisibleRegion</key>
-		<string>{{219.9073976756618, 14171.758696124163}, {956.48144347432367, 575.46294009612029}}</string>
+		<string>{{-25, 1058.3332912789467}, {1208.3332853184825, 562.03701470369265}}</string>
 		<key>Zoom</key>
-		<real>2.1600000858306885</real>
+		<real>1.0800000429153442</real>
 		<key>ZoomValues</key>
 		<array>
 			<array>
 				<string>Canvas 1</string>
-				<real>2.1600000858306885</real>
 				<real>1.0800000429153442</real>
+				<real>0.54000002145767212</real>
 			</array>
 		</array>
 	</dict>

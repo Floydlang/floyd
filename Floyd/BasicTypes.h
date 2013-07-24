@@ -19,6 +19,9 @@
 
 class CStaticDefinition;
 class VValue;
+class VRange;
+class CRuntime;
+class VExpressionRef;
 
 typedef int64_t TInteger;
 
@@ -40,7 +43,6 @@ enum EBasicType {
 
 
 
-
 ////////////////////////		Complex types
 
 
@@ -53,7 +55,9 @@ enum EValueType {
 	kType_MachineStringRef,
 
 	kType_TableRef,
+	kType_Range,
 	kType_ValueObjectRef,
+	kType_ExpressionRef,
 //	kType_MotherboardRef,
 //	kType_InterfaceRef
 };
@@ -79,22 +83,22 @@ bool operator==(const VMemberMeta& iA, const VMemberMeta& iB);
 
 
 
-
-
 ////////////////////////		CTableRecord
 
 
 
 
 class CTableRecord {
-	public: CTableRecord(const std::map<std::string, VValue>& iValues);
+	public: CTableRecord(CRuntime& iRuntime, const std::map<std::string, VValue>& iValues);
 	public: bool CheckInvariant() const;
 
 
 	///////////////////////		State.
 		public: std::map<std::string, VValue> fValues;
 		public: long fRefCount;
+		public: CRuntime* fRuntime;
 };
+
 
 
 
@@ -109,15 +113,18 @@ class VTableRef {
 	public: bool CheckInvariant() const;
 	public: void Swap(VTableRef& ioOther);
 
-	public: void Set(const std::string& iKey, const VValue& iValue);
+	//	Returns a modified table. The original table is unmodified.
+	public: VTableRef SetCopy(const std::string& iKey, const VValue& iValue) const;
 	public: VValue Get(const std::string& iKey) const;
-	public: VValue operator[](const std::string& iKey) const;
+	public: const VValue operator[](const std::string& iKey) const;
 
 	public: long GetSize() const;
+	public: VRange GetRange() const;
 
 	//	MZ: Will increment reference counter inside record.
 	public: VTableRef(CTableRecord* iRecord);
 
+	public: CTableRecord& GetRecord() const;
 
 	friend bool operator==(const VTableRef& iA, const VTableRef& iB);
 
@@ -126,6 +133,24 @@ class VTableRef {
 };
 
 bool operator==(const VTableRef& iA, const VTableRef& iB);
+
+
+
+
+
+////////////////////////		VExpressionRef
+
+
+
+
+class VExpressionRef {
+//	public: VExpressionRef();
+
+//	CProgram* fProgram;
+//	CEvalNode* fOutputNode;
+};
+
+
 
 
 
@@ -224,7 +249,9 @@ struct TInternalValue {
 //		int32_t fEnum;
 		std::string fMachineStringRef;
 		std::shared_ptr<VTableRef> fTableRef;
+		std::shared_ptr<VRange> fRange;
 		std::shared_ptr<VValueObjectRef> fValueObjectRef;
+		std::shared_ptr<VExpressionRef> fExpressionRef;
 //		VMotherboardRef fMotherboardRef;
 //		VInterfaceRef fInterfaceRef;
 };
@@ -245,6 +272,7 @@ class VValue {
 
 	public: bool IsInt() const;
 	public: static VValue MakeInt(TInteger iInt);
+	public: VValue(TInteger iInt);
 	public: TInteger GetInt() const;
 
 	public: static VValue MakeMachineString(const std::string& iMachineString);
@@ -255,6 +283,11 @@ class VValue {
 	public: static VValue MakeTableRef(const VTableRef& iTableRef);
 	public: VValue(const VTableRef& iTableRef);
 	public: VTableRef GetTableRef() const;
+
+	public: bool IsRange() const;
+	public: static VValue MakeRange(const VRange& iRange);
+	public: VValue(const VRange& iRange);
+	public: VRange GetRange() const;
 
 	public: bool IsValueObjectRef() const;
 	public: static VValue MakeValueObjectRef(const VValueObjectRef& iValueObjectRef);
@@ -276,6 +309,38 @@ class VValue {
 bool operator==(const VValue& iA, const VValue& iB);
 inline bool operator!=(const VValue& iA, const VValue& iB){	return !(iA == iB);	};
 
+
+
+
+
+////////////////////////		VRange
+
+
+/**	@brief The way to iterate over a container.
+	@details
+		Is always const - can never modify container.
+		Owns the container - you can dispose of all other references to the container.
+		The order of the elements depends on the container type. A table will return items in key-sort-order.
+*/
+
+
+class VRange {
+	public: bool CheckInvariant() const;
+
+//	public: std::size_t GetSize() const;
+	public: bool IsEmpty() const;
+	public: void PopFront();
+	public: const VValue& GetFront() const;
+
+	public: VRange(const VTableRef& iTableRef,
+		std::map<std::string, VValue>::const_iterator& iBegin,
+		std::map<std::string, VValue>::const_iterator& iEnd);
+
+	///////////////////////		State.
+		public: const VTableRef fTableRef;
+		public: std::map<std::string, VValue>::const_iterator fBegin;
+		public: std::map<std::string, VValue>::const_iterator fEnd;
+};
 
 
 
@@ -336,7 +401,11 @@ class CRuntime {
 	public: const VValueObjectMeta& LookupValueObjectType(const std::string& iTypeName) const;
 	public: VValueObjectRef MakeValueObject(const VValueObjectMeta& iType, const std::vector<VValue>& iValues);
 
+	//	MZ: Will reuse existing empty table, if any.
 	public: VTableRef MakeEmptyTable();
+
+	//	MZ: Will reuse existing identical table, if any.
+	public: VTableRef MakeTableWithValues(const std::map<std::string, VValue>& iValues);
 
 	private: void FlushUnusedValueObjects();
 
