@@ -168,6 +168,250 @@
 	<array>
 		<dict>
 			<key>Bounds</key>
+			<string>{{1485, 2844}, {288, 234}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Font</key>
+				<string>Helvetica-Bold</string>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>2252</integer>
+			<key>Shape</key>
+			<string>Rectangle</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<string>0</string>
+						<key>g</key>
+						<string>0</string>
+						<key>r</key>
+						<string>1</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f0\fs24 \cf0 Make alternatives how to do IC:s.\
+\
+Q1: Separate object or part of finale executable silicon?\
+\
+Q2: Instances and data vs pure functions?\
+\
+Q3: Many outputs or one output + client can split-up?\
+\
+Q4: Can outputs and inputs be bundled into a protocol / HDMI-style connection?\
+\
+Q5: Interface class is both input and output, but it dictates who takes initiative to function = this is not important in Floyd.}</string>
+			</dict>
+			<key>TextPlacement</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{171, 1638}, {219, 62}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FitText</key>
+			<string>Vertical</string>
+			<key>Flow</key>
+			<string>Resize</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Color</key>
+				<dict>
+					<key>w</key>
+					<string>0</string>
+				</dict>
+				<key>Font</key>
+				<string>ArialMT</string>
+				<key>NSKern</key>
+				<real>0.0</real>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>2251</integer>
+			<key>Shape</key>
+			<string>Rectangle</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<string>0.501961</string>
+						<key>g</key>
+						<string>1</string>
+						<key>r</key>
+						<string>0</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;}
+\deftab720
+\pard\pardeftab720
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+All objects are immutable always. Future\'a0\
+}</string>
+				<key>VerticalPad</key>
+				<integer>10</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{1224, 7704}, {521, 868}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FitText</key>
+			<string>YES</string>
+			<key>Flow</key>
+			<string>Resize</string>
+			<key>ID</key>
+			<integer>1985</integer>
+			<key>Shape</key>
+			<string>Rectangle</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<string>0.4</string>
+						<key>g</key>
+						<string>1</string>
+						<key>r</key>
+						<string>0.8</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+
+\f0\b\fs24 \cf0 MUTATION\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+
+\b0 \cf0 \
+typedef long TMutatorRevisionID;\
+\
+struct TMutable \{\
+	vector&lt;TMtd\
+\};\
+\
+class CMutatorStorage \{\
+	TMutatorRevisionID fCurrentRevisionID;\
+	hash_map&lt;void*, TMutable&gt; fMutableData;\
+\};\
+\
+\
+Mutator\
+\
+MyGUILevelMutator - allowed to mutate the GUI state and the document state.\
+\
+\
+MyRealtimeAudioMutator - called by OS to generate a slice of realtime audio.\
+\
+\
+class CClassA \{\
+	private: int fValueA;\
+	private: MUTABLE fValueB;\
+	private: MUTABLE fValueC;\
+\};\
+\
+class CViewX : public IView \{\
+	private: MUTABLE vector&lt;CView&gt; fSubViews;\
+\};\
+\
+void AddSubView(IMutator&amp; iMutator, CView* subView)\{\
+	vector&lt;CView&gt; old = fSubViews;\
+\
+	vector&lt;CView&gt; new = fSubViews + subView;\
+\
+	iMutator.Mutate(fSubViews, new);\
+\}\
+\
+void OnWindowsClick()\{\
+	MyGUILevelMutator mutator;\
+	SendClickToViewHiearchy(mutator);\
+\}\
+\
+void SendClickToViewHiearchy(IMutator&amp; iMutator, CView&amp; ioView)\{\
+	for(fSubViews)\{\
+		it-&gt;SendClickToViewHiearchy();\
+	\}\
+\}\
+\
+\
+\
+\
+\
+MutationContainer\
+-- this is an object that contains mutable state but does not allow any client to observe that state.\
+Like a mediator.\
+Does this make sense?\
+\
+\
+}</string>
+				<key>VerticalPad</key>
+				<integer>0</integer>
+			</dict>
+			<key>Wrap</key>
+			<string>NO</string>
+		</dict>
+		<dict>
+			<key>Bounds</key>
 			<string>{{765, 1431}, {144, 90}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
@@ -3935,120 +4179,6 @@ http://web.cs.wpi.edu/~kfisler/Pubs/}</string>
 \f0\fs24 \cf0 \expnd0\expndtw0\kerning0
 All instances are referenced by ID.}</string>
 			</dict>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{1179, 1260}, {521, 840}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
-			<key>FitText</key>
-			<string>YES</string>
-			<key>Flow</key>
-			<string>Resize</string>
-			<key>ID</key>
-			<integer>1985</integer>
-			<key>Shape</key>
-			<string>Rectangle</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.4</string>
-						<key>g</key>
-						<string>1</string>
-						<key>r</key>
-						<string>0.8</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Align</key>
-				<integer>0</integer>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
-\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
-
-\f0\fs24 \cf0 typedef long TMutatorRevisionID;\
-\
-struct TMutable \{\
-	vector&lt;TMtd\
-\};\
-\
-class CMutatorStorage \{\
-	TMutatorRevisionID fCurrentRevisionID;\
-	hash_map&lt;void*, TMutable&gt; fMutableData;\
-\};\
-\
-\
-Mutator\
-\
-MyGUILevelMutator - allowed to mutate the GUI state and the document state.\
-\
-\
-MyRealtimeAudioMutator - called by OS to generate a slice of realtime audio.\
-\
-\
-class CClassA \{\
-	private: int fValueA;\
-	private: MUTABLE fValueB;\
-	private: MUTABLE fValueC;\
-\};\
-\
-class CViewX : public IView \{\
-	private: MUTABLE vector&lt;CView&gt; fSubViews;\
-\};\
-\
-void AddSubView(IMutator&amp; iMutator, CView* subView)\{\
-	vector&lt;CView&gt; old = fSubViews;\
-\
-	vector&lt;CView&gt; new = fSubViews + subView;\
-\
-	iMutator.Mutate(fSubViews, new);\
-\}\
-\
-void OnWindowsClick()\{\
-	MyGUILevelMutator mutator;\
-	SendClickToViewHiearchy(mutator);\
-\}\
-\
-void SendClickToViewHiearchy(IMutator&amp; iMutator, CView&amp; ioView)\{\
-	for(fSubViews)\{\
-		it-&gt;SendClickToViewHiearchy();\
-	\}\
-\}\
-\
-\
-\
-\
-\
-MutationContainer\
--- this is an object that contains mutable state but does not allow any client to observe that state.\
-Like a mediator.\
-Does this make sense?\
-\
-\
-}</string>
-				<key>VerticalPad</key>
-				<integer>0</integer>
-			</dict>
-			<key>Wrap</key>
-			<string>NO</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
@@ -42777,7 +42907,7 @@ Check-out D-language\
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{297, 1809}, {207, 28}}</string>
+			<string>{{324, 1755}, {207, 48}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -42809,11 +42939,11 @@ Check-out D-language\
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
-						<key>g</key>
 						<string>0.501961</string>
-						<key>r</key>
+						<key>g</key>
 						<string>1</string>
+						<key>r</key>
+						<string>0</string>
 					</dict>
 				</dict>
 				<key>shadow</key>
@@ -42841,12 +42971,12 @@ Check-out D-language\
 \f0\fs24 \cf0 \expnd0\expndtw0\kerning0
 Referencetial transparent functions are the only imperative constructs}</string>
 				<key>VerticalPad</key>
-				<integer>0</integer>
+				<integer>10</integer>
 			</dict>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{324, 1746}, {162, 42}}</string>
+			<string>{{261, 1701}, {162, 62}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -42878,11 +43008,11 @@ Referencetial transparent functions are the only imperative constructs}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
-						<key>g</key>
 						<string>0.501961</string>
-						<key>r</key>
+						<key>g</key>
 						<string>1</string>
+						<key>r</key>
+						<string>0</string>
 					</dict>
 				</dict>
 				<key>shadow</key>
@@ -42910,7 +43040,7 @@ Referencetial transparent functions are the only imperative constructs}</string>
 \f0\fs24 \cf0 \expnd0\expndtw0\kerning0
 Max 3 inputs to a function =&gt; better design + easy display visually.}</string>
 				<key>VerticalPad</key>
-				<integer>0</integer>
+				<integer>10</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -43201,8 +43331,8 @@ Read about ADA\
 			<integer>355</integer>
 			<key>Points</key>
 			<array>
-				<string>{1727.516434037916, 3643.9428695213614}</string>
-				<string>{1683.4834757977683, 3632.3658752136876}</string>
+				<string>{1727.516459352096, 3643.9274544677855}</string>
+				<string>{1683.4835300034506, 3632.3410992426961}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -46463,11 +46593,11 @@ Philosophy}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{675, 2133}, {253, 28}}</string>
+			<string>{{54, 1755}, {253, 48}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
-			<string>YES</string>
+			<string>Vertical</string>
 			<key>Flow</key>
 			<string>Resize</string>
 			<key>FontInfo</key>
@@ -46495,11 +46625,11 @@ Philosophy}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.501961</string>
 						<key>g</key>
-						<string>0.4</string>
-						<key>r</key>
 						<string>1</string>
+						<key>r</key>
+						<string>0</string>
 					</dict>
 				</dict>
 				<key>shadow</key>
@@ -46528,10 +46658,8 @@ Philosophy}</string>
 Lifetime management: stack, aggregation etc.\
 }</string>
 				<key>VerticalPad</key>
-				<integer>0</integer>
+				<integer>10</integer>
 			</dict>
-			<key>Wrap</key>
-			<string>NO</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
@@ -46678,7 +46806,7 @@ Environment does automatic unit-testing + code coverage while you edit code. Run
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{648, 2169}, {315, 42}}</string>
+			<string>{{54, 1818}, {315, 62}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -46710,11 +46838,11 @@ Environment does automatic unit-testing + code coverage while you edit code. Run
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
-						<key>g</key>
 						<string>0.501961</string>
-						<key>r</key>
+						<key>g</key>
 						<string>1</string>
+						<key>r</key>
+						<string>0</string>
 					</dict>
 				</dict>
 				<key>shadow</key>
@@ -46740,10 +46868,10 @@ Environment does automatic unit-testing + code coverage while you edit code. Run
 \pard\pardeftab720
 
 \f0\fs24 \cf0 \expnd0\expndtw0\kerning0
-Dynamic containers are presented as one instance with ghosting.\
+Dynamic containers are presented in dev-tool as one instance with ghosting.\
 }</string>
 				<key>VerticalPad</key>
-				<integer>0</integer>
+				<integer>10</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -46988,8 +47116,8 @@ Fast refactoring, by renaming in one place, moving functions between classes, au
 			<integer>252</integer>
 			<key>Points</key>
 			<array>
-				<string>{800.500056142782, 3363.7668673976145}</string>
-				<string>{720.49994577078053, 3362.5678679212297}</string>
+				<string>{800.50005570809731, 3363.7752348913859}</string>
+				<string>{720.49994443552691, 3362.5807280270365}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -50777,7 +50905,7 @@ Lightweight, modern retake on programming. Bi-directional wiring. Design by cont
 \
 Graphical programming / debugger / tester / simulator. Edit code on iPhone! Special support for experimenting and playing and learning about code, interactively.\
 \
-Test, examples and docs are parts of project, not only code.\
+Test, examples and docs are parts of user's project, not only code.\
 \
 Support huge systems.\
 \
@@ -52384,7 +52512,7 @@ Environment is done in HTML5. Cloud-based but can run offline too.\
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{126, 1845}, {445, 350}}</string>
+			<string>{{54, 1962}, {445, 266}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -52452,10 +52580,6 @@ Environment is done in HTML5. Cloud-based but can run offline too.\
 \
 Open-up IC to make customizations.\
 \
-All objects are immutable always. Future\'a0\
-\
-Reference-counting\
-\
 Automatic metrics, like code coverage, unused code, non-scalable constructs.\
 \
 You can use / create plugins in C++ or python.\
@@ -52463,8 +52587,6 @@ You can use / create plugins in C++ or python.\
 Project format does import with versioning.\
 \
 Code format is 7bit ascii with [x] for checkboxes etc. so it's usable like ASCIIDocs.\
-\
-Transactions and swap\
 \
 Focus on instances, not classes / hierarchies / compile-time.\
 \
@@ -62905,7 +63027,7 @@ Find value&lt;T&gt;}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2013-07-21 09:08:53 +0000</string>
+	<string>2013-07-26 23:06:33 +0000</string>
 	<key>Modifier</key>
 	<string>Marcus Zetterquist</string>
 	<key>NotesVisible</key>
@@ -62941,7 +63063,7 @@ Find value&lt;T&gt;}</string>
 		<key>NSPaperName</key>
 		<array>
 			<string>string</string>
-			<string>2725AC8F-9556-4335-B638-B5DF07F44A77</string>
+			<string>24B622B2-D400-447D-A086-44A63404E44F</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>
@@ -63010,15 +63132,15 @@ Find value&lt;T&gt;}</string>
 		<key>SidebarWidth</key>
 		<integer>120</integer>
 		<key>VisibleRegion</key>
-		<string>{{-25, 1058.3332912789467}, {1208.3332853184825, 562.03701470369265}}</string>
+		<string>{{1378.7036479255321, 2828.2406283565556}, {604.16664265924123, 281.01850735184598}}</string>
 		<key>Zoom</key>
-		<real>1.0800000429153442</real>
+		<real>2.1600000858306885</real>
 		<key>ZoomValues</key>
 		<array>
 			<array>
 				<string>Canvas 1</string>
+				<real>2.1600000858306885</real>
 				<real>1.0800000429153442</real>
-				<real>0.54000002145767212</real>
 			</array>
 		</array>
 	</dict>
