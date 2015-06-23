@@ -1,0 +1,386 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1347\cocoasubrtf570
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww12020\viewh13460\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+
+\f0\fs24 \cf0 ### Use subset of javascript to configure optimizations on top of solution\
+\
+\
+Floyd overview\
+================================================================\
+\
+Floyd is a new programming language. It attempts to inject some new thinking into programming computers.\
+\
+1) Imperativ programming: functions change variables and objects. Program always performs what programmer tells it, step by step.\
+\
+2) Functional programming: functions have no side effects and function may be evaluated lazily.\
+\
+3) Floyd: functions behave pure, like functional programming, but can be programmed imperatively. Then you string functions and objects together statically.\
+\
+In floyd, you statically allocate objects and string them together in a dependency graph, as part of the programming. In object oriented programs this graph is usually created by the program at runtime.\
+\
+\
+It\'92s a compiled, static systems programming language and speed is comparable to C / C++.\
+\
+It uses LLVM as backend so is very portable across processor architectures.\
+\
+Floyd attempts to put a number of specific higherlevel constructs in place - not just modules and classes like object \
+\
+Floyd supports generic programming.\
+\
+\
+\
+\
+Goals\
+================================================================\
+	1) Make correct and reliable software you can reason about.\
+	2) Allow huge, complex software using truly composable software design.\
+	3) Elevate software design from expressions, functions and class to a higher level constructs.\
+	4) Speed - goal is higher practical speed than the equivalent C code, taking  threading and trimming into account.\
+\
+Main approaches\
+================================================================\
+\
+Functions and data structures\
+----------------------------------------------------------------------------------------------------------------\
+1) Functions are written in any C or Java Script or Python.\
+\
+2) All functions are pure. In debug mode, all C calls are sandboxed using OS processes.\
+\
+3) Design by contract built in.\
+\
+4) Unit tests are part of function definition.\
+\
+5) Somewhat object oriented. Supports objects and classes, but only explicit variations of classes, not general purpose classes.\
+\
+6) Mutation is carefully controlled. Data is per default immutable, persistent data structures are used.\
+\
+7) Statically typed, but has support for dynamic types where it\'92s needed.\
+\
+8) There is no difference between a function and a table lookup.\
+\
+9) All data structures have an efficient structure, mappable directly to a function written in C. (C function still cannot have side effects or mutate data directly, except as controlled by Floyd).\
+\
+\
+Runtime, dependencies\
+----------------------------------------------------------------------------------------------------------------\
+1) System is designed by defining dependency between objects. This graph is statically designed.\
+\
+2) The runtime evaluated the dependencies and controls execution order of functions. \
+\
+3) Optimisations like lazy evaluation, caching, trading memory vs cpu, treading etc is controlled at runtime by the runtime, but inspected and tweaked by programmer, as a system. Futures are used internally, so are thread pools etc. Execute on speculation, with rollback. Batching control.\
+\
+4) No traditional garbage collection.\
+\
+5) Heavily scalable to many cores. No explicit control over threading\
+\
+6) Programs cannot observe or control concurrency.\
+\
+\
+Time, mutation, observers\
+================================================================\
+A system with only pure functions and immutable data structure you do not allow any mutation or passage of time.\
+\
+In Floyd, this is the default. Time is solved by very specific and explicit mechanisms.\
+\
+\
+Spurious changes to externals\
+\
+\
+Time capsule illusion. XTimeCapsuleBroken\
+\
+\
+Making external objects immutable\
+----------------------------------------------------------------------------------------------------------------\
+\
+Floyd has a mechanism for making mutable external things behave like they are immutable. The naive solution (and the fallback) is to always make new external objects when performing changes or insert the object into Floyd\'92s simulation.\
+\
+\
+Floyd\'92s file API. Floyd maps entire files to objects and treats the file system files as reference to that object.\
+\
+//	While you have a ref to the FS file, simulation guarantees the file exists. File is kept open and is copied to RAM.\
+ExternalFileRef r = MakeExternalFileRef(\'93Volumes/marcus/Documents/My song.json\'94)\
+\
+var text = Read(r);\
+var text2 = \'93[start]\'94 + text  + \'93[end]\'94;\
+\
+//	This commits the text to the simulation\'92s reference, but it *might* not write it to the external yet.\
+f.Store(text2);\
+\
+Example: a file that is read and written. It is implemented in the external artefact as a number of files hidden in secret directory. Depending on observer, different version of the file is accessed in file system. All observers (except external clients) are tracked.\
+\
+Advanced version: same disk for big files: memory-mapped Floyd data structure allows splitting big files into many then replacing only the middle section, for instances. When clients read files, they get bits from several files. persistant-file-system-files.\
+\
+\
+Time: current and next are always available. External mutable state needs to support both current and next at the same time, also going back to prev. External objects are connected via pins. They declare how many time steps they support. Expose time_clock for each mutable object. This is an \'93optimization\'94 of the concept immutable-forever-rollback-GC-timeless thinking.\
+\
+Make time a full and explicit component of design. Time = versions = revisions = mutations = generations. You can have time and generations without mutation. \'93Alien time\'94 = objects that have time properties outside our control. Simulation captures snapshots.\
+\
+External client: This object lives on its own time axis. It can be realtime in seconds, non-realtime in seconds or generation-based-as-soon-as-possible. It has a priority saying how much weight to give it its precise timing.\
+\
+//	### Add pipe syntax UserAccount a = RESTGet(uri) -> UnJSONUserAccount()\
+text json = RESTGet(uri);\
+UserAccount a = UnJSONUserAccount(json);\
+var b = a.SetName(\'93Test\'94);\
+RESTPut(uri, JSONUserAccount(b));\
+\
+\
+\
+??? IDEA: You have public members in object. You describe invariant of members and this is checked automatically. If invariant check has dependencies between members, this is automatically checked too.\
+\
+Example\
+----------------------------------------------------------------------------------------------------------------\
+\
+\{\
+	External_OpenGL openGL;\
+	External_KeyboardInput keyboard;\
+	External_COWClock worldClock(100hz);\
+	External_COWClock videoClock(60hz);\
+\
+	//	Every time world is stored to, a new generation is created.\
+	//	\'93All\'94 old generations are still available and referenced existing objects. \
+	GENERATIONS WorldSimulation worldGenerations;\
+	WorldDrawerFunction worldDrawer;\
+	WorldAdvancerFunction worldAdvancer;\
+	Latcher<World> latcher;\
+\
+	//	Setup so world is updated at 100 Hz.\
+	worldAdvancer.inputWorldPin = world;\
+	worldAdvancer.clocksPin = worldClock.clockOutPin;\
+	worldGenerations.nextPin = worldAdvancer;\
+\
+	//	Setup so world is painted at 60 Hz.\
+	latcher.inputPin = world;\
+	latcher.clockPin = videoClock.clockOutPin;\
+	worldDrawer.inputWorldPin = latcher;\
+\
+	OpenGL.commandsPin = worldDrawer.outputPin;\
+\}\
+\
+\
+	External_AudioStream audioStream;\
+	AudioGenerator audioGenerator;\
+	//	Audio stream requests buffers of 64 audio frames at a time from audio generator.\
+	audioStream.bufferInputPin = audioGenerator.bufferOutputPin;\
+\
+\
+\
+###\
+----------------------------------------------------------------------------------------------------------------\
+\
+### Requires trim pots\
+### Requires measurements\
+### How to solve mutability\
+### Requires language to describe dependencies between chips.\
+### Requires efficient reference counting, across threads, cores and network.\
+### Requires efficient persistent vector and map.\
+### Use sha1 internally to do de-duplication.\
+\
+### Make JSON format for entire simulation. Normalise format so it can be generated, editted in GUI.\
+\
+\
+\
+Dynamic allocation vs hardware metaphore\
+----------------------------------------------------------------------------------------------------------------\
+Since breadboards are statically designed, new / delete are not possible. Instead collections of objects are used\
+\
+Every time an object is allocated, it gets a new ID (not a reference or pointer) and the ID is local to its type. The object is kept by runtime after its been deleted.\
+Local variables are never part of breadboard, but completely internal to a function.\
+\
+??? more\
+\
+\
+breadboard.json\
+\{\
+\
+\
+\}\
+\
+\
+\
+Data types\
+----------------------------------------------------------------------------------------------------------------\
+\
+(nil)\
+\
+bool\
+\
+number\
+\
+text\
+\
+string\
+\
+Composite\
+This is an aggregate of a number of types.\
+\
+	composite MyComposite \{\
+		string firstName;\
+		string lastName;\
+		number age;\
+		bool updated;\
+\
+		invariant \{\
+			firstName != null && firstName > 0;\
+			lastName != null && lastName > 0;\
+			age > 0 && age < 140;\
+		\}\
+	\}\
+\
+Composites are like objects but without member functions and without access control. You define an invariant and this is always checked when creating a new instance.\
+\
+You can always write to a member like this:\
+	var a = MyComposite(\'93Bill\'94, 28, false);\
+	var b = a.name <- \'93Anders\'94;\
+\
+You can always access members directly.\
+You can automatically convert one composite (or member of composite) to something else using a function:\
+\
+	var fullName = MakeMyComposite();\
+	text Convert(MyComposite c)\{\
+		return c.firstName + \'93 \'93 + c.lastName;\
+	\}\
+\
+	You can also access nested composites using paths:\
+		var c = a.players[2].vehicle.name;\
+\
+\
+/*\
+Protocol\
+	protocol Draw \{\
+		void DrawLine(Vector2D a, Vector2D b);\
+		void DrawText(Vector2D pos, text t, TextStyle style);\
+	\}\
+*/\
+\
+Vector<T>\
+A container holding 0 to many instances of a specific type of object. Quickly addressable via index. Persistent data structure. Container can grow and shrink and you can insert / remove append etc.\
+\
+Map<T>\
+Hash map. Persistent data structure. Keys are strings, all values are of a specific type.\
+\
+Tagged Union<T, X, Y>\
+This type can hold one of several types of values. When you define the tagged union-type you list the alternatives. When you assign a value the tagged union becomes this type. You can check which type it holds.\
+\
+	tagged_union MyThing \{\
+		string,\
+		vector<string>\
+	\}\
+\
+	var a = MyThing(\'93test a\'94);\
+	var b = MyThing(vector<string>(\'93test x\'94, \'93test y\'94);\
+\
+	if(b.type == typeof(vector<string>);\
+\
+* typeof(x) return an SHA1 representing the type.\
+\
+Function\
+Function objects are first-class citizens. There are no closures.\
+\
+\
+Example programs\
+----------------------------------------------------------------------------------------------------------------\
+\
+Example: Hello, world\
+Example: Copy a file.\
+Example: Game of life\
+Example: space invaders\
+Example program: read a text file and generate JSON file.\
+\
+\
+\
+\
+Concepts\
+----------------------------------------------------------------------------------------------------------------\
+\
+Variable\
+A variable is a reference to a specific value. It can only be assigned once.\
+\
+Pin\
+External connection exposed by CHIP. Supports a specific protocol. You connect pins with functions or CHIPs or objects.\
+\
+Function\
+Functions are always pure - can have no observable side effects. A function can be put as a module in the scene graph. Its inputs become input pins, its output becomes output pins.\
+\
+CHIP\
+Sub-solution using fixed(*) set of object instances, functions operating on them and pins. CHIP has *one* big state and has *this* and *next* states as pins. Actual storage of state is external. ??? hmm.\
+\
+Memory\
+Externalized memory store. Mutable.\
+\
+External artefact\
+An object that can be observed from the outside world, outside to the entire simulation. These are somewhat outside simulation\'92s control. They must support the time-protocol.\
+\
+Mediator\
+Support mutations and advances time.\
+\
+External client\
+This object lives on its own time axis.\
+\
+\
+\
+SIMULATION OVERVIEW\
+================================================================\
+\
+Simulation is a controlled environment managed by an active runtime.\
+\
+0 to many functions\
+0 to many packages\
+0 to many types\
+0 to many objects\
+0 to many external artefacts\
+0 to many time bases\
+0 to many chips\
+\
+\
+PACKAGE\
+0 to many functions\
+0 to many CHIPs\
+	0 to many objects\
+	0 to many wirings\
+0 to many types\
+\
+0 to many external artefacts\
+\
+\
+\
+\
+\
+Examples of external clients\
+================================================================\
+\
+\
+1) Local file system, files observable by other software on computer\
+	Write / modify / read a file in a path.\
+	Update entire trees of files = how to do persistent?\
+2) REST-api on server\
+3) Local GUI - windows etc.\
+\
+4) Database access.\
+\
+5) Audio output buffers\
+\
+6) Running simulation at later time\
+\
+6) OS Clipboard\
+\
+\
+\
+\
+\
+state\
+combinational logic\
+sequential logic\
+https://en.wikipedia.org/wiki/State_(computer_science)\
+\
+\
+\
+\
+\
+\
+\
+Eliminate observable intermediate states of the program. In the best world the program would have no state. Next best is a program that has one state that changes atomically step by step and no code can observe other than before and after.\
+\
+Observable state is controlled both by limit the number of visible intermediate states all together and by defining small observation scopes for different observers - small keyholes where they observe just as much as they need.\
+}
