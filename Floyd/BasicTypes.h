@@ -29,7 +29,20 @@ typedef int64_t TInteger;
 
 ////////////////////////		Basic types
 
+/*
+	Unified number
+	Composite XYZ (open, static type)
+	Tagged union XYZ
+	Typedef<T> XYZ
+	Vector<T>
+	Map<T>
+	A Function
+	Tuple
+	sha1
+	enum
 
+	new_type <name> <type>
+*/
 
 enum EBasicType {
 	kBasicType_Nil	=	4,

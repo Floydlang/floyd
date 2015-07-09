@@ -12,6 +12,8 @@
 
 #include "ProgramUT.h"
 
+#include "Runtime.h"
+
 #include <iostream>
 
 
@@ -99,6 +101,9 @@ int main(int /*argc*/, const char * /*argv*/[]){
 	std::cout << "Start tests!\n";
 
 	try{
+		test();
+
+
 		TestBasicTypes();
 		TestProgram();
 
