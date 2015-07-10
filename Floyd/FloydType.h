@@ -54,6 +54,17 @@ struct FloydDT;
 	The signature strings are in a normalized format and must appear exactly as above, whitespace and all.
 
 	There is an alternative, faster encoding of the signature: a 32bit hash of the signature string.
+
+	### Add map, vector etc.
+
+
+	[] = vector
+	{} = composite
+	{} = map
+	() = tuple
+	<> = tagged_union
+
+	f() = function
 */
 
 
@@ -80,6 +91,12 @@ TTypeSignatureHash HashSignature(const TTypeSignature& s);
 std::vector<TTypeSignature> UnpackCompositeSignature(const TTypeSignature& s);
 
 
+struct TFunctionSignature {
+	TTypeSignature _returnType;
+	std::vector<std::pair<std::string, TTypeSignature>> _args;
+};
+
+std::vector<TFunctionSignature> UnpackFunctionSignature(const TTypeSignature& s);
 
 
 
@@ -101,15 +118,17 @@ struct TCompositeDef {
 /////////////////////////////////////////		Function
 
 
+const int kMaxFunctionArgs = 6;
 
-typedef FloydDT (*CFunctionPtr)(const FloydDT args[], int argCount);
+typedef FloydDT (*CFunctionPtr)(const FloydDT args[], std::size_t argCount);
 
 //	Function signature = string in format
 //		FloydType
 //	### Make optimized calling signatures with different sets of C arguments.
 
 struct FunctionDef {
-	TTypeSignature _signature;
+	TFunctionSignature _signature;
+//	TTypeSignature _signature;
 	CFunctionPtr _functionPtr;
 };
 
@@ -125,13 +144,15 @@ enum FloydDTType {
 	kNull = 1,
 	kFloat,
 	kString,
-	kFunction,
-	kComposite,
-	kMapKV
+	kFunction
+//	,
+//	kComposite,
+//	kMapKV
 };
 
 struct FloydDT {
 	public: bool CheckInvariant() const;
+	public: std::string GetType() const;
 
 
 	///////////////////		State
@@ -165,11 +186,13 @@ FloydDT MakeFunction(const FunctionDef& f);
 bool IsFunction(const FloydDT& value);
 CFunctionPtr GetFunction(const FloydDT& value);
 
+//	Arguments must match those of the function or assert.
+FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
 
 FloydDT MakeComposite(const TCompositeDef& c);
 
 
 
-void RuntFloydTypeTests();
+void RunFloydTypeTests();
 
 #endif /* defined(__Floyd__FloydType__) */

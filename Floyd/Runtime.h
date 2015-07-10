@@ -19,74 +19,134 @@
 struct TComposite;
 struct FloydDT;
 */
+struct WireInput;
+struct WireOutput;
+struct OutputPinPart;
+struct InputPinPart;
+struct FunctionPart;
+struct ConstantPart;
 
+/*
+//	May generate many output values, stored
+class IOutputGenerator {
+	public: virtual ~IOutputGenerator(){};
+	public: virtual FloydDT IOutputGenerator_Render() = 0;
+};
+*/
 
 /*
 	These are the micro-ops of the simulation. No UI-logic or interactive stuff here.
 */
 
-struct InputPinInstance;
+
+
+
+struct WireInput {
+	public: WireInput(const TTypeSignature& type, const std::string& label) :
+		_type(type),
+		_label(label)
+	{
+	}
+	public: bool CheckInvariant() const{
+		return true;
+	}
+
+
+	std::string _label;
+	TTypeSignature _type;
+	WireOutput* _connectedTo = nullptr;
+};
+
+
+//	Generates values.
+struct WireOutput {
+	public: bool CheckInvariant() const;
+
+
+	//	Which node consumes our output?
+	WireInput* _connectedTo = nullptr;
+
+	FunctionPart* _ownerFunctionPart = nullptr;
+	OutputPinPart* _ownerOutputPinPart = nullptr;
+	ConstantPart* _ownerConstantPart = nullptr;
+
+
+//	IOutputGenerator* _generator;
+//	FloydDT _outputValue;
+};
+
+
+
 
 //	An actual concrete pin in the simulation.
-struct OutputPinInstance {
-	OutputPinInstance() :
-		_connectedTo(nullptr)
-	{}
+struct OutputPinPart {
+	OutputPinPart(const TTypeSignature& type, const std::string& label) :
+		_label(label),
+		_output(),
+		_input(type, label)
+	{
+	}
 
 
 	std::string _label;
-
-	InputPinInstance* _connectedTo;
+	WireOutput _output;
+	WireInput _input;
 };
 
-struct InputPinInstance {
-	InputPinInstance() :
-		_connectedTo(nullptr)
-	{}
+struct InputPinPart {
+	InputPinPart(const TTypeSignature& type, const std::string& label) :
+		_label(label),
+		_output(),
+		_input(type, label)
+	{
+	}
 
 	std::string _label;
-
-	OutputPinInstance* _connectedTo;
+	WireOutput _output;
+	WireInput _input;
 };
 
-std::shared_ptr<InputPinInstance> MakeInputPin(const std::string& label);
-std::shared_ptr<OutputPinInstance> MakeOutputPin(const std::string& label);
+
+std::shared_ptr<InputPinPart> MakeInputPin(const TTypeSignature& type, const std::string& label);
+std::shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignature& type, const std::string& label);
 
 
 
 struct WireInstance {
-	OutputPinInstance* _sourcePin;
-	InputPinInstance* _destPin;
+	OutputPinPart* _sourcePin = nullptr;
+	InputPinPart* _destPin = nullptr;
 };
 
 
 struct ConstantPart {
 	FloydDT _value;
-	OutputPinInstance _outputPin;
+	WireOutput _output;
 };
 
 //	A function, positioned in the simulation.
 struct FunctionPart {
-	FunctionDef* _function;
-	std::map<int, InputPinInstance> _inputs;
-	OutputPinInstance _output;
+	FloydDT _function;
+//	FunctionDef* _functionDef;
+	std::vector<WireInput> _inputs;
+	WireOutput _output;
 };
 
 struct BoardInstance {
-	std::map<int, OutputPinInstance> _boardOutputPins;
-	std::map<int, InputPinInstance> _boardInputPins;
+	std::map<int, OutputPinPart> _boardOutputPins;
+	std::map<int, InputPinPart> _boardInputPins;
 	std::map<int, WireInstance> _wires;
-	std::map<int, FunctionPart> _functionInstances;
+	std::map<int, FunctionPart> _functionParts;
 };
 
 
 
 
-
-
+std::shared_ptr<FunctionPart> MakeFunctionPart(const FloydDT& f);
 ConstantPart MakeConstantPart(const FloydDT& value);
-void Connect(InputPinInstance& dest, OutputPinInstance& source);
-FloydDT GetValue(const OutputPinInstance& /*output*/);
+
+void Connect(WireInput& dest, WireOutput& source);
+
+FloydDT GetValue(const WireOutput& output);
 
 
 
@@ -99,17 +159,20 @@ void test();
 
 struct SimulationRuntime {
 	SimulationRuntime();
+	bool CheckInvariant() const {
+		return true;
+	}
 
 	//	Returns the input pins exposed by this board.
-	std::map<std::string, std::shared_ptr<InputPinInstance> > GetInputs();
+	std::map<std::string, std::shared_ptr<InputPinPart> > GetInputPins();
 
 	//	Returns the output pins exposed by this board.
-	std::map<std::string, std::shared_ptr<OutputPinInstance> > GetOutputs();
+	std::map<std::string, std::shared_ptr<OutputPinPart> > GetOutputPins();
 
 	//////////////////////////		State
-	std::map<std::string, FunctionDef> _functions;
-	std::map<std::string, std::shared_ptr<InputPinInstance> > _inputs;
-	std::map<std::string, std::shared_ptr<OutputPinInstance> > _outputs;
+	std::map<std::string, std::shared_ptr<FunctionPart> > _functionParts;
+	std::map<std::string, std::shared_ptr<InputPinPart> > _inputPins;
+	std::map<std::string, std::shared_ptr<OutputPinPart> > _outputPins;
 };
 
 std::shared_ptr<SimulationRuntime> MakeRuntime(const std::string& json);

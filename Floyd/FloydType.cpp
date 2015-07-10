@@ -10,6 +10,9 @@
 
 #include "FloydType.h"
 
+#include <string>
+
+
 
 
 
@@ -50,7 +53,6 @@ namespace {
 }
 
 
-
 TTypeSignature MakeSignature(const std::string& s){
 	ASSERT(IsWellformedSignatureString(s));
 
@@ -75,10 +77,6 @@ TTypeSignatureHash HashSignature(const TTypeSignature& s){
 std::vector<TTypeSignature> UnpackCompositeSignature(const TTypeSignature& s){
 }
 */
-
-
-
-
 
 
 
@@ -117,6 +115,30 @@ bool FloydDT::CheckInvariant() const{
 	}
 	return true;
 }
+
+std::string FloydDT::GetType() const{
+	ASSERT(CheckInvariant());
+
+	if(_type == kNull){
+		return "<null>";
+	}
+	else if(_type == kFloat){
+		return "<float>";
+	}
+
+	else if(_type == kString){
+		return "<string>";
+	}
+	else if(_type == kFunction){
+		return "<xxxx---function>";
+	}
+	else{
+		ASSERT(false);
+		return "???";
+	}
+}
+
+
 
 
 FloydDT MakeNull(){
@@ -187,7 +209,6 @@ std::string GetString(const FloydDT& value){
 
 
 
-
 FloydDT MakeFunction(const FunctionDef& f){
 	FloydDT result;
 	result._type = FloydDTType::kFunction;
@@ -211,6 +232,42 @@ CFunctionPtr GetFunction(const FloydDT& value){
 	return value._asFunction->_functionPtr;
 }
 
+FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args){
+	ASSERT(value.CheckInvariant());
+#if ASSERT_ON
+	for(auto a: args){
+		ASSERT(a.CheckInvariant());
+	}
+#endif
+
+	const TFunctionSignature& functionTypeSignature = value._asFunction->_signature;
+
+	std::vector<FloydDT> argValues;
+	int index = 0;
+	for(auto i: args){
+		//	Make sure the type of the argument is correct.
+		auto a = i.GetType();
+		auto b = functionTypeSignature._args[index].second._s;
+		ASSERT(a == b);
+
+		argValues.push_back(i);
+
+		index++;
+	}
+
+	// check that types match!
+
+	FloydDT dummy[1];
+	FloydDT functionResult = value._asFunction->_functionPtr(
+		argValues.empty() ? &dummy[0] : argValues.data(),
+		argValues.size()
+	);
+
+
+	ASSERT(functionResult.GetType() == functionTypeSignature._returnType._s);
+
+	return functionResult;
+}
 
 
 
@@ -221,8 +278,7 @@ namespace {
 		return s == "*" ? a * b : a + b;
 	}
 
-
-	FloydDT ExampleFunction1_Glue(const FloydDT args[], int argCount){
+	FloydDT ExampleFunction1_Glue(const FloydDT args[], std::size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
 		ASSERT(args[0]._type == FloydDTType::kFloat);
@@ -238,22 +294,71 @@ namespace {
 		return result;
 	}
 
+	FloydDT MakeFunction1(){
+		TFunctionSignature signature;
+		signature._args.push_back(
+			std::pair<std::string, TTypeSignature>("a", MakeSignature("<float>"))
+		);
+		signature._args.push_back(
+			std::pair<std::string, TTypeSignature>("b", MakeSignature("<float>"))
+		);
+		signature._args.push_back(
+			std::pair<std::string, TTypeSignature>("s", MakeSignature("<string>"))
+		);
+
+		signature._returnType = MakeSignature("<float>");
+
+		FunctionDef def;
+		def._functionPtr = ExampleFunction1_Glue;
+		def._signature = signature;
+
+		const FloydDT result = MakeFunction(def);
+		return result;
+	}
+
 
 
 	void ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT(){
 		FunctionDef def;
-		def._signature = MakeSignature("<float>(<string>)");
+
+		TFunctionSignature signature;
+		signature._returnType = MakeSignature("<float>");
+		signature._args.push_back(
+			std::pair<std::string, TTypeSignature>("a", MakeSignature("<float>"))
+		);
 		def._functionPtr = ExampleFunction1_Glue;
+		def._signature = signature;
+
 		FloydDT result = MakeFunction(def);
 		UT_VERIFY(IsFunction(result));
 		UT_VERIFY(GetFunction(result) == ExampleFunction1_Glue);
 	}
+
+
+	void ProveWorks__CallFunction__SimpleFunction__CorrectReturn(){
+		const FloydDT f = MakeFunction1();
+
+		UT_VERIFY(IsFunction(f));
+		UT_VERIFY(GetFunction(f) == ExampleFunction1_Glue);
+
+		std::vector<FloydDT> args;
+		args.push_back(MakeFloat(2.0f));
+		args.push_back(MakeFloat(3.0f));
+		args.push_back(MakeString("*"));
+		auto r = CallFunction(f, args);
+		UT_VERIFY(IsFloat(r));
+		UT_VERIFY(GetFloat(r) == 6.0f);
+	}
+
 }
 
 
-void RuntFloydTypeTests(){
+void RunFloydTypeTests(){
 	ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT();
+	ProveWorks__CallFunction__SimpleFunction__CorrectReturn();
 }
+
+
 
 
 

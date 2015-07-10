@@ -11,6 +11,7 @@
 
 void OnAssert(const char iFileName[], int iLineNumber);
 
+#define ASSERT_ON (DEBUG)
 #define DEBUG 1
 #define SCOPED_CHECK_INVARIANT
 #define ASSERT(x) if(x){} else{ OnAssert(__FILE__, __LINE__); }
