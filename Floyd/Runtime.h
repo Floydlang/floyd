@@ -39,6 +39,7 @@ class IOutputGenerator {
 */
 
 
+/////////////////////////////////////////		WireInput
 
 
 struct WireInput {
@@ -58,8 +59,15 @@ struct WireInput {
 };
 
 
+/////////////////////////////////////////		WireOutput
+
+
 //	Generates values.
 struct WireOutput {
+	public: WireOutput(FunctionPart* ownerFunctionPart);
+	public: WireOutput(OutputPinPart* ownerOutputPinPart);
+	public: WireOutput(InputPinPart* ownerInputPinPart);
+	public: WireOutput(ConstantPart* ownerConstantPart);
 	public: bool CheckInvariant() const;
 
 
@@ -68,21 +76,19 @@ struct WireOutput {
 
 	FunctionPart* _ownerFunctionPart = nullptr;
 	OutputPinPart* _ownerOutputPinPart = nullptr;
+	InputPinPart* _ownerInputPinPart = nullptr;
 	ConstantPart* _ownerConstantPart = nullptr;
-
-
-//	IOutputGenerator* _generator;
-//	FloydDT _outputValue;
 };
 
 
+/////////////////////////////////////////		OutputPinPart
 
 
 //	An actual concrete pin in the simulation.
 struct OutputPinPart {
 	OutputPinPart(const TTypeSignature& type, const std::string& label) :
 		_label(label),
-		_output(),
+		_output(this),
 		_input(type, label)
 	{
 	}
@@ -93,10 +99,15 @@ struct OutputPinPart {
 	WireInput _input;
 };
 
+
+
+/////////////////////////////////////////		InputPinPart
+
+
 struct InputPinPart {
 	InputPinPart(const TTypeSignature& type, const std::string& label) :
 		_label(label),
-		_output(),
+		_output(this),
 		_input(type, label)
 	{
 	}
@@ -112,24 +123,49 @@ std::shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignature& type, const s
 
 
 
+/////////////////////////////////////////		WireInstance
+
+
 struct WireInstance {
 	OutputPinPart* _sourcePin = nullptr;
 	InputPinPart* _destPin = nullptr;
 };
 
 
+/////////////////////////////////////////		ConstantPart
+
+
 struct ConstantPart {
+	ConstantPart(const FloydDT& value);
+	public: bool CheckInvariant() const{
+		return true;
+	}
+
 	FloydDT _value;
 	WireOutput _output;
 };
 
+
+/////////////////////////////////////////		FunctionPart
+
+
 //	A function, positioned in the simulation.
 struct FunctionPart {
+	public: FunctionPart();
+	public: bool CheckInvariant() const{
+		return true;
+	}
+
+
 	FloydDT _function;
 //	FunctionDef* _functionDef;
 	std::vector<WireInput> _inputs;
 	WireOutput _output;
 };
+
+
+/////////////////////////////////////////		BoardInstance
+
 
 struct BoardInstance {
 	std::map<int, OutputPinPart> _boardOutputPins;
@@ -142,7 +178,7 @@ struct BoardInstance {
 
 
 std::shared_ptr<FunctionPart> MakeFunctionPart(const FloydDT& f);
-ConstantPart MakeConstantPart(const FloydDT& value);
+std::shared_ptr<ConstantPart> MakeConstantPart(const FloydDT& value);
 
 void Connect(WireInput& dest, WireOutput& source);
 

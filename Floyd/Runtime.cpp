@@ -19,22 +19,65 @@ using namespace std;
 
 
 
-bool WireOutput::CheckInvariant() const{
-	ASSERT(_connectedTo == nullptr);
+/////////////////////////////////////////		WireOutput
 
+
+
+WireOutput::WireOutput(FunctionPart* ownerFunctionPart) :
+	_ownerFunctionPart(ownerFunctionPart)
+{
+	ASSERT(ownerFunctionPart != nullptr);
+
+	ASSERT(CheckInvariant());
+}
+
+WireOutput::WireOutput(OutputPinPart* ownerOutputPinPart) :
+	_ownerOutputPinPart(ownerOutputPinPart)
+{
+	ASSERT(ownerOutputPinPart != nullptr);
+
+	ASSERT(CheckInvariant());
+}
+
+WireOutput::WireOutput(InputPinPart* ownerInputPinPart) :
+	_ownerInputPinPart(ownerInputPinPart)
+{
+	ASSERT(ownerInputPinPart != nullptr);
+
+	ASSERT(CheckInvariant());
+}
+
+WireOutput::WireOutput(ConstantPart* ownerConstantPart) :
+	_ownerConstantPart(ownerConstantPart)
+{
+	ASSERT(ownerConstantPart != nullptr);
+
+	ASSERT(CheckInvariant());
+}
+
+bool WireOutput::CheckInvariant() const{
 	if(_ownerFunctionPart != nullptr){
 //		ASSERT(_ownerFunctionPart == nullptr);
 		ASSERT(_ownerOutputPinPart == nullptr);
+		ASSERT(_ownerInputPinPart == nullptr);
 		ASSERT(_ownerConstantPart == nullptr);
 	}
 	else if(_ownerOutputPinPart != nullptr){
 		ASSERT(_ownerFunctionPart == nullptr);
 //		ASSERT(_ownerOutputPinPart == nullptr);
+		ASSERT(_ownerInputPinPart == nullptr);
+		ASSERT(_ownerConstantPart == nullptr);
+	}
+	else if(_ownerInputPinPart != nullptr){
+		ASSERT(_ownerFunctionPart == nullptr);
+		ASSERT(_ownerOutputPinPart == nullptr);
+//		ASSERT(_ownerInputPinPart == nullptr);
 		ASSERT(_ownerConstantPart == nullptr);
 	}
 	else if(_ownerConstantPart != nullptr){
 		ASSERT(_ownerFunctionPart == nullptr);
 		ASSERT(_ownerOutputPinPart == nullptr);
+		ASSERT(_ownerInputPinPart == nullptr);
 //		ASSERT(_ownerConstantPart == nullptr);
 	}
 	else{
@@ -44,26 +87,58 @@ bool WireOutput::CheckInvariant() const{
 }
 
 
+/////////////////////////////////////////		ConstantPart
+
+
+ConstantPart::ConstantPart(const FloydDT& value) :
+	_value(value),
+	_output(this)
+{
+	ASSERT(value.CheckInvariant());
+
+	ASSERT(CheckInvariant());
+}
+
+
+/////////////////////////////////////////		FunctionPart
+
+
+FunctionPart::FunctionPart() :
+	_output(this)
+{
+
+	ASSERT(CheckInvariant());
+}
+
+
+
+
+
+
+
+
+
+
 
 shared_ptr<FunctionPart> MakeFunctionPart(const FloydDT& f){
 	ASSERT(f.CheckInvariant());
 	ASSERT(IsFunction(f));
 
-	FunctionPart result;
-	result._function = f;
-	result._output._ownerFunctionPart = &result;
+	auto result = shared_ptr<FunctionPart>(new FunctionPart());
+	result->_function = f;
+//	result->_output._ownerFunctionPart = result.get();
 	for(auto i: f._asFunction->_signature._args){
-		result._inputs.push_back(WireInput(i.second, i.first));
+		auto input = WireInput(i.second, i.first);
+		result->_inputs.push_back(input);
 	}
-	return shared_ptr<FunctionPart>(&result);
+	return result;
 }
 
 
-ConstantPart MakeConstantPart(const FloydDT& value){
+shared_ptr<ConstantPart> MakeConstantPart(const FloydDT& value){
 	ASSERT(value.CheckInvariant());
 
-	ConstantPart result;
-	result._value = value;
+	auto result = shared_ptr<ConstantPart>(new ConstantPart(value));
 	return result;
 }
 
@@ -93,11 +168,18 @@ namespace {
 				const auto v = i._connectedTo == nullptr ? MakeNull() : GetValue(*i._connectedTo);
 				argValues.push_back(v);
 			}
-			FloydDT functionResult = CallFunction(output._ownerFunctionPart->_function, argValues);
+			const auto functionResult = CallFunction(output._ownerFunctionPart->_function, argValues);
 			return functionResult;
 		}
 		else if(output._ownerOutputPinPart != nullptr){
-			return MakeNull();
+			const auto nextOutput = output._ownerOutputPinPart->_input._connectedTo;
+			const auto v = nextOutput == nullptr ? MakeNull() : GetValue(*nextOutput);
+			return v;
+		}
+		else if(output._ownerInputPinPart != nullptr){
+			const auto nextOutput = output._ownerInputPinPart->_input._connectedTo;
+			const auto v = nextOutput == nullptr ? MakeNull() : GetValue(*nextOutput);
+			return v;
 		}
 		else if(output._ownerConstantPart != nullptr){
 			return output._ownerConstantPart->_value;
@@ -126,6 +208,7 @@ shared_ptr<InputPinPart> MakeInputPin(const TTypeSignature& type, const string& 
 shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignature& type, const string& label){
 	auto result = shared_ptr<OutputPinPart>(new OutputPinPart(type, label));
 	result->_label = label;
+//	result->_output._ownerOutputPinPart = result.get();
 	return result;
 }
 
@@ -142,7 +225,9 @@ shared_ptr<SimulationRuntime> MakeRuntime(const string& /*json*/){
 }
 
 
+
 /////////////////////////////////////////		SimulationRuntime
+
 
 
 SimulationRuntime::SimulationRuntime(){
@@ -161,7 +246,7 @@ map<string, shared_ptr<OutputPinPart> > SimulationRuntime::GetOutputPins(){
 
 
 
-/////////////////////////////////////////
+/////////////////////////////////////////		Tests
 
 
 
@@ -225,6 +310,16 @@ namespace {
 	}
 
 
+	void ProveWorks__MakeFunctionPart__1Function__ValidFunctionPart(){
+		auto r = MakeFunctionPart(MakeFunction1());
+
+		UT_VERIFY(r->CheckInvariant());
+		UT_VERIFY(IsFunction(r->_function));
+		UT_VERIFY(r->_inputs.size() == 3);
+		UT_VERIFY(r->_output.CheckInvariant());
+	}
+
+
 		//	### add clock -auto clock = inputs["clock"];
 	shared_ptr<SimulationRuntime> MakeExample1Runtime(){
 		auto r = MakeRuntime(kTest2);
@@ -232,12 +327,14 @@ namespace {
 		//	Create all external pins.
 		r->_inputPins["a"] = MakeInputPin(MakeSignature("<float>"), "a");
 		r->_inputPins["b"] = MakeInputPin(MakeSignature("<float>"), "b");
+		r->_inputPins["s"] = MakeInputPin(MakeSignature("<string>"), "s");
 		r->_outputPins["result"] = MakeOutputPin(MakeSignature("<float>"), "result");
 		r->_functionParts["f1"] = MakeFunctionPart(MakeFunction1());
 
 		//	Connect all internal wires.
 		Connect(r->_functionParts["f1"]->_inputs[0], r->_inputPins["a"]->_output);
 		Connect(r->_functionParts["f1"]->_inputs[1], r->_inputPins["b"]->_output);
+		Connect(r->_functionParts["f1"]->_inputs[2], r->_inputPins["s"]->_output);
 		Connect(r->_outputPins["result"]->_input, r->_functionParts["f1"]->_output);
 
 		ASSERT(r->CheckInvariant());
@@ -249,17 +346,22 @@ namespace {
 		auto r = MakeExample1Runtime();
 
 		auto constantA = MakeConstantPart(MakeFloat(3.0f));
-		auto constantB = MakeConstantPart(MakeFloat(4.0f));
+		auto constantB = MakeConstantPart(MakeFloat(2.0f));
+		auto constantS = MakeConstantPart(MakeString("*"));
 
 		//	Make test rig for the simulation.
-		auto inputs = r->GetInputPins();
-		auto outputs = r->GetOutputPins();
+		auto inputPinA = r->GetInputPins()["a"];
+		auto inputPinB = r->GetInputPins()["b"];
+		auto inputPinS = r->GetInputPins()["s"];
+		auto resultOutputPin = r->GetOutputPins()["result"];
+		Connect(inputPinA->_input, constantA->_output);
+		Connect(inputPinB->_input, constantB->_output);
+		Connect(inputPinS->_input, constantS->_output);
 
-		Connect(inputs["a"]->_input, constantA._output);
-		Connect(inputs["b"]->_input, constantB._output);
-		FloydDT result = GetValue(outputs["result"]->_output);
+		//	Read "result" output pin. This should cause simulation to run all through.
+		FloydDT result = GetValue(resultOutputPin->_output);
 
-		ASSERT(IsNull(result));
+		ASSERT(GetFloat(result) == 6.0f);
 	}
 
 }
@@ -268,6 +370,7 @@ namespace {
 void test(){
 	RunFloydTypeTests();
 
+	ProveWorks__MakeFunctionPart__1Function__ValidFunctionPart();
 	ProveWorks__GetValue__MinimalSimulation1Function__OutputIs6();
 }
 
