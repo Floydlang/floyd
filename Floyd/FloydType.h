@@ -13,6 +13,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <unordered_map>
 
 struct TComposite;
 struct FloydDT;
@@ -130,6 +131,47 @@ struct FunctionDef {
 	TFunctionSignature _signature;
 //	TTypeSignature _signature;
 	CFunctionPtr _functionPtr;
+};
+
+
+
+
+/////////////////////////////////////////		TGenericContainer
+
+
+
+template <typename K, typename V> class TGenericContainer {
+	public: TGenericContainer(){
+		UT_VERIFY(CheckInvariant());
+	}
+
+	public: bool CheckInvariant() const{
+		if(_type == kEmpty){
+			ASSERT(_vector.get() == nullptr);
+			ASSERT(_map.get() == nullptr);
+		}
+		else if(_type == kVector){
+			ASSERT(_vector.get() != nullptr);
+			ASSERT(_map.get() == nullptr);
+		}
+		else if(_type == kHashMap){
+			ASSERT(_vector.get() == nullptr);
+			ASSERT(_map.get() != nullptr);
+		}
+		else{
+			ASSERT(false);
+		}
+		return true;
+	}
+
+	public: enum BackendType {
+		kEmpty,
+		kVector,
+		kHashMap
+	};
+	public: BackendType _type = kEmpty;
+	public: std::shared_ptr<std::vector<V> > _vector;
+	public: std::shared_ptr<std::unordered_map<K, V> > _map;
 };
 
 

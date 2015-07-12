@@ -350,12 +350,25 @@ namespace {
 		UT_VERIFY(GetFloat(r) == 6.0f);
 	}
 
+
+
+
+	void ProveWorks__GCON_DefaultConstructor__Basic__NoAssert(){
+		auto a = TGenericContainer<int, int>();
+		UT_VERIFY(a.CheckInvariant());
+	}
+
+	void ProveWorks__GCON_IndexAppend__OnEmptyContainer__OneItemContainer(){
+	}
 }
 
 
 void RunFloydTypeTests(){
 	ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT();
 	ProveWorks__CallFunction__SimpleFunction__CorrectReturn();
+
+	ProveWorks__GCON_DefaultConstructor__Basic__NoAssert();
+	ProveWorks__GCON_IndexAppend__OnEmptyContainer__OneItemContainer();
 }
 
 
