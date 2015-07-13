@@ -329,11 +329,11 @@ inline bool operator!=(const VValue& iA, const VValue& iB){	return !(iA == iB);	
 ////////////////////////		VRange
 
 
-/**	@brief The way to iterate over a container.
+/**	@brief The way to iterate over a collection.
 	@details
-		Is always const - can never modify container.
-		Owns the container - you can dispose of all other references to the container.
-		The order of the elements depends on the container type. A table will return items in key-sort-order.
+		Is always const - can never modify collection.
+		Owns the collection - you can dispose of all other references to the collection.
+		The order of the elements depends on the collection type. A table will return items in key-sort-order.
 */
 
 

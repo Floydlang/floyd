@@ -353,13 +353,77 @@ namespace {
 
 
 
-	void ProveWorks__GCON_DefaultConstructor__Basic__NoAssert(){
-		auto a = TGenericContainer<int, int>();
+	void ProveWorks__TOrdered_DefaultConstructor__Basic__NoAssert(){
+		auto a = TOrdered<int>();
 		UT_VERIFY(a.CheckInvariant());
 	}
 
-	void ProveWorks__GCON_IndexAppend__OnEmptyContainer__OneItemContainer(){
+	void ProveWorks__TOrdered_Assoc__OnEmptyCollection__OneItem(){
+		auto a = TOrdered<int>();
+		auto b = a.Assoc(0, 13);
+
+		UT_VERIFY(a.Count() == 0);
+		UT_VERIFY(b.Count() == 1);
+		UT_VERIFY(b[0] == 13);
 	}
+
+	void ProveWorks__TOrdered_Assoc__AppendThree__ThreeItems(){
+		auto a = TOrdered<int>();
+		auto b = a.Assoc(0, 8);
+		auto c = b.Assoc(1, 9);
+		auto d = c.Assoc(2, 10);
+
+		UT_VERIFY(a.Count() == 0);
+
+		UT_VERIFY(b.Count() == 1);
+		UT_VERIFY(b[0] == 8);
+
+		UT_VERIFY(c.Count() == 2);
+		UT_VERIFY(c[0] == 8);
+		UT_VERIFY(c[1] == 9);
+
+		UT_VERIFY(d.Count() == 3);
+		UT_VERIFY(d[0] == 8);
+		UT_VERIFY(d[1] == 9);
+		UT_VERIFY(d[2] == 10);
+	}
+
+
+	TOrdered<int> MakeTestOrdered3(){
+		auto a = TOrdered<int>();
+		a = a.Assoc(0, 8);
+		a = a.Assoc(1, 9);
+		a = a.Assoc(2, 10);
+		return a;
+	}
+
+
+	void ProveWorks__TOrdered_Assoc__ReplaceItem__Correct(){
+		auto a = MakeTestOrdered3();
+		auto b = a.Assoc(1, 99);
+
+		UT_VERIFY(a.Count() == 3);
+		UT_VERIFY(a[1] == 9);
+		UT_VERIFY(b.Count() == 3);
+		UT_VERIFY(b[1] == 99);
+	}
+
+
+	void ProveWorks__TOrdered_First__ThreeItems__8(){
+		auto a = MakeTestOrdered3();
+		auto b = a.First();
+		UT_VERIFY(b == 8);
+	}
+
+	void ProveWorks__TOrdered_Rest__ThreeItems__TwoItems(){
+		auto a = MakeTestOrdered3();
+		auto b = a.Rest();
+		UT_VERIFY(b.Count() == 2);
+		UT_VERIFY(b[0] == 9);
+		UT_VERIFY(b[1] == 10);
+	}
+
+
 }
 
 
@@ -367,8 +431,13 @@ void RunFloydTypeTests(){
 	ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT();
 	ProveWorks__CallFunction__SimpleFunction__CorrectReturn();
 
-	ProveWorks__GCON_DefaultConstructor__Basic__NoAssert();
-	ProveWorks__GCON_IndexAppend__OnEmptyContainer__OneItemContainer();
+	ProveWorks__TOrdered_DefaultConstructor__Basic__NoAssert();
+	ProveWorks__TOrdered_Assoc__OnEmptyCollection__OneItem();
+	ProveWorks__TOrdered_Assoc__AppendThree__ThreeItems();
+	ProveWorks__TOrdered_Assoc__ReplaceItem__Correct();
+
+	ProveWorks__TOrdered_First__ThreeItems__8();
+	ProveWorks__TOrdered_Rest__ThreeItems__TwoItems();
 }
 
 

@@ -140,39 +140,93 @@ struct FunctionDef {
 
 
 
-template <typename K, typename V> class TGenericContainer {
-	public: TGenericContainer(){
+template <typename V> class TOrdered {
+	public: TOrdered(){
 		UT_VERIFY(CheckInvariant());
 	}
 
+	public: std::size_t Count() const {
+		return _vector.size();
+	}
+
 	public: bool CheckInvariant() const{
-		if(_type == kEmpty){
-			ASSERT(_vector.get() == nullptr);
-			ASSERT(_map.get() == nullptr);
-		}
-		else if(_type == kVector){
-			ASSERT(_vector.get() != nullptr);
-			ASSERT(_map.get() == nullptr);
-		}
-		else if(_type == kHashMap){
-			ASSERT(_vector.get() == nullptr);
-			ASSERT(_map.get() != nullptr);
-		}
-		else{
-			ASSERT(false);
-		}
 		return true;
 	}
 
-	public: enum BackendType {
-		kEmpty,
-		kVector,
-		kHashMap
+
+	///////////////////////////////		Seq
+
+	public: V First() const {
+		UT_VERIFY(CheckInvariant());
+		ASSERT(!_vector.empty());
+		return _vector[0];
+	}
+
+	public: TOrdered<V> Rest() const {
+		UT_VERIFY(CheckInvariant());
+		ASSERT(!_vector.empty());
+
+		TOrdered<V> result;
+		auto temp = std::vector<V>(&_vector[1], &_vector[_vector.size()]);
+		result._vector.swap(temp);
+		ASSERT(result.CheckInvariant());
+		ASSERT(result.Count() == Count() - 1);
+		return result;
+	}
+
+
+
+	///////////////////////////////		Order
+
+	public: const V& operator[](std::size_t idx) const {
+		UT_VERIFY(CheckInvariant());
+		ASSERT(idx < _vector.size());
+
+		return _vector[idx];
 	};
-	public: BackendType _type = kEmpty;
-	public: std::shared_ptr<std::vector<V> > _vector;
-	public: std::shared_ptr<std::unordered_map<K, V> > _map;
+
+
+	public: const TOrdered<V> Assoc(std::size_t idx, V value) const {
+		UT_VERIFY(CheckInvariant());
+		ASSERT(idx <= _vector.size());
+
+		//	Append just after end of vector?
+		if(idx == _vector.size()){
+			TOrdered<V> result;
+			result._vector = _vector;
+			result._vector.push_back(value);
+
+			ASSERT(result.CheckInvariant());
+			ASSERT(result.Count() == Count() + 1);
+			return result;
+		}
+
+		//	Overwrite existing index.
+		else{
+			TOrdered<V> result;
+			result._vector = _vector;
+			result._vector[idx] = value;
+
+			ASSERT(result.CheckInvariant());
+			ASSERT(result.Count() == Count());
+			return result;
+		}
+	};
+
+
+
+	///////////////////////////////		State
+	private: std::vector<V> _vector;
 };
+
+
+template <typename V> TOrdered<V> Append(const TOrdered<V>& a, const TOrdered<V>& b){
+	ASSERT(a.CheckInvariant());
+	ASSERT(b.CheckInvariant());
+
+	TOrdered<V> result = a + b;
+	return result;
+}
 
 
 
