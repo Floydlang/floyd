@@ -115,7 +115,6 @@ struct TCompositeDef {
 };
 
 
-
 /////////////////////////////////////////		Function
 
 
@@ -134,15 +133,18 @@ struct FunctionDef {
 };
 
 
+/////////////////////////////////////////		TSeq
 
 
-/////////////////////////////////////////		TGenericContainer
+template <typename V> class TSeq {
+	public: TSeq(){
+		ASSERT(CheckInvariant());
+	}
 
-
-
-template <typename V> class TOrdered {
-	public: TOrdered(){
-		UT_VERIFY(CheckInvariant());
+	public: TSeq(const std::vector<V>& v) :
+		_vector(v)
+	{
+		ASSERT(CheckInvariant());
 	}
 
 	public: std::size_t Count() const {
@@ -157,66 +159,92 @@ template <typename V> class TOrdered {
 	///////////////////////////////		Seq
 
 	public: V First() const {
-		UT_VERIFY(CheckInvariant());
+		ASSERT(CheckInvariant());
 		ASSERT(!_vector.empty());
 		return _vector[0];
 	}
 
-	public: TOrdered<V> Rest() const {
-		UT_VERIFY(CheckInvariant());
+	public: std::shared_ptr<const TSeq<V> > Rest() const {
+		ASSERT(CheckInvariant());
 		ASSERT(!_vector.empty());
 
-		TOrdered<V> result;
-		auto temp = std::vector<V>(&_vector[1], &_vector[_vector.size()]);
-		result._vector.swap(temp);
-		ASSERT(result.CheckInvariant());
-		ASSERT(result.Count() == Count() - 1);
+		auto v = std::vector<V>(&_vector[1], &_vector[_vector.size()]);
+		auto result = std::shared_ptr<const TSeq<V> >(new TSeq<V>(v));
+		ASSERT(result->Count() == Count() - 1);
 		return result;
 	}
 
 
+	public: std::vector<V> ToVector() const{
+		ASSERT(CheckInvariant());
+
+		return _vector;
+	}
+
+	///////////////////////////////		State
+	private: const std::vector<V> _vector;
+};
+
+
+/////////////////////////////////////////		TOrdered
+
+
+template <typename V> class TOrdered {
+	public: TOrdered(){
+		ASSERT(CheckInvariant());
+	}
+
+	public: TOrdered(const std::vector<V>& v) :
+		_vector(v)
+	{
+		ASSERT(CheckInvariant());
+	}
+
+	public: std::size_t Count() const {
+		return _vector.size();
+	}
+
+	public: bool CheckInvariant() const{
+		return true;
+	}
+
 
 	///////////////////////////////		Order
 
-	public: const V& operator[](std::size_t idx) const {
-		UT_VERIFY(CheckInvariant());
+	public: const V& AtIndex(std::size_t idx) const {
+		ASSERT(CheckInvariant());
 		ASSERT(idx < _vector.size());
 
 		return _vector[idx];
-	};
+	}
 
-
-	public: const TOrdered<V> Assoc(std::size_t idx, V value) const {
-		UT_VERIFY(CheckInvariant());
+	//### Interning?
+	public: std::shared_ptr<const TOrdered<V> > Assoc(std::size_t idx, const V& value) const {
+		ASSERT(CheckInvariant());
 		ASSERT(idx <= _vector.size());
 
 		//	Append just after end of vector?
 		if(idx == _vector.size()){
-			TOrdered<V> result;
-			result._vector = _vector;
-			result._vector.push_back(value);
-
-			ASSERT(result.CheckInvariant());
-			ASSERT(result.Count() == Count() + 1);
+			auto v = _vector;
+			v.push_back(value);
+			auto result = std::shared_ptr<const TOrdered<V> >(new TOrdered<V>(v));
+			ASSERT(result->Count() == Count() + 1);
 			return result;
 		}
 
 		//	Overwrite existing index.
 		else{
-			TOrdered<V> result;
-			result._vector = _vector;
-			result._vector[idx] = value;
-
-			ASSERT(result.CheckInvariant());
-			ASSERT(result.Count() == Count());
+			auto v = _vector;
+			v[idx] = value;
+			auto result = std::shared_ptr<const TOrdered<V> >(new TOrdered<V>(v));
+			ASSERT(result->Count() == Count());
 			return result;
 		}
-	};
-
+	}
 
 
 	///////////////////////////////		State
-	private: std::vector<V> _vector;
+	private: const std::vector<V> _vector;
 };
 
 
@@ -227,6 +255,64 @@ template <typename V> TOrdered<V> Append(const TOrdered<V>& a, const TOrdered<V>
 	TOrdered<V> result = a + b;
 	return result;
 }
+
+
+/////////////////////////////////////////		TUnordered
+
+
+template <typename K, typename V> class TUnordered {
+	public: TUnordered(){
+		ASSERT(CheckInvariant());
+	}
+
+	public: TUnordered(const std::unordered_map<K, V>& v) :
+		_map(v)
+	{
+		ASSERT(CheckInvariant());
+	}
+
+	public: std::size_t Count() const {
+		return _map.size();
+	}
+
+	public: bool CheckInvariant() const{
+		return true;
+	}
+
+
+	///////////////////////////////		Order
+
+	public: V AtKey(const K& key) const {
+		ASSERT(CheckInvariant());
+		ASSERT(Exists(key));
+
+		auto it = _map.find(key);
+		ASSERT(it != _map.end());
+		return it->second;
+	}
+
+	public: bool Exists(const K& key) const {
+		ASSERT(CheckInvariant());
+
+		const auto it = _map.find(key);
+		return it != _map.end();
+	}
+
+
+	public: std::shared_ptr<const TUnordered<K, V> > Assoc(const K& key, const V& value) const {
+		ASSERT(CheckInvariant());
+
+		auto v = _map;
+		v[key] = value;
+		const auto result = std::shared_ptr<const TUnordered<K, V> >(new TUnordered<K, V>(v));
+		return result;
+	}
+
+
+	///////////////////////////////		State
+	private: const std::unordered_map<K, V> _map;
+};
+
 
 
 

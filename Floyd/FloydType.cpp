@@ -13,6 +13,7 @@
 #include <string>
 
 
+using namespace std;
 
 
 
@@ -270,6 +271,7 @@ FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args){
 }
 
 
+/////////////////////////////////////////		Test functions
 
 
 namespace {
@@ -316,8 +318,6 @@ namespace {
 		return result;
 	}
 
-
-
 	void ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT(){
 		FunctionDef def;
 
@@ -334,7 +334,6 @@ namespace {
 		UT_VERIFY(GetFunction(result) == ExampleFunction1_Glue);
 	}
 
-
 	void ProveWorks__CallFunction__SimpleFunction__CorrectReturn(){
 		const FloydDT f = MakeFunction1();
 
@@ -350,7 +349,72 @@ namespace {
 		UT_VERIFY(GetFloat(r) == 6.0f);
 	}
 
+}
 
+
+
+
+
+/////////////////////////////////////////		Test TSeq
+
+
+
+namespace {
+
+
+	void ProveWorks__TSeq_DefaultConstructor__Basic__NoAssert(){
+		auto a = TSeq<int>();
+		UT_VERIFY(a.CheckInvariant());
+	}
+
+	TSeq<int> MakeTestSeq3(){
+		const int kTest[] = {	88, 90, 100 };
+		const auto a = TSeq<int>(std::vector<int>(&kTest[0], &kTest[3]));
+		ASSERT(a.Count() == 3);
+
+		const auto b = a.ToVector();
+		ASSERT(b[0] == 88);
+		ASSERT(b[1] == 90);
+		ASSERT(b[2] == 100);
+
+		return a;
+	}
+
+	void ProveWorks__TSeq_First__ThreeItems__8(){
+		auto a = MakeTestSeq3();
+		auto b = a.First();
+		UT_VERIFY(b == 88);
+	}
+
+	void ProveWorks__TSeq_Rest__ThreeItems__TwoItems(){
+		const auto a = MakeTestSeq3();
+		const auto b = a.Rest();
+
+		UT_VERIFY(b->Count() == 2);
+		const auto c = b->ToVector();
+		ASSERT(c[0] == 90);
+		ASSERT(c[1] == 100);
+	}
+
+	void ProveWorks__TSeq_Rest__ReadAllItems__ResultIsEmpty(){
+		const auto a = MakeTestSeq3();
+		const auto b = a.Rest();
+		const auto c = b->Rest();
+		const auto d = c->Rest();
+		UT_VERIFY(d->Count() == 0);
+	}
+
+
+}
+
+
+
+
+/////////////////////////////////////////		Test TOrdered
+
+
+
+namespace {
 
 
 	void ProveWorks__TOrdered_DefaultConstructor__Basic__NoAssert(){
@@ -363,81 +427,134 @@ namespace {
 		auto b = a.Assoc(0, 13);
 
 		UT_VERIFY(a.Count() == 0);
-		UT_VERIFY(b.Count() == 1);
-		UT_VERIFY(b[0] == 13);
+		UT_VERIFY(b->Count() == 1);
+		UT_VERIFY(b->AtIndex(0) == 13);
 	}
 
 	void ProveWorks__TOrdered_Assoc__AppendThree__ThreeItems(){
 		auto a = TOrdered<int>();
 		auto b = a.Assoc(0, 8);
-		auto c = b.Assoc(1, 9);
-		auto d = c.Assoc(2, 10);
+		auto c = b->Assoc(1, 9);
+		auto d = c->Assoc(2, 10);
 
 		UT_VERIFY(a.Count() == 0);
 
-		UT_VERIFY(b.Count() == 1);
-		UT_VERIFY(b[0] == 8);
+		UT_VERIFY(b->Count() == 1);
+		UT_VERIFY(b->AtIndex(0) == 8);
 
-		UT_VERIFY(c.Count() == 2);
-		UT_VERIFY(c[0] == 8);
-		UT_VERIFY(c[1] == 9);
+		UT_VERIFY(c->Count() == 2);
+		UT_VERIFY(c->AtIndex(0) == 8);
+		UT_VERIFY(c->AtIndex(1) == 9);
 
-		UT_VERIFY(d.Count() == 3);
-		UT_VERIFY(d[0] == 8);
-		UT_VERIFY(d[1] == 9);
-		UT_VERIFY(d[2] == 10);
+		UT_VERIFY(d->Count() == 3);
+		UT_VERIFY(d->AtIndex(0) == 8);
+		UT_VERIFY(d->AtIndex(1) == 9);
+		UT_VERIFY(d->AtIndex(2) == 10);
 	}
 
-
-	TOrdered<int> MakeTestOrdered3(){
+	std::shared_ptr<const TOrdered<int>> MakeTestOrdered3(){
 		auto a = TOrdered<int>();
-		a = a.Assoc(0, 8);
-		a = a.Assoc(1, 9);
-		a = a.Assoc(2, 10);
-		return a;
+		auto b = a.Assoc(0, 8);
+		b = b->Assoc(1, 9);
+		b = b->Assoc(2, 10);
+		return b;
 	}
-
 
 	void ProveWorks__TOrdered_Assoc__ReplaceItem__Correct(){
 		auto a = MakeTestOrdered3();
-		auto b = a.Assoc(1, 99);
+		auto b = a->Assoc(1, 99);
 
-		UT_VERIFY(a.Count() == 3);
-		UT_VERIFY(a[1] == 9);
-		UT_VERIFY(b.Count() == 3);
-		UT_VERIFY(b[1] == 99);
+		UT_VERIFY(a->Count() == 3);
+		UT_VERIFY(a->AtIndex(1) == 9);
+		UT_VERIFY(b->Count() == 3);
+		UT_VERIFY(b->AtIndex(1)== 99);
 	}
-
-
-	void ProveWorks__TOrdered_First__ThreeItems__8(){
-		auto a = MakeTestOrdered3();
-		auto b = a.First();
-		UT_VERIFY(b == 8);
-	}
-
-	void ProveWorks__TOrdered_Rest__ThreeItems__TwoItems(){
-		auto a = MakeTestOrdered3();
-		auto b = a.Rest();
-		UT_VERIFY(b.Count() == 2);
-		UT_VERIFY(b[0] == 9);
-		UT_VERIFY(b[1] == 10);
-	}
-
-
 }
+
+
+
+/////////////////////////////////////////		Test TUnordered
+
+
+
+namespace {
+
+	void ProveWorks__TUnordered_DefaultConstructor__Basic__NoAssert(){
+		auto a = TUnordered<string, int>();
+		UT_VERIFY(a.CheckInvariant());
+	}
+
+	void ProveWorks__TUnordered_Assoc__OnEmptyCollection__OneItem(){
+		auto a = TUnordered<string, int>();
+		auto b = a.Assoc("three", 13);
+
+		UT_VERIFY(a.Count() == 0);
+		UT_VERIFY(b->Count() == 1);
+		UT_VERIFY(b->AtKey("three") == 13);
+	}
+
+	void ProveWorks__TUnordered_Assoc__AppendThree__ThreeItems(){
+		auto a = TUnordered<string, int>();
+		auto b = a.Assoc("zero", 8);
+		auto c = b->Assoc("one", 9);
+		auto d = c->Assoc("two", 10);
+
+		UT_VERIFY(a.Count() == 0);
+
+		UT_VERIFY(b->Count() == 1);
+		UT_VERIFY(b->AtKey("zero") == 8);
+
+		UT_VERIFY(c->Count() == 2);
+		UT_VERIFY(c->AtKey("zero") == 8);
+		UT_VERIFY(c->AtKey("one") == 9);
+
+		UT_VERIFY(d->Count() == 3);
+		UT_VERIFY(d->AtKey("zero") == 8);
+		UT_VERIFY(d->AtKey("one") == 9);
+		UT_VERIFY(d->AtKey("two") == 10);
+	}
+
+	std::shared_ptr<const TUnordered<string, int>> MakeTestUnordered3(){
+		auto a = TUnordered<string, int>();
+		auto b = a.Assoc("zero", 8);
+		b = b->Assoc("one", 9);
+		b = b->Assoc("two", 10);
+		return b;
+	}
+
+	void ProveWorks__TUnordered_Assoc__ReplaceItem__Correct(){
+		auto a = MakeTestUnordered3();
+		auto b = a->Assoc("one", 99);
+
+		UT_VERIFY(a->Count() == 3);
+		UT_VERIFY(a->AtKey("one") == 9);
+		UT_VERIFY(b->Count() == 3);
+		UT_VERIFY(b->AtKey("one")== 99);
+	}
+}
+
+
+
 
 
 void RunFloydTypeTests(){
 	ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT();
 	ProveWorks__CallFunction__SimpleFunction__CorrectReturn();
 
+	ProveWorks__TSeq_DefaultConstructor__Basic__NoAssert();
+	ProveWorks__TSeq_First__ThreeItems__8();
+	ProveWorks__TSeq_Rest__ThreeItems__TwoItems();
+	ProveWorks__TSeq_Rest__ReadAllItems__ResultIsEmpty();
+
 	ProveWorks__TOrdered_DefaultConstructor__Basic__NoAssert();
 	ProveWorks__TOrdered_Assoc__OnEmptyCollection__OneItem();
 	ProveWorks__TOrdered_Assoc__AppendThree__ThreeItems();
 	ProveWorks__TOrdered_Assoc__ReplaceItem__Correct();
 
-	ProveWorks__TOrdered_First__ThreeItems__8();
-	ProveWorks__TOrdered_Rest__ThreeItems__TwoItems();
+	ProveWorks__TUnordered_DefaultConstructor__Basic__NoAssert();
+	ProveWorks__TUnordered_Assoc__OnEmptyCollection__OneItem();
+	ProveWorks__TUnordered_Assoc__AppendThree__ThreeItems();
+	ProveWorks__TUnordered_Assoc__ReplaceItem__Correct();
 }
 
 
