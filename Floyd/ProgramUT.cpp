@@ -8,7 +8,7 @@
 
 #include "ProgramUT.h"
 
-#include "Quark.h"
+#include "cpp_extension.h"
 #include "BasicTypes.h"
 #include "Program.h"
 
@@ -199,7 +199,7 @@ namespace {
 }
 
 
-void TestProgram(){
+UNIT_TEST("Program", "TestProgram()", "", ""){
 	ProveWorks_CEvalNode_MakeConditional__Plain__ConstructsOK();
 	ProveWorks_CEvalNode_MakeAdd__Plain__ConstructsOK();
 	ProveWorks_CProgram_Constructor__1Node__ConstructsOK();

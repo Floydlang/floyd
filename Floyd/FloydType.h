@@ -21,6 +21,26 @@ struct FloydDT;
 
 
 
+//	This is the normalized order of the types.
+enum FloydDTType {
+	kNull = 1,
+	kFloat,
+	kString,
+	kFunction
+
+/*
+	Composite
+	Exception
+
+	Seq
+	Ordered
+	Unordered
+*/
+
+};
+
+
+
 /////////////////////////////////////////		FloydDT
 
 
@@ -31,41 +51,9 @@ struct FloydDT;
 
 	All values are immutable.
 
-	In the floyd simumation, values are static, but in the host they are dynamic.
+	In the floyd simulation, values are static, but in the host they are dynamic.
 
 	Also holds every new data type, like composites.
-
-	###	Use a unique ID for each interneted object-type = smaller than object. Goal is FloydDT == 8 bytes on 64-bit systems.
-
-	Signatures: these are unique names for a specific type. All types: built-in, custom composites, function etc.
-	You can also give a type a specific name, which makes it its own uniqu type.
-
-	Definition											Explanation
-	---------------------------------------------------	------------------------------------------------------------
-	"<null>"											null
-	"<float>"											float
-	"<string>"											string
-	"<float>(<string>, <float>)"						function returning float, with string and float arguments
-	"{ <string>, <string>, <float> }"					composite with three unnamed members.
-
-	"meters <float>"									float with a new name
-	"triangle { <float> a, <float> b, <float> c }"		a named composite
-	"<float> MySineF(<float>)"							a named function
-
-	The signature strings are in a normalized format and must appear exactly as above, whitespace and all.
-
-	There is an alternative, faster encoding of the signature: a 32bit hash of the signature string.
-
-	### Add map, vector etc.
-
-
-	[] = vector
-	{} = composite
-	{} = map
-	() = tuple
-	<> = tagged_union
-
-	f() = function
 */
 
 
@@ -101,6 +89,8 @@ std::vector<TFunctionSignature> UnpackFunctionSignature(const TTypeSignature& s)
 
 
 
+
+
 /////////////////////////////////////////		Composite
 
 
@@ -110,12 +100,18 @@ std::vector<TFunctionSignature> UnpackFunctionSignature(const TTypeSignature& s)
 typedef bool (*CompositeCheckInvariant)(const TComposite& value);
 
 struct TCompositeDef {
-	std::map<std::string, FloydDT> _members;
+	std::vector<std::pair<std::string, FloydDT> > _members;
+
+	//	### Use FunctionDef instead?
 	CompositeCheckInvariant _checkInvariant;
 };
 
 
+
+
+
 /////////////////////////////////////////		Function
+
 
 
 const int kMaxFunctionArgs = 6;
@@ -128,12 +124,15 @@ typedef FloydDT (*CFunctionPtr)(const FloydDT args[], std::size_t argCount);
 
 struct FunctionDef {
 	TFunctionSignature _signature;
-//	TTypeSignature _signature;
 	CFunctionPtr _functionPtr;
 };
 
 
+
+
 /////////////////////////////////////////		TSeq
+
+
 
 
 template <typename V> class TSeq {
@@ -186,7 +185,22 @@ template <typename V> class TSeq {
 };
 
 
+struct TSeqTypeInstance {
+	FloydDTType _valueType;
+};
+
+struct TOrderedTypeInstance {
+	FloydDTType _valueType;
+};
+
+struct TUnorderedTypeInstance {
+	FloydDTType _valueType;
+};
+
+
+
 /////////////////////////////////////////		TOrdered
+
 
 
 template <typename V> class TOrdered {
@@ -298,7 +312,6 @@ template <typename K, typename V> class TUnordered {
 		return it != _map.end();
 	}
 
-
 	public: std::shared_ptr<const TUnordered<K, V> > Assoc(const K& key, const V& value) const {
 		ASSERT(CheckInvariant());
 
@@ -316,34 +329,86 @@ template <typename K, typename V> class TUnordered {
 
 
 
-
 /////////////////////////////////////////		FloydDT
 
+/*
+	Make this 16 bytes big on 64-bit architectures.
+
+	### Maybe possible to squeeze down to 8 bytes, if we can detect int64, float64 from 64bit word.
+	### Make some rare bitpattern of int64/float64 actual cause them to use a second memory block?
+
+	Depending on the type of value, the value is inline in FloydDT or interned.
+*/
 
 
-//	This is the normalized order of the types.
-enum FloydDTType {
-	kNull = 1,
-	kFloat,
-	kString,
-	kFunction
-//	,
-//	kComposite,
-//	kMapKV
-};
+#if false
+
+	/*
+		0 -- 7
+		8 bit: base-type
+		---------------------
+		0 = null [inlined value]
+		5 = bool [inlined value]
+		1 = float64 bit [inlined value]
+		4 = int64 [inlined value]
+		2 = string [inlined value] (1 + 6 bytes + 8)
+		3 = string [interned ID]
+		8 = function [custom types] [
+		9 = enum
+		10 = exception
+		11 = composite
+		12 = tuple
+		13 = seq
+		14 = ordered
+		15 = tagged_union
+		16 -- 255 = reserved
+
+		8 -- 31		(256 -- 2^32) custom types = 16M types.
+
+		32 -- 64	32bits A
+	*/
+	uint64_t _param0;
+	uint64_t _param1;
+#endif
+
 
 struct FloydDT {
 	public: bool CheckInvariant() const;
-	public: std::string GetType() const;
+	public: std::string GetTypeString() const;
+
+
+	///////////////////		Internals
+
+	friend FloydDT MakeNull();
+	friend bool IsNull(const FloydDT& value);
+
+	friend FloydDT MakeFloat(float value);
+	friend bool IsFloat(const FloydDT& value);
+	friend float GetFloat(const FloydDT& value);
+
+	friend FloydDT MakeString(const std::string& value);
+	friend bool IsString(const FloydDT& value);
+	friend std::string GetString(const FloydDT& value);
+
+	friend FloydDT MakeFunction(const FunctionDef& f);
+	friend bool IsFunction(const FloydDT& value);
+	friend CFunctionPtr GetFunction(const FloydDT& value);
+	friend const TFunctionSignature& GetFunctionSignature(const FloydDT& value);
+	friend FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
+
 
 
 	///////////////////		State
-		FloydDTType _type = FloydDTType::kNull;
-		float _asFloat = 0.0f;
-		std::string _asString = "";
+		private: FloydDTType _type = FloydDTType::kNull;
+		private: float _asFloat = 0.0f;
+		private: std::string _asString = "";
 
-		std::shared_ptr<TComposite> _asComposite;
-		std::shared_ptr<FunctionDef> _asFunction;
+		private: std::shared_ptr<TComposite> _asComposite;
+		private: std::shared_ptr<FunctionDef> _asFunction;
+
+		private: std::shared_ptr<TSeq<FloydDT>> _asSeq;
+		private: std::shared_ptr<TOrdered<FloydDT>> _asOrdered;
+		private: std::shared_ptr<TUnordered<std::string, FloydDT>> _asUnordered;
 };
 
 
@@ -367,14 +432,19 @@ std::string GetString(const FloydDT& value);
 FloydDT MakeFunction(const FunctionDef& f);
 bool IsFunction(const FloydDT& value);
 CFunctionPtr GetFunction(const FloydDT& value);
+const TFunctionSignature& GetFunctionSignature(const FloydDT& value);
 
 //	Arguments must match those of the function or assert.
 FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
 
+
+
 FloydDT MakeComposite(const TCompositeDef& c);
 
 
+FloydDT MakeSeq();
+FloydDT MakeOrdered();
+FloydDT MakeUnordered();
 
-void RunFloydTypeTests();
 
 #endif /* defined(__Floyd__FloydType__) */

@@ -1,0 +1,37 @@
+Port
+bus
+rising and falling edges of the clock signals
+tricks like replication or pipelining to speed up effective performance
+
+
+
+OPTIMIZATION
+
+out of order and in parallel
+
+
+An instruction, along with its required data operands, is transmitted to an execution unit as a packet, also called an instruction token. Similarly, output data is transmitted back to the CAM as a data token. The packetization of instructions and results allows for parallel execution of ready instructions on a large scale.
+
+
+
+Dataflow architecture
+
+https://en.m.wikipedia.org/wiki/Reactive_programming
+
+https://en.m.wikipedia.org/wiki/Functional_reactive_programming
+
+FRP: Discrete
+Formulations such as Event-Driven FRP and Elm require that updates are discrete and event-driven.[3] These formulations have pushed for practical FRP, focusing on semantics that have a simple API that can be implemented efficiently in a setting such as robotics or in a web-browser.[4]
+
+In these formulations, it is common that the ideas of behaviors and events are combined into signals that always have a current value, but change discretely.[5]
+
+
+https://en.wikipedia.org/wiki/SystemVerilog
+
+An HDL module is written to provide the circuit stimulus.  This is known as a testbench
+
+
+model, modules, ports, channels, signals
+
+
+http://users.cecs.anu.edu.au/~steveb/downloads/pdf/rc-ismm-2012.pdf

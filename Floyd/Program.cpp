@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 Marcus Zetterquist. All rights reserved.
 //
 
-#include "Quark.h"
+#include "cpp_extension.h"
 
 #include "Program.h"
 

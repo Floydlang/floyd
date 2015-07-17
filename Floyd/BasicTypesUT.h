@@ -11,8 +11,4 @@
 
 
 
-void TestBasicTypes();
-
-
-
 #endif /* defined(__Floyd__BasicTypesUT__) */

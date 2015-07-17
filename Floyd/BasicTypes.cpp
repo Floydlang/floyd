@@ -6,11 +6,10 @@
 //  Copyright (c) 2013 Marcus Zetterquist. All rights reserved.
 //
 
+#include "cpp_extension.h"
+
 #include "BasicTypes.h"
 
-#include <cassert>
-
-#include "Quark.h"
 
 
 

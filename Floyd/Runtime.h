@@ -158,7 +158,6 @@ struct FunctionPart {
 
 
 	FloydDT _function;
-//	FunctionDef* _functionDef;
 	std::vector<WireInput> _inputs;
 	WireOutput _output;
 };

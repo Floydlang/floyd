@@ -6,11 +6,10 @@
 //  Copyright (c) 2013 Marcus Zetterquist. All rights reserved.
 //
 
+#include "cpp_extension.h"
 #include "BasicTypesUT.h"
 
 #include "BasicTypes.h"
-
-#include "Quark.h"
 
 
 namespace {
@@ -384,8 +383,7 @@ namespace {
 
 }
 
-
-void TestBasicTypes(){
+UNIT_TEST("BasicTypes", "TestBasicTypes()", "", ""){
 	ProveWorks_VValue_DefaultConstructor__None__ResultIsNil();
 	ProveWorks_VValue_MakeInt__Normal__ResultIsCorrectInt();
 	ProveWorks_VValue_CopyConstructor__Int__ResultIsCorrectInt();
@@ -415,4 +413,5 @@ void TestBasicTypes(){
 	ProveWorks_VTableRef_Set__StoreValueObjectRef__CanGetBackAgain();
 	ProveWorks_VTableRef_Set__StoreTableRef__CanGetBackAgain();
 }
+
 

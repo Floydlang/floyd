@@ -8,7 +8,7 @@
 //  Copyright (c) 2015 Marcus Zetterquist. All rights reserved.
 //
 
-#include "Quark.h"
+#include "cpp_extension.h"
 
 #include "Runtime.h"
 
@@ -127,7 +127,8 @@ shared_ptr<FunctionPart> MakeFunctionPart(const FloydDT& f){
 	auto result = shared_ptr<FunctionPart>(new FunctionPart());
 	result->_function = f;
 //	result->_output._ownerFunctionPart = result.get();
-	for(auto i: f._asFunction->_signature._args){
+	const auto signature = GetFunctionSignature(f);
+	for(auto i: signature._args){
 		auto input = WireInput(i.second, i.first);
 		result->_inputs.push_back(input);
 	}
@@ -253,7 +254,6 @@ map<string, shared_ptr<OutputPinPart> > SimulationRuntime::GetOutputPins(){
 
 namespace {
 
-
 	float ExampleFunction1(float a, float b, string s){
 		return s == "*" ? a * b : a + b;
 	}
@@ -261,19 +261,18 @@ namespace {
 	FloydDT ExampleFunction1_Glue(const FloydDT args[], size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
-		ASSERT(args[0]._type == FloydDTType::kFloat);
-		ASSERT(args[1]._type == FloydDTType::kFloat);
-		ASSERT(args[2]._type == FloydDTType::kString);
+		ASSERT(IsFloat(args[0]));
+		ASSERT(IsFloat(args[1]));
+		ASSERT(IsString(args[2]));
 
-		const float a = args[0]._asFloat;
-		const float b = args[1]._asFloat;
-		const string s = args[2]._asString;
+		const float a = GetFloat(args[0]);
+		const float b = GetFloat(args[1]);
+		const string s = GetString(args[2]);
 		const float r = ExampleFunction1(a, b, s);
 
 		FloydDT result = MakeFloat(r);
 		return result;
 	}
-
 
 
 
@@ -283,8 +282,6 @@ namespace {
 	"{"
 	"	version: 2"
 	"}";
-
-
 
 
 	FloydDT MakeFunction1(){
@@ -367,9 +364,40 @@ namespace {
 }
 
 
-void test(){
-	RunFloydTypeTests();
+#if false
+/////////////////////////////////////////		Test scenario 1
 
+
+namespace {
+
+	FloydDT Scenario1_Render(const FloydDT args[], size_t argCount){
+		ASSERT(args != nullptr);
+		ASSERT(argCount == 3);
+		ASSERT(args[0]._type == FloydDTType::kFloat);
+		ASSERT(args[1]._type == FloydDTType::kFloat);
+		ASSERT(args[2]._type == FloydDTType::kString);
+
+		const float a = args[0]._asFloat;
+		const float b = args[1]._asFloat;
+		const string s = args[2]._asString;
+		const float r = ExampleFunction1(a, b, s);
+
+		FloydDT result = MakeFloat(r);
+		return result;
+	}
+
+
+
+	void ProveWorks__Runtime_Run__Scenario1(){
+	}
+}
+#endif
+
+
+
+
+
+UNIT_TEST("Runtime", "TestRuntime()", "", ""){
 	ProveWorks__MakeFunctionPart__1Function__ValidFunctionPart();
 	ProveWorks__GetValue__MinimalSimulation1Function__OutputIs6();
 }

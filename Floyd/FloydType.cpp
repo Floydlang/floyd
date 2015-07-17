@@ -6,7 +6,7 @@
 //  Copyright (c) 2015 Marcus Zetterquist. All rights reserved.
 //
 
-#include "Quark.h"
+#include "cpp_extension.h"
 
 #include "FloydType.h"
 
@@ -117,7 +117,8 @@ bool FloydDT::CheckInvariant() const{
 	return true;
 }
 
-std::string FloydDT::GetType() const{
+
+std::string FloydDT::GetTypeString() const{
 	ASSERT(CheckInvariant());
 
 	if(_type == kNull){
@@ -233,6 +234,13 @@ CFunctionPtr GetFunction(const FloydDT& value){
 	return value._asFunction->_functionPtr;
 }
 
+const TFunctionSignature& GetFunctionSignature(const FloydDT& value){
+	ASSERT(value.CheckInvariant());
+	ASSERT(IsFunction(value));
+
+	return value._asFunction->_signature;
+}
+
 FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args){
 	ASSERT(value.CheckInvariant());
 #if ASSERT_ON
@@ -247,7 +255,7 @@ FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args){
 	int index = 0;
 	for(auto i: args){
 		//	Make sure the type of the argument is correct.
-		auto a = i.GetType();
+		auto a = i.GetTypeString();
 		auto b = functionTypeSignature._args[index].second._s;
 		ASSERT(a == b);
 
@@ -265,10 +273,12 @@ FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args){
 	);
 
 
-	ASSERT(functionResult.GetType() == functionTypeSignature._returnType._s);
+	ASSERT(functionResult.GetTypeString() == functionTypeSignature._returnType._s);
 
 	return functionResult;
 }
+
+
 
 
 /////////////////////////////////////////		Test functions
@@ -283,13 +293,13 @@ namespace {
 	FloydDT ExampleFunction1_Glue(const FloydDT args[], std::size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
-		ASSERT(args[0]._type == FloydDTType::kFloat);
-		ASSERT(args[1]._type == FloydDTType::kFloat);
-		ASSERT(args[2]._type == FloydDTType::kString);
+		ASSERT(IsFloat(args[0]));
+		ASSERT(IsFloat(args[1]));
+		ASSERT(IsString(args[2]));
 
-		const float a = args[0]._asFloat;
-		const float b = args[1]._asFloat;
-		const std::string s = args[2]._asString;
+		const float a = GetFloat(args[0]);
+		const float b = GetFloat(args[1]);
+		const std::string s = GetString(args[2]);
 		const float r = ExampleFunction1(a, b, s);
 
 		FloydDT result = MakeFloat(r);
@@ -469,6 +479,7 @@ namespace {
 		UT_VERIFY(b->Count() == 3);
 		UT_VERIFY(b->AtIndex(1)== 99);
 	}
+
 }
 
 
@@ -537,7 +548,8 @@ namespace {
 
 
 
-void RunFloydTypeTests(){
+
+UNIT_TEST("FloydType", "RunFloydTypeTests()", "", ""){
 	ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT();
 	ProveWorks__CallFunction__SimpleFunction__CorrectReturn();
 
