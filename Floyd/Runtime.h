@@ -43,7 +43,7 @@ class IOutputGenerator {
 
 
 struct WireInput {
-	public: WireInput(const TTypeSignature& type, const std::string& label) :
+	public: WireInput(const TTypeSignatureString& type, const std::string& label) :
 		_type(type),
 		_label(label)
 	{
@@ -54,7 +54,7 @@ struct WireInput {
 
 
 	std::string _label;
-	TTypeSignature _type;
+	TTypeSignatureString _type;
 	WireOutput* _connectedTo = nullptr;
 };
 
@@ -86,7 +86,7 @@ struct WireOutput {
 
 //	An actual concrete pin in the simulation.
 struct OutputPinPart {
-	OutputPinPart(const TTypeSignature& type, const std::string& label) :
+	OutputPinPart(const TTypeSignatureString& type, const std::string& label) :
 		_label(label),
 		_output(this),
 		_input(type, label)
@@ -105,7 +105,7 @@ struct OutputPinPart {
 
 
 struct InputPinPart {
-	InputPinPart(const TTypeSignature& type, const std::string& label) :
+	InputPinPart(const TTypeSignatureString& type, const std::string& label) :
 		_label(label),
 		_output(this),
 		_input(type, label)
@@ -118,8 +118,8 @@ struct InputPinPart {
 };
 
 
-std::shared_ptr<InputPinPart> MakeInputPin(const TTypeSignature& type, const std::string& label);
-std::shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignature& type, const std::string& label);
+std::shared_ptr<InputPinPart> MakeInputPin(const TTypeSignatureString& type, const std::string& label);
+std::shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignatureString& type, const std::string& label);
 
 
 

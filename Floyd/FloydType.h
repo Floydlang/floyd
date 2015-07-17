@@ -16,15 +16,16 @@
 #include <unordered_map>
 
 struct FloydDT;
-struct TCompositeDef;
 struct TCompositeValue;
 struct FloydBasicRuntime;
+struct TStaticCompositeType;
 
 
 
 //	This is the normalized order of the types.
 enum FloydDTType {
 	kNull = 1,
+//	kBool,
 	kFloat,
 	kString,
 	kFunction,
@@ -39,6 +40,98 @@ enum FloydDTType {
 */
 
 };
+
+
+
+
+/////////////////////////////////////////		Type Signatures
+
+
+
+/*
+
+	"<null>"										null
+//	"<bool>"										bool
+	"<float>"										float
+	"<string>"										string
+
+	"<float>(<string>, <float>)"					function returning float, with string and float arguments
+
+	"{ <string> a, <string> b, <float> c }"			composite with three NAMED members.
+
+	"<string>[]"									seq with strings. No key.
+
+	"<float>[<int>]"								ordered with floats, array access using int.
+
+	"<float>{<int>}"								unordered with floats, keyed on ints.
+	"<float>{<string>}"								unordered with floats, keyed on strings.
+
+	"{ <float>, <int>, <string> }"					tuple with float, int, string. Always access with index.
+
+	"<float>/<int>/<string>"						tagged union.
+*/
+
+
+
+
+
+struct TTypeSignatureString {
+	TTypeSignatureString(){
+	}
+	explicit TTypeSignatureString(const std::string& s) :
+		_s(s)
+	{
+	}
+	TTypeSignatureString(const TTypeSignatureString& other)=default;
+
+	bool CheckInvariant() const {
+		ASSERT(!_s.empty());
+		return true;
+	}
+
+	std::string _s;
+};
+
+//	### use hash of string for speed.
+
+
+
+
+//	Input string must be wellformed, normalized format.
+TTypeSignatureString MakeSignature(const std::string& s);
+
+
+
+struct TFunctionSignature {
+	TTypeSignatureString _returnType;
+	std::vector<std::pair<std::string, TTypeSignatureString>> _args;
+};
+
+std::vector<TFunctionSignature> UnpackFunctionSignature(const TTypeSignatureString& s);
+
+
+struct TTypeSignatureSpec {
+	TTypeSignatureSpec(FloydDTType type) :
+		_type(type)
+	{
+	}
+
+
+	FloydDTType _type = FloydDTType::kNull;
+	
+	std::vector<TTypeSignatureString> _more;
+};
+
+
+TTypeSignatureSpec TypeSignatureFromString(const TTypeSignatureString& s);
+
+
+
+
+
+
+
+
 
 
 
@@ -59,40 +152,6 @@ enum FloydDTType {
 
 
 //### Allow member names to be part of composite's signature? I think no.
-
-
-
-struct TTypeSignature {
-	TTypeSignature(){
-	}
-	TTypeSignature(const std::string& s) :
-		_s(s)
-	{
-	}
-	TTypeSignature(const TTypeSignature& other)=default;
-
-	std::string _s;
-};
-
-struct TTypeSignatureHash {
-	uint32_t _hash;
-};
-
-
-
-//	Input string must be wellformed, normalized format.
-TTypeSignature MakeSignature(const std::string& s);
-
-TTypeSignatureHash HashSignature(const TTypeSignature& s);
-
-
-struct TFunctionSignature {
-	TTypeSignature _returnType;
-	std::vector<std::pair<std::string, TTypeSignature>> _args;
-};
-
-std::vector<TFunctionSignature> UnpackFunctionSignature(const TTypeSignature& s);
-
 
 
 
@@ -403,84 +462,87 @@ struct FloydDT {
 
 
 
-/////////////////////////////////////////		Composite
+
+/////////////////////////////////////////		TCompositeValue
+
+
 
 
 struct TCompositeValue {
-	TCompositeDef* _def;
+	TStaticCompositeType* _type;
 
 	//	Vector with all members, keyed on memeber name string.
 	std::vector<std::pair<std::string, FloydDT> > _members;
 };
 
 
-struct TCompositeDef {
-//	TCompositeDef()=default;
-//	TCompositeDef(const TCompositeDef&)=default;
+
+
+
+/////////////////////////////////////////		TStaticCompositeType
+
 
 /*
-	TCompositeDef(const TTypeSignature& signature, const FloydDT& checkInvariant) :
-		_signature(signature),
-		_checkInvariant(checkInvariant)
-	{
-	}
+	Completely describes a type of composite. The type needs to be defined before program is run.
 */
 
-	TTypeSignature _signature;
-//	std::vector<std::pair<std::string, FloydDT> > _members;
+struct TStaticCompositeType {
+
+	//	Use 32-bit hash of signature string instead.
+	int _id;
+
+	//	Contains types and names of all members.
+	TTypeSignatureString _signature;
 
 	FloydDT _checkInvariant;
 };
 
-struct TCompositeDefs {
-	public: int DefineComposite(const TCompositeDef& def){
-		const int id = _idGenerator++;
 
-		const auto a = std::pair<int, TCompositeDef>(id, def);
-		_defs[def._signature._s] = a;
-		return id;
+
+
+
+/////////////////////////////////////////		TStaticCompositeType
+
+
+/*
+	Tracks all static information, like types and typedefs etc.
+	Must exist before you can run simulation.
+*/
+
+
+//### Rename to "Runtime". The other object shold be called "Model".
+struct FloydBasicRuntime {
+	public: FloydBasicRuntime();
+	public: bool CheckInvariant() const;
+
+	public: int DefineComposite(const std::string& signature, const FloydDT& checkInvariant);
+
+
+	public: int SignatureToID(const TTypeSignatureString& s){
+		const auto it = _staticCompositeTypes.find(s._s);
+		return it == _staticCompositeTypes.end() ? -1 : it->second->_id;
 	}
 
-	public: int SignatureToID(const TTypeSignature& s){
-		const auto it = _defs.find(s._s);
-		return it == _defs.end() ? -1 : it->second.first;
-	}
-
-	public: const TCompositeDef* LookupID(int id) const{
-		for(const auto it: _defs){
-			if(it.second.first == id){
-				return &it.second.second;
+	public: const std::shared_ptr<TStaticCompositeType> LookupID(int id) const{
+		for(const auto it: _staticCompositeTypes){
+			if(it.second->_id == id){
+				return it.second;
 			}
 		}
 		return nullptr;
 	}
 
+
+
+	////////////////////////////		State
+
 	//	### faster to key on ID.
-	std::unordered_map<std::string, std::pair<int, TCompositeDef> > _defs;
+	std::unordered_map<std::string, std::shared_ptr<TStaticCompositeType> > _staticCompositeTypes;
 	int _idGenerator = 0;
 };
 
 
-//??? Invariant-check must be part of composite signature too!
-//		"{ <string>, <string>, <float> }"			composite with three unnamed members.
 
-
-
-
-//	Returns the members of a composite.
-std::vector<TTypeSignature> UnpackCompositeSignature(const TTypeSignature& s);
-
-
-
-
-//### Rename to "Runtime". The other object shold be called "Model".
-struct FloydBasicRuntime {
-
-	public: int DefineComposite(const std::string& signature, const FloydDT& checkInvariant);
-
-
-	TCompositeDefs _compositeDefs;
-};
 
 
 
@@ -489,7 +551,11 @@ FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID);
 
 
 
+
+
+
 /////////////////////////////////////////		Functions
+
 
 
 

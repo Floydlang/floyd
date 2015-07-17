@@ -200,13 +200,13 @@ FloydDT GetValue(const WireOutput& output){
 
 
 
-shared_ptr<InputPinPart> MakeInputPin(const TTypeSignature& type, const string& label){
+shared_ptr<InputPinPart> MakeInputPin(const TTypeSignatureString& type, const string& label){
 	auto result = shared_ptr<InputPinPart>(new InputPinPart(type, label));
 	result->_label = label;
 	return result;
 }
 
-shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignature& type, const string& label){
+shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignatureString& type, const string& label){
 	auto result = shared_ptr<OutputPinPart>(new OutputPinPart(type, label));
 	result->_label = label;
 //	result->_output._ownerOutputPinPart = result.get();
@@ -287,13 +287,13 @@ namespace {
 	FloydDT MakeFunction1(){
 		TFunctionSignature signature;
 		signature._args.push_back(
-			pair<string, TTypeSignature>("a", MakeSignature("<float>"))
+			pair<string, TTypeSignatureString>("a", MakeSignature("<float>"))
 		);
 		signature._args.push_back(
-			pair<string, TTypeSignature>("b", MakeSignature("<float>"))
+			pair<string, TTypeSignatureString>("b", MakeSignature("<float>"))
 		);
 		signature._args.push_back(
-			pair<string, TTypeSignature>("s", MakeSignature("<string>"))
+			pair<string, TTypeSignatureString>("s", MakeSignature("<string>"))
 		);
 
 		signature._returnType = MakeSignature("<float>");

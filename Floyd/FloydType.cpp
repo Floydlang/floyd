@@ -18,6 +18,7 @@ using namespace std;
 
 
 namespace {
+
 	bool IsWellformedFunction(const std::string& s){
 		if(s.length() > std::string("<>()").length()){
 			return true;
@@ -51,17 +52,17 @@ namespace {
 			return false;
 		}
 	}
+
 }
 
 
-TTypeSignature MakeSignature(const std::string& s){
+TTypeSignatureString MakeSignature(const std::string& s){
 	ASSERT(IsWellformedSignatureString(s));
 
-	TTypeSignature result;
-	result._s = s;
-	return result;
+	return TTypeSignatureString(s);
 }
 
+/*
 TTypeSignatureHash HashSignature(const TTypeSignature& s){
 	uint32_t badHash = 1234;
 
@@ -72,12 +73,51 @@ TTypeSignatureHash HashSignature(const TTypeSignature& s){
 	result._hash = badHash;
 	return result;
 }
-
-
-/*
-std::vector<TTypeSignature> UnpackCompositeSignature(const TTypeSignature& s){
-}
 */
+
+
+
+namespace {
+
+/*	std::pair<std::string, std::string> GetTypeToken(const std::string s){
+		
+	}
+*/
+
+}
+
+
+TTypeSignatureSpec TypeSignatureFromString(const TTypeSignatureString& s){
+	ASSERT(s.CheckInvariant());
+
+	const auto s2 = s._s;
+	if(s2 == "<null>"){
+		return TTypeSignatureSpec(FloydDTType::kNull);
+	}
+	else if(s2 == "<float>"){
+		return TTypeSignatureSpec(FloydDTType::kFloat);
+	}
+	else if(s2 == "<string>"){
+		return TTypeSignatureSpec(FloydDTType::kString);
+	}
+	else{
+		if(s2[0] == '<'){
+		}
+	}
+	return TTypeSignatureSpec(FloydDTType::kNull);
+}
+
+
+
+
+UNIT_TEST("", "TypeSignatureFromString", "<null>", "kNull"){
+	const auto a = TypeSignatureFromString(TTypeSignatureString("<null>"));
+	UT_VERIFY(a._type == FloydDTType::kNull);
+	UT_VERIFY(a._more.empty());
+}
+
+
+
 
 
 
@@ -309,13 +349,13 @@ namespace {
 	FloydDT MakeFunction1(){
 		TFunctionSignature signature;
 		signature._args.push_back(
-			std::pair<std::string, TTypeSignature>("a", MakeSignature("<float>"))
+			std::pair<std::string, TTypeSignatureString>("a", MakeSignature("<float>"))
 		);
 		signature._args.push_back(
-			std::pair<std::string, TTypeSignature>("b", MakeSignature("<float>"))
+			std::pair<std::string, TTypeSignatureString>("b", MakeSignature("<float>"))
 		);
 		signature._args.push_back(
-			std::pair<std::string, TTypeSignature>("s", MakeSignature("<string>"))
+			std::pair<std::string, TTypeSignatureString>("s", MakeSignature("<string>"))
 		);
 
 		signature._returnType = MakeSignature("<float>");
@@ -334,7 +374,7 @@ namespace {
 		TFunctionSignature signature;
 		signature._returnType = MakeSignature("<float>");
 		signature._args.push_back(
-			std::pair<std::string, TTypeSignature>("a", MakeSignature("<float>"))
+			std::pair<std::string, TTypeSignatureString>("a", MakeSignature("<float>"))
 		);
 		def._functionPtr = ExampleFunction1_Glue;
 		def._signature = signature;
@@ -363,24 +403,17 @@ namespace {
 
 
 
-#if false
-UNIT_TEST("FloydDT", "Composite", "BasicUsage", ""){
-	TCompositeDefs compositeDefs;
-
-	const TTypeSignature signature("{ <string>, <string> }");
-	TCompositeDef def;
-	def._signature = signature;
-	def._checkInvariant = MakeNull();
-	const int kNoteCompositeID = compositeDefs.DefineComposite(def);
-
-	FloydBasicRuntime runtime;
-	const auto a = MakeComposite(runtime, kNoteCompositeID);
+#if true
+UNIT_TEST("FloydBasicRuntime", "Composite", "BasicUsage", ""){
+	FloydBasicRuntime basic;
+	const int kNoteCompositeID = basic.DefineComposite("{ <string>, <string> }", MakeNull());
+	const auto a = MakeComposite(basic, kNoteCompositeID);
 }
 #endif
 
 
 FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID){
-	const TCompositeDef* def = runtime._compositeDefs.LookupID(compositeTypeID);
+	const auto def = runtime.LookupID(compositeTypeID);
 	ASSERT(def != nullptr);
 
 	auto c = shared_ptr<TCompositeValue>(new TCompositeValue);
@@ -398,12 +431,33 @@ FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID){
 
 
 
+/////////////////////////////////////////		FloydBasicRuntime
+
+
+
+FloydBasicRuntime::FloydBasicRuntime(){
+	ASSERT(CheckInvariant());
+}
+
+bool FloydBasicRuntime::CheckInvariant() const{
+	return true;
+}
+
+
 int FloydBasicRuntime::DefineComposite(const std::string& signature, const FloydDT& checkInvariant){
-	const TTypeSignature s(signature);
-	TCompositeDef def;
-	def._signature = s;
-	def._checkInvariant = checkInvariant;
-	const int id = _compositeDefs.DefineComposite(def);
+	ASSERT(CheckInvariant());
+
+	const TTypeSignatureString s(signature);
+	const int id = _idGenerator++;
+
+	auto b = std::shared_ptr<TStaticCompositeType>(new TStaticCompositeType());
+	b->_id = id;
+	b->_signature = TTypeSignatureString(signature);
+	b->_checkInvariant = checkInvariant;
+	_staticCompositeTypes[b->_signature._s] = b;
+
+	ASSERT(CheckInvariant());
+
 	return id;
 }
 

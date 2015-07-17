@@ -34,8 +34,16 @@ namespace {
 		
 	}
 
+
 }
 
+
+UNIT_TEST("MockupOptimizedCPP", "MockupOptimizedCPP()", "", ""){
+	TMyComposite c;
+	c.oscillator = 5.0f;
+	const auto a = MockupOptimizedCPP(3.0f, 4.0f, c);
+//	UT_VERIFY(a.count == 30.0f);
+}
 
 
 
