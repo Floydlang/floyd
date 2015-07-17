@@ -363,9 +363,53 @@ namespace {
 
 
 
+#if false
+UNIT_TEST("FloydDT", "Composite", "BasicUsage", ""){
+	TCompositeDefs compositeDefs;
+
+	const TTypeSignature signature("{ <string>, <string> }");
+	TCompositeDef def;
+	def._signature = signature;
+	def._checkInvariant = MakeNull();
+	const int kNoteCompositeID = compositeDefs.DefineComposite(def);
+
+	FloydBasicRuntime runtime;
+	const auto a = MakeComposite(runtime, kNoteCompositeID);
+}
+#endif
+
+
+FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID){
+	const TCompositeDef* def = runtime._compositeDefs.LookupID(compositeTypeID);
+	ASSERT(def != nullptr);
+
+	auto c = shared_ptr<TCompositeValue>(new TCompositeValue);
+//	c->_def = def;
+//???
+//	for(const auto m: def->_)
+//	c->_members.
+
+	FloydDT result;
+	result._type = FloydDTType::kComposite;
+	result._asComposite = c;
+	return result;
+
+}
+
+
+
+int FloydBasicRuntime::DefineComposite(const std::string& signature, const FloydDT& checkInvariant){
+	const TTypeSignature s(signature);
+	TCompositeDef def;
+	def._signature = s;
+	def._checkInvariant = checkInvariant;
+	const int id = _compositeDefs.DefineComposite(def);
+	return id;
+}
 
 
 /////////////////////////////////////////		Test TSeq
+
 
 
 

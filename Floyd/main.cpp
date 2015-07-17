@@ -94,36 +94,6 @@ UNIT_TEST("Example2","", "", ""){
 	ASSERT(tableRef["b"].GetInt() == 5000);
 }
 
-
-
-#if false
-int main(int /*argc*/, const char * /*argv*/[]){
-	std::cout << "Start tests!\n";
-
-	try{
-		RunExperiments();
-		test();
-
-
-		TestBasicTypes();
-		TestProgram();
-
-		Example1();
-		Example2();
-
-		std::cout << "Success!\n";
-	}
-	catch(...){
-		std::cout << "Failure!\n";
-		return -1;
-	}
-
-    return 0;
-}
-#endif
-
-
-
 int main(int /*argc*/, const char* /*argv*/[]){
 	TDefaultRuntime runtime("");
 	SetRuntime(&runtime);

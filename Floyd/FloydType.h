@@ -15,9 +15,10 @@
 #include <memory>
 #include <unordered_map>
 
-struct TComposite;
 struct FloydDT;
-
+struct TCompositeDef;
+struct TCompositeValue;
+struct FloydBasicRuntime;
 
 
 
@@ -26,10 +27,10 @@ enum FloydDTType {
 	kNull = 1,
 	kFloat,
 	kString,
-	kFunction
+	kFunction,
+	kComposite
 
 /*
-	Composite
 	Exception
 
 	Seq
@@ -62,6 +63,14 @@ enum FloydDTType {
 
 
 struct TTypeSignature {
+	TTypeSignature(){
+	}
+	TTypeSignature(const std::string& s) :
+		_s(s)
+	{
+	}
+	TTypeSignature(const TTypeSignature& other)=default;
+
 	std::string _s;
 };
 
@@ -76,9 +85,6 @@ TTypeSignature MakeSignature(const std::string& s);
 
 TTypeSignatureHash HashSignature(const TTypeSignature& s);
 
-//	Returns the members of a composite.
-std::vector<TTypeSignature> UnpackCompositeSignature(const TTypeSignature& s);
-
 
 struct TFunctionSignature {
 	TTypeSignature _returnType;
@@ -87,24 +93,6 @@ struct TFunctionSignature {
 
 std::vector<TFunctionSignature> UnpackFunctionSignature(const TTypeSignature& s);
 
-
-
-
-
-/////////////////////////////////////////		Composite
-
-
-//??? Invariant-check must be part of composite signature too!
-
-
-typedef bool (*CompositeCheckInvariant)(const TComposite& value);
-
-struct TCompositeDef {
-	std::vector<std::pair<std::string, FloydDT> > _members;
-
-	//	### Use FunctionDef instead?
-	CompositeCheckInvariant _checkInvariant;
-};
 
 
 
@@ -396,6 +384,7 @@ struct FloydDT {
 	friend const TFunctionSignature& GetFunctionSignature(const FloydDT& value);
 	friend FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
 
+	friend FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID);
 
 
 	///////////////////		State
@@ -403,7 +392,7 @@ struct FloydDT {
 		private: float _asFloat = 0.0f;
 		private: std::string _asString = "";
 
-		private: std::shared_ptr<TComposite> _asComposite;
+		private: std::shared_ptr<TCompositeValue> _asComposite;
 		private: std::shared_ptr<FunctionDef> _asFunction;
 
 		private: std::shared_ptr<TSeq<FloydDT>> _asSeq;
@@ -412,7 +401,96 @@ struct FloydDT {
 };
 
 
+
+
+/////////////////////////////////////////		Composite
+
+
+struct TCompositeValue {
+	TCompositeDef* _def;
+
+	//	Vector with all members, keyed on memeber name string.
+	std::vector<std::pair<std::string, FloydDT> > _members;
+};
+
+
+struct TCompositeDef {
+//	TCompositeDef()=default;
+//	TCompositeDef(const TCompositeDef&)=default;
+
+/*
+	TCompositeDef(const TTypeSignature& signature, const FloydDT& checkInvariant) :
+		_signature(signature),
+		_checkInvariant(checkInvariant)
+	{
+	}
+*/
+
+	TTypeSignature _signature;
+//	std::vector<std::pair<std::string, FloydDT> > _members;
+
+	FloydDT _checkInvariant;
+};
+
+struct TCompositeDefs {
+	public: int DefineComposite(const TCompositeDef& def){
+		const int id = _idGenerator++;
+
+		const auto a = std::pair<int, TCompositeDef>(id, def);
+		_defs[def._signature._s] = a;
+		return id;
+	}
+
+	public: int SignatureToID(const TTypeSignature& s){
+		const auto it = _defs.find(s._s);
+		return it == _defs.end() ? -1 : it->second.first;
+	}
+
+	public: const TCompositeDef* LookupID(int id) const{
+		for(const auto it: _defs){
+			if(it.second.first == id){
+				return &it.second.second;
+			}
+		}
+		return nullptr;
+	}
+
+	//	### faster to key on ID.
+	std::unordered_map<std::string, std::pair<int, TCompositeDef> > _defs;
+	int _idGenerator = 0;
+};
+
+
+//??? Invariant-check must be part of composite signature too!
+//		"{ <string>, <string>, <float> }"			composite with three unnamed members.
+
+
+
+
+//	Returns the members of a composite.
+std::vector<TTypeSignature> UnpackCompositeSignature(const TTypeSignature& s);
+
+
+
+
+//### Rename to "Runtime". The other object shold be called "Model".
+struct FloydBasicRuntime {
+
+	public: int DefineComposite(const std::string& signature, const FloydDT& checkInvariant);
+
+
+	TCompositeDefs _compositeDefs;
+};
+
+
+
+
+FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID);
+
+
+
 /////////////////////////////////////////		Functions
+
 
 
 FloydDT MakeNull();
@@ -438,8 +516,6 @@ const TFunctionSignature& GetFunctionSignature(const FloydDT& value);
 FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
 
 
-
-FloydDT MakeComposite(const TCompositeDef& c);
 
 
 FloydDT MakeSeq();

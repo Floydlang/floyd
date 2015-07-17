@@ -363,6 +363,10 @@ namespace {
 
 }
 
+UNIT_TEST("Runtime", "", "", ""){
+}
+
+
 
 #if false
 /////////////////////////////////////////		Test scenario 1
