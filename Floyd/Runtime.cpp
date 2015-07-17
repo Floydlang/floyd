@@ -128,8 +128,9 @@ shared_ptr<FunctionPart> MakeFunctionPart(const FloydDT& f){
 	result->_function = f;
 //	result->_output._ownerFunctionPart = result.get();
 	const auto signature = GetFunctionSignature(f);
-	for(auto i: signature._args){
-		auto input = WireInput(i.second, i.first);
+	for(auto i = 1 ; i < signature._more.size() ; i++){
+		const auto a = signature._more[i];
+		auto input = WireInput(a.second, a.first);
 		result->_inputs.push_back(input);
 	}
 	return result;
@@ -200,13 +201,13 @@ FloydDT GetValue(const WireOutput& output){
 
 
 
-shared_ptr<InputPinPart> MakeInputPin(const TTypeSignatureString& type, const string& label){
+shared_ptr<InputPinPart> MakeInputPin(const TValueType& type, const string& label){
 	auto result = shared_ptr<InputPinPart>(new InputPinPart(type, label));
 	result->_label = label;
 	return result;
 }
 
-shared_ptr<OutputPinPart> MakeOutputPin(const TTypeSignatureString& type, const string& label){
+shared_ptr<OutputPinPart> MakeOutputPin(const TValueType& type, const string& label){
 	auto result = shared_ptr<OutputPinPart>(new OutputPinPart(type, label));
 	result->_label = label;
 //	result->_output._ownerOutputPinPart = result.get();
@@ -285,22 +286,15 @@ namespace {
 
 
 	FloydDT MakeFunction1(){
-		TFunctionSignature signature;
-		signature._args.push_back(
-			pair<string, TTypeSignatureString>("a", MakeSignature("<float>"))
-		);
-		signature._args.push_back(
-			pair<string, TTypeSignatureString>("b", MakeSignature("<float>"))
-		);
-		signature._args.push_back(
-			pair<string, TTypeSignatureString>("s", MakeSignature("<string>"))
-		);
-
-		signature._returnType = MakeSignature("<float>");
+		TTypeDefinition typeDef(FloydDTType::kFunction);
+		typeDef._more.push_back(std::pair<std::string, TValueType>("", FloydDTType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("a", FloydDTType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("b", FloydDTType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("s", FloydDTType::kString));
 
 		FunctionDef def;
 		def._functionPtr = ExampleFunction1_Glue;
-		def._signature = signature;
+		def._signature = typeDef;
 
 		const FloydDT result = MakeFunction(def);
 		return result;
@@ -322,10 +316,10 @@ namespace {
 		auto r = MakeRuntime(kTest2);
 
 		//	Create all external pins.
-		r->_inputPins["a"] = MakeInputPin(MakeSignature("<float>"), "a");
-		r->_inputPins["b"] = MakeInputPin(MakeSignature("<float>"), "b");
-		r->_inputPins["s"] = MakeInputPin(MakeSignature("<string>"), "s");
-		r->_outputPins["result"] = MakeOutputPin(MakeSignature("<float>"), "result");
+		r->_inputPins["a"] = MakeInputPin(TValueType(FloydDTType::kFloat), "a");
+		r->_inputPins["b"] = MakeInputPin(TValueType(FloydDTType::kFloat), "b");
+		r->_inputPins["s"] = MakeInputPin(TValueType(FloydDTType::kString), "s");
+		r->_outputPins["result"] = MakeOutputPin(TValueType(FloydDTType::kFloat), "result");
 		r->_functionParts["f1"] = MakeFunctionPart(MakeFunction1());
 
 		//	Connect all internal wires.

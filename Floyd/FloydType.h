@@ -16,6 +16,7 @@
 #include <unordered_map>
 
 struct FloydDT;
+struct TValueType;
 struct TCompositeValue;
 struct FloydBasicRuntime;
 struct TStaticCompositeType;
@@ -73,63 +74,21 @@ enum FloydDTType {
 
 
 
-
-
-struct TTypeSignatureString {
-	TTypeSignatureString(){
-	}
-	explicit TTypeSignatureString(const std::string& s) :
-		_s(s)
-	{
-	}
-	TTypeSignatureString(const TTypeSignatureString& other)=default;
-
-	bool CheckInvariant() const {
-		ASSERT(!_s.empty());
-		return true;
+struct TTypeDefinition {
+	TTypeDefinition(){
 	}
 
-	std::string _s;
-};
-
-//	### use hash of string for speed.
-
-
-
-
-//	Input string must be wellformed, normalized format.
-TTypeSignatureString MakeSignature(const std::string& s);
-
-
-
-struct TFunctionSignature {
-	TTypeSignatureString _returnType;
-	std::vector<std::pair<std::string, TTypeSignatureString>> _args;
-};
-
-std::vector<TFunctionSignature> UnpackFunctionSignature(const TTypeSignatureString& s);
-
-
-struct TTypeSignatureSpec {
-	TTypeSignatureSpec(FloydDTType type) :
+	TTypeDefinition(FloydDTType type) :
 		_type(type)
 	{
 	}
 
 
 	FloydDTType _type = FloydDTType::kNull;
-	
-	std::vector<TTypeSignatureString> _more;
+
+	//	Pairs of member-name + member-type.
+	std::vector<std::pair<std::string, TValueType> > _more;
 };
-
-
-TTypeSignatureSpec TypeSignatureFromString(const TTypeSignatureString& s);
-
-
-
-
-
-
 
 
 
@@ -169,8 +128,9 @@ typedef FloydDT (*CFunctionPtr)(const FloydDT args[], std::size_t argCount);
 //		FloydType
 //	### Make optimized calling signatures with different sets of C arguments.
 
+
 struct FunctionDef {
-	TFunctionSignature _signature;
+	TTypeDefinition _signature;
 	CFunctionPtr _functionPtr;
 };
 
@@ -421,6 +381,9 @@ template <typename K, typename V> class TUnordered {
 
 struct FloydDT {
 	public: bool CheckInvariant() const;
+	public: FloydDTType GetType() const{
+		return _type;
+	}
 	public: std::string GetTypeString() const;
 
 
@@ -440,10 +403,10 @@ struct FloydDT {
 	friend FloydDT MakeFunction(const FunctionDef& f);
 	friend bool IsFunction(const FloydDT& value);
 	friend CFunctionPtr GetFunction(const FloydDT& value);
-	friend const TFunctionSignature& GetFunctionSignature(const FloydDT& value);
+	friend const TTypeDefinition& GetFunctionSignature(const FloydDT& value);
 	friend FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
 
-	friend FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID);
+	friend FloydDT MakeComposite(const FloydBasicRuntime& runtime, const TValueType& type);
 
 
 	///////////////////		State
@@ -492,9 +455,33 @@ struct TStaticCompositeType {
 	int _id;
 
 	//	Contains types and names of all members.
-	TTypeSignatureString _signature;
+	TTypeDefinition _signature;
 
 	FloydDT _checkInvariant;
+};
+
+
+
+
+
+/////////////////////////////////////////		TValueType
+
+/*
+	Specifies the exact type of a value, even custom types.
+*/
+
+struct TValueType {
+	TValueType(){
+	}
+
+	TValueType(FloydDTType basicType) :
+		_type(basicType)
+	{
+	}
+
+
+	FloydDTType _type = FloydDTType::kNull;
+	int _customTypeID = -1;
 };
 
 
@@ -515,17 +502,22 @@ struct FloydBasicRuntime {
 	public: FloydBasicRuntime();
 	public: bool CheckInvariant() const;
 
-	public: int DefineComposite(const std::string& signature, const FloydDT& checkInvariant);
+	public: TValueType DefineComposite(const std::string& signature, const TTypeDefinition& type, const FloydDT& checkInvariant);
 
-
-	public: int SignatureToID(const TTypeSignatureString& s){
-		const auto it = _staticCompositeTypes.find(s._s);
-		return it == _staticCompositeTypes.end() ? -1 : it->second->_id;
+#if false
+	public: int SignatureToID(const TTypeSignatureSpec& s){
+//		const auto it = _staticCompositeTypes.find(s._s);
+//		return it == _staticCompositeTypes.end() ? -1 : it->second->_id;
+return 666;
 	}
+#endif
 
-	public: const std::shared_ptr<TStaticCompositeType> LookupID(int id) const{
+
+	public: const std::shared_ptr<TStaticCompositeType> LookupCompositeType(const TValueType& type) const{
+		ASSERT(type._type == FloydDTType::kComposite);
+
 		for(const auto it: _staticCompositeTypes){
-			if(it.second->_id == id){
+			if(it.second->_id == type._customTypeID){
 				return it.second;
 			}
 		}
@@ -547,7 +539,7 @@ struct FloydBasicRuntime {
 
 
 
-FloydDT MakeComposite(const FloydBasicRuntime& runtime, int compositeTypeID);
+FloydDT MakeComposite(const FloydBasicRuntime& runtime, const TValueType& type);
 
 
 
@@ -576,7 +568,7 @@ std::string GetString(const FloydDT& value);
 FloydDT MakeFunction(const FunctionDef& f);
 bool IsFunction(const FloydDT& value);
 CFunctionPtr GetFunction(const FloydDT& value);
-const TFunctionSignature& GetFunctionSignature(const FloydDT& value);
+const TTypeDefinition& GetFunctionSignature(const FloydDT& value);
 
 //	Arguments must match those of the function or assert.
 FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
