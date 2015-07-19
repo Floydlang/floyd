@@ -9,7 +9,7 @@
 #include "cpp_extension.h"
 #include "Experiments.h"
 
-#include "FloydType.h"
+#include "Runtime.h"
 
 namespace {
 
@@ -42,7 +42,7 @@ UNIT_TEST("MockupOptimizedCPP", "MockupOptimizedCPP()", "", ""){
 	TMyComposite c;
 	c.oscillator = 5.0f;
 	const auto a = MockupOptimizedCPP(3.0f, 4.0f, c);
-//	UT_VERIFY(a.count == 30.0f);
+	UT_VERIFY(a.count != 3.1415f);
 }
 
 
