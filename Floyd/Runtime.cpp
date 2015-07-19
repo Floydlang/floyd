@@ -187,10 +187,16 @@ bool Floyd::Value::CheckInvariant() const{
 		ASSERT(_asFloat == 0.0f);
 		ASSERT(_asString == "");
 		ASSERT(_asFunction.get() != nullptr);
-//		ASSERT(_asFunction->_signature == 3);
-		ASSERT(_asFunction->_functionPtr != nullptr);
+		ASSERT(_asFunction->_type != nullptr);
 
 		ASSERT(_asComposite.get() == nullptr);
+	}
+	else if(_type == EType::kComposite){
+		ASSERT(_asFloat == 0.0f);
+		ASSERT(_asString == "");
+		ASSERT(_asFunction.get() == nullptr);
+		ASSERT(_asComposite.get() != nullptr);
+		ASSERT(_asComposite->_type != nullptr);
 	}
 	else{
 		ASSERT(false);
@@ -292,10 +298,18 @@ std::string Floyd::GetString(const Value& value){
 
 
 
-Floyd::Value Floyd::MakeFunction(const FunctionDef& f){
+Floyd::Value Floyd::MakeFunction(const Runtime& runtime, const TValueType& type){
+	ASSERT(runtime.CheckInvariant());
+	ASSERT(type.CheckInvariant());
+	ASSERT(type._type == EType::kFunction);
+
+	const auto t = runtime.LookupFunctionType(type);
+	auto v = std::shared_ptr<TFunctionValue>(new TFunctionValue());
+	v->_type = t;
+
 	Value result;
 	result._type = EType::kFunction;
-	result._asFunction = std::shared_ptr<FunctionDef>(new FunctionDef(f));
+	result._asFunction = v;
 
 	ASSERT(result.CheckInvariant());
 	return result;
@@ -312,14 +326,14 @@ Floyd::CFunctionPtr Floyd::GetFunction(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsFunction(value));
 
-	return value._asFunction->_functionPtr;
+	return value._asFunction->_type->_f;
 }
 
 const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsFunction(value));
 
-	return value._asFunction->_signature;
+	return value._asFunction->_type->_signature;
 }
 
 Floyd::Value Floyd::CallFunction(const Value& value, const std::vector<Value>& args){
@@ -331,7 +345,7 @@ Floyd::Value Floyd::CallFunction(const Value& value, const std::vector<Value>& a
 	ASSERT(args.size() == value._asFunction->_signature._more.size() - 1);
 #endif
 
-	const TTypeDefinition& functionTypeSignature = value._asFunction->_signature;
+	const TTypeDefinition& functionTypeSignature = value._asFunction->_type->_signature;
 
 	std::vector<Value> argValues;
 	int index = 0;
@@ -349,7 +363,7 @@ Floyd::Value Floyd::CallFunction(const Value& value, const std::vector<Value>& a
 	// check that types match!
 
 	Value dummy[1];
-	Value functionResult = value._asFunction->_functionPtr(
+	Value functionResult = value._asFunction->_type->_f(
 		argValues.empty() ? &dummy[0] : argValues.data(),
 		argValues.size()
 	);
@@ -362,25 +376,163 @@ Floyd::Value Floyd::CallFunction(const Value& value, const std::vector<Value>& a
 
 
 
-
-
+Floyd::Value Floyd::MakeDefaultValue(const Floyd::TValueType& type){
+	if(type._type == EType::kNull){
+		return MakeNull();
+	}
+	else if(type._type == EType::kFloat){
+		return MakeFloat(0.0f);
+	}
+	else if(type._type == EType::kString){
+		return MakeString("");
+	}
+	else{
+		ASSERT(false);
+	}
+}
 
 Floyd::Value Floyd::MakeComposite(const Runtime& runtime, const TValueType& type){
-	const auto def = runtime.LookupCompositeType(type);
-	ASSERT(def != nullptr);
+	ASSERT(runtime.CheckInvariant());
+	ASSERT(type.CheckInvariant());
+	ASSERT(type._type == EType::kComposite);
 
-	auto c = shared_ptr<TCompositeValue>(new TCompositeValue);
-//	c->_def = def;
-//???
-//	for(const auto m: def->_)
-//	c->_members.
+	const auto t = runtime.LookupCompositeType(type);
+	auto v = std::shared_ptr<TCompositeValue>(new TCompositeValue());
+	v->_type = t;
+	for(const auto it: t->_signature._more){
+		const auto& memberType = it.second;
+		const Value defaultValue = MakeDefaultValue(memberType);
+		v->_memberValues.push_back(
+			std::pair<string, Value>(it.first, defaultValue)
+		);
+	}
 
 	Value result;
 	result._type = EType::kComposite;
-	result._asComposite = c;
-	return result;
+	result._asComposite = v;
 
+	ASSERT(result.CheckInvariant());
+	return result;
 }
+
+bool Floyd::IsComposite(const Value& value){
+	ASSERT(value.CheckInvariant());
+
+	return value._type == Floyd::kComposite;
+}
+
+const Floyd::Value& Floyd::GetCompositeMember(const Value& composite, const std::string& member){
+	ASSERT(IsComposite(composite));
+	ASSERT(!member.empty());
+
+std::shared_ptr<const TCompositeValue> temp = composite._asComposite;
+/*
+composite._asComposite->_memberValues[0].first = "x";
+*/
+
+	for(const auto& it: composite._asComposite->_memberValues){
+		if(it.first == member){
+			return it.second;
+		}
+	}
+
+	//	Unknown member.
+	throw std::runtime_error("");
+}
+
+const Floyd::Value Floyd::Assoc(const Value& composite, const std::string& member, const Value& newValue){
+	ASSERT(IsComposite(composite));
+	ASSERT(!member.empty());
+	ASSERT(newValue.CheckInvariant());
+
+	auto v = shared_ptr<TCompositeValue>(new TCompositeValue());
+	{
+		v->_type = composite._asComposite->_type;
+		v->_memberValues = composite._asComposite->_memberValues;
+
+		auto it = v->_memberValues.begin();
+		while(it != v->_memberValues.end() && it->first != member){
+			it++;
+		}
+		if(it == v->_memberValues.end()){
+			//	Unknown member.
+			throw std::runtime_error("");
+		}
+		it->second = newValue;
+	}
+
+	Value result;
+	result._type = EType::kComposite;
+	result._asComposite = v;
+
+	ASSERT(result.CheckInvariant());
+	return result;
+}
+
+
+namespace {
+
+	Floyd::TValueType DefineNoteComposite(Floyd::Runtime& runtime){
+		using namespace Floyd;
+		auto type = TTypeDefinition(EType::kComposite);
+		type._more.push_back(std::pair<std::string, TValueType>("note_number", EType::kFloat));
+		type._more.push_back(std::pair<std::string, TValueType>("velocity", EType::kFloat));
+		const TValueType result = runtime.DefineComposite(type, MakeNull());
+		return result;
+	}
+}
+
+
+
+UNIT_TEST("Runtime", "Composite", "BasicUsage", ""){
+	using namespace Floyd;
+	Runtime runtime;
+
+	auto type = TTypeDefinition(EType::kComposite);
+	type._more.push_back(std::pair<std::string, TValueType>("note_number", EType::kString));
+	type._more.push_back(std::pair<std::string, TValueType>("velocity", EType::kString));
+
+	const TValueType kNoteCompositeType = runtime.DefineComposite(type, MakeNull());
+	const auto a = MakeComposite(runtime, kNoteCompositeType);
+
+	UT_VERIFY(IsComposite(a));
+}
+
+UNIT_TEST("Composite", "GetCompositeMember", "Composite with two floats", "Has correct members"){
+	using namespace Floyd;
+	Runtime runtime;
+
+	const auto noteType = DefineNoteComposite(runtime);
+	const Value c = MakeComposite(runtime, noteType);
+
+	const Value noteNumber = GetCompositeMember(c, "note_number");
+	const Value velocity = GetCompositeMember(c, "velocity");
+
+	UT_VERIFY(GetFloat(noteNumber) == 0.0f);
+	UT_VERIFY(GetFloat(velocity) == 0.0f);
+}
+
+
+UNIT_TEST("Composite", "Assoc", "Replace member", "Read back cahange"){
+	using namespace Floyd;
+	Runtime runtime;
+
+	const auto noteType = DefineNoteComposite(runtime);
+	const Value c0 = MakeComposite(runtime, noteType);
+
+	UT_VERIFY(GetFloat(GetCompositeMember(c0, "note_number")) == 0.0f);
+	UT_VERIFY(GetFloat(GetCompositeMember(c0, "velocity")) == 0.0f);
+
+	const Value c1 = Assoc(c0, "note_number", MakeFloat(3.14f));
+
+	UT_VERIFY(GetFloat(GetCompositeMember(c0, "note_number")) == 0.0f);
+	UT_VERIFY(GetFloat(GetCompositeMember(c0, "velocity")) == 0.0f);
+	UT_VERIFY(GetFloat(GetCompositeMember(c1, "note_number")) == 3.14f);
+	UT_VERIFY(GetFloat(GetCompositeMember(c1, "velocity")) == 0.0f);
+}
+
+
+
 
 
 
@@ -397,17 +549,53 @@ bool Floyd::Runtime::CheckInvariant() const{
 }
 
 
-Floyd::TValueType Floyd::Runtime::DefineComposite(const std::string& signature, const TTypeDefinition& type, const Value& checkInvariant){
+//??? Check for duplicates.
+Floyd::TValueType Floyd::Runtime::DefineFunction(const TTypeDefinition& type, CFunctionPtr f){
+	ASSERT(CheckInvariant());
+	ASSERT(type.CheckInvariant());
+	ASSERT(f != nullptr);
+
+	const int id = _functionTypeIDGenerator++;
+
+	auto b = std::shared_ptr<TStaticFunctionType>(new TStaticFunctionType());
+	b->_signature = type;
+	b->_f = f;
+	_functionTypes[id] = b;
+
 	ASSERT(CheckInvariant());
 
-//	const TTypeSignatureString s(signature);
-	const int id = _idGenerator++;
+	TValueType result;
+	result._type = EType::kFunction;
+	result._customTypeID = id;
+
+	return result;
+}
+
+const std::shared_ptr<Floyd::TStaticFunctionType> Floyd::Runtime::LookupFunctionType(const TValueType& type) const{
+	ASSERT(type._type == EType::kFunction);
+
+	const auto it = _functionTypes.find(type._customTypeID);
+	ASSERT(it != _functionTypes.end());
+
+	return it->second;
+}
+
+
+
+
+
+
+//??? Check for duplicates.
+Floyd::TValueType Floyd::Runtime::DefineComposite(const TTypeDefinition& type, const Value& checkInvariant){
+	ASSERT(CheckInvariant());
+	ASSERT(type.CheckInvariant());
+
+	const int id = _compositeTypeIDGenerator++;
 
 	auto b = std::shared_ptr<TStaticCompositeType>(new TStaticCompositeType());
-	b->_id = id;
 	b->_signature = type;
 	b->_checkInvariant = checkInvariant;
-	_staticCompositeTypes[signature] = b;
+	_compositeTypes[id] = b;
 
 	ASSERT(CheckInvariant());
 
@@ -418,20 +606,24 @@ Floyd::TValueType Floyd::Runtime::DefineComposite(const std::string& signature, 
 	return result;
 }
 
+const std::shared_ptr<Floyd::TStaticCompositeType> Floyd::Runtime::LookupCompositeType(const TValueType& type) const{
+	ASSERT(type._type == EType::kComposite);
 
+	const auto it = _compositeTypes.find(type._customTypeID);
+	ASSERT(it != _compositeTypes.end());
 
+	return it->second;
+}
 
-
-
-
-
-
-using namespace Floyd;
 
 
 
 
 /////////////////////////////////////////		Test functions
+
+
+
+using namespace Floyd;
 
 
 namespace {
@@ -456,29 +648,27 @@ namespace {
 	}
 
 	Value MakeFunction1(){
-		TTypeDefinition type(EType::kFunction);
-		type._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+		TTypeDefinition typeDef(EType::kFunction);
+		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("c", EType::kString));
 
-		type._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
-		type._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
-		type._more.push_back(std::pair<std::string, TValueType>("c", EType::kString));
+		Runtime runtime;
+		const auto type = runtime.DefineFunction(typeDef, ExampleFunction1_Glue);
 
-		FunctionDef def;
-		def._functionPtr = ExampleFunction1_Glue;
-		def._signature = type;
-
-		const Value result = MakeFunction(def);
+		const Value result = MakeFunction(runtime, type);
 		return result;
 	}
 
 	void ProveWorks__MakeFunction__SimpleFunction__CorrectValue(){
-		TTypeDefinition type(EType::kFunction);
-		type._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+		TTypeDefinition typeDef(EType::kFunction);
+		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
 
-		FunctionDef def;
-		def._functionPtr = ExampleFunction1_Glue;
-		def._signature = type;
-		Value result = MakeFunction(def);
+		Runtime runtime;
+		const auto type = runtime.DefineFunction(typeDef, ExampleFunction1_Glue);
+
+		Value result = MakeFunction(runtime, type);
 		UT_VERIFY(IsFunction(result));
 		UT_VERIFY(GetFunction(result) == ExampleFunction1_Glue);
 	}
@@ -501,18 +691,6 @@ namespace {
 }
 
 
-#if true
-UNIT_TEST("Runtime", "Composite", "BasicUsage", ""){
-	Runtime basic;
-
-	auto type = TTypeDefinition(EType::kComposite);
-	type._more.push_back(std::pair<std::string, TValueType>("note_number", EType::kString));
-	type._more.push_back(std::pair<std::string, TValueType>("velocity", EType::kString));
-
-	const TValueType kNoteCompositeType = basic.DefineComposite("{ <string>, <string> }", type, MakeNull());
-	const auto a = MakeComposite(basic, kNoteCompositeType);
-}
-#endif
 
 
 

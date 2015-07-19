@@ -24,9 +24,25 @@ namespace Floyd {
 
 	struct Value;
 	struct TValueType;
+
+	struct TFunctionValue;
+	struct TStaticFunctionType;
+
 	struct TCompositeValue;
-	struct Runtime;
 	struct TStaticCompositeType;
+
+	struct Runtime;
+
+
+
+	/*
+		Support for custom function-types.
+	*/
+
+	const int kMaxFunctionArgs = 6;
+
+	typedef Value (*CFunctionPtr)(const Value args[], std::size_t argCount);
+
 
 
 	/////////////////////////////////////////		EType
@@ -106,34 +122,16 @@ namespace Floyd {
 		{
 		}
 
-
-		EType _type = EType::kNull;
-
-		//	Pairs of member-name + member-type.
-		std::vector<std::pair<std::string, TValueType> > _more;
-	};
+		public: bool CheckInvariant() const{
+			return true;
+		}
 
 
+		///////////////////////////////		State
+			EType _type = EType::kNull;
 
-
-	/////////////////////////////////////////		Function
-
-	/*
-		Support for custom function-types.
-	*/
-
-	const int kMaxFunctionArgs = 6;
-
-	typedef Value (*CFunctionPtr)(const Value args[], std::size_t argCount);
-
-	//	Function signature = string in format
-	//		FloydType
-	//	### Make optimized calling signatures with different sets of C arguments.
-
-
-	struct FunctionDef {
-		TTypeDefinition _signature;
-		CFunctionPtr _functionPtr;
+			//	Pairs of member-name + member-type.
+			std::vector<std::pair<std::string, TValueType> > _more;
 	};
 
 
@@ -389,13 +387,16 @@ namespace Floyd {
 		friend bool IsString(const Value& value);
 		friend std::string GetString(const Value& value);
 
-		friend Value MakeFunction(const FunctionDef& f);
+		friend Value MakeFunction(const Runtime& runtime, const TValueType& type);
 		friend bool IsFunction(const Value& value);
 		friend CFunctionPtr GetFunction(const Value& value);
 		friend const TTypeDefinition& GetFunctionSignature(const Value& value);
 		friend Value CallFunction(const Value& value, const std::vector<Value>& args);
 
 		friend Value MakeComposite(const Runtime& runtime, const TValueType& type);
+		friend bool IsComposite(const Value& value);
+		friend const Value& GetCompositeMember(const Value& composite, const std::string& member);
+		friend const Value Assoc(const Value& composite, const std::string& member, const Value& newValue);
 
 
 		///////////////////		State
@@ -403,12 +404,12 @@ namespace Floyd {
 			private: float _asFloat = 0.0f;
 			private: std::string _asString = "";
 
-			private: std::shared_ptr<TCompositeValue> _asComposite;
-			private: std::shared_ptr<FunctionDef> _asFunction;
+			private: std::shared_ptr<const TCompositeValue> _asComposite;
+			private: std::shared_ptr<const TFunctionValue> _asFunction;
 
-			private: std::shared_ptr<TSeq<Value>> _asSeq;
-			private: std::shared_ptr<TOrdered<Value>> _asOrdered;
-			private: std::shared_ptr<TUnordered<std::string, Value>> _asUnordered;
+			private: std::shared_ptr<const TSeq<Value>> _asSeq;
+			private: std::shared_ptr<const TOrdered<Value>> _asOrdered;
+			private: std::shared_ptr<const TUnordered<std::string, Value>> _asUnordered;
 	};
 
 
@@ -430,7 +431,12 @@ namespace Floyd {
 		{
 		}
 
+		public: bool CheckInvariant() const{
+			return true;
+		}
 
+
+		///////////////////		State
 		EType _type = EType::kNull;
 		int _customTypeID = -1;
 	};
@@ -445,14 +451,11 @@ namespace Floyd {
 	*/
 
 	struct TCompositeValue {
-		TStaticCompositeType* _type;
+		std::shared_ptr<TStaticCompositeType> _type;
 
 		//	Vector with all members, keyed on memeber name string.
-		std::vector<std::pair<std::string, Value> > _members;
+		std::vector<std::pair<std::string, Value> > _memberValues;
 	};
-
-	Value MakeComposite(const Runtime& runtime, const TValueType& type);
-
 
 
 
@@ -466,7 +469,7 @@ namespace Floyd {
 	struct TStaticCompositeType {
 
 		//	Use 32-bit hash of signature string instead.
-		int _id;
+//		int _id;
 
 		//	Contains types and names of all members.
 		TTypeDefinition _signature;
@@ -475,6 +478,37 @@ namespace Floyd {
 	};
 
 
+
+
+
+	/////////////////////////////////////////		TFunctionValue
+
+	/*
+		Holds the value of a custom function.
+
+		??? Something is weird here. The name + types of a function makes up its *value*.
+	*/
+
+	struct TFunctionValue {
+		std::shared_ptr<TStaticFunctionType> _type;
+
+		//	Vector with all members, keyed on memeber name string.
+//		std::vector<std::pair<std::string, Value> > _members;
+	};
+
+
+
+	/////////////////////////////////////////		TStaticFunctionType
+
+
+	struct TStaticFunctionType {
+		TTypeDefinition _signature;
+		CFunctionPtr _f;
+	};
+
+
+
+	const int kNoStaticTypeID = -1;
 
 
 	/////////////////////////////////////////		Runtime
@@ -487,45 +521,35 @@ namespace Floyd {
 
 
 	//### Rename to "Runtime". The other object shold be called "Model".
+	//### Make a special phase where you can define statics *then* construct the Runtime.
 	struct Runtime {
 		public: Runtime();
 		public: bool CheckInvariant() const;
 
-		public: TValueType DefineComposite(const std::string& signature, const TTypeDefinition& type, const Value& checkInvariant);
+		public: TValueType DefineFunction(const TTypeDefinition& type, CFunctionPtr f);
+		public: const std::shared_ptr<TStaticFunctionType> LookupFunctionType(const TValueType& type) const;
 
-#if false
-		public: int SignatureToID(const TTypeSignatureSpec& s){
-			//		const auto it = _staticCompositeTypes.find(s._s);
-			//		return it == _staticCompositeTypes.end() ? -1 : it->second->_id;
-			return 666;
-		}
-#endif
-
-		public: const std::shared_ptr<TStaticCompositeType> LookupCompositeType(const TValueType& type) const{
-			ASSERT(type._type == EType::kComposite);
-
-			for(const auto it: _staticCompositeTypes){
-				if(it.second->_id == type._customTypeID){
-					return it.second;
-				}
-			}
-			return nullptr;
-		}
+		public: TValueType DefineComposite(const TTypeDefinition& type, const Value& checkInvariant);
+		public: const std::shared_ptr<TStaticCompositeType> LookupCompositeType(const TValueType& type) const;
 
 
 
 		////////////////////////////		State
 
+		int _functionTypeIDGenerator = 10000;
+		std::unordered_map<int, std::shared_ptr<TStaticFunctionType> > _functionTypes;
+
 		//	### faster to key on ID.
-		std::unordered_map<std::string, std::shared_ptr<TStaticCompositeType> > _staticCompositeTypes;
-		int _idGenerator = 0;
+		std::unordered_map<int, std::shared_ptr<TStaticCompositeType> > _compositeTypes;
+		int _compositeTypeIDGenerator = 20000;
 	};
 
 
 
 
-	/////////////////////////////////////////		Functions
+	/////////////////////////////////////////		Basic types
 
+	Value MakeDefaultValue(const TValueType& type);
 
 
 	Value MakeNull();
@@ -542,13 +566,29 @@ namespace Floyd {
 	std::string GetString(const Value& value);
 
 
-	Value MakeFunction(const FunctionDef& f);
+
+	/////////////////////////////////////////		Function
+
+
+	Value MakeFunction(const Runtime& runtime, const TValueType& type);
 	bool IsFunction(const Value& value);
 	CFunctionPtr GetFunction(const Value& value);
 	const TTypeDefinition& GetFunctionSignature(const Value& value);
 
 	//	Arguments must match those of the function or assert.
 	Value CallFunction(const Value& value, const std::vector<Value>& args);
+
+
+	/////////////////////////////////////////		Composite
+
+
+	Value MakeComposite(const Runtime& runtime, const TValueType& type);
+	bool IsComposite(const Value& value);
+	const Value& GetCompositeMember(const Value& composite, const std::string& member);
+	const Value Assoc(const Value& composite, const std::string& member, const Value& newValue);
+
+//	const TValueType& GetCompositeType(const Value& value);
+//	const TTypeDefinition& GetCompositeDef(const TValueType& type);
 
 
 

@@ -290,7 +290,7 @@ namespace {
 		const string s = GetString(args[2]);
 		const float r = ExampleFunction1(a, b, s);
 
-		Value result = MakeFloat(r);
+		const Value result = MakeFloat(r);
 		return result;
 	}
 
@@ -311,17 +311,16 @@ namespace {
 		typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
 		typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
 
-		FunctionDef def;
-		def._functionPtr = ExampleFunction1_Glue;
-		def._signature = typeDef;
+		auto runtime = Runtime();
+		const auto type = runtime.DefineFunction(typeDef, ExampleFunction1_Glue);
 
-		const Value result = MakeFunction(def);
+		const Value result = MakeFunction(runtime, type);
 		return result;
 	}
 
 
 	void ProveWorks__MakeFunctionPart__1Function__ValidFunctionPart(){
-		auto r = MakeFunctionPart(MakeFunction1());
+		const auto r = MakeFunctionPart(MakeFunction1());
 
 		UT_VERIFY(r->CheckInvariant());
 		UT_VERIFY(IsFunction(r->_function));
@@ -331,7 +330,7 @@ namespace {
 
 
 		//	### add clock -auto clock = inputs["clock"];
-	shared_ptr<Simulation> MakeExample1Runtime(){
+	shared_ptr<Simulation> MakeExample1Simulation(){
 		auto runtime = shared_ptr<Runtime>(new Runtime());
 		auto r = MakeSimulation(runtime, kTest2);
 
@@ -354,7 +353,7 @@ namespace {
 
 
 	void ProveWorks__GetValue__MinimalSimulation1Function__OutputIs6(){
-		auto r = MakeExample1Runtime();
+		auto r = MakeExample1Simulation();
 
 		auto constantA = MakeConstantPart(MakeFloat(3.0f));
 		auto constantB = MakeConstantPart(MakeFloat(2.0f));
@@ -413,10 +412,7 @@ namespace {
 
 
 
-
-
 UNIT_TEST("Runtime", "TestRuntime()", "", ""){
 	ProveWorks__MakeFunctionPart__1Function__ValidFunctionPart();
 	ProveWorks__GetValue__MinimalSimulation1Function__OutputIs6();
 }
-
