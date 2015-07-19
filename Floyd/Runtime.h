@@ -22,7 +22,7 @@
 
 namespace Floyd {
 
-	struct FloydDT;
+	struct Value;
 	struct TValueType;
 	struct TCompositeValue;
 	struct Runtime;
@@ -124,7 +124,7 @@ namespace Floyd {
 
 	const int kMaxFunctionArgs = 6;
 
-	typedef FloydDT (*CFunctionPtr)(const FloydDT args[], std::size_t argCount);
+	typedef Value (*CFunctionPtr)(const Value args[], std::size_t argCount);
 
 	//	Function signature = string in format
 	//		FloydType
@@ -368,7 +368,7 @@ namespace Floyd {
 		### Make some rare bitpattern of int64/float64 actual cause them to use a second memory block?
 	*/
 
-	struct FloydDT {
+	struct Value {
 		public: bool CheckInvariant() const;
 		public: EType GetType() const{
 			return _type;
@@ -378,24 +378,24 @@ namespace Floyd {
 
 		///////////////////		Internals
 
-		friend FloydDT MakeNull();
-		friend bool IsNull(const FloydDT& value);
+		friend Value MakeNull();
+		friend bool IsNull(const Value& value);
 
-		friend FloydDT MakeFloat(float value);
-		friend bool IsFloat(const FloydDT& value);
-		friend float GetFloat(const FloydDT& value);
+		friend Value MakeFloat(float value);
+		friend bool IsFloat(const Value& value);
+		friend float GetFloat(const Value& value);
 
-		friend FloydDT MakeString(const std::string& value);
-		friend bool IsString(const FloydDT& value);
-		friend std::string GetString(const FloydDT& value);
+		friend Value MakeString(const std::string& value);
+		friend bool IsString(const Value& value);
+		friend std::string GetString(const Value& value);
 
-		friend FloydDT MakeFunction(const FunctionDef& f);
-		friend bool IsFunction(const FloydDT& value);
-		friend CFunctionPtr GetFunction(const FloydDT& value);
-		friend const TTypeDefinition& GetFunctionSignature(const FloydDT& value);
-		friend FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
+		friend Value MakeFunction(const FunctionDef& f);
+		friend bool IsFunction(const Value& value);
+		friend CFunctionPtr GetFunction(const Value& value);
+		friend const TTypeDefinition& GetFunctionSignature(const Value& value);
+		friend Value CallFunction(const Value& value, const std::vector<Value>& args);
 
-		friend FloydDT MakeComposite(const Runtime& runtime, const TValueType& type);
+		friend Value MakeComposite(const Runtime& runtime, const TValueType& type);
 
 
 		///////////////////		State
@@ -406,9 +406,9 @@ namespace Floyd {
 			private: std::shared_ptr<TCompositeValue> _asComposite;
 			private: std::shared_ptr<FunctionDef> _asFunction;
 
-			private: std::shared_ptr<TSeq<FloydDT>> _asSeq;
-			private: std::shared_ptr<TOrdered<FloydDT>> _asOrdered;
-			private: std::shared_ptr<TUnordered<std::string, FloydDT>> _asUnordered;
+			private: std::shared_ptr<TSeq<Value>> _asSeq;
+			private: std::shared_ptr<TOrdered<Value>> _asOrdered;
+			private: std::shared_ptr<TUnordered<std::string, Value>> _asUnordered;
 	};
 
 
@@ -448,10 +448,10 @@ namespace Floyd {
 		TStaticCompositeType* _type;
 
 		//	Vector with all members, keyed on memeber name string.
-		std::vector<std::pair<std::string, FloydDT> > _members;
+		std::vector<std::pair<std::string, Value> > _members;
 	};
 
-	FloydDT MakeComposite(const Runtime& runtime, const TValueType& type);
+	Value MakeComposite(const Runtime& runtime, const TValueType& type);
 
 
 
@@ -471,7 +471,7 @@ namespace Floyd {
 		//	Contains types and names of all members.
 		TTypeDefinition _signature;
 
-		FloydDT _checkInvariant;
+		Value _checkInvariant;
 	};
 
 
@@ -491,7 +491,7 @@ namespace Floyd {
 		public: Runtime();
 		public: bool CheckInvariant() const;
 
-		public: TValueType DefineComposite(const std::string& signature, const TTypeDefinition& type, const FloydDT& checkInvariant);
+		public: TValueType DefineComposite(const std::string& signature, const TTypeDefinition& type, const Value& checkInvariant);
 
 #if false
 		public: int SignatureToID(const TTypeSignatureSpec& s){
@@ -528,33 +528,33 @@ namespace Floyd {
 
 
 
-	FloydDT MakeNull();
-	bool IsNull(const FloydDT& value);
+	Value MakeNull();
+	bool IsNull(const Value& value);
 
 
-	FloydDT MakeFloat(float value);
-	bool IsFloat(const FloydDT& value);
-	float GetFloat(const FloydDT& value);
+	Value MakeFloat(float value);
+	bool IsFloat(const Value& value);
+	float GetFloat(const Value& value);
 
 
-	FloydDT MakeString(const std::string& value);
-	bool IsString(const FloydDT& value);
-	std::string GetString(const FloydDT& value);
+	Value MakeString(const std::string& value);
+	bool IsString(const Value& value);
+	std::string GetString(const Value& value);
 
 
-	FloydDT MakeFunction(const FunctionDef& f);
-	bool IsFunction(const FloydDT& value);
-	CFunctionPtr GetFunction(const FloydDT& value);
-	const TTypeDefinition& GetFunctionSignature(const FloydDT& value);
+	Value MakeFunction(const FunctionDef& f);
+	bool IsFunction(const Value& value);
+	CFunctionPtr GetFunction(const Value& value);
+	const TTypeDefinition& GetFunctionSignature(const Value& value);
 
 	//	Arguments must match those of the function or assert.
-	FloydDT CallFunction(const FloydDT& value, const std::vector<FloydDT>& args);
+	Value CallFunction(const Value& value, const std::vector<Value>& args);
 
 
 
-	FloydDT MakeSeq();
-	FloydDT MakeOrdered();
-	FloydDT MakeUnordered();
+	Value MakeSeq();
+	Value MakeOrdered();
+	Value MakeUnordered();
 
 }
 

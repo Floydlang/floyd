@@ -11,6 +11,10 @@
 
 #include "Runtime.h"
 
+
+
+/////////////////////////////////////////		How would fully optimized code call Floyd functions written in C++?
+
 namespace {
 
 	struct TMyComposite {
@@ -37,7 +41,6 @@ namespace {
 
 }
 
-
 UNIT_TEST("MockupOptimizedCPP", "MockupOptimizedCPP()", "", ""){
 	TMyComposite c;
 	c.oscillator = 5.0f;
@@ -45,6 +48,10 @@ UNIT_TEST("MockupOptimizedCPP", "MockupOptimizedCPP()", "", ""){
 	UT_VERIFY(a.count != 3.1415f);
 }
 
+
+
+
+/////////////////////////////////////////		Test C++11 threading
 
 
 #include <iostream>

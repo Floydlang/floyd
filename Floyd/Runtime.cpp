@@ -162,7 +162,7 @@ UNIT_TEST("", "TypeSignatureFromString", "<null>", "kNull"){
 
 
 
-bool Floyd::FloydDT::CheckInvariant() const{
+bool Floyd::Value::CheckInvariant() const{
 	//	Use NAN for no-float?
 
 	if(_type == EType::kNull){
@@ -199,7 +199,7 @@ bool Floyd::FloydDT::CheckInvariant() const{
 }
 
 
-std::string Floyd::FloydDT::GetTypeString() const{
+std::string Floyd::Value::GetTypeString() const{
 	ASSERT(CheckInvariant());
 
 	if(_type == kNull){
@@ -224,15 +224,15 @@ std::string Floyd::FloydDT::GetTypeString() const{
 
 
 
-Floyd::FloydDT Floyd::MakeNull(){
-	FloydDT result;
+Floyd::Value Floyd::MakeNull(){
+	Value result;
 	result._type = EType::kNull;
 
 	ASSERT(result.CheckInvariant());
 	return result;
 }
 
-bool Floyd::IsNull(const FloydDT& value){
+bool Floyd::IsNull(const Value& value){
 	ASSERT(value.CheckInvariant());
 
 	return value._type == kNull;
@@ -241,8 +241,8 @@ bool Floyd::IsNull(const FloydDT& value){
 
 
 
-Floyd::FloydDT Floyd::MakeFloat(float value){
-	FloydDT result;
+Floyd::Value Floyd::MakeFloat(float value){
+	Value result;
 	result._type = EType::kFloat;
 	result._asFloat = value;
 
@@ -250,13 +250,13 @@ Floyd::FloydDT Floyd::MakeFloat(float value){
 	return result;
 }
 
-bool Floyd::IsFloat(const FloydDT& value){
+bool Floyd::IsFloat(const Value& value){
 	ASSERT(value.CheckInvariant());
 
 	return value._type == kFloat;
 }
 
-float Floyd::GetFloat(const FloydDT& value){
+float Floyd::GetFloat(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsFloat(value));
 
@@ -266,8 +266,8 @@ float Floyd::GetFloat(const FloydDT& value){
 
 
 
-Floyd::FloydDT Floyd::MakeString(const std::string& value){
-	FloydDT result;
+Floyd::Value Floyd::MakeString(const std::string& value){
+	Value result;
 	result._type = EType::kString;
 	result._asString = value;
 
@@ -276,13 +276,13 @@ Floyd::FloydDT Floyd::MakeString(const std::string& value){
 }
 
 
-bool Floyd::IsString(const FloydDT& value){
+bool Floyd::IsString(const Value& value){
 	ASSERT(value.CheckInvariant());
 
 	return value._type == kString;
 }
 
-std::string Floyd::GetString(const FloydDT& value){
+std::string Floyd::GetString(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsString(value));
 
@@ -292,8 +292,8 @@ std::string Floyd::GetString(const FloydDT& value){
 
 
 
-Floyd::FloydDT Floyd::MakeFunction(const FunctionDef& f){
-	FloydDT result;
+Floyd::Value Floyd::MakeFunction(const FunctionDef& f){
+	Value result;
 	result._type = EType::kFunction;
 	result._asFunction = std::shared_ptr<FunctionDef>(new FunctionDef(f));
 
@@ -302,27 +302,27 @@ Floyd::FloydDT Floyd::MakeFunction(const FunctionDef& f){
 }
 
 
-bool Floyd::IsFunction(const FloydDT& value){
+bool Floyd::IsFunction(const Value& value){
 	ASSERT(value.CheckInvariant());
 
 	return value._type == kFunction;
 }
 
-Floyd::CFunctionPtr Floyd::GetFunction(const FloydDT& value){
+Floyd::CFunctionPtr Floyd::GetFunction(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsFunction(value));
 
 	return value._asFunction->_functionPtr;
 }
 
-const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const FloydDT& value){
+const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsFunction(value));
 
 	return value._asFunction->_signature;
 }
 
-Floyd::FloydDT Floyd::CallFunction(const FloydDT& value, const std::vector<FloydDT>& args){
+Floyd::Value Floyd::CallFunction(const Value& value, const std::vector<Value>& args){
 	ASSERT(value.CheckInvariant());
 #if ASSERT_ON
 	for(auto a: args){
@@ -333,7 +333,7 @@ Floyd::FloydDT Floyd::CallFunction(const FloydDT& value, const std::vector<Floyd
 
 	const TTypeDefinition& functionTypeSignature = value._asFunction->_signature;
 
-	std::vector<FloydDT> argValues;
+	std::vector<Value> argValues;
 	int index = 0;
 	for(auto i: args){
 		//	Make sure the type of the argument is correct.
@@ -348,8 +348,8 @@ Floyd::FloydDT Floyd::CallFunction(const FloydDT& value, const std::vector<Floyd
 
 	// check that types match!
 
-	FloydDT dummy[1];
-	FloydDT functionResult = value._asFunction->_functionPtr(
+	Value dummy[1];
+	Value functionResult = value._asFunction->_functionPtr(
 		argValues.empty() ? &dummy[0] : argValues.data(),
 		argValues.size()
 	);
@@ -365,7 +365,7 @@ Floyd::FloydDT Floyd::CallFunction(const FloydDT& value, const std::vector<Floyd
 
 
 
-Floyd::FloydDT Floyd::MakeComposite(const Runtime& runtime, const TValueType& type){
+Floyd::Value Floyd::MakeComposite(const Runtime& runtime, const TValueType& type){
 	const auto def = runtime.LookupCompositeType(type);
 	ASSERT(def != nullptr);
 
@@ -375,7 +375,7 @@ Floyd::FloydDT Floyd::MakeComposite(const Runtime& runtime, const TValueType& ty
 //	for(const auto m: def->_)
 //	c->_members.
 
-	FloydDT result;
+	Value result;
 	result._type = EType::kComposite;
 	result._asComposite = c;
 	return result;
@@ -397,7 +397,7 @@ bool Floyd::Runtime::CheckInvariant() const{
 }
 
 
-Floyd::TValueType Floyd::Runtime::DefineComposite(const std::string& signature, const TTypeDefinition& type, const FloydDT& checkInvariant){
+Floyd::TValueType Floyd::Runtime::DefineComposite(const std::string& signature, const TTypeDefinition& type, const Value& checkInvariant){
 	ASSERT(CheckInvariant());
 
 //	const TTypeSignatureString s(signature);
@@ -439,7 +439,7 @@ namespace {
 		return s == "*" ? a * b : a + b;
 	}
 
-	FloydDT ExampleFunction1_Glue(const FloydDT args[], std::size_t argCount){
+	Value ExampleFunction1_Glue(const Value args[], std::size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
 		ASSERT(IsFloat(args[0]));
@@ -451,11 +451,11 @@ namespace {
 		const std::string s = GetString(args[2]);
 		const float r = ExampleFunction1(a, b, s);
 
-		FloydDT result = MakeFloat(r);
+		Value result = MakeFloat(r);
 		return result;
 	}
 
-	FloydDT MakeFunction1(){
+	Value MakeFunction1(){
 		TTypeDefinition type(EType::kFunction);
 		type._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
 
@@ -467,29 +467,29 @@ namespace {
 		def._functionPtr = ExampleFunction1_Glue;
 		def._signature = type;
 
-		const FloydDT result = MakeFunction(def);
+		const Value result = MakeFunction(def);
 		return result;
 	}
 
-	void ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT(){
+	void ProveWorks__MakeFunction__SimpleFunction__CorrectValue(){
 		TTypeDefinition type(EType::kFunction);
 		type._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
 
 		FunctionDef def;
 		def._functionPtr = ExampleFunction1_Glue;
 		def._signature = type;
-		FloydDT result = MakeFunction(def);
+		Value result = MakeFunction(def);
 		UT_VERIFY(IsFunction(result));
 		UT_VERIFY(GetFunction(result) == ExampleFunction1_Glue);
 	}
 
 	void ProveWorks__CallFunction__SimpleFunction__CorrectReturn(){
-		const FloydDT f = MakeFunction1();
+		const Value f = MakeFunction1();
 
 		UT_VERIFY(IsFunction(f));
 		UT_VERIFY(GetFunction(f) == ExampleFunction1_Glue);
 
-		std::vector<FloydDT> args;
+		std::vector<Value> args;
 		args.push_back(MakeFloat(2.0f));
 		args.push_back(MakeFloat(3.0f));
 		args.push_back(MakeString("*"));
@@ -696,7 +696,7 @@ namespace {
 
 
 UNIT_TEST("FloydType", "RunFloydTypeTests()", "", ""){
-	ProveWorks__MakeFunction__SimpleFunction__CorrectFloydDT();
+	ProveWorks__MakeFunction__SimpleFunction__CorrectValue();
 	ProveWorks__CallFunction__SimpleFunction__CorrectReturn();
 
 	ProveWorks__TSeq_DefaultConstructor__Basic__NoAssert();

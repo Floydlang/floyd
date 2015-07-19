@@ -91,7 +91,7 @@ bool Floyd::WireOutput::CheckInvariant() const{
 /////////////////////////////////////////		ConstantPart
 
 
-Floyd::ConstantPart::ConstantPart(const FloydDT& value) :
+Floyd::ConstantPart::ConstantPart(const Value& value) :
 	_value(value),
 	_output(this)
 {
@@ -121,7 +121,7 @@ Floyd::FunctionPart::FunctionPart() :
 
 
 
-shared_ptr<Floyd::FunctionPart> Floyd::MakeFunctionPart(const FloydDT& f){
+shared_ptr<Floyd::FunctionPart> Floyd::MakeFunctionPart(const Value& f){
 	ASSERT(f.CheckInvariant());
 	ASSERT(IsFunction(f));
 
@@ -138,7 +138,7 @@ shared_ptr<Floyd::FunctionPart> Floyd::MakeFunctionPart(const FloydDT& f){
 }
 
 
-shared_ptr<Floyd::ConstantPart> Floyd::MakeConstantPart(const FloydDT& value){
+shared_ptr<Floyd::ConstantPart> Floyd::MakeConstantPart(const Value& value){
 	ASSERT(value.CheckInvariant());
 
 	auto result = shared_ptr<Floyd::ConstantPart>(new ConstantPart(value));
@@ -159,7 +159,7 @@ void Floyd::Connect(WireInput& dest, WireOutput& source){
 
 namespace {
 
-	Floyd::FloydDT GenerateValue(const Floyd::WireOutput& output){
+	Floyd::Value GenerateValue(const Floyd::WireOutput& output){
 		ASSERT(output.CheckInvariant());
 
 		using namespace Floyd;
@@ -168,7 +168,7 @@ namespace {
 //			const TFunctionSignature& functionSignature = output._ownerFunctionPart->_functionDef->_signature;
 
 			//	Read all our inputs to get arguments to call function part.
-			vector<FloydDT> argValues;
+			vector<Value> argValues;
 			for(auto i: output._ownerFunctionPart->_inputs){
 				const auto v = i._connectedTo == nullptr ? MakeNull() : GetValue(*i._connectedTo);
 				argValues.push_back(v);
@@ -197,7 +197,7 @@ namespace {
 
 }
 
-Floyd::FloydDT Floyd::GetValue(const WireOutput& output){
+Floyd::Value Floyd::GetValue(const WireOutput& output){
 	auto r = GenerateValue(output);
 	return r;
 }
@@ -278,7 +278,7 @@ namespace {
 		return s == "*" ? a * b : a + b;
 	}
 
-	FloydDT ExampleFunction1_Glue(const FloydDT args[], size_t argCount){
+	Value ExampleFunction1_Glue(const Value args[], size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
 		ASSERT(IsFloat(args[0]));
@@ -290,7 +290,7 @@ namespace {
 		const string s = GetString(args[2]);
 		const float r = ExampleFunction1(a, b, s);
 
-		FloydDT result = MakeFloat(r);
+		Value result = MakeFloat(r);
 		return result;
 	}
 
@@ -304,7 +304,7 @@ namespace {
 	"}";
 
 
-	FloydDT MakeFunction1(){
+	Value MakeFunction1(){
 		TTypeDefinition typeDef(EType::kFunction);
 		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
 		typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
@@ -315,7 +315,7 @@ namespace {
 		def._functionPtr = ExampleFunction1_Glue;
 		def._signature = typeDef;
 
-		const FloydDT result = MakeFunction(def);
+		const Value result = MakeFunction(def);
 		return result;
 	}
 
@@ -370,7 +370,7 @@ namespace {
 		Connect(inputPinS->_input, constantS->_output);
 
 		//	Read "result" output pin. This should cause simulation to run all through.
-		FloydDT result = GetValue(resultOutputPin->_output);
+		Value result = GetValue(resultOutputPin->_output);
 
 		ASSERT(GetFloat(result) == 6.0f);
 	}
@@ -388,7 +388,7 @@ UNIT_TEST("Runtime", "", "", ""){
 
 namespace {
 
-	FloydDT Scenario1_Render(const FloydDT args[], size_t argCount){
+	Value Scenario1_Render(const Value args[], size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
 		ASSERT(args[0]._type == EType::kFloat);
@@ -400,7 +400,7 @@ namespace {
 		const string s = args[2]._asString;
 		const float r = ExampleFunction1(a, b, s);
 
-		FloydDT result = MakeFloat(r);
+		Value result = MakeFloat(r);
 		return result;
 	}
 

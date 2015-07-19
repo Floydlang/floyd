@@ -27,7 +27,7 @@
 namespace Floyd {
 
 	struct TComposite;
-	struct FloydDT;
+	struct Value;
 	struct WireInput;
 	struct WireOutput;
 	struct OutputPinPart;
@@ -149,12 +149,12 @@ namespace Floyd {
 		A part containing a constant value. It cannot change at runtime.
 	*/
 	struct ConstantPart {
-		ConstantPart(const FloydDT& value);
+		ConstantPart(const Value& value);
 		public: bool CheckInvariant() const{
 			return true;
 		}
 
-		FloydDT _value;
+		Value _value;
 		WireOutput _output;
 	};
 
@@ -172,7 +172,7 @@ namespace Floyd {
 		}
 
 
-		FloydDT _function;
+		Value _function;
 		std::vector<WireInput> _inputs;
 		WireOutput _output;
 	};
@@ -193,12 +193,12 @@ namespace Floyd {
 */
 
 
-	std::shared_ptr<FunctionPart> MakeFunctionPart(const FloydDT& f);
-	std::shared_ptr<ConstantPart> MakeConstantPart(const FloydDT& value);
+	std::shared_ptr<FunctionPart> MakeFunctionPart(const Value& f);
+	std::shared_ptr<ConstantPart> MakeConstantPart(const Value& value);
 
 	void Connect(WireInput& dest, WireOutput& source);
 
-	FloydDT GetValue(const WireOutput& output);
+	Value GetValue(const WireOutput& output);
 
 
 
