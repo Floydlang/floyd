@@ -31,6 +31,9 @@ namespace Floyd {
 	struct TCompositeValue;
 	struct TStaticCompositeType;
 
+	struct TOrderedValue;
+	struct TStaticOrderedType;
+
 	struct Runtime;
 
 
@@ -59,8 +62,9 @@ namespace Floyd {
 		kFloat,
 		kString,
 		kFunction,
-		kComposite
+		kComposite,
 
+		kOrdered
 	/*
 		Exception
 
@@ -398,6 +402,10 @@ namespace Floyd {
 		friend const Value& GetCompositeMember(const Value& composite, const std::string& member);
 		friend const Value Assoc(const Value& composite, const std::string& member, const Value& newValue);
 
+		friend Value MakeOrdered(const Runtime& runtime, const TValueType& type);
+		friend bool IsOrdered(const Value& value);
+		friend const Value& GetOrderedMember(const Value& ordered, const std::string& member);
+
 
 		///////////////////		State
 			private: EType _type = EType::kNull;
@@ -407,9 +415,9 @@ namespace Floyd {
 			private: std::shared_ptr<const TCompositeValue> _asComposite;
 			private: std::shared_ptr<const TFunctionValue> _asFunction;
 
-			private: std::shared_ptr<const TSeq<Value>> _asSeq;
-			private: std::shared_ptr<const TOrdered<Value>> _asOrdered;
-			private: std::shared_ptr<const TUnordered<std::string, Value>> _asUnordered;
+//			private: std::shared_ptr<const TSeq<Value>> _asSeq;
+			private: std::shared_ptr<const TOrderedValue> _asOrdered;
+//			private: std::shared_ptr<const TUnordered<std::string, Value>> _asUnordered;
 	};
 
 
@@ -420,6 +428,8 @@ namespace Floyd {
 	/*
 		Specifies the exact type of a value, even custom types.
 		References state in the Runtime - depends implicitly on the Runtime-object.
+
+		### put pts to TStaticCompositeType etc in here, not ID. Fast without lookup.
 	*/
 
 	struct TValueType {
@@ -508,6 +518,29 @@ namespace Floyd {
 
 
 
+
+
+
+
+	struct TOrderedValue {
+		std::shared_ptr<TStaticOrderedType> _type;
+		std::vector<Value> _values;
+	};
+
+	struct TStaticOrderedType {
+		//	Use 32-bit hash of signature string instead.
+//		int _id;
+
+		//	Contains types and names of all members.
+		TTypeDefinition _signature;
+	};
+
+
+
+
+
+
+
 	const int kNoStaticTypeID = -1;
 
 
@@ -533,15 +566,21 @@ namespace Floyd {
 		public: const std::shared_ptr<TStaticCompositeType> LookupCompositeType(const TValueType& type) const;
 
 
+		public: TValueType DefineOrdered(const TTypeDefinition& type);
+		public: const std::shared_ptr<TStaticOrderedType> LookupOrderedType(const TValueType& type) const;
+
+
 
 		////////////////////////////		State
 
 		int _functionTypeIDGenerator = 10000;
 		std::unordered_map<int, std::shared_ptr<TStaticFunctionType> > _functionTypes;
 
-		//	### faster to key on ID.
 		std::unordered_map<int, std::shared_ptr<TStaticCompositeType> > _compositeTypes;
 		int _compositeTypeIDGenerator = 20000;
+
+		std::unordered_map<int, std::shared_ptr<TStaticOrderedType> > _orderedTypes;
+		int _orderedTypeIDGenerator = 30000;
 	};
 
 
@@ -591,11 +630,9 @@ namespace Floyd {
 //	const TTypeDefinition& GetCompositeDef(const TValueType& type);
 
 
-
-	Value MakeSeq();
-	Value MakeOrdered();
-	Value MakeUnordered();
-
+	Value MakeOrdered(const Runtime& runtime, const TValueType& type);
+	bool IsOrdered(const Value& value);
+	const Value& GetOrderedMember(const Value& ordered, const std::string& member);
 }
 
 #endif /* defined(__Floyd__FloydType__) */

@@ -170,33 +170,46 @@ bool Floyd::Value::CheckInvariant() const{
 		ASSERT(_asString == "");
 		ASSERT(_asFunction.get() == nullptr);
 		ASSERT(_asComposite.get() == nullptr);
+		ASSERT(_asOrdered.get() == nullptr);
 	}
 	else if(_type == EType::kFloat){
 //		ASSERT(_asFloat == 0.0f);
 		ASSERT(_asString == "");
 		ASSERT(_asFunction.get() == nullptr);
 		ASSERT(_asComposite.get() == nullptr);
+		ASSERT(_asOrdered.get() == nullptr);
 	}
 	else if(_type == EType::kString){
 		ASSERT(_asFloat == 0.0f);
 //		ASSERT(_asString == "");
 		ASSERT(_asFunction.get() == nullptr);
 		ASSERT(_asComposite.get() == nullptr);
+		ASSERT(_asOrdered.get() == nullptr);
 	}
 	else if(_type == EType::kFunction){
 		ASSERT(_asFloat == 0.0f);
 		ASSERT(_asString == "");
 		ASSERT(_asFunction.get() != nullptr);
-		ASSERT(_asFunction->_type != nullptr);
-
 		ASSERT(_asComposite.get() == nullptr);
+		ASSERT(_asOrdered.get() == nullptr);
+
+		ASSERT(_asFunction->_type != nullptr);
 	}
 	else if(_type == EType::kComposite){
 		ASSERT(_asFloat == 0.0f);
 		ASSERT(_asString == "");
 		ASSERT(_asFunction.get() == nullptr);
 		ASSERT(_asComposite.get() != nullptr);
+		ASSERT(_asOrdered.get() == nullptr);
+
 		ASSERT(_asComposite->_type != nullptr);
+	}
+	else if(_type == EType::kOrdered){
+		ASSERT(_asFloat == 0.0f);
+		ASSERT(_asString == "");
+		ASSERT(_asFunction.get() == nullptr);
+		ASSERT(_asComposite.get() == nullptr);
+		ASSERT(_asOrdered.get() != nullptr);
 	}
 	else{
 		ASSERT(false);
@@ -391,6 +404,10 @@ Floyd::Value Floyd::MakeDefaultValue(const Floyd::TValueType& type){
 	}
 }
 
+
+
+
+
 Floyd::Value Floyd::MakeComposite(const Runtime& runtime, const TValueType& type){
 	ASSERT(runtime.CheckInvariant());
 	ASSERT(type.CheckInvariant());
@@ -535,6 +552,70 @@ UNIT_TEST("Composite", "Assoc", "Replace member", "Read back cahange"){
 
 
 
+/////////////////////////////////////////		Ordered
+
+
+
+
+Floyd::Value Floyd::MakeOrdered(const Runtime& runtime, const TValueType& type){
+	ASSERT(runtime.CheckInvariant());
+	ASSERT(type.CheckInvariant());
+	ASSERT(type._type == EType::kOrdered);
+
+	const auto t = runtime.LookupOrderedType(type);
+	auto v = std::shared_ptr<TOrderedValue>(new TOrderedValue());
+	v->_type = t;
+
+	Value result;
+	result._type = EType::kOrdered;
+	result._asOrdered = v;
+
+	ASSERT(result.CheckInvariant());
+	return result;
+}
+
+bool Floyd::IsOrdered(const Value& value){
+	ASSERT(value.CheckInvariant());
+
+	return value._type == Floyd::kOrdered;
+}
+
+const Floyd::Value& Floyd::GetOrderedMember(const Value& ordered, const std::string& member){
+	ASSERT(IsOrdered(ordered));
+	ASSERT(!member.empty());
+
+	std::shared_ptr<const TOrderedValue> temp = ordered._asOrdered;
+
+/*
+	for(const auto& it: composite._asComposite->_memberValues){
+		if(it.first == member){
+			return it.second;
+		}
+	}
+*/
+
+	//	Unknown member.
+	throw std::runtime_error("");
+}
+
+
+
+
+UNIT_TEST("Runtime", "DefineOrdered", "BasicUsage", ""){
+	using namespace Floyd;
+	Runtime runtime;
+
+	auto type = TTypeDefinition(EType::kOrdered);
+	type._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+
+	const TValueType t = runtime.DefineOrdered(type);
+	const auto a = MakeOrdered(runtime, t);
+
+	UT_VERIFY(IsOrdered(a));
+}
+
+
+
 
 /////////////////////////////////////////		Runtime
 
@@ -614,6 +695,45 @@ const std::shared_ptr<Floyd::TStaticCompositeType> Floyd::Runtime::LookupComposi
 
 	return it->second;
 }
+
+
+
+
+
+
+
+
+//??? Check for duplicates.
+Floyd::TValueType Floyd::Runtime::DefineOrdered(const TTypeDefinition& type){
+	ASSERT(CheckInvariant());
+	ASSERT(type.CheckInvariant());
+
+	const int id = _orderedTypeIDGenerator++;
+
+	auto b = std::shared_ptr<TStaticOrderedType>(new TStaticOrderedType());
+	b->_signature = type;
+	_orderedTypes[id] = b;
+
+	ASSERT(CheckInvariant());
+
+	TValueType result;
+	result._type = EType::kOrdered;
+	result._customTypeID = id;
+
+	return result;
+}
+
+const std::shared_ptr<Floyd::TStaticOrderedType> Floyd::Runtime::LookupOrderedType(const TValueType& type) const{
+	ASSERT(type._type == EType::kOrdered);
+
+	const auto it = _orderedTypes.find(type._customTypeID);
+	ASSERT(it != _orderedTypes.end());
+
+	return it->second;
+}
+
+
+
 
 
 

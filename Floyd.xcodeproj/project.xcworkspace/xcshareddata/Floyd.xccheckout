@@ -7,14 +7,14 @@
 	<key>IDESourceControlProjectIdentifier</key>
 	<string>1D290090-122E-4885-8C8C-F86D8516DFF6</string>
 	<key>IDESourceControlProjectName</key>
-	<string>Floyd</string>
+	<string>project</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
 		<key>C321F60E1DE00C380994A561B1EFA367E03D79D3</key>
 		<string>https://github.com/marcusz/Floyd.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>Floyd.xcodeproj</string>
+	<string>Floyd.xcodeproj/project.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>C321F60E1DE00C380994A561B1EFA367E03D79D3</key>
