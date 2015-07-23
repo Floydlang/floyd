@@ -13,6 +13,7 @@
 #include <string>
 
 
+
 using namespace std;
 
 
@@ -241,6 +242,32 @@ std::string Floyd::Value::GetTypeString() const{
 }
 
 
+Floyd::EType Floyd::Value::GetType() const{
+	return _type;
+}
+
+Floyd::TValueType Floyd::Value::GetValueType() const{
+	ASSERT(CheckInvariant());
+
+	if(_type == kNull || _type == kFloat || _type == kString){
+		return Floyd::TValueType(_type);
+	}
+	else{
+		if(_type == kFunction){
+			return TValueType(_type, _asFunction->_type->_id);
+		}
+		else if(_type == kComposite){
+			return TValueType(_type, _asComposite->_type->_id);
+		}
+		else if(_type == kOrdered){
+			return TValueType(_type, _asOrdered->_type->_id);
+		}
+		else{
+			ASSERT(false);
+			return Floyd::TValueType();
+		}
+	}
+}
 
 
 Floyd::Value Floyd::MakeNull(){
@@ -641,15 +668,12 @@ Floyd::TValueType Floyd::Runtime::DefineFunction(const TTypeDefinition& type, CF
 	auto b = std::shared_ptr<TStaticFunctionType>(new TStaticFunctionType());
 	b->_signature = type;
 	b->_f = f;
+	b->_id = id;
 	_functionTypes[id] = b;
 
 	ASSERT(CheckInvariant());
 
-	TValueType result;
-	result._type = EType::kFunction;
-	result._customTypeID = id;
-
-	return result;
+	return TValueType(kFunction, b->_id);
 }
 
 const std::shared_ptr<Floyd::TStaticFunctionType> Floyd::Runtime::LookupFunctionType(const TValueType& type) const{
@@ -666,6 +690,7 @@ const std::shared_ptr<Floyd::TStaticFunctionType> Floyd::Runtime::LookupFunction
 
 
 
+
 //??? Check for duplicates.
 Floyd::TValueType Floyd::Runtime::DefineComposite(const TTypeDefinition& type, const Value& checkInvariant){
 	ASSERT(CheckInvariant());
@@ -676,15 +701,12 @@ Floyd::TValueType Floyd::Runtime::DefineComposite(const TTypeDefinition& type, c
 	auto b = std::shared_ptr<TStaticCompositeType>(new TStaticCompositeType());
 	b->_signature = type;
 	b->_checkInvariant = checkInvariant;
+	b->_id = id;
 	_compositeTypes[id] = b;
 
 	ASSERT(CheckInvariant());
 
-	TValueType result;
-	result._type = EType::kComposite;
-	result._customTypeID = id;
-
-	return result;
+	return TValueType(kComposite, b->_id);
 }
 
 const std::shared_ptr<Floyd::TStaticCompositeType> Floyd::Runtime::LookupCompositeType(const TValueType& type) const{
@@ -703,6 +725,7 @@ const std::shared_ptr<Floyd::TStaticCompositeType> Floyd::Runtime::LookupComposi
 
 
 
+
 //??? Check for duplicates.
 Floyd::TValueType Floyd::Runtime::DefineOrdered(const TTypeDefinition& type){
 	ASSERT(CheckInvariant());
@@ -712,15 +735,12 @@ Floyd::TValueType Floyd::Runtime::DefineOrdered(const TTypeDefinition& type){
 
 	auto b = std::shared_ptr<TStaticOrderedType>(new TStaticOrderedType());
 	b->_signature = type;
+	b->_id = id;
 	_orderedTypes[id] = b;
 
 	ASSERT(CheckInvariant());
 
-	TValueType result;
-	result._type = EType::kOrdered;
-	result._customTypeID = id;
-
-	return result;
+	return TValueType(kOrdered,id);
 }
 
 const std::shared_ptr<Floyd::TStaticOrderedType> Floyd::Runtime::LookupOrderedType(const TValueType& type) const{
@@ -781,6 +801,69 @@ namespace {
 		return result;
 	}
 
+
+
+
+
+
+
+	struct Function2Fixture {
+		Function2Fixture(){
+			_noteType = DefineNoteComposite(_runtime);
+
+			TTypeDefinition typeDef(EType::kFunction);
+			typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kNull));
+			typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
+			typeDef._more.push_back(std::pair<std::string, TValueType>("note", _noteType));
+			_f2Type = _runtime.DefineFunction(typeDef, ExampleFunction2);
+			_f2 = MakeFunction(_runtime, _f2Type);
+
+
+			_note0 = MakeComposite(_runtime, _noteType);
+			_note0 = Assoc(_note0, "note_number", MakeFloat(63.0f));
+
+			_note1 = MakeComposite(_runtime, _noteType);
+			_note1 = Assoc(_note1, "velocity", MakeFloat(4.0f));
+		}
+
+
+
+		static Value ExampleFunction2(const Value args[], std::size_t argCount){
+			ASSERT(args != nullptr);
+			ASSERT(argCount == 2);
+			ASSERT(IsString(args[0]));
+			ASSERT(IsComposite(args[1]));
+
+			const string arg0 = GetString(args[0]);
+			ASSERT(arg0 == "Thursday");
+
+			const Value& arg1 = args[1];
+			const auto member0 = GetFloat(GetCompositeMember(arg1, "note_number"));
+			const auto member1 = GetFloat(GetCompositeMember(arg1, "velocity"));
+
+			Value result = MakeNull();
+			return result;
+		}
+
+
+
+
+		Runtime _runtime;
+		TValueType _noteType;
+		TValueType _f2Type;
+		Value _f2;
+
+		Value _note0;
+		Value _note1;
+	};
+
+
+
+
+
+
+
+
 	void ProveWorks__MakeFunction__SimpleFunction__CorrectValue(){
 		TTypeDefinition typeDef(EType::kFunction);
 		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
@@ -808,9 +891,27 @@ namespace {
 		UT_VERIFY(GetFloat(r) == 6.0f);
 	}
 
+
+
+
+
+
+
 }
 
 
+//??? Test making composite in C++ funciton and returning it. HOw can f2() get to noteType?
+
+//??? Null cannot be a static type - it can be the value of all(?????) ref-types.
+
+UNIT_TEST("Runtime", "CallFunction", "Function with composite arg", "Can access composite in f2()"){
+	Function2Fixture fixture;
+
+	vector<Value> args;
+	args.push_back(MakeString("Thursday"));
+	args.push_back(fixture._note0);
+	CallFunction(fixture._f2, args);
+}
 
 
 

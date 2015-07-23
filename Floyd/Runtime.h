@@ -372,9 +372,8 @@ namespace Floyd {
 
 	struct Value {
 		public: bool CheckInvariant() const;
-		public: EType GetType() const{
-			return _type;
-		}
+		public: EType GetType() const;
+		public: TValueType GetValueType() const;
 		public: std::string GetTypeString() const;
 
 
@@ -441,8 +440,19 @@ namespace Floyd {
 		{
 		}
 
+		TValueType(EType refType, int customTypeID) :
+			_type(refType),
+			_customTypeID(customTypeID)
+		{
+		}
+
 		public: bool CheckInvariant() const{
 			return true;
+		}
+
+		public: TValueType& operator=(const TValueType& other) = default;
+		public: bool operator==(const TValueType& other){
+			return _type == other._type && _customTypeID == other._customTypeID;
 		}
 
 
@@ -450,6 +460,37 @@ namespace Floyd {
 		EType _type = EType::kNull;
 		int _customTypeID = -1;
 	};
+
+
+
+
+
+	/////////////////////////////////////////		TFunctionValue
+
+	/*
+		Holds the value of a custom function.
+
+		??? Something is weird here. The name + types of a function makes up its *value*.
+	*/
+
+	struct TFunctionValue {
+		std::shared_ptr<TStaticFunctionType> _type;
+
+		//	Vector with all members, keyed on memeber name string.
+//		std::vector<std::pair<std::string, Value> > _members;
+	};
+
+
+
+	/////////////////////////////////////////		TStaticFunctionType
+
+
+	struct TStaticFunctionType {
+		TTypeDefinition _signature;
+		CFunctionPtr _f = nullptr;
+		int _id = 0;
+	};
+
 
 
 
@@ -485,41 +526,12 @@ namespace Floyd {
 		TTypeDefinition _signature;
 
 		Value _checkInvariant;
+		int _id = 0;
 	};
 
 
 
-
-
-	/////////////////////////////////////////		TFunctionValue
-
-	/*
-		Holds the value of a custom function.
-
-		??? Something is weird here. The name + types of a function makes up its *value*.
-	*/
-
-	struct TFunctionValue {
-		std::shared_ptr<TStaticFunctionType> _type;
-
-		//	Vector with all members, keyed on memeber name string.
-//		std::vector<std::pair<std::string, Value> > _members;
-	};
-
-
-
-	/////////////////////////////////////////		TStaticFunctionType
-
-
-	struct TStaticFunctionType {
-		TTypeDefinition _signature;
-		CFunctionPtr _f;
-	};
-
-
-
-
-
+	/////////////////////////////////////////		TOrderedValue
 
 
 	struct TOrderedValue {
@@ -527,12 +539,17 @@ namespace Floyd {
 		std::vector<Value> _values;
 	};
 
+
+	/////////////////////////////////////////		TStaticOrderedType
+
+
 	struct TStaticOrderedType {
 		//	Use 32-bit hash of signature string instead.
 //		int _id;
 
 		//	Contains types and names of all members.
 		TTypeDefinition _signature;
+		int _id = 0;
 	};
 
 
