@@ -9,7 +9,6 @@
 	Floyd's types and containers and the runtime to support them.
 */
 
-
 #ifndef __Floyd__FloydType__
 #define __Floyd__FloydType__
 
@@ -47,19 +46,17 @@ namespace Floyd {
 	const int kMaxFunctionArgs = 6;
 
 	typedef Value (*CFunctionPtr)(const IFunctionContext& context, const Value args[], std::size_t argCount);
-	typedef Value (*TooboxFunctionPtr)(const IFunctionContext& context, const Value args[], std::size_t argCount);
 
 
 	struct IFunctionContext {
 		virtual ~IFunctionContext(){};
 
 		virtual void* IFunctionContext_GetToolbox(uint32_t toolboxMagic) = 0;
-		virtual TooboxFunctionPtr IFunctionContext_GetFunction(const std::string& functionName) = 0;
+		virtual CFunctionPtr IFunctionContext_GetFunction(const std::string& functionName) = 0;
 
 
 		virtual Runtime& IFunctionContext_GetRuntime() = 0;
 	};
-
 
 
 
@@ -490,9 +487,6 @@ namespace Floyd {
 
 	struct TFunctionValue {
 		std::shared_ptr<TStaticFunctionType> _type;
-
-		//	Vector with all members, keyed on memeber name string.
-//		std::vector<std::pair<std::string, Value> > _members;
 	};
 
 
@@ -534,9 +528,6 @@ namespace Floyd {
 
 	struct TStaticCompositeType {
 
-		//	Use 32-bit hash of signature string instead.
-//		int _id;
-
 		//	Contains types and names of all members.
 		TTypeDefinition _signature;
 
@@ -559,8 +550,7 @@ namespace Floyd {
 
 
 	struct TStaticOrderedType {
-		//	Use 32-bit hash of signature string instead.
-//		int _id;
+		//	###	Use 32-bit hash of signature string instead.
 
 		//	Contains types and names of all members.
 		TTypeDefinition _signature;
@@ -572,8 +562,6 @@ namespace Floyd {
 
 
 
-
-	const int kNoStaticTypeID = -1;
 
 
 	/////////////////////////////////////////		Runtime
@@ -591,22 +579,29 @@ namespace Floyd {
 		public: Runtime();
 		public: bool CheckInvariant() const;
 
-		public: TValueType DefineFunction(const TTypeDefinition& type, CFunctionPtr f);
 		public: const std::shared_ptr<TStaticFunctionType> LookupFunctionType(const TValueType& type) const;
+		public: CFunctionPtr LookupFunction(const std::string& functionName);
 
-		public: TooboxFunctionPtr LookupFunction(const std::string& functionName);
-
-
-		public: TValueType DefineComposite(const TTypeDefinition& type, const Value& checkInvariant);
 		public: const std::shared_ptr<TStaticCompositeType> LookupCompositeType(const TValueType& type) const;
-
-
-		public: TValueType DefineOrdered(const TTypeDefinition& type);
 		public: const std::shared_ptr<TStaticOrderedType> LookupOrderedType(const TValueType& type) const;
 
 
 
+
+		//	Define a function.
+		public: TValueType DefineFunction(const TTypeDefinition& type, CFunctionPtr f);
+
+		//	Define static types - only before simulation runtime.
+		public: TValueType DefineCompositeType(const TTypeDefinition& type, const Value& checkInvariant);
+		public: TValueType DefineOrderedType(const TTypeDefinition& type);
+
+
+
+
 		////////////////////////////		State
+
+		private: std::unordered_map<std::string, Value> _globalFunctions;
+
 
 		private: int _functionTypeIDGenerator = 10000;
 		private: std::unordered_map<int, std::shared_ptr<TStaticFunctionType> > _functionTypes;

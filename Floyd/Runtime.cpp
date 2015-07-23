@@ -385,7 +385,7 @@ const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 		virtual void* IFunctionContext_GetToolbox(uint32_t /*toolboxMagic*/){
 			return nullptr;
 		}
-		virtual Floyd::TooboxFunctionPtr IFunctionContext_GetFunction(const std::string& functionName){
+		virtual Floyd::CFunctionPtr IFunctionContext_GetFunction(const std::string& functionName){
 			return _runtime->LookupFunction(functionName);
 		}
 
@@ -546,7 +546,7 @@ namespace {
 		auto type = TTypeDefinition(EType::kComposite);
 		type._more.push_back(std::pair<std::string, TValueType>("note_number", EType::kFloat));
 		type._more.push_back(std::pair<std::string, TValueType>("velocity", EType::kFloat));
-		const TValueType result = runtime.DefineComposite(type, MakeNull());
+		const TValueType result = runtime.DefineCompositeType(type, MakeNull());
 		return result;
 	}
 }
@@ -561,7 +561,7 @@ UNIT_TEST("Runtime", "Composite", "BasicUsage", ""){
 	type._more.push_back(std::pair<std::string, TValueType>("note_number", EType::kString));
 	type._more.push_back(std::pair<std::string, TValueType>("velocity", EType::kString));
 
-	const TValueType kNoteCompositeType = runtime.DefineComposite(type, MakeNull());
+	const TValueType kNoteCompositeType = runtime.DefineCompositeType(type, MakeNull());
 	const auto a = MakeComposite(runtime, kNoteCompositeType);
 
 	UT_VERIFY(IsComposite(a));
@@ -660,7 +660,7 @@ UNIT_TEST("Runtime", "DefineOrdered", "BasicUsage", ""){
 	auto type = TTypeDefinition(EType::kOrdered);
 	type._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
 
-	const TValueType t = runtime.DefineOrdered(type);
+	const TValueType t = runtime.DefineOrderedType(type);
 	const auto a = MakeOrdered(runtime, t);
 
 	UT_VERIFY(IsOrdered(a));
@@ -702,6 +702,7 @@ Floyd::TValueType Floyd::Runtime::DefineFunction(const TTypeDefinition& type, CF
 }
 
 const std::shared_ptr<Floyd::TStaticFunctionType> Floyd::Runtime::LookupFunctionType(const TValueType& type) const{
+	ASSERT(CheckInvariant());
 	ASSERT(type._type == EType::kFunction);
 
 	const auto it = _functionTypes.find(type._customTypeID);
@@ -710,8 +711,14 @@ const std::shared_ptr<Floyd::TStaticFunctionType> Floyd::Runtime::LookupFunction
 	return it->second;
 }
 
-Floyd::TooboxFunctionPtr Floyd::Runtime::LookupFunction(const std::string& functionName){
-	return nullptr;
+Floyd::CFunctionPtr Floyd::Runtime::LookupFunction(const std::string& functionName){
+	ASSERT(CheckInvariant());
+	ASSERT(functionName.length() > 0);
+
+	const auto it = _globalFunctions.find(functionName);
+	ASSERT(it != _globalFunctions.end());
+
+	return GetFunction(it->second);
 }
 
 
@@ -720,7 +727,7 @@ Floyd::TooboxFunctionPtr Floyd::Runtime::LookupFunction(const std::string& funct
 
 
 //??? Check for duplicates.
-Floyd::TValueType Floyd::Runtime::DefineComposite(const TTypeDefinition& type, const Value& checkInvariant){
+Floyd::TValueType Floyd::Runtime::DefineCompositeType(const TTypeDefinition& type, const Value& checkInvariant){
 	ASSERT(CheckInvariant());
 	ASSERT(type.CheckInvariant());
 
@@ -755,7 +762,7 @@ const std::shared_ptr<Floyd::TStaticCompositeType> Floyd::Runtime::LookupComposi
 
 
 //??? Check for duplicates.
-Floyd::TValueType Floyd::Runtime::DefineOrdered(const TTypeDefinition& type){
+Floyd::TValueType Floyd::Runtime::DefineOrderedType(const TTypeDefinition& type){
 	ASSERT(CheckInvariant());
 	ASSERT(type.CheckInvariant());
 
