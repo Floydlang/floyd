@@ -159,7 +159,8 @@ void Floyd::Connect(WireInput& dest, WireOutput& source){
 
 namespace {
 
-	Floyd::Value GenerateValue(const Floyd::WireOutput& output){
+	Floyd::Value GenerateValue(Floyd::Simulation& simulation,const Floyd::WireOutput& output){
+		ASSERT(simulation.CheckInvariant());
 		ASSERT(output.CheckInvariant());
 
 		using namespace Floyd;
@@ -170,20 +171,20 @@ namespace {
 			//	Read all our inputs to get arguments to call function part.
 			vector<Value> argValues;
 			for(auto i: output._ownerFunctionPart->_inputs){
-				const auto v = i._connectedTo == nullptr ? MakeNull() : GetValue(*i._connectedTo);
+				const auto v = i._connectedTo == nullptr ? MakeNull() : GetValue(simulation, *i._connectedTo);
 				argValues.push_back(v);
 			}
-			const auto functionResult = CallFunction(output._ownerFunctionPart->_function, argValues);
+			const auto functionResult = CallFunction(simulation.GetRuntime(), output._ownerFunctionPart->_function, argValues);
 			return functionResult;
 		}
 		else if(output._ownerOutputPinPart != nullptr){
 			const auto nextOutput = output._ownerOutputPinPart->_input._connectedTo;
-			const auto v = nextOutput == nullptr ? MakeNull() : GetValue(*nextOutput);
+			const auto v = nextOutput == nullptr ? MakeNull() : GetValue(simulation, *nextOutput);
 			return v;
 		}
 		else if(output._ownerInputPinPart != nullptr){
 			const auto nextOutput = output._ownerInputPinPart->_input._connectedTo;
-			const auto v = nextOutput == nullptr ? MakeNull() : GetValue(*nextOutput);
+			const auto v = nextOutput == nullptr ? MakeNull() : GetValue(simulation, *nextOutput);
 			return v;
 		}
 		else if(output._ownerConstantPart != nullptr){
@@ -197,8 +198,11 @@ namespace {
 
 }
 
-Floyd::Value Floyd::GetValue(const WireOutput& output){
-	auto r = GenerateValue(output);
+Floyd::Value Floyd::GetValue(Floyd::Simulation& simulation, const WireOutput& output){
+	ASSERT(simulation.CheckInvariant());
+	ASSERT(output.CheckInvariant());
+
+	auto r = GenerateValue(simulation, output);
 	return r;
 }
 
@@ -262,6 +266,11 @@ map<string, shared_ptr<Floyd::OutputPinPart> > Floyd::Simulation::GetOutputPins(
 }
 
 
+std::shared_ptr<Floyd::Runtime> Floyd::Simulation::GetRuntime(){
+	ASSERT(CheckInvariant());
+
+	return _runtime;
+}
 
 
 
@@ -278,7 +287,7 @@ namespace {
 		return s == "*" ? a * b : a + b;
 	}
 
-	Value ExampleFunction1_Glue(const Value args[], size_t argCount){
+	Value ExampleFunction1_Glue(const IFunctionContext& context, const Value args[], size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
 		ASSERT(IsFloat(args[0]));
@@ -369,7 +378,7 @@ namespace {
 		Connect(inputPinS->_input, constantS->_output);
 
 		//	Read "result" output pin. This should cause simulation to run all through.
-		Value result = GetValue(resultOutputPin->_output);
+		Value result = GetValue(*r, resultOutputPin->_output);
 
 		ASSERT(GetFloat(result) == 6.0f);
 	}

@@ -25,6 +25,7 @@ namespace Floyd {
 	struct Value;
 	struct TValueType;
 
+	struct IFunctionContext;
 	struct TFunctionValue;
 	struct TStaticFunctionType;
 
@@ -37,6 +38,7 @@ namespace Floyd {
 	struct Runtime;
 
 
+	/////////////////////////////////////////		Functions
 
 	/*
 		Support for custom function-types.
@@ -44,7 +46,20 @@ namespace Floyd {
 
 	const int kMaxFunctionArgs = 6;
 
-	typedef Value (*CFunctionPtr)(const Value args[], std::size_t argCount);
+	typedef Value (*CFunctionPtr)(const IFunctionContext& context, const Value args[], std::size_t argCount);
+	typedef Value (*TooboxFunctionPtr)(const IFunctionContext& context, const Value args[], std::size_t argCount);
+
+
+	struct IFunctionContext {
+		virtual ~IFunctionContext(){};
+
+		virtual void* IFunctionContext_GetToolbox(uint32_t toolboxMagic) = 0;
+		virtual TooboxFunctionPtr IFunctionContext_GetFunction(const std::string& functionName) = 0;
+
+
+		virtual Runtime& IFunctionContext_GetRuntime() = 0;
+	};
+
 
 
 
@@ -394,7 +409,7 @@ namespace Floyd {
 		friend bool IsFunction(const Value& value);
 		friend CFunctionPtr GetFunction(const Value& value);
 		friend const TTypeDefinition& GetFunctionSignature(const Value& value);
-		friend Value CallFunction(const Value& value, const std::vector<Value>& args);
+		friend Value CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const Value& value, const std::vector<Value>& args);
 
 		friend Value MakeComposite(const Runtime& runtime, const TValueType& type);
 		friend bool IsComposite(const Value& value);
@@ -579,6 +594,9 @@ namespace Floyd {
 		public: TValueType DefineFunction(const TTypeDefinition& type, CFunctionPtr f);
 		public: const std::shared_ptr<TStaticFunctionType> LookupFunctionType(const TValueType& type) const;
 
+		public: TooboxFunctionPtr LookupFunction(const std::string& functionName);
+
+
 		public: TValueType DefineComposite(const TTypeDefinition& type, const Value& checkInvariant);
 		public: const std::shared_ptr<TStaticCompositeType> LookupCompositeType(const TValueType& type) const;
 
@@ -590,16 +608,18 @@ namespace Floyd {
 
 		////////////////////////////		State
 
-		int _functionTypeIDGenerator = 10000;
-		std::unordered_map<int, std::shared_ptr<TStaticFunctionType> > _functionTypes;
+		private: int _functionTypeIDGenerator = 10000;
+		private: std::unordered_map<int, std::shared_ptr<TStaticFunctionType> > _functionTypes;
 
-		std::unordered_map<int, std::shared_ptr<TStaticCompositeType> > _compositeTypes;
-		int _compositeTypeIDGenerator = 20000;
+		private: std::unordered_map<int, std::shared_ptr<TStaticCompositeType> > _compositeTypes;
+		private: int _compositeTypeIDGenerator = 20000;
 
-		std::unordered_map<int, std::shared_ptr<TStaticOrderedType> > _orderedTypes;
-		int _orderedTypeIDGenerator = 30000;
+		private: std::unordered_map<int, std::shared_ptr<TStaticOrderedType> > _orderedTypes;
+		private: int _orderedTypeIDGenerator = 30000;
 	};
 
+
+	std::shared_ptr<Runtime> MakeRuntime();
 
 
 
@@ -632,7 +652,7 @@ namespace Floyd {
 	const TTypeDefinition& GetFunctionSignature(const Value& value);
 
 	//	Arguments must match those of the function or assert.
-	Value CallFunction(const Value& value, const std::vector<Value>& args);
+	Value CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const Value& value, const std::vector<Value>& args);
 
 
 	/////////////////////////////////////////		Composite

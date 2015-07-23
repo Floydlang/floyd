@@ -376,7 +376,30 @@ const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 	return value._asFunction->_type->_signature;
 }
 
-Floyd::Value Floyd::CallFunction(const Value& value, const std::vector<Value>& args){
+	struct TContext : Floyd::IFunctionContext {
+		TContext(std::shared_ptr<Floyd::Runtime> runtime) :
+			_runtime(runtime)
+		{
+		}
+
+		virtual void* IFunctionContext_GetToolbox(uint32_t /*toolboxMagic*/){
+			return nullptr;
+		}
+		virtual Floyd::TooboxFunctionPtr IFunctionContext_GetFunction(const std::string& functionName){
+			return _runtime->LookupFunction(functionName);
+		}
+
+		virtual Floyd::Runtime& IFunctionContext_GetRuntime(){
+			return *_runtime;
+		}
+
+		std::shared_ptr<Floyd::Runtime> _runtime;
+	};
+
+
+
+Floyd::Value Floyd::CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const Value& value, const std::vector<Value>& args){
+	ASSERT(runtime->CheckInvariant());
 	ASSERT(value.CheckInvariant());
 #if ASSERT_ON
 	for(auto a: args){
@@ -402,8 +425,10 @@ Floyd::Value Floyd::CallFunction(const Value& value, const std::vector<Value>& a
 
 	// check that types match!
 
+	TContext context(runtime);
 	Value dummy[1];
 	Value functionResult = value._asFunction->_type->_f(
+		context,
 		argValues.empty() ? &dummy[0] : argValues.data(),
 		argValues.size()
 	);
@@ -685,6 +710,9 @@ const std::shared_ptr<Floyd::TStaticFunctionType> Floyd::Runtime::LookupFunction
 	return it->second;
 }
 
+Floyd::TooboxFunctionPtr Floyd::Runtime::LookupFunction(const std::string& functionName){
+	return nullptr;
+}
 
 
 
@@ -754,6 +782,9 @@ const std::shared_ptr<Floyd::TStaticOrderedType> Floyd::Runtime::LookupOrderedTy
 
 
 
+std::shared_ptr<Floyd::Runtime> Floyd::MakeRuntime(){
+	return shared_ptr<Floyd::Runtime>(new Runtime());
+}
 
 
 
@@ -771,7 +802,7 @@ namespace {
 		return s == "*" ? a * b : a + b;
 	}
 
-	Value ExampleFunction1_Glue(const Value args[], std::size_t argCount){
+	Value ExampleFunction1_Glue(const IFunctionContext& context, const Value args[], std::size_t argCount){
 		ASSERT(args != nullptr);
 		ASSERT(argCount == 3);
 		ASSERT(IsFloat(args[0]));
@@ -787,19 +818,6 @@ namespace {
 		return result;
 	}
 
-	Value MakeFunction1(){
-		TTypeDefinition typeDef(EType::kFunction);
-		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("c", EType::kString));
-
-		Runtime runtime;
-		const auto type = runtime.DefineFunction(typeDef, ExampleFunction1_Glue);
-
-		const Value result = MakeFunction(runtime, type);
-		return result;
-	}
 
 
 
@@ -809,26 +827,26 @@ namespace {
 
 	struct Function2Fixture {
 		Function2Fixture(){
-			_noteType = DefineNoteComposite(_runtime);
+			_runtime = MakeRuntime();
+
+			_noteType = DefineNoteComposite(*_runtime);
 
 			TTypeDefinition typeDef(EType::kFunction);
 			typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kNull));
 			typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
 			typeDef._more.push_back(std::pair<std::string, TValueType>("note", _noteType));
-			_f2Type = _runtime.DefineFunction(typeDef, ExampleFunction2);
-			_f2 = MakeFunction(_runtime, _f2Type);
+			_f2Type = _runtime->DefineFunction(typeDef, ExampleFunction2);
+			_f2 = MakeFunction(*_runtime, _f2Type);
 
 
-			_note0 = MakeComposite(_runtime, _noteType);
+			_note0 = MakeComposite(*_runtime, _noteType);
 			_note0 = Assoc(_note0, "note_number", MakeFloat(63.0f));
 
-			_note1 = MakeComposite(_runtime, _noteType);
+			_note1 = MakeComposite(*_runtime, _noteType);
 			_note1 = Assoc(_note1, "velocity", MakeFloat(4.0f));
 		}
 
-
-
-		static Value ExampleFunction2(const Value args[], std::size_t argCount){
+		static Value ExampleFunction2(const IFunctionContext& context, const Value args[], std::size_t argCount){
 			ASSERT(args != nullptr);
 			ASSERT(argCount == 2);
 			ASSERT(IsString(args[0]));
@@ -845,10 +863,7 @@ namespace {
 			return result;
 		}
 
-
-
-
-		Runtime _runtime;
+		std::shared_ptr<Runtime> _runtime;
 		TValueType _noteType;
 		TValueType _f2Type;
 		Value _f2;
@@ -877,7 +892,16 @@ namespace {
 	}
 
 	void ProveWorks__CallFunction__SimpleFunction__CorrectReturn(){
-		const Value f = MakeFunction1();
+		TTypeDefinition typeDef(EType::kFunction);
+		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("c", EType::kString));
+
+		auto runtime = MakeRuntime();
+		const auto type = runtime->DefineFunction(typeDef, ExampleFunction1_Glue);
+
+		const Value f = MakeFunction(*runtime, type);
 
 		UT_VERIFY(IsFunction(f));
 		UT_VERIFY(GetFunction(f) == ExampleFunction1_Glue);
@@ -886,7 +910,7 @@ namespace {
 		args.push_back(MakeFloat(2.0f));
 		args.push_back(MakeFloat(3.0f));
 		args.push_back(MakeString("*"));
-		auto r = CallFunction(f, args);
+		auto r = CallFunction(runtime, f, args);
 		UT_VERIFY(IsFloat(r));
 		UT_VERIFY(GetFloat(r) == 6.0f);
 	}
@@ -910,7 +934,7 @@ UNIT_TEST("Runtime", "CallFunction", "Function with composite arg", "Can access 
 	vector<Value> args;
 	args.push_back(MakeString("Thursday"));
 	args.push_back(fixture._note0);
-	CallFunction(fixture._f2, args);
+	CallFunction(fixture._runtime, fixture._f2, args);
 }
 
 

@@ -35,6 +35,7 @@ namespace Floyd {
 	struct FunctionPart;
 	struct ConstantPart;
 
+	struct Simulation;
 
 
 	/////////////////////////////////////////		WireInput
@@ -198,7 +199,7 @@ namespace Floyd {
 
 	void Connect(WireInput& dest, WireOutput& source);
 
-	Value GetValue(const WireOutput& output);
+	Value GetValue(Simulation& simulation, const WireOutput& output);
 
 
 
@@ -219,6 +220,7 @@ namespace Floyd {
 		//	Returns the output pins exposed by this board.
 		std::map<std::string, std::shared_ptr<OutputPinPart> > GetOutputPins();
 
+		std::shared_ptr<Runtime> GetRuntime();
 
 		//////////////////////////		State
 		std::shared_ptr<Runtime> _runtime;
