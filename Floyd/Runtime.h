@@ -25,8 +25,7 @@ namespace Floyd {
 	struct TValueType;
 
 	struct IFunctionContext;
-	struct TFunctionValue;
-	struct TStaticFunctionType;
+	struct TFunctionDefinition;
 
 	struct TCompositeValue;
 	struct TStaticCompositeType;
@@ -52,7 +51,7 @@ namespace Floyd {
 		virtual ~IFunctionContext(){};
 
 		virtual void* IFunctionContext_GetToolbox(uint32_t toolboxMagic) = 0;
-		virtual CFunctionPtr IFunctionContext_GetFunction(const std::string& functionName) = 0;
+		virtual Floyd::Value IFunctionContext_GetFunction(const std::string& functionName) = 0;
 
 
 		virtual Runtime& IFunctionContext_GetRuntime() = 0;
@@ -383,6 +382,9 @@ namespace Floyd {
 	*/
 
 	struct Value {
+		//	Makes null value.
+		public: Value() = default;
+
 		public: bool CheckInvariant() const;
 		public: EType GetType() const;
 		public: TValueType GetValueType() const;
@@ -390,6 +392,7 @@ namespace Floyd {
 
 
 		///////////////////		Internals
+		public: Value(std::shared_ptr<const TFunctionDefinition> functionValue);
 
 		friend Value MakeNull();
 		friend bool IsNull(const Value& value);
@@ -402,9 +405,8 @@ namespace Floyd {
 		friend bool IsString(const Value& value);
 		friend std::string GetString(const Value& value);
 
-		friend Value MakeFunction(const Runtime& runtime, const TValueType& type);
 		friend bool IsFunction(const Value& value);
-		friend CFunctionPtr GetFunction(const Value& value);
+		friend CFunctionPtr GetFunctionPtr(const Value& value);
 		friend const TTypeDefinition& GetFunctionSignature(const Value& value);
 		friend Value CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const Value& value, const std::vector<Value>& args);
 
@@ -424,7 +426,7 @@ namespace Floyd {
 			private: std::string _asString = "";
 
 			private: std::shared_ptr<const TCompositeValue> _asComposite;
-			private: std::shared_ptr<const TFunctionValue> _asFunction;
+			private: std::shared_ptr<const TFunctionDefinition> _asFunction;
 
 //			private: std::shared_ptr<const TSeq<Value>> _asSeq;
 			private: std::shared_ptr<const TOrderedValue> _asOrdered;
@@ -458,6 +460,12 @@ namespace Floyd {
 		{
 		}
 
+		TValueType(const std::shared_ptr<const TFunctionDefinition> functionValue) :
+			_type(kFunction),
+			_functionValue(functionValue)
+		{
+		}
+
 		public: bool CheckInvariant() const{
 			return true;
 		}
@@ -471,34 +479,25 @@ namespace Floyd {
 		///////////////////		State
 		EType _type = EType::kNull;
 		int _customTypeID = -1;
+		std::shared_ptr<const TFunctionDefinition> _functionValue;
 	};
 
 
 
 
 
-	/////////////////////////////////////////		TFunctionValue
+	/////////////////////////////////////////		TFunctionDefinition
 
 	/*
 		Holds the value of a custom function.
-
-		??? Something is weird here. The name + types of a function makes up its *value*.
 	*/
 
-	struct TFunctionValue {
-		std::shared_ptr<TStaticFunctionType> _type;
-	};
-
-
-
-	/////////////////////////////////////////		TStaticFunctionType
-
-
-	struct TStaticFunctionType {
+	struct TFunctionDefinition {
 		TTypeDefinition _signature;
 		CFunctionPtr _f = nullptr;
-		int _id = 0;
+		std::string _functionName;
 	};
+
 
 
 
@@ -573,23 +572,19 @@ namespace Floyd {
 	*/
 
 
-	//### Rename to "Runtime". The other object shold be called "Model".
 	//### Make a special phase where you can define statics *then* construct the Runtime.
 	struct Runtime {
 		public: Runtime();
 		public: bool CheckInvariant() const;
 
-		public: const std::shared_ptr<TStaticFunctionType> LookupFunctionType(const TValueType& type) const;
-		public: CFunctionPtr LookupFunction(const std::string& functionName);
+		public: Value LookupFunction(const std::string& functionName);
 
 		public: const std::shared_ptr<TStaticCompositeType> LookupCompositeType(const TValueType& type) const;
 		public: const std::shared_ptr<TStaticOrderedType> LookupOrderedType(const TValueType& type) const;
 
 
-
-
 		//	Define a function.
-		public: TValueType DefineFunction(const TTypeDefinition& type, CFunctionPtr f);
+		public: Value DefineFunction(const std::string& functionName, const TTypeDefinition& type, CFunctionPtr f);
 
 		//	Define static types - only before simulation runtime.
 		public: TValueType DefineCompositeType(const TTypeDefinition& type, const Value& checkInvariant);
@@ -597,14 +592,10 @@ namespace Floyd {
 
 
 
-
 		////////////////////////////		State
 
-		private: std::unordered_map<std::string, Value> _globalFunctions;
+		private: std::unordered_map<std::string, Value> _functions;
 
-
-		private: int _functionTypeIDGenerator = 10000;
-		private: std::unordered_map<int, std::shared_ptr<TStaticFunctionType> > _functionTypes;
 
 		private: std::unordered_map<int, std::shared_ptr<TStaticCompositeType> > _compositeTypes;
 		private: int _compositeTypeIDGenerator = 20000;
@@ -641,9 +632,8 @@ namespace Floyd {
 	/////////////////////////////////////////		Function
 
 
-	Value MakeFunction(const Runtime& runtime, const TValueType& type);
 	bool IsFunction(const Value& value);
-	CFunctionPtr GetFunction(const Value& value);
+	CFunctionPtr GetFunctionPtr(const Value& value);
 	const TTypeDefinition& GetFunctionSignature(const Value& value);
 
 	//	Arguments must match those of the function or assert.

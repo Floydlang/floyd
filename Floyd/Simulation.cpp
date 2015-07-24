@@ -321,9 +321,7 @@ namespace {
 		typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
 
 		auto runtime = Runtime();
-		const auto type = runtime.DefineFunction(typeDef, ExampleFunction1_Glue);
-
-		const Value result = MakeFunction(runtime, type);
+		const auto result = runtime.DefineFunction("F1", typeDef, ExampleFunction1_Glue);
 		return result;
 	}
 

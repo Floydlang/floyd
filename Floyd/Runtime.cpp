@@ -162,6 +162,12 @@ UNIT_TEST("", "TypeSignatureFromString", "<null>", "kNull"){
 
 
 
+Floyd::Value::Value(std::shared_ptr<const TFunctionDefinition> functionValue) :
+	_type(EType::kFunction),
+	_asFunction(functionValue)
+{
+	ASSERT(CheckInvariant());
+}
 
 bool Floyd::Value::CheckInvariant() const{
 	//	Use NAN for no-float?
@@ -194,7 +200,9 @@ bool Floyd::Value::CheckInvariant() const{
 		ASSERT(_asComposite.get() == nullptr);
 		ASSERT(_asOrdered.get() == nullptr);
 
-		ASSERT(_asFunction->_type != nullptr);
+		ASSERT(_asFunction->_signature.CheckInvariant());
+		ASSERT(_asFunction->_f != nullptr);
+		ASSERT(_asFunction->_functionName.length() > 0);
 	}
 	else if(_type == EType::kComposite){
 		ASSERT(_asFloat == 0.0f);
@@ -254,7 +262,7 @@ Floyd::TValueType Floyd::Value::GetValueType() const{
 	}
 	else{
 		if(_type == kFunction){
-			return TValueType(_type, _asFunction->_type->_id);
+			return TValueType(_asFunction);
 		}
 		else if(_type == kComposite){
 			return TValueType(_type, _asComposite->_type->_id);
@@ -338,42 +346,25 @@ std::string Floyd::GetString(const Value& value){
 
 
 
-Floyd::Value Floyd::MakeFunction(const Runtime& runtime, const TValueType& type){
-	ASSERT(runtime.CheckInvariant());
-	ASSERT(type.CheckInvariant());
-	ASSERT(type._type == EType::kFunction);
-
-	const auto t = runtime.LookupFunctionType(type);
-	auto v = std::shared_ptr<TFunctionValue>(new TFunctionValue());
-	v->_type = t;
-
-	Value result;
-	result._type = EType::kFunction;
-	result._asFunction = v;
-
-	ASSERT(result.CheckInvariant());
-	return result;
-}
-
-
 bool Floyd::IsFunction(const Value& value){
 	ASSERT(value.CheckInvariant());
 
 	return value._type == kFunction;
 }
 
-Floyd::CFunctionPtr Floyd::GetFunction(const Value& value){
+Floyd::CFunctionPtr Floyd::GetFunctionPtr(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsFunction(value));
 
-	return value._asFunction->_type->_f;
+	return value._asFunction->_f;
 }
+
 
 const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 	ASSERT(value.CheckInvariant());
 	ASSERT(IsFunction(value));
 
-	return value._asFunction->_type->_signature;
+	return value._asFunction->_signature;
 }
 
 	struct TContext : Floyd::IFunctionContext {
@@ -385,7 +376,7 @@ const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 		virtual void* IFunctionContext_GetToolbox(uint32_t /*toolboxMagic*/){
 			return nullptr;
 		}
-		virtual Floyd::CFunctionPtr IFunctionContext_GetFunction(const std::string& functionName){
+		virtual Floyd::Value IFunctionContext_GetFunction(const std::string& functionName){
 			return _runtime->LookupFunction(functionName);
 		}
 
@@ -408,7 +399,7 @@ Floyd::Value Floyd::CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const 
 	ASSERT(args.size() == value._asFunction->_signature._more.size() - 1);
 #endif
 
-	const TTypeDefinition& functionTypeSignature = value._asFunction->_type->_signature;
+	const TTypeDefinition& functionTypeSignature = value._asFunction->_signature;
 
 	std::vector<Value> argValues;
 	int index = 0;
@@ -427,7 +418,7 @@ Floyd::Value Floyd::CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const 
 
 	TContext context(runtime);
 	Value dummy[1];
-	Value functionResult = value._asFunction->_type->_f(
+	Value functionResult = value._asFunction->_f(
 		context,
 		argValues.empty() ? &dummy[0] : argValues.data(),
 		argValues.size()
@@ -669,6 +660,10 @@ UNIT_TEST("Runtime", "DefineOrdered", "BasicUsage", ""){
 
 
 
+
+
+
+
 /////////////////////////////////////////		Runtime
 
 
@@ -683,42 +678,34 @@ bool Floyd::Runtime::CheckInvariant() const{
 
 
 //??? Check for duplicates.
-Floyd::TValueType Floyd::Runtime::DefineFunction(const TTypeDefinition& type, CFunctionPtr f){
+Floyd::Value Floyd::Runtime::DefineFunction(const std::string& functionName, const TTypeDefinition& type, CFunctionPtr f){
 	ASSERT(CheckInvariant());
+	ASSERT(functionName.length() > 0);
 	ASSERT(type.CheckInvariant());
 	ASSERT(f != nullptr);
 
-	const int id = _functionTypeIDGenerator++;
-
-	auto b = std::shared_ptr<TStaticFunctionType>(new TStaticFunctionType());
+	auto b = std::shared_ptr<TFunctionDefinition>(new TFunctionDefinition());
 	b->_signature = type;
 	b->_f = f;
-	b->_id = id;
-	_functionTypes[id] = b;
+	b->_functionName = functionName;
+
+	const Value result(b);
+	ASSERT(result.CheckInvariant());
+
+	_functions[functionName] = result;
 
 	ASSERT(CheckInvariant());
-
-	return TValueType(kFunction, b->_id);
+	return result;
 }
 
-const std::shared_ptr<Floyd::TStaticFunctionType> Floyd::Runtime::LookupFunctionType(const TValueType& type) const{
-	ASSERT(CheckInvariant());
-	ASSERT(type._type == EType::kFunction);
-
-	const auto it = _functionTypes.find(type._customTypeID);
-	ASSERT(it != _functionTypes.end());
-
-	return it->second;
-}
-
-Floyd::CFunctionPtr Floyd::Runtime::LookupFunction(const std::string& functionName){
+Floyd::Value Floyd::Runtime::LookupFunction(const std::string& functionName){
 	ASSERT(CheckInvariant());
 	ASSERT(functionName.length() > 0);
 
-	const auto it = _globalFunctions.find(functionName);
-	ASSERT(it != _globalFunctions.end());
+	const auto it = _functions.find(functionName);
+	ASSERT(it != _functions.end());
 
-	return GetFunction(it->second);
+	return it->second;
 }
 
 
@@ -842,8 +829,7 @@ namespace {
 			typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kNull));
 			typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
 			typeDef._more.push_back(std::pair<std::string, TValueType>("note", _noteType));
-			_f2Type = _runtime->DefineFunction(typeDef, ExampleFunction2);
-			_f2 = MakeFunction(*_runtime, _f2Type);
+			_f2 = _runtime->DefineFunction("f2", typeDef, ExampleFunction2);
 
 
 			_note0 = MakeComposite(*_runtime, _noteType);
@@ -872,7 +858,6 @@ namespace {
 
 		std::shared_ptr<Runtime> _runtime;
 		TValueType _noteType;
-		TValueType _f2Type;
 		Value _f2;
 
 		Value _note0;
@@ -891,11 +876,9 @@ namespace {
 		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
 
 		Runtime runtime;
-		const auto type = runtime.DefineFunction(typeDef, ExampleFunction1_Glue);
-
-		Value result = MakeFunction(runtime, type);
+		const auto result = runtime.DefineFunction("f1", typeDef, ExampleFunction1_Glue);
 		UT_VERIFY(IsFunction(result));
-		UT_VERIFY(GetFunction(result) == ExampleFunction1_Glue);
+		UT_VERIFY(GetFunctionPtr(result) == ExampleFunction1_Glue);
 	}
 
 	void ProveWorks__CallFunction__SimpleFunction__CorrectReturn(){
@@ -906,12 +889,9 @@ namespace {
 		typeDef._more.push_back(std::pair<std::string, TValueType>("c", EType::kString));
 
 		auto runtime = MakeRuntime();
-		const auto type = runtime->DefineFunction(typeDef, ExampleFunction1_Glue);
-
-		const Value f = MakeFunction(*runtime, type);
-
+		const auto f = runtime->DefineFunction("f1", typeDef, ExampleFunction1_Glue);
 		UT_VERIFY(IsFunction(f));
-		UT_VERIFY(GetFunction(f) == ExampleFunction1_Glue);
+		UT_VERIFY(GetFunctionPtr(f) == ExampleFunction1_Glue);
 
 		std::vector<Value> args;
 		args.push_back(MakeFloat(2.0f));
@@ -931,8 +911,7 @@ namespace {
 }
 
 
-//??? Test making composite in C++ funciton and returning it. HOw can f2() get to noteType?
-
+//??? Test making composite in C++ function and returning it. HOw can f2() get to noteType?
 //??? Null cannot be a static type - it can be the value of all(?????) ref-types.
 
 UNIT_TEST("Runtime", "CallFunction", "Function with composite arg", "Can access composite in f2()"){
