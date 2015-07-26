@@ -375,3 +375,81 @@ UNIT_TEST("Runtime", "GetValue", "MinimalSimulation1Function", "OutputIs6"){
 	ASSERT(GetFloat(result) == 6.0f);
 }
 
+
+
+
+
+
+
+/////////////////////////////////////////		Test scenario 1
+
+
+
+
+
+
+namespace {
+
+	Value fx(const IFunctionContext& /*context*/, const Value args[], size_t argCount){
+		ASSERT(args != nullptr);
+		ASSERT(argCount == 3);
+		ASSERT(IsFloat(args[0]));
+		ASSERT(IsFloat(args[1]));
+		ASSERT(IsString(args[2]));
+
+		const float a = GetFloat(args[0]);
+		const float b = GetFloat(args[1]);
+		const string s = GetString(args[2]);
+		const float r = s == "*" ? a * b : a + b;
+		const Value result = MakeFloat(r);
+		return result;
+	}
+}
+
+UNIT_TEST("Runtime", "", "Scenario 1", ""){
+	auto runtime = shared_ptr<Runtime>(new Runtime());
+	auto simulation = MakeSimulation(runtime, kTest2);
+
+	//	Build the board.
+	{
+		TTypeDefinition typeDef(EType::kFunction);
+		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
+		typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
+		const auto fxValue = runtime->DefineFunction("fx", typeDef, fx);
+
+		simulation->_functionParts["f1"] = MakeFunctionPart(fxValue);
+
+		//	Create all external pins.
+		simulation->_inputPins["a"] = MakeInputPin(TValueType(EType::kFloat), "a");
+		simulation->_inputPins["b"] = MakeInputPin(TValueType(EType::kFloat), "b");
+		simulation->_inputPins["s"] = MakeInputPin(TValueType(EType::kString), "s");
+		simulation->_outputPins["result"] = MakeOutputPin(TValueType(EType::kFloat), "result");
+
+		//	Connect all internal wires.
+		Connect(simulation->_functionParts["f1"]->_inputs[0], simulation->_inputPins["a"]->_output);
+		Connect(simulation->_functionParts["f1"]->_inputs[1], simulation->_inputPins["b"]->_output);
+		Connect(simulation->_functionParts["f1"]->_inputs[2], simulation->_inputPins["s"]->_output);
+		Connect(simulation->_outputPins["result"]->_input, simulation->_functionParts["f1"]->_output);
+	}
+
+	//	Make test rig for the simulation.
+	auto constantA = MakeConstantPart(MakeFloat(3.0f));
+	auto constantB = MakeConstantPart(MakeFloat(2.0f));
+	auto constantS = MakeConstantPart(MakeString("*"));
+
+	auto inputPinA = simulation->GetInputPins()["a"];
+	auto inputPinB = simulation->GetInputPins()["b"];
+	auto inputPinS = simulation->GetInputPins()["s"];
+	auto resultOutputPin = simulation->GetOutputPins()["result"];
+	Connect(inputPinA->_input, constantA->_output);
+	Connect(inputPinB->_input, constantB->_output);
+	Connect(inputPinS->_input, constantS->_output);
+
+	//	Read "result" output pin. This should cause simulation to run all through.
+	Value result = GetValue(*simulation, resultOutputPin->_output);
+
+	ASSERT(GetFloat(result) == 6.0f);
+}
+
