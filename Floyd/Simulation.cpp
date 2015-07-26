@@ -1,5 +1,3 @@
-
-
 //
 //  Runtime.cpp
 //  Floyd
@@ -15,7 +13,6 @@
 using namespace std;
 
 
-//	### Intern & RC any bigger values.
 
 
 
@@ -23,8 +20,7 @@ using namespace std;
 
 
 
-Floyd::WireOutput
-::WireOutput(FunctionPart* ownerFunctionPart) :
+Floyd::WireOutput::WireOutput(FunctionPart* ownerFunctionPart) :
 	_ownerFunctionPart(ownerFunctionPart)
 {
 	ASSERT(ownerFunctionPart != nullptr);
@@ -227,8 +223,6 @@ shared_ptr<Floyd::OutputPinPart> Floyd::MakeOutputPin(const TValueType& type, co
 
 
 
-
-
 shared_ptr<Floyd::Simulation> Floyd::MakeSimulation(std::shared_ptr<Runtime> runtime, const string& /*json*/){
 	return shared_ptr<Simulation>(new Simulation(runtime));
 }
@@ -304,7 +298,6 @@ namespace {
 	}
 
 
-
 	const string kTest2 = "hjsdf";
 
 	const string kTest3 =
@@ -324,17 +317,6 @@ namespace {
 		const auto result = runtime.DefineFunction("F1", typeDef, ExampleFunction1_Glue);
 		return result;
 	}
-
-
-	void ProveWorks__MakeFunctionPart__1Function__ValidFunctionPart(){
-		const auto r = MakeFunctionPart(MakeFunction1());
-
-		UT_VERIFY(r->CheckInvariant());
-		UT_VERIFY(IsFunction(r->_function));
-		UT_VERIFY(r->_inputs.size() == 3);
-		UT_VERIFY(r->_output.CheckInvariant());
-	}
-
 
 		//	### add clock -auto clock = inputs["clock"];
 	shared_ptr<Simulation> MakeExample1Simulation(){
@@ -359,67 +341,37 @@ namespace {
 	}
 
 
-	void ProveWorks__GetValue__MinimalSimulation1Function__OutputIs6(){
-		auto r = MakeExample1Simulation();
-
-		auto constantA = MakeConstantPart(MakeFloat(3.0f));
-		auto constantB = MakeConstantPart(MakeFloat(2.0f));
-		auto constantS = MakeConstantPart(MakeString("*"));
-
-		//	Make test rig for the simulation.
-		auto inputPinA = r->GetInputPins()["a"];
-		auto inputPinB = r->GetInputPins()["b"];
-		auto inputPinS = r->GetInputPins()["s"];
-		auto resultOutputPin = r->GetOutputPins()["result"];
-		Connect(inputPinA->_input, constantA->_output);
-		Connect(inputPinB->_input, constantB->_output);
-		Connect(inputPinS->_input, constantS->_output);
-
-		//	Read "result" output pin. This should cause simulation to run all through.
-		Value result = GetValue(*r, resultOutputPin->_output);
-
-		ASSERT(GetFloat(result) == 6.0f);
-	}
-
-}
-
-UNIT_TEST("Runtime", "", "", ""){
 }
 
 
+UNIT_TEST("Runtime", "MakeFunctionPart", "1Function", "ValidFunctionPart"){
+	const auto r = MakeFunctionPart(MakeFunction1());
 
-#if false
-/////////////////////////////////////////		Test scenario 1
-
-
-namespace {
-
-	Value Scenario1_Render(const Value args[], size_t argCount){
-		ASSERT(args != nullptr);
-		ASSERT(argCount == 3);
-		ASSERT(args[0]._type == EType::kFloat);
-		ASSERT(args[1]._type == EType::kFloat);
-		ASSERT(args[2]._type == EType::kString);
-
-		const float a = args[0]._asFloat;
-		const float b = args[1]._asFloat;
-		const string s = args[2]._asString;
-		const float r = ExampleFunction1(a, b, s);
-
-		Value result = MakeFloat(r);
-		return result;
-	}
-
-
-
-	void ProveWorks__Runtime_Run__Scenario1(){
-	}
+	UT_VERIFY(r->CheckInvariant());
+	UT_VERIFY(IsFunction(r->_function));
+	UT_VERIFY(r->_inputs.size() == 3);
+	UT_VERIFY(r->_output.CheckInvariant());
 }
-#endif
 
+UNIT_TEST("Runtime", "GetValue", "MinimalSimulation1Function", "OutputIs6"){
+	auto r = MakeExample1Simulation();
 
+	auto constantA = MakeConstantPart(MakeFloat(3.0f));
+	auto constantB = MakeConstantPart(MakeFloat(2.0f));
+	auto constantS = MakeConstantPart(MakeString("*"));
 
-UNIT_TEST("Runtime", "TestRuntime()", "", ""){
-	ProveWorks__MakeFunctionPart__1Function__ValidFunctionPart();
-	ProveWorks__GetValue__MinimalSimulation1Function__OutputIs6();
+	//	Make test rig for the simulation.
+	auto inputPinA = r->GetInputPins()["a"];
+	auto inputPinB = r->GetInputPins()["b"];
+	auto inputPinS = r->GetInputPins()["s"];
+	auto resultOutputPin = r->GetOutputPins()["result"];
+	Connect(inputPinA->_input, constantA->_output);
+	Connect(inputPinB->_input, constantB->_output);
+	Connect(inputPinS->_input, constantS->_output);
+
+	//	Read "result" output pin. This should cause simulation to run all through.
+	Value result = GetValue(*r, resultOutputPin->_output);
+
+	ASSERT(GetFloat(result) == 6.0f);
 }
+

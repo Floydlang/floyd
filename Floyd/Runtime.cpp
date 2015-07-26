@@ -92,41 +92,9 @@ namespace {
 
 }
 
-#if false
-
-TTypeSignatureString MakeSignature(const std::string& s){
-	ASSERT(IsWellformedSignatureString(s));
-
-	return TTypeSignatureString(s);
-}
-#endif
-
-
-/*
-TTypeSignatureHash HashSignature(const TTypeSignature& s){
-	uint32_t badHash = 1234;
-
-	for(auto c: s._s){
-		badHash += c;
-	}
-	TTypeSignatureHash result;
-	result._hash = badHash;
-	return result;
-}
-*/
-
-
-
-namespace {
-
-/*	std::pair<std::string, std::string> GetTypeToken(const std::string s){
-		
-	}
-*/
-
-}
 
 #if false
+
 TTypeDefinition TypeSignatureFromString(const TTypeSignatureString& s){
 	ASSERT(s.CheckInvariant());
 
@@ -157,6 +125,12 @@ UNIT_TEST("", "TypeSignatureFromString", "<null>", "kNull"){
 }
 
 #endif
+
+
+
+
+
+//////////////////////////////////////		Value
 
 
 
@@ -226,7 +200,6 @@ bool Floyd::Value::CheckInvariant() const{
 	return true;
 }
 
-
 std::string Floyd::Value::GetTypeString() const{
 	ASSERT(CheckInvariant());
 
@@ -248,7 +221,6 @@ std::string Floyd::Value::GetTypeString() const{
 		return "???";
 	}
 }
-
 
 Floyd::EType Floyd::Value::GetType() const{
 	return _type;
@@ -276,6 +248,30 @@ Floyd::TValueType Floyd::Value::GetValueType() const{
 		}
 	}
 }
+
+
+
+
+
+
+
+
+Floyd::Value Floyd::MakeDefaultValue(const Floyd::TValueType& type){
+	if(type._type == EType::kNull){
+		return MakeNull();
+	}
+	else if(type._type == EType::kFloat){
+		return MakeFloat(0.0f);
+	}
+	else if(type._type == EType::kString){
+		return MakeString("");
+	}
+	else{
+		ASSERT(false);
+	}
+}
+
+
 
 
 Floyd::Value Floyd::MakeNull(){
@@ -346,6 +342,16 @@ std::string Floyd::GetString(const Value& value){
 
 
 
+
+
+/////////////////////////////////////////		Functions
+
+
+
+
+
+
+
 bool Floyd::IsFunction(const Value& value){
 	ASSERT(value.CheckInvariant());
 
@@ -367,6 +373,7 @@ const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 	return value._asFunction->_signature;
 }
 
+
 	struct TContext : Floyd::IFunctionContext {
 		TContext(std::shared_ptr<Floyd::Runtime> runtime) :
 			_runtime(runtime)
@@ -386,8 +393,6 @@ const Floyd::TTypeDefinition& Floyd::GetFunctionSignature(const Value& value){
 
 		std::shared_ptr<Floyd::Runtime> _runtime;
 	};
-
-
 
 Floyd::Value Floyd::CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const Value& value, const std::vector<Value>& args){
 	ASSERT(runtime->CheckInvariant());
@@ -431,21 +436,140 @@ Floyd::Value Floyd::CallFunction(std::shared_ptr<Floyd::Runtime> runtime, const 
 }
 
 
+namespace {
 
-Floyd::Value Floyd::MakeDefaultValue(const Floyd::TValueType& type){
-	if(type._type == EType::kNull){
-		return MakeNull();
+	Floyd::TValueType DefineNoteComposite(Floyd::Runtime& runtime){
+		using namespace Floyd;
+		auto type = TTypeDefinition(EType::kComposite);
+		type._more.push_back(std::pair<std::string, TValueType>("note_number", EType::kFloat));
+		type._more.push_back(std::pair<std::string, TValueType>("velocity", EType::kFloat));
+		const TValueType result = runtime.DefineCompositeType(type, MakeNull());
+		return result;
 	}
-	else if(type._type == EType::kFloat){
-		return MakeFloat(0.0f);
+
+	float ExampleFunction1(float a, float b, std::string s){
+		return s == "*" ? a * b : a + b;
 	}
-	else if(type._type == EType::kString){
-		return MakeString("");
+
+	Floyd::Value ExampleFunction1_Glue(const Floyd::IFunctionContext& /*context*/, const Floyd::Value args[], std::size_t argCount){
+		using namespace Floyd;
+
+		ASSERT(args != nullptr);
+		ASSERT(argCount == 3);
+		ASSERT(IsFloat(args[0]));
+		ASSERT(IsFloat(args[1]));
+		ASSERT(IsString(args[2]));
+
+		const float a = GetFloat(args[0]);
+		const float b = GetFloat(args[1]);
+		const std::string s = GetString(args[2]);
+		const float r = ExampleFunction1(a, b, s);
+
+		Value result = MakeFloat(r);
+		return result;
 	}
-	else{
-		ASSERT(false);
-	}
+
+	struct Function2Fixture {
+		Function2Fixture(){
+			using namespace Floyd;
+
+			_runtime = MakeRuntime();
+
+			_noteType = DefineNoteComposite(*_runtime);
+
+			TTypeDefinition typeDef(EType::kFunction);
+			typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kNull));
+			typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
+			typeDef._more.push_back(std::pair<std::string, TValueType>("note", _noteType));
+			_f2 = _runtime->DefineFunction("f2", typeDef, ExampleFunction2);
+
+
+			_note0 = MakeComposite(*_runtime, _noteType);
+			_note0 = Assoc(_note0, "note_number", MakeFloat(63.0f));
+
+			_note1 = MakeComposite(*_runtime, _noteType);
+			_note1 = Assoc(_note1, "velocity", MakeFloat(4.0f));
+		}
+
+		static Floyd::Value ExampleFunction2(const Floyd::IFunctionContext& /*context*/, const Floyd::Value args[], std::size_t argCount){
+			using namespace Floyd;
+
+			ASSERT(args != nullptr);
+			ASSERT(argCount == 2);
+			ASSERT(IsString(args[0]));
+			ASSERT(IsComposite(args[1]));
+
+			const string arg0 = GetString(args[0]);
+			ASSERT(arg0 == "Thursday");
+
+			const Value& arg1 = args[1];
+			const auto member0 = GetFloat(GetCompositeMember(arg1, "note_number"));
+			const auto member1 = GetFloat(GetCompositeMember(arg1, "velocity"));
+
+			Value result = MakeNull();
+			return result;
+		}
+
+		std::shared_ptr<Floyd::Runtime> _runtime;
+		Floyd::TValueType _noteType;
+		Floyd::Value _f2;
+
+		Floyd::Value _note0;
+		Floyd::Value _note1;
+	};
+
 }
+
+UNIT_TEST("", "MakeFunction", "SimpleFunction()", "CorrectValue"){
+	using namespace Floyd;
+	TTypeDefinition typeDef(EType::kFunction);
+	typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+
+	Runtime runtime;
+	const auto result = runtime.DefineFunction("f1", typeDef, ExampleFunction1_Glue);
+	UT_VERIFY(IsFunction(result));
+	UT_VERIFY(GetFunctionPtr(result) == ExampleFunction1_Glue);
+}
+
+UNIT_TEST("", "CallFunction", "SimpleFunction()", "CorrectValue"){
+	using namespace Floyd;
+	TTypeDefinition typeDef(EType::kFunction);
+	typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
+	typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
+	typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
+	typeDef._more.push_back(std::pair<std::string, TValueType>("c", EType::kString));
+
+	auto runtime = MakeRuntime();
+	const auto f = runtime->DefineFunction("f1", typeDef, ExampleFunction1_Glue);
+	UT_VERIFY(IsFunction(f));
+	UT_VERIFY(GetFunctionPtr(f) == ExampleFunction1_Glue);
+
+	std::vector<Value> args;
+	args.push_back(MakeFloat(2.0f));
+	args.push_back(MakeFloat(3.0f));
+	args.push_back(MakeString("*"));
+	auto r = CallFunction(runtime, f, args);
+	UT_VERIFY(IsFloat(r));
+	UT_VERIFY(GetFloat(r) == 6.0f);
+}
+
+//??? Test making composite in C++ function and returning it. HOw can f2() get to noteType?
+
+UNIT_TEST("Runtime", "CallFunction", "Function with composite arg", "Can access composite in f2()"){
+	using namespace Floyd;
+	Function2Fixture fixture;
+	vector<Value> args;
+	args.push_back(MakeString("Thursday"));
+	args.push_back(fixture._note0);
+	CallFunction(fixture._runtime, fixture._f2, args);
+}
+
+
+
+
+
+/////////////////////////////////////////		Composite
+
 
 
 
@@ -485,9 +609,9 @@ const Floyd::Value& Floyd::GetCompositeMember(const Value& composite, const std:
 	ASSERT(IsComposite(composite));
 	ASSERT(!member.empty());
 
-std::shared_ptr<const TCompositeValue> temp = composite._asComposite;
 /*
-composite._asComposite->_memberValues[0].first = "x";
+	std::shared_ptr<const TCompositeValue> temp = composite._asComposite;
+	composite._asComposite->_memberValues[0].first = "x";
 */
 
 	for(const auto& it: composite._asComposite->_memberValues){
@@ -528,20 +652,6 @@ const Floyd::Value Floyd::Assoc(const Value& composite, const std::string& membe
 	ASSERT(result.CheckInvariant());
 	return result;
 }
-
-
-namespace {
-
-	Floyd::TValueType DefineNoteComposite(Floyd::Runtime& runtime){
-		using namespace Floyd;
-		auto type = TTypeDefinition(EType::kComposite);
-		type._more.push_back(std::pair<std::string, TValueType>("note_number", EType::kFloat));
-		type._more.push_back(std::pair<std::string, TValueType>("velocity", EType::kFloat));
-		const TValueType result = runtime.DefineCompositeType(type, MakeNull());
-		return result;
-	}
-}
-
 
 
 UNIT_TEST("Runtime", "Composite", "BasicUsage", ""){
@@ -595,6 +705,62 @@ UNIT_TEST("Composite", "Assoc", "Replace member", "Read back cahange"){
 
 
 
+/////////////////////////////////////////		TSeq
+
+
+
+
+namespace {
+	using namespace Floyd;
+
+	TSeq<int> MakeTestSeq3(){
+		const int kTest[] = {	88, 90, 100 };
+		const auto a = TSeq<int>(std::vector<int>(&kTest[0], &kTest[3]));
+		ASSERT(a.Count() == 3);
+
+		const auto b = a.ToVector();
+		ASSERT(b[0] == 88);
+		ASSERT(b[1] == 90);
+		ASSERT(b[2] == 100);
+
+		return a;
+	}
+}
+
+
+UNIT_TEST("TSeq", "DefaultConstructor", "Basic", "NoAssert"){
+	auto a = TSeq<int>();
+	UT_VERIFY(a.CheckInvariant());
+}
+
+
+UNIT_TEST("TSeq", "First()", "ThreeItems", "8"){
+	auto a = MakeTestSeq3();
+	auto b = a.First();
+	UT_VERIFY(b == 88);
+}
+
+UNIT_TEST("TSeq", "Rest()", "ThreeItems", "TwoItems"){
+	const auto a = MakeTestSeq3();
+	const auto b = a.Rest();
+
+	UT_VERIFY(b->Count() == 2);
+	const auto c = b->ToVector();
+	ASSERT(c[0] == 90);
+	ASSERT(c[1] == 100);
+}
+
+UNIT_TEST("TSeq", "Rest()", "ReadAllItems", "ResultIsEmpty"){
+	const auto a = MakeTestSeq3();
+	const auto b = a.Rest();
+	const auto c = b->Rest();
+	const auto d = c->Rest();
+	UT_VERIFY(d->Count() == 0);
+}
+
+
+
+
 /////////////////////////////////////////		Ordered
 
 
@@ -641,9 +807,6 @@ const Floyd::Value& Floyd::GetOrderedMember(const Value& ordered, const std::str
 	throw std::runtime_error("");
 }
 
-
-
-
 UNIT_TEST("Runtime", "DefineOrdered", "BasicUsage", ""){
 	using namespace Floyd;
 	Runtime runtime;
@@ -657,14 +820,137 @@ UNIT_TEST("Runtime", "DefineOrdered", "BasicUsage", ""){
 	UT_VERIFY(IsOrdered(a));
 }
 
+namespace {
+
+	std::shared_ptr<const TOrdered<int>> MakeTestOrdered3(){
+		auto a = TOrdered<int>();
+		auto b = a.Assoc(0, 8);
+		b = b->Assoc(1, 9);
+		b = b->Assoc(2, 10);
+		return b;
+	}
+
+}
+
+UNIT_TEST("TOrdered", "DefaultConstructor()", "Basic", "NoAssert"){
+	auto a = TOrdered<int>();
+	UT_VERIFY(a.CheckInvariant());
+}
+
+UNIT_TEST("TOrdered", "Assoc()", "OnEmptyCollection", "OneItem"){
+	auto a = TOrdered<int>();
+	auto b = a.Assoc(0, 13);
+
+	UT_VERIFY(a.Count() == 0);
+	UT_VERIFY(b->Count() == 1);
+	UT_VERIFY(b->AtIndex(0) == 13);
+}
+
+UNIT_TEST("TOrdered", "Assoc()", "AppendThree", "ThreeItems"){
+	auto a = TOrdered<int>();
+	auto b = a.Assoc(0, 8);
+	auto c = b->Assoc(1, 9);
+	auto d = c->Assoc(2, 10);
+
+	UT_VERIFY(a.Count() == 0);
+
+	UT_VERIFY(b->Count() == 1);
+	UT_VERIFY(b->AtIndex(0) == 8);
+
+	UT_VERIFY(c->Count() == 2);
+	UT_VERIFY(c->AtIndex(0) == 8);
+	UT_VERIFY(c->AtIndex(1) == 9);
+
+	UT_VERIFY(d->Count() == 3);
+	UT_VERIFY(d->AtIndex(0) == 8);
+	UT_VERIFY(d->AtIndex(1) == 9);
+	UT_VERIFY(d->AtIndex(2) == 10);
+}
+
+UNIT_TEST("TOrdered", "Assoc()", "ReplaceItem", "Correct"){
+	auto a = MakeTestOrdered3();
+	auto b = a->Assoc(1, 99);
+
+	UT_VERIFY(a->Count() == 3);
+	UT_VERIFY(a->AtIndex(1) == 9);
+	UT_VERIFY(b->Count() == 3);
+	UT_VERIFY(b->AtIndex(1)== 99);
+}
 
 
+
+
+
+
+/////////////////////////////////////////		TUnordered
+
+
+
+
+namespace {
+
+	std::shared_ptr<const TUnordered<string, int>> MakeTestUnordered3(){
+		auto a = TUnordered<string, int>();
+		auto b = a.Assoc("zero", 8);
+		b = b->Assoc("one", 9);
+		b = b->Assoc("two", 10);
+		return b;
+	}
+
+}
+
+UNIT_TEST("TUnordered", "DefaultConstructor()", "Basic", "NoAssert"){
+	auto a = TUnordered<string, int>();
+	UT_VERIFY(a.CheckInvariant());
+}
+
+UNIT_TEST("TUnordered", "Assoc()", "OnEmptyCollection", "OneItem"){
+	auto a = TUnordered<string, int>();
+	auto b = a.Assoc("three", 13);
+
+	UT_VERIFY(a.Count() == 0);
+	UT_VERIFY(b->Count() == 1);
+	UT_VERIFY(b->AtKey("three") == 13);
+}
+
+UNIT_TEST("TUnordered", "Assoc()", "AppendThree", "ThreeItems"){
+	auto a = TUnordered<string, int>();
+	auto b = a.Assoc("zero", 8);
+	auto c = b->Assoc("one", 9);
+	auto d = c->Assoc("two", 10);
+
+	UT_VERIFY(a.Count() == 0);
+
+	UT_VERIFY(b->Count() == 1);
+	UT_VERIFY(b->AtKey("zero") == 8);
+
+	UT_VERIFY(c->Count() == 2);
+	UT_VERIFY(c->AtKey("zero") == 8);
+	UT_VERIFY(c->AtKey("one") == 9);
+
+	UT_VERIFY(d->Count() == 3);
+	UT_VERIFY(d->AtKey("zero") == 8);
+	UT_VERIFY(d->AtKey("one") == 9);
+	UT_VERIFY(d->AtKey("two") == 10);
+}
+
+UNIT_TEST("TUnordered", "Assoc()", "ReplaceItem", "Correct"){
+	auto a = MakeTestUnordered3();
+	auto b = a->Assoc("one", 99);
+
+	UT_VERIFY(a->Count() == 3);
+	UT_VERIFY(a->AtKey("one") == 9);
+	UT_VERIFY(b->Count() == 3);
+	UT_VERIFY(b->AtKey("one")== 99);
+}
 
 
 
 
 
 /////////////////////////////////////////		Runtime
+
+
 
 
 
@@ -709,10 +995,6 @@ Floyd::Value Floyd::Runtime::LookupFunction(const std::string& functionName){
 }
 
 
-
-
-
-
 //??? Check for duplicates.
 Floyd::TValueType Floyd::Runtime::DefineCompositeType(const TTypeDefinition& type, const Value& checkInvariant){
 	ASSERT(CheckInvariant());
@@ -739,13 +1021,6 @@ const std::shared_ptr<Floyd::TStaticCompositeType> Floyd::Runtime::LookupComposi
 
 	return it->second;
 }
-
-
-
-
-
-
-
 
 
 //??? Check for duplicates.
@@ -775,352 +1050,8 @@ const std::shared_ptr<Floyd::TStaticOrderedType> Floyd::Runtime::LookupOrderedTy
 }
 
 
-
 std::shared_ptr<Floyd::Runtime> Floyd::MakeRuntime(){
 	return shared_ptr<Floyd::Runtime>(new Runtime());
 }
 
-
-
-
-
-/////////////////////////////////////////		Test functions
-
-
-
-using namespace Floyd;
-
-
-namespace {
-	float ExampleFunction1(float a, float b, std::string s){
-		return s == "*" ? a * b : a + b;
-	}
-
-	Value ExampleFunction1_Glue(const IFunctionContext& context, const Value args[], std::size_t argCount){
-		ASSERT(args != nullptr);
-		ASSERT(argCount == 3);
-		ASSERT(IsFloat(args[0]));
-		ASSERT(IsFloat(args[1]));
-		ASSERT(IsString(args[2]));
-
-		const float a = GetFloat(args[0]);
-		const float b = GetFloat(args[1]);
-		const std::string s = GetString(args[2]);
-		const float r = ExampleFunction1(a, b, s);
-
-		Value result = MakeFloat(r);
-		return result;
-	}
-
-
-
-
-
-
-
-
-	struct Function2Fixture {
-		Function2Fixture(){
-			_runtime = MakeRuntime();
-
-			_noteType = DefineNoteComposite(*_runtime);
-
-			TTypeDefinition typeDef(EType::kFunction);
-			typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kNull));
-			typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
-			typeDef._more.push_back(std::pair<std::string, TValueType>("note", _noteType));
-			_f2 = _runtime->DefineFunction("f2", typeDef, ExampleFunction2);
-
-
-			_note0 = MakeComposite(*_runtime, _noteType);
-			_note0 = Assoc(_note0, "note_number", MakeFloat(63.0f));
-
-			_note1 = MakeComposite(*_runtime, _noteType);
-			_note1 = Assoc(_note1, "velocity", MakeFloat(4.0f));
-		}
-
-		static Value ExampleFunction2(const IFunctionContext& context, const Value args[], std::size_t argCount){
-			ASSERT(args != nullptr);
-			ASSERT(argCount == 2);
-			ASSERT(IsString(args[0]));
-			ASSERT(IsComposite(args[1]));
-
-			const string arg0 = GetString(args[0]);
-			ASSERT(arg0 == "Thursday");
-
-			const Value& arg1 = args[1];
-			const auto member0 = GetFloat(GetCompositeMember(arg1, "note_number"));
-			const auto member1 = GetFloat(GetCompositeMember(arg1, "velocity"));
-
-			Value result = MakeNull();
-			return result;
-		}
-
-		std::shared_ptr<Runtime> _runtime;
-		TValueType _noteType;
-		Value _f2;
-
-		Value _note0;
-		Value _note1;
-	};
-
-
-
-
-
-
-
-
-	void ProveWorks__MakeFunction__SimpleFunction__CorrectValue(){
-		TTypeDefinition typeDef(EType::kFunction);
-		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
-
-		Runtime runtime;
-		const auto result = runtime.DefineFunction("f1", typeDef, ExampleFunction1_Glue);
-		UT_VERIFY(IsFunction(result));
-		UT_VERIFY(GetFunctionPtr(result) == ExampleFunction1_Glue);
-	}
-
-	void ProveWorks__CallFunction__SimpleFunction__CorrectReturn(){
-		TTypeDefinition typeDef(EType::kFunction);
-		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("c", EType::kString));
-
-		auto runtime = MakeRuntime();
-		const auto f = runtime->DefineFunction("f1", typeDef, ExampleFunction1_Glue);
-		UT_VERIFY(IsFunction(f));
-		UT_VERIFY(GetFunctionPtr(f) == ExampleFunction1_Glue);
-
-		std::vector<Value> args;
-		args.push_back(MakeFloat(2.0f));
-		args.push_back(MakeFloat(3.0f));
-		args.push_back(MakeString("*"));
-		auto r = CallFunction(runtime, f, args);
-		UT_VERIFY(IsFloat(r));
-		UT_VERIFY(GetFloat(r) == 6.0f);
-	}
-
-
-
-
-
-
-
-}
-
-
-//??? Test making composite in C++ function and returning it. HOw can f2() get to noteType?
-//??? Null cannot be a static type - it can be the value of all(?????) ref-types.
-
-UNIT_TEST("Runtime", "CallFunction", "Function with composite arg", "Can access composite in f2()"){
-	Function2Fixture fixture;
-
-	vector<Value> args;
-	args.push_back(MakeString("Thursday"));
-	args.push_back(fixture._note0);
-	CallFunction(fixture._runtime, fixture._f2, args);
-}
-
-
-
-/////////////////////////////////////////		Test TSeq
-
-
-
-
-namespace {
-
-	void ProveWorks__TSeq_DefaultConstructor__Basic__NoAssert(){
-		auto a = TSeq<int>();
-		UT_VERIFY(a.CheckInvariant());
-	}
-
-	TSeq<int> MakeTestSeq3(){
-		const int kTest[] = {	88, 90, 100 };
-		const auto a = TSeq<int>(std::vector<int>(&kTest[0], &kTest[3]));
-		ASSERT(a.Count() == 3);
-
-		const auto b = a.ToVector();
-		ASSERT(b[0] == 88);
-		ASSERT(b[1] == 90);
-		ASSERT(b[2] == 100);
-
-		return a;
-	}
-
-	void ProveWorks__TSeq_First__ThreeItems__8(){
-		auto a = MakeTestSeq3();
-		auto b = a.First();
-		UT_VERIFY(b == 88);
-	}
-
-	void ProveWorks__TSeq_Rest__ThreeItems__TwoItems(){
-		const auto a = MakeTestSeq3();
-		const auto b = a.Rest();
-
-		UT_VERIFY(b->Count() == 2);
-		const auto c = b->ToVector();
-		ASSERT(c[0] == 90);
-		ASSERT(c[1] == 100);
-	}
-
-	void ProveWorks__TSeq_Rest__ReadAllItems__ResultIsEmpty(){
-		const auto a = MakeTestSeq3();
-		const auto b = a.Rest();
-		const auto c = b->Rest();
-		const auto d = c->Rest();
-		UT_VERIFY(d->Count() == 0);
-	}
-
-}
-
-
-
-
-/////////////////////////////////////////		Test TOrdered
-
-
-
-namespace {
-
-	void ProveWorks__TOrdered_DefaultConstructor__Basic__NoAssert(){
-		auto a = TOrdered<int>();
-		UT_VERIFY(a.CheckInvariant());
-	}
-
-	void ProveWorks__TOrdered_Assoc__OnEmptyCollection__OneItem(){
-		auto a = TOrdered<int>();
-		auto b = a.Assoc(0, 13);
-
-		UT_VERIFY(a.Count() == 0);
-		UT_VERIFY(b->Count() == 1);
-		UT_VERIFY(b->AtIndex(0) == 13);
-	}
-
-	void ProveWorks__TOrdered_Assoc__AppendThree__ThreeItems(){
-		auto a = TOrdered<int>();
-		auto b = a.Assoc(0, 8);
-		auto c = b->Assoc(1, 9);
-		auto d = c->Assoc(2, 10);
-
-		UT_VERIFY(a.Count() == 0);
-
-		UT_VERIFY(b->Count() == 1);
-		UT_VERIFY(b->AtIndex(0) == 8);
-
-		UT_VERIFY(c->Count() == 2);
-		UT_VERIFY(c->AtIndex(0) == 8);
-		UT_VERIFY(c->AtIndex(1) == 9);
-
-		UT_VERIFY(d->Count() == 3);
-		UT_VERIFY(d->AtIndex(0) == 8);
-		UT_VERIFY(d->AtIndex(1) == 9);
-		UT_VERIFY(d->AtIndex(2) == 10);
-	}
-
-	std::shared_ptr<const TOrdered<int>> MakeTestOrdered3(){
-		auto a = TOrdered<int>();
-		auto b = a.Assoc(0, 8);
-		b = b->Assoc(1, 9);
-		b = b->Assoc(2, 10);
-		return b;
-	}
-
-	void ProveWorks__TOrdered_Assoc__ReplaceItem__Correct(){
-		auto a = MakeTestOrdered3();
-		auto b = a->Assoc(1, 99);
-
-		UT_VERIFY(a->Count() == 3);
-		UT_VERIFY(a->AtIndex(1) == 9);
-		UT_VERIFY(b->Count() == 3);
-		UT_VERIFY(b->AtIndex(1)== 99);
-	}
-
-}
-
-
-
-/////////////////////////////////////////		Test TUnordered
-
-
-
-namespace {
-
-	void ProveWorks__TUnordered_DefaultConstructor__Basic__NoAssert(){
-		auto a = TUnordered<string, int>();
-		UT_VERIFY(a.CheckInvariant());
-	}
-
-	void ProveWorks__TUnordered_Assoc__OnEmptyCollection__OneItem(){
-		auto a = TUnordered<string, int>();
-		auto b = a.Assoc("three", 13);
-
-		UT_VERIFY(a.Count() == 0);
-		UT_VERIFY(b->Count() == 1);
-		UT_VERIFY(b->AtKey("three") == 13);
-	}
-
-	void ProveWorks__TUnordered_Assoc__AppendThree__ThreeItems(){
-		auto a = TUnordered<string, int>();
-		auto b = a.Assoc("zero", 8);
-		auto c = b->Assoc("one", 9);
-		auto d = c->Assoc("two", 10);
-
-		UT_VERIFY(a.Count() == 0);
-
-		UT_VERIFY(b->Count() == 1);
-		UT_VERIFY(b->AtKey("zero") == 8);
-
-		UT_VERIFY(c->Count() == 2);
-		UT_VERIFY(c->AtKey("zero") == 8);
-		UT_VERIFY(c->AtKey("one") == 9);
-
-		UT_VERIFY(d->Count() == 3);
-		UT_VERIFY(d->AtKey("zero") == 8);
-		UT_VERIFY(d->AtKey("one") == 9);
-		UT_VERIFY(d->AtKey("two") == 10);
-	}
-
-	std::shared_ptr<const TUnordered<string, int>> MakeTestUnordered3(){
-		auto a = TUnordered<string, int>();
-		auto b = a.Assoc("zero", 8);
-		b = b->Assoc("one", 9);
-		b = b->Assoc("two", 10);
-		return b;
-	}
-
-	void ProveWorks__TUnordered_Assoc__ReplaceItem__Correct(){
-		auto a = MakeTestUnordered3();
-		auto b = a->Assoc("one", 99);
-
-		UT_VERIFY(a->Count() == 3);
-		UT_VERIFY(a->AtKey("one") == 9);
-		UT_VERIFY(b->Count() == 3);
-		UT_VERIFY(b->AtKey("one")== 99);
-	}
-}
-
-
-
-UNIT_TEST("FloydType", "RunFloydTypeTests()", "", ""){
-	ProveWorks__MakeFunction__SimpleFunction__CorrectValue();
-	ProveWorks__CallFunction__SimpleFunction__CorrectReturn();
-
-	ProveWorks__TSeq_DefaultConstructor__Basic__NoAssert();
-	ProveWorks__TSeq_First__ThreeItems__8();
-	ProveWorks__TSeq_Rest__ThreeItems__TwoItems();
-	ProveWorks__TSeq_Rest__ReadAllItems__ResultIsEmpty();
-
-	ProveWorks__TOrdered_DefaultConstructor__Basic__NoAssert();
-	ProveWorks__TOrdered_Assoc__OnEmptyCollection__OneItem();
-	ProveWorks__TOrdered_Assoc__AppendThree__ThreeItems();
-	ProveWorks__TOrdered_Assoc__ReplaceItem__Correct();
-
-	ProveWorks__TUnordered_DefaultConstructor__Basic__NoAssert();
-	ProveWorks__TUnordered_Assoc__OnEmptyCollection__OneItem();
-	ProveWorks__TUnordered_Assoc__AppendThree__ThreeItems();
-	ProveWorks__TUnordered_Assoc__ReplaceItem__Correct();
-}
 

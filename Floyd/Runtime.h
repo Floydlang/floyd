@@ -374,11 +374,14 @@ namespace Floyd {
 		Depending on the type of value, the value is inline in the Value object itself or interned.
 
 
+		??? Null cannot be a static type - it can be the value of all(?????) ref-types.
+		Yes it can, but it is only useful for tagged_union. Also need null-refs??? Weak vs strong references?
 
 		### Attempt to make this struct 16 bytes big on 64-bit architectures.
 
 		### Maybe possible to squeeze down to 8 bytes, if we can detect int64, float64 from 64bit word.
 		### Make some rare bitpattern of int64/float64 actual cause them to use a second memory block?
+		### Intern & RC any bigger values.
 	*/
 
 	struct Value {

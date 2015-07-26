@@ -23,9 +23,7 @@
 #include <string>
 
 
-
 namespace Floyd {
-
 	struct TComposite;
 	struct Value;
 	struct WireInput;
@@ -128,10 +126,8 @@ namespace Floyd {
 		WireInput _input;
 	};
 
-
 	std::shared_ptr<InputPinPart> MakeInputPin(const TValueType& type, const std::string& label);
 	std::shared_ptr<OutputPinPart> MakeOutputPin(const TValueType& type, const std::string& label);
-
 
 
 /*
@@ -230,7 +226,6 @@ namespace Floyd {
 	};
 
 	std::shared_ptr<Simulation> MakeSimulation(std::shared_ptr<Runtime> runtime, const std::string& json);
-
 }
 
 
