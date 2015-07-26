@@ -560,10 +560,35 @@ namespace Floyd {
 	};
 
 
+	struct Arg {
+		Arg(const std::string& name, const TValueType& valueType) :
+			_name(name),
+			_valueType(valueType)
+		{
+		}
+
+		TValueType _valueType;
+		std::string _name;
+	};
+
+	struct Args {
+		std::vector<Arg> _args;
+	};
 
 
+	inline Args operator<<(const Arg& a1, const Arg& a2){
+		Args result;
+		result._args.push_back(a1);
+		result._args.push_back(a2);
+		return result;
+	}
 
-
+	inline Args operator<<(const Args& args, const Arg& arg){
+		auto result = args;
+		result._args.push_back(arg);
+		return result;
+	}
+//		const auto fxValue = runtime->DefineFunction("fx", kFloat, Arg("a", kFloat) << Arg("b", kFloat) << Arg("s", kString), fx);
 
 
 	/////////////////////////////////////////		Runtime
@@ -588,6 +613,18 @@ namespace Floyd {
 
 		//	Define a function.
 		public: Value DefineFunction(const std::string& functionName, const TTypeDefinition& type, CFunctionPtr f);
+
+		public: Value DefineFunction(const std::string& functionName, TValueType resultType, const Args& args, CFunctionPtr f){
+			TTypeDefinition typeDef(kFunction);
+			typeDef._more.push_back(std::pair<std::string, TValueType>("", resultType));
+			for(auto it: args._args){
+				typeDef._more.push_back(std::pair<std::string, TValueType>(it._name, it._valueType));
+			}
+			return DefineFunction(functionName, typeDef, f);
+		}
+
+
+
 
 		//	Define static types - only before simulation runtime.
 		public: TValueType DefineCompositeType(const TTypeDefinition& type, const Value& checkInvariant);

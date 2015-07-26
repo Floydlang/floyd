@@ -134,6 +134,14 @@ shared_ptr<Floyd::FunctionPart> Floyd::MakeFunctionPart(const Value& f){
 }
 
 
+std::shared_ptr<Floyd::FunctionPart> MakeFunctionPart(Floyd::Simulation& simulation, const std::string& functionName, Floyd::TValueType resultType, const Floyd::Args& args, Floyd::CFunctionPtr f){
+	const auto value = simulation.GetRuntime()->DefineFunction(functionName, resultType, args, f);
+	auto functionPart = MakeFunctionPart(value);
+	simulation._functionParts[functionName] = functionPart;
+	return functionPart;
+}
+
+
 shared_ptr<Floyd::ConstantPart> Floyd::MakeConstantPart(const Value& value){
 	ASSERT(value.CheckInvariant());
 
@@ -412,26 +420,19 @@ UNIT_TEST("Runtime", "", "Scenario 1", ""){
 
 	//	Build the board.
 	{
-		TTypeDefinition typeDef(EType::kFunction);
-		typeDef._more.push_back(std::pair<std::string, TValueType>("", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("a", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("b", EType::kFloat));
-		typeDef._more.push_back(std::pair<std::string, TValueType>("s", EType::kString));
-		const auto fxValue = runtime->DefineFunction("fx", typeDef, fx);
-
-		simulation->_functionParts["f1"] = MakeFunctionPart(fxValue);
+		const auto fxPart = MakeFunctionPart(*simulation, "fx", kFloat, Arg("a", kFloat) << Arg("b", kFloat) << Arg("s", kString), fx);
 
 		//	Create all external pins.
-		simulation->_inputPins["a"] = MakeInputPin(TValueType(EType::kFloat), "a");
-		simulation->_inputPins["b"] = MakeInputPin(TValueType(EType::kFloat), "b");
-		simulation->_inputPins["s"] = MakeInputPin(TValueType(EType::kString), "s");
-		simulation->_outputPins["result"] = MakeOutputPin(TValueType(EType::kFloat), "result");
+		simulation->_inputPins["a"] = MakeInputPin(kFloat, "a");
+		simulation->_inputPins["b"] = MakeInputPin(kFloat, "b");
+		simulation->_inputPins["s"] = MakeInputPin(kString, "s");
+		simulation->_outputPins["result"] = MakeOutputPin(kFloat, "result");
 
 		//	Connect all internal wires.
-		Connect(simulation->_functionParts["f1"]->_inputs[0], simulation->_inputPins["a"]->_output);
-		Connect(simulation->_functionParts["f1"]->_inputs[1], simulation->_inputPins["b"]->_output);
-		Connect(simulation->_functionParts["f1"]->_inputs[2], simulation->_inputPins["s"]->_output);
-		Connect(simulation->_outputPins["result"]->_input, simulation->_functionParts["f1"]->_output);
+		Connect(fxPart->_inputs[0], simulation->_inputPins["a"]->_output);
+		Connect(fxPart->_inputs[1], simulation->_inputPins["b"]->_output);
+		Connect(fxPart->_inputs[2], simulation->_inputPins["s"]->_output);
+		Connect(simulation->_outputPins["result"]->_input, fxPart->_output);
 	}
 
 	//	Make test rig for the simulation.

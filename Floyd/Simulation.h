@@ -193,6 +193,9 @@ namespace Floyd {
 	std::shared_ptr<FunctionPart> MakeFunctionPart(const Value& f);
 	std::shared_ptr<ConstantPart> MakeConstantPart(const Value& value);
 
+	std::shared_ptr<FunctionPart> MakeFunctionPart2(Simulation& simulation, const std::string& functionName, TValueType resultType, const Args& args, CFunctionPtr f);
+
+
 	void Connect(WireInput& dest, WireOutput& source);
 
 	Value GetValue(Simulation& simulation, const WireOutput& output);
