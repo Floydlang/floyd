@@ -175,7 +175,56 @@ namespace Floyd {
 	};
 
 
+	/////////////////////////////////////////		BoardDefinition
+
+	/*
+		Mutable definition of a board. Not executable.
+	*/
+
+
+		struct FunctionPartDef {
+			FunctionPartDef(TValueType resultType, const Args& args, CFunctionPtr f);
+
+			std::string _functionName;
+			TValueType _resultType;
+			Args _args;
+			CFunctionPtr _f;
+		};
+
+
+
+		struct OutputPinPartDef {
+			OutputPinPartDef(const TValueType& type) :
+				_type(type)
+			{
+			}
+
+			TValueType _type;
+		};
+
+		struct InputPinPartDef {
+			InputPinPartDef(const TValueType& type) :
+				_type(type)
+			{
+			}
+
+			TValueType _type;
+		};
+
+	struct BoardDef {
+		std::map<std::string, FunctionPartDef> _functionParts;
+		std::map<std::string, InputPinPartDef> _inputPins;
+		std::map<std::string, OutputPinPartDef> _outputPins;
+	};
+
+	std::shared_ptr<Simulation> MakeSimulation(std::shared_ptr<Runtime> runtime, const BoardDef& board);
+
+
+
+
+
 	/////////////////////////////////////////		BoardInstance
+
 
 	/*
 		TBD: A simulation should be able to hold nested boards.
@@ -193,7 +242,7 @@ namespace Floyd {
 	std::shared_ptr<FunctionPart> MakeFunctionPart(const Value& f);
 	std::shared_ptr<ConstantPart> MakeConstantPart(const Value& value);
 
-	std::shared_ptr<FunctionPart> MakeFunctionPart2(Simulation& simulation, const std::string& functionName, TValueType resultType, const Args& args, CFunctionPtr f);
+	std::shared_ptr<FunctionPart> MakeFunctionPart(Simulation& simulation, const std::string& functionName, TValueType resultType, const Args& args, CFunctionPtr f);
 
 
 	void Connect(WireInput& dest, WireOutput& source);

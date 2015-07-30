@@ -134,7 +134,7 @@ shared_ptr<Floyd::FunctionPart> Floyd::MakeFunctionPart(const Value& f){
 }
 
 
-std::shared_ptr<Floyd::FunctionPart> MakeFunctionPart(Floyd::Simulation& simulation, const std::string& functionName, Floyd::TValueType resultType, const Floyd::Args& args, Floyd::CFunctionPtr f){
+std::shared_ptr<Floyd::FunctionPart> Floyd::MakeFunctionPart(Floyd::Simulation& simulation, const std::string& functionName, Floyd::TValueType resultType, const Floyd::Args& args, Floyd::CFunctionPtr f){
 	const auto value = simulation.GetRuntime()->DefineFunction(functionName, resultType, args, f);
 	auto functionPart = MakeFunctionPart(value);
 	simulation._functionParts[functionName] = functionPart;
@@ -152,6 +152,7 @@ shared_ptr<Floyd::ConstantPart> Floyd::MakeConstantPart(const Value& value){
 //	### Put wiring in separate datastructure, not in pin instances.
 
 void Floyd::Connect(WireInput& dest, WireOutput& source){
+
 	ASSERT(dest.CheckInvariant());
 	ASSERT(source.CheckInvariant());
 
@@ -392,19 +393,21 @@ UNIT_TEST("Runtime", "GetValue", "MinimalSimulation1Function", "OutputIs6"){
 /////////////////////////////////////////		Test scenario 1
 
 
+Floyd::FunctionPartDef::FunctionPartDef(TValueType resultType, const Args& args, CFunctionPtr f) :
+	_resultType(resultType),
+	_args(args),
+	_f(f)
+
+{
+}
+
 
 
 
 
 namespace {
 
-	Value fx(const IFunctionContext& /*context*/, const Value args[], size_t argCount){
-		ASSERT(args != nullptr);
-		ASSERT(argCount == 3);
-		ASSERT(IsFloat(args[0]));
-		ASSERT(IsFloat(args[1]));
-		ASSERT(IsString(args[2]));
-
+	Value fx(const IFunctionContext& /*context*/, const Value args[], size_t /*argCount*/){
 		const float a = GetFloat(args[0]);
 		const float b = GetFloat(args[1]);
 		const string s = GetString(args[2]);
@@ -453,4 +456,46 @@ UNIT_TEST("Runtime", "", "Scenario 1", ""){
 
 	ASSERT(GetFloat(result) == 6.0f);
 }
+
+#if false
+UNIT_TEST("Runtime", "", "Scenario 1 - compacter", ""){
+	auto runtime = shared_ptr<Runtime>(new Runtime());
+	auto simulation = MakeSimulation(runtime, kTest2);
+
+	//	Build the board.
+	{
+		BoardDef board;
+		board._functionParts["fx"] = FunctionPartDef(kFloat, Arg("a", kFloat) << Arg("b", kFloat) << Arg("s", kString), fx);
+		board._inputPins["a"] = InputPinPartDef(kFloat);
+		board._inputPins["b"] = InputPinPartDef(kFloat);
+		board._inputPins["s"] = InputPinPartDef(kString);
+		board._outputPins["result"] = OutputPinPartDef(kString);
+
+		//	Connect all internal wires.
+		Connect(fxPart->_inputs[0], simulation->_inputPins["a"]->_output);
+		Connect(fxPart->_inputs[1], simulation->_inputPins["b"]->_output);
+		Connect(fxPart->_inputs[2], simulation->_inputPins["s"]->_output);
+		Connect(simulation->_outputPins["result"]->_input, fxPart->_output);
+	}
+
+	//	Make test rig for the simulation.
+	auto constantA = MakeConstantPart(MakeFloat(3.0f));
+	auto constantB = MakeConstantPart(MakeFloat(2.0f));
+	auto constantS = MakeConstantPart(MakeString("*"));
+
+	auto inputPinA = simulation->GetInputPins()["a"];
+	auto inputPinB = simulation->GetInputPins()["b"];
+	auto inputPinS = simulation->GetInputPins()["s"];
+	auto resultOutputPin = simulation->GetOutputPins()["result"];
+	Connect(inputPinA->_input, constantA->_output);
+	Connect(inputPinB->_input, constantB->_output);
+	Connect(inputPinS->_input, constantS->_output);
+
+	//	Read "result" output pin. This should cause simulation to run all through.
+	Value result = GetValue(*simulation, resultOutputPin->_output);
+
+	ASSERT(GetFloat(result) == 6.0f);
+}
+#endif
+
 
