@@ -1,0 +1,31 @@
+
+
+
+MILESTONES
+
+
+MS: Easy to make simulations and run them. JSON? Useful C++ library. Demonstrates programming model. Mutation, clocks.
+
+MS: 
+MS: Multithreaded - speed! Thread pool.
+
+MS: Persistent collections
+
+Clock transformers
+
+
+MS: CHIPs
+
+
+MS:Generate static c / C++. C ABI
+
+
+Advanced scheduling, tweaks, lazy, prelacy.
+
+
+UI
+
+Exceptions
+
+Monads
+
