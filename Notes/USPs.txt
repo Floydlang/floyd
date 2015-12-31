@@ -1,0 +1,23 @@
+COMPARES TO OTHER FUNCTIONAL LANUGAGES
+
+
+Nextgen decentralized, concurrent.
+Separate correctness from optimizations
+
+Visual
+Language neutral
+
+
+Static typing (not dynamic)
+Empirical / Tweaks
+Push-pull runtime
+Collection hierarchies, dynamic selection of collection type.
+
+Explicit notions of clocks, Transformers
+Native (not interpreted) - LLVM
+
+Unique and explicit handling of mutation and concurrency.
+
+Support for making external objects behave immutable.
+
+Fast RC - no GC used!

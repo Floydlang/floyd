@@ -1,3 +1,44 @@
+??? How to get programmers to use some features of Floyd with their current tools? 
+
+
+
+
+1) Prove that you can design solid programs using boards, wires and function - with clocks. Multi threaded.
+
+Mutability, external i/o, clocks, threads, unreliable extern objects (file in FS etc).
+
+Runtime written in C++, interpreted boards, not compiled to LLV:
+Basic toolbox for user-functions.
+
+Some simple tweaks.
+
+
+2) Optimize scedueling system, collections now persistent v1, more tweaks.
+
+3) Low-level optimisations - LLVM
+
+
+
+
+
+
+
+
+==============================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
