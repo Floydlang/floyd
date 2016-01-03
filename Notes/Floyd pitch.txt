@@ -1,0 +1,18 @@
+
+
+
+
+FLOYD
+
+
+PURPOSE
+Allow you to quickly create non-trivial software that is correct, fast composablle and long-lasting.
+
+
+Typesafe
+Pure functions
+Persistent and immutable data structures
+
+Separation between functionallity and 
+
+LLVM
