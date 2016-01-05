@@ -161,13 +161,30 @@ Function always have the same syntax, no matter if they are member functions of 
 
 Functions always return exactly one value. Use a tuple to return more values. A function without return value makes no sense since function cannot have side effects.
 
-#### Contracts
-
+#### FUNCTION CONTRACTS
 Arguments and return values always specifies their contracts using an expression within []. You can use constants, function calls and all function arguments in the expressions.
 
 	int [_ >=0 && _ <= a] function test1(int a, int b){
 	}
 
+	function1 = function {
+		_: int [_ >= 0 && _ <= a]
+		a: a >= 0 && a < 100, "The minor flabbergast"
+
+	}
+
+#### FUNCTION PROOFS
+	proof(function1) {
+		"Whenever flabbergast is 0, b don't matter) and result is 0
+		function1(0, 0) == 0
+		function1(0, 1) == 0
+		function1(0, 10000) == 0
+
+		function1(1, 0) == 0
+		function1(1, 1) == 8
+	}
+
+??? Freeze complex inputs to function and serialzie them for later exploration, adding proofs and keeping as regression tests.
 
 Example function definitions:
 
@@ -179,11 +196,6 @@ Example function definitions:
 
 	int function test(){	
 	}
-
-
-
-
-
 
 int function(string x, bool y)
 
@@ -209,10 +221,17 @@ A typedef makes a new, unique type, by copying another (often complex) type.
 	typedef 
 
 
+# Value serialization
+Serializing a value is a built in mechamism.
+It is always deep.
+
+The result is always a normalized JSON stream.
+
+??? De-duplication vs references vs equality vs diffing.
 
 //	Define serialised format of a type, usable as constant.
 
 
-
+An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream. Runtime can chose to 
 
 
