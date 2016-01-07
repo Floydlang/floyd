@@ -1,4 +1,4 @@
-### GOALS
+# GOALS
 1. Floyd preferes C-like / Java syntax to appeal to imperative programmers.
 2. Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
 3. One simple and clear way to do everthing, little opportunity to do crazy stuff.
@@ -12,10 +12,22 @@
 * string serialize(T a)
 * T T.deserialize(string s)
 
-The order of the members inside the struct or collection is important for equal() etc.
+
+# IDEAS
+
+
+
+	### fixed_size_vector
+
+
+
 
 ### About structs
-Structs are the central building blocks for data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally instances are shared.
+Structs are the central building blocks for data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, instances are shared to conserve memoryt and performance.
+
+The order of the members inside the struct or collection is important for equal() etc.
+
+You can chose to name members or not. An unnamed member can be accessed using its position in the struct: first member is 0.
 
 	struct song1 {
 		float length = 0;
@@ -75,7 +87,7 @@ Structs are the central building blocks for data in Floyd. They are used for str
 
 * Users of the struct are not affected if you introduce a setter or getter to a property. They are also unaffected if you move a function from being a member function to a free function - they call them the same way.
 * There is no implicit _this_.
-* _invariant_ is required and is an expression that must always be true - or the song-struct is defect. The invariant function will automatically be called whenever before a new value is exposed to client code: when returning a value from a constructor, from a mutating member function etc.
+* _invariant_ is required for structs that have dependencies between members (that have setters or mutating members) and is an expression that must always be true - or the song-struct is defect. The invariant function will automatically be called whenever before a new value is exposed to client code: when returning a value from a constructor, from a mutating member function etc.
 
 ### Member-data
 * All members must have default value.
@@ -89,18 +101,24 @@ Structs are the central building blocks for data in Floyd. They are used for str
 * You can add any type of mutating functions, not just setters.
 * It is often but not always possible to make an free function that mutates a value - if it can read all data from the original and can control all member data of the newly constructed value.
 
-### Tuples, anonymous structs
+### Tuples (actually a struct)
 You can access the members using indexes instead of their names, for use as a tuple.
 
 	a = struct { int, int, string }( 4, 5, "six");
-	assert(a.1 == 4);
-	assert(a.2 == 5);
-	assert(a.3 == "six");
+	assert(a.0 == 4);
+	assert(a.1 == 5);
+	assert(a.2 == "six");
 	
 	b = struct { 4, 5, "six" };
-	assert(a.1 == 4);
-	assert(a.2 == 5);
-	assert(a.3 == "six");
+	assert(a.0 == 4);
+	assert(a.1 == 5);
+	assert(a.2 == "six");
+
+### Anonymous structs
+Unnamed structs / tuples with the same signature are the considered the same type and you can automatically assign between them.
+
+NOTE: A function takes a struct/tuple as an argument and returns another struct/tuple or basic type.
+
 
 ### Variables and constants
 All variables are by default constants / immutable.
@@ -120,6 +138,8 @@ Use _mut_ to define a local variable that can be mutated. Only local variables c
 		a = "goodbye";	//	Changes variable a to "goodbye".
 		return 3;
 	}
+
+You can postfix type with ? to make it optional.
 
 
 ### About collections
@@ -143,7 +163,7 @@ map<K, V>
 	a = {string, int}({ "one", 1 }, { "two", 2 }, { "three", 3 });
 
 ### Vectors
-A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). Finding the correct value is constant-time. There are many potential backends for a vector:
+A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. There are many potential backends for a vector:
 
 1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
 2. A HAMT-based persistent vector. Medium-fast to make, read an write. Uses more memory.

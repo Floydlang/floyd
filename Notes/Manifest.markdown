@@ -5,7 +5,8 @@ Floyd is a new programming language. It attempts to inject some new thinking int
 
 # PURPOSE
 1. Allow you to quickly create non-trivial software that is correct, fast, composable and long-lasting.
-2. Replace  Java, C++ and C# as systems programming languages
+2. Replace  Java, C++ and C# as systems programming languages.
+3. Be SIMPLE to learn and use - remove noise of traditional languages. 
 
 # GOALS
 1. Make correct and reliable software you can reason about.
@@ -50,6 +51,15 @@ In floyd, you statically allocate objects and string them together in a dependen
 
 ??? Concept of 0-1-2-3-many instances. No pointers.
 ??? Construction and destruction with sideffectcts = RAII. Use "externals" for this.
+
+# SPEED
+Why is Floyd faster than functional languages?
+1. Static typing - all types are defined and verified at compile-time.
+2. Compiled to native code (usually).
+3. Uses native basic types just like C: int32, uint8, char, float etc. These are not wrapped in abstractions.
+4. No collecting garbage collector. Memory and other resources have explicit life times controlled by the runtime and client program.
+5. Concurrency is not only done by parallelizing fold and loops, it can also be done for separate sub-systems.
+6. All types of optimizations are detailed controlled on a systems-level by the developer - per instance of collections etc. In a composable way.
 
 # ROADMAP
 
@@ -205,6 +215,26 @@ Example: Copy a file.
 Example: Game of life
 Example: space invaders
 Example program: read a text file and generate JSON file.
+
+
+
+# Why circuit boards?
+
+* Calculations: functions, data structures, collections - no time.
+* Time and externals: mutability, clocks, concurrency, transformers  - circuit boards
+* Optimizations: measure / profile / tweak runtime.
+
+
+int function f1(int a) is a value that is equivalent to a int myVector[int]
+
+
+There are only immutable values, no iterators, generators, ranges etc. Use SEQ, VEC and MAP and INSTREAM and OSTREAM.
+
+You can only have mutable state as local variables and in clock.
+
+Runtime optimization: Only MUTABLE<SONG> a = x;  will use atomic operations on internal RC for the value X, all other access to value X will use normal inc/dec.
+
+
 
 
 ### SIMULATION OVERVIEW
