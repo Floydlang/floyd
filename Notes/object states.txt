@@ -1,0 +1,25 @@
+
+
+
+
+
+class opened_file {
+
+	(opened_file, [byte]) read(size_t count);
+	size_t get_pos();
+	size_t get_size();
+	size_t get_left();
+
+}
+
+
+class closed_file {
+}
+
+opened_file open(string path);
+closed_file close(open_file f);
+
+
+
+
+

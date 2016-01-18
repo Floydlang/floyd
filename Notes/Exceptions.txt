@@ -1,0 +1,33 @@
+EXCEPTIONS vs normal program flow
+Where to draw the line?
+
+
+
+""Exceptions are for handling the following situation: you can not find out in advance whether an operation will succeed without trying it." - First I note that this criteria applies equally well to returning an error code. That aside..."
+
+
+
+1) Main flow: this is the plan A - the work that should be done. It must not trigger exceptions to perform its work. Example: check if you are read the entire file before reading more - do not rely on exceptions for the main flow.
+
+2) Function contract describes different alternative behaviors on runtime errors.
+
+3) Function contract defines what inputs are illegal and defects.
+
+
+If an error CAN potentially happen in function (= almost all functions) it can OPTIONALLY define explicit exceptions that will be thrown for those cases. The function must guarantee these exceptions are thrown for these cases. It is also given that other, unknown exceptions may be thrown too.
+
+There are be special no-throw functions that are guaranteed to never fail / throw exceptions. These are rare.
+
+
+often changing the normal flow of program execution.
+
+
+
+
+- If there is no practical / meaningful way to handle the problem as the normal flow of the program.
+
+- Opening a file can fail if file has been deleted. You can preflight that by checking if file exists first.
+
+Example
+- While your program reads a large file from disk into RAM and the disks USB-cable is unplugged.
+	- It is not
