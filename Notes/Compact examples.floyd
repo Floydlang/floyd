@@ -43,12 +43,12 @@ my_struct3 {
 my_struct3 {
 	float a = 0;
 
-	my_struct3 Double(my_struct3 this){
+	my_struct3 Times2(my_struct3 this){
 		mut temp = this.copy()
 		temp.a = temp.a * 2.0f;
 		return temp;
 	}
-	my_struct3 Double(my_struct3 mutable_copy){
+	my_struct3 Times2(my_struct3 mutable_copy){
 		mutable_copy.a = mutable_copy.a * 2.0f;
 		return mutable_copy;
 	}
