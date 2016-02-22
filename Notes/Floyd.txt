@@ -1,0 +1,47 @@
+
+
+
+Floyd - how to minimize cache misses for language. Ignore CPU optimizations!
+
+
+
+Collapse aggregated objects into one big allocation upfront. Even if the aggregated objects use their own allocation.
+
+Put caches in data structures.
+Reformat data for access patterns, even duplicating the data.
+
+
+Make adaptable DS and collections that bubble up frequenctly accessed data.
+
+Cache friendly alignment of inodes and leafes.
+
+
+
+??? How can subfunction down call stack mutate a subobject and know this object will become part of a composing parent = share allocations etc? Take advantage of that we know lifespan of new object!
+
+Allocate entire ReasonSong as _one_ memory allocation.
+
+Always allocate things in 4kb block?
+
+
+
+Optimal RC object pool
+=========================================
+Make template class pool class: each entry has optimal RC with RC-caching. RCs are 
+
+Hiearchical RC.
+Hash on thread ID.
+
+each thread has a pool_RC that locks entire pool. Also has its own thread-local RC (non-atomic) on each entry.
+
+	template<T> class TRCdPool {
+
+		std::vector<T> _entries;
+		std::vector<int32_t> _rcs;
+	}
+
+
+IDEA: Always have one non-atomic 4-bit RC for each thread. 0=>1 also bumps global 32-bit RC.
+
+When 15, bump global RC directly instead. NO, BAD!
+
