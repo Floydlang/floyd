@@ -1,39 +1,66 @@
-# GOALS
-1. Floyd preferes C-like / Java syntax to appeal to imperative programmers.
-2. Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
-3. One simple and clear way to do everthing, little opportunity to do crazy stuff.
+# Floyd Programming Language
 
+### GOALS
+1. Floyd prefers C-like / Java syntax to appeal to imperative programmers.
+2. Compact - Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
+3. Mininal - One simple and clear way to do everthing, little opportunity to do creative coding.
+4. Composability
+5. Performance
+6. Solid code and techniques
+7. Normalized source code format allows round-trip tools / visual editing
 
-### Built into every data structure: structs, string, collections etc.
-* T = copy(T b)
-* bool equal(T a, T b)
-* bool less_than(T a, T b)
-* hash hash(T a)
-* string serialize(T a)
-* T T.deserialize(string s)
+	
+# Reference
+	
+	
+### Types
+These are the data types built into the language itself.
 
+- **float**		Same as float64
+- **float32**		32 bit floating point
+- **float64**		64 bit floating point
+- **int**			Same as int64
+- **int8**		8 bit integer
+- **int16**
+- **int32**
+- **int64**
+- **bool**		**true** or **false**
+- **enum**	(same as struct with only static constant data members)
 
-# IDEAS
+- **struct**		like C struct or class
 
+- **string**		built-in string type. 8bit pure (support null). Use for computer strings.
+- **text**		same as string but for user-texts. Always unicode denormalization C.
+- **map**			look up values from a key.
+- **vector**		look up values from an integer. Range starts with 0 and is continous.
 
+- **dyn**<>		dynamic type, tagged union.
 
-	### fixed_size_vector
-
-
-
+- **?**			the type postfix makes the value optional (can be null).
+- **null**		represents nothing / missing value.
+- **hash**		160 bit SHA1 hash
 
 ### About structs
-Structs are the central building blocks for data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, instances are shared to conserve memoryt and performance.
+Structs are the central building blocks for data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, instances are shared to conserve memory and performance. They are deep by default - there is no concept of pointers or references or shared structs (from the programmer's point of view).
 
-The order of the members inside the struct or collection is important for equal() etc.
+The order of the members inside the struct (or collection) is important for comparisons since those are done member by member.
 
 You can chose to name members or not. An unnamed member can be accessed using its position in the struct: first member is 0.
+
+Data member = memory slot.
+Property = member exposed to outside - either a memory slot or a get/set.
+Private member data = memory slot hidden from clients.
+All member functions works like C++ static members. Some how
+
+Shortcut for defining read-only property:
+	public string Name => First + " " + Last; 
+
 
 	struct song1 {
 		float length = 0;
 		float? last_pos = null;
 		dyn<int, string> nav_info = "off";
-		private bool selected = true;
+		bool selected = true;
 		private float internal_play_pos = 0.0f;
 		float play_pos = 0.0f;
 	
@@ -43,7 +70,6 @@ You can chose to name members or not. An unnamed member can be accessed using it
 		}
 
 		song(){
-			return new song();
 		}
 	}
 
@@ -52,7 +78,12 @@ You can chose to name members or not. An unnamed member can be accessed using it
 		float? last_pos = null;
 		dyn<int, string> nav_info = "off";
 
-		private bool selected = true;
+		//	Demonstrate replacing a member property with accessors, without affecting clients.
+		bool selected {
+			get { return !selected_internal }
+			set { return assoc(
+		}
+		private bool selected_internal = true;
 
 		private float internal_play_pos = 0.0f;
 
@@ -64,7 +95,7 @@ You can chose to name members or not. An unnamed member can be accessed using it
 		}
 
 		song scale_song(song original){
-			mut temp = copy(original);
+			mut temp = original;
 			temp.length = temp.length / 2.0f;
 			temp.last_pos = temp.last_pos / 2.0f;
 			temp.internal_play_pos = internal_play_pos / 2.0f;
@@ -76,10 +107,10 @@ You can chose to name members or not. An unnamed member can be accessed using it
 		}
 
 		song(){
-			return new song();
+			return song();
 		}
 		song(float bars ( >=0 && @ <= 128.0f) ){
-			mut temp = new song();
+			mut temp = song();
 			temp.length = bars * 192;
 			return temp;
 		}
@@ -87,21 +118,45 @@ You can chose to name members or not. An unnamed member can be accessed using it
 
 * Users of the struct are not affected if you introduce a setter or getter to a property. They are also unaffected if you move a function from being a member function to a free function - they call them the same way.
 * There is no implicit _this_.
-* _invariant_ is required for structs that have dependencies between members (that have setters or mutating members) and is an expression that must always be true - or the song-struct is defect. The invariant function will automatically be called whenever before a new value is exposed to client code: when returning a value from a constructor, from a mutating member function etc.
 
-### Member-data
-* All members must have default value.
-* All data is always read-only for clients. Member functions can mutate local instances of the struct.
+#### Member-data
+* All members have default value.
+* All data is always read-only for clients. Member functions can mutate local-variable instances of the struct.
 * Clients can directly access all member variables. But you can explicitly hide member data by prefixing with "private".
-* You can take control over reading members by replacing its default value with a function. 
+* You can take control over reading / writing members by replacing its default value with a get / set function. 
 
-### Mutation
-* When client attempts to mutate a struct, it always gets a new copy of the struct, with the change applied. This is the default behaviour.
+#### invariant
+_invariant_ is required for structs that have dependencies between members (that have setters or mutating members) and is an expression that must always be true - or the song-struct is defect. The invariant function will automatically be called before a new value is exposed to client code: when returning a value from a constructor, from a mutating member function etc.
+
+#### Built in Features of Structs
+- Destruction: destruction is automatic when there are no references to a struct. Copying is done automatically, no need to write code for this. All copies behave as deep copies.
+
+- **a < b**: tests all member data in the order they appear in the struct. Only public data and public getters are checked.
+	x = make_some_object()
+	y = find_some_object()
+	if(x > b){
+	}
+- **a <= b**, **a > b**, **a >= b** -- these are derivated of a < b
+- **a == b** Tests all member data for deep equality.
+
+- **hash hash(v)** -- built in function that computes a deep hash of the value.
+	x = make_some_object()
+	my_hash = get_hash(x)
+- ### add deduplicate feature / function / tag?
+- **diff(a, b)** -- this is an automatic diff-function that returns a path to the first members that diff between a and b. This is a deep operation. ### Research how git does it.
+
+Notice about optimizations: many accellerations are made behind the scenes:
+- causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
+- You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
+- There is no way for client code to see if the struct instances are _the same_ - that is access the same memory via two separate pointers.
+
+#### Mutation
+* When client attempts to write to a member variable of a struct, it by default gets a new copy of the struct, with the change applied. This is the default behaviour.
 * If you want to control the mutation, you can add your own setter function as a member function.
 * You can add any type of mutating functions, not just setters.
-* It is often but not always possible to make an free function that mutates a value - if it can read all data from the original and can control all member data of the newly constructed value.
+* It is often (but not always) possible to make an free function that mutates a value. If it can read all data from the original and can control all member data of the newly constructed value.
 
-### Tuples (actually a struct)
+#### Tuples (actually a struct)
 You can access the members using indexes instead of their names, for use as a tuple.
 
 	a = struct { int, int, string }( 4, 5, "six");
@@ -114,10 +169,21 @@ You can access the members using indexes instead of their names, for use as a tu
 	assert(a.1 == 5);
 	assert(a.2 == "six");
 
-### Anonymous structs
+#### Anonymous structs
 Unnamed structs / tuples with the same signature are the considered the same type and you can automatically assign between them.
 
 NOTE: A function takes a struct/tuple as an argument and returns another struct/tuple or basic type.
+
+#### Enums
+
+enum line_type {
+	k
+}
+
+### Built into every data structure: structs, string, collections etc.
+* hash **hash**(T a)
+* string **serialize**(T a)
+* T **T.deserialize**(string s)
 
 
 ### Variables and constants
@@ -131,7 +197,7 @@ All variables are by default constants / immutable.
 		}"
 	) == -3);
 
-Use _mut_ to define a local variable that can be mutated. Only local variables can be mut.
+Use _mut_ to define a local variable that can be mutated. Only _local variables_ can be mut.
 
 	int hello2(){
 		mut a = "hello";
@@ -174,12 +240,13 @@ A vector is a collection where you lookup your values using an index between 0 a
 	b = [int](1, 2, 3);
 
 ### Functions
-
 Function always have the same syntax, no matter if they are member functions of a struct, a constructor or a free function.
 
-!!! The arguments for a function is a struct. Function internally only take one argument.
+### The arguments for a function is a struct. Function internally only take one argument.
 
 Functions always return exactly one value. Use a tuple to return more values. A function without return value makes no sense since function cannot have side effects.
+
+How to add docs? Markdown. Tests, contracts etc.
 
 #### FUNCTION CONTRACTS
 Arguments and return values always specifies their contracts using an expression within []. You can use constants, function calls and all function arguments in the expressions.
@@ -194,7 +261,7 @@ Arguments and return values always specifies their contracts using an expression
 	}
 
 #### FUNCTION PROOFS
-	proof(function1) {
+	prove(function1) {
 		"Whenever flabbergast is 0, b don't matter) and result is 0
 		function1(0, 0) == 0
 		function1(0, 1) == 0
@@ -208,16 +275,23 @@ Arguments and return values always specifies their contracts using an expression
 
 Example function definitions:
 
-	int function(dyn<string,int> x){
+	int f1(dyn<string,int> x){
 	}
 
-	int function a(int a, int b){
+	int f2(int a, int b){
 	}
 
-	int function test(){	
+	int f3(){	
 	}
 
-int function(string x, bool y)
+	int f4(string x, bool y)
+
+
+### Lambdas
+foreach(stuff, a => return a + 1)
+foreach(stuff, () => {})
+foreach(stuff, (a, b) => { return a + 1; })
+
 
 ### Dynamic type / tagged union
 dyn<float, string> // one of these. Tagged union. a
@@ -240,10 +314,14 @@ A typedef makes a new, unique type, by copying another (often complex) type.
 	typedef [string, [bool]] book_list;
 	typedef 
 
+### Paths
+You can make a path through nested data structures. The path is a built-in opaque type.
 
-# Value serialization
-Serializing a value is a built in mechamism.
-It is always deep.
+### Streams
+
+### Value serialization
+Serializing a value is a built in mechanism.
+It is always deep. ### Always shallow with interning when values are shared.
 
 The result is always a normalized JSON stream.
 
@@ -251,7 +329,262 @@ The result is always a normalized JSON stream.
 
 //	Define serialised format of a type, usable as constant.
 
+ ### floud code = stored / edited in the serialized format.
 
-An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream. Runtime can chose to 
+An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream.
+
+### Protocols
+A protocol is a type that introduces zero to many functions signatures without having any implementation. The protocols have no state and no functionallity.
+
+A struct can chose to implement one or several protocols.
+A protocol does NOT mean an is-a hiearchy. It is rather a supports-a. An optional feature.
 
 
+protocol tooltip_support {
+	text get_text(this)
+	color get_color(this)
+	text_style get_style(this)
+}
+
+protocol mouse_support {
+	T on_click(float x, float y)
+	T on_release(float x, float y)
+}
+
+protocol seq {
+	T first()
+	seq rest()
+}
+
+//	Implements mouse_support and tooltip_support
+struct my_window {
+	mouse_support {
+		T on_click(this, float x, float y){
+			return this;
+		}
+		T on_release(this, float x, float y){
+		}
+	}
+	tooltip_support {
+		text get_text(this){
+		}
+		color get_color(this){
+		}
+		text_style get_style(this){
+		}
+	}
+}
+
+### Statements
+if(){
+}
+else if(){
+}
+else{
+}
+
+foreach(a in stuff){
+}
+foreach(stuff, () => {})
+
+return a < b ? 1 : 2
+
+assert()
+test
+log()
+prove
+
+
+switch()
+
+
+
+
+
+### Reserved Keywords
+
+
+
+|   	|   	|   	|   	|   	|
+|---	|---	|---	|---	|---	|
+|   	|   	|   	|   	|   	|
+|   	|   	|   	|   	|   	|
+|   	|   	|   	|   	|   	|
+
+
+?
+assert
+bool
+catch
+char???
+code_point
+clock
+deserialize()
+diff()
+double
+dyn
+dyn**<>
+else
+ensure
+enum
+false
+float
+foreach
+hash
+hash()
+if
+int
+int16
+int32
+int64
+int8
+invariant
+log
+map
+mutable
+namespace?
+null
+path
+private
+protocol
+prove
+return
+require
+seq
+serialize()
+string
+struct
+swap
+switch
+tag
+test
+text
+true
+try
+typedef
+typeof
+typecast
+vector
+while
+
+
+
+
+
+
+# Text features
+text
+code_point
+a = localizeable("Please insert data type into terminal...");
+
+Tool extracts and switches text inside localizeable() automatically.
+
+# Binary data features
+
+# File features
+
+
+
+
+
+
+
+
+# ??? OPEN QUESTIONS
+	### fixed_size_vector
+
+??? Global constants / static?
+Namespaces
+Serializing abstraction
+Externals
+
+
+### SWITCH OPEN PROBLEM
+
+switch(a){
+	case "one":
+		log("ONE");
+	case "two":
+		log("TWO");
+	case "three":
+		log("THREE");
+	default
+		log("...");
+}
+
+if(a == "one"){
+	log("ONE");
+}
+else if(a == "two"){
+	log("TWO");
+}
+else if(a == "three"){
+	log("THREE");
+}
+else {
+	log("...");
+}
+
+switch(a){
+	case("one"){
+		log("ONE");
+	}
+	case("two"){
+		log("TWO");
+	}
+	case("three"){
+		log("THREE");
+	}
+	default{
+		log("...");
+	}
+}
+
+switch(a){
+	case(== 1){
+		log("ONE");
+	}
+	case(< 3){
+		log("TWO");
+	}
+	case(== 3){
+		log("THREE");
+	}
+	case(> 3){
+		log("...");
+	}
+}
+
+map<int, @>{
+	1, {
+		log("ONE")
+	},
+	2, {
+		log("TWO")
+	},
+	3, {
+		log("THREE")
+	}
+}[a]();
+
+switch(a){
+	(_ == 1) {
+		log("ONE")
+	}
+	(_ == 2) {
+		log("TWO")
+	}
+	(_ > 2){
+		log("THREE")
+	}
+	(_ > 3){
+		log("...")
+	}
+}
+
+return a < b ? 1 : 2
+
+a,b ?
+	(_0 == 0 : log("ONE")) :
+	(_0 == _1 : log("TWO")) :
+}

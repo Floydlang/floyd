@@ -1,0 +1,15 @@
+
+
+
+
+
+
+void main(){
+	var simulation = new FloydVM("myprogram.floyd");
+	var socketClock = simulation.GetClock("socket_clock");
+	var realtimeAudioClock = simulation.GetClock("audio_clock");
+
+	open_socket("https://sdfdfjk", x => {var a = socketClock.Advance(x); socketClock.Commit(a);});
+
+	open_audio_output(44100, x => {});
+}

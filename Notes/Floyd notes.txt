@@ -1,0 +1,73 @@
+FIRST STEP - alternative approaches
+
+A) Make C++ library that runs and optimizes performances on multi cores.
+	Persistent DSs + composite
+	Collection stacks
+	Tweaks & profiling
+	Runtime optimization of memory accesses, SIMD, HW caches
+	Visual 2D programming and profiler / optimizer
+	Web based.
+	Functional. New language. Th
+
+B) Make C++ DSs with collection stack / caching etc.
+
+C) Make web based editor for existing language(?) with testing/examples/interactive etc. Composable.
+
+D) Make small programming language for speed.
+
+E) Make visual editor / runtime
+
+F) A but us pure C-functions and other languages.
+
+G) Make complete design + make papers.
+
+H) Make visual and SOLID game engine using Floyd tech.
+
+J) Make library of 
+
+K) Make "Hypercard" using Floyd tech. Not performance.
+
+L) Make game engine, visual programming, solid
+
+
+
+================================
+
+
+Writing a function = three battles:
+	1) Guessing what callers want
+	2) Making a good implementation
+		2b) Runtime performance???
+	3) Fighting code you need to call.
+
+
+Redefine problem to be simpler.
+	1) DEFINE exactly what your function provides: make examples and tests and contracts.
+	2) Your work goes here
+	3) Use functions that DEFINE example what they provide: with examples and tests and contracts.
+
+
+
+GOAL: Correct and composable and simple.
+
+Easy to parse source code / generate it.
+
+
+???
+
+Generate change lists quickly for collections and structs.
+Use Git-style tracking.
+
+Explicity layered runtimes and contracts. Allows composable stacking of side effects (allocation of resources etc). A permission handle is required to use different runtimes = track lifetimes independantly, cache them etc.
+
+
+
+PRO IMMUTABILITY: http://www.yegor256.com/2014/06/09/objects-should-be-immutable.html
+
+http://www.yegor256.com/2014/11/07/how-immutability-helps.html
+
+
+
+Clojure
+	Meta data
+	value equality semantics
