@@ -32,41 +32,10 @@
 		2C7E06A31B822EDF00996483 /* stream.zh-cn.md in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E062F1B822EDF00996483 /* stream.zh-cn.md */; };
 		2C7E06A41B822EDF00996483 /* tutorial.md in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06301B822EDF00996483 /* tutorial.md */; };
 		2C7E06A51B822EDF00996483 /* tutorial.zh-cn.md in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06311B822EDF00996483 /* tutorial.zh-cn.md */; };
-		2C7E06A61B822EDF00996483 /* capitalize.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06341B822EDF00996483 /* capitalize.cpp */; };
-		2C7E06A71B822EDF00996483 /* condense.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06371B822EDF00996483 /* condense.cpp */; };
-		2C7E06A81B822EDF00996483 /* messagereader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06391B822EDF00996483 /* messagereader.cpp */; };
-		2C7E06A91B822EDF00996483 /* pretty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E063B1B822EDF00996483 /* pretty.cpp */; };
-		2C7E06AA1B822EDF00996483 /* prettyauto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E063D1B822EDF00996483 /* prettyauto.cpp */; };
-		2C7E06AB1B822EDF00996483 /* serialize.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E063F1B822EDF00996483 /* serialize.cpp */; };
-		2C7E06AC1B822EDF00996483 /* simpledom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06411B822EDF00996483 /* simpledom.cpp */; };
-		2C7E06AD1B822EDF00996483 /* simplereader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06431B822EDF00996483 /* simplereader.cpp */; };
-		2C7E06AE1B822EDF00996483 /* simplewriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06451B822EDF00996483 /* simplewriter.cpp */; };
-		2C7E06AF1B822EDF00996483 /* tutorial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06471B822EDF00996483 /* tutorial.cpp */; };
 		2C7E06B01B822EDF00996483 /* readme.md in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E066F1B822EDF00996483 /* readme.md */; };
 		2C7E06B11B822EDF00996483 /* readme.zh-cn.md in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06701B822EDF00996483 /* readme.zh-cn.md */; };
-		2C7E06B21B822EDF00996483 /* misctest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06751B822EDF00996483 /* misctest.cpp */; };
-		2C7E06B31B822EDF00996483 /* perftest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06761B822EDF00996483 /* perftest.cpp */; };
-		2C7E06B41B822EDF00996483 /* platformtest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06781B822EDF00996483 /* platformtest.cpp */; };
-		2C7E06B51B822EDF00996483 /* rapidjsontest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06791B822EDF00996483 /* rapidjsontest.cpp */; };
-		2C7E06B61B822EDF00996483 /* allocatorstest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E067B1B822EDF00996483 /* allocatorstest.cpp */; };
-		2C7E06B71B822EDF00996483 /* bigintegertest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E067C1B822EDF00996483 /* bigintegertest.cpp */; };
-		2C7E06B81B822EDF00996483 /* documenttest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E067E1B822EDF00996483 /* documenttest.cpp */; };
-		2C7E06B91B822EDF00996483 /* encodedstreamtest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E067F1B822EDF00996483 /* encodedstreamtest.cpp */; };
-		2C7E06BA1B822EDF00996483 /* encodingstest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06801B822EDF00996483 /* encodingstest.cpp */; };
-		2C7E06BB1B822EDF00996483 /* filestreamtest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06811B822EDF00996483 /* filestreamtest.cpp */; };
-		2C7E06BC1B822EDF00996483 /* itoatest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06821B822EDF00996483 /* itoatest.cpp */; };
-		2C7E06BD1B822EDF00996483 /* jsoncheckertest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06831B822EDF00996483 /* jsoncheckertest.cpp */; };
-		2C7E06BE1B822EDF00996483 /* namespacetest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06841B822EDF00996483 /* namespacetest.cpp */; };
-		2C7E06BF1B822EDF00996483 /* pointertest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06851B822EDF00996483 /* pointertest.cpp */; };
-		2C7E06C01B822EDF00996483 /* prettywritertest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06861B822EDF00996483 /* prettywritertest.cpp */; };
-		2C7E06C11B822EDF00996483 /* readertest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06871B822EDF00996483 /* readertest.cpp */; };
-		2C7E06C21B822EDF00996483 /* simdtest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06881B822EDF00996483 /* simdtest.cpp */; };
-		2C7E06C31B822EDF00996483 /* stringbuffertest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06891B822EDF00996483 /* stringbuffertest.cpp */; };
-		2C7E06C41B822EDF00996483 /* strtodtest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E068A1B822EDF00996483 /* strtodtest.cpp */; };
-		2C7E06C51B822EDF00996483 /* unittest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E068B1B822EDF00996483 /* unittest.cpp */; };
-		2C7E06C61B822EDF00996483 /* valuetest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E068D1B822EDF00996483 /* valuetest.cpp */; };
-		2C7E06C71B822EDF00996483 /* writertest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E068E1B822EDF00996483 /* writertest.cpp */; };
 		2CA6E20A1B4E92FF00337472 /* Runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA6E2081B4E92FF00337472 /* Runtime.cpp */; };
+		2CBF16DF1C8B9DB00094ADE1 /* Compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBF16DD1C8B9DB00094ADE1 /* Compiler.cpp */; };
 		2CE8E4591B587D7800609E63 /* cpp_extension.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE8E4571B587D7800609E63 /* cpp_extension.cpp */; };
 		2CF1F1051784FCCF00677E13 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CF1F1041784FCCF00677E13 /* main.cpp */; };
 		2CF1F1071784FCCF00677E13 /* Floyd.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CF1F1061784FCCF00677E13 /* Floyd.1 */; };
@@ -282,6 +251,8 @@
 		2C7E06911B822EDF00996483 /* travis-doxygen.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "travis-doxygen.sh"; sourceTree = "<group>"; };
 		2CA6E2081B4E92FF00337472 /* Runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Runtime.cpp; sourceTree = "<group>"; };
 		2CA6E2091B4E92FF00337472 /* Runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Runtime.h; sourceTree = "<group>"; };
+		2CBF16DD1C8B9DB00094ADE1 /* Compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Compiler.cpp; sourceTree = "<group>"; };
+		2CBF16DE1C8B9DB00094ADE1 /* Compiler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Compiler.hpp; sourceTree = "<group>"; };
 		2CE8E4571B587D7800609E63 /* cpp_extension.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_extension.cpp; sourceTree = "<group>"; };
 		2CE8E4581B587D7800609E63 /* cpp_extension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cpp_extension.h; sourceTree = "<group>"; };
 		2CF1F1011784FCCF00677E13 /* Floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Floyd; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -772,6 +743,8 @@
 				2C08B64C1797685E006A0890 /* Program.h */,
 				2C08B64E17977121006A0890 /* ProgramUT.cpp */,
 				2C08B64F17977121006A0890 /* ProgramUT.h */,
+				2CBF16DD1C8B9DB00094ADE1 /* Compiler.cpp */,
+				2CBF16DE1C8B9DB00094ADE1 /* Compiler.hpp */,
 				2CA6E2081B4E92FF00337472 /* Runtime.cpp */,
 				2CA6E2091B4E92FF00337472 /* Runtime.h */,
 				2C7A67021B4951D90025A100 /* Simulation.cpp */,
@@ -833,69 +806,38 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2C7E06A71B822EDF00996483 /* condense.cpp in Sources */,
 				2C7E06991B822EDF00996483 /* faq.zh-cn.md in Sources */,
-				2C7E06B51B822EDF00996483 /* rapidjsontest.cpp in Sources */,
 				2C7E069E1B822EDF00996483 /* performance.zh-cn.md in Sources */,
 				2C7E069B1B822EDF00996483 /* features.zh-cn.md in Sources */,
 				2C7E069D1B822EDF00996483 /* performance.md in Sources */,
 				2C7A67041B4951D90025A100 /* Simulation.cpp in Sources */,
-				2C7E06AF1B822EDF00996483 /* tutorial.cpp in Sources */,
 				2C7E06941B822EDF00996483 /* dom.md in Sources */,
-				2C7E06A91B822EDF00996483 /* pretty.cpp in Sources */,
-				2C7E06AA1B822EDF00996483 /* prettyauto.cpp in Sources */,
-				2C7E06AD1B822EDF00996483 /* simplereader.cpp in Sources */,
 				2C7E06931B822EDF00996483 /* makefile in Sources */,
 				2C7E06A51B822EDF00996483 /* tutorial.zh-cn.md in Sources */,
 				2C7E06921B822EDF00996483 /* CHANGELOG.md in Sources */,
 				2CF1F1051784FCCF00677E13 /* main.cpp in Sources */,
 				2CF1F10F1784FD0300677E13 /* BasicTypes.cpp in Sources */,
-				2C7E06C71B822EDF00996483 /* writertest.cpp in Sources */,
-				2C7E06AB1B822EDF00996483 /* serialize.cpp in Sources */,
 				2C7E06A41B822EDF00996483 /* tutorial.md in Sources */,
 				2C7E06971B822EDF00996483 /* encoding.zh-cn.md in Sources */,
-				2C7E06C21B822EDF00996483 /* simdtest.cpp in Sources */,
-				2C7E06C11B822EDF00996483 /* readertest.cpp in Sources */,
-				2C7E06A61B822EDF00996483 /* capitalize.cpp in Sources */,
 				2C3D09CB1794C4A5001771B9 /* BasicTypesUT.cpp in Sources */,
-				2C7E06BA1B822EDF00996483 /* encodingstest.cpp in Sources */,
 				2C08B64D1797685E006A0890 /* Program.cpp in Sources */,
-				2C7E06B71B822EDF00996483 /* bigintegertest.cpp in Sources */,
-				2C7E06B41B822EDF00996483 /* platformtest.cpp in Sources */,
-				2C7E06C01B822EDF00996483 /* prettywritertest.cpp in Sources */,
-				2C7E06BB1B822EDF00996483 /* filestreamtest.cpp in Sources */,
 				2C7E069C1B822EDF00996483 /* internals.md in Sources */,
-				2C7E06C61B822EDF00996483 /* valuetest.cpp in Sources */,
 				2CA6E20A1B4E92FF00337472 /* Runtime.cpp in Sources */,
 				2CE8E4591B587D7800609E63 /* cpp_extension.cpp in Sources */,
-				2C7E06BC1B822EDF00996483 /* itoatest.cpp in Sources */,
-				2C7E06BE1B822EDF00996483 /* namespacetest.cpp in Sources */,
 				2C7E06951B822EDF00996483 /* dom.zh-cn.md in Sources */,
 				2C7E06A01B822EDF00996483 /* sax.md in Sources */,
 				2C7E06A31B822EDF00996483 /* stream.zh-cn.md in Sources */,
-				2C7E06B31B822EDF00996483 /* perftest.cpp in Sources */,
-				2C7E06B81B822EDF00996483 /* documenttest.cpp in Sources */,
 				2C7E06961B822EDF00996483 /* encoding.md in Sources */,
-				2C7E06BF1B822EDF00996483 /* pointertest.cpp in Sources */,
 				2C7E06981B822EDF00996483 /* faq.md in Sources */,
-				2C7E06AC1B822EDF00996483 /* simpledom.cpp in Sources */,
 				2C7E06B11B822EDF00996483 /* readme.zh-cn.md in Sources */,
-				2C7E06AE1B822EDF00996483 /* simplewriter.cpp in Sources */,
 				2C7E069F1B822EDF00996483 /* pointer.md in Sources */,
-				2C7E06A81B822EDF00996483 /* messagereader.cpp in Sources */,
 				2C08B65017977121006A0890 /* ProgramUT.cpp in Sources */,
-				2C7E06C51B822EDF00996483 /* unittest.cpp in Sources */,
-				2C7E06C31B822EDF00996483 /* stringbuffertest.cpp in Sources */,
-				2C7E06BD1B822EDF00996483 /* jsoncheckertest.cpp in Sources */,
-				2C7E06C41B822EDF00996483 /* strtodtest.cpp in Sources */,
-				2C7E06B91B822EDF00996483 /* encodedstreamtest.cpp in Sources */,
+				2CBF16DF1C8B9DB00094ADE1 /* Compiler.cpp in Sources */,
 				2C7E06A21B822EDF00996483 /* stream.md in Sources */,
-				2C7E06B21B822EDF00996483 /* misctest.cpp in Sources */,
 				2C5E8DA81B5804850058A833 /* Experiments.cpp in Sources */,
 				2C7E06A11B822EDF00996483 /* sax.zh-cn.md in Sources */,
 				2C7E06B01B822EDF00996483 /* readme.md in Sources */,
 				2C7E069A1B822EDF00996483 /* features.md in Sources */,
-				2C7E06B61B822EDF00996483 /* allocatorstest.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
