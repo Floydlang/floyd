@@ -2,10 +2,10 @@
 
 ### GOALS
 1. Floyd prefers C-like / Java syntax to appeal to imperative programmers.
-2. Compact - Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
-3. Mininal - One simple and clear way to do everthing, little opportunity to do creative coding.
+2. Automatic - Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
+3. Explicit - One simple and clear way to do everything, little opportunity to do creative coding. Built-in specific mechanisms for all common stuff.
 4. Composability
-5. Performance
+5. Performance: built in profiling and hardware cache. Ballpark C++ performance.
 6. Solid code and techniques
 7. Normalized source code format allows round-trip tools / visual editing
 
