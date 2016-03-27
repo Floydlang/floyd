@@ -16,6 +16,7 @@
 #include <map>
 #include <iostream>
 
+using std::vector;
 using std::string;
 using std::pair;
 
@@ -179,8 +180,49 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 }
 
 
+
+
+
+struct expression {
+};
+
+/*
+*/
+enum StatementType {
+	return_expression,
+	if_else_node__bodies,
+	for_expression__body,
+	foreach_expression__body,
+	while_expression__body,
+	let_expression,
+	mut_expression,
+	assert_expression,
+};
+
+struct Statement {
+	StatementType _type;
+	
+};
+
+/*
+	Functions always return a value.
+*/
+struct function_body {
+	vector<Statement> _root_statements;
+};
+
+
+struct function_def {
+	string return_type;
+	vector<pair<string, string>> _args;
+	function_body _body;
+};
+
+
+
+
 struct pass1 {
-	std::map<string, string> _functions;
+	std::map<string, function_def> _functions;
 };
 
 
