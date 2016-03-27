@@ -22,10 +22,10 @@ using std::pair;
 
 
 const string kProgram1 =
-"int main(string args){"
-"	log(args);"
-"	return 3;"
-"}";
+"int main(string args){\n"
+"	log(args);\n"
+"	return 3;\n"
+"}\n";
 
 typedef pair<string, string> seq;
 
@@ -257,6 +257,13 @@ pass1 compiler_pass1(string program){
 	}
 
 	return pass1();
+}
+
+string emit_c_code(){
+	return
+		"int main(int argc, char *argv[]){\n"
+		"	return 0;\n"
+		"}\n";
 }
 
 QUARK_UNIT_TEST("", "generate_numbers()", "5 numbers", "correct vector"){
