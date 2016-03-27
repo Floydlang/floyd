@@ -338,6 +338,11 @@ foreach(stuff, (a, b) => { return a + 1; })
 They are closures.
 
 
+int main(string args){
+	log(args);
+	return 3;
+}
+
 
 ## RIGHTS
 Communicates between function and caller what access rights and what layer int the system this functions operates on.
