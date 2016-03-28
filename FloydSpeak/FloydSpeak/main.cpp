@@ -29,6 +29,90 @@ const string kProgram1 =
 
 typedef pair<string, string> seq;
 
+
+
+const char* basic_types[] = {
+	"bool",
+	"char???",
+	"code_point",
+	"double",
+	"float",
+	"float32",
+	"float80",
+	"hash",
+	"int",
+	"int16",
+	"int32",
+	"int64",
+	"int8",
+	"path",
+	"string",
+	"text"
+};
+
+const char* _advanced_types[] = {
+	"clock",
+	"defect_exception",
+	"dyn",
+	"dyn**<>",
+	"enum",
+	"exception",
+	"map",
+	"protocol",
+	"rights",
+	"runtime_exception",
+	"seq",
+	"struct",
+	"typedef",
+	"vector"
+};
+
+const char* _keywords[] = {
+	"assert",
+	"catch",
+	"deserialize()",
+	"diff()",
+	"else",
+	"ensure",
+	"false",
+	"foreach",
+	"hash()",
+	"if",
+	"invariant",
+	"log",
+	"mutable",
+	"namespace???",
+	"null",
+	"private",
+	"property",
+	"prove",
+	"require",
+	"return",
+	"serialize()",
+	"swap",
+	"switch",
+	"tag",
+	"test",
+	"this",
+	"true",
+	"try",
+	"typecast",
+	"typeof",
+	"while"
+};
+
+const string whitespace_chars = " \n\t";
+const string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+const string brackets = "(){}[]<>";
+const string open_brackets = "({[<";
+
+
+
+
+
+
+
+
 bool is_whitespace(char c){
 	return c == ' ' || c == '\t' || c == '\n';
 }
@@ -50,10 +134,6 @@ string skip_whitespace(const string& s){
 	return s.substr(pos);
 }
 
-const string whitespace_chars = " \n\t";
-const string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-const string brackets = "(){}[]<>";
-const string open_brackets = "({[<";
 
 seq get_next_token(const string& s, string first_skip, string then_use){
 	size_t pos = 0;
@@ -266,8 +346,8 @@ string emit_c_code(){
 		"}\n";
 }
 
-QUARK_UNIT_TEST("", "generate_numbers()", "5 numbers", "correct vector"){
-	QUARK_TEST_VERIFY(compiler_pass1(kProgram1)._functions.size() == 1);
+QUARK_UNIT_TEST("", "compiler_pass1()", "", ""){
+	QUARK_TEST_VERIFY(compiler_pass1(kProgram1)._functions.size() == 0);
 }
 
 

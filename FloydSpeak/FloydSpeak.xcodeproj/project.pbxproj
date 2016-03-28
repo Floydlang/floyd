@@ -10,7 +10,6 @@
 		2C1D84E11CA765A90042F0A8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* main.cpp */; };
 		2C1D84EC1CA766470042F0A8 /* main 2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E71CA766470042F0A8 /* main 2.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
-		2C1D84EE1CA766470042F0A8 /* steady_vector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -133,7 +132,6 @@
 			files = (
 				2C1D84EC1CA766470042F0A8 /* main 2.cpp in Sources */,
 				2C1D84E11CA765A90042F0A8 /* main.cpp in Sources */,
-				2C1D84EE1CA766470042F0A8 /* steady_vector.cpp in Sources */,
 				2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -253,6 +251,7 @@
 				2C1D84E61CA765A90042F0A8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

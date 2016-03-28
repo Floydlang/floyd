@@ -7,10 +7,12 @@
 4. Composability
 5. Performance: built in profiling and hardware cache. Ballpark C++ performance.
 6. Solid code and techniques
-7. Normalized source code format allows round-trip tools / visual editing
+7. Normalized source code format allows round-trip tools / visual editing. Easy language parsing, use as data language.
+8. Oppinionated: there is a good way to do things. That is built into the languge, not in libraries
+9. Encourage creating lots of very specific structs even for simple things. Can be unnamed.
 
 	
-# Reference
+# REFERENCES
 	
 	
 # BASIC TYPES
@@ -20,37 +22,58 @@ These are the privitive data types built into the language itself. The goals is 
 
 - **float**			Same as float64
 - **float32**		32 bit floating point
-- **float64**		64 bit floating point
+- **float80**		80 bit floating point
+
 - **int**			Same as int64
 - **int8**			8 bit integer
 - **int16**
 - **int32**
 - **int64**
+- 
 - **bool**			**true** or **false**
+- 
 - **enum**			(same as struct with only static constant data members)
 
-- **struct**		like C struct or class or tuple.
-
 - **string**		built-in string type. 8bit pure (supports emedded nulls).
-	- 					Use for computer strings. Not localizable.
+	 					Use for computer strings. Not localizable.
 - **text**			same as string but for user-texts.
-	- 				Always unicode denormalization C. Stores Unicode code points, not bytes.
+	 				Always unicode denormalization C. Stores Unicode code points, not bytes.
+- **code_point**	A Unicode code point.
+
+- **hash**			160 bit SHA1 hash
+- **exception**		A built in, fixed tree of exception types,
+					including **runtime_exception** and **defect_exception**
+- **path**			specified a number of named (or numbered) hopes through
+	 				a nested data structure.
+
+# C TYPES
+**C**			**Floyd**
+float 			float
+double			float80
+int				always int32
+int8_t			int8
+int16_t			int16
+int32_t			int32
+uint32_t		typedef int32(
+
+# MORE TYPES
+These are composites and collections of other types.
+
+- **struct**		like C struct or class or tuple.
 - **map**			look up values from a key. Localizable.
 - **vector**		look up values from a 0 based continous range of integer indexes.
 
 - **dyn**<>			dynamic type, tagged union.
 
-- **?**				the type postfix makes the value optional (can be null).
-- **null**			represents nothing / missing value.
-- **hash**			160 bit SHA1 hash
-- **exception**		A built in, fixed tree of exception types,
-					including **runtime_exception** and **defect_exception**
-- **path**			specified a number of named (or numbered) hopes through
-	- 				a nested data structure.
 - **protocol**
 
 - **rights**		Communicates between function and caller what access rights
 					and what layer int the system this functions operates on.
+
+# OPTIONAL VALUES
+- **?**				the type postfix makes the value optional (can be null).
+- **null**			represents nothing / missing value.
+
 
 # STRUCTs
 Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view). **True-deep** is a Floyd term that means that all values and sub-values are considered equally.
@@ -81,9 +104,9 @@ This is the properties exposed by a struct in the order they are listed in the s
 ## Invariant
 _invariant_ is required for structs that have dependencies between members (that have setters or mutating members) and is an expression that must always be true - or the song-struct is defect. The invariant function will automatically be called before a new value is exposed to client code: when returning a value from a constructor, from a mutating member function etc.
 
-	### Allow adding invariant to _any_ type and getting a new, safer type. Cool for collections (they are sorted!) or integers (range is 0 to 7).
+	### Allow adding invariant to _any_ type and getting a new, safer type. Cool for collections (they are sorted!) or integers (range is 0 to 7). Combine this with typedef feature.
 
-### Built in Features of Structs
+## Built in Features of Structs
 Destruction: destruction is automatic when there are no references to a struct. Copying is done automatically, no need to write code for this. All copies behave as true-deep copies.
 All structs automatically support the built in features of every data type like comparison, copies etc: see separate description.
 
@@ -92,13 +115,13 @@ Notice about optimizations: many accellerations are made behind the scenes:
 - You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
 - There is no way for client code to see if the struct instances are _the same_ - that is access the same memory via two separate pointers.
 
-### Mutation
+## Mutation
 * When client attempts to write to a member variable of a struct, it gets a new copy of the struct, with the change applied. This is the default behaviour.
 * If a struct wants to control the mutation, you can add your own setter function as a member function.
 * You can add any type of mutating functions, not just setters.
 * It is often (but not always) possible to make an free function that mutates a value. If it can read all data from the original and can control all member data of the newly constructed value.
 
-### Tuples (unnnamed structs)
+# Tuples (unnnamed structs)
 You can access the members using indexes instead of their names, for use as a tuple.
 
 	a = struct { int, int, string }( 4, 5, "six");
@@ -111,16 +134,15 @@ You can access the members using indexes instead of their names, for use as a tu
 	assert(a.1 == 5);
 	assert(a.2 == "six");
 
-#### Anonymous structs
-Unnamed structs / tuples with the same signature are the considered the same type and you can automatically assign between them.
+# Conversions
+All data types with the same signature are can automatically be assign between.
+
+??? Examples
 
 
+# Features of Values - Structs, Basic types, collections - every type
+Built into every type: data structures, basic types, structs, string, collections etc.
 
-
-
-
-### Features of Values - Structs, Basic types, collections - every type
-Built into every data structure: basic types, structs, string, collections etc.
 * string **serialize**(T a)
 * T **T.deserialize**(string s)
 - **hash hash(v)** -- built in function that computes a true-deep hash of the value.
@@ -135,14 +157,15 @@ Built into every data structure: basic types, structs, string, collections etc.
 - ### add deduplicate feature / function / tag?
 
 
-## STRUCT EXAMPLES
+# STRUCT EXAMPLES
 
 	struct song {
 		float length = 0;
 		float? last_pos = null;
 		dyn<int, string> nav_info = "off";
 
-		//	Demonstrate replacing a member property with accessors, without affecting clients.
+		//	Demonstrate replacing a member property with accessors,
+		//	without affecting clients.
 		bool selected {
 			get { return !selected_internal }
 			set { return assoc(
@@ -173,7 +196,7 @@ Built into every data structure: basic types, structs, string, collections etc.
 		song(){
 			return song();
 		}
-		song(float bars ( >=0 && @ <= 128.0f) ){
+		song(float bars (_ >=0 && _ <= 128.0f) ){
 			mut temp = song();
 			temp.length = bars * 192;
 			return temp;
@@ -181,14 +204,8 @@ Built into every data structure: basic types, structs, string, collections etc.
 	}
 
 
-
-
-
-
-
-
-#### Enums
-Works like usual, but can be extended.
+# ENUM
+Works like expected from C, but can be extended.
 
 enum preset_colo {
 	red = 2,
@@ -201,7 +218,7 @@ enum preset_color_ex : preset color {
 }
 
 
-### Variables and constants
+# VARIABLES AND CONSTANTS
 All variables are by default constants / immutable.
 
 	assert(floyd_verify(
@@ -212,10 +229,10 @@ All variables are by default constants / immutable.
 		}"
 	) == -3);
 
-Use _mut_ to define a local variable that can be mutated. Only _local variables_ can be mut.
+Use _mutable_ to define a local variable that can be mutated. Only _local variables_ can be mutable.
 
 	int hello2(){
-		mut a = "hello";
+		mutable a = "hello";
 		a = "goodbye";	//	Changes variable a to "goodbye".
 		return 3;
 	}
@@ -228,18 +245,30 @@ A fixed set of collections are built right into Floyd. They can store any Floyd 
 
 A unique feature in Floyd is that you cannot specify the exact implementation of the collection, only its basic type: vector or map. The precise data structure is selected by the runtime according to your recommendations and the optimiser / profiler.
 
-## VECTOR
-A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. There are many potential backends for a vector:
+# HINTS-SYSTEM
+	### add hints system for optimization
+	### Add profiler features
+
+
+# VECTOR
+A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. Prefer to access using SEQ for performance.
+
+There are many potential backends for a vector:
 
 1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
 2. A HAMT-based persistent vector. Medium-fast to make, read an write. Uses more memory.
 3. A function. Compact, potentially very fast / very slow. No read/write.
 
-??? Explore functions vs vectors vs maps. Integer keys vs float keys. sin(float a)?
-
 	b = [int](1, 2, 3);
 
-## MAPS
+	vector<T>(seq<t> in);
+	vector<T> make[T]{ 1, 2, 3 };
+	vector<T> make(vector<T> other, int startPos, int endPos);
+	seq subset(vector<T> in, 
+
+
+
+# MAP
 map<K, V>
 
 	struct {
@@ -249,7 +278,8 @@ map<K, V>
 	int function test_map([string, int] p1);
 	a = {string, int}({ "one", 1 }, { "two", 2 }, { "three", 3 });
 
-## SEQ
+
+# SEQ
 Seq is an interface built into every collection and struct. It allows you to read from the source, one entry at a time, in an immutable way.
 
 	int f2(seq<int> data){
@@ -257,8 +287,10 @@ Seq is an interface built into every collection and struct. It allows you to rea
 		b = data.rest;
 	}
 
-	//	Vectos (and all collections, compoisites) support the seq interface so you can convert it to a seq:
-	result = f2([int](1, 2, 3))
+Vectors (and all collections, composites) support the seq interface so you can convert it to a seq:
+		result = f2([int](1, 2, 3))
+You can even do this with a struct: the members will be returned in order.
+
 
 # FUNCTIONS
 Function always have the same syntax, no matter if they are member functions of a struct, a constructor or a free function.
@@ -266,33 +298,18 @@ Function always have the same syntax, no matter if they are member functions of 
 NOTE: A function is a thing that takes a struct/tuple as an argument and returns another struct/tuple or basic type.
 
 	### The arguments for a function is a struct. Function internally only take one argument.
+	### log()
+	### assert()
+	### Closures
 
-Closures
-
-## Internals
-	function definition:
-		input type
-		output type
-		namespace
-
-	function_closure
-		function_closure* parent_closure;
-		function_def* f
-		local_variables<local_var_name, dyn<all>>{}
-		
 Functions always return exactly one value. Use a tuple to return more values. A function without return value makes no sense since function cannot have side effects.
 
-You can use maps, vector and functions the same way. Since maps and vectors are immutable and functions are pure, they are equivalen when they have the same signature.
 
-	string my_function(int a){
-		return a == 1 ? "one", a == 2 ? "two", a == 3 ? "three";
-	}
-	my_map = [string, int]( 1: "one", 2: "two", 3: "three");
-	my_vector = [string]( "one", "two", "three" );
-
+# FUNCTION DOCUMENTATION
 How to add docs? Markdown. Tests, contracts etc.
 
-## FUNCTION CONTRACTS
+
+# FUNCTION CONTRACTS
 Arguments and return values always specifies their contracts using an expression within []. You can use constants, function calls and all function arguments in the expressions.
 
 	int [_ >=0 && _ <= a] function test1(int a, int b){
@@ -304,7 +321,7 @@ Arguments and return values always specifies their contracts using an expression
 
 	}
 
-## FUNCTION PROOFS
+# FUNCTION TESTS
 	prove(function1) {
 		"Whenever flabbergast is 0, b don't matter) and result is 0
 		function1(0, 0) == 0
@@ -331,20 +348,26 @@ Example function definitions:
 	int f4(string x, bool y)
 
 
-## Lambdas
+# EQUIVALENCE: FUNCTIONS - MAPS - VECTORS
+??? Explore functions vs vectors vs maps. Integer keys vs float keys. sin(float a)?
+
+You can use maps, vector and functions the same way. Since maps and vectors are immutable and functions are pure, they are equivalen when they have the same signature.
+
+	string my_function(int a){
+		return a == 1 ? "one", a == 2 ? "two", a == 3 ? "three";
+	}
+	my_map = [string, int]( 1: "one", 2: "two", 3: "three");
+	my_vector = [string]( "one", "two", "three" );
+
+
+# LAMBDAS
 foreach(stuff, a => return a + 1)
 foreach(stuff, () => {})
 foreach(stuff, (a, b) => { return a + 1; })
 They are closures.
 
 
-int main(string args){
-	log(args);
-	return 3;
-}
-
-
-## RIGHTS
+# RIGHTS
 Communicates between function and caller what access rights and what layer int the system this functions operates on.
 - This gives function can take one or several rights as argument. These are protocols that gives your function access to functions and privileges it doesn't otherwize have. A large composite program consists of layers of runtimes and _rights_ is the way for a function to communicate it requires access. This makes sure layring is consistent and explicit. You can easily make composite rights by listing several or using +
 
@@ -372,9 +395,20 @@ rights core {
 	make_world();
 }
 
+## Function Internals
+	function definition:
+		input type
+		output type
+		namespace
+
+	function_closure
+		function_closure* parent_closure;
+		function_def* f
+		local_variables<local_var_name, dyn<all>>{}
 
 
-### Dynamic type / tagged union
+
+# DYN
 dyn<float, string> // one of these. Tagged union. a
 
 	a = dyn<string, int>("test");
@@ -390,34 +424,40 @@ dyn<float, string> // one of these. Tagged union. a
 	assert(a.type != bool);
 
 
-### Typedef
+# TYPEDEF
 A typedef makes a new, unique type, by copying another (often complex) type.
 	typedef [string, [bool]] book_list;
-	typedef 
+	### You also add additional invariant. sample_rate is an integer, but can only be positive.
 
-### Paths
+
+# PATHS
 You can make a path through nested data structures. The path is a built-in opaque type.
 
-# Value serialization
+	let my_path = &my_document.text_block[3].footer_old.fragment[ix].text;
+	### operations.
+	### show as a string / file path.
+
+
+# SERIALIZATION
 Serializing a value is a built in mechanism. It is based on the seq-type.
 It is always deep. ### Always shallow with interning when values are shared.
 
-The result is always a normalized JSON stream.
+The result is always a normalized JSON stream. ???
 
 ??? De-duplication vs references vs equality vs diffing.
-
+	### Make reading and writing Floyd code simple, especially data definitions.
 //	Define serialised format of a type, usable as constant.
 
- ### floud code = stored / edited in the serialized format.
+ ### floyd code = stored / edited in the serialized format.
 
 An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream.
+
 
 # PROTOCOLS
 A protocol is a type that introduces zero to many functions signatures without having any implementation. The protocols have no state and no functionallity.
 
 A struct can chose to implement one or several protocols.
 A protocol does NOT mean an is-a hiearchy. It is rather a supports-a. An optional feature.
-
 
 protocol tooltip_support {
 	text get_text(this)
@@ -454,50 +494,99 @@ struct my_window {
 	}
 }
 
-### Statements
-if(){
-}
-else if(){
-}
-else{
-}
+# IF
+This is a normal if-else-if-else construct, like in most languages.
+
+		if(s == "one"){
+			return 1;
+		}
+		else if(s == "two"){
+			return 2;
+		}
+		else{
+			return -1;
+		}
+
+In each body you can write any statements. There is no "break" keyword.
+
+You can use a lambda to do directly assign a value from an if-then-else:
+
+		int v = () => {
+			if(s == "one"){
+				return 1;
+			}
+			else if(s == "two"){
+				return 2;
+			}
+			else{
+				return -1;
+			}
+		}
+
+
+# LOOPS AND CONDITIONS
+The foreach uses the seq-protocol to process all items in a seq, one by one.
 
 foreach(a in stuff){
 }
-foreach(stuff, () => {})
-
-return a < b ? 1 : 2
-
-assert()
-test
-log()
-prove
+foreach(thing, [string]{ 1, 2, 3 })
 
 
-switch()
+int r = a < b ? 1 : 2;
+
+switch() -- has modern update, no default or break.
+
+
+# TEMPLATES
+
+# IMPORT / DEFINE LIBRARIES
+
+# EXTERNALS
+
+# CLOCKS
+
+# RUNTIME ERRORS / EXCEPTIONS
+Principles and policies.
+Functions.
+	??? Only support this in mutating parts and externals?
+
+# CONCURRENCY
+
+# FILE SYSTEM FEATURES
 
 
 
 
 
-### Reserved Keywords
+# TEXT FEATURES
+text
+code_point
+a = localizeable("Please insert data type into terminal...");
+
+Tool extracts and switches text inside localizeable() automatically.
 
 
-
-|   	|   	|   	|   	|   	|
-|---	|---	|---	|---	|---	|
-|   	|   	|   	|   	|   	|
-|   	|   	|   	|   	|   	|
-|   	|   	|   	|   	|   	|
+# BINARY DATA FEATURES
 
 
-?
+# GLOBAL CONSTANTS
+
+
+# NAMESPACES
+
+
+# C GLUE
+
+
+# RESERVED KEYWORDS
+
 assert
 bool
 catch
 char???
-code_point
 clock
+code_point
+defect_exception
 deserialize()
 diff()
 double
@@ -506,8 +595,11 @@ dyn**<>
 else
 ensure
 enum
+exception
 false
 float
+float32
+float80
 foreach
 hash
 hash()
@@ -521,14 +613,17 @@ invariant
 log
 map
 mutable
-namespace?
+namespace???
 null
 path
 private
+property
 protocol
 prove
-return
 require
+return
+rights
+runtime_exception
 seq
 serialize()
 string
@@ -538,11 +633,12 @@ switch
 tag
 test
 text
+this
 true
 try
+typecast
 typedef
 typeof
-typecast
 vector
 while
 
@@ -550,32 +646,9 @@ while
 
 
 
-
-# Text features
-text
-code_point
-a = localizeable("Please insert data type into terminal...");
-
-Tool extracts and switches text inside localizeable() automatically.
-
-# Binary data features
-
-# File features
-
-
-
-
-
-
-
-
+#??????????????????????????????????????????????????????
 # ??? OPEN QUESTIONS
 	### fixed_size_vector
-
-??? Global constants / static?
-Namespaces
-Serializing abstraction
-Externals
 
 
 ### SWITCH OPEN PROBLEM
@@ -660,8 +733,6 @@ switch(a){
 		log("...")
 	}
 }
-
-return a < b ? 1 : 2
 
 a,b ?
 	(_0 == 0 : log("ONE")) :
