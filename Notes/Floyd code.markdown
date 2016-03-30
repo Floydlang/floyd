@@ -555,7 +555,15 @@ Functions.
 # FILE SYSTEM FEATURES
 
 
+# OPTIONALS VALUES, NULL AND ?
 
+"Haskell for example provides the Maybe monad instead, which forces the programmer to consider the "null case"."
+
+int? a = b > 0 ? b : null;
+
+	### Design a syntax for force client to always get and consider both null and value, like a visitor.
+		b.resolve
+		b.null 
 
 
 # TEXT FEATURES

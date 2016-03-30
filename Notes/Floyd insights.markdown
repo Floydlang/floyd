@@ -96,9 +96,7 @@ MY GAME
 	(Network io)
 
 	
-	
 # CONCURRENCY / THREADING
 - External clocks - these are clocks for different clients that communicate at different rates (think UI vs realtime output vs sockets). Programmer uses clocks-concept to do this.
 
 - Internal threading: runtime can chose to use many threads to accellerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
-
