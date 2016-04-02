@@ -896,7 +896,7 @@ pair<data_type_t, string> read_required_type(const string& s){
 }
 
 //	Get identifier (name of a defined function or constant variable name).
-pair<data_type_t, string> read_required_identifier(const string& s){
+pair<string, string> read_required_identifier(const string& s){
 	const seq type_pos = get_identifier(s);
 	if(type_pos.first.empty()){
 		throw std::runtime_error("missing identifier");
@@ -943,42 +943,37 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
+/*
+	Just defines an unnamed function - it has no name.
 
-//////////////////////////////////////////////////		read_toplevel_statement()
+	Named function:
+
+	int myfunc(string a, int b){
+		...
+		return b + 1;
+	}
 
 
-	/*
-		Named function:
+	LATER:
+	Lambda:
 
-		int myfunc(string a, int b){
-			...
-			return b + 1;
+	int myfunc(string a){
+		() => {
 		}
+	}
 
-		Lambda:
-
-		int myfunc(string a){
-			() => {
-			}
-		}
-
-		Just defines an unnamed function - it has no name.
-
-		[make_function_expression]
-			[value_type]
-			[arg_list]
-				[arg0]
-					[value_type]
-					[name]
-				[arg1]
-					[value_type]
-					[name]
-			[body_node]
-	*/
-//	make_function_expression,
-
-//??? Also bind it to a global constant.
-pair<statement_t, string> read_toplevel_statement(const string& pos){
+	[make_function_expression]
+		[value_type]
+		[arg_list]
+			[arg0]
+				[value_type]
+				[name]
+			[arg1]
+				[value_type]
+				[name]
+		[body_node]
+*/
+pair<pair<string, make_function_expression_t>, string> read_function(const string& pos){
 	const auto type_pos = read_required_type(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
@@ -1000,11 +995,52 @@ pair<statement_t, string> read_toplevel_statement(const string& pos){
 	}
 	const auto body_pos = get_balanced(arg_list_pos.second);
 	const auto a = make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} };
+	trace_node(a);
 
-	statement_t statement(make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} });
+	return { { identifier_pos.first, a }, body_pos.second };
+}
+
+
+
+//////////////////////////////////////////////////		read_toplevel_statement()
+
+
+//	make_function_expression,
+
+//	??? also allow defining types and global constants.
+//??? Also bind it to a global constant.
+pair<statement_t, string> read_toplevel_statement(const string& pos){
+	const auto type_pos = read_required_type(pos);
+	const auto identifier_pos = read_required_identifier(type_pos.second);
+
+
+	pair<pair<string, make_function_expression_t>, string> function = read_function(pos);
+	statement_t statement(function.first.second);
+
+/*
+	//	Skip whitespace.
+	const auto rest = skip_whitespace(identifier_pos.second);
+
+	if(!peek_required_char(rest, '(')){
+		throw std::runtime_error("expected function argument list enclosed by (),");
+	}
+
+	//### crete pair<string, string> get_required_balanced(string, '(', ')') that returns empty string if not found.
+
+	const auto arg_list_pos = get_balanced(rest);
+	const auto arg_list_chars(arg_list_pos.first.substr(1, arg_list_pos.first.length() - 2));
+	const auto arg_list2 = read_function_arguments(arg_list_chars);
+
+	if(!peek_required_char(arg_list_pos.second, '{')){
+		throw std::runtime_error("expected function body enclosed by {}.");
+	}
+	const auto body_pos = get_balanced(arg_list_pos.second);
+	const auto a = make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} };
+
 	trace_node(statement);
+*/
 
-	return { statement, body_pos.second };
+	return { statement, function.second };
 }
 
 QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
