@@ -1,15 +1,22 @@
 # Floyd Programming Language
 
 ### GOALS
-1. Floyd prefers C-like / Java syntax to appeal to imperative programmers.
+1. Floyd prefers C-like / Java syntax to appeal to imperative programmers. C-subset is compatible.
 2. Automatic - Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
-3. Explicit - One simple and clear way to do everything, little opportunity to do creative coding. Built-in specific mechanisms for all common stuff.
+3. Explicit - One simple and clear way to do everything, little opportunity to do creative coding. Built-in specific mechanisms for all common stuff and best pratices.
 4. Composability
 5. Performance: built in profiling and hardware cache. Ballpark C++ performance.
 6. Solid code and techniques
 7. Normalized source code format allows round-trip tools / visual editing. Easy language parsing, use as data language.
 8. Oppinionated: there is a good way to do things. That is built into the languge, not in libraries
 9. Encourage creating lots of very specific structs even for simple things. Can be unnamed.
+
+
+# FLOYD RUNTME
+- Static profiler - knows ballpark performance directly in editor. Optimize complexity when data sets are big, else brute force.
+- Runtime does optimizations in the same way as Pentium does optimizations at runtime. Caches, write buffers, speculation, batching, concurrency. Nextgen stuff.
+- No aliasing or side-effects = maximum performance.
+- Compile for GPUs too.
 
 	
 # REFERENCES

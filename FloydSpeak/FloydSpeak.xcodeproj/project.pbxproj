@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2C1D84E11CA765A90042F0A8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* main.cpp */; };
-		2C1D84EC1CA766470042F0A8 /* main 2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E71CA766470042F0A8 /* main 2.cpp */; };
+		2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0AC17A1CADB26B00979C49 /* runtime.cpp */; };
+		2C1D84E11CA765A90042F0A8 /* compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* compiler.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
 /* End PBXBuildFile section */
 
@@ -25,9 +25,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2C0AC17A1CADB26B00979C49 /* runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime.cpp; sourceTree = "<group>"; };
+		2C0AC17B1CADB26B00979C49 /* runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime.h; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* FloydSpeak */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FloydSpeak; sourceTree = BUILT_PRODUCTS_DIR; };
-		2C1D84E01CA765A90042F0A8 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		2C1D84E71CA766470042F0A8 /* main 2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "main 2.cpp"; sourceTree = "<group>"; };
+		2C1D84E01CA765A90042F0A8 /* compiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
 		2C1D84E81CA766470042F0A8 /* quark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = quark.cpp; sourceTree = "<group>"; };
 		2C1D84E91CA766470042F0A8 /* quark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quark.h; sourceTree = "<group>"; };
 		2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = steady_vector.cpp; sourceTree = "<group>"; };
@@ -64,12 +65,13 @@
 		2C1D84DF1CA765A90042F0A8 /* FloydSpeak */ = {
 			isa = PBXGroup;
 			children = (
-				2C1D84E01CA765A90042F0A8 /* main.cpp */,
-				2C1D84E71CA766470042F0A8 /* main 2.cpp */,
+				2C1D84E01CA765A90042F0A8 /* compiler.cpp */,
 				2C1D84E81CA766470042F0A8 /* quark.cpp */,
 				2C1D84E91CA766470042F0A8 /* quark.h */,
 				2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */,
 				2C1D84EB1CA766470042F0A8 /* steady_vector.h */,
+				2C0AC17A1CADB26B00979C49 /* runtime.cpp */,
+				2C0AC17B1CADB26B00979C49 /* runtime.h */,
 			);
 			path = FloydSpeak;
 			sourceTree = "<group>";
@@ -130,8 +132,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2C1D84EC1CA766470042F0A8 /* main 2.cpp in Sources */,
-				2C1D84E11CA765A90042F0A8 /* main.cpp in Sources */,
+				2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */,
+				2C1D84E11CA765A90042F0A8 /* compiler.cpp in Sources */,
 				2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
