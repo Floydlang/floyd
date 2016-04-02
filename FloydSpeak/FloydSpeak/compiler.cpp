@@ -183,10 +183,7 @@ seq read_until(const string& s, const string& match){
 		pos++;
 	}
 
-	return seq(
-		s.substr(0, pos),
-		s.substr(pos)
-	);
+	return { s.substr(0, pos), s.substr(pos) };
 }
 
 QUARK_UNIT_TEST("", "read_until()", "", ""){
@@ -220,7 +217,7 @@ QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 */
 seq get_type(const string& s){
 	const auto a = skip_whitespace(s);
-	const auto b = read_until(a, type_chars);
+	const auto b = read_while(a, type_chars);
 	return b;
 }
 
@@ -229,7 +226,7 @@ seq get_type(const string& s){
 */
 seq get_identifier(const string& s){
 	const auto a = skip_whitespace(s);
-	const auto b = read_until(a, identifier_chars);
+	const auto b = read_while(a, identifier_chars);
 	return b;
 }
 
@@ -326,10 +323,7 @@ seq get_balanced(const string& s){
 		pos++;
 	}
 
-	return seq(
-		s.substr(0, pos + 1),
-		s.substr(pos + 1)
-	);
+	return { s.substr(0, pos + 1), s.substr(pos + 1) };
 }
 
 QUARK_UNIT_TEST("", "get_balanced()", "", ""){
@@ -390,6 +384,10 @@ struct value_type_t {
 	public: string _type_magic;
 };
 
+/*
+	returns "" on unknown type.
+*/
+
 value_type_t resolve_type(string node_type){
 	if(node_type == "int"){
 		return value_type_t::make_type("int");
@@ -407,7 +405,6 @@ value_type_t resolve_type(string node_type){
 		return value_type_t::make_type("value_type");
 	}
 	else{
-		QUARK_ASSERT(false);
 		return "";
 	}
 }
@@ -778,6 +775,26 @@ void trace_node(const node1_t& node){
 	trace_node_int(node);
 }
 
+/*
+	Returns "rest" if ch is found, else throws exceptions.
+*/
+std::string read_required_char(const std::string& s, char ch){
+	if(s.size() > 0 && s[0] == ch){
+		return s.substr(1);
+	}
+	else{
+		throw std::runtime_error("expected character '" + string(1, ch)  + "'.");
+	}
+}
+
+pair<bool, std::string> read_optional_char(const std::string& s, char ch){
+	if(s.size() > 0 && s[0] == ch){
+		return { true, s.substr(1) };
+	}
+	else{
+		return { false, s };
+	}
+}
 
 
 //////////////////////////////////////////////////		pass1
@@ -812,17 +829,17 @@ struct pass1 {
 node1_t parse_arg_list(const string& s){
 	vector<node1_t> arg_nodes;
 
-	auto pos = seq("", s);
-	while(!pos.second.empty()){
-		const seq arg_type = get_type(pos.second);
-		const seq arg_name = get_identifier(arg_type.second);
-		const seq optional_comma = read_while(arg_name.second, ",");
+	auto str = s;
+	while(!str.empty()){
+		const auto arg_type = get_type(str);
+		const auto arg_name = get_identifier(arg_type.second);
+		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
-		const node1_t arg_type_node = make_node1(node1_type::value_type, resolve_type(arg_type.first));
-		const node1_t arg_name_node = make_node1(node1_type::identifier, arg_name.first);
+		const auto arg_type_node = make_node1(node1_type::value_type, resolve_type(arg_type.first));
+		const auto arg_name_node = make_node1(node1_type::identifier, arg_name.first);
 		arg_nodes.push_back(make_node1(node1_type::arg, vector<node1_t>{ arg_type_node, arg_name_node }));
 
-		pos = optional_comma;
+		str = skip_whitespace(optional_comma.second);
 	}
 
 	const auto result = make_node1(node1_type::arg_list, arg_nodes);
@@ -894,11 +911,11 @@ pair<value_type_t, string> read_required_type(const string& s){
 
 //	Get identifier (name of a defined function or constant variable name).
 pair<value_type_t, string> read_required_identifier(const string& s){
-	const seq t2 = get_identifier(s);
-	if(t2.first.empty()){
+	const seq type_pos = get_identifier(s);
+	if(type_pos.first.empty()){
 		throw std::runtime_error("missing identifier");
 	}
-	const string identifier = t2.first;
+	const string identifier = type_pos.first;
 	return { identifier, type_pos.second };
 }
 
@@ -907,10 +924,10 @@ pair<node1_t, string> read_toplevel(const string& pos){
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
 	//	Skip whitespace.
-	const seq t3 = get_next_token(t2.second, whitespace_chars, "");
+	const auto rest = skip_whitespace(identifier_pos.second);
 
-	//	Is this a function definition?
-	if(t3.second.size() > 0 && t3.second[0] == '('){
+	//	Comma => this a function definition.
+	if(rest.size() > 0 && rest[0] == '('){
 		/*
 			[make_function_expression]
 				[value_type] = "int"
@@ -923,19 +940,20 @@ pair<node1_t, string> read_toplevel(const string& pos){
 						[name]
 				[body_node]
 		*/
-		const auto t4 = get_balanced(t3.second);
-		const auto function_return = resolve_type(type1);;
-		const auto arg_list(t4.first.substr(1, t4.first.length() - 2));
-		const auto arg_list_node = parse_arg_list(arg_list);
+		const auto function_return_node = make_node1(node1_type::value_type, type_pos.first);
 
-		const auto function_return_node = make_node1(node1_type::value_type, function_return);
+		const auto arg_list = get_balanced(rest);
+		const auto arg_list_chars(arg_list.first.substr(1, arg_list.first.length() - 2));
+		const auto arg_list_node = parse_arg_list(arg_list_chars);
 
+		const auto body = get_balanced(arg_list.second);
 		const auto body_node = make_node1(node1_type::body_node, vector<node1_t>{});
+
 		//??? Also bind it to a global constant.
-		const auto r = node1_t(node1_type::make_function_expression, {function_return_node, arg_list_node, body_node});
+		const auto r = node1_t(node1_type::make_function_expression, { function_return_node, arg_list_node, body_node });
 		trace_node(r);
 
-		top_childen.push_back(r);
+		return { r, body.second };
 	}
 	else{
 		throw std::runtime_error("expected (");
@@ -950,7 +968,40 @@ QUARK_UNIT_TEST("", "read_toplevel()", "three arguments", ""){
 
 	const auto result = read_toplevel(kInput);
 	QUARK_TEST_VERIFY(result.first._type == node1_type::make_function_expression);
-	QUARK_TEST_VERIFY(result.second == "");
+	QUARK_TEST_VERIFY(result.first._children.size() == 3);
+
+	//	Return type.
+	QUARK_TEST_VERIFY(result.first._children[0]._type == node1_type::value_type);
+	QUARK_TEST_VERIFY(result.first._children[0]._value == resolve_type("int"));
+
+	//	argument list.
+	QUARK_TEST_VERIFY(result.first._children[1]._type == node1_type::arg_list);
+	QUARK_TEST_VERIFY(result.first._children[1]._children.size() == 3);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._type == node1_type::arg);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children.size() == 2);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[0]._type == node1_type::value_type);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[0]._value == resolve_type("int"));
+	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[1]._type == node1_type::identifier);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[1]._value._string == "x");
+
+	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._type == node1_type::arg);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children.size() == 2);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[0]._type == node1_type::value_type);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[0]._value == resolve_type("int"));
+	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[1]._type == node1_type::identifier);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[1]._value._string == "y");
+
+	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._type == node1_type::arg);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children.size() == 2);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[0]._type == node1_type::value_type);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[0]._value == resolve_type("string"));
+	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[1]._type == node1_type::identifier);
+	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[1]._value._string == "z");
+
+	//	Functionbody.
+	QUARK_TEST_VERIFY(result.first._children[2]._type == node1_type::body_node);
+
+	QUARK_TEST_VERIFY(result.second == "\n");
 }
 
 
@@ -961,10 +1012,13 @@ QUARK_UNIT_TEST("", "read_toplevel()", "three arguments", ""){
 
 pass1 compile_pass1(string program){
 	vector<node1_t> top_childen;
-	const auto start = seq("", program);
-
-
-
+	auto pos = program;
+	pos = skip_whitespace(pos);
+	while(!pos.empty()){
+		const auto node = read_toplevel(pos);
+		top_childen.push_back(node.first);
+		pos = skip_whitespace(node.second);
+	}
 
 	node1_t program_body_node(node1_type::body_node, top_childen);
 	trace_node(program_body_node);
