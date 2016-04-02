@@ -520,11 +520,6 @@ struct value_t {
 
 struct statement_t;
 
-
-struct expression_t {
-};
-
-
 struct arg_t {
 	bool operator==(const arg_t& other) const{
 		return _type == other._type && _identifier == other._identifier;
@@ -538,21 +533,38 @@ struct function_body_t {
 	vector<statement_t> _statements;
 };
 
-
 struct make_function_expression_t {
 	data_type_t _return_type;
 	vector<arg_t> _args;
 	function_body_t _body;
 };
 
-struct statement_t {
-	statement_t(make_function_expression_t value) :
+
+struct expression_t {
+	expression_t(make_function_expression_t value) :
 		_make_function_expression(make_shared<make_function_expression_t>(value))
 	{
 	}
 
-	//??? error this is no statement, use bind_global instead.
 	shared_ptr<make_function_expression_t> _make_function_expression;
+};
+
+
+
+
+
+struct bind_global_constant {
+	string _global_identifier;
+	expression_t _expression;
+};
+
+struct statement_t {
+	statement_t(bind_global_constant value) :
+		_bind_global_constant(make_shared<bind_global_constant>(value))
+	{
+	}
+
+	shared_ptr<bind_global_constant> _bind_global_constant;
 };
 
 
@@ -764,12 +776,6 @@ enum node1_type {
 	*/
 	function_call_expression,
 
-	arg_list,
-	arg,
-
-	value_type,
-	identifier
-
 	/*
 		(a + b)
 		(a - b)
@@ -961,17 +967,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 		() => {
 		}
 	}
-
-	[make_function_expression]
-		[value_type]
-		[arg_list]
-			[arg0]
-				[value_type]
-				[name]
-			[arg1]
-				[value_type]
-				[name]
-		[body_node]
 */
 pair<pair<string, make_function_expression_t>, string> read_function(const string& pos){
 	const auto type_pos = read_required_type(pos);
@@ -995,7 +990,7 @@ pair<pair<string, make_function_expression_t>, string> read_function(const strin
 	}
 	const auto body_pos = get_balanced(arg_list_pos.second);
 	const auto a = make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} };
-	trace_node(a);
+//	trace_node(a);
 
 	return { { identifier_pos.first, a }, body_pos.second };
 }
@@ -1006,41 +1001,15 @@ pair<pair<string, make_function_expression_t>, string> read_function(const strin
 
 
 //	make_function_expression,
-
 //	??? also allow defining types and global constants.
-//??? Also bind it to a global constant.
 pair<statement_t, string> read_toplevel_statement(const string& pos){
 	const auto type_pos = read_required_type(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
 
 	pair<pair<string, make_function_expression_t>, string> function = read_function(pos);
-	statement_t statement(function.first.second);
-
-/*
-	//	Skip whitespace.
-	const auto rest = skip_whitespace(identifier_pos.second);
-
-	if(!peek_required_char(rest, '(')){
-		throw std::runtime_error("expected function argument list enclosed by (),");
-	}
-
-	//### crete pair<string, string> get_required_balanced(string, '(', ')') that returns empty string if not found.
-
-	const auto arg_list_pos = get_balanced(rest);
-	const auto arg_list_chars(arg_list_pos.first.substr(1, arg_list_pos.first.length() - 2));
-	const auto arg_list2 = read_function_arguments(arg_list_chars);
-
-	if(!peek_required_char(arg_list_pos.second, '{')){
-		throw std::runtime_error("expected function body enclosed by {}.");
-	}
-	const auto body_pos = get_balanced(arg_list_pos.second);
-	const auto a = make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} };
-
-	trace_node(statement);
-*/
-
-	return { statement, function.second };
+	const auto bind = bind_global_constant{ function.first.first, function.first.second };
+	return { bind, function.second };
 }
 
 QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
@@ -1054,10 +1023,15 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 
 QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 	const auto result = read_toplevel_statement("int f(){}");
-	QUARK_TEST_VERIFY(result.first._make_function_expression);
-	QUARK_TEST_VERIFY(result.first._make_function_expression->_return_type == data_type_t::make_type("int"));
-	QUARK_TEST_VERIFY(result.first._make_function_expression->_args.empty());
-	QUARK_TEST_VERIFY(result.first._make_function_expression->_body._statements.empty());
+	QUARK_TEST_VERIFY(result.first._bind_global_constant);
+	QUARK_TEST_VERIFY(result.first._bind_global_constant->_global_identifier == "f");
+	QUARK_TEST_VERIFY(result.first._bind_global_constant->_expression._make_function_expression);
+
+	const auto make_function_expression = result.first._bind_global_constant->_expression._make_function_expression;
+	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(make_function_expression->_args.empty());
+	QUARK_TEST_VERIFY(make_function_expression->_body._statements.empty());
+
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
@@ -1088,11 +1062,15 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	"	return 3;\n"
 	"}\n";
 
-	const auto r = program_to_ast(kProgram1);
-	QUARK_TEST_VERIFY(r._top_level_statements.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression->_return_type == data_type_t::make_type("int"));
-	QUARK_TEST_VERIFY((r._top_level_statements[0]._make_function_expression->_args == vector<arg_t>{ arg_t{ data_type_t::make_type("string"), "args" }}));
+	const auto result = program_to_ast(kProgram1);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_global_identifier == "main");
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression);
+
+	const auto make_function_expression = result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression;
+	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((make_function_expression->_args == vector<arg_t>{ arg_t{ data_type_t::make_type("string"), "args" }}));
 }
 
 
@@ -1103,11 +1081,15 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	"}\n"
 	;
 
-	const auto r = program_to_ast(kProgram);
-	QUARK_TEST_VERIFY(r._top_level_statements.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression->_return_type == data_type_t::make_type("int"));
-	QUARK_TEST_VERIFY((r._top_level_statements[0]._make_function_expression->_args == vector<arg_t>{
+	const auto result = program_to_ast(kProgram);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_global_identifier == "f");
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression);
+
+	const auto make_function_expression = result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression;
+	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((make_function_expression->_args == vector<arg_t>{
 		arg_t{ data_type_t::make_type("int"), "x" },
 		arg_t{ data_type_t::make_type("int"), "y" },
 		arg_t{ data_type_t::make_type("string"), "z" }
@@ -1125,19 +1107,29 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	"}\n"
 	;
 
-	const auto r = program_to_ast(kProgram);
-	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression->_return_type == data_type_t::make_type("string"));
-	QUARK_TEST_VERIFY((r._top_level_statements[0]._make_function_expression->_args == vector<arg_t>{
+	const auto result = program_to_ast(kProgram);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 2);
+
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_global_identifier == "hello");
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression);
+
+	const auto hello = result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression;
+	QUARK_TEST_VERIFY(hello->_return_type == data_type_t::make_type("string"));
+	QUARK_TEST_VERIFY((hello->_args == vector<arg_t>{
 		arg_t{ data_type_t::make_type("int"), "x" },
 		arg_t{ data_type_t::make_type("int"), "y" },
 		arg_t{ data_type_t::make_type("string"), "z" }
 	}));
 
-	QUARK_TEST_VERIFY(r._top_level_statements[1]._make_function_expression);
-	QUARK_TEST_VERIFY(r._top_level_statements[1]._make_function_expression->_return_type == data_type_t::make_type("int"));
-	QUARK_TEST_VERIFY((r._top_level_statements[1]._make_function_expression->_args == vector<arg_t>{
+
+	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_global_constant);
+	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_global_constant->_global_identifier == "main");
+	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_global_constant->_expression._make_function_expression);
+
+	const auto main = result._top_level_statements[1]._bind_global_constant->_expression._make_function_expression;
+	QUARK_TEST_VERIFY(main->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((main->_args == vector<arg_t>{
 		arg_t{ data_type_t::make_type("string"), "args" }
 	}));
 
