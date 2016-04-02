@@ -28,6 +28,7 @@ using std::string;
 using std::pair;
 using std::shared_ptr;
 using std::unique_ptr;
+using std::make_shared;
 
 
 /*
@@ -351,6 +352,9 @@ struct value_type_t {
 	public: bool operator==(const value_type_t other) const{
 		return other._type_magic == _type_magic;
 	}
+	public: bool operator!=(const value_type_t other) const{
+		return !(*this == other);
+	}
 	value_type_t() : _type_magic(""){}
 	value_type_t(const char s[]) :
 		_type_magic(s)
@@ -470,6 +474,105 @@ struct value_t {
 	const string _function_id = "";
 	const string _value_type__type_magic;
 };
+
+
+
+
+
+//////////////////////////////////////////////////		node1
+
+
+
+struct statement_t;
+
+
+struct expression_t {
+};
+
+
+struct arg_t {
+	bool operator==(const arg_t& other) const{
+		return _type == other._type && _identifier == other._identifier;
+	}
+
+	value_type_t _type;
+	string _identifier;
+};
+
+struct function_body_t {
+	vector<statement_t> _statements;
+};
+
+
+	/*
+		Named function:
+
+		int myfunc(string a, int b){
+			...
+			return b + 1;
+		}
+
+		Lambda:
+
+		int myfunc(string a){
+			() => {
+			}
+		}
+
+		Just defines an unnamed function - it has no name.
+
+		[make_function_expression]
+			[value_type]
+			[arg_list]
+				[arg0]
+					[value_type]
+					[name]
+				[arg1]
+					[value_type]
+					[name]
+			[body_node]
+	*/
+//	make_function_expression,
+
+struct make_function_expression_t {
+	value_type_t _return_type;
+	vector<arg_t> _args;
+	function_body_t _body;
+};
+
+struct statement_t {
+	statement_t(make_function_expression_t value) :
+		_make_function_expression(make_shared<make_function_expression_t>(value))
+	{
+	}
+
+	//??? error this is no statement, use bind_global instead.
+	shared_ptr<make_function_expression_t> _make_function_expression;
+};
+
+
+
+struct program_t {
+	vector<statement_t> _top_level_statements;
+};
+
+struct visitor_i {
+	virtual void visitor_interface__on_make_function_expression(make_function_expression_t& expression) = 0;
+};
+
+void visit_program(const program_t& program, visitor_i& visit){
+}
+
+
+
+void trace_node(const arg_t& arg){
+}
+
+template<typename T> void trace_node(const vector<T>& v){
+	for(auto i: v){
+		trace_node(i);
+	}
+}
 
 
 
@@ -797,6 +900,11 @@ pair<bool, std::string> read_optional_char(const std::string& s, char ch){
 }
 
 
+bool peek_required_char(const std::string& s, char ch){
+	return s.size() > 0 && s[0] == ch;
+}
+
+
 //////////////////////////////////////////////////		pass1
 
 
@@ -808,7 +916,6 @@ struct pass1 {
 	}
 	node1_t _program_body_node;
 };
-
 
 
 /*
@@ -846,7 +953,6 @@ node1_t parse_arg_list(const string& s){
 	trace_node(result);
 	return result;
 }
-
 
 /*
 	[arg_list]
@@ -896,6 +1002,51 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+
+pair<vector<arg_t>, string> parse_arg_list2(const string& s){
+	vector<arg_t> args;
+	auto str = s;
+	while(!str.empty()){
+		const auto arg_type = get_type(str);
+		const auto arg_name = get_identifier(arg_type.second);
+		const auto optional_comma = read_optional_char(arg_name.second, ',');
+
+		const auto a = arg_t{ resolve_type(arg_type.first), arg_name.first };
+		args.push_back(a);
+		str = skip_whitespace(optional_comma.second);
+	}
+
+	trace_node(args);
+	return { args, str };
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_TEST_VERIFY((parse_arg_list2("") == pair<vector<arg_t>, string>{ {}, ""}));
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	//### include the ( and )!!!"
+	const auto r = parse_arg_list2("int x, string y, float z");
+	QUARK_TEST_VERIFY((r == pair<vector<arg_t>, string>{
+		{
+			{ resolve_type("int"), "x" },
+			{ resolve_type("string"), "y" },
+			{ resolve_type("float"), "z" }
+		},
+		""
+		}
+	));
+}
+
+
+
+
+
+
+
+
+
+
 bool is_valid_type(const string& s){
 	return s == "int" || s == "bool" || s == "string" || s == "float";
 }
@@ -918,6 +1069,13 @@ pair<value_type_t, string> read_required_identifier(const string& s){
 	const string identifier = type_pos.first;
 	return { identifier, type_pos.second };
 }
+
+
+
+
+
+
+
 
 pair<node1_t, string> read_toplevel(const string& pos){
 	const auto type_pos = read_required_type(pos);
@@ -1005,6 +1163,63 @@ QUARK_UNIT_TEST("", "read_toplevel()", "three arguments", ""){
 }
 
 
+void trace_node(const statement_t& s){
+}
+
+
+
+//??? Also bind it to a global constant.
+pair<statement_t, string> read_toplevel2(const string& pos){
+	const auto type_pos = read_required_type(pos);
+	const auto identifier_pos = read_required_identifier(type_pos.second);
+
+	//	Skip whitespace.
+	const auto rest = skip_whitespace(identifier_pos.second);
+
+	if(!peek_required_char(rest, '(')){
+		throw std::runtime_error("expected function argument list enclosed by (),");
+	}
+
+	//### crete pair<string, string> get_required_balanced(string, '(', ')') that returns empty string if not found.
+
+	const auto arg_list_pos = get_balanced(rest);
+	const auto arg_list_chars(arg_list_pos.first.substr(1, arg_list_pos.first.length() - 2));
+	const auto arg_list2 = parse_arg_list2(arg_list_chars);
+
+	if(!peek_required_char(arg_list_pos.second, '{')){
+		throw std::runtime_error("expected function body enclosed by {}.");
+	}
+	const auto body_pos = get_balanced(arg_list_pos.second);
+	const auto a = make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} };
+
+	statement_t statement(make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} });
+	trace_node(statement);
+
+	return { statement, body_pos.second };
+}
+
+QUARK_UNIT_TEST("", "read_toplevel2()", "", ""){
+	try{
+		const auto result = read_toplevel2("int f()");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+QUARK_UNIT_TEST("", "read_toplevel2()", "", ""){
+	const auto result = read_toplevel2("int f(){}");
+	QUARK_TEST_VERIFY(result.first._make_function_expression);
+	QUARK_TEST_VERIFY(result.first._make_function_expression->_return_type == value_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(result.first._make_function_expression->_args.empty());
+	QUARK_TEST_VERIFY(result.first._make_function_expression->_body._statements.empty());
+	QUARK_TEST_VERIFY(result.second == "");
+}
+
+
+
+
+
 /*
 	Makes a tree of all the program. Whitespace removed, all types of parenthesis split to sub-trees.
 	No knowledget of language syntax needed to do this.
@@ -1058,6 +1273,28 @@ QUARK_UNIT_TEST("", "compile_pass1()", "two functions", ""){
 }
 
 
+void trace_node(const program_t& v){
+}
+
+
+program_t compile_pass1b(string program){
+	vector<statement_t> top_level_statements;
+	auto pos = program;
+	pos = skip_whitespace(pos);
+	while(!pos.empty()){
+		const auto statement_pos = read_toplevel2(pos);
+		top_level_statements.push_back(statement_pos.first);
+		pos = skip_whitespace(statement_pos.second);
+	}
+
+	const program_t result{ top_level_statements };
+	trace_node(result);
+
+	return result;
+}
+
+
+
 
 
 
@@ -1081,6 +1318,14 @@ const string kProgram4 =
 
 QUARK_UNIT_TEST("", "compiler_pass1()", "", ""){
 	auto r = compile_pass1(kProgram2);
+//	QUARK_TEST_VERIFY(r._functions["main"]._return_type == value_type_t::make_type("int"));
+	vector<pair<string, string>> a{ { "string", "args" }};
+//	QUARK_TEST_VERIFY((r._functions["main"]._args == vector<pair<value_type_t, string>>{ { value_type_t::make_type("string"), "args" }}));
+}
+
+
+QUARK_UNIT_TEST("", "compile_pass1b()", "", ""){
+	auto r = compile_pass1b(kProgram2);
 //	QUARK_TEST_VERIFY(r._functions["main"]._return_type == value_type_t::make_type("int"));
 	vector<pair<string, string>> a{ { "string", "args" }};
 //	QUARK_TEST_VERIFY((r._functions["main"]._args == vector<pair<value_type_t, string>>{ { value_type_t::make_type("string"), "args" }}));
