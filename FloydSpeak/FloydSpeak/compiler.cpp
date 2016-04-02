@@ -229,10 +229,23 @@ pair<bool, std::string> read_optional_char(const std::string& s, char ch){
 }
 
 
-bool peek_required_char(const std::string& s, char ch){
+bool peek_compare_char(const std::string& s, char ch){
 	return s.size() > 0 && s[0] == ch;
 }
 
+bool peek_string(const std::string& s, const std::string& peek){
+	return s.size() >= peek.size() && s.substr(0, peek.size()) == peek;
+}
+
+QUARK_UNIT_TEST("", "peek_string()", "", ""){
+	QUARK_TEST_VERIFY(peek_string("", "") == true);
+	QUARK_TEST_VERIFY(peek_string("a", "a") == true);
+	QUARK_TEST_VERIFY(peek_string("a", "b") == false);
+	QUARK_TEST_VERIFY(peek_string("", "b") == false);
+	QUARK_TEST_VERIFY(peek_string("abc", "abc") == true);
+	QUARK_TEST_VERIFY(peek_string("abc", "abx") == false);
+	QUARK_TEST_VERIFY(peek_string("abc", "ab") == true);
+}
 
 /*
 	Skip leading whitespace, get string while type-char.
@@ -460,6 +473,12 @@ struct value_t {
 	{
 	}
 
+	public: value_t(int value) :
+		_type("int"),
+		_int(value)
+	{
+	}
+
 	public: value_t(const data_type_t& s) :
 		_type("value_type"),
 		_value_type__type_magic(s._type_magic)
@@ -539,14 +558,31 @@ struct make_function_expression_t {
 	function_body_t _body;
 };
 
+struct constant_expression_t {
+	value_t _constant;
+};
+
 
 struct expression_t {
+	expression_t() :
+		_nop(true)
+	{
+	}
+
 	expression_t(make_function_expression_t value) :
 		_make_function_expression(make_shared<make_function_expression_t>(value))
 	{
 	}
 
+	expression_t(constant_expression_t value) :
+		_constant_expression_t(make_shared<constant_expression_t>(value))
+	{
+	}
+
 	shared_ptr<make_function_expression_t> _make_function_expression;
+	shared_ptr<constant_expression_t> _constant_expression_t;
+
+	bool _nop;
 };
 
 
@@ -558,13 +594,23 @@ struct bind_global_constant {
 	expression_t _expression;
 };
 
+struct return_value {
+	expression_t _expression;
+};
+
 struct statement_t {
 	statement_t(bind_global_constant value) :
 		_bind_global_constant(make_shared<bind_global_constant>(value))
 	{
 	}
 
+	statement_t(return_value value) :
+		_return_value(make_shared<return_value>(value))
+	{
+	}
+
 	shared_ptr<bind_global_constant> _bind_global_constant;
+	shared_ptr<return_value> _return_value;
 };
 
 
@@ -911,7 +957,13 @@ pair<string, string> read_required_identifier(const string& s){
 	return { identifier, type_pos.second };
 }
 
-pair<vector<arg_t>, string> read_function_arguments(const string& s){
+/*
+	()
+	(int a)
+	(int x, int y)
+*/
+vector<arg_t> parse_function_arguments(const string& s2){
+	const auto s(s2.substr(1, s2.length() - 2));
 	vector<arg_t> args;
 	auto str = s;
 	while(!str.empty()){
@@ -925,25 +977,113 @@ pair<vector<arg_t>, string> read_function_arguments(const string& s){
 	}
 
 	trace_vec(args);
-	return { args, str };
+	return args;
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_TEST_VERIFY((read_function_arguments("") == pair<vector<arg_t>, string>{ {}, ""}));
+	QUARK_TEST_VERIFY((parse_function_arguments("()") == vector<arg_t>{}));
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
 	//### include the ( and )!!!"
-	const auto r = read_function_arguments("int x, string y, float z");
-	QUARK_TEST_VERIFY((r == pair<vector<arg_t>, string>{
-		{
-			{ resolve_type("int"), "x" },
-			{ resolve_type("string"), "y" },
-			{ resolve_type("float"), "z" }
-		},
-		""
-		}
+	const auto r = parse_function_arguments("(int x, string y, float z)");
+	QUARK_TEST_VERIFY((r == vector<arg_t>{
+		{ resolve_type("int"), "x" },
+		{ resolve_type("string"), "y" },
+		{ resolve_type("float"), "z" }
+	}
 	));
+}
+
+
+
+/*
+*/
+expression_t parse_expression(const string& s){
+//	return expression_t(constant_expression_t());
+	return expression_t(constant_expression_t{ value_t(3) });
+}
+
+QUARK_UNIT_TEST("", "parse_expression", "", ""){
+	QUARK_TEST_VERIFY((parse_expression("()")._constant_expression_t->_constant == value_t(3)));
+//	QUARK_TEST_VERIFY((parse_expression("()")._nop));
+}
+
+
+
+
+/*
+	### Split-out parse_statement().
+
+	{}
+
+	{
+		return 3;
+	}
+
+	{
+		int a = 10;
+		int b = f(a);
+		int c = a + b;
+		return c;
+	}
+
+
+	{
+		struct point2d {
+			int _x;
+			int _y;
+		}
+	}
+
+	{
+		int my_func(string a, string b){
+			int c = a + b;
+			return c;
+		}
+	}
+*/
+function_body_t parse_function_body(const string& s){
+	QUARK_ASSERT(s.size() >= 2);
+	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
+
+	const string body_str = skip_whitespace(s.substr(1, s.size() - 2));
+
+	vector<statement_t> statements;
+
+	string pos = body_str;
+	while(!pos.empty()){
+		const auto token_pos = read_until(pos, whitespace_chars);
+		if(token_pos.first == "return"){
+			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
+			const auto expression = parse_expression(expression_pos.first);
+			const auto statement = statement_t(return_value{ expression });
+			statements.push_back(statement);
+
+			//	Skip trailing ";".
+			pos = skip_whitespace(expression_pos.second.substr(1));
+		}
+		else if(resolve_type(token_pos.first) != ""){
+			const auto type = resolve_type(token_pos.first);
+			return {};
+		}
+		else{
+			throw std::runtime_error("syntax error");
+		}
+	}
+	return function_body_t{ statements };
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_TEST_VERIFY((parse_function_body("{}")._statements.empty()));
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_TEST_VERIFY(parse_function_body("{return 3;}")._statements.size() == 1);
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_TEST_VERIFY(parse_function_body("{\n\treturn 3;\n}")._statements.size() == 1);
 }
 
 
@@ -975,25 +1115,74 @@ pair<pair<string, make_function_expression_t>, string> read_function(const strin
 	//	Skip whitespace.
 	const auto rest = skip_whitespace(identifier_pos.second);
 
-	if(!peek_required_char(rest, '(')){
+	if(!peek_compare_char(rest, '(')){
 		throw std::runtime_error("expected function argument list enclosed by (),");
 	}
 
-	//### crete pair<string, string> get_required_balanced(string, '(', ')') that returns empty string if not found.
+	//### create pair<string, string> get_required_balanced(string, '(', ')') that returns empty string if not found.
 
 	const auto arg_list_pos = get_balanced(rest);
-	const auto arg_list_chars(arg_list_pos.first.substr(1, arg_list_pos.first.length() - 2));
-	const auto arg_list2 = read_function_arguments(arg_list_chars);
+	const auto args = parse_function_arguments(arg_list_pos.first);
+	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
 
-	if(!peek_required_char(arg_list_pos.second, '{')){
+	if(!peek_compare_char(body_rest_pos, '{')){
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
-	const auto body_pos = get_balanced(arg_list_pos.second);
-	const auto a = make_function_expression_t{ type_pos.first, arg_list2.first, function_body_t{} };
+	const auto body_pos = get_balanced(body_rest_pos);
+	const auto body = parse_function_body(body_pos.first);
+	const auto a = make_function_expression_t{ type_pos.first, args, function_body_t{} };
 //	trace_node(a);
 
 	return { { identifier_pos.first, a }, body_pos.second };
 }
+
+QUARK_UNIT_TEST("", "read_function()", "", ""){
+	try{
+		const auto result = read_function("int f()");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+QUARK_UNIT_TEST("", "read_function()", "", ""){
+	const auto result = read_function("int f(){}");
+	QUARK_TEST_VERIFY(result.first.first == "f");
+	QUARK_TEST_VERIFY(result.first.second._return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(result.first.second._args.empty());
+	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
+	QUARK_TEST_VERIFY(result.second == "");
+}
+
+QUARK_UNIT_TEST("", "read_function()", "Test many arguments of different types", ""){
+	const auto result = read_function("int printf(string a, float barry, int c){}");
+	QUARK_TEST_VERIFY(result.first.first == "printf");
+	QUARK_TEST_VERIFY(result.first.second._return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
+		{ resolve_type("string"), "a" },
+		{ resolve_type("float"), "barry" },
+		{ resolve_type("int"), "c" },
+	}));
+	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
+	QUARK_TEST_VERIFY(result.second == "");
+}
+
+/*
+QUARK_UNIT_TEST("", "read_function()", "Test exteme whitespaces", ""){
+	const auto result = read_function("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
+	QUARK_TEST_VERIFY(result.first.first == "printf");
+	QUARK_TEST_VERIFY(result.first.second._return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
+		{ resolve_type("string"), "a" },
+		{ resolve_type("float"), "barry" },
+		{ resolve_type("int"), "c" },
+	}));
+	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
+	QUARK_TEST_VERIFY(result.second == "");
+}
+*/
+
+
 
 
 
@@ -1138,7 +1327,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 
 const string kProgram2 =
 "int main(string args){\n"
-"	log(args);\n"
+"	float test = log(args);\n"
 "	return 3;\n"
 "}\n";
 
