@@ -59,11 +59,6 @@ https://en.wikipedia.org/wiki/Parsing
 	mutable
 */
 
-const string kProgram1 =
-"int main(string args){\n"
-"	return 3;\n"
-"}\n";
-
 
 
 
@@ -212,6 +207,32 @@ QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 }
 
 
+/*
+	Returns "rest" if ch is found, else throws exceptions.
+*/
+std::string read_required_char(const std::string& s, char ch){
+	if(s.size() > 0 && s[0] == ch){
+		return s.substr(1);
+	}
+	else{
+		throw std::runtime_error("expected character '" + string(1, ch)  + "'.");
+	}
+}
+
+pair<bool, std::string> read_optional_char(const std::string& s, char ch){
+	if(s.size() > 0 && s[0] == ch){
+		return { true, s.substr(1) };
+	}
+	else{
+		return { false, s };
+	}
+}
+
+
+bool peek_required_char(const std::string& s, char ch){
+	return s.size() > 0 && s[0] == ch;
+}
+
 
 /*
 	Skip leading whitespace, get string while type-char.
@@ -338,35 +359,41 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 
 
 
-//////////////////////////////////////////////////		value_t
 
 
 
-struct value_type_t {
-	public: static value_type_t make_type(string s){
-		value_type_t result;
+//////////////////////////////////////////////////		data_type_t
+
+/*
+	Internal object representing a Floyd data type.
+		### Use the same compatible technique / API  in the runtime and in the language itself!
+*/
+
+
+struct data_type_t {
+	public: static data_type_t make_type(string s){
+		data_type_t result;
 		result._type_magic = s;
 		return result;
 	}
 
-	public: bool operator==(const value_type_t other) const{
+	public: bool operator==(const data_type_t other) const{
 		return other._type_magic == _type_magic;
 	}
-	public: bool operator!=(const value_type_t other) const{
+	public: bool operator!=(const data_type_t other) const{
 		return !(*this == other);
 	}
-	value_type_t() : _type_magic(""){}
-	value_type_t(const char s[]) :
+	data_type_t() : _type_magic(""){}
+	data_type_t(const char s[]) :
 		_type_magic(s)
 	{
 	}
-	value_type_t(string s) :
+	data_type_t(string s) :
 		_type_magic(s)
 	{
 	}
 
 	/*
-		### Use the same compatible technique / API  in the runtime and in the language itself!
 		The name of the type, including its path using :
 		"null"
 
@@ -388,30 +415,39 @@ struct value_type_t {
 	public: string _type_magic;
 };
 
+
+
 /*
 	returns "" on unknown type.
 */
-
-value_type_t resolve_type(string node_type){
+data_type_t resolve_type(string node_type){
 	if(node_type == "int"){
-		return value_type_t::make_type("int");
+		return data_type_t::make_type("int");
 	}
 	else if(node_type == "string"){
-		return value_type_t::make_type("string");
+		return data_type_t::make_type("string");
 	}
 	else if(node_type == "float"){
-		return value_type_t::make_type("float");
+		return data_type_t::make_type("float");
 	}
 	else if(node_type == "function"){
-		return value_type_t::make_type("function");
+		return data_type_t::make_type("function");
 	}
 	else if(node_type == "value_type"){
-		return value_type_t::make_type("value_type");
+		return data_type_t::make_type("value_type");
 	}
 	else{
 		return "";
 	}
 }
+
+
+
+//////////////////////////////////////////////////		value_t
+
+/*
+	Hold a value with an explicit type.
+*/
 
 struct value_t {
 	public: value_t() :
@@ -424,7 +460,7 @@ struct value_t {
 	{
 	}
 
-	public: value_t(const value_type_t& s) :
+	public: value_t(const data_type_t& s) :
 		_type("value_type"),
 		_value_type__type_magic(s._type_magic)
 	{
@@ -465,7 +501,7 @@ struct value_t {
 	}
 
 
-	const value_type_t _type;
+	const data_type_t _type;
 
 	const bool _bool = false;
 	const int _int = 0;
@@ -478,8 +514,7 @@ struct value_t {
 
 
 
-
-//////////////////////////////////////////////////		node1
+//////////////////////////////////////////////////		AST types
 
 
 
@@ -495,7 +530,7 @@ struct arg_t {
 		return _type == other._type && _identifier == other._identifier;
 	}
 
-	value_type_t _type;
+	data_type_t _type;
 	string _identifier;
 };
 
@@ -504,38 +539,8 @@ struct function_body_t {
 };
 
 
-	/*
-		Named function:
-
-		int myfunc(string a, int b){
-			...
-			return b + 1;
-		}
-
-		Lambda:
-
-		int myfunc(string a){
-			() => {
-			}
-		}
-
-		Just defines an unnamed function - it has no name.
-
-		[make_function_expression]
-			[value_type]
-			[arg_list]
-				[arg0]
-					[value_type]
-					[name]
-				[arg1]
-					[value_type]
-					[name]
-			[body_node]
-	*/
-//	make_function_expression,
-
 struct make_function_expression_t {
-	value_type_t _return_type;
+	data_type_t _return_type;
 	vector<arg_t> _args;
 	function_body_t _body;
 };
@@ -565,24 +570,17 @@ void visit_program(const program_t& program, visitor_i& visit){
 
 
 
-void trace_node(const arg_t& arg){
-}
 
-template<typename T> void trace_node(const vector<T>& v){
-	for(auto i: v){
-		trace_node(i);
-	}
-}
+
+
+
+//////////////////////////////////////////////////		TEMP
 
 
 
 
 
-//////////////////////////////////////////////////		node1
-
-
-
-
+#if false
 enum node1_type {
 
 	////////////////////////////////		STATEMENTS
@@ -781,46 +779,31 @@ enum node1_type {
 	*/
 //	arithmetic_expression
 };
-
-struct node1_t {
-	node1_t(node1_type type, const std::vector<node1_t>& children) :
-		_type(type),
-		_children(children)
-	{
-	}
-	node1_t(node1_type type, const value_t& value) :
-		_type(type),
-		_value(value)
-	{
-	}
-
-	public: bool operator==(const node1_t& other) const{
-		return _type == other._type && _children == other._children && _value == other._value;
-	}
+#endif
 
 
-	node1_type _type;
 
-	//	Contains childen OR a value.
-	vector<node1_t> _children;
-	value_t _value;
-};
 
-node1_t make_node1(node1_type type, const std::vector<node1_t>& children){
-	return node1_t(type, children);
+//////////////////////////////////////////////////		trace
+
+
+
+void trace_node(const arg_t& arg){
 }
 
-node1_t make_node1(node1_type type, const value_t& value){
-	return node1_t(type, value);
-}
-
-void trace_node_int(const node1_t& node);
-
-void trace_children(const node1_t& node){
-	for(auto i: node._children){
-		trace_node_int(i);
+template<typename T> void trace_vec(const vector<T>& v){
+	for(auto i: v){
+		trace_node(i);
 	}
 }
+
+void trace_node(const program_t& v){
+}
+
+void trace_node(const statement_t& s){
+}
+
+/*
 
 string node_type_to_string(node1_type type){
 	if(type == node1_type::body_node){
@@ -862,13 +845,22 @@ string node_type_to_string(node1_type type){
 	}
 }
 
+
+void trace_node_int(const node1_t& node);
+
+void trace_children(const node1_t& node){
+	trace_vec(_children);
+}
+
+
+
 void trace_node_int(const node1_t& node){
 	const auto type_name = node_type_to_string(node._type);
 	if(!node._children.empty()){
 		QUARK_SCOPED_TRACE("[" + type_name + "]");
 		trace_children(node);
 	}
-	if(!(node._value._type == value_type_t("null"))){
+	if(!(node._value._type == data_type_t("null"))){
 		QUARK_TRACE_SS("[" + type_name + "] = [" + node._value.value_to_string() + "]");
 	}
 }
@@ -877,133 +869,43 @@ void trace_node(const node1_t& node){
 	QUARK_SCOPED_TRACE("Nodes:");
 	trace_node_int(node);
 }
-
-/*
-	Returns "rest" if ch is found, else throws exceptions.
-*/
-std::string read_required_char(const std::string& s, char ch){
-	if(s.size() > 0 && s[0] == ch){
-		return s.substr(1);
-	}
-	else{
-		throw std::runtime_error("expected character '" + string(1, ch)  + "'.");
-	}
-}
-
-pair<bool, std::string> read_optional_char(const std::string& s, char ch){
-	if(s.size() > 0 && s[0] == ch){
-		return { true, s.substr(1) };
-	}
-	else{
-		return { false, s };
-	}
-}
-
-
-bool peek_required_char(const std::string& s, char ch){
-	return s.size() > 0 && s[0] == ch;
-}
-
-
-//////////////////////////////////////////////////		pass1
-
-
-
-struct pass1 {
-	pass1(const node1_t& program_body_node) :
-		_program_body_node(program_body_node)
-	{
-	}
-	node1_t _program_body_node;
-};
-
-
-/*
-	Examples:
-		""
-		"int x"
-		"int x, string y, float z"
-
-	[arg_list]
-		[arg0]
-			[value_type]
-			[name]
-		[arg1]
-			[value_type]
-			[name]
 */
 
-node1_t parse_arg_list(const string& s){
-	vector<node1_t> arg_nodes;
 
-	auto str = s;
-	while(!str.empty()){
-		const auto arg_type = get_type(str);
-		const auto arg_name = get_identifier(arg_type.second);
-		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
-		const auto arg_type_node = make_node1(node1_type::value_type, resolve_type(arg_type.first));
-		const auto arg_name_node = make_node1(node1_type::identifier, arg_name.first);
-		arg_nodes.push_back(make_node1(node1_type::arg, vector<node1_t>{ arg_type_node, arg_name_node }));
 
-		str = skip_whitespace(optional_comma.second);
-	}
 
-	const auto result = make_node1(node1_type::arg_list, arg_nodes);
-	trace_node(result);
-	return result;
-}
+//////////////////////////////////////////////////		Syntax-specific reading
 
 /*
-	[arg_list]
-		[arg0]
-			[value_type]
-			[name]
-		[arg1]
-			[value_type]
-			[name]
+	These functions knows about the Floyd syntax.
 */
-QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_TEST_VERIFY((parse_arg_list("") == node1_t(node1_type::arg_list, std::vector<node1_t>{})));
+
+
+bool is_string_valid_type(const string& s){
+	return s == "int" || s == "bool" || s == "string" || s == "float";
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto wanted = node1_t(node1_type::arg_list, std::vector<node1_t>{
-		make_node1(node1_type::arg, vector<node1_t>{
-			make_node1(node1_type::value_type, value_type_t::make_type("int")),
-			make_node1(node1_type::identifier, value_t(string("x")))
-		})
-	});
-	trace_node(wanted);
-
-	const auto r1 = parse_arg_list("int x");
-	QUARK_TEST_VERIFY(r1 == wanted);
+pair<data_type_t, string> read_required_type(const string& s){
+	const seq type_pos = get_type(s);
+	if(!is_string_valid_type(type_pos.first)){
+		throw std::runtime_error("expected type");
+	}
+	const auto type = resolve_type(type_pos.first);
+	return { type, type_pos.second };
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto wanted = node1_t(node1_type::arg_list, std::vector<node1_t>{
-		make_node1(node1_type::arg, vector<node1_t>{
-			make_node1(node1_type::value_type, value_type_t::make_type("int")),
-			make_node1(node1_type::identifier, value_t(string("x")))
-		}),
-		make_node1(node1_type::arg, vector<node1_t>{
-			make_node1(node1_type::value_type, value_type_t::make_type("string")),
-			make_node1(node1_type::identifier, value_t(string("y")))
-		}),
-		make_node1(node1_type::arg, vector<node1_t>{
-			make_node1(node1_type::value_type, value_type_t::make_type("float")),
-			make_node1(node1_type::identifier, value_t(string("z")))
-		})
-	});
-	trace_node(wanted);
-
-	const auto r1 = parse_arg_list("int x, string y, float z");
-	QUARK_TEST_VERIFY(r1 == wanted);
+//	Get identifier (name of a defined function or constant variable name).
+pair<data_type_t, string> read_required_identifier(const string& s){
+	const seq type_pos = get_identifier(s);
+	if(type_pos.first.empty()){
+		throw std::runtime_error("missing identifier");
+	}
+	const string identifier = type_pos.first;
+	return { identifier, type_pos.second };
 }
 
-
-
-pair<vector<arg_t>, string> parse_arg_list2(const string& s){
+pair<vector<arg_t>, string> read_function_arguments(const string& s){
 	vector<arg_t> args;
 	auto str = s;
 	while(!str.empty()){
@@ -1016,17 +918,17 @@ pair<vector<arg_t>, string> parse_arg_list2(const string& s){
 		str = skip_whitespace(optional_comma.second);
 	}
 
-	trace_node(args);
+	trace_vec(args);
 	return { args, str };
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_TEST_VERIFY((parse_arg_list2("") == pair<vector<arg_t>, string>{ {}, ""}));
+	QUARK_TEST_VERIFY((read_function_arguments("") == pair<vector<arg_t>, string>{ {}, ""}));
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
 	//### include the ( and )!!!"
-	const auto r = parse_arg_list2("int x, string y, float z");
+	const auto r = read_function_arguments("int x, string y, float z");
 	QUARK_TEST_VERIFY((r == pair<vector<arg_t>, string>{
 		{
 			{ resolve_type("int"), "x" },
@@ -1042,134 +944,41 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
+//////////////////////////////////////////////////		read_toplevel_statement()
 
 
+	/*
+		Named function:
 
+		int myfunc(string a, int b){
+			...
+			return b + 1;
+		}
 
+		Lambda:
 
-bool is_valid_type(const string& s){
-	return s == "int" || s == "bool" || s == "string" || s == "float";
-}
+		int myfunc(string a){
+			() => {
+			}
+		}
 
-pair<value_type_t, string> read_required_type(const string& s){
-	const seq type_pos = get_type(s);
-	if(!is_valid_type(type_pos.first)){
-		throw std::runtime_error("expected type");
-	}
-	const auto type = resolve_type(type_pos.first);
-	return { type, type_pos.second };
-}
+		Just defines an unnamed function - it has no name.
 
-//	Get identifier (name of a defined function or constant variable name).
-pair<value_type_t, string> read_required_identifier(const string& s){
-	const seq type_pos = get_identifier(s);
-	if(type_pos.first.empty()){
-		throw std::runtime_error("missing identifier");
-	}
-	const string identifier = type_pos.first;
-	return { identifier, type_pos.second };
-}
-
-
-
-
-
-
-
-
-pair<node1_t, string> read_toplevel(const string& pos){
-	const auto type_pos = read_required_type(pos);
-	const auto identifier_pos = read_required_identifier(type_pos.second);
-
-	//	Skip whitespace.
-	const auto rest = skip_whitespace(identifier_pos.second);
-
-	//	Comma => this a function definition.
-	if(rest.size() > 0 && rest[0] == '('){
-		/*
-			[make_function_expression]
-				[value_type] = "int"
-				[arg_list]
-					[arg0]
-						[value_type]
-						[name]
-					[arg1]
-						[value_type]
-						[name]
-				[body_node]
-		*/
-		const auto function_return_node = make_node1(node1_type::value_type, type_pos.first);
-
-		const auto arg_list = get_balanced(rest);
-		const auto arg_list_chars(arg_list.first.substr(1, arg_list.first.length() - 2));
-		const auto arg_list_node = parse_arg_list(arg_list_chars);
-
-		const auto body = get_balanced(arg_list.second);
-		const auto body_node = make_node1(node1_type::body_node, vector<node1_t>{});
-
-		//??? Also bind it to a global constant.
-		const auto r = node1_t(node1_type::make_function_expression, { function_return_node, arg_list_node, body_node });
-		trace_node(r);
-
-		return { r, body.second };
-	}
-	else{
-		throw std::runtime_error("expected (");
-	}
-}
-
-QUARK_UNIT_TEST("", "read_toplevel()", "three arguments", ""){
-	const string kInput =
-		"int f(int x, int y, string z){\n"
-		"	return 3;\n"
-		"}\n";
-
-	const auto result = read_toplevel(kInput);
-	QUARK_TEST_VERIFY(result.first._type == node1_type::make_function_expression);
-	QUARK_TEST_VERIFY(result.first._children.size() == 3);
-
-	//	Return type.
-	QUARK_TEST_VERIFY(result.first._children[0]._type == node1_type::value_type);
-	QUARK_TEST_VERIFY(result.first._children[0]._value == resolve_type("int"));
-
-	//	argument list.
-	QUARK_TEST_VERIFY(result.first._children[1]._type == node1_type::arg_list);
-	QUARK_TEST_VERIFY(result.first._children[1]._children.size() == 3);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._type == node1_type::arg);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children.size() == 2);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[0]._type == node1_type::value_type);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[0]._value == resolve_type("int"));
-	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[1]._type == node1_type::identifier);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[0]._children[1]._value._string == "x");
-
-	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._type == node1_type::arg);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children.size() == 2);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[0]._type == node1_type::value_type);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[0]._value == resolve_type("int"));
-	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[1]._type == node1_type::identifier);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[1]._children[1]._value._string == "y");
-
-	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._type == node1_type::arg);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children.size() == 2);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[0]._type == node1_type::value_type);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[0]._value == resolve_type("string"));
-	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[1]._type == node1_type::identifier);
-	QUARK_TEST_VERIFY(result.first._children[1]._children[2]._children[1]._value._string == "z");
-
-	//	Functionbody.
-	QUARK_TEST_VERIFY(result.first._children[2]._type == node1_type::body_node);
-
-	QUARK_TEST_VERIFY(result.second == "\n");
-}
-
-
-void trace_node(const statement_t& s){
-}
-
-
+		[make_function_expression]
+			[value_type]
+			[arg_list]
+				[arg0]
+					[value_type]
+					[name]
+				[arg1]
+					[value_type]
+					[name]
+			[body_node]
+	*/
+//	make_function_expression,
 
 //??? Also bind it to a global constant.
-pair<statement_t, string> read_toplevel2(const string& pos){
+pair<statement_t, string> read_toplevel_statement(const string& pos){
 	const auto type_pos = read_required_type(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
@@ -1184,7 +993,7 @@ pair<statement_t, string> read_toplevel2(const string& pos){
 
 	const auto arg_list_pos = get_balanced(rest);
 	const auto arg_list_chars(arg_list_pos.first.substr(1, arg_list_pos.first.length() - 2));
-	const auto arg_list2 = parse_arg_list2(arg_list_chars);
+	const auto arg_list2 = read_function_arguments(arg_list_chars);
 
 	if(!peek_required_char(arg_list_pos.second, '{')){
 		throw std::runtime_error("expected function body enclosed by {}.");
@@ -1198,91 +1007,35 @@ pair<statement_t, string> read_toplevel2(const string& pos){
 	return { statement, body_pos.second };
 }
 
-QUARK_UNIT_TEST("", "read_toplevel2()", "", ""){
+QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 	try{
-		const auto result = read_toplevel2("int f()");
+		const auto result = read_toplevel_statement("int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
 	}
 }
 
-QUARK_UNIT_TEST("", "read_toplevel2()", "", ""){
-	const auto result = read_toplevel2("int f(){}");
+QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
+	const auto result = read_toplevel_statement("int f(){}");
 	QUARK_TEST_VERIFY(result.first._make_function_expression);
-	QUARK_TEST_VERIFY(result.first._make_function_expression->_return_type == value_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(result.first._make_function_expression->_return_type == data_type_t::make_type("int"));
 	QUARK_TEST_VERIFY(result.first._make_function_expression->_args.empty());
 	QUARK_TEST_VERIFY(result.first._make_function_expression->_body._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
 
+//////////////////////////////////////////////////		program_to_ast()
 
 
 
-/*
-	Makes a tree of all the program. Whitespace removed, all types of parenthesis split to sub-trees.
-	No knowledget of language syntax needed to do this.
-*/
-
-pass1 compile_pass1(string program){
-	vector<node1_t> top_childen;
-	auto pos = program;
-	pos = skip_whitespace(pos);
-	while(!pos.empty()){
-		const auto node = read_toplevel(pos);
-		top_childen.push_back(node.first);
-		pos = skip_whitespace(node.second);
-	}
-
-	node1_t program_body_node(node1_type::body_node, top_childen);
-	trace_node(program_body_node);
-	pass1 result(program_body_node);
-
-	return result;
-}
-
-
-QUARK_UNIT_TEST("", "compile_pass1()", "kProgram1", ""){
-	QUARK_TEST_VERIFY(compile_pass1(kProgram1)._program_body_node._type == node1_type::body_node);
-}
-
-
-QUARK_UNIT_TEST("", "compile_pass1()", "three arguments", ""){
-	const string kProgram =
-	"int f(int x, int y, string z){\n"
-	"	return 3;\n"
-	"}\n"
-	;
-
-	QUARK_TEST_VERIFY(compile_pass1(kProgram)._program_body_node._type == node1_type::body_node);
-}
-
-
-QUARK_UNIT_TEST("", "compile_pass1()", "two functions", ""){
-	const string kProgram =
-	"string hello(int x, int y, string z){\n"
-	"	return \"test abc\";\n"
-	"}\n"
-	"int main(string args){\n"
-	"	return 3;\n"
-	"}\n"
-	;
-
-	QUARK_TEST_VERIFY(compile_pass1(kProgram)._program_body_node._type == node1_type::body_node);
-}
-
-
-void trace_node(const program_t& v){
-}
-
-
-program_t compile_pass1b(string program){
+program_t program_to_ast(string program){
 	vector<statement_t> top_level_statements;
 	auto pos = program;
 	pos = skip_whitespace(pos);
 	while(!pos.empty()){
-		const auto statement_pos = read_toplevel2(pos);
+		const auto statement_pos = read_toplevel_statement(pos);
 		top_level_statements.push_back(statement_pos.first);
 		pos = skip_whitespace(statement_pos.second);
 	}
@@ -1293,9 +1046,50 @@ program_t compile_pass1b(string program){
 	return result;
 }
 
+QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
+	const string kProgram1 =
+	"int main(string args){\n"
+	"	return 3;\n"
+	"}\n";
+
+	const auto r = program_to_ast(kProgram1);
+	QUARK_TEST_VERIFY(r._top_level_statements.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((r._top_level_statements[0]._make_function_expression->_args == vector<arg_t>{ arg_t{ data_type_t::make_type("string"), "args" }}));
+}
 
 
+QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
+	const string kProgram =
+	"int f(int x, int y, string z){\n"
+	"	return 3;\n"
+	"}\n"
+	;
 
+	const auto r = program_to_ast(kProgram);
+	QUARK_TEST_VERIFY(r._top_level_statements.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((r._top_level_statements[0]._make_function_expression->_args == vector<arg_t>{
+		arg_t{ data_type_t::make_type("int"), "x" },
+		arg_t{ data_type_t::make_type("int"), "y" },
+		arg_t{ data_type_t::make_type("string"), "z" }
+	}));
+}
+
+
+QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
+	const string kProgram =
+	"string hello(int x, int y, string z){\n"
+	"	return \"test abc\";\n"
+	"}\n"
+	"int main(string args){\n"
+	"	return 3;\n"
+	"}\n"
+	;
+
+}
 
 
 const string kProgram2 =
@@ -1316,21 +1110,16 @@ const string kProgram4 =
 "}\n";
 
 
-QUARK_UNIT_TEST("", "compiler_pass1()", "", ""){
-	auto r = compile_pass1(kProgram2);
-//	QUARK_TEST_VERIFY(r._functions["main"]._return_type == value_type_t::make_type("int"));
+QUARK_UNIT_TEST("", "program_to_ast()", "", ""){
+	auto r = program_to_ast(kProgram2);
+//	QUARK_TEST_VERIFY(r._functions["main"]._return_type == data_type_t::make_type("int"));
 	vector<pair<string, string>> a{ { "string", "args" }};
-//	QUARK_TEST_VERIFY((r._functions["main"]._args == vector<pair<value_type_t, string>>{ { value_type_t::make_type("string"), "args" }}));
+//	QUARK_TEST_VERIFY((r._functions["main"]._args == vector<pair<data_type_t, string>>{ { data_type_t::make_type("string"), "args" }}));
 }
 
 
-QUARK_UNIT_TEST("", "compile_pass1b()", "", ""){
-	auto r = compile_pass1b(kProgram2);
-//	QUARK_TEST_VERIFY(r._functions["main"]._return_type == value_type_t::make_type("int"));
-	vector<pair<string, string>> a{ { "string", "args" }};
-//	QUARK_TEST_VERIFY((r._functions["main"]._args == vector<pair<value_type_t, string>>{ { value_type_t::make_type("string"), "args" }}));
-}
 
+//////////////////////////////////////////////////		main()
 
 
 
