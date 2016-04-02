@@ -1089,6 +1089,22 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	"}\n"
 	;
 
+	const auto r = program_to_ast(kProgram);
+	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._make_function_expression->_return_type == data_type_t::make_type("string"));
+	QUARK_TEST_VERIFY((r._top_level_statements[0]._make_function_expression->_args == vector<arg_t>{
+		arg_t{ data_type_t::make_type("int"), "x" },
+		arg_t{ data_type_t::make_type("int"), "y" },
+		arg_t{ data_type_t::make_type("string"), "z" }
+	}));
+
+	QUARK_TEST_VERIFY(r._top_level_statements[1]._make_function_expression);
+	QUARK_TEST_VERIFY(r._top_level_statements[1]._make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY((r._top_level_statements[1]._make_function_expression->_args == vector<arg_t>{
+		arg_t{ data_type_t::make_type("string"), "args" }
+	}));
+
 }
 
 
