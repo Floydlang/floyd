@@ -72,7 +72,7 @@ floydrt__state* make_state(){
 	return state;
 }
 
-void delete_state(floydrt__state** state){
+void delete_state(floydrt__state** /*state*/){
 }
 
 

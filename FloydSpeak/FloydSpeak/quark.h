@@ -255,6 +255,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cstring>
 
 
 #ifndef QUARK_ASSERT_ON
@@ -382,9 +383,14 @@ void set_runtime(runtime_i* iRuntime);
 	struct scoped_trace {
 		scoped_trace(const char s[]){
 #if QUARK_TRACE_ON
+			const char append[] = " {";
+			size_t app_size = strlen(append);
+			char temp[128 + 1];
+			strlcpy(temp, s, sizeof(temp) - app_size);
+			strlcat(temp, append, sizeof(temp));
+
 			runtime_i* r = get_runtime();
-			r->runtime_i__trace(s);
-			r->runtime_i__trace("{");
+			r->runtime_i__trace(temp);
 			r->runtime_i__add_log_indent(1);
 #endif
 		}
@@ -392,8 +398,7 @@ void set_runtime(runtime_i* iRuntime);
 		scoped_trace(const std::string& s){
 #if QUARK_TRACE_ON
 			runtime_i* r = get_runtime();
-			r->runtime_i__trace(s.c_str());
-			r->runtime_i__trace("{");
+			r->runtime_i__trace((s + " {").c_str());
 			r->runtime_i__add_log_indent(1);
 #endif
 		}

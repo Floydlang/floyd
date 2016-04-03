@@ -71,7 +71,7 @@ struct seq2 {
 	}
 	
 	const shared_ptr<const string> _str;
-	std::size_t pos;
+	std::size_t _pos;
 };
 
 const char* basic_types[] = {
@@ -146,6 +146,16 @@ const char* _keywords[] = {
 
 
 
+
+void IncreaseIndent(){
+	auto r = quark::get_runtime();
+	r->runtime_i__add_log_indent(1);
+}
+
+void DecreateIndent(){
+	auto r = quark::get_runtime();
+	r->runtime_i__add_log_indent(-1);
+}
 
 
 //////////////////////////////////////////////////		Text parsing primitives
@@ -394,268 +404,7 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 
 
 
-
-
-//////////////////////////////////////////////////		data_type_t
-
-/*
-	Internal object representing a Floyd data type.
-		### Use the same compatible technique / API  in the runtime and in the language itself!
-*/
-
-
-struct data_type_t {
-	public: static data_type_t make_type(string s){
-		data_type_t result;
-		result._type_magic = s;
-		return result;
-	}
-
-	public: bool operator==(const data_type_t other) const{
-		return other._type_magic == _type_magic;
-	}
-	public: bool operator!=(const data_type_t other) const{
-		return !(*this == other);
-	}
-	data_type_t() : _type_magic(""){}
-	data_type_t(const char s[]) :
-		_type_magic(s)
-	{
-	}
-	data_type_t(string s) :
-		_type_magic(s)
-	{
-	}
-
-	/*
-		The name of the type, including its path using :
-		"null"
-
-		"bool"
-		"int"
-		"float"
-		"function"
-
-		//	Specifies a data type.
-		"value_type"
-
-
-		"metronome"
-		"map<string, metronome>"
-		"game_engine:sprite"
-		"vector<game_engine:sprite>"
-		"int (string, vector<game_engine:sprite>)"
-	*/
-	public: string _type_magic;
-};
-
-
-
-/*
-	returns "" on unknown type.
-*/
-data_type_t resolve_type(string node_type){
-	if(node_type == "int"){
-		return data_type_t::make_type("int");
-	}
-	else if(node_type == "string"){
-		return data_type_t::make_type("string");
-	}
-	else if(node_type == "float"){
-		return data_type_t::make_type("float");
-	}
-	else if(node_type == "function"){
-		return data_type_t::make_type("function");
-	}
-	else if(node_type == "value_type"){
-		return data_type_t::make_type("value_type");
-	}
-	else{
-		return "";
-	}
-}
-
-
-
-//////////////////////////////////////////////////		value_t
-
-/*
-	Hold a value with an explicit type.
-*/
-
-struct value_t {
-	public: value_t() :
-		_type("null")
-	{
-	}
-	public: value_t(string s) :
-		_type("string"),
-		_string(s)
-	{
-	}
-
-	public: value_t(int value) :
-		_type("int"),
-		_int(value)
-	{
-	}
-
-	public: value_t(const data_type_t& s) :
-		_type("value_type"),
-		_value_type__type_magic(s._type_magic)
-	{
-	}
-
-	public: bool operator==(const value_t& other) const{
-		return _type == other._type && _bool == other._bool && _int == other._int && _float == other._float && _string == other._string && _function_id == other._function_id && _value_type__type_magic == other._value_type__type_magic;
-	}
-	string value_to_string() const {
-		if(_type == "null"){
-			return "<null>";
-		}
-		else if(_type == "bool"){
-			return _bool ? "true" : "false";
-		}
-		else if(_type == "int"){
-			char temp[200 + 1];//??? Use C++ function instead.
-			sprintf(temp, "%d", _int);
-			return string(temp);
-		}
-		else if(_type == "float"){
-			char temp[200 + 1];//??? Use C++ function instead.
-			sprintf(temp, "%f", _float);
-			return string(temp);
-		}
-		else if(_type == "string"){
-			return _string;
-		}
-		else if(_type == "function_id"){
-			return _function_id;
-		}
-		else if(_type == "value_type"){
-			return _value_type__type_magic;
-		}
-		else{
-			return "???";
-		}
-	}
-
-
-	const data_type_t _type;
-
-	const bool _bool = false;
-	const int _int = 0;
-	const float _float = 0.0f;
-	const string _string = "";
-	const string _function_id = "";
-	const string _value_type__type_magic;
-};
-
-
-
-
-//////////////////////////////////////////////////		AST types
-
-
-
-struct statement_t;
-
-struct arg_t {
-	bool operator==(const arg_t& other) const{
-		return _type == other._type && _identifier == other._identifier;
-	}
-
-	data_type_t _type;
-	string _identifier;
-};
-
-struct function_body_t {
-	vector<statement_t> _statements;
-};
-
-struct make_function_expression_t {
-	data_type_t _return_type;
-	vector<arg_t> _args;
-	function_body_t _body;
-};
-
-struct constant_expression_t {
-	value_t _constant;
-};
-
-
-struct expression_t {
-	expression_t() :
-		_nop(true)
-	{
-	}
-
-	expression_t(make_function_expression_t value) :
-		_make_function_expression(make_shared<make_function_expression_t>(value))
-	{
-	}
-
-	expression_t(constant_expression_t value) :
-		_constant_expression_t(make_shared<constant_expression_t>(value))
-	{
-	}
-
-	shared_ptr<make_function_expression_t> _make_function_expression;
-	shared_ptr<constant_expression_t> _constant_expression_t;
-
-	bool _nop;
-};
-
-
-
-
-
-struct bind_global_constant {
-	string _global_identifier;
-	expression_t _expression;
-};
-
-struct return_value {
-	expression_t _expression;
-};
-
-struct statement_t {
-	statement_t(bind_global_constant value) :
-		_bind_global_constant(make_shared<bind_global_constant>(value))
-	{
-	}
-
-	statement_t(return_value value) :
-		_return_value(make_shared<return_value>(value))
-	{
-	}
-
-	shared_ptr<bind_global_constant> _bind_global_constant;
-	shared_ptr<return_value> _return_value;
-};
-
-
-
-struct program_t {
-	vector<statement_t> _top_level_statements;
-};
-
-struct visitor_i {
-	virtual void visitor_interface__on_make_function_expression(make_function_expression_t& expression) = 0;
-};
-
-void visit_program(const program_t& program, visitor_i& visit){
-}
-
-
-
-
-
-
-
-//////////////////////////////////////////////////		TEMP
-
-
+//////////////////////////////////////////////////		NODES
 
 
 
@@ -857,94 +606,470 @@ enum node1_type {
 
 
 
-//////////////////////////////////////////////////		trace
 
-
-
-void trace_node(const arg_t& arg){
-}
-
-template<typename T> void trace_vec(const vector<T>& v){
-	for(auto i: v){
-		trace_node(i);
-	}
-}
-
-void trace_node(const program_t& v){
-}
-
-void trace_node(const statement_t& s){
-}
+//////////////////////////////////////////////////		data_type_t
 
 /*
+	Internal object representing a Floyd data type.
+		### Use the same compatible technique / API  in the runtime and in the language itself!
 
-string node_type_to_string(node1_type type){
-	if(type == node1_type::body_node){
-		return "body_node";
-	}
-	else if(type == node1_type::return_value_statement){
-		return "return_value_statement";
-	}
-	else if(type == node1_type::define_local_constant_statement){
-		return "define_local_constant_statement";
-	}
-	else if(type == node1_type::define_global_constant_statement){
-		return "define_global_constant_statement";
-	}
-	else if(type == node1_type::make_function_expression){
-		return "make_function_expression";
-	}
-	else if(type == node1_type::expression){
-		return "expression";
-	}
-	else if(type == node1_type::function_call_expression){
-		return "function_call_expression";
-	}
-	else if(type == node1_type::arg_list){
-		return "arg_list";
-	}
-	else if(type == node1_type::arg){
-		return "arg";
-	}
-	else if(type == node1_type::value_type){
-		return "value_type";
-	}
-	else if(type == node1_type::identifier){
-		return "identifier";
+	!!! Right now we use an internal string, but this will change in future.
+*/
+
+
+struct data_type_t {
+	public: static data_type_t make_type(string s){
+		data_type_t result;
+		result._type_magic = s;
+		return result;
 	}
 
+	public: bool operator==(const data_type_t other) const{
+		return other._type_magic == _type_magic;
+	}
+	public: bool operator!=(const data_type_t other) const{
+		return !(*this == other);
+	}
+	data_type_t() : _type_magic(""){}
+	data_type_t(const char s[]) :
+		_type_magic(s)
+	{
+	}
+	data_type_t(string s) :
+		_type_magic(s)
+	{
+	}
+
+	string to_string() const {
+		return _type_magic;
+	}
+
+	/*
+		The name of the type, including its path using :
+		"null"
+
+		"bool"
+		"int"
+		"float"
+		"function"
+
+		//	Specifies a data type.
+		"value_type"
+
+
+		"metronome"
+		"map<string, metronome>"
+		"game_engine:sprite"
+		"vector<game_engine:sprite>"
+		"int (string, vector<game_engine:sprite>)"
+	*/
+	private: string _type_magic;
+};
+
+
+/*
+	returns "" on unknown type.
+*/
+data_type_t resolve_type(string node_type){
+	if(node_type == "int"){
+		return data_type_t::make_type("int");
+	}
+	else if(node_type == "string"){
+		return data_type_t::make_type("string");
+	}
+	else if(node_type == "float"){
+		return data_type_t::make_type("float");
+	}
+	else if(node_type == "function"){
+		return data_type_t::make_type("function");
+	}
+	else if(node_type == "value_type"){
+		return data_type_t::make_type("value_type");
+	}
+	else{
+		return "";
+	}
+}
+
+
+
+//////////////////////////////////////////////////		value_t
+
+/*
+	Hold a value with an explicit type.
+*/
+
+struct value_t {
+	public: value_t() :
+		_type("null")
+	{
+	}
+	public: value_t(string s) :
+		_type("string"),
+		_string(s)
+	{
+	}
+
+	public: value_t(int value) :
+		_type("int"),
+		_int(value)
+	{
+	}
+
+	public: value_t(const data_type_t& s) :
+		_type("value_type"),
+		_data_type(s)
+	{
+	}
+
+	public: bool operator==(const value_t& other) const{
+		return _type == other._type && _bool == other._bool && _int == other._int && _float == other._float && _string == other._string && _function_id == other._function_id && _data_type == other._data_type;
+	}
+	string plain_value_to_string() const {
+		if(_type == "null"){
+			return "<null>";
+		}
+		else if(_type == "bool"){
+			return _bool ? "true" : "false";
+		}
+		else if(_type == "int"){
+			char temp[200 + 1];//??? Use C++ function instead.
+			sprintf(temp, "%d", _int);
+			return string(temp);
+		}
+		else if(_type == "float"){
+			char temp[200 + 1];//??? Use C++ function instead.
+			sprintf(temp, "%f", _float);
+			return string(temp);
+		}
+		else if(_type == "string"){
+			return _string;
+		}
+		else if(_type == "function_id"){
+			return _function_id;
+		}
+		else if(_type == "value_type"){
+			return _data_type.to_string();
+		}
+		else{
+			return "???";
+		}
+	}
+
+	string value_and_type_to_string() const {
+		return "<" + _type.to_string() + "> " + plain_value_to_string();
+	}
+
+
+	const data_type_t _type;
+
+	const bool _bool = false;
+	const int _int = 0;
+	const float _float = 0.0f;
+	const string _string = "";
+	const string _function_id = "";
+	const data_type_t _data_type;
+};
+
+
+
+
+//////////////////////////////////////////////////		AST types
+
+
+
+struct statement_t;
+struct expression_t;
+struct math_operation_t;
+
+struct arg_t {
+	bool operator==(const arg_t& other) const{
+		return _type == other._type && _identifier == other._identifier;
+	}
+
+	data_type_t _type;
+	string _identifier;
+};
+
+struct function_body_t {
+	vector<statement_t> _statements;
+};
+
+struct make_function_expression_t {
+	data_type_t _return_type;
+	vector<arg_t> _args;
+	function_body_t _body;
+};
+
+struct constant_expression_t {
+	value_t _constant;
+};
+
+
+struct expression_t {
+	expression_t() :
+		_nop(true)
+	{
+	}
+
+	expression_t(make_function_expression_t value) :
+		_make_function_expression(make_shared<make_function_expression_t>(value))
+	{
+	}
+
+	expression_t(constant_expression_t value) :
+		_constant_expression(make_shared<constant_expression_t>(value))
+	{
+	}
+	expression_t(const math_operation_t& value) :
+		_math_operation(make_shared<math_operation_t>(value))
+	{
+	}
+
+	shared_ptr<make_function_expression_t> _make_function_expression;
+	shared_ptr<constant_expression_t> _constant_expression;
+	shared_ptr<math_operation_t> _math_operation;
+
+	bool _nop;
+};
+
+struct math_operation_t {
+	expression_t _left;
+	expression_t _right;
+	enum operation {
+		add = 10,
+		subtract,
+		multiply,
+		divide
+	};
+
+	operation _operation;
+};
+
+struct bind_global_constant_t {
+	string _global_identifier;
+	expression_t _expression;
+};
+
+struct return_value_t {
+	expression_t _expression;
+};
+
+struct statement_t {
+	statement_t(const bind_global_constant_t& value) :
+		_bind_global_constant(make_shared<bind_global_constant_t>(value))
+	{
+	}
+
+	statement_t(const return_value_t& value) :
+		_return_value(make_shared<return_value_t>(value))
+	{
+	}
+
+	shared_ptr<bind_global_constant_t> _bind_global_constant;
+	shared_ptr<return_value_t> _return_value;
+};
+
+
+
+struct program_t {
+	vector<statement_t> _top_level_statements;
+};
+
+
+
+
+//////////////////////////////////////////////////		VISITOR
+
+
+
+
+struct visitor_i {
+	virtual ~visitor_i(){};
+
+	virtual void visitor_interface__on_math_operation(const math_operation_t& e) = 0;
+	virtual void visitor_interface__on_make_function_expression(const make_function_expression_t& e) = 0;
+
+	virtual void visitor_interface__on_bind_global_constant_statement(const bind_global_constant_t& s) = 0;
+	virtual void visitor_interface__on_return_value_statement(const return_value_t& s) = 0;
+};
+
+void visit_statement(const statement_t& s, visitor_i& visitor){
+	if(s._bind_global_constant){
+		visitor.visitor_interface__on_bind_global_constant_statement(*s._bind_global_constant.get());
+	}
+	else if(s._return_value){
+		visitor.visitor_interface__on_return_value_statement(*s._return_value.get());
+	}
 	else{
 		QUARK_ASSERT(false);
 	}
 }
 
 
-void trace_node_int(const node1_t& node);
-
-void trace_children(const node1_t& node){
-	trace_vec(_children);
-}
-
-
-
-void trace_node_int(const node1_t& node){
-	const auto type_name = node_type_to_string(node._type);
-	if(!node._children.empty()){
-		QUARK_SCOPED_TRACE("[" + type_name + "]");
-		trace_children(node);
-	}
-	if(!(node._value._type == data_type_t("null"))){
-		QUARK_TRACE_SS("[" + type_name + "] = [" + node._value.value_to_string() + "]");
+void visit_program(const program_t& program, visitor_i& visitor){
+	for(const auto i: program._top_level_statements){
+		visit_statement(i, visitor);
 	}
 }
 
-void trace_node(const node1_t& node){
-	QUARK_SCOPED_TRACE("Nodes:");
-	trace_node_int(node);
+
+
+//////////////////////////////////////////////////		TRACE
+
+
+
+void trace(const arg_t& arg);
+void trace(const expression_t& e);
+void trace(const statement_t& s);
+void trace(const expression_t& e);
+void trace(const function_body_t& body);
+void trace(const data_type_t& v);
+void trace(const constant_expression_t& e);
+void trace(const make_function_expression_t& e);
+void trace(const math_operation_t& e);
+void trace(const program_t& program);
+
+
+
+
+string operation_to_string(const math_operation_t::operation& op){
+	if(op == math_operation_t::add){
+		return "add";
+	}
+	else if(op == math_operation_t::subtract){
+		return "subtract";
+	}
+	else if(op == math_operation_t::multiply){
+		return "multiply";
+	}
+	else if(op == math_operation_t::divide){
+		return "divide";
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
+
+//	### Generate parse tree as JSON for easy tooling and debugging.
+
+
+/*
+struct tracing_visitor : public visitor_i {
+	virtual void visitor_interface__on_math_operation(const math_operation_t& e){
+		string s = "math_operation_t: " + operation_to_string(e._operation);
+		QUARK_SCOPED_TRACE(s);
+		{
+			
+			visitor_interface__on_make_function_expression(e._left);
+			visitor_interface__on_make_function_expression(*e._right.get());
+		}
+	}
+
+	virtual void visitor_interface__on_make_function_expression(const make_function_expression_t& e){
+	}
+
+	virtual void visitor_interface__on_bind_global_constant_statement(const bind_global_constant_t& s){
+	}
+
+	virtual void visitor_interface__on_return_value_statement(const return_value_t& s){
+	}
+};
 */
 
+void trace(const arg_t& arg){
+	QUARK_TRACE("<arg_t> data type: <" + arg._type.to_string() + "> indentifier: \"" + arg._identifier + "\"");
+}
 
+template<typename T> void trace_vec(const string& title, const vector<T>& v){
+	QUARK_SCOPED_TRACE(title);
+	for(auto i: v){
+		trace(i);
+	}
+}
+
+void trace(const expression_t& e);
+
+void trace(const statement_t& s){
+	if(s._bind_global_constant){
+		const auto s2 = s._bind_global_constant.get();
+		string t = "bind_global_constant_t: \"" + s2->_global_identifier + "\"";
+		QUARK_SCOPED_TRACE(t);
+		trace(s2->_expression);
+	}
+	else if(s._return_value){
+		const auto s2 = s._return_value.get();
+		QUARK_SCOPED_TRACE("return_value_t");
+		trace(s2->_expression);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+void trace(const expression_t& e){
+	if(e._constant_expression){
+		trace(*e._constant_expression.get());
+	}
+	else if(e._make_function_expression){
+		const make_function_expression_t* temp = e._make_function_expression.get();
+		trace(*temp);
+	}
+	else if(e._math_operation){
+		trace(*e._math_operation.get());
+	}
+	else if(e._nop){
+		QUARK_TRACE("NOP");
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+void trace(const function_body_t& body){
+	QUARK_SCOPED_TRACE("function_body_t");
+	trace_vec("Statements:", body._statements);
+}
+
+void trace(const data_type_t& v){
+	QUARK_TRACE("data_type_t <" + v.to_string() + ">");
+}
+
+void trace(const constant_expression_t& e){
+	QUARK_TRACE("constant_expression_t: " + e._constant.value_and_type_to_string());
+}
+
+void trace(const make_function_expression_t& e){
+	QUARK_SCOPED_TRACE("make_function_expression_t");
+
+	{
+		QUARK_SCOPED_TRACE("return");
+		trace(e._return_type);
+	}
+	{
+		trace_vec("arguments", e._args);
+	}
+	{
+		QUARK_SCOPED_TRACE("body");
+		trace(e._body);
+	}
+}
+
+void trace(const math_operation_t& e){
+	string s = "math_operation_t: " + operation_to_string(e._operation);
+	QUARK_SCOPED_TRACE(s);
+	trace(e._left);
+	trace(e._right);
+}
+
+
+void trace(const program_t& program){
+	QUARK_SCOPED_TRACE("program");
+
+	for(const auto i: program._top_level_statements){
+		trace(i);
+	}
+}
 
 
 
@@ -997,7 +1122,7 @@ vector<arg_t> parse_function_arguments(const string& s2){
 		str = skip_whitespace(optional_comma.second);
 	}
 
-	trace_vec(args);
+	trace_vec("parsed arguments:", args);
 	return args;
 }
 
@@ -1066,20 +1191,18 @@ struct open_stacker_t {
 
 struct test_expression_i : public expression_i {
 	virtual void expression_i__on_open(){
-		QUARK_TRACE_SS("OPEN");
-		auto r = quark::get_runtime();
-		r->runtime_i__add_log_indent(1);
+//		QUARK_TRACE_SS("OPEN");
+//		IncreaseIndent();
 	}
 	virtual void expression_i__on_close(){
-		auto r = quark::get_runtime();
-		r->runtime_i__add_log_indent(-1);
-		QUARK_TRACE_SS("CLOSE");
+//		DecreateIndent();
+//		QUARK_TRACE_SS("CLOSE");
 	}
 
 	virtual void expression_i__on_int_constant(int number){
 	}
 	virtual void expression_i__on_float_constant(float number){
-		QUARK_TRACE_SS("float: " << number);
+//		QUARK_TRACE_SS("float: " << number);
 	}
 	virtual void expression_i__on_string_constant(const string& s){
 	}
@@ -1491,7 +1614,7 @@ expression_t parse_expression(const string& s){
 }
 
 QUARK_UNIT_TEST("", "parse_expression", "", ""){
-	QUARK_TEST_VERIFY((parse_expression("()")._constant_expression_t->_constant == value_t(3)));
+	QUARK_TEST_VERIFY((parse_expression("()")._constant_expression->_constant == value_t(3)));
 //	QUARK_TEST_VERIFY((parse_expression("()")._nop));
 }
 
@@ -1560,7 +1683,7 @@ function_body_t parse_function_body(const string& s){
 		if(token_pos.first == "return"){
 			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 			const auto expression = parse_expression(expression_pos.first);
-			const auto statement = statement_t(return_value{ expression });
+			const auto statement = statement_t(return_value_t{ expression });
 			statements.push_back(statement);
 
 			//	Skip trailing ";".
@@ -1700,7 +1823,7 @@ pair<statement_t, string> read_toplevel_statement(const string& pos){
 
 
 	pair<pair<string, make_function_expression_t>, string> function = read_function(pos);
-	const auto bind = bind_global_constant{ function.first.first, function.first.second };
+	const auto bind = bind_global_constant_t{ function.first.first, function.first.second };
 	return { bind, function.second };
 }
 
@@ -1743,7 +1866,7 @@ program_t program_to_ast(string program){
 	}
 
 	const program_t result{ top_level_statements };
-	trace_node(result);
+	trace(result);
 
 	return result;
 }
@@ -1798,6 +1921,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	"	return 3;\n"
 	"}\n"
 	;
+	QUARK_TRACE(kProgram);
 
 	const auto result = program_to_ast(kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 2);
