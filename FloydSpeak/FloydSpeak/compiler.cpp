@@ -65,6 +65,14 @@ https://en.wikipedia.org/wiki/Parsing
 
 typedef pair<string, string> seq;
 
+struct seq2 {
+	seq2 substr(size_t pos, size_t count = string::npos){
+		return seq2();
+	}
+	
+	const shared_ptr<const string> _str;
+	std::size_t pos;
+};
 
 const char* basic_types[] = {
 	"bool",
