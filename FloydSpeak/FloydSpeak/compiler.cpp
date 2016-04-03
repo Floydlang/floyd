@@ -1017,16 +1017,90 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
+/*
+	10 + 20 + 30 * (40 + 50 / 60) - 70
+	10 + 20 + (30 * (40 + (50 / 60))) - 70
+*/
+
+struct expression_i {
+	virtual void expression_i__on_open() = 0;
+	virtual void expression_i__on_close() = 0;
+
+	virtual void expression_i__on_int_constant(int number) = 0;
+	virtual void expression_i__on_float_constant(float number) = 0;
+	virtual void expression_i__on_string_constant(const string& s) = 0;
+	virtual void expression_i__on_constant_variable(const value_t& value) = 0;
+	virtual void expression_i__on_function_call(const value_t& value) = 0;
+
+	virtual void expression_i__on_plus() = 0;
+	virtual void expression_i__on_minus() = 0;
+	virtual void expression_i__on_multiply() = 0;
+	virtual void expression_i__on_divide() = 0;
+};
+
+
+struct open_stacker_t {
+	open_stacker_t(expression_i& i) :
+		_i(i)
+	{
+		_i.expression_i__on_open();
+	}
+
+	~open_stacker_t(){
+		_i.expression_i__on_close();
+	}
+
+
+	expression_i& _i;
+};
+
+
+
+struct test_expression_i : public expression_i {
+	virtual void expression_i__on_open(){
+		QUARK_TRACE_SS("OPEN");
+		auto r = quark::get_runtime();
+		r->runtime_i__add_log_indent(1);
+	}
+	virtual void expression_i__on_close(){
+		auto r = quark::get_runtime();
+		r->runtime_i__add_log_indent(-1);
+		QUARK_TRACE_SS("CLOSE");
+	}
+
+	virtual void expression_i__on_int_constant(int number){
+	}
+	virtual void expression_i__on_float_constant(float number){
+		QUARK_TRACE_SS("float: " << number);
+	}
+	virtual void expression_i__on_string_constant(const string& s){
+	}
+	virtual void expression_i__on_constant_variable(const value_t& value){
+	}
+	virtual void expression_i__on_function_call(const value_t& value){
+	}
+
+	virtual void expression_i__on_plus(){
+	}
+	virtual void expression_i__on_minus(){
+	}
+	virtual void expression_i__on_multiply(){
+	}
+	virtual void expression_i__on_divide(){
+	}
+};
 
 
 
 
-pair<float, string> ParseSummands(const string& s, int depth);
+
+
+pair<float, string> ParseSummands(const string& s, expression_i& i);
 
 
 
 // Parse a number or an expression in parenthesis
-pair<float, string> ParseAtom(const string& s, int depth) {
+pair<float, string> ParseAtom(const string& s, expression_i& i) {
 	string pos = skip_whitespace(s);
 
 	//	Handle the sign before parenthesis (or before number)
@@ -1042,15 +1116,16 @@ pair<float, string> ParseAtom(const string& s, int depth) {
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = ParseSummands(pos, depth + 1);
-		pos = skip_whitespace(res.second);
-		bool close = res.second.size() > 0 && res.second[0] == ')';
-		if(!close) {
-			// Unmatched opening parenthesis
-			throw std::runtime_error("EEE_PARENTHESIS");
-		}
-		pos = pos.substr(1);
-		return { negative ? -res.first : res.first, pos };
+		open_stacker_t open(i);
+			auto res = ParseSummands(pos, i);
+			pos = skip_whitespace(res.second);
+			bool close = res.second.size() > 0 && res.second[0] == ')';
+			if(!close) {
+				// Unmatched opening parenthesis
+				throw std::runtime_error("EEE_PARENTHESIS");
+			}
+			pos = pos.substr(1);
+			return { negative ? -res.first : res.first, pos };
 	}
 
 	if(pos.size() > 0){
@@ -1066,27 +1141,30 @@ pair<float, string> ParseAtom(const string& s, int depth) {
 			throw std::runtime_error("EEE_WRONG_CHAR");
 		}
 		pos = pos.substr(float_string_pos.first.size());
-		return { negative ? -res : res, pos };
+		float result_number = negative ? -res : res;
+		i.expression_i__on_float_constant(result_number);
+		return { result_number, pos };
 	}
 
 	throw std::runtime_error("Expected number");
 }
 
 QUARK_UNIT_TEST("", "ParseAtom", "", ""){
-	QUARK_TEST_VERIFY((ParseAtom("0", 0) == pair<float, string>(0.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("9", 0) == pair<float, string>(9.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("12345", 0) == pair<float, string>(12345.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("10 ", 0) == pair<float, string>(10.0f, " ")));
-	QUARK_TEST_VERIFY((ParseAtom("-10", 0) == pair<float, string>(-10.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("+10", 0) == pair<float, string>(10.0f, "")));
+	test_expression_i i;
+	QUARK_TEST_VERIFY((ParseAtom("0", i) == pair<float, string>(0.0f, "")));
+	QUARK_TEST_VERIFY((ParseAtom("9", i) == pair<float, string>(9.0f, "")));
+	QUARK_TEST_VERIFY((ParseAtom("12345", i) == pair<float, string>(12345.0f, "")));
+	QUARK_TEST_VERIFY((ParseAtom("10 ", i) == pair<float, string>(10.0f, " ")));
+	QUARK_TEST_VERIFY((ParseAtom("-10", i) == pair<float, string>(-10.0f, "")));
+	QUARK_TEST_VERIFY((ParseAtom("+10", i) == pair<float, string>(10.0f, "")));
 
-	QUARK_TEST_VERIFY((ParseAtom("4+", 0) == pair<float, string>(4.0f, "+")));
+	QUARK_TEST_VERIFY((ParseAtom("4+", i) == pair<float, string>(4.0f, "+")));
 }
 
 
 // Parse multiplication and division
-pair<float, string> ParseFactors(const string& s, int depth) {
-	const auto num1_pos = ParseAtom(s, depth);
+pair<float, string> ParseFactors(const string& s, expression_i& i) {
+	const auto num1_pos = ParseAtom(s, i);
 	auto value = num1_pos.first;
 	string pos = skip_whitespace(num1_pos.second);
 	for(;;) {
@@ -1099,7 +1177,7 @@ pair<float, string> ParseFactors(const string& s, int depth) {
 		}
 		pos = pos.substr(1);
 
-		const auto num2_pos = ParseAtom(pos, depth);
+		const auto num2_pos = ParseAtom(pos, i);
 		const auto value2 = num2_pos.first;
 		if(op == '/') {
 			// Handle division by zero
@@ -1117,8 +1195,8 @@ pair<float, string> ParseFactors(const string& s, int depth) {
 }
 
 // Parse addition and subtraction
-pair<float, string> ParseSummands(const string& s, int depth) {
-	const auto num1_pos = ParseFactors(s, depth);
+pair<float, string> ParseSummands(const string& s, expression_i& i) {
+	const auto num1_pos = ParseFactors(s, i);
 	auto value = num1_pos.first;
 	string pos = num1_pos.second;
 	for(;;) {
@@ -1131,7 +1209,7 @@ pair<float, string> ParseSummands(const string& s, int depth) {
 		}
 		pos = pos.substr(1);
 
-		const auto num2_pos = ParseFactors(pos, depth);
+		const auto num2_pos = ParseFactors(pos, i);
 		const auto value2 = num2_pos.first;
 		if(op == '-'){
 			value = value - value2;
@@ -1144,8 +1222,8 @@ pair<float, string> ParseSummands(const string& s, int depth) {
 	}
 }
 
-float evaluate(string expression) {
-	auto result = ParseSummands(expression, 0);
+float visit_evaluator(string expression, expression_i& i){
+	auto result = ParseSummands(expression, i);
 
 	// Now, expr should point to '\0', and _paren_count should be zero
 //	if(result.second._paren_count != 0 || result.second._tokens[result.second._pos] == ')') {
@@ -1158,7 +1236,37 @@ float evaluate(string expression) {
 	return result.first;
 }
 
-//??? better exception types!!
+float evaluate(string expression) {
+	struct x : public expression_i {
+		virtual void expression_i__on_open(){
+		}
+		virtual void expression_i__on_close(){
+		}
+
+		virtual void expression_i__on_int_constant(int number){
+		}
+		virtual void expression_i__on_float_constant(float number){
+		}
+		virtual void expression_i__on_string_constant(const string& s){
+		}
+		virtual void expression_i__on_constant_variable(const value_t& value){
+		}
+		virtual void expression_i__on_function_call(const value_t& value){
+		}
+
+		virtual void expression_i__on_plus(){
+		}
+		virtual void expression_i__on_minus(){
+		}
+		virtual void expression_i__on_multiply(){
+		}
+		virtual void expression_i__on_divide(){
+		}
+	};
+
+	x i;
+	return visit_evaluator(expression, i);
+}
 
 bool compare_float_approx(float value, float expected){
 	float diff = fabs(value - expected);
@@ -1166,46 +1274,47 @@ bool compare_float_approx(float value, float expected){
 }
 
 
-QUARK_UNIT_TEST("", "evaluate()", "", "") {
+QUARK_UNIT_TEST("", "visit_evaluator()", "", "") {
+	test_expression_i i;
 
 	// Some simple expressions
-	QUARK_TEST_VERIFY(evaluate("1234") == 1234);
-	QUARK_TEST_VERIFY(evaluate("1+2*3") == 7);
+	QUARK_TEST_VERIFY(visit_evaluator("1234", i) == 1234);
+	QUARK_TEST_VERIFY(visit_evaluator("1+2*3", i) == 7);
 
 	// Parenthesis
-	QUARK_TEST_VERIFY(evaluate("5*(4+4+1)") == 45);
-	QUARK_TEST_VERIFY(evaluate("5*(2*(1+3)+1)") == 45);
-	QUARK_TEST_VERIFY(evaluate("5*((1+3)*2+1)") == 45);
+	QUARK_TEST_VERIFY(visit_evaluator("5*(4+4+1)", i) == 45);
+	QUARK_TEST_VERIFY(visit_evaluator("5*(2*(1+3)+1)", i) == 45);
+	QUARK_TEST_VERIFY(visit_evaluator("5*((1+3)*2+1)", i) == 45);
 
 	// Spaces
-	QUARK_TEST_VERIFY(evaluate(" 5 * ((1 + 3) * 2 + 1) ") == 45);
-	QUARK_TEST_VERIFY(evaluate(" 5 - 2 * ( 3 ) ") == -1);
-	QUARK_TEST_VERIFY(evaluate(" 5 - 2 * ( ( 4 )  - 1 ) ") == -1);
+	QUARK_TEST_VERIFY(visit_evaluator(" 5 * ((1 + 3) * 2 + 1) ", i) == 45);
+	QUARK_TEST_VERIFY(visit_evaluator(" 5 - 2 * ( 3 ) ", i) == -1);
+	QUARK_TEST_VERIFY(visit_evaluator(" 5 - 2 * ( ( 4 )  - 1 ) ", i) == -1);
 
 	// Sign before parenthesis
-	QUARK_TEST_VERIFY(evaluate("-(2+1)*4") == -12);
-	QUARK_TEST_VERIFY(evaluate("-4*(2+1)") == -12);
+	QUARK_TEST_VERIFY(visit_evaluator("-(2+1)*4", i) == -12);
+	QUARK_TEST_VERIFY(visit_evaluator("-4*(2+1)", i) == -12);
 	
 	// Fractional numbers
-	QUARK_TEST_VERIFY(compare_float_approx(evaluate("5.5/5"), 1.1f));
-//	QUARK_TEST_VERIFY(evaluate("1/5e10") == 2e-11);
-	QUARK_TEST_VERIFY(compare_float_approx(evaluate("(4-3)/(4*4)"), 0.0625f));
-	QUARK_TEST_VERIFY(evaluate("1/2/2") == 0.25);
-	QUARK_TEST_VERIFY(evaluate("0.25 * .5 * 0.5") == 0.0625f);
-	QUARK_TEST_VERIFY(evaluate(".25 / 2 * .5") == 0.0625f);
+	QUARK_TEST_VERIFY(compare_float_approx(visit_evaluator("5.5/5", i), 1.1f));
+//	QUARK_TEST_VERIFY(visit_evaluator("1/5e10", i) == 2e-11);
+	QUARK_TEST_VERIFY(compare_float_approx(visit_evaluator("(4-3)/(4*4)", i), 0.0625f));
+	QUARK_TEST_VERIFY(visit_evaluator("1/2/2", i) == 0.25);
+	QUARK_TEST_VERIFY(visit_evaluator("0.25 * .5 * 0.5", i) == 0.0625f);
+	QUARK_TEST_VERIFY(visit_evaluator(".25 / 2 * .5", i) == 0.0625f);
 	
 	// Repeated operators
-	QUARK_TEST_VERIFY(evaluate("1+-2") == -1);
-	QUARK_TEST_VERIFY(evaluate("--2") == 2);
-	QUARK_TEST_VERIFY(evaluate("2---2") == 0);
-	QUARK_TEST_VERIFY(evaluate("2-+-2") == 4);
+	QUARK_TEST_VERIFY(visit_evaluator("1+-2", i) == -1);
+	QUARK_TEST_VERIFY(visit_evaluator("--2", i) == 2);
+	QUARK_TEST_VERIFY(visit_evaluator("2---2", i) == 0);
+	QUARK_TEST_VERIFY(visit_evaluator("2-+-2", i) == 4);
 
 	// === Errors ===
 
 	if(true){
 		//////////////////////////		Parenthesis error
 		try{
-			evaluate("5*((1+3)*2+1");
+			visit_evaluator("5*((1+3)*2+1", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1213,7 +1322,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 		}
 
 		try{
-			evaluate("5*((1+3)*2)+1)");
+			visit_evaluator("5*((1+3)*2)+1)", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1223,7 +1332,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 
 		//////////////////////////		Repeated operators (wrong)
 		try{
-			evaluate("5*/2");
+			visit_evaluator("5*/2", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1232,7 +1341,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 
 		//////////////////////////		Wrong position of an operator
 		try{
-			evaluate("*2");
+			visit_evaluator("*2", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1240,7 +1349,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 		}
 
 		try{
-			evaluate("2+");
+			visit_evaluator("2+", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1248,7 +1357,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 		}
 
 		try{
-			evaluate("2*");
+			visit_evaluator("2*", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1258,7 +1367,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 		//////////////////////////		Division by zero
 
 		try{
-			evaluate("2/0");
+			visit_evaluator("2/0", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1266,7 +1375,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 		}
 
 		try{
-			evaluate("3+1/(5-5)+4");
+			visit_evaluator("3+1/(5-5)+4", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1274,7 +1383,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 		}
 
 		try{
-			evaluate("2/");
+			visit_evaluator("2/", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1283,14 +1392,14 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 
 		//////////////////////////		Invalid characters
 		try{
-			evaluate("~5");
+			visit_evaluator("~5", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
 			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
 		}
 		try{
-			evaluate("5x");
+			visit_evaluator("5x", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(const std::runtime_error& e){
@@ -1302,19 +1411,19 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 			//	Multiple errors not possible/relevant now that we use exceptions for errors.
 	/*
 		//////////////////////////		Only one error will be detected (in this case, the last one)
-		QUARK_TEST_VERIFY(evaluate("3+1/0+4$") == EEE_WRONG_CHAR);
+		QUARK_TEST_VERIFY(visit_evaluator("3+1/0+4$") == EEE_WRONG_CHAR);
 
-		QUARK_TEST_VERIFY(evaluate("3+1/0+4") == EEE_DIVIDE_BY_ZERO);
+		QUARK_TEST_VERIFY(visit_evaluator("3+1/0+4") == EEE_DIVIDE_BY_ZERO);
 
 		// ...or the first one
-		QUARK_TEST_VERIFY(evaluate("q+1/0)") == EEE_WRONG_CHAR);
-		QUARK_TEST_VERIFY(evaluate("+1/0)") == EEE_PARENTHESIS);
-		QUARK_TEST_VERIFY(evaluate("+1/0") == EEE_DIVIDE_BY_ZERO);
+		QUARK_TEST_VERIFY(visit_evaluator("q+1/0)") == EEE_WRONG_CHAR);
+		QUARK_TEST_VERIFY(visit_evaluator("+1/0)") == EEE_PARENTHESIS);
+		QUARK_TEST_VERIFY(visit_evaluator("+1/0") == EEE_DIVIDE_BY_ZERO);
 	*/
 
 		// An emtpy string
 		try{
-			evaluate("");
+			visit_evaluator("", i);
 			QUARK_TEST_VERIFY(false);
 		}
 		catch(...){
