@@ -716,6 +716,12 @@ struct value_t {
 	{
 	}
 
+	public: value_t(float value) :
+		_type("float"),
+		_float(value)
+	{
+	}
+
 	public: value_t(const data_type_t& s) :
 		_type("value_type"),
 		_data_type(s)
@@ -1245,8 +1251,8 @@ pair<float, string> ParseSummands(const string& s, int depth) {
 	}
 }
 
-float visit_evaluator(string expression, int depth){
-	auto result = ParseSummands(expression, depth);
+float evaluate(string expression){
+	auto result = ParseSummands(expression, 0);
 
 	// Now, expr should point to '\0', and _paren_count should be zero
 //	if(result.second._paren_count != 0 || result.second._tokens[result.second._pos] == ')') {
@@ -1257,10 +1263,6 @@ float visit_evaluator(string expression, int depth){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
 	return result.first;
-}
-
-float evaluate(string expression) {
-	return visit_evaluator(expression, 0);
 }
 
 bool compare_float_approx(float value, float expected){
@@ -1433,40 +1435,50 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 
 
 
-
-
-
-
-
-
 /*
-	Add variable as sources (arguments and locals and globals).
+	### Add variable as sources (arguments and locals and globals).
+
+
+	Example input:
+		0
+		3
+		()
+		(3)
+		(1 + 2) * 3
+		"test"
+		"test number: " +
+
+		x
+		x + y
+
+		f()
+		f(10, 122)
+
+		(my_fun1("hello, 3) + 4) * my_fun2(10))
 */
+expression_t parse_expression(const string expression){
+	if(expression.empty()){
+		return expression_t();
+	}
 
-/*
-	0
-	3
-	()
-	(3)
-	(1 + 2) * 3
-	"test"
-	"test number: " +
-
-	x
-	x + y
-
-	f()
-	f(10, 122)
-*/
-expression_t parse_expression(const string& s){
-//	return expression_t(constant_expression_t());
-	return expression_t(constant_expression_t{ value_t(3) });
+	float value = evaluate(expression);
+	return expression_t(constant_expression_t{ value_t(value) });
 }
+
 
 QUARK_UNIT_TEST("", "parse_expression", "", ""){
-	QUARK_TEST_VERIFY((parse_expression("()")._constant_expression->_constant == value_t(3)));
+//	QUARK_TEST_VERIFY((parse_expression("")._nop));
+
+//	QUARK_TEST_VERIFY((parse_expression("0")._constant_expression->_constant == value_t(0)));
+//	QUARK_TEST_VERIFY((parse_expression("134")._constant_expression->_constant == value_t(134)));
+//	QUARK_TEST_VERIFY((parse_expression("10 + 3")._constant_expression->_constant == value_t(13)));
+
 //	QUARK_TEST_VERIFY((parse_expression("()")._nop));
 }
+
+
+
+
 
 
 
