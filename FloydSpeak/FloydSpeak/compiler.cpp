@@ -168,6 +168,7 @@ const string brackets = "(){}[]<>";
 const string open_brackets = "({[<";
 const string type_chars = identifier_chars + brackets;
 const string number_chars = "0123456789.";
+const string operator_chars = "+-*/.";
 
 
 seq read_while(const string& s, const string& match){
@@ -798,17 +799,47 @@ struct arg_t {
 };
 
 struct function_body_t {
+	bool operator==(const function_body_t& other) const{
+		return _statements == other._statements;
+	}
+
 	vector<statement_t> _statements;
 };
 
 struct make_function_expression_t {
+	bool operator==(const make_function_expression_t& other) const{
+		return _return_type == other._return_type && _args == other._args && _body == other._body;
+	}
+
 	data_type_t _return_type;
 	vector<arg_t> _args;
 	function_body_t _body;
 };
 
 struct constant_expression_t {
+	bool operator==(const constant_expression_t& other) const{
+		return _constant == other._constant;
+	}
+
 	value_t _constant;
+};
+
+struct math_operation_t {
+	bool operator==(const math_operation_t& other) const {
+		return _operation == other._operation && _left == other._left && _right == other._right;
+	}
+
+	enum operation {
+		add = 10,
+		subtract,
+		multiply,
+		divide
+	};
+
+	operation _operation;
+
+	shared_ptr<expression_t> _left;
+	shared_ptr<expression_t> _right;
 };
 
 
@@ -818,18 +849,40 @@ struct expression_t {
 	{
 	}
 
-	expression_t(make_function_expression_t value) :
+	expression_t(const make_function_expression_t& value) :
 		_make_function_expression(make_shared<make_function_expression_t>(value))
 	{
 	}
 
-	expression_t(constant_expression_t value) :
+	expression_t(const constant_expression_t& value) :
 		_constant_expression(make_shared<constant_expression_t>(value))
 	{
 	}
 	expression_t(const math_operation_t& value) :
 		_math_operation(make_shared<math_operation_t>(value))
 	{
+	}
+
+	bool operator==(const expression_t& other) const {
+		if(_make_function_expression){
+			return other._make_function_expression && *_make_function_expression.get() == *other._make_function_expression.get();
+		}
+		else if(_constant_expression){
+			return other._constant_expression && *_constant_expression.get() == *other._constant_expression.get();
+		}
+		else if(_math_operation){
+			if(!other._math_operation){
+				return false;
+			}
+			const math_operation_t& a = *_math_operation.get();
+			const math_operation_t& b = *other._math_operation.get();
+			return a == b;
+//			return *_math_operation.get() == *other._math_operation.get();
+		}
+		else{
+			QUARK_ASSERT(false);
+			return false;
+		}
 	}
 
 	shared_ptr<make_function_expression_t> _make_function_expression;
@@ -839,25 +892,50 @@ struct expression_t {
 	bool _nop;
 };
 
-struct math_operation_t {
-	expression_t _left;
-	expression_t _right;
-	enum operation {
-		add = 10,
-		subtract,
-		multiply,
-		divide
-	};
 
-	operation _operation;
-};
+expression_t make__make_function_expression(const make_function_expression_t& value){
+	return expression_t(value);
+}
+expression_t make_constant_expression(const constant_expression_t& value){
+	return expression_t(value);
+}
+expression_t make_constant_expression(const int value){
+	return expression_t(constant_expression_t{ value_t{value} });
+}
+expression_t make_constant_expression(const float value){
+	return expression_t(constant_expression_t{ value_t{value} });
+}
+expression_t make_math_operation(const math_operation_t& value){
+	return expression_t(value);
+}
+expression_t make_math_operation(math_operation_t::operation op, const expression_t& left, const expression_t& right){
+	return expression_t(math_operation_t{op, make_shared<expression_t>(left), make_shared<expression_t>(right)});
+}
+
+
+
+QUARK_UNIT_TEST("", "math_operation_t==()", "", ""){
+	const auto a = make_math_operation(math_operation_t::add, make_constant_expression(3), make_constant_expression(4));
+	const auto b = make_math_operation(math_operation_t::add, make_constant_expression(3), make_constant_expression(4));
+	QUARK_TEST_VERIFY(a == b);
+}
+
+
 
 struct bind_global_constant_t {
+	bool operator==(const bind_global_constant_t& other) const {
+		return _global_identifier == other._global_identifier && _expression == other._expression;
+	}
+
 	string _global_identifier;
 	expression_t _expression;
 };
 
 struct return_value_t {
+	bool operator==(const return_value_t& other) const {
+		return _expression == other._expression;
+	}
+
 	expression_t _expression;
 };
 
@@ -872,9 +950,30 @@ struct statement_t {
 	{
 	}
 
+	bool operator==(const statement_t& other) const {
+		if(_bind_global_constant){
+			return other._bind_global_constant && *_bind_global_constant.get() == *other._bind_global_constant.get();
+		}
+		else if(_return_value){
+			return other._return_value && *_return_value.get() == *other._return_value.get();
+		}
+		else{
+			QUARK_ASSERT(false);
+			return false;
+		}
+	}
+
 	shared_ptr<bind_global_constant_t> _bind_global_constant;
 	shared_ptr<return_value_t> _return_value;
 };
+
+statement_t make__bind_global_constant(const bind_global_constant_t& value){
+	return statement_t(value);
+}
+
+statement_t make__return_value(const return_value_t& value){
+	return statement_t(value);
+}
 
 
 
@@ -1039,8 +1138,8 @@ void trace(const make_function_expression_t& e){
 void trace(const math_operation_t& e){
 	string s = "math_operation_t: " + operation_to_string(e._operation);
 	QUARK_SCOPED_TRACE(s);
-	trace(e._left);
-	trace(e._right);
+	trace(*e._left.get());
+	trace(*e._right.get());
 }
 
 
@@ -1127,12 +1226,29 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-pair<float, string> ParseSummands(const string& s, int depth);
+pair<expression_t, string> ParseSummands(const string& s, int depth);
 
 
+expression_t negate_expression(const expression_t& e){
+	if(e._constant_expression){
+		const value_t& value = e._constant_expression->_constant;
+		if(value._type == resolve_type("int")){
+			return make_constant_expression(constant_expression_t{-value._int});
+		}
+		else if(value._type == resolve_type("float")){
+			return make_constant_expression(constant_expression_t{-value._float});
+		}
+		else{
+			throw std::runtime_error("Cannot negate");
+		}
+	}
+	else{
+		throw std::runtime_error("Cannot negate");
+	}
+}
 
 // Parse a number or an expression in parenthesis
-pair<float, string> ParseAtom(const string& s, int depth) {
+pair<expression_t, string> ParseAtom(const string& s, int depth) {
 	string pos = skip_whitespace(s);
 
 	//	Handle the sign before parenthesis (or before number)
@@ -1156,43 +1272,58 @@ pair<float, string> ParseAtom(const string& s, int depth) {
 			throw std::runtime_error("EEE_PARENTHESIS");
 		}
 		pos = pos.substr(1);
-		return { negative ? -res.first : res.first, pos };
+		const auto expr = res.first;
+		return { negative ? negate_expression(expr) : expr, pos };
 	}
 
+	//	Parse constant / function call.
 	if(pos.size() > 0){
-		// It should be a number; convert it to double
-		const auto float_string_pos = read_while(pos, number_chars);
-		if(float_string_pos.first.empty()){
-			throw std::runtime_error("EEE_WRONG_CHAR");
+		//	" => string constant.
+		if(peek_string(pos, "\"")){
+			pos = pos.substr(1);
+			const auto string_constant_pos = read_until(pos, "\"");
+
+			pos = string_constant_pos.second;
+			pos = pos.substr(1);
+			return { constant_expression_t{ string_constant_pos.first }, pos };
 		}
 
-		size_t end = -1;
-		auto res = std::stof(float_string_pos.first, &end);
-		if(isnan(res) || end == 0){
-			throw std::runtime_error("EEE_WRONG_CHAR");
+		// 0-9 and +-*/ => numeric constant.
+		else if((number_chars + operator_chars).find(pos[0]) != string::npos){
+			const auto float_string_pos = read_while(pos, number_chars);
+			if(float_string_pos.first.empty()){
+				throw std::runtime_error("EEE_WRONG_CHAR");
+			}
+
+			size_t end = -1;
+			auto res = std::stof(float_string_pos.first, &end);
+			if(isnan(res) || end == 0){
+				throw std::runtime_error("EEE_WRONG_CHAR");
+			}
+			pos = pos.substr(float_string_pos.first.size());
+			float result_number = negative ? -res : res;
+			return { constant_expression_t{result_number}, pos };
 		}
-		pos = pos.substr(float_string_pos.first.size());
-		float result_number = negative ? -res : res;
-		return { result_number, pos };
 	}
 
 	throw std::runtime_error("Expected number");
 }
 
 QUARK_UNIT_TEST("", "ParseAtom", "", ""){
-	QUARK_TEST_VERIFY((ParseAtom("0", 0) == pair<float, string>(0.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("9", 0) == pair<float, string>(9.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("12345", 0) == pair<float, string>(12345.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("10 ", 0) == pair<float, string>(10.0f, " ")));
-	QUARK_TEST_VERIFY((ParseAtom("-10", 0) == pair<float, string>(-10.0f, "")));
-	QUARK_TEST_VERIFY((ParseAtom("+10", 0) == pair<float, string>(10.0f, "")));
+	QUARK_TEST_VERIFY((ParseAtom("0", 0) == pair<expression_t, string>(constant_expression_t{ 0.0f }, "")));
+	QUARK_TEST_VERIFY((ParseAtom("9", 0) == pair<expression_t, string>(constant_expression_t{ 9.0f }, "")));
+	QUARK_TEST_VERIFY((ParseAtom("12345", 0) == pair<expression_t, string>(constant_expression_t{ 12345.0f }, "")));
 
-	QUARK_TEST_VERIFY((ParseAtom("4+", 0) == pair<float, string>(4.0f, "+")));
+	QUARK_TEST_VERIFY((ParseAtom("10", 0) == pair<expression_t, string>(constant_expression_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((ParseAtom("-10", 0) == pair<expression_t, string>(constant_expression_t{ -10.0f }, "")));
+	QUARK_TEST_VERIFY((ParseAtom("+10", 0) == pair<expression_t, string>(constant_expression_t{ 10.0f }, "")));
+
+	QUARK_TEST_VERIFY((ParseAtom("4+", 0) == pair<expression_t, string>(constant_expression_t{ 4.0f }, "+")));
 }
 
 
 // Parse multiplication and division
-pair<float, string> ParseFactors(const string& s, int depth) {
+pair<expression_t, string> ParseFactors(const string& s, int depth) {
 	const auto num1_pos = ParseAtom(s, depth);
 	auto value = num1_pos.first;
 	string pos = skip_whitespace(num1_pos.second);
@@ -1224,7 +1355,7 @@ pair<float, string> ParseFactors(const string& s, int depth) {
 }
 
 // Parse addition and subtraction
-pair<float, string> ParseSummands(const string& s, int depth) {
+pair<expression_t, string> ParseSummands(const string& s, int depth) {
 	const auto num1_pos = ParseFactors(s, depth);
 	auto value = num1_pos.first;
 	string pos = num1_pos.second;
@@ -1251,7 +1382,7 @@ pair<float, string> ParseSummands(const string& s, int depth) {
 	}
 }
 
-float evaluate(string expression){
+expression_t evaluate(string expression){
 	auto result = ParseSummands(expression, 0);
 
 	// Now, expr should point to '\0', and _paren_count should be zero
@@ -1273,36 +1404,36 @@ bool compare_float_approx(float value, float expected){
 
 QUARK_UNIT_TEST("", "evaluate()", "", "") {
 	// Some simple expressions
-	QUARK_TEST_VERIFY(evaluate("1234") == 1234);
-	QUARK_TEST_VERIFY(evaluate("1+2*3") == 7);
+	QUARK_TEST_VERIFY(evaluate("1234") == make_constant_expression(1234));
+	QUARK_TEST_VERIFY(evaluate("1+2*3") == make_constant_expression(7));
 
 	// Parenthesis
-	QUARK_TEST_VERIFY(evaluate("5*(4+4+1)") == 45);
-	QUARK_TEST_VERIFY(evaluate("5*(2*(1+3)+1)") == 45);
-	QUARK_TEST_VERIFY(evaluate("5*((1+3)*2+1)") == 45);
+	QUARK_TEST_VERIFY(evaluate("5*(4+4+1)") == make_constant_expression(45));
+	QUARK_TEST_VERIFY(evaluate("5*(2*(1+3)+1)") == make_constant_expression(45));
+	QUARK_TEST_VERIFY(evaluate("5*((1+3)*2+1)") == make_constant_expression(45));
 
 	// Spaces
-	QUARK_TEST_VERIFY(evaluate(" 5 * ((1 + 3) * 2 + 1) ") == 45);
-	QUARK_TEST_VERIFY(evaluate(" 5 - 2 * ( 3 ) ") == -1);
-	QUARK_TEST_VERIFY(evaluate(" 5 - 2 * ( ( 4 )  - 1 ) ") == -1);
+	QUARK_TEST_VERIFY(evaluate(" 5 * ((1 + 3) * 2 + 1) ") == make_constant_expression(45));
+	QUARK_TEST_VERIFY(evaluate(" 5 - 2 * ( 3 ) ") == make_constant_expression(-1));
+	QUARK_TEST_VERIFY(evaluate(" 5 - 2 * ( ( 4 )  - 1 ) ") == make_constant_expression(-1));
 
 	// Sign before parenthesis
-	QUARK_TEST_VERIFY(evaluate("-(2+1)*4") == -12);
-	QUARK_TEST_VERIFY(evaluate("-4*(2+1)") == -12);
+	QUARK_TEST_VERIFY(evaluate("-(2+1)*4") == make_constant_expression(-12));
+	QUARK_TEST_VERIFY(evaluate("-4*(2+1)") == make_constant_expression(-12));
 	
 	// Fractional numbers
-	QUARK_TEST_VERIFY(compare_float_approx(evaluate("5.5/5"), 1.1f));
+	QUARK_TEST_VERIFY(compare_float_approx(evaluate("5.5/5")._constant_expression->_constant._float, 1.1f));
 //	QUARK_TEST_VERIFY(evaluate("1/5e10") == 2e-11);
-	QUARK_TEST_VERIFY(compare_float_approx(evaluate("(4-3)/(4*4)"), 0.0625f));
-	QUARK_TEST_VERIFY(evaluate("1/2/2") == 0.25);
-	QUARK_TEST_VERIFY(evaluate("0.25 * .5 * 0.5") == 0.0625f);
-	QUARK_TEST_VERIFY(evaluate(".25 / 2 * .5") == 0.0625f);
+	QUARK_TEST_VERIFY(compare_float_approx(evaluate("(4-3)/(4*4)")._constant_expression->_constant._float, 0.0625f));
+	QUARK_TEST_VERIFY(evaluate("1/2/2") == make_constant_expression(0.25f));
+	QUARK_TEST_VERIFY(evaluate("0.25 * .5 * 0.5") == make_constant_expression(0.0625f));
+	QUARK_TEST_VERIFY(evaluate(".25 / 2 * .5") == make_constant_expression(0.0625f));
 	
 	// Repeated operators
-	QUARK_TEST_VERIFY(evaluate("1+-2") == -1);
-	QUARK_TEST_VERIFY(evaluate("--2") == 2);
-	QUARK_TEST_VERIFY(evaluate("2---2") == 0);
-	QUARK_TEST_VERIFY(evaluate("2-+-2") == 4);
+	QUARK_TEST_VERIFY(evaluate("1+-2") == make_constant_expression(-1));
+	QUARK_TEST_VERIFY(evaluate("--2") == make_constant_expression(2));
+	QUARK_TEST_VERIFY(evaluate("2---2") == make_constant_expression(0));
+	QUARK_TEST_VERIFY(evaluate("2-+-2") == make_constant_expression(4));
 
 	// === Errors ===
 
@@ -1461,8 +1592,8 @@ expression_t parse_expression(const string expression){
 		return expression_t();
 	}
 
-	float value = evaluate(expression);
-	return expression_t(constant_expression_t{ value_t(value) });
+	const auto result = evaluate(expression);
+	return result;
 }
 
 
