@@ -8,8 +8,10 @@
 5. Performance: built in profiling and hardware cache. Ballpark C++ performance.
 6. Solid code and techniques
 7. Normalized source code format allows round-trip tools / visual editing. Easy language parsing, use as data language.
-8. Oppinionated: there is a good way to do things. That is built into the languge, not in libraries
+8. Opinionated: there is a good way to do things. That is built into the languge, not in libraries
 9. Encourage creating lots of very specific structs even for simple things. Can be unnamed.
+10. No pre-processor. Dedicated module file format supports versioning, renaming, backward compatibility etc. DLL-hell not possible.
+12. Partial compatibility support for C / C++ constructs, with deprecated warnings. For easy migration only. Slow constructs.
 
 
 # FLOYD RUNTME
@@ -258,7 +260,7 @@ A unique feature in Floyd is that you cannot specify the exact implementation of
 
 
 # VECTOR
-A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. Prefer to access using SEQ for performance.
+A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. Prefer to access using SEQ for maximum performance (it allows runtime to keep an pointer to the current position in the vector).
 
 There are many potential backends for a vector:
 
@@ -268,10 +270,16 @@ There are many potential backends for a vector:
 
 	b = [int](1, 2, 3);
 
-	vector<T>(seq<t> in);
-	vector<T> make[T]{ 1, 2, 3 };
-	vector<T> make(vector<T> other, int startPos, int endPos);
-	seq subset(vector<T> in, 
+			vector<T>(seq<t> in);
+			vector<T> make[T]{ 1, 2, 3 };
+			vector<T> make(vector<T> other, int startPos, int endPos);
+			seq subset(vector<T> in, 
+
+	a = [string];	//	Empty vector of strings
+	b = [string] ( "one", "two", "three");		//	Vector initialized to 3 strings.
+	c = [ "one", "two", "three" ]
+
+	[string] a;		//	Compatibility shortcut for a = [string]
 
 
 
@@ -284,6 +292,17 @@ map<K, V>
 	}
 	int function test_map([string, int] p1);
 	a = {string, int}({ "one", 1 }, { "two", 2 }, { "three", 3 });
+
+
+{string, float}
+
+-	a = {string, int}(("one", 1), ("two", 2), ("three", 3))	//	Make map where key is a string and value is an int. Initialize it. Each initializer-entry is an annonymous tuple with correct type.
+
+	###	var airports: [String: String] = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
+	### var airports = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
+
+
+
 
 
 # SEQ

@@ -35,7 +35,6 @@
 		2C7E06B01B822EDF00996483 /* readme.md in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E066F1B822EDF00996483 /* readme.md */; };
 		2C7E06B11B822EDF00996483 /* readme.zh-cn.md in Sources */ = {isa = PBXBuildFile; fileRef = 2C7E06701B822EDF00996483 /* readme.zh-cn.md */; };
 		2CA6E20A1B4E92FF00337472 /* Runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA6E2081B4E92FF00337472 /* Runtime.cpp */; };
-		2CBF16DF1C8B9DB00094ADE1 /* Compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBF16DD1C8B9DB00094ADE1 /* Compiler.cpp */; };
 		2CE8E4591B587D7800609E63 /* cpp_extension.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE8E4571B587D7800609E63 /* cpp_extension.cpp */; };
 		2CF1F1051784FCCF00677E13 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CF1F1041784FCCF00677E13 /* main.cpp */; };
 		2CF1F1071784FCCF00677E13 /* Floyd.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CF1F1061784FCCF00677E13 /* Floyd.1 */; };
@@ -251,8 +250,6 @@
 		2C7E06911B822EDF00996483 /* travis-doxygen.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "travis-doxygen.sh"; sourceTree = "<group>"; };
 		2CA6E2081B4E92FF00337472 /* Runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Runtime.cpp; sourceTree = "<group>"; };
 		2CA6E2091B4E92FF00337472 /* Runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Runtime.h; sourceTree = "<group>"; };
-		2CBF16DD1C8B9DB00094ADE1 /* Compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Compiler.cpp; sourceTree = "<group>"; };
-		2CBF16DE1C8B9DB00094ADE1 /* Compiler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Compiler.hpp; sourceTree = "<group>"; };
 		2CE8E4571B587D7800609E63 /* cpp_extension.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_extension.cpp; sourceTree = "<group>"; };
 		2CE8E4581B587D7800609E63 /* cpp_extension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cpp_extension.h; sourceTree = "<group>"; };
 		2CF1F1011784FCCF00677E13 /* Floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Floyd; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -743,8 +740,6 @@
 				2C08B64C1797685E006A0890 /* Program.h */,
 				2C08B64E17977121006A0890 /* ProgramUT.cpp */,
 				2C08B64F17977121006A0890 /* ProgramUT.h */,
-				2CBF16DD1C8B9DB00094ADE1 /* Compiler.cpp */,
-				2CBF16DE1C8B9DB00094ADE1 /* Compiler.hpp */,
 				2CA6E2081B4E92FF00337472 /* Runtime.cpp */,
 				2CA6E2091B4E92FF00337472 /* Runtime.h */,
 				2C7A67021B4951D90025A100 /* Simulation.cpp */,
@@ -832,7 +827,6 @@
 				2C7E06B11B822EDF00996483 /* readme.zh-cn.md in Sources */,
 				2C7E069F1B822EDF00996483 /* pointer.md in Sources */,
 				2C08B65017977121006A0890 /* ProgramUT.cpp in Sources */,
-				2CBF16DF1C8B9DB00094ADE1 /* Compiler.cpp in Sources */,
 				2C7E06A21B822EDF00996483 /* stream.md in Sources */,
 				2C5E8DA81B5804850058A833 /* Experiments.cpp in Sources */,
 				2C7E06A11B822EDF00996483 /* sax.zh-cn.md in Sources */,

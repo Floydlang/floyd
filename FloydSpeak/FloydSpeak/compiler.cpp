@@ -33,6 +33,10 @@ using std::make_shared;
 
 
 /*
+	AST ABSTRACT SYNTAX TREE
+
+https://en.wikipedia.org/wiki/Abstract_syntax_tree
+
 https://en.wikipedia.org/wiki/Parsing_expression_grammar
 https://en.wikipedia.org/wiki/Parsing
 */
@@ -2137,6 +2141,89 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	}));
 
 }
+
+
+
+
+/*
+	"string hello(int x, int y, string z){\n"
+	"	return \"test abc\";\n"
+	"}\n"
+	"int main(string args){\n"
+	"	return 3;\n"
+	"}\n"
+
+
+
+
+	string hello(int x, int y, string z){
+		return "test abc";
+	}
+
+	int main(string args){
+		return 3;
+	}
+
+
+{
+	"program_as_json" : [
+		{
+			"_func" : {
+				"_prototype" : "string hello(int x, int y, string z)",
+				"_body" : "{ return \"test abc\"; }"
+			}
+		},
+		{
+			"_func" : {
+				"_prototype" : "int main(string args)",
+				"_body" : "{ return 3; }"
+			}
+		}
+	]
+}
+
+
+
+{
+	"program_as_json" : [
+		{
+			"_func" : {
+				"return": "string",
+				"name": "hello",
+				"args": [
+					{ "type": "int", "name": "x" },
+					{ "type": "int", "name": "y" },
+					{ "type": "string", "name": "z" },
+				],
+				"body": [
+					[ "assign", "a",
+						[
+							[ "return",
+								[ "*", "a", "y" ]
+							]
+						],
+					[ "return", "test abc" ]
+				]
+				"_body" : "{ return \"test abc\"; }"
+			}
+		},
+		{
+			"_func" : {
+				"_prototype" : "int main(string args)",
+				"_body" : "{ return 3; }"
+			}
+		}
+	]
+}
+
+
+
+
+!!! JSON does not support multi-line strings.
+
+
+*/
+
 
 
 const string kProgram2 =
