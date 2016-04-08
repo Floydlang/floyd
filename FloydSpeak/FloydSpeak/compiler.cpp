@@ -979,8 +979,8 @@ struct bind_global_constant_t {
 	expression_t _expression;
 };
 
-struct return_value_t {
-	bool operator==(const return_value_t& other) const {
+struct return_statement_t {
+	bool operator==(const return_statement_t& other) const {
 		return _expression == other._expression;
 	}
 
@@ -993,8 +993,8 @@ struct statement_t {
 	{
 	}
 
-	statement_t(const return_value_t& value) :
-		_return_value(make_shared<return_value_t>(value))
+	statement_t(const return_statement_t& value) :
+		_return_statement(make_shared<return_statement_t>(value))
 	{
 	}
 
@@ -1002,8 +1002,8 @@ struct statement_t {
 		if(_bind_global_constant){
 			return other._bind_global_constant && *_bind_global_constant == *other._bind_global_constant;
 		}
-		else if(_return_value){
-			return other._return_value && *_return_value == *other._return_value;
+		else if(_return_statement){
+			return other._return_statement && *_return_statement == *other._return_statement;
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1012,14 +1012,14 @@ struct statement_t {
 	}
 
 	shared_ptr<bind_global_constant_t> _bind_global_constant;
-	shared_ptr<return_value_t> _return_value;
+	shared_ptr<return_statement_t> _return_statement;
 };
 
 statement_t make__bind_global_constant(const bind_global_constant_t& value){
 	return statement_t(value);
 }
 
-statement_t make__return_value(const return_value_t& value){
+statement_t make__return_statement(const return_statement_t& value){
 	return statement_t(value);
 }
 
@@ -1044,15 +1044,15 @@ struct visitor_i {
 	virtual void visitor_interface__on_make_function_expression(const make_function_expression_t& e) = 0;
 
 	virtual void visitor_interface__on_bind_global_constant_statement(const bind_global_constant_t& s) = 0;
-	virtual void visitor_interface__on_return_value_statement(const return_value_t& s) = 0;
+	virtual void visitor_interface__on_return_statement(const return_statement_t& s) = 0;
 };
 
 void visit_statement(const statement_t& s, visitor_i& visitor){
 	if(s._bind_global_constant){
 		visitor.visitor_interface__on_bind_global_constant_statement(*s._bind_global_constant);
 	}
-	else if(s._return_value){
-		visitor.visitor_interface__on_return_value_statement(*s._return_value);
+	else if(s._return_statement){
+		visitor.visitor_interface__on_return_statement(*s._return_statement);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1136,9 +1136,9 @@ void trace(const statement_t& s){
 		QUARK_SCOPED_TRACE(t);
 		trace(s2->_expression);
 	}
-	else if(s._return_value){
-		const auto s2 = s._return_value;
-		QUARK_SCOPED_TRACE("return_value_t");
+	else if(s._return_statement){
+		const auto s2 = s._return_statement;
+		QUARK_SCOPED_TRACE("return_statement_t");
 		trace(s2->_expression);
 	}
 	else{
@@ -1861,6 +1861,7 @@ QUARK_UNIT_TEST("", "parse_expression", "", ""){
 	}
 */
 function_body_t parse_function_body(const string& s){
+	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
 	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
 
@@ -1874,7 +1875,7 @@ function_body_t parse_function_body(const string& s){
 		if(token_pos.first == "return"){
 			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 			const auto expression = parse_expression(expression_pos.first);
-			const auto statement = statement_t(return_value_t{ expression });
+			const auto statement = statement_t(return_statement_t{ expression });
 			statements.push_back(statement);
 
 			//	Skip trailing ";".
@@ -1888,7 +1889,9 @@ function_body_t parse_function_body(const string& s){
 			throw std::runtime_error("syntax error");
 		}
 	}
-	return function_body_t{ statements };
+	const auto result = function_body_t{ statements };
+	trace(result);
+	return result;
 }
 
 QUARK_UNIT_TEST("", "", "", ""){

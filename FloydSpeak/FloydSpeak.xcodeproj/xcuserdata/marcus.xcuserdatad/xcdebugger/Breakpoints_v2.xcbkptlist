@@ -22,7 +22,7 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.ExceptionBreakpoint">
          <BreakpointContent
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             scope = "0"
@@ -126,7 +126,7 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "481629770.39862"
+                  timestampString = "481843802.492663"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "225"
@@ -141,12 +141,12 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "481629770.398731"
+                  timestampString = "481843802.492948"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "225"
                   endingLineNumber = "225"
-                  offsetFromSymbolStart = "1715">
+                  offsetFromSymbolStart = "1788">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -174,7 +174,7 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "481629770.399282"
+                  timestampString = "481843802.494658"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "231"
@@ -189,12 +189,12 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "481629770.399359"
+                  timestampString = "481843802.494891"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "231"
                   endingLineNumber = "231"
-                  offsetFromSymbolStart = "1528">
+                  offsetFromSymbolStart = "1560">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -238,12 +238,12 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/compiler.cpp"
-                  timestampString = "481629770.400096"
+                  timestampString = "481843802.497803"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "1757"
                   endingLineNumber = "1757"
-                  offsetFromSymbolStart = "303">
+                  offsetFromSymbolStart = "326">
                </Location>
                <Location
                   shouldBeEnabled = "Yes"
@@ -253,30 +253,14 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/compiler.cpp"
-                  timestampString = "481629770.400174"
+                  timestampString = "481843802.498071"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "1757"
                   endingLineNumber = "1757"
-                  offsetFromSymbolStart = "10306">
+                  offsetFromSymbolStart = "10858">
                </Location>
             </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FloydSpeak/compiler.cpp"
-            timestampString = "481629769.099003"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1668"
-            endingLineNumber = "1668"
-            landmarkName = "QUARK_UNIT_TEST(&quot;&quot;, &quot;evaluate()&quot;, &quot;&quot;, &quot;&quot;)"
-            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -302,28 +286,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FloydSpeak/compiler.cpp"
-            timestampString = "481629769.099003"
+            timestampString = "481834815.89571"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1976"
-            endingLineNumber = "1976"
-            landmarkName = "QUARK_UNIT_TEST(&quot;&quot;, &quot;read_function()&quot;, &quot;Test many arguments of different types&quot;, &quot;&quot;)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FloydSpeak/compiler.cpp"
-            timestampString = "481629769.099003"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2054"
-            endingLineNumber = "2054"
-            landmarkName = "program_to_ast(string program)"
+            startingLineNumber = "1902"
+            endingLineNumber = "1902"
+            landmarkName = "QUARK_UNIT_TEST(&quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
