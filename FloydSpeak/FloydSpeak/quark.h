@@ -540,6 +540,11 @@ void set_runtime(runtime_i* iRuntime);
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
+	#define QUARK_UNIT_TESTQ(function_under_test) \
+		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)("", function_under_test, "", "", QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
+		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
 	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
 

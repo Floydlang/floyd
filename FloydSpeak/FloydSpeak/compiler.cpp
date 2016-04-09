@@ -31,7 +31,6 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
 
-
 /*
 	AST ABSTRACT SYNTAX TREE
 
@@ -63,7 +62,6 @@ https://en.wikipedia.org/wiki/Parsing
 	while
 	mutable
 */
-
 
 
 
@@ -147,7 +145,6 @@ const char* _keywords[] = {
 	"-typeof",
 	"while"
 };
-
 
 
 
@@ -633,8 +630,7 @@ enum node1_type {
 
 struct data_type_t {
 	public: static data_type_t make_type(string s){
-		data_type_t result;
-		result._type_magic = s;
+		const data_type_t result(s);
 		return result;
 	}
 
@@ -652,6 +648,10 @@ struct data_type_t {
 	data_type_t(string s) :
 		_type_magic(s)
 	{
+	}
+
+	void swap(data_type_t& other){
+		_type_magic.swap(other._type_magic);
 	}
 
 	string to_string() const {
@@ -747,6 +747,24 @@ struct value_t {
 	{
 	}
 
+	value_t(const value_t& other):
+		_type(other._type),
+
+		_bool(other._bool),
+		_int(other._int),
+		_float(other._float),
+		_string(other._string),
+		_function_id(other._function_id),
+		_data_type(other._data_type)
+	{
+	}
+
+	value_t& operator=(const value_t& other){
+		value_t temp(other);
+		temp.swap(*this);
+		return *this;
+	}
+
 	public: bool operator==(const value_t& other) const{
 		return _type == other._type && _bool == other._bool && _int == other._int && _float == other._float && _string == other._string && _function_id == other._function_id && _data_type == other._data_type;
 	}
@@ -785,15 +803,38 @@ struct value_t {
 		return "<" + _type.to_string() + "> " + plain_value_to_string();
 	}
 
+	public: data_type_t get_type() const{
+		return _type;
+	}
+	public: int get_int() const{
+		return _int;
+	}
+	public: float get_float() const{
+		return _float;
+	}
+	public: string get_string() const{
+		return _string;
+	}
 
-	const data_type_t _type;
+	public: void swap(value_t& other){
+		_type.swap(other._type);
 
-	const bool _bool = false;
-	const int _int = 0;
-	const float _float = 0.0f;
-	const string _string = "";
-	const string _function_id = "";
-	const data_type_t _data_type;
+		std::swap(_bool, other._bool);
+		std::swap(_int, other._int);
+		std::swap(_float, other._float);
+		std::swap(_string, other._string);
+		std::swap(_function_id, other._function_id);
+		std::swap(_data_type, other._data_type);
+	}
+
+	private: data_type_t _type;
+
+	private: bool _bool = false;
+	private: int _int = 0;
+	private: float _float = 0.0f;
+	private: string _string = "";
+	private: string _function_id = "";
+	private: data_type_t _data_type;
 };
 
 
@@ -813,8 +854,8 @@ struct arg_t {
 		return _type == other._type && _identifier == other._identifier;
 	}
 
-	data_type_t _type;
-	string _identifier;
+	const data_type_t _type;
+	const string _identifier;
 };
 
 struct function_body_t {
@@ -822,7 +863,7 @@ struct function_body_t {
 		return _statements == other._statements;
 	}
 
-	vector<statement_t> _statements;
+	const vector<statement_t> _statements;
 };
 
 struct make_function_expression_t {
@@ -830,9 +871,9 @@ struct make_function_expression_t {
 		return _return_type == other._return_type && _args == other._args && _body == other._body;
 	}
 
-	data_type_t _return_type;
-	vector<arg_t> _args;
-	function_body_t _body;
+	const data_type_t _return_type;
+	const vector<arg_t> _args;
+	const function_body_t _body;
 };
 
 struct constant_expression_t {
@@ -840,7 +881,7 @@ struct constant_expression_t {
 		return _constant == other._constant;
 	}
 
-	value_t _constant;
+	const value_t _constant;
 };
 
 struct math_operation_t {
@@ -854,10 +895,10 @@ struct math_operation_t {
 		divide
 	};
 
-	operation _operation;
+	const operation _operation;
 
-	shared_ptr<expression_t> _left;
-	shared_ptr<expression_t> _right;
+	const shared_ptr<expression_t> _left;
+	const shared_ptr<expression_t> _right;
 };
 
 struct math_operation1_t {
@@ -868,9 +909,9 @@ struct math_operation1_t {
 		negate = 20
 	};
 
-	operation _operation;
+	const operation _operation;
 
-	shared_ptr<expression_t> _input;
+	const shared_ptr<expression_t> _input;
 };
 
 
@@ -898,6 +939,22 @@ struct expression_t {
 	{
 	}
 
+/*
+	void swap(expression_t& other) throw(){
+		_make_function_expression.swap(other._make_function_expression);
+		_constant_expression.swap(other._constant_expression);
+		_math_operation.swap(other._math_operation);
+		_math_operation1.swap(other._math_operation1);
+		std::swap(_nop, other._nop);
+	}
+
+	const expression_t& operator=(const expression_t& other){
+		auto expression_t temp = other;
+		temp.swap(*this);
+		return *this;
+	}
+*/
+
 	bool operator==(const expression_t& other) const {
 		if(_make_function_expression){
 			return other._make_function_expression && *_make_function_expression == *other._make_function_expression;
@@ -922,7 +979,7 @@ struct expression_t {
 	shared_ptr<math_operation_t> _math_operation;
 	shared_ptr<math_operation1_t> _math_operation1;
 
-	bool _nop;
+	bool _nop = false;
 };
 
 
@@ -970,12 +1027,12 @@ QUARK_UNIT_TEST("", "math_operation_t==()", "", ""){
 
 
 
-struct bind_global_constant_t {
-	bool operator==(const bind_global_constant_t& other) const {
-		return _global_identifier == other._global_identifier && _expression == other._expression;
+struct bind_statement_t {
+	bool operator==(const bind_statement_t& other) const {
+		return _identifier == other._identifier && _expression == other._expression;
 	}
 
-	string _global_identifier;
+	string _identifier;
 	expression_t _expression;
 };
 
@@ -988,8 +1045,8 @@ struct return_statement_t {
 };
 
 struct statement_t {
-	statement_t(const bind_global_constant_t& value) :
-		_bind_global_constant(make_shared<bind_global_constant_t>(value))
+	statement_t(const bind_statement_t& value) :
+		_bind_statement(make_shared<bind_statement_t>(value))
 	{
 	}
 
@@ -999,8 +1056,8 @@ struct statement_t {
 	}
 
 	bool operator==(const statement_t& other) const {
-		if(_bind_global_constant){
-			return other._bind_global_constant && *_bind_global_constant == *other._bind_global_constant;
+		if(_bind_statement){
+			return other._bind_statement && *_bind_statement == *other._bind_statement;
 		}
 		else if(_return_statement){
 			return other._return_statement && *_return_statement == *other._return_statement;
@@ -1011,12 +1068,16 @@ struct statement_t {
 		}
 	}
 
-	shared_ptr<bind_global_constant_t> _bind_global_constant;
-	shared_ptr<return_statement_t> _return_statement;
+	const shared_ptr<bind_statement_t> _bind_statement;
+	const shared_ptr<return_statement_t> _return_statement;
 };
 
-statement_t make__bind_global_constant(const bind_global_constant_t& value){
+statement_t make__bind_statement(const bind_statement_t& value){
 	return statement_t(value);
+}
+
+statement_t make__bind_statement(const string& identifier, const expression_t& e){
+	return statement_t(bind_statement_t{identifier, e});
 }
 
 statement_t make__return_statement(const return_statement_t& value){
@@ -1025,7 +1086,7 @@ statement_t make__return_statement(const return_statement_t& value){
 
 
 
-struct program_t {
+struct ast_t {
 	vector<statement_t> _top_level_statements;
 };
 
@@ -1043,13 +1104,13 @@ struct visitor_i {
 	virtual void visitor_interface__on_math_operation(const math_operation_t& e) = 0;
 	virtual void visitor_interface__on_make_function_expression(const make_function_expression_t& e) = 0;
 
-	virtual void visitor_interface__on_bind_global_constant_statement(const bind_global_constant_t& s) = 0;
+	virtual void visitor_interface__on_bind_statement_statement(const bind_statement_t& s) = 0;
 	virtual void visitor_interface__on_return_statement(const return_statement_t& s) = 0;
 };
 
 void visit_statement(const statement_t& s, visitor_i& visitor){
-	if(s._bind_global_constant){
-		visitor.visitor_interface__on_bind_global_constant_statement(*s._bind_global_constant);
+	if(s._bind_statement){
+		visitor.visitor_interface__on_bind_statement_statement(*s._bind_statement);
 	}
 	else if(s._return_statement){
 		visitor.visitor_interface__on_return_statement(*s._return_statement);
@@ -1060,7 +1121,7 @@ void visit_statement(const statement_t& s, visitor_i& visitor){
 }
 
 
-void visit_program(const program_t& program, visitor_i& visitor){
+void visit_program(const ast_t& program, visitor_i& visitor){
 	for(const auto i: program._top_level_statements){
 		visit_statement(i, visitor);
 	}
@@ -1083,7 +1144,7 @@ void trace(const make_function_expression_t& e);
 void trace(const math_operation_t& e);
 void trace(const math_operation1_t& e);
 
-void trace(const program_t& program);
+void trace(const ast_t& program);
 
 
 
@@ -1130,9 +1191,9 @@ template<typename T> void trace_vec(const string& title, const vector<T>& v){
 void trace(const expression_t& e);
 
 void trace(const statement_t& s){
-	if(s._bind_global_constant){
-		const auto s2 = s._bind_global_constant;
-		string t = "bind_global_constant_t: \"" + s2->_global_identifier + "\"";
+	if(s._bind_statement){
+		const auto s2 = s._bind_statement;
+		string t = "bind_statement_t: \"" + s2->_identifier + "\"";
 		QUARK_SCOPED_TRACE(t);
 		trace(s2->_expression);
 	}
@@ -1210,7 +1271,7 @@ void trace(const math_operation1_t& e){
 }
 
 
-void trace(const program_t& program){
+void trace(const ast_t& program){
 	QUARK_SCOPED_TRACE("program");
 
 	for(const auto i: program._top_level_statements){
@@ -1293,18 +1354,18 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-pair<expression_t, string> ParseSummands(const string& s, int depth);
+pair<expression_t, string> parse_summands(const string& s, int depth);
 
 
 expression_t negate_expression(const expression_t& e){
 	//	Shortcut: directly negate numeric constants.
 	if(e._constant_expression){
 		const value_t& value = e._constant_expression->_constant;
-		if(value._type == resolve_type("int")){
-			return make_constant_expression(constant_expression_t{-value._int});
+		if(value.get_type() == resolve_type("int")){
+			return make_constant_expression(constant_expression_t{-value.get_int()});
 		}
-		else if(value._type == resolve_type("float")){
-			return make_constant_expression(constant_expression_t{-value._float});
+		else if(value.get_type() == resolve_type("float")){
+			return make_constant_expression(constant_expression_t{-value.get_float()});
 		}
 	}
 
@@ -1321,8 +1382,100 @@ float parse_float(const string& pos){
 }
 
 
+
+
+
+
+/*
+	Function call
+		f()
+		f(g())
+		f(a + "xyz")
+	Constant literal
+		3
+		3.0
+		"three"
+	Variable
+		x1
+		hello2
+*/
+pair<expression_t, string> parse_single(const string& s, bool negative) {
+	QUARK_ASSERT(s.size() > 0);
+
+	string pos = s;
+
+	//	" => string constant.
+	if(peek_string(pos, "\"")){
+		pos = pos.substr(1);
+		const auto string_constant_pos = read_until(pos, "\"");
+
+		pos = string_constant_pos.second;
+		pos = pos.substr(1);
+		return { constant_expression_t{ string_constant_pos.first }, pos };
+	}
+
+	// [0-9] and "."  => numeric constant.
+	else if((number_chars + ".").find(pos[0]) != string::npos){
+		const auto number_pos = read_while(pos, number_chars + ".");
+		if(number_pos.first.empty()){
+			throw std::runtime_error("EEE_WRONG_CHAR");
+		}
+
+		//	If it contains a "." its a float, else an int.
+		if(number_pos.first.find('.') != string::npos){
+			pos = pos.substr(number_pos.first.size());
+
+			float value = parse_float(number_pos.first);
+			float result_number = negative ? -value : value;
+			return { constant_expression_t{result_number}, pos };
+		}
+		else{
+			pos = pos.substr(number_pos.first.size());
+
+			int value = atoi(number_pos.first.c_str());
+			int result_number = negative ? -value : value;
+			return { constant_expression_t{result_number}, pos };
+		}
+	}
+
+	/*
+		Start of identifier: can be variable access or function call.
+
+		"hello"
+		"f()"
+		"f(x + 10)"
+	*/
+	else if(identifier_chars.find(pos[0]) != string::npos){
+		QUARK_ASSERT(false);
+#if false
+		const auto token_pos = read_until(s, whitespace_chars);
+		const auto type = resolve_type(token_pos.first);
+		QUARK_ASSERT(resolve_type(read_until(s, whitespace_chars).first) != "");
+
+		const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
+		const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
+		const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
+
+		const auto expression = parse_expression(expression_pos.first);
+
+		const auto statement = make__bind_statement(variable_pos.first, expression);
+		trace(statement);
+
+		//	Skip trailing ";".
+		return { statement, expression_pos.second.substr(1) };
+#endif
+
+	}
+	else{
+		throw std::runtime_error("EEE_WRONG_CHAR");
+	}
+}
+
+
+
+
 // Parse a constant or an expression in parenthesis
-pair<expression_t, string> ParseAtom(const string& s, int depth) {
+pair<expression_t, string> parse_atom(const string& s, int depth) {
 	string pos = skip_whitespace(s);
 
 	//	Handle the sign before parenthesis (or before number)
@@ -1338,7 +1491,7 @@ pair<expression_t, string> ParseAtom(const string& s, int depth) {
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = ParseSummands(pos, depth);
+		auto res = parse_summands(pos, depth);
 		pos = skip_whitespace(res.second);
 		if(!(res.second.size() > 0 && res.second[0] == ')')) {
 			// Unmatched opening parenthesis
@@ -1351,74 +1504,35 @@ pair<expression_t, string> ParseAtom(const string& s, int depth) {
 
 	//	Parse constant / function call.
 	if(pos.size() > 0){
-		//	" => string constant.
-		if(peek_string(pos, "\"")){
-			pos = pos.substr(1);
-			const auto string_constant_pos = read_until(pos, "\"");
-
-			pos = string_constant_pos.second;
-			pos = pos.substr(1);
-			return { constant_expression_t{ string_constant_pos.first }, pos };
-		}
-
-		// [0-9] and .  => numeric constant.
-		else if((number_chars + ".").find(pos[0]) != string::npos){
-			const auto number_pos = read_while(pos, number_chars + ".");
-			if(number_pos.first.empty()){
-				throw std::runtime_error("EEE_WRONG_CHAR");
-			}
-
-			//	If it contains a "." its a float, else an int.
-			if(number_pos.first.find('.') != string::npos){
-				pos = pos.substr(number_pos.first.size());
-
-				float value = parse_float(number_pos.first);
-				float result_number = negative ? -value : value;
-				return { constant_expression_t{result_number}, pos };
-			}
-			else{
-				pos = pos.substr(number_pos.first.size());
-
-				int value = atoi(number_pos.first.c_str());
-				int result_number = negative ? -value : value;
-				return { constant_expression_t{result_number}, pos };
-			}
-		}
-
-		//	Start of idenditifer: can be variable access or function call.
-		else if(identifier_chars.find(pos[0]) != string::npos){
-			QUARK_ASSERT(false);
-		}
-		else{
-			throw std::runtime_error("EEE_WRONG_CHAR");
-		}
+		const auto single_pos = parse_single(pos, negative);
+		return single_pos;
 	}
 
 	throw std::runtime_error("Expected number");
 }
 
-QUARK_UNIT_TEST("", "ParseAtom", "", ""){
-	QUARK_TEST_VERIFY((ParseAtom("0.0", 0) == pair<expression_t, string>(constant_expression_t{ 0.0f }, "")));
-	QUARK_TEST_VERIFY((ParseAtom("9.0", 0) == pair<expression_t, string>(constant_expression_t{ 9.0f }, "")));
-	QUARK_TEST_VERIFY((ParseAtom("12345.0", 0) == pair<expression_t, string>(constant_expression_t{ 12345.0f }, "")));
+QUARK_UNIT_TEST("", "parse_atom", "", ""){
+	QUARK_TEST_VERIFY((parse_atom("0.0", 0) == pair<expression_t, string>(constant_expression_t{ 0.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom("9.0", 0) == pair<expression_t, string>(constant_expression_t{ 9.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom("12345.0", 0) == pair<expression_t, string>(constant_expression_t{ 12345.0f }, "")));
 
-	QUARK_TEST_VERIFY((ParseAtom("10.0", 0) == pair<expression_t, string>(constant_expression_t{ 10.0f }, "")));
-	QUARK_TEST_VERIFY((ParseAtom("-10.0", 0) == pair<expression_t, string>(constant_expression_t{ -10.0f }, "")));
-	QUARK_TEST_VERIFY((ParseAtom("+10.0", 0) == pair<expression_t, string>(constant_expression_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom("10.0", 0) == pair<expression_t, string>(constant_expression_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom("-10.0", 0) == pair<expression_t, string>(constant_expression_t{ -10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom("+10.0", 0) == pair<expression_t, string>(constant_expression_t{ 10.0f }, "")));
 
-	QUARK_TEST_VERIFY((ParseAtom("4.0+", 0) == pair<expression_t, string>(constant_expression_t{ 4.0f }, "+")));
+	QUARK_TEST_VERIFY((parse_atom("4.0+", 0) == pair<expression_t, string>(constant_expression_t{ 4.0f }, "+")));
 
 
-	QUARK_TEST_VERIFY((ParseAtom("\"hello\"", 0) == pair<expression_t, string>(constant_expression_t{ "hello" }, "")));
+	QUARK_TEST_VERIFY((parse_atom("\"hello\"", 0) == pair<expression_t, string>(constant_expression_t{ "hello" }, "")));
 }
 
-pair<expression_t, string> ParseFactors(const string& s, int depth) {
-	const auto num1_pos = ParseAtom(s, depth);
+pair<expression_t, string> parse_factors(const string& s, int depth) {
+	const auto num1_pos = parse_atom(s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = skip_whitespace(num1_pos.second);
 	while(!pos.empty() && (pos[0] == '*' || pos[0] == '/')){
 		const auto op_pos = read_char(pos);
-		const auto expression2_pos = ParseAtom(op_pos.second, depth);
+		const auto expression2_pos = parse_atom(op_pos.second, depth);
 		if(op_pos.first == '/') {
 			result_expression = make_math_operation(math_operation_t::divide, result_expression, expression2_pos.first);
 		}
@@ -1430,14 +1544,14 @@ pair<expression_t, string> ParseFactors(const string& s, int depth) {
 	return { result_expression, pos };
 }
 
-pair<expression_t, string> ParseSummands(const string& s, int depth) {
-	const auto num1_pos = ParseFactors(s, depth);
+pair<expression_t, string> parse_summands(const string& s, int depth) {
+	const auto num1_pos = parse_factors(s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = num1_pos.second;
 	while(!pos.empty() && (pos[0] == '-' || pos[0] == '+')) {
 		const auto op_pos = read_char(pos);
 
-		const auto expression2_pos = ParseFactors(op_pos.second, depth);
+		const auto expression2_pos = parse_factors(op_pos.second, depth);
 		if(op_pos.first == '-'){
 			result_expression = make_math_operation(math_operation_t::subtract, result_expression, expression2_pos.first);
 		}
@@ -1451,7 +1565,7 @@ pair<expression_t, string> ParseSummands(const string& s, int depth) {
 }
 
 expression_t evaluate2(string expression){
-	auto result = ParseSummands(expression, 0);
+	auto result = parse_summands(expression, 0);
 
 	// Now, expr should point to '\0', and _paren_count should be zero
 //	if(result.second._paren_count != 0 || result.second._tokens[result.second._pos] == ')') {
@@ -1472,6 +1586,7 @@ bool compare_float_approx(float value, float expected){
 	return diff < 0.00001;
 }
 
+//### Test string + etc.
 
 expression_t evaluate_constants(const expression_t& e){
 	if(e._constant_expression){
@@ -1486,49 +1601,49 @@ expression_t evaluate_constants(const expression_t& e){
 		if(left._constant_expression && right._constant_expression){
 			const auto left_value = left._constant_expression->_constant;
 			const auto right_value = right._constant_expression->_constant;
-			if(left_value._type == resolve_type("int") && right_value._type == resolve_type("int")){
+			if(left_value.get_type() == resolve_type("int") && right_value.get_type() == resolve_type("int")){
 				if(e2._operation == math_operation_t::add){
-					return make_constant_expression(left_value._int + right_value._int);
+					return make_constant_expression(left_value.get_int() + right_value.get_int());
 				}
 				else if(e2._operation == math_operation_t::subtract){
-					return make_constant_expression(left_value._int - right_value._int);
+					return make_constant_expression(left_value.get_int() - right_value.get_int());
 				}
 				else if(e2._operation == math_operation_t::multiply){
-					return make_constant_expression(left_value._int * right_value._int);
+					return make_constant_expression(left_value.get_int() * right_value.get_int());
 				}
 				else if(e2._operation == math_operation_t::divide){
-					if(right_value._int == 0){
+					if(right_value.get_int() == 0){
 						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 					}
-					return make_constant_expression(left_value._int / right_value._int);
+					return make_constant_expression(left_value.get_int() / right_value.get_int());
 				}
 				else{
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(left_value._type == resolve_type("float") && right_value._type == resolve_type("float")){
+			else if(left_value.get_type() == resolve_type("float") && right_value.get_type() == resolve_type("float")){
 				if(e2._operation == math_operation_t::add){
-					return make_constant_expression(left_value._float + right_value._float);
+					return make_constant_expression(left_value.get_float() + right_value.get_float());
 				}
 				else if(e2._operation == math_operation_t::subtract){
-					return make_constant_expression(left_value._float - right_value._float);
+					return make_constant_expression(left_value.get_float() - right_value.get_float());
 				}
 				else if(e2._operation == math_operation_t::multiply){
-					return make_constant_expression(left_value._float * right_value._float);
+					return make_constant_expression(left_value.get_float() * right_value.get_float());
 				}
 				else if(e2._operation == math_operation_t::divide){
-					if(right_value._float == 0.0f){
+					if(right_value.get_float() == 0.0f){
 						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 					}
-					return make_constant_expression(left_value._float / right_value._float);
+					return make_constant_expression(left_value.get_float() / right_value.get_float());
 				}
 				else{
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(left_value._type == resolve_type("string") && right_value._type == resolve_type("string")){
+			else if(left_value.get_type() == resolve_type("string") && right_value.get_type() == resolve_type("string")){
 				if(e2._operation == math_operation_t::add){
-					return make_constant_expression(left_value._string + right_value._string);
+					return make_constant_expression(left_value.get_string() + right_value.get_string());
 				}
 				else{
 					throw std::runtime_error("Arithmetics failed.");
@@ -1551,23 +1666,23 @@ expression_t evaluate_constants(const expression_t& e){
 		//	Replace the with a constant!
 		if(input._constant_expression){
 			const auto value = input._constant_expression->_constant;
-			if(value._type == resolve_type("int")){
+			if(value.get_type() == resolve_type("int")){
 				if(e2._operation == math_operation1_t::negate){
-					return make_constant_expression(-value._int);
+					return make_constant_expression(-value.get_int());
 				}
 				else{
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value._type == resolve_type("float")){
+			else if(value.get_type() == resolve_type("float")){
 				if(e2._operation == math_operation1_t::negate){
-					return make_constant_expression(-value._float);
+					return make_constant_expression(-value.get_float());
 				}
 				else{
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value._type == resolve_type("string")){
+			else if(value.get_type() == resolve_type("string")){
 				throw std::runtime_error("Arithmetics failed.");
 			}
 			else{
@@ -1619,9 +1734,9 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 	QUARK_TEST_VERIFY(evaluate("-4*(2+1)") == make_constant_expression(-12));
 	
 	// Fractional numbers
-	QUARK_TEST_VERIFY(compare_float_approx(evaluate("5.5/5.0")._constant_expression->_constant._float, 1.1f));
+	QUARK_TEST_VERIFY(compare_float_approx(evaluate("5.5/5.0")._constant_expression->_constant.get_float(), 1.1f));
 //	QUARK_TEST_VERIFY(evaluate("1/5e10") == 2e-11);
-	QUARK_TEST_VERIFY(compare_float_approx(evaluate("(4.0-3.0)/(4.0*4.0)")._constant_expression->_constant._float, 0.0625f));
+	QUARK_TEST_VERIFY(compare_float_approx(evaluate("(4.0-3.0)/(4.0*4.0)")._constant_expression->_constant.get_float(), 0.0625f));
 	QUARK_TEST_VERIFY(evaluate("1.0/2.0/2.0") == make_constant_expression(0.25f));
 	QUARK_TEST_VERIFY(evaluate("0.25 * .5 * 0.5") == make_constant_expression(0.0625f));
 	QUARK_TEST_VERIFY(evaluate(".25 / 2.0 * .5") == make_constant_expression(0.0625f));
@@ -1809,6 +1924,57 @@ QUARK_UNIT_TEST("", "parse_expression", "", ""){
 
 
 
+/*
+	"int a = 10;"
+	"float b = 0.3;"
+	"int c = a + b;"
+	"int b = f(a);"
+	"string hello = f(a) + \"_suffix\";";
+
+	...can contain trailing whitespace.
+*/
+pair<statement_t, string> parse_assignment_statement(const string& s){
+	QUARK_SCOPED_TRACE("parse_assignment_statement()");
+
+	const auto token_pos = read_until(s, whitespace_chars);
+	const auto type = resolve_type(token_pos.first);
+	QUARK_ASSERT(resolve_type(read_until(s, whitespace_chars).first) != "");
+
+	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
+	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
+	const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
+
+	const auto expression = parse_expression(expression_pos.first);
+
+	const auto statement = make__bind_statement(variable_pos.first, expression);
+	trace(statement);
+
+	//	Skip trailing ";".
+	return { statement, expression_pos.second.substr(1) };
+}
+
+QUARK_UNIT_TESTQ("parse_assignment_statement"){
+	const auto a = parse_assignment_statement("int a = 10; \n");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "a");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_expression._constant_expression->_constant == value_t(10));
+	QUARK_TEST_VERIFY(a.second == " \n");
+}
+
+QUARK_UNIT_TESTQ("parse_assignment_statement"){
+	const auto a = parse_assignment_statement("float b = 0.3; \n");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "b");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_expression._constant_expression->_constant == value_t(0.3f));
+	QUARK_TEST_VERIFY(a.second == " \n");
+}
+
+#if false
+QUARK_UNIT_TESTQ("parse_assignment_statement"){
+	const auto a = parse_assignment_statement("float test = log(args);\n");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_expression._constant_expression->_constant == value_t(0.3f));
+	QUARK_TEST_VERIFY(a.second == " \n");
+}
+#endif
 
 
 
@@ -1818,6 +1984,7 @@ QUARK_UNIT_TEST("", "parse_expression", "", ""){
 	### Add variables
 	### Add local functions
 
+	Must not have whitespace before / after {}.
 	{}
 
 	{
@@ -1881,9 +2048,17 @@ function_body_t parse_function_body(const string& s){
 			//	Skip trailing ";".
 			pos = skip_whitespace(expression_pos.second.substr(1));
 		}
+
+		/*
+			"int a = 10;"
+			"string hello = f(a) + \"_suffix\";";
+		*/
 		else if(resolve_type(token_pos.first) != ""){
-//			const auto type = resolve_type(token_pos.first);
-			return {};
+			pair<statement_t, string> assignment_statement = parse_assignment_statement(pos);
+			statements.push_back(assignment_statement.first);
+
+			//	Skips trailing ";".
+			pos = assignment_statement.second;
 		}
 		else{
 			throw std::runtime_error("syntax error");
@@ -1906,6 +2081,19 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_TEST_VERIFY(parse_function_body("{\n\treturn 3;\n}")._statements.size() == 1);
 }
 
+#if false
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto a = parse_function_body(
+		"{	float test = log(args);\n"
+		"	return 3;\n}"
+	);
+	QUARK_TEST_VERIFY(a._statements.size() == 2);
+	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_identifier == "test");
+	//### test expression
+
+	QUARK_TEST_VERIFY(a._statements[1]._return_statement->_expression._constant_expression->_constant == value_t(3));
+}
+#endif
 
 
 
@@ -2017,7 +2205,7 @@ pair<statement_t, string> read_toplevel_statement(const string& pos){
 
 
 	pair<pair<string, make_function_expression_t>, string> function = read_function(pos);
-	const auto bind = bind_global_constant_t{ function.first.first, function.first.second };
+	const auto bind = bind_statement_t{ function.first.first, function.first.second };
 	return { bind, function.second };
 }
 
@@ -2032,11 +2220,11 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 
 QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 	const auto result = read_toplevel_statement("int f(){}");
-	QUARK_TEST_VERIFY(result.first._bind_global_constant);
-	QUARK_TEST_VERIFY(result.first._bind_global_constant->_global_identifier == "f");
-	QUARK_TEST_VERIFY(result.first._bind_global_constant->_expression._make_function_expression);
+	QUARK_TEST_VERIFY(result.first._bind_statement);
+	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "f");
+	QUARK_TEST_VERIFY(result.first._bind_statement->_expression._make_function_expression);
 
-	const auto make_function_expression = result.first._bind_global_constant->_expression._make_function_expression;
+	const auto make_function_expression = result.first._bind_statement->_expression._make_function_expression;
 	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
 	QUARK_TEST_VERIFY(make_function_expression->_args.empty());
 	QUARK_TEST_VERIFY(make_function_expression->_body._statements.empty());
@@ -2049,7 +2237,7 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 
 
 
-program_t program_to_ast(string program){
+ast_t program_to_ast(string program){
 	vector<statement_t> top_level_statements;
 	auto pos = program;
 	pos = skip_whitespace(pos);
@@ -2059,7 +2247,7 @@ program_t program_to_ast(string program){
 		pos = skip_whitespace(statement_pos.second);
 	}
 
-	const program_t result{ top_level_statements };
+	const ast_t result{ top_level_statements };
 	trace(result);
 
 	return result;
@@ -2073,11 +2261,11 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 
 	const auto result = program_to_ast(kProgram1);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_global_identifier == "main");
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_identifier == "main");
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_expression._make_function_expression);
 
-	const auto make_function_expression = result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression;
+	const auto make_function_expression = result._top_level_statements[0]._bind_statement->_expression._make_function_expression;
 	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
 	QUARK_TEST_VERIFY((make_function_expression->_args == vector<arg_t>{ arg_t{ data_type_t::make_type("string"), "args" }}));
 }
@@ -2092,11 +2280,11 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 
 	const auto result = program_to_ast(kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_global_identifier == "f");
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_identifier == "f");
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_expression._make_function_expression);
 
-	const auto make_function_expression = result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression;
+	const auto make_function_expression = result._top_level_statements[0]._bind_statement->_expression._make_function_expression;
 	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
 	QUARK_TEST_VERIFY((make_function_expression->_args == vector<arg_t>{
 		arg_t{ data_type_t::make_type("int"), "x" },
@@ -2120,11 +2308,11 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	const auto result = program_to_ast(kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 2);
 
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_global_identifier == "hello");
-	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_identifier == "hello");
+	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_expression._make_function_expression);
 
-	const auto hello = result._top_level_statements[0]._bind_global_constant->_expression._make_function_expression;
+	const auto hello = result._top_level_statements[0]._bind_statement->_expression._make_function_expression;
 	QUARK_TEST_VERIFY(hello->_return_type == data_type_t::make_type("string"));
 	QUARK_TEST_VERIFY((hello->_args == vector<arg_t>{
 		arg_t{ data_type_t::make_type("int"), "x" },
@@ -2133,11 +2321,11 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	}));
 
 
-	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_global_constant);
-	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_global_constant->_global_identifier == "main");
-	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_global_constant->_expression._make_function_expression);
+	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_statement);
+	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_statement->_identifier == "main");
+	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_statement->_expression._make_function_expression);
 
-	const auto main = result._top_level_statements[1]._bind_global_constant->_expression._make_function_expression;
+	const auto main = result._top_level_statements[1]._bind_statement->_expression._make_function_expression;
 	QUARK_TEST_VERIFY(main->_return_type == data_type_t::make_type("int"));
 	QUARK_TEST_VERIFY((main->_args == vector<arg_t>{
 		arg_t{ data_type_t::make_type("string"), "args" }
@@ -2219,41 +2407,148 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	]
 }
 
-
-
-
 !!! JSON does not support multi-line strings.
-
 
 */
 
 
 
-const string kProgram2 =
-"int main(string args){\n"
-"	float test = log(args);\n"
-"	return 3;\n"
-"}\n";
 
-const string kProgram3 =
-"int main(string args){\n"
-"	return 3 + 4;\n"
-"}\n";
 
-const string kProgram4 =
-"int myfunc(){ return 5; }\n"
-"int main(string args){\n"
-"	return myfunc();\n"
-"}\n";
+
+#if false
+QUARK_UNIT_TESTQ("program_to_ast()"){
+	const string kProgram2 =
+	"int main(string args){\n"
+	"	float test = log(args);\n"
+	"	return 3;\n"
+	"}\n";
+	auto r = program_to_ast(kProgram2);
+	QUARK_TEST_VERIFY(r._top_level_statements.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_identifier == "main");
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._make_function_expression->_return_type == resolve_type("int"));
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._make_function_expression->_args.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._make_function_expression->_args[0]._type == resolve_type("string"));
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._make_function_expression->_args[0]._identifier == "args");
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._make_function_expression->_body._statements.size() == 2);
+}
+#endif
+
 
 
 QUARK_UNIT_TEST("", "program_to_ast()", "", ""){
-	auto r = program_to_ast(kProgram2);
+	const string kProgram3 =
+	"int main(string args){\n"
+	"	return 3 + 4;\n"
+	"}\n";
+	auto r = program_to_ast(kProgram3);
 //	QUARK_TEST_VERIFY(r._functions["main"]._return_type == data_type_t::make_type("int"));
 	vector<pair<string, string>> a{ { "string", "args" }};
 //	QUARK_TEST_VERIFY((r._functions["main"]._args == vector<pair<data_type_t, string>>{ { data_type_t::make_type("string"), "args" }}));
 }
 
+#if false
+QUARK_UNIT_TEST("", "program_to_ast()", "", ""){
+	const string kProgram4 =
+	"int myfunc(){ return 5; }\n"
+	"int main(string args){\n"
+	"	return myfunc();\n"
+	"}\n";
+	auto r = program_to_ast(kProgram4);
+//	QUARK_TEST_VERIFY(r._functions["main"]._return_type == data_type_t::make_type("int"));
+	vector<pair<string, string>> a{ { "string", "args" }};
+//	QUARK_TEST_VERIFY((r._functions["main"]._args == vector<pair<data_type_t, string>>{ { data_type_t::make_type("string"), "args" }}));
+}
+#endif
+
+
+
+
+
+struct vm_t {
+	vm_t(const ast_t& ast) :
+		_ast(ast)
+	{
+	}
+
+	ast_t _ast;
+};
+
+
+shared_ptr<make_function_expression_t> find_global_function(const vm_t& vm, const string& name){
+	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
+	if(it == vm._ast._top_level_statements.end()){
+		return nullptr;
+	}
+
+	const auto f = it->_bind_statement->_expression._make_function_expression;
+	return f;
+}
+
+pair<value_t, vm_t> run_function(const vm_t& vm, const make_function_expression_t& f, const vector<value_t>& args){
+	const auto body = f._body;
+
+	std::map<string, value_t> locals;
+	int statement_index = 0;
+	while(statement_index < body._statements.size()){
+		const auto statement = body._statements[statement_index];
+		if(statement._bind_statement){
+			const auto s = statement._bind_statement;
+			const auto name = s->_identifier;
+			if(locals.count(name) != 0){
+				throw std::runtime_error("local constant already exists");
+			}
+			const auto result = evaluate_constants(s->_expression);
+			if(!result._constant_expression){
+				throw std::runtime_error("unknown variables");
+			}
+			locals[name] = result._constant_expression->_constant;
+		}
+		else if(statement._return_statement){
+			return pair<value_t, vm_t>(value_t(11), vm);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+		statement_index++;
+	}
+	throw std::runtime_error("function missing return statement");
+}
+
+value_t run(const ast_t& ast){
+	vm_t vm(ast);
+
+	const auto main_function = find_global_function(vm, "main");
+	const auto r = run_function(vm, *main_function, vector<value_t>{value_t("program_name 1 2 3 4")});
+	return r.first;
+}
+
+#if false
+QUARK_UNIT_TEST("", "run()", "", ""){
+	auto ast = program_to_ast(
+		"int main(string args){\n"
+		"	return 3 + 4;\n"
+		"}\n"
+	);
+
+	value_t result = run(ast);
+	QUARK_TEST_VERIFY(result == value_t(7));
+}
+#endif
+
+#if false
+QUARK_UNIT_TEST("", "run()", "", ""){
+	auto ast = program_to_ast(
+		"int main(string args){\n"
+		"	return \"hello, world!\";\n"
+		"}\n"
+	);
+
+	value_t result = run(ast);
+	QUARK_TEST_VERIFY(result == value_t("hello, world!"));
+}
+#endif
 
 
 //////////////////////////////////////////////////		main()
