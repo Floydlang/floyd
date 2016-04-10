@@ -45,16 +45,16 @@ bool unit_tests_on = QUARK_UNIT_TESTS_ON;
 
 namespace {
 	quark::default_runtime default_runtime("");
-	runtime_i* runtime = &default_runtime;
+	runtime_i* g_runtime = &default_runtime;
 }
 
 
 runtime_i* get_runtime(){
-	return runtime;
+	return g_runtime;
 }
 
 void set_runtime(runtime_i* iRuntime){
-	runtime = iRuntime;
+	g_runtime = iRuntime;
 }
 
 
