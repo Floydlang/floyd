@@ -8,8 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0AC17A1CADB26B00979C49 /* runtime.cpp */; };
-		2C1D84E11CA765A90042F0A8 /* compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* compiler.cpp */; };
+		2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
+		2C789ED21CBA533100DDBD3C /* floyd_vm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C789ED01CBA533100DDBD3C /* floyd_vm.cpp */; };
+		2CCD83351CBA5B6E006033E4 /* floyd_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCD83341CBA5B6E006033E4 /* floyd_main.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,11 +30,16 @@
 		2C0AC17A1CADB26B00979C49 /* runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime.cpp; sourceTree = "<group>"; };
 		2C0AC17B1CADB26B00979C49 /* runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime.h; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* FloydSpeak */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FloydSpeak; sourceTree = BUILT_PRODUCTS_DIR; };
-		2C1D84E01CA765A90042F0A8 /* compiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
+		2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_parser.cpp; sourceTree = "<group>"; };
 		2C1D84E81CA766470042F0A8 /* quark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = quark.cpp; sourceTree = "<group>"; };
 		2C1D84E91CA766470042F0A8 /* quark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quark.h; sourceTree = "<group>"; };
 		2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = steady_vector.cpp; sourceTree = "<group>"; };
 		2C1D84EB1CA766470042F0A8 /* steady_vector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = steady_vector.h; sourceTree = "<group>"; };
+		2C789ED01CBA533100DDBD3C /* floyd_vm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_vm.cpp; sourceTree = "<group>"; };
+		2C789ED11CBA533100DDBD3C /* floyd_vm.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = floyd_vm.hpp; sourceTree = "<group>"; };
+		2C789ED71CBA54C400DDBD3C /* floyd_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_parser.h; sourceTree = "<group>"; };
+		2C789ED81CBA581200DDBD3C /* unused_bits.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = unused_bits.cpp; sourceTree = "<group>"; };
+		2CCD83341CBA5B6E006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +56,7 @@
 		2C1D84D41CA765A90042F0A8 = {
 			isa = PBXGroup;
 			children = (
+				2CCD83341CBA5B6E006033E4 /* floyd_main.cpp */,
 				2C1D84DF1CA765A90042F0A8 /* FloydSpeak */,
 				2C1D84DE1CA765A90042F0A8 /* Products */,
 			);
@@ -65,13 +73,17 @@
 		2C1D84DF1CA765A90042F0A8 /* FloydSpeak */ = {
 			isa = PBXGroup;
 			children = (
-				2C1D84E01CA765A90042F0A8 /* compiler.cpp */,
+				2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */,
+				2C789ED71CBA54C400DDBD3C /* floyd_parser.h */,
+				2C789ED01CBA533100DDBD3C /* floyd_vm.cpp */,
+				2C789ED11CBA533100DDBD3C /* floyd_vm.hpp */,
 				2C1D84E81CA766470042F0A8 /* quark.cpp */,
 				2C1D84E91CA766470042F0A8 /* quark.h */,
-				2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */,
-				2C1D84EB1CA766470042F0A8 /* steady_vector.h */,
 				2C0AC17A1CADB26B00979C49 /* runtime.cpp */,
 				2C0AC17B1CADB26B00979C49 /* runtime.h */,
+				2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */,
+				2C1D84EB1CA766470042F0A8 /* steady_vector.h */,
+				2C789ED81CBA581200DDBD3C /* unused_bits.cpp */,
 			);
 			path = FloydSpeak;
 			sourceTree = "<group>";
@@ -132,8 +144,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2CCD83351CBA5B6E006033E4 /* floyd_main.cpp in Sources */,
 				2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */,
-				2C1D84E11CA765A90042F0A8 /* compiler.cpp in Sources */,
+				2C789ED21CBA533100DDBD3C /* floyd_vm.cpp in Sources */,
+				2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */,
 				2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
