@@ -25,8 +25,8 @@ using std::make_shared;
 
 
 
-
-shared_ptr<make_function_expression_t> find_global_function(const vm_t& vm, const string& name){
+//!!! use functions-map instead.
+shared_ptr<const make_function_expression_t> find_global_function(const vm_t& vm, const string& name){
 	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
 	if(it == vm._ast._top_level_statements.end()){
 		return nullptr;
@@ -36,46 +36,20 @@ shared_ptr<make_function_expression_t> find_global_function(const vm_t& vm, cons
 	return f;
 }
 
-pair<value_t, vm_t> run_function(const vm_t& vm, const make_function_expression_t& f, const vector<value_t>& args){
-	const auto body = f._body;
-
+struct vm_stack_frame {
 	std::map<string, value_t> locals;
-	int statement_index = 0;
-	while(statement_index < body._statements.size()){
-		const auto statement = body._statements[statement_index];
-		if(statement._bind_statement){
-			const auto s = statement._bind_statement;
-			const auto name = s->_identifier;
-			if(locals.count(name) != 0){
-				throw std::runtime_error("local constant already exists");
-			}
-			const auto result = evaluate_compiletime_constants(s->_expression);
-			if(!result._constant){
-				throw std::runtime_error("unknown variables");
-			}
-			locals[name] = *result._constant;
-		}
-		else if(statement._return_statement){
-//			const auto result = evaluate_compiletime_constants()
-			return pair<value_t, vm_t>(value_t(11), vm);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-		statement_index++;
-	}
-	throw std::runtime_error("function missing return statement");
-}
+	int _statement_index;
+};
 
 value_t run(const ast_t& ast){
 	vm_t vm(ast);
 
 	const auto main_function = find_global_function(vm, "main");
-	const auto r = run_function(vm, *main_function, vector<value_t>{value_t("program_name 1 2 3 4")});
-	return r.first;
+	const auto r = run_function(vm._ast._functions, *main_function, vector<value_t>{value_t("program_name 1 2 3 4")});
+	return r;
 }
 
-QUARK_UNIT_TEST("", "run()", "", ""){
+QUARK_UNIT_TESTQ("run()", "minimal program"){
 	auto ast = program_to_ast(
 		"int main(string args){\n"
 		"	return 3 + 4;\n"
@@ -83,5 +57,28 @@ QUARK_UNIT_TEST("", "run()", "", ""){
 	);
 
 	value_t result = run(ast);
-//	QUARK_TEST_VERIFY(result == value_t(7));
+	QUARK_TEST_VERIFY(result == value_t(7));
+}
+
+QUARK_UNIT_TESTQ("run()", "minimal program 2"){
+	auto ast = program_to_ast(
+		"int main(string args){\n"
+		"	return \"123\" + \"456\";\n"
+		"}\n"
+	);
+
+	value_t result = run(ast);
+	QUARK_TEST_VERIFY(result == value_t("123456"));
+}
+
+QUARK_UNIT_TESTQ("run()", "define additional function, call it several times"){
+	auto ast = program_to_ast(
+		"int myfunc(){ return 5; }\n"
+		"int main(string args){\n"
+		"	return myfunc() + myfunc() * 2;\n"
+		"}\n"
+	);
+
+//	value_t result = run(ast);
+//	QUARK_TEST_VERIFY(result == value_t(15));
 }

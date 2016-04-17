@@ -12,6 +12,7 @@
 #include "quark.h"
 #include <vector>
 #include <string>
+#include <map>
 
 struct statement_t;
 
@@ -303,13 +304,17 @@ struct call_function_t {
 
 
 struct expression_t {
+	public: bool check_invariant() const{
+		return true;
+	}
+
 	expression_t() :
 		_nop(true)
 	{
 	}
 
 	expression_t(const make_function_expression_t& value) :
-		_make_function_expression(std::make_shared<make_function_expression_t>(value))
+		_make_function_expression(std::make_shared<const make_function_expression_t>(value))
 	{
 	}
 
@@ -369,12 +374,11 @@ struct expression_t {
 		}
 	}
 
-	std::shared_ptr<make_function_expression_t> _make_function_expression;
+	std::shared_ptr<const make_function_expression_t> _make_function_expression;
 	std::shared_ptr<value_t> _constant;
 	std::shared_ptr<math_operation_t> _math_operation;
 	std::shared_ptr<math_operation1_t> _math_operation1;
 	std::shared_ptr<call_function_t> _call_function;
-
 	bool _nop = false;
 };
 
@@ -480,16 +484,48 @@ inline statement_t make__return_statement(const return_statement_t& value){
 
 
 
+struct functions_t {
+	public: bool check_invariant() const {
+		return true;
+	}
+
+	//### Function names should have namespace etc.
+	std::map<std::string, std::shared_ptr<const make_function_expression_t> > _functions;
+};
 
 
 struct ast_t {
+	functions_t _functions;
 	std::vector<statement_t> _top_level_statements;
 };
 
 
 ast_t program_to_ast(const std::string& program);
-expression_t evaluate_compiletime_constants(const expression_t& e);
 
+/*
+	Parses the expression sttring
+	Checks syntax
+	Validates that called functions exists and has correct type.
+	Validates that accessed variables exists and has correct types.
+
+	No optimization or evalution of any constant expressions etc.
+*/
+expression_t parse_expression(const functions_t& functions, std::string expression);
+
+/*
+*/
+expression_t evaluate3(const functions_t& functions, const expression_t& e);
+
+
+/*
+	functions: if null, all function calls are just stored in as expression-nodes.
+		If NOT null, the function is called if possible
+		
+		??? Not OK: function calls should be validated even in non-optimizing pass.
+*/
+expression_t parse_expression_evaluate(const functions_t& functions, std::string expression);
+
+value_t run_function(const functions_t& functions, const make_function_expression_t& f, const std::vector<value_t>& args);
 
 
 
