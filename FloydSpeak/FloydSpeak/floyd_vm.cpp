@@ -24,17 +24,19 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-
-//!!! use functions-map instead.
 shared_ptr<const make_function_expression_t> find_global_function(const vm_t& vm, const string& name){
+/*
 	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
-	if(it == vm._ast._top_level_statements.end()){
+*/
+	const auto it = vm._ast._functions._functions.find(name);
+	if(it == vm._ast._functions._functions.end()){
 		return nullptr;
 	}
 
-	const auto f = it->_bind_statement->_expression._make_function_expression;
-	return f;
+	return it->second;
 }
+
+
 
 struct vm_stack_frame {
 	std::map<string, value_t> locals;
@@ -79,6 +81,6 @@ QUARK_UNIT_TESTQ("run()", "define additional function, call it several times"){
 		"}\n"
 	);
 
-//	value_t result = run(ast);
-//	QUARK_TEST_VERIFY(result == value_t(15));
+	value_t result = run(ast);
+	QUARK_TEST_VERIFY(result == value_t(15));
 }

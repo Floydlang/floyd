@@ -232,7 +232,7 @@ struct value_t {
 
 struct statement_t;
 struct expression_t;
-struct math_operation_t;
+struct math_operation2_t;
 struct math_operation1_t;
 
 struct arg_t {
@@ -262,8 +262,8 @@ struct make_function_expression_t {
 	const function_body_t _body;
 };
 
-struct math_operation_t {
-	bool operator==(const math_operation_t& other) const;
+struct math_operation2_t {
+	bool operator==(const math_operation2_t& other) const;
 
 
 	enum operation {
@@ -322,8 +322,8 @@ struct expression_t {
 		_constant(std::make_shared<value_t>(value))
 	{
 	}
-	expression_t(const math_operation_t& value) :
-		_math_operation(std::make_shared<math_operation_t>(value))
+	expression_t(const math_operation2_t& value) :
+		_math_operation2(std::make_shared<math_operation2_t>(value))
 	{
 	}
 	expression_t(const math_operation1_t& value) :
@@ -340,7 +340,7 @@ struct expression_t {
 	void swap(expression_t& other) throw(){
 		_make_function_expression.swap(other._make_function_expression);
 		_constant.swap(other._constant);
-		_math_operation.swap(other._math_operation);
+		_math_operation2.swap(other._math_operation2);
 		_math_operation1.swap(other._math_operation1);
 		std::swap(_nop, other._nop);
 	}
@@ -359,8 +359,8 @@ struct expression_t {
 		else if(_constant){
 			return other._constant && *_constant == *other._constant;
 		}
-		else if(_math_operation){
-			return other._math_operation && *_math_operation == *other._math_operation;
+		else if(_math_operation2){
+			return other._math_operation2 && *_math_operation2 == *other._math_operation2;
 		}
 		else if(_math_operation1){
 			return other._math_operation1 && *_math_operation1 == *other._math_operation1;
@@ -376,14 +376,14 @@ struct expression_t {
 
 	std::shared_ptr<const make_function_expression_t> _make_function_expression;
 	std::shared_ptr<value_t> _constant;
-	std::shared_ptr<math_operation_t> _math_operation;
+	std::shared_ptr<math_operation2_t> _math_operation2;
 	std::shared_ptr<math_operation1_t> _math_operation1;
 	std::shared_ptr<call_function_t> _call_function;
 	bool _nop = false;
 };
 
 
-inline bool math_operation_t::operator==(const math_operation_t& other) const {
+inline bool math_operation2_t::operator==(const math_operation2_t& other) const {
 	return _operation == other._operation && *_left == *other._left && *_right == *other._right;
 }
 inline bool math_operation1_t::operator==(const math_operation1_t& other) const {
@@ -399,12 +399,12 @@ inline expression_t make_constant(const value_t& value){
 	return expression_t(value);
 }
 
-inline expression_t make_math_operation(const math_operation_t& value){
+inline expression_t make_math_operation2(const math_operation2_t& value){
 	return expression_t(value);
 }
 
-inline expression_t make_math_operation(math_operation_t::operation op, const expression_t& left, const expression_t& right){
-	return expression_t(math_operation_t{op, std::make_shared<expression_t>(left), std::make_shared<expression_t>(right)});
+inline expression_t make_math_operation2(math_operation2_t::operation op, const expression_t& left, const expression_t& right){
+	return expression_t(math_operation2_t{op, std::make_shared<expression_t>(left), std::make_shared<expression_t>(right)});
 }
 
 inline expression_t make_math_operation1(math_operation1_t::operation op, const expression_t& input){

@@ -475,9 +475,9 @@ data_type_t resolve_type(std::string node_type){
 
 
 
-QUARK_UNIT_TEST("", "math_operation_t==()", "", ""){
-	const auto a = make_math_operation(math_operation_t::add, make_constant(3), make_constant(4));
-	const auto b = make_math_operation(math_operation_t::add, make_constant(3), make_constant(4));
+QUARK_UNIT_TEST("", "math_operation2_t==()", "", ""){
+	const auto a = make_math_operation2(math_operation2_t::add, make_constant(3), make_constant(4));
+	const auto b = make_math_operation2(math_operation2_t::add, make_constant(3), make_constant(4));
 	QUARK_TEST_VERIFY(a == b);
 }
 
@@ -492,7 +492,7 @@ QUARK_UNIT_TEST("", "math_operation_t==()", "", ""){
 struct visitor_i {
 	virtual ~visitor_i(){};
 
-	virtual void visitor_interface__on_math_operation(const math_operation_t& e) = 0;
+	virtual void visitor_interface__on_math_operation2(const math_operation2_t& e) = 0;
 	virtual void visitor_interface__on_make_function_expression(const make_function_expression_t& e) = 0;
 
 	virtual void visitor_interface__on_bind_statement_statement(const bind_statement_t& s) = 0;
@@ -532,7 +532,7 @@ void trace(const function_body_t& body);
 void trace(const data_type_t& v);
 void trace(const value_t& e);
 void trace(const make_function_expression_t& e);
-void trace(const math_operation_t& e);
+void trace(const math_operation2_t& e);
 void trace(const math_operation1_t& e);
 void trace(const call_function_t& e);
 
@@ -541,17 +541,17 @@ void trace(const ast_t& program);
 
 
 
-string operation_to_string(const math_operation_t::operation& op){
-	if(op == math_operation_t::add){
+string operation_to_string(const math_operation2_t::operation& op){
+	if(op == math_operation2_t::add){
 		return "add";
 	}
-	else if(op == math_operation_t::subtract){
+	else if(op == math_operation2_t::subtract){
 		return "subtract";
 	}
-	else if(op == math_operation_t::multiply){
+	else if(op == math_operation2_t::multiply){
 		return "multiply";
 	}
-	else if(op == math_operation_t::divide){
+	else if(op == math_operation2_t::divide){
 		return "divide";
 	}
 	else{
@@ -607,8 +607,8 @@ void trace(const expression_t& e){
 		const make_function_expression_t& temp = *e._make_function_expression;
 		trace(temp);
 	}
-	else if(e._math_operation){
-		trace(*e._math_operation);
+	else if(e._math_operation2){
+		trace(*e._math_operation2);
 	}
 	else if(e._math_operation1){
 		trace(*e._math_operation1);
@@ -648,13 +648,12 @@ void trace(const make_function_expression_t& e){
 		trace_vec("arguments", e._args);
 	}
 	{
-		QUARK_SCOPED_TRACE("body");
 		trace(e._body);
 	}
 }
 
-void trace(const math_operation_t& e){
-	string s = "math_operation_t: " + operation_to_string(e._operation);
+void trace(const math_operation2_t& e){
+	string s = "math_operation2_t: " + operation_to_string(e._operation);
 	QUARK_SCOPED_TRACE(s);
 	trace(*e._left);
 	trace(*e._right);
@@ -849,14 +848,13 @@ pair<expression_t, string> parse_single_internal(const functions_t& functions, c
 	else if(identifier_chars.find(pos[0]) != string::npos){
 		const auto identifier_pos = read_required_identifier(pos);
 
-
+		//	Lookup function!
 		if(functions._functions.find(identifier_pos.first) == functions._functions.end()){
 			throw std::runtime_error("Unknown function \"" + identifier_pos.first + "\"");
 		}
 
 		string p2 = skip_whitespace(identifier_pos.second);
 
-		//???	Lookup function!
 		//	Function call.
 		if(!p2.empty() && p2[0] == '('){
 			const auto arg_list_pos = get_balanced(p2);
@@ -870,7 +868,7 @@ pair<expression_t, string> parse_single_internal(const functions_t& functions, c
 				args_expressions.push_back(make_shared<expression_t>(arg_expre));
 				p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 			}
-			return { call_function_t{identifier_pos.first, args_expressions }, p2 };
+			return { call_function_t{identifier_pos.first, args_expressions }, arg_list_pos.second };
 		}
 
 		//	Variable-read.
@@ -918,12 +916,26 @@ shared_ptr<const make_function_expression_t> make_log2(){
 	return make_shared<const make_function_expression_t>(make_function_expression_t{ resolve_type("float"), args, body });
 }
 
+shared_ptr<const make_function_expression_t> make_return5(){
+	vector<arg_t> args{};
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ make_constant(value_t(5)) }
+			)
+		}
+	};
+
+	return make_shared<const make_function_expression_t>(make_function_expression_t{ resolve_type("int"), args, body });
+}
+
 
 functions_t make_test_functions(){
 	functions_t result;
 	result._functions["log"] = make_log();
 	result._functions["log2"] = make_log2();
 	result._functions["f"] = make_log();
+	result._functions["return5"] = make_return5();
 	return result;
 }
 
@@ -951,8 +963,8 @@ QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 	const auto a = parse_single(functions, "log2(\"123\" + \"xyz\", 1000 * 3)");
 	QUARK_TEST_VERIFY(a.first._call_function->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call_function->_inputs.size() == 2);
-	QUARK_TEST_VERIFY(a.first._call_function->_inputs[0]->_math_operation);
-	QUARK_TEST_VERIFY(a.first._call_function->_inputs[1]->_math_operation);
+	QUARK_TEST_VERIFY(a.first._call_function->_inputs[0]->_math_operation2);
+	QUARK_TEST_VERIFY(a.first._call_function->_inputs[1]->_math_operation2);
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
@@ -1034,10 +1046,10 @@ pair<expression_t, string> parse_factors(const functions_t& functions, const str
 		const auto op_pos = read_char(pos);
 		const auto expression2_pos = parse_atom(functions, op_pos.second, depth);
 		if(op_pos.first == '/') {
-			result_expression = make_math_operation(math_operation_t::divide, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_t::divide, result_expression, expression2_pos.first);
 		}
 		else{
-			result_expression = make_math_operation(math_operation_t::multiply, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_t::multiply, result_expression, expression2_pos.first);
 		}
 		pos = skip_whitespace(expression2_pos.second);
 	}
@@ -1053,10 +1065,10 @@ pair<expression_t, string> parse_summands(const functions_t& functions, const st
 
 		const auto expression2_pos = parse_factors(functions, op_pos.second, depth);
 		if(op_pos.first == '-'){
-			result_expression = make_math_operation(math_operation_t::subtract, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_t::subtract, result_expression, expression2_pos.first);
 		}
 		else{
-			result_expression = make_math_operation(math_operation_t::add, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_t::add, result_expression, expression2_pos.first);
 		}
 
 		pos = skip_whitespace(expression2_pos.second);
@@ -1164,8 +1176,8 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 	if(e._constant){
 		return e;
 	}
-	else if(e._math_operation){
-		const auto e2 = *e._math_operation;
+	else if(e._math_operation2){
+		const auto e2 = *e._math_operation2;
 		const auto left = evaluate3(functions, *e2._left);
 		const auto right = evaluate3(functions, *e2._right);
 
@@ -1174,16 +1186,16 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 			const auto left_value = left._constant;
 			const auto right_value = right._constant;
 			if(left_value->get_type() == resolve_type("int") && right_value->get_type() == resolve_type("int")){
-				if(e2._operation == math_operation_t::add){
+				if(e2._operation == math_operation2_t::add){
 					return make_constant(left_value->get_int() + right_value->get_int());
 				}
-				else if(e2._operation == math_operation_t::subtract){
+				else if(e2._operation == math_operation2_t::subtract){
 					return make_constant(left_value->get_int() - right_value->get_int());
 				}
-				else if(e2._operation == math_operation_t::multiply){
+				else if(e2._operation == math_operation2_t::multiply){
 					return make_constant(left_value->get_int() * right_value->get_int());
 				}
-				else if(e2._operation == math_operation_t::divide){
+				else if(e2._operation == math_operation2_t::divide){
 					if(right_value->get_int() == 0){
 						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 					}
@@ -1194,16 +1206,16 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 				}
 			}
 			else if(left_value->get_type() == resolve_type("float") && right_value->get_type() == resolve_type("float")){
-				if(e2._operation == math_operation_t::add){
+				if(e2._operation == math_operation2_t::add){
 					return make_constant(left_value->get_float() + right_value->get_float());
 				}
-				else if(e2._operation == math_operation_t::subtract){
+				else if(e2._operation == math_operation2_t::subtract){
 					return make_constant(left_value->get_float() - right_value->get_float());
 				}
-				else if(e2._operation == math_operation_t::multiply){
+				else if(e2._operation == math_operation2_t::multiply){
 					return make_constant(left_value->get_float() * right_value->get_float());
 				}
-				else if(e2._operation == math_operation_t::divide){
+				else if(e2._operation == math_operation2_t::divide){
 					if(right_value->get_float() == 0.0f){
 						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 					}
@@ -1214,7 +1226,7 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 				}
 			}
 			else if(left_value->get_type() == resolve_type("string") && right_value->get_type() == resolve_type("string")){
-				if(e2._operation == math_operation_t::add){
+				if(e2._operation == math_operation2_t::add){
 					return make_constant(value_t(left_value->get_string() + right_value->get_string()));
 				}
 				else{
@@ -1228,7 +1240,7 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 
 		//	Else use a math_operation to make the calculation later. We make a NEW math_operation since sub-nodes may have been evaluated.
 		else{
-			return make_math_operation(e2._operation, left, right);
+			return make_math_operation2(e2._operation, left, right);
 		}
 	}
 	else if(e._math_operation1){
@@ -1555,6 +1567,8 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 
 
 /*
+	Pre-evaluates when possible!
+
 	### Split-out parse_statement().
 	### Add struct {}
 	### Add variables
@@ -1617,8 +1631,9 @@ function_body_t parse_function_body(const functions_t& functions, const string& 
 		const auto token_pos = read_until(pos, whitespace_chars);
 		if(token_pos.first == "return"){
 			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-			const auto expression = parse_expression(functions, expression_pos.first);
-			const auto statement = statement_t(return_statement_t{ expression });
+			const auto expression1 = parse_expression(functions, expression_pos.first);
+			const auto expression2 = evaluate3(functions, expression1);
+			const auto statement = statement_t(return_statement_t{ expression2 });
 			statements.push_back(statement);
 
 			//	Skip trailing ";".
@@ -1670,6 +1685,23 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_TEST_VERIFY(*a._statements[0]._bind_statement->_expression._call_function->_inputs[0]->_constant == value_t(10.11f));
 
 	QUARK_TEST_VERIFY(*a._statements[1]._return_statement->_expression._constant == value_t(3));
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto functions = make_test_functions();
+	const auto a = parse_function_body(functions,
+		"{ return return5() + return5() * 2;\n}"
+	);
+	QUARK_TEST_VERIFY(a._statements.size() == 1);
+//	QUARK_TEST_VERIFY(a._statements[0]._return_statement->_expression._math_operation2);
+
+	const auto b = evaluate3(functions, a._statements[0]._return_statement->_expression);
+	QUARK_TEST_VERIFY(b._constant && *b._constant == value_t(15));
+
+//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_identifier == "test");
+//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression._call_function->_function_name == "log");
+//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression._call_function->_inputs.size() == 1);
+//	QUARK_TEST_VERIFY(*a._statements[0]._bind_statement->_expression._call_function->_inputs[0]->_constant == value_t(10.11f));
 }
 
 
