@@ -48,22 +48,30 @@ https://en.wikipedia.org/wiki/Parsing
 	===============================
 	main()
 	functions
-	bool, int, string
-	true, false
 	return
-	if-then-else
-	foreach
-	map
-	seq
+	int, string, float
+
+
+	Next version
+	===============================
+	bool, true, false
 	(?:)
-	assert()
 
 	Later version
 	===============================
 	struct
+	if-then-else
+	foreach
+	vector
+	seq
+	assert()
 	map
 	while
 	mutable
+	log()
+
+	EPIC: Debugger
+	EPIC: LLVM
 */
 
 
