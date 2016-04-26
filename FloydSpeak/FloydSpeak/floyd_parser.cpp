@@ -1870,9 +1870,9 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 
 
 
-ast_t program_to_ast(const string& program){
+ast_t program_to_ast(const functions_t& builtins, const string& program){
 	vector<statement_t> top_level_statements;
-	functions_t functions;
+	functions_t functions = builtins;
 	auto pos = program;
 	pos = skip_whitespace(pos);
 	while(!pos.empty()){
@@ -1911,7 +1911,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	"	return 3;\n"
 	"}\n";
 
-	const auto result = program_to_ast(kProgram1);
+	const auto result = program_to_ast(functions_t(), kProgram1);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_identifier == "main");
@@ -1930,7 +1930,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	"}\n"
 	;
 
-	const auto result = program_to_ast(kProgram);
+	const auto result = program_to_ast(functions_t(), kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_identifier == "f");
@@ -1957,7 +1957,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	;
 	QUARK_TRACE(kProgram);
 
-	const auto result = program_to_ast(kProgram);
+	const auto result = program_to_ast(functions_t(), kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 2);
 
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
@@ -2074,7 +2074,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	"	float test = testx(1234);\n"
 	"	return 3;\n"
 	"}\n";
-	auto r = program_to_ast(kProgram2);
+	auto r = program_to_ast(functions_t(), kProgram2);
 	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_identifier == "testx");

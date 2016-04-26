@@ -514,6 +514,9 @@ inline statement_t make__return_statement(const return_statement_t& value){
 
 
 struct functions_t {
+	functions_t(){
+	}
+
 	public: bool check_invariant() const {
 		return true;
 	}
@@ -535,7 +538,7 @@ struct ast_t {
 };
 
 
-ast_t program_to_ast(const std::string& program);
+ast_t program_to_ast(const functions_t& builtins, const std::string& program);
 
 /*
 	Parses the expression sttring
