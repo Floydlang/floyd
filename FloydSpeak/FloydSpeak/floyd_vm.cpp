@@ -28,8 +28,8 @@ shared_ptr<const function_def_expr_t> find_global_function(const vm_t& vm, const
 /*
 	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
 */
-	const auto it = vm._ast._functions._functions.find(name);
-	if(it == vm._ast._functions._functions.end()){
+	const auto it = vm._ast._identifiers._functions.find(name);
+	if(it == vm._ast._identifiers._functions.end()){
 		return nullptr;
 	}
 
@@ -41,32 +41,16 @@ struct vm_stack_frame {
 	int _statement_index;
 };
 
-bool check_args(shared_ptr<const function_def_expr_t> f, const vector<value_t>& args){
-	if(f->_args.size() != args.size()){
-		return false;
-	}
-	for(int i = 0 ; i < args.size() ; i++){
-		if(f->_args[i]._type != args[i].get_type()){
-			return false;
-		}
-	}
-	return true;
-}
-
 value_t call_function(vm_t& vm, shared_ptr<const function_def_expr_t> f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-	if(!check_args(f, args)){
-		throw std::runtime_error("function arguments do not match function");
-	}
-
-	const auto r = run_function(vm._ast._functions, *f, args);
+	const auto r = run_function(vm._ast._identifiers, *f, args);
 	return r;
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
-	auto ast = program_to_ast(functions_t(), 
+	auto ast = program_to_ast(identifiers_t(),
 		"int main(string args){\n"
 		"	return 3 + 4;\n"
 		"}\n"
@@ -79,7 +63,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
-	auto ast = program_to_ast(functions_t(), 
+	auto ast = program_to_ast(identifiers_t(),
 		"int main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n"
@@ -91,7 +75,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
-	auto ast = program_to_ast(functions_t(), 
+	auto ast = program_to_ast(identifiers_t(),
 		"int myfunc(){ return 5; }\n"
 		"int main(string args){\n"
 		"	return myfunc() + myfunc() * 2;\n"
@@ -108,15 +92,18 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
-	auto ast = program_to_ast(functions_t(), 
+	auto ast = program_to_ast(identifiers_t(),
 		"int main(string args){\n"
-		"	return 3 + 4;\n"
+		"	return \"-\" + args + \"-\";\n"
 		"}\n"
 	);
 	auto vm = vm_t(ast);
 	const auto f = find_global_function(vm, "main");
-	value_t result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == value_t(7));
+	const value_t result = call_function(vm, f, vector<value_t>{ value_t("xyz") });
+	QUARK_TEST_VERIFY(result == value_t("-xyz-"));
+
+	const value_t result2 = call_function(vm, f, vector<value_t>{ value_t("Hello, world!") });
+	QUARK_TEST_VERIFY(result2 == value_t("-Hello, world!-"));
 }
 
 
@@ -128,7 +115,7 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 */
 value_t run_main(const string& source, const vector<value_t>& args){
 	QUARK_ASSERT(source.size() > 0);
-	auto ast = program_to_ast(functions_t(), source);
+	auto ast = program_to_ast(identifiers_t(), source);
 	auto vm = vm_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto r = call_function(vm, f, args);

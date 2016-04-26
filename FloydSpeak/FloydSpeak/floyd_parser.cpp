@@ -545,6 +545,7 @@ void trace(const function_def_expr_t& e);
 void trace(const math_operation2_expr_t& e);
 void trace(const math_operation1_expr_t& e);
 void trace(const function_call_expr_t& e);
+void trace(const variable_read_expr_t& e);
 
 void trace(const ast_t& program);
 
@@ -629,6 +630,9 @@ void trace(const expression_t& e){
 	else if(e._call_function_expr){
 		trace(*e._call_function_expr);
 	}
+	else if(e._variable_read_expr){
+		trace(*e._variable_read_expr);
+	}
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -680,6 +684,9 @@ void trace(const function_call_expr_t& e){
 	for(const auto i: e._inputs){
 		trace(*i);
 	}
+}
+void trace(const variable_read_expr_t& e){
+	string s = "variable_read_expr_t: " + e._variable_name;
 }
 
 
@@ -771,7 +778,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-pair<expression_t, string> parse_summands(const functions_t& functions, const string& s, int depth);
+pair<expression_t, string> parse_summands(const identifiers_t& identifiers, const string& s, int depth);
 
 
 expression_t negate_expression(const expression_t& e){
@@ -818,8 +825,8 @@ float parse_float(const string& pos){
 		x1
 		hello2
 */
-pair<expression_t, string> parse_single_internal(const functions_t& functions, const string& s) {
-	QUARK_ASSERT(functions.check_invariant());
+pair<expression_t, string> parse_single_internal(const identifiers_t& identifiers, const string& s) {
+	QUARK_ASSERT(identifiers.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
 	string pos = s;
@@ -864,15 +871,15 @@ pair<expression_t, string> parse_single_internal(const functions_t& functions, c
 	else if(identifier_chars.find(pos[0]) != string::npos){
 		const auto identifier_pos = read_required_identifier(pos);
 
-		//	Lookup function!
-		if(functions._functions.find(identifier_pos.first) == functions._functions.end()){
-			throw std::runtime_error("Unknown function \"" + identifier_pos.first + "\"");
-		}
-
 		string p2 = skip_whitespace(identifier_pos.second);
 
 		//	Function call.
 		if(!p2.empty() && p2[0] == '('){
+			//	Lookup function!
+			if(identifiers._functions.find(identifier_pos.first) == identifiers._functions.end()){
+				throw std::runtime_error("Unknown function \"" + identifier_pos.first + "\"");
+			}
+
 			const auto arg_list_pos = get_balanced(p2);
 			const auto args = trim_ends(arg_list_pos.first);
 
@@ -880,7 +887,7 @@ pair<expression_t, string> parse_single_internal(const functions_t& functions, c
 			vector<shared_ptr<expression_t>> args_expressions;
 			while(!p2.empty()){
 				const auto p3 = read_until(skip_whitespace(p2), ",");
-				expression_t arg_expre = parse_expression(functions, p3.first);
+				expression_t arg_expre = parse_expression(identifiers, p3.first);
 				args_expressions.push_back(make_shared<expression_t>(arg_expre));
 				p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 			}
@@ -889,7 +896,11 @@ pair<expression_t, string> parse_single_internal(const functions_t& functions, c
 
 		//	Variable-read.
 		else{
-			QUARK_ASSERT(false);
+			//	Lookup value!
+			if(identifiers._constant_values.find(identifier_pos.first) == identifiers._constant_values.end()){
+				throw std::runtime_error("Unknown identifier \"" + identifier_pos.first + "\"");
+			}
+			return { variable_read_expr_t{identifier_pos.first }, p2 };
 		}
 	}
 	else{
@@ -897,10 +908,10 @@ pair<expression_t, string> parse_single_internal(const functions_t& functions, c
 	}
 }
 
-pair<expression_t, string> parse_single(const functions_t& functions, const string& s){
-	QUARK_ASSERT(functions.check_invariant());
+pair<expression_t, string> parse_single(const identifiers_t& identifiers, const string& s){
+	QUARK_ASSERT(identifiers.check_invariant());
 
-	const auto result = parse_single_internal(functions, s);
+	const auto result = parse_single_internal(identifiers, s);
 	trace(result.first);
 	return result;
 }
@@ -946,8 +957,8 @@ shared_ptr<const function_def_expr_t> make_return5(){
 }
 
 
-functions_t make_test_functions(){
-	functions_t result;
+identifiers_t make_test_functions(){
+	identifiers_t result;
 	result._functions["log"] = make_log_function();
 	result._functions["log2"] = make_log2_function();
 	result._functions["f"] = make_log_function();
@@ -957,13 +968,13 @@ functions_t make_test_functions(){
 
 
 QUARK_UNIT_TESTQ("parse_single", "number"){
-	functions_t functions;
-	QUARK_TEST_VERIFY((parse_single(functions, "9.0") == pair<expression_t, string>(value_t{ 9.0f }, "")));
+	identifiers_t identifiers;
+	QUARK_TEST_VERIFY((parse_single(identifiers, "9.0") == pair<expression_t, string>(value_t{ 9.0f }, "")));
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call"){
-	const auto functions = make_test_functions();
-	const auto a = parse_single(functions, "log(34.5)");
+	const auto identifiers = make_test_functions();
+	const auto a = parse_single(identifiers, "log(34.5)");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 1);
 	QUARK_TEST_VERIFY(*a.first._call_function_expr->_inputs[0]->_constant == value_t(34.5f));
@@ -971,8 +982,8 @@ QUARK_UNIT_TESTQ("parse_single", "function call"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
-	const auto functions = make_test_functions();
-	const auto a = parse_single(functions, "log2(\"123\" + \"xyz\", 1000 * 3)");
+	const auto identifiers = make_test_functions();
+	const auto a = parse_single(identifiers, "log2(\"123\" + \"xyz\", 1000 * 3)");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[0]->_math_operation2_expr);
@@ -981,8 +992,8 @@ QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
-	const auto functions = make_test_functions();
-	const auto a = parse_single(functions, "log2(2.1, f(3.14))");
+	const auto identifiers = make_test_functions();
+	const auto a = parse_single(identifiers, "log2(2.1, f(3.14))");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[0]->_constant);
@@ -994,7 +1005,7 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 
 
 // Parse a constant or an expression in parenthesis
-pair<expression_t, string> parse_atom(const functions_t& functions, const string& s, int depth) {
+pair<expression_t, string> parse_atom(const identifiers_t& identifiers, const string& s, int depth) {
 	string pos = skip_whitespace(s);
 
 	//	Handle the sign before parenthesis (or before number)
@@ -1010,7 +1021,7 @@ pair<expression_t, string> parse_atom(const functions_t& functions, const string
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = parse_summands(functions, pos, depth);
+		auto res = parse_summands(identifiers, pos, depth);
 		pos = skip_whitespace(res.second);
 		if(!(res.second.size() > 0 && res.second[0] == ')')) {
 			// Unmatched opening parenthesis
@@ -1023,7 +1034,7 @@ pair<expression_t, string> parse_atom(const functions_t& functions, const string
 
 	//	Parse constant literal / function call / variable-access.
 	if(pos.size() > 0){
-		const auto single_pos = parse_single(functions, pos);
+		const auto single_pos = parse_single(identifiers, pos);
 		return { negative ? negate_expression(single_pos.first) : single_pos.first, single_pos.second };
 	}
 
@@ -1031,30 +1042,30 @@ pair<expression_t, string> parse_atom(const functions_t& functions, const string
 }
 
 QUARK_UNIT_TEST("", "parse_atom", "", ""){
-	functions_t functions;
+	identifiers_t identifiers;
 
-	QUARK_TEST_VERIFY((parse_atom(functions, "0.0", 0) == pair<expression_t, string>(value_t{ 0.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(functions, "9.0", 0) == pair<expression_t, string>(value_t{ 9.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(functions, "12345.0", 0) == pair<expression_t, string>(value_t{ 12345.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "0.0", 0) == pair<expression_t, string>(value_t{ 0.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "9.0", 0) == pair<expression_t, string>(value_t{ 9.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "12345.0", 0) == pair<expression_t, string>(value_t{ 12345.0f }, "")));
 
-	QUARK_TEST_VERIFY((parse_atom(functions, "10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(functions, "-10.0", 0) == pair<expression_t, string>(value_t{ -10.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(functions, "+10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "-10.0", 0) == pair<expression_t, string>(value_t{ -10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "+10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
 
-	QUARK_TEST_VERIFY((parse_atom(functions, "4.0+", 0) == pair<expression_t, string>(value_t{ 4.0f }, "+")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "4.0+", 0) == pair<expression_t, string>(value_t{ 4.0f }, "+")));
 
 
-	QUARK_TEST_VERIFY((parse_atom(functions, "\"hello\"", 0) == pair<expression_t, string>(value_t{ "hello" }, "")));
+	QUARK_TEST_VERIFY((parse_atom(identifiers, "\"hello\"", 0) == pair<expression_t, string>(value_t{ "hello" }, "")));
 }
 
 
-pair<expression_t, string> parse_factors(const functions_t& functions, const string& s, int depth) {
-	const auto num1_pos = parse_atom(functions, s, depth);
+pair<expression_t, string> parse_factors(const identifiers_t& identifiers, const string& s, int depth) {
+	const auto num1_pos = parse_atom(identifiers, s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = skip_whitespace(num1_pos.second);
 	while(!pos.empty() && (pos[0] == '*' || pos[0] == '/')){
 		const auto op_pos = read_char(pos);
-		const auto expression2_pos = parse_atom(functions, op_pos.second, depth);
+		const auto expression2_pos = parse_atom(identifiers, op_pos.second, depth);
 		if(op_pos.first == '/') {
 			result_expression = make_math_operation2_expr(math_operation2_expr_t::divide, result_expression, expression2_pos.first);
 		}
@@ -1066,14 +1077,14 @@ pair<expression_t, string> parse_factors(const functions_t& functions, const str
 	return { result_expression, pos };
 }
 
-pair<expression_t, string> parse_summands(const functions_t& functions, const string& s, int depth) {
-	const auto num1_pos = parse_factors(functions, s, depth);
+pair<expression_t, string> parse_summands(const identifiers_t& identifiers, const string& s, int depth) {
+	const auto num1_pos = parse_factors(identifiers, s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = num1_pos.second;
 	while(!pos.empty() && (pos[0] == '-' || pos[0] == '+')) {
 		const auto op_pos = read_char(pos);
 
-		const auto expression2_pos = parse_factors(functions, op_pos.second, depth);
+		const auto expression2_pos = parse_factors(identifiers, op_pos.second, depth);
 		if(op_pos.first == '-'){
 			result_expression = make_math_operation2_expr(math_operation2_expr_t::subtract, result_expression, expression2_pos.first);
 		}
@@ -1107,11 +1118,11 @@ pair<expression_t, string> parse_summands(const functions_t& functions, const st
 
 		(my_fun1("hello, 3) + 4) * my_fun2(10))
 */
-expression_t parse_expression(const functions_t& functions, string expression){
+expression_t parse_expression(const identifiers_t& identifiers, string expression){
 	if(expression.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
-	auto result = parse_summands(functions, expression, 0);
+	auto result = parse_summands(identifiers, expression, 0);
 	if(!result.second.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
@@ -1129,29 +1140,73 @@ expression_t parse_expression(const functions_t& functions, string expression){
 
 
 
+bool check_args(const function_def_expr_t& f, const vector<value_t>& args){
+	if(f._args.size() != args.size()){
+		return false;
+	}
+	for(int i = 0 ; i < args.size() ; i++){
+		if(f._args[i]._type != args[i].get_type()){
+			return false;
+		}
+	}
+	return true;
+}
 
-value_t run_function(const functions_t& functions, const function_def_expr_t& f, const vector<value_t>& args){
+
+
+
+
+
+identifiers_t add_args(const identifiers_t& identifiers, const function_def_expr_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(identifiers.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+	if(!check_args(f, args)){
+		throw std::runtime_error("function arguments do not match function");
+	}
+
+	auto local_scope = identifiers;
+	for(int i = 0 ; i < args.size() ; i++){
+		const auto& arg_name = f._args[i]._identifier;
+		const auto& arg_value = args[i];
+		local_scope._constant_values[arg_name] = make_shared<const value_t>(arg_value);
+	}
+	return local_scope;
+}
+
+
+
+value_t run_function(const identifiers_t& identifiers, const function_def_expr_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(identifiers.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+	if(!check_args(f, args)){
+		throw std::runtime_error("function arguments do not match function");
+	}
+	auto local_scope = add_args(identifiers, f, args);
+
+	//	??? Should respect {} for local variable scopes!
 	const auto body = f._body;
-
-	std::map<string, value_t> locals;
 	int statement_index = 0;
 	while(statement_index < body._statements.size()){
 		const auto statement = body._statements[statement_index];
 		if(statement._bind_statement){
 			const auto s = statement._bind_statement;
 			const auto name = s->_identifier;
-			if(locals.count(name) != 0){
+			if(local_scope._constant_values.count(name) != 0){
 				throw std::runtime_error("local constant already exists");
 			}
-			const auto result = evaluate3(functions, s->_expression);
+			const auto result = evaluate3(local_scope, s->_expression);
 			if(!result._constant){
 				throw std::runtime_error("unknown variables");
 			}
-			locals[name] = *result._constant;
+			local_scope._constant_values[name] = make_shared<value_t>(*result._constant);
 		}
 		else if(statement._return_statement){
 			const auto expr = statement._return_statement->_expression;
-			const auto result = evaluate3(functions, expr);
+			const auto result = evaluate3(local_scope, expr);
 
 			if(!result._constant){
 				throw std::runtime_error("undefined");
@@ -1176,8 +1231,8 @@ bool compare_float_approx(float value, float expected){
 //### Test string + etc.
 
 
-expression_t evaluate3(const functions_t& functions, const expression_t& e){
-	QUARK_ASSERT(functions.check_invariant());
+expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
+	QUARK_ASSERT(identifiers.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e._constant){
@@ -1185,8 +1240,8 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 	}
 	else if(e._math_operation2_expr){
 		const auto e2 = *e._math_operation2_expr;
-		const auto left = evaluate3(functions, *e2._left);
-		const auto right = evaluate3(functions, *e2._right);
+		const auto left = evaluate3(identifiers, *e2._left);
+		const auto right = evaluate3(identifiers, *e2._right);
 
 		//	Both left and right are constant, replace the math_operation with a constant!
 		if(left._constant && right._constant){
@@ -1252,7 +1307,7 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 	}
 	else if(e._math_operation1_expr){
 		const auto e2 = *e._math_operation1_expr;
-		const auto input = evaluate3(functions, *e2._input);
+		const auto input = evaluate3(identifiers, *e2._input);
 
 		//	Replace the with a constant!
 		if(input._constant){
@@ -1293,8 +1348,8 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 	else if(e._call_function_expr){
 		const auto& call_function_expression = *e._call_function_expr;
 
-		const auto it = functions._functions.find(call_function_expression._function_name);
-		QUARK_ASSERT(it != functions._functions.end());
+		const auto it = identifiers._functions.find(call_function_expression._function_name);
+		QUARK_ASSERT(it != identifiers._functions.end());
 
 		const auto& make_function_expression = *it->second;
 
@@ -1304,7 +1359,7 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
 		for(const auto& i: call_function_expression._inputs){
-			const auto arg_expr = evaluate3(functions, *i);
+			const auto arg_expr = evaluate3(identifiers, *i);
 			simplified_args.push_back(arg_expr);
 		}
 
@@ -1323,8 +1378,21 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 				return { function_call_expr_t{ call_function_expression._function_name, call_function_expression._inputs } };
 			}
 		}
-		const value_t result = run_function(functions, make_function_expression, constant_args);
+		const value_t result = run_function(identifiers, make_function_expression, constant_args);
 		return make_constant(result);
+	}
+	else if(e._variable_read_expr){
+		const string& identifier = e._variable_read_expr->_variable_name;
+		const auto it = identifiers._constant_values.find(identifier);
+		QUARK_ASSERT(it != identifiers._constant_values.end());
+
+		const auto value_ref = it->second;
+		if(value_ref){
+			return make_constant(*value_ref);
+		}
+		else{
+			return e;
+		}
 	}
 	else if(e._nop_expr){
 		return e;
@@ -1337,9 +1405,9 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e){
 
 namespace {
 	expression_t test_evaluate_simple(string expression_string){
-		functions_t functions;
-		const auto e = parse_expression(functions, expression_string);
-		const auto e2 = evaluate3(functions, e);
+		identifiers_t identifiers;
+		const auto e = parse_expression(identifiers, expression_string);
+		const auto e2 = evaluate3(identifiers, e);
 		return e2;
 	}
 }
@@ -1512,7 +1580,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 
 //////////////////////////////////////////////////		PARSE FUNCTION DEFINTION EXPRESSION
 
-pair<statement_t, string> parse_assignment_statement(const functions_t& functions, const string& s);
+pair<statement_t, string> parse_assignment_statement(const identifiers_t& identifiers, const string& s);
 
 
 /*
@@ -1566,7 +1634,7 @@ pair<statement_t, string> parse_assignment_statement(const functions_t& function
 		}
 	}
 */
-function_body_t parse_function_body(const functions_t& functions, const string& s){
+function_body_t parse_function_body(const identifiers_t& identifiers, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
 	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
@@ -1580,8 +1648,8 @@ function_body_t parse_function_body(const functions_t& functions, const string& 
 		const auto token_pos = read_until(pos, whitespace_chars);
 		if(token_pos.first == "return"){
 			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-			const auto expression1 = parse_expression(functions, expression_pos.first);
-			const auto expression2 = evaluate3(functions, expression1);
+			const auto expression1 = parse_expression(identifiers, expression_pos.first);
+			const auto expression2 = evaluate3(identifiers, expression1);
 			const auto statement = statement_t(return_statement_t{ expression2 });
 			statements.push_back(statement);
 
@@ -1594,7 +1662,7 @@ function_body_t parse_function_body(const functions_t& functions, const string& 
 			"string hello = f(a) + \"_suffix\";";
 		*/
 		else if(resolve_type(token_pos.first) != ""){
-			pair<statement_t, string> assignment_statement = parse_assignment_statement(functions, pos);
+			pair<statement_t, string> assignment_statement = parse_assignment_statement(identifiers, pos);
 			statements.push_back(assignment_statement.first);
 
 			//	Skips trailing ";".
@@ -1622,8 +1690,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto functions = make_test_functions();
-	const auto a = parse_function_body(functions,
+	const auto identifiers = make_test_functions();
+	const auto a = parse_function_body(identifiers,
 		"{	float test = log(10.11);\n"
 		"	return 3;\n}"
 	);
@@ -1637,14 +1705,14 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto functions = make_test_functions();
-	const auto a = parse_function_body(functions,
+	const auto identifiers = make_test_functions();
+	const auto a = parse_function_body(identifiers,
 		"{ return return5() + return5() * 2;\n}"
 	);
 	QUARK_TEST_VERIFY(a._statements.size() == 1);
 //	QUARK_TEST_VERIFY(a._statements[0]._return_statement->_expression._math_operation2);
 
-	const auto b = evaluate3(functions, a._statements[0]._return_statement->_expression);
+	const auto b = evaluate3(identifiers, a._statements[0]._return_statement->_expression);
 	QUARK_TEST_VERIFY(b._constant && *b._constant == value_t(15));
 
 //	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_identifier == "test");
@@ -1654,6 +1722,21 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+
+
+
+identifiers_t add_arg_identifiers(const identifiers_t& identifiers, const vector<arg_t> arg_types){
+	QUARK_ASSERT(identifiers.check_invariant());
+	for(const auto i: arg_types){ QUARK_ASSERT(i.check_invariant()); };
+
+	auto local_scope = identifiers;
+	for(const auto arg: arg_types){
+		const auto& arg_name = arg._identifier;
+		shared_ptr<value_t> blank_arg_value;
+		local_scope._constant_values[arg_name] = blank_arg_value;
+	}
+	return local_scope;
+}
 
 /*
 	Named function:
@@ -1672,8 +1755,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 		}
 	}
 */
-pair<pair<string, function_def_expr_t>, string> parse_function_definition(const functions_t& functions, const string& pos){
-	QUARK_ASSERT(functions.check_invariant());
+pair<pair<string, function_def_expr_t>, string> parse_function_definition(const identifiers_t& identifiers, const string& pos){
+	QUARK_ASSERT(identifiers.check_invariant());
 
 	const auto type_pos = read_required_type(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
@@ -1695,7 +1778,9 @@ pair<pair<string, function_def_expr_t>, string> parse_function_definition(const 
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
-	const auto body = parse_function_body(functions, body_pos.first);
+	const auto local_scope = add_arg_identifiers(identifiers, args);
+
+	const auto body = parse_function_body(local_scope, body_pos.first);
 	const auto a = function_def_expr_t{ type_pos.first, args, body };
 //	trace_node(a);
 
@@ -1765,9 +1850,9 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""
 
 	...can contain trailing whitespace.
 */
-pair<statement_t, string> parse_assignment_statement(const functions_t& functions, const string& s){
+pair<statement_t, string> parse_assignment_statement(const identifiers_t& identifiers, const string& s){
 	QUARK_SCOPED_TRACE("parse_assignment_statement()");
-	QUARK_ASSERT(functions.check_invariant());
+	QUARK_ASSERT(identifiers.check_invariant());
 
 	const auto token_pos = read_until(s, whitespace_chars);
 	const auto type = resolve_type(token_pos.first);
@@ -1777,7 +1862,7 @@ pair<statement_t, string> parse_assignment_statement(const functions_t& function
 	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
 
-	const auto expression = parse_expression(functions, expression_pos.first);
+	const auto expression = parse_expression(identifiers, expression_pos.first);
 
 	const auto statement = make__bind_statement(variable_pos.first, expression);
 	trace(statement);
@@ -1787,22 +1872,22 @@ pair<statement_t, string> parse_assignment_statement(const functions_t& function
 }
 
 QUARK_UNIT_TESTQ("parse_assignment_statement", "int"){
-	const auto a = parse_assignment_statement(functions_t(), "int a = 10; \n");
+	const auto a = parse_assignment_statement(identifiers_t(), "int a = 10; \n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "a");
 	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression._constant == value_t(10));
 	QUARK_TEST_VERIFY(a.second == " \n");
 }
 
 QUARK_UNIT_TESTQ("parse_assignment_statement", "float"){
-	const auto a = parse_assignment_statement(functions_t(), "float b = 0.3; \n");
+	const auto a = parse_assignment_statement(identifiers_t(), "float b = 0.3; \n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "b");
 	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression._constant == value_t(0.3f));
 	QUARK_TEST_VERIFY(a.second == " \n");
 }
 
 QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
-	const auto functions = make_test_functions();
-	const auto a = parse_assignment_statement(functions, "float test = log(\"hello\");\n");
+	const auto identifiers = make_test_functions();
+	const auto a = parse_assignment_statement(identifiers, "float test = log(\"hello\");\n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_expression._call_function_expr->_function_name == "log");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_expression._call_function_expr->_inputs.size() == 1);
@@ -1829,13 +1914,13 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 	Define data structures
 */
 
-pair<statement_t, string> read_toplevel_statement(const functions_t& functions, const string& pos){
-	QUARK_ASSERT(functions.check_invariant());
+pair<statement_t, string> read_toplevel_statement(const identifiers_t& identifiers, const string& pos){
+	QUARK_ASSERT(identifiers.check_invariant());
 
 	const auto type_pos = read_required_type(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
-	pair<pair<string, function_def_expr_t>, string> function = parse_function_definition(functions, pos);
+	pair<pair<string, function_def_expr_t>, string> function = parse_function_definition(identifiers, pos);
 	const auto bind = bind_statement_t{ function.first.first, function.first.second };
 	return { bind, function.second };
 }
@@ -1870,13 +1955,13 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 
 
 
-ast_t program_to_ast(const functions_t& builtins, const string& program){
+ast_t program_to_ast(const identifiers_t& builtins, const string& program){
 	vector<statement_t> top_level_statements;
-	functions_t functions = builtins;
+	identifiers_t identifiers = builtins;
 	auto pos = program;
 	pos = skip_whitespace(pos);
 	while(!pos.empty()){
-		const auto statement_pos = read_toplevel_statement(functions, pos);
+		const auto statement_pos = read_toplevel_statement(identifiers, pos);
 		top_level_statements.push_back(statement_pos.first);
 
 		if(statement_pos.first._bind_statement){
@@ -1884,13 +1969,13 @@ ast_t program_to_ast(const functions_t& builtins, const string& program){
 			const auto e = statement_pos.first._bind_statement->_expression;
 
 			if(e._function_def_expr){
-				const auto foundIt = functions._functions.find(identifier);
-				if(foundIt != functions._functions.end()){
+				const auto foundIt = identifiers._functions.find(identifier);
+				if(foundIt != identifiers._functions.end()){
 					throw std::runtime_error("Function \"" + identifier + "\" already defined.");
 				}
 
 				//	shared_ptr
-				functions._functions[identifier] = e._function_def_expr;
+				identifiers._functions[identifier] = e._function_def_expr;
 			}
 		}
 		else{
@@ -1899,7 +1984,7 @@ ast_t program_to_ast(const functions_t& builtins, const string& program){
 		pos = skip_whitespace(statement_pos.second);
 	}
 
-	const ast_t result{ functions, top_level_statements };
+	const ast_t result{ identifiers, top_level_statements };
 	trace(result);
 
 	return result;
@@ -1911,7 +1996,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	"	return 3;\n"
 	"}\n";
 
-	const auto result = program_to_ast(functions_t(), kProgram1);
+	const auto result = program_to_ast(identifiers_t(), kProgram1);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_identifier == "main");
@@ -1930,7 +2015,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	"}\n"
 	;
 
-	const auto result = program_to_ast(functions_t(), kProgram);
+	const auto result = program_to_ast(identifiers_t(), kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_identifier == "f");
@@ -1957,7 +2042,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	;
 	QUARK_TRACE(kProgram);
 
-	const auto result = program_to_ast(functions_t(), kProgram);
+	const auto result = program_to_ast(identifiers_t(), kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 2);
 
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement);
@@ -2074,7 +2159,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	"	float test = testx(1234);\n"
 	"	return 3;\n"
 	"}\n";
-	auto r = program_to_ast(functions_t(), kProgram2);
+	auto r = program_to_ast(identifiers_t(), kProgram2);
 	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_identifier == "testx");

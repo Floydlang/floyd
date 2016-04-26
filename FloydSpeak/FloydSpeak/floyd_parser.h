@@ -139,6 +139,7 @@ struct value_t {
 	{
 	}
 
+
 	value_t(const value_t& other):
 		_type(other._type),
 
@@ -230,8 +231,30 @@ struct value_t {
 };
 
 
-
-
+/*
+inline value_t make_dummy_value(const data_type_t& type){
+	const auto t = type.to_string();
+	if(t == "null"){
+		return value_t();	//??? Remove concept of null??
+	}
+	else if(t == "string"){
+		return value_t("...");
+	}
+	else if(t == "int"){
+		return value_t(666);
+	}
+	else if(t == "float"){
+		return value_t(667.667f);
+	}
+	else if(t == "value_type"){
+		return value_t(data_type_t("null"));
+	}
+	else{
+		QUARK_ASSERT(false);
+		return value_t();
+	}
+}
+*/
 
 
 
@@ -245,6 +268,11 @@ struct math_operation2_expr_t;
 struct math_operation1_expr_t;
 
 struct arg_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(_type.check_invariant());
+		QUARK_ASSERT(_identifier.size() > 0);
+		return true;
+	}
 	bool operator==(const arg_t& other) const{
 		return _type == other._type && _identifier == other._identifier;
 	}
@@ -316,6 +344,15 @@ struct function_call_expr_t {
 	const std::vector<std::shared_ptr<expression_t>> _inputs;
 };
 
+struct variable_read_expr_t {
+	bool operator==(const variable_read_expr_t& other) const{
+		return _variable_name == other._variable_name ;
+	}
+
+
+	const std::string _variable_name;
+};
+
 
 struct expression_t {
 	public: bool check_invariant() const{
@@ -357,6 +394,12 @@ struct expression_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
+	expression_t(const variable_read_expr_t& value) :
+		_variable_read_expr(std::make_shared<variable_read_expr_t>(value))
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
 /*
 	void swap(expression_t& other) throw(){
 		_function_def_expr.swap(other._function_def_expr);
@@ -392,6 +435,9 @@ struct expression_t {
 		else if(_call_function_expr){
 			return other._call_function_expr && *_call_function_expr == *other._call_function_expr;
 		}
+		else if(_variable_read_expr){
+			return other._variable_read_expr && *_variable_read_expr == *other._variable_read_expr;
+		}
 		else{
 			QUARK_ASSERT(false);
 			return false;
@@ -408,6 +454,7 @@ struct expression_t {
 	std::shared_ptr<math_operation2_expr_t> _math_operation2_expr;
 	std::shared_ptr<math_operation1_expr_t> _math_operation1_expr;
 	std::shared_ptr<function_call_expr_t> _call_function_expr;
+	std::shared_ptr<variable_read_expr_t> _variable_read_expr;
 	bool _nop_expr = false;
 };
 
@@ -513,8 +560,8 @@ inline statement_t make__return_statement(const return_statement_t& value){
 
 
 
-struct functions_t {
-	functions_t(){
+struct identifiers_t {
+	identifiers_t(){
 	}
 
 	public: bool check_invariant() const {
@@ -523,6 +570,8 @@ struct functions_t {
 
 	//### Function names should have namespace etc.
 	std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
+
+	std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
 };
 
 
@@ -533,12 +582,12 @@ struct ast_t {
 
 
 	/////////////////////////////		STATE
-	functions_t _functions;
+	identifiers_t _identifiers;
 	std::vector<statement_t> _top_level_statements;
 };
 
 
-ast_t program_to_ast(const functions_t& builtins, const std::string& program);
+ast_t program_to_ast(const identifiers_t& builtins, const std::string& program);
 
 /*
 	Parses the expression sttring
@@ -548,11 +597,11 @@ ast_t program_to_ast(const functions_t& builtins, const std::string& program);
 
 	No optimization or evalution of any constant expressions etc.
 */
-expression_t parse_expression(const functions_t& functions, std::string expression);
+expression_t parse_expression(const identifiers_t& identifiers, std::string expression);
 
 /*
 */
-expression_t evaluate3(const functions_t& functions, const expression_t& e);
+expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e);
 
 
 /*
@@ -561,9 +610,9 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e);
 		
 		??? Not OK: function calls should be validated even in non-optimizing pass.
 */
-expression_t parse_expression_evaluate(const functions_t& functions, std::string expression);
+expression_t parse_expression_evaluate(const identifiers_t& identifiers, std::string expression);
 
-value_t run_function(const functions_t& functions, const function_def_expr_t& f, const std::vector<value_t>& args);
+value_t run_function(const identifiers_t& identifiers, const function_def_expr_t& f, const std::vector<value_t>& args);
 
 
 
