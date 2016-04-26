@@ -106,6 +106,24 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	QUARK_TEST_VERIFY(result2 == value_t("-Hello, world!-"));
 }
 
+//### Check return value type.
+
+QUARK_UNIT_TESTQ("call_function()", "use local variables"){
+	auto ast = program_to_ast(identifiers_t(),
+		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
+		"string main(string args){\n"
+		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
+		"}\n"
+	);
+	auto vm = vm_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const value_t result = call_function(vm, f, vector<value_t>{ value_t("xyz") });
+	QUARK_TEST_VERIFY(result == value_t("--xyz<xyz>--"));
+
+	const value_t result2 = call_function(vm, f, vector<value_t>{ value_t("123") });
+	QUARK_TEST_VERIFY(result2 == value_t("--123<123>--"));
+}
+
 
 
 

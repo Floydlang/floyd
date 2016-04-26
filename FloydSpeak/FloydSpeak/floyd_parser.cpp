@@ -1634,7 +1634,7 @@ pair<statement_t, string> parse_assignment_statement(const identifiers_t& identi
 		}
 	}
 */
-function_body_t parse_function_body(const identifiers_t& identifiers, const string& s){
+function_body_t parse_function_body(const identifiers_t& ident, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
 	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
@@ -1642,14 +1642,15 @@ function_body_t parse_function_body(const identifiers_t& identifiers, const stri
 	const string body_str = skip_whitespace(s.substr(1, s.size() - 2));
 
 	vector<statement_t> statements;
+	identifiers_t local_scope = ident;
 
 	string pos = body_str;
 	while(!pos.empty()){
 		const auto token_pos = read_until(pos, whitespace_chars);
 		if(token_pos.first == "return"){
 			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-			const auto expression1 = parse_expression(identifiers, expression_pos.first);
-			const auto expression2 = evaluate3(identifiers, expression1);
+			const auto expression1 = parse_expression(local_scope, expression_pos.first);
+			const auto expression2 = evaluate3(local_scope, expression1);
 			const auto statement = statement_t(return_statement_t{ expression2 });
 			statements.push_back(statement);
 
@@ -1662,7 +1663,17 @@ function_body_t parse_function_body(const identifiers_t& identifiers, const stri
 			"string hello = f(a) + \"_suffix\";";
 		*/
 		else if(resolve_type(token_pos.first) != ""){
-			pair<statement_t, string> assignment_statement = parse_assignment_statement(identifiers, pos);
+			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
+			const string& identifier = assignment_statement.first._bind_statement->_identifier;
+
+			const auto it = local_scope._constant_values.find(identifier);
+			if(it != local_scope._constant_values.end()){
+				throw std::runtime_error("Variable name already in use!");
+			}
+
+			shared_ptr<const value_t> blank;
+			local_scope._constant_values[identifier] = blank;
+
 			statements.push_back(assignment_statement.first);
 
 			//	Skips trailing ";".
