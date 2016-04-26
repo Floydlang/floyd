@@ -16,8 +16,18 @@ struct vm_t {
 	vm_t(const ast_t& ast) :
 		_ast(ast)
 	{
+		QUARK_ASSERT(ast.check_invariant());
+
+		QUARK_ASSERT(check_invariant());
 	}
 
+	bool check_invariant() const {
+		QUARK_ASSERT(_ast.check_invariant());
+		return true;
+	}
+
+
+	////////////////////////		STATE
 	ast_t _ast;
 };
 

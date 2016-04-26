@@ -36,20 +36,38 @@ shared_ptr<const function_def_expr_t> find_global_function(const vm_t& vm, const
 	return it->second;
 }
 
-
-
 struct vm_stack_frame {
 	std::map<string, value_t> locals;
 	int _statement_index;
 };
 
-value_t run(const ast_t& ast){
-	vm_t vm(ast);
 
-	const auto main_function = find_global_function(vm, "main");
-	const auto r = run_function(vm._ast._functions, *main_function, vector<value_t>{value_t("program_name 1 2 3 4")});
+value_t call_function(vm_t& vm, shared_ptr<const function_def_expr_t> f, const vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+	const auto r = run_function(vm._ast._functions, *f, args);
 	return r;
 }
+
+
+
+
+/*
+	Quckie that compiles a program and calls its main() with the args.
+*/
+value_t run_main(const string& source, const vector<value_t>& args){
+	QUARK_ASSERT(source.size() > 0);
+	auto ast = program_to_ast(source);
+	auto vm = vm_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto r = call_function(vm, f, args);
+	return r;
+}
+
+
+
+
 
 QUARK_UNIT_TESTQ("run()", "minimal program"){
 	auto ast = program_to_ast(
@@ -57,30 +75,29 @@ QUARK_UNIT_TESTQ("run()", "minimal program"){
 		"	return 3 + 4;\n"
 		"}\n"
 	);
-
-	value_t result = run(ast);
+	auto vm = vm_t(ast);
+	const auto f = find_global_function(vm, "main");
+	value_t result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == value_t(7));
 }
 
 QUARK_UNIT_TESTQ("run()", "minimal program 2"){
-	auto ast = program_to_ast(
+	const auto result = run_main(
 		"int main(string args){\n"
 		"	return \"123\" + \"456\";\n"
-		"}\n"
+		"}\n",
+		vector<value_t>{value_t("program_name 1 2 3 4")}
 	);
-
-	value_t result = run(ast);
 	QUARK_TEST_VERIFY(result == value_t("123456"));
 }
 
 QUARK_UNIT_TESTQ("run()", "define additional function, call it several times"){
-	auto ast = program_to_ast(
+	const auto result = run_main(
 		"int myfunc(){ return 5; }\n"
 		"int main(string args){\n"
 		"	return myfunc() + myfunc() * 2;\n"
-		"}\n"
+		"}\n",
+		vector<value_t>{value_t("program_name 1 2 3 4")}
 	);
-
-	value_t result = run(ast);
 	QUARK_TEST_VERIFY(result == value_t(15));
 }

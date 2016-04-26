@@ -60,6 +60,11 @@ struct data_type_t {
 		return _type_magic;
 	}
 
+	bool check_invariant() const {
+		QUARK_ASSERT(_type_magic != "");
+		return true;
+	}
+
 	/*
 		The name of the type, including its path using :
 		"null"
@@ -257,6 +262,11 @@ struct function_body_t {
 };
 
 struct function_def_expr_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(_return_type.check_invariant());
+		return true;
+	}
+
 	bool operator==(const function_def_expr_t& other) const{
 		return _return_type == other._return_type && _args == other._args && _body == other._body;
 	}
@@ -514,6 +524,12 @@ struct functions_t {
 
 
 struct ast_t {
+	public: bool check_invariant() const {
+		return true;
+	}
+
+
+	/////////////////////////////		STATE
 	functions_t _functions;
 	std::vector<statement_t> _top_level_statements;
 };
