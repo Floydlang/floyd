@@ -97,6 +97,10 @@ data_type_t resolve_type(std::string node_type);
 */
 
 struct value_t {
+	public: bool check_invariant() const{
+		return true;
+	}
+
 	public: value_t() :
 		_type("null")
 	{
@@ -232,8 +236,8 @@ struct value_t {
 
 struct statement_t;
 struct expression_t;
-struct math_operation2_t;
-struct math_operation1_t;
+struct math_operation2_expr_t;
+struct math_operation1_expr_t;
 
 struct arg_t {
 	bool operator==(const arg_t& other) const{
@@ -252,8 +256,8 @@ struct function_body_t {
 	const std::vector<statement_t> _statements;
 };
 
-struct make_function_expression_t {
-	bool operator==(const make_function_expression_t& other) const{
+struct function_def_expr_t {
+	bool operator==(const function_def_expr_t& other) const{
 		return _return_type == other._return_type && _args == other._args && _body == other._body;
 	}
 
@@ -262,8 +266,8 @@ struct make_function_expression_t {
 	const function_body_t _body;
 };
 
-struct math_operation2_t {
-	bool operator==(const math_operation2_t& other) const;
+struct math_operation2_expr_t {
+	bool operator==(const math_operation2_expr_t& other) const;
 
 
 	enum operation {
@@ -279,8 +283,8 @@ struct math_operation2_t {
 	const std::shared_ptr<expression_t> _right;
 };
 
-struct math_operation1_t {
-	bool operator==(const math_operation1_t& other) const;
+struct math_operation1_expr_t {
+	bool operator==(const math_operation1_expr_t& other) const;
 
 
 	enum operation {
@@ -292,8 +296,8 @@ struct math_operation1_t {
 	const std::shared_ptr<expression_t> _input;
 };
 
-struct call_function_t {
-	bool operator==(const call_function_t& other) const{
+struct function_call_expr_t {
+	bool operator==(const function_call_expr_t& other) const{
 		return _function_name == other._function_name && _inputs == other._inputs;
 	}
 
@@ -309,36 +313,43 @@ struct expression_t {
 	}
 
 	expression_t() :
-		_nop(true)
+		_nop_expr(true)
 	{
+		QUARK_ASSERT(false);
 	}
 
-	expression_t(const make_function_expression_t& value) :
-		_make_function_expression(std::make_shared<const make_function_expression_t>(value))
+	expression_t(const function_def_expr_t& value) :
+		_function_def_expr(std::make_shared<const function_def_expr_t>(value))
 	{
 	}
 
 	expression_t(const value_t& value) :
 		_constant(std::make_shared<value_t>(value))
 	{
+		QUARK_ASSERT(value.check_invariant());
+
+		QUARK_ASSERT(check_invariant());
 	}
-	expression_t(const math_operation2_t& value) :
-		_math_operation2(std::make_shared<math_operation2_t>(value))
+	expression_t(const math_operation2_expr_t& value) :
+		_math_operation2_expr(std::make_shared<math_operation2_expr_t>(value))
 	{
+		QUARK_ASSERT(check_invariant());
 	}
-	expression_t(const math_operation1_t& value) :
-		_math_operation1(std::make_shared<math_operation1_t>(value))
+	expression_t(const math_operation1_expr_t& value) :
+		_math_operation1_expr(std::make_shared<math_operation1_expr_t>(value))
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
-	expression_t(const call_function_t& value) :
-		_call_function(std::make_shared<call_function_t>(value))
+	expression_t(const function_call_expr_t& value) :
+		_call_function_expr(std::make_shared<function_call_expr_t>(value))
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
 /*
 	void swap(expression_t& other) throw(){
-		_make_function_expression.swap(other._make_function_expression);
+		_function_def_expr.swap(other._function_def_expr);
 		_constant.swap(other._constant);
 		_math_operation2.swap(other._math_operation2);
 		_math_operation1.swap(other._math_operation1);
@@ -353,20 +364,23 @@ struct expression_t {
 */
 
 	bool operator==(const expression_t& other) const {
-		if(_make_function_expression){
-			return other._make_function_expression && *_make_function_expression == *other._make_function_expression;
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(_function_def_expr){
+			return other._function_def_expr && *_function_def_expr == *other._function_def_expr;
 		}
 		else if(_constant){
 			return other._constant && *_constant == *other._constant;
 		}
-		else if(_math_operation2){
-			return other._math_operation2 && *_math_operation2 == *other._math_operation2;
+		else if(_math_operation2_expr){
+			return other._math_operation2_expr && *_math_operation2_expr == *other._math_operation2_expr;
 		}
-		else if(_math_operation1){
-			return other._math_operation1 && *_math_operation1 == *other._math_operation1;
+		else if(_math_operation1_expr){
+			return other._math_operation1_expr && *_math_operation1_expr == *other._math_operation1_expr;
 		}
-		else if(_call_function){
-			return other._call_function && *_call_function == *other._call_function;
+		else if(_call_function_expr){
+			return other._call_function_expr && *_call_function_expr == *other._call_function_expr;
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -374,24 +388,29 @@ struct expression_t {
 		}
 	}
 
-	std::shared_ptr<const make_function_expression_t> _make_function_expression;
+	//////////////////////////		STATE
+
+	/*
+		Only one of there are used at any time.
+	*/
+	std::shared_ptr<const function_def_expr_t> _function_def_expr;
 	std::shared_ptr<value_t> _constant;
-	std::shared_ptr<math_operation2_t> _math_operation2;
-	std::shared_ptr<math_operation1_t> _math_operation1;
-	std::shared_ptr<call_function_t> _call_function;
-	bool _nop = false;
+	std::shared_ptr<math_operation2_expr_t> _math_operation2_expr;
+	std::shared_ptr<math_operation1_expr_t> _math_operation1_expr;
+	std::shared_ptr<function_call_expr_t> _call_function_expr;
+	bool _nop_expr = false;
 };
 
 
-inline bool math_operation2_t::operator==(const math_operation2_t& other) const {
+inline bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
 	return _operation == other._operation && *_left == *other._left && *_right == *other._right;
 }
-inline bool math_operation1_t::operator==(const math_operation1_t& other) const {
+inline bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
 	return _operation == other._operation && *_input == *other._input;
 }
 
 
-inline expression_t make__make_function_expression(const make_function_expression_t& value){
+inline expression_t make__function_def_expr(const function_def_expr_t& value){
 	return expression_t(value);
 }
 
@@ -399,16 +418,16 @@ inline expression_t make_constant(const value_t& value){
 	return expression_t(value);
 }
 
-inline expression_t make_math_operation2(const math_operation2_t& value){
+inline expression_t make_math_operation2_expr(const math_operation2_expr_t& value){
 	return expression_t(value);
 }
 
-inline expression_t make_math_operation2(math_operation2_t::operation op, const expression_t& left, const expression_t& right){
-	return expression_t(math_operation2_t{op, std::make_shared<expression_t>(left), std::make_shared<expression_t>(right)});
+inline expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
+	return expression_t(math_operation2_expr_t{op, std::make_shared<expression_t>(left), std::make_shared<expression_t>(right)});
 }
 
-inline expression_t make_math_operation1(math_operation1_t::operation op, const expression_t& input){
-	return expression_t(math_operation1_t{op, std::make_shared<expression_t>(input) });
+inline expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
+	return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
 }
 
 
@@ -490,7 +509,7 @@ struct functions_t {
 	}
 
 	//### Function names should have namespace etc.
-	std::map<std::string, std::shared_ptr<const make_function_expression_t> > _functions;
+	std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
 };
 
 
@@ -525,7 +544,7 @@ expression_t evaluate3(const functions_t& functions, const expression_t& e);
 */
 expression_t parse_expression_evaluate(const functions_t& functions, std::string expression);
 
-value_t run_function(const functions_t& functions, const make_function_expression_t& f, const std::vector<value_t>& args);
+value_t run_function(const functions_t& functions, const function_def_expr_t& f, const std::vector<value_t>& args);
 
 
 

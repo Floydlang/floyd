@@ -6,7 +6,7 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "floyd_vm.hpp"
+#include "floyd_vm.h"
 
 
 #include "steady_vector.h"
@@ -24,7 +24,7 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-shared_ptr<const make_function_expression_t> find_global_function(const vm_t& vm, const string& name){
+shared_ptr<const function_def_expr_t> find_global_function(const vm_t& vm, const string& name){
 /*
 	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
 */
