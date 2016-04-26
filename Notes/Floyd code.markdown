@@ -290,7 +290,7 @@ map<K, V>
 		my_map = [string, int]({ "one", 1 }, { "two", 2 });
 		my_map2 [string, int]({ "one", 1 }, { "two", 2 });
 	}
-	int function test_map([string, int] p1);
+	int test_map([string, int] p1);
 	a = {string, int}({ "one", 1 }, { "two", 2 }, { "three", 3 });
 
 
@@ -301,9 +301,25 @@ map<K, V>
 	###	var airports: [String: String] = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
 	### var airports = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
 
+Map Reference
+	V my_map.at(K key)
+	V my_map[K key]
+	my_map[K key] = value
+	bool my_map.empty()
+	size_t my_map.size()
+	map<K, V> my_map.insert(K key, V value)
+	size_t my_map.count()
+	map<K, V> my_map.erase(K key)
 
+C++11
+	map<int, char> m = {{1, 'a'}, {3, 'b'}, {5, 'c'}, {7, 'd'}};
+	std::map<int, std::string> m{{1, "Hello"}, {2, "world"}, {4, "!!!"}};
 
-
+	reference: https://mbevin.wordpress.com/2012/11/16/uniform-initialization/
+Clojure
+	{:a 1, :b 2, :c 3}
+	(assoc {:a 1, :b 2} :b 3)
+	reference: https://adambard.com/blog/clojure-in-15-minutes/
 
 # SEQ
 Seq is an interface built into every collection and struct. It allows you to read from the source, one entry at a time, in an immutable way.
