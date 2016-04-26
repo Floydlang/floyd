@@ -169,12 +169,12 @@ struct value_t {
 			return _bool ? "true" : "false";
 		}
 		else if(_type == "int"){
-			char temp[200 + 1];//??? Use C++ function instead.
+			char temp[200 + 1];//### Use C++ function instead.
 			sprintf(temp, "%d", _int);
 			return std::string(temp);
 		}
 		else if(_type == "float"){
-			char temp[200 + 1];//??? Use C++ function instead.
+			char temp[200 + 1];//### Use C++ function instead.
 			sprintf(temp, "%f", _float);
 			return std::string(temp);
 		}
@@ -600,17 +600,10 @@ ast_t program_to_ast(const identifiers_t& builtins, const std::string& program);
 expression_t parse_expression(const identifiers_t& identifiers, std::string expression);
 
 /*
+	Evaluates an expression as far as possible.
 */
 expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e);
 
-
-/*
-	functions: if null, all function calls are just stored in as expression-nodes.
-		If NOT null, the function is called if possible
-		
-		??? Not OK: function calls should be validated even in non-optimizing pass.
-*/
-expression_t parse_expression_evaluate(const identifiers_t& identifiers, std::string expression);
 
 value_t run_function(const identifiers_t& identifiers, const function_def_expr_t& f, const std::vector<value_t>& args);
 

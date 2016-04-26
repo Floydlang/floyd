@@ -43,38 +43,6 @@ https://en.wikipedia.org/wiki/Parsing_expression_grammar
 https://en.wikipedia.org/wiki/Parsing
 */
 
-/*
-	Compiler version #1
-	===============================
-	main()
-	functions
-	return
-	int, string, float
-
-
-	Next version
-	===============================
-	bool, true, false
-	(?:)
-
-	Later version
-	===============================
-	struct
-	if-then-else
-	foreach
-	vector
-	seq
-	assert()
-	map
-	while
-	mutable
-	log()
-
-	EPIC: Debugger
-	EPIC: LLVM
-*/
-
-
 
 
 struct test_value_class_a {
@@ -531,7 +499,6 @@ void visit_program(const ast_t& program, visitor_i& visitor){
 //////////////////////////////////////////////////		TRACE
 
 
-//	### Instead of just tracing, generate + trace the parse tree as JSON for easy tooling and debugging.
 
 void trace(const arg_t& arg);
 void trace(const expression_t& e);
@@ -759,7 +726,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	//### include the ( and )!!!"
 	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
 	QUARK_TEST_VERIFY((r == vector<arg_t>{
 		{ resolve_type("int"), "x" },
@@ -782,8 +748,7 @@ pair<expression_t, string> parse_summands(const identifiers_t& identifiers, cons
 
 
 expression_t negate_expression(const expression_t& e){
-	//	Shortcut: directly negate numeric constants.
-	//	### Move this shortcut out of parser to make parser simpler.
+	//	Shortcut: directly negate numeric constants. This makes parse tree cleaner and is non-lossy.
 	if(e._constant){
 		const value_t& value = *e._constant;
 		if(value.get_type() == resolve_type("int")){
@@ -809,9 +774,6 @@ float parse_float(const string& pos){
 
 
 /*
-	### add lambda / local function
-	### add member access: my_data.name.first_name
-
 	Constant literal
 		3
 		3.0
@@ -824,6 +786,10 @@ float parse_float(const string& pos){
 	Variable
 		x1
 		hello2
+
+	FUTURE
+		- Add member access: my_data.name.first_name
+		- Add lambda / local function
 */
 pair<expression_t, string> parse_single_internal(const identifiers_t& identifiers, const string& s) {
 	QUARK_ASSERT(identifiers.check_invariant());
@@ -891,6 +857,8 @@ pair<expression_t, string> parse_single_internal(const identifiers_t& identifier
 				args_expressions.push_back(make_shared<expression_t>(arg_expre));
 				p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 			}
+			//	??? Check types of arguments and count.
+
 			return { function_call_expr_t{identifier_pos.first, args_expressions }, arg_list_pos.second };
 		}
 
@@ -1041,6 +1009,7 @@ pair<expression_t, string> parse_atom(const identifiers_t& identifiers, const st
 	throw std::runtime_error("Expected number");
 }
 
+//### more tests here!
 QUARK_UNIT_TEST("", "parse_atom", "", ""){
 	identifiers_t identifiers;
 
@@ -1099,9 +1068,6 @@ pair<expression_t, string> parse_summands(const identifiers_t& identifiers, cons
 
 
 /*
-	### Add variable as sources (arguments and locals and globals).
-
-
 	Example input:
 		0
 		3
@@ -1353,7 +1319,6 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 
 		const auto& make_function_expression = *it->second;
 
-		//??? Validate function call argument count when parsing!
 		QUARK_ASSERT(make_function_expression._args.size() == call_function_expression._inputs.size());
 
 		//	Simplify each argument.
@@ -1584,12 +1549,8 @@ pair<statement_t, string> parse_assignment_statement(const identifiers_t& identi
 
 
 /*
-	Pre-evaluates when possible!
+	Pre-evaluates when possible! NO DO NOT! THAT MAKES PARSER LOSSY!
 
-	### Split-out parse_statement().
-	### Add struct {}
-	### Add variables
-	### Add local functions
 
 	Must not have whitespace before / after {}.
 	{}
@@ -1633,6 +1594,14 @@ pair<statement_t, string> parse_assignment_statement(const identifiers_t& identi
 			return c;
 		}
 	}
+
+	FUTURE
+	- Include comments
+	- Split-out parse_statement().
+	- Add struct {}
+	- Add variables
+	- Add local functions
+
 */
 function_body_t parse_function_body(const identifiers_t& ident, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
@@ -1779,8 +1748,6 @@ pair<pair<string, function_def_expr_t>, string> parse_function_definition(const 
 		throw std::runtime_error("expected function argument list enclosed by (),");
 	}
 
-	//### create pair<string, string> get_required_balanced(string, '(', ')') that returns empty string if not found.
-
 	const auto arg_list_pos = get_balanced(rest);
 	const auto args = parse_functiondef_arguments(arg_list_pos.first);
 	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
@@ -1913,16 +1880,15 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 
 
 /*
-	??? Only supports functions right now.
-
 	Function definitions
 		int my_func(){ return 100; };
 		string test3(int a, float b){ return "sdf" };
 
-	Assign global constants
+	FUTURE
+	- Define data structures (also in local scopes).
+	- Add support for global constants.
+	- Assign global constants
 		int my_global = 3;
-
-	Define data structures
 */
 
 pair<statement_t, string> read_toplevel_statement(const identifiers_t& identifiers, const string& pos){
@@ -2080,85 +2046,6 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	}));
 
 }
-
-
-
-
-/*
-	### Define format for source-as-JSON roundtrip. Normalized source code format. Goal for JSON is easy machine transformation.
-
-	"string hello(int x, int y, string z){\n"
-	"	return \"test abc\";\n"
-	"}\n"
-	"int main(string args){\n"
-	"	return 3;\n"
-	"}\n"
-
-
-
-
-	string hello(int x, int y, string z){
-		return "test abc";
-	}
-
-	int main(string args){
-		return 3;
-	}
-
-
-{
-	"program_as_json" : [
-		{
-			"_func" : {
-				"_prototype" : "string hello(int x, int y, string z)",
-				"_body" : "{ return \"test abc\"; }"
-			}
-		},
-		{
-			"_func" : {
-				"_prototype" : "int main(string args)",
-				"_body" : "{ return 3; }"
-			}
-		}
-	]
-}
-
-{
-	"program_as_json" : [
-		{
-			"_func" : {
-				"return": "string",
-				"name": "hello",
-				"args": [
-					{ "type": "int", "name": "x" },
-					{ "type": "int", "name": "y" },
-					{ "type": "string", "name": "z" },
-				],
-				"body": [
-					[ "assign", "a",
-						[
-							[ "return",
-								[ "*", "a", "y" ]
-							]
-						],
-					[ "return", "test abc" ]
-				]
-				"_body" : "{ return \"test abc\"; }"
-			}
-		},
-		{
-			"_func" : {
-				"_prototype" : "int main(string args)",
-				"_body" : "{ return 3; }"
-			}
-		}
-	]
-}
-
-!!! JSON does not support multi-line strings.
-*/
-
-
 
 
 QUARK_UNIT_TESTQ("program_to_ast()", ""){

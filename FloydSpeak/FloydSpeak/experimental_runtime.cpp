@@ -169,7 +169,7 @@ struct backend_string {
 };
 
 struct experimental_interned_strings {
-	//??? reallocates = illegal.
+	//!!! reallocates = illegal.
 	std::vector<backend_string> _strings;
 	uint64_t _unique_string_id_generator;
 };
@@ -196,4 +196,91 @@ struct experimental_floydrt__state {
 
 
 }	//	experimental_runtime
+
+
+
+
+
+
+
+//////////		JSON
+
+
+
+
+
+
+/*
+	### Define format for source-as-JSON roundtrip. Normalized source code format. Goal for JSON is easy machine transformation.
+
+	"string hello(int x, int y, string z){\n"
+	"	return \"test abc\";\n"
+	"}\n"
+	"int main(string args){\n"
+	"	return 3;\n"
+	"}\n"
+
+
+
+
+	string hello(int x, int y, string z){
+		return "test abc";
+	}
+
+	int main(string args){
+		return 3;
+	}
+
+
+{
+	"program_as_json" : [
+		{
+			"_func" : {
+				"_prototype" : "string hello(int x, int y, string z)",
+				"_body" : "{ return \"test abc\"; }"
+			}
+		},
+		{
+			"_func" : {
+				"_prototype" : "int main(string args)",
+				"_body" : "{ return 3; }"
+			}
+		}
+	]
+}
+
+{
+	"program_as_json" : [
+		{
+			"_func" : {
+				"return": "string",
+				"name": "hello",
+				"args": [
+					{ "type": "int", "name": "x" },
+					{ "type": "int", "name": "y" },
+					{ "type": "string", "name": "z" },
+				],
+				"body": [
+					[ "assign", "a",
+						[
+							[ "return",
+								[ "*", "a", "y" ]
+							]
+						],
+					[ "return", "test abc" ]
+				]
+				"_body" : "{ return \"test abc\"; }"
+			}
+		},
+		{
+			"_func" : {
+				"_prototype" : "int main(string args)",
+				"_body" : "{ return 3; }"
+			}
+		}
+	]
+}
+
+!!! JSON does not support multi-line strings.
+*/
 
