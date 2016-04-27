@@ -5,8 +5,8 @@
 2. Automatic - Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
 3. Explicit - One simple and clear way to do everything, little opportunity to do creative coding. Built-in specific mechanisms for all common stuff and best pratices.
 4. Composability
-5. Performance: built in profiling and hardware cache. Ballpark C++ performance.
-6. Solid code and techniques
+5. Performance: built in profiling and hardware cache. Ballpark C performance.
+6. Enforces solid code and techniques
 7. Normalized source code format allows round-trip tools / visual editing. Easy language parsing, use as data language.
 8. Opinionated: there is a good way to do things. That is built into the languge, not in libraries
 9. Encourage creating lots of very specific structs even for simple things. Can be unnamed.
@@ -14,11 +14,11 @@
 12. Partial compatibility support for C / C++ constructs, with deprecated warnings. For easy migration only. Slow constructs.
 
 
-# FLOYD RUNTME
+# FLOYD RUNTIME
 - Static profiler - knows ballpark performance directly in editor. Optimize complexity when data sets are big, else brute force.
 - Runtime does optimizations in the same way as Pentium does optimizations at runtime. Caches, write buffers, speculation, batching, concurrency. Nextgen stuff.
 - No aliasing or side-effects = maximum performance.
-- Compile for GPUs too.
+- ### Compile for GPUs too.
 
 	
 # REFERENCES
@@ -26,10 +26,12 @@
 	
 # BASIC TYPES
 These are the privitive data types built into the language itself. The goals is that all the basics you need are already there in the language.
-- This makes it easy to start making useful programs, you don't need to chose or build the baiscs.
+- This makes it easy to start making useful programs, you don't need to chose or build the basics.
 - It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
-- **float**			Same as float64
+TYPES
+
+- **float**			Same as float32
 - **float32**		32 bit floating point
 - **float80**		80 bit floating point
 
@@ -43,10 +45,13 @@ These are the privitive data types built into the language itself. The goals is 
 - 
 - **enum**			(same as struct with only static constant data members)
 
-- **string**		built-in string type. 8bit pure (supports emedded nulls).
+- **string**		built-in string type. 8bit pure (supports embedded nulls).
 	 					Use for computer strings. Not localizable.
+FUTURE
+
 - **text**			same as string but for user-texts.
 	 				Always unicode denormalization C. Stores Unicode code points, not bytes.
+
 - **code_point**	A Unicode code point.
 
 - **hash**			160 bit SHA1 hash
@@ -70,19 +75,21 @@ These are composites and collections of other types.
 
 - **struct**		like C struct or class or tuple.
 - **map**			look up values from a key. Localizable.
-- **vector**		look up values from a 0 based continous range of integer indexes.
-
+- **vector**		look up values from a 0-based continous range of integer indexes.
 - **dyn**<>			dynamic type, tagged union.
 
-- **protocol**
+FUTURE
+- **protocol**		polymorhpism. Like an interface class.
 
 - **rights**		Communicates between function and caller what access rights
 					and what layer int the system this functions operates on.
 
 # OPTIONAL VALUES
 - **?**				the type postfix makes the value optional (can be null).
-- **null**			represents nothing / missing value.
-
+	- 					int? a = 40
+		- 				assert(a.value == 40)
+			- 			int? b = null
+				- 		assert(b.null)
 
 # STRUCTs
 Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view). **True-deep** is a Floyd term that means that all values and sub-values are considered equally.
