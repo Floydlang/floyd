@@ -33,35 +33,57 @@ struct statement_t;
 struct data_type_t {
 	public: static data_type_t make_type(std::string s){
 		const data_type_t result(s);
+
+		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
 
 	public: bool operator==(const data_type_t other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
 		return other._type_magic == _type_magic;
 	}
+
 	public: bool operator!=(const data_type_t other) const{
 		return !(*this == other);
 	}
-	data_type_t() : _type_magic(""){}
+
+	data_type_t() :
+		_type_magic("")
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
 	data_type_t(const char s[]) :
 		_type_magic(s)
 	{
+		QUARK_ASSERT(s != nullptr);
+
+		QUARK_ASSERT(check_invariant());
 	}
+
 	data_type_t(std::string s) :
 		_type_magic(s)
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
 	void swap(data_type_t& other){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
 		_type_magic.swap(other._type_magic);
 	}
 
 	std::string to_string() const {
+		QUARK_ASSERT(check_invariant());
+
 		return _type_magic;
 	}
 
 	bool check_invariant() const {
-		QUARK_ASSERT(_type_magic != "");
+//		QUARK_ASSERT(_type_magic != "");
 		return true;
 	}
 
@@ -100,6 +122,16 @@ data_type_t resolve_type(std::string node_type);
 /*
 	Hold a value with an explicit type.
 */
+struct arg_t;
+struct value_t;
+
+struct c_function_spec_t {
+	std::vector<arg_t> _arguments;
+	data_type_t _return_type;
+};
+
+typedef value_t (*c_function_t)(std::vector<arg_t> args);
+
 
 struct value_t {
 	public: bool check_invariant() const{
@@ -109,36 +141,56 @@ struct value_t {
 	public: value_t() :
 		_type("null")
 	{
+		QUARK_ASSERT(check_invariant());
 	}
+
 	public: explicit value_t(const char s[]) :
 		_type("string"),
 		_string(s)
 	{
+		QUARK_ASSERT(s != nullptr);
+
+		QUARK_ASSERT(check_invariant());
 	}
+
 	public: explicit value_t(const std::string& s) :
 		_type("string"),
 		_string(s)
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
 	public: value_t(int value) :
 		_type("int"),
 		_int(value)
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
 	public: value_t(float value) :
 		_type("float"),
 		_float(value)
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
 	public: value_t(const data_type_t& s) :
 		_type("value_type"),
 		_data_type(s)
 	{
+		QUARK_ASSERT(s.check_invariant());
+
+		QUARK_ASSERT(check_invariant());
 	}
 
+	public: value_t(c_function_t f, const c_function_spec_t& spec) :
+		_c_function(f),
+		_c_spec(spec)
+	{
+		QUARK_ASSERT(f != nullptr);
+
+		QUARK_ASSERT(check_invariant());
+	}
 
 	value_t(const value_t& other):
 		_type(other._type),
@@ -150,18 +202,32 @@ struct value_t {
 		_function_id(other._function_id),
 		_data_type(other._data_type)
 	{
+		QUARK_ASSERT(other.check_invariant());
+
+		QUARK_ASSERT(check_invariant());
 	}
 
 	value_t& operator=(const value_t& other){
+		QUARK_ASSERT(other.check_invariant());
+		QUARK_ASSERT(check_invariant());
+
 		value_t temp(other);
 		temp.swap(*this);
+
+		QUARK_ASSERT(other.check_invariant());
+		QUARK_ASSERT(check_invariant());
 		return *this;
 	}
 
 	public: bool operator==(const value_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
 		return _type == other._type && _bool == other._bool && _int == other._int && _float == other._float && _string == other._string && _function_id == other._function_id && _data_type == other._data_type;
 	}
 	std::string plain_value_to_string() const {
+		QUARK_ASSERT(check_invariant());
+
 		if(_type == "null"){
 			return "<null>";
 		}
@@ -193,23 +259,39 @@ struct value_t {
 	}
 
 	std::string value_and_type_to_string() const {
+		QUARK_ASSERT(check_invariant());
+
 		return "<" + _type.to_string() + "> " + plain_value_to_string();
 	}
 
 	public: data_type_t get_type() const{
+		QUARK_ASSERT(check_invariant());
+
 		return _type;
 	}
+
 	public: int get_int() const{
+		QUARK_ASSERT(check_invariant());
+
 		return _int;
 	}
+
 	public: float get_float() const{
+		QUARK_ASSERT(check_invariant());
+
 		return _float;
 	}
+
 	public: std::string get_string() const{
+		QUARK_ASSERT(check_invariant());
+
 		return _string;
 	}
 
 	public: void swap(value_t& other){
+		QUARK_ASSERT(other.check_invariant());
+		QUARK_ASSERT(check_invariant());
+
 		_type.swap(other._type);
 
 		std::swap(_bool, other._bool);
@@ -218,7 +300,13 @@ struct value_t {
 		std::swap(_string, other._string);
 		std::swap(_function_id, other._function_id);
 		std::swap(_data_type, other._data_type);
+
+		QUARK_ASSERT(other.check_invariant());
+		QUARK_ASSERT(check_invariant());
 	}
+
+
+	////////////////		STATE
 
 	private: data_type_t _type;
 
@@ -228,7 +316,12 @@ struct value_t {
 	private: std::string _string = "";
 	private: std::string _function_id = "";
 	private: data_type_t _data_type;
+
+
+	private: c_function_t _c_function;
+	private: c_function_spec_t _c_spec;
 };
+
 
 
 /*
