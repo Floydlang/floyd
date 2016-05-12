@@ -9,7 +9,9 @@
 #include <stdio.h>
 
 #include "quark.h"
-
+#include "game_of_life1.h"
+#include "game_of_life2.h"
+#include "game_of_life3.h"
 
 //////////////////////////////////////////////////		main()
 
