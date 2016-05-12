@@ -1,64 +1,37 @@
-//  http://codereview.stackexchange.com/questions/47167/conways-game-of-life-in-c
 
-#include <iostream>
-#include <cstdlib>
-#include <vector>
-
-namespace {
-//	const int gridsize = 75;
 	const int gridsize = 32;
 
 	struct grid_t {
-		grid_t(){
-			for(int a = 0 ; a < (gridsize + 1) ; a++){
-				for(int b = 0 ; b < (gridsize + 1) ; b++){
-					_entries[a][b] = false;
-				}
-			}
-		}
 		bool _entries[gridsize + 1][gridsize + 1];
-
-
-		grid_t& operator=(const grid_t& rhs){
-			for(int a = 0 ; a < (gridsize + 1) ; a++){
-				for(int b = 0 ; b < (gridsize + 1) ; b++){
-					this->_entries[a][b] = rhs._entries[a][b];
-				}
-			}
-			return *this;
-		}
-
-		grid_t(const grid_t& other){
-			*this = other;
-		}
 	};
 
-	void Display(const grid_t& grid){
-		for(int a = 1; a < gridsize; a++){
-			for(int b = 1; b < gridsize; b++){
-				if(grid._entries[a][b] == true){
-					std::cout << " *";
-				}
-				else{
-					std::cout << "  ";
-				}
-				if(b == gridsize-1){
-					std::cout << std::endl;
-				}
+	std::string to_string(const grid_t& grid){
+		std::string result;
+		foreach(int a = 0; a < gridsize; a++){
+			for(int b = 0; b < gridsize; b++){
+				result = result + (grid._entries[a][b] == true) ? "*" : " ";
 			}
+			result = result + "\n";
 		}
+		return result;
 	}
 
 	grid_t liveOrDie(const grid_t& grid0){
 		grid_t grid1 = grid0;
 
-		for(int a = 1; a < gridsize; a++){
-			for(int b = 1; b < gridsize; b++){
+		for(int a = 0; a < gridsize; a++){
+			for(int b = 0; b < gridsize; b++){
 				int life = 0;
 				for(int c = -1; c < 2; c++){
 					for(int d = -1; d < 2; d++){
-						if(!(c == 0 && d == 0)){
-							if(grid0._entries[a + c][b + d]){
+						int x2 = a + c;
+						int y2 = b + d;
+						if(x2 == a && y2 == b){
+						}
+						else if(x2 < 0 || x2 >= gridsize || y2 < 0 || y2 >= gridsize){
+						}
+						else{
+							if(grid0._entries[x2][y2]){
 								++life;
 							}
 						}
@@ -78,7 +51,6 @@ namespace {
 		return grid1;
 	}
 
-
 	grid_t make_init(){
 		grid_t result;
 		result._entries[gridsize/2][gridsize/2] = true;
@@ -88,13 +60,22 @@ namespace {
 		result._entries[gridsize/2+1][gridsize/2+1] = true;
 		return result;
 	}
-}
-void game_of_life2(int generations){
-	grid_t grid = make_init();
-    for(int i = 0 ; i < generations ; i++){
-        Display(grid);
-        grid = liveOrDie(grid);
-        system("CLS");
-    }
+
+	void game_of_life(int generations){
+		grid = make_init();
+		for(int i = 0 ; i < generations ; i++){
+		std::cout << to_string(grid);
+			grid = liveOrDie(grid);
+		}
+	}
 }
 
+QUARK_UNIT_TESTQ("game_of_life3", "10 generations"){
+	using namespace game_of_life3;
+
+	grid_t grid = make_init();
+	for(int i = 0 ; i < 10 ; i++){
+		std::cout << to_string(grid);
+		grid = liveOrDie(grid);
+	}
+}

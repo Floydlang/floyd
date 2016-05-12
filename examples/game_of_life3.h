@@ -17,13 +17,13 @@ namespace game_of_life3 {
 
 	struct grid_t {
 		grid_t(){
-			for(int a = 0 ; a < (gridsize + 1) ; a++){
-				for(int b = 0 ; b < (gridsize + 1) ; b++){
+			for(int a = 0 ; a < gridsize ; a++){
+				for(int b = 0 ; b < gridsize ; b++){
 					_entries[a][b] = false;
 				}
 			}
 		}
-		bool _entries[gridsize + 1][gridsize + 1];
+		bool _entries[gridsize][gridsize];
 	};
 
 	std::string to_string(const grid_t& grid);
