@@ -1121,8 +1121,9 @@ bool check_args(const function_def_expr_t& f, const vector<value_t>& args){
 
 
 
-
-
+/*
+	- Use callstack instead of duplicating all identifiers.
+*/
 identifiers_t add_args(const identifiers_t& identifiers, const function_def_expr_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(identifiers.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
