@@ -15,7 +15,7 @@
 
 
 # FLOYD RUNTIME
-- Static profiler - knows ballpark performance directly in editor. Optimize complexity when data sets are big, else brute force.
+- Static profiler - knows ballpark performance and complexity directly in editor. Optimize complexity when data sets are big, else brute force.
 - Runtime does optimizations in the same way as Pentium does optimizations at runtime. Caches, write buffers, speculation, batching, concurrency. Nextgen stuff.
 - No aliasing or side-effects = maximum performance.
 - ### Compile for GPUs too.

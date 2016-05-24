@@ -55,7 +55,7 @@ struct data_type_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	data_type_t(const char s[]) :
+	explicit data_type_t(const char s[]) :
 		_type_magic(s)
 	{
 		QUARK_ASSERT(s != nullptr);
@@ -63,7 +63,7 @@ struct data_type_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	data_type_t(std::string s) :
+	explicit data_type_t(std::string s) :
 		_type_magic(s)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -83,7 +83,7 @@ struct data_type_t {
 	}
 
 	bool check_invariant() const {
-//		QUARK_ASSERT(_type_magic != "");
+		QUARK_ASSERT(_type_magic == "" || _type_magic == "string" || _type_magic == "int" || _type_magic == "float" || _type_magic == "value_type");
 		return true;
 	}
 
@@ -228,29 +228,33 @@ struct value_t {
 	std::string plain_value_to_string() const {
 		QUARK_ASSERT(check_invariant());
 
-		if(_type == "null"){
+		const auto d = _type.to_string();
+		if(d == "null"){
 			return "<null>";
 		}
+/*
 		else if(_type == "bool"){
 			return _bool ? "true" : "false";
 		}
-		else if(_type == "int"){
+*/
+
+		else if(d == "int"){
 			char temp[200 + 1];//### Use C++ function instead.
 			sprintf(temp, "%d", _int);
 			return std::string(temp);
 		}
-		else if(_type == "float"){
+		else if(d == "float"){
 			char temp[200 + 1];//### Use C++ function instead.
 			sprintf(temp, "%f", _float);
 			return std::string(temp);
 		}
-		else if(_type == "string"){
+		else if(d == "string"){
 			return _string;
 		}
-		else if(_type == "function_id"){
+		else if(d == "function_id"){
 			return _function_id;
 		}
-		else if(_type == "value_type"){
+		else if(d == "value_type"){
 			return _data_type.to_string();
 		}
 		else{

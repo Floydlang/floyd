@@ -443,7 +443,7 @@ data_type_t resolve_type(std::string node_type){
 		return data_type_t::make_type("value_type");
 	}
 	else{
-		return "";
+		return data_type_t("");
 	}
 }
 
@@ -1093,7 +1093,7 @@ expression_t parse_expression(const identifiers_t& identifiers, string expressio
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
 
-	trace("Expression: \"" + expression + "\"");
+	QUARK_TRACE("Expression: \"" + expression + "\"");
 	trace(result.first);
 	return result.first;
 }
@@ -1631,7 +1631,7 @@ function_body_t parse_function_body(const identifiers_t& ident, const string& s)
 			"int a = 10;"
 			"string hello = f(a) + \"_suffix\";";
 		*/
-		else if(resolve_type(token_pos.first) != ""){
+		else if(resolve_type(token_pos.first) != data_type_t("")){
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
 			const string& identifier = assignment_statement.first._bind_statement->_identifier;
 
@@ -1834,7 +1834,7 @@ pair<statement_t, string> parse_assignment_statement(const identifiers_t& identi
 
 	const auto token_pos = read_until(s, whitespace_chars);
 	const auto type = resolve_type(token_pos.first);
-	QUARK_ASSERT(resolve_type(read_until(s, whitespace_chars).first) != "");
+	QUARK_ASSERT(resolve_type(read_until(s, whitespace_chars).first) != data_type_t(""));
 
 	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
 	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
