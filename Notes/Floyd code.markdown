@@ -1,18 +1,5 @@
 # Floyd Programming Language
 
-### GOALS
-1. Floyd prefers C-like / Java syntax to appeal to imperative programmers. C-subset is compatible.
-2. Automatic - Avoid having to repeat things: no need to implement equal() etc manually. No need to initialize every member in each constructor etc.
-3. Explicit - One simple and clear way to do everything, little opportunity to do creative coding. Built-in specific mechanisms for all common stuff and best pratices.
-4. Composability
-5. Performance: built in profiling and hardware cache. Ballpark C performance.
-6. Enforces solid code and techniques
-7. Normalized source code format allows round-trip tools / visual editing. Easy language parsing, use as data language.
-8. Opinionated: there is a good way to do things. That is built into the languge, not in libraries
-9. Encourage creating lots of very specific structs even for simple things. Can be unnamed.
-10. No pre-processor. Dedicated module file format supports versioning, renaming, backward compatibility etc. DLL-hell not possible.
-12. Partial compatibility support for C / C++ constructs, with deprecated warnings. For easy migration only. Slow constructs.
-
 
 # FLOYD RUNTIME
 - Static profiler - knows ballpark performance and complexity directly in editor. Optimize complexity when data sets are big, else brute force.
@@ -92,7 +79,7 @@ FUTURE
 				- 		assert(b.null)
 
 # STRUCTs
-Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view). **True-deep** is a Floyd term that means that all values and sub-values are considered in equally checks.
+Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view). **True-deep** is a Floyd term that means that all values and sub-values are considered, for example in equally checks.
 
 The order of the members inside the struct (or collection) is important for comparisons since those are done member by member.
 
@@ -102,8 +89,8 @@ Notice: a struct can expose a set of read properties but have a different set of
 
 - **Data member** = memory slot.
 - **Property** = member exposed to outside - either a memory slot or a get/set.
-- Private member data = memory slot hidden from clients.
-All member functions works like C++ static members and takes *this* as their first, excplict argument. There is nothing special about _this_ - it's only a convention.
+- **Private member data** = memory slot hidden from clients.
+All member functions works like C++ static members and takes *this* as their first, explict argument. There is nothing special about _this_ - it's only a convention.
 
 ## Struct Signature
 This is the properties exposed by a struct in the order they are listed in the struct. This is affected by private and properties.
@@ -703,7 +690,10 @@ while
 
 
 
-#??????????????????????????????????????????????????????
+
+
+# OUTSIDE
+#########################################################################################
 # ??? OPEN QUESTIONS
 	### fixed_size_vector
 
