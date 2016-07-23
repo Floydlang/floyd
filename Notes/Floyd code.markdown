@@ -383,6 +383,9 @@ Example function definitions:
 
 	int f4(string x, bool y)
 
+# STRUCT EXAMPLES
+When defining a data type (composite) you need to list 4 example instances. Can use functions to build them or just fill-in manually or a mix. These are used in example docs, example code and for unit testing this data types and *other* data types. You cannot change examples without breaking client tests higher up physical dependncy graph.
+
 
 # EQUIVALENCE: FUNCTIONS - MAPS - VECTORS
 ??? Explore functions vs vectors vs maps. Integer keys vs float keys. sin(float a)?
