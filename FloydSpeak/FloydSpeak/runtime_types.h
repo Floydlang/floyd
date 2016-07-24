@@ -11,6 +11,7 @@
 
 #include <cstdio>
 #include <vector>
+#include <string>
 
 #include "runtime_core.h"
 
@@ -24,19 +25,26 @@ namespace runtime_types {
 		This type is tracked by compiler, not stored in the value-type.
 	*/
 	enum frontend_base_type {
-		k_float,
+//		k_float,
 		k_int32,
+//		k_bool,
 		k_string,
-		k_function,
+
+//		k_enum,
 		k_struct,
-		k_vector,
-		k_mapruntime_value
+//		k_map,
+		k_vector
+//		k_seq,
+//		k_dyn,
+//		k_function
 	};
 
 	/*
 		Recursively describes a frontend type.
 	*/
 	struct frontend_type_t {
+		std::string _name;
+
 		/*
 			Plain types only use the _base_type.
 			### Add support for int-ranges etc.
@@ -44,10 +52,6 @@ namespace runtime_types {
 		frontend_base_type _base_type;
 
 		/*
-			Function
-				_output_type is function return-type.
-				_input_types are function arguements.
-
 			Struct
 				_inputs_types are struct members.
 
@@ -57,13 +61,21 @@ namespace runtime_types {
 
 			Vector
 				_output_type is value type
+
+
+
+			Function
+				_input_types are function arguments.
+				_output_type is function return-type.
 		*/
 
 		std::shared_ptr<const frontend_type_t> _output_type;
 		std::vector<std::shared_ptr<frontend_type_t> > _input_types;
+
+//		std::vector<std::pair<std::string, int32_t> > _enum_constants;
 	};
 
-
+	void trace_frontend_type(const frontend_type_t& t);
 
 
 	//////////////////////////////////////		example structs
@@ -79,9 +91,6 @@ namespace runtime_types {
 		std::shared_ptr<const test_struct_1> _e;
 		int _f;
 	};
-
-
-
 
 
 

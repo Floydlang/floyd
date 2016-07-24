@@ -29,8 +29,6 @@ TYPES
 - **int64**
 - 
 - **bool**			**true** or **false**
-- 
-- **enum**			(same as struct with only static constant data members)
 
 - **string**		built-in string type. 8bit pure (supports embedded nulls).
 	 					Use for computer strings. Not localizable.
@@ -60,10 +58,13 @@ uint32_t		typedef int32(
 # MORE TYPES
 These are composites and collections of other types.
 
+- **enum**			(same as struct with only static constant data members)
 - **struct**		like C struct or class or tuple.
 - **map**			look up values from a key. Localizable.
 - **vector**		look up values from a 0-based continous range of integer indexes.
+- **seq**
 - **dyn**<>			dynamic type, tagged union.
+- **function**		function pointer
 
 FUTURE
 - **protocol**		polymorhpism. Like an interface class.
