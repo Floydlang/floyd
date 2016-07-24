@@ -16,6 +16,9 @@
 		2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC50E261CE49A4C008D78C7 /* game_of_life3.cpp */; };
 		2CC50E2A1CE49F09008D78C7 /* game_of_life_ut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC50E291CE49F09008D78C7 /* game_of_life_ut.cpp */; };
 		2CCD83371CBA5BA3006033E4 /* floyd_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */; };
+		2CFB36811D44F70B00F31A19 /* runtime_core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFB367F1D44F70B00F31A19 /* runtime_core.cpp */; };
+		2CFB36841D44F7B700F31A19 /* runtime_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFB36821D44F7B700F31A19 /* runtime_value.cpp */; };
+		2CFB36871D4506FA00F31A19 /* runtime_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFB36851D4506FA00F31A19 /* runtime_types.cpp */; };
 		2CFCCFAC1CCE3E7000F2BEC3 /* experimental_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFCCFAA1CCE3E7000F2BEC3 /* experimental_runtime.cpp */; };
 /* End PBXBuildFile section */
 
@@ -52,6 +55,12 @@
 		2CC50E271CE49A4C008D78C7 /* game_of_life3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = game_of_life3.h; sourceTree = "<group>"; };
 		2CC50E291CE49F09008D78C7 /* game_of_life_ut.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life_ut.cpp; sourceTree = "<group>"; };
 		2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
+		2CFB367F1D44F70B00F31A19 /* runtime_core.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime_core.cpp; sourceTree = "<group>"; };
+		2CFB36801D44F70B00F31A19 /* runtime_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime_core.h; sourceTree = "<group>"; };
+		2CFB36821D44F7B700F31A19 /* runtime_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime_value.cpp; sourceTree = "<group>"; };
+		2CFB36831D44F7B700F31A19 /* runtime_value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime_value.h; sourceTree = "<group>"; };
+		2CFB36851D4506FA00F31A19 /* runtime_types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime_types.cpp; sourceTree = "<group>"; };
+		2CFB36861D4506FA00F31A19 /* runtime_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime_types.h; sourceTree = "<group>"; };
 		2CFCCFAA1CCE3E7000F2BEC3 /* experimental_runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = experimental_runtime.cpp; sourceTree = "<group>"; };
 		2CFCCFAB1CCE3E7000F2BEC3 /* experimental_runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = experimental_runtime.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -96,6 +105,12 @@
 				2C789ED11CBA533100DDBD3C /* floyd_vm.h */,
 				2C1D84E81CA766470042F0A8 /* quark.cpp */,
 				2C1D84E91CA766470042F0A8 /* quark.h */,
+				2CFB367F1D44F70B00F31A19 /* runtime_core.cpp */,
+				2CFB36801D44F70B00F31A19 /* runtime_core.h */,
+				2CFB36851D4506FA00F31A19 /* runtime_types.cpp */,
+				2CFB36861D4506FA00F31A19 /* runtime_types.h */,
+				2CFB36821D44F7B700F31A19 /* runtime_value.cpp */,
+				2CFB36831D44F7B700F31A19 /* runtime_value.h */,
 				2C0AC17A1CADB26B00979C49 /* runtime.cpp */,
 				2C0AC17B1CADB26B00979C49 /* runtime.h */,
 				2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */,
@@ -180,11 +195,14 @@
 				2CC50E251CE48748008D78C7 /* game_of_life2.cpp in Sources */,
 				2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */,
 				2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */,
+				2CFB36871D4506FA00F31A19 /* runtime_types.cpp in Sources */,
 				2CFCCFAC1CCE3E7000F2BEC3 /* experimental_runtime.cpp in Sources */,
 				2CC50E2A1CE49F09008D78C7 /* game_of_life_ut.cpp in Sources */,
+				2CFB36841D44F7B700F31A19 /* runtime_value.cpp in Sources */,
 				2C789ED21CBA533100DDBD3C /* floyd_vm.cpp in Sources */,
 				2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */,
 				2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */,
+				2CFB36811D44F70B00F31A19 /* runtime_core.cpp in Sources */,
 				2CC50E211CE485FF008D78C7 /* game_of_life1.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
