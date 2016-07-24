@@ -46,7 +46,6 @@ namespace runtime_types {
 
 	////////////////////////			member_t
 
-//??? Separate typedef from signature. Typedef is an alias for a signature.
 
 
 	struct member_t {

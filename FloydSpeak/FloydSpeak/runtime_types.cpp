@@ -190,6 +190,13 @@ QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
 
 
 /*
+TODO
+??? Interning the types?
+??? Separate typedef-mechanism from signature. Typedef is an alias for a signature. Use only typedef-key when possible.
+*/
+
+
+/*
 	struct {
 		int32 a
 		string b
