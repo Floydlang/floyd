@@ -126,7 +126,7 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "491065723.296135"
+                  timestampString = "491070148.614894"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "225"
@@ -141,7 +141,7 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "491065723.296224"
+                  timestampString = "491070148.615101"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "225"
@@ -174,7 +174,7 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "491065723.296742"
+                  timestampString = "491070148.615727"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "231"
@@ -189,7 +189,7 @@
                   moduleName = "FloydSpeak"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/marcus/Repositories/Floyd/FloydSpeak/FloydSpeak/quark.cpp"
-                  timestampString = "491065723.296835"
+                  timestampString = "491070148.615807"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "231"
@@ -308,22 +308,6 @@
             startingLineNumber = "75"
             endingLineNumber = "75"
             landmarkName = "game_of_life(int generations)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FloydSpeak/runtime_types.cpp"
-            timestampString = "491065704.977"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "63"
-            endingLineNumber = "63"
-            landmarkName = "QUARK_UNIT_TESTQ(&quot;to_string()&quot;, &quot;&quot;)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

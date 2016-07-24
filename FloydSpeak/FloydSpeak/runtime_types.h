@@ -39,10 +39,26 @@ namespace runtime_types {
 //		k_function
 	};
 
+
+
+	////////////////////////			frontend_type_t
+
 	/*
 		Recursively describes a frontend type.
 	*/
 	struct frontend_type_t {
+		private: frontend_type_t(){};
+		public: bool check_invariant() const;
+
+
+		public: static frontend_type_t make_int32();
+
+		/*	name == "": nameless which is OK. ### add type for symbol strings.
+		*/
+		public: static frontend_type_t make_struct(const std::string& name, const std::vector<std::shared_ptr<frontend_type_t> >& members);
+
+
+		///////////////////		STATE
 		std::string _name;
 
 		/*
@@ -63,7 +79,6 @@ namespace runtime_types {
 				_output_type is value type
 
 
-
 			Function
 				_input_types are function arguments.
 				_output_type is function return-type.
@@ -75,7 +90,29 @@ namespace runtime_types {
 //		std::vector<std::pair<std::string, int32_t> > _enum_constants;
 	};
 
+
 	void trace_frontend_type(const frontend_type_t& t);
+
+	/*
+		Returns a normalized signature string unique for this data type.
+		Use to compare types.
+		If the type has a name, it will be prefixed like this: "my_label: ".
+
+
+		"<null>"									null
+		"<float>"									float
+		"<string>"									string
+		"<vector>[<float>]"							vector containing floats
+		"<float>(<string>, <float>)"				function returning float, with string and float arguments
+		"{ <string> a, <string> b, <float> c }”			composite with three named members.
+
+		"my_pixel: { <string> a, <string> b, <float> c }”			NAMED composite with three named members.
+	*/
+	std::string to_signature(const frontend_type_t& t);
+
+
+
+
 
 
 	//////////////////////////////////////		example structs

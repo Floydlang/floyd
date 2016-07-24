@@ -57,6 +57,7 @@ namespace runtime_core {
 
 		public: bool check_invariant() const;
 
+
 		///////////////////		STATE
 //		private: std::vector<rt_cache_line_t> _cache_lines;
 	};
