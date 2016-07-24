@@ -18,7 +18,10 @@
 
 
 namespace runtime_types {
+	struct frontend_type_t;
 
+
+	////////////////////////			frontend_base_type
 
 
 	/*
@@ -41,6 +44,20 @@ namespace runtime_types {
 
 
 
+	////////////////////////			member_t
+
+//??? Separate typedef from signature. Typedef is an alias for a signature.
+
+
+	struct member_t {
+		member_t(const std::string& name, const std::shared_ptr<frontend_type_t>& type);
+		public: bool check_invariant() const;
+
+		std::string _name;
+		std::shared_ptr<frontend_type_t> _type;
+	};
+
+
 	////////////////////////			frontend_type_t
 
 	/*
@@ -51,15 +68,17 @@ namespace runtime_types {
 		public: bool check_invariant() const;
 
 
-		public: static frontend_type_t make_int32();
+		public: static frontend_type_t make_int32(const std::string& name);
+		public: static frontend_type_t make_string(const std::string& name);
 
 		/*	name == "": nameless which is OK. ### add type for symbol strings.
 		*/
-		public: static frontend_type_t make_struct(const std::string& name, const std::vector<std::shared_ptr<frontend_type_t> >& members);
+		public: static frontend_type_t make_struct(const std::string& name, const std::vector<member_t>& members);
+
 
 
 		///////////////////		STATE
-		std::string _name;
+		std::string _typedef;
 
 		/*
 			Plain types only use the _base_type.
@@ -69,23 +88,24 @@ namespace runtime_types {
 
 		/*
 			Struct
-				_inputs_types are struct members.
+				_members are struct members.
 
 			Map
-				_output_type is value type
-				_inputs_types[0] is key type.
+				_value_type is value type
+				_key_type is key type.
 
 			Vector
-				_output_type is value type
+				_value_type is value type
 
 
 			Function
-				_input_types are function arguments.
-				_output_type is function return-type.
+				_members are function arguments.
+				_value_type is function return-type.
 		*/
 
-		std::shared_ptr<const frontend_type_t> _output_type;
-		std::vector<std::shared_ptr<frontend_type_t> > _input_types;
+		std::vector<member_t> _members;
+		std::shared_ptr<frontend_type_t> _value_type;
+		std::shared_ptr<frontend_type_t> _key_type;
 
 //		std::vector<std::pair<std::string, int32_t> > _enum_constants;
 	};
