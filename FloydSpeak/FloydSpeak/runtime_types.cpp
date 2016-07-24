@@ -178,10 +178,10 @@ using namespace runtime_types;
 
 
 
-//////////////////////////////////////		rt_memory_manager
+//////////////////////////////////////		to_string(frontend_base_type)
 
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
 	QUARK_TEST_VERIFY(to_string(k_int32) == "int32");
 	QUARK_TEST_VERIFY(to_string(k_string) == "string");
 	QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
@@ -224,15 +224,28 @@ frontend_type_t make_struct_2(){
 }
 
 
+//////////////////////////////////////		to_signature()
 
-QUARK_UNIT_TESTQ("to_signature()", ""){
+
+QUARK_UNIT_TESTQ("to_signature()", "int32"){
 	QUARK_TEST_VERIFY(to_signature(frontend_type_t::make_int32("")) == "<int32>");
-	QUARK_TEST_VERIFY(to_signature(frontend_type_t::make_string("")) == "<string>");
-	QUARK_TEST_VERIFY(to_signature(frontend_type_t::make_struct("", {})) == "<struct>{}");
+}
 
+QUARK_UNIT_TESTQ("to_signature()", "string"){
+	QUARK_TEST_VERIFY(to_signature(frontend_type_t::make_string("")) == "<string>");
+}
+
+QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
+	QUARK_TEST_VERIFY(to_signature(frontend_type_t::make_struct("", {})) == "<struct>{}");
+}
+
+QUARK_UNIT_TESTQ("to_signature()", "struct 1"){
 	const auto t1 = make_struct_1();
 	QUARK_TEST_VERIFY(to_signature(t1) == "<struct>{<int32>a,<string>b}");
+}
 
+
+QUARK_UNIT_TESTQ("to_signature()", "struct 2"){
 	const auto t2 = make_struct_2();
 	const auto s2 = to_signature(t2);
 	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct>{<int32>a,<string>b}y,<string>z}");
