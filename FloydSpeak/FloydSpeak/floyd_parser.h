@@ -14,6 +14,8 @@
 #include <string>
 #include <map>
 
+#include "parser_types.h"
+#include "parser_primitives.h"
 
 
 namespace floyd_parser {
@@ -24,100 +26,6 @@ struct statement_t;
 
 
 
-//////////////////////////////////////////////////		data_type_t
-
-/*
-	Internal object representing a Floyd data type.
-		### Use the same compatible technique / API  in the runtime and in the language itself!
-
-	!!! Right now we use an internal string, but this will change in future.
-*/
-
-
-struct data_type_t {
-	public: static data_type_t make_type(std::string s){
-		const data_type_t result(s);
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-
-	public: bool operator==(const data_type_t other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		return other._type_magic == _type_magic;
-	}
-
-	public: bool operator!=(const data_type_t other) const{
-		return !(*this == other);
-	}
-
-	data_type_t() :
-		_type_magic("")
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
-	explicit data_type_t(const char s[]) :
-		_type_magic(s)
-	{
-		QUARK_ASSERT(s != nullptr);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	explicit data_type_t(std::string s) :
-		_type_magic(s)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
-	void swap(data_type_t& other){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		_type_magic.swap(other._type_magic);
-	}
-
-	std::string to_string() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _type_magic;
-	}
-
-	bool check_invariant() const {
-		QUARK_ASSERT(_type_magic == "" || _type_magic == "string" || _type_magic == "int" || _type_magic == "float" || _type_magic == "value_type");
-		return true;
-	}
-
-	/*
-		The name of the type, including its path using :
-		"null"
-
-		"bool"
-		"int"
-		"float"
-		"function"
-
-		//	Specifies a data type.
-		"value_type"
-
-
-		"metronome"
-		"map<string, metronome>"
-		"game_engine:sprite"
-		"vector<game_engine:sprite>"
-		"int (string, vector<game_engine:sprite>)"
-	*/
-	private: std::string _type_magic;
-};
-
-
-/*
-	returns "" on unknown type.
-*/
-data_type_t resolve_type(std::string node_type);
 
 
 
@@ -131,7 +39,7 @@ struct value_t;
 
 struct c_function_spec_t {
 	std::vector<arg_t> _arguments;
-	data_type_t _return_type;
+	type_identifier_t _return_type;
 };
 
 typedef value_t (*c_function_t)(std::vector<arg_t> args);
@@ -178,9 +86,9 @@ struct value_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: value_t(const data_type_t& s) :
+	public: value_t(const type_identifier_t& s) :
 		_type("value_type"),
-		_data_type(s)
+		_data_type_value(s)
 	{
 		QUARK_ASSERT(s.check_invariant());
 
@@ -204,7 +112,7 @@ struct value_t {
 		_float(other._float),
 		_string(other._string),
 		_function_id(other._function_id),
-		_data_type(other._data_type)
+		_data_type_value(other._data_type_value)
 	{
 		QUARK_ASSERT(other.check_invariant());
 
@@ -227,7 +135,7 @@ struct value_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _type == other._type && _bool == other._bool && _int == other._int && _float == other._float && _string == other._string && _function_id == other._function_id && _data_type == other._data_type;
+		return _type == other._type && _bool == other._bool && _int == other._int && _float == other._float && _string == other._string && _function_id == other._function_id && _data_type_value == other._data_type_value;
 	}
 	std::string plain_value_to_string() const {
 		QUARK_ASSERT(check_invariant());
@@ -258,8 +166,8 @@ struct value_t {
 		else if(d == "function_id"){
 			return _function_id;
 		}
-		else if(d == "value_type"){
-			return _data_type.to_string();
+		else if(d == "value_type"){//???
+			return _data_type_value.to_string();
 		}
 		else{
 			return "???";
@@ -272,7 +180,7 @@ struct value_t {
 		return "<" + _type.to_string() + "> " + plain_value_to_string();
 	}
 
-	public: data_type_t get_type() const{
+	public: type_identifier_t get_type() const{
 		QUARK_ASSERT(check_invariant());
 
 		return _type;
@@ -307,7 +215,7 @@ struct value_t {
 		std::swap(_float, other._float);
 		std::swap(_string, other._string);
 		std::swap(_function_id, other._function_id);
-		std::swap(_data_type, other._data_type);
+		std::swap(_data_type_value, other._data_type_value);
 
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
@@ -316,14 +224,14 @@ struct value_t {
 
 	////////////////		STATE
 
-	private: data_type_t _type;
+	private: type_identifier_t _type;
 
 	private: bool _bool = false;
 	private: int _int = 0;
 	private: float _float = 0.0f;
 	private: std::string _string = "";
 	private: std::string _function_id = "";
-	private: data_type_t _data_type;
+	private: type_identifier_t _data_type_value;
 
 
 	private: c_function_t _c_function;
@@ -333,7 +241,7 @@ struct value_t {
 
 
 /*
-inline value_t make_dummy_value(const data_type_t& type){
+inline value_t make_dummy_value(const type_identifier_t& type){
 	const auto t = type.to_string();
 	if(t == "null"){
 		return value_t();	//??? Remove concept of null??
@@ -348,7 +256,7 @@ inline value_t make_dummy_value(const data_type_t& type){
 		return value_t(667.667f);
 	}
 	else if(t == "value_type"){
-		return value_t(data_type_t("null"));
+		return value_t(type_identifier_t("null"));
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -378,7 +286,7 @@ struct arg_t {
 		return _type == other._type && _identifier == other._identifier;
 	}
 
-	const data_type_t _type;
+	const type_identifier_t _type;
 	const std::string _identifier;
 };
 
@@ -400,7 +308,7 @@ struct function_def_expr_t {
 		return _return_type == other._return_type && _args == other._args && _body == other._body;
 	}
 
-	const data_type_t _return_type;
+	const type_identifier_t _return_type;
 	const std::vector<arg_t> _args;
 	const function_body_t _body;
 };
@@ -683,6 +591,7 @@ struct ast_t {
 
 
 	/////////////////////////////		STATE
+	frontend_types_collector_t _types_collector;
 	identifiers_t _identifiers;
 	std::vector<statement_t> _top_level_statements;
 };

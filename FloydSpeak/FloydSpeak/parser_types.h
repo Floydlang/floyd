@@ -47,14 +47,46 @@ namespace floyd_parser {
 	};
 
 
-	////////////////////////			type_identifier
+
+	//////////////////////////////////////////////////		type_identifier_t
 
 
-	struct type_identifier {
-		public: type_identifier(const std::string& s);
-		private: std::string _s;
+
+	struct type_identifier_t {
+		public: static type_identifier_t make_type(std::string s);
+		public: bool operator==(const type_identifier_t& other) const;
+		public: bool operator!=(const type_identifier_t& other) const;
+
+		public: type_identifier_t();
+		public: explicit type_identifier_t(const char s[]);
+		public: explicit type_identifier_t(const std::string& s);
+		public: void swap(type_identifier_t& other);
+		public: std::string to_string() const;
+		public: bool check_invariant() const;
+
+
+		///////////////////		STATE
+		/*
+			The name of the type, including its path using :
+			"null"
+
+			"bool"
+			"int"
+			"float"
+			"function"
+
+			//	Specifies a data type.
+			"value_type"
+
+
+			"metronome"
+			"map<string, metronome>"
+			"game_engine:sprite"
+			"vector<game_engine:sprite>"
+			"int (string, vector<game_engine:sprite>)"
+		*/
+		private: std::string _type_magic;
 	};
-
 
 
 

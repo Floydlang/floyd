@@ -14,11 +14,88 @@
 #include <string>
 #include <map>
 
+#include "parser_primitives.h"
+
+
 using std::make_shared;
 using std::string;
 
 
 namespace floyd_parser {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//////////////////////////////////////////////////		type_identifier_t
+
+
+	type_identifier_t type_identifier_t::make_type(std::string s){
+		const type_identifier_t result(s);
+
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+
+	bool type_identifier_t::operator==(const type_identifier_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return other._type_magic == _type_magic;
+	}
+
+	bool type_identifier_t::operator!=(const type_identifier_t& other) const{
+		return !(*this == other);
+	}
+
+	type_identifier_t::type_identifier_t() :
+		_type_magic("")
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	type_identifier_t::type_identifier_t(const char s[]) :
+		_type_magic(s)
+	{
+		QUARK_ASSERT(s != nullptr);
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	type_identifier_t::type_identifier_t(const std::string& s) :
+		_type_magic(s)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	void type_identifier_t::swap(type_identifier_t& other){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		_type_magic.swap(other._type_magic);
+	}
+
+	std::string type_identifier_t::to_string() const {
+		QUARK_ASSERT(check_invariant());
+
+		return _type_magic;
+	}
+
+	bool type_identifier_t::check_invariant() const {
+//		QUARK_ASSERT(_type_magic != "");
+//		QUARK_ASSERT(_type_magic == "" || _type_magic == "string" || _type_magic == "int" || _type_magic == "float" || _type_magic == "value_type");
+		return true;
+	}
+
 
 
 	string to_string(const frontend_base_type t){
@@ -45,18 +122,10 @@ namespace floyd_parser {
 
 
 
-	////////////////////////			type_identifier
-
-
-
 	bool is_valid_type_identifier(const std::string& s){
 		return true;
 	}
 
-	type_identifier::type_identifier(const std::string& s){
-		QUARK_ASSERT(is_valid_type_identifier(s));
-		_s = s;
-	}
 
 
 

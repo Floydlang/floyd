@@ -80,77 +80,6 @@ struct seq2 {
 	std::size_t _pos;
 };
 
-const char* basic_types[] = {
-	"bool",
-	"char???",
-	"-code_point",
-	"-double",
-	"float",
-	"float32",
-	"float80",
-	"-hash",
-	"int",
-	"int16",
-	"int32",
-	"int64",
-	"int8",
-	"-path",
-	"string",
-	"-text"
-};
-
-const char* _advanced_types[] = {
-	"-clock",
-	"-defect_exception",
-	"-dyn",
-	"-dyn**<>",
-	"-enum",
-	"-exception",
-	"map",
-	"-protocol",
-	"-rights",
-	"-runtime_exception",
-	"seq",
-	"struct",
-	"-typedef",
-	"-vector"
-};
-
-const char* _keywords[] = {
-	"assert",
-	"-catch",
-	"-deserialize()",
-	"-diff()",
-	"else",
-	"-ensure",
-	"false",
-	"foreach",
-	"-hash()",
-	"if",
-	"-invariant",
-	"log",
-	"mutable",
-	"-namespace???",
-	"-null",
-	"-private",
-	"-property",
-	"-prove",
-	"-require",
-	"return",
-	"-serialize()",
-	"-swap",
-	"-switch",
-	"-tag",
-	"-test",
-	"-this",
-	"true",
-	"-try",
-	"-typecast",
-	"-typeof",
-	"while"
-};
-
-
 
 void IncreaseIndent(){
 	auto r = quark::get_runtime();
@@ -166,14 +95,6 @@ void DecreateIndent(){
 //////////////////////////////////////////////////		Text parsing primitives
 
 
-
-const string whitespace_chars = " \n\t";
-const string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-const string brackets = "(){}[]<>";
-const string open_brackets = "({[<";
-const string type_chars = identifier_chars + brackets;
-const string number_chars = "0123456789.";
-const string operator_chars = "+-*/.";
 
 
 seq read_while(const string& s, const string& match){
@@ -423,31 +344,43 @@ string trim_ends(const string& s){
 
 
 
-//////////////////////////////////////////////////		data_type_t
-
 
 /*
-	returns "" on unknown type.
+	Validates that this is a legal string, with legal characters. Exception.
+	Does NOT make sure this a known type-identifier.
+	String must not be empty.
 */
-data_type_t resolve_type(std::string node_type){
-	if(node_type == "int"){
-		return data_type_t::make_type("int");
+type_identifier_t make_type_identifier(const std::string& s){
+	QUARK_ASSERT(!s.empty());
+
+	//	Make sure string only contains valid characters.
+	const auto a = read_while(s, identifier_chars);
+	if(!a.second.empty()){
+		throw std::runtime_error("illegal character in type identifier");
 	}
-	else if(node_type == "string"){
-		return data_type_t::make_type("string");
+
+	return type_identifier_t::make_type(s);
+
+/*
+	if(s == "int"){
+		return type_identifier_t::make_type("int");
 	}
-	else if(node_type == "float"){
-		return data_type_t::make_type("float");
+	else if(s == "string"){
+		return type_identifier_t::make_type("string");
 	}
-	else if(node_type == "function"){
-		return data_type_t::make_type("function");
+	else if(s == "float"){
+		return type_identifier_t::make_type("float");
 	}
-	else if(node_type == "value_type"){
-		return data_type_t::make_type("value_type");
+	else if(s == "function"){
+		return type_identifier_t::make_type("function");
+	}
+	else if(s == "value_type"){
+		return type_identifier_t::make_type("value_type");
 	}
 	else{
-		return data_type_t("");
+		return type_identifier_t("");
 	}
+*/
 }
 
 
@@ -508,7 +441,7 @@ void trace(const expression_t& e);
 void trace(const statement_t& s);
 void trace(const expression_t& e);
 void trace(const function_body_t& body);
-void trace(const data_type_t& v);
+void trace(const type_identifier_t& v);
 void trace(const value_t& e);
 
 void trace(const function_def_expr_t& e);
@@ -613,8 +546,8 @@ void trace(const function_body_t& body){
 	trace_vec("Statements:", body._statements);
 }
 
-void trace(const data_type_t& v){
-	QUARK_TRACE("data_type_t <" + v.to_string() + ">");
+void trace(const type_identifier_t& v){
+	QUARK_TRACE("type_identifier_t <" + v.to_string() + ">");
 }
 
 void trace(const value_t& e){
@@ -678,16 +611,9 @@ void trace(const ast_t& program){
 */
 
 
-bool is_string_valid_type(const string& s){
-	return s == "int" || s == "bool" || s == "string" || s == "float";
-}
-
-pair<data_type_t, string> read_required_type(const string& s){
+pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 	const seq type_pos = get_type(s);
-	if(!is_string_valid_type(type_pos.first)){
-		throw std::runtime_error("expected type");
-	}
-	const auto type = resolve_type(type_pos.first);
+	const auto type = make_type_identifier(type_pos.first);
 	return { type, type_pos.second };
 }
 
@@ -715,7 +641,7 @@ vector<arg_t> parse_functiondef_arguments(const string& s2){
 		const auto arg_name = get_identifier(arg_type.second);
 		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
-		const auto a = arg_t{ resolve_type(arg_type.first), arg_name.first };
+		const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
 		args.push_back(a);
 		str = skip_whitespace(optional_comma.second);
 	}
@@ -731,9 +657,9 @@ QUARK_UNIT_TEST("", "", "", ""){
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
 	QUARK_TEST_VERIFY((r == vector<arg_t>{
-		{ resolve_type("int"), "x" },
-		{ resolve_type("string"), "y" },
-		{ resolve_type("float"), "z" }
+		{ make_type_identifier("int"), "x" },
+		{ make_type_identifier("string"), "y" },
+		{ make_type_identifier("float"), "z" }
 	}
 	));
 }
@@ -754,10 +680,10 @@ expression_t negate_expression(const expression_t& e){
 	//	Shortcut: directly negate numeric constants. This makes parse tree cleaner and is non-lossy.
 	if(e._constant){
 		const value_t& value = *e._constant;
-		if(value.get_type() == resolve_type("int")){
+		if(value.get_type() == make_type_identifier("int")){
 			return make_constant(value_t{-value.get_int()});
 		}
-		else if(value.get_type() == resolve_type("float")){
+		else if(value.get_type() == make_type_identifier("float")){
 			return make_constant(value_t{-value.get_float()});
 		}
 	}
@@ -889,7 +815,7 @@ pair<expression_t, string> parse_single(const identifiers_t& identifiers, const 
 
 
 shared_ptr<const function_def_expr_t> make_log_function(){
-	vector<arg_t> args{ {resolve_type("float"), "value"} };
+	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
 	function_body_t body{
 		{
 			make__return_statement(
@@ -898,11 +824,11 @@ shared_ptr<const function_def_expr_t> make_log_function(){
 		}
 	};
 
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ resolve_type("float"), args, body });
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
 }
 
 shared_ptr<const function_def_expr_t> make_log2_function(){
-	vector<arg_t> args{ {resolve_type("string"), "s"}, {resolve_type("float"), "v"} };
+	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
 	function_body_t body{
 		{
 			make__return_statement(
@@ -911,7 +837,7 @@ shared_ptr<const function_def_expr_t> make_log2_function(){
 		}
 	};
 
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ resolve_type("float"), args, body });
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
 }
 
 shared_ptr<const function_def_expr_t> make_return5(){
@@ -924,7 +850,7 @@ shared_ptr<const function_def_expr_t> make_return5(){
 		}
 	};
 
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ resolve_type("int"), args, body });
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("int"), args, body });
 }
 
 
@@ -1217,7 +1143,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 		if(left._constant && right._constant){
 			const auto left_value = left._constant;
 			const auto right_value = right._constant;
-			if(left_value->get_type() == resolve_type("int") && right_value->get_type() == resolve_type("int")){
+			if(left_value->get_type() == make_type_identifier("int") && right_value->get_type() == make_type_identifier("int")){
 				if(e2._operation == math_operation2_expr_t::add){
 					return make_constant(left_value->get_int() + right_value->get_int());
 				}
@@ -1237,7 +1163,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(left_value->get_type() == resolve_type("float") && right_value->get_type() == resolve_type("float")){
+			else if(left_value->get_type() == make_type_identifier("float") && right_value->get_type() == make_type_identifier("float")){
 				if(e2._operation == math_operation2_expr_t::add){
 					return make_constant(left_value->get_float() + right_value->get_float());
 				}
@@ -1257,7 +1183,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(left_value->get_type() == resolve_type("string") && right_value->get_type() == resolve_type("string")){
+			else if(left_value->get_type() == make_type_identifier("string") && right_value->get_type() == make_type_identifier("string")){
 				if(e2._operation == math_operation2_expr_t::add){
 					return make_constant(value_t(left_value->get_string() + right_value->get_string()));
 				}
@@ -1282,7 +1208,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 		//	Replace the with a constant!
 		if(input._constant){
 			const auto value = input._constant;
-			if(value->get_type() == resolve_type("int")){
+			if(value->get_type() == make_type_identifier("int")){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return make_constant(-value->get_int());
 				}
@@ -1290,7 +1216,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value->get_type() == resolve_type("float")){
+			else if(value->get_type() == make_type_identifier("float")){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return make_constant(-value->get_float());
 				}
@@ -1298,7 +1224,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value->get_type() == resolve_type("string")){
+			else if(value->get_type() == make_type_identifier("string")){
 				throw std::runtime_error("Arithmetics failed.");
 			}
 			else{
@@ -1552,6 +1478,13 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 pair<statement_t, string> parse_assignment_statement(const identifiers_t& identifiers, const string& s);
 
 
+
+bool is_known_data_type(const std::string& s){
+	return true;
+//???token_pos.first) != type_identifier_t("")){
+}
+
+
 /*
 	Pre-evaluates when possible! NO DO NOT! THAT MAKES PARSER LOSSY!
 
@@ -1635,7 +1568,7 @@ function_body_t parse_function_body(const identifiers_t& ident, const string& s)
 			"int a = 10;"
 			"string hello = f(a) + \"_suffix\";";
 		*/
-		else if(resolve_type(token_pos.first) != data_type_t("")){
+		else if(is_known_data_type(token_pos.first)){
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
 			const string& identifier = assignment_statement.first._bind_statement->_identifier;
 
@@ -1742,7 +1675,7 @@ identifiers_t add_arg_identifiers(const identifiers_t& identifiers, const vector
 pair<pair<string, function_def_expr_t>, string> parse_function_definition(const identifiers_t& identifiers, const string& pos){
 	QUARK_ASSERT(identifiers.check_invariant());
 
-	const auto type_pos = read_required_type(pos);
+	const auto type_pos = read_required_type_identifier(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
 	//	Skip whitespace.
@@ -1781,7 +1714,7 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "", ""){
 QUARK_UNIT_TEST("", "parse_function_definition()", "", ""){
 	const auto result = parse_function_definition({}, "int f(){}");
 	QUARK_TEST_VERIFY(result.first.first == "f");
-	QUARK_TEST_VERIFY(result.first.second._return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY(result.first.second._args.empty());
 	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
@@ -1790,11 +1723,11 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "", ""){
 QUARK_UNIT_TEST("", "parse_function_definition()", "Test many arguments of different types", ""){
 	const auto result = parse_function_definition({}, "int printf(string a, float barry, int c){}");
 	QUARK_TEST_VERIFY(result.first.first == "printf");
-	QUARK_TEST_VERIFY(result.first.second._return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
-		{ resolve_type("string"), "a" },
-		{ resolve_type("float"), "barry" },
-		{ resolve_type("int"), "c" },
+		{ make_type_identifier("string"), "a" },
+		{ make_type_identifier("float"), "barry" },
+		{ make_type_identifier("int"), "c" },
 	}));
 	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
@@ -1804,11 +1737,11 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "Test many arguments of diffe
 QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""){
 	const auto result = parse_function_definition("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
 	QUARK_TEST_VERIFY(result.first.first == "printf");
-	QUARK_TEST_VERIFY(result.first.second._return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
-		{ resolve_type("string"), "a" },
-		{ resolve_type("float"), "barry" },
-		{ resolve_type("int"), "c" },
+		{ make_type_identifier("string"), "a" },
+		{ make_type_identifier("float"), "barry" },
+		{ make_type_identifier("int"), "c" },
 	}));
 	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
@@ -1837,8 +1770,8 @@ pair<statement_t, string> parse_assignment_statement(const identifiers_t& identi
 	QUARK_ASSERT(identifiers.check_invariant());
 
 	const auto token_pos = read_until(s, whitespace_chars);
-	const auto type = resolve_type(token_pos.first);
-	QUARK_ASSERT(resolve_type(read_until(s, whitespace_chars).first) != data_type_t(""));
+	const auto type = make_type_identifier(token_pos.first);
+	QUARK_ASSERT(is_known_data_type(read_until(s, whitespace_chars).first));
 
 	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
 	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
@@ -1898,7 +1831,7 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 pair<statement_t, string> read_toplevel_statement(const identifiers_t& identifiers, const string& pos){
 	QUARK_ASSERT(identifiers.check_invariant());
 
-	const auto type_pos = read_required_type(pos);
+	const auto type_pos = read_required_type_identifier(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
 	pair<pair<string, function_def_expr_t>, string> function = parse_function_definition(identifiers, pos);
@@ -1922,7 +1855,7 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 	QUARK_TEST_VERIFY(result.first._bind_statement->_expression._function_def_expr);
 
 	const auto make_function_expression = result.first._bind_statement->_expression._function_def_expr;
-	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(make_function_expression->_return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY(make_function_expression->_args.empty());
 	QUARK_TEST_VERIFY(make_function_expression->_body._statements.empty());
 
@@ -1965,7 +1898,7 @@ ast_t program_to_ast(const identifiers_t& builtins, const string& program){
 		pos = skip_whitespace(statement_pos.second);
 	}
 
-	const ast_t result{ identifiers, top_level_statements };
+	const ast_t result{ {}, identifiers, top_level_statements };
 	trace(result);
 
 	return result;
@@ -1984,8 +1917,8 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_expression._function_def_expr);
 
 	const auto make_function_expression = result._top_level_statements[0]._bind_statement->_expression._function_def_expr;
-	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
-	QUARK_TEST_VERIFY((make_function_expression->_args == vector<arg_t>{ arg_t{ data_type_t::make_type("string"), "args" }}));
+	QUARK_TEST_VERIFY(make_function_expression->_return_type == type_identifier_t::make_type("int"));
+	QUARK_TEST_VERIFY((make_function_expression->_args == vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }}));
 }
 
 
@@ -2003,11 +1936,11 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_expression._function_def_expr);
 
 	const auto make_function_expression = result._top_level_statements[0]._bind_statement->_expression._function_def_expr;
-	QUARK_TEST_VERIFY(make_function_expression->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(make_function_expression->_return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY((make_function_expression->_args == vector<arg_t>{
-		arg_t{ data_type_t::make_type("int"), "x" },
-		arg_t{ data_type_t::make_type("int"), "y" },
-		arg_t{ data_type_t::make_type("string"), "z" }
+		arg_t{ type_identifier_t::make_type("int"), "x" },
+		arg_t{ type_identifier_t::make_type("int"), "y" },
+		arg_t{ type_identifier_t::make_type("string"), "z" }
 	}));
 }
 
@@ -2031,11 +1964,11 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[0]._bind_statement->_expression._function_def_expr);
 
 	const auto hello = result._top_level_statements[0]._bind_statement->_expression._function_def_expr;
-	QUARK_TEST_VERIFY(hello->_return_type == data_type_t::make_type("string"));
+	QUARK_TEST_VERIFY(hello->_return_type == type_identifier_t::make_type("string"));
 	QUARK_TEST_VERIFY((hello->_args == vector<arg_t>{
-		arg_t{ data_type_t::make_type("int"), "x" },
-		arg_t{ data_type_t::make_type("int"), "y" },
-		arg_t{ data_type_t::make_type("string"), "z" }
+		arg_t{ type_identifier_t::make_type("int"), "x" },
+		arg_t{ type_identifier_t::make_type("int"), "y" },
+		arg_t{ type_identifier_t::make_type("string"), "z" }
 	}));
 
 
@@ -2044,9 +1977,9 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[1]._bind_statement->_expression._function_def_expr);
 
 	const auto main = result._top_level_statements[1]._bind_statement->_expression._function_def_expr;
-	QUARK_TEST_VERIFY(main->_return_type == data_type_t::make_type("int"));
+	QUARK_TEST_VERIFY(main->_return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY((main->_args == vector<arg_t>{
-		arg_t{ data_type_t::make_type("string"), "args" }
+		arg_t{ type_identifier_t::make_type("string"), "args" }
 	}));
 
 }
@@ -2065,17 +1998,17 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_identifier == "testx");
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._function_def_expr->_return_type == resolve_type("float"));
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._function_def_expr->_return_type == make_type_identifier("float"));
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._function_def_expr->_args.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._function_def_expr->_args[0]._type == resolve_type("float"));
+	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._function_def_expr->_args[0]._type == make_type_identifier("float"));
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._function_def_expr->_args[0]._identifier == "v");
 	QUARK_TEST_VERIFY(r._top_level_statements[0]._bind_statement->_expression._function_def_expr->_body._statements.size() == 1);
 
 	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_identifier == "main");
-	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_expression._function_def_expr->_return_type == resolve_type("int"));
+	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_expression._function_def_expr->_return_type == make_type_identifier("int"));
 	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_expression._function_def_expr->_args.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_expression._function_def_expr->_args[0]._type == resolve_type("string"));
+	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_expression._function_def_expr->_args[0]._type == make_type_identifier("string"));
 	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_expression._function_def_expr->_args[0]._identifier == "args");
 	QUARK_TEST_VERIFY(r._top_level_statements[1]._bind_statement->_expression._function_def_expr->_body._statements.size() == 2);
 	//### Test body?
