@@ -120,7 +120,7 @@ namespace runtime_types {
 	};
 
 
-	void trace_frontend_type(const frontend_type_t& t);
+	void trace_frontend_type(const frontend_type_t& t, const std::string& label);
 
 	/*
 		Returns a normalized signature string unique for this data type.

@@ -21,8 +21,6 @@ using std::string;
 namespace runtime_types {
 
 
-
-
 	string to_string(const frontend_base_type t){
 		if(t == k_int32){
 			return "int32";
@@ -103,12 +101,28 @@ namespace runtime_types {
 
 
 
-	void trace_frontend_type(const frontend_type_t& t){
+	void trace_frontend_type(const frontend_type_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
-//		QUARK_TRACE("frontend_type_t <" + "int32" + ">");
-
-		const auto s = to_string(t._base_type);
+		if(t._base_type == k_int32){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_string){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_struct){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			for(const auto it: t._members){
+				trace_frontend_type(*it._type, it._name);
+			}
+		}
+		else if(t._base_type == k_vector){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			trace_frontend_type(*t._value_type, "");
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 	}
 
 
@@ -206,6 +220,7 @@ namespace runtime_types {
 		return true;
 	}
 
+	//??? What happens if existing_identifier isn't bound to def yet? Maybe we should actually chain the identifiers?
 	frontend_types_t frontend_types_t::define_alias(const std::string& new_identifier, const std::string& existing_identifier) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(!lookup_identifier(new_identifier));
@@ -220,6 +235,7 @@ namespace runtime_types {
 
 		QUARK_ASSERT(result.check_invariant());
 
+		trace_frontend_type(*it->second, "");
 		return result;
 	}
 
@@ -245,6 +261,8 @@ namespace runtime_types {
 		result._type_definitions[signature] = def;
 
 		QUARK_ASSERT(result.check_invariant());
+
+		trace_frontend_type(*def, new_identifier);
 
 		return result;
 	}
