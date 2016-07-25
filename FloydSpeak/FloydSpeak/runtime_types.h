@@ -48,10 +48,11 @@ namespace runtime_types {
 	};
 
 
-
+/*
 	struct identifier {
 		std::string _s;
 	};
+*/
 
 
 	////////////////////////			member_t
@@ -68,7 +69,16 @@ namespace runtime_types {
 	};
 
 
-/*
+	////////////////////////			struct_def_t
+
+	/*
+		TODO
+		- Add member functions / vtable
+		- Add memory layout calculation and storage
+		- Add support for alternative layout.
+		- Add support for optional value (using "?").
+	*/
+
 	struct struct_def_t {
 		public: struct_def_t(){};
 		public: bool check_invariant() const;
@@ -77,6 +87,9 @@ namespace runtime_types {
 		///////////////////		STATE
 		public: std::vector<member_t> _members;
 	};
+
+
+	////////////////////////			struct_def_t
 
 
 	struct vector_def_t {
@@ -90,7 +103,6 @@ namespace runtime_types {
 
 		public: std::shared_ptr<frontend_type_t> _key_type;
 	};
-*/
 
 
 	////////////////////////			frontend_type_t
@@ -99,7 +111,6 @@ namespace runtime_types {
 		Recursively describes a frontend type.
 
 		TODO
-		- Add member functions / vtable
 		- Add memory layout calculation and storage
 		- Add support for alternative layout.
 		- Add support for optional value (using "?").
@@ -117,31 +128,8 @@ namespace runtime_types {
 		*/
 		public: frontend_base_type _base_type;
 
-		/*
-			Struct
-				_members are struct members.
-
-			Map
-				_value_type is value type
-				_key_type is key type.
-
-			Vector
-				_value_type is value type
-
-
-			Function
-				_members are function arguments.
-				_value_type is function return-type.
-		*/
-
-		public: std::vector<member_t> _members;
-
-		public: std::string _value_type_identifier;
-		public: std::shared_ptr<frontend_type_t> _value_type;
-
-		public: std::shared_ptr<frontend_type_t> _key_type;
-
-//		public: std::vector<std::pair<std::string, int32_t> > _enum_constants;
+		public: std::shared_ptr<struct_def_t> _struct_def;
+		public: std::shared_ptr<vector_def_t> _vector_def;
 	};
 
 
