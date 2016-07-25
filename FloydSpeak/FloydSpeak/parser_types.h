@@ -1,20 +1,18 @@
 //
-//  runtime_types.hpp
+//  parse_types.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 24/07/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef runtime_types_hpp
-#define runtime_types_hpp
+#ifndef parser_types_hpp
+#define parser_types_hpp
 
 #include <cstdio>
 #include <vector>
 #include <string>
 #include <map>
-
-#include "runtime_core.h"
 
 
 /*
@@ -22,7 +20,7 @@
 	typedef: a typesafe identifier for any time.
 */
 
-namespace runtime_types {
+namespace floyd_parser {
 	struct type_definition_t;
 	struct frontend_types_collector_t;
 
@@ -266,7 +264,7 @@ namespace runtime_types {
 	};
 
 
-}	//	runtime_value
+}	//	floyd_parser
 
 
-#endif /* runtime_types_hpp */
+#endif

@@ -27,6 +27,9 @@
 #include <iostream>
 #include <cmath>
 
+namespace floyd_parser {
+
+
 using std::vector;
 using std::string;
 using std::pair;
@@ -2078,6 +2081,8 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	//### Test body?
 }
 
+
+}	//	floyd_parser
 
 
 

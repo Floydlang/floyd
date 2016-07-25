@@ -13,7 +13,7 @@
 
 
 struct vm_t {
-	vm_t(const ast_t& ast) :
+	vm_t(const floyd_parser::ast_t& ast) :
 		_ast(ast)
 	{
 		QUARK_ASSERT(ast.check_invariant());
@@ -28,7 +28,7 @@ struct vm_t {
 
 
 	////////////////////////		STATE
-	ast_t _ast;
+	floyd_parser::ast_t _ast;
 };
 
 

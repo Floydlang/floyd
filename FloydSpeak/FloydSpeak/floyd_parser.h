@@ -14,6 +14,10 @@
 #include <string>
 #include <map>
 
+
+
+namespace floyd_parser {
+
 struct statement_t;
 
 
@@ -703,6 +707,8 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e);
 
 
 value_t run_function(const identifiers_t& identifiers, const function_def_expr_t& f, const std::vector<value_t>& args);
+
+}	//	floyd_parser
 
 
 

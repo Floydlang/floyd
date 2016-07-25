@@ -1,13 +1,13 @@
 
 //
-//  runtime_types.cpp
+//  parser_types.cpp
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 24/07/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "runtime_types.h"
+#include "parser_types.h"
 
 #include "quark.h"
 #include <vector>
@@ -18,7 +18,7 @@ using std::make_shared;
 using std::string;
 
 
-namespace runtime_types {
+namespace floyd_parser {
 
 
 	string to_string(const frontend_base_type t){
@@ -466,12 +466,12 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	}
 
 
-} //	runtime_types;
+} //	floyd_parser;
 
 
 
 
-using namespace runtime_types;
+using namespace floyd_parser;
 
 
 
