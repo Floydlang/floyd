@@ -35,7 +35,7 @@ namespace runtime_types {
 	enum frontend_base_type {
 //		k_float,
 		k_int32,
-//		k_bool,
+		k_bool,
 		k_string,
 
 //		k_enum,
@@ -66,6 +66,31 @@ namespace runtime_types {
 		std::string _type_identifier;
 		std::shared_ptr<frontend_type_t> _type;
 	};
+
+
+/*
+	struct struct_def_t {
+		public: struct_def_t(){};
+		public: bool check_invariant() const;
+
+
+		///////////////////		STATE
+		public: std::vector<member_t> _members;
+	};
+
+
+	struct vector_def_t {
+		public: vector_def_t(){};
+		public: bool check_invariant() const;
+
+
+		///////////////////		STATE
+		public: std::string _value_type_identifier;
+		public: std::shared_ptr<frontend_type_t> _value_type;
+
+		public: std::shared_ptr<frontend_type_t> _key_type;
+	};
+*/
 
 
 	////////////////////////			frontend_type_t
@@ -120,27 +145,32 @@ namespace runtime_types {
 	};
 
 
+
+
+
 	void trace_frontend_type(const frontend_type_t& t, const std::string& label);
 
 	/*
 		Returns a normalized signature string unique for this data type.
 		Use to compare types.
-		If the type has a name, it will be prefixed like this: "my_label: ".
 
-
-		"<null>"									null
 		"<float>"									float
 		"<string>"									string
 		"<vector>[<float>]"							vector containing floats
-		"<float>(<string>, <float>)"				function returning float, with string and float arguments
-		"{ <string> a, <string> b, <float> c }”			composite with three named members.
-
-		"my_pixel: { <string> a, <string> b, <float> c }”			NAMED composite with three named members.
+		"<float>(<string>,<float>)"				function returning float, with string and float arguments
+		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
+		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
 	*/
 	std::string to_signature(const frontend_type_t& t);
 
+	typedef std::pair<std::size_t, std::size_t> byte_range_t;
 
-
+	/*
+		result, item[0] the memory range for the entire struct.
+				item[1] the first member in the struct. Members may be mapped in any order in memory!
+				item[2] the first member in the struct.
+	*/
+	std::vector<byte_range_t> calc_struct_default_memory_layout(const frontend_type_t& s);
 
 
 	////////////////////////			frontend_types_t

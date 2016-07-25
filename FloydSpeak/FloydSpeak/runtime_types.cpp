@@ -25,6 +25,9 @@ namespace runtime_types {
 		if(t == k_int32){
 			return "int32";
 		}
+		if(t == k_bool){
+			return "bool";
+		}
 		else if(t == k_string){
 			return "string";
 		}
@@ -76,6 +79,11 @@ namespace runtime_types {
 			QUARK_ASSERT(!_value_type);
 			QUARK_ASSERT(!_key_type);
 		}
+		else if(_base_type == k_bool){
+			QUARK_ASSERT(_members.empty());
+			QUARK_ASSERT(!_value_type);
+			QUARK_ASSERT(!_key_type);
+		}
 		else if(_base_type == k_string){
 			QUARK_ASSERT(_members.empty());
 			QUARK_ASSERT(!_value_type);
@@ -105,6 +113,9 @@ namespace runtime_types {
 		QUARK_ASSERT(t.check_invariant());
 
 		if(t._base_type == k_int32){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_bool){
 			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
 		}
 		else if(t._base_type == k_string){
@@ -161,7 +172,67 @@ namespace runtime_types {
 		}
 	}
 
+	/*
+		alignment == 8: pos is roundet up untill nearest multiple of 8.
+	*/
+	std::size_t align_pos(std::size_t pos, std::size_t alignment){
+		std::size_t rem = pos % alignment;
+		std::size_t add = rem == 0 ? 0 : alignment - rem;
+		return pos + add;
+	}
 
+
+QUARK_UNIT_TESTQ("align_pos()", ""){
+	QUARK_TEST_VERIFY(align_pos(0, 8) == 0);
+	QUARK_TEST_VERIFY(align_pos(1, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(2, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(3, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(4, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(5, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(6, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(7, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(8, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(9, 8) == 16);
+}
+
+	std::vector<byte_range_t> calc_struct_default_memory_layout(const frontend_type_t& s){
+		QUARK_ASSERT(s.check_invariant());
+
+		std::vector<byte_range_t> result;
+		std::size_t pos = 0;
+		for(const auto& member : s._members) {
+			if(member._type->_base_type == k_int32){
+				pos = align_pos(pos, 4);
+				result.push_back(byte_range_t(pos, 4));
+				pos += 4;
+			}
+			else if(member._type->_base_type == k_bool){
+				result.push_back(byte_range_t(pos, 1));
+				pos += 1;
+			}
+			else if(member._type->_base_type == k_string){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else if(member._type->_base_type == k_struct){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else if(member._type->_base_type == k_vector){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+		pos = align_pos(pos, 8);
+		result.insert(result.begin(), byte_range_t(0, pos));
+		return result;
+	}
 
 
 	////////////////////////			frontend_types_t
@@ -182,6 +253,16 @@ namespace runtime_types {
 			QUARK_ASSERT(def->check_invariant());
 
 			_identifiers["int32"] = def;
+			_type_definitions[to_signature(*def)] = def;
+		}
+
+		//	bool
+		{
+			auto def = make_shared<frontend_type_t>();
+			def->_base_type = k_bool;
+			QUARK_ASSERT(def->check_invariant());
+
+			_identifiers["bool"] = def;
 			_type_definitions[to_signature(*def)] = def;
 		}
 
@@ -302,6 +383,7 @@ using namespace runtime_types;
 
 QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
 	QUARK_TEST_VERIFY(to_string(k_int32) == "int32");
+	QUARK_TEST_VERIFY(to_string(k_bool) == "bool");
 	QUARK_TEST_VERIFY(to_string(k_string) == "string");
 	QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
 	QUARK_TEST_VERIFY(to_string(k_vector) == "vector");
@@ -351,6 +433,25 @@ frontend_types_t define_test_struct_2(const frontend_types_t& types){
 	);
 	return a;
 }
+//??? check for duplicate member names.
+frontend_types_t define_test_struct_3(const frontend_types_t& types){
+	const auto a = types.define_struct_type("struct_3",
+		{
+			types.make_member("a", "bool"),
+			// pad
+			// pad
+			// pad
+			types.make_member("b", "int32"),
+			types.make_member("c", "bool"),
+			types.make_member("d", "bool"),
+			types.make_member("e", "bool"),
+			types.make_member("f", "bool"),
+			types.make_member("g", "string"),
+			types.make_member("h", "bool")
+		}
+	);
+	return a;
+}
 
 
 //////////////////////////////////////		to_signature()
@@ -392,12 +493,16 @@ QUARK_UNIT_TESTQ("frontend_types_t::frontend_types_t()", "default construction")
 	const auto a = frontend_types_t();
 	QUARK_TEST_VERIFY(a.check_invariant());
 
-	QUARK_TEST_VERIFY(a._identifiers.size() == 2);
-	QUARK_TEST_VERIFY(a._type_definitions.size() == 2);
+	QUARK_TEST_VERIFY(a._identifiers.size() == 3);
+	QUARK_TEST_VERIFY(a._type_definitions.size() == 3);
 
 	const auto b = a.lookup_identifier("int32");
 	QUARK_TEST_VERIFY(b);
 	QUARK_TEST_VERIFY(b->_base_type == k_int32);
+
+	const auto d = a.lookup_identifier("bool");
+	QUARK_TEST_VERIFY(d);
+	QUARK_TEST_VERIFY(d->_base_type == k_bool);
 
 	const auto c = a.lookup_identifier("string");
 	QUARK_TEST_VERIFY(c);
@@ -425,6 +530,25 @@ QUARK_UNIT_TESTQ("frontend_types_t::define_alias()", "int32 => my_int"){
 	QUARK_TEST_VERIFY(b);
 	QUARK_TEST_VERIFY(b->_base_type == k_int32);
 }
+
+
+QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
+	const auto a = frontend_types_t();
+	const auto b = define_test_struct_3(a);
+	const auto t = b.lookup_identifier("struct_3");
+	const auto layout = calc_struct_default_memory_layout(*t);
+	int i = 0;
+	for(const auto it: layout){
+		const string name = i == 0 ? "struct" : t->_members[i - 1]._name;
+		QUARK_TRACE_SS(it.first << "--" << (it.first + it.second) << ": " + name);
+		i++;
+	}
+	QUARK_TEST_VERIFY(true);
+//	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct_1>y,<string>z}");
+}
+
+
+
 
 
 
