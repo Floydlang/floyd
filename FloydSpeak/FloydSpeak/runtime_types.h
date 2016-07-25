@@ -12,10 +12,15 @@
 #include <cstdio>
 #include <vector>
 #include <string>
+#include <map>
 
 #include "runtime_core.h"
 
 
+/*
+	type signature:	a string the defines one level of any type. It can be
+	typedef: a typesafe identifier for any time.
+*/
 
 namespace runtime_types {
 	struct frontend_type_t;
@@ -44,15 +49,21 @@ namespace runtime_types {
 
 
 
+	struct identifier {
+		std::string _s;
+	};
+
+
 	////////////////////////			member_t
 
 
 
 	struct member_t {
-		member_t(const std::string& name, const std::shared_ptr<frontend_type_t>& type);
+		member_t(const std::string& name, const std::string& type_identifier, const std::shared_ptr<frontend_type_t>& type);
 		public: bool check_invariant() const;
 
 		std::string _name;
+		std::string _type_identifier;
 		std::shared_ptr<frontend_type_t> _type;
 	};
 
@@ -61,29 +72,25 @@ namespace runtime_types {
 
 	/*
 		Recursively describes a frontend type.
+
+		TODO
+		- Add member functions / vtable
+		- Add memory layout calculation and storage
+		- Add support for alternative layout.
+		- Add support for optional value (using "?").
 	*/
 	struct frontend_type_t {
-		private: frontend_type_t(){};
+		public: frontend_type_t(){};
 		public: bool check_invariant() const;
 
 
-		public: static frontend_type_t make_int32(const std::string& name);
-		public: static frontend_type_t make_string(const std::string& name);
-
-		/*	name == "": nameless which is OK. ### add type for symbol strings.
-		*/
-		public: static frontend_type_t make_struct(const std::string& name, const std::vector<member_t>& members);
-
-
-
 		///////////////////		STATE
-		std::string _typedef;
 
 		/*
 			Plain types only use the _base_type.
 			### Add support for int-ranges etc.
 		*/
-		frontend_base_type _base_type;
+		public: frontend_base_type _base_type;
 
 		/*
 			Struct
@@ -102,11 +109,14 @@ namespace runtime_types {
 				_value_type is function return-type.
 		*/
 
-		std::vector<member_t> _members;
-		std::shared_ptr<frontend_type_t> _value_type;
-		std::shared_ptr<frontend_type_t> _key_type;
+		public: std::vector<member_t> _members;
 
-//		std::vector<std::pair<std::string, int32_t> > _enum_constants;
+		public: std::string _value_type_identifier;
+		public: std::shared_ptr<frontend_type_t> _value_type;
+
+		public: std::shared_ptr<frontend_type_t> _key_type;
+
+//		public: std::vector<std::pair<std::string, int32_t> > _enum_constants;
 	};
 
 
@@ -133,24 +143,50 @@ namespace runtime_types {
 
 
 
+	////////////////////////			frontend_types_t
 
-	//////////////////////////////////////		example structs
 
-	struct test_struct_1 {
-		float _a;
-		int _b;
+	/*
+		Holds all types of program:
+			- built-ins like float, bool.
+			- vector<XYZ>, map etc.
+			- custom structs
+			- both named and unnamed types.
+
+		A type can be declared but not yet completely defined (maybe forward declared or a member type is still unknown).
+	*/
+	struct frontend_types_t {
+		public: frontend_types_t();
+		public: bool check_invariant() const;
+
+		public: frontend_types_t define_alias(const std::string& new_identifier, const std::string& existing_identifier) const;
+
+		/*
+			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
+		*/
+		public: frontend_types_t define_struct_type(const std::string& new_identifier, std::vector<member_t> members) const;
+
+		public: member_t make_member(const std::string& name, const std::string& type_identifier) const;
+
+		/*
+			returns
+				empty ptr: the identifier is unknown
+				object: the identifer is known, examine its contents to see if it is fully defined.
+		*/
+		public: std::shared_ptr<frontend_type_t> lookup_identifier(const std::string& s) const;
+		public: std::shared_ptr<frontend_type_t> lookup_signature(const std::string& s) const;
+
+
+
+		///////////////////		STATE
+
+		//	Key is the type identifier.
+		//	Value refers to a frontend_type_t stored in _type_definition.
+		public: std::map<std::string, std::shared_ptr<frontend_type_t> > _identifiers;
+
+		//	Key is the signature string. De-duplicated.
+		public: std::map<std::string, std::shared_ptr<frontend_type_t> > _type_definitions;
 	};
-
-	struct test_struct_2 {
-		float _c;
-		std::shared_ptr<const test_struct_1> _d;
-		std::shared_ptr<const test_struct_1> _e;
-		int _f;
-	};
-
-
-
-
 
 
 }	//	runtime_value
