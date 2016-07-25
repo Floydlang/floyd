@@ -46,7 +46,7 @@ namespace runtime_types {
 	////////////////////////			member_t
 
 
-	member_t::member_t(const std::string& name, const std::string& type_identifier, const std::shared_ptr<frontend_type_t>& type) :
+	member_t::member_t(const std::string& name, const std::string& type_identifier, const std::shared_ptr<type_definition_t>& type) :
 		_name(name),
 		_type_identifier(type_identifier),
 		_type(type)
@@ -79,10 +79,10 @@ namespace runtime_types {
 
 
 
-	////////////////////////			frontend_type_t
+	////////////////////////			type_definition_t
 
 
-	bool frontend_type_t::check_invariant() const{
+	bool type_definition_t::check_invariant() const{
 		if(_base_type == k_int32){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
@@ -113,7 +113,7 @@ namespace runtime_types {
 
 
 
-	void trace_frontend_type(const frontend_type_t& t, const std::string& label){
+	void trace_frontend_type(const type_definition_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
 		if(t._base_type == k_int32){
@@ -141,7 +141,7 @@ namespace runtime_types {
 	}
 
 
-	std::string to_signature(const frontend_type_t& t){
+	std::string to_signature(const type_definition_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
 		const auto base_type = to_string(t._base_type);
@@ -199,7 +199,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	QUARK_TEST_VERIFY(align_pos(9, 8) == 16);
 }
 
-	std::vector<byte_range_t> calc_struct_default_memory_layout(const frontend_type_t& s){
+	std::vector<byte_range_t> calc_struct_default_memory_layout(const type_definition_t& s){
 		QUARK_ASSERT(s.check_invariant());
 
 		std::vector<byte_range_t> result;
@@ -252,7 +252,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 
 		//	int32
 		{
-			auto def = make_shared<frontend_type_t>();
+			auto def = make_shared<type_definition_t>();
 			def->_base_type = k_int32;
 			QUARK_ASSERT(def->check_invariant());
 
@@ -262,7 +262,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 
 		//	bool
 		{
-			auto def = make_shared<frontend_type_t>();
+			auto def = make_shared<type_definition_t>();
 			def->_base_type = k_bool;
 			QUARK_ASSERT(def->check_invariant());
 
@@ -272,7 +272,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 
 		//	string
 		{
-			auto def = make_shared<frontend_type_t>();
+			auto def = make_shared<type_definition_t>();
 			def->_base_type = k_string;
 			QUARK_ASSERT(def->check_invariant());
 
@@ -327,7 +327,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(!lookup_identifier(new_identifier));
 
-		auto def = make_shared<frontend_type_t>();
+		auto def = make_shared<type_definition_t>();
 		def->_base_type = k_struct;
 		def->_struct_def = make_shared<struct_def_t>();
 		def->_struct_def->_members = members;
@@ -358,18 +358,18 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		return result;
 	}
 
-	std::shared_ptr<frontend_type_t> frontend_types_t::lookup_identifier(const std::string& s) const{
+	std::shared_ptr<type_definition_t> frontend_types_t::lookup_identifier(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _identifiers.find(s);
-		return it == _identifiers.end() ? std::shared_ptr<frontend_type_t>() : it->second;
+		return it == _identifiers.end() ? std::shared_ptr<type_definition_t>() : it->second;
 	}
 
-	std::shared_ptr<frontend_type_t> frontend_types_t::lookup_signature(const std::string& s) const{
+	std::shared_ptr<type_definition_t> frontend_types_t::lookup_signature(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _type_definitions.find(s);
-		return it == _type_definitions.end() ? std::shared_ptr<frontend_type_t>() : it->second;
+		return it == _type_definitions.end() ? std::shared_ptr<type_definition_t>() : it->second;
 	}
 
 

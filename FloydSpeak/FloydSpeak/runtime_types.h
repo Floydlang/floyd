@@ -23,7 +23,7 @@
 */
 
 namespace runtime_types {
-	struct frontend_type_t;
+	struct type_definition_t;
 
 
 	////////////////////////			frontend_base_type
@@ -60,12 +60,12 @@ namespace runtime_types {
 
 
 	struct member_t {
-		member_t(const std::string& name, const std::string& type_identifier, const std::shared_ptr<frontend_type_t>& type);
+		member_t(const std::string& name, const std::string& type_identifier, const std::shared_ptr<type_definition_t>& type);
 		public: bool check_invariant() const;
 
 		std::string _name;
 		std::string _type_identifier;
-		std::shared_ptr<frontend_type_t> _type;
+		std::shared_ptr<type_definition_t> _type;
 	};
 
 
@@ -99,13 +99,13 @@ namespace runtime_types {
 
 		///////////////////		STATE
 		public: std::string _value_type_identifier;
-		public: std::shared_ptr<frontend_type_t> _value_type;
+		public: std::shared_ptr<type_definition_t> _value_type;
 
-		public: std::shared_ptr<frontend_type_t> _key_type;
+		public: std::shared_ptr<type_definition_t> _key_type;
 	};
 
 
-	////////////////////////			frontend_type_t
+	////////////////////////			type_definition_t
 
 	/*
 		Recursively describes a frontend type.
@@ -115,8 +115,8 @@ namespace runtime_types {
 		- Add support for alternative layout.
 		- Add support for optional value (using "?").
 	*/
-	struct frontend_type_t {
-		public: frontend_type_t(){};
+	struct type_definition_t {
+		public: type_definition_t(){};
 		public: bool check_invariant() const;
 
 
@@ -136,7 +136,7 @@ namespace runtime_types {
 
 
 
-	void trace_frontend_type(const frontend_type_t& t, const std::string& label);
+	void trace_frontend_type(const type_definition_t& t, const std::string& label);
 
 	/*
 		Returns a normalized signature string unique for this data type.
@@ -149,7 +149,7 @@ namespace runtime_types {
 		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
 		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
 	*/
-	std::string to_signature(const frontend_type_t& t);
+	std::string to_signature(const type_definition_t& t);
 
 	typedef std::pair<std::size_t, std::size_t> byte_range_t;
 
@@ -158,7 +158,7 @@ namespace runtime_types {
 				item[1] the first member in the struct. Members may be mapped in any order in memory!
 				item[2] the first member in the struct.
 	*/
-	std::vector<byte_range_t> calc_struct_default_memory_layout(const frontend_type_t& s);
+	std::vector<byte_range_t> calc_struct_default_memory_layout(const type_definition_t& s);
 
 
 	////////////////////////			frontend_types_t
@@ -191,19 +191,19 @@ namespace runtime_types {
 				empty ptr: the identifier is unknown
 				object: the identifer is known, examine its contents to see if it is fully defined.
 		*/
-		public: std::shared_ptr<frontend_type_t> lookup_identifier(const std::string& s) const;
-		public: std::shared_ptr<frontend_type_t> lookup_signature(const std::string& s) const;
+		public: std::shared_ptr<type_definition_t> lookup_identifier(const std::string& s) const;
+		public: std::shared_ptr<type_definition_t> lookup_signature(const std::string& s) const;
 
 
 
 		///////////////////		STATE
 
 		//	Key is the type identifier.
-		//	Value refers to a frontend_type_t stored in _type_definition.
-		public: std::map<std::string, std::shared_ptr<frontend_type_t> > _identifiers;
+		//	Value refers to a type_definition_t stored in _type_definition.
+		public: std::map<std::string, std::shared_ptr<type_definition_t> > _identifiers;
 
 		//	Key is the signature string. De-duplicated.
-		public: std::map<std::string, std::shared_ptr<frontend_type_t> > _type_definitions;
+		public: std::map<std::string, std::shared_ptr<type_definition_t> > _type_definitions;
 	};
 
 
