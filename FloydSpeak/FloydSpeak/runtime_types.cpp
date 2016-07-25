@@ -43,26 +43,38 @@ namespace runtime_types {
 	}
 
 
+
+
+	////////////////////////			type_identifier
+
+
+
+	bool is_valid_type_identifier(const std::string& s){
+		return true;
+	}
+
+	type_identifier::type_identifier(const std::string& s){
+		QUARK_ASSERT(is_valid_type_identifier(s));
+		_s = s;
+	}
+
+
+
+
 	////////////////////////			member_t
 
 
-	member_t::member_t(const std::string& name, const std::string& type_identifier, const std::shared_ptr<type_definition_t>& type) :
+	member_t::member_t(const std::string& name, const std::string& type_identifier) :
 		_name(name),
-		_type_identifier(type_identifier),
-		_type(type)
+		_type_identifier(type_identifier)
 	{
 		QUARK_ASSERT(!type_identifier.empty());
-
-		QUARK_ASSERT(type);
-		QUARK_ASSERT(type->check_invariant());
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool member_t::check_invariant() const{
 		QUARK_ASSERT(!_type_identifier.empty());
-		QUARK_ASSERT(_type);
-		QUARK_ASSERT(_type->check_invariant());
 		return true;
 	}
 
@@ -128,12 +140,14 @@ namespace runtime_types {
 		else if(t._base_type == k_struct){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
 			for(const auto it: t._struct_def->_members){
-				trace_frontend_type(*it._type, it._name);
+				QUARK_TRACE("<" + it._type_identifier + "> " + it._name);
+
+//				trace_frontend_type(*it._type, it._name);
 			}
 		}
 		else if(t._base_type == k_vector){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			trace_frontend_type(*t._vector_def->_value_type, "");
+//			trace_frontend_type(*t._vector_def->_value_type, "");
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -152,7 +166,8 @@ namespace runtime_types {
 			for(const auto& member : t._struct_def->_members) {
 				const string member_label = member._name;
 				const string typedef_s = member._type_identifier;
-				const string member_type = typedef_s.empty() ? to_signature(*member._type) : "<" + typedef_s + ">";
+//				const string member_type = typedef_s.empty() ? to_signature(*member._type) : "<" + typedef_s + ">";
+				const string member_type = "<" + typedef_s + ">";
 
 				//	"<string>first_name"
 				const string member_result = member_type + member_label;
@@ -168,7 +183,8 @@ namespace runtime_types {
 			return label + "<struct>" + "{" + body + "}";
 		}
 		else if(t._base_type == k_vector){
-			const auto vector_value_s = t._vector_def->_value_type_identifier.empty() ? to_signature(*t._vector_def->_value_type) : "<" + t._vector_def->_value_type_identifier + ">";
+//			const auto vector_value_s = t._vector_def->_value_type_identifier.empty() ? to_signature(*t._vector_def->_value_type) : "<" + t._vector_def->_value_type_identifier + ">";
+			const auto vector_value_s = "";
 			return label + "<vector>" + "[" + vector_value_s + "]";
 		}
 		else{
@@ -199,32 +215,37 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	QUARK_TEST_VERIFY(align_pos(9, 8) == 16);
 }
 
-	std::vector<byte_range_t> calc_struct_default_memory_layout(const type_definition_t& s){
+	std::vector<byte_range_t> calc_struct_default_memory_layout(const frontend_types_collector_t& types, const type_definition_t& s){
+		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(s.check_invariant());
 
 		std::vector<byte_range_t> result;
 		std::size_t pos = 0;
 		for(const auto& member : s._struct_def->_members) {
-			if(member._type->_base_type == k_int32){
+			const auto identifier_data = types.lookup_identifier_deep(member._type_identifier);
+			const auto type_def = identifier_data->_optional_def;
+			QUARK_ASSERT(type_def);
+
+			if(type_def->_base_type == k_int32){
 				pos = align_pos(pos, 4);
 				result.push_back(byte_range_t(pos, 4));
 				pos += 4;
 			}
-			else if(member._type->_base_type == k_bool){
+			else if(type_def->_base_type == k_bool){
 				result.push_back(byte_range_t(pos, 1));
 				pos += 1;
 			}
-			else if(member._type->_base_type == k_string){
+			else if(type_def->_base_type == k_string){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;
 			}
-			else if(member._type->_base_type == k_struct){
+			else if(type_def->_base_type == k_struct){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;
 			}
-			else if(member._type->_base_type == k_vector){
+			else if(type_def->_base_type == k_vector){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;
@@ -239,14 +260,14 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	}
 
 
-	////////////////////////			frontend_types_t
+	////////////////////////			frontend_types_collector_t
 
 
 	/*
 		Holds all types of program.
 	*/
 
-	frontend_types_t::frontend_types_t(){
+	frontend_types_collector_t::frontend_types_collector_t(){
 		QUARK_ASSERT(check_invariant());
 
 
@@ -256,7 +277,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 			def->_base_type = k_int32;
 			QUARK_ASSERT(def->check_invariant());
 
-			_identifiers["int32"] = def;
+			_identifiers["int32"] = { "", def };
 			_type_definitions[to_signature(*def)] = def;
 		}
 
@@ -266,7 +287,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 			def->_base_type = k_bool;
 			QUARK_ASSERT(def->check_invariant());
 
-			_identifiers["bool"] = def;
+			_identifiers["bool"] = { "", def };
 			_type_definitions[to_signature(*def)] = def;
 		}
 
@@ -276,12 +297,12 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 			def->_base_type = k_string;
 			QUARK_ASSERT(def->check_invariant());
 
-			_identifiers["string"] = def;
+			_identifiers["string"] = { "", def };
 			_type_definitions[to_signature(*def)] = def;
 		}
 	}
 	
-	bool frontend_types_t::check_invariant() const{
+	bool frontend_types_collector_t::check_invariant() const{
 		for(const auto it: _identifiers){
 			QUARK_ASSERT(it.first != "");
 		}
@@ -293,79 +314,151 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		}
 
 		//	Make sure all types referenced from _identifiers are also stored inside _type_definition.
-		for(const auto it: _identifiers){
-			auto defs_it = _type_definitions.begin();
-			while(defs_it != _type_definitions.end() && defs_it->second != it.second){
-				 defs_it++;
-			}
+		for(const auto identifiers_it: _identifiers){
+			if(identifiers_it.second._optional_def){
+				auto defs_it = _type_definitions.begin();
+				while(defs_it != _type_definitions.end() && defs_it->second != identifiers_it.second._optional_def){
+					 defs_it++;
+				}
 
-			QUARK_ASSERT(defs_it != _type_definitions.end());
+				QUARK_ASSERT(defs_it != _type_definitions.end());
+			}
 		}
 		return true;
 	}
 
-	//??? What happens if existing_identifier isn't bound to def yet? Maybe we should actually chain the identifiers?
-	frontend_types_t frontend_types_t::define_alias(const std::string& new_identifier, const std::string& existing_identifier) const{
+	frontend_types_collector_t frontend_types_collector_t::define_alias_identifier(const std::string& new_identifier, const std::string& existing_identifier) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(!lookup_identifier(new_identifier));
+		QUARK_ASSERT(!new_identifier.empty());
+		QUARK_ASSERT(!existing_identifier.empty());
 
-		auto it = _identifiers.find(existing_identifier);
-		if(it == _identifiers.end()){
-			throw std::runtime_error("unknown identifier to alias");
+		if(_identifiers.find(existing_identifier) == _identifiers.end()){
+			throw std::runtime_error("unknown type identifier to base alias on");
+		}
+
+		if(is_type_identifier_fully_defined(new_identifier)){
+			throw std::runtime_error("new type identifier already defined");
 		}
 
 		auto result = *this;
-		result._identifiers[new_identifier] = it->second;
+		result._identifiers[new_identifier] = { existing_identifier, {} };
 
 		QUARK_ASSERT(result.check_invariant());
-
-		trace_frontend_type(*it->second, "");
 		return result;
 	}
 
-	frontend_types_t frontend_types_t::define_struct_type(const std::string& new_identifier, std::vector<member_t> members) const{
+
+	frontend_types_collector_t frontend_types_collector_t::define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_definition_t>& type_def) const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(!lookup_identifier(new_identifier));
+		QUARK_ASSERT(!new_identifier.empty());
 
-		auto def = make_shared<type_definition_t>();
-		def->_base_type = k_struct;
-		def->_struct_def = make_shared<struct_def_t>();
-		def->_struct_def->_members = members;
-		const string signature = to_signature(*def);
+		//	### Be quite if existing identifier matches new one 100% == same type_def.
+		if(is_type_identifier_fully_defined(new_identifier)){
+			throw std::runtime_error("new type identifier already defined");
+		}
 
-		//	Reuse existing type def if one exists with the correct signature.
+		auto result = *this;
+		result._identifiers[new_identifier] = { "", type_def };
+
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+
+
+	std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> frontend_types_collector_t::define_struct_type(const std::vector<member_t>& members) const{
+		QUARK_ASSERT(check_invariant());
+
+		auto type_def = make_shared<type_definition_t>();
+		type_def->_base_type = k_struct;
+		type_def->_struct_def = make_shared<struct_def_t>();
+		type_def->_struct_def->_members = members;
+
+		const string signature = to_signature(*type_def);
+
 		const auto existing_it = _type_definitions.find(signature);
 		if(existing_it != _type_definitions.end()){
-			def = existing_it->second;
+			return { existing_it->second, *this };
 		}
-
-		auto result = *this;
-		if(!new_identifier.empty()){
-			result._identifiers[new_identifier] = def;
+		else{
+			auto result = *this;
+			result._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_definition_t>>(signature, type_def));
+			return { type_def, result };
 		}
-		result._type_definitions[signature] = def;
-
-		QUARK_ASSERT(result.check_invariant());
-
-		trace_frontend_type(*def, new_identifier);
-
-		return result;
 	}
 
-	member_t frontend_types_t::make_member(const std::string& name, const std::string& type_identifier) const{
-		auto def = lookup_identifier(type_identifier);
-		member_t result(name, type_identifier, def);
-		return result;
+	bool frontend_types_collector_t::is_type_identifier_fully_defined(const std::string& type_identifier) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(!type_identifier.empty());
+
+		const auto existing_it = _identifiers.find(type_identifier);
+		if(existing_it != _identifiers.end() && (!existing_it->second._alias_type_identifier.empty() || existing_it->second._optional_def)){
+			return true;
+		}
+		else{
+			return false;
+		}
 	}
 
-	std::shared_ptr<type_definition_t> frontend_types_t::lookup_identifier(const std::string& s) const{
+
+	frontend_types_collector_t frontend_types_collector_t::define_struct_type(const std::string& new_identifier, std::vector<member_t> members) const{
+		QUARK_ASSERT(check_invariant());
+
+		//	Make struct def, if not already done.
+		const auto a = frontend_types_collector_t::define_struct_type(members);
+		const auto type_def = a.first;
+		const auto collector2 = a.second;
+
+		if(new_identifier.empty()){
+			return collector2;
+		}
+		else{
+			//	Make a type-identifier too.
+			const auto collector3 = collector2.define_type_identifier(new_identifier, type_def);
+
+			return collector3;
+		}
+	}
+
+	std::shared_ptr<type_indentifier_data_ref> frontend_types_collector_t::lookup_identifier_shallow(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _identifiers.find(s);
-		return it == _identifiers.end() ? std::shared_ptr<type_definition_t>() : it->second;
+		return it == _identifiers.end() ? std::shared_ptr<type_indentifier_data_ref>() : make_shared<type_indentifier_data_ref>(it->second);
 	}
 
-	std::shared_ptr<type_definition_t> frontend_types_t::lookup_signature(const std::string& s) const{
+	std::shared_ptr<type_indentifier_data_ref> frontend_types_collector_t::lookup_identifier_deep(const std::string& s) const{
+		QUARK_ASSERT(check_invariant());
+
+		const auto it = _identifiers.find(s);
+		if(it == _identifiers.end()){
+			return {};
+		}
+		else {
+			const auto alias = it->second._alias_type_identifier;
+			if(!alias.empty()){
+				return lookup_identifier_deep(alias);
+			}
+			else{
+				return make_shared<type_indentifier_data_ref>(it->second);
+			}
+		}
+	}
+
+	std::shared_ptr<type_definition_t> frontend_types_collector_t::resolve_identifier(const std::string& s) const{
+		QUARK_ASSERT(check_invariant());
+
+		const auto identifier_data = lookup_identifier_deep(s);
+		if(!identifier_data){
+			return {};
+		}
+		else{
+			return identifier_data->_optional_def;
+		}
+	}
+
+
+
+	std::shared_ptr<type_definition_t> frontend_types_collector_t::lookup_signature(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _type_definitions.find(s);
@@ -398,7 +491,7 @@ QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
 	struct {
 	}
 */
-frontend_types_t define_test_struct_0(const frontend_types_t& types){
+frontend_types_collector_t define_test_struct_0(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("", {});
 	return a;
 }
@@ -410,11 +503,11 @@ frontend_types_t define_test_struct_0(const frontend_types_t& types){
 		string b
 	}
 */
-frontend_types_t define_test_struct_1(const frontend_types_t& types){
+frontend_types_collector_t define_test_struct_1(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("struct_1",
 		{
-			types.make_member("a", "int32"),
-			types.make_member("b", "string")
+			member_t("a", "int32"),
+			member_t("b", "string")
 		}
 	);
 	return a;
@@ -427,31 +520,31 @@ frontend_types_t define_test_struct_1(const frontend_types_t& types){
 		string z
 	}
 */
-frontend_types_t define_test_struct_2(const frontend_types_t& types){
+frontend_types_collector_t define_test_struct_2(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("struct_2",
 		{
-			types.make_member("x", "string"),
-			types.make_member("y", "struct_1"),
-			types.make_member("z", "string")
+			member_t("x", "string"),
+			member_t("y", "struct_1"),
+			member_t("z", "string")
 		}
 	);
 	return a;
 }
 //??? check for duplicate member names.
-frontend_types_t define_test_struct_3(const frontend_types_t& types){
+frontend_types_collector_t define_test_struct_3(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("struct_3",
 		{
-			types.make_member("a", "bool"),
+			member_t("a", "bool"),
 			// pad
 			// pad
 			// pad
-			types.make_member("b", "int32"),
-			types.make_member("c", "bool"),
-			types.make_member("d", "bool"),
-			types.make_member("e", "bool"),
-			types.make_member("f", "bool"),
-			types.make_member("g", "string"),
-			types.make_member("h", "bool")
+			member_t("b", "int32"),
+			member_t("c", "bool"),
+			member_t("d", "bool"),
+			member_t("e", "bool"),
+			member_t("f", "bool"),
+			member_t("g", "string"),
+			member_t("h", "bool")
 		}
 	);
 	return a;
@@ -462,7 +555,7 @@ frontend_types_t define_test_struct_3(const frontend_types_t& types){
 
 
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
-	const auto a = frontend_types_t();
+	const auto a = frontend_types_collector_t();
 	const auto b = define_test_struct_0(a);
 	const auto t1 = b.lookup_signature("<struct>{}");
 	QUARK_TEST_VERIFY(t1);
@@ -470,77 +563,77 @@ QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 }
 
 QUARK_UNIT_TESTQ("to_signature()", "struct 1"){
-	const auto a = frontend_types_t();
+	const auto a = frontend_types_collector_t();
 	const auto b = define_test_struct_1(a);
-	const auto t1 = b.lookup_identifier("struct_1");
+	const auto t1 = b.resolve_identifier("struct_1");
 	const auto s1 = to_signature(*t1);
 	QUARK_TEST_VERIFY(s1 == "<struct>{<int32>a,<string>b}");
 }
 
 
 QUARK_UNIT_TESTQ("to_signature()", "struct 2"){
-	const auto a = frontend_types_t();
+	const auto a = frontend_types_collector_t();
 	const auto b = define_test_struct_1(a);
 	const auto c = define_test_struct_2(b);
-	const auto t2 = c.lookup_identifier("struct_2");
+	const auto t2 = c.resolve_identifier("struct_2");
 	const auto s2 = to_signature(*t2);
 	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct_1>y,<string>z}");
 }
 
 
 
-//////////////////////////////////////		frontend_types_t
+//////////////////////////////////////		frontend_types_collector_t
 
 
 
-QUARK_UNIT_TESTQ("frontend_types_t::frontend_types_t()", "default construction"){
-	const auto a = frontend_types_t();
+QUARK_UNIT_TESTQ("frontend_types_collector_t::frontend_types_collector_t()", "default construction"){
+	const auto a = frontend_types_collector_t();
 	QUARK_TEST_VERIFY(a.check_invariant());
 
 	QUARK_TEST_VERIFY(a._identifiers.size() == 3);
 	QUARK_TEST_VERIFY(a._type_definitions.size() == 3);
 
-	const auto b = a.lookup_identifier("int32");
+	const auto b = a.resolve_identifier("int32");
 	QUARK_TEST_VERIFY(b);
 	QUARK_TEST_VERIFY(b->_base_type == k_int32);
 
-	const auto d = a.lookup_identifier("bool");
+	const auto d = a.resolve_identifier("bool");
 	QUARK_TEST_VERIFY(d);
 	QUARK_TEST_VERIFY(d->_base_type == k_bool);
 
-	const auto c = a.lookup_identifier("string");
+	const auto c = a.resolve_identifier("string");
 	QUARK_TEST_VERIFY(c);
 	QUARK_TEST_VERIFY(c->_base_type == k_string);
 }
 
 
-QUARK_UNIT_TESTQ("frontend_types_t::lookup_identifier()", "not found"){
-	const auto a = frontend_types_t();
-	const auto b = a.lookup_identifier("xyz");
+QUARK_UNIT_TESTQ("frontend_types_collector_t::resolve_identifier()", "not found"){
+	const auto a = frontend_types_collector_t();
+	const auto b = a.resolve_identifier("xyz");
 	QUARK_TEST_VERIFY(!b);
 }
 
-QUARK_UNIT_TESTQ("frontend_types_t::lookup_identifier()", "int32 found"){
-	const auto a = frontend_types_t();
-	const auto b = a.lookup_identifier("int32");
+QUARK_UNIT_TESTQ("frontend_types_collector_t::resolve_identifier()", "int32 found"){
+	const auto a = frontend_types_collector_t();
+	const auto b = a.resolve_identifier("int32");
 	QUARK_TEST_VERIFY(b);
 }
 
 
-QUARK_UNIT_TESTQ("frontend_types_t::define_alias()", "int32 => my_int"){
-	auto a = frontend_types_t();
-	a = a.define_alias("my_int", "int32");
-	const auto b = a.lookup_identifier("my_int");
+QUARK_UNIT_TESTQ("frontend_types_collector_t::define_alias_identifier()", "int32 => my_int"){
+	auto a = frontend_types_collector_t();
+	a = a.define_alias_identifier("my_int", "int32");
+	const auto b = a.resolve_identifier("my_int");
 	QUARK_TEST_VERIFY(b);
 	QUARK_TEST_VERIFY(b->_base_type == k_int32);
 }
 
 
 QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
-	const auto a = frontend_types_t();
+	const auto a = frontend_types_collector_t();
 	const auto b = define_test_struct_3(a);
-	const auto t = b.lookup_identifier("struct_3");
-	const auto layout = calc_struct_default_memory_layout(*t);
+	const auto t = b.resolve_identifier("struct_3");
+	const auto layout = calc_struct_default_memory_layout(a, *t);
 	int i = 0;
 	for(const auto it: layout){
 		const string name = i == 0 ? "struct" : t->_struct_def->_members[i - 1]._name;
