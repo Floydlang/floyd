@@ -371,6 +371,9 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 			_identifiers["string"] = { "", def };
 			_type_definitions[to_signature(*def)] = def;
 		}
+
+		QUARK_ASSERT(_identifiers.size() == 3);
+		QUARK_ASSERT(_type_definitions.size() == 3);
 	}
 	
 	bool frontend_types_collector_t::check_invariant() const{
@@ -661,8 +664,6 @@ QUARK_UNIT_TESTQ("frontend_types_collector_t::frontend_types_collector_t()", "de
 	const auto a = frontend_types_collector_t();
 	QUARK_TEST_VERIFY(a.check_invariant());
 
-	QUARK_TEST_VERIFY(a._identifiers.size() == 3);
-	QUARK_TEST_VERIFY(a._type_definitions.size() == 3);
 
 	const auto b = a.resolve_identifier("int32");
 	QUARK_TEST_VERIFY(b);

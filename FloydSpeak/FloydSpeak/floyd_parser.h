@@ -243,32 +243,6 @@ struct value_t {
 
 
 
-/*
-inline value_t make_dummy_value(const type_identifier_t& type){
-	const auto t = type.to_string();
-	if(t == "null"){
-		return value_t();	//??? Remove concept of null??
-	}
-	else if(t == "string"){
-		return value_t("...");
-	}
-	else if(t == "int"){
-		return value_t(666);
-	}
-	else if(t == "float"){
-		return value_t(667.667f);
-	}
-	else if(t == "__data_type_value"){
-		return value_t(type_identifier_t("null"));
-	}
-	else{
-		QUARK_ASSERT(false);
-		return value_t();
-	}
-}
-*/
-
-
 
 //////////////////////////////////////////////////		AST types
 
@@ -616,7 +590,7 @@ struct ast_t {
 ast_t program_to_ast(const identifiers_t& builtins, const std::string& program);
 
 /*
-	Parses the expression sttring
+	Parses the expression string
 	Checks syntax
 	Validates that called functions exists and has correct type.
 	Validates that accessed variables exists and has correct types.

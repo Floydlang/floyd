@@ -289,10 +289,10 @@ namespace floyd_parser {
 
 		//	Key is the type identifier.
 		//	Value refers to a type_definition_t stored in _type_definition.
-		public: std::map<std::string, type_indentifier_data_ref > _identifiers;
+		private: std::map<std::string, type_indentifier_data_ref > _identifiers;
 
 		//	Key is the signature string. De-duplicated.
-		public: std::map<std::string, std::shared_ptr<type_definition_t> > _type_definitions;
+		private: std::map<std::string, std::shared_ptr<type_definition_t> > _type_definitions;
 	};
 
 
