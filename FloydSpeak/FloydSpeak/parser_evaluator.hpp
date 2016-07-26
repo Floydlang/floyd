@@ -20,9 +20,10 @@ namespace floyd_parser {
 	struct value_t;
 	struct ast_t;
 
-
 	/*
 		Evaluates an expression as far as possible.
+		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
+		return == _constant == nullptr: the expression was partially evaluate.
 	*/
 	expression_t evaluate3(const ast_t& ast, const expression_t& e);
 

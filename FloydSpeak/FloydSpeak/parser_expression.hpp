@@ -244,7 +244,6 @@ namespace floyd_parser {
 	void trace(const expression_t& e);
 
 
-
 	/*
 		()
 		(int a)

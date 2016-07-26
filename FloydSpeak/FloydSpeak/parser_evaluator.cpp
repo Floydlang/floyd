@@ -14,16 +14,6 @@
 #include "floyd_parser.h"
 
 #include <cmath>
-/*
-#include "text_parser.h"
-#include "steady_vector.h"
-#include "parser_statement.hpp"
-
-#include <string>
-#include <memory>
-#include <map>
-#include <iostream>
-*/
 
 namespace floyd_parser {
 
@@ -36,58 +26,48 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-bool compare_float_approx(float value, float expected){
-	float diff = static_cast<float>(fabs(value - expected));
-	return diff < 0.00001;
-}
 
+namespace {
 
-
-
-
-
-//////////////////////////////////////////////////		EVALUATE EXPRESSIONS
-
-
-
-bool check_args(const function_def_expr_t& f, const vector<value_t>& args){
-	if(f._args.size() != args.size()){
-		return false;
+	bool compare_float_approx(float value, float expected){
+		float diff = static_cast<float>(fabs(value - expected));
+		return diff < 0.00001;
 	}
-	for(int i = 0 ; i < args.size() ; i++){
-		if(f._args[i]._type != args[i].get_type()){
+
+	bool check_args(const function_def_expr_t& f, const vector<value_t>& args){
+		if(f._args.size() != args.size()){
 			return false;
 		}
+		for(int i = 0 ; i < args.size() ; i++){
+			if(f._args[i]._type != args[i].get_type()){
+				return false;
+			}
+		}
+		return true;
 	}
-	return true;
+
+	/*
+		- Use callstack instead of duplicating all identifiers.
+	*/
+	identifiers_t add_args(const identifiers_t& identifiers, const function_def_expr_t& f, const vector<value_t>& args){
+		QUARK_ASSERT(identifiers.check_invariant());
+		QUARK_ASSERT(f.check_invariant());
+		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+		if(!check_args(f, args)){
+			throw std::runtime_error("function arguments do not match function");
+		}
+
+		auto local_scope = identifiers;
+		for(int i = 0 ; i < args.size() ; i++){
+			const auto& arg_name = f._args[i]._identifier;
+			const auto& arg_value = args[i];
+			local_scope._constant_values[arg_name] = make_shared<const value_t>(arg_value);
+		}
+		return local_scope;
+	}
+
 }
-
-
-
-
-/*
-	- Use callstack instead of duplicating all identifiers.
-*/
-identifiers_t add_args(const identifiers_t& identifiers, const function_def_expr_t& f, const vector<value_t>& args){
-	QUARK_ASSERT(identifiers.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
-	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-
-	if(!check_args(f, args)){
-		throw std::runtime_error("function arguments do not match function");
-	}
-
-	auto local_scope = identifiers;
-	for(int i = 0 ; i < args.size() ; i++){
-		const auto& arg_name = f._args[i]._identifier;
-		const auto& arg_value = args[i];
-		local_scope._constant_values[arg_name] = make_shared<const value_t>(arg_value);
-	}
-	return local_scope;
-}
-
-
-
 
 
 value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vector<value_t>& args){
@@ -140,7 +120,6 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 
 
 //### Test string + etc.
-
 
 
 
@@ -315,8 +294,13 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 }
 
 
+}	//	floyd_parser
+
+
+
 namespace {
 
+using namespace floyd_parser;
 
 
 struct test_parser : public parser_i {
@@ -501,9 +485,7 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 //			QUARK_TEST_VERIFY(error == "EEE_WRONG_CHAR");
 		}
 	}
+
 }
 
 
-
-
-}	//	floyd_parser

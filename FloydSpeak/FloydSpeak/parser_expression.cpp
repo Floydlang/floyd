@@ -582,8 +582,6 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 	return result;
 }
 
-
-
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
 	QUARK_TEST_VERIFY((parse_function_body({}, "{}")._statements.empty()));
 }
