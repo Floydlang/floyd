@@ -24,13 +24,24 @@
 
 typedef std::pair<std::string, std::string> seq;
 
+
+///////////////////////////////		seq2
+
+
 struct seq2 {
-	seq2 substr(std::size_t pos, std::size_t count = std::string::npos){
-		return seq2();
-	}
-	
-	const std::shared_ptr<const std::string> _str;
-	std::size_t _pos;
+	public: seq2(const std::string& s);
+	public: bool check_invariant() const;
+
+	public: char first() const;
+	public: const seq2 rest() const;
+	public: std::size_t rest_size() const;
+
+	private: seq2(const std::shared_ptr<const std::string>& str, std::size_t rest_pos);
+
+
+	/////////////		STATE
+	private: const std::shared_ptr<const std::string> _str;
+	private: std::size_t _rest_pos;
 };
 
 

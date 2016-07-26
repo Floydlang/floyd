@@ -29,6 +29,77 @@ const std::string test_whitespace_chars = " \n\t";
 
 
 
+
+
+///////////////////////////////		seq2
+
+
+
+
+seq2::seq2(const std::string& s) :
+	_str(make_shared<string>(s)),
+	_rest_pos(0)
+{
+	QUARK_ASSERT(check_invariant());
+}
+
+seq2::seq2(const std::shared_ptr<const std::string>& str, std::size_t rest_pos) :
+	_str(str),
+	_rest_pos(rest_pos)
+{
+	QUARK_ASSERT(check_invariant());
+}
+
+bool seq2::check_invariant() const {
+	QUARK_ASSERT(_str);
+	QUARK_ASSERT(_rest_pos <= _str->size());
+	return true;
+}
+
+
+char seq2::first() const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(_rest_pos <= _str->size());
+
+	return (*_str)[_rest_pos];
+}
+
+const seq2 seq2::rest() const{
+	QUARK_ASSERT(check_invariant());
+
+	return seq2(_str, _rest_pos + 1);
+}
+
+std::size_t seq2::rest_size() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _str->size() - _rest_pos;
+}
+
+
+
+QUARK_UNIT_TESTQ("seq2::seq2()", ""){
+	QUARK_TEST_VERIFY(seq2("").rest_size() == 0);
+}
+
+QUARK_UNIT_TESTQ("seq2::seq2()", ""){
+	QUARK_TEST_VERIFY(seq2("xyz").rest_size() == 3);
+}
+
+QUARK_UNIT_TESTQ("seq2::first()", ""){
+	QUARK_TEST_VERIFY(seq2("xyz").first() == 'x');
+}
+
+QUARK_UNIT_TESTQ("seq2::first()", ""){
+	QUARK_TEST_VERIFY(seq2("xyz").rest().first() == 'y');
+}
+
+
+
+
+
+
+
 seq read_while(const string& s, const string& match){
 	size_t pos = 0;
 	while(pos < s.size() && match.find(s[pos]) != string::npos){
