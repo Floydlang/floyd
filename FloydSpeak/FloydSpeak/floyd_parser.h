@@ -45,6 +45,7 @@ struct c_function_spec_t {
 typedef value_t (*c_function_t)(const std::vector<arg_t>& args);
 
 
+
 struct value_t {
 	public: bool check_invariant() const{
 		QUARK_ASSERT((_type.to_string() == "__data_type_value") == (_data_type_value != nullptr));
@@ -365,6 +366,11 @@ struct variable_read_expr_t {
 };
 
 
+
+//////////////////////////////////////////////////		expression_t
+
+
+
 struct expression_t {
 	public: bool check_invariant() const{
 		return true;
@@ -569,6 +575,8 @@ inline statement_t make__return_statement(const return_statement_t& value){
 
 
 
+//////////////////////////////////////////////////		identifiers_t
+
 
 
 struct identifiers_t {
@@ -586,6 +594,11 @@ struct identifiers_t {
 };
 
 
+
+//////////////////////////////////////////////////		ast_t
+
+
+
 struct ast_t {
 	public: bool check_invariant() const {
 		return true;
@@ -597,6 +610,7 @@ struct ast_t {
 	identifiers_t _identifiers;
 	std::vector<statement_t> _top_level_statements;
 };
+
 
 
 ast_t program_to_ast(const identifiers_t& builtins, const std::string& program);
