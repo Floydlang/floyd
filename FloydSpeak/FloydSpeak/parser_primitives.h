@@ -177,29 +177,6 @@ namespace floyd_parser {
 
 
 
-	//////////////////////////////////////////////////		identifiers_t
-
-	/*
-		Holds all constants values and
-	*/
-
-	struct identifiers_t {
-		identifiers_t(){
-		}
-
-		public: bool check_invariant() const {
-			return true;
-		}
-
-		//### Function names should have namespace etc.
-		//??? Should contain all function definitions, unnamed. Address them using hash of their signature + body.
-		std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
-
-		//??? Should contain all functions too.
-		std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
-	};
-
-
 	//////////////////////////////////////////////////		ast_t
 
 
@@ -219,8 +196,15 @@ namespace floyd_parser {
 
 
 		/////////////////////////////		STATE
+		//### Function names should have namespace etc.
+		//??? Should contain all function definitions, unnamed. Address them using hash of their signature + body.
+		public: std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
+
+		//??? Should contain all functions too.
+		public: std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
+
 		public: frontend_types_collector_t _types_collector;
-		public: identifiers_t _identifiers;
+
 		public: std::vector<std::shared_ptr<statement_t> > _top_level_statements;
 	};
 

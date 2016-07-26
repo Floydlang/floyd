@@ -56,31 +56,27 @@ void trace(const statement_t& s){
 
 
 
-
-
-
-
-
 //////////////////////////////////////////////////		PARSE STATEMENTS
 
 
 
 
+namespace {
 
+	//	Temporarily add the function's input argument to the identifers, so the body can access them.
+	ast_t add_arg_identifiers(const ast_t& ast, const std::vector<arg_t> arg_types){
+		QUARK_ASSERT(ast.check_invariant());
+		for(const auto i: arg_types){ QUARK_ASSERT(i.check_invariant()); };
 
-
-//	Temporarily add the function's input argument to the identifers, so the body can access them.
-identifiers_t add_arg_identifiers(const identifiers_t& identifiers, const std::vector<arg_t> arg_types){
-	QUARK_ASSERT(identifiers.check_invariant());
-	for(const auto i: arg_types){ QUARK_ASSERT(i.check_invariant()); };
-
-	auto local_scope = identifiers;
-	for(const auto arg: arg_types){
-		const auto& arg_name = arg._identifier;
-		std::shared_ptr<value_t> blank_arg_value;
-		local_scope._constant_values[arg_name] = blank_arg_value;
+		auto local_scope = ast;
+		for(const auto arg: arg_types){
+			const auto& arg_name = arg._identifier;
+			std::shared_ptr<value_t> blank_arg_value;
+			local_scope._constant_values[arg_name] = blank_arg_value;
+		}
+		return local_scope;
 	}
-	return local_scope;
+
 }
 
 std::pair<std::pair<string, function_def_expr_t>, string> parse_function_definition_statement(const ast_t& ast, const string& pos){
@@ -105,9 +101,7 @@ std::pair<std::pair<string, function_def_expr_t>, string> parse_function_definit
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
 
-	auto local_scope = ast;
-
-	local_scope._identifiers = add_arg_identifiers(local_scope._identifiers, args);
+	auto local_scope = add_arg_identifiers(ast, args);
 
 	const auto body = parse_function_body(local_scope, body_pos.first);
 	const auto a = function_def_expr_t{ type_pos.first, args, body };

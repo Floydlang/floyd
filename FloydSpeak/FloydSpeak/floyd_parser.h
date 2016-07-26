@@ -20,7 +20,7 @@ namespace floyd_parser {
 	struct value_t;
 
 
-	ast_t program_to_ast(const identifiers_t& builtins, const std::string& program);
+	ast_t program_to_ast(const ast_t& init, const std::string& program);
 
 }	//	floyd_parser
 

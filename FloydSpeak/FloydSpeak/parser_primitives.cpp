@@ -242,11 +242,11 @@ type_identifier_t make_type_identifier(const std::string& s){
 
 
 	bool ast_t::parser_i__is_declared_function(const std::string& s) const{
-		return _identifiers._functions.find(s) != _identifiers._functions.end();
+		return _functions.find(s) != _functions.end();
 	}
 
 	bool ast_t::parser_i__is_declared_constant_value(const std::string& s) const{
-		return _identifiers._constant_values.find(s) != _identifiers._constant_values.end();
+		return _constant_values.find(s) != _constant_values.end();
 	}
 
 	bool ast_t::parser_i__is_known_type(const std::string& s) const{

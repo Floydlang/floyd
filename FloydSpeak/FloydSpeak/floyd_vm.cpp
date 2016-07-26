@@ -31,13 +31,15 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
 
+using floyd_parser::program_to_ast;
+
 
 shared_ptr<const floyd_parser::function_def_expr_t> find_global_function(const vm_t& vm, const string& name){
 /*
 	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
 */
-	const auto it = vm._ast._identifiers._functions.find(name);
-	if(it == vm._ast._identifiers._functions.end()){
+	const auto it = vm._ast._functions.find(name);
+	if(it == vm._ast._functions.end()){
 		return nullptr;
 	}
 
@@ -58,7 +60,7 @@ floyd_parser::value_t call_function(vm_t& vm, shared_ptr<const floyd_parser::fun
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
-	auto ast = program_to_ast(floyd_parser::identifiers_t(),
+	auto ast = program_to_ast({},
 		"int main(string args){\n"
 		"	return 3 + 4;\n"
 		"}\n"
@@ -71,7 +73,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
-	auto ast = floyd_parser::program_to_ast(floyd_parser::identifiers_t(),
+	auto ast = floyd_parser::program_to_ast({},
 		"int main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n"
@@ -83,7 +85,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
-	auto ast = floyd_parser::program_to_ast(floyd_parser::identifiers_t(),
+	auto ast = floyd_parser::program_to_ast({},
 		"int myfunc(){ return 5; }\n"
 		"int main(string args){\n"
 		"	return myfunc() + myfunc() * 2;\n"
@@ -100,7 +102,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
-	auto ast = program_to_ast(floyd_parser::identifiers_t(),
+	auto ast = program_to_ast({},
 		"int main(string args){\n"
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
@@ -117,7 +119,7 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 //### Check return value type.
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
-	auto ast = program_to_ast(floyd_parser::identifiers_t(),
+	auto ast = program_to_ast({},
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
 		"string main(string args){\n"
 		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
@@ -141,7 +143,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 */
 floyd_parser::value_t run_main(const string& source, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(source.size() > 0);
-	auto ast = program_to_ast(floyd_parser::identifiers_t(), source);
+	auto ast = program_to_ast({}, source);
 	auto vm = vm_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto r = call_function(vm, f, args);

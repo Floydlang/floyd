@@ -560,13 +560,13 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
 			const string& identifier = assignment_statement.first._bind_statement->_identifier;
 
-			const auto it = local_scope._identifiers._constant_values.find(identifier);
-			if(it != local_scope._identifiers._constant_values.end()){
+			const auto it = local_scope._constant_values.find(identifier);
+			if(it != local_scope._constant_values.end()){
 				throw std::runtime_error("Variable name already in use!");
 			}
 
 			shared_ptr<const value_t> blank;
-			local_scope._identifiers._constant_values[identifier] = blank;
+			local_scope._constant_values[identifier] = blank;
 
 			statements.push_back(assignment_statement.first);
 
@@ -695,10 +695,10 @@ shared_ptr<const function_def_expr_t> make_return5(){
 
 ast_t make_test_ast(){
 	ast_t result;
-	result._identifiers._functions["log"] = make_log_function();
-	result._identifiers._functions["log2"] = make_log2_function();
-	result._identifiers._functions["f"] = make_log_function();
-	result._identifiers._functions["return5"] = make_return5();
+	result._functions["log"] = make_log_function();
+	result._functions["log2"] = make_log2_function();
+	result._functions["f"] = make_log_function();
+	result._functions["return5"] = make_return5();
 	return result;
 }
 

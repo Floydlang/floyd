@@ -49,8 +49,8 @@ namespace {
 	/*
 		- Use callstack instead of duplicating all identifiers.
 	*/
-	identifiers_t add_args(const identifiers_t& identifiers, const function_def_expr_t& f, const vector<value_t>& args){
-		QUARK_ASSERT(identifiers.check_invariant());
+	ast_t add_args(const ast_t& ast, const function_def_expr_t& f, const vector<value_t>& args){
+		QUARK_ASSERT(ast.check_invariant());
 		QUARK_ASSERT(f.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -58,7 +58,7 @@ namespace {
 			throw std::runtime_error("function arguments do not match function");
 		}
 
-		auto local_scope = identifiers;
+		auto local_scope = ast;
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f._args[i]._identifier;
 			const auto& arg_value = args[i];
@@ -79,8 +79,7 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 		throw std::runtime_error("function arguments do not match function");
 	}
 
-	auto local_scope = ast;
-	local_scope._identifiers = add_args(local_scope._identifiers, f, args);
+	auto local_scope = add_args(ast, f, args);
 
 	//	??? Should respect {} for local variable scopes!
 	const auto body = f._body;
@@ -90,14 +89,14 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 		if(statement._bind_statement){
 			const auto s = statement._bind_statement;
 			const auto name = s->_identifier;
-			if(local_scope._identifiers._constant_values.count(name) != 0){
+			if(local_scope._constant_values.count(name) != 0){
 				throw std::runtime_error("local constant already exists");
 			}
 			const auto result = evaluate3(local_scope, *s->_expression);
 			if(!result._constant){
 				throw std::runtime_error("unknown variables");
 			}
-			local_scope._identifiers._constant_values[name] = make_shared<value_t>(*result._constant);
+			local_scope._constant_values[name] = make_shared<value_t>(*result._constant);
 		}
 		else if(statement._return_statement){
 			const auto expr = statement._return_statement->_expression;
@@ -240,8 +239,8 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	else if(e._call_function_expr){
 		const auto& call_function_expression = *e._call_function_expr;
 
-		const auto it = ast._identifiers._functions.find(call_function_expression._function_name);
-		QUARK_ASSERT(it != ast._identifiers._functions.end());
+		const auto it = ast._functions.find(call_function_expression._function_name);
+		QUARK_ASSERT(it != ast._functions.end());
 
 		const auto& make_function_expression = *it->second;
 
@@ -274,8 +273,8 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	}
 	else if(e._variable_read_expr){
 		const string& identifier = e._variable_read_expr->_variable_name;
-		const auto it = ast._identifiers._constant_values.find(identifier);
-		QUARK_ASSERT(it != ast._identifiers._constant_values.end());
+		const auto it = ast._constant_values.find(identifier);
+		QUARK_ASSERT(it != ast._constant_values.end());
 
 		const auto value_ref = it->second;
 		if(value_ref){

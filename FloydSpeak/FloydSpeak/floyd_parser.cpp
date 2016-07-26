@@ -204,9 +204,8 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 
 
 	//### better if ast_t is closed for modification -- internals should use different storage to collect ast into.
-ast_t program_to_ast(const identifiers_t& builtins, const string& program){
-	ast_t result;
-	result._identifiers = builtins;
+ast_t program_to_ast(const ast_t& init, const string& program){
+	ast_t result = init;
 
 	auto pos = program;
 	pos = skip_whitespace(pos);
@@ -219,13 +218,13 @@ ast_t program_to_ast(const identifiers_t& builtins, const string& program){
 			const auto e = statement_pos.first._bind_statement->_expression;
 
 			if(e->_function_def_expr){
-				const auto foundIt = result._identifiers._functions.find(identifier);
-				if(foundIt != result._identifiers._functions.end()){
+				const auto foundIt = result._functions.find(identifier);
+				if(foundIt != result._functions.end()){
 					throw std::runtime_error("Function \"" + identifier + "\" already defined.");
 				}
 
 				//	shared_ptr
-				result._identifiers._functions[identifier] = e->_function_def_expr;
+				result._functions[identifier] = e->_function_def_expr;
 			}
 		}
 		else{
@@ -246,7 +245,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	"	return 3;\n"
 	"}\n";
 
-	const auto result = program_to_ast(identifiers_t(), kProgram1);
+	const auto result = program_to_ast({}, kProgram1);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_identifier == "main");
@@ -265,7 +264,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	"}\n"
 	;
 
-	const auto result = program_to_ast(identifiers_t(), kProgram);
+	const auto result = program_to_ast({}, kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement);
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_identifier == "f");
@@ -292,7 +291,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	;
 	QUARK_TRACE(kProgram);
 
-	const auto result = program_to_ast(identifiers_t(), kProgram);
+	const auto result = program_to_ast({}, kProgram);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 2);
 
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement);
@@ -330,7 +329,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	"	float test = testx(1234);\n"
 	"	return 3;\n"
 	"}\n";
-	auto r = program_to_ast(identifiers_t(), kProgram2);
+	auto r = program_to_ast({}, kProgram2);
 	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_identifier == "testx");
