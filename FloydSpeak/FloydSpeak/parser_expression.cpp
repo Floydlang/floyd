@@ -15,7 +15,6 @@
 #include <cmath>
 
 
-
 namespace floyd_parser {
 
 
@@ -133,7 +132,7 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 		//	Function call.
 		if(!p2.empty() && p2[0] == '('){
 			//	Lookup function!
-			if(!parser.parser_i_is_declared_function(identifier_pos.first)){
+			if(!parser.parser_i__is_declared_function(identifier_pos.first)){
 				throw std::runtime_error("Unknown function \"" + identifier_pos.first + "\"");
 			}
 
@@ -156,7 +155,7 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 		//	Variable-read.
 		else{
 			//	Lookup value!
-			if(!parser.parser_i_is_declared_constant_value(identifier_pos.first)){
+			if(!parser.parser_i__is_declared_constant_value(identifier_pos.first)){
 				throw std::runtime_error("Unknown identifier \"" + identifier_pos.first + "\"");
 			}
 			return { variable_read_expr_t{identifier_pos.first }, p2 };
@@ -177,14 +176,15 @@ pair<expression_t, string> parse_single(const parser_i& parser, const string& s)
 
 
 struct test_parser : public parser_i {
-	public: test_parser(){
-	}
-
-	public: virtual bool parser_i_is_declared_function(const std::string& s) const{
+	public: virtual bool parser_i__is_declared_function(const std::string& s) const{
 		return s == "log" || s == "log2" || s == "f" || s == "return5";
 	}
-	public: virtual bool parser_i_is_declared_constant_value(const std::string& s) const{
+	public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const{
 		return false;
+	}
+
+	bool parser_i__is_known_type(const std::string& s) const{
+		return true;
 	}
 };
 
@@ -197,7 +197,7 @@ QUARK_UNIT_TESTQ("parse_single", "number"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call"){
-	const test_parser parser;
+	test_parser parser;
 	const auto a = parse_single(parser, "log(34.5)");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 1);
@@ -206,7 +206,7 @@ QUARK_UNIT_TESTQ("parse_single", "function call"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
-	const test_parser parser;
+	test_parser parser;
 	const auto a = parse_single(parser, "log2(\"123\" + \"xyz\", 1000 * 3)");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
@@ -216,7 +216,7 @@ QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
-	const test_parser parser;
+	test_parser parser;
 	const auto a = parse_single(parser, "log2(2.1, f(3.14))");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
@@ -429,6 +429,209 @@ void trace(const expression_t& e){
 
 
 
+
+
+vector<arg_t> parse_functiondef_arguments(const string& s2){
+	const auto s(s2.substr(1, s2.length() - 2));
+	vector<arg_t> args;
+	auto str = s;
+	while(!str.empty()){
+		const auto arg_type = get_type(str);
+		const auto arg_name = get_identifier(arg_type.second);
+		const auto optional_comma = read_optional_char(arg_name.second, ',');
+
+		const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
+		args.push_back(a);
+		str = skip_whitespace(optional_comma.second);
+	}
+
+	trace_vec("parsed arguments:", args);
+	return args;
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_TEST_VERIFY((parse_functiondef_arguments("()") == vector<arg_t>{}));
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
+	QUARK_TEST_VERIFY((r == vector<arg_t>{
+		{ make_type_identifier("int"), "x" },
+		{ make_type_identifier("string"), "y" },
+		{ make_type_identifier("float"), "z" }
+	}
+	));
+}
+
+
+
+/*
+	Never simplifes - the parser is non-lossy.
+
+	Must not have whitespace before / after {}.
+	{}
+
+	{
+		return 3;
+	}
+
+	{
+		return 3 + 4;
+	}
+	{
+		return f(3, 4) + 2;
+	}
+
+
+	//	Example: binding constants to constants, result of function calls and math operations.
+	{
+		int a = 10;
+		int b = f(a);
+		int c = a + b;
+		return c;
+	}
+
+	//	Local scope.
+	{
+		{
+			int a = 10;
+		}
+	}
+	{
+		struct point2d {
+			int _x;
+			int _y;
+		}
+	}
+
+	{
+		int my_func(string a, string b){
+			int c = a + b;
+			return c;
+		}
+	}
+
+	FUTURE
+	- Include comments
+	- Split-out parse_statement().
+	- Add struct {}
+	- Add variables
+	- Add local functions
+*/
+//??? Need concept of parsing stack-frame to store local variables.
+
+
+
+function_body_t parse_function_body(const ast_t& ast, const string& s){
+	QUARK_SCOPED_TRACE("parse_function_body()");
+	QUARK_ASSERT(s.size() >= 2);
+	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
+
+	const string body_str = skip_whitespace(s.substr(1, s.size() - 2));
+
+	vector<statement_t> statements;
+
+	ast_t local_scope = ast;
+
+	string pos = body_str;
+	while(!pos.empty()){
+
+		//	Examine function body, one statement at a time. Only statements are allowed.
+		const auto token_pos = read_until(pos, whitespace_chars);
+
+		//	return statement?
+		if(token_pos.first == "return"){
+			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
+			const auto expression1 = parse_expression(local_scope, expression_pos.first);
+//			const auto expression2 = evaluate3(local_scope, expression1);
+			const auto statement = statement_t(return_statement_t{ make_shared<expression_t>(expression1) });
+			statements.push_back(statement);
+
+			//	Skip trailing ";".
+			pos = skip_whitespace(expression_pos.second.substr(1));
+		}
+
+		//	Define local variable?
+		/*
+			"int a = 10;"
+			"string hello = f(a) + \"_suffix\";";
+		*/
+		else if(ast.parser_i__is_known_type(token_pos.first)){
+			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
+			const string& identifier = assignment_statement.first._bind_statement->_identifier;
+
+			const auto it = local_scope._identifiers._constant_values.find(identifier);
+			if(it != local_scope._identifiers._constant_values.end()){
+				throw std::runtime_error("Variable name already in use!");
+			}
+
+			shared_ptr<const value_t> blank;
+			local_scope._identifiers._constant_values[identifier] = blank;
+
+			statements.push_back(assignment_statement.first);
+
+			//	Skips trailing ";".
+			pos = skip_whitespace(assignment_statement.second);
+		}
+		else{
+			throw std::runtime_error("syntax error");
+		}
+	}
+	const auto result = function_body_t{ statements };
+	trace(result);
+	return result;
+}
+
+
+
+QUARK_UNIT_TESTQ("parse_function_body()", ""){
+	QUARK_TEST_VERIFY((parse_function_body({}, "{}")._statements.empty()));
+}
+
+QUARK_UNIT_TESTQ("parse_function_body()", ""){
+	QUARK_TEST_VERIFY(parse_function_body({}, "{return 3;}")._statements.size() == 1);
+}
+
+QUARK_UNIT_TESTQ("parse_function_body()", ""){
+	QUARK_TEST_VERIFY(parse_function_body({}, "{\n\treturn 3;\n}")._statements.size() == 1);
+}
+
+QUARK_UNIT_TESTQ("parse_function_body()", ""){
+	const auto a = parse_function_body(make_test_ast(),
+		"{	float test = log(10.11);\n"
+		"	return 3;\n}"
+	);
+	QUARK_TEST_VERIFY(a._statements.size() == 2);
+	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_identifier == "test");
+	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression->_call_function_expr->_function_name == "log");
+	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a._statements[0]._bind_statement->_expression->_call_function_expr->_inputs[0]->_constant == value_t(10.11f));
+
+	QUARK_TEST_VERIFY(*a._statements[1]._return_statement->_expression->_constant == value_t(3));
+}
+
+/*
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto identifiers = make_test_ast();
+	const auto a = parse_function_body(identifiers,
+		"{ return return5() + return5() * 2;\n}"
+	);
+	QUARK_TEST_VERIFY(a._statements.size() == 1);
+//	QUARK_TEST_VERIFY(a._statements[0]._return_statement->_expression._math_operation2);
+
+	const auto b = evaluate3(identifiers, *a._statements[0]._return_statement->_expression);
+	QUARK_TEST_VERIFY(b._constant && *b._constant == value_t(15));
+
+//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_identifier == "test");
+//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression._call_function->_function_name == "log");
+//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression._call_function->_inputs.size() == 1);
+//	QUARK_TEST_VERIFY(*a._statements[0]._bind_statement->_expression._call_function->_inputs[0]->_constant == value_t(10.11f));
+}
+*/
+
+
+
+
 expression_t parse_expression(const parser_i& parser, string expression){
 	if(expression.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
@@ -442,6 +645,67 @@ expression_t parse_expression(const parser_i& parser, string expression){
 	trace(result.first);
 	return result.first;
 }
+
+
+
+
+
+
+//////////////////////////////////////////////////		test rig
+
+
+
+shared_ptr<const function_def_expr_t> make_log_function(){
+	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(123.f))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+}
+
+shared_ptr<const function_def_expr_t> make_log2_function(){
+	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ make_shared<expression_t>(make_constant(value_t(456.7f))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+}
+
+shared_ptr<const function_def_expr_t> make_return5(){
+	vector<arg_t> args{};
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ make_shared<expression_t>(make_constant(value_t(5))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("int"), args, body });
+}
+
+
+ast_t make_test_ast(){
+	ast_t result;
+	result._identifiers._functions["log"] = make_log_function();
+	result._identifiers._functions["log2"] = make_log2_function();
+	result._identifiers._functions["f"] = make_log_function();
+	result._identifiers._functions["return5"] = make_return5();
+	return result;
+}
+
+
+
 
 
 //??? where are unit tests???

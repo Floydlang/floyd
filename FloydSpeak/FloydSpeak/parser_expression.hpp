@@ -20,7 +20,7 @@
 namespace floyd_parser {
 	struct expression_t;
 	struct statement_t;
-
+	struct ast_t;
 
 	//////////////////////////////////////////////////		function_def_expr_t
 
@@ -155,22 +155,6 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-	/*
-		void swap(expression_t& other) throw(){
-			_function_def_expr.swap(other._function_def_expr);
-			_constant.swap(other._constant);
-			_math_operation2.swap(other._math_operation2);
-			_math_operation1.swap(other._math_operation1);
-			std::swap(_nop, other._nop);
-		}
-
-		const expression_t& operator=(const expression_t& other){
-			auto expression_t temp = other;
-			temp.swap(*this);
-			return *this;
-		}
-	*/
-
 		bool operator==(const expression_t& other) const {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
@@ -262,6 +246,16 @@ namespace floyd_parser {
 
 
 	/*
+		()
+		(int a)
+		(int x, int y)
+	*/
+	std::vector<arg_t> parse_functiondef_arguments(const std::string& s2);
+
+	function_body_t parse_function_body(const ast_t& ast, const std::string& s);
+
+
+	/*
 		Parses the expression string
 		Checks syntax
 		Validates that called functions exists and has correct type.
@@ -285,7 +279,9 @@ namespace floyd_parser {
 
 			(my_fun1("hello, 3) + 4) * my_fun2(10))
 	*/
-	expression_t parse_expression(const parser_i& identifiers, std::string expression);
+	expression_t parse_expression(const parser_i& parser, std::string expression);
+
+	ast_t make_test_ast();
 
 }
 

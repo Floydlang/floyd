@@ -54,8 +54,9 @@ MANIFEST: To Create a small general purpose languages that promotes great softwa
 - Looks like JS or C
 - Pure and immutable
 - Explicit time / mutation / concurrency control
-- Separate correctness from optimuzation
+- Separate correctness from optimisation
 - Strict and static typing
+- Next generation runtime
 - Persistent data structures built in
 - Supports OOP classes and encapsulation (objects are persistent/immutable)
 - Supports OOP interfaces

@@ -19,6 +19,10 @@
 
 
 namespace floyd_parser {
+	struct function_def_expr_t;
+	struct value_t;
+	struct statement_t;
+
 	const std::vector<std::string> basic_types {
 		"bool",
 		"char???",
@@ -166,10 +170,62 @@ namespace floyd_parser {
 
 	struct parser_i {
 		public: virtual ~parser_i(){};
-		public: virtual bool parser_i_is_declared_function(const std::string& s) const = 0;
-		public: virtual bool parser_i_is_declared_constant_value(const std::string& s) const = 0;
+		public: virtual bool parser_i__is_declared_function(const std::string& s) const = 0;
+		public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const = 0;
+		public: virtual bool parser_i__is_known_type(const std::string& s) const = 0;
 	};
 
+
+
+	//////////////////////////////////////////////////		identifiers_t
+
+	/*
+		Holds all constants values and
+	*/
+
+	struct identifiers_t {
+		identifiers_t(){
+		}
+
+		public: bool check_invariant() const {
+			return true;
+		}
+
+		//### Function names should have namespace etc.
+		//??? Should contain all function definitions, unnamed. Address them using hash of their signature + body.
+		std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
+
+		//??? Should contain all functions too.
+		std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
+	};
+
+
+	//////////////////////////////////////////////////		ast_t
+
+
+	struct ast_t : public parser_i {
+		public: ast_t(){
+		}
+
+		public: bool check_invariant() const {
+			return true;
+		}
+
+		/////////////////////////////		parser_i
+
+		public: virtual bool parser_i__is_declared_function(const std::string& s) const;
+		public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const;
+		public: virtual bool parser_i__is_known_type(const std::string& s) const;
+
+
+		/////////////////////////////		STATE
+		public: frontend_types_collector_t _types_collector;
+		public: identifiers_t _identifiers;
+		public: std::vector<std::shared_ptr<statement_t> > _top_level_statements;
+	};
+
+
+	
 }	//	floyd_parser
 
 

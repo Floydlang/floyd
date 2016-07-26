@@ -89,6 +89,42 @@ namespace floyd_parser {
 	statement_t make__bind_statement(const std::string& identifier, const expression_t& e);
 	statement_t make__return_statement(const return_statement_t& value);
 
+	void trace(const statement_t& s);
+
+
+
+	/*
+		Named function:
+
+		int myfunc(string a, int b){
+			...
+			return b + 1;
+		}
+
+
+		LATER:
+		Lambda:
+
+		int myfunc(string a){
+			() => {
+			}
+		}
+	*/
+	std::pair<std::pair<std::string, function_def_expr_t>, std::string> parse_function_definition_statement(const ast_t& ast, const std::string& pos);
+
+
+	/*
+		"int a = 10;"
+		"float b = 0.3;"
+		"int c = a + b;"
+		"int b = f(a);"
+		"string hello = f(a) + \"_suffix\";";
+
+		...can contain trailing whitespace.
+	*/
+	std::pair<statement_t, std::string> parse_assignment_statement(const ast_t& ast, const std::string& s);
+
+
 }	//	floyd_parser
 
 
