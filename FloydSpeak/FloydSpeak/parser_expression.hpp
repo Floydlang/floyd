@@ -12,31 +12,17 @@
 #include "quark.h"
 #include <vector>
 #include <string>
-#include <map>
 
 #include "parser_types.h"
-#include "parser_primitives.h"
 #include "parser_value.hpp"
 
 
 namespace floyd_parser {
-
-
-
 	struct expression_t;
 	struct statement_t;
-	struct identifiers_t;
 
 
-
-
-
-
-
-
-	struct math_operation2_expr_t;
-	struct math_operation1_expr_t;
-
+	//////////////////////////////////////////////////		function_def_expr_t
 
 
 	struct function_def_expr_t {
@@ -53,6 +39,10 @@ namespace floyd_parser {
 		const std::vector<arg_t> _args;
 		const function_body_t _body;
 	};
+
+
+	//////////////////////////////////////////////////		math_operation2_expr_t
+
 
 	struct math_operation2_expr_t {
 		bool operator==(const math_operation2_expr_t& other) const;
@@ -71,6 +61,10 @@ namespace floyd_parser {
 		const std::shared_ptr<expression_t> _right;
 	};
 
+
+	//////////////////////////////////////////////////		math_operation1_expr_t
+
+
 	struct math_operation1_expr_t {
 		bool operator==(const math_operation1_expr_t& other) const;
 
@@ -84,6 +78,10 @@ namespace floyd_parser {
 		const std::shared_ptr<expression_t> _input;
 	};
 
+
+	//////////////////////////////////////////////////		function_call_expr_t
+
+
 	struct function_call_expr_t {
 		bool operator==(const function_call_expr_t& other) const{
 			return _function_name == other._function_name && _inputs == other._inputs;
@@ -93,6 +91,10 @@ namespace floyd_parser {
 		const std::string _function_name;
 		const std::vector<std::shared_ptr<expression_t>> _inputs;
 	};
+
+
+	//////////////////////////////////////////////////		variable_read_expr_t
+
 
 	struct variable_read_expr_t {
 		bool operator==(const variable_read_expr_t& other) const{
@@ -104,9 +106,7 @@ namespace floyd_parser {
 	};
 
 
-
 	//////////////////////////////////////////////////		expression_t
-
 
 
 	struct expression_t {
@@ -214,12 +214,18 @@ namespace floyd_parser {
 	};
 
 
+	//////////////////////////////////////////////////		inlines
+
+
 	inline bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
 		return _operation == other._operation && *_left == *other._left && *_right == *other._right;
 	}
 	inline bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
 		return _operation == other._operation && *_input == *other._input;
 	}
+
+
+	//////////////////////////////////////////////////		make specific expressions
 
 
 	inline expression_t make__function_def_expr(const function_def_expr_t& value){
@@ -243,6 +249,8 @@ namespace floyd_parser {
 	}
 
 
+	//////////////////////////////////////////////////		trace()
+
 
 	void trace(const function_def_expr_t& e);
 	void trace(const math_operation2_expr_t& e);
@@ -256,6 +264,13 @@ namespace floyd_parser {
 
 
 	/*
+		Parses the expression string
+		Checks syntax
+		Validates that called functions exists and has correct type.
+		Validates that accessed variables exists and has correct types.
+
+		No optimization or evalution of any constant expressions etc.
+
 		Example input:
 			0
 			3

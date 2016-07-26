@@ -23,19 +23,6 @@ using std::string;
 
 namespace floyd_parser {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 	//////////////////////////////////////////////////		type_identifier_t
 
 
@@ -122,12 +109,9 @@ namespace floyd_parser {
 	}
 
 
-
-
 	bool is_valid_type_identifier(const std::string& s){
 		return true;
 	}
-
 
 
 
@@ -157,8 +141,6 @@ namespace floyd_parser {
 	bool struct_def_t::check_invariant() const{
 		return true;
 	}
-
-
 
 
 

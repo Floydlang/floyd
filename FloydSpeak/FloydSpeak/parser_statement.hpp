@@ -16,16 +16,15 @@
 #include <map>
 
 #include "parser_types.h"
-//#include "parser_expression.cpp"
 #include "parser_primitives.h"
 
 
-
 namespace floyd_parser {
-
-
 	struct statement_t;
 	struct expression_t;
+
+
+	//////////////////////////////////////		bind_statement_t
 
 
 	struct bind_statement_t {
@@ -37,6 +36,10 @@ namespace floyd_parser {
 		std::shared_ptr<expression_t> _expression;
 	};
 
+
+	//////////////////////////////////////		return_statement_t
+
+
 	struct return_statement_t {
 		bool operator==(const return_statement_t& other) const {
 			return _expression == other._expression;
@@ -44,6 +47,11 @@ namespace floyd_parser {
 
 		std::shared_ptr<expression_t> _expression;
 	};
+
+
+
+	//////////////////////////////////////		statement_t
+
 
 	struct statement_t {
 		statement_t(const bind_statement_t& value) :
@@ -74,19 +82,14 @@ namespace floyd_parser {
 	};
 
 
-
-
+	//////////////////////////////////////		Makers
 
 
 	statement_t make__bind_statement(const bind_statement_t& value);
 	statement_t make__bind_statement(const std::string& identifier, const expression_t& e);
 	statement_t make__return_statement(const return_statement_t& value);
 
-
-
-
 }	//	floyd_parser
-
 
 
 #endif /* parser_statement_hpp */

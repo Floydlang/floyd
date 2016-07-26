@@ -15,9 +15,7 @@
 #include "runtime_core.h"
 
 
-
 namespace runtime_value {
-
 
 	//////////////////////////////////////		frontend_value_ref
 

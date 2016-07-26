@@ -25,8 +25,7 @@ namespace floyd_parser {
 	struct frontend_types_collector_t;
 
 
-	////////////////////////			frontend_base_type
-
+	//////////////////////////////////////		frontend_base_type
 
 	/*
 		This type is tracked by compiler, not stored in the value-type.
@@ -47,10 +46,13 @@ namespace floyd_parser {
 	};
 
 
+	//////////////////////////////////////		type_identifier_t
 
-	//////////////////////////////////////////////////		type_identifier_t
-
-
+	/*
+		Textual specification of a type-identifier.
+		It only contains valid characters.
+		There is no guarantee this type actually exists.
+	*/
 
 	struct type_identifier_t {
 		public: static type_identifier_t make_type(std::string s);
@@ -90,7 +92,7 @@ namespace floyd_parser {
 
 
 
-	////////////////////////			member_t
+	//////////////////////////////////////		Definition of a struct-member.
 
 
 
@@ -103,9 +105,12 @@ namespace floyd_parser {
 	};
 
 
-	////////////////////////			struct_def_t
+
+	//////////////////////////////////////		struct_def_t
 
 	/*
+		Defines a struct, including all members.
+
 		TODO
 		- Add member functions / vtable
 		- Add memory layout calculation and storage
@@ -123,7 +128,7 @@ namespace floyd_parser {
 	};
 
 
-	////////////////////////			struct_def_t
+	//////////////////////////////////////		vector_def_t
 
 
 	struct vector_def_t {
@@ -137,10 +142,11 @@ namespace floyd_parser {
 	};
 
 
-	////////////////////////			type_definition_t
+
+	//////////////////////////////////////		type_definition_t
 
 	/*
-		Recursively describes a frontend type.
+		Describes a frontend type. All sub-types may or may not be known yet.
 
 		TODO
 		- Add memory layout calculation and storage
@@ -162,7 +168,6 @@ namespace floyd_parser {
 		public: std::shared_ptr<struct_def_t> _struct_def;
 		public: std::shared_ptr<vector_def_t> _vector_def;
 	};
-
 
 
 
@@ -194,10 +199,15 @@ namespace floyd_parser {
 
 
 
-	////////////////////////			frontend_types_collector_t
+	//////////////////////////////////////		frontend_types_collector_t
 
-
-
+	/*
+		What we know about a type-identifier so far.
+		It can be:
+		A) an alias for another type-identifier
+		B) defined using a type-definition
+		C) Neither = the type-identifier is declared but not defined.
+	*/
 	struct type_indentifier_data_ref {
 		//	Used only when this type_identifier is a straigh up alias of an existing type.
 		//	The _optional_def is never used in this case.
@@ -209,10 +219,14 @@ namespace floyd_parser {
 	};
 
 
-	////////////////////////			frontend_types_collector_t
+	//////////////////////////////////////		frontend_types_collector_t
 
 
 	/*
+		This object is used during parsing.
+		It support partially defines types and slow lookups.
+		You can do lookups recursively but it's pretty slow.
+
 		Holds all types of program:
 			- built-ins like float, bool.
 			- vector<XYZ>, map etc.
@@ -220,12 +234,6 @@ namespace floyd_parser {
 			- both named and unnamed types.
 
 		A type can be declared but not yet completely defined (maybe forward declared or a member type is still unknown).
-
-
-		This object is only used during parsing.
-		It support partially defines types and slow lookups.
-
-		When parsing is complete, a faster compile-time object is created instead.
 	*/
 	struct frontend_types_collector_t {
 		public: frontend_types_collector_t();

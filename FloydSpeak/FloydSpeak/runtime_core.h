@@ -15,14 +15,12 @@
 #include <vector>
 
 
-
-
-#define FLOYD_CACHE_LINE_SIZE		64
-#define FLOYD_VIRTUAL_PAGE_SIZE		4096
-#define FLOYD_HUGE_SIZE				(4096 * 1024)
-
-
 namespace runtime_core {
+
+	#define FLOYD_CACHE_LINE_SIZE		64
+	#define FLOYD_VIRTUAL_PAGE_SIZE		4096
+	#define FLOYD_HUGE_SIZE				(4096 * 1024)
+
 
 	//////////////////////////////////////		rt_cache_line_t
 

@@ -22,6 +22,8 @@
 
 #include "text_parser.h"
 #include "steady_vector.h"
+#include "parser_expression.hpp"
+#include "parser_statement.hpp"
 
 #include <string>
 #include <memory>
