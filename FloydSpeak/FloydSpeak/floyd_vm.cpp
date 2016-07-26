@@ -17,6 +17,7 @@
 #include <cmath>
 
 
+#include "parser_evaluator.hpp"
 #include "parser_value.hpp"
 #include "parser_statement.hpp"
 
@@ -52,7 +53,7 @@ floyd_parser::value_t call_function(vm_t& vm, shared_ptr<const floyd_parser::fun
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-	const auto r = run_function(vm._ast, *f, args);
+	const auto r = floyd_parser::run_function(vm._ast, *f, args);
 	return r;
 }
 

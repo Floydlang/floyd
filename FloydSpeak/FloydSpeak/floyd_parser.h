@@ -64,15 +64,6 @@ namespace floyd_parser {
 
 
 	ast_t program_to_ast(const identifiers_t& builtins, const std::string& program);
-
-	/*
-		Evaluates an expression as far as possible.
-	*/
-	expression_t evaluate3(const ast_t& ast, const expression_t& e);
-
-
-	value_t run_function(const ast_t& ast, const function_def_expr_t& f, const std::vector<value_t>& args);
-
 }	//	floyd_parser
 
 
