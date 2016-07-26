@@ -26,18 +26,7 @@ using std::pair;
 
 
 
-
-
-
-
-
-
-
-
-
-
 //////////////////////////////////////////////////		Text parsing primitives
-
 
 
 
@@ -188,9 +177,6 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 
 
 
-
-
-
 /*
 	These functions knows about the Floyd syntax.
 */
@@ -251,24 +237,21 @@ type_identifier_t make_type_identifier(const std::string& s){
 }
 
 
+	//////////////////////////////////////////////////		ast_t
 
 
 
-		//////////////////////////////////////////////////		ast_t
+	bool ast_t::parser_i__is_declared_function(const std::string& s) const{
+		return _identifiers._functions.find(s) != _identifiers._functions.end();
+	}
 
+	bool ast_t::parser_i__is_declared_constant_value(const std::string& s) const{
+		return _identifiers._constant_values.find(s) != _identifiers._constant_values.end();
+	}
 
-
-		bool ast_t::parser_i__is_declared_function(const std::string& s) const{
-			return _identifiers._functions.find(s) != _identifiers._functions.end();
-		}
-
-		bool ast_t::parser_i__is_declared_constant_value(const std::string& s) const{
-			return _identifiers._constant_values.find(s) != _identifiers._constant_values.end();
-		}
-
-		bool ast_t::parser_i__is_known_type(const std::string& s) const{
-			return true;
-		}
+	bool ast_t::parser_i__is_known_type(const std::string& s) const{
+		return true;
+	}
 
 
 
@@ -303,8 +286,6 @@ type_identifier_t make_type_identifier(const std::string& s){
 		return _parser->parser_i_is_known_type(s);
 	}
 */
-
-
 
 
 
