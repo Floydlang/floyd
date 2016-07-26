@@ -36,10 +36,7 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 
 
 
-
-
-
-pair<expression_t, string> parse_summands(const identifiers_t& identifiers, const string& s, int depth);
+pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth);
 
 
 expression_t negate_expression(const expression_t& e){
@@ -86,8 +83,7 @@ float parse_float(const string& pos){
 		- Add member access: my_data.name.first_name
 		- Add lambda / local function
 */
-pair<expression_t, string> parse_single_internal(const identifiers_t& identifiers, const string& s) {
-	QUARK_ASSERT(identifiers.check_invariant());
+pair<expression_t, string> parse_single_internal(const parser_i& parser, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	string pos = s;
@@ -137,7 +133,7 @@ pair<expression_t, string> parse_single_internal(const identifiers_t& identifier
 		//	Function call.
 		if(!p2.empty() && p2[0] == '('){
 			//	Lookup function!
-			if(identifiers._functions.find(identifier_pos.first) == identifiers._functions.end()){
+			if(!parser.parser_i_is_declared_function(identifier_pos.first)){
 				throw std::runtime_error("Unknown function \"" + identifier_pos.first + "\"");
 			}
 
@@ -148,7 +144,7 @@ pair<expression_t, string> parse_single_internal(const identifiers_t& identifier
 			vector<std::shared_ptr<expression_t>> args_expressions;
 			while(!p2.empty()){
 				const auto p3 = read_until(skip_whitespace(p2), ",");
-				expression_t arg_expre = parse_expression(identifiers, p3.first);
+				expression_t arg_expre = parse_expression(parser, p3.first);
 				args_expressions.push_back(std::make_shared<expression_t>(arg_expre));
 				p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 			}
@@ -160,7 +156,7 @@ pair<expression_t, string> parse_single_internal(const identifiers_t& identifier
 		//	Variable-read.
 		else{
 			//	Lookup value!
-			if(identifiers._constant_values.find(identifier_pos.first) == identifiers._constant_values.end()){
+			if(!parser.parser_i_is_declared_constant_value(identifier_pos.first)){
 				throw std::runtime_error("Unknown identifier \"" + identifier_pos.first + "\"");
 			}
 			return { variable_read_expr_t{identifier_pos.first }, p2 };
@@ -171,73 +167,38 @@ pair<expression_t, string> parse_single_internal(const identifiers_t& identifier
 	}
 }
 
-pair<expression_t, string> parse_single(const identifiers_t& identifiers, const string& s){
-	QUARK_ASSERT(identifiers.check_invariant());
-
-	const auto result = parse_single_internal(identifiers, s);
+pair<expression_t, string> parse_single(const parser_i& parser, const string& s){
+	const auto result = parse_single_internal(parser, s);
 	trace(result.first);
 	return result;
 }
 
 
-shared_ptr<const function_def_expr_t> make_log_function(){
-	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
-	function_body_t body{
-		{
-			make__return_statement(
-				return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(123.f))) }
-			)
-		}
-	};
-
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
-}
-
-shared_ptr<const function_def_expr_t> make_log2_function(){
-	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
-	function_body_t body{
-		{
-			make__return_statement(
-				return_statement_t{ make_shared<expression_t>(make_constant(value_t(456.7f))) }
-			)
-		}
-	};
-
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
-}
-
-shared_ptr<const function_def_expr_t> make_return5(){
-	vector<arg_t> args{};
-	function_body_t body{
-		{
-			make__return_statement(
-				return_statement_t{ make_shared<expression_t>(make_constant(value_t(5))) }
-			)
-		}
-	};
-
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("int"), args, body });
-}
 
 
-identifiers_t make_test_functions(){
-	identifiers_t result;
-	result._functions["log"] = make_log_function();
-	result._functions["log2"] = make_log2_function();
-	result._functions["f"] = make_log_function();
-	result._functions["return5"] = make_return5();
-	return result;
-}
+struct test_parser : public parser_i {
+	public: test_parser(){
+	}
 
+	public: virtual bool parser_i_is_declared_function(const std::string& s) const{
+		return s == "log" || s == "log2" || s == "f" || s == "return5";
+	}
+	public: virtual bool parser_i_is_declared_constant_value(const std::string& s) const{
+		return false;
+	}
+};
+
+
+//??? Do we perform proper type checking when building parse tree? Or will parse tree contain syntax errors?
 
 QUARK_UNIT_TESTQ("parse_single", "number"){
-	identifiers_t identifiers;
-	QUARK_TEST_VERIFY((parse_single(identifiers, "9.0") == pair<expression_t, string>(value_t{ 9.0f }, "")));
+	test_parser parser;
+	QUARK_TEST_VERIFY((parse_single(parser, "9.0") == pair<expression_t, string>(value_t{ 9.0f }, "")));
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call"){
-	const auto identifiers = make_test_functions();
-	const auto a = parse_single(identifiers, "log(34.5)");
+	const test_parser parser;
+	const auto a = parse_single(parser, "log(34.5)");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 1);
 	QUARK_TEST_VERIFY(*a.first._call_function_expr->_inputs[0]->_constant == value_t(34.5f));
@@ -245,8 +206,8 @@ QUARK_UNIT_TESTQ("parse_single", "function call"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
-	const auto identifiers = make_test_functions();
-	const auto a = parse_single(identifiers, "log2(\"123\" + \"xyz\", 1000 * 3)");
+	const test_parser parser;
+	const auto a = parse_single(parser, "log2(\"123\" + \"xyz\", 1000 * 3)");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[0]->_math_operation2_expr);
@@ -255,8 +216,8 @@ QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
-	const auto identifiers = make_test_functions();
-	const auto a = parse_single(identifiers, "log2(2.1, f(3.14))");
+	const test_parser parser;
+	const auto a = parse_single(parser, "log2(2.1, f(3.14))");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[0]->_constant);
@@ -268,7 +229,7 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 
 
 // Parse a constant or an expression in parenthesis
-pair<expression_t, string> parse_atom(const identifiers_t& identifiers, const string& s, int depth) {
+pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, int depth) {
 	string pos = skip_whitespace(s);
 
 	//	Handle the sign before parenthesis (or before number)
@@ -284,7 +245,7 @@ pair<expression_t, string> parse_atom(const identifiers_t& identifiers, const st
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = parse_summands(identifiers, pos, depth);
+		auto res = parse_summands(parser, pos, depth);
 		pos = skip_whitespace(res.second);
 		if(!(res.second.size() > 0 && res.second[0] == ')')) {
 			// Unmatched opening parenthesis
@@ -297,39 +258,43 @@ pair<expression_t, string> parse_atom(const identifiers_t& identifiers, const st
 
 	//	Parse constant literal / function call / variable-access.
 	if(pos.size() > 0){
-		const auto single_pos = parse_single(identifiers, pos);
+		const auto single_pos = parse_single(parser, pos);
 		return { negative ? negate_expression(single_pos.first) : single_pos.first, single_pos.second };
 	}
 
 	throw std::runtime_error("Expected number");
 }
 
-//### more tests here!
+
+
+
+
+//??? more tests here!
 QUARK_UNIT_TEST("", "parse_atom", "", ""){
-	identifiers_t identifiers;
+	test_parser parser;
 
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "0.0", 0) == pair<expression_t, string>(value_t{ 0.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "9.0", 0) == pair<expression_t, string>(value_t{ 9.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "12345.0", 0) == pair<expression_t, string>(value_t{ 12345.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "0.0", 0) == pair<expression_t, string>(value_t{ 0.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "9.0", 0) == pair<expression_t, string>(value_t{ 9.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "12345.0", 0) == pair<expression_t, string>(value_t{ 12345.0f }, "")));
 
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "-10.0", 0) == pair<expression_t, string>(value_t{ -10.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "+10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "-10.0", 0) == pair<expression_t, string>(value_t{ -10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "+10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
 
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "4.0+", 0) == pair<expression_t, string>(value_t{ 4.0f }, "+")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "4.0+", 0) == pair<expression_t, string>(value_t{ 4.0f }, "+")));
 
 
-	QUARK_TEST_VERIFY((parse_atom(identifiers, "\"hello\"", 0) == pair<expression_t, string>(value_t{ "hello" }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "\"hello\"", 0) == pair<expression_t, string>(value_t{ "hello" }, "")));
 }
 
 
-pair<expression_t, string> parse_factors(const identifiers_t& identifiers, const string& s, int depth) {
-	const auto num1_pos = parse_atom(identifiers, s, depth);
+pair<expression_t, string> parse_factors(const parser_i& parser, const string& s, int depth) {
+	const auto num1_pos = parse_atom(parser, s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = skip_whitespace(num1_pos.second);
 	while(!pos.empty() && (pos[0] == '*' || pos[0] == '/')){
 		const auto op_pos = read_char(pos);
-		const auto expression2_pos = parse_atom(identifiers, op_pos.second, depth);
+		const auto expression2_pos = parse_atom(parser, op_pos.second, depth);
 		if(op_pos.first == '/') {
 			result_expression = make_math_operation2_expr(math_operation2_expr_t::divide, result_expression, expression2_pos.first);
 		}
@@ -341,14 +306,14 @@ pair<expression_t, string> parse_factors(const identifiers_t& identifiers, const
 	return { result_expression, pos };
 }
 
-pair<expression_t, string> parse_summands(const identifiers_t& identifiers, const string& s, int depth) {
-	const auto num1_pos = parse_factors(identifiers, s, depth);
+pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth) {
+	const auto num1_pos = parse_factors(parser, s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = num1_pos.second;
 	while(!pos.empty() && (pos[0] == '-' || pos[0] == '+')) {
 		const auto op_pos = read_char(pos);
 
-		const auto expression2_pos = parse_factors(identifiers, op_pos.second, depth);
+		const auto expression2_pos = parse_factors(parser, op_pos.second, depth);
 		if(op_pos.first == '-'){
 			result_expression = make_math_operation2_expr(math_operation2_expr_t::subtract, result_expression, expression2_pos.first);
 		}
@@ -464,11 +429,11 @@ void trace(const expression_t& e){
 
 
 
-expression_t parse_expression(const identifiers_t& identifiers, string expression){
+expression_t parse_expression(const parser_i& parser, string expression){
 	if(expression.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
-	auto result = parse_summands(identifiers, expression, 0);
+	auto result = parse_summands(parser, expression, 0);
 	if(!result.second.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}

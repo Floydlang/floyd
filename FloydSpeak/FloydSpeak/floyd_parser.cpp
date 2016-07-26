@@ -86,11 +86,6 @@ void DecreateIndent(){
 
 
 
-
-
-
-
-
 //////////////////////////////////////////////////		VISITOR
 
 
@@ -257,15 +252,17 @@ identifiers_t add_args(const identifiers_t& identifiers, const function_def_expr
 
 
 
-value_t run_function(const identifiers_t& identifiers, const function_def_expr_t& f, const vector<value_t>& args){
-	QUARK_ASSERT(identifiers.check_invariant());
+value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 	if(!check_args(f, args)){
 		throw std::runtime_error("function arguments do not match function");
 	}
-	auto local_scope = add_args(identifiers, f, args);
+
+	auto local_scope = ast;
+	local_scope._identifiers = add_args(local_scope._identifiers, f, args);
 
 	//	??? Should respect {} for local variable scopes!
 	const auto body = f._body;
@@ -275,14 +272,14 @@ value_t run_function(const identifiers_t& identifiers, const function_def_expr_t
 		if(statement._bind_statement){
 			const auto s = statement._bind_statement;
 			const auto name = s->_identifier;
-			if(local_scope._constant_values.count(name) != 0){
+			if(local_scope._identifiers._constant_values.count(name) != 0){
 				throw std::runtime_error("local constant already exists");
 			}
 			const auto result = evaluate3(local_scope, *s->_expression);
 			if(!result._constant){
 				throw std::runtime_error("unknown variables");
 			}
-			local_scope._constant_values[name] = make_shared<value_t>(*result._constant);
+			local_scope._identifiers._constant_values[name] = make_shared<value_t>(*result._constant);
 		}
 		else if(statement._return_statement){
 			const auto expr = statement._return_statement->_expression;
@@ -311,8 +308,8 @@ bool compare_float_approx(float value, float expected){
 //### Test string + etc.
 
 
-expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
-	QUARK_ASSERT(identifiers.check_invariant());
+expression_t evaluate3(const ast_t& ast, const expression_t& e){
+	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e._constant){
@@ -320,8 +317,8 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 	}
 	else if(e._math_operation2_expr){
 		const auto e2 = *e._math_operation2_expr;
-		const auto left = evaluate3(identifiers, *e2._left);
-		const auto right = evaluate3(identifiers, *e2._right);
+		const auto left = evaluate3(ast, *e2._left);
+		const auto right = evaluate3(ast, *e2._right);
 
 		//	Both left and right are constant, replace the math_operation with a constant!
 		if(left._constant && right._constant){
@@ -387,7 +384,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 	}
 	else if(e._math_operation1_expr){
 		const auto e2 = *e._math_operation1_expr;
-		const auto input = evaluate3(identifiers, *e2._input);
+		const auto input = evaluate3(ast, *e2._input);
 
 		//	Replace the with a constant!
 		if(input._constant){
@@ -428,8 +425,8 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 	else if(e._call_function_expr){
 		const auto& call_function_expression = *e._call_function_expr;
 
-		const auto it = identifiers._functions.find(call_function_expression._function_name);
-		QUARK_ASSERT(it != identifiers._functions.end());
+		const auto it = ast._identifiers._functions.find(call_function_expression._function_name);
+		QUARK_ASSERT(it != ast._identifiers._functions.end());
 
 		const auto& make_function_expression = *it->second;
 
@@ -438,7 +435,7 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
 		for(const auto& i: call_function_expression._inputs){
-			const auto arg_expr = evaluate3(identifiers, *i);
+			const auto arg_expr = evaluate3(ast, *i);
 			simplified_args.push_back(arg_expr);
 		}
 
@@ -457,13 +454,13 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 				return { function_call_expr_t{ call_function_expression._function_name, call_function_expression._inputs } };
 			}
 		}
-		const value_t result = run_function(identifiers, make_function_expression, constant_args);
+		const value_t result = run_function(ast, make_function_expression, constant_args);
 		return make_constant(result);
 	}
 	else if(e._variable_read_expr){
 		const string& identifier = e._variable_read_expr->_variable_name;
-		const auto it = identifiers._constant_values.find(identifier);
-		QUARK_ASSERT(it != identifiers._constant_values.end());
+		const auto it = ast._identifiers._constant_values.find(identifier);
+		QUARK_ASSERT(it != ast._identifiers._constant_values.end());
 
 		const auto value_ref = it->second;
 		if(value_ref){
@@ -483,10 +480,26 @@ expression_t evaluate3(const identifiers_t& identifiers, const expression_t& e){
 
 
 namespace {
+
+
+
+struct test_parser : public parser_i {
+	public: test_parser(){
+	}
+
+	public: virtual bool parser_i_is_declared_function(const std::string& s) const{
+		return s == "log" || s == "log2" || s == "f" || s == "return5";
+	}
+	public: virtual bool parser_i_is_declared_constant_value(const std::string& s) const{
+		return false;
+	}
+};
+
+//??? Needs test functs?
 	expression_t test_evaluate_simple(string expression_string){
-		identifiers_t identifiers;
-		const auto e = parse_expression(identifiers, expression_string);
-		const auto e2 = evaluate3(identifiers, e);
+		const ast_t ast;
+		const auto e = parse_expression(ast, expression_string);
+		const auto e2 = evaluate3(ast, e);
 		return e2;
 	}
 }
@@ -656,10 +669,13 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 
 
 
+//??? Move evaluation from parser to VM.
+
+
 
 //////////////////////////////////////////////////		PARSE FUNCTION DEFINTION EXPRESSION
 
-pair<statement_t, string> parse_assignment_statement(const identifiers_t& identifiers, const string& s);
+pair<statement_t, string> parse_assignment_statement(const ast_t& ast, const string& s);
 
 
 
@@ -722,9 +738,10 @@ bool is_known_data_type(const std::string& s){
 	- Add struct {}
 	- Add variables
 	- Add local functions
-
 */
-function_body_t parse_function_body(const identifiers_t& ident, const string& s){
+//??? Need concept of parsing stack-frame to store local variables.
+
+function_body_t parse_function_body(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
 	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
@@ -732,7 +749,8 @@ function_body_t parse_function_body(const identifiers_t& ident, const string& s)
 	const string body_str = skip_whitespace(s.substr(1, s.size() - 2));
 
 	vector<statement_t> statements;
-	identifiers_t local_scope = ident;
+
+	ast_t local_scope = ast;
 
 	string pos = body_str;
 	while(!pos.empty()){
@@ -756,13 +774,13 @@ function_body_t parse_function_body(const identifiers_t& ident, const string& s)
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
 			const string& identifier = assignment_statement.first._bind_statement->_identifier;
 
-			const auto it = local_scope._constant_values.find(identifier);
-			if(it != local_scope._constant_values.end()){
+			const auto it = local_scope._identifiers._constant_values.find(identifier);
+			if(it != local_scope._identifiers._constant_values.end()){
 				throw std::runtime_error("Variable name already in use!");
 			}
 
 			shared_ptr<const value_t> blank;
-			local_scope._constant_values[identifier] = blank;
+			local_scope._identifiers._constant_values[identifier] = blank;
 
 			statements.push_back(assignment_statement.first);
 
@@ -825,7 +843,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-
+//	Temporarily add the function's input argument to the identifers, so the body can access them.
 identifiers_t add_arg_identifiers(const identifiers_t& identifiers, const vector<arg_t> arg_types){
 	QUARK_ASSERT(identifiers.check_invariant());
 	for(const auto i: arg_types){ QUARK_ASSERT(i.check_invariant()); };
@@ -856,8 +874,8 @@ identifiers_t add_arg_identifiers(const identifiers_t& identifiers, const vector
 		}
 	}
 */
-pair<pair<string, function_def_expr_t>, string> parse_function_definition(const identifiers_t& identifiers, const string& pos){
-	QUARK_ASSERT(identifiers.check_invariant());
+pair<pair<string, function_def_expr_t>, string> parse_function_definition(const ast_t& ast, const string& pos){
+	QUARK_ASSERT(ast.check_invariant());
 
 	const auto type_pos = read_required_type_identifier(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
@@ -877,11 +895,13 @@ pair<pair<string, function_def_expr_t>, string> parse_function_definition(const 
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
-	const auto local_scope = add_arg_identifiers(identifiers, args);
+
+	auto local_scope = ast;
+
+	local_scope._identifiers = add_arg_identifiers(local_scope._identifiers, args);
 
 	const auto body = parse_function_body(local_scope, body_pos.first);
 	const auto a = function_def_expr_t{ type_pos.first, args, body };
-//	trace_node(a);
 
 	return { { identifier_pos.first, a }, body_pos.second };
 }
@@ -949,9 +969,9 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""
 
 	...can contain trailing whitespace.
 */
-pair<statement_t, string> parse_assignment_statement(const identifiers_t& identifiers, const string& s){
+pair<statement_t, string> parse_assignment_statement(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_assignment_statement()");
-	QUARK_ASSERT(identifiers.check_invariant());
+	QUARK_ASSERT(ast.check_invariant());
 
 	const auto token_pos = read_until(s, whitespace_chars);
 	const auto type = make_type_identifier(token_pos.first);
@@ -961,7 +981,7 @@ pair<statement_t, string> parse_assignment_statement(const identifiers_t& identi
 	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
 
-	const auto expression = parse_expression(identifiers, expression_pos.first);
+	const auto expression = parse_expression(ast, expression_pos.first);
 
 	const auto statement = make__bind_statement(variable_pos.first, expression);
 	trace(statement);
@@ -971,22 +991,22 @@ pair<statement_t, string> parse_assignment_statement(const identifiers_t& identi
 }
 
 QUARK_UNIT_TESTQ("parse_assignment_statement", "int"){
-	const auto a = parse_assignment_statement(identifiers_t(), "int a = 10; \n");
+	const auto a = parse_assignment_statement(ast_t(), "int a = 10; \n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "a");
 	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(10));
 	QUARK_TEST_VERIFY(a.second == " \n");
 }
 
 QUARK_UNIT_TESTQ("parse_assignment_statement", "float"){
-	const auto a = parse_assignment_statement(identifiers_t(), "float b = 0.3; \n");
+	const auto a = parse_assignment_statement(make_test_functions(), "float b = 0.3; \n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "b");
 	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(0.3f));
 	QUARK_TEST_VERIFY(a.second == " \n");
 }
 
 QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
-	const auto identifiers = make_test_functions();
-	const auto a = parse_assignment_statement(identifiers, "float test = log(\"hello\");\n");
+	const auto ast = make_test_functions();
+	const auto a = parse_assignment_statement(ast, "float test = log(\"hello\");\n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call_function_expr->_function_name == "log");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
@@ -1013,13 +1033,13 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 		int my_global = 3;
 */
 
-pair<statement_t, string> read_toplevel_statement(const identifiers_t& identifiers, const string& pos){
-	QUARK_ASSERT(identifiers.check_invariant());
+pair<statement_t, string> read_toplevel_statement(const ast_t& ast, const string& pos){
+	QUARK_ASSERT(ast.check_invariant());
 
 	const auto type_pos = read_required_type_identifier(pos);
 	const auto identifier_pos = read_required_identifier(type_pos.second);
 
-	pair<pair<string, function_def_expr_t>, string> function = parse_function_definition(identifiers, pos);
+	const pair<pair<string, function_def_expr_t>, string> function = parse_function_definition(ast, pos);
 	const auto bind = bind_statement_t{ function.first.first, make_shared<expression_t>(function.first.second) };
 	return { bind, function.second };
 }
@@ -1049,32 +1069,109 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 
 
 
+//////////////////////////////////////////////////		test rig
+
+
+
+
+shared_ptr<const function_def_expr_t> make_log_function(){
+	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(123.f))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+}
+
+shared_ptr<const function_def_expr_t> make_log2_function(){
+	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ make_shared<expression_t>(make_constant(value_t(456.7f))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+}
+
+shared_ptr<const function_def_expr_t> make_return5(){
+	vector<arg_t> args{};
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ make_shared<expression_t>(make_constant(value_t(5))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("int"), args, body });
+}
+
+
+ast_t make_test_functions(){
+	ast_t result;
+	result._identifiers._functions["log"] = make_log_function();
+	result._identifiers._functions["log2"] = make_log2_function();
+	result._identifiers._functions["f"] = make_log_function();
+	result._identifiers._functions["return5"] = make_return5();
+	return result;
+}
+
+
+
+
+
+
+
+
+
+		//////////////////////////////////////////////////		ast_t
+
+
+
+		bool ast_t::parser_i_is_declared_function(const std::string& s) const{
+			return _identifiers._functions.find(s) != _identifiers._functions.end();
+		}
+
+		bool ast_t::parser_i_is_declared_constant_value(const std::string& s) const{
+			return _identifiers._constant_values.find(s) != _identifiers._constant_values.end();
+		}
+
+
+
 
 //////////////////////////////////////////////////		program_to_ast()
 
 
-
+	//### better if ast_t is closed for modification -- internals should use different storage to collect ast into.
 ast_t program_to_ast(const identifiers_t& builtins, const string& program){
-	vector<statement_t> top_level_statements;
-	identifiers_t identifiers = builtins;
+	ast_t result;
+	result._identifiers = builtins;
+
 	auto pos = program;
 	pos = skip_whitespace(pos);
 	while(!pos.empty()){
-		const auto statement_pos = read_toplevel_statement(identifiers, pos);
-		top_level_statements.push_back(statement_pos.first);
+		const auto statement_pos = read_toplevel_statement(result, pos);
+		result._top_level_statements.push_back(statement_pos.first);
 
 		if(statement_pos.first._bind_statement){
 			string identifier = statement_pos.first._bind_statement->_identifier;
 			const auto e = statement_pos.first._bind_statement->_expression;
 
 			if(e->_function_def_expr){
-				const auto foundIt = identifiers._functions.find(identifier);
-				if(foundIt != identifiers._functions.end()){
+				const auto foundIt = result._identifiers._functions.find(identifier);
+				if(foundIt != result._identifiers._functions.end()){
 					throw std::runtime_error("Function \"" + identifier + "\" already defined.");
 				}
 
 				//	shared_ptr
-				identifiers._functions[identifier] = e->_function_def_expr;
+				result._identifiers._functions[identifier] = e->_function_def_expr;
 			}
 		}
 		else{
@@ -1083,7 +1180,7 @@ ast_t program_to_ast(const identifiers_t& builtins, const string& program){
 		pos = skip_whitespace(statement_pos.second);
 	}
 
-	const ast_t result{ {}, identifiers, top_level_statements };
+	QUARK_ASSERT(result.check_invariant());
 	trace(result);
 
 	return result;

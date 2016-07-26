@@ -161,29 +161,14 @@ namespace floyd_parser {
 	}
 
 
-	//??? Move to floyd_parser.h, give parser_expression an interface instead so it can look up variables.
+	//////////////////////////////////////////////////		parser_i
 
 
-	//////////////////////////////////////////////////		identifiers_t
-
-		struct function_def_expr_t;
-		struct value_t;
-
-
-	struct identifiers_t {
-		identifiers_t(){
-		}
-
-		public: bool check_invariant() const {
-			return true;
-		}
-
-		//### Function names should have namespace etc.
-		std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
-
-		std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
+	struct parser_i {
+		public: virtual ~parser_i(){};
+		public: virtual bool parser_i_is_declared_function(const std::string& s) const = 0;
+		public: virtual bool parser_i_is_declared_constant_value(const std::string& s) const = 0;
 	};
-
 
 }	//	floyd_parser
 

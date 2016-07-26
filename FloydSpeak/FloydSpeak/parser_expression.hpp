@@ -260,8 +260,6 @@ namespace floyd_parser {
 	void trace(const expression_t& e);
 
 
-	identifiers_t make_test_functions();
-
 
 	/*
 		Parses the expression string
@@ -287,7 +285,7 @@ namespace floyd_parser {
 
 			(my_fun1("hello, 3) + 4) * my_fun2(10))
 	*/
-	expression_t parse_expression(const identifiers_t& identifiers, std::string expression);
+	expression_t parse_expression(const parser_i& identifiers, std::string expression);
 
 }
 
