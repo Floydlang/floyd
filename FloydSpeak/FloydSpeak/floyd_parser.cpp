@@ -796,6 +796,65 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 	return result;
 }
 
+
+//////////////////////////////////////////////////		test rig
+
+
+
+
+shared_ptr<const function_def_expr_t> make_log_function(){
+	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(123.f))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+}
+
+shared_ptr<const function_def_expr_t> make_log2_function(){
+	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ make_shared<expression_t>(make_constant(value_t(456.7f))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+}
+
+shared_ptr<const function_def_expr_t> make_return5(){
+	vector<arg_t> args{};
+	function_body_t body{
+		{
+			make__return_statement(
+				return_statement_t{ make_shared<expression_t>(make_constant(value_t(5))) }
+			)
+		}
+	};
+
+	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("int"), args, body });
+}
+
+
+ast_t make_test_functions(){
+	ast_t result;
+	result._identifiers._functions["log"] = make_log_function();
+	result._identifiers._functions["log2"] = make_log2_function();
+	result._identifiers._functions["f"] = make_log_function();
+	result._identifiers._functions["return5"] = make_return5();
+	return result;
+}
+
+
+
+
+
 QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_TEST_VERIFY((parse_function_body({}, "{}")._statements.empty()));
 }
@@ -1067,61 +1126,6 @@ QUARK_UNIT_TEST("", "read_toplevel_statement()", "", ""){
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
-
-
-//////////////////////////////////////////////////		test rig
-
-
-
-
-shared_ptr<const function_def_expr_t> make_log_function(){
-	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
-	function_body_t body{
-		{
-			make__return_statement(
-				return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(123.f))) }
-			)
-		}
-	};
-
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
-}
-
-shared_ptr<const function_def_expr_t> make_log2_function(){
-	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
-	function_body_t body{
-		{
-			make__return_statement(
-				return_statement_t{ make_shared<expression_t>(make_constant(value_t(456.7f))) }
-			)
-		}
-	};
-
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
-}
-
-shared_ptr<const function_def_expr_t> make_return5(){
-	vector<arg_t> args{};
-	function_body_t body{
-		{
-			make__return_statement(
-				return_statement_t{ make_shared<expression_t>(make_constant(value_t(5))) }
-			)
-		}
-	};
-
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("int"), args, body });
-}
-
-
-ast_t make_test_functions(){
-	ast_t result;
-	result._identifiers._functions["log"] = make_log_function();
-	result._identifiers._functions["log2"] = make_log2_function();
-	result._identifiers._functions["f"] = make_log_function();
-	result._identifiers._functions["return5"] = make_return5();
-	return result;
-}
 
 
 

@@ -11,18 +11,17 @@
 
 #include "quark.h"
 
-#include "parser_types.h"
 #include "parser_primitives.h"
 
 namespace floyd_parser {
 	struct expression_t;
 	struct statement_t;
+	struct function_def_expr_t;
+	struct value_t;
 
 
 	//////////////////////////////////////////////////		identifiers_t
 
-		struct function_def_expr_t;
-		struct value_t;
 
 
 	struct identifiers_t {
@@ -65,8 +64,6 @@ namespace floyd_parser {
 
 
 	ast_t program_to_ast(const identifiers_t& builtins, const std::string& program);
-
-	ast_t make_test_functions();
 
 	/*
 		Evaluates an expression as far as possible.
