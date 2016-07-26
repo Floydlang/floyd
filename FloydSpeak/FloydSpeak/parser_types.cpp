@@ -57,11 +57,13 @@ namespace floyd_parser {
 		return !(*this == other);
 	}
 
+/*
 	type_identifier_t::type_identifier_t() :
 		_type_magic("")
 	{
 		QUARK_ASSERT(check_invariant());
 	}
+*/
 
 	type_identifier_t::type_identifier_t(const char s[]) :
 		_type_magic(s)
@@ -91,7 +93,7 @@ namespace floyd_parser {
 	}
 
 	bool type_identifier_t::check_invariant() const {
-//		QUARK_ASSERT(_type_magic != "");
+		QUARK_ASSERT(_type_magic != "");
 //		QUARK_ASSERT(_type_magic == "" || _type_magic == "string" || _type_magic == "int" || _type_magic == "float" || _type_magic == "value_type");
 		return true;
 	}

@@ -57,7 +57,7 @@ namespace floyd_parser {
 		public: bool operator==(const type_identifier_t& other) const;
 		public: bool operator!=(const type_identifier_t& other) const;
 
-		public: type_identifier_t();
+		private: type_identifier_t(){};
 		public: explicit type_identifier_t(const char s[]);
 		public: explicit type_identifier_t(const std::string& s);
 		public: void swap(type_identifier_t& other);

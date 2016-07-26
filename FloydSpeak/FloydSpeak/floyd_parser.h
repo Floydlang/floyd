@@ -42,11 +42,12 @@ struct c_function_spec_t {
 	type_identifier_t _return_type;
 };
 
-typedef value_t (*c_function_t)(std::vector<arg_t> args);
+typedef value_t (*c_function_t)(const std::vector<arg_t>& args);
 
 
 struct value_t {
 	public: bool check_invariant() const{
+		QUARK_ASSERT((_type.to_string() == "__data_type_value") == (_data_type_value != nullptr));
 		return true;
 	}
 
@@ -87,8 +88,8 @@ struct value_t {
 	}
 
 	public: value_t(const type_identifier_t& s) :
-		_type("value_type"),
-		_data_type_value(s)
+		_type("__data_type_value"),
+		_data_type_value(std::make_shared<type_identifier_t>(s))
 	{
 		QUARK_ASSERT(s.check_invariant());
 
@@ -96,8 +97,9 @@ struct value_t {
 	}
 
 	public: value_t(c_function_t f, const c_function_spec_t& spec) :
+		_type("__c_function"),
 		_c_function(f),
-		_c_spec(spec)
+		_c_spec(std::make_shared<c_function_spec_t>(spec))
 	{
 		QUARK_ASSERT(f != nullptr);
 
@@ -166,8 +168,8 @@ struct value_t {
 		else if(d == "function_id"){
 			return _function_id;
 		}
-		else if(d == "value_type"){//???
-			return _data_type_value.to_string();
+		else if(d == "__data_type_value"){//???
+			return _data_type_value->to_string();
 		}
 		else{
 			return "???";
@@ -231,11 +233,11 @@ struct value_t {
 	private: float _float = 0.0f;
 	private: std::string _string = "";
 	private: std::string _function_id = "";
-	private: type_identifier_t _data_type_value;
+	private: std::shared_ptr<type_identifier_t> _data_type_value;
 
 
 	private: c_function_t _c_function;
-	private: c_function_spec_t _c_spec;
+	private: std::shared_ptr<c_function_spec_t> _c_spec;
 };
 
 
@@ -255,7 +257,7 @@ inline value_t make_dummy_value(const type_identifier_t& type){
 	else if(t == "float"){
 		return value_t(667.667f);
 	}
-	else if(t == "value_type"){
+	else if(t == "__data_type_value"){
 		return value_t(type_identifier_t("null"));
 	}
 	else{
