@@ -9,17 +9,7 @@
 #ifndef text_parser_hpp
 #define text_parser_hpp
 
-
-
-
-#include "quark.h"
-#include <vector>
 #include <string>
-#include <map>
-
-#include "parser_types.h"
-#include "parser_primitives.h"
-
 
 
 typedef std::pair<std::string, std::string> seq;
