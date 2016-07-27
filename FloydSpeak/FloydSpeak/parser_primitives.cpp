@@ -254,40 +254,4 @@ type_identifier_t make_type_identifier(const std::string& s){
 	}
 
 
-
-	//////////////////////////////////////////////////		parser_t
-
-/*
-	parser_t::parser_t(parser_i* parser) :
-		_parser(parser)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-	bool parser_t::check_invariant() const {
-		QUARK_ASSERT(_parser);
-		return true;
-	}
-
-	bool parser_t::is_declared_function(const std::string& s) const{
-		QUARK_ASSERT(check_invariant());
-
-		return _parser->parser_i_is_declared_function(s);
-	}
-
-	bool parser_t::is_declared_constant_value(const std::string& s) const{
-		QUARK_ASSERT(check_invariant());
-
-		return _parser->parser_i_is_declared_constant_value(s);
-	}
-
-	bool parser_t::is_known_type(const std::string& s) const{
-		QUARK_ASSERT(check_invariant());
-
-		return _parser->parser_i_is_known_type(s);
-	}
-*/
-
-
-
-
 }	//	floyd_parser

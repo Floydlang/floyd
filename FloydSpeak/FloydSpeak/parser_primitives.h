@@ -205,6 +205,7 @@ namespace floyd_parser {
 
 		public: frontend_types_collector_t _types_collector;
 
+		//	### Stuff all globals into a global struct in the floyd world.
 		public: std::vector<std::shared_ptr<statement_t> > _top_level_statements;
 	};
 

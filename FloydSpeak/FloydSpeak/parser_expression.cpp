@@ -34,7 +34,6 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 
 
 
-
 pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth);
 
 
