@@ -6,12 +6,6 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-/*
-	floydrt -- floyd runtime.
-	floydgen -- generated code from user program.
-	floydc -- floyd compiler
-*/
-
 #include "floyd_parser.h"
 
 /*
@@ -72,23 +66,9 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
 
 
 
-void IncreaseIndent(){
-	auto r = quark::get_runtime();
-	r->runtime_i__add_log_indent(1);
-}
 
-void DecreateIndent(){
-	auto r = quark::get_runtime();
-	r->runtime_i__add_log_indent(-1);
-}
-
-
-
-
-
+/*
 //////////////////////////////////////////////////		VISITOR
-
-
 
 
 struct visitor_i {
@@ -119,6 +99,7 @@ void visit_program(const ast_t& program, visitor_i& visitor){
 		visit_statement(*i, visitor);
 	}
 }
+*/
 
 
 
@@ -139,8 +120,6 @@ void trace(const ast_t& program){
 		trace(*i);
 	}
 }
-
-
 
 
 
