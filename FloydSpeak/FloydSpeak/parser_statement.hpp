@@ -17,6 +17,7 @@
 
 #include "parser_types.h"
 #include "parser_primitives.h"
+#include "parser_expression.hpp"
 
 
 namespace floyd_parser {
@@ -42,7 +43,7 @@ namespace floyd_parser {
 
 	struct return_statement_t {
 		bool operator==(const return_statement_t& other) const {
-			return _expression == other._expression;
+			return *_expression == *other._expression;
 		}
 
 		std::shared_ptr<expression_t> _expression;

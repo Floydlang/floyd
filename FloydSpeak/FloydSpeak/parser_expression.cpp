@@ -373,6 +373,14 @@ void trace(const function_def_expr_t& e){
 	}
 }
 
+void trace(const struct_def_expr_t& e){
+	QUARK_SCOPED_TRACE("struct_def_expr_t");
+
+	{
+		trace_vec("arguments", e._members);
+	}
+}
+
 void trace(const math_operation2_expr_t& e){
 	string s = "math_operation2_expr_t: " + operation_to_string(e._operation);
 	QUARK_SCOPED_TRACE(s);
@@ -405,6 +413,10 @@ void trace(const expression_t& e){
 		const function_def_expr_t& temp = *e._function_def_expr;
 		trace(temp);
 	}
+	else if(e._struct_def_expr){
+		const struct_def_expr_t& temp = *e._struct_def_expr;
+		trace(temp);
+	}
 	else if(e._math_operation2_expr){
 		trace(*e._math_operation2_expr);
 	}
@@ -435,8 +447,8 @@ vector<arg_t> parse_functiondef_arguments(const string& s2){
 	vector<arg_t> args;
 	auto str = s;
 	while(!str.empty()){
-		const auto arg_type = get_type(str);
-		const auto arg_name = get_identifier(arg_type.second);
+		const auto arg_type = read_type(str);
+		const auto arg_name = read_identifier(arg_type.second);
 		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
 		const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
@@ -692,16 +704,44 @@ shared_ptr<const function_def_expr_t> make_return5(){
 }
 
 
+
+shared_ptr<const struct_def_expr_t> make_struct0(){
+	vector<arg_t> members{};
+
+	return make_shared<const struct_def_expr_t>(struct_def_expr_t{ members });
+}
+
+shared_ptr<const struct_def_expr_t> make_struct1(){
+	vector<arg_t> members{
+		{ make_type_identifier("float"), "x" },
+		{ make_type_identifier("float"), "y" },
+		{ make_type_identifier("string"), "name" }
+	};
+
+	return make_shared<const struct_def_expr_t>(struct_def_expr_t{ members });
+}
+
+
+
 ast_t make_test_ast(){
 	ast_t result;
 	result._functions["log"] = make_log_function();
 	result._functions["log2"] = make_log2_function();
 	result._functions["f"] = make_log_function();
 	result._functions["return5"] = make_return5();
+
+	result._structs["test_struct0"] = make_struct0();
+	result._structs["test_struct1"] = make_struct1();
 	return result;
 }
 
+QUARK_UNIT_TESTQ("make_test_ast()", ""){
+	auto a = make_test_ast();
+	QUARK_TEST_VERIFY(a._structs.size() == 2);
 
+	QUARK_TEST_VERIFY(*a._structs["test_struct0"] == *make_struct0());
+	QUARK_TEST_VERIFY(*a._structs["test_struct1"] == *make_struct1());
+}
 
 
 

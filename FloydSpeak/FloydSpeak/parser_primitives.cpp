@@ -56,13 +56,13 @@ QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 }
 
 
-seq get_type(const string& s){
+seq read_type(const string& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, type_chars);
 	return b;
 }
 
-seq get_identifier(const string& s){
+seq read_identifier(const string& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, identifier_chars);
 	return b;
@@ -183,13 +183,13 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 
 
 pair<type_identifier_t, string> read_required_type_identifier(const string& s){
-	const seq type_pos = get_type(s);
+	const seq type_pos = read_type(s);
 	const auto type = make_type_identifier(type_pos.first);
 	return { type, type_pos.second };
 }
 
 pair<string, string> read_required_identifier(const string& s){
-	const seq type_pos = get_identifier(s);
+	const seq type_pos = read_identifier(s);
 	if(type_pos.first.empty()){
 		throw std::runtime_error("missing identifier");
 	}

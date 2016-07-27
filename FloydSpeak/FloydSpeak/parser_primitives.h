@@ -20,6 +20,7 @@
 
 namespace floyd_parser {
 	struct function_def_expr_t;
+	struct struct_def_expr_t;
 	struct value_t;
 	struct statement_t;
 
@@ -118,12 +119,12 @@ namespace floyd_parser {
 	/*
 		Skip leading whitespace, get string while type-char.
 	*/
-	seq get_type(const std::string& s);
+	seq read_type(const std::string& s);
 
 	/*
 		Skip leading whitespace, get string while identifier char.
 	*/
-	seq get_identifier(const std::string& s);
+	seq read_identifier(const std::string& s);
 
 
 	bool is_start_char(char c);
@@ -199,6 +200,8 @@ namespace floyd_parser {
 		//### Function names should have namespace etc.
 		//??? Should contain all function definitions, unnamed. Address them using hash of their signature + body.
 		public: std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
+
+		public: std::map<std::string, std::shared_ptr<const struct_def_expr_t> > _structs;
 
 		//??? Should contain all functions too.
 		public: std::map<std::string, std::shared_ptr<const value_t> > _constant_values;

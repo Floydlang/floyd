@@ -41,6 +41,24 @@ namespace floyd_parser {
 	};
 
 
+
+	//////////////////////////////////////////////////		struct_def_expr_t
+
+
+	struct struct_def_expr_t {
+		bool check_invariant() const {
+			return true;
+		}
+
+		bool operator==(const struct_def_expr_t& other) const{
+			return _members == other._members;
+		}
+
+		const std::vector<arg_t> _members;
+	};
+
+
+
 	//////////////////////////////////////////////////		math_operation2_expr_t
 
 
@@ -125,6 +143,12 @@ namespace floyd_parser {
 		{
 		}
 
+		expression_t(const struct_def_expr_t& value) :
+			_struct_def_expr(std::make_shared<const struct_def_expr_t>(value))
+		{
+		}
+
+
 		expression_t(const value_t& value) :
 			_constant(std::make_shared<value_t>(value))
 		{
@@ -189,6 +213,7 @@ namespace floyd_parser {
 			Only one of there are used at any time.
 		*/
 		std::shared_ptr<const function_def_expr_t> _function_def_expr;
+		std::shared_ptr<const struct_def_expr_t> _struct_def_expr;
 		std::shared_ptr<value_t> _constant;
 		std::shared_ptr<math_operation2_expr_t> _math_operation2_expr;
 		std::shared_ptr<math_operation1_expr_t> _math_operation1_expr;
@@ -216,6 +241,10 @@ namespace floyd_parser {
 		return expression_t(value);
 	}
 
+	inline expression_t make__struct_def_expr(const struct_def_expr_t& value){
+		return expression_t(value);
+	}
+
 	inline expression_t make_constant(const value_t& value){
 		return expression_t(value);
 	}
@@ -237,8 +266,10 @@ namespace floyd_parser {
 
 
 	void trace(const function_def_expr_t& e);
+	void trace(const struct_def_expr_t& e);
 	void trace(const math_operation2_expr_t& e);
 	void trace(const math_operation1_expr_t& e);
+	void trace(const function_call_expr_t& e);
 	void trace(const function_call_expr_t& e);
 	void trace(const variable_read_expr_t& e);
 	void trace(const expression_t& e);
