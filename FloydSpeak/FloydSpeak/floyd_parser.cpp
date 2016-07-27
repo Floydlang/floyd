@@ -242,6 +242,8 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 }
 
 
+const string test_function1 = "int test_function1(){ return 100; }";
+
 function_def_expr_t make_test_function1(){
 	return {
 		type_identifier_t::make_type("int"),
@@ -253,38 +255,20 @@ function_def_expr_t make_test_function1(){
 	};
 }
 
+const string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
+
 function_def_expr_t make_test_function2(){
 	return {
-		type_identifier_t::make_type("int"),
+		type_identifier_t::make_type("string"),
 		vector<arg_t>{
-			{ make_type_identifier("int"), "x" },
-			{ make_type_identifier("string"), "y" },
-			{ make_type_identifier("float"), "z" }
+			{ make_type_identifier("int"), "a" },
+			{ make_type_identifier("float"), "b" }
 		},
 		function_body_t{
-			{ return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(100))) } }
+			{ return_statement_t{ std::make_shared<expression_t>(make_constant(value_t("sdf"))) } }
 		}
 	};
 }
-
-QUARK_UNIT_TESTQ("read_statement()", ""){
-	const auto result = read_statement({}, "int test_func1(){ return 100;}");
-	QUARK_TEST_VERIFY(result.first._bind_statement);
-	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_func1");
-	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr);
-
-	const auto test = make_test_function1();
-	QUARK_TEST_VERIFY(expr->_args == test._args);
-	QUARK_TEST_VERIFY(expr->_return_type == test._return_type);
-	QUARK_TEST_VERIFY(expr->_body == test._body);
-
-	QUARK_TEST_VERIFY(*expr == test);
-	QUARK_TEST_VERIFY(result.second == "");
-}
-
-
-
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	try{
@@ -295,20 +279,38 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	}
 }
 
-//??? add complete set of tests
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	const auto result = read_statement({}, "int f(){}");
+	const auto result = read_statement({}, test_function1);
 	QUARK_TEST_VERIFY(result.first._bind_statement);
-	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "f");
-	QUARK_TEST_VERIFY(result.first._bind_statement->_expression->_function_def_expr);
-
+	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_function1");
 	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr->_return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY(expr->_args.empty());
-	QUARK_TEST_VERIFY(expr->_body._statements.empty());
+	QUARK_TEST_VERIFY(expr);
 
+/*
+	const auto test = make_test_function1();
+	QUARK_TEST_VERIFY(expr->_args == test._args);
+	QUARK_TEST_VERIFY(expr->_return_type == test._return_type);
+	QUARK_TEST_VERIFY(expr->_body == test._body);
+*/
+	QUARK_TEST_VERIFY(*expr == make_test_function1());
 	QUARK_TEST_VERIFY(result.second == "");
 }
+
+QUARK_UNIT_TESTQ("read_statement()", ""){
+	const auto result = read_statement({}, test_function2);
+	QUARK_TEST_VERIFY(result.first._bind_statement);
+	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_function2");
+	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
+	QUARK_TEST_VERIFY(expr);
+
+	QUARK_TEST_VERIFY(*expr == make_test_function2());
+	QUARK_TEST_VERIFY(result.second == "");
+}
+
+
+
+
+
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto result = read_statement({}, "struct test_struct0 {int x; string y; float z;}");
