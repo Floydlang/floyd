@@ -377,10 +377,6 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 }
 
 
-
-
-
-
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto result = read_statement({}, "struct test_struct0 {int x; string y; float z;}");
 	QUARK_TEST_VERIFY(result.first._bind_statement);

@@ -476,66 +476,11 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-/*
-	Never simplifes - the parser is non-lossy.
-
-	Must not have whitespace before / after {}.
-	{}
-
-	{
-		return 3;
-	}
-
-	{
-		return 3 + 4;
-	}
-	{
-		return f(3, 4) + 2;
-	}
-
-
-	//	Example: binding constants to constants, result of function calls and math operations.
-	{
-		int a = 10;
-		int b = f(a);
-		int c = a + b;
-		return c;
-	}
-
-	//	Local scope.
-	{
-		{
-			int a = 10;
-		}
-	}
-	{
-		struct point2d {
-			int _x;
-			int _y;
-		}
-	}
-
-	{
-		int my_func(string a, string b){
-			int c = a + b;
-			return c;
-		}
-	}
-
-	FUTURE
-	- Include comments
-	- Split-out parse_statement().
-	- Add struct {}
-	- Add variables
-	- Add local functions
-*/
 //??? Need concept of parsing stack-frame to store local variables.
 
 
 //??? Unite this function with read_statement(). No need to have parse-level difference. Check syntax later.
 //??? When to check for correct types, for a global return statement etc? While parsing or separate pass? When to inject conversions?
-
-
 function_body_t parse_function_body(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
@@ -596,6 +541,7 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 	return result;
 }
 
+
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
 	QUARK_TEST_VERIFY((parse_function_body({}, "{}")._statements.empty()));
 }
@@ -621,25 +567,6 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 
 	QUARK_TEST_VERIFY(*a._statements[1]._return_statement->_expression->_constant == value_t(3));
 }
-
-/*
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto identifiers = make_test_ast();
-	const auto a = parse_function_body(identifiers,
-		"{ return return5() + return5() * 2;\n}"
-	);
-	QUARK_TEST_VERIFY(a._statements.size() == 1);
-//	QUARK_TEST_VERIFY(a._statements[0]._return_statement->_expression._math_operation2);
-
-	const auto b = evaluate3(identifiers, *a._statements[0]._return_statement->_expression);
-	QUARK_TEST_VERIFY(b._constant && *b._constant == value_t(15));
-
-//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_identifier == "test");
-//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression._call_function->_function_name == "log");
-//	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression._call_function->_inputs.size() == 1);
-//	QUARK_TEST_VERIFY(*a._statements[0]._bind_statement->_expression._call_function->_inputs[0]->_constant == value_t(10.11f));
-}
-*/
 
 
 
