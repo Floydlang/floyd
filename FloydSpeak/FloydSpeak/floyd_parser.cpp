@@ -139,9 +139,12 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 
 	auto pos = program;
 	pos = skip_whitespace(pos);
+
+
+	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
 		const auto statement_pos = read_statement(result, pos);
-		result._top_level_statements.push_back(make_shared<statement_t>(statement_pos.first));
+		statements.push_back(make_shared<statement_t>(statement_pos.first));
 
 		if(statement_pos.first._bind_statement){
 			string identifier = statement_pos.first._bind_statement->_identifier;
@@ -172,6 +175,8 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 		}
 		pos = skip_whitespace(statement_pos.second);
 	}
+
+	result._top_level_statements = statements;
 
 	QUARK_ASSERT(result.check_invariant());
 	trace(result);
@@ -293,17 +298,4 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 }	//	floyd_parser
 
 
-
-#if false
-QUARK_UNIT_TEST("", "run()", "", ""){
-	auto ast = program_to_ast(
-		"int main(string args){\n"
-		"	return \"hello, world!\";\n"
-		"}\n"
-	);
-
-	value_t result = run(ast);
-	QUARK_TEST_VERIFY(result == value_t("hello, world!"));
-}
-#endif
 

@@ -180,6 +180,25 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		ast_t
 
+	/*
+
+		VALUE struct: __global_struct
+			int: my_global_int
+			function: <int>f(string a, string b) ----> function-def.
+
+			struct_def struct1
+
+			struct1 a = make_struct1()
+
+		types
+			struct struct1 --> struct_defs/struct1
+
+		struct_defs
+			(struct1) {
+				int: a
+				int: b
+			}
+	*/
 
 	struct ast_t : public parser_i {
 		public: ast_t(){

@@ -296,6 +296,16 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 		pair<vector<arg_t>, string> body_pos = parse_struct_body(struct_name.second);
 		struct_def_expr_t struct_def{ body_pos.first };
 		const auto bind = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def) };
+
+/*
+		//	Add struct
+		const auto foundIt = result._structs.find(identifier);
+		if(foundIt != result._structs.end()){
+			throw std::runtime_error("Struct \"" + identifier + "\" already defined.");
+		}
+
+		result._structs[identifier] = e->_struct_def_expr;
+*/
 		return { bind, body_pos.second };
 	}
 
