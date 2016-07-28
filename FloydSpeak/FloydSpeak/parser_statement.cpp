@@ -18,6 +18,7 @@ namespace floyd_parser {
 	using std::string;
 	using std::vector;
 	using std::pair;
+	using std::make_shared;
 
 
 	statement_t make__bind_statement(const bind_statement_t& value){
@@ -55,7 +56,6 @@ void trace(const statement_t& s){
 
 
 
-
 //////////////////////////////////////////////////		PARSE STATEMENTS
 
 
@@ -79,6 +79,24 @@ namespace {
 
 }
 
+
+	/*
+		Named function:
+
+		int myfunc(string a, int b){
+			...
+			return b + 1;
+		}
+
+
+		LATER:
+		Lambda:
+
+		int myfunc(string a){
+			() => {
+			}
+		}
+	*/
 std::pair<std::pair<string, function_def_expr_t>, string> parse_function_definition_statement(const ast_t& ast, const string& pos){
 	QUARK_ASSERT(ast.check_invariant());
 
@@ -161,7 +179,6 @@ QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Test exteme whites
 
 
 
-
 pair<statement_t, string> parse_assignment_statement(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_assignment_statement()");
 	QUARK_ASSERT(ast.check_invariant());
@@ -209,6 +226,169 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 
 
 
+
+
+
+
+
+
+std::pair<vector<arg_t>, std::string> parse_struct_body(const string& s){
+	const auto s2 = skip_whitespace(s);
+	read_required_char(s2, '{');
+	const auto body_pos = get_balanced(s2);
+
+	vector<arg_t> members;
+	auto pos = trim_ends(body_pos.first);
+	while(!pos.empty()){
+		const auto arg_type = read_type(pos);
+		const auto arg_name = read_identifier(arg_type.second);
+		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ';');
+
+		const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
+		members.push_back(a);
+		pos = optional_comma.second;
+	}
+
+	return { members, body_pos.second };
+}
+
+QUARK_UNIT_TESTQ("parse_struct_body", ""){
+	QUARK_TEST_VERIFY((parse_struct_body("{}") == pair<vector<arg_t>, string>(vector<arg_t>{}, "")));
+}
+
+QUARK_UNIT_TESTQ("parse_struct_body", ""){
+	QUARK_TEST_VERIFY((parse_struct_body(" {} x") == pair<vector<arg_t>, string>(vector<arg_t>{}, " x")));
+}
+
+
+struct_def_expr_t make_test_struct0(){
+	return {
+		vector<arg_t>{
+			{ make_type_identifier("int"), "x" },
+			{ make_type_identifier("string"), "y" },
+			{ make_type_identifier("float"), "z" }
+		}
+	};
+}
+
+QUARK_UNIT_TESTQ("parse_struct_body", ""){
+	const auto r = parse_struct_body("{int x; string y; float z;}");
+	QUARK_TEST_VERIFY((
+		r == pair<vector<arg_t>, string>(make_test_struct0()._members, "" )
+	));
+}
+
+
+
+
+//////////////////////////////////////////////////		read_statement()
+
+
+pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
+	QUARK_ASSERT(ast.check_invariant());
+
+	const auto word1 = read_until(pos, " ");
+
+	//	struct?
+	if(word1.first == "struct"){
+		const auto struct_name = read_required_identifier(word1.second);
+
+		pair<vector<arg_t>, string> body_pos = parse_struct_body(struct_name.second);
+		struct_def_expr_t struct_def{ body_pos.first };
+		const auto bind = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def) };
+		return { bind, body_pos.second };
+	}
+
+	//	Function?
+	else {
+		const auto type_pos = read_required_type_identifier(pos);
+		const auto identifier_pos = read_required_identifier(type_pos.second);
+
+		const pair<pair<string, function_def_expr_t>, string> function = parse_function_definition_statement(ast, pos);
+		const auto bind = bind_statement_t{ function.first.first, make_shared<expression_t>(function.first.second) };
+		return { bind, function.second };
+	}
+}
+
+
+const string test_function1 = "int test_function1(){ return 100; }";
+
+function_def_expr_t make_test_function1(){
+	return {
+		type_identifier_t::make_type("int"),
+		vector<arg_t>{
+		},
+		function_body_t{
+			{ return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(100))) } }
+		}
+	};
+}
+
+const string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
+
+function_def_expr_t make_test_function2(){
+	return {
+		type_identifier_t::make_type("string"),
+		vector<arg_t>{
+			{ make_type_identifier("int"), "a" },
+			{ make_type_identifier("float"), "b" }
+		},
+		function_body_t{
+			{ return_statement_t{ std::make_shared<expression_t>(make_constant(value_t("sdf"))) } }
+		}
+	};
+}
+
+QUARK_UNIT_TESTQ("read_statement()", ""){
+	try{
+		const auto result = read_statement({}, "int f()");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+QUARK_UNIT_TESTQ("read_statement()", ""){
+	const auto result = read_statement({}, test_function1);
+	QUARK_TEST_VERIFY(result.first._bind_statement);
+	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_function1");
+	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
+	QUARK_TEST_VERIFY(expr);
+
+/*
+	const auto test = make_test_function1();
+	QUARK_TEST_VERIFY(expr->_args == test._args);
+	QUARK_TEST_VERIFY(expr->_return_type == test._return_type);
+	QUARK_TEST_VERIFY(expr->_body == test._body);
+*/
+	QUARK_TEST_VERIFY(*expr == make_test_function1());
+	QUARK_TEST_VERIFY(result.second == "");
+}
+
+QUARK_UNIT_TESTQ("read_statement()", ""){
+	const auto result = read_statement({}, test_function2);
+	QUARK_TEST_VERIFY(result.first._bind_statement);
+	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_function2");
+	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
+	QUARK_TEST_VERIFY(expr);
+
+	QUARK_TEST_VERIFY(*expr == make_test_function2());
+	QUARK_TEST_VERIFY(result.second == "");
+}
+
+
+
+
+
+
+QUARK_UNIT_TESTQ("read_statement()", ""){
+	const auto result = read_statement({}, "struct test_struct0 {int x; string y; float z;}");
+	QUARK_TEST_VERIFY(result.first._bind_statement);
+	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_struct0");
+	const auto expr = result.first._bind_statement->_expression->_struct_def_expr;
+
+	QUARK_TEST_VERIFY(*expr == make_test_struct0());
+}
 
 
 

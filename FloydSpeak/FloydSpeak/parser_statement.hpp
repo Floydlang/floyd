@@ -93,27 +93,6 @@ namespace floyd_parser {
 	void trace(const statement_t& s);
 
 
-
-	/*
-		Named function:
-
-		int myfunc(string a, int b){
-			...
-			return b + 1;
-		}
-
-
-		LATER:
-		Lambda:
-
-		int myfunc(string a){
-			() => {
-			}
-		}
-	*/
-	std::pair<std::pair<std::string, function_def_expr_t>, std::string> parse_function_definition_statement(const ast_t& ast, const std::string& pos);
-
-
 	/*
 		"int a = 10;"
 		"float b = 0.3;"
@@ -124,6 +103,43 @@ namespace floyd_parser {
 		...can contain trailing whitespace.
 	*/
 	std::pair<statement_t, std::string> parse_assignment_statement(const ast_t& ast, const std::string& s);
+
+	/*
+		Global function definitions:
+
+			#1
+			int test_func1(){ return 100; };
+
+			#2
+			string test_func2(int a, float b){ return "sdf" };
+
+		Global struct definitions:
+
+			struct my_image {
+				int width;
+				int height;
+			};
+
+			struct my_sprite {
+				string name;
+				my_image image;
+			};
+
+		FUTURE
+		- Define data structures (also in local scopes).
+		- Add support for global constants.
+		- Assign global constants
+
+
+		Global constants:
+
+			float my_global1 = 3.1415f + ;
+			my_sprite my_test_sprite =
+	*/
+	std::pair<statement_t, std::string> read_statement(const ast_t& ast, const std::string& pos);
+
+
+
 
 
 }	//	floyd_parser
