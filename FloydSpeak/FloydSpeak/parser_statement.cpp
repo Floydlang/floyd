@@ -54,6 +54,27 @@ void trace(const statement_t& s){
 	}
 }
 
+	//////////////////////////////////////		statement_t
+
+
+
+	bool statement_t::check_invariant() const {
+		if(_bind_statement){
+			QUARK_ASSERT(_bind_statement);
+			QUARK_ASSERT(!_return_statement);
+		}
+		else if(_return_statement){
+			QUARK_ASSERT(!_bind_statement);
+			QUARK_ASSERT(_return_statement);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+		return true;
+	}
+
+
+
 
 
 
@@ -98,7 +119,7 @@ namespace {
 			}
 		}
 	*/
-std::pair<std::pair<string, function_def_expr_t>, string> parse_function_definition_statement(const ast_t& ast, const string& pos){
+std::pair<std::pair<string, function_def_t>, string> parse_function_definition_statement(const ast_t& ast, const string& pos){
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto type_pos = read_required_type_identifier(pos);
@@ -123,7 +144,7 @@ std::pair<std::pair<string, function_def_expr_t>, string> parse_function_definit
 	auto local_scope = add_arg_identifiers(ast, args);
 
 	const auto body = parse_function_body(local_scope, body_pos.first);
-	const auto a = function_def_expr_t{ type_pos.first, args, body };
+	const auto a = function_def_t{ type_pos.first, args, body };
 
 	return { { identifier_pos.first, a }, body_pos.second };
 }
@@ -316,8 +337,10 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 		const auto type_pos = read_required_type_identifier(pos);
 		const auto identifier_pos = read_required_identifier(type_pos.second);
 
-		const pair<pair<string, function_def_expr_t>, string> function = parse_function_definition_statement(ast, pos);
-		const auto bind = bind_statement_t{ function.first.first, make_shared<expression_t>(function.first.second) };
+		const pair<pair<string, function_def_t>, string> function = parse_function_definition_statement(ast, pos);
+		const auto function_def_expr = function_def_expr_t{make_shared<function_def_t>(function.first.second)};
+
+		const auto bind = bind_statement_t{ function.first.first, make_shared<expression_t>(expression_t{function_def_expr}) };
 		return { bind, function.second };
 	}
 }
@@ -325,7 +348,7 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 
 const string test_function1 = "int test_function1(){ return 100; }";
 
-function_def_expr_t make_test_function1(){
+function_def_t make_test_function1(){
 	return {
 		type_identifier_t::make_type("int"),
 		vector<arg_t>{
@@ -338,7 +361,7 @@ function_def_expr_t make_test_function1(){
 
 const string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
 
-function_def_expr_t make_test_function2(){
+function_def_t make_test_function2(){
 	return {
 		type_identifier_t::make_type("string"),
 		vector<arg_t>{
@@ -373,7 +396,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	QUARK_TEST_VERIFY(expr->_return_type == test._return_type);
 	QUARK_TEST_VERIFY(expr->_body == test._body);
 */
-	QUARK_TEST_VERIFY(*expr == make_test_function1());
+	QUARK_TEST_VERIFY(*expr->_def == make_test_function1());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
@@ -384,7 +407,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
 	QUARK_TEST_VERIFY(expr);
 
-	QUARK_TEST_VERIFY(*expr == make_test_function2());
+	QUARK_TEST_VERIFY(*expr->_def == make_test_function2());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 

@@ -55,6 +55,8 @@ namespace floyd_parser {
 
 
 	struct statement_t {
+		bool check_invariant() const;
+
 		statement_t(const bind_statement_t& value) :
 			_bind_statement(std::make_shared<bind_statement_t>(value))
 		{

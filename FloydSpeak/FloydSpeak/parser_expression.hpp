@@ -27,17 +27,16 @@ namespace floyd_parser {
 
 	struct function_def_expr_t {
 		bool check_invariant() const {
-			QUARK_ASSERT(_return_type.check_invariant());
+			QUARK_ASSERT(_def);
+			QUARK_ASSERT(_def->check_invariant());
 			return true;
 		}
 
 		bool operator==(const function_def_expr_t& other) const{
-			return _return_type == other._return_type && _args == other._args && _body == other._body;
+			return *_def == *other._def;
 		}
 
-		const type_identifier_t _return_type;
-		const std::vector<arg_t> _args;
-		const function_body_t _body;
+		std::shared_ptr<function_def_t> _def;
 	};
 
 
@@ -47,11 +46,13 @@ namespace floyd_parser {
 
 	struct struct_def_expr_t {
 		bool check_invariant() const {
+			QUARK_ASSERT(_def);
+			QUARK_ASSERT(_def->check_invariant());
 			return true;
 		}
 
 		bool operator==(const struct_def_expr_t& other) const{
-			return _def->_members == other._def->_members;
+			return *_def == *other._def;
 		}
 
 		const std::shared_ptr<struct_def_t> _def;

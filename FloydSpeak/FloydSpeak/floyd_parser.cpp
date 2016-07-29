@@ -197,8 +197,8 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr);
 
 	const auto expr = result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr->_return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((expr->_args == vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }}));
+	QUARK_TEST_VERIFY(expr->_def->_return_type == type_identifier_t::make_type("int"));
+	QUARK_TEST_VERIFY((expr->_def->_args == vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }}));
 }
 
 
@@ -216,8 +216,8 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr);
 
 	const auto expr = result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr->_return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((expr->_args == vector<arg_t>{
+	QUARK_TEST_VERIFY(expr->_def->_return_type == type_identifier_t::make_type("int"));
+	QUARK_TEST_VERIFY((expr->_def->_args == vector<arg_t>{
 		arg_t{ type_identifier_t::make_type("int"), "x" },
 		arg_t{ type_identifier_t::make_type("int"), "y" },
 		arg_t{ type_identifier_t::make_type("string"), "z" }
@@ -244,8 +244,8 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr);
 
 	const auto hello = result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(hello->_return_type == type_identifier_t::make_type("string"));
-	QUARK_TEST_VERIFY((hello->_args == vector<arg_t>{
+	QUARK_TEST_VERIFY(hello->_def->_return_type == type_identifier_t::make_type("string"));
+	QUARK_TEST_VERIFY((hello->_def->_args == vector<arg_t>{
 		arg_t{ type_identifier_t::make_type("int"), "x" },
 		arg_t{ type_identifier_t::make_type("int"), "y" },
 		arg_t{ type_identifier_t::make_type("string"), "z" }
@@ -257,8 +257,8 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	QUARK_TEST_VERIFY(result._top_level_statements[1]->_bind_statement->_expression->_function_def_expr);
 
 	const auto main = result._top_level_statements[1]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(main->_return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((main->_args == vector<arg_t>{
+	QUARK_TEST_VERIFY(main->_def->_return_type == type_identifier_t::make_type("int"));
+	QUARK_TEST_VERIFY((main->_def->_args == vector<arg_t>{
 		arg_t{ type_identifier_t::make_type("string"), "args" }
 	}));
 
@@ -278,19 +278,19 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_identifier == "testx");
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_return_type == make_type_identifier("float"));
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_args.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_args[0]._type == make_type_identifier("float"));
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_args[0]._identifier == "v");
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_body._statements.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_return_type == make_type_identifier("float"));
+	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._type == make_type_identifier("float"));
+	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._identifier == "v");
+	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_body._statements.size() == 1);
 
 	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_identifier == "main");
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_return_type == make_type_identifier("int"));
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_args.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_args[0]._type == make_type_identifier("string"));
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_args[0]._identifier == "args");
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_body._statements.size() == 2);
+	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_return_type == make_type_identifier("int"));
+	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._type == make_type_identifier("string"));
+	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._identifier == "args");
+	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_body._statements.size() == 2);
 	//### Test body?
 }
 

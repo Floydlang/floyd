@@ -360,17 +360,7 @@ string operation_to_string(const math_operation1_expr_t::operation& op){
 
 void trace(const function_def_expr_t& e){
 	QUARK_SCOPED_TRACE("function_def_expr_t");
-
-	{
-		QUARK_SCOPED_TRACE("return");
-		trace(e._return_type);
-	}
-	{
-		trace_vec("arguments", e._args);
-	}
-	{
-		trace(e._body);
-	}
+	trace(*e._def);
 }
 
 void trace(const struct_def_expr_t& e){
@@ -592,7 +582,7 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 
 
-shared_ptr<const function_def_expr_t> make_log_function(){
+function_def_t make_log_function(){
 	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
 	function_body_t body{
 		{
@@ -602,10 +592,10 @@ shared_ptr<const function_def_expr_t> make_log_function(){
 		}
 	};
 
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+	return function_def_t{ make_type_identifier("float"), args, body };
 }
 
-shared_ptr<const function_def_expr_t> make_log2_function(){
+function_def_t make_log2_function(){
 	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
 	function_body_t body{
 		{
@@ -615,10 +605,10 @@ shared_ptr<const function_def_expr_t> make_log2_function(){
 		}
 	};
 
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("float"), args, body });
+	return function_def_t{ make_type_identifier("float"), args, body };
 }
 
-shared_ptr<const function_def_expr_t> make_return5(){
+function_def_t make_return5(){
 	vector<arg_t> args{};
 	function_body_t body{
 		{
@@ -628,7 +618,7 @@ shared_ptr<const function_def_expr_t> make_return5(){
 		}
 	};
 
-	return make_shared<const function_def_expr_t>(function_def_expr_t{ make_type_identifier("int"), args, body });
+	return function_def_t{ make_type_identifier("int"), args, body };
 }
 
 
@@ -669,10 +659,10 @@ struct_def_expr_t make_struct1(){
 
 ast_t make_test_ast(){
 	ast_t result;
-	result._functions["log"] = make_log_function();
-	result._functions["log2"] = make_log2_function();
-	result._functions["f"] = make_log_function();
-	result._functions["return5"] = make_return5();
+	result._functions["log"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_log_function())});
+	result._functions["log2"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_log2_function())});
+	result._functions["f"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_log_function())});
+	result._functions["return5"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_return5())});
 
 	result._structs["test_struct0"] = make_shared<struct_def_expr_t>(make_struct0());
 	result._structs["test_struct1"] = make_shared<struct_def_expr_t>(make_struct1());

@@ -35,11 +35,11 @@ namespace {
 	}
 
 	bool check_args(const function_def_expr_t& f, const vector<value_t>& args){
-		if(f._args.size() != args.size()){
+		if(f._def->_args.size() != args.size()){
 			return false;
 		}
 		for(int i = 0 ; i < args.size() ; i++){
-			if(f._args[i]._type != args[i].get_type()){
+			if(f._def->_args[i]._type != args[i].get_type()){
 				return false;
 			}
 		}
@@ -60,7 +60,7 @@ namespace {
 
 		auto local_scope = ast;
 		for(int i = 0 ; i < args.size() ; i++){
-			const auto& arg_name = f._args[i]._identifier;
+			const auto& arg_name = f._def->_args[i]._identifier;
 			const auto& arg_value = args[i];
 			local_scope._constant_values[arg_name] = make_shared<const value_t>(arg_value);
 		}
@@ -82,7 +82,7 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 	auto local_scope = add_args(ast, f, args);
 
 	//	??? Should respect {} for local variable scopes!
-	const auto body = f._body;
+	const auto body = f._def->_body;
 	int statement_index = 0;
 	while(statement_index < body._statements.size()){
 		const auto statement = body._statements[statement_index];
@@ -244,7 +244,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 
 		const auto& make_function_expression = *it->second;
 
-		QUARK_ASSERT(make_function_expression._args.size() == call_function_expression._inputs.size());
+		QUARK_ASSERT(make_function_expression._def->_args.size() == call_function_expression._inputs.size());
 
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;

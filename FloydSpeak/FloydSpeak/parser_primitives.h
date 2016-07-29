@@ -222,7 +222,7 @@ namespace floyd_parser {
 		//??? Should contain all function definitions, unnamed. Address them using hash of their signature + body.
 		public: std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
 
-		public: std::map<std::string, std::shared_ptr<const struct_def_expr_t> > _structs;
+		public: std::map<std::string, std::shared_ptr<const struct_def_expr_t> > _structs;//???  struct_def_t
 
 		//??? Should contain all functions too.
 		public: std::map<std::string, std::shared_ptr<const value_t> > _constant_values;

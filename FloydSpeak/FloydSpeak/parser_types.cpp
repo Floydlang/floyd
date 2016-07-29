@@ -145,8 +145,18 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		function_body_t
 
 
+	bool function_body_t::check_invariant() const {
+		for(const auto s: _statements){
+			QUARK_ASSERT(s);
+			QUARK_ASSERT(s->check_invariant());
+		}
+		return true;
+	}
 
 	bool function_body_t::operator==(const function_body_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
 //		return _statements == other._statements;
 		if(_statements.size() != other._statements.size()){
 			return false;
@@ -160,11 +170,32 @@ namespace floyd_parser {
 	}
 
 
-
 	void trace(const function_body_t& body){
 		QUARK_SCOPED_TRACE("function_body_t");
 	//	trace_vec<statement_t>("Statements:", body._statements);
 	}
+
+
+
+	//////////////////////////////////////		function_def_t
+
+
+
+	void trace(const function_def_t& e){
+		QUARK_SCOPED_TRACE("function_def_t");
+
+		{
+			QUARK_SCOPED_TRACE("return");
+			trace(e._return_type);
+		}
+		{
+			trace_vec("arguments", e._args);
+		}
+		{
+			trace(e._body);
+		}
+	}
+
 
 
 
