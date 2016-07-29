@@ -356,29 +356,28 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 const string test_function1 = "int test_function1(){ return 100; }";
 
 function_def_t make_test_function1(){
-	return {
-		type_identifier_t::make_type("int"),
-		vector<arg_t>{
-		},
-		vector<shared_ptr<statement_t>>{
-			{ make_shared<statement_t>(return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(100))) }) }
+	return make_function_def(
+		make_type_identifier("int"),
+		{},
+		{
+			makie_return_statement(make_constant(100))
 		}
-	};
+	);
 }
 
 const string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
 
 function_def_t make_test_function2(){
-	return {
-		type_identifier_t::make_type("string"),
-		vector<arg_t>{
+	return make_function_def(
+		make_type_identifier("string"),
+		{
 			{ make_type_identifier("int"), "a" },
 			{ make_type_identifier("float"), "b" }
 		},
-		vector<shared_ptr<statement_t>>{
-			{ make_shared<statement_t>(return_statement_t{ std::make_shared<expression_t>(make_constant(value_t("sdf"))) }) }
+		{
+			makie_return_statement(make_constant(value_t("sdf")))
 		}
-	};
+	);
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
@@ -397,12 +396,6 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
 	QUARK_TEST_VERIFY(expr);
 
-/*
-	const auto test = make_test_function1();
-	QUARK_TEST_VERIFY(expr->_args == test._args);
-	QUARK_TEST_VERIFY(expr->_return_type == test._return_type);
-	QUARK_TEST_VERIFY(expr->_body == test._body);
-*/
 	QUARK_TEST_VERIFY(*expr->_def == make_test_function1());
 	QUARK_TEST_VERIFY(result.second == "");
 }

@@ -588,18 +588,6 @@ function_def_t make_log_function(){
 			makie_return_statement(make_constant(123.f))
 		}
 	);
-/*
-	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
-	function_body_t body{
-		{
-			make_shared<statement_t>(make__return_statement(
-				return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(123.f))) }
-			))
-		}
-	};
-
-	return function_def_t{ make_type_identifier("float"), args, body };
-*/
 }
 
 function_def_t make_log2_function(){
@@ -610,19 +598,7 @@ function_def_t make_log2_function(){
 			makie_return_statement(make_constant(456.7f))
 		}
 	);
-
-/*
-	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
-	function_body_t body{
-		{
-			make_shared<statement_t>(make__return_statement(
-				return_statement_t{ make_shared<expression_t>(make_constant(value_t(456.7f))) }
-			))
-		}
-	};
-
-	return function_def_t{ make_type_identifier("float"), args, body };
-*/}
+}
 
 function_def_t make_return5(){
 	return make_function_def(
@@ -632,44 +608,13 @@ function_def_t make_return5(){
 			makie_return_statement(make_constant(value_t(5)))
 		}
 	);
-/*
-	vector<arg_t> args{};
-	function_body_t body{
-		{
-			make_shared<statement_t>(make__return_statement(
-				return_statement_t{ make_shared<expression_t>(make_constant(value_t(5))) }
-			))
-		}
-	};
-
-	return function_def_t{ make_type_identifier("int"), args, body };
-*/
 }
 
 
-
-/*
-shared_ptr<const struct_def_expr_t> make_struct0(){
-	vector<arg_t> members{};
-
-	return make_shared<const struct_def_expr_t>(struct_def_expr_t{ members });
-}
-*/
 struct_def_expr_t make_struct0(){
 	return { make_shared<struct_def_t>() };
 }
 
-/*
-shared_ptr<const struct_def_expr_t> make_struct1(){
-	vector<arg_t> members{
-		{ make_type_identifier("float"), "x" },
-		{ make_type_identifier("float"), "y" },
-		{ make_type_identifier("string"), "name" }
-	};
-
-	return make_shared<const struct_def_expr_t>(struct_def_expr_t{ members });
-}
-*/
 struct_def_expr_t make_struct1(){
 	return { make_shared<struct_def_t>(
 		struct_def_t{
