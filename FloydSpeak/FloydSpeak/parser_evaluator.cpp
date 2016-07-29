@@ -82,10 +82,10 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 	auto local_scope = add_args(ast, f, args);
 
 	//	??? Should respect {} for local variable scopes!
-	const auto body = f._def->_body;
+	const auto& statements = f._def->_statements;
 	int statement_index = 0;
-	while(statement_index < body._statements.size()){
-		const auto statement = body._statements[statement_index];
+	while(statement_index < statements.size()){
+		const auto statement = statements[statement_index];
 		if(statement->_bind_statement){
 			const auto s = statement->_bind_statement;
 			const auto name = s->_identifier;

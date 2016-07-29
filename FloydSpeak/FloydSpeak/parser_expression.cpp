@@ -465,11 +465,10 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 //??? Need concept of parsing stack-frame to store local variables.
-
-
 //??? Unite this function with read_statement(). No need to have parse-level difference. Check syntax later.
 //??? When to check for correct types, for a global return statement etc? While parsing or separate pass? When to inject conversions?
-function_body_t parse_function_body(const ast_t& ast, const string& s){
+
+std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
 	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
@@ -524,22 +523,21 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 			throw std::runtime_error("syntax error");
 		}
 	}
-	const auto result = function_body_t{ statements };
-	trace(result);
-	return result;
+	trace(statements);
+	return statements;
 }
 
 
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	QUARK_TEST_VERIFY((parse_function_body({}, "{}")._statements.empty()));
+	QUARK_TEST_VERIFY((parse_function_body({}, "{}").empty()));
 }
 
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	QUARK_TEST_VERIFY(parse_function_body({}, "{return 3;}")._statements.size() == 1);
+	QUARK_TEST_VERIFY(parse_function_body({}, "{return 3;}").size() == 1);
 }
 
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	QUARK_TEST_VERIFY(parse_function_body({}, "{\n\treturn 3;\n}")._statements.size() == 1);
+	QUARK_TEST_VERIFY(parse_function_body({}, "{\n\treturn 3;\n}").size() == 1);
 }
 
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
@@ -547,13 +545,13 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 		"{	float test = log(10.11);\n"
 		"	return 3;\n}"
 	);
-	QUARK_TEST_VERIFY(a._statements.size() == 2);
-	QUARK_TEST_VERIFY(a._statements[0]->_bind_statement->_identifier == "test");
-	QUARK_TEST_VERIFY(a._statements[0]->_bind_statement->_expression->_call_function_expr->_function_name == "log");
-	QUARK_TEST_VERIFY(a._statements[0]->_bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a._statements[0]->_bind_statement->_expression->_call_function_expr->_inputs[0]->_constant == value_t(10.11f));
+	QUARK_TEST_VERIFY(a.size() == 2);
+	QUARK_TEST_VERIFY(a[0]->_bind_statement->_identifier == "test");
+	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call_function_expr->_function_name == "log");
+	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a[0]->_bind_statement->_expression->_call_function_expr->_inputs[0]->_constant == value_t(10.11f));
 
-	QUARK_TEST_VERIFY(*a._statements[1]->_return_statement->_expression->_constant == value_t(3));
+	QUARK_TEST_VERIFY(*a[1]->_return_statement->_expression->_constant == value_t(3));
 }
 
 
@@ -583,6 +581,14 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 
 function_def_t make_log_function(){
+	return make_function_def(
+		make_type_identifier("float"),
+		{ {make_type_identifier("float"), "value"} },
+		{
+			makie_return_statement(make_constant(123.f))
+		}
+	);
+/*
 	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
 	function_body_t body{
 		{
@@ -593,9 +599,19 @@ function_def_t make_log_function(){
 	};
 
 	return function_def_t{ make_type_identifier("float"), args, body };
+*/
 }
 
 function_def_t make_log2_function(){
+	return make_function_def(
+		make_type_identifier("float"),
+		{ { make_type_identifier("string"), "s" }, { make_type_identifier("float"), "v" } },
+		{
+			makie_return_statement(make_constant(456.7f))
+		}
+	);
+
+/*
 	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
 	function_body_t body{
 		{
@@ -606,9 +622,17 @@ function_def_t make_log2_function(){
 	};
 
 	return function_def_t{ make_type_identifier("float"), args, body };
-}
+*/}
 
 function_def_t make_return5(){
+	return make_function_def(
+		make_type_identifier("int"),
+		{ },
+		{
+			makie_return_statement(make_constant(value_t(5)))
+		}
+	);
+/*
 	vector<arg_t> args{};
 	function_body_t body{
 		{
@@ -619,6 +643,7 @@ function_def_t make_return5(){
 	};
 
 	return function_def_t{ make_type_identifier("int"), args, body };
+*/
 }
 
 

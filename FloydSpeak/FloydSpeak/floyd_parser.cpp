@@ -282,7 +282,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args.size() == 1);
 	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._type == make_type_identifier("float"));
 	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._identifier == "v");
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_body._statements.size() == 1);
+	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_statements.size() == 1);
 
 	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement);
 	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_identifier == "main");
@@ -290,7 +290,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args.size() == 1);
 	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._type == make_type_identifier("string"));
 	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._identifier == "args");
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_body._statements.size() == 2);
+	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_statements.size() == 2);
 	//### Test body?
 }
 

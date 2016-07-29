@@ -20,6 +20,7 @@ namespace floyd_parser {
 	using std::vector;
 	using std::pair;
 	using std::make_shared;
+	using std::shared_ptr;
 
 
 	statement_t make__bind_statement(const bind_statement_t& value){
@@ -33,6 +34,12 @@ namespace floyd_parser {
 	statement_t make__return_statement(const return_statement_t& value){
 		return statement_t(value);
 	}
+
+
+	statement_t makie_return_statement(const expression_t& expression){
+		return statement_t(return_statement_t{make_shared<expression_t>(expression)});
+	}
+
 
 
 
@@ -163,7 +170,7 @@ QUARK_UNIT_TESTQ("parse_function_definition_statement()", ""){
 	QUARK_TEST_VERIFY(result.first.first == "f");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY(result.first.second._args.empty());
-	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
+	QUARK_TEST_VERIFY(result.first.second._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
@@ -176,7 +183,7 @@ QUARK_UNIT_TESTQ("parse_function_definition_statement()", "Test many arguments o
 		{ make_type_identifier("float"), "barry" },
 		{ make_type_identifier("int"), "c" },
 	}));
-	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
+	QUARK_TEST_VERIFY(result.first.second._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
@@ -353,7 +360,7 @@ function_def_t make_test_function1(){
 		type_identifier_t::make_type("int"),
 		vector<arg_t>{
 		},
-		function_body_t{
+		vector<shared_ptr<statement_t>>{
 			{ make_shared<statement_t>(return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(100))) }) }
 		}
 	};
@@ -368,7 +375,7 @@ function_def_t make_test_function2(){
 			{ make_type_identifier("int"), "a" },
 			{ make_type_identifier("float"), "b" }
 		},
-		function_body_t{
+		vector<shared_ptr<statement_t>>{
 			{ make_shared<statement_t>(return_statement_t{ std::make_shared<expression_t>(make_constant(value_t("sdf"))) }) }
 		}
 	};

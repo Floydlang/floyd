@@ -20,6 +20,8 @@
 
 using std::make_shared;
 using std::string;
+using std::shared_ptr;
+using std::vector;
 
 
 namespace floyd_parser {
@@ -142,10 +144,11 @@ namespace floyd_parser {
 	}
 
 
-	//////////////////////////////////////////////////		function_body_t
+	//////////////////////////////////////		function_def_t
 
 
-	bool function_body_t::check_invariant() const {
+	bool function_def_t::check_invariant() const {
+		QUARK_ASSERT(_return_type.check_invariant());
 		for(const auto s: _statements){
 			QUARK_ASSERT(s);
 			QUARK_ASSERT(s->check_invariant());
@@ -153,11 +156,10 @@ namespace floyd_parser {
 		return true;
 	}
 
-	bool function_body_t::operator==(const function_body_t& other) const{
+	bool function_def_t::operator==(const function_def_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-//		return _statements == other._statements;
 		if(_statements.size() != other._statements.size()){
 			return false;
 		}
@@ -166,20 +168,9 @@ namespace floyd_parser {
 				return false;
 			}
 		}
-		return true;
+
+		return _return_type == other._return_type && _args == other._args;
 	}
-
-
-	void trace(const function_body_t& body){
-		QUARK_SCOPED_TRACE("function_body_t");
-	//	trace_vec<statement_t>("Statements:", body._statements);
-	}
-
-
-
-	//////////////////////////////////////		function_def_t
-
-
 
 	void trace(const function_def_t& e){
 		QUARK_SCOPED_TRACE("function_def_t");
@@ -191,10 +182,25 @@ namespace floyd_parser {
 		{
 			trace_vec("arguments", e._args);
 		}
-		{
-			trace(e._body);
+
+		trace(e._statements);
+	}
+
+	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
+		QUARK_SCOPED_TRACE("statements");
+		for(const auto s: e){
+			trace(*s);
 		}
 	}
+
+	function_def_t make_function_def(type_identifier_t return_type, const vector<arg_t>& args, const vector<statement_t>& statements){
+		vector<shared_ptr<statement_t>> statements2;
+		for(const auto i: statements){
+			statements2.push_back(make_shared<statement_t>(i));
+		}
+		return { return_type, args, statements2 };
+	}
+
 
 
 

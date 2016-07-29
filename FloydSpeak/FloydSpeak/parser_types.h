@@ -118,44 +118,28 @@ namespace floyd_parser {
 	void trace(const arg_t& arg);
 
 
-	//////////////////////////////////////////////////		function_body_t
-
-	/*
-		Describes a function body, basically a number of statements.
-	*/
-
-	struct function_body_t {
-		bool check_invariant() const;
-		bool operator==(const function_body_t& other) const;
-
-		const std::vector<std::shared_ptr<statement_t> > _statements;
-	};
-
-	void trace(const function_body_t& body);
-
-
-
 	//////////////////////////////////////		function_def_t
 
 
 	struct function_def_t {
-		bool check_invariant() const {
-			QUARK_ASSERT(_return_type.check_invariant());
-			return true;
-		}
+		bool check_invariant() const;
+		bool operator==(const function_def_t& other) const;
 
-		bool operator==(const function_def_t& other) const{
-			return _return_type == other._return_type && _args == other._args && _body == other._body;
-		}
 
 		const type_identifier_t _return_type;
 
 		//??? Should be a struct. Idea: use internal concept for "record" and use it to build Floyd struct, tuple, arg list, local variables / stack frames etc.
 		const std::vector<arg_t> _args;
-		const function_body_t _body;
+		const std::vector<std::shared_ptr<statement_t> > _statements;
 	};
 
 	void trace(const function_def_t& v);
+
+
+	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
+
+	//	Helper for making tests.
+	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
 
 
 

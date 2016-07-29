@@ -337,7 +337,7 @@ namespace floyd_parser {
 		- Add variables
 		- Add local functions
 	*/
-	function_body_t parse_function_body(const ast_t& ast, const std::string& s);
+	std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, const std::string& s);
 
 
 	/*

@@ -50,6 +50,8 @@ namespace floyd_parser {
 	};
 
 
+	statement_t makie_return_statement(const expression_t& expression);
+
 
 	//////////////////////////////////////		statement_t
 
