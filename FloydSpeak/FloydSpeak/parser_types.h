@@ -57,6 +57,10 @@ namespace floyd_parser {
 
 	struct type_identifier_t {
 		public: static type_identifier_t make_type(std::string s);
+
+		public: type_identifier_t(const type_identifier_t& other);
+		public: type_identifier_t operator=(const type_identifier_t& other);
+
 		public: bool operator==(const type_identifier_t& other) const;
 		public: bool operator!=(const type_identifier_t& other) const;
 
@@ -107,8 +111,8 @@ namespace floyd_parser {
 			return _type == other._type && _identifier == other._identifier;
 		}
 
-		const type_identifier_t _type;
-		const std::string _identifier;
+		type_identifier_t _type;
+		std::string _identifier;
 	};
 
 	void trace(const arg_t& arg);
@@ -137,6 +141,7 @@ namespace floyd_parser {
 		Definition of a struct-member.
 	*/
 
+/*
 	struct member_t {
 		member_t(const std::string& name, const std::string& type_identifier);
 		public: bool check_invariant() const;
@@ -144,7 +149,7 @@ namespace floyd_parser {
 		std::string _name;
 		std::string _type_identifier;
 	};
-
+*/
 
 
 	//////////////////////////////////////		struct_def_t
@@ -160,13 +165,15 @@ namespace floyd_parser {
 	*/
 
 	struct struct_def_t {
-		public: struct_def_t(){};
 		public: bool check_invariant() const;
+		bool operator==(const struct_def_t& other) const;
 
 
 		///////////////////		STATE
-		public: std::vector<member_t> _members;
+		public: std::vector<arg_t> _members;
 	};
+
+	void trace(const struct_def_t& e);
 
 
 	//////////////////////////////////////		vector_def_t
@@ -301,13 +308,13 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> define_struct_type(const std::vector<member_t>& members) const;
+		public: std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> define_struct_type(const std::vector<arg_t>& members) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
-		public: frontend_types_collector_t define_struct_type(const std::string& new_identifier, std::vector<member_t> members) const;
+		public: frontend_types_collector_t define_struct_type(const std::string& new_identifier, std::vector<arg_t> members) const;
 
 
 		/*

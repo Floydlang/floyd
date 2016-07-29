@@ -10,6 +10,7 @@
 
 
 
+#include "parser_types.h"
 #include "parser_expression.hpp"
 
 
@@ -232,7 +233,7 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 
 
 
-std::pair<vector<arg_t>, std::string> parse_struct_body(const string& s){
+std::pair<struct_def_t, std::string> parse_struct_body(const string& s){
 	const auto s2 = skip_whitespace(s);
 	read_required_char(s2, '{');
 	const auto body_pos = get_balanced(s2);
@@ -249,21 +250,22 @@ std::pair<vector<arg_t>, std::string> parse_struct_body(const string& s){
 		pos = optional_comma.second;
 	}
 
-	return { members, body_pos.second };
+	return { struct_def_t{members}, body_pos.second };
 }
 
 QUARK_UNIT_TESTQ("parse_struct_body", ""){
-	QUARK_TEST_VERIFY((parse_struct_body("{}") == pair<vector<arg_t>, string>(vector<arg_t>{}, "")));
+	QUARK_TEST_VERIFY((parse_struct_body("{}") == pair<struct_def_t, string>({}, "")));
 }
 
 QUARK_UNIT_TESTQ("parse_struct_body", ""){
-	QUARK_TEST_VERIFY((parse_struct_body(" {} x") == pair<vector<arg_t>, string>(vector<arg_t>{}, " x")));
+	QUARK_TEST_VERIFY((parse_struct_body(" {} x") == pair<struct_def_t, string>({}, " x")));
 }
 
 
-struct_def_expr_t make_test_struct0(){
+struct_def_t make_test_struct0(){
 	return {
-		vector<arg_t>{
+		vector<arg_t>
+		{
 			{ make_type_identifier("int"), "x" },
 			{ make_type_identifier("string"), "y" },
 			{ make_type_identifier("float"), "z" }
@@ -274,7 +276,7 @@ struct_def_expr_t make_test_struct0(){
 QUARK_UNIT_TESTQ("parse_struct_body", ""){
 	const auto r = parse_struct_body("{int x; string y; float z;}");
 	QUARK_TEST_VERIFY((
-		r == pair<vector<arg_t>, string>(make_test_struct0()._members, "" )
+		r == pair<struct_def_t, string>(make_test_struct0(), "" )
 	));
 }
 
@@ -293,9 +295,9 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 	if(word1.first == "struct"){
 		const auto struct_name = read_required_identifier(word1.second);
 
-		pair<vector<arg_t>, string> body_pos = parse_struct_body(struct_name.second);
-		struct_def_expr_t struct_def{ body_pos.first };
-		const auto bind = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def) };
+		pair<struct_def_t, string> body_pos = parse_struct_body(struct_name.second);
+		struct_def_expr_t struct_def_expr{ make_shared<struct_def_t>(body_pos.first) };
+		const auto bind = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def_expr) };
 
 /*
 		//	Add struct
@@ -393,7 +395,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_struct0");
 	const auto expr = result.first._bind_statement->_expression->_struct_def_expr;
 
-	QUARK_TEST_VERIFY(*expr == make_test_struct0());
+	QUARK_TEST_VERIFY(*expr->_def == make_test_struct0());
 }
 
 

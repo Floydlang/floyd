@@ -51,10 +51,10 @@ namespace floyd_parser {
 		}
 
 		bool operator==(const struct_def_expr_t& other) const{
-			return _members == other._members;
+			return _def->_members == other._def->_members;
 		}
 
-		const std::vector<arg_t> _members;
+		const std::shared_ptr<struct_def_t> _def;
 	};
 
 

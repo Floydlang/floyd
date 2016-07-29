@@ -376,9 +376,7 @@ void trace(const function_def_expr_t& e){
 void trace(const struct_def_expr_t& e){
 	QUARK_SCOPED_TRACE("struct_def_expr_t");
 
-	{
-		trace_vec("arguments", e._members);
-	}
+	trace(*e._def);
 }
 
 void trace(const math_operation2_expr_t& e){
@@ -635,12 +633,18 @@ shared_ptr<const function_def_expr_t> make_return5(){
 
 
 
+/*
 shared_ptr<const struct_def_expr_t> make_struct0(){
 	vector<arg_t> members{};
 
 	return make_shared<const struct_def_expr_t>(struct_def_expr_t{ members });
 }
+*/
+struct_def_expr_t make_struct0(){
+	return { make_shared<struct_def_t>() };
+}
 
+/*
 shared_ptr<const struct_def_expr_t> make_struct1(){
 	vector<arg_t> members{
 		{ make_type_identifier("float"), "x" },
@@ -650,8 +654,18 @@ shared_ptr<const struct_def_expr_t> make_struct1(){
 
 	return make_shared<const struct_def_expr_t>(struct_def_expr_t{ members });
 }
-
-
+*/
+struct_def_expr_t make_struct1(){
+	return { make_shared<struct_def_t>(
+		struct_def_t{
+			vector<arg_t>{
+				{ make_type_identifier("float"), "x" },
+				{ make_type_identifier("float"), "y" },
+				{ make_type_identifier("string"), "name" }
+			}
+		}
+	) };
+}
 
 ast_t make_test_ast(){
 	ast_t result;
@@ -660,8 +674,8 @@ ast_t make_test_ast(){
 	result._functions["f"] = make_log_function();
 	result._functions["return5"] = make_return5();
 
-	result._structs["test_struct0"] = make_struct0();
-	result._structs["test_struct1"] = make_struct1();
+	result._structs["test_struct0"] = make_shared<struct_def_expr_t>(make_struct0());
+	result._structs["test_struct1"] = make_shared<struct_def_expr_t>(make_struct1());
 	return result;
 }
 
@@ -669,8 +683,8 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	auto a = make_test_ast();
 	QUARK_TEST_VERIFY(a._structs.size() == 2);
 
-	QUARK_TEST_VERIFY(*a._structs["test_struct0"] == *make_struct0());
-	QUARK_TEST_VERIFY(*a._structs["test_struct1"] == *make_struct1());
+	QUARK_TEST_VERIFY(*a._structs["test_struct0"] == make_struct0());
+	QUARK_TEST_VERIFY(*a._structs["test_struct1"] == make_struct1());
 }
 
 

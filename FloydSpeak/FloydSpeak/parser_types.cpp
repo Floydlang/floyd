@@ -34,6 +34,24 @@ namespace floyd_parser {
 		return result;
 	}
 
+
+	type_identifier_t::type_identifier_t(const type_identifier_t& other) :
+		_type_magic(other._type_magic)
+	{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+	}
+
+	type_identifier_t type_identifier_t::operator=(const type_identifier_t& other){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		type_identifier_t temp(other);
+		temp.swap(*this);
+		return *this;
+	}
+
+
 	bool type_identifier_t::operator==(const type_identifier_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
@@ -150,7 +168,7 @@ namespace floyd_parser {
 
 
 
-
+/*
 	////////////////////////			member_t
 
 
@@ -167,7 +185,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(!_type_identifier.empty());
 		return true;
 	}
-
+*/
 
 
 	////////////////////////			struct_def_t
@@ -175,6 +193,17 @@ namespace floyd_parser {
 
 	bool struct_def_t::check_invariant() const{
 		return true;
+	}
+	bool struct_def_t::operator==(const struct_def_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return other._members == _members;
+	}
+
+	void trace(const struct_def_t& e){
+		QUARK_SCOPED_TRACE("struct_def_t");
+		trace_vec("members", e._members);
 	}
 
 
@@ -228,7 +257,7 @@ namespace floyd_parser {
 		else if(t._base_type == k_struct){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
 			for(const auto it: t._struct_def->_members){
-				QUARK_TRACE("<" + it._type_identifier + "> " + it._name);
+				QUARK_TRACE("<" + it._type.to_string() + "> " + it._identifier);
 
 //				trace_frontend_type(*it._type, it._name);
 			}
@@ -252,10 +281,10 @@ namespace floyd_parser {
 		if(t._base_type == k_struct){
 			string body;
 			for(const auto& member : t._struct_def->_members) {
-				const string member_label = member._name;
-				const string typedef_s = member._type_identifier;
+				const string member_label = member._identifier;
+				const type_identifier_t typedef_s = member._type;
 //				const string member_type = typedef_s.empty() ? to_signature(*member._type) : "<" + typedef_s + ">";
-				const string member_type = "<" + typedef_s + ">";
+				const string member_type = "<" + typedef_s.to_string() + ">";
 
 				//	"<string>first_name"
 				const string member_result = member_type + member_label;
@@ -310,7 +339,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		std::vector<byte_range_t> result;
 		std::size_t pos = 0;
 		for(const auto& member : s._struct_def->_members) {
-			const auto identifier_data = types.lookup_identifier_deep(member._type_identifier);
+			const auto identifier_data = types.lookup_identifier_deep(member._type.to_string());
 			const auto type_def = identifier_data->_optional_def;
 			QUARK_ASSERT(type_def);
 
@@ -456,7 +485,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	}
 
 
-	std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> frontend_types_collector_t::define_struct_type(const std::vector<member_t>& members) const{
+	std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> frontend_types_collector_t::define_struct_type(const std::vector<arg_t>& members) const{
 		QUARK_ASSERT(check_invariant());
 
 		auto type_def = make_shared<type_definition_t>();
@@ -491,7 +520,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	}
 
 
-	frontend_types_collector_t frontend_types_collector_t::define_struct_type(const std::string& new_identifier, std::vector<member_t> members) const{
+	frontend_types_collector_t frontend_types_collector_t::define_struct_type(const std::string& new_identifier, std::vector<arg_t> members) const{
 		QUARK_ASSERT(check_invariant());
 
 		//	Make struct def, if not already done.
@@ -587,6 +616,9 @@ frontend_types_collector_t define_test_struct_0(const frontend_types_collector_t
 	return a;
 }
 
+	arg_t make_member_kludge(const std::string& name, const std::string& type){
+		return arg_t{ type_identifier_t(type), name };
+	}
 
 /*
 	struct struct_1 {
@@ -597,8 +629,8 @@ frontend_types_collector_t define_test_struct_0(const frontend_types_collector_t
 frontend_types_collector_t define_test_struct_1(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("struct_1",
 		{
-			member_t("a", "int32"),
-			member_t("b", "string")
+			make_member_kludge("a", "int32"),
+			make_member_kludge("b", "string")
 		}
 	);
 	return a;
@@ -614,9 +646,9 @@ frontend_types_collector_t define_test_struct_1(const frontend_types_collector_t
 frontend_types_collector_t define_test_struct_2(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("struct_2",
 		{
-			member_t("x", "string"),
-			member_t("y", "struct_1"),
-			member_t("z", "string")
+			make_member_kludge("x", "string"),
+			make_member_kludge("y", "struct_1"),
+			make_member_kludge("z", "string")
 		}
 	);
 	return a;
@@ -625,17 +657,17 @@ frontend_types_collector_t define_test_struct_2(const frontend_types_collector_t
 frontend_types_collector_t define_test_struct_3(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("struct_3",
 		{
-			member_t("a", "bool"),
+			make_member_kludge("a", "bool"),
 			// pad
 			// pad
 			// pad
-			member_t("b", "int32"),
-			member_t("c", "bool"),
-			member_t("d", "bool"),
-			member_t("e", "bool"),
-			member_t("f", "bool"),
-			member_t("g", "string"),
-			member_t("h", "bool")
+			make_member_kludge("b", "int32"),
+			make_member_kludge("c", "bool"),
+			make_member_kludge("d", "bool"),
+			make_member_kludge("e", "bool"),
+			make_member_kludge("f", "bool"),
+			make_member_kludge("g", "string"),
+			make_member_kludge("h", "bool")
 		}
 	);
 	return a;
@@ -725,7 +757,7 @@ QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 	const auto layout = calc_struct_default_memory_layout(a, *t);
 	int i = 0;
 	for(const auto it: layout){
-		const string name = i == 0 ? "struct" : t->_struct_def->_members[i - 1]._name;
+		const string name = i == 0 ? "struct" : t->_struct_def->_members[i - 1]._identifier;
 		QUARK_TRACE_SS(it.first << "--" << (it.first + it.second) << ": " + name);
 		i++;
 	}
