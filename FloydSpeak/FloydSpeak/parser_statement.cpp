@@ -329,7 +329,7 @@ function_def_expr_t make_test_function1(){
 		vector<arg_t>{
 		},
 		function_body_t{
-			{ return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(100))) } }
+			{ make_shared<statement_t>(return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(100))) }) }
 		}
 	};
 }
@@ -344,7 +344,7 @@ function_def_expr_t make_test_function2(){
 			{ make_type_identifier("float"), "b" }
 		},
 		function_body_t{
-			{ return_statement_t{ std::make_shared<expression_t>(make_constant(value_t("sdf"))) } }
+			{ make_shared<statement_t>(return_statement_t{ std::make_shared<expression_t>(make_constant(value_t("sdf"))) }) }
 		}
 	};
 }

@@ -16,7 +16,6 @@
 #include <string>
 #include <map>
 
-
 /*
 	type signature:	a string the defines one level of any type. It can be
 	typedef: a typesafe identifier for any time.
@@ -25,7 +24,7 @@
 namespace floyd_parser {
 	struct type_definition_t;
 	struct frontend_types_collector_t;
-
+	struct statement_t;
 
 	//////////////////////////////////////		frontend_base_type
 
@@ -113,6 +112,23 @@ namespace floyd_parser {
 	};
 
 	void trace(const arg_t& arg);
+
+
+	//////////////////////////////////////////////////		function_body_t
+
+	/*
+		Describes a function body, basically a number of statements.
+	*/
+
+	struct function_body_t {
+		bool operator==(const function_body_t& other) const;
+
+		const std::vector<std::shared_ptr<statement_t> > _statements;
+	};
+
+	void trace(const function_body_t& body);
+
+
 
 
 	//////////////////////////////////////		member_t

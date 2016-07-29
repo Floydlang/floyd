@@ -23,7 +23,9 @@ namespace floyd_parser {
 	struct struct_def_expr_t;
 	struct value_t;
 	struct statement_t;
-
+	struct type_identifier_t;
+	
+	
 	const std::vector<std::string> basic_types {
 		"bool",
 		"char???",

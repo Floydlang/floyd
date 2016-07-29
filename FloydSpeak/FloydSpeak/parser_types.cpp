@@ -15,6 +15,7 @@
 #include <map>
 
 #include "parser_primitives.h"
+#include "parser_statement.hpp"
 
 
 using std::make_shared;
@@ -121,6 +122,33 @@ namespace floyd_parser {
 	void trace(const arg_t& arg){
 		QUARK_TRACE("<arg_t> data type: <" + arg._type.to_string() + "> indentifier: \"" + arg._identifier + "\"");
 	}
+
+
+	//////////////////////////////////////////////////		function_body_t
+
+
+
+	bool function_body_t::operator==(const function_body_t& other) const{
+//		return _statements == other._statements;
+		if(_statements.size() != other._statements.size()){
+			return false;
+		}
+		for(int i = 0 ; i < _statements.size() ; i++){
+			if(!(*_statements[i] == *other._statements[i])){
+				return false;
+			}
+		}
+		return true;
+	}
+
+
+
+	void trace(const function_body_t& body){
+		QUARK_SCOPED_TRACE("function_body_t");
+	//	trace_vec<statement_t>("Statements:", body._statements);
+	}
+
+
 
 
 	////////////////////////			member_t

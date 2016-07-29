@@ -488,7 +488,7 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 
 	const string body_str = skip_whitespace(s.substr(1, s.size() - 2));
 
-	vector<statement_t> statements;
+	vector<shared_ptr<statement_t>> statements;
 
 	ast_t local_scope = ast;
 
@@ -504,7 +504,7 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 			const auto expression1 = parse_expression(local_scope, expression_pos.first);
 //			const auto expression2 = evaluate3(local_scope, expression1);
 			const auto statement = statement_t(return_statement_t{ make_shared<expression_t>(expression1) });
-			statements.push_back(statement);
+			statements.push_back(make_shared<statement_t>(statement));
 
 			//	Skip trailing ";".
 			pos = skip_whitespace(expression_pos.second.substr(1));
@@ -527,7 +527,7 @@ function_body_t parse_function_body(const ast_t& ast, const string& s){
 			shared_ptr<const value_t> blank;
 			local_scope._constant_values[identifier] = blank;
 
-			statements.push_back(assignment_statement.first);
+			statements.push_back(make_shared<statement_t>(assignment_statement.first));
 
 			//	Skips trailing ";".
 			pos = skip_whitespace(assignment_statement.second);
@@ -560,12 +560,12 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 		"	return 3;\n}"
 	);
 	QUARK_TEST_VERIFY(a._statements.size() == 2);
-	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_identifier == "test");
-	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression->_call_function_expr->_function_name == "log");
-	QUARK_TEST_VERIFY(a._statements[0]._bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a._statements[0]._bind_statement->_expression->_call_function_expr->_inputs[0]->_constant == value_t(10.11f));
+	QUARK_TEST_VERIFY(a._statements[0]->_bind_statement->_identifier == "test");
+	QUARK_TEST_VERIFY(a._statements[0]->_bind_statement->_expression->_call_function_expr->_function_name == "log");
+	QUARK_TEST_VERIFY(a._statements[0]->_bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a._statements[0]->_bind_statement->_expression->_call_function_expr->_inputs[0]->_constant == value_t(10.11f));
 
-	QUARK_TEST_VERIFY(*a._statements[1]._return_statement->_expression->_constant == value_t(3));
+	QUARK_TEST_VERIFY(*a._statements[1]->_return_statement->_expression->_constant == value_t(3));
 }
 
 
@@ -598,9 +598,9 @@ shared_ptr<const function_def_expr_t> make_log_function(){
 	vector<arg_t> args{ {make_type_identifier("float"), "value"} };
 	function_body_t body{
 		{
-			make__return_statement(
+			make_shared<statement_t>(make__return_statement(
 				return_statement_t{ std::make_shared<expression_t>(make_constant(value_t(123.f))) }
-			)
+			))
 		}
 	};
 
@@ -611,9 +611,9 @@ shared_ptr<const function_def_expr_t> make_log2_function(){
 	vector<arg_t> args{ {make_type_identifier("string"), "s"}, {make_type_identifier("float"), "v"} };
 	function_body_t body{
 		{
-			make__return_statement(
+			make_shared<statement_t>(make__return_statement(
 				return_statement_t{ make_shared<expression_t>(make_constant(value_t(456.7f))) }
-			)
+			))
 		}
 	};
 
@@ -624,9 +624,9 @@ shared_ptr<const function_def_expr_t> make_return5(){
 	vector<arg_t> args{};
 	function_body_t body{
 		{
-			make__return_statement(
+			make_shared<statement_t>(make__return_statement(
 				return_statement_t{ make_shared<expression_t>(make_constant(value_t(5))) }
-			)
+			))
 		}
 	};
 

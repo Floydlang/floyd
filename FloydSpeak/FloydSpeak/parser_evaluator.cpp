@@ -86,8 +86,8 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 	int statement_index = 0;
 	while(statement_index < body._statements.size()){
 		const auto statement = body._statements[statement_index];
-		if(statement._bind_statement){
-			const auto s = statement._bind_statement;
+		if(statement->_bind_statement){
+			const auto s = statement->_bind_statement;
 			const auto name = s->_identifier;
 			if(local_scope._constant_values.count(name) != 0){
 				throw std::runtime_error("local constant already exists");
@@ -98,8 +98,8 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 			}
 			local_scope._constant_values[name] = make_shared<value_t>(*result._constant);
 		}
-		else if(statement._return_statement){
-			const auto expr = statement._return_statement->_expression;
+		else if(statement->_return_statement){
+			const auto expr = statement->_return_statement->_expression;
 			const auto result = evaluate3(local_scope, *expr);
 
 			if(!result._constant){

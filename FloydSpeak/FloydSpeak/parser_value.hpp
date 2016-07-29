@@ -26,17 +26,6 @@ namespace floyd_parser {
 
 
 
-	//////////////////////////////////////////////////		function_body_t
-
-	/*
-		Describes a function body, basically a number of statements.
-	*/
-
-	struct function_body_t {
-		bool operator==(const function_body_t& other) const;
-
-		const std::vector<statement_t> _statements;
-	};
 
 
 	//////////////////////////////////////////////////		c_function_spec_t
@@ -257,7 +246,6 @@ namespace floyd_parser {
 	};
 
 
-	void trace(const function_body_t& body);
 	void trace(const value_t& e);
 
 
