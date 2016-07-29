@@ -114,6 +114,13 @@ namespace floyd_parser {
 	}
 
 
+	////////////////////////			arg_t
+
+
+
+	void trace(const arg_t& arg){
+		QUARK_TRACE("<arg_t> data type: <" + arg._type.to_string() + "> indentifier: \"" + arg._identifier + "\"");
+	}
 
 
 	////////////////////////			member_t

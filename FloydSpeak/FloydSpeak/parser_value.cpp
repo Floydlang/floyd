@@ -27,9 +27,6 @@ namespace floyd_parser {
 
 
 
-void trace(const arg_t& arg){
-	QUARK_TRACE("<arg_t> data type: <" + arg._type.to_string() + "> indentifier: \"" + arg._identifier + "\"");
-}
 
 void trace(const function_body_t& body){
 	QUARK_SCOPED_TRACE("function_body_t");

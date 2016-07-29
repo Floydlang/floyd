@@ -23,24 +23,6 @@ namespace floyd_parser {
 	struct statement_t;
 	struct value_t;
 
-	//////////////////////////////////////////////////		arg_t
-
-	/*
-		Describes a function argument - it's type and the argument name.
-	*/
-	struct arg_t {
-		bool check_invariant() const {
-			QUARK_ASSERT(_type.check_invariant());
-			QUARK_ASSERT(_identifier.size() > 0);
-			return true;
-		}
-		bool operator==(const arg_t& other) const{
-			return _type == other._type && _identifier == other._identifier;
-		}
-
-		const type_identifier_t _type;
-		const std::string _identifier;
-	};
 
 
 
@@ -275,7 +257,6 @@ namespace floyd_parser {
 	};
 
 
-	void trace(const arg_t& arg);
 	void trace(const function_body_t& body);
 	void trace(const value_t& e);
 

@@ -9,6 +9,8 @@
 #ifndef parser_types_hpp
 #define parser_types_hpp
 
+#include "quark.h"
+
 #include <cstdio>
 #include <vector>
 #include <string>
@@ -91,10 +93,33 @@ namespace floyd_parser {
 	};
 
 
+	//////////////////////////////////////		arg_t
 
-	//////////////////////////////////////		Definition of a struct-member.
+	/*
+		Describes a function argument - it's type and the argument name.
+	*/
+	struct arg_t {
+		bool check_invariant() const {
+			QUARK_ASSERT(_type.check_invariant());
+			QUARK_ASSERT(_identifier.size() > 0);
+			return true;
+		}
+		bool operator==(const arg_t& other) const{
+			return _type == other._type && _identifier == other._identifier;
+		}
+
+		const type_identifier_t _type;
+		const std::string _identifier;
+	};
+
+	void trace(const arg_t& arg);
 
 
+	//////////////////////////////////////		member_t
+
+	/*
+		Definition of a struct-member.
+	*/
 
 	struct member_t {
 		member_t(const std::string& name, const std::string& type_identifier);
