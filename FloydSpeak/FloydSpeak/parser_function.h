@@ -22,70 +22,9 @@ namespace floyd_parser {
 	struct statement_t;
 	struct ast_t;
 
-	/*
-		()
-		(int a)
-		(int x, int y)
-	*/
-	std::vector<arg_t> parse_functiondef_arguments(const std::string& s2);
 
 	/*
-		Never simplifes - the parser is non-lossy.
-
-		Must not have whitespace before / after {}.
-		{}
-
-		{
-			return 3;
-		}
-
-		{
-			return 3 + 4;
-		}
-		{
-			return f(3, 4) + 2;
-		}
-
-
-		//	Example: binding constants to constants, result of function calls and math operations.
-		{
-			int a = 10;
-			int b = f(a);
-			int c = a + b;
-			return c;
-		}
-
-		//	Local scope.
-		{
-			{
-				int a = 10;
-			}
-		}
-		{
-			struct point2d {
-				int _x;
-				int _y;
-			}
-		}
-
-		{
-			int my_func(string a, string b){
-				int c = a + b;
-				return c;
-			}
-		}
-
-		FUTURE
-		- Include comments
-		- Split-out parse_statement().
-		- Add struct {}
-		- Add variables
-		- Add local functions
-	*/
-	std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, const std::string& s);
-
-	/*
-		Named function:
+		Named function definition:
 
 		int myfunc(string a, int b){
 			...
@@ -101,7 +40,7 @@ namespace floyd_parser {
 			}
 		}
 	*/
-	std::pair<std::pair<std::string, function_def_t>, std::string> parse_function_definition_statement(const ast_t& ast, const std::string& pos);
+	std::pair<std::pair<std::string, function_def_t>, std::string> parse_function_definition(const ast_t& ast, const std::string& pos);
 
 
 

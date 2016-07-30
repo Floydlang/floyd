@@ -28,6 +28,11 @@ using std::make_shared;
 
 
 
+	/*
+		()
+		(int a)
+		(int x, int y)
+	*/
 vector<arg_t> parse_functiondef_arguments(const string& s2){
 	const auto s(s2.substr(1, s2.length() - 2));
 	vector<arg_t> args;
@@ -106,11 +111,60 @@ QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 
 
 
-//??? Need concept of parsing stack-frame to store local variables.
-//??? Unite this function with read_statement().
-//???No need to have parse-level difference. Check syntax later.
-//??? When to check for correct types, for a global return statement etc? While parsing or separate pass? When to inject conversions?
 
+	/*
+		Never simplifes - the parser is non-lossy.
+
+		Must not have whitespace before / after {}.
+		{}
+
+		{
+			return 3;
+		}
+
+		{
+			return 3 + 4;
+		}
+		{
+			return f(3, 4) + 2;
+		}
+
+
+		//	Example: binding constants to constants, result of function calls and math operations.
+		{
+			int a = 10;
+			int b = f(a);
+			int c = a + b;
+			return c;
+		}
+
+		//	Local scope.
+		{
+			{
+				int a = 10;
+			}
+		}
+		{
+			struct point2d {
+				int _x;
+				int _y;
+			}
+		}
+
+		{
+			int my_func(string a, string b){
+				int c = a + b;
+				return c;
+			}
+		}
+
+		FUTURE
+		- Include comments
+		- Split-out parse_statement().
+		- Add struct {}
+		- Add variables
+		- Add local functions
+	*/
 std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
@@ -227,7 +281,7 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 
 
 
-std::pair<std::pair<string, function_def_t>, string> parse_function_definition_statement(const ast_t& ast, const string& pos){
+std::pair<std::pair<string, function_def_t>, string> parse_function_definition(const ast_t& ast, const string& pos){
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto type_pos = read_required_type_identifier(pos);
@@ -257,17 +311,17 @@ std::pair<std::pair<string, function_def_t>, string> parse_function_definition_s
 	return { { identifier_pos.first, a }, body_pos.second };
 }
 
-QUARK_UNIT_TESTQ("parse_function_definition_statement()", ""){
+QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	try{
-		const auto result = parse_function_definition_statement({}, "int f()");
+		const auto result = parse_function_definition({}, "int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
 	}
 }
 
-QUARK_UNIT_TESTQ("parse_function_definition_statement()", ""){
-	const auto result = parse_function_definition_statement({}, "int f(){}");
+QUARK_UNIT_TESTQ("parse_function_definition()", ""){
+	const auto result = parse_function_definition({}, "int f(){}");
 	QUARK_TEST_VERIFY(result.first.first == "f");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY(result.first.second._args.empty());
@@ -275,8 +329,8 @@ QUARK_UNIT_TESTQ("parse_function_definition_statement()", ""){
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
-QUARK_UNIT_TESTQ("parse_function_definition_statement()", "Test many arguments of different types"){
-	const auto result = parse_function_definition_statement({}, "int printf(string a, float barry, int c){}");
+QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of different types"){
+	const auto result = parse_function_definition({}, "int printf(string a, float barry, int c){}");
 	QUARK_TEST_VERIFY(result.first.first == "printf");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
@@ -289,8 +343,8 @@ QUARK_UNIT_TESTQ("parse_function_definition_statement()", "Test many arguments o
 }
 
 /*
-QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Test exteme whitespaces", ""){
-	const auto result = parse_function_definition_statement("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
+QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""){
+	const auto result = parse_function_definition("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
 	QUARK_TEST_VERIFY(result.first.first == "printf");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{

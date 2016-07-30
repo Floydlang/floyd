@@ -179,7 +179,7 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 		const auto type_pos = read_required_type_identifier(pos);
 		const auto identifier_pos = read_required_identifier(type_pos.second);
 
-		const pair<pair<string, function_def_t>, string> function = parse_function_definition_statement(ast, pos);
+		const pair<pair<string, function_def_t>, string> function = parse_function_definition(ast, pos);
 		const auto function_def_expr = function_def_expr_t{make_shared<function_def_t>(function.first.second)};
 
 		const auto bind = bind_statement_t{ function.first.first, make_shared<expression_t>(expression_t{function_def_expr}) };
