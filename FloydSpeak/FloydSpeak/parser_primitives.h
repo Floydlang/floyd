@@ -183,23 +183,45 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		ast_t
 
 	/*
+		Function definitions have a type and a body and an optional name.
 
-		VALUE struct: __global_struct
-			int: my_global_int
-			function: <int>f(string a, string b) ----> function-def.
 
-			struct_def struct1
+		This is a function definition for a function definition called "function4":
+			"int function4(int a, string b){
+				return a + 1;
+			}"
 
-			struct1 a = make_struct1()
 
-		types
-			struct struct1 --> struct_defs/struct1
+		This is an unnamed function function definition.
+			"int(int a, string b){
+				return a + 1;
+			}"
 
-		struct_defs
-			(struct1) {
-				int: a
-				int: b
-			}
+		Here a constant x points to the function definition.
+			auto x = function4
+
+		Functions and structs do not normally become values, they become *types*.
+
+
+		{
+			VALUE struct: __global_struct
+				int: my_global_int
+				function: <int>f(string a, string b) ----> function-def.
+
+				struct_def struct1
+
+				struct1 a = make_struct1()
+
+			types
+				struct struct1 --> struct_defs/struct1
+
+			struct_defs
+				(struct1) {
+					int: a
+					int: b
+				}
+
+		}
 	*/
 
 	struct ast_t : public parser_i {
@@ -210,6 +232,7 @@ namespace floyd_parser {
 			return true;
 		}
 
+
 		/////////////////////////////		parser_i
 
 		public: virtual bool parser_i__is_declared_function(const std::string& s) const;
@@ -219,10 +242,7 @@ namespace floyd_parser {
 
 		/////////////////////////////		STATE
 		//### Function names should have namespace etc.
-		//??? Should contain all function definitions, unnamed. Address them using hash of their signature + body.
-		public: std::map<std::string, std::shared_ptr<const function_def_expr_t> > _functions;
 
-		//??? Should contain all functions too.
 		public: std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
 
 		public: frontend_types_collector_t _types_collector;

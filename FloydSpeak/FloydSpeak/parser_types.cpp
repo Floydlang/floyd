@@ -16,6 +16,7 @@
 
 #include "parser_primitives.h"
 #include "parser_statement.hpp"
+#include "parser_function.h"
 
 
 using std::make_shared;
@@ -351,6 +352,18 @@ namespace floyd_parser {
 		}
 	}
 
+	std::string calc_function_body_hash(const function_def_t& f){
+		return "";
+	}
+
+	//	Remove trailing comma, if any.
+	std::string remove_trailing_comma(const std::string& a){
+		auto s = a;
+		if(s.size() > 1 && s.back() == ','){
+			s.pop_back();
+		}
+		return s;
+	}
 
 	std::string to_signature(const type_definition_t& t){
 		QUARK_ASSERT(t.check_invariant());
@@ -363,7 +376,6 @@ namespace floyd_parser {
 			for(const auto& member : t._struct_def->_members) {
 				const string member_label = member._identifier;
 				const type_identifier_t typedef_s = member._type;
-//				const string member_type = typedef_s.empty() ? to_signature(*member._type) : "<" + typedef_s + ">";
 				const string member_type = "<" + typedef_s.to_string() + ">";
 
 				//	"<string>first_name"
@@ -371,26 +383,32 @@ namespace floyd_parser {
 
 				body = body + member_result + ",";
 			}
-
-			//	Remove trailing comma, if any.
-			if(body.size() > 1 && body.back() == ','){
-				body.pop_back();
-			}
+			body = remove_trailing_comma(body);
 
 			return label + "<struct>" + "{" + body + "}";
 		}
 		else if(t._base_type == k_vector){
-//			const auto vector_value_s = t._vector_def->_value_type_identifier.empty() ? to_signature(*t._vector_def->_value_type) : "<" + t._vector_def->_value_type_identifier + ">";
 			const auto vector_value_s = "";
 			return label + "<vector>" + "[" + vector_value_s + "]";
 		}
 		else if(t._base_type == k_function){
-/*
-//			const auto vector_value_s = t._vector_def->_value_type_identifier.empty() ? to_signature(*t._vector_def->_value_type) : "<" + t._vector_def->_value_type_identifier + ">";
-			const auto vector_value_s = "";
-			return label + "<vector>" + "[" + vector_value_s + "]";
-*/
-			return "function ???";
+//			return label + "<function>" + "[" + vector_value_s + "]";
+
+			string arguments;
+			for(const auto& arg : t._function_def->_args) {
+				//	"<string>first_name"
+				const auto a = std::string("") + "<"  + arg._type.to_string() + ">" + arg._identifier;
+
+				arguments = arguments + a + ",";
+			}
+
+			arguments = remove_trailing_comma(arguments);
+
+
+			std::string body_hash = calc_function_body_hash(*t._function_def);
+
+			return label + "<function>" + "args(" + arguments + ") body_hash" + body_hash;
+
 		}
 		else{
 			return label + "<" + base_type + ">";
@@ -683,7 +701,11 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 
 
 
-
+QUARK_UNIT_TESTQ("define_function_type()", ""){
+	QUARK_TEST_VERIFY(to_string(k_int32) == "int32");
+	const auto a = frontend_types_collector_t{};
+	const auto b =  a.define_function_type("one", make_return_hello());
+}
 
 
 
@@ -731,6 +753,18 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		const auto a = resolve_identifier(s);
 		if(a && a->_base_type == k_struct){
 			return a->_struct_def;
+		}
+		else {
+			return {};
+		}
+	}
+
+	std::shared_ptr<function_def_t> frontend_types_collector_t::resolve_function_type(const std::string& s) const{
+		QUARK_ASSERT(check_invariant());
+
+		const auto a = resolve_identifier(s);
+		if(a && a->_base_type == k_function){
+			return a->_function_def;
 		}
 		else {
 			return {};

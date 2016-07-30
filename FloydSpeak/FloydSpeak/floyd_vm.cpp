@@ -35,16 +35,8 @@ using floyd_parser::program_to_ast;
 
 
 
-shared_ptr<const floyd_parser::function_def_expr_t> find_global_function(const vm_t& vm, const string& name){
-/*
-	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
-*/
-	const auto it = vm._ast._functions.find(name);
-	if(it == vm._ast._functions.end()){
-		return nullptr;
-	}
-
-	return it->second;
+shared_ptr<const floyd_parser::function_def_t> find_global_function(const vm_t& vm, const string& name){
+	return vm._ast._types_collector.resolve_function_type(name);
 }
 
 struct vm_stack_frame {
@@ -52,7 +44,7 @@ struct vm_stack_frame {
 	int _statement_index;
 };
 
-floyd_parser::value_t call_function(vm_t& vm, shared_ptr<const floyd_parser::function_def_expr_t> f, const vector<floyd_parser::value_t>& args){
+floyd_parser::value_t call_function(vm_t& vm, shared_ptr<const floyd_parser::function_def_t> f, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 

@@ -12,6 +12,8 @@
 #include "text_parser.h"
 
 #include "steady_vector.h"
+#include "parser_value.hpp"
+
 #include <string>
 #include <memory>
 #include <map>
@@ -242,7 +244,8 @@ type_identifier_t make_type_identifier(const std::string& s){
 
 
 	bool ast_t::parser_i__is_declared_function(const std::string& s) const{
-		return _functions.find(s) != _functions.end();
+//		return _functions.find(s) != _functions.end();
+		return _types_collector.resolve_function_type(s) ? true : false;
 	}
 
 	bool ast_t::parser_i__is_declared_constant_value(const std::string& s) const{
@@ -252,6 +255,7 @@ type_identifier_t make_type_identifier(const std::string& s){
 	bool ast_t::parser_i__is_known_type(const std::string& s) const{
 		return true;
 	}
+
 
 
 }	//	floyd_parser

@@ -288,6 +288,17 @@ function_def_t make_return5(){
 }
 
 
+function_def_t make_return_hello(){
+	return make_function_def(
+		make_type_identifier("int"),
+		{ },
+		{
+			makie_return_statement(make_constant(value_t("hello")))
+		}
+	);
+}
+
+
 
 
 

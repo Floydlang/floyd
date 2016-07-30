@@ -317,12 +317,7 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 			const auto e = statement_pos._statement._bind_statement->_expression;
 
 			if(e->_function_def_expr){
-				const auto foundIt = ast2._functions.find(identifier);
-				if(foundIt != ast2._functions.end()){
-					throw std::runtime_error("Function \"" + identifier + "\" already defined.");
-				}
-
-				ast2._functions[identifier] = e->_function_def_expr;
+				ast2._types_collector = ast2._types_collector.define_function_type(identifier, *e->_function_def_expr->_def);
 			}
 			else if(e->_struct_def_expr){
 				ast2._types_collector.define_struct_type(identifier, *e->_struct_def_expr->_def);

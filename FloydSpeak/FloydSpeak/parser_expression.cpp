@@ -470,10 +470,10 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 ast_t make_test_ast(){
 	ast_t result;
-	result._functions["log"] = makie_function_def_expr_t(make_log_function());
-	result._functions["log2"] = makie_function_def_expr_t(make_log2_function());
-	result._functions["f"] = makie_function_def_expr_t(make_log_function());
-	result._functions["return5"] = makie_function_def_expr_t(make_return5());
+	result._types_collector = result._types_collector.define_function_type("log", make_log_function());
+	result._types_collector = result._types_collector.define_function_type("log2", make_log2_function());
+	result._types_collector = result._types_collector.define_function_type("f", make_log_function());
+	result._types_collector = result._types_collector.define_function_type("return5", make_return5());
 
 	result._types_collector = result._types_collector.define_struct_type("test_struct0", make_struct0());
 	result._types_collector = result._types_collector.define_struct_type("test_struct1", make_struct1());

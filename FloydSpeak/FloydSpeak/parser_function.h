@@ -58,6 +58,8 @@ namespace floyd_parser {
 	function_def_t make_log2_function();
 	function_def_t make_return5();
 
+	function_def_t make_return_hello();
+
 }
 
 

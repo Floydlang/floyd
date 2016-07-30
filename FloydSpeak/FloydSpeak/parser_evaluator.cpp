@@ -34,12 +34,12 @@ namespace {
 		return diff < 0.00001;
 	}
 
-	bool check_args(const function_def_expr_t& f, const vector<value_t>& args){
-		if(f._def->_args.size() != args.size()){
+	bool check_args(const function_def_t& f, const vector<value_t>& args){
+		if(f._args.size() != args.size()){
 			return false;
 		}
 		for(int i = 0 ; i < args.size() ; i++){
-			if(f._def->_args[i]._type != args[i].get_type()){
+			if(f._args[i]._type != args[i].get_type()){
 				return false;
 			}
 		}
@@ -49,7 +49,7 @@ namespace {
 	/*
 		- Use callstack instead of duplicating all identifiers.
 	*/
-	ast_t add_args(const ast_t& ast, const function_def_expr_t& f, const vector<value_t>& args){
+	ast_t add_args(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(ast.check_invariant());
 		QUARK_ASSERT(f.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
@@ -60,7 +60,7 @@ namespace {
 
 		auto local_scope = ast;
 		for(int i = 0 ; i < args.size() ; i++){
-			const auto& arg_name = f._def->_args[i]._identifier;
+			const auto& arg_name = f._args[i]._identifier;
 			const auto& arg_value = args[i];
 			local_scope._constant_values[arg_name] = make_shared<const value_t>(arg_value);
 		}
@@ -70,7 +70,7 @@ namespace {
 }
 
 
-value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vector<value_t>& args){
+value_t run_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
@@ -82,7 +82,7 @@ value_t run_function(const ast_t& ast, const function_def_expr_t& f, const vecto
 	auto local_scope = add_args(ast, f, args);
 
 	//	??? Should respect {} for local variable scopes!
-	const auto& statements = f._def->_statements;
+	const auto& statements = f._statements;
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
@@ -239,12 +239,9 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	else if(e._call_function_expr){
 		const auto& call_function_expression = *e._call_function_expr;
 
-		const auto it = ast._functions.find(call_function_expression._function_name);
-		QUARK_ASSERT(it != ast._functions.end());
+		const auto& function_def = ast._types_collector.resolve_function_type(call_function_expression._function_name);
 
-		const auto& make_function_expression = *it->second;
-
-		QUARK_ASSERT(make_function_expression._def->_args.size() == call_function_expression._inputs.size());
+		QUARK_ASSERT(function_def->_args.size() == call_function_expression._inputs.size());
 
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
@@ -268,7 +265,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 				return { function_call_expr_t{ call_function_expression._function_name, call_function_expression._inputs } };
 			}
 		}
-		const value_t result = run_function(ast, make_function_expression, constant_args);
+		const value_t result = run_function(ast, *function_def, constant_args);
 		return make_constant(result);
 	}
 	else if(e._variable_read_expr){

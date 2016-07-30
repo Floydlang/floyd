@@ -372,9 +372,14 @@ namespace floyd_parser {
 		public: std::shared_ptr<type_definition_t> resolve_identifier(const std::string& s) const;
 
 		/*
-			returns empty if struct-type is unknown or the type is not fully defined.
+			returns empty if type is unknown or the type is not fully defined.
 		*/
 		public: std::shared_ptr<struct_def_t> resolve_struct_type(const std::string& s) const;
+
+		/*
+			returns empty if type is unknown or the type is not fully defined.
+		*/
+		public: std::shared_ptr<function_def_t> resolve_function_type(const std::string& s) const;
 
 
 		public: std::shared_ptr<type_definition_t> lookup_signature(const std::string& s) const;
