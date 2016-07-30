@@ -12,6 +12,7 @@
 #include "parser_expression.hpp"
 #include "text_parser.h"
 #include "parser_statement.hpp"
+#include "floyd_parser.h"
 
 #include <cmath>
 
@@ -68,60 +69,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-	/*
-		Never simplifes - the parser is non-lossy.
-
-		Must not have whitespace before / after {}.
-		Examples:
-			{}
-
-			{
-				return 3;
-			}
-
-			{
-				return 3 + 4;
-			}
-			{
-				return f(3, 4) + 2;
-			}
-
-
-			//	Example: binding constants to constants, result of function calls and math operations.
-			{
-				int a = 10;
-				int b = f(a);
-				int c = a + b;
-				return c;
-			}
-
-			//	Local scope.
-			{
-				{
-					int a = 10;
-				}
-			}
-			{
-				struct point2d {
-					int _x;
-					int _y;
-				}
-			}
-
-			{
-				int my_func(string a, string b){
-					int c = a + b;
-					return c;
-				}
-			}
-
-		FUTURE
-		- Include comments
-		- Split-out parse_statement().
-		- Add struct {}
-		- Add variables
-		- Add local functions
-	*/
 std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(s.size() >= 2);
@@ -135,42 +82,9 @@ std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, 
 
 	string pos = body_str;
 	while(!pos.empty()){
-
-		//	Examine function body, one statement at a time. Only statements are allowed.
-		const auto token_pos = read_until(pos, whitespace_chars);
-
-		//	return statement?
-		if(token_pos.first == "return"){
-			const auto return_statement_pos = parse_return_statement(local_scope, pos);
-			statements.push_back(make_shared<statement_t>(make__return_statement(return_statement_pos.first)));
-			pos = return_statement_pos.second;
-		}
-
-		//	Define local variable?
-		/*
-			"int a = 10;"
-			"string hello = f(a) + \"_suffix\";";
-		*/
-		else if(ast.parser_i__is_known_type(token_pos.first)){
-			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
-			const string& identifier = assignment_statement.first._bind_statement->_identifier;
-
-			const auto it = local_scope._constant_values.find(identifier);
-			if(it != local_scope._constant_values.end()){
-				throw std::runtime_error("Variable name already in use!");
-			}
-
-			shared_ptr<const value_t> blank;
-			local_scope._constant_values[identifier] = blank;
-
-			statements.push_back(make_shared<statement_t>(assignment_statement.first));
-
-			//	Skips trailing ";".
-			pos = skip_whitespace(assignment_statement.second);
-		}
-		else{
-			throw std::runtime_error("syntax error");
-		}
+		const auto statement_seq = read_statement(local_scope, pos);
+		pos = statement_seq._rest;
+		statements.push_back(make_shared<statement_t>(statement_seq._statement));
 	}
 	trace(statements);
 	return statements;

@@ -185,7 +185,7 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 	const seq type_pos = read_type(s);
 	const auto type = make_type_identifier(type_pos.first);
-	return { type, type_pos.second };
+	return { type, skip_whitespace(type_pos.second) };
 }
 
 pair<string, string> read_required_identifier(const string& s){
@@ -194,7 +194,7 @@ pair<string, string> read_required_identifier(const string& s){
 		throw std::runtime_error("missing identifier");
 	}
 	const string identifier = type_pos.first;
-	return { identifier, type_pos.second };
+	return { identifier, skip_whitespace(type_pos.second) };
 }
 
 

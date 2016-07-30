@@ -131,9 +131,12 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 		//	Function call.
 		if(!p2.empty() && p2[0] == '('){
 			//	Lookup function!
+/*
+???
 			if(!parser.parser_i__is_declared_function(identifier_pos.first)){
 				throw std::runtime_error("Unknown function \"" + identifier_pos.first + "\"");
 			}
+*/
 
 			const auto arg_list_pos = get_balanced(p2);
 			const auto args = trim_ends(arg_list_pos.first);
@@ -153,10 +156,13 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 
 		//	Variable-read.
 		else{
+/*
+???
 			//	Lookup value!
 			if(!parser.parser_i__is_declared_constant_value(identifier_pos.first)){
 				throw std::runtime_error("Unknown identifier \"" + identifier_pos.first + "\"");
 			}
+*/
 			return { variable_read_expr_t{identifier_pos.first }, p2 };
 		}
 	}

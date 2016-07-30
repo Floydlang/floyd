@@ -34,6 +34,7 @@ using std::make_shared;
 using floyd_parser::program_to_ast;
 
 
+
 shared_ptr<const floyd_parser::function_def_expr_t> find_global_function(const vm_t& vm, const string& name){
 /*
 	const auto it = std::find_if(vm._ast._top_level_statements.begin(), vm._ast._top_level_statements.end(), [=] (const statement_t& s) { return s._bind_statement != nullptr && s._bind_statement->_identifier == name; });
@@ -159,3 +160,5 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	);
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("123456"));
 }
+
+

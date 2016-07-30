@@ -129,61 +129,54 @@ void trace(const ast_t& program){
 
 
 
-
-
-
-
 //////////////////////////////////////////////////		read_statement()
 
 
 	/*
-		Function definitions:
+		Read one statement, including any expressions it uses.
+		Supports all statments:
+			- return statement
+			- struct-definition
+			- function-definition
+			- define constant, with initializating.
 
-			#1
-			int test_func1(){ return 100; };
+		Never simplifes expressions- the parser is non-lossy.
 
-			#2
-			string test_func2(int a, float b){ return "sdf" };
-
-		Struct definitions:
-
-			struct my_image {
-				int width;
-				int height;
-			};
-
-			struct my_sprite {
-				string name;
-				my_image image;
-			};
-
-		Define variable
-			int a = 10;
-
-			int b = f(a);
+		Returns:
+			_statement
+				[return_statement]
+					[expression]
+				...
+			_ast
+				May have been updated to hold new function-definition or struct-definition.
+			_rest
+				will never start with whitespace.
+				trailing ";" will be consumed.
 
 
+
+		Example return statement:
+			#1	"return 3;..."
+			#2	"return f(3, 4) + 2;..."
+
+		Example function definitions:
+			#1	"int test_func1(){ return 100; };..."
+			#2	"string test_func2(int a, float b){ return "sdf" };..."
+
+		Example struct definitions:
+			"struct my_image { int width; int height; };"
+			"struct my_sprite { string name; my_image image; };..."
+
+		Example variable definitions
+			"int a = 10;..."
+			"int b = f(a);..."
 
 
 		FUTURE
-		- Define data structures (also in local scopes).
-		- Add support for global constants.
-		- Assign global constants
 		- Add local scopes / blocks.
-
-
-		Global constants:
-
-			float my_global1 = 3.1415f + ;
-			my_sprite my_test_sprite =
+		- Include comments
+		- Add mutable variables
 	*/
-
-
-struct statement_result_t {
-	statement_t _statement;
-	ast_t _ast;
-	std::string _rest;
-};
 
 statement_result_t read_statement(const ast_t& ast1, const string& pos){
 	QUARK_ASSERT(ast1.check_invariant());
@@ -194,7 +187,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 	//	return statement?
 	if(token_pos.first == "return"){
 		const auto return_statement_pos = parse_return_statement(ast1, pos);
-		return { make__return_statement(return_statement_pos.first), ast2, return_statement_pos.second };
+		return { make__return_statement(return_statement_pos.first), ast2, skip_whitespace(return_statement_pos.second) };
 	}
 
 	//	struct definition?
@@ -214,7 +207,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 
 		result._structs[identifier] = e->_struct_def_expr;
 */
-		return { bind_statement, ast2, body_pos.second };
+		return { bind_statement, ast2, skip_whitespace(body_pos.second) };
 	}
 
 	else {
@@ -230,7 +223,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 			const auto function_def_expr = function_def_expr_t{make_shared<function_def_t>(function.first.second)};
 
 			const auto bind_statement = bind_statement_t{ function.first.first, make_shared<expression_t>(expression_t{function_def_expr}) };
-			return { bind_statement, ast2, function.second };
+			return { bind_statement, ast2, skip_whitespace(function.second) };
 		}
 
 		//	Define variable?
@@ -252,9 +245,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 			shared_ptr<const value_t> blank;
 			ast2._constant_values[identifier] = blank;
 
-			//	Skips trailing ";".
-			const auto pos2 = skip_whitespace(assignment_statement.second);
-			return { assignment_statement.first, ast2, pos2 };
+			return { assignment_statement.first, ast2, skip_whitespace(assignment_statement.second) };
 		}
 
 		else{
@@ -271,6 +262,11 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	}
 	catch(...){
 	}
+}
+
+
+QUARK_UNIT_TESTQ("read_statement()", ""){
+	const auto result = read_statement({}, "float test = testx(1234);\n\treturn 3;\n");
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
@@ -305,35 +301,36 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 
 ast_t program_to_ast(const ast_t& init, const string& program){
-	ast_t result = init;
+	ast_t ast2 = init;
 
 	auto pos = program;
 	pos = skip_whitespace(pos);
 
 	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
-		const auto statement_pos = read_statement(result, pos);
+		const auto statement_pos = read_statement(ast2, pos);
 		statements.push_back(make_shared<statement_t>(statement_pos._statement));
+		ast2 = statement_pos._ast;
 
 		if(statement_pos._statement._bind_statement){
 			string identifier = statement_pos._statement._bind_statement->_identifier;
 			const auto e = statement_pos._statement._bind_statement->_expression;
 
 			if(e->_function_def_expr){
-				const auto foundIt = result._functions.find(identifier);
-				if(foundIt != result._functions.end()){
+				const auto foundIt = ast2._functions.find(identifier);
+				if(foundIt != ast2._functions.end()){
 					throw std::runtime_error("Function \"" + identifier + "\" already defined.");
 				}
 
-				result._functions[identifier] = e->_function_def_expr;
+				ast2._functions[identifier] = e->_function_def_expr;
 			}
 			else if(e->_struct_def_expr){
-				const auto foundIt = result._structs.find(identifier);
-				if(foundIt != result._structs.end()){
+				const auto foundIt = ast2._structs.find(identifier);
+				if(foundIt != ast2._structs.end()){
 					throw std::runtime_error("Struct \"" + identifier + "\" already defined.");
 				}
 
-				result._structs[identifier] = e->_struct_def_expr;
+				ast2._structs[identifier] = e->_struct_def_expr;
 			}
 			else{
 				throw std::runtime_error("Unexpected expression.");
@@ -345,12 +342,12 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 		pos = skip_whitespace(statement_pos._rest);
 	}
 
-	result._top_level_statements = statements;
+	ast2._top_level_statements = statements;
 
-	QUARK_ASSERT(result.check_invariant());
-	trace(result);
+	QUARK_ASSERT(ast2.check_invariant());
+	trace(ast2);
 
-	return result;
+	return ast2;
 }
 
 QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
