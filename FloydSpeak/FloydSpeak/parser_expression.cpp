@@ -428,138 +428,12 @@ void trace(const expression_t& e){
 
 
 	std::shared_ptr<const function_def_expr_t> makie_function_def_expr_t(const function_def_t& f){
-		return make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(f)});
+		return make_shared<function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(f)});
 	}
 
 	std::shared_ptr<const struct_def_expr_t> makie_struct_def_expr_t(const struct_def_t& f){
-		return make_shared<const struct_def_expr_t>(struct_def_expr_t{ make_shared<struct_def_t>(f)});
+		return make_shared<struct_def_expr_t>(struct_def_expr_t{ make_shared<struct_def_t>(f)});
 	}
-
-
-
-vector<arg_t> parse_functiondef_arguments(const string& s2){
-	const auto s(s2.substr(1, s2.length() - 2));
-	vector<arg_t> args;
-	auto str = s;
-	while(!str.empty()){
-		const auto arg_type = read_type(str);
-		const auto arg_name = read_identifier(arg_type.second);
-		const auto optional_comma = read_optional_char(arg_name.second, ',');
-
-		const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
-		args.push_back(a);
-		str = skip_whitespace(optional_comma.second);
-	}
-
-	trace_vec("parsed arguments:", args);
-	return args;
-}
-
-QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_TEST_VERIFY((parse_functiondef_arguments("()") == vector<arg_t>{}));
-}
-
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
-	QUARK_TEST_VERIFY((r == vector<arg_t>{
-		{ make_type_identifier("int"), "x" },
-		{ make_type_identifier("string"), "y" },
-		{ make_type_identifier("float"), "z" }
-	}
-	));
-}
-
-
-
-//??? Need concept of parsing stack-frame to store local variables.
-//??? Unite this function with read_statement(). No need to have parse-level difference. Check syntax later.
-//??? When to check for correct types, for a global return statement etc? While parsing or separate pass? When to inject conversions?
-
-std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, const string& s){
-	QUARK_SCOPED_TRACE("parse_function_body()");
-	QUARK_ASSERT(s.size() >= 2);
-	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
-
-	const string body_str = skip_whitespace(s.substr(1, s.size() - 2));
-
-	vector<shared_ptr<statement_t>> statements;
-
-	ast_t local_scope = ast;
-
-	string pos = body_str;
-	while(!pos.empty()){
-
-		//	Examine function body, one statement at a time. Only statements are allowed.
-		const auto token_pos = read_until(pos, whitespace_chars);
-
-		//	return statement?
-		if(token_pos.first == "return"){
-			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-			const auto expression1 = parse_expression(local_scope, expression_pos.first);
-//			const auto expression2 = evaluate3(local_scope, expression1);
-			const auto statement = statement_t(return_statement_t{ make_shared<expression_t>(expression1) });
-			statements.push_back(make_shared<statement_t>(statement));
-
-			//	Skip trailing ";".
-			pos = skip_whitespace(expression_pos.second.substr(1));
-		}
-
-		//	Define local variable?
-		/*
-			"int a = 10;"
-			"string hello = f(a) + \"_suffix\";";
-		*/
-		else if(ast.parser_i__is_known_type(token_pos.first)){
-			pair<statement_t, string> assignment_statement = parse_assignment_statement(local_scope, pos);
-			const string& identifier = assignment_statement.first._bind_statement->_identifier;
-
-			const auto it = local_scope._constant_values.find(identifier);
-			if(it != local_scope._constant_values.end()){
-				throw std::runtime_error("Variable name already in use!");
-			}
-
-			shared_ptr<const value_t> blank;
-			local_scope._constant_values[identifier] = blank;
-
-			statements.push_back(make_shared<statement_t>(assignment_statement.first));
-
-			//	Skips trailing ";".
-			pos = skip_whitespace(assignment_statement.second);
-		}
-		else{
-			throw std::runtime_error("syntax error");
-		}
-	}
-	trace(statements);
-	return statements;
-}
-
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	QUARK_TEST_VERIFY((parse_function_body({}, "{}").empty()));
-}
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	QUARK_TEST_VERIFY(parse_function_body({}, "{return 3;}").size() == 1);
-}
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	QUARK_TEST_VERIFY(parse_function_body({}, "{\n\treturn 3;\n}").size() == 1);
-}
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	const auto a = parse_function_body(make_test_ast(),
-		"{	float test = log(10.11);\n"
-		"	return 3;\n}"
-	);
-	QUARK_TEST_VERIFY(a.size() == 2);
-	QUARK_TEST_VERIFY(a[0]->_bind_statement->_identifier == "test");
-	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call_function_expr->_function_name == "log");
-	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a[0]->_bind_statement->_expression->_call_function_expr->_inputs[0]->_constant == value_t(10.11f));
-
-	QUARK_TEST_VERIFY(*a[1]->_return_statement->_expression->_constant == value_t(3));
-}
 
 
 
@@ -611,7 +485,10 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 
 
 //??? where are unit tests???
-}
+
+
+}	//	floyd_parser
+
 
 
 

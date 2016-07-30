@@ -12,6 +12,8 @@
 
 #include "parser_types.h"
 #include "parser_expression.hpp"
+#include "parser_function.h"
+#include "parser_struct.h"
 
 
 namespace floyd_parser {
@@ -89,124 +91,11 @@ void trace(const statement_t& s){
 
 
 
-
-namespace {
-
-	//	Temporarily add the function's input argument to the identifers, so the body can access them.
-	ast_t add_arg_identifiers(const ast_t& ast, const std::vector<arg_t> arg_types){
-		QUARK_ASSERT(ast.check_invariant());
-		for(const auto i: arg_types){ QUARK_ASSERT(i.check_invariant()); };
-
-		auto local_scope = ast;
-		for(const auto arg: arg_types){
-			const auto& arg_name = arg._identifier;
-			std::shared_ptr<value_t> blank_arg_value;
-			local_scope._constant_values[arg_name] = blank_arg_value;
-		}
-		return local_scope;
-	}
-
-}
-
-
-	/*
-		Named function:
-
-		int myfunc(string a, int b){
-			...
-			return b + 1;
-		}
-
-
-		LATER:
-		Lambda:
-
-		int myfunc(string a){
-			() => {
-			}
-		}
-	*/
-std::pair<std::pair<string, function_def_t>, string> parse_function_definition_statement(const ast_t& ast, const string& pos){
-	QUARK_ASSERT(ast.check_invariant());
-
-	const auto type_pos = read_required_type_identifier(pos);
-	const auto identifier_pos = read_required_identifier(type_pos.second);
-
-	//	Skip whitespace.
-	const auto rest = skip_whitespace(identifier_pos.second);
-
-	if(!peek_compare_char(rest, '(')){
-		throw std::runtime_error("expected function argument list enclosed by (),");
-	}
-
-	const auto arg_list_pos = get_balanced(rest);
-	const auto args = parse_functiondef_arguments(arg_list_pos.first);
-	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
-
-	if(!peek_compare_char(body_rest_pos, '{')){
-		throw std::runtime_error("expected function body enclosed by {}.");
-	}
-	const auto body_pos = get_balanced(body_rest_pos);
-
-	auto local_scope = add_arg_identifiers(ast, args);
-
-	const auto body = parse_function_body(local_scope, body_pos.first);
-	const auto a = function_def_t{ type_pos.first, args, body };
-
-	return { { identifier_pos.first, a }, body_pos.second };
-}
-
-QUARK_UNIT_TESTQ("parse_function_definition_statement()", ""){
-	try{
-		const auto result = parse_function_definition_statement({}, "int f()");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(...){
-	}
-}
-
-QUARK_UNIT_TESTQ("parse_function_definition_statement()", ""){
-	const auto result = parse_function_definition_statement({}, "int f(){}");
-	QUARK_TEST_VERIFY(result.first.first == "f");
-	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY(result.first.second._args.empty());
-	QUARK_TEST_VERIFY(result.first.second._statements.empty());
-	QUARK_TEST_VERIFY(result.second == "");
-}
-
-QUARK_UNIT_TESTQ("parse_function_definition_statement()", "Test many arguments of different types"){
-	const auto result = parse_function_definition_statement({}, "int printf(string a, float barry, int c){}");
-	QUARK_TEST_VERIFY(result.first.first == "printf");
-	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
-		{ make_type_identifier("string"), "a" },
-		{ make_type_identifier("float"), "barry" },
-		{ make_type_identifier("int"), "c" },
-	}));
-	QUARK_TEST_VERIFY(result.first.second._statements.empty());
-	QUARK_TEST_VERIFY(result.second == "");
-}
-
 /*
-QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Test exteme whitespaces", ""){
-	const auto result = parse_function_definition_statement("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
-	QUARK_TEST_VERIFY(result.first.first == "printf");
-	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
-		{ make_type_identifier("string"), "a" },
-		{ make_type_identifier("float"), "barry" },
-		{ make_type_identifier("int"), "c" },
-	}));
-	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
-	QUARK_TEST_VERIFY(result.second == "");
-}
+	Returns
+		[bind_statement_t]
+			[expression_t]
 */
-
-
-
-
-
-
 
 pair<statement_t, string> parse_assignment_statement(const ast_t& ast, const string& s){
 	QUARK_SCOPED_TRACE("parse_assignment_statement()");
@@ -259,8 +148,6 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 
 
 
-
-
 std::pair<struct_def_t, std::string> parse_struct_body(const string& s){
 	const auto s2 = skip_whitespace(s);
 	read_required_char(s2, '{');
@@ -290,19 +177,8 @@ QUARK_UNIT_TESTQ("parse_struct_body", ""){
 }
 
 
-struct_def_t make_test_struct0(){
-	return {
-		vector<arg_t>
-		{
-			{ make_type_identifier("int"), "x" },
-			{ make_type_identifier("string"), "y" },
-			{ make_type_identifier("float"), "z" }
-		}
-	};
-}
-
 QUARK_UNIT_TESTQ("parse_struct_body", ""){
-	const auto r = parse_struct_body("{int x; string y; float z;}");
+	const auto r = parse_struct_body(k_test_struct0);
 	QUARK_TEST_VERIFY((
 		r == pair<struct_def_t, string>(make_test_struct0(), "" )
 	));
@@ -353,32 +229,6 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 }
 
 
-const string test_function1 = "int test_function1(){ return 100; }";
-
-function_def_t make_test_function1(){
-	return make_function_def(
-		make_type_identifier("int"),
-		{},
-		{
-			makie_return_statement(make_constant(100))
-		}
-	);
-}
-
-const string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
-
-function_def_t make_test_function2(){
-	return make_function_def(
-		make_type_identifier("string"),
-		{
-			{ make_type_identifier("int"), "a" },
-			{ make_type_identifier("float"), "b" }
-		},
-		{
-			makie_return_statement(make_constant(value_t("sdf")))
-		}
-	);
-}
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	try{
