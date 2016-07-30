@@ -475,17 +475,15 @@ ast_t make_test_ast(){
 	result._functions["f"] = makie_function_def_expr_t(make_log_function());
 	result._functions["return5"] = makie_function_def_expr_t(make_return5());
 
-	result._structs["test_struct0"] = makie_struct_def_expr_t(make_struct0());
-	result._structs["test_struct1"] = makie_struct_def_expr_t(make_struct1());
+	result._types_collector = result._types_collector.define_struct_type("test_struct0", make_struct0());
+	result._types_collector = result._types_collector.define_struct_type("test_struct1", make_struct1());
 	return result;
 }
 
 QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	auto a = make_test_ast();
-	QUARK_TEST_VERIFY(a._structs.size() == 2);
-
-	QUARK_TEST_VERIFY(*a._structs["test_struct0"]->_def == make_struct0());
-	QUARK_TEST_VERIFY(*a._structs["test_struct1"]->_def == make_struct1());
+	QUARK_TEST_VERIFY(*a._types_collector.resolve_struct_type("test_struct0") == make_struct0());
+	QUARK_TEST_VERIFY(*a._types_collector.resolve_struct_type("test_struct1") == make_struct1());
 }
 
 

@@ -325,12 +325,7 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 				ast2._functions[identifier] = e->_function_def_expr;
 			}
 			else if(e->_struct_def_expr){
-				const auto foundIt = ast2._structs.find(identifier);
-				if(foundIt != ast2._structs.end()){
-					throw std::runtime_error("Struct \"" + identifier + "\" already defined.");
-				}
-
-				ast2._structs[identifier] = e->_struct_def_expr;
+				ast2._types_collector.define_struct_type(identifier, *e->_struct_def_expr->_def);
 			}
 			else{
 				throw std::runtime_error("Unexpected expression.");

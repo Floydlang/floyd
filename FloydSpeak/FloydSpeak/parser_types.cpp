@@ -521,8 +521,9 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		}
 
 		for(const auto it: _type_definitions){
-			const auto signature = to_signature(*it.second);
-			QUARK_ASSERT(it.first == signature);
+		//??? Cannot call to_signature() from here - recursion!
+//			const auto signature = to_signature(*it.second);
+//			QUARK_ASSERT(it.first == signature);
 			QUARK_ASSERT(it.second->check_invariant());
 		}
 
@@ -724,6 +725,17 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		}
 	}
 
+	std::shared_ptr<struct_def_t> frontend_types_collector_t::resolve_struct_type(const std::string& s) const{
+		QUARK_ASSERT(check_invariant());
+
+		const auto a = resolve_identifier(s);
+		if(a && a->_base_type == k_struct){
+			return a->_struct_def;
+		}
+		else {
+			return {};
+		}
+	}
 
 
 	std::shared_ptr<type_definition_t> frontend_types_collector_t::lookup_signature(const std::string& s) const{
@@ -842,7 +854,7 @@ QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	QUARK_TEST_VERIFY(to_signature(*t1) == "<struct>{}");
 }
 
-QUARK_UNIT_TESTQ("to_signature()", "struct 1"){
+QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 	const auto a = frontend_types_collector_t();
 	const auto b = define_test_struct3(a);
 	const auto t1 = b.resolve_identifier("struct3");
@@ -851,7 +863,7 @@ QUARK_UNIT_TESTQ("to_signature()", "struct 1"){
 }
 
 
-QUARK_UNIT_TESTQ("to_signature()", "struct 2"){
+QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 	const auto a = frontend_types_collector_t();
 	const auto b = define_test_struct3(a);
 	const auto c = define_test_struct4(b);
