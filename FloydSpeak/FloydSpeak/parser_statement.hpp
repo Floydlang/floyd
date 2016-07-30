@@ -97,6 +97,21 @@ namespace floyd_parser {
 	void trace(const statement_t& s);
 
 
+
+
+
+	/*
+		s:
+			Must start with "return".
+
+			Examples:
+				return 0;
+				return x + y;
+
+	*/
+	std::pair<return_statement_t, std::string> parse_return_statement(const ast_t& ast, const std::string& s);
+
+
 	/*
 		"int a = 10;"
 		"float b = 0.3;"
@@ -108,39 +123,6 @@ namespace floyd_parser {
 	*/
 	std::pair<statement_t, std::string> parse_assignment_statement(const ast_t& ast, const std::string& s);
 
-	/*
-		Global function definitions:
-
-			#1
-			int test_func1(){ return 100; };
-
-			#2
-			string test_func2(int a, float b){ return "sdf" };
-
-		Global struct definitions:
-
-			struct my_image {
-				int width;
-				int height;
-			};
-
-			struct my_sprite {
-				string name;
-				my_image image;
-			};
-
-		FUTURE
-		- Define data structures (also in local scopes).
-		- Add support for global constants.
-		- Assign global constants
-
-
-		Global constants:
-
-			float my_global1 = 3.1415f + ;
-			my_sprite my_test_sprite =
-	*/
-	std::pair<statement_t, std::string> read_statement(const ast_t& ast, const std::string& pos);
 
 
 

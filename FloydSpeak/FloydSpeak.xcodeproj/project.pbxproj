@@ -120,8 +120,6 @@
 		2C1D84DF1CA765A90042F0A8 /* FloydSpeak */ = {
 			isa = PBXGroup;
 			children = (
-				2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */,
-				2CA061CE1D4C34B70045AF86 /* parser_struct.h */,
 				2CFCCFAA1CCE3E7000F2BEC3 /* experimental_runtime.cpp */,
 				2CFCCFAB1CCE3E7000F2BEC3 /* experimental_runtime.h */,
 				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
@@ -139,6 +137,8 @@
 				2C8270031D46D9A300E697ED /* parser_primitives.h */,
 				2C4F35601D4795C20061CA93 /* parser_statement.cpp */,
 				2C4F35611D4795C20061CA93 /* parser_statement.hpp */,
+				2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */,
+				2CA061CE1D4C34B70045AF86 /* parser_struct.h */,
 				2CFB36851D4506FA00F31A19 /* parser_types.cpp */,
 				2CFB36861D4506FA00F31A19 /* parser_types.h */,
 				2C4F355D1D4794CD0061CA93 /* parser_value.cpp */,

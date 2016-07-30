@@ -85,7 +85,45 @@ namespace floyd_parser {
 
 
 
-//////////////////////////////////////////////////		PARSE STATEMENTS
+
+
+pair<return_statement_t, string> parse_return_statement(const ast_t& ast, const string& s){
+	QUARK_SCOPED_TRACE("parse_return_statement()");
+	QUARK_ASSERT(s.size() >= string("return").size());
+
+	QUARK_ASSERT(peek_string(s, "return"));
+
+	const auto token_pos = read_until(s, whitespace_chars);
+	const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
+	const auto expression1 = parse_expression(ast, expression_pos.first);
+//			const auto expression2 = evaluate3(local_scope, expression1);
+	const auto statement = return_statement_t{ make_shared<expression_t>(expression1) };
+
+	//	Skip trailing ";".
+	const auto pos = skip_whitespace(expression_pos.second.substr(1));
+	return pair<return_statement_t, string>(statement, pos);
+}
+
+
+QUARK_UNIT_TESTQ("parse_return_statement()", ""){
+	const auto t = make_shared<expression_t>(make_constant(value_t(0)));
+	
+	QUARK_TEST_VERIFY((
+		parse_return_statement({}, "return 0;") == pair<return_statement_t, string>(return_statement_t{t}, "")
+	));
+}
+
+QUARK_UNIT_TESTQ("parse_return_statement()", ""){
+	const auto t = make_shared<expression_t>(make_constant(value_t(123)));
+	
+	QUARK_TEST_VERIFY((
+		parse_return_statement({}, "return \t123\t;\t\nxyz}") == pair<return_statement_t, string>(return_statement_t{t}, "xyz}")
+	));
+}
+
+
+
+
 
 
 
@@ -141,81 +179,6 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 }
 
 
-
-
-
-//////////////////////////////////////////////////		read_statement()
-
-
-
-
-pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
-	QUARK_ASSERT(ast.check_invariant());
-
-	const auto word1 = read_until(pos, " ");
-
-	//	struct?
-	if(word1.first == "struct"){
-		const auto struct_name = read_required_identifier(word1.second);
-
-		pair<struct_def_t, string> body_pos = parse_struct_body(struct_name.second);
-		struct_def_expr_t struct_def_expr{ make_shared<struct_def_t>(body_pos.first) };
-		const auto bind = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def_expr) };
-
-/*
-		//	Add struct
-		const auto foundIt = result._structs.find(identifier);
-		if(foundIt != result._structs.end()){
-			throw std::runtime_error("Struct \"" + identifier + "\" already defined.");
-		}
-
-		result._structs[identifier] = e->_struct_def_expr;
-*/
-		return { bind, body_pos.second };
-	}
-
-	//	Function?
-	else {
-		const auto type_pos = read_required_type_identifier(pos);
-		const auto identifier_pos = read_required_identifier(type_pos.second);
-
-		const pair<pair<string, function_def_t>, string> function = parse_function_definition(ast, pos);
-		const auto function_def_expr = function_def_expr_t{make_shared<function_def_t>(function.first.second)};
-
-		const auto bind = bind_statement_t{ function.first.first, make_shared<expression_t>(expression_t{function_def_expr}) };
-		return { bind, function.second };
-	}
-}
-
-
-QUARK_UNIT_TESTQ("read_statement()", ""){
-	try{
-		const auto result = read_statement({}, "int f()");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(...){
-	}
-}
-
-QUARK_UNIT_TESTQ("read_statement()", ""){
-	const auto result = read_statement({}, test_function1);
-	QUARK_TEST_VERIFY(result.first._bind_statement);
-	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_function1");
-	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr);
-
-	QUARK_TEST_VERIFY(*expr->_def == make_test_function1());
-	QUARK_TEST_VERIFY(result.second == "");
-}
-
-QUARK_UNIT_TESTQ("read_statement()", ""){
-	const auto result = read_statement({}, "struct test_struct0 " + k_test_struct0);
-	QUARK_TEST_VERIFY(result.first._bind_statement);
-	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_struct0");
-	const auto expr = result.first._bind_statement->_expression->_struct_def_expr;
-
-	QUARK_TEST_VERIFY(*expr->_def == make_test_struct0());
-}
 
 
 
