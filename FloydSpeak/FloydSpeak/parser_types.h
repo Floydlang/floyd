@@ -25,6 +25,8 @@ namespace floyd_parser {
 	struct type_definition_t;
 	struct frontend_types_collector_t;
 	struct statement_t;
+	struct struct_def_t;
+	struct function_def_t;
 
 	//////////////////////////////////////		frontend_base_type
 
@@ -137,11 +139,6 @@ namespace floyd_parser {
 
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
-
-	//	Helper for making tests.
-	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
-
-
 
 
 
@@ -360,6 +357,15 @@ namespace floyd_parser {
 		//	Key is the signature string. De-duplicated.
 		private: std::map<std::string, std::shared_ptr<type_definition_t> > _type_definitions;
 	};
+
+
+
+	////////////////////	Helper for making tests.
+
+
+
+	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
+	struct_def_t make_struct_def(const std::vector<arg_t>& args);
 
 
 }	//	floyd_parser

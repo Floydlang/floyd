@@ -427,6 +427,13 @@ void trace(const expression_t& e){
 
 
 
+	std::shared_ptr<const function_def_expr_t> makie_function_def_expr_t(const function_def_t& f){
+		return make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(f)});
+	}
+
+	std::shared_ptr<const struct_def_expr_t> makie_struct_def_expr_t(const struct_def_t& f){
+		return make_shared<const struct_def_expr_t>(struct_def_expr_t{ make_shared<struct_def_t>(f)});
+	}
 
 
 
@@ -574,9 +581,9 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 
 
-
-
 //////////////////////////////////////////////////		test rig
+
+
 
 
 
@@ -611,31 +618,29 @@ function_def_t make_return5(){
 }
 
 
-struct_def_expr_t make_struct0(){
-	return { make_shared<struct_def_t>() };
+struct_def_t make_struct0(){
+	return make_struct_def({});
 }
 
-struct_def_expr_t make_struct1(){
-	return { make_shared<struct_def_t>(
-		struct_def_t{
-			vector<arg_t>{
-				{ make_type_identifier("float"), "x" },
-				{ make_type_identifier("float"), "y" },
-				{ make_type_identifier("string"), "name" }
-			}
+struct_def_t make_struct1(){
+	return make_struct_def(
+		{
+			{ make_type_identifier("float"), "x" },
+			{ make_type_identifier("float"), "y" },
+			{ make_type_identifier("string"), "name" }
 		}
-	) };
+	);
 }
 
 ast_t make_test_ast(){
 	ast_t result;
-	result._functions["log"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_log_function())});
-	result._functions["log2"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_log2_function())});
-	result._functions["f"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_log_function())});
-	result._functions["return5"] = make_shared<const function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(make_return5())});
+	result._functions["log"] = makie_function_def_expr_t(make_log_function());
+	result._functions["log2"] = makie_function_def_expr_t(make_log2_function());
+	result._functions["f"] = makie_function_def_expr_t(make_log_function());
+	result._functions["return5"] = makie_function_def_expr_t(make_return5());
 
-	result._structs["test_struct0"] = make_shared<struct_def_expr_t>(make_struct0());
-	result._structs["test_struct1"] = make_shared<struct_def_expr_t>(make_struct1());
+	result._structs["test_struct0"] = makie_struct_def_expr_t(make_struct0());
+	result._structs["test_struct1"] = makie_struct_def_expr_t(make_struct1());
 	return result;
 }
 
@@ -643,8 +648,8 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	auto a = make_test_ast();
 	QUARK_TEST_VERIFY(a._structs.size() == 2);
 
-	QUARK_TEST_VERIFY(*a._structs["test_struct0"] == make_struct0());
-	QUARK_TEST_VERIFY(*a._structs["test_struct1"] == make_struct1());
+	QUARK_TEST_VERIFY(*a._structs["test_struct0"]->_def == make_struct0());
+	QUARK_TEST_VERIFY(*a._structs["test_struct1"]->_def == make_struct1());
 }
 
 

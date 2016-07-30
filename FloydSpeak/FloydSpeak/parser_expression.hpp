@@ -262,6 +262,10 @@ namespace floyd_parser {
 		return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
 	}
 
+	std::shared_ptr<const function_def_expr_t> makie_function_def_expr_t(const function_def_t& f);
+	std::shared_ptr<const struct_def_expr_t> makie_struct_def_expr_t(const struct_def_t& f);
+
+
 
 	//////////////////////////////////////////////////		trace()
 

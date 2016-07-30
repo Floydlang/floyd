@@ -193,6 +193,13 @@ namespace floyd_parser {
 		}
 	}
 
+
+
+	////////////////////	Helper for making tests.
+
+
+
+
 	function_def_t make_function_def(type_identifier_t return_type, const vector<arg_t>& args, const vector<statement_t>& statements){
 		vector<shared_ptr<statement_t>> statements2;
 		for(const auto i: statements){
@@ -201,6 +208,9 @@ namespace floyd_parser {
 		return { return_type, args, statements2 };
 	}
 
+	struct_def_t make_struct_def(const vector<arg_t>& args){
+		return struct_def_t{ args };
+	}
 
 
 
