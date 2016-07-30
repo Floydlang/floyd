@@ -124,6 +124,9 @@ namespace floyd_parser {
 		else if(t == k_vector){
 			return "vector";
 		}
+		else if(t == k_function){
+			return "function";
+		}
 		else{
 			QUARK_ASSERT(false);
 		}
@@ -309,22 +312,32 @@ namespace floyd_parser {
 		if(_base_type == k_int32){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
 		}
 		else if(_base_type == k_bool){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
 		}
 		else if(_base_type == k_string){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
 		}
 		else if(_base_type == k_struct){
 			QUARK_ASSERT(_struct_def);
 			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
 		}
 		else if(_base_type == k_vector){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_function){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(_function_def);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -359,6 +372,10 @@ namespace floyd_parser {
 		else if(t._base_type == k_vector){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
 //			trace_frontend_type(*t._vector_def->_value_type, "");
+		}
+		else if(t._base_type == k_function){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			trace(*t._function_def);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -397,6 +414,14 @@ namespace floyd_parser {
 //			const auto vector_value_s = t._vector_def->_value_type_identifier.empty() ? to_signature(*t._vector_def->_value_type) : "<" + t._vector_def->_value_type_identifier + ">";
 			const auto vector_value_s = "";
 			return label + "<vector>" + "[" + vector_value_s + "]";
+		}
+		else if(t._base_type == k_function){
+/*
+//			const auto vector_value_s = t._vector_def->_value_type_identifier.empty() ? to_signature(*t._vector_def->_value_type) : "<" + t._vector_def->_value_type_identifier + ">";
+			const auto vector_value_s = "";
+			return label + "<vector>" + "[" + vector_value_s + "]";
+*/
+			return "function ???";
 		}
 		else{
 			return label + "<" + base_type + ">";
@@ -457,6 +482,11 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 				pos += 8;
 			}
 			else if(type_def->_base_type == k_vector){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else if(type_def->_base_type == k_function){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;
@@ -541,6 +571,19 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		return true;
 	}
 
+	bool frontend_types_collector_t::is_type_identifier_fully_defined(const std::string& type_identifier) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(!type_identifier.empty());
+
+		const auto existing_it = _identifiers.find(type_identifier);
+		if(existing_it != _identifiers.end() && (!existing_it->second._alias_type_identifier.empty() || existing_it->second._optional_def)){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
 	frontend_types_collector_t frontend_types_collector_t::define_alias_identifier(const std::string& new_identifier, const std::string& existing_identifier) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(!new_identifier.empty());
@@ -579,6 +622,8 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	}
 
 
+
+
 	std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> frontend_types_collector_t::define_struct_type(const struct_def_t& struct_def) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(struct_def.check_invariant());
@@ -600,20 +645,6 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		}
 	}
 
-	bool frontend_types_collector_t::is_type_identifier_fully_defined(const std::string& type_identifier) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(!type_identifier.empty());
-
-		const auto existing_it = _identifiers.find(type_identifier);
-		if(existing_it != _identifiers.end() && (!existing_it->second._alias_type_identifier.empty() || existing_it->second._optional_def)){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-
-
 	frontend_types_collector_t frontend_types_collector_t::define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(struct_def.check_invariant());
@@ -633,6 +664,59 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 			return collector3;
 		}
 	}
+
+
+
+
+	//??? test!
+	std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> frontend_types_collector_t::define_function_type(const function_def_t& function_def) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(function_def.check_invariant());
+
+		auto type_def = make_shared<type_definition_t>();
+		type_def->_base_type = k_function;
+		type_def->_function_def = make_shared<function_def_t>(function_def);
+
+		const string signature = to_signature(*type_def);
+
+		const auto existing_it = _type_definitions.find(signature);
+		if(existing_it != _type_definitions.end()){
+			return { existing_it->second, *this };
+		}
+		else{
+			auto result = *this;
+			result._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_definition_t>>(signature, type_def));
+			return { type_def, result };
+		}
+	}
+
+	//??? test!
+	frontend_types_collector_t frontend_types_collector_t::define_function_type(const std::string& new_identifier, const function_def_t& function_def) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(function_def.check_invariant());
+
+		//	Make struct def, if not already done.
+		const auto a = frontend_types_collector_t::define_function_type(function_def);
+		const auto type_def = a.first;
+		const auto collector2 = a.second;
+
+		if(new_identifier.empty()){
+			return collector2;
+		}
+		else{
+			//	Make a type-identifier too.
+			const auto collector3 = collector2.define_type_identifier(new_identifier, type_def);
+
+			return collector3;
+		}
+	}
+
+
+
+
+
+
+
 
 	std::shared_ptr<type_indentifier_data_ref> frontend_types_collector_t::lookup_identifier_shallow(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
@@ -699,6 +783,7 @@ QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
 	QUARK_TEST_VERIFY(to_string(k_string) == "string");
 	QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
 	QUARK_TEST_VERIFY(to_string(k_vector) == "vector");
+	QUARK_TEST_VERIFY(to_string(k_function) == "function");
 }
 
 

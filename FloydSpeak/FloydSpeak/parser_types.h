@@ -42,10 +42,10 @@ namespace floyd_parser {
 //		k_enum,
 		k_struct,
 //		k_map,
-		k_vector
+		k_vector,
 //		k_seq,
 //		k_dyn,
-//		k_function
+		k_function
 	};
 
 
@@ -222,6 +222,7 @@ namespace floyd_parser {
 		public: frontend_base_type _base_type;
 		public: std::shared_ptr<struct_def_t> _struct_def;
 		public: std::shared_ptr<vector_def_t> _vector_def;
+		public: std::shared_ptr<function_def_t> _function_def;
 	};
 
 
@@ -311,6 +312,11 @@ namespace floyd_parser {
 		*/
 		public: frontend_types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_definition_t>& type_def) const;
 
+
+
+		/////////////////////////		STRUCTs
+
+
 		/*
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
@@ -322,6 +328,27 @@ namespace floyd_parser {
 			You can define a type identifier
 		*/
 		public: frontend_types_collector_t define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const;
+
+
+
+		/////////////////////////		FUNCTIONs
+
+
+		/*
+			Adds type-definition for a struct.
+			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
+		*/
+		public: std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> define_function_type(const function_def_t& function_def) const;
+
+		/*
+			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
+			You can define a type identifier
+		*/
+		public: frontend_types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
+
+
+
+
 
 
 		/*
