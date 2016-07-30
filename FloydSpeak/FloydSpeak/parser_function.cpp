@@ -61,6 +61,50 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+/*
+	s:
+		Must start with "return".
+
+		Examples:
+			return 0;
+			return x + y;
+
+*/
+pair<return_statement_t, string> parse_return_statement(const ast_t& ast, const string& s){
+	QUARK_SCOPED_TRACE("parse_return_statement()");
+	QUARK_ASSERT(s.size() >= string("return").size());
+
+	QUARK_ASSERT(peek_string(s, "return"));
+
+	const auto token_pos = read_until(s, whitespace_chars);
+	const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
+	const auto expression1 = parse_expression(ast, expression_pos.first);
+//			const auto expression2 = evaluate3(local_scope, expression1);
+	const auto statement = return_statement_t{ make_shared<expression_t>(expression1) };
+
+	//	Skip trailing ";".
+	const auto pos = skip_whitespace(expression_pos.second.substr(1));
+	return pair<return_statement_t, string>(statement, pos);
+}
+
+
+QUARK_UNIT_TESTQ("parse_return_statement()", ""){
+	const auto t = make_shared<expression_t>(make_constant(value_t(0)));
+	
+	QUARK_TEST_VERIFY((
+		parse_return_statement({}, "return 0;") == pair<return_statement_t, string>(return_statement_t{t}, "")
+	));
+}
+
+QUARK_UNIT_TESTQ("parse_return_statement()", ""){
+	const auto t = make_shared<expression_t>(make_constant(value_t(123)));
+	
+	QUARK_TEST_VERIFY((
+		parse_return_statement({}, "return \t123\t;\t\nxyz}") == pair<return_statement_t, string>(return_statement_t{t}, "xyz}")
+	));
+}
+
+
 
 //??? Need concept of parsing stack-frame to store local variables.
 //??? Unite this function with read_statement().
@@ -86,14 +130,9 @@ std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, 
 
 		//	return statement?
 		if(token_pos.first == "return"){
-			const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-			const auto expression1 = parse_expression(local_scope, expression_pos.first);
-//			const auto expression2 = evaluate3(local_scope, expression1);
-			const auto statement = statement_t(return_statement_t{ make_shared<expression_t>(expression1) });
-			statements.push_back(make_shared<statement_t>(statement));
-
-			//	Skip trailing ";".
-			pos = skip_whitespace(expression_pos.second.substr(1));
+			const auto return_statement_pos = parse_return_statement(local_scope, pos);
+			statements.push_back(make_shared<statement_t>(make__return_statement(return_statement_pos.first)));
+			pos = return_statement_pos.second;
 		}
 
 		//	Define local variable?
