@@ -106,21 +106,18 @@ namespace floyd_parser {
 
 
 
-const std::string test_function1 = "int test_function1(){ return 100; }";
-
-function_def_t make_test_function1();
-
-const std::string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
-
-function_def_t make_test_function2();
+	//////////////////////////////////		Testing
 
 
-function_def_t make_log_function();
-function_def_t make_log2_function();
-function_def_t make_return5();
+	const std::string test_function1 = "int test_function1(){ return 100; }";
+	function_def_t make_test_function1();
 
+	const std::string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
+	function_def_t make_test_function2();
 
-
+	function_def_t make_log_function();
+	function_def_t make_log2_function();
+	function_def_t make_return5();
 
 }
 

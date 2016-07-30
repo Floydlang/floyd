@@ -10,8 +10,6 @@
 
 
 #include "parser_expression.hpp"
-
-
 #include "text_parser.h"
 #include "parser_statement.hpp"
 
@@ -65,7 +63,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 //??? Need concept of parsing stack-frame to store local variables.
-//??? Unite this function with read_statement(). No need to have parse-level difference. Check syntax later.
+//??? Unite this function with read_statement().
+//???No need to have parse-level difference. Check syntax later.
 //??? When to check for correct types, for a global return statement etc? While parsing or separate pass? When to inject conversions?
 
 std::vector<std::shared_ptr<statement_t>> parse_function_body(const ast_t& ast, const string& s){

@@ -13,17 +13,18 @@
 #include "quark.h"
 #include <vector>
 #include <string>
-#include <map>
-
-#include "parser_types.h"
-#include "parser_primitives.h"
-#include "parser_expression.hpp"
-
 
 namespace floyd_parser {
+	struct struct_def_t;
+
+	/*
+		{}
+		{int a;}
+	*/
+	std::pair<struct_def_t, std::string> parse_struct_body(const std::string& s);
+
 
 	const std::string k_test_struct0 = "{int x; string y; float z;}";
-
 	struct_def_t make_test_struct0();
 
 }
