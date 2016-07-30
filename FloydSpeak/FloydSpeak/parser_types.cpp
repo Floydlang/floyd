@@ -195,7 +195,7 @@ namespace floyd_parser {
 
 
 
-	////////////////////	Helper for making tests.
+	////////////////////	Helpers for making tests.
 
 
 
@@ -211,6 +211,53 @@ namespace floyd_parser {
 	struct_def_t make_struct_def(const vector<arg_t>& args){
 		return struct_def_t{ args };
 	}
+
+
+	function_def_t make_log_function(){
+		return make_function_def(
+			make_type_identifier("float"),
+			{ {make_type_identifier("float"), "value"} },
+			{
+				makie_return_statement(make_constant(123.f))
+			}
+		);
+	}
+
+	function_def_t make_log2_function(){
+		return make_function_def(
+			make_type_identifier("float"),
+			{ { make_type_identifier("string"), "s" }, { make_type_identifier("float"), "v" } },
+			{
+				makie_return_statement(make_constant(456.7f))
+			}
+		);
+	}
+
+	function_def_t make_return5(){
+		return make_function_def(
+			make_type_identifier("int"),
+			{ },
+			{
+				makie_return_statement(make_constant(value_t(5)))
+			}
+		);
+	}
+
+
+	struct_def_t make_struct0(){
+		return make_struct_def({});
+	}
+
+	struct_def_t make_struct1(){
+		return make_struct_def(
+			{
+				{ make_type_identifier("float"), "x" },
+				{ make_type_identifier("float"), "y" },
+				{ make_type_identifier("string"), "name" }
+			}
+		);
+	}
+
 
 
 
@@ -532,13 +579,13 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	}
 
 
-	std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> frontend_types_collector_t::define_struct_type(const std::vector<arg_t>& members) const{
+	std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> frontend_types_collector_t::define_struct_type(const struct_def_t& struct_def) const{
 		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(struct_def.check_invariant());
 
 		auto type_def = make_shared<type_definition_t>();
 		type_def->_base_type = k_struct;
-		type_def->_struct_def = make_shared<struct_def_t>();
-		type_def->_struct_def->_members = members;
+		type_def->_struct_def = make_shared<struct_def_t>(struct_def);
 
 		const string signature = to_signature(*type_def);
 
@@ -567,11 +614,12 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	}
 
 
-	frontend_types_collector_t frontend_types_collector_t::define_struct_type(const std::string& new_identifier, std::vector<arg_t> members) const{
+	frontend_types_collector_t frontend_types_collector_t::define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const{
 		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(struct_def.check_invariant());
 
 		//	Make struct def, if not already done.
-		const auto a = frontend_types_collector_t::define_struct_type(members);
+		const auto a = frontend_types_collector_t::define_struct_type(struct_def);
 		const auto type_def = a.first;
 		const auto collector2 = a.second;
 
@@ -654,70 +702,78 @@ QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
 }
 
 
+
+
+
+
 /*
-	struct {
+	struct struct2 {
 	}
 */
-frontend_types_collector_t define_test_struct_0(const frontend_types_collector_t& types){
+frontend_types_collector_t define_test_struct2(const frontend_types_collector_t& types){
 	const auto a = types.define_struct_type("", {});
 	return a;
 }
 
-	arg_t make_member_kludge(const std::string& name, const std::string& type){
-		return arg_t{ type_identifier_t(type), name };
-	}
 
 /*
-	struct struct_1 {
+	struct struct3 {
 		int32 a
 		string b
 	}
 */
-frontend_types_collector_t define_test_struct_1(const frontend_types_collector_t& types){
-	const auto a = types.define_struct_type("struct_1",
-		{
-			make_member_kludge("a", "int32"),
-			make_member_kludge("b", "string")
-		}
+frontend_types_collector_t define_test_struct3(const frontend_types_collector_t& types){
+	return types.define_struct_type(
+		"struct3",
+		make_struct_def(
+			{
+				{ make_type_identifier("int32"), "a" },
+				{ make_type_identifier("string"), "b" }
+			}
+		)
 	);
-	return a;
 }
 
 /*
-	struct struct_2 {
+	struct struct4 {
 		string x
 		<struct_1> y
 		string z
 	}
 */
-frontend_types_collector_t define_test_struct_2(const frontend_types_collector_t& types){
-	const auto a = types.define_struct_type("struct_2",
-		{
-			make_member_kludge("x", "string"),
-			make_member_kludge("y", "struct_1"),
-			make_member_kludge("z", "string")
-		}
+frontend_types_collector_t define_test_struct4(const frontend_types_collector_t& types){
+	return types.define_struct_type(
+		"struct4",
+		make_struct_def(
+			{
+				{ make_type_identifier("string"), "x" },
+				{ make_type_identifier("struct3"), "y" },
+				{ make_type_identifier("string"), "z" }
+			}
+		)
 	);
-	return a;
 }
+
 //??? check for duplicate member names.
-frontend_types_collector_t define_test_struct_3(const frontend_types_collector_t& types){
-	const auto a = types.define_struct_type("struct_3",
-		{
-			make_member_kludge("a", "bool"),
-			// pad
-			// pad
-			// pad
-			make_member_kludge("b", "int32"),
-			make_member_kludge("c", "bool"),
-			make_member_kludge("d", "bool"),
-			make_member_kludge("e", "bool"),
-			make_member_kludge("f", "bool"),
-			make_member_kludge("g", "string"),
-			make_member_kludge("h", "bool")
-		}
+frontend_types_collector_t define_test_struct5(const frontend_types_collector_t& types){
+	return types.define_struct_type(
+		"struct5",
+		make_struct_def(
+			{
+				{ make_type_identifier("bool"), "a" },
+				// pad
+				// pad
+				// pad
+				{ make_type_identifier("int32"), "b" },
+				{ make_type_identifier("bool"), "c" },
+				{ make_type_identifier("bool"), "d" },
+				{ make_type_identifier("bool"), "e" },
+				{ make_type_identifier("bool"), "f" },
+				{ make_type_identifier("string"), "g" },
+				{ make_type_identifier("bool"), "h" }
+			}
+		)
 	);
-	return a;
 }
 
 
@@ -726,7 +782,7 @@ frontend_types_collector_t define_test_struct_3(const frontend_types_collector_t
 
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	const auto a = frontend_types_collector_t();
-	const auto b = define_test_struct_0(a);
+	const auto b = define_test_struct2(a);
 	const auto t1 = b.lookup_signature("<struct>{}");
 	QUARK_TEST_VERIFY(t1);
 	QUARK_TEST_VERIFY(to_signature(*t1) == "<struct>{}");
@@ -734,8 +790,8 @@ QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 
 QUARK_UNIT_TESTQ("to_signature()", "struct 1"){
 	const auto a = frontend_types_collector_t();
-	const auto b = define_test_struct_1(a);
-	const auto t1 = b.resolve_identifier("struct_1");
+	const auto b = define_test_struct3(a);
+	const auto t1 = b.resolve_identifier("struct3");
 	const auto s1 = to_signature(*t1);
 	QUARK_TEST_VERIFY(s1 == "<struct>{<int32>a,<string>b}");
 }
@@ -743,11 +799,11 @@ QUARK_UNIT_TESTQ("to_signature()", "struct 1"){
 
 QUARK_UNIT_TESTQ("to_signature()", "struct 2"){
 	const auto a = frontend_types_collector_t();
-	const auto b = define_test_struct_1(a);
-	const auto c = define_test_struct_2(b);
-	const auto t2 = c.resolve_identifier("struct_2");
+	const auto b = define_test_struct3(a);
+	const auto c = define_test_struct4(b);
+	const auto t2 = c.resolve_identifier("struct4");
 	const auto s2 = to_signature(*t2);
-	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct_1>y,<string>z}");
+	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct3>y,<string>z}");
 }
 
 
@@ -799,8 +855,8 @@ QUARK_UNIT_TESTQ("frontend_types_collector_t::define_alias_identifier()", "int32
 
 QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 	const auto a = frontend_types_collector_t();
-	const auto b = define_test_struct_3(a);
-	const auto t = b.resolve_identifier("struct_3");
+	const auto b = define_test_struct5(a);
+	const auto t = b.resolve_identifier("struct5");
 	const auto layout = calc_struct_default_memory_layout(a, *t);
 	int i = 0;
 	for(const auto it: layout){

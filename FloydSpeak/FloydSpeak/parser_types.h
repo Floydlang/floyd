@@ -315,13 +315,13 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> define_struct_type(const std::vector<arg_t>& members) const;
+		public: std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
-		public: frontend_types_collector_t define_struct_type(const std::string& new_identifier, std::vector<arg_t> members) const;
+		public: frontend_types_collector_t define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const;
 
 
 		/*
@@ -360,12 +360,20 @@ namespace floyd_parser {
 
 
 
-	////////////////////	Helper for making tests.
+	////////////////////	Helpers for making tests.
 
 
 
 	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
 	struct_def_t make_struct_def(const std::vector<arg_t>& args);
+
+
+	function_def_t make_log_function();
+	function_def_t make_log2_function();
+	function_def_t make_return5();
+
+	struct_def_t make_struct0();
+	struct_def_t make_struct1();
 
 
 }	//	floyd_parser

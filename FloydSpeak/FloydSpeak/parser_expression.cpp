@@ -587,50 +587,6 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 
 
-function_def_t make_log_function(){
-	return make_function_def(
-		make_type_identifier("float"),
-		{ {make_type_identifier("float"), "value"} },
-		{
-			makie_return_statement(make_constant(123.f))
-		}
-	);
-}
-
-function_def_t make_log2_function(){
-	return make_function_def(
-		make_type_identifier("float"),
-		{ { make_type_identifier("string"), "s" }, { make_type_identifier("float"), "v" } },
-		{
-			makie_return_statement(make_constant(456.7f))
-		}
-	);
-}
-
-function_def_t make_return5(){
-	return make_function_def(
-		make_type_identifier("int"),
-		{ },
-		{
-			makie_return_statement(make_constant(value_t(5)))
-		}
-	);
-}
-
-
-struct_def_t make_struct0(){
-	return make_struct_def({});
-}
-
-struct_def_t make_struct1(){
-	return make_struct_def(
-		{
-			{ make_type_identifier("float"), "x" },
-			{ make_type_identifier("float"), "y" },
-			{ make_type_identifier("string"), "name" }
-		}
-	);
-}
 
 ast_t make_test_ast(){
 	ast_t result;
