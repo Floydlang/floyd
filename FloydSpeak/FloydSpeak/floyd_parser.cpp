@@ -136,20 +136,74 @@ void trace(const ast_t& program){
 //////////////////////////////////////////////////		read_statement()
 
 
+	/*
+		Function definitions:
+
+			#1
+			int test_func1(){ return 100; };
+
+			#2
+			string test_func2(int a, float b){ return "sdf" };
+
+		Struct definitions:
+
+			struct my_image {
+				int width;
+				int height;
+			};
+
+			struct my_sprite {
+				string name;
+				my_image image;
+			};
+
+		Define variable
+			int a = 10;
+
+			int b = f(a);
 
 
-pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
-	QUARK_ASSERT(ast.check_invariant());
 
-	const auto word1 = read_until(pos, " ");
 
-	//	struct?
-	if(word1.first == "struct"){
-		const auto struct_name = read_required_identifier(word1.second);
+		FUTURE
+		- Define data structures (also in local scopes).
+		- Add support for global constants.
+		- Assign global constants
+		- Add local scopes / blocks.
+
+
+		Global constants:
+
+			float my_global1 = 3.1415f + ;
+			my_sprite my_test_sprite =
+	*/
+
+
+struct statement_result_t {
+	statement_t _statement;
+	ast_t _ast;
+	std::string _rest;
+};
+
+statement_result_t read_statement(const ast_t& ast1, const string& pos){
+	QUARK_ASSERT(ast1.check_invariant());
+
+	ast_t ast2 = ast1;
+	const auto token_pos = read_until(pos, whitespace_chars);
+
+	//	return statement?
+	if(token_pos.first == "return"){
+		const auto return_statement_pos = parse_return_statement(ast1, pos);
+		return { make__return_statement(return_statement_pos.first), ast2, return_statement_pos.second };
+	}
+
+	//	struct definition?
+	else if(token_pos.first == "struct"){
+		const auto struct_name = read_required_identifier(token_pos.second);
 
 		pair<struct_def_t, string> body_pos = parse_struct_body(struct_name.second);
 		struct_def_expr_t struct_def_expr{ make_shared<struct_def_t>(body_pos.first) };
-		const auto bind = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def_expr) };
+		const auto bind_statement = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def_expr) };
 
 /*
 		//	Add struct
@@ -160,19 +214,52 @@ pair<statement_t, string> read_statement(const ast_t& ast, const string& pos){
 
 		result._structs[identifier] = e->_struct_def_expr;
 */
-		return { bind, body_pos.second };
+		return { bind_statement, ast2, body_pos.second };
 	}
 
-	//	Function?
 	else {
 		const auto type_pos = read_required_type_identifier(pos);
 		const auto identifier_pos = read_required_identifier(type_pos.second);
 
-		const pair<pair<string, function_def_t>, string> function = parse_function_definition(ast, pos);
-		const auto function_def_expr = function_def_expr_t{make_shared<function_def_t>(function.first.second)};
+		/*
+			Function definition?
+			"int xyz(string a, string b){ ... }
+		*/
+		if(peek_string(identifier_pos.second, "(")){
+			const pair<pair<string, function_def_t>, string> function = parse_function_definition(ast1, pos);
+			const auto function_def_expr = function_def_expr_t{make_shared<function_def_t>(function.first.second)};
 
-		const auto bind = bind_statement_t{ function.first.first, make_shared<expression_t>(expression_t{function_def_expr}) };
-		return { bind, function.second };
+			const auto bind_statement = bind_statement_t{ function.first.first, make_shared<expression_t>(expression_t{function_def_expr}) };
+			return { bind_statement, ast2, function.second };
+		}
+
+		//	Define variable?
+		/*
+			"int a = 10;"
+			"string hello = f(a) + \"_suffix\";";
+		*/
+
+		else if(peek_string(identifier_pos.second, "=")){
+//		else if(ast.parser_i__is_known_type(token_pos.first))
+			pair<statement_t, string> assignment_statement = parse_assignment_statement(ast1, pos);
+			const string& identifier = assignment_statement.first._bind_statement->_identifier;
+
+			const auto it = ast2._constant_values.find(identifier);
+			if(it != ast2._constant_values.end()){
+				throw std::runtime_error("Variable name already in use!");
+			}
+
+			shared_ptr<const value_t> blank;
+			ast2._constant_values[identifier] = blank;
+
+			//	Skips trailing ";".
+			const auto pos2 = skip_whitespace(assignment_statement.second);
+			return { assignment_statement.first, ast2, pos2 };
+		}
+
+		else{
+			throw std::runtime_error("syntax error");
+		}
 	}
 }
 
@@ -188,20 +275,20 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto result = read_statement({}, test_function1);
-	QUARK_TEST_VERIFY(result.first._bind_statement);
-	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_function1");
-	const auto expr = result.first._bind_statement->_expression->_function_def_expr;
+	QUARK_TEST_VERIFY(result._statement._bind_statement);
+	QUARK_TEST_VERIFY(result._statement._bind_statement->_identifier == "test_function1");
+	const auto expr = result._statement._bind_statement->_expression->_function_def_expr;
 	QUARK_TEST_VERIFY(expr);
 
 	QUARK_TEST_VERIFY(*expr->_def == make_test_function1());
-	QUARK_TEST_VERIFY(result.second == "");
+	QUARK_TEST_VERIFY(result._rest == "");
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto result = read_statement({}, "struct test_struct0 " + k_test_struct0);
-	QUARK_TEST_VERIFY(result.first._bind_statement);
-	QUARK_TEST_VERIFY(result.first._bind_statement->_identifier == "test_struct0");
-	const auto expr = result.first._bind_statement->_expression->_struct_def_expr;
+	QUARK_TEST_VERIFY(result._statement._bind_statement);
+	QUARK_TEST_VERIFY(result._statement._bind_statement->_identifier == "test_struct0");
+	const auto expr = result._statement._bind_statement->_expression->_struct_def_expr;
 
 	QUARK_TEST_VERIFY(*expr->_def == make_test_struct0());
 }
@@ -226,11 +313,11 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
 		const auto statement_pos = read_statement(result, pos);
-		statements.push_back(make_shared<statement_t>(statement_pos.first));
+		statements.push_back(make_shared<statement_t>(statement_pos._statement));
 
-		if(statement_pos.first._bind_statement){
-			string identifier = statement_pos.first._bind_statement->_identifier;
-			const auto e = statement_pos.first._bind_statement->_expression;
+		if(statement_pos._statement._bind_statement){
+			string identifier = statement_pos._statement._bind_statement->_identifier;
+			const auto e = statement_pos._statement._bind_statement->_expression;
 
 			if(e->_function_def_expr){
 				const auto foundIt = result._functions.find(identifier);
@@ -255,7 +342,7 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 		else{
 			throw std::runtime_error("Unexpected statement.");
 		}
-		pos = skip_whitespace(statement_pos.second);
+		pos = skip_whitespace(statement_pos._rest);
 	}
 
 	result._top_level_statements = statements;

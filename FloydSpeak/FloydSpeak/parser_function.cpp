@@ -72,47 +72,48 @@ QUARK_UNIT_TEST("", "", "", ""){
 		Never simplifes - the parser is non-lossy.
 
 		Must not have whitespace before / after {}.
-		{}
+		Examples:
+			{}
 
-		{
-			return 3;
-		}
+			{
+				return 3;
+			}
 
-		{
-			return 3 + 4;
-		}
-		{
-			return f(3, 4) + 2;
-		}
+			{
+				return 3 + 4;
+			}
+			{
+				return f(3, 4) + 2;
+			}
 
 
-		//	Example: binding constants to constants, result of function calls and math operations.
-		{
-			int a = 10;
-			int b = f(a);
-			int c = a + b;
-			return c;
-		}
-
-		//	Local scope.
-		{
+			//	Example: binding constants to constants, result of function calls and math operations.
 			{
 				int a = 10;
-			}
-		}
-		{
-			struct point2d {
-				int _x;
-				int _y;
-			}
-		}
-
-		{
-			int my_func(string a, string b){
+				int b = f(a);
 				int c = a + b;
 				return c;
 			}
-		}
+
+			//	Local scope.
+			{
+				{
+					int a = 10;
+				}
+			}
+			{
+				struct point2d {
+					int _x;
+					int _y;
+				}
+			}
+
+			{
+				int my_func(string a, string b){
+					int c = a + b;
+					return c;
+				}
+			}
 
 		FUTURE
 		- Include comments
