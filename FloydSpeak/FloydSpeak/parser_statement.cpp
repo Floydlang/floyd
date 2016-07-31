@@ -46,15 +46,23 @@ namespace floyd_parser {
 
 	void trace(const statement_t& s){
 		if(s._bind_statement){
-			const auto s2 = s._bind_statement;
-			std::string t = "bind_statement_t: \"" + s2->_identifier + "\"";
+			std::string t = "bind_statement_t: \"" + s._bind_statement->_identifier + "\"";
 			QUARK_SCOPED_TRACE(t);
-			trace(*s2->_expression);
+			trace(*s._bind_statement->_expression);
 		}
+
+		else if(s._define_struct){
+			QUARK_SCOPED_TRACE("define_struct_statement_t: \"" + s._define_struct->_type_identifier);
+			trace(s._define_struct->_struct_def);
+		}
+		else if(s._define_function){
+			QUARK_SCOPED_TRACE("define_function_statement_t: \"" + s._define_function->_type_identifier);
+			trace(s._define_function->_function_def);
+		}
+
 		else if(s._return_statement){
-			const auto s2 = s._return_statement;
 			QUARK_SCOPED_TRACE("return_statement_t");
-			trace(*s2->_expression);
+			trace(*s._return_statement->_expression);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -70,10 +78,26 @@ namespace floyd_parser {
 	bool statement_t::check_invariant() const {
 		if(_bind_statement){
 			QUARK_ASSERT(_bind_statement);
+			QUARK_ASSERT(!_define_struct);
+			QUARK_ASSERT(!_define_function);
+			QUARK_ASSERT(!_return_statement);
+		}
+		else if(_define_struct){
+			QUARK_ASSERT(!_bind_statement);
+			QUARK_ASSERT(_define_struct);
+			QUARK_ASSERT(!_define_function);
+			QUARK_ASSERT(!_return_statement);
+		}
+		else if(_define_function){
+			QUARK_ASSERT(!_bind_statement);
+			QUARK_ASSERT(!_define_struct);
+			QUARK_ASSERT(_define_function);
 			QUARK_ASSERT(!_return_statement);
 		}
 		else if(_return_statement){
 			QUARK_ASSERT(!_bind_statement);
+			QUARK_ASSERT(!_define_struct);
+			QUARK_ASSERT(!_define_function);
 			QUARK_ASSERT(_return_statement);
 		}
 		else{

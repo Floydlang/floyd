@@ -193,21 +193,8 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 	//	struct definition?
 	else if(token_pos.first == "struct"){
 		const auto struct_name = read_required_identifier(token_pos.second);
-
 		pair<struct_def_t, string> body_pos = parse_struct_body(struct_name.second);
-		struct_def_expr_t struct_def_expr{ make_shared<struct_def_t>(body_pos.first) };
-		const auto bind_statement = bind_statement_t{ struct_name.first, make_shared<expression_t>(struct_def_expr) };
-
-/*
-		//	Add struct
-		const auto foundIt = result._structs.find(identifier);
-		if(foundIt != result._structs.end()){
-			throw std::runtime_error("Struct \"" + identifier + "\" already defined.");
-		}
-
-		result._structs[identifier] = e->_struct_def_expr;
-*/
-		return { bind_statement, ast2, skip_whitespace(body_pos.second) };
+        return { define_struct_statement_t{ struct_name.first, body_pos.first }, ast2, skip_whitespace(body_pos.second) };
 	}
 
 	else {
@@ -220,10 +207,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 		*/
 		if(peek_string(identifier_pos.second, "(")){
 			const pair<pair<string, function_def_t>, string> function = parse_function_definition(ast1, pos);
-			const auto function_def_expr = function_def_expr_t{make_shared<function_def_t>(function.first.second)};
-
-			const auto bind_statement = bind_statement_t{ function.first.first, make_shared<expression_t>(expression_t{function_def_expr}) };
-			return { bind_statement, ast2, skip_whitespace(function.second) };
+            return { define_function_statement_t{ function.first.first, function.first.second }, ast2, skip_whitespace(function.second) };
 		}
 
 		//	Define variable?
@@ -271,22 +255,17 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto result = read_statement({}, test_function1);
-	QUARK_TEST_VERIFY(result._statement._bind_statement);
-	QUARK_TEST_VERIFY(result._statement._bind_statement->_identifier == "test_function1");
-	const auto expr = result._statement._bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr);
-
-	QUARK_TEST_VERIFY(*expr->_def == make_test_function1());
+	QUARK_TEST_VERIFY(result._statement._define_function);
+	QUARK_TEST_VERIFY(result._statement._define_function->_type_identifier == "test_function1");
+	QUARK_TEST_VERIFY(result._statement._define_function->_function_def == make_test_function1());
 	QUARK_TEST_VERIFY(result._rest == "");
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto result = read_statement({}, "struct test_struct0 " + k_test_struct0);
-	QUARK_TEST_VERIFY(result._statement._bind_statement);
-	QUARK_TEST_VERIFY(result._statement._bind_statement->_identifier == "test_struct0");
-	const auto expr = result._statement._bind_statement->_expression->_struct_def_expr;
-
-	QUARK_TEST_VERIFY(*expr->_def == make_test_struct0());
+	QUARK_TEST_VERIFY(result._statement._define_struct);
+	QUARK_TEST_VERIFY(result._statement._define_struct->_type_identifier == "test_struct0");
+	QUARK_TEST_VERIFY(result._statement._define_struct->_struct_def == make_test_struct0());
 }
 
 
@@ -309,25 +288,17 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
 		const auto statement_pos = read_statement(ast2, pos);
-		statements.push_back(make_shared<statement_t>(statement_pos._statement));
 		ast2 = statement_pos._ast;
 
-		if(statement_pos._statement._bind_statement){
-			string identifier = statement_pos._statement._bind_statement->_identifier;
-			const auto e = statement_pos._statement._bind_statement->_expression;
-
-			if(e->_function_def_expr){
-				ast2._types_collector = ast2._types_collector.define_function_type(identifier, *e->_function_def_expr->_def);
-			}
-			else if(e->_struct_def_expr){
-				ast2._types_collector.define_struct_type(identifier, *e->_struct_def_expr->_def);
-			}
-			else{
-				throw std::runtime_error("Unexpected expression.");
-			}
+		if(statement_pos._statement._define_struct){
+			ast2._types_collector = ast2._types_collector.define_struct_type(statement_pos._statement._define_struct->_type_identifier, statement_pos._statement._define_struct->_struct_def);
+		}
+		else if(statement_pos._statement._define_function){
+			ast2._types_collector = ast2._types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
 		}
 		else{
-			throw std::runtime_error("Unexpected statement.");
+			statements.push_back(make_shared<statement_t>(statement_pos._statement));
+//			throw std::runtime_error("Unexpected statement.");
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
@@ -347,14 +318,17 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	"}\n";
 
 	const auto result = program_to_ast({}, kProgram1);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_identifier == "main");
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
 
-	const auto expr = result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr->_def->_return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((expr->_def->_args == vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }}));
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
+		make_function_def(
+			type_identifier_t::make_type("int"),
+			vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }},
+			{
+				makie_return_statement(make_constant(value_t(3)))
+			}
+		)
+	));
 }
 
 
@@ -366,18 +340,21 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	;
 
 	const auto result = program_to_ast({}, kProgram);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 1);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_identifier == "f");
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
 
-	const auto expr = result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(expr->_def->_return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((expr->_def->_args == vector<arg_t>{
-		arg_t{ type_identifier_t::make_type("int"), "x" },
-		arg_t{ type_identifier_t::make_type("int"), "y" },
-		arg_t{ type_identifier_t::make_type("string"), "z" }
-	}));
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("f") ==
+		make_function_def(
+			type_identifier_t::make_type("int"),
+			vector<arg_t>{
+				arg_t{ type_identifier_t::make_type("int"), "x" },
+				arg_t{ type_identifier_t::make_type("int"), "y" },
+				arg_t{ type_identifier_t::make_type("string"), "z" }
+			},
+			{
+				makie_return_statement(make_constant(value_t(3)))
+			}
+		)
+	));
 }
 
 
@@ -393,31 +370,33 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	QUARK_TRACE(kProgram);
 
 	const auto result = program_to_ast({}, kProgram);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 2);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
 
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement);
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_identifier == "hello");
-	QUARK_TEST_VERIFY(result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr);
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("hello") ==
+		make_function_def(
+			type_identifier_t::make_type("string"),
+			vector<arg_t>{
+				arg_t{ type_identifier_t::make_type("int"), "x" },
+				arg_t{ type_identifier_t::make_type("int"), "y" },
+				arg_t{ type_identifier_t::make_type("string"), "z" }
+			},
+			{
+				makie_return_statement(make_constant(value_t("test abc")))
+			}
+		)
+	));
 
-	const auto hello = result._top_level_statements[0]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(hello->_def->_return_type == type_identifier_t::make_type("string"));
-	QUARK_TEST_VERIFY((hello->_def->_args == vector<arg_t>{
-		arg_t{ type_identifier_t::make_type("int"), "x" },
-		arg_t{ type_identifier_t::make_type("int"), "y" },
-		arg_t{ type_identifier_t::make_type("string"), "z" }
-	}));
-
-
-	QUARK_TEST_VERIFY(result._top_level_statements[1]->_bind_statement);
-	QUARK_TEST_VERIFY(result._top_level_statements[1]->_bind_statement->_identifier == "main");
-	QUARK_TEST_VERIFY(result._top_level_statements[1]->_bind_statement->_expression->_function_def_expr);
-
-	const auto main = result._top_level_statements[1]->_bind_statement->_expression->_function_def_expr;
-	QUARK_TEST_VERIFY(main->_def->_return_type == type_identifier_t::make_type("int"));
-	QUARK_TEST_VERIFY((main->_def->_args == vector<arg_t>{
-		arg_t{ type_identifier_t::make_type("string"), "args" }
-	}));
-
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
+		make_function_def(
+			type_identifier_t::make_type("int"),
+			vector<arg_t>{
+				arg_t{ type_identifier_t::make_type("string"), "args" }
+			},
+			{
+				makie_return_statement(make_constant(value_t(3)))
+			}
+		)
+	));
 }
 
 
@@ -430,24 +409,35 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	"	float test = testx(1234);\n"
 	"	return 3;\n"
 	"}\n";
-	auto r = program_to_ast({}, kProgram2);
-	QUARK_TEST_VERIFY(r._top_level_statements.size() == 2);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_identifier == "testx");
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_return_type == make_type_identifier("float"));
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._type == make_type_identifier("float"));
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._identifier == "v");
-	QUARK_TEST_VERIFY(r._top_level_statements[0]->_bind_statement->_expression->_function_def_expr->_def->_statements.size() == 1);
+	auto result = program_to_ast({}, kProgram2);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
 
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement);
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_identifier == "main");
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_return_type == make_type_identifier("int"));
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args.size() == 1);
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._type == make_type_identifier("string"));
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_args[0]._identifier == "args");
-	QUARK_TEST_VERIFY(r._top_level_statements[1]->_bind_statement->_expression->_function_def_expr->_def->_statements.size() == 2);
-	//### Test body?
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("testx") ==
+		make_function_def(
+			type_identifier_t::make_type("float"),
+			vector<arg_t>{
+				arg_t{ type_identifier_t::make_type("float"), "v" }
+			},
+			{
+				makie_return_statement(make_constant(value_t(13.4f)))
+			}
+		)
+	));
+
+/*
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
+		make_function_def(
+			type_identifier_t::make_type("int"),
+			vector<arg_t>{
+				arg_t{ type_identifier_t::make_type("string"), "arg" }
+			},
+			{
+				makie_return_statement(bind_statement_t{"test", function_call_expr_t{"testx", }})
+				makie_return_statement(make_constant(value_t(13.4f)))
+			}
+		)
+	));
+*/
 }
 
 

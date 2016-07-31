@@ -25,19 +25,45 @@ namespace floyd_parser {
 	struct expression_t;
 
 
-	//////////////////////////////////////		bind_statement_t
-
-
-	struct bind_statement_t {
-		bool operator==(const bind_statement_t& other) const {
-			return _identifier == other._identifier && _expression == other._expression;
-		}
-
-		std::string _identifier;
-		std::shared_ptr<expression_t> _expression;
-	};
-
-
+    //////////////////////////////////////		bind_statement_t
+    
+    
+    struct bind_statement_t {
+        bool operator==(const bind_statement_t& other) const {
+            return _identifier == other._identifier && _expression == other._expression;
+        }
+        
+        std::string _identifier;
+        std::shared_ptr<expression_t> _expression;
+    };
+    
+    
+    //////////////////////////////////////		define_struct_statement_t
+    
+    
+    struct define_struct_statement_t {
+        bool operator==(const define_struct_statement_t& other) const {
+            return _type_identifier == other._type_identifier && _struct_def == other._struct_def;
+        }
+        
+        std::string _type_identifier;
+        struct_def_t _struct_def;
+    };
+    
+    
+    //////////////////////////////////////		define_function_statement_t
+    
+    
+    struct define_function_statement_t {
+        bool operator==(const define_function_statement_t& other) const {
+            return _type_identifier == other._type_identifier && _function_def == other._function_def;
+        }
+        
+        std::string _type_identifier;
+        function_def_t _function_def;
+    };
+    
+    
 	//////////////////////////////////////		return_statement_t
 
 
@@ -53,6 +79,7 @@ namespace floyd_parser {
 	statement_t makie_return_statement(const expression_t& expression);
 
 
+    
 	//////////////////////////////////////		statement_t
 
 
@@ -64,7 +91,17 @@ namespace floyd_parser {
 		{
 		}
 
-		statement_t(const return_statement_t& value) :
+        statement_t(const define_struct_statement_t& value) :
+            _define_struct(std::make_shared<define_struct_statement_t>(value))
+        {
+        }
+
+        statement_t(const define_function_statement_t& value) :
+            _define_function(std::make_shared<define_function_statement_t>(value))
+        {
+        }
+
+        statement_t(const return_statement_t& value) :
 			_return_statement(std::make_shared<return_statement_t>(value))
 		{
 		}
@@ -82,7 +119,9 @@ namespace floyd_parser {
 			}
 		}
 
-		const std::shared_ptr<bind_statement_t> _bind_statement;
+        const std::shared_ptr<bind_statement_t> _bind_statement;
+        const std::shared_ptr<define_struct_statement_t> _define_struct;
+        const std::shared_ptr<define_function_statement_t> _define_function;
 		const std::shared_ptr<return_statement_t> _return_statement;
 	};
 

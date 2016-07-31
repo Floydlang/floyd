@@ -364,16 +364,6 @@ string operation_to_string(const math_operation1_expr_t::operation& op){
 
 
 
-void trace(const function_def_expr_t& e){
-	QUARK_SCOPED_TRACE("function_def_expr_t");
-	trace(*e._def);
-}
-
-void trace(const struct_def_expr_t& e){
-	QUARK_SCOPED_TRACE("struct_def_expr_t");
-
-	trace(*e._def);
-}
 
 void trace(const math_operation2_expr_t& e){
 	string s = "math_operation2_expr_t: " + operation_to_string(e._operation);
@@ -403,14 +393,6 @@ void trace(const expression_t& e){
 	if(e._constant){
 		trace(*e._constant);
 	}
-	else if(e._function_def_expr){
-		const function_def_expr_t& temp = *e._function_def_expr;
-		trace(temp);
-	}
-	else if(e._struct_def_expr){
-		const struct_def_expr_t& temp = *e._struct_def_expr;
-		trace(temp);
-	}
 	else if(e._math_operation2_expr){
 		trace(*e._math_operation2_expr);
 	}
@@ -430,16 +412,6 @@ void trace(const expression_t& e){
 		QUARK_ASSERT(false);
 	}
 }
-
-
-
-	std::shared_ptr<const function_def_expr_t> makie_function_def_expr_t(const function_def_t& f){
-		return make_shared<function_def_expr_t>(function_def_expr_t{ make_shared<function_def_t>(f)});
-	}
-
-	std::shared_ptr<const struct_def_expr_t> makie_struct_def_expr_t(const struct_def_t& f){
-		return make_shared<struct_def_expr_t>(struct_def_expr_t{ make_shared<struct_def_t>(f)});
-	}
 
 
 

@@ -21,7 +21,7 @@
 #include "parser_value.hpp"
 #include "parser_statement.hpp"
 
-
+#if true
 
 
 using std::vector;
@@ -154,3 +154,4 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 }
 
 
+#endif
