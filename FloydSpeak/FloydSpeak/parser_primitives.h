@@ -19,8 +19,6 @@
 
 
 namespace floyd_parser {
-	struct function_def_expr_t;
-	struct struct_def_expr_t;
 	struct value_t;
 	struct statement_t;
 	struct type_identifier_t;
