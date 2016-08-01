@@ -217,11 +217,12 @@ namespace floyd_parser {
 
 	/*
 		Parses the expression string
+		Requires all characters to be part of expression - does not stop until all characters have been evaluated.
 		Checks syntax
-		Validates that called functions exists and has correct type.
-		Validates that accessed variables exists and has correct types.
+		FALSE: Validates that called functions exists and has correct type.
+		FALSE: Validates that accessed variables exists and has correct types.
 
-		No optimization or evalution of any constant expressions etc.
+		No optimization or evalution of any constant expressions etc. Must be non-lossy = cannot optimize.
 
 		Example input:
 			0

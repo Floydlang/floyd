@@ -24,7 +24,7 @@ namespace floyd_parser {
 	std::pair<struct_def_t, std::string> parse_struct_body(const std::string& s);
 
 
-	const std::string k_test_struct0 = "{int x; string y; float z;}";
+	const std::string k_test_struct0_body = "{int x; string y; float z;}";
 	struct_def_t make_test_struct0();
 
 }

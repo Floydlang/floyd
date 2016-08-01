@@ -431,6 +431,10 @@ expression_t parse_expression(const parser_i& parser, string expression){
 }
 
 
+QUARK_UNIT_TESTQ("parse_expression()", ""){
+	const auto a = parse_expression(make_test_ast(), "pixel( \"hiya\" )");
+	QUARK_TEST_VERIFY(a._call_function_expr);
+}
 
 
 //////////////////////////////////////////////////		test rig

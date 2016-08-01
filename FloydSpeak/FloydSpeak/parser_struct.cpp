@@ -39,7 +39,7 @@ namespace floyd_parser {
 
 			const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
 			members.push_back(a);
-			pos = optional_comma.second;
+			pos = skip_whitespace(optional_comma.second);
 		}
 
 		return { struct_def_t{members}, body_pos.second };
@@ -55,7 +55,7 @@ namespace floyd_parser {
 
 
 	QUARK_UNIT_TESTQ("parse_struct_body", ""){
-		const auto r = parse_struct_body(k_test_struct0);
+		const auto r = parse_struct_body(k_test_struct0_body);
 		QUARK_TEST_VERIFY((
 			r == pair<struct_def_t, string>(make_test_struct0(), "" )
 		));

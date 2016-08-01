@@ -194,12 +194,19 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 	else if(token_pos.first == "struct"){
 		const auto struct_name = read_required_identifier(token_pos.second);
 		pair<struct_def_t, string> body_pos = parse_struct_body(struct_name.second);
-        return { define_struct_statement_t{ struct_name.first, body_pos.first }, ast2, skip_whitespace(body_pos.second) };
+
+
+		auto pos2 = skip_whitespace(body_pos.second);
+		pos2 = read_required_char(pos2, ';');
+
+        return { define_struct_statement_t{ struct_name.first, body_pos.first }, ast2, skip_whitespace(pos2) };
 	}
 
 	else {
 		const auto type_pos = read_required_type_identifier(pos);
 		const auto identifier_pos = read_required_identifier(type_pos.second);
+
+		//	??? check for "a = 3"-type assignment, with inferred type.
 
 		/*
 			Function definition?
@@ -262,7 +269,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	const auto result = read_statement({}, "struct test_struct0 " + k_test_struct0);
+	const auto result = read_statement({}, "struct test_struct0 " + k_test_struct0_body + ";");
 	QUARK_TEST_VERIFY(result._statement._define_struct);
 	QUARK_TEST_VERIFY(result._statement._define_struct->_type_identifier == "test_struct0");
 	QUARK_TEST_VERIFY(result._statement._define_struct->_struct_def == make_test_struct0());
@@ -439,6 +446,30 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 	));
 */
 }
+
+#if false
+??? access member variable
+QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_100", ""){
+	const auto result = program_to_ast({}, k_test_program_100);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+
+/*
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
+		make_function_def(
+			type_identifier_t::make_type("string"),
+			vector<arg_t>{},
+			{
+				makie_return_statement(make_constant(value_t(3)))
+			}
+		)
+	));
+*/
+}
+#endif
+
+
+
+
 
 
 }	//	floyd_parser

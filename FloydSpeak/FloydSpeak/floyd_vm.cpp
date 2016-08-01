@@ -130,6 +130,18 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
+#if false
+QUARK_UNIT_TESTQ("call_function()", "k_test_program_100"){
+	const auto ast = program_to_ast({}, floyd_parser::k_test_program_100);
+
+	auto vm = vm_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto result = call_function(vm, f, {});
+	QUARK_TEST_VERIFY(result == floyd_parser::value_t("hiya friend"));
+}
+#endif
+
+
 
 /*
 	Quckie that compiles a program and calls its main() with the args.
