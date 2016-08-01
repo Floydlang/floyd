@@ -40,7 +40,7 @@ vector<arg_t> parse_functiondef_arguments(const string& s2){
 	auto str = s;
 	while(!str.empty()){
 		const auto arg_type = read_type(str);
-		const auto arg_name = read_identifier(arg_type.second);
+		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
 		const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
@@ -156,7 +156,7 @@ std::pair<std::pair<string, function_def_t>, string> parse_function_definition(c
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto type_pos = read_required_type_identifier(pos);
-	const auto identifier_pos = read_required_identifier(type_pos.second);
+	const auto identifier_pos = read_required_single_symbol(type_pos.second);
 
 	//	Skip whitespace.
 	const auto rest = skip_whitespace(identifier_pos.second);

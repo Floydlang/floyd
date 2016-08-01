@@ -6,6 +6,11 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
+/*
+	These functions knows about the Floyd syntax.
+*/
+
+
 #ifndef parser_primitives_hpp
 #define parser_primitives_hpp
 
@@ -116,21 +121,9 @@ namespace floyd_parser {
 
 	bool is_whitespace(char ch);
 
-	/*
-		Skip leading whitespace, get string while type-char.
-	*/
-	seq read_type(const std::string& s);
-
-	/*
-		Skip leading whitespace, get string while identifier char.
-	*/
-	seq read_identifier(const std::string& s);
-
-
 	bool is_start_char(char c);
 	bool is_end_char(char c);
 	char start_char_to_end_char(char start_char);
-
 
 	/*
 		First char is the start char, like '(' or '{'.
@@ -139,11 +132,75 @@ namespace floyd_parser {
 	seq get_balanced(const std::string& s);
 
 
+
+
+	//////////////////////////////////////		symbol_path
+
+
+	/*
+		"my_global"
+		"my_global.member"
+	*/
+	struct symbol_path {
+		explicit symbol_path(const std::string& one_level) :
+			_entries({one_level})
+		{
+		}
+		symbol_path(const std::vector<std::string>& entries) :
+			_entries(entries)
+		{
+		}
+		symbol_path(const symbol_path& other) = default;
+
+		std::vector<std::string> _entries;
+	};
+
+	symbol_path operator+(const symbol_path& a, const symbol_path& b);
+	bool operator==(const symbol_path& a, const symbol_path& b);
+
+
+	//////////////////////////////////////		SYMBOLS
+
+	/*
+		Reads an identifier, like a variable name or function name.
+		DOES NOT struct members.
+			"hello xxx"
+			"hello()xxx"
+			"hello+xxx"
+
+		Does not skip whitespace on the rest of the string.
+			"\thello\txxx" => "hello" + "\txxx"
+	*/
+	seq read_required_single_symbol(const std::string& s);
+
+	/*
+		Reads an identifier, like a variable name or function name.
+			"hello xxx"
+			"hello() xxx"
+			"hello+xxx"
+
+		Supports struct members.
+			"hello.my_member xxx"
+			"sprite.image.x xxx"
+	*/
+	std::pair<symbol_path, std::string> read_required_symbol_path(const std::string& s);
+
+
+
+
+	//////////////////////////////////////		TYPE IDENTIFIERS
+
+
+
+	/*
+		Skip leading whitespace, get string while type-char.
+	*/
+	seq read_type(const std::string& s);
+
+
+
+
 	std::pair<type_identifier_t, std::string> read_required_type_identifier(const std::string& s);
-
-	//	Get identifier (name of a defined function or constant variable name).
-	std::pair<std::string, std::string> read_required_identifier(const std::string& s);
-
 
 	/*
 		Validates that this is a legal string, with legal characters. Exception.

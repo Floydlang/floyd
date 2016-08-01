@@ -65,20 +65,20 @@ float parse_float(const string& pos){
 
 /*
 	Constant literal
-		3
-		3.0
-		"three"
+		"3"
+		"3.0"
+		"\"three\""
 	Function call
-		f ()
-		f(g())
-		f(a + "xyz")
-		f(a + "xyz", 1000 * 3)
-	Variable
-		x1
-		hello2
+		"f ()"
+		"f(g())"
+		"f(a + "xyz")"
+		"f(a + "xyz", 1000 * 3)"
+	Variable read
+		"x1"
+		"hello2"
+		"hello.member"
 
 	FUTURE
-		- Add member access: my_data.name.first_name
 		- Add lambda / local function
 */
 pair<expression_t, string> parse_single_internal(const parser_i& parser, const string& s) {
@@ -119,12 +119,13 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 	/*
 		Start of identifier: can be variable access or function call.
 
-		"hello"
+		"hello2"
+		"hello.member"
 		"f ()"
 		"f(x + 10)"
 	*/
-	else if(identifier_chars.find(pos[0]) != string::npos){
-		const auto identifier_pos = read_required_identifier(pos);
+	else if((identifier_chars + ".").find(pos[0]) != string::npos){
+		const auto identifier_pos = read_required_single_symbol(pos);
 
 		string p2 = skip_whitespace(identifier_pos.second);
 
@@ -194,8 +195,6 @@ struct test_parser : public parser_i {
 };
 
 
-//??? Do we perform proper type checking when building parse tree? Or will parse tree contain syntax errors?
-
 QUARK_UNIT_TESTQ("parse_single", "number"){
 	test_parser parser;
 	QUARK_TEST_VERIFY((parse_single(parser, "9.0") == pair<expression_t, string>(value_t{ 9.0f }, "")));
@@ -231,6 +230,18 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 	QUARK_TEST_VERIFY(*a.first._call_function_expr->_inputs[1]->_call_function_expr->_inputs[0] == value_t(3.14f));
 	QUARK_TEST_VERIFY(a.second == "");
 }
+
+QUARK_UNIT_TESTQ("parse_single", "variable read"){
+	test_parser parser;
+	QUARK_TEST_VERIFY((parse_single({}, "k_my_global") == pair<expression_t, string>(make_variable_read("k_my_global"), "")));
+}
+
+#if false
+QUARK_UNIT_TESTQ("parse_single", "read struct member"){
+	test_parser parser;
+	QUARK_TEST_VERIFY((parse_single(parser, "k_my_global.member") == pair<expression_t, string>(make_variable_read("k_my_global.member"), "")));
+}
+#endif
 
 
 // Parse a constant or an expression in parenthesis
@@ -274,7 +285,7 @@ pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, i
 
 
 
-//??? more tests here!
+//### more tests here!
 QUARK_UNIT_TEST("", "parse_atom", "", ""){
 	test_parser parser;
 
@@ -432,9 +443,16 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
-	const auto a = parse_expression(make_test_ast(), "pixel( \"hiya\" )");
+	const auto a = parse_expression({}, "pixel( \"hiya\" )");
 	QUARK_TEST_VERIFY(a._call_function_expr);
 }
+
+#if false
+QUARK_UNIT_TESTQ("parse_expression()", ""){
+	const auto a = parse_expression({}, "pixel.red");
+	QUARK_TEST_VERIFY(a._variable_read_expr);
+}
+#endif
 
 
 //////////////////////////////////////////////////		test rig
@@ -463,8 +481,6 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 }
 
 
-
-//??? where are unit tests???
 
 
 }	//	floyd_parser

@@ -379,7 +379,7 @@ The collections are typesafe - a string-vector can only hold strings etc.
 Every collection automatically support the core-type-features, like comparisons, serialization and hashing.
 
 # VECTOR
-A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. Prefer to access using SEQ for maximum performance (it allows runtime to keep an pointer to the current position in the vector).
+A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. If you read many continous elements it's faster to use a SEQ with the vector - it allows the runtime to keep an pointer to the current position in the vector.
 
 	a = [int]();		//	Create empty vector of ints.
 	b = [int](1, 2, 3);		//	Create a vector with three ints.
@@ -388,7 +388,13 @@ A vector is a collection where you lookup your values using an index between 0 a
 	b = [string] ( "one", "two", "three");		//	Vector initialized to 3 strings.
 	b = ["one", "two", "three"];		//	Shortcut to create a vector with 3 strings. String-type is dedu
 
-There are many potential backends for a vector:
+The vector is persistent so you can write elements to it, but you always get a new vector back - the original is unmodified:
+
+	a = ["one", "two", "three" ];
+	b = a[1] = "zwei";
+	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
+
+There are many potential backends for a vector - the runtime choses for each vector instances (not each type!):
 
 1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
 2. A HAMT-based persistent vector. Medium-fast to make, read an write. Uses more memory.
@@ -396,10 +402,12 @@ There are many potential backends for a vector:
 
 Vector Reference:
 
-	vector<T>(seq<t> in);
-	vector<T> make[T]{ 1, 2, 3 };
-	vector<T> make(vector<T> other, int startPos, int endPos);
-	seq subset(vector<T> in, 
+	vector(seq<t> in);
+	vector [T][ 1, 2, 3, ... };
+	vector<T> make(vector<T> other, int start, int end);
+	seq subset(vector<T> in, int start, int end);
+	a = b + c;
+	
 
 # MAP
 A collection that maps a key to a value.Unsorted. Like a dictionary. 

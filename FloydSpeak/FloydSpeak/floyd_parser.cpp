@@ -192,8 +192,8 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto struct_name = read_required_identifier(token_pos.second);
-		pair<struct_def_t, string> body_pos = parse_struct_body(struct_name.second);
+		const auto struct_name = read_required_single_symbol(token_pos.second);
+		pair<struct_def_t, string> body_pos = parse_struct_body(skip_whitespace(struct_name.second));
 
 
 		auto pos2 = skip_whitespace(body_pos.second);
@@ -204,7 +204,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 
 	else {
 		const auto type_pos = read_required_type_identifier(pos);
-		const auto identifier_pos = read_required_identifier(type_pos.second);
+		const auto identifier_pos = read_required_single_symbol(type_pos.second);
 
 		//	??? check for "a = 3"-type assignment, with inferred type.
 
@@ -212,7 +212,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 			Function definition?
 			"int xyz(string a, string b){ ... }
 		*/
-		if(peek_string(identifier_pos.second, "(")){
+		if(peek_string(skip_whitespace(identifier_pos.second), "(")){
 			const pair<pair<string, function_def_t>, string> function = parse_function_definition(ast1, pos);
             return { define_function_statement_t{ function.first.first, function.first.second }, ast2, skip_whitespace(function.second) };
 		}
@@ -223,7 +223,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 			"string hello = f(a) + \"_suffix\";";
 		*/
 
-		else if(peek_string(identifier_pos.second, "=")){
+		else if(peek_string(skip_whitespace(identifier_pos.second), "=")){
 //		else if(ast.parser_i__is_known_type(token_pos.first))
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(ast1, pos);
 			const string& identifier = assignment_statement.first._bind_statement->_identifier;
@@ -447,10 +447,30 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 */
 }
 
-#if false
-??? access member variable
+////////////////////////////		STRUCT SUPPORT
+
+
+
 QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_100", ""){
 	const auto result = program_to_ast({}, k_test_program_100);
+	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+
+/*
+	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
+		make_function_def(
+			type_identifier_t::make_type("string"),
+			vector<arg_t>{},
+			{
+				makie_return_statement(make_constant(value_t(3)))
+			}
+		)
+	));
+*/
+}
+
+#if false
+QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_101", ""){
+	const auto result = program_to_ast({}, k_test_program_101);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
 
 /*

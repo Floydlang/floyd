@@ -201,6 +201,9 @@ namespace floyd_parser {
 	inline expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
 		return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
 	}
+	inline expression_t make_variable_read(const std::string& variable_name){
+		return expression_t(variable_read_expr_t{variable_name});
+	}
 
 
 

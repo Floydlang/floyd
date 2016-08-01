@@ -34,7 +34,7 @@ namespace floyd_parser {
 		auto pos = trim_ends(body_pos.first);
 		while(!pos.empty()){
 			const auto arg_type = read_type(pos);
-			const auto arg_name = read_identifier(arg_type.second);
+			const auto arg_name = read_required_single_symbol(arg_type.second);
 			const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ';');
 
 			const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };

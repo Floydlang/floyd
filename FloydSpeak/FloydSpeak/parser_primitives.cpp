@@ -6,6 +6,7 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
+
 #include "parser_primitives.h"
 
 
@@ -22,6 +23,7 @@
 
 namespace floyd_parser {
 
+using std::vector;
 using std::string;
 using std::pair;
 
@@ -58,17 +60,7 @@ QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 }
 
 
-seq read_type(const string& s){
-	const auto a = skip_whitespace(s);
-	const auto b = read_while(a, type_chars);
-	return b;
-}
 
-seq read_identifier(const string& s){
-	const auto a = skip_whitespace(s);
-	const auto b = read_while(a, identifier_chars);
-	return b;
-}
 
 
 bool is_start_char(char c){
@@ -176,29 +168,83 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 }
 
 
+//////////////////////////////////////		symbol_path
 
 
 
-/*
-	These functions knows about the Floyd syntax.
-*/
+symbol_path operator+(const symbol_path& a, const symbol_path& b){
+	symbol_path result = a;
+	result._entries.insert(result._entries.end(), b._entries.begin(), b._entries.end());
+	return result;
+}
 
+bool operator==(const symbol_path& a, const symbol_path& b){
+	return a._entries == b._entries;
+}
+
+
+
+//////////////////////////////////////		SYMBOLS
+
+
+
+seq read_required_single_symbol(const string& s){
+	const auto a = skip_whitespace(s);
+	const auto b = read_while(a, identifier_chars);
+
+	if(b.first.empty()){
+		throw std::runtime_error("missing identifier");
+	}
+	return b;
+}
+
+QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
+	QUARK_TEST_VERIFY(read_required_single_symbol("\thello\txxx") == seq("hello", "\txxx"));
+}
+
+
+
+pair<symbol_path, string> read_required_symbol_path(const string& s){
+	const auto a = read_required_single_symbol(s);
+	if(peek_compare_char(a.second, '.')){
+		const auto b = read_required_symbol_path(a.second.substr(1));
+		symbol_path path = symbol_path({a.first}) + b.first;
+		return pair<symbol_path, string>(path, b.second);
+	}
+	else{
+		return pair<vector<string>, string>({a.first}, a.second);
+	}
+}
+
+QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello"){
+	QUARK_TEST_VERIFY((read_required_symbol_path("hello") == pair<symbol_path, string>(symbol_path{"hello"}, "")));
+}
+
+QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello.kitty"){
+	QUARK_TEST_VERIFY((read_required_symbol_path("hello.kitty") == pair<symbol_path, string>(symbol_path(vector<string>{"hello", "kitty"}), "")));
+}
+
+QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello.kitty.blitz\txxx"){
+	QUARK_TEST_VERIFY((read_required_symbol_path("hello.kitty.blitz\txxx") == pair<symbol_path, string>(symbol_path({"hello", "kitty", "blitz"}), "\txxx")));
+}
+
+
+
+//////////////////////////////////////		TYPE IDENTIFIERS
+
+
+
+seq read_type(const string& s){
+	const auto a = skip_whitespace(s);
+	const auto b = read_while(a, type_chars);
+	return b;
+}
 
 pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 	const seq type_pos = read_type(s);
 	const auto type = make_type_identifier(type_pos.first);
 	return { type, skip_whitespace(type_pos.second) };
 }
-
-pair<string, string> read_required_identifier(const string& s){
-	const seq type_pos = read_identifier(s);
-	if(type_pos.first.empty()){
-		throw std::runtime_error("missing identifier");
-	}
-	const string identifier = type_pos.first;
-	return { identifier, skip_whitespace(type_pos.second) };
-}
-
 
 /*
 	Validates that this is a legal string, with legal characters. Exception.
