@@ -63,11 +63,40 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s)
 	return { expression_t(lookup_element_expr_t{}), body.second };
 }
 
+/*
+	"f()"
+	"hello(a + b)"
+*/
+pair<expression_t, string> parse_function_call(const parser_i& parser, const string& s) {
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto identifier_pos = read_required_single_symbol(s);
+
+	string p2 = skip_whitespace(identifier_pos.second);
+
+	//	Function call?
+	QUARK_ASSERT(!p2.empty() && p2[0] == '(');
+
+	const auto arg_list_pos = get_balanced(p2);
+	const auto args = trim_ends(arg_list_pos.first);
+
+	p2 = args;
+	vector<std::shared_ptr<expression_t>> args_expressions;
+	while(!p2.empty()){
+		const auto p3 = read_until(skip_whitespace(p2), ",");
+		expression_t arg_expre = parse_expression(parser, p3.first);
+		args_expressions.push_back(std::make_shared<expression_t>(arg_expre));
+		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
+	}
+
+	return { function_call_expr_t{identifier_pos.first, args_expressions }, arg_list_pos.second };
+}
+
 
 /*
 	Non-constant value.
 	Read variable, from lookup, call function, from structure member -- and any mix of these.
-	Returns a variable_read_expr_t with simple or complex address exression in it.
+	Returns a variable_read_expr_t or a function_call_expr_t -- with simple or complex address expression in it.
 
 
 	load "[4]"
@@ -132,29 +161,20 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 
 		//	Function call?
 		if(!p2.empty() && p2[0] == '('){
-			const auto arg_list_pos = get_balanced(p2);
-			const auto args = trim_ends(arg_list_pos.first);
-
-			p2 = args;
-			vector<std::shared_ptr<expression_t>> args_expressions;
-			while(!p2.empty()){
-				const auto p3 = read_until(skip_whitespace(p2), ",");
-				expression_t arg_expre = parse_expression(parser, p3.first);
-				args_expressions.push_back(std::make_shared<expression_t>(arg_expre));
-				p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
-			}
-
-			return { function_call_expr_t{identifier_pos.first, args_expressions }, arg_list_pos.second };
+			return parse_function_call(parser, pos);
 		}
 
 		//	Variable-read.
 		else{
 			const auto resolve = resolve_member_expr_t { identifier_pos.first };
-			return { variable_read_expr_t{ make_shared<expression_t>(resolve) }, p2 };
+			return { variable_read_expr_t{ make_shared<expression_t>(resolve) }, identifier_pos.second };
 		}
 	}
 }
 
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	QUARK_TEST_VERIFY((parse_calculated_value({}, "hello xxx") == pair<expression_t, string>{ make_variable_read(resolve_member_expr_t{"hello"}), " xxx" }));
+}
 
 
 

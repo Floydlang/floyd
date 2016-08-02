@@ -83,6 +83,77 @@ All member functions works like C++ static members and takes *this* as their fir
 ??? invent way to separate member variable names, locals and arguments and globals so they don't collide. Use ".red = red"?
 
 
+######################################
+### separate clients from how struct members & data is implementeed. Allow refactoring.
+
+
+### Separate needs into clearer parts:
+	1) private / public is access control for clients and for struct implementation.
+	
+	2) Clients should not be affected with if a struct value is data or calculated.
+
+
+Clients to a struct should not care if:
+1) A struct property is a data member or a function, ever. Always the same syntax.
+2) a function has private access or not to the struct. Always the same syntax.
+3) a function is part of the struct or provided some other way. Always the same syntax.
+
+////////////////////		MEMBER FUNCTIONS
+
+/*
+	Member functions have access to all private members.
+	You call a member function just like a normal function.
+	There is no special implicit "this" argument to functions.
+	This makes it easier to refactor code: you can change a function from non-member to member without affecting any client code!
+*/
+
+struct pixel {
+	int red;
+	int green;
+	int blue;
+
+	int get_sum(pixel p){
+		return p.red + p.green + p.blue;
+	}
+};
+my_pixel = pixel(100, 200, 255);
+
+int get_intensity(pixel p){
+	return p.get_sum() / 3;
+}
+
+intensity2 = my_pixel.get_intensity();
+sum2 = get_sum(my_pixel);
+
+/*
+	Alternative function call style. Any function with a pixel as first argument (member functions and non-member functions) can all be called like this. The first argument to the function will be the value you're calling the function on.
+*/
+sum1 = my_pixel.get_sum();
+intensity1 = get_intensity(my_pixel);
+
+
+////////////////////////		MEMBER DATA VS GETTERS
+
+
+struct pixel {
+	int red;
+	int green;
+	int blue;
+
+	int intensity(pixel p){
+		return p.red + p.green + p.blue;
+	}
+};
+
+my_pixel = pixel(100, 200, 255);
+assert(my_pixel.red == 100);
+
+
+
+
+
+
+
 ??? split / join cables from visual language
 
 # Struct Examples
