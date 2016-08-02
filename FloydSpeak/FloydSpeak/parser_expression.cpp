@@ -81,15 +81,15 @@ pair<expression_t, string> parse_function_call(const parser_i& parser, const str
 	const auto args = trim_ends(arg_list_pos.first);
 
 	p2 = args;
-	vector<std::shared_ptr<expression_t>> args_expressions;
+	vector<expression_t> args_expressions;
 	while(!p2.empty()){
 		const auto p3 = read_until(skip_whitespace(p2), ",");
-		expression_t arg_expre = parse_expression(parser, p3.first);
-		args_expressions.push_back(std::make_shared<expression_t>(arg_expre));
+		expression_t arg_expr = parse_expression(parser, p3.first);
+		args_expressions.push_back(arg_expr);
 		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 	}
 
-	return { function_call_expr_t{identifier_pos.first, args_expressions }, arg_list_pos.second };
+	return { make_function_call(identifier_pos.first, args_expressions), arg_list_pos.second };
 }
 
 

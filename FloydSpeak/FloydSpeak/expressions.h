@@ -74,7 +74,7 @@ namespace floyd_parser {
 			return _function_name == other._function_name && _inputs == other._inputs;
 		}
 
-
+		//??? Change for a path.
 		const std::string _function_name;
 		const std::vector<std::shared_ptr<expression_t>> _inputs;
 	};
@@ -131,12 +131,6 @@ namespace floyd_parser {
 		}
 
 		expression_t(){
-		}
-
-		expression_t(const function_call_expr_t& value) :
-			_call_function_expr(std::make_shared<function_call_expr_t>(value))
-		{
-			QUARK_ASSERT(check_invariant());
 		}
 
 		expression_t(const resolve_member_expr_t& value) :
@@ -199,7 +193,8 @@ namespace floyd_parser {
 	expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input);
 	expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right);
 
-	expression_t make_function_call();
+	expression_t make_function_call(const std::string& function_name, const std::vector<expression_t>& inputs);
+	expression_t make_function_call(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs);
 
 	expression_t make_variable_read(const expression_t& address_expression);
 	expression_t make_variable_read_variable(const std::string& name);

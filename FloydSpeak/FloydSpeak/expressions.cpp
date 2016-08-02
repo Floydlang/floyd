@@ -122,21 +122,22 @@ expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, con
 
 
 
-expression_t make_function_call(){
+expression_t make_function_call(const std::string& function_name, const std::vector<expression_t>& inputs){
 	expression_t result;
-/*
-	auto input2 = make_shared<expression_t>(input);
+	auto inputs2 = vector<shared_ptr<expression_t>>();
+	for(auto arg: inputs){
+		inputs2.push_back(make_shared<expression_t>(arg));
+	}
 
+	function_call_expr_t r = function_call_expr_t{ function_name, inputs2 };
+	result._call_function_expr = std::make_shared<function_call_expr_t>(r);
+	return result;
+}
 
-
-		const std::string _function_name;
-		const std::vector<std::shared_ptr<expression_t>> _inputs;
-
-
-
-	math_operation1_expr_t r = math_operation1_expr_t{ op, input2 };
-	result._math_operation1_expr = std::make_shared<math_operation1_expr_t>(r);
-*/
+expression_t make_function_call(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs){
+	expression_t result;
+	function_call_expr_t r = function_call_expr_t{ function_name, inputs };
+	result._call_function_expr = std::make_shared<function_call_expr_t>(r);
 	return result;
 }
 

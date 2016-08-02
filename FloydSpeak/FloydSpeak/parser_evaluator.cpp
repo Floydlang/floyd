@@ -254,7 +254,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 		//	All arguments to functions are constants? Else return new call_function, but with simplified arguments.
 		for(const auto& i: simplified_args){
 			if(!i._constant){
-				return { function_call_expr_t{ call_function_expression._function_name, call_function_expression._inputs } };
+				return make_function_call(call_function_expression._function_name, call_function_expression._inputs);
 			}
 		}
 
@@ -263,7 +263,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 		for(const auto& i: simplified_args){
 			constant_args.push_back(*i._constant);
 			if(!i._constant){
-				return { function_call_expr_t{ call_function_expression._function_name, call_function_expression._inputs } };
+				return make_function_call(call_function_expression._function_name, call_function_expression._inputs);
 			}
 		}
 		const value_t result = run_function(ast, *function_def, constant_args);
