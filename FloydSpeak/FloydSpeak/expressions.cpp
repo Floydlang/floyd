@@ -100,11 +100,45 @@ expression_t make_constant(const float f){
 }
 
 
+
 expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
-	return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
+	expression_t result;
+	auto input2 = make_shared<expression_t>(input);
+
+	math_operation1_expr_t r = math_operation1_expr_t{ op, input2 };
+	result._math_operation1_expr = std::make_shared<math_operation1_expr_t>(r);
+	return result;
+}
+
+expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
+	expression_t result;
+	auto left2 = make_shared<expression_t>(left);
+	auto right2 = make_shared<expression_t>(right);
+
+	math_operation2_expr_t r = math_operation2_expr_t{ op, left2, right2 };
+	result._math_operation2_expr = std::make_shared<math_operation2_expr_t>(r);
+	return result;
 }
 
 
+
+expression_t make_function_call(){
+	expression_t result;
+/*
+	auto input2 = make_shared<expression_t>(input);
+
+
+
+		const std::string _function_name;
+		const std::vector<std::shared_ptr<expression_t>> _inputs;
+
+
+
+	math_operation1_expr_t r = math_operation1_expr_t{ op, input2 };
+	result._math_operation1_expr = std::make_shared<math_operation1_expr_t>(r);
+*/
+	return result;
+}
 
 
 expression_t make_variable_read(const expression_t& address_expression){

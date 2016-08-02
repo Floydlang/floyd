@@ -43,7 +43,6 @@ namespace floyd_parser {
 		};
 
 		const operation _operation;
-
 		const std::shared_ptr<expression_t> _input;
 	};
 
@@ -62,7 +61,6 @@ namespace floyd_parser {
 		};
 
 		const operation _operation;
-
 		const std::shared_ptr<expression_t> _left;
 		const std::shared_ptr<expression_t> _right;
 	};
@@ -135,17 +133,6 @@ namespace floyd_parser {
 		expression_t(){
 		}
 
-		expression_t(const math_operation1_expr_t& value) :
-			_math_operation1_expr(std::make_shared<math_operation1_expr_t>(value))
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-		expression_t(const math_operation2_expr_t& value) :
-			_math_operation2_expr(std::make_shared<math_operation2_expr_t>(value))
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
 		expression_t(const function_call_expr_t& value) :
 			_call_function_expr(std::make_shared<function_call_expr_t>(value))
 		{
@@ -209,16 +196,10 @@ namespace floyd_parser {
 	expression_t make_constant(const int i);
 	expression_t make_constant(const float f);
 
-
-	inline expression_t make_math_operation2_expr(const math_operation2_expr_t& value){
-		return expression_t(value);
-	}
-
-	inline expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
-		return expression_t(math_operation2_expr_t{op, std::make_shared<expression_t>(left), std::make_shared<expression_t>(right)});
-	}
-
 	expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input);
+	expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right);
+
+	expression_t make_function_call();
 
 	expression_t make_variable_read(const expression_t& address_expression);
 	expression_t make_variable_read_variable(const std::string& name);
