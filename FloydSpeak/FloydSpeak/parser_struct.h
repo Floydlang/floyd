@@ -1,5 +1,5 @@
 //
-//  parser_struct.hpp
+//  parser_struct.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 30/07/16.

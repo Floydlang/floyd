@@ -1,5 +1,5 @@
 //
-//  parser_function.hpp
+//  parser_function.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 30/07/16.
@@ -14,7 +14,7 @@
 #include <string>
 
 #include "parser_types.h"
-#include "parser_value.hpp"
+#include "parser_value.h"
 
 
 namespace floyd_parser {

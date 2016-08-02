@@ -17,9 +17,9 @@
 #include <cmath>
 
 
-#include "parser_evaluator.hpp"
-#include "parser_value.hpp"
-#include "parser_statement.hpp"
+#include "parser_evaluator.h"
+#include "parser_value.h"
+#include "parser_statement.h"
 
 #if true
 

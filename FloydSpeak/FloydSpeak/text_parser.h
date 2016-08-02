@@ -1,5 +1,5 @@
 //
-//  text_parser.hpp
+//  text_parser.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 26/07/16.

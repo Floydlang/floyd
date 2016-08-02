@@ -6,11 +6,11 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_evaluator.hpp"
+#include "parser_evaluator.h"
 
 
-#include "parser_expression.hpp"
-#include "parser_statement.hpp"
+#include "parser_expression.h"
+#include "parser_statement.h"
 #include "floyd_parser.h"
 
 #include <cmath>

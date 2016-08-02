@@ -1,5 +1,5 @@
 //
-//  parser_statement.hpp
+//  parser_statement.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 26/07/16.
@@ -17,7 +17,8 @@
 
 #include "parser_types.h"
 #include "parser_primitives.h"
-#include "parser_expression.hpp"
+#include "parser_expression.h"
+#include "expressions.h"
 
 
 namespace floyd_parser {
@@ -137,8 +138,6 @@ namespace floyd_parser {
 
 
 
-
-
 	/*
 		s:
 			Must start with "return".
@@ -161,7 +160,6 @@ namespace floyd_parser {
 		...can contain trailing whitespace.
 	*/
 	std::pair<statement_t, std::string> parse_assignment_statement(const ast_t& ast, const std::string& s);
-
 
 
 

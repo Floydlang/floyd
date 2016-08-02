@@ -1,5 +1,5 @@
 //
-//  runtime_core.hpp
+//  runtime_core.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 24/07/16.

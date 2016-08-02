@@ -12,7 +12,7 @@
 #include "quark.h"
 
 #include "parser_primitives.h"
-#include "parser_statement.hpp"
+#include "parser_statement.h"
 
 namespace floyd_parser {
 

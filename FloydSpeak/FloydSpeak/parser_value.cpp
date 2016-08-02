@@ -6,9 +6,9 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_value.hpp"
+#include "parser_value.h"
 
-#include "parser_statement.hpp"
+#include "parser_statement.h"
 
 
 namespace floyd_parser {

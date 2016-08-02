@@ -1,5 +1,5 @@
 //
-//  parser_primitives.hpp
+//  parser_primitives.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 26/07/16.

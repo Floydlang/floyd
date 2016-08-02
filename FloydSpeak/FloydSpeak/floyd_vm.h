@@ -1,5 +1,5 @@
 //
-//  floyd_vm.hpp
+//  floyd_vm.h
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 10/04/16.

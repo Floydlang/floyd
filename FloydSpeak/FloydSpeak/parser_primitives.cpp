@@ -13,7 +13,7 @@
 #include "text_parser.h"
 
 #include "steady_vector.h"
-#include "parser_value.hpp"
+#include "parser_value.h"
 
 #include <string>
 #include <memory>

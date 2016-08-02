@@ -16,8 +16,8 @@
 
 #include "text_parser.h"
 #include "steady_vector.h"
-#include "parser_expression.hpp"
-#include "parser_statement.hpp"
+#include "parser_expression.h"
+#include "parser_statement.h"
 #include "parser_function.h"
 #include "parser_struct.h"
 
