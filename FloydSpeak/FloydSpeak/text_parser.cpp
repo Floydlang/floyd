@@ -191,5 +191,7 @@ QUARK_UNIT_TEST("", "peek_string()", "", ""){
 
 
 string trim_ends(const string& s){
+	QUARK_ASSERT(s.size() >= 2);
+
 	return s.substr(1, s.size() - 2);
 }

@@ -25,6 +25,92 @@ using std::shared_ptr;
 using std::make_shared;
 
 
+
+
+
+#if false
+seq read_required_single_symbol(const string& s){
+	const auto a = skip_whitespace(s);
+	const auto b = read_while(a, identifier_chars);
+
+	if(b.first.empty()){
+		throw std::runtime_error("missing identifier");
+	}
+	return b;
+}
+
+QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
+	QUARK_TEST_VERIFY(read_required_single_symbol("\thello\txxx") == seq("hello", "\txxx"));
+}
+
+
+pair<symbol_path, string> read_required_symbol_path(const string& s){
+	const auto a = read_required_single_symbol(s);
+	if(peek_compare_char(a.second, '.')){
+		const auto b = read_required_symbol_path(a.second.substr(1));
+		symbol_path path = symbol_path({a.first}) + b.first;
+		return pair<symbol_path, string>(path, b.second);
+	}
+	else{
+		return pair<vector<string>, string>({a.first}, a.second);
+	}
+}
+#endif
+
+
+
+/*
+	"hello xxx"
+	"hello.kitty xxx"
+	"hello.kitty.cat xxx"
+	"[10] xxx"
+	"[10].cat xxx"
+	"hello[10] xxx"
+	"hello["troll"] xxx"
+	"hello["troll"].kitty[10].cat xxx"
+	"hello["troll"][10].cat xxx"
+
+	"[x + f(10)].cat xxx"
+*/
+expression_t parse_symbol_path(const parser_i& parser, const std::string& s){
+	return expression_t();
+#if false
+	const auto a = skip_whitespace(s);
+
+	if(peek_compare_char(a,'[')){
+		const auto body = get_balanced(a);
+		if(body.first.empty()){
+			throw std::runtime_error("Illegal index key");
+		}
+
+		const auto key_expression_s = trim_ends(body.first);
+		expression_t key_expression = parse_expression(parser, key_expression_s);
+		
+
+
+
+	}
+	else{
+	}
+
+	const auto b = read_while(a, identifier_chars);
+
+	if(b.first.empty()){
+		throw std::runtime_error("missing identifier");
+	}
+	return b;
+#endif
+}
+
+QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello"){
+	QUARK_TEST_VERIFY((read_required_symbol_path("hello") == pair<symbol_path, string>(symbol_path{"hello"}, "")));
+}
+
+
+
+
+
+
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = make_math_operation2_expr(math_operation2_expr_t::add, make_constant(3), make_constant(4));
 	const auto b = make_math_operation2_expr(math_operation2_expr_t::add, make_constant(3), make_constant(4));
@@ -123,8 +209,10 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 		"hello.member"
 		"f ()"
 		"f(x + 10)"
+		"node.print(10)"
+		??? can be any expression characters
 	*/
-	else if((identifier_chars + ".").find(pos[0]) != string::npos){
+	else if((identifier_chars + ".[]").find(pos[0]) != string::npos){
 		const auto identifier_pos = read_required_single_symbol(pos);
 
 		string p2 = skip_whitespace(identifier_pos.second);
@@ -382,6 +470,7 @@ void trace(const math_operation2_expr_t& e){
 	trace(*e._left);
 	trace(*e._right);
 }
+
 void trace(const math_operation1_expr_t& e){
 	string s = "math_operation1_expr_t: " + operation_to_string(e._operation);
 	QUARK_SCOPED_TRACE(s);
@@ -395,9 +484,21 @@ void trace(const function_call_expr_t& e){
 		trace(*i);
 	}
 }
+
 void trace(const variable_read_expr_t& e){
-	string s = "variable_read_expr_t: " + e._variable_name;
+	QUARK_TRACE_SS("variable_read_expr_t: " << e._variable_name);
 }
+
+void trace(const resolve_member_expr_t& e){
+	QUARK_TRACE_SS("resolve_member_expr_t: " << e._member_name);
+}
+
+void trace(const lookup_element_expr_t& e){
+	string s = "lookup_element_expr_t: ";
+	QUARK_SCOPED_TRACE(s);
+	trace(*e._lookup_key_expression);
+}
+
 
 
 void trace(const expression_t& e){

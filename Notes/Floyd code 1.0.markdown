@@ -277,7 +277,7 @@ Explicit constructors, member functions and member constants:
 	};
 
 	//	External function, using the same format as member functions.
-	bool is_white(pixel this){ return this == white);
+	bool is_white(pixel this){ return this == white; };
 	
 Usage
 
