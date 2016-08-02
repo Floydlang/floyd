@@ -86,12 +86,10 @@ namespace floyd_parser {
 		Supports reading a named variable, like "int a = 10; print(a);"
 	*/
 	struct variable_read_expr_t {
-		bool operator==(const variable_read_expr_t& other) const{
-			return _variable_name == other._variable_name ;
-		}
+		bool operator==(const variable_read_expr_t& other) const;
 
 
-		const std::string _variable_name;
+		std::shared_ptr<expression_t> _address;
 	};
 
 
@@ -115,11 +113,9 @@ namespace floyd_parser {
 		Looksup using a key. They key can be a sub-expression.
 	*/
 	struct lookup_element_expr_t {
-		bool operator==(const lookup_element_expr_t& other) const{
-			return _lookup_key_expression == other._lookup_key_expression ;
-		}
+		bool operator==(const lookup_element_expr_t& other) const;
 
-		std::shared_ptr<expression_t> _lookup_key_expression;
+		std::shared_ptr<expression_t> _lookup_key;
 	};
 
 
@@ -243,6 +239,15 @@ namespace floyd_parser {
 		return _operation == other._operation && *_input == *other._input;
 	}
 
+	inline bool variable_read_expr_t::operator==(const variable_read_expr_t& other) const{
+		return *_address == *other._address ;
+	}
+
+	inline bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
+		return *_lookup_key == *other._lookup_key ;
+	}
+
+
 
 	//////////////////////////////////////////////////		make specific expressions
 
@@ -261,8 +266,8 @@ namespace floyd_parser {
 	inline expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
 		return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
 	}
-	inline expression_t make_variable_read(const std::string& variable_name){
-		return expression_t(variable_read_expr_t{variable_name});
+	inline expression_t make_variable_read(const expression_t& address_expresion){
+		return expression_t(variable_read_expr_t{std::make_shared<expression_t>(address_expresion)});
 	}
 
 

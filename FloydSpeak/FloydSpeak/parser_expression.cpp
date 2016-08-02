@@ -42,7 +42,6 @@ pair<symbol_path, string> read_required_symbol_path(const string& s){
 }
 #endif
 
-
 /*
 	[10]
 	[f(3)]
@@ -66,23 +65,11 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s)
 
 
 /*
-	"hello xxx"
-	"hello.kitty xxx"
-	"hello.kitty.cat xxx"
-	"[10] xxx"
-	"[10].cat xxx"
-	"hello[10] xxx"
-	"hello["troll"] xxx"
-	"hello["troll"].kitty[10].cat xxx"
-	"hello["troll"][10].cat xxx"
-
-	"[x + f(10)].cat xxx"
-	"hello[10].func(3).cat xxx"
-*/
-/*
 	Non-constant value.
 	Read variable, from lookup, call function, from structure member -- and any mix of these.
-	
+	Returns a variable_read_expr_t with simple or complex address exression in it.
+
+
 	load "[4]"
 
 	call "f()"
@@ -99,6 +86,20 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s)
 		)
 	].next["hello"].tail[10]"
 */
+/*
+	"hello xxx"
+	"hello.kitty xxx"
+	"hello.kitty.cat xxx"
+	"[10] xxx"
+	"[10].cat xxx"
+	"hello[10] xxx"
+	"hello["troll"] xxx"
+	"hello["troll"].kitty[10].cat xxx"
+	"hello["troll"][10].cat xxx"
+
+	"[x + f(10)].cat xxx"
+	"hello[10].func(3).cat xxx"
+*/
 
 /*
 	Start of identifier: can be variable access or function call.
@@ -111,6 +112,7 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s)
 	??? can be any expression characters
 */
 
+//??? make recursive!!
 pair<expression_t, string> parse_calculated_value(const parser_i& parser, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
@@ -118,7 +120,8 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 
 	//	Lookup? [expression]xxx
 	if(peek_compare_char(pos, '[')){
-		return parse_lookup(parser, pos);
+		const auto lookup = parse_lookup(parser, pos);
+		return { variable_read_expr_t{ make_shared<expression_t>(lookup.first) }, lookup.second };
 	}
 
 	//	variable name || function call
@@ -146,7 +149,8 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 
 		//	Variable-read.
 		else{
-			return { variable_read_expr_t{identifier_pos.first }, p2 };
+			const auto resolve = resolve_member_expr_t { identifier_pos.first };
+			return { variable_read_expr_t{ make_shared<expression_t>(resolve) }, p2 };
 		}
 	}
 }
@@ -318,7 +322,9 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 
 QUARK_UNIT_TESTQ("parse_single", "variable read"){
 	test_parser parser;
-	QUARK_TEST_VERIFY((parse_single({}, "k_my_global") == pair<expression_t, string>(make_variable_read("k_my_global"), "")));
+	const auto a = pair<expression_t, string>(make_variable_read(resolve_member_expr_t{"k_my_global"}), "");
+	const auto b = parse_single({}, "k_my_global");
+	QUARK_TEST_VERIFY(a == b);
 }
 
 #if false
@@ -483,7 +489,9 @@ void trace(const function_call_expr_t& e){
 }
 
 void trace(const variable_read_expr_t& e){
-	QUARK_TRACE_SS("variable_read_expr_t: " << e._variable_name);
+	string s = "variable_read_expr_t: address:";
+	QUARK_SCOPED_TRACE(s);
+	trace(*e._address);
 }
 
 void trace(const resolve_member_expr_t& e){
@@ -493,7 +501,7 @@ void trace(const resolve_member_expr_t& e){
 void trace(const lookup_element_expr_t& e){
 	string s = "lookup_element_expr_t: ";
 	QUARK_SCOPED_TRACE(s);
-	trace(*e._lookup_key_expression);
+	trace(*e._lookup_key);
 }
 
 
@@ -516,6 +524,12 @@ void trace(const expression_t& e){
 	}
 	else if(e._variable_read_expr){
 		trace(*e._variable_read_expr);
+	}
+	else if(e._resolve_member_expr){
+		trace(*e._resolve_member_expr);
+	}
+	else if(e._lookup_element_expr){
+		trace(*e._lookup_element_expr);
 	}
 	else{
 		QUARK_ASSERT(false);
