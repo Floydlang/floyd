@@ -201,10 +201,10 @@ expression_t negate_expression(const expression_t& e){
 	if(e._constant){
 		const value_t& value = *e._constant;
 		if(value.get_type() == make_type_identifier("int")){
-			return make_constant(value_t{-value.get_int()});
+			return make_constant(-value.get_int());
 		}
 		else if(value.get_type() == make_type_identifier("float")){
-			return make_constant(value_t{-value.get_float()});
+			return make_constant(-value.get_float());
 		}
 	}
 
@@ -253,7 +253,7 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 
 		pos = string_constant_pos.second;
 		pos = pos.substr(1);
-		return { value_t{ string_constant_pos.first }, pos };
+		return { make_constant(string_constant_pos.first), pos };
 	}
 
 	// [0-9] and "."  => numeric constant.
@@ -267,12 +267,12 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 		if(number_pos.first.find('.') != string::npos){
 			pos = pos.substr(number_pos.first.size());
 			float value = parse_float(number_pos.first);
-			return { value_t{value}, pos };
+			return { make_constant(value), pos };
 		}
 		else{
 			pos = pos.substr(number_pos.first.size());
 			int value = atoi(number_pos.first.c_str());
-			return { value_t{value}, pos };
+			return { make_constant(value), pos };
 		}
 	}
 
@@ -306,7 +306,7 @@ struct test_parser : public parser_i {
 
 QUARK_UNIT_TESTQ("parse_single", "number"){
 	test_parser parser;
-	QUARK_TEST_VERIFY((parse_single(parser, "9.0") == pair<expression_t, string>(value_t{ 9.0f }, "")));
+	QUARK_TEST_VERIFY((parse_single(parser, "9.0") == pair<expression_t, string>(make_constant(9.0f), "")));
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call"){
@@ -336,7 +336,7 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[0]->_constant);
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[1]->_call_function_expr->_function_name == "f");
 	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[1]->_call_function_expr->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a.first._call_function_expr->_inputs[1]->_call_function_expr->_inputs[0] == value_t(3.14f));
+	QUARK_TEST_VERIFY(*a.first._call_function_expr->_inputs[1]->_call_function_expr->_inputs[0] == make_constant(3.14f));
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
@@ -400,18 +400,18 @@ pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, i
 QUARK_UNIT_TEST("", "parse_atom", "", ""){
 	test_parser parser;
 
-	QUARK_TEST_VERIFY((parse_atom(parser, "0.0", 0) == pair<expression_t, string>(value_t{ 0.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "9.0", 0) == pair<expression_t, string>(value_t{ 9.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "12345.0", 0) == pair<expression_t, string>(value_t{ 12345.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "0.0", 0) == pair<expression_t, string>(make_constant(0.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "9.0", 0) == pair<expression_t, string>(make_constant(9.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "12345.0", 0) == pair<expression_t, string>(make_constant(12345.0f), "")));
 
-	QUARK_TEST_VERIFY((parse_atom(parser, "10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "-10.0", 0) == pair<expression_t, string>(value_t{ -10.0f }, "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "+10.0", 0) == pair<expression_t, string>(value_t{ 10.0f }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "10.0", 0) == pair<expression_t, string>(make_constant(10.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "-10.0", 0) == pair<expression_t, string>(make_constant(-10.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "+10.0", 0) == pair<expression_t, string>(make_constant( 10.0f), "")));
 
-	QUARK_TEST_VERIFY((parse_atom(parser, "4.0+", 0) == pair<expression_t, string>(value_t{ 4.0f }, "+")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "4.0+", 0) == pair<expression_t, string>(make_constant(4.0f), "+")));
 
 
-	QUARK_TEST_VERIFY((parse_atom(parser, "\"hello\"", 0) == pair<expression_t, string>(value_t{ "hello" }, "")));
+	QUARK_TEST_VERIFY((parse_atom(parser, "\"hello\"", 0) == pair<expression_t, string>(make_constant("hello"), "")));
 }
 
 

@@ -332,7 +332,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 			type_identifier_t::make_type("int"),
 			vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }},
 			{
-				makie_return_statement(make_constant(value_t(3)))
+				makie_return_statement(make_constant(3))
 			}
 		)
 	));
@@ -358,7 +358,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 				arg_t{ type_identifier_t::make_type("string"), "z" }
 			},
 			{
-				makie_return_statement(make_constant(value_t(3)))
+				makie_return_statement(make_constant(3))
 			}
 		)
 	));
@@ -388,7 +388,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 				arg_t{ type_identifier_t::make_type("string"), "z" }
 			},
 			{
-				makie_return_statement(make_constant(value_t("test abc")))
+				makie_return_statement(make_constant("test abc"))
 			}
 		)
 	));
@@ -400,7 +400,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 				arg_t{ type_identifier_t::make_type("string"), "args" }
 			},
 			{
-				makie_return_statement(make_constant(value_t(3)))
+				makie_return_statement(make_constant(3))
 			}
 		)
 	));
@@ -426,7 +426,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 				arg_t{ type_identifier_t::make_type("float"), "v" }
 			},
 			{
-				makie_return_statement(make_constant(value_t(13.4f)))
+				makie_return_statement(make_constant(13.4f))
 			}
 		)
 	));

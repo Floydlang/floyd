@@ -252,7 +252,7 @@ function_def_t make_test_function2(){
 			{ make_type_identifier("float"), "b" }
 		},
 		{
-			makie_return_statement(make_constant(value_t("sdf")))
+			makie_return_statement(make_constant("sdf"))
 		}
 	);
 }
@@ -282,7 +282,7 @@ function_def_t make_return5(){
 		make_type_identifier("int"),
 		{ },
 		{
-			makie_return_statement(make_constant(value_t(5)))
+			makie_return_statement(make_constant(5))
 		}
 	);
 }
@@ -293,7 +293,7 @@ function_def_t make_return_hello(){
 		make_type_identifier("int"),
 		{ },
 		{
-			makie_return_statement(make_constant(value_t("hello")))
+			makie_return_statement(make_constant("hello"))
 		}
 	);
 }

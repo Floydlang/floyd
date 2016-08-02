@@ -26,6 +26,61 @@ using std::make_shared;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////		expression_t
+
+
+bool expression_t::operator==(const expression_t& other) const {
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(other.check_invariant());
+
+	if(_constant){
+		return other._constant && *_constant == *other._constant;
+	}
+	else if(_math_operation1_expr){
+		return other._math_operation1_expr && *_math_operation1_expr == *other._math_operation1_expr;
+	}
+	else if(_math_operation2_expr){
+		return other._math_operation2_expr && *_math_operation2_expr == *other._math_operation2_expr;
+	}
+	else if(_call_function_expr){
+		return other._call_function_expr && *_call_function_expr == *other._call_function_expr;
+	}
+	else if(_variable_read_expr){
+		return other._variable_read_expr && *_variable_read_expr == *other._variable_read_expr;
+	}
+	else if(_resolve_member_expr){
+		return other._resolve_member_expr && *_resolve_member_expr == *other._resolve_member_expr;
+	}
+	else if(_lookup_element_expr){
+		return other._lookup_element_expr && *_lookup_element_expr == *other._lookup_element_expr;
+	}
+	else{
+		QUARK_ASSERT(false);
+		return false;
+	}
+}
+
+
+expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
+	return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
+}
+
+
+
+
+
 string operation_to_string(const math_operation2_expr_t::operation& op){
 	if(op == math_operation2_expr_t::add){
 		return "add";
@@ -105,9 +160,6 @@ void trace(const expression_t& e){
 	}
 	else if(e._math_operation1_expr){
 		trace(*e._math_operation1_expr);
-	}
-	else if(e._nop_expr){
-		QUARK_TRACE("NOP");
 	}
 	else if(e._call_function_expr){
 		trace(*e._call_function_expr);

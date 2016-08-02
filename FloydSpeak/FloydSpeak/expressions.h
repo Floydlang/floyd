@@ -24,6 +24,7 @@ namespace floyd_parser {
 	struct statement_t;
 	struct ast_t;
 
+	struct math_operation1_expr_t;
 
 	//////////////////////////////////////////////////		constant expression
 	
@@ -45,7 +46,6 @@ namespace floyd_parser {
 
 		const std::shared_ptr<expression_t> _input;
 	};
-
 
 	//////////////////////////////////////////////////		math_operation2_expr_t
 
@@ -132,13 +132,10 @@ namespace floyd_parser {
 			return true;
 		}
 
-		expression_t() :
-			_nop_expr(true)
-		{
-			QUARK_ASSERT(false);
+		expression_t(){
 		}
 
-
+/*
 		expression_t(const value_t& value) :
 			_constant(std::make_shared<value_t>(value))
 		{
@@ -146,6 +143,7 @@ namespace floyd_parser {
 
 			QUARK_ASSERT(check_invariant());
 		}
+*/
 		expression_t(const math_operation1_expr_t& value) :
 			_math_operation1_expr(std::make_shared<math_operation1_expr_t>(value))
 		{
@@ -184,36 +182,8 @@ namespace floyd_parser {
 
 
 
-		bool operator==(const expression_t& other) const {
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(other.check_invariant());
+		bool operator==(const expression_t& other) const;
 
-			if(_constant){
-				return other._constant && *_constant == *other._constant;
-			}
-			else if(_math_operation1_expr){
-				return other._math_operation1_expr && *_math_operation1_expr == *other._math_operation1_expr;
-			}
-			else if(_math_operation2_expr){
-				return other._math_operation2_expr && *_math_operation2_expr == *other._math_operation2_expr;
-			}
-			else if(_call_function_expr){
-				return other._call_function_expr && *_call_function_expr == *other._call_function_expr;
-			}
-			else if(_variable_read_expr){
-				return other._variable_read_expr && *_variable_read_expr == *other._variable_read_expr;
-			}
-			else if(_resolve_member_expr){
-				return other._resolve_member_expr && *_resolve_member_expr == *other._resolve_member_expr;
-			}
-			else if(_lookup_element_expr){
-				return other._lookup_element_expr && *_lookup_element_expr == *other._lookup_element_expr;
-			}
-			else{
-				QUARK_ASSERT(false);
-				return false;
-			}
-		}
 
 		//////////////////////////		STATE
 
@@ -227,7 +197,6 @@ namespace floyd_parser {
 		std::shared_ptr<variable_read_expr_t> _variable_read_expr;
 		std::shared_ptr<resolve_member_expr_t> _resolve_member_expr;
 		std::shared_ptr<lookup_element_expr_t> _lookup_element_expr;
-		bool _nop_expr = false;
 	};
 
 
@@ -254,8 +223,29 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		make specific expressions
 
 	inline expression_t make_constant(const value_t& value){
-		return expression_t(value);
+		expression_t result;
+		result._constant = std::make_shared<value_t>(value);
+		return result;
 	}
+
+	inline expression_t make_constant(const std::string& s){
+		expression_t result;
+		result._constant = std::make_shared<value_t>(value_t(s));
+		return result;
+	}
+
+	inline expression_t make_constant(const int i){
+		expression_t result;
+		result._constant = std::make_shared<value_t>(value_t(i));
+		return result;
+	}
+
+	inline expression_t make_constant(const float f){
+		expression_t result;
+		result._constant = std::make_shared<value_t>(value_t(f));
+		return result;
+	}
+
 
 	inline expression_t make_math_operation2_expr(const math_operation2_expr_t& value){
 		return expression_t(value);
@@ -265,9 +255,8 @@ namespace floyd_parser {
 		return expression_t(math_operation2_expr_t{op, std::make_shared<expression_t>(left), std::make_shared<expression_t>(right)});
 	}
 
-	inline expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
-		return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
-	}
+	expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input);
+
 	inline expression_t make_variable_read(const expression_t& address_expresion){
 		return expression_t(variable_read_expr_t{std::make_shared<expression_t>(address_expresion)});
 	}

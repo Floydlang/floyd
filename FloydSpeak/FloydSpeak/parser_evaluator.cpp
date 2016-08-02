@@ -181,7 +181,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 			}
 			else if(left_value->get_type() == make_type_identifier("string") && right_value->get_type() == make_type_identifier("string")){
 				if(e2._operation == math_operation2_expr_t::add){
-					return make_constant(value_t(left_value->get_string() + right_value->get_string()));
+					return make_constant(left_value->get_string() + right_value->get_string());
 				}
 				else{
 					throw std::runtime_error("Arithmetics failed.");
@@ -288,9 +288,6 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 		else{
 			return e;
 		}
-	}
-	else if(e._nop_expr){
-		return e;
 	}
 	else{
 		QUARK_ASSERT(false);
