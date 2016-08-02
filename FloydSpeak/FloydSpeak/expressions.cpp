@@ -73,9 +73,53 @@ bool expression_t::operator==(const expression_t& other) const {
 }
 
 
+
+
+expression_t make_constant(const value_t& value){
+	expression_t result;
+	result._constant = std::make_shared<value_t>(value);
+	return result;
+}
+
+expression_t make_constant(const std::string& s){
+	expression_t result;
+	result._constant = std::make_shared<value_t>(value_t(s));
+	return result;
+}
+
+expression_t make_constant(const int i){
+	expression_t result;
+	result._constant = std::make_shared<value_t>(value_t(i));
+	return result;
+}
+
+expression_t make_constant(const float f){
+	expression_t result;
+	result._constant = std::make_shared<value_t>(value_t(f));
+	return result;
+}
+
+
 expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
 	return expression_t(math_operation1_expr_t{op, std::make_shared<expression_t>(input) });
 }
+
+
+
+
+expression_t make_variable_read(const expression_t& address_expression){
+	expression_t result;
+	auto address = make_shared<expression_t>(address_expression);
+	variable_read_expr_t r = variable_read_expr_t{address};
+	result._variable_read_expr = std::make_shared<variable_read_expr_t>(r);
+	return result;
+}
+
+expression_t make_variable_read_variable(const std::string& name){
+	const expression_t resolve(resolve_member_expr_t { name });
+	return make_variable_read(resolve);
+}
+
 
 
 

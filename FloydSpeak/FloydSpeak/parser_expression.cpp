@@ -150,7 +150,7 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 	//	Lookup? [expression]xxx
 	if(peek_compare_char(pos, '[')){
 		const auto lookup = parse_lookup(parser, pos);
-		return { variable_read_expr_t{ make_shared<expression_t>(lookup.first) }, lookup.second };
+		return { make_variable_read(lookup.first), lookup.second };
 	}
 
 	//	variable name || function call
@@ -166,8 +166,7 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 
 		//	Variable-read.
 		else{
-			const auto resolve = resolve_member_expr_t { identifier_pos.first };
-			return { variable_read_expr_t{ make_shared<expression_t>(resolve) }, identifier_pos.second };
+			return { make_variable_read_variable(identifier_pos.first), identifier_pos.second };
 		}
 	}
 }

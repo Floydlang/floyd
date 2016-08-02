@@ -135,15 +135,6 @@ namespace floyd_parser {
 		expression_t(){
 		}
 
-/*
-		expression_t(const value_t& value) :
-			_constant(std::make_shared<value_t>(value))
-		{
-			QUARK_ASSERT(value.check_invariant());
-
-			QUARK_ASSERT(check_invariant());
-		}
-*/
 		expression_t(const math_operation1_expr_t& value) :
 			_math_operation1_expr(std::make_shared<math_operation1_expr_t>(value))
 		{
@@ -161,12 +152,6 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		expression_t(const variable_read_expr_t& value) :
-			_variable_read_expr(std::make_shared<variable_read_expr_t>(value))
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
 		expression_t(const resolve_member_expr_t& value) :
 			_resolve_member_expr(std::make_shared<resolve_member_expr_t>(value))
 		{
@@ -178,9 +163,6 @@ namespace floyd_parser {
 		{
 			QUARK_ASSERT(check_invariant());
 		}
-
-
-
 
 		bool operator==(const expression_t& other) const;
 
@@ -222,29 +204,10 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		make specific expressions
 
-	inline expression_t make_constant(const value_t& value){
-		expression_t result;
-		result._constant = std::make_shared<value_t>(value);
-		return result;
-	}
-
-	inline expression_t make_constant(const std::string& s){
-		expression_t result;
-		result._constant = std::make_shared<value_t>(value_t(s));
-		return result;
-	}
-
-	inline expression_t make_constant(const int i){
-		expression_t result;
-		result._constant = std::make_shared<value_t>(value_t(i));
-		return result;
-	}
-
-	inline expression_t make_constant(const float f){
-		expression_t result;
-		result._constant = std::make_shared<value_t>(value_t(f));
-		return result;
-	}
+	expression_t make_constant(const value_t& value);
+	expression_t make_constant(const std::string& s);
+	expression_t make_constant(const int i);
+	expression_t make_constant(const float f);
 
 
 	inline expression_t make_math_operation2_expr(const math_operation2_expr_t& value){
@@ -257,9 +220,8 @@ namespace floyd_parser {
 
 	expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input);
 
-	inline expression_t make_variable_read(const expression_t& address_expresion){
-		return expression_t(variable_read_expr_t{std::make_shared<expression_t>(address_expresion)});
-	}
+	expression_t make_variable_read(const expression_t& address_expression);
+	expression_t make_variable_read_variable(const std::string& name);
 
 
 
