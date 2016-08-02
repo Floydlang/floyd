@@ -29,21 +29,6 @@ using std::make_shared;
 
 
 #if false
-seq read_required_single_symbol(const string& s){
-	const auto a = skip_whitespace(s);
-	const auto b = read_while(a, identifier_chars);
-
-	if(b.first.empty()){
-		throw std::runtime_error("missing identifier");
-	}
-	return b;
-}
-
-QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
-	QUARK_TEST_VERIFY(read_required_single_symbol("\thello\txxx") == seq("hello", "\txxx"));
-}
-
-
 pair<symbol_path, string> read_required_symbol_path(const string& s){
 	const auto a = read_required_single_symbol(s);
 	if(peek_compare_char(a.second, '.')){
@@ -58,6 +43,27 @@ pair<symbol_path, string> read_required_symbol_path(const string& s){
 #endif
 
 
+/*
+	[10]
+	[f(3)]
+	["troll"]
+
+	Returns a lookup_element_expr_t, including any expression within the brackets.
+*/
+pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s) {
+	QUARK_ASSERT(s.size() > 2);
+
+	const auto pos = skip_whitespace(s);
+	const auto body = get_balanced(pos);
+	if(body.first.empty()){
+		throw std::runtime_error("Illegal index key");
+	}
+
+	const auto key_expression_s = trim_ends(body.first);
+	expression_t key_expression = parse_expression(parser, key_expression_s);
+	return { expression_t(lookup_element_expr_t{}), body.second };
+}
+
 
 /*
 	"hello xxx"
@@ -71,40 +77,83 @@ pair<symbol_path, string> read_required_symbol_path(const string& s){
 	"hello["troll"][10].cat xxx"
 
 	"[x + f(10)].cat xxx"
+	"hello[10].func(3).cat xxx"
 */
-expression_t parse_symbol_path(const parser_i& parser, const std::string& s){
-	return expression_t();
-#if false
-	const auto a = skip_whitespace(s);
+/*
+	Non-constant value.
+	Read variable, from lookup, call function, from structure member -- and any mix of these.
+	
+	load "[4]"
 
-	if(peek_compare_char(a,'[')){
-		const auto body = get_balanced(a);
-		if(body.first.empty()){
-			throw std::runtime_error("Illegal index key");
+	call "f()"
+
+	load "my_global"
+
+	load "my_local"
+
+	load "my_global[
+		f(
+			g(
+				test[3 + f()]
+			)
+		)
+	].next["hello"].tail[10]"
+*/
+
+/*
+	Start of identifier: can be variable access or function call.
+
+	"hello2"
+	"hello.member"
+	"f ()"
+	"f(x + 10)"
+	"node.print(10)"
+	??? can be any expression characters
+*/
+
+pair<expression_t, string> parse_calculated_value(const parser_i& parser, const string& s) {
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto pos = skip_whitespace(s);
+
+	//	Lookup? [expression]xxx
+	if(peek_compare_char(pos, '[')){
+		return parse_lookup(parser, pos);
+	}
+
+	//	variable name || function call
+	else{
+		const auto identifier_pos = read_required_single_symbol(pos);
+
+		string p2 = skip_whitespace(identifier_pos.second);
+
+		//	Function call?
+		if(!p2.empty() && p2[0] == '('){
+			const auto arg_list_pos = get_balanced(p2);
+			const auto args = trim_ends(arg_list_pos.first);
+
+			p2 = args;
+			vector<std::shared_ptr<expression_t>> args_expressions;
+			while(!p2.empty()){
+				const auto p3 = read_until(skip_whitespace(p2), ",");
+				expression_t arg_expre = parse_expression(parser, p3.first);
+				args_expressions.push_back(std::make_shared<expression_t>(arg_expre));
+				p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
+			}
+
+			return { function_call_expr_t{identifier_pos.first, args_expressions }, arg_list_pos.second };
 		}
 
-		const auto key_expression_s = trim_ends(body.first);
-		expression_t key_expression = parse_expression(parser, key_expression_s);
-		
-
-
-
+		//	Variable-read.
+		else{
+			return { variable_read_expr_t{identifier_pos.first }, p2 };
+		}
 	}
-	else{
-	}
-
-	const auto b = read_while(a, identifier_chars);
-
-	if(b.first.empty()){
-		throw std::runtime_error("missing identifier");
-	}
-	return b;
-#endif
 }
 
-QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello"){
-	QUARK_TEST_VERIFY((read_required_symbol_path("hello") == pair<symbol_path, string>(symbol_path{"hello"}, "")));
-}
+
+
+
 
 
 
@@ -164,6 +213,7 @@ float parse_float(const string& pos){
 		"hello2"
 		"hello.member"
 
+		??? []
 	FUTURE
 		- Add lambda / local function
 */
@@ -202,61 +252,8 @@ pair<expression_t, string> parse_single_internal(const parser_i& parser, const s
 		}
 	}
 
-	/*
-		Start of identifier: can be variable access or function call.
-
-		"hello2"
-		"hello.member"
-		"f ()"
-		"f(x + 10)"
-		"node.print(10)"
-		??? can be any expression characters
-	*/
-	else if((identifier_chars + ".[]").find(pos[0]) != string::npos){
-		const auto identifier_pos = read_required_single_symbol(pos);
-
-		string p2 = skip_whitespace(identifier_pos.second);
-
-		//	Function call.
-		if(!p2.empty() && p2[0] == '('){
-			//	Lookup function!
-/*
-???
-			if(!parser.parser_i__is_declared_function(identifier_pos.first)){
-				throw std::runtime_error("Unknown function \"" + identifier_pos.first + "\"");
-			}
-*/
-
-			const auto arg_list_pos = get_balanced(p2);
-			const auto args = trim_ends(arg_list_pos.first);
-
-			p2 = args;
-			vector<std::shared_ptr<expression_t>> args_expressions;
-			while(!p2.empty()){
-				const auto p3 = read_until(skip_whitespace(p2), ",");
-				expression_t arg_expre = parse_expression(parser, p3.first);
-				args_expressions.push_back(std::make_shared<expression_t>(arg_expre));
-				p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
-			}
-			//	??? Check types of arguments and count.
-
-			return { function_call_expr_t{identifier_pos.first, args_expressions }, arg_list_pos.second };
-		}
-
-		//	Variable-read.
-		else{
-/*
-???
-			//	Lookup value!
-			if(!parser.parser_i__is_declared_constant_value(identifier_pos.first)){
-				throw std::runtime_error("Unknown identifier \"" + identifier_pos.first + "\"");
-			}
-*/
-			return { variable_read_expr_t{identifier_pos.first }, p2 };
-		}
-	}
 	else{
-		throw std::runtime_error("EEE_WRONG_CHAR");
+		return parse_calculated_value(parser, pos);
 	}
 }
 
