@@ -118,13 +118,8 @@ namespace floyd_parser {
 
 
 	struct expression_t {
-		public: bool check_invariant() const{
-			return true;
-		}
-
-		expression_t(){
-		}
-
+		public: bool check_invariant() const;
+		expression_t();
 		bool operator==(const expression_t& other) const;
 
 

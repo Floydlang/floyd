@@ -29,26 +29,21 @@ using std::make_shared;
 
 
 
+bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
+	return _operation == other._operation && *_left == *other._left && *_right == *other._right;
+}
 
+bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
+	return _operation == other._operation && *_input == *other._input;
+}
 
+bool variable_read_expr_t::operator==(const variable_read_expr_t& other) const{
+	return *_address == *other._address ;
+}
 
-
-	bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
-		return _operation == other._operation && *_left == *other._left && *_right == *other._right;
-	}
-
-	bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
-		return _operation == other._operation && *_input == *other._input;
-	}
-
-	bool variable_read_expr_t::operator==(const variable_read_expr_t& other) const{
-		return *_address == *other._address ;
-	}
-
-	bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
-		return *_lookup_key == *other._lookup_key ;
-	}
-
+bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
+	return *_lookup_key == *other._lookup_key ;
+}
 
 
 
@@ -56,6 +51,15 @@ using std::make_shared;
 
 //////////////////////////////////////////////////		expression_t
 
+
+
+bool expression_t::check_invariant() const{
+	return true;
+}
+
+expression_t::expression_t(){
+	QUARK_ASSERT(check_invariant());
+}
 
 bool expression_t::operator==(const expression_t& other) const {
 	QUARK_ASSERT(check_invariant());
@@ -92,6 +96,8 @@ bool expression_t::operator==(const expression_t& other) const {
 
 
 expression_t make_constant(const value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
 	expression_t result;
 	result._constant = std::make_shared<value_t>(value);
 	return result;
@@ -118,6 +124,8 @@ expression_t make_constant(const float f){
 
 
 expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
+	QUARK_ASSERT(input.check_invariant());
+
 	expression_t result;
 	auto input2 = make_shared<expression_t>(input);
 
@@ -127,6 +135,9 @@ expression_t make_math_operation1(math_operation1_expr_t::operation op, const ex
 }
 
 expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+
 	expression_t result;
 	auto left2 = make_shared<expression_t>(left);
 	auto right2 = make_shared<expression_t>(right);
@@ -159,6 +170,8 @@ expression_t make_function_call(const std::string& function_name, const std::vec
 
 
 expression_t make_variable_read(const expression_t& address_expression){
+	QUARK_ASSERT(address_expression.check_invariant());
+
 	expression_t result;
 	auto address = make_shared<expression_t>(address_expression);
 	variable_read_expr_t r = variable_read_expr_t{address};
@@ -180,6 +193,8 @@ expression_t make_resolve_member(const std::string& member_name){
 }
 
 expression_t make_lookup(const expression_t& lookup_key){
+	QUARK_ASSERT(lookup_key.check_invariant());
+
 	expression_t result;
 	auto address = make_shared<expression_t>(lookup_key);
 	lookup_element_expr_t r = lookup_element_expr_t{address};
@@ -260,6 +275,8 @@ void trace(const lookup_element_expr_t& e){
 
 
 void trace(const expression_t& e){
+	QUARK_ASSERT(e.check_invariant());
+
 	if(e._constant){
 		trace(*e._constant);
 	}
