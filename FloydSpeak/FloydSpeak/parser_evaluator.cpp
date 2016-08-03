@@ -12,6 +12,7 @@
 #include "parser_expression.h"
 #include "parser_statement.h"
 #include "floyd_parser.h"
+#include "parser_value.h"
 
 #include <cmath>
 

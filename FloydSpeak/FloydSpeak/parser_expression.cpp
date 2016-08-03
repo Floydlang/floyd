@@ -11,6 +11,7 @@
 
 #include "text_parser.h"
 #include "parser_statement.h"
+#include "parser_value.h"
 
 #include <cmath>
 
@@ -60,7 +61,7 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s)
 
 	const auto key_expression_s = trim_ends(body.first);
 	expression_t key_expression = parse_expression(parser, key_expression_s);
-	return { expression_t(lookup_element_expr_t{}), body.second };
+	return { make_lookup(key_expression), body.second };
 }
 
 /*

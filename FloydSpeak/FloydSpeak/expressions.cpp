@@ -10,6 +10,7 @@
 
 #include "text_parser.h"
 #include "parser_statement.h"
+#include "parser_value.h"
 
 #include <cmath>
 
@@ -32,6 +33,21 @@ using std::make_shared;
 
 
 
+	bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
+		return _operation == other._operation && *_left == *other._left && *_right == *other._right;
+	}
+
+	bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
+		return _operation == other._operation && *_input == *other._input;
+	}
+
+	bool variable_read_expr_t::operator==(const variable_read_expr_t& other) const{
+		return *_address == *other._address ;
+	}
+
+	bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
+		return *_lookup_key == *other._lookup_key ;
+	}
 
 
 
@@ -163,6 +179,13 @@ expression_t make_resolve_member(const std::string& member_name){
 	return result;
 }
 
+expression_t make_lookup(const expression_t& lookup_key){
+	expression_t result;
+	auto address = make_shared<expression_t>(lookup_key);
+	lookup_element_expr_t r = lookup_element_expr_t{address};
+	result._lookup_element_expr = std::make_shared<lookup_element_expr_t>(r);
+	return result;
+}
 
 
 

@@ -15,16 +15,10 @@
 #include <vector>
 #include <string>
 
-#include "parser_types.h"
-#include "parser_value.h"
-
 
 namespace floyd_parser {
 	struct expression_t;
-	struct statement_t;
-	struct ast_t;
-
-	struct math_operation1_expr_t;
+	struct value_t;
 
 	//////////////////////////////////////////////////		constant expression
 	
@@ -110,7 +104,7 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		lookup_element_expr_t
 
 	/*
-		Looksup using a key. They key can be a sub-expression.
+		Looks up using a key. They key can be a sub-expression. Can be any type: index, string etc.
 	*/
 	struct lookup_element_expr_t {
 		bool operator==(const lookup_element_expr_t& other) const;
@@ -120,9 +114,7 @@ namespace floyd_parser {
 
 
 
-
-
-//////////////////////////////////////////////////		expression_t
+	//////////////////////////////////////////////////		expression_t
 
 
 	struct expression_t {
@@ -131,12 +123,6 @@ namespace floyd_parser {
 		}
 
 		expression_t(){
-		}
-
-		expression_t(const lookup_element_expr_t& value) :
-			_lookup_element_expr(std::make_shared<lookup_element_expr_t>(value))
-		{
-			QUARK_ASSERT(check_invariant());
 		}
 
 		bool operator==(const expression_t& other) const;
@@ -157,25 +143,6 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////////////////		inlines
-
-
-	inline bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
-		return _operation == other._operation && *_left == *other._left && *_right == *other._right;
-	}
-	inline bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
-		return _operation == other._operation && *_input == *other._input;
-	}
-
-	inline bool variable_read_expr_t::operator==(const variable_read_expr_t& other) const{
-		return *_address == *other._address ;
-	}
-
-	inline bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
-		return *_lookup_key == *other._lookup_key ;
-	}
-
-
 
 	//////////////////////////////////////////////////		make specific expressions
 
@@ -193,8 +160,9 @@ namespace floyd_parser {
 	expression_t make_variable_read(const expression_t& address_expression);
 	expression_t make_variable_read_variable(const std::string& name);
 
-
 	expression_t make_resolve_member(const std::string& member_name);
+
+	expression_t make_lookup(const expression_t& lookup_key);
 
 
 	//////////////////////////////////////////////////		trace()
@@ -208,7 +176,7 @@ namespace floyd_parser {
 	void trace(const lookup_element_expr_t& e);
 	void trace(const expression_t& e);
 
-}
+}	//	floyd_parser
 
 
 #endif /* expressions_hpp */
