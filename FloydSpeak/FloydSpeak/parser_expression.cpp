@@ -168,9 +168,23 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 	}
 }
 
+seq to_seq(const pair<expression_t, string>& p){
+	return seq(to_string(p.first), p.second);
+}
+
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	QUARK_TEST_VERIFY((parse_calculated_value({}, "hello xxx") == pair<expression_t, string>{ make_variable_read_variable("hello"), " xxx" }));
 }
+
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello xxx")), seq("(@read (@resolve 'hello'))", " xxx"));
+}
+
+#if false
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty xxx")), seq("(@read (@resolve 'hello'))", " xxx"));
+}
+#endif
 
 
 

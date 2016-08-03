@@ -171,7 +171,7 @@ namespace floyd_parser {
 	void trace(const lookup_element_expr_t& e);
 	void trace(const expression_t& e);
 
-	std::string expression_to_string(const expression_t& e);
+	std::string to_string(const expression_t& e);
 
 }	//	floyd_parser
 
