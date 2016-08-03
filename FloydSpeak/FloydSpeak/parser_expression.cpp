@@ -25,19 +25,11 @@ using std::make_shared;
 
 
 
-#if false
-pair<symbol_path, string> read_required_symbol_path(const string& s){
-	const auto a = read_required_single_symbol(s);
-	if(peek_compare_char(a.second, '.')){
-		const auto b = read_required_symbol_path(a.second.substr(1));
-		symbol_path path = symbol_path({a.first}) + b.first;
-		return pair<symbol_path, string>(path, b.second);
-	}
-	else{
-		return pair<vector<string>, string>({a.first}, a.second);
-	}
+
+seq to_seq(const pair<expression_t, string>& p){
+	return seq(to_string(p.first), p.second);
 }
-#endif
+
 
 /*
 	[<expression>]...
@@ -195,9 +187,6 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 	}
 }
 
-seq to_seq(const pair<expression_t, string>& p){
-	return seq(to_string(p.first), p.second);
-}
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(to_seq(parse_calculated_value({}, "hello xxx")), seq("(@read (@resolve nullptr 'hello'))", " xxx"));
@@ -211,7 +200,7 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty.cat xxx")), seq("(@read (@resolve (@resolve (@resolve nullptr 'hello') 'kitty') 'cat'))", " xxx"));
 }
 
-
+//??? more tests
 
 
 pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth);
@@ -366,12 +355,10 @@ QUARK_UNIT_TESTQ("parse_single", "variable read"){
 	QUARK_TEST_VERIFY(a == b);
 }
 
-#if false
 QUARK_UNIT_TESTQ("parse_single", "read struct member"){
 	test_parser parser;
-	QUARK_TEST_VERIFY((parse_single(parser, "k_my_global.member") == pair<expression_t, string>(make_variable_read("k_my_global.member"), "")));
+	quark::ut_compare(to_seq(parse_single(parser, "k_my_global.member")),  seq("(@read (@resolve (@resolve nullptr 'k_my_global') 'member'))", ""));
 }
-#endif
 
 
 // Parse a constant or an expression in parenthesis
@@ -492,12 +479,9 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 	QUARK_TEST_VERIFY(a._call_function_expr);
 }
 
-#if false
 QUARK_UNIT_TESTQ("parse_expression()", ""){
-	const auto a = parse_expression({}, "pixel.red");
-	QUARK_TEST_VERIFY(a._variable_read_expr);
+	quark::ut_compare(to_string(parse_expression({}, "pixel.red")), "(@read (@resolve (@resolve nullptr 'pixel') 'red'))");
 }
-#endif
 
 
 

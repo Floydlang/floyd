@@ -133,32 +133,6 @@ namespace floyd_parser {
 
 
 
-
-	//////////////////////////////////////		symbol_path
-
-
-	/*
-		"my_global"
-		"my_global.member"
-	*/
-	struct symbol_path {
-		explicit symbol_path(const std::string& one_level) :
-			_entries({one_level})
-		{
-		}
-		symbol_path(const std::vector<std::string>& entries) :
-			_entries(entries)
-		{
-		}
-		symbol_path(const symbol_path& other) = default;
-
-		std::vector<std::string> _entries;
-	};
-
-	symbol_path operator+(const symbol_path& a, const symbol_path& b);
-	bool operator==(const symbol_path& a, const symbol_path& b);
-
-
 	//////////////////////////////////////		SYMBOLS
 
 	/*
@@ -173,31 +147,14 @@ namespace floyd_parser {
 	*/
 	seq read_required_single_symbol(const std::string& s);
 
-	/*
-		Reads an identifier, like a variable name or function name.
-			"hello xxx"
-			"hello() xxx"
-			"hello+xxx"
-
-		Supports struct members.
-			"hello.my_member xxx"
-			"sprite.image.x xxx"
-	*/
-	std::pair<symbol_path, std::string> read_required_symbol_path(const std::string& s);
-
-
-
 
 	//////////////////////////////////////		TYPE IDENTIFIERS
-
 
 
 	/*
 		Skip leading whitespace, get string while type-char.
 	*/
 	seq read_type(const std::string& s);
-
-
 
 
 	std::pair<type_identifier_t, std::string> read_required_type_identifier(const std::string& s);

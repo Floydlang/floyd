@@ -16,7 +16,6 @@
 
 namespace floyd_parser {
 
-
     struct statement_result_t {
         statement_t _statement;
         ast_t _ast;
@@ -29,27 +28,29 @@ namespace floyd_parser {
 
 
 
-//	Proves we can instantiate a struct.
-const std::string k_test_program_100 =
-	"struct pixel { string s; };"
-	"string main(){\n"
-	"	return \"\";"
-	"}\n";
+	//	Proves we can instantiate a struct.
+	const std::string k_test_program_100 =
+		"struct pixel { string s; };"
+		"string main(){\n"
+		"	return \"\";"
+		"}\n";
 
-//	Proves we can read a struct member variable.
-const std::string k_test_program_101 =
-	"return p.s + a;";
+	//	Proves we can read a struct member variable.
+	const std::string k_test_program_101 =
+		"string main(){\n"
+		"	return p.s + a;"
+		"}\n";
 
 
-/*
-//	Proves we can read a struct member variable.
-const std::string k_test_program_102 =
-	"struct pixel { string s; };"
-	"string main(){\n"
-	"	pixel p = pixel( \"hiya\" );"
-	"	return p.s + a;"
-	"}\n";
-*/
+	/*
+	//	Proves we can read a struct member variable.
+	const std::string k_test_program_102 =
+		"struct pixel { string s; };"
+		"string main(){\n"
+		"	pixel p = pixel( \"hiya\" );"
+		"	return p.s + a;"
+		"}\n";
+	*/
 
 
 }	//	floyd_parser

@@ -275,14 +275,11 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 //		const shared_ptr<expression_t> address = e2._parent_address ? make_shared<expression_t>(evaluate3(ast, *e2._parent_address)) : shared_ptr<expression_t>();
 
 		//??? Very limited addressing!
-		const auto value_ref_expr = evaluate3(ast, *e2._address);
-		if(value_ref_expr._resolve_member_expr && !value_ref_expr._resolve_member_expr->_parent_address){
-		}
-		else{
+		if(!e2._address->_resolve_member_expr || e2._address->_resolve_member_expr->_parent_address){
 			throw std::runtime_error("Cannot resolve read address.");
 		}
 
-		const auto function_name = value_ref_expr._resolve_member_expr->_member_name;
+		const auto function_name = e2._address->_resolve_member_expr->_member_name;
 
 		const auto it = ast._constant_values.find(function_name);
 		QUARK_ASSERT(it != ast._constant_values.end());

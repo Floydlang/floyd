@@ -5,7 +5,7 @@
 
 
 
-#if false
+#if 0
 enum node1_type {
 
 	////////////////////////////////		STATEMENTS

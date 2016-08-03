@@ -468,7 +468,6 @@ QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_100", ""){
 */
 }
 
-#if false
 QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_101", ""){
 	const auto result = program_to_ast({}, k_test_program_101);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
@@ -485,7 +484,6 @@ QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_101", ""){
 	));
 */
 }
-#endif
 
 
 

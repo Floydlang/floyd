@@ -92,7 +92,6 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 
 
 
-#if false
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	auto ast = program_to_ast({},
 		"int main(string args){\n"
@@ -107,11 +106,9 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("Hello, world!") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
 }
-#endif
 
 //### Check return value type.
 
-#if false
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto ast = program_to_ast({},
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
@@ -127,25 +124,19 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
-#endif
 
 
-
-#if false
-QUARK_UNIT_TESTQ("call_function()", "k_test_program_100"){
+QUARK_UNIT_TESTQ("struct", "k_test_program_100"){
 	const auto ast = program_to_ast({}, floyd_parser::k_test_program_100);
 
 	auto vm = vm_t(ast);
-	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, f, {});
-	QUARK_TEST_VERIFY(result == floyd_parser::value_t("hiya friend"));
+	QUARK_TEST_VERIFY(vm._ast._types_collector.lookup_identifier_shallow("pixel"));
 }
-#endif
 
 
 
 /*
-	Quckie that compiles a program and calls its main() with the args.
+	Quickie that compiles a program and calls its main() with the args.
 */
 floyd_parser::value_t run_main(const string& source, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(source.size() > 0);

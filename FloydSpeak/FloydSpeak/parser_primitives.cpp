@@ -168,21 +168,6 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 }
 
 
-//////////////////////////////////////		symbol_path
-
-
-
-symbol_path operator+(const symbol_path& a, const symbol_path& b){
-	symbol_path result = a;
-	result._entries.insert(result._entries.end(), b._entries.begin(), b._entries.end());
-	return result;
-}
-
-bool operator==(const symbol_path& a, const symbol_path& b){
-	return a._entries == b._entries;
-}
-
-
 
 //////////////////////////////////////		SYMBOLS
 
@@ -200,32 +185,6 @@ seq read_required_single_symbol(const string& s){
 
 QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 	QUARK_TEST_VERIFY(read_required_single_symbol("\thello\txxx") == seq("hello", "\txxx"));
-}
-
-
-
-pair<symbol_path, string> read_required_symbol_path(const string& s){
-	const auto a = read_required_single_symbol(s);
-	if(peek_compare_char(a.second, '.')){
-		const auto b = read_required_symbol_path(a.second.substr(1));
-		symbol_path path = symbol_path({a.first}) + b.first;
-		return pair<symbol_path, string>(path, b.second);
-	}
-	else{
-		return pair<vector<string>, string>({a.first}, a.second);
-	}
-}
-
-QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello"){
-	QUARK_TEST_VERIFY((read_required_symbol_path("hello") == pair<symbol_path, string>(symbol_path{"hello"}, "")));
-}
-
-QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello.kitty"){
-	QUARK_TEST_VERIFY((read_required_symbol_path("hello.kitty") == pair<symbol_path, string>(symbol_path(vector<string>{"hello", "kitty"}), "")));
-}
-
-QUARK_UNIT_TESTQ("read_required_single_symbol_path()", "hello.kitty.blitz\txxx"){
-	QUARK_TEST_VERIFY((read_required_symbol_path("hello.kitty.blitz\txxx") == pair<symbol_path, string>(symbol_path({"hello", "kitty", "blitz"}), "\txxx")));
 }
 
 
