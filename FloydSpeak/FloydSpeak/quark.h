@@ -550,6 +550,29 @@ void set_runtime(runtime_i* iRuntime);
 
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
 
+
+
+template <typename T> void ut_compare(const T& a, const T& b){
+	if(a != b){
+		::quark::on_unit_test_failed_hook(
+			::quark::get_runtime(),
+			::quark::source_code_location(__FILE__, __LINE__),
+			QUARK_STRING(a) " != " QUARK_STRING(b)
+		);
+	}
+}
+
+inline void ut_compare(const std::string& a, const std::string& b){
+	if(a != b){
+		::quark::on_unit_test_failed_hook(
+			::quark::get_runtime(),
+			::quark::source_code_location(__FILE__, __LINE__),
+			QUARK_STRING(a) " != " QUARK_STRING(b)
+		);
+	}
+}
+
+
 #else
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).

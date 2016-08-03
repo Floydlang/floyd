@@ -147,7 +147,7 @@ namespace floyd_parser {
 	expression_t make_constant(const float f);
 
 	expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input);
-	expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right);
+	expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right);
 
 	expression_t make_function_call(const std::string& function_name, const std::vector<expression_t>& inputs);
 	expression_t make_function_call(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs);
@@ -170,6 +170,8 @@ namespace floyd_parser {
 	void trace(const resolve_member_expr_t& e);
 	void trace(const lookup_element_expr_t& e);
 	void trace(const expression_t& e);
+
+	std::string expression_to_string(const expression_t& e);
 
 }	//	floyd_parser
 

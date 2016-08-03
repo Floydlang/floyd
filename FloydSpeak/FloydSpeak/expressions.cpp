@@ -29,6 +29,14 @@ using std::make_shared;
 
 
 
+QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
+	const auto a = make_math_operation2(math_operation2_expr_t::add, make_constant(3), make_constant(4));
+	const auto b = make_math_operation2(math_operation2_expr_t::add, make_constant(3), make_constant(4));
+	QUARK_TEST_VERIFY(a == b);
+}
+
+
+
 bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
 	return _operation == other._operation && *_left == *other._left && *_right == *other._right;
 }
@@ -134,7 +142,7 @@ expression_t make_math_operation1(math_operation1_expr_t::operation op, const ex
 	return result;
 }
 
-expression_t make_math_operation2_expr(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
+expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -206,16 +214,16 @@ expression_t make_lookup(const expression_t& lookup_key){
 
 string operation_to_string(const math_operation2_expr_t::operation& op){
 	if(op == math_operation2_expr_t::add){
-		return "add";
+		return "+";
 	}
 	else if(op == math_operation2_expr_t::subtract){
-		return "subtract";
+		return "-";
 	}
 	else if(op == math_operation2_expr_t::multiply){
-		return "multiply";
+		return "*";
 	}
 	else if(op == math_operation2_expr_t::divide){
-		return "divide";
+		return "/";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -224,7 +232,7 @@ string operation_to_string(const math_operation2_expr_t::operation& op){
 
 string operation_to_string(const math_operation1_expr_t::operation& op){
 	if(op == math_operation1_expr_t::negate){
-		return "negate";
+		return "neg";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -301,6 +309,67 @@ void trace(const expression_t& e){
 	else{
 		QUARK_ASSERT(false);
 	}
+}
+
+
+
+std::string expression_to_string(const expression_t& e){
+	QUARK_ASSERT(e.check_invariant());
+
+	if(e._constant){
+		return string("(@k ") + e._constant->value_and_type_to_string() + ")";
+	}
+	else if(e._math_operation2_expr){
+		const auto e2 = *e._math_operation2_expr;
+		const auto left = expression_to_string(*e2._left);
+		const auto right = expression_to_string(*e2._right);
+		return string("(@math2 ") + left + operation_to_string(e2._operation) + right + ")";
+	}
+	else if(e._math_operation1_expr){
+		const auto e2 = *e._math_operation1_expr;
+		const auto input = expression_to_string(*e2._input);
+		return string("(@math1 ") + operation_to_string(e2._operation) + input + ")";
+	}
+
+	/*
+		If inputs are constant, replace function call with a constant!
+	*/
+	else if(e._call_function_expr){
+		const auto& call_function = *e._call_function_expr;
+
+//		const auto& function_def = ast._types_collector.resolve_function_type(call_function_expression._function_name);
+
+		string  args;
+		for(const auto& i: call_function._inputs){
+			const auto arg_expr = expression_to_string(*i);
+			args = args + arg_expr + " ";
+		}
+		return string("(@call ") + "\"" + call_function._function_name + "\"(" + args + "))";
+	}
+	else if(e._variable_read_expr){
+		const auto e2 = *e._variable_read_expr;
+		const auto address = expression_to_string(*e2._address);
+		return string("(@read ") + address + ")";
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+QUARK_UNIT_TESTQ("expression_to_string()", "constants"){
+	quark::ut_compare(expression_to_string(make_constant(13)), "(@k <int> 13)");
+	quark::ut_compare(expression_to_string(make_constant("xyz")), "(@k <string> xyz)");
+	quark::ut_compare(expression_to_string(make_constant(14.0f)), "(@k <float> 14.000000)");
+}
+
+QUARK_UNIT_TESTQ("expression_to_string()", "math2"){
+	quark::ut_compare(
+		expression_to_string(
+			make_math_operation2(math_operation2_expr_t::operation::add, make_constant(2), make_constant(3))),
+		"(@math2 (@k <int> 2)+(@k <int> 3))"
+	);
+
 }
 
 

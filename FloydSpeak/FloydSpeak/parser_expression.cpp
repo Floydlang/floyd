@@ -8,13 +8,11 @@
 
 #include "parser_expression.h"
 
-
 #include "text_parser.h"
 #include "parser_statement.h"
 #include "parser_value.h"
 
 #include <cmath>
-
 
 namespace floyd_parser {
 
@@ -24,8 +22,6 @@ using std::string;
 using std::vector;
 using std::shared_ptr;
 using std::make_shared;
-
-
 
 
 
@@ -179,20 +175,6 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 
 
 
-
-
-
-
-
-QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
-	const auto a = make_math_operation2_expr(math_operation2_expr_t::add, make_constant(3), make_constant(4));
-	const auto b = make_math_operation2_expr(math_operation2_expr_t::add, make_constant(3), make_constant(4));
-	QUARK_TEST_VERIFY(a == b);
-}
-
-
-
-
 pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth);
 
 
@@ -219,7 +201,6 @@ float parse_float(const string& pos){
 	}
 	return res;
 }
-
 
 
 /*
@@ -286,7 +267,6 @@ pair<expression_t, string> parse_single(const parser_i& parser, const string& s)
 	trace(result.first);
 	return result;
 }
-
 
 
 
@@ -394,8 +374,6 @@ pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, i
 
 
 
-
-
 //### more tests here!
 QUARK_UNIT_TEST("", "parse_atom", "", ""){
 	test_parser parser;
@@ -423,10 +401,10 @@ pair<expression_t, string> parse_factors(const parser_i& parser, const string& s
 		const auto op_pos = read_char(pos);
 		const auto expression2_pos = parse_atom(parser, op_pos.second, depth);
 		if(op_pos.first == '/') {
-			result_expression = make_math_operation2_expr(math_operation2_expr_t::divide, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_expr_t::divide, result_expression, expression2_pos.first);
 		}
 		else{
-			result_expression = make_math_operation2_expr(math_operation2_expr_t::multiply, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_expr_t::multiply, result_expression, expression2_pos.first);
 		}
 		pos = skip_whitespace(expression2_pos.second);
 	}
@@ -442,17 +420,16 @@ pair<expression_t, string> parse_summands(const parser_i& parser, const string& 
 
 		const auto expression2_pos = parse_factors(parser, op_pos.second, depth);
 		if(op_pos.first == '-'){
-			result_expression = make_math_operation2_expr(math_operation2_expr_t::subtract, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_expr_t::subtract, result_expression, expression2_pos.first);
 		}
 		else{
-			result_expression = make_math_operation2_expr(math_operation2_expr_t::add, result_expression, expression2_pos.first);
+			result_expression = make_math_operation2(math_operation2_expr_t::add, result_expression, expression2_pos.first);
 		}
 
 		pos = skip_whitespace(expression2_pos.second);
 	}
 	return { result_expression, pos };
 }
-
 
 
 
@@ -484,9 +461,8 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 #endif
 
 
+
 //////////////////////////////////////////////////		test rig
-
-
 
 
 

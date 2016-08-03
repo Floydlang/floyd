@@ -195,7 +195,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 
 		//	Else use a math_operation to make the calculation later. We make a NEW math_operation since sub-nodes may have been evaluated.
 		else{
-			return make_math_operation2_expr(e2._operation, left, right);
+			return make_math_operation2(e2._operation, left, right);
 		}
 	}
 	else if(e._math_operation1_expr){
