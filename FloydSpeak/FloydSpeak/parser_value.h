@@ -168,7 +168,7 @@ namespace floyd_parser {
 				return std::string(temp);
 			}
 			else if(d == "string"){
-				return _string;
+				return std::string("'") + _string + "'";
 			}
 			else if(d == "function_id"){
 				return _function_id;
@@ -184,7 +184,7 @@ namespace floyd_parser {
 		std::string value_and_type_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return "<" + _type.to_string() + "> " + plain_value_to_string();
+			return "<" + _type.to_string() + ">" + plain_value_to_string();
 		}
 
 		public: type_identifier_t get_type() const{

@@ -552,22 +552,22 @@ void set_runtime(runtime_i* iRuntime);
 
 
 
-template <typename T> void ut_compare(const T& a, const T& b){
-	if(a != b){
+template <typename T> void ut_compare(const T& result, const T& expected){
+	if(result != expected){
 		::quark::on_unit_test_failed_hook(
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),
-			QUARK_STRING(a) " != " QUARK_STRING(b)
+			QUARK_STRING(result) " != " QUARK_STRING(expect)
 		);
 	}
 }
 
-inline void ut_compare(const std::string& a, const std::string& b){
-	if(a != b){
+inline void ut_compare(const std::string& result, const std::string& expected){
+	if(result != expected){
 		::quark::on_unit_test_failed_hook(
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),
-			QUARK_STRING(a) " != " QUARK_STRING(b)
+			QUARK_STRING(result) " != " QUARK_STRING(expected)
 		);
 	}
 }

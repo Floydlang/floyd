@@ -232,7 +232,7 @@ string operation_to_string(const math_operation2_expr_t::operation& op){
 
 string operation_to_string(const math_operation1_expr_t::operation& op){
 	if(op == math_operation1_expr_t::negate){
-		return "neg";
+		return "negate";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -342,14 +342,23 @@ std::string expression_to_string(const expression_t& e){
 		string  args;
 		for(const auto& i: call_function._inputs){
 			const auto arg_expr = expression_to_string(*i);
-			args = args + arg_expr + " ";
+			args = args + arg_expr;
 		}
-		return string("(@call ") + "\"" + call_function._function_name + "\"(" + args + "))";
+		return string("(@call ") + "'" + call_function._function_name + "'(" + args + "))";
 	}
 	else if(e._variable_read_expr){
 		const auto e2 = *e._variable_read_expr;
 		const auto address = expression_to_string(*e2._address);
 		return string("(@read ") + address + ")";
+	}
+	else if(e._resolve_member_expr){
+		const auto e2 = *e._resolve_member_expr;
+		return string("(@resolve ") + "'" + e2._member_name + "'" + ")";
+	}
+	else if(e._lookup_element_expr){
+		const auto e2 = *e._lookup_element_expr;
+		const auto lookup_key = expression_to_string(*e2._lookup_key);
+		return string("(@lookup ") + lookup_key + ")";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -358,18 +367,52 @@ std::string expression_to_string(const expression_t& e){
 
 
 QUARK_UNIT_TESTQ("expression_to_string()", "constants"){
-	quark::ut_compare(expression_to_string(make_constant(13)), "(@k <int> 13)");
-	quark::ut_compare(expression_to_string(make_constant("xyz")), "(@k <string> xyz)");
-	quark::ut_compare(expression_to_string(make_constant(14.0f)), "(@k <float> 14.000000)");
+	quark::ut_compare(expression_to_string(make_constant(13)), "(@k <int>13)");
+	quark::ut_compare(expression_to_string(make_constant("xyz")), "(@k <string>'xyz')");
+	quark::ut_compare(expression_to_string(make_constant(14.0f)), "(@k <float>14.000000)");
+}
+
+QUARK_UNIT_TESTQ("expression_to_string()", "math1"){
+	quark::ut_compare(
+		expression_to_string(
+			make_math_operation1(math_operation1_expr_t::operation::negate, make_constant(2))),
+		"(@math1 negate(@k <int>2))"
+	);
 }
 
 QUARK_UNIT_TESTQ("expression_to_string()", "math2"){
 	quark::ut_compare(
 		expression_to_string(
 			make_math_operation2(math_operation2_expr_t::operation::add, make_constant(2), make_constant(3))),
-		"(@math2 (@k <int> 2)+(@k <int> 3))"
+		"(@math2 (@k <int>2)+(@k <int>3))"
 	);
+}
 
+QUARK_UNIT_TESTQ("expression_to_string()", "call"){
+	quark::ut_compare(
+		expression_to_string(
+			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
+		),
+		"(@call 'my_func'((@k <string>'xyz')(@k <int>123)))"
+	);
+}
+
+QUARK_UNIT_TESTQ("expression_to_string()", "read & resolve"){
+	quark::ut_compare(
+		expression_to_string(
+			make_variable_read_variable("param1")
+		),
+		"(@read (@resolve 'param1'))"
+	);
+}
+
+QUARK_UNIT_TESTQ("expression_to_string()", "lookup"){
+	quark::ut_compare(
+		expression_to_string(
+			make_lookup(make_constant("xyz"))
+		),
+		"(@lookup (@k <string>'xyz'))"
+	);
 }
 
 
