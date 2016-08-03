@@ -172,7 +172,7 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	QUARK_TEST_VERIFY((parse_calculated_value({}, "hello xxx") == pair<expression_t, string>{ make_variable_read(resolve_member_expr_t{"hello"}), " xxx" }));
+	QUARK_TEST_VERIFY((parse_calculated_value({}, "hello xxx") == pair<expression_t, string>{ make_variable_read_variable("hello"), " xxx" }));
 }
 
 
@@ -341,7 +341,7 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 
 QUARK_UNIT_TESTQ("parse_single", "variable read"){
 	test_parser parser;
-	const auto a = pair<expression_t, string>(make_variable_read(resolve_member_expr_t{"k_my_global"}), "");
+	const auto a = pair<expression_t, string>(make_variable_read_variable("k_my_global"), "");
 	const auto b = parse_single({}, "k_my_global");
 	QUARK_TEST_VERIFY(a == b);
 }

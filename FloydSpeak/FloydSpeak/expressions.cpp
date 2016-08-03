@@ -151,11 +151,17 @@ expression_t make_variable_read(const expression_t& address_expression){
 }
 
 expression_t make_variable_read_variable(const std::string& name){
-	const expression_t resolve(resolve_member_expr_t { name });
+	const auto resolve = make_resolve_member(name);
 	return make_variable_read(resolve);
 }
 
 
+expression_t make_resolve_member(const std::string& member_name){
+	expression_t result;
+	resolve_member_expr_t r = resolve_member_expr_t{ member_name };
+	result._resolve_member_expr = std::make_shared<resolve_member_expr_t>(r);
+	return result;
+}
 
 
 

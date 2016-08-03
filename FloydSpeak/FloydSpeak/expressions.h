@@ -133,12 +133,6 @@ namespace floyd_parser {
 		expression_t(){
 		}
 
-		expression_t(const resolve_member_expr_t& value) :
-			_resolve_member_expr(std::make_shared<resolve_member_expr_t>(value))
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
 		expression_t(const lookup_element_expr_t& value) :
 			_lookup_element_expr(std::make_shared<lookup_element_expr_t>(value))
 		{
@@ -200,6 +194,7 @@ namespace floyd_parser {
 	expression_t make_variable_read_variable(const std::string& name);
 
 
+	expression_t make_resolve_member(const std::string& member_name);
 
 
 	//////////////////////////////////////////////////		trace()
