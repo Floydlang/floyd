@@ -49,8 +49,15 @@ bool variable_read_expr_t::operator==(const variable_read_expr_t& other) const{
 	return *_address == *other._address ;
 }
 
+bool resolve_member_expr_t::operator==(const resolve_member_expr_t& other) const{
+	//	Parent can by null or a proper expression.
+	bool parent = (!_parent_address && !other._parent_address) || (_parent_address && other._parent_address && *_parent_address == *other._parent_address);
+	return parent && _member_name == other._member_name ;
+}
+
+
 bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
-	return *_lookup_key == *other._lookup_key ;
+	return *_parent_address == *other._parent_address && *_lookup_key == *other._lookup_key ;
 }
 
 
@@ -62,11 +69,12 @@ bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const
 
 
 bool expression_t::check_invariant() const{
-	return true;
-}
+	QUARK_ASSERT(_debug.size() > 0);
 
-expression_t::expression_t(){
-	QUARK_ASSERT(check_invariant());
+	//	Make sure exactly ONE pointer is set.
+	QUARK_ASSERT((_constant ? 1 : 0) + (_math_operation1_expr ? 1 : 0) + (_math_operation2_expr ? 1 : 0) + (_call_function_expr ? 1 : 0) + (_variable_read_expr ? 1 : 0) + (_resolve_member_expr ? 1 : 0) + (_lookup_element_expr ? 1 : 0) == 1);
+
+	return true;
 }
 
 bool expression_t::operator==(const expression_t& other) const {
@@ -106,27 +114,19 @@ bool expression_t::operator==(const expression_t& other) const {
 expression_t make_constant(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
-	expression_t result;
-	result._constant = std::make_shared<value_t>(value);
-	return result;
+	return std::make_shared<value_t>(value);
 }
 
 expression_t make_constant(const std::string& s){
-	expression_t result;
-	result._constant = std::make_shared<value_t>(value_t(s));
-	return result;
+	return std::make_shared<value_t>(value_t(s));
 }
 
 expression_t make_constant(const int i){
-	expression_t result;
-	result._constant = std::make_shared<value_t>(value_t(i));
-	return result;
+	return std::make_shared<value_t>(value_t(i));
 }
 
 expression_t make_constant(const float f){
-	expression_t result;
-	result._constant = std::make_shared<value_t>(value_t(f));
-	return result;
+	return std::make_shared<value_t>(value_t(f));
 }
 
 
@@ -134,80 +134,79 @@ expression_t make_constant(const float f){
 expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
 	QUARK_ASSERT(input.check_invariant());
 
-	expression_t result;
 	auto input2 = make_shared<expression_t>(input);
-
-	math_operation1_expr_t r = math_operation1_expr_t{ op, input2 };
-	result._math_operation1_expr = std::make_shared<math_operation1_expr_t>(r);
-	return result;
+	return std::make_shared<math_operation1_expr_t>(math_operation1_expr_t{ op, input2 });
 }
 
 expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
-	expression_t result;
 	auto left2 = make_shared<expression_t>(left);
 	auto right2 = make_shared<expression_t>(right);
-
-	math_operation2_expr_t r = math_operation2_expr_t{ op, left2, right2 };
-	result._math_operation2_expr = std::make_shared<math_operation2_expr_t>(r);
-	return result;
+	return std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ op, left2, right2 });
 }
 
 
 
 expression_t make_function_call(const std::string& function_name, const std::vector<expression_t>& inputs){
-	expression_t result;
+	QUARK_ASSERT(function_name.size() > 0);
+	for(const auto arg: inputs){
+		QUARK_ASSERT(arg.check_invariant());
+	}
+
 	auto inputs2 = vector<shared_ptr<expression_t>>();
 	for(auto arg: inputs){
 		inputs2.push_back(make_shared<expression_t>(arg));
 	}
 
 	function_call_expr_t r = function_call_expr_t{ function_name, inputs2 };
-	result._call_function_expr = std::make_shared<function_call_expr_t>(r);
-	return result;
+	const auto a = std::make_shared<function_call_expr_t>(r);
+	return expression_t(a);
 }
 
 expression_t make_function_call(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs){
-	expression_t result;
 	function_call_expr_t r = function_call_expr_t{ function_name, inputs };
-	result._call_function_expr = std::make_shared<function_call_expr_t>(r);
-	return result;
+	const auto a = std::make_shared<function_call_expr_t>(r);
+	return expression_t(a);
 }
 
 
 expression_t make_variable_read(const expression_t& address_expression){
 	QUARK_ASSERT(address_expression.check_invariant());
 
-	expression_t result;
 	auto address = make_shared<expression_t>(address_expression);
-	variable_read_expr_t r = variable_read_expr_t{address};
-	result._variable_read_expr = std::make_shared<variable_read_expr_t>(r);
-	return result;
+	return std::make_shared<variable_read_expr_t>(variable_read_expr_t{address});
 }
 
 expression_t make_variable_read_variable(const std::string& name){
-	const auto resolve = make_resolve_member(name);
-	return make_variable_read(resolve);
+	QUARK_ASSERT(name.size() > 0);
+
+	const auto address = make_resolve_member(name);
+	return make_variable_read(address);
 }
 
+expression_t make_resolve_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name){
+	QUARK_ASSERT(!parent_address || parent_address->check_invariant());
+	QUARK_ASSERT(member_name.size() > 0);
+
+	resolve_member_expr_t r = resolve_member_expr_t{ parent_address, member_name };
+	return std::make_shared<resolve_member_expr_t>(r);
+}
 
 expression_t make_resolve_member(const std::string& member_name){
-	expression_t result;
-	resolve_member_expr_t r = resolve_member_expr_t{ member_name };
-	result._resolve_member_expr = std::make_shared<resolve_member_expr_t>(r);
-	return result;
+	QUARK_ASSERT(member_name.size() > 0);
+
+	return make_resolve_member(shared_ptr<expression_t>(), member_name);
 }
 
-expression_t make_lookup(const expression_t& lookup_key){
+expression_t make_lookup(const expression_t& parent_address, const expression_t& lookup_key){
+	QUARK_ASSERT(parent_address.check_invariant());
 	QUARK_ASSERT(lookup_key.check_invariant());
 
-	expression_t result;
-	auto address = make_shared<expression_t>(lookup_key);
-	lookup_element_expr_t r = lookup_element_expr_t{address};
-	result._lookup_element_expr = std::make_shared<lookup_element_expr_t>(r);
-	return result;
+	auto parent_address2 = make_shared<expression_t>(parent_address);
+	auto lookup_key2 = make_shared<expression_t>(lookup_key);
+	return std::make_shared<lookup_element_expr_t>(lookup_element_expr_t{parent_address2, lookup_key2});
 }
 
 
@@ -314,7 +313,7 @@ void trace(const expression_t& e){
 
 
 std::string to_string(const expression_t& e){
-	QUARK_ASSERT(e.check_invariant());
+//	QUARK_ASSERT(e.check_invariant());
 
 	if(e._constant){
 		return string("(@k ") + e._constant->value_and_type_to_string() + ")";
@@ -353,12 +352,12 @@ std::string to_string(const expression_t& e){
 	}
 	else if(e._resolve_member_expr){
 		const auto e2 = *e._resolve_member_expr;
-		return string("(@resolve ") + "'" + e2._member_name + "'" + ")";
+		return string("(@resolve ") + (e2._parent_address ? to_string(*e2._parent_address) : "nullptr") + " '" + e2._member_name + "'" + ")";
 	}
 	else if(e._lookup_element_expr){
 		const auto e2 = *e._lookup_element_expr;
 		const auto lookup_key = to_string(*e2._lookup_key);
-		return string("(@lookup ") + lookup_key + ")";
+		return string("(@lookup ") + to_string(*e2._parent_address) + " " + lookup_key + ")";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -402,16 +401,16 @@ QUARK_UNIT_TESTQ("to_string()", "read & resolve"){
 		to_string(
 			make_variable_read_variable("param1")
 		),
-		"(@read (@resolve 'param1'))"
+		"(@read (@resolve nullptr 'param1'))"
 	);
 }
 
 QUARK_UNIT_TESTQ("to_string()", "lookup"){
 	quark::ut_compare(
 		to_string(
-			make_lookup(make_constant("xyz"))
+			make_lookup(make_resolve_member("hello"), make_constant("xyz"))
 		),
-		"(@lookup (@k <string>'xyz'))"
+		"(@lookup (@resolve nullptr 'hello') (@k <string>'xyz'))"
 	);
 }
 

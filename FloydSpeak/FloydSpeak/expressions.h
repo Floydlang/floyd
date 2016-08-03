@@ -89,14 +89,15 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		resolve_member_expr_t
 
+
+
 	/*
 		Supports reading a named variable, like "int a = 10; print(a);"
 	*/
 	struct resolve_member_expr_t {
-		bool operator==(const resolve_member_expr_t& other) const{
-			return _member_name == other._member_name ;
-		}
+		bool operator==(const resolve_member_expr_t& other) const;
 
+		std::shared_ptr<expression_t> _parent_address;
 		const std::string _member_name;
 	};
 
@@ -109,18 +110,72 @@ namespace floyd_parser {
 	struct lookup_element_expr_t {
 		bool operator==(const lookup_element_expr_t& other) const;
 
+		std::shared_ptr<expression_t> _parent_address;
 		std::shared_ptr<expression_t> _lookup_key;
 	};
 
 
+	std::string to_string(const expression_t& e);
 
 	//////////////////////////////////////////////////		expression_t
 
 
 	struct expression_t {
 		public: bool check_invariant() const;
-		expression_t();
-		bool operator==(const expression_t& other) const;
+
+
+		public: expression_t(const std::shared_ptr<value_t>& a) :
+			_constant(a)
+		{
+			_debug = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: expression_t(const std::shared_ptr<math_operation1_expr_t>& a) :
+			_math_operation1_expr(a)
+		{
+			_debug = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: expression_t(const std::shared_ptr<math_operation2_expr_t>& a) :
+			_math_operation2_expr(a)
+		{
+			_debug = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: expression_t(const std::shared_ptr<function_call_expr_t>& a) :
+			_call_function_expr(a)
+		{
+			_debug = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: expression_t(const std::shared_ptr<variable_read_expr_t>& a) :
+			_variable_read_expr(a)
+		{
+			_debug = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: expression_t(const std::shared_ptr<resolve_member_expr_t>& a) :
+			_resolve_member_expr(a)
+		{
+			_debug = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: expression_t(const std::shared_ptr<lookup_element_expr_t>& a) :
+			_lookup_element_expr(a)
+		{
+			_debug = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+
+
+		public: bool operator==(const expression_t& other) const;
 
 
 		//////////////////////////		STATE
@@ -128,13 +183,16 @@ namespace floyd_parser {
 		/*
 			Only one of there are used at any time.
 		*/
-		std::shared_ptr<value_t> _constant;
-		std::shared_ptr<math_operation1_expr_t> _math_operation1_expr;
-		std::shared_ptr<math_operation2_expr_t> _math_operation2_expr;
-		std::shared_ptr<function_call_expr_t> _call_function_expr;
-		std::shared_ptr<variable_read_expr_t> _variable_read_expr;
-		std::shared_ptr<resolve_member_expr_t> _resolve_member_expr;
-		std::shared_ptr<lookup_element_expr_t> _lookup_element_expr;
+		public: std::shared_ptr<value_t> _constant;
+		public: std::shared_ptr<math_operation1_expr_t> _math_operation1_expr;
+		public: std::shared_ptr<math_operation2_expr_t> _math_operation2_expr;
+		public: std::shared_ptr<function_call_expr_t> _call_function_expr;
+		public: std::shared_ptr<variable_read_expr_t> _variable_read_expr;
+		public: std::shared_ptr<resolve_member_expr_t> _resolve_member_expr;
+		public: std::shared_ptr<lookup_element_expr_t> _lookup_element_expr;
+
+
+		public: std::string _debug;
 	};
 
 
@@ -155,9 +213,13 @@ namespace floyd_parser {
 	expression_t make_variable_read(const expression_t& address_expression);
 	expression_t make_variable_read_variable(const std::string& name);
 
+	/*
+		parent_address is optional.
+	*/
+	expression_t make_resolve_member(const std::shared_ptr<expression_t>& parent_address, const std::string& member_name);
 	expression_t make_resolve_member(const std::string& member_name);
 
-	expression_t make_lookup(const expression_t& lookup_key);
+	expression_t make_lookup(const expression_t& parent_address, const expression_t& lookup_key);
 
 
 	//////////////////////////////////////////////////		trace()

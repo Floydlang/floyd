@@ -40,13 +40,15 @@ pair<symbol_path, string> read_required_symbol_path(const string& s){
 #endif
 
 /*
+	[<expression>]...
+
 	[10]
 	[f(3)]
 	["troll"]
 
 	Returns a lookup_element_expr_t, including any expression within the brackets.
 */
-pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s) {
+pair<expression_t, string> parse_lookup(const parser_i& parser, const expression_t& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 2);
 
 	const auto pos = skip_whitespace(s);
@@ -57,14 +59,14 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const string& s)
 
 	const auto key_expression_s = trim_ends(body.first);
 	expression_t key_expression = parse_expression(parser, key_expression_s);
-	return { make_lookup(key_expression), body.second };
+	return { make_lookup(leftside, key_expression), body.second };
 }
 
 /*
 	"f()"
 	"hello(a + b)"
 */
-pair<expression_t, string> parse_function_call(const parser_i& parser, const string& s) {
+pair<expression_t, string> parse_function_call(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto identifier_pos = read_required_single_symbol(s);
@@ -89,65 +91,18 @@ pair<expression_t, string> parse_function_call(const parser_i& parser, const str
 	return { make_function_call(identifier_pos.first, args_expressions), arg_list_pos.second };
 }
 
-
-/*
-	Non-constant value.
-	Read variable, from lookup, call function, from structure member -- and any mix of these.
-	Returns a variable_read_expr_t or a function_call_expr_t -- with simple or complex address expression in it.
-
-
-	load "[4]"
-
-	call "f()"
-
-	load "my_global"
-
-	load "my_local"
-
-	load "my_global[
-		f(
-			g(
-				test[3 + f()]
-			)
-		)
-	].next["hello"].tail[10]"
-*/
-/*
-	"hello xxx"
-	"hello.kitty xxx"
-	"hello.kitty.cat xxx"
-	"[10] xxx"
-	"[10].cat xxx"
-	"hello[10] xxx"
-	"hello["troll"] xxx"
-	"hello["troll"].kitty[10].cat xxx"
-	"hello["troll"][10].cat xxx"
-
-	"[x + f(10)].cat xxx"
-	"hello[10].func(3).cat xxx"
-*/
-
-/*
-	Start of identifier: can be variable access or function call.
-
-	"hello2"
-	"hello.member"
-	"f ()"
-	"f(x + 10)"
-	"node.print(10)"
-	??? can be any expression characters
-*/
-
-//??? make recursive!!
-pair<expression_t, string> parse_calculated_value(const parser_i& parser, const string& s) {
+pair<expression_t, string> parse_x(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto pos = skip_whitespace(s);
 
 	//	Lookup? [expression]xxx
 	if(peek_compare_char(pos, '[')){
-		const auto lookup = parse_lookup(parser, pos);
-		return { make_variable_read(lookup.first), lookup.second };
+		if(!leftside){
+			throw std::runtime_error("[] needs to operate on a value");
+		}
+		const auto lookup = parse_lookup(parser, *leftside.get(), pos);
+		return lookup;
 	}
 
 	//	variable name || function call
@@ -158,13 +113,85 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 
 		//	Function call?
 		if(!p2.empty() && p2[0] == '('){
-			return parse_function_call(parser, pos);
+			return parse_function_call(parser, leftside, pos);
 		}
 
-		//	Variable-read.
+		//	Variable.
 		else{
-			return { make_variable_read_variable(identifier_pos.first), identifier_pos.second };
+			return { make_resolve_member(leftside, identifier_pos.first), identifier_pos.second };
 		}
+	}
+}
+
+//		"hello[10].func(3).cat xxx"
+pair<expression_t, string> parse_calculated_value_recursive(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
+	QUARK_ASSERT(s.size() > 0);
+
+	//	Read leftmost element in path. "hello" or "f(1 + 2)" or "[1 + 2]".
+	const auto a = parse_x(parser, leftside, s);
+
+	//	Is there a chain of resolves, like "kitty" in "hello.kitty"?
+	const auto pos = skip_whitespace(a.second);
+	if(peek_compare_char(pos, '.')){
+		return parse_calculated_value_recursive(parser, make_shared<expression_t>(a.first), pos.substr(1));
+	}
+	else if(peek_compare_char(pos, '[')){
+		return parse_calculated_value_recursive(parser, make_shared<expression_t>(a.first), pos);
+	}
+	else{
+		return a;
+	}
+}
+
+
+
+/*
+	Parse non-constant value.
+	This is a recursive function since you can use lookups, function calls, structure members - all nested.
+
+	Each step in the path can be one of these:
+	1) *read* from a variable / constant, structure member.
+	2) Function call
+	3) Looking up using []
+
+	Returns either a variable_read_expr_t or a function_call_expr_t. The hold potentially many levels of nested lookups, function calls and member reads.
+
+	load "[4]"
+	call "f()"
+	load "my_global"
+	load "my_local"
+
+
+	Example:
+	"hello xxx"
+	"hello.kitty xxx"
+	"hello.kitty.cat xxx"
+	"f ()"
+	"f(x + 10)"
+	"hello[10] xxx"
+	"hello["troll"] xxx"
+
+
+	"hello["troll"].kitty[10].cat xxx"
+	"hello["troll"][10].cat xxx"
+	"hello[10].func(3).cat xxx"
+
+	"my_global[
+		f(
+			g(
+				test[3 + f()]
+			)
+		)
+	].next["hello"].tail[10]"
+
+*/
+pair<expression_t, string> parse_calculated_value(const parser_i& parser, const string& s) {
+	const auto a = parse_calculated_value_recursive(parser, shared_ptr<expression_t>(), s);
+	if(a.first._resolve_member_expr){
+		return { make_variable_read(a.first), a.second };
+	}
+	else{
+		return a;
 	}
 }
 
@@ -173,18 +200,16 @@ seq to_seq(const pair<expression_t, string>& p){
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	QUARK_TEST_VERIFY((parse_calculated_value({}, "hello xxx") == pair<expression_t, string>{ make_variable_read_variable("hello"), " xxx" }));
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello xxx")), seq("(@read (@resolve nullptr 'hello'))", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello xxx")), seq("(@read (@resolve 'hello'))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty xxx")), seq("(@read (@resolve (@resolve nullptr 'hello') 'kitty'))", " xxx"));
 }
 
-#if false
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty xxx")), seq("(@read (@resolve 'hello'))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty.cat xxx")), seq("(@read (@resolve (@resolve (@resolve nullptr 'hello') 'kitty') 'cat'))", " xxx"));
 }
-#endif
 
 
 

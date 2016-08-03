@@ -92,8 +92,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 
 
 
-
-
+#if false
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	auto ast = program_to_ast({},
 		"int main(string args){\n"
@@ -108,9 +107,11 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("Hello, world!") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
 }
+#endif
 
 //### Check return value type.
 
+#if false
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto ast = program_to_ast({},
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
@@ -126,7 +127,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
-
+#endif
 
 
 
