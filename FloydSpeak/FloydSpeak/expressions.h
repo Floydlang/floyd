@@ -237,7 +237,7 @@ namespace floyd_parser {
 
 	/*
 	"hello[\"troll\"].kitty[10].cat" =>
-	"(@read (@resolve (@lookup (@resolve (@lookup (@resolve nullptr 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))"
+	"(@load (@resolve (@lookup (@resolve (@lookup (@resolve nullptr 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))"
 
 
 	### Encode using JSON! Easy to copy-paste, user JSON validators etc:

@@ -348,7 +348,7 @@ std::string to_string(const expression_t& e){
 	else if(e._load){
 		const auto e2 = *e._load;
 		const auto address = to_string(*e2._address);
-		return string("(@read ") + address + ")";
+		return string("(@load ") + address + ")";
 	}
 	else if(e._resolve_member){
 		const auto e2 = *e._resolve_member;
@@ -401,7 +401,7 @@ QUARK_UNIT_TESTQ("to_string()", "read & resolve"){
 		to_string(
 			make_load_variable("param1")
 		),
-		"(@read (@resolve nullptr 'param1'))"
+		"(@load (@resolve nullptr 'param1'))"
 	);
 }
 
