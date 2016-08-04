@@ -126,15 +126,15 @@ namespace floyd_parser {
 
 
 	struct function_def_t {
-		bool check_invariant() const;
-		bool operator==(const function_def_t& other) const;
+		public: bool check_invariant() const;
+		public: bool operator==(const function_def_t& other) const;
 
 
-		const type_identifier_t _return_type;
+		public: const type_identifier_t _return_type;
 
 		//??? Should be a struct. Idea: use internal concept for "record" and use it to build Floyd struct, tuple, arg list, local variables / stack frames etc.
-		const std::vector<arg_t> _args;
-		const std::vector<std::shared_ptr<statement_t> > _statements;
+		public: const std::vector<arg_t> _args;
+		public: const std::vector<std::shared_ptr<statement_t> > _statements;
 	};
 
 	void trace(const function_def_t& v);

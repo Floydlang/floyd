@@ -295,7 +295,36 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 //////////////////////////////////////////////////		program_to_ast()
 
 
+/*
+	Take struct definition and creates all types, member variables, constructors, member functions etc.
+*/
+ast_t install_struct_support(const ast_t& ast, const std::string& struct_name, const struct_def_t& struct_def){
+	auto ast2 = ast;
 
+			//??? add constructors and generated stuff.
+
+	ast2._types_collector = ast2._types_collector.define_struct_type(struct_name, struct_def);
+	std::shared_ptr<struct_def_t> s = ast2._types_collector.resolve_struct_type(struct_name);
+
+
+	//	Make constructor with same name as struct.
+	//??? easier to use source code template and compile it.
+	const function_def_t function_def {
+		type_identifier_t::make_type(struct_name),
+		vector<arg_t>{
+			{type_identifier_t::make_type("int"), "this" }
+		},
+		{}
+	};
+//		public: const std::vector<std::shared_ptr<statement_t> > _statements;
+/*
+		else if(statement_pos._statement._define_function){
+			ast2._types_collector = ast2._types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
+		}
+*/
+
+	return ast2;
+}
 
 
 
@@ -311,8 +340,10 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 		ast2 = statement_pos._ast;
 
 		if(statement_pos._statement._define_struct){
-			//??? add constructors and generated stuff.
-			ast2._types_collector = ast2._types_collector.define_struct_type(statement_pos._statement._define_struct->_type_identifier, statement_pos._statement._define_struct->_struct_def);
+			const auto a = statement_pos._statement._define_struct;
+			ast2 = install_struct_support(ast2, a->_type_identifier, a->_struct_def);
+
+//			ast2._types_collector = ast2._types_collector.define_struct_type(statement_pos._statement._define_struct->_type_identifier, statement_pos._statement._define_struct->_struct_def);
 		}
 		else if(statement_pos._statement._define_function){
 			ast2._types_collector = ast2._types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
@@ -421,7 +452,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 }
 
 
-QUARK_UNIT_TESTQ("program_to_ast()", ""){
+QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 	const string kProgram2 =
 	"float testx(float v){\n"
 	"	return 13.4;\n"
@@ -465,26 +496,17 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 
 
 
-namespace {
 
-	//	Proves we can instantiate a struct.
-	const std::string k_test_program_100 =
+QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can instantiate a struct"){
+	const auto result = program_to_ast(
+		{},
 		"struct pixel { string s; };"
 		"string main(){\n"
 		"	return \"\";"
-		"}\n";
-
-	//	Proves we can address a struct member variable.
-	const std::string k_test_program_101 =
-		"string main(){\n"
-		"	return p.s + a;"
-		"}\n";
-
-}
+		"}\n"
+	);
 
 
-QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_100", ""){
-	const auto result = program_to_ast({}, k_test_program_100);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
 
 /*
@@ -500,8 +522,13 @@ QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_100", ""){
 */
 }
 
-QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_101", ""){
-	const auto result = program_to_ast({}, k_test_program_101);
+QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member variable"){
+	const auto result = program_to_ast(
+		{},
+		"string main(){\n"
+		"	return p.s + a;"
+		"}\n"
+	);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
 
 /*
