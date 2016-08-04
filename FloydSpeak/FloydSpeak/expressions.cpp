@@ -45,7 +45,7 @@ bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) con
 	return _operation == other._operation && *_input == *other._input;
 }
 
-bool variable_read_expr_t::operator==(const variable_read_expr_t& other) const{
+bool load_expr_t::operator==(const load_expr_t& other) const{
 	return *_address == *other._address ;
 }
 
@@ -72,7 +72,7 @@ bool expression_t::check_invariant() const{
 	QUARK_ASSERT(_debug.size() > 0);
 
 	//	Make sure exactly ONE pointer is set.
-	QUARK_ASSERT((_constant ? 1 : 0) + (_math_operation1_expr ? 1 : 0) + (_math_operation2_expr ? 1 : 0) + (_call_function_expr ? 1 : 0) + (_variable_read_expr ? 1 : 0) + (_resolve_member_expr ? 1 : 0) + (_lookup_element_expr ? 1 : 0) == 1);
+	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
 
 	return true;
 }
@@ -84,23 +84,23 @@ bool expression_t::operator==(const expression_t& other) const {
 	if(_constant){
 		return other._constant && *_constant == *other._constant;
 	}
-	else if(_math_operation1_expr){
-		return other._math_operation1_expr && *_math_operation1_expr == *other._math_operation1_expr;
+	else if(_math1){
+		return other._math1 && *_math1 == *other._math1;
 	}
-	else if(_math_operation2_expr){
-		return other._math_operation2_expr && *_math_operation2_expr == *other._math_operation2_expr;
+	else if(_math2){
+		return other._math2 && *_math2 == *other._math2;
 	}
-	else if(_call_function_expr){
-		return other._call_function_expr && *_call_function_expr == *other._call_function_expr;
+	else if(_call){
+		return other._call && *_call == *other._call;
 	}
-	else if(_variable_read_expr){
-		return other._variable_read_expr && *_variable_read_expr == *other._variable_read_expr;
+	else if(_load){
+		return other._load && *_load == *other._load;
 	}
-	else if(_resolve_member_expr){
-		return other._resolve_member_expr && *_resolve_member_expr == *other._resolve_member_expr;
+	else if(_resolve_member){
+		return other._resolve_member && *_resolve_member == *other._resolve_member;
 	}
-	else if(_lookup_element_expr){
-		return other._lookup_element_expr && *_lookup_element_expr == *other._lookup_element_expr;
+	else if(_lookup_element){
+		return other._lookup_element && *_lookup_element == *other._lookup_element;
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -172,18 +172,18 @@ expression_t make_function_call(const std::string& function_name, const std::vec
 }
 
 
-expression_t make_variable_read(const expression_t& address_expression){
+expression_t make_load(const expression_t& address_expression){
 	QUARK_ASSERT(address_expression.check_invariant());
 
 	auto address = make_shared<expression_t>(address_expression);
-	return std::make_shared<variable_read_expr_t>(variable_read_expr_t{address});
+	return std::make_shared<load_expr_t>(load_expr_t{address});
 }
 
-expression_t make_variable_read_variable(const std::string& name){
+expression_t make_load_variable(const std::string& name){
 	QUARK_ASSERT(name.size() > 0);
 
 	const auto address = make_resolve_member(name);
-	return make_variable_read(address);
+	return make_load(address);
 }
 
 expression_t make_resolve_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name){
@@ -263,8 +263,8 @@ void trace(const function_call_expr_t& e){
 	}
 }
 
-void trace(const variable_read_expr_t& e){
-	string s = "variable_read_expr_t: address:";
+void trace(const load_expr_t& e){
+	string s = "load_expr_t: address:";
 	QUARK_SCOPED_TRACE(s);
 	trace(*e._address);
 }
@@ -287,23 +287,23 @@ void trace(const expression_t& e){
 	if(e._constant){
 		trace(*e._constant);
 	}
-	else if(e._math_operation2_expr){
-		trace(*e._math_operation2_expr);
+	else if(e._math2){
+		trace(*e._math2);
 	}
-	else if(e._math_operation1_expr){
-		trace(*e._math_operation1_expr);
+	else if(e._math1){
+		trace(*e._math1);
 	}
-	else if(e._call_function_expr){
-		trace(*e._call_function_expr);
+	else if(e._call){
+		trace(*e._call);
 	}
-	else if(e._variable_read_expr){
-		trace(*e._variable_read_expr);
+	else if(e._load){
+		trace(*e._load);
 	}
-	else if(e._resolve_member_expr){
-		trace(*e._resolve_member_expr);
+	else if(e._resolve_member){
+		trace(*e._resolve_member);
 	}
-	else if(e._lookup_element_expr){
-		trace(*e._lookup_element_expr);
+	else if(e._lookup_element){
+		trace(*e._lookup_element);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -318,23 +318,23 @@ std::string to_string(const expression_t& e){
 	if(e._constant){
 		return string("(@k ") + e._constant->value_and_type_to_string() + ")";
 	}
-	else if(e._math_operation2_expr){
-		const auto e2 = *e._math_operation2_expr;
+	else if(e._math2){
+		const auto e2 = *e._math2;
 		const auto left = to_string(*e2._left);
 		const auto right = to_string(*e2._right);
-		return string("(@math2 ") + left + operation_to_string(e2._operation) + right + ")";
+		return string("(@") + operation_to_string(e2._operation) + " " + left + " " + right + ")";
 	}
-	else if(e._math_operation1_expr){
-		const auto e2 = *e._math_operation1_expr;
+	else if(e._math1){
+		const auto e2 = *e._math1;
 		const auto input = to_string(*e2._input);
-		return string("(@math1 ") + operation_to_string(e2._operation) + input + ")";
+		return string("(@") + operation_to_string(e2._operation) + " " + input + ")";
 	}
 
 	/*
 		If inputs are constant, replace function call with a constant!
 	*/
-	else if(e._call_function_expr){
-		const auto& call_function = *e._call_function_expr;
+	else if(e._call){
+		const auto& call_function = *e._call;
 
 //		const auto& function_def = ast._types_collector.resolve_function_type(call_function_expression._function_name);
 
@@ -345,17 +345,17 @@ std::string to_string(const expression_t& e){
 		}
 		return string("(@call ") + "'" + call_function._function_name + "'(" + args + "))";
 	}
-	else if(e._variable_read_expr){
-		const auto e2 = *e._variable_read_expr;
+	else if(e._load){
+		const auto e2 = *e._load;
 		const auto address = to_string(*e2._address);
 		return string("(@read ") + address + ")";
 	}
-	else if(e._resolve_member_expr){
-		const auto e2 = *e._resolve_member_expr;
+	else if(e._resolve_member){
+		const auto e2 = *e._resolve_member;
 		return string("(@resolve ") + (e2._parent_address ? to_string(*e2._parent_address) : "nullptr") + " '" + e2._member_name + "'" + ")";
 	}
-	else if(e._lookup_element_expr){
-		const auto e2 = *e._lookup_element_expr;
+	else if(e._lookup_element){
+		const auto e2 = *e._lookup_element;
 		const auto lookup_key = to_string(*e2._lookup_key);
 		return string("(@lookup ") + to_string(*e2._parent_address) + " " + lookup_key + ")";
 	}
@@ -375,7 +375,7 @@ QUARK_UNIT_TESTQ("to_string()", "math1"){
 	quark::ut_compare(
 		to_string(
 			make_math_operation1(math_operation1_expr_t::operation::negate, make_constant(2))),
-		"(@math1 negate(@k <int>2))"
+		"(@negate (@k <int>2))"
 	);
 }
 
@@ -383,7 +383,7 @@ QUARK_UNIT_TESTQ("to_string()", "math2"){
 	quark::ut_compare(
 		to_string(
 			make_math_operation2(math_operation2_expr_t::operation::add, make_constant(2), make_constant(3))),
-		"(@math2 (@k <int>2)+(@k <int>3))"
+		"(@+ (@k <int>2) (@k <int>3))"
 	);
 }
 
@@ -399,7 +399,7 @@ QUARK_UNIT_TESTQ("to_string()", "call"){
 QUARK_UNIT_TESTQ("to_string()", "read & resolve"){
 	quark::ut_compare(
 		to_string(
-			make_variable_read_variable("param1")
+			make_load_variable("param1")
 		),
 		"(@read (@resolve nullptr 'param1'))"
 	);

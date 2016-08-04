@@ -154,36 +154,25 @@ pair<expression_t, string> parse_calculated_value_recursive(const parser_i& pars
 	load "my_local"
 
 
-	Example:
-	"hello xxx"
-	"hello.kitty xxx"
-	"hello.kitty.cat xxx"
-	"f ()"
-	"f(x + 10)"
-	"hello[10] xxx"
-	"hello["troll"] xxx"
-
-
-	"hello["troll"].kitty[10].cat xxx"
-	"hello["troll"][10].cat xxx"
-	"hello[10].func(3).cat xxx"
-
-	"my_global[
-		f(
-			g(
-				test[3 + f()]
-			)
-		)
-	].next["hello"].tail[10]"
-
+	Examples:
+		"hello xxx"
+		"hello.kitty xxx"
+		"f ()"
+		"f(x + 10)"
+		"hello[10] xxx"
+		"hello["troll"] xxx"
+		"hello["troll"].kitty[10].cat xxx"
 */
 pair<expression_t, string> parse_calculated_value(const parser_i& parser, const string& s) {
 	const auto a = parse_calculated_value_recursive(parser, shared_ptr<expression_t>(), s);
-	if(a.first._resolve_member_expr){
-		return { make_variable_read(a.first), a.second };
+	if(a.first._resolve_member || a.first._lookup_element){
+		return { make_load(a.first), a.second };
+	}
+	else if(a.first._call){
+		return a;
 	}
 	else{
-		return a;
+		QUARK_ASSERT(false);
 	}
 }
 
@@ -200,6 +189,41 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty.cat xxx")), seq("(@read (@resolve (@resolve (@resolve nullptr 'hello') 'kitty') 'cat'))", " xxx"));
 }
 
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(to_seq(parse_calculated_value({}, "f () xxx")), seq("(@call 'f'())", " xxx"));
+}
+
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(to_seq(parse_calculated_value({}, "f (x + 10) xxx")), seq("(@call 'f'((@+ (@read (@resolve nullptr 'x')) (@k <int>10))))", " xxx"));
+}
+
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello[10] xxx")), seq("(@read (@lookup (@resolve nullptr 'hello') (@k <int>10)))", " xxx"));
+}
+
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello[\"troll\"] xxx")), seq("(@read (@lookup (@resolve nullptr 'hello') (@k <string>'troll')))", " xxx"));
+}
+
+//### allow nl and tab when writing result strings.
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(to_seq(parse_calculated_value({}, "hello[\"troll\"].kitty[10].cat xxx")), seq("(@read (@resolve (@lookup (@resolve (@lookup (@resolve nullptr 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))", " xxx"));
+}
+
+/*
+	"hello["troll"].kitty[10].cat xxx"
+	"hello["troll"][10].cat xxx"
+	"hello[10].func(3).cat xxx"
+
+	"my_global[
+		f(
+			g(
+				test[3 + f()]
+			)
+		)
+	].next["hello"].tail[10]"
+
+*/
 //??? more tests
 
 
@@ -320,37 +344,37 @@ QUARK_UNIT_TESTQ("parse_single", "number"){
 QUARK_UNIT_TESTQ("parse_single", "function call"){
 	test_parser parser;
 	const auto a = parse_single(parser, "log(34.5)");
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log");
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a.first._call_function_expr->_inputs[0]->_constant == value_t(34.5f));
+	QUARK_TEST_VERIFY(a.first._call->_function_name == "log");
+	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a.first._call->_inputs[0]->_constant == value_t(34.5f));
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 	test_parser parser;
 	const auto a = parse_single(parser, "log2(\"123\" + \"xyz\", 1000 * 3)");
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[0]->_math_operation2_expr);
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[1]->_math_operation2_expr);
+	QUARK_TEST_VERIFY(a.first._call->_function_name == "log2");
+	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_math2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_math2);
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
 QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 	test_parser parser;
 	const auto a = parse_single(parser, "log2(2.1, f(3.14))");
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_function_name == "log2");
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs.size() == 2);
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[0]->_constant);
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[1]->_call_function_expr->_function_name == "f");
-	QUARK_TEST_VERIFY(a.first._call_function_expr->_inputs[1]->_call_function_expr->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a.first._call_function_expr->_inputs[1]->_call_function_expr->_inputs[0] == make_constant(3.14f));
+	QUARK_TEST_VERIFY(a.first._call->_function_name == "log2");
+	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_constant);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_function_name == "f");
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a.first._call->_inputs[1]->_call->_inputs[0] == make_constant(3.14f));
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
 QUARK_UNIT_TESTQ("parse_single", "variable read"){
 	test_parser parser;
-	const auto a = pair<expression_t, string>(make_variable_read_variable("k_my_global"), "");
+	const auto a = pair<expression_t, string>(make_load_variable("k_my_global"), "");
 	const auto b = parse_single({}, "k_my_global");
 	QUARK_TEST_VERIFY(a == b);
 }
@@ -476,7 +500,7 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
 	const auto a = parse_expression({}, "pixel( \"hiya\" )");
-	QUARK_TEST_VERIFY(a._call_function_expr);
+	QUARK_TEST_VERIFY(a._call);
 }
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
@@ -509,10 +533,5 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 }
 
 
-
-
 }	//	floyd_parser
-
-
-
 

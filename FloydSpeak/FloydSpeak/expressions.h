@@ -74,13 +74,13 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////////////////		variable_read_expr_t
+	//////////////////////////////////////////////////		load_expr_t
 
 	/*
 		Supports reading a named variable, like "int a = 10; print(a);"
 	*/
-	struct variable_read_expr_t {
-		bool operator==(const variable_read_expr_t& other) const;
+	struct load_expr_t {
+		bool operator==(const load_expr_t& other) const;
 
 
 		std::shared_ptr<expression_t> _address;
@@ -132,42 +132,42 @@ namespace floyd_parser {
 		}
 
 		public: expression_t(const std::shared_ptr<math_operation1_expr_t>& a) :
-			_math_operation1_expr(a)
+			_math1(a)
 		{
 			_debug = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<math_operation2_expr_t>& a) :
-			_math_operation2_expr(a)
+			_math2(a)
 		{
 			_debug = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<function_call_expr_t>& a) :
-			_call_function_expr(a)
+			_call(a)
 		{
 			_debug = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<variable_read_expr_t>& a) :
-			_variable_read_expr(a)
+		public: expression_t(const std::shared_ptr<load_expr_t>& a) :
+			_load(a)
 		{
 			_debug = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<resolve_member_expr_t>& a) :
-			_resolve_member_expr(a)
+			_resolve_member(a)
 		{
 			_debug = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<lookup_element_expr_t>& a) :
-			_lookup_element_expr(a)
+			_lookup_element(a)
 		{
 			_debug = to_string(*this);
 			QUARK_ASSERT(check_invariant());
@@ -184,12 +184,12 @@ namespace floyd_parser {
 			Only one of there are used at any time.
 		*/
 		public: std::shared_ptr<value_t> _constant;
-		public: std::shared_ptr<math_operation1_expr_t> _math_operation1_expr;
-		public: std::shared_ptr<math_operation2_expr_t> _math_operation2_expr;
-		public: std::shared_ptr<function_call_expr_t> _call_function_expr;
-		public: std::shared_ptr<variable_read_expr_t> _variable_read_expr;
-		public: std::shared_ptr<resolve_member_expr_t> _resolve_member_expr;
-		public: std::shared_ptr<lookup_element_expr_t> _lookup_element_expr;
+		public: std::shared_ptr<math_operation1_expr_t> _math1;
+		public: std::shared_ptr<math_operation2_expr_t> _math2;
+		public: std::shared_ptr<function_call_expr_t> _call;
+		public: std::shared_ptr<load_expr_t> _load;
+		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
+		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
 
 
 		public: std::string _debug;
@@ -210,8 +210,8 @@ namespace floyd_parser {
 	expression_t make_function_call(const std::string& function_name, const std::vector<expression_t>& inputs);
 	expression_t make_function_call(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs);
 
-	expression_t make_variable_read(const expression_t& address_expression);
-	expression_t make_variable_read_variable(const std::string& name);
+	expression_t make_load(const expression_t& address_expression);
+	expression_t make_load_variable(const std::string& name);
 
 	/*
 		parent_address is optional.
@@ -228,7 +228,7 @@ namespace floyd_parser {
 	void trace(const math_operation1_expr_t& e);
 	void trace(const math_operation2_expr_t& e);
 	void trace(const function_call_expr_t& e);
-	void trace(const variable_read_expr_t& e);
+	void trace(const load_expr_t& e);
 	void trace(const resolve_member_expr_t& e);
 	void trace(const lookup_element_expr_t& e);
 	void trace(const expression_t& e);

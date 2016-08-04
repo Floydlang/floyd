@@ -131,8 +131,8 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	if(e._constant){
 		return e;
 	}
-	else if(e._math_operation2_expr){
-		const auto e2 = *e._math_operation2_expr;
+	else if(e._math2){
+		const auto e2 = *e._math2;
 		const auto left = evaluate3(ast, *e2._left);
 		const auto right = evaluate3(ast, *e2._right);
 
@@ -198,8 +198,8 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 			return make_math_operation2(e2._operation, left, right);
 		}
 	}
-	else if(e._math_operation1_expr){
-		const auto e2 = *e._math_operation1_expr;
+	else if(e._math1){
+		const auto e2 = *e._math1;
 		const auto input = evaluate3(ast, *e2._input);
 
 		//	Replace the with a constant!
@@ -238,8 +238,8 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	/*
 		If inputs are constant, replace function call with a constant!
 	*/
-	else if(e._call_function_expr){
-		const auto& call_function_expression = *e._call_function_expr;
+	else if(e._call){
+		const auto& call_function_expression = *e._call;
 
 		const auto& function_def = ast._types_collector.resolve_function_type(call_function_expression._function_name);
 
@@ -270,16 +270,16 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 		const value_t result = run_function(ast, *function_def, constant_args);
 		return make_constant(result);
 	}
-	else if(e._variable_read_expr){
-		const auto e2 = *e._variable_read_expr;
+	else if(e._load){
+		const auto e2 = *e._load;
 //		const shared_ptr<expression_t> address = e2._parent_address ? make_shared<expression_t>(evaluate3(ast, *e2._parent_address)) : shared_ptr<expression_t>();
 
 		//??? Very limited addressing!
-		if(!e2._address->_resolve_member_expr || e2._address->_resolve_member_expr->_parent_address){
+		if(!e2._address->_resolve_member || e2._address->_resolve_member->_parent_address){
 			throw std::runtime_error("Cannot resolve read address.");
 		}
 
-		const auto function_name = e2._address->_resolve_member_expr->_member_name;
+		const auto function_name = e2._address->_resolve_member->_member_name;
 
 		const auto it = ast._constant_values.find(function_name);
 		QUARK_ASSERT(it != ast._constant_values.end());
@@ -292,10 +292,10 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 			return e;
 		}
 	}
-	else if(e._resolve_member_expr){
+	else if(e._resolve_member){
 		return e;
 	}
-	else if(e._lookup_element_expr){
+	else if(e._lookup_element){
 		return e;
 	}
 	else{

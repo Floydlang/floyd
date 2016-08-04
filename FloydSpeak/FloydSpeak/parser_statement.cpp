@@ -196,9 +196,9 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 	const auto ast = make_test_ast();
 	const auto a = parse_assignment_statement(ast, "float test = log(\"hello\");\n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
-	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call_function_expr->_function_name == "log");
-	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call_function_expr->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_call_function_expr->_inputs[0]->_constant ==value_t("hello"));
+	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_function_name == "log");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_call->_inputs[0]->_constant ==value_t("hello"));
 	QUARK_TEST_VERIFY(a.second == "\n");
 }
 
