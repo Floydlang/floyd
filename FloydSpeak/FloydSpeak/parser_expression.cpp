@@ -30,6 +30,20 @@ seq to_seq(const pair<expression_t, string>& p){
 	return seq(to_string(p.first), p.second);
 }
 
+struct test_parser : public parser_i {
+	public: virtual bool parser_i__is_declared_function(const std::string& s) const{
+		return s == "log" || s == "log2" || s == "f" || s == "return5";
+	}
+	public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const{
+		return false;
+	}
+
+	bool parser_i__is_known_type(const std::string& s) const{
+		return true;
+	}
+};
+
+
 
 /*
 	[<expression>]...
@@ -270,6 +284,61 @@ float parse_float(const string& pos){
 }
 
 
+
+// [0-9] and "."  => numeric constant.
+pair<value_t, string> parse_numeric_constant(const string& s) {
+	QUARK_ASSERT(s.size() > 0);
+	QUARK_ASSERT((number_chars + ".").find(s[0]) != string::npos);
+
+	const auto number_pos = read_while(s, number_chars + ".");
+	if(number_pos.first.empty()){
+		throw std::runtime_error("EEE_WRONG_CHAR");
+	}
+
+	//	If it contains a "." its a float, else an int.
+	if(number_pos.first.find('.') != string::npos){
+		const auto pos = s.substr(number_pos.first.size());
+		float value = parse_float(number_pos.first);
+		return { value_t(value), pos };
+	}
+	else{
+		const auto pos = s.substr(number_pos.first.size());
+		int value = atoi(number_pos.first.c_str());
+		return { value_t(value), pos };
+	}
+}
+
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(parse_numeric_constant("0 xxx"), pair<value_t, string>(value_t(0), " xxx"));
+}
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(parse_numeric_constant("1234 xxx"), pair<value_t, string>(value_t(1234), " xxx"));
+}
+QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+	quark::ut_compare(parse_numeric_constant(".5 xxx"), pair<value_t, string>(value_t(0.5f), " xxx"));
+}
+
+
+seq parse_string_constant(const string& s){
+	QUARK_ASSERT(s.size() > 0);
+	QUARK_ASSERT(s[0] == '\"');
+
+	const auto pos = s.substr(1);
+	const auto string_constant_pos = read_until(pos, "\"");
+	const auto r = string_constant_pos.second.substr(1);
+	return { string_constant_pos.first, r };
+}
+QUARK_UNIT_TESTQ("parse_string_constant()", ""){
+	quark::ut_compare(parse_string_constant("\"\" xxx"), seq("", " xxx"));
+}
+QUARK_UNIT_TESTQ("parse_string_constant()", ""){
+	quark::ut_compare(parse_string_constant("\"hello\" xxx"), seq("hello", " xxx"));
+}
+QUARK_UNIT_TESTQ("parse_string_constant()", ""){
+	quark::ut_compare(parse_string_constant("\".5\" xxx"), seq(".5", " xxx"));
+}
+
+
 /*
 	Constant literal
 		"3"
@@ -287,67 +356,25 @@ float parse_float(const string& pos){
 
 		x[10 + f()]
 */
-pair<expression_t, string> parse_single_internal(const parser_i& parser, const string& s) {
+pair<expression_t, string> parse_single(const parser_i& parser, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
-	string pos = s;
-
 	//	" => string constant.
-	if(peek_string(pos, "\"")){
-		pos = pos.substr(1);
-		const auto string_constant_pos = read_until(pos, "\"");
-
-		pos = string_constant_pos.second;
-		pos = pos.substr(1);
-		return { make_constant(string_constant_pos.first), pos };
+	if(peek_string(s, "\"")){
+		const auto a = parse_string_constant(s);
+		return { make_constant(a.first), a.second };
 	}
 
 	// [0-9] and "."  => numeric constant.
-	else if((number_chars + ".").find(pos[0]) != string::npos){
-		const auto number_pos = read_while(pos, number_chars + ".");
-		if(number_pos.first.empty()){
-			throw std::runtime_error("EEE_WRONG_CHAR");
-		}
-
-		//	If it contains a "." its a float, else an int.
-		if(number_pos.first.find('.') != string::npos){
-			pos = pos.substr(number_pos.first.size());
-			float value = parse_float(number_pos.first);
-			return { make_constant(value), pos };
-		}
-		else{
-			pos = pos.substr(number_pos.first.size());
-			int value = atoi(number_pos.first.c_str());
-			return { make_constant(value), pos };
-		}
+	else if((number_chars + ".").find(s[0]) != string::npos){
+		const auto n = parse_numeric_constant(s);
+		return { make_constant(n.first), n.second };
 	}
 
 	else{
-		return parse_calculated_value(parser, pos);
+		return parse_calculated_value(parser, s);
 	}
 }
-
-pair<expression_t, string> parse_single(const parser_i& parser, const string& s){
-	const auto result = parse_single_internal(parser, s);
-	trace(result.first);
-	return result;
-}
-
-
-
-struct test_parser : public parser_i {
-	public: virtual bool parser_i__is_declared_function(const std::string& s) const{
-		return s == "log" || s == "log2" || s == "f" || s == "return5";
-	}
-	public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const{
-		return false;
-	}
-
-	bool parser_i__is_known_type(const std::string& s) const{
-		return true;
-	}
-};
-
 
 QUARK_UNIT_TESTQ("parse_single", "number"){
 	test_parser parser;
