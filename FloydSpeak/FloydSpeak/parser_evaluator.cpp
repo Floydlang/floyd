@@ -242,6 +242,9 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 		const auto& call_function_expression = *e._call;
 
 		const auto& function_def = ast._types_collector.resolve_function_type(call_function_expression._function_name);
+		if(!function_def){
+			throw std::runtime_error("Failed calling function - unresolved function.");
+		}
 
 		QUARK_ASSERT(function_def->_args.size() == call_function_expression._inputs.size());
 

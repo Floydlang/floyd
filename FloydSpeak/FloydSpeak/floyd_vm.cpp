@@ -154,6 +154,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 #endif
 
 /*
+	Can read struct's member.
+
 	Can define constructor
 	Can call constructor
 
@@ -170,6 +172,9 @@ QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 	Scenario
 */
 
+
+
+//////////////////////////		run_main()
 
 
 /*
