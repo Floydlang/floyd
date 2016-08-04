@@ -44,7 +44,7 @@ struct vm_stack_frame {
 	int _statement_index;
 };
 
-floyd_parser::value_t call_function(vm_t& vm, shared_ptr<const floyd_parser::function_def_t> f, const vector<floyd_parser::value_t>& args){
+floyd_parser::value_t call_function(const vm_t& vm, shared_ptr<const floyd_parser::function_def_t> f, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -126,12 +126,49 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 }
 
 
-QUARK_UNIT_TESTQ("struct", "k_test_program_100"){
-	const auto ast = program_to_ast({}, floyd_parser::k_test_program_100);
 
+//////////////////////////		TEST STRUCT SUPPORT
+
+
+
+pair<vm_t, floyd_parser::value_t> run_program(const string& source){
+	QUARK_ASSERT(source.size() > 0);
+	auto ast = program_to_ast({}, source);
 	auto vm = vm_t(ast);
-	QUARK_TEST_VERIFY(vm._ast._types_collector.lookup_identifier_shallow("pixel"));
+	const auto f = find_global_function(vm, "main");
+	const auto r = call_function(vm, f, {});
+	return {vm, r};
 }
+
+#if false
+QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
+	const auto a = run_program(
+		"struct pixel { string s; };"
+		"string main(){\n"
+		"	pixel p = pixel();"
+		"	return p.s;"
+		"}\n"
+	);
+	QUARK_TEST_VERIFY(a.first._ast._types_collector.lookup_identifier_shallow("pixel"));
+}
+#endif
+
+/*
+	Can define constructor
+	Can call constructor
+
+	Can define member function
+	Can call member function
+
+	Can nest structs
+
+	Can use structs as arguments
+	Can return struct
+
+	Can write to struct
+
+	Scenario
+*/
 
 
 

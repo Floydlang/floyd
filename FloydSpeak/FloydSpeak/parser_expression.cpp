@@ -269,9 +269,7 @@ float parse_float(const string& pos){
 		"hello2"
 		"hello.member"
 
-		??? []
-	FUTURE
-		- Add lambda / local function
+		x[10 + f()]
 */
 pair<expression_t, string> parse_single_internal(const parser_i& parser, const string& s) {
 	QUARK_ASSERT(s.size() > 0);

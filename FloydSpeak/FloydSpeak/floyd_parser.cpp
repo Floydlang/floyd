@@ -451,6 +451,24 @@ QUARK_UNIT_TESTQ("program_to_ast()", ""){
 
 
 
+namespace {
+
+	//	Proves we can instantiate a struct.
+	const std::string k_test_program_100 =
+		"struct pixel { string s; };"
+		"string main(){\n"
+		"	return \"\";"
+		"}\n";
+
+	//	Proves we can address a struct member variable.
+	const std::string k_test_program_101 =
+		"string main(){\n"
+		"	return p.s + a;"
+		"}\n";
+
+}
+
+
 QUARK_UNIT_TEST("", "program_to_ast()", "k_test_program_100", ""){
 	const auto result = program_to_ast({}, k_test_program_100);
 	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
