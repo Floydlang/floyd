@@ -83,7 +83,7 @@ pair<expression_t, string> parse_function_call(const parser_i& parser, const std
 	return { make_function_call(identifier_pos.first, args_expressions), arg_list_pos.second };
 }
 
-pair<expression_t, string> parse_x(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
+pair<expression_t, string> parse_path_node(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto pos = skip_whitespace(s);
@@ -115,12 +115,28 @@ pair<expression_t, string> parse_x(const parser_i& parser, const std::shared_ptr
 	}
 }
 
-//		"hello[10].func(3).cat xxx"
+QUARK_UNIT_TESTQ("parse_path_node()", ""){
+	quark::ut_compare(to_seq(parse_path_node({}, {}, "hello xxx")), seq("(@resolve nullptr 'hello')", " xxx"));
+}
+
+QUARK_UNIT_TESTQ("parse_path_node()", ""){
+	quark::ut_compare(to_seq(parse_path_node({}, {}, "f () xxx")), seq("(@call 'f'())", " xxx"));
+}
+
+QUARK_UNIT_TESTQ("parse_path_node()", ""){
+	quark::ut_compare(to_seq(parse_path_node({}, {}, "f (x + 10) xxx")), seq("(@call 'f'((@+ (@load (@resolve nullptr 'x')) (@k <int>10))))", " xxx"));
+}
+
+QUARK_UNIT_TESTQ("parse_path_node()", ""){
+//	quark::ut_compare(to_seq(parse_path_node({}, {}, "[10] xxx")), seq("(@lookup nullptr (@k <int>10))", " xxx"));
+}
+
+
 pair<expression_t, string> parse_calculated_value_recursive(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	//	Read leftmost element in path. "hello" or "f(1 + 2)" or "[1 + 2]".
-	const auto a = parse_x(parser, leftside, s);
+	const auto a = parse_path_node(parser, leftside, s);
 
 	//	Is there a chain of resolves, like "kitty" in "hello.kitty"?
 	const auto pos = skip_whitespace(a.second);
@@ -211,6 +227,8 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 }
 
 /*
+	??? more tests
+
 	"hello["troll"][10].cat xxx"
 	"hello[10].func(3).cat xxx"
 
@@ -221,9 +239,7 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 			)
 		)
 	].next["hello"].tail[10]"
-
 */
-//??? more tests
 
 
 pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth);

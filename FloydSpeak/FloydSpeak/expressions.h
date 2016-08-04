@@ -127,49 +127,49 @@ namespace floyd_parser {
 		public: expression_t(const std::shared_ptr<value_t>& a) :
 			_constant(a)
 		{
-			_debug = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<math_operation1_expr_t>& a) :
 			_math1(a)
 		{
-			_debug = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<math_operation2_expr_t>& a) :
 			_math2(a)
 		{
-			_debug = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<function_call_expr_t>& a) :
 			_call(a)
 		{
-			_debug = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<load_expr_t>& a) :
 			_load(a)
 		{
-			_debug = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<resolve_member_expr_t>& a) :
 			_resolve_member(a)
 		{
-			_debug = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<lookup_element_expr_t>& a) :
 			_lookup_element(a)
 		{
-			_debug = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -179,6 +179,7 @@ namespace floyd_parser {
 
 
 		//////////////////////////		STATE
+		public: std::string _debug_aaaaaaaaaaaaaaaaaaaaaaa;
 
 		/*
 			Only one of there are used at any time.
@@ -190,9 +191,6 @@ namespace floyd_parser {
 		public: std::shared_ptr<load_expr_t> _load;
 		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
-
-
-		public: std::string _debug;
 	};
 
 

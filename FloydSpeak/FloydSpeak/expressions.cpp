@@ -69,7 +69,7 @@ bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const
 
 
 bool expression_t::check_invariant() const{
-	QUARK_ASSERT(_debug.size() > 0);
+	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
 
 	//	Make sure exactly ONE pointer is set.
 	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
