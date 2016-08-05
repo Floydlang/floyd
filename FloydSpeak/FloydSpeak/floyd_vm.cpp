@@ -171,6 +171,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 		"}\n"
 	);
 	QUARK_TEST_VERIFY(a.first._ast._types_collector.lookup_identifier_shallow("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
 #endif
 

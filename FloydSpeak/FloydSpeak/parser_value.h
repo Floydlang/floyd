@@ -24,23 +24,16 @@ namespace floyd_parser {
 	struct value_t;
 
 
+	//////////////////////////////////////////////////		value_t
 
 
+	struct struct_instance_t {
+		//	??? Remove this points at later time, when we statically track the type of structs OK.
+		const struct_def_t* __def;
 
-
-	//////////////////////////////////////////////////		c_function_spec_t
-
-	/*
-		A C-function callback, used to register C-functions that the Floyd program can call into host.
-	*/
-
-	struct c_function_spec_t {
-		std::vector<arg_t> _arguments;
-		type_identifier_t _return_type;
+		//	Use index of member to find the value.
+		std::vector<value_t> _member_values;
 	};
-
-	typedef value_t (*c_function_t)(const std::vector<arg_t>& args);
-
 
 
 	//////////////////////////////////////////////////		value_t
@@ -48,16 +41,45 @@ namespace floyd_parser {
 	/*
 		Hold a value with an explicit type.
 		Used only for parsing. Encoding is very inefficient.
+
+		null
+		bool
+		int
+		float
+		string
+		struct
+		data_type
 	*/
 
 	struct value_t {
 		public: bool check_invariant() const{
-			QUARK_ASSERT((_type.to_string() == "__data_type_value") == (_data_type_value != nullptr));
+			QUARK_ASSERT((_type.to_string() == "__type_value") == (_type_value != nullptr));
 			return true;
 		}
 
 		public: value_t() :
 			_type("null")
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: explicit value_t(bool value) :
+			_type("bool"),
+			_bool(value)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: explicit value_t(int value) :
+			_type("int"),
+			_int(value)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: value_t(float value) :
+			_type("float"),
+			_float(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -78,36 +100,10 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(int value) :
-			_type("int"),
-			_int(value)
+		public: value_t(const std::shared_ptr<struct_instance_t>& struct_instance) :
+			_type("struct_instance"),
+			_struct_instance(struct_instance)
 		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-		public: value_t(float value) :
-			_type("float"),
-			_float(value)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-		public: value_t(const type_identifier_t& s) :
-			_type("__data_type_value"),
-			_data_type_value(std::make_shared<type_identifier_t>(s))
-		{
-			QUARK_ASSERT(s.check_invariant());
-
-			QUARK_ASSERT(check_invariant());
-		}
-
-		public: value_t(c_function_t f, const c_function_spec_t& spec) :
-			_type("__c_function"),
-			_c_function(f),
-			_c_spec(std::make_shared<c_function_spec_t>(spec))
-		{
-			QUARK_ASSERT(f != nullptr);
-
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -118,8 +114,8 @@ namespace floyd_parser {
 			_int(other._int),
 			_float(other._float),
 			_string(other._string),
-			_function_id(other._function_id),
-			_data_type_value(other._data_type_value)
+			_struct_instance(other._struct_instance),
+			_type_value(other._type_value)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
@@ -142,7 +138,13 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			return _type == other._type && _bool == other._bool && _int == other._int && _float == other._float && _string == other._string && _function_id == other._function_id && _data_type_value == other._data_type_value;
+			return _type == other._type
+				&& _bool == other._bool
+				&& _int == other._int
+				&& _float == other._float
+				&& _string == other._string
+				&& _struct_instance == other._struct_instance
+				&& _type_value == other._type_value;
 		}
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
@@ -151,12 +153,9 @@ namespace floyd_parser {
 			if(d == "null"){
 				return "<null>";
 			}
-	/*
-			else if(_type == "bool"){
+			else if(d == "bool"){
 				return _bool ? "true" : "false";
 			}
-	*/
-
 			else if(d == "int"){
 				char temp[200 + 1];//### Use C++ function instead.
 				sprintf(temp, "%d", _int);
@@ -170,11 +169,11 @@ namespace floyd_parser {
 			else if(d == "string"){
 				return std::string("'") + _string + "'";
 			}
-			else if(d == "function_id"){
-				return _function_id;
+			else if(d == "struct_instance"){
+				return to_signature(*_struct_instance->__def);
 			}
-			else if(d == "__data_type_value"){//???
-				return _data_type_value->to_string();
+			else if(d == "__type_value"){
+				return _type_value->to_string();
 			}
 			else{
 				return "???";
@@ -193,22 +192,102 @@ namespace floyd_parser {
 			return _type;
 		}
 
+		public: bool is_null() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type == type_identifier_t("null");
+		}
+
+		public: bool is_bool() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type == type_identifier_t("bool");
+		}
+
+		public: bool is_int() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type == type_identifier_t("int");
+		}
+
+		public: bool is_float() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type == type_identifier_t("float");
+		}
+
+		public: bool is_string() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type == type_identifier_t("string");
+		}
+
+		public: bool is_struct_instance() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type == type_identifier_t("struct_instance");
+		}
+
+		public: bool is_type_value() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type == type_identifier_t("__type_value");
+		}
+
+
+		//	???	Use enums from type system instead of strings
+		public: bool get_bool() const{
+			QUARK_ASSERT(check_invariant());
+			if(!is_bool()){
+				throw std::runtime_error("Type mismatch!");
+			}
+
+			return _bool;
+		}
+
 		public: int get_int() const{
 			QUARK_ASSERT(check_invariant());
+			if(!is_int()){
+				throw std::runtime_error("Type mismatch!");
+			}
 
 			return _int;
 		}
 
 		public: float get_float() const{
 			QUARK_ASSERT(check_invariant());
+			if(!is_float()){
+				throw std::runtime_error("Type mismatch!");
+			}
 
 			return _float;
 		}
 
 		public: std::string get_string() const{
 			QUARK_ASSERT(check_invariant());
+			if(!is_string()){
+				throw std::runtime_error("Type mismatch!");
+			}
 
 			return _string;
+		}
+
+		public: std::shared_ptr<struct_instance_t> get_struct_instance() const{
+			QUARK_ASSERT(check_invariant());
+			if(!is_struct_instance()){
+				throw std::runtime_error("Type mismatch!");
+			}
+
+			return _struct_instance;
+		}
+
+		public: std::shared_ptr<type_identifier_t> get_type_value() const{
+			QUARK_ASSERT(check_invariant());
+			if(!is_type_value()){
+				throw std::runtime_error("Type mismatch!");
+			}
+
+			return _type_value;
 		}
 
 		public: void swap(value_t& other){
@@ -221,13 +300,42 @@ namespace floyd_parser {
 			std::swap(_int, other._int);
 			std::swap(_float, other._float);
 			std::swap(_string, other._string);
-			std::swap(_function_id, other._function_id);
-			std::swap(_data_type_value, other._data_type_value);
+			std::swap(_struct_instance, other._struct_instance);
+			std::swap(_type_value, other._type_value);
 
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
 		}
 
+		public: static value_t make_default_value(const type_identifier_t& type){
+			if(type == type_identifier_t("null")){
+				return value_t();
+			}
+			else if(type == type_identifier_t("bool")){
+				return value_t(false);
+			}
+			else if(type == type_identifier_t("int")){
+				return value_t(0);
+			}
+			else if(type == type_identifier_t("float")){
+				return value_t(0.0f);
+			}
+			else if(type == type_identifier_t("string")){
+				return value_t("");
+			}
+			//??? Need better way
+			else if(type == type_identifier_t("struct_instance")){
+				QUARK_ASSERT(false);
+				return value_t("");
+			}
+			else if(type == type_identifier_t("__type_value")){
+				QUARK_ASSERT(false);
+				return value_t("");
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
 
 		////////////////		STATE
 
@@ -237,12 +345,9 @@ namespace floyd_parser {
 		private: int _int = 0;
 		private: float _float = 0.0f;
 		private: std::string _string = "";
-		private: std::string _function_id = "";
-		private: std::shared_ptr<type_identifier_t> _data_type_value;
+		private: std::shared_ptr<struct_instance_t> _struct_instance;
+		private: std::shared_ptr<type_identifier_t> _type_value;
 
-
-		private: c_function_t _c_function;
-		private: std::shared_ptr<c_function_spec_t> _c_spec;
 	};
 
 

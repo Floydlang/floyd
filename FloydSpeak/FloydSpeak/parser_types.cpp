@@ -181,7 +181,7 @@ namespace floyd_parser {
 
 		{
 			QUARK_SCOPED_TRACE("return");
-			trace(e._return_type);
+			QUARK_TRACE(e._return_type.to_string());
 		}
 		{
 			trace_vec("arguments", e._args);
@@ -365,6 +365,30 @@ namespace floyd_parser {
 		return s;
 	}
 
+
+
+	std::string to_signature(const struct_def_t& t){
+		QUARK_ASSERT(t.check_invariant());
+
+		const string label = "";
+		string body;
+		for(const auto& member : t._members) {
+			const string member_label = member._identifier;
+			const type_identifier_t typedef_s = member._type;
+			const string member_type = "<" + typedef_s.to_string() + ">";
+
+			//	"<string>first_name"
+			const string member_result = member_type + member_label;
+
+			body = body + member_result + ",";
+		}
+		body = remove_trailing_comma(body);
+
+		return label + "<struct>" + "{" + body + "}";
+	}
+
+
+
 	std::string to_signature(const type_definition_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
@@ -372,20 +396,7 @@ namespace floyd_parser {
 
 		const string label = "";
 		if(t._base_type == k_struct){
-			string body;
-			for(const auto& member : t._struct_def->_members) {
-				const string member_label = member._identifier;
-				const type_identifier_t typedef_s = member._type;
-				const string member_type = "<" + typedef_s.to_string() + ">";
-
-				//	"<string>first_name"
-				const string member_result = member_type + member_label;
-
-				body = body + member_result + ",";
-			}
-			body = remove_trailing_comma(body);
-
-			return label + "<struct>" + "{" + body + "}";
+			return to_signature(*t._struct_def);
 		}
 		else if(t._base_type == k_vector){
 			const auto vector_value_s = "";

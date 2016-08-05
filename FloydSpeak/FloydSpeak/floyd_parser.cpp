@@ -306,12 +306,34 @@ struct alloc_struct_param : public host_data_i {
 	{
 	}
 
+	ast_t _ast;
 	type_identifier_t _struct_name;
 };
 
 
+
+value_t make_struct_instance(const struct_def_t& def){
+	auto instance = make_shared<struct_instance_t>();
+
+	instance->__def = &def;
+	for(int i = 0 ; i < def._members.size() ; i++){
+		value_t value = value_t::make_default_value(def._members[i]._type);
+		instance->_member_values.push_back(value);
+	}
+	return value_t(instance);
+}
+
 value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
-	return {};
+	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
+	const auto struct_name = a._struct_name;
+
+	std::shared_ptr<struct_def_t> b = a._ast._types_collector.resolve_struct_type(struct_name.to_string());
+	if(!b){
+		throw std::runtime_error("Undefined struct!");
+	}
+
+	const auto instance = make_struct_instance(*b);
+	return instance;
 }
 
 
@@ -341,6 +363,7 @@ pair<vector<shared_ptr<statement_t>>, ast_t> install_struct_support(const ast_t&
 
 	{
 		const auto param = make_shared<alloc_struct_param>(struct_name_ident);
+		param->_ast = ast2;
 		const auto a = function_def_t(struct_name_ident, {}, hosts_function__alloc_struct, param);
 		ast2._types_collector = ast2._types_collector.define_function_type(struct_name + "_constructor", a);
 	}
