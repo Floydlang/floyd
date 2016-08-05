@@ -20,6 +20,7 @@
 #include "parser_evaluator.h"
 #include "parser_value.h"
 #include "parser_statement.h"
+#include "parser_types.h"
 
 #if true
 
@@ -31,7 +32,27 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
 
-using floyd_parser::program_to_ast;
+using namespace floyd_parser;
+
+
+
+//////////////////////////		vm_t
+
+
+vm_t::vm_t(const floyd_parser::ast_t& ast) :
+	_ast(ast)
+{
+	QUARK_ASSERT(ast.check_invariant());
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bool vm_t::check_invariant() const {
+	QUARK_ASSERT(_ast.check_invariant());
+	return true;
+}
+
+
 
 
 
@@ -145,7 +166,7 @@ QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 	const auto a = run_program(
 		"struct pixel { string s; };"
 		"string main(){\n"
-		"	pixel p = pixel();"
+		"	pixel p = pixel_constructor();"
 		"	return p.s;"
 		"}\n"
 	);

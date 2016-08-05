@@ -71,9 +71,31 @@ namespace {
 }
 
 
-value_t run_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
+value_t call_host_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(f._statements.empty());
+	QUARK_ASSERT(f._host_function);
+	QUARK_ASSERT(f._host_function_param);
+
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+	if(!check_args(f, args)){
+		throw std::runtime_error("function arguments do not match function");
+	}
+
+//	auto local_scope = add_args(ast, f, args);
+	const auto a = f._host_function(f._host_function_param, args);
+	return a;
+}
+
+
+value_t call_interpreted_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(!f._statements.empty());
+	QUARK_ASSERT(!f._host_function);
+	QUARK_ASSERT(!f._host_function_param);
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 	if(!check_args(f, args)){
@@ -115,6 +137,26 @@ value_t run_function(const ast_t& ast, const function_def_t& f, const vector<val
 		statement_index++;
 	}
 	throw std::runtime_error("function missing return statement");
+}
+
+
+value_t run_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+	if(!check_args(f, args)){
+		throw std::runtime_error("function arguments do not match function");
+	}
+
+	auto local_scope = add_args(ast, f, args);
+
+	if(f._host_function){
+		return call_host_function(local_scope, f, args);
+	}
+	else{
+		return call_interpreted_function(local_scope, f, args);
+	}
 }
 
 

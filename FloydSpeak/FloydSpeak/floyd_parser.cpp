@@ -295,20 +295,60 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 //////////////////////////////////////////////////		program_to_ast()
 
 
+
+
+
+struct alloc_struct_param : public host_data_i {
+	public: virtual ~alloc_struct_param(){};
+
+	alloc_struct_param(const type_identifier_t& struct_name) :
+		_struct_name(struct_name)
+	{
+	}
+
+	type_identifier_t _struct_name;
+};
+
+
+value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
+	return {};
+}
+
+
 /*
 	Take struct definition and creates all types, member variables, constructors, member functions etc.
-*/
-ast_t install_struct_support(const ast_t& ast, const std::string& struct_name, const struct_def_t& struct_def){
-	auto ast2 = ast;
-
 			//??? add constructors and generated stuff.
+*/
+pair<vector<shared_ptr<statement_t>>, ast_t> install_struct_support(const ast_t& ast1, const std::string& struct_name, const struct_def_t& struct_def){
+	auto ast2 = ast1;
+	std::vector<std::shared_ptr<statement_t> > statements;
 
+	const auto struct_name_ident = type_identifier_t::make_type(struct_name);
+
+	//	Define struct type and data members.
 	ast2._types_collector = ast2._types_collector.define_struct_type(struct_name, struct_def);
 	std::shared_ptr<struct_def_t> s = ast2._types_collector.resolve_struct_type(struct_name);
 
-
 	//	Make constructor with same name as struct.
+	/*{
+		const auto b = "pixel pixel_constructor(){ pixel temp = allocate_struct(\"pixel\"); return temp; }";
+		const auto statement_pos = read_statement(ast2, b);
+		ast2 = statement_pos._ast;
+		QUARK_ASSERT(statement_pos._statement._define_function);
+		const auto define_function_statement = *statement_pos._statement._define_function;
+		ast2._types_collector = ast2._types_collector.define_function_type(define_function_statement._type_identifier, define_function_statement._function_def);
+	}*/
+
+	{
+		const auto param = make_shared<alloc_struct_param>(struct_name_ident);
+		const auto a = function_def_t(struct_name_ident, {}, hosts_function__alloc_struct, param);
+		ast2._types_collector = ast2._types_collector.define_function_type(struct_name + "_constructor", a);
+	}
+
+//	statements.push_back(make_shared<statement_t>(statement_pos._statement));
+
 	//??? easier to use source code template and compile it.
+/*
 	const function_def_t function_def {
 		type_identifier_t::make_type(struct_name),
 		vector<arg_t>{
@@ -316,15 +356,18 @@ ast_t install_struct_support(const ast_t& ast, const std::string& struct_name, c
 		},
 		{}
 	};
-//		public: const std::vector<std::shared_ptr<statement_t> > _statements;
+*/
+
 /*
 		else if(statement_pos._statement._define_function){
 			ast2._types_collector = ast2._types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
 		}
 */
 
-	return ast2;
+	return { statements, ast2 };
 }
+
+
 
 
 
@@ -341,7 +384,12 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 
 		if(statement_pos._statement._define_struct){
 			const auto a = statement_pos._statement._define_struct;
-			ast2 = install_struct_support(ast2, a->_type_identifier, a->_struct_def);
+			const auto b = install_struct_support(ast2, a->_type_identifier, a->_struct_def);
+			ast2 = b.second;
+			statements.insert(statements.end(), b.first.begin(), b.first.end());
+
+
+
 
 //			ast2._types_collector = ast2._types_collector.define_struct_type(statement_pos._statement._define_struct->_type_identifier, statement_pos._statement._define_struct->_struct_def);
 		}
@@ -543,9 +591,6 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member vari
 	));
 */
 }
-
-
-
 
 
 

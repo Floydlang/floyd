@@ -65,6 +65,33 @@ All data types with the same signature are can automatically be assign between.
 ??? Examples
 
 
+# FUNCTIONS
+
+
+	### The arguments for a function is a struct. Function internally only take one argument. The args-struct is called "args" and can be accessed like any value.
+	### log()
+	### assert()
+	### Closures
+	
+
+# IF - THEN -ELSE
+
+	You can use a lambda to do directly assign a value from an if-then-else:
+
+		int v = () => {
+			if(s == "one"){
+				return 1;
+			}
+			else if(s == "two"){
+				return 2;
+			}
+			else{
+				return -1;
+			}
+		}
+
+
+	
 # STRUCTs
 
 ## Invariant
@@ -93,64 +120,10 @@ All member functions works like C++ static members and takes *this* as their fir
 	2) Clients should not be affected with if a struct value is data or calculated.
 
 
-Clients to a struct should not care if:
-1) A struct property is a data member or a function, ever. Always the same syntax.
-2) a function has private access or not to the struct. Always the same syntax.
-3) a function is part of the struct or provided some other way. Always the same syntax.
-
-////////////////////		MEMBER FUNCTIONS
-
-/*
-	Member functions have access to all private members.
-	You call a member function just like a normal function.
-	There is no special implicit "this" argument to functions.
-	This makes it easier to refactor code: you can change a function from non-member to member without affecting any client code!
-*/
-
-struct pixel {
-	int red;
-	int green;
-	int blue;
-
-	int get_sum(pixel p){
-		return p.red + p.green + p.blue;
-	}
-};
-my_pixel = pixel(100, 200, 255);
-
-int get_intensity(pixel p){
-	return p.get_sum() / 3;
-}
-
-intensity2 = my_pixel.get_intensity();
-sum2 = get_sum(my_pixel);
-
-/*
-	Alternative function call style. Any function with a pixel as first argument (member functions and non-member functions) can all be called like this. The first argument to the function will be the value you're calling the function on.
-*/
-sum1 = my_pixel.get_sum();
-intensity1 = get_intensity(my_pixel);
 
 
-////////////////////////		MEMBER DATA VS GETTERS
-
-
-struct pixel {
-	int red;
-	int green;
-	int blue;
-
-	int intensity(pixel p){
-		return p.red + p.green + p.blue;
-	}
-};
-
-my_pixel = pixel(100, 200, 255);
-assert(my_pixel.red == 100);
-
-
-
-
+# STRUCT EXAMPLES
+When defining a data type (composite) you need to list 4 example instances. Can use functions to build them or just fill-in manually or a mix. These are used in example docs, example code and for unit testing this data types and *other* data types. You cannot change examples without breaking client tests higher up physical dependncy graph.
 
 
 
@@ -162,23 +135,6 @@ assert(my_pixel.red == 100);
 		float length = 0;
 		float? last_pos = null;
 		dyn<int, string> nav_info = "off";
-
-		//	Demonstrate replacing a member property with accessors,
-		//	without affecting clients.
-		bool selected {
-			get { return !selected_internal }
-			set { return assoc(
-		}
-		private bool selected_internal = true;
-
-		private float internal_play_pos = 0.0f;
-
-		float play_pos(song original) {
-			return internal_play_pos / 1000.0f;
-		}
-		float play_pos2(song original) {
-			return internal_play_pos;
-		}
 
 		song scale_song(song original){
 			mut temp = original;
@@ -201,8 +157,6 @@ assert(my_pixel.red == 100);
 			return temp;
 		}
 	}
-
-
 
 
 # HINTS-SYSTEM
@@ -269,8 +223,6 @@ Arguments and return values always specifies their contracts using an expression
 
 
 
-# STRUCT EXAMPLES
-When defining a data type (composite) you need to list 4 example instances. Can use functions to build them or just fill-in manually or a mix. These are used in example docs, example code and for unit testing this data types and *other* data types. You cannot change examples without breaking client tests higher up physical dependncy graph.
 
 
 # EQUIVALENCE: FUNCTIONS - MAPS - VECTORS
@@ -411,10 +363,12 @@ struct my_window {
 
 # EXTERNALS
 
+
 # CLOCKS
 
 
 # CONCURRENCY
+
 
 # FILE SYSTEM FEATURES
 

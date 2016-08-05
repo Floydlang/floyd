@@ -177,7 +177,7 @@ std::pair<std::pair<string, function_def_t>, string> parse_function_definition(c
 	auto local_scope = add_arg_identifiers(ast, args);
 
 	const auto body = parse_function_body(local_scope, body_pos.first);
-	const auto a = function_def_t{ type_pos.first, args, body };
+	const auto a = function_def_t(type_pos.first, args, body);
 
 	return { { identifier_pos.first, a }, body_pos.second };
 }

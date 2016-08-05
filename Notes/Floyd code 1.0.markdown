@@ -10,6 +10,7 @@ Functions and classes are pure. A pure function can only call pure functions. Th
 
 This makes those risk. Have as little nonpure code as possible. Try to not have any conditional code inside nonpure code - this makes testing easier.
 
+
 # BASIC TYPES
 These are the privitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
@@ -25,6 +26,7 @@ These are the privitive data types built into the language itself. The goals is 
 - **string**					built-in string type. 8bit pure (supports embedded nulls).
 	 								Use for computer strings. Not localizable.
 - **function**				function pointer. Functions can be Floyd functions or C functions.
+
 
 ### MORE TYPES
 These are composites and collections of other types.
@@ -46,10 +48,12 @@ These are features built into every type: integer, string, struct, collections e
 - **a < b**										tests all member data in the order they appear in the struct.
 - **a <= b**, **a > b**, **a >= b**	these are derivated of a < b
 
+
 # PROOF
 Floyd has serveral built in features to check code correctness. One of the core features is assert() which is a function that makes sure an expression is true or the program will be stopped. If the expression is false, the program is defect.
 
 This is used through out this document to demonstrate language features.
+
 
 # VALUES, VARIABLES AND CONSTANTS
 All "variables" aka values are by default constants / immutable.
@@ -75,8 +79,10 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 		return 3;
 	}
 
+
 # GLOBAL SCOPE
 Used for function definitions, defining constants and structs.
+
 
 # FUNCTIONS
 Functions in Floyd are pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at differenttimes, like get_time().
@@ -85,13 +91,9 @@ Function always have the same syntax, no matter if they are member functions of 
 
 NOTE: A function is a thing that takes a struct/tuple as an argument and returns another struct/tuple or basic type.
 
-	### The arguments for a function is a struct. Function internally only take one argument. The args-struct is called "args" and can be accessed like any value.
-	### log()
-	### assert()
-	### Closures
+Functions always return exactly one value. Use a tuple or struct to return more values.
 
-Functions always return exactly one value. Use a tuple to return more values. A function without return value makes no sense since function cannot have side effects.
-	### a side effect could be calling void is_valid_filename(string s) that asserts the string is valid.
+A function without return value usually makes no sense since function cannot have side effects. Possible uses would be logging, asserting or throwing exceptions.
 
 Example function definitions:
 
@@ -111,6 +113,7 @@ Example function definitions:
 		return "<" + x + ">";
 	}
 
+
 # IF - THEN -ELSE
 This is a normal if-else-if-else construct, like in most languages.
 
@@ -126,19 +129,6 @@ This is a normal if-else-if-else construct, like in most languages.
 
 In each body you can write any statements. There is no "break" keyword. { and } are required.
 
-You can use a lambda to do directly assign a value from an if-then-else:
-
-		int v = () => {
-			if(s == "one"){
-				return 1;
-			}
-			else if(s == "two"){
-				return 2;
-			}
-			else{
-				return -1;
-			}
-		}
 
 # QUESTION OPERATOR
 
@@ -147,7 +137,8 @@ You can use a lambda to do directly assign a value from an if-then-else:
 	}
 	assert(is_polity("hiya!") == false);
 	assert(is_polity("hello") == true);
-	
+
+
 # EXPRESSIONS
 		http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep - they consider all members and also member structs and collections.
@@ -161,6 +152,7 @@ Comparisons are true-deep - they consider all members and also member structs an
 	/		Divides numerator by de-numerator.														"B / A = 2"
 	%		Modulus Operator and remainder of after an integer division.				"B % A = 0"
 
+
 ### Relational Operators
 	a == b				true if a and b have the same value
 	a != b				true if a and b have different values
@@ -169,10 +161,12 @@ Comparisons are true-deep - they consider all members and also member structs an
 	>=
 	<=
 
+
 ### Logical Operators
 	&&
 	||
 	!
+
 
 ### Bitwise Operators
 
@@ -191,6 +185,7 @@ Comparisons are true-deep - they consider all members and also member structs an
 	++
 	--
 
+
 # LOOPS AND CONDITIONS
 The foreach uses the seq-protocol to process all items in a seq, one by one.
 
@@ -208,6 +203,7 @@ switch() -- has modern update, no default or break.
 while(expression){
 }
 
+
 # STRUCTs
 Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view).
 
@@ -217,9 +213,11 @@ Structs are the central building blocks for composing data in Floyd. They are us
 		int blue;
 	};
 
+
 **True-deep** is a Floyd term that means that all values and sub-values are considered, for example in equally checks. The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
 
-You can chose to name members or not. An unnamed member can be accessed using its position in the struct: first member is 0. Named members are also numbered.
+You can chose to name members or not. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0". Named members are also numbered - a parallell name.
+
 
 ## Struct Signature
 This is the properties exposed by a struct in the order they are listed in the struct.
@@ -227,59 +225,67 @@ This is the properties exposed by a struct in the order they are listed in the s
 * Users of the struct are not affected if you introduce a setter or getter to a property. They are also unaffected if you move a function from being a member function to a free function - they call them the same way.
 * There is no implicit _this_.
 
+Clients to a struct should not care if:
+1) A struct property is a data member or a function, ever. Always the same syntax.
+2) a function has private access or not to the struct. Always the same syntax.
+3) a function is part of the struct or provided some other way. Always the same syntax.
+
+This makes it easier to refactor code: you can change a function from non-member to member without affecting any client code!
+
+
 ## Member Data
-* All members have default value.
-* Clients can directly access all member variables.
-* You can take control over reading / writing members by replacing its default value with a get / set function. 
+All members have default value. This makes simple value classes extremely simple to create.
+Clients can directly access all member variables, unless they are marked as "private".
+You can take control over reading / writing members by replacing its default getter / setter with your own functions. 
 
-## Member Functions
-Constructors: these are member functions that are named the same as the struct that sets up the initial state of a struct value. All member variables are first automatically initialized to default values: either explicitly or using that type's default. A constructor overrides these defaults. The value does not exist to the rest of the program until the constructor finishes.
+	struct test {
+		float f;
+		float g = 3.1415f;
+	};
 
-Default initialization:
+Simple but fully functional struct. "f" will be initialized to 0.0f, g will be initialized to 3.1415f.
 
-		struct test {
-			float f;
-			float g = 3.1415f;
-		}
-		a = test();
-		assert(a.f == 0.0f);
-		assert(a.g == 3.1415f);
+??? How to block mutation of member variable? Some members makes no sense to write in isolation.
 
-Explicit constructors, member functions and member constants:
+
+## Constructors
+These are member functions that are named the same as the struct that sets up the initial state of a struct value. All member variables are first automatically initialized to default values: either explicitly or using that type's default. A constructor overrides these defaults. The value does not exist to the rest of the program until the constructor finishes.
+
+Two constructors are automatically generated:
+	The first one takes no argument and initializes all members to their defaults
+	The second one has one argument for each member, in the order they appear in the struct.
+
+
+## Using default contructors:
+
+	struct test {
+		float f;
+		float g = 3.1415f;
+	}
+
+	a = test();
+	assert(a.f == 0.0f);
+	assert(a.g == 3.1415f);
+
+	b = test(1.1f, 2.2f);
+	assert(b.f == 1.1f);
+	assert(b.g == 2.2f);
+
+You cannot stop these two contructors, but you can reimplement them if you wish.
+
+
+## Explicit constructors
 
 	struct pixel { 
-		//	Constructors.
-		pixel(int gray){
-			this.red = gray;
-			this.green = gray;
-			this.blue = gray;
-		}
-		pixel(int red, int green, int blue){
-			this.red = red;
-			this.green = green;
-			this.blue = blue;
+		pixel pixel(int gray){
+			//	Use built in constructor 2.
+			return pixel.make(gray, gray, gray);
 		}
 
-		//	Member functions.
-		bool is_black(pixel this){	return this == black; };
-		bool is_monochrome(pixel this){	return this.red == this.green == this.blue; };
-		pixel scale(pixel this, float k){	return pixel(this.red *k, this.green * k,this.blue * k); };
-		int intensity(pixel this){ return (red + green + blue) / 3; };
-
-		//	Member values.
 		int red;
 		int green;
 		int blue;
-		
-		//	Constant pixels.
-		black = pixel(0, 0, 0);
-		white = pixel(255, 255, 255);
 	};
-
-	//	External function, using the same format as member functions.
-	bool is_white(pixel this){ return this == white; };
-	
-Usage
 
 	//	Construct a new gray pixel, called a. Check its values. 
 	a = pixel(100);
@@ -291,28 +297,84 @@ Usage
 	assert(b == pixel(10, 20, 30);
 
 
+## Member Functions
+Member functions have access to all private members, external functions only to public members of the struct.
+You call a member function just like a normal function, draw(my_struct, 10).
+There is no special implicit "this" argument to functions, you need to add it manually.
+It is not possible to change member variables, instead you return a completely new instance of the struct.
 
-## Built in Features of Structs
-Destruction: destruction is automatic when there are no references to a struct. Copying is done automatically, no need to write code for this. All copies behave as true-deep copies.
-All structs automatically support the built in features of every data type like comparison, copies etc: see separate description.
+	struct pixel { 
+		/*
+			This is how the implicitly generated getter for member "red" looks.
+			You can make your own to override it. Any function that takes a single argument of
+			a type can be called as if it's a readable propery of the struct.
+		*/
+		int red(pixel p){
+			return red;
+		}
 
-Notice about optimizations: many accellerations are made behind the scenes:
-- causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
-- You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
-- There is no way for client code to see if the struct instances are _the same_ - that is access the same memory via two separate pointers.
+		/*
+			This is how the implicitly generated setter for member "red" looks.
+			You can make your own to override it. Any function that takes a two
+			arguments (struct type + one more) can be called as if it's a writable propery of the struct.
+		*/
+		pixel red(pixel p, int value){
+			return pixel(value, p.green, p.blue);
+		}
 
-## Pure mutation
-* When client attempts to write to a member variable of a struct, it gets a new copy of the struct, with the change applied. This is the default behaviour.
-* If a struct wants to control the mutation, you can add your own setter function as a member function.
-* You can add any type of mutating functions, not just setters.
-* It is often (but not always) possible to make an free function that mutates a value. If it can read all data from the original and can control all member data of the newly constructed value.
+		int magneta(pixel p){
+			return (p.red + p.green) * 0.3;
+		}
+
+		//	Member functions.
+		int intensity(pixel this){ return (red + green + blue) / 3; };
+
+		//	Member values.
+		int red;
+		int green;
+		int blue;
+
+		//	Constant pixels.
+		black = pixel(0, 0, 0);
+		white = pixel(255, 255, 255);
+	};
+
+	//	External function.
+	int get_sum(pixel p){ return p.red + p.green + p.blue; };
+
+	my_pixel = pixel(100, 200, 50);
+	int red = my_pixel.red;
+
+	sum1 = get_sum(my_pixel);
+	intensity1 = get_intensity(my_pixel);
+
+
+## Alternative function call style
+??? Bad to have several ways to call functions...
+Any function with a pixel as first argument (member functions and non-member functions) can all be called like this.
+
+	sum1 = get_sum(my_pixel);
+	sum2 = my_pixel.get_sum();
+
+	intensity1 = get_intensity(my_pixel);
+	intensity2 = my_pixel.get_intensity();
+
+	int green1 = my_pixel.green;
+	int green2 = green(my_pixel);
+	int green3 = my_pixel.green(my_pixel);
+
+	pixel2 = my_pixel.green = 60;
+	pixel3 = green(my_pixel, 60);
+	pixel4 = my_pixel.green(my_pixel, 60);
+
+
+## Persistence - mutating / changing an immutable struct
+* When client attempts to write to a member variable of a struct it gets a new copy of the struct, with the change applied. This is the default behaviour.
+* If a struct wants to control the mutation, you can add your own setter function or other mutating function. Either as a member function or an external function.
 
 Changing member variable of a struct:
 
-	struct pixel { int red; int green; int blue; };
-
-	a = pixel(255);
-	assert(a == pixel(255, 255, 255));
+	a = pixel(255, 255, 255);
 
 	//	Storing into a member variable is an expression that returns a new value,
 	//	not a statement that modifies the existing value.
@@ -320,7 +382,7 @@ Changing member variable of a struct:
 	assert(a == pixel(255, 255, 255));	//	a is unmodified!
 
 	//	Capture the new, updated pixel value	in a new variable called b.
-	b = a.red = 10;
+	b = a.red <- 10;
 
 	//	Now we have the original, unmodified a and the new, updated b.
 	assert(a == pixel(255, 255, 255));
@@ -338,9 +400,21 @@ This works with nested values too:
 	assert(a == 1);
 
 	//	Update the red member inside the image's pixel. The result is a brand new image!
-	b = i.image.red = 4;
+	b = i.image.red <- 4;
 	assert(a.image.red == 1);
 	assert(b.image.red == 4);
+
+
+## Built in Features of Structs
+Destruction: destruction is automatic when there are no references to a struct. Copying is done automatically, no need to write code for this. All copies behave as true-deep copies.
+All structs automatically support the built in features of every data type like comparison, copies etc: see separate description.
+
+Notice about optimizations: many accellerations are made behind the scenes:
+
+- causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
+- You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
+- There is no way for client code to see if the struct instances are _the same_ - that is access the same memory via two separate pointers.
+
 
 # TUPLES (unnnamed structs)
 You can access the members using indexes instead of their names, for use as a tuple.
@@ -354,6 +428,7 @@ You can access the members using indexes instead of their names, for use as a tu
 	assert(a.0 == 4);
 	assert(a.1 == 5);
 	assert(a.2 == "six");
+
 
 # ENUM
 Works like expected from C, but can be extended.
@@ -377,6 +452,7 @@ A unique feature in Floyd is that you cannot specify the exact implementation of
 The collections are typesafe - a string-vector can only hold strings etc.
 
 Every collection automatically support the core-type-features, like comparisons, serialization and hashing.
+
 
 # VECTOR
 A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. If you read many continous elements it's faster to use a SEQ with the vector - it allows the runtime to keep an pointer to the current position in the vector.
@@ -407,7 +483,7 @@ Vector Reference:
 	vector<T> make(vector<T> other, int start, int end);
 	seq subset(vector<T> in, int start, int end);
 	a = b + c;
-	
+
 
 # MAP
 A collection that maps a key to a value.Unsorted. Like a dictionary. 
@@ -430,6 +506,7 @@ Map Reference
 	map<K, V> my_map.insert(K key, V value)
 	size_t my_map.count()
 	map<K, V> my_map.erase(K key)
+
 
 # SERIALIZATION
 Serializing a value is a built in mechanism. It is based on the seq-type.

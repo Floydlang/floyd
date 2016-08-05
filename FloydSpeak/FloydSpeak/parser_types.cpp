@@ -209,7 +209,7 @@ namespace floyd_parser {
 		for(const auto i: statements){
 			statements2.push_back(make_shared<statement_t>(i));
 		}
-		return { return_type, args, statements2 };
+		return function_def_t(return_type, args,statements2);
 	}
 
 	struct_def_t make_struct_def(const vector<arg_t>& args){

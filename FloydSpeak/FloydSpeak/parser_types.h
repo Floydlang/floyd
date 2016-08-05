@@ -27,7 +27,7 @@ namespace floyd_parser {
 	struct statement_t;
 	struct struct_def_t;
 	struct function_def_t;
-	struct symbol_path;
+	struct value_t;
 
 
 	//////////////////////////////////////		frontend_base_type
@@ -125,16 +125,48 @@ namespace floyd_parser {
 	//////////////////////////////////////		function_def_t
 
 
+	struct host_data_i {
+		public: virtual ~host_data_i(){};
+	};
+
+	typedef value_t (*hosts_function_t)(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
+
+
+
 	struct function_def_t {
 		public: bool check_invariant() const;
 		public: bool operator==(const function_def_t& other) const;
 
 
+		function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<std::shared_ptr<statement_t> > statements) :
+			_return_type(return_type),
+			_args(args),
+			_statements(statements)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, hosts_function_t f, std::shared_ptr<host_data_i> param) :
+			_return_type(return_type),
+			_args(args),
+			_host_function(f),
+			_host_function_param(param)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+
 		public: const type_identifier_t _return_type;
 
-		//??? Should be a struct. Idea: use internal concept for "record" and use it to build Floyd struct, tuple, arg list, local variables / stack frames etc.
+		//??? Should be a struct. Idea: use internal concept for "record" and use it to build
+		//	Floyd struct, tuple, arg list, local variables / stack frames etc.
 		public: const std::vector<arg_t> _args;
+
+		//	Either _host_function or _statements is used.
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
+
+		public: hosts_function_t _host_function;
+		public: std::shared_ptr<host_data_i> _host_function_param;
 	};
 
 	void trace(const function_def_t& v);
@@ -347,10 +379,6 @@ namespace floyd_parser {
 			You can define a type identifier
 		*/
 		public: frontend_types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
-
-
-
-
 
 
 		/*
