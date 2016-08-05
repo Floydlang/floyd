@@ -317,7 +317,7 @@ value_t make_struct_instance(const struct_def_t& def){
 
 	instance->__def = &def;
 	for(int i = 0 ; i < def._members.size() ; i++){
-		value_t value = value_t::make_default_value(def._members[i]._type);
+		value_t value = *def._members[i]._type_and_default_value;
 		instance->_member_values.push_back(value);
 	}
 	return value_t(instance);

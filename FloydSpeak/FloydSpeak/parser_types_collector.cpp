@@ -60,11 +60,11 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		std::vector<byte_range_t> result;
 		std::size_t pos = 0;
 		for(const auto& member : s._struct_def->_members) {
-			const auto identifier_data = types.lookup_identifier_deep(member._type.to_string());
+			const auto identifier_data = types.lookup_identifier_deep(member._type_and_default_value->get_type().to_string());
 			const auto type_def = identifier_data->_optional_def;
 			QUARK_ASSERT(type_def);
 
-			if(type_def->_base_type == k_int32){
+			if(type_def->_base_type == k_int){
 				pos = align_pos(pos, 4);
 				result.push_back(byte_range_t(pos, 4));
 				pos += 4;
@@ -117,10 +117,10 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		//	int32
 		{
 			auto def = make_shared<type_definition_t>();
-			def->_base_type = k_int32;
+			def->_base_type = k_int;
 			QUARK_ASSERT(def->check_invariant());
 
-			_identifiers["int32"] = { "", def };
+			_identifiers["int"] = { "", def };
 			_type_definitions[to_signature(*def)] = def;
 		}
 
@@ -317,7 +317,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 
 
 QUARK_UNIT_TESTQ("define_function_type()", ""){
-	QUARK_TEST_VERIFY(to_string(k_int32) == "int32");
+	QUARK_TEST_VERIFY(to_string(k_int) == "int");
 	const auto a = frontend_types_collector_t{};
 	const auto b =  a.define_function_type("one", make_return_hello());
 }
@@ -436,7 +436,7 @@ QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 	const auto b = define_test_struct3(a);
 	const auto t1 = b.resolve_identifier("struct3");
 	const auto s1 = to_signature(*t1);
-	QUARK_TEST_VERIFY(s1 == "<struct>{<int32>a,<string>b}");
+	QUARK_TEST_VERIFY(s1 == "<struct>{<int>a,<string>b}");
 }
 
 
@@ -446,7 +446,7 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 	const auto c = define_test_struct4(b);
 	const auto t2 = c.resolve_identifier("struct4");
 	const auto s2 = to_signature(*t2);
-	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct3>y,<string>z}");
+	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<string>z}");
 }
 
 
@@ -461,9 +461,9 @@ QUARK_UNIT_TESTQ("frontend_types_collector_t::frontend_types_collector_t()", "de
 	QUARK_TEST_VERIFY(a.check_invariant());
 
 
-	const auto b = a.resolve_identifier("int32");
+	const auto b = a.resolve_identifier("int");
 	QUARK_TEST_VERIFY(b);
-	QUARK_TEST_VERIFY(b->_base_type == k_int32);
+	QUARK_TEST_VERIFY(b->_base_type == k_int);
 
 	const auto d = a.resolve_identifier("bool");
 	QUARK_TEST_VERIFY(d);
@@ -483,17 +483,17 @@ QUARK_UNIT_TESTQ("frontend_types_collector_t::resolve_identifier()", "not found"
 
 QUARK_UNIT_TESTQ("frontend_types_collector_t::resolve_identifier()", "int32 found"){
 	const auto a = frontend_types_collector_t();
-	const auto b = a.resolve_identifier("int32");
+	const auto b = a.resolve_identifier("int");
 	QUARK_TEST_VERIFY(b);
 }
 
 
 QUARK_UNIT_TESTQ("frontend_types_collector_t::define_alias_identifier()", "int32 => my_int"){
 	auto a = frontend_types_collector_t();
-	a = a.define_alias_identifier("my_int", "int32");
+	a = a.define_alias_identifier("my_int", "int");
 	const auto b = a.resolve_identifier("my_int");
 	QUARK_TEST_VERIFY(b);
-	QUARK_TEST_VERIFY(b->_base_type == k_int32);
+	QUARK_TEST_VERIFY(b->_base_type == k_int);
 }
 
 
@@ -504,7 +504,7 @@ QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 	const auto layout = calc_struct_default_memory_layout(a, *t);
 	int i = 0;
 	for(const auto it: layout){
-		const string name = i == 0 ? "struct" : t->_struct_def->_members[i - 1]._identifier;
+		const string name = i == 0 ? "struct" : t->_struct_def->_members[i - 1]._name;
 		QUARK_TRACE_SS(it.first << "--" << (it.first + it.second) << ": " + name);
 		i++;
 	}

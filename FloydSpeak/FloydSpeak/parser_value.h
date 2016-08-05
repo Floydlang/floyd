@@ -20,7 +20,7 @@
 namespace floyd_parser {
 	struct statement_t;
 	struct value_t;
-
+	struct struct_def_t;
 
 	//////////////////////////////////////////////////		value_t
 

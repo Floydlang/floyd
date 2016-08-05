@@ -100,8 +100,8 @@ namespace floyd_parser {
 
 
 	string to_string(const frontend_base_type t){
-		if(t == k_int32){
-			return "int32";
+		if(t == k_int){
+			return "int";
 		}
 		if(t == k_bool){
 			return "bool";
@@ -202,8 +202,8 @@ namespace floyd_parser {
 		return function_def_t(return_type, args,statements2);
 	}
 
-	struct_def_t make_struct_def(const vector<arg_t>& args){
-		return struct_def_t{ args };
+	struct_def_t make_struct_def(const vector<member_t>& members){
+		return struct_def_t{ members };
 	}
 
 
@@ -229,7 +229,7 @@ namespace floyd_parser {
 	struct_def_t make_struct3(){
 		return make_struct_def(
 			{
-				{ make_type_identifier("int32"), "a" },
+				{ make_type_identifier("int"), "a" },
 				{ make_type_identifier("string"), "b" }
 			}
 		);
@@ -239,7 +239,7 @@ namespace floyd_parser {
 		return make_struct_def(
 			{
 				{ make_type_identifier("string"), "x" },
-				{ make_type_identifier("struct3"), "y" },
+//				{ make_type_identifier("struct3"), "y" },
 				{ make_type_identifier("string"), "z" }
 			}
 		);
@@ -254,7 +254,7 @@ struct_def_t make_struct5(){
 			// pad
 			// pad
 			// pad
-			{ make_type_identifier("int32"), "b" },
+			{ make_type_identifier("int"), "b" },
 			{ make_type_identifier("bool"), "c" },
 			{ make_type_identifier("bool"), "d" },
 			{ make_type_identifier("bool"), "e" },
@@ -265,24 +265,49 @@ struct_def_t make_struct5(){
 	);
 }
 
-/*
 	////////////////////////			member_t
 
 
-	member_t::member_t(const std::string& name, const std::string& type_identifier) :
-		_name(name),
-		_type_identifier(type_identifier)
+	member_t::member_t(const value_t& type_and_default_value, const std::string& name) :
+		_type_and_default_value(make_shared<value_t>(type_and_default_value)),
+		_name(name)
 	{
-		QUARK_ASSERT(!type_identifier.empty());
+		QUARK_ASSERT(!type_and_default_value.is_null());
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	member_t::member_t(const type_identifier_t& type, const std::string& name) :
+		_type_and_default_value(make_shared<value_t>(value_t::make_default_value(type))),
+		_name(name)
+	{
+		QUARK_ASSERT(name.size() > 0);
+		QUARK_ASSERT(type.check_invariant());
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool member_t::check_invariant() const{
-		QUARK_ASSERT(!_type_identifier.empty());
+		QUARK_ASSERT(_name.size() > 0);
+		QUARK_ASSERT(_type_and_default_value);
+		QUARK_ASSERT(_type_and_default_value->check_invariant());
 		return true;
 	}
-*/
+
+	bool member_t::operator==(const member_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return *_type_and_default_value == *other._type_and_default_value && _name == other._name;
+	}
+
+
+	void trace(const member_t& member){
+		QUARK_TRACE("<member> type: <" + member._type_and_default_value->get_type().to_string() + "> name: \"" + member._name + "\"");
+	}
+
+
+
 
 
 	////////////////////////			struct_def_t
@@ -309,7 +334,7 @@ struct_def_t make_struct5(){
 
 
 	bool type_definition_t::check_invariant() const{
-		if(_base_type == k_int32){
+		if(_base_type == k_int){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
 			QUARK_ASSERT(!_function_def);
@@ -352,7 +377,7 @@ struct_def_t make_struct5(){
 	void trace_frontend_type(const type_definition_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
-		if(t._base_type == k_int32){
+		if(t._base_type == k_int){
 			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
 		}
 		else if(t._base_type == k_bool){
@@ -363,10 +388,8 @@ struct_def_t make_struct5(){
 		}
 		else if(t._base_type == k_struct){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			for(const auto it: t._struct_def->_members){
-				QUARK_TRACE("<" + it._type.to_string() + "> " + it._identifier);
-
-//				trace_frontend_type(*it._type, it._name);
+			for(const auto m: t._struct_def->_members){
+				trace(m);
 			}
 		}
 		else if(t._base_type == k_vector){
@@ -403,12 +426,12 @@ struct_def_t make_struct5(){
 		const string label = "";
 		string body;
 		for(const auto& member : t._members) {
-			const string member_label = member._identifier;
-			const type_identifier_t typedef_s = member._type;
+			const auto member_name = member._name;
+			const type_identifier_t typedef_s = member._type_and_default_value->get_type();
 			const string member_type = "<" + typedef_s.to_string() + ">";
 
 			//	"<string>first_name"
-			const string member_result = member_type + member_label;
+			const string member_result = member_type + member_name;
 
 			body = body + member_result + ",";
 		}
@@ -471,7 +494,7 @@ using namespace floyd_parser;
 
 
 QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
-	QUARK_TEST_VERIFY(to_string(k_int32) == "int32");
+	QUARK_TEST_VERIFY(to_string(k_int) == "int");
 	QUARK_TEST_VERIFY(to_string(k_bool) == "bool");
 	QUARK_TEST_VERIFY(to_string(k_string) == "string");
 	QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
@@ -488,11 +511,11 @@ QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 }
 
 QUARK_UNIT_TESTQ("to_signature()", "struct3"){
-	quark::ut_compare(to_signature(make_struct3()), "<struct>{<int32>a,<string>b}");
+	quark::ut_compare(to_signature(make_struct3()), "<struct>{<int>a,<string>b}");
 }
 
 QUARK_UNIT_TESTQ("to_signature()", "struct4"){
-	quark::ut_compare(to_signature(make_struct4()), "<struct>{<string>x,<struct3>y,<string>z}");
+	quark::ut_compare(to_signature(make_struct4()), "<struct>{<string>x,<string>z}");
 }
 
 //??? more

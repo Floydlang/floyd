@@ -26,7 +26,7 @@ namespace floyd_parser {
 	struct struct_def_t;
 	struct function_def_t;
 	struct value_t;
-
+	
 
 	//////////////////////////////////////		frontend_base_type
 
@@ -35,7 +35,7 @@ namespace floyd_parser {
 	*/
 	enum frontend_base_type {
 //		k_float,
-		k_int32,
+		k_int,
 		k_bool,
 		k_string,
 
@@ -180,15 +180,17 @@ namespace floyd_parser {
 		Definition of a struct-member.
 	*/
 
-/*
 	struct member_t {
-		member_t(const std::string& name, const std::string& type_identifier);
+		public: member_t(const value_t& type_and_default_value, const std::string& name);
+		public: member_t(const type_identifier_t& type, const std::string& name);
+		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
 
-		std::string _name;
-		std::string _type_identifier;
+		public: std::shared_ptr<value_t> _type_and_default_value;
+		public: std::string _name;
 	};
-*/
+
+	void trace(const member_t& member);
 
 
 	//////////////////////////////////////		struct_def_t
@@ -209,7 +211,7 @@ namespace floyd_parser {
 
 
 		///////////////////		STATE
-		public: std::vector<arg_t> _members;
+		public: std::vector<member_t> _members;
 	};
 
 	void trace(const struct_def_t& e);
@@ -288,7 +290,7 @@ namespace floyd_parser {
 
 
 	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
-	struct_def_t make_struct_def(const std::vector<arg_t>& args);
+	struct_def_t make_struct_def(const std::vector<member_t>& members);
 
 
 	struct_def_t make_struct0();
@@ -302,7 +304,7 @@ namespace floyd_parser {
 
 	/*
 		struct struct3 {
-			int32 a
+			int a
 			string b
 		}
 	*/

@@ -31,14 +31,14 @@ namespace floyd_parser {
 		read_required_char(s2, '{');
 		const auto body_pos = get_balanced(s2);
 
-		vector<arg_t> members;
+		vector<member_t> members;
 		auto pos = trim_ends(body_pos.first);
 		while(!pos.empty()){
 			const auto arg_type = read_type(pos);
 			const auto arg_name = read_required_single_symbol(arg_type.second);
 			const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ';');
 
-			const auto a = arg_t{ make_type_identifier(arg_type.first), arg_name.first };
+			const auto a = member_t{ make_type_identifier(arg_type.first), arg_name.first };
 			members.push_back(a);
 			pos = skip_whitespace(optional_comma.second);
 		}
@@ -67,7 +67,7 @@ namespace floyd_parser {
 
 	struct_def_t make_test_struct0(){
 		return {
-			vector<arg_t>
+			vector<member_t>
 			{
 				{ make_type_identifier("int"), "x" },
 				{ make_type_identifier("string"), "y" },
