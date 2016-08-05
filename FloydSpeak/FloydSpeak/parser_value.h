@@ -13,10 +13,8 @@
 #include "quark.h"
 #include <vector>
 #include <string>
-#include <map>
 
 #include "parser_types.h"
-#include "parser_primitives.h"
 
 
 namespace floyd_parser {

@@ -13,6 +13,7 @@
 #include "parser_expression.h"
 #include "parser_function.h"
 #include "parser_struct.h"
+#include "parser_primitives.h"
 
 
 namespace floyd_parser {
