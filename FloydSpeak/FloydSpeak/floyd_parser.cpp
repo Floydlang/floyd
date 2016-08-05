@@ -237,7 +237,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 		else if(peek_string(skip_whitespace(identifier_pos.second), "=")){
 //		else if(ast.parser_i__is_known_type(token_pos.first))
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(ast1, pos);
-			const string& identifier = assignment_statement.first._bind_statement->_identifier;
+//			const string& identifier = assignment_statement.first._bind_statement->_identifier;
 
 /*
 			//	??? If the value can be evaluted to a constant, do this. Else it's just a variable that can't be changed.

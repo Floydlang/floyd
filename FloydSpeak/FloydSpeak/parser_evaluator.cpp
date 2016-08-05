@@ -63,7 +63,7 @@ namespace {
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f._args[i]._identifier;
 			const auto& arg_value = args[i];
-			local_scope._constant_values[arg_name] = make_shared<const value_t>(arg_value);
+			local_scope._constant_values[arg_name] = arg_value;
 		}
 		return local_scope;
 	}
@@ -119,7 +119,7 @@ value_t call_interpreted_function(const ast_t& ast, const function_def_t& f, con
 			if(!result._constant){
 				throw std::runtime_error("unknown variables");
 			}
-			local_scope._constant_values[name] = make_shared<value_t>(*result._constant);
+			local_scope._constant_values[name] = *result._constant;
 		}
 		else if(statement->_return_statement){
 			const auto expr = statement->_return_statement->_expression;
@@ -329,13 +329,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 		const auto it = ast._constant_values.find(function_name);
 		QUARK_ASSERT(it != ast._constant_values.end());
 
-		const auto value_ref = it->second;
-		if(value_ref){
-			return make_constant(*value_ref);
-		}
-		else{
-			return e;
-		}
+		return make_constant(it->second);
 	}
 	else if(e._resolve_member){
 		return e;

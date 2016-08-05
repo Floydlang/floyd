@@ -322,7 +322,7 @@ namespace floyd_parser {
 
 		/////////////////////////////		STATE
 
-		public: std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
+		public: std::map<std::string, value_t> _constant_values;
 		public: frontend_types_collector_t _types_collector;
 		public: std::vector<std::shared_ptr<statement_t> > _top_level_statements;
 
