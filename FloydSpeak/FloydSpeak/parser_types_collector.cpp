@@ -114,7 +114,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		QUARK_ASSERT(check_invariant());
 
 
-		//	int32
+		//	int
 		{
 			auto def = make_shared<type_definition_t>();
 			def->_base_type = k_int;
@@ -481,14 +481,14 @@ QUARK_UNIT_TESTQ("frontend_types_collector_t::resolve_identifier()", "not found"
 	QUARK_TEST_VERIFY(!b);
 }
 
-QUARK_UNIT_TESTQ("frontend_types_collector_t::resolve_identifier()", "int32 found"){
+QUARK_UNIT_TESTQ("frontend_types_collector_t::resolve_identifier()", "int found"){
 	const auto a = frontend_types_collector_t();
 	const auto b = a.resolve_identifier("int");
 	QUARK_TEST_VERIFY(b);
 }
 
 
-QUARK_UNIT_TESTQ("frontend_types_collector_t::define_alias_identifier()", "int32 => my_int"){
+QUARK_UNIT_TESTQ("frontend_types_collector_t::define_alias_identifier()", "int => my_int"){
 	auto a = frontend_types_collector_t();
 	a = a.define_alias_identifier("my_int", "int");
 	const auto b = a.resolve_identifier("my_int");

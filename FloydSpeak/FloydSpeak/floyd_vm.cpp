@@ -162,6 +162,7 @@ pair<vm_t, floyd_parser::value_t> run_program(const string& source){
 }
 
 #if false
+//??? "main" and "pixel_constructor" overwrites each other.
 QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 	const auto a = run_program(
 		"struct pixel { string s; };"
