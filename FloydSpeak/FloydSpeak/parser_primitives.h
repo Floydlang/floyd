@@ -10,7 +10,6 @@
 	These functions knows about the Floyd syntax.
 */
 
-
 #ifndef parser_primitives_hpp
 #define parser_primitives_hpp
 
@@ -18,6 +17,7 @@
 #include "text_parser.h"
 #include "parser_types.h"
 #include "parser_types_collector.h"
+#include "parser_value.h"
 
 #include <string>
 #include <vector>
@@ -25,7 +25,6 @@
 
 
 namespace floyd_parser {
-	struct value_t;
 	struct statement_t;
 	struct type_identifier_t;
 	
@@ -181,6 +180,44 @@ namespace floyd_parser {
 	}
 
 
+	//////////////////////////////////////////////////		scope_def_t
+
+
+	struct function_def_t;
+
+
+	/*
+		Represents
+		- global scope
+		- struct definition, with member data and functions
+		- function definition, with arguments
+		- function body
+		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
+	*/
+	struct scope_def_t {
+		//	Used for finding parent symbols, for making symbol paths.
+		scope_def_t* _parent_scope;
+
+		//	Code, if any.
+		std::vector<statement_t> _statements;
+
+		//	Local functions, if any.
+		std::vector<function_def_t> _functions;
+
+		//	Local constants, if any.
+		std::vector<std::pair<std::string, value_t> > _constant_values;
+
+		//	Specification of values to store in each instance.
+		std::vector<member_t> _per_instance_values_spec;
+	};
+
+	struct scope_instance_t {
+		scope_def_t* _def;
+		std::vector<std::pair<std::string, value_t>> _values;
+	};
+
+
+
 	//////////////////////////////////////////////////		parser_i
 
 
@@ -235,6 +272,8 @@ namespace floyd_parser {
 				}
 
 		}
+		//### Function names should have namespace etc.
+		//	### Stuff all globals into a global struct in the floyd world.
 	*/
 
 	struct ast_t : public parser_i {
@@ -254,18 +293,19 @@ namespace floyd_parser {
 
 
 		/////////////////////////////		STATE
-		//### Function names should have namespace etc.
 
 		public: std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
-
 		public: frontend_types_collector_t _types_collector;
-
-		//	### Stuff all globals into a global struct in the floyd world.
 		public: std::vector<std::shared_ptr<statement_t> > _top_level_statements;
+		public: std::shared_ptr<scope_def_t> _root_scope;
 	};
 
 
-	
+	struct parser_state_t {
+		const ast_t _ast;
+		scope_def_t _open;
+	};
+
 }	//	floyd_parser
 
 

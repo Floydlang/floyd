@@ -163,7 +163,7 @@ namespace floyd_parser {
 		//	Either _host_function or _statements is used.
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
 
-		public: hosts_function_t _host_function;
+		public: hosts_function_t _host_function = nullptr;
 		public: std::shared_ptr<host_data_i> _host_function_param;
 	};
 
