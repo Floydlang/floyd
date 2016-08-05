@@ -11,6 +11,7 @@
 #include "text_parser.h"
 #include "parser_statement.h"
 #include "parser_value.h"
+#include "parser_function.h"
 
 #include <cmath>
 

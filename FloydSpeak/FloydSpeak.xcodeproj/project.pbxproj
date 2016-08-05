@@ -10,6 +10,7 @@
 		2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0AC17A1CADB26B00979C49 /* runtime.cpp */; };
 		2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
+		2C3D6EB01D54E918005926BE /* parser_types_collector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3D6EAE1D54E918005926BE /* parser_types_collector.cpp */; };
 		2C4F355C1D4792C60061CA93 /* parser_expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355A1D4792C60061CA93 /* parser_expression.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* parser_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* parser_value.cpp */; };
 		2C4F35621D4795C20061CA93 /* parser_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F35601D4795C20061CA93 /* parser_statement.cpp */; };
@@ -52,6 +53,8 @@
 		2C1D84E91CA766470042F0A8 /* quark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quark.h; sourceTree = "<group>"; };
 		2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = steady_vector.cpp; sourceTree = "<group>"; };
 		2C1D84EB1CA766470042F0A8 /* steady_vector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = steady_vector.h; sourceTree = "<group>"; };
+		2C3D6EAE1D54E918005926BE /* parser_types_collector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_types_collector.cpp; sourceTree = "<group>"; };
+		2C3D6EAF1D54E918005926BE /* parser_types_collector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_types_collector.h; sourceTree = "<group>"; };
 		2C4F355A1D4792C60061CA93 /* parser_expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_expression.cpp; sourceTree = "<group>"; };
 		2C4F355B1D4792C60061CA93 /* parser_expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_expression.h; sourceTree = "<group>"; };
 		2C4F355D1D4794CD0061CA93 /* parser_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_value.cpp; sourceTree = "<group>"; };
@@ -144,6 +147,8 @@
 				2C4F35611D4795C20061CA93 /* parser_statement.h */,
 				2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */,
 				2CA061CE1D4C34B70045AF86 /* parser_struct.h */,
+				2C3D6EAE1D54E918005926BE /* parser_types_collector.cpp */,
+				2C3D6EAF1D54E918005926BE /* parser_types_collector.h */,
 				2CFB36851D4506FA00F31A19 /* parser_types.cpp */,
 				2CFB36861D4506FA00F31A19 /* parser_types.h */,
 				2C4F355D1D4794CD0061CA93 /* parser_value.cpp */,
@@ -251,6 +256,7 @@
 				2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */,
 				2C8270041D46D9A300E697ED /* parser_primitives.cpp in Sources */,
 				2C81894D1D47B62400030C96 /* parser_evaluator.cpp in Sources */,
+				2C3D6EB01D54E918005926BE /* parser_types_collector.cpp in Sources */,
 				2C4F35621D4795C20061CA93 /* parser_statement.cpp in Sources */,
 				2C4F355F1D4794CD0061CA93 /* parser_value.cpp in Sources */,
 				2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */,
