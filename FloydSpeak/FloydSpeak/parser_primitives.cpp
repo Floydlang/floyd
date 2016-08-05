@@ -245,6 +245,78 @@ type_identifier_t make_type_identifier(const std::string& s){
 }
 
 
+
+
+
+	////////////////////////			type_definition2_t
+
+
+	bool type_definition2_t::check_invariant() const{
+		if(_base_type == k_int){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_bool){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_string){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_struct){
+			QUARK_ASSERT(_struct_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_vector){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_function){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(_function_def);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+		return true;
+	}
+
+	void trace_frontend_type(const type_definition2_t& t, const std::string& label){
+		QUARK_ASSERT(t.check_invariant());
+
+		if(t._base_type == k_int){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_bool){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_string){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_struct){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			for(const auto m: t._struct_def->_members){
+				trace(m);
+			}
+		}
+/*
+		else if(t._base_type == k_vector){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+//			trace_frontend_type(*t._vector_def->_value_type, "");
+		}
+*/
+		else if(t._base_type == k_function){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			trace(*t._function_def);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+
+
 	//////////////////////////////////////////////////		ast_t
 
 
@@ -255,7 +327,8 @@ type_identifier_t make_type_identifier(const std::string& s){
 	}
 
 	bool ast_t::parser_i__is_declared_constant_value(const std::string& s) const{
-		return _constant_values.find(s) != _constant_values.end();
+//		return _constant_values.find(s) != _constant_values.end();
+		return true;
 	}
 
 	bool ast_t::parser_i__is_known_type(const std::string& s) const{

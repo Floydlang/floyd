@@ -239,6 +239,8 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(ast1, pos);
 			const string& identifier = assignment_statement.first._bind_statement->_identifier;
 
+/*
+			//	??? If the value can be evaluted to a constant, do this. Else it's just a variable that can't be changed.
 			const auto it = ast2._constant_values.find(identifier);
 			if(it != ast2._constant_values.end()){
 				throw std::runtime_error("Variable name already in use!");
@@ -246,6 +248,7 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 
 			shared_ptr<const value_t> blank;
 			ast2._constant_values[identifier] = blank;
+*/
 
 			return { assignment_statement.first, ast2, skip_whitespace(assignment_statement.second) };
 		}

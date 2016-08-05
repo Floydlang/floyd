@@ -370,10 +370,6 @@ struct_def_t make_struct5(){
 		return true;
 	}
 
-
-
-
-
 	void trace_frontend_type(const type_definition_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
@@ -404,6 +400,11 @@ struct_def_t make_struct5(){
 			QUARK_ASSERT(false);
 		}
 	}
+
+
+
+
+
 
 	std::string calc_function_body_hash(const function_def_t& f){
 		return "";

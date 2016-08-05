@@ -194,6 +194,12 @@ You can even do this with a struct: the members will be returned in order.
 # FUNCTION DOCUMENTATION
 How to add docs? Markdown. Tests, contracts etc.
 
+	### Idea: Source code is markdown, add code segments:
+		# This is my source file
+			int my_const = "hello";
+			int main(string args){
+				return
+			}
 
 # FUNCTION CONTRACTS
 Arguments and return values always specifies their contracts using an expression within []. You can use constants, function calls and all function arguments in the expressions.

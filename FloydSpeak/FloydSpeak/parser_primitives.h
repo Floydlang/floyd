@@ -180,10 +180,44 @@ namespace floyd_parser {
 	}
 
 
+	struct type_definition2_t {
+		public: type_definition2_t(){};
+		public: bool check_invariant() const;
+
+
+		///////////////////		STATE
+
+		public: std::string _symbol;
+
+		// ### generate collections / templates, do not require them to be instantiated to be be able to make instances.
+		public: enum {
+			k_struct_def,
+			k_function_def
+		};
+
+		/*
+			Plain types only use the _base_type.
+			### Add support for int-ranges etc.
+		*/
+		public: frontend_base_type _base_type;
+		public: std::shared_ptr<struct_def_t> _struct_def;
+//		public: std::shared_ptr<vector_def_t> _vector_def;
+		public: std::shared_ptr<function_def_t> _function_def;
+	};
+
+
+	//////////////////////////////////////////////////		parser_i
+
+	//??? delete this
+	struct parser_i {
+		public: virtual ~parser_i(){};
+		public: virtual bool parser_i__is_declared_function(const std::string& s) const = 0;
+		public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const = 0;
+		public: virtual bool parser_i__is_known_type(const std::string& s) const = 0;
+	};
+
+
 	//////////////////////////////////////////////////		scope_def_t
-
-
-	struct function_def_t;
 
 
 	/*
@@ -196,38 +230,30 @@ namespace floyd_parser {
 	*/
 	struct scope_def_t {
 		//	Used for finding parent symbols, for making symbol paths.
-		scope_def_t* _parent_scope;
+		public: scope_def_t* _parent_scope;
 
 		//	Code, if any.
-		std::vector<statement_t> _statements;
+		public: std::vector<std::shared_ptr<statement_t> > _statements;
 
-		//	Local functions, if any.
-		std::vector<function_def_t> _functions;
+		//	Local constants, if any. ??? delete this - instead build scope_def_t for each scope.
+		public: std::vector<std::pair<std::string, value_t> > _constant_values;
 
-		//	Local constants, if any.
-		std::vector<std::pair<std::string, value_t> > _constant_values;
+		/*
+			Key is symbol name or a random string if unnamed.
+			### Allow many types to have the same symbol name (pixel, pixel several pixel constructor etc.).
+				Maybe use better key that encodes those differences?
+		*/
+		public: std::map<std::string, std::vector<type_definition_t>> _symbols;
 
 		//	Specification of values to store in each instance.
-		std::vector<member_t> _per_instance_values_spec;
+		public: std::vector<member_t> _per_instance_values_spec;
 	};
 
 	struct scope_instance_t {
-		scope_def_t* _def;
-		std::vector<std::pair<std::string, value_t>> _values;
+		public: scope_instance_t* _parent_instance;
+		public: scope_def_t* _def;
+		public: std::vector<std::pair<std::string, value_t>> _values;
 	};
-
-
-
-	//////////////////////////////////////////////////		parser_i
-
-
-	struct parser_i {
-		public: virtual ~parser_i(){};
-		public: virtual bool parser_i__is_declared_function(const std::string& s) const = 0;
-		public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const = 0;
-		public: virtual bool parser_i__is_known_type(const std::string& s) const = 0;
-	};
-
 
 
 	//////////////////////////////////////////////////		ast_t
@@ -277,7 +303,9 @@ namespace floyd_parser {
 	*/
 
 	struct ast_t : public parser_i {
-		public: ast_t(){
+		public: ast_t() :
+			_root_scope(std::make_shared<scope_def_t>())
+		{
 		}
 
 		public: bool check_invariant() const {
@@ -297,6 +325,7 @@ namespace floyd_parser {
 		public: std::map<std::string, std::shared_ptr<const value_t> > _constant_values;
 		public: frontend_types_collector_t _types_collector;
 		public: std::vector<std::shared_ptr<statement_t> > _top_level_statements;
+
 		public: std::shared_ptr<scope_def_t> _root_scope;
 	};
 

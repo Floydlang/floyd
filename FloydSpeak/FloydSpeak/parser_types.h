@@ -262,6 +262,7 @@ namespace floyd_parser {
 
 
 
+
 	void trace_frontend_type(const type_definition_t& t, const std::string& label);
 
 	std::string to_signature(const struct_def_t& t);

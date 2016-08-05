@@ -134,7 +134,7 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 
 
 
-
+/*
 	//	Temporarily add the function's input argument to the identifers, so the body can access them.
 	ast_t add_arg_identifiers(const ast_t& ast, const std::vector<arg_t> arg_types){
 		QUARK_ASSERT(ast.check_invariant());
@@ -148,7 +148,7 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 		}
 		return local_scope;
 	}
-
+*/
 
 
 
@@ -174,7 +174,8 @@ std::pair<std::pair<string, function_def_t>, string> parse_function_definition(c
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
 
-	auto local_scope = add_arg_identifiers(ast, args);
+//	auto local_scope = add_arg_identifiers(ast, args);
+	auto local_scope = ast;
 
 	const auto body = parse_function_body(local_scope, body_pos.first);
 	const auto a = function_def_t(type_pos.first, args, body);
