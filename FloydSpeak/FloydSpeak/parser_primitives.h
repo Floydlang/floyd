@@ -239,20 +239,16 @@ namespace floyd_parser {
 		//	Used for finding parent symbols, for making symbol paths.
 		public: scope_def_t* _parent_scope = nullptr;
 
-		//	Code, if any.
-		public: std::vector<std::shared_ptr<statement_t> > _statements;
+		//	INSTRUCTIONS - either _host_function or _statements is used.
 
-		//	Either _host_function or _statements is used.
-		public: hosts_function_t _host_function = nullptr;
-		public: std::shared_ptr<host_data_i> _host_function_param;
+			//	Code, if any.
+			public: std::vector<std::shared_ptr<statement_t> > _statements;
 
-
+			//	Either _host_function or _statements is used.
+			public: hosts_function_t _host_function = nullptr;
+			public: std::shared_ptr<host_data_i> _host_function_param;
 
 		public: frontend_types_collector_t _types_collector;
-
-		//	Local constants, if any. ??? delete this - instead build scope_def_t for each scope.
-//		public: std::vector<std::pair<std::string, value_t> > _constant_values;
-//		public: std::map<std::string, value_t> _constant_values;
 
 		/*
 			Key is symbol name or a random string if unnamed.
@@ -322,7 +318,7 @@ namespace floyd_parser {
 
 	struct ast_t : public parser_i {
 		public: ast_t() :
-			_root_scope(std::make_shared<scope_def_t>())
+			_global_scope(std::make_shared<scope_def_t>())
 		{
 		}
 
@@ -339,7 +335,7 @@ namespace floyd_parser {
 
 
 		/////////////////////////////		STATE
-		public: std::shared_ptr<scope_def_t> _root_scope;
+		public: std::shared_ptr<scope_def_t> _global_scope;
 	};
 
 

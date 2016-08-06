@@ -45,7 +45,7 @@ vm_t::vm_t(const floyd_parser::ast_t& ast) :
 	QUARK_ASSERT(ast.check_invariant());
 
 	auto global_scope = scope_instance_t();
-	global_scope._def = ast._root_scope.get();
+	global_scope._def = ast._global_scope.get();
 	_scope_instances.push_back(make_shared<scope_instance_t>(global_scope));
 	QUARK_ASSERT(check_invariant());
 }
@@ -84,7 +84,7 @@ std::shared_ptr<function_def_t> vm_t::resolve_function_type(const std::string& s
 
 
 shared_ptr<const floyd_parser::function_def_t> find_global_function(const vm_t& vm, const string& name){
-	return vm._ast._root_scope->_types_collector.resolve_function_type(name);
+	return vm._ast._global_scope->_types_collector.resolve_function_type(name);
 }
 
 struct vm_stack_frame {
@@ -198,8 +198,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 		"	return p.s;"
 		"}\n"
 	);
-	QUARK_TEST_VERIFY(a.first._ast._root_scope->_types_collector.lookup_identifier_shallow("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._root_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
 #endif
