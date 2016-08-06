@@ -43,7 +43,7 @@ namespace floyd_parser {
 
 		//	int
 		{
-			auto def = make_shared<type_definition_t>();
+			auto def = make_shared<type_def_t>();
 			def->_base_type = k_int;
 			QUARK_ASSERT(def->check_invariant());
 
@@ -53,7 +53,7 @@ namespace floyd_parser {
 
 		//	bool
 		{
-			auto def = make_shared<type_definition_t>();
+			auto def = make_shared<type_def_t>();
 			def->_base_type = k_bool;
 			QUARK_ASSERT(def->check_invariant());
 
@@ -63,7 +63,7 @@ namespace floyd_parser {
 
 		//	string
 		{
-			auto def = make_shared<type_definition_t>();
+			auto def = make_shared<type_def_t>();
 			def->_base_type = k_string;
 			QUARK_ASSERT(def->check_invariant());
 
@@ -135,7 +135,7 @@ namespace floyd_parser {
 	}
 
 
-	types_collector_t types_collector_t::define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_definition_t>& type_def) const{
+	types_collector_t types_collector_t::define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(!new_identifier.empty());
 
@@ -154,11 +154,11 @@ namespace floyd_parser {
 
 
 
-	std::pair<std::shared_ptr<type_definition_t>, types_collector_t> types_collector_t::define_struct_type(const struct_def_t& struct_def) const{
+	std::pair<std::shared_ptr<type_def_t>, types_collector_t> types_collector_t::define_struct_type(const struct_def_t& struct_def) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(struct_def.check_invariant());
 
-		auto type_def = make_shared<type_definition_t>();
+		auto type_def = make_shared<type_def_t>();
 		type_def->_base_type = k_struct;
 		type_def->_struct_def = make_shared<struct_def_t>(struct_def);
 
@@ -170,7 +170,7 @@ namespace floyd_parser {
 		}
 		else{
 			auto result = *this;
-			result._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_definition_t>>(signature, type_def));
+			result._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_def_t>>(signature, type_def));
 			return { type_def, result };
 		}
 	}
@@ -199,11 +199,11 @@ namespace floyd_parser {
 
 
 	//??? test!
-	std::pair<std::shared_ptr<type_definition_t>, types_collector_t> types_collector_t::define_function_type(const function_def_t& function_def) const{
+	std::pair<std::shared_ptr<type_def_t>, types_collector_t> types_collector_t::define_function_type(const function_def_t& function_def) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(function_def.check_invariant());
 
-		auto type_def = make_shared<type_definition_t>();
+		auto type_def = make_shared<type_def_t>();
 		type_def->_base_type = k_function;
 		type_def->_function_def = make_shared<function_def_t>(function_def);
 
@@ -215,7 +215,7 @@ namespace floyd_parser {
 		}
 		else{
 			auto result = *this;
-			result._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_definition_t>>(signature, type_def));
+			result._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_def_t>>(signature, type_def));
 			return { type_def, result };
 		}
 	}
@@ -277,7 +277,7 @@ QUARK_UNIT_TESTQ("define_function_type()", ""){
 		}
 	}
 
-	std::shared_ptr<type_definition_t> types_collector_t::resolve_identifier(const std::string& s) const{
+	std::shared_ptr<type_def_t> types_collector_t::resolve_identifier(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto identifier_data = lookup_identifier_deep(s);
@@ -314,11 +314,11 @@ QUARK_UNIT_TESTQ("define_function_type()", ""){
 	}
 
 
-	std::shared_ptr<type_definition_t> types_collector_t::lookup_signature(const std::string& s) const{
+	std::shared_ptr<type_def_t> types_collector_t::lookup_signature(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _type_definitions.find(s);
-		return it == _type_definitions.end() ? std::shared_ptr<type_definition_t>() : it->second;
+		return it == _type_definitions.end() ? std::shared_ptr<type_def_t>() : it->second;
 	}
 
 

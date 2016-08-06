@@ -21,7 +21,7 @@
 
 namespace floyd_parser {
 
-	struct type_definition_t;
+	struct type_def_t;
 	struct types_collector_t;
 	struct statement_t;
 	struct struct_def_t;
@@ -46,7 +46,7 @@ namespace floyd_parser {
 		public: std::string _alias_type_identifier;
 
 		//	Can be empty. Only way it can be filled is if identifier is later updated
-		public: std::shared_ptr<type_definition_t> _optional_def;
+		public: std::shared_ptr<type_def_t> _optional_def;
 	};
 
 
@@ -85,7 +85,7 @@ namespace floyd_parser {
 		/*
 			type_def == empty: just declare the new type-identifier, don't bind to a type-definition yet.
 		*/
-		public: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_definition_t>& type_def) const;
+		public: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
 
 
 
@@ -96,7 +96,7 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_definition_t>, types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
+		public: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
@@ -113,7 +113,7 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_definition_t>, types_collector_t> define_function_type(const function_def_t& function_def) const;
+		public: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_function_type(const function_def_t& function_def) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
@@ -140,7 +140,7 @@ namespace floyd_parser {
 			return empty: the identifier is unknown or has no type-definition.
 			NOTICE: any found alias is resolved recursively.
 		*/
-		public: std::shared_ptr<type_definition_t> resolve_identifier(const std::string& s) const;
+		public: std::shared_ptr<type_def_t> resolve_identifier(const std::string& s) const;
 
 		/*
 			returns empty if type is unknown or the type is not fully defined.
@@ -153,17 +153,17 @@ namespace floyd_parser {
 		public: std::shared_ptr<function_def_t> resolve_function_type(const std::string& s) const;
 
 
-		public: std::shared_ptr<type_definition_t> lookup_signature(const std::string& s) const;
+		public: std::shared_ptr<type_def_t> lookup_signature(const std::string& s) const;
 
 
 		///////////////////		STATE
 
 		//	Key is the type identifier.
-		//	Value refers to a type_definition_t stored in _type_definition.
+		//	Value refers to a type_def_t stored in _type_definition.
 		private: std::map<std::string, type_indentifier_data_ref > _identifiers;
 
 		//	Key is the signature string. De-duplicated.
-		private: std::map<std::string, std::shared_ptr<type_definition_t> > _type_definitions;
+		private: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
 	};
 
 

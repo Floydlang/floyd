@@ -340,10 +340,10 @@ struct_def_t make_struct5(){
 
 
 
-	////////////////////////			type_definition_t
+	////////////////////////			type_def_t
 
 
-	bool type_definition_t::check_invariant() const{
+	bool type_def_t::check_invariant() const{
 		if(_base_type == k_int){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
@@ -380,7 +380,7 @@ struct_def_t make_struct5(){
 		return true;
 	}
 
-	void trace_frontend_type(const type_definition_t& t, const std::string& label){
+	void trace_frontend_type(const type_def_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
 		if(t._base_type == k_int){
@@ -453,7 +453,7 @@ struct_def_t make_struct5(){
 
 
 
-	std::string to_signature(const type_definition_t& t){
+	std::string to_signature(const type_def_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
 		const auto base_type = to_string(t._base_type);

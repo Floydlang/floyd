@@ -87,7 +87,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	QUARK_TEST_VERIFY(align_pos(9, 8) == 16);
 }
 
-	std::vector<byte_range_t> calc_struct_default_memory_layout(const types_collector_t& types, const type_definition_t& s){
+	std::vector<byte_range_t> calc_struct_default_memory_layout(const types_collector_t& types, const type_def_t& s){
 		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(s.check_invariant());
 

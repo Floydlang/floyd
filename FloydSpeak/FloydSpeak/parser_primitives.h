@@ -255,7 +255,7 @@ namespace floyd_parser {
 			### Allow many types to have the same symbol name (pixel, pixel several pixel constructor etc.).
 				Maybe use better key that encodes those differences?
 		*/
-		//		public: std::map<std::string, std::vector<type_definition_t>> _symbolsxxxx;
+		//		public: std::map<std::string, std::vector<type_def_t>> _symbolsxxxx;
 
 		//	Specification of values to store in each instance.
 		//		public: std::vector<member_t> _runtime_value_spec;
