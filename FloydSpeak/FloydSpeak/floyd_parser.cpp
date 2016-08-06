@@ -118,7 +118,7 @@ void trace(const type_identifier_t& v){
 void trace(const ast_t& program){
 	QUARK_SCOPED_TRACE("program");
 
-	for(const auto i: program._top_level_statements){
+	for(const auto i: program._root_scope->_statements){
 		trace(*i);
 	}
 }
@@ -330,7 +330,7 @@ value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, 
 	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
 	const auto struct_name = a._struct_name;
 
-	std::shared_ptr<struct_def_t> b = a._ast._types_collector.resolve_struct_type(struct_name.to_string());
+	std::shared_ptr<struct_def_t> b = a._ast._root_scope->_types_collector.resolve_struct_type(struct_name.to_string());
 	if(!b){
 		throw std::runtime_error("Undefined struct!");
 	}
@@ -351,8 +351,8 @@ pair<vector<shared_ptr<statement_t>>, ast_t> install_struct_support(const ast_t&
 	const auto struct_name_ident = type_identifier_t::make_type(struct_name);
 
 	//	Define struct type and data members.
-	ast2._types_collector = ast2._types_collector.define_struct_type(struct_name, struct_def);
-	std::shared_ptr<struct_def_t> s = ast2._types_collector.resolve_struct_type(struct_name);
+	ast2._root_scope->_types_collector = ast2._root_scope->_types_collector.define_struct_type(struct_name, struct_def);
+	std::shared_ptr<struct_def_t> s = ast2._root_scope->_types_collector.resolve_struct_type(struct_name);
 
 	//	Make constructor with same name as struct.
 	/*{
@@ -368,7 +368,7 @@ pair<vector<shared_ptr<statement_t>>, ast_t> install_struct_support(const ast_t&
 		const auto param = make_shared<alloc_struct_param>(struct_name_ident);
 		param->_ast = ast2;
 		const auto a = function_def_t(struct_name_ident, {}, hosts_function__alloc_struct, param);
-		ast2._types_collector = ast2._types_collector.define_function_type(struct_name + "_constructor", a);
+		ast2._root_scope->_types_collector = ast2._root_scope->_types_collector.define_function_type(struct_name + "_constructor", a);
 	}
 
 //	statements.push_back(make_shared<statement_t>(statement_pos._statement));
@@ -420,7 +420,7 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 //			ast2._types_collector = ast2._types_collector.define_struct_type(statement_pos._statement._define_struct->_type_identifier, statement_pos._statement._define_struct->_struct_def);
 		}
 		else if(statement_pos._statement._define_function){
-			ast2._types_collector = ast2._types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
+			ast2._root_scope->_types_collector = ast2._root_scope->_types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
 		}
 		else{
 			statements.push_back(make_shared<statement_t>(statement_pos._statement));
@@ -429,7 +429,7 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 		pos = skip_whitespace(statement_pos._rest);
 	}
 
-	ast2._top_level_statements = statements;
+	ast2._root_scope->_statements = statements;
 
 	QUARK_ASSERT(ast2.check_invariant());
 	trace(ast2);
@@ -444,9 +444,9 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	"}\n";
 
 	const auto result = program_to_ast({}, kProgram1);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+	QUARK_TEST_VERIFY(result._root_scope->_statements.size() == 0);
 
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
+	QUARK_TEST_VERIFY((*result._root_scope->_types_collector.resolve_function_type("main") ==
 		make_function_def(
 			type_identifier_t::make_type("int"),
 			vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }},
@@ -466,9 +466,9 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	;
 
 	const auto result = program_to_ast({}, kProgram);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+	QUARK_TEST_VERIFY(result._root_scope->_statements.size() == 0);
 
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("f") ==
+	QUARK_TEST_VERIFY((*result._root_scope->_types_collector.resolve_function_type("f") ==
 		make_function_def(
 			type_identifier_t::make_type("int"),
 			vector<arg_t>{
@@ -496,9 +496,9 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	QUARK_TRACE(kProgram);
 
 	const auto result = program_to_ast({}, kProgram);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+	QUARK_TEST_VERIFY(result._root_scope->_statements.size() == 0);
 
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("hello") ==
+	QUARK_TEST_VERIFY((*result._root_scope->_types_collector.resolve_function_type("hello") ==
 		make_function_def(
 			type_identifier_t::make_type("string"),
 			vector<arg_t>{
@@ -512,7 +512,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		)
 	));
 
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
+	QUARK_TEST_VERIFY((*result._root_scope->_types_collector.resolve_function_type("main") ==
 		make_function_def(
 			type_identifier_t::make_type("int"),
 			vector<arg_t>{
@@ -536,9 +536,9 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 	"	return 3;\n"
 	"}\n";
 	auto result = program_to_ast({}, kProgram2);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+	QUARK_TEST_VERIFY(result._root_scope->_statements.size() == 0);
 
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("testx") ==
+	QUARK_TEST_VERIFY((*result._root_scope->_types_collector.resolve_function_type("testx") ==
 		make_function_def(
 			type_identifier_t::make_type("float"),
 			vector<arg_t>{
@@ -581,7 +581,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can instantiate a struct"){
 	);
 
 
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+	QUARK_TEST_VERIFY(result._root_scope->_statements.size() == 0);
 
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
@@ -603,7 +603,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member vari
 		"	return p.s + a;"
 		"}\n"
 	);
-	QUARK_TEST_VERIFY(result._top_level_statements.size() == 0);
+	QUARK_TEST_VERIFY(result._root_scope->_statements.size() == 0);
 
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==

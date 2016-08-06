@@ -44,6 +44,9 @@ vm_t::vm_t(const floyd_parser::ast_t& ast) :
 {
 	QUARK_ASSERT(ast.check_invariant());
 
+	auto global_scope = scope_instance_t();
+	global_scope._def = ast._root_scope.get();
+	_scope_instances.push_back(make_shared<scope_instance_t>(global_scope));
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -53,11 +56,59 @@ bool vm_t::check_invariant() const {
 }
 
 
+std::shared_ptr<function_def_t> resolve_function_type_deep(const std::vector<shared_ptr<floyd_parser::scope_instance_t>>& scopes, const std::string& s, size_t depth){
+	QUARK_ASSERT(depth < scopes.size());
+	QUARK_ASSERT(depth >= 0);
+
+	const auto f = scopes[depth]->_def->_types_collector.resolve_function_type(s);
+	if(f){
+		return f;
+	}
+	else if(depth > 0){
+		return resolve_function_type_deep(scopes, s, depth - 1);
+	}
+	else{
+		return {};
+	}
+}
+
+std::shared_ptr<function_def_t> vm_t::resolve_function_type(const std::string& s) const{
+	QUARK_ASSERT(check_invariant());
+
+	return resolve_function_type_deep(_scope_instances, s, _scope_instances.size() - 1);
+}
+
+
+
+floyd_parser::value_t resolve_value_deep(const std::vector<shared_ptr<scope_instance_t>>& scopes, const std::string& s, size_t depth){
+	QUARK_ASSERT(depth < scopes.size());
+	QUARK_ASSERT(depth >= 0);
+
+	const auto it = scopes[depth]->_values.find(s);
+	if(it != scopes[depth]->_values.end()){
+		return it->second;
+	}
+	else if(depth > 0){
+		return resolve_value_deep(scopes, s, depth - 1);
+	}
+	else{
+		return {};
+	}
+}
+
+
+
+floyd_parser::value_t vm_t::resolve_value(const std::string& s) const{
+	QUARK_ASSERT(check_invariant());
+
+	return resolve_value_deep(_scope_instances, s, _scope_instances.size() - 1);
+}
+
 
 
 
 shared_ptr<const floyd_parser::function_def_t> find_global_function(const vm_t& vm, const string& name){
-	return vm._ast._types_collector.resolve_function_type(name);
+	return vm._ast._root_scope->_types_collector.resolve_function_type(name);
 }
 
 struct vm_stack_frame {

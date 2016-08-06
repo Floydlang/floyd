@@ -141,12 +141,31 @@ namespace floyd_parser {
 	//////////////////////////////////////		function_def_t
 
 
+
+	function_def_t::function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<std::shared_ptr<statement_t> > statements) :
+		_return_type(return_type),
+		_args(args)
+	{
+		_scope_def = std::make_shared<scope_def_t>();
+		_scope_def->_statements = statements;
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	function_def_t::function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, hosts_function_t f, std::shared_ptr<host_data_i> param) :
+		_return_type(return_type),
+		_args(args)
+	{
+		_scope_def = std::make_shared<scope_def_t>();
+		_scope_def->_host_function = f;
+		_scope_def->_host_function_param = param;
+
+		QUARK_ASSERT(check_invariant());
+	}
+
 	bool function_def_t::check_invariant() const {
 		QUARK_ASSERT(_return_type.check_invariant());
-		for(const auto s: _statements){
-			QUARK_ASSERT(s);
-			QUARK_ASSERT(s->check_invariant());
-		}
+		QUARK_ASSERT(_scope_def && _scope_def->check_invariant());
 		return true;
 	}
 
@@ -154,16 +173,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		if(_statements.size() != other._statements.size()){
-			return false;
-		}
-		for(int i = 0 ; i < _statements.size() ; i++){
-			if(!(*_statements[i] == *other._statements[i])){
-				return false;
-			}
-		}
-
-		return _return_type == other._return_type && _args == other._args;
+		return *_scope_def == *other._scope_def && _return_type == other._return_type && _args == other._args;
 	}
 
 	void trace(const function_def_t& e){
@@ -177,7 +187,7 @@ namespace floyd_parser {
 			trace_vec("arguments", e._args);
 		}
 
-		trace(e._statements);
+		trace(e._scope_def->_statements);
 	}
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e){

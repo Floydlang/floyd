@@ -180,6 +180,9 @@ namespace floyd_parser {
 	}
 
 
+	//////////////////////////////////////////////////		type_definition2_t
+
+
 	struct type_definition2_t {
 		public: type_definition2_t(){};
 		public: bool check_invariant() const;
@@ -229,30 +232,45 @@ namespace floyd_parser {
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 	*/
 	struct scope_def_t {
+		public: bool check_invariant() const;
+		public: bool operator==(const scope_def_t& other) const;
+
+
 		//	Used for finding parent symbols, for making symbol paths.
-		public: scope_def_t* _parent_scope;
+		public: scope_def_t* _parent_scope = nullptr;
 
 		//	Code, if any.
 		public: std::vector<std::shared_ptr<statement_t> > _statements;
 
+		//	Either _host_function or _statements is used.
+		public: hosts_function_t _host_function = nullptr;
+		public: std::shared_ptr<host_data_i> _host_function_param;
+
+
+
+		public: frontend_types_collector_t _types_collector;
+
 		//	Local constants, if any. ??? delete this - instead build scope_def_t for each scope.
-		public: std::vector<std::pair<std::string, value_t> > _constant_values;
+//		public: std::vector<std::pair<std::string, value_t> > _constant_values;
+//		public: std::map<std::string, value_t> _constant_values;
 
 		/*
 			Key is symbol name or a random string if unnamed.
 			### Allow many types to have the same symbol name (pixel, pixel several pixel constructor etc.).
 				Maybe use better key that encodes those differences?
 		*/
-		public: std::map<std::string, std::vector<type_definition_t>> _symbols;
+		//		public: std::map<std::string, std::vector<type_definition_t>> _symbolsxxxx;
 
 		//	Specification of values to store in each instance.
-		public: std::vector<member_t> _per_instance_values_spec;
+		//		public: std::vector<member_t> _runtime_value_spec;
 	};
 
 	struct scope_instance_t {
-		public: scope_instance_t* _parent_instance;
-		public: scope_def_t* _def;
-		public: std::vector<std::pair<std::string, value_t>> _values;
+		public: const scope_def_t* _def = nullptr;
+
+		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
+		//	key string is name of variable.
+		public: std::map<std::string, value_t> _values;
 	};
 
 
@@ -321,11 +339,6 @@ namespace floyd_parser {
 
 
 		/////////////////////////////		STATE
-
-		public: std::map<std::string, value_t> _constant_values;
-		public: frontend_types_collector_t _types_collector;
-		public: std::vector<std::shared_ptr<statement_t> > _top_level_statements;
-
 		public: std::shared_ptr<scope_def_t> _root_scope;
 	};
 

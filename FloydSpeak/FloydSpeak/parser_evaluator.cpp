@@ -12,6 +12,7 @@
 #include "parser_expression.h"
 #include "parser_statement.h"
 #include "floyd_parser.h"
+#include "floyd_vm.h"
 #include "parser_value.h"
 
 #include <cmath>
@@ -48,10 +49,10 @@ namespace {
 	}
 
 	/*
-		- Use callstack instead of duplicating all identifiers.
+		### Use callstack instead of duplicating all identifiers.
 	*/
-	ast_t add_args(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
-		QUARK_ASSERT(ast.check_invariant());
+	vm_t open_function_scope(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -59,24 +60,29 @@ namespace {
 			throw std::runtime_error("function arguments do not match function");
 		}
 
-		auto local_scope = ast;
+		scope_instance_t new_scope;
+		new_scope._def = f._scope_def.get();
+
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f._args[i]._identifier;
 			const auto& arg_value = args[i];
-			local_scope._constant_values[arg_name] = arg_value;
+			new_scope._values[arg_name] = arg_value;
 		}
-		return local_scope;
+
+		vm_t result = vm;
+		result._scope_instances.push_back(make_shared<scope_instance_t>(new_scope));
+		return result;
 	}
 
 }
 
 
-value_t call_host_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
-	QUARK_ASSERT(ast.check_invariant());
+value_t call_host_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
-	QUARK_ASSERT(f._statements.empty());
-	QUARK_ASSERT(f._host_function);
-	QUARK_ASSERT(f._host_function_param);
+	QUARK_ASSERT(f._scope_def->_statements.empty());
+	QUARK_ASSERT(f._scope_def->_host_function);
+	QUARK_ASSERT(f._scope_def->_host_function_param);
 
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -85,45 +91,45 @@ value_t call_host_function(const ast_t& ast, const function_def_t& f, const vect
 	}
 
 //	auto local_scope = add_args(ast, f, args);
-	const auto a = f._host_function(f._host_function_param, args);
+	const auto a = f._scope_def->_host_function(f._scope_def->_host_function_param, args);
 	return a;
 }
 
-
-value_t call_interpreted_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
-	QUARK_ASSERT(ast.check_invariant());
+//??? Make this operate on scope_def_t instead of function_def_t.
+value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
-	QUARK_ASSERT(!f._statements.empty());
-	QUARK_ASSERT(!f._host_function);
-	QUARK_ASSERT(!f._host_function_param);
+	QUARK_ASSERT(!f._scope_def->_statements.empty());
+	QUARK_ASSERT(!f._scope_def->_host_function);
+	QUARK_ASSERT(!f._scope_def->_host_function_param);
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 	if(!check_args(f, args)){
 		throw std::runtime_error("function arguments do not match function");
 	}
 
-	auto local_scope = add_args(ast, f, args);
+	auto vm2 = open_function_scope(vm, f, args);
 
 	//	??? Should respect {} for local variable scopes!
-	const auto& statements = f._statements;
+	const auto& statements = f._scope_def->_statements;
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
 		if(statement->_bind_statement){
 			const auto s = statement->_bind_statement;
 			const auto name = s->_identifier;
-			if(local_scope._constant_values.count(name) != 0){
+			if(vm2._scope_instances.back()->_values.count(name) != 0){
 				throw std::runtime_error("local constant already exists");
 			}
-			const auto result = evaluate3(local_scope, *s->_expression);
+			const auto result = evaluate3(vm2, *s->_expression);
 			if(!result._constant){
 				throw std::runtime_error("unknown variables");
 			}
-			local_scope._constant_values[name] = *result._constant;
+			vm2._scope_instances.back()->_values[name] = *result._constant;
 		}
 		else if(statement->_return_statement){
 			const auto expr = statement->_return_statement->_expression;
-			const auto result = evaluate3(local_scope, *expr);
+			const auto result = evaluate3(vm2, *expr);
 
 			if(!result._constant){
 				throw std::runtime_error("undefined");
@@ -140,8 +146,8 @@ value_t call_interpreted_function(const ast_t& ast, const function_def_t& f, con
 }
 
 
-value_t run_function(const ast_t& ast, const function_def_t& f, const vector<value_t>& args){
-	QUARK_ASSERT(ast.check_invariant());
+value_t run_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -149,13 +155,11 @@ value_t run_function(const ast_t& ast, const function_def_t& f, const vector<val
 		throw std::runtime_error("function arguments do not match function");
 	}
 
-	auto local_scope = add_args(ast, f, args);
-
-	if(f._host_function){
-		return call_host_function(local_scope, f, args);
+	if(f._scope_def->_host_function){
+		return call_host_function(vm, f, args);
 	}
 	else{
-		return call_interpreted_function(local_scope, f, args);
+		return call_interpreted_function(vm, f, args);
 	}
 }
 
@@ -166,8 +170,8 @@ value_t run_function(const ast_t& ast, const function_def_t& f, const vector<val
 
 //??? tests
 //??? Split into several functions.
-expression_t evaluate3(const ast_t& ast, const expression_t& e){
-	QUARK_ASSERT(ast.check_invariant());
+expression_t evaluate3(const vm_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e._constant){
@@ -175,8 +179,8 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	}
 	else if(e._math2){
 		const auto e2 = *e._math2;
-		const auto left = evaluate3(ast, *e2._left);
-		const auto right = evaluate3(ast, *e2._right);
+		const auto left = evaluate3(vm, *e2._left);
+		const auto right = evaluate3(vm, *e2._right);
 
 		//	Both left and right are constant, replace the math_operation with a constant!
 		if(left._constant && right._constant){
@@ -242,7 +246,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
-		const auto input = evaluate3(ast, *e2._input);
+		const auto input = evaluate3(vm, *e2._input);
 
 		//	Replace the with a constant!
 		if(input._constant){
@@ -283,7 +287,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 	else if(e._call){
 		const auto& call_function_expression = *e._call;
 
-		const auto& function_def = ast._types_collector.resolve_function_type(call_function_expression._function_name);
+		const auto& function_def = vm.resolve_function_type(call_function_expression._function_name);
 		if(!function_def){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}
@@ -293,7 +297,7 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
 		for(const auto& i: call_function_expression._inputs){
-			const auto arg_expr = evaluate3(ast, *i);
+			const auto arg_expr = evaluate3(vm, *i);
 			simplified_args.push_back(arg_expr);
 		}
 
@@ -312,24 +316,22 @@ expression_t evaluate3(const ast_t& ast, const expression_t& e){
 				return make_function_call(call_function_expression._function_name, call_function_expression._inputs);
 			}
 		}
-		const value_t result = run_function(ast, *function_def, constant_args);
+		const value_t result = run_function(vm, *function_def, constant_args);
 		return make_constant(result);
 	}
 	else if(e._load){
 		const auto e2 = *e._load;
-//		const shared_ptr<expression_t> address = e2._parent_address ? make_shared<expression_t>(evaluate3(ast, *e2._parent_address)) : shared_ptr<expression_t>();
+//		const shared_ptr<expression_t> address = e2._parent_address ? make_shared<expression_t>(evaluate3(vm, *e2._parent_address)) : shared_ptr<expression_t>();
 
 		//??? Very limited addressing!
 		if(!e2._address->_resolve_member || e2._address->_resolve_member->_parent_address){
 			throw std::runtime_error("Cannot resolve read address.");
 		}
 
-		const auto function_name = e2._address->_resolve_member->_member_name;
+		const auto member_name = e2._address->_resolve_member->_member_name;
+		const value_t value = vm.resolve_value(member_name);
 
-		const auto it = ast._constant_values.find(function_name);
-		QUARK_ASSERT(it != ast._constant_values.end());
-
-		return make_constant(it->second);
+		return make_constant(value);
 	}
 	else if(e._resolve_member){
 		return e;

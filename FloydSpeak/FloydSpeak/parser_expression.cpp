@@ -557,20 +557,20 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 
 ast_t make_test_ast(){
 	ast_t result;
-	result._types_collector = result._types_collector.define_function_type("log", make_log_function());
-	result._types_collector = result._types_collector.define_function_type("log2", make_log2_function());
-	result._types_collector = result._types_collector.define_function_type("f", make_log_function());
-	result._types_collector = result._types_collector.define_function_type("return5", make_return5());
+	result._root_scope->_types_collector = result._root_scope->_types_collector.define_function_type("log", make_log_function());
+	result._root_scope->_types_collector = result._root_scope->_types_collector.define_function_type("log2", make_log2_function());
+	result._root_scope->_types_collector = result._root_scope->_types_collector.define_function_type("f", make_log_function());
+	result._root_scope->_types_collector = result._root_scope->_types_collector.define_function_type("return5", make_return5());
 
-	result._types_collector = result._types_collector.define_struct_type("test_struct0", make_struct0());
-	result._types_collector = result._types_collector.define_struct_type("test_struct1", make_struct1());
+	result._root_scope->_types_collector = result._root_scope->_types_collector.define_struct_type("test_struct0", make_struct0());
+	result._root_scope->_types_collector = result._root_scope->_types_collector.define_struct_type("test_struct1", make_struct1());
 	return result;
 }
 
 QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	auto a = make_test_ast();
-	QUARK_TEST_VERIFY(*a._types_collector.resolve_struct_type("test_struct0") == make_struct0());
-	QUARK_TEST_VERIFY(*a._types_collector.resolve_struct_type("test_struct1") == make_struct1());
+	QUARK_TEST_VERIFY(*a._root_scope->_types_collector.resolve_struct_type("test_struct0") == make_struct0());
+	QUARK_TEST_VERIFY(*a._root_scope->_types_collector.resolve_struct_type("test_struct1") == make_struct1());
 }
 
 

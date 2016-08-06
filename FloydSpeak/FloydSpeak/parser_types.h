@@ -26,7 +26,7 @@ namespace floyd_parser {
 	struct struct_def_t;
 	struct function_def_t;
 	struct value_t;
-	
+	struct scope_def_t;
 
 	//////////////////////////////////////		frontend_base_type
 
@@ -129,42 +129,15 @@ namespace floyd_parser {
 
 	typedef value_t (*hosts_function_t)(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
 
-
-
 	struct function_def_t {
+		public: function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<std::shared_ptr<statement_t> > statements);
+		public: function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, hosts_function_t f, std::shared_ptr<host_data_i> param);
 		public: bool check_invariant() const;
 		public: bool operator==(const function_def_t& other) const;
 
-
-		function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<std::shared_ptr<statement_t> > statements) :
-			_return_type(return_type),
-			_args(args),
-			_statements(statements)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-		function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, hosts_function_t f, std::shared_ptr<host_data_i> param) :
-			_return_type(return_type),
-			_args(args),
-			_host_function(f),
-			_host_function_param(param)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-
 		public: const type_identifier_t _return_type;
-
-		//??? Should be a struct. Idea: use internal concept for "record" and use it to build
-		//	Floyd struct, tuple, arg list, local variables / stack frames etc.
 		public: const std::vector<arg_t> _args;
-
-		//	Either _host_function or _statements is used.
-		public: const std::vector<std::shared_ptr<statement_t> > _statements;
-
-		public: hosts_function_t _host_function = nullptr;
-		public: std::shared_ptr<host_data_i> _host_function_param;
+		public: std::shared_ptr<scope_def_t> _scope_def;
 	};
 
 	void trace(const function_def_t& v);

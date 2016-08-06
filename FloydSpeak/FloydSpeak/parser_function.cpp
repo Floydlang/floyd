@@ -197,7 +197,7 @@ QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	QUARK_TEST_VERIFY(result.first.first == "f");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_type("int"));
 	QUARK_TEST_VERIFY(result.first.second._args.empty());
-	QUARK_TEST_VERIFY(result.first.second._statements.empty());
+	QUARK_TEST_VERIFY(result.first.second._scope_def->_statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
@@ -210,7 +210,7 @@ QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of differen
 		{ make_type_identifier("float"), "barry" },
 		{ make_type_identifier("int"), "c" },
 	}));
-	QUARK_TEST_VERIFY(result.first.second._statements.empty());
+	QUARK_TEST_VERIFY(result.first.second._scope_def->_statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 

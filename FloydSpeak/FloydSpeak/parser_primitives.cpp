@@ -13,6 +13,7 @@
 #include "text_parser.h"
 
 #include "steady_vector.h"
+#include "parser_statement.h"
 #include "parser_value.h"
 
 #include <string>
@@ -317,13 +318,42 @@ type_identifier_t make_type_identifier(const std::string& s){
 
 
 
+	//////////////////////////////////////////////////		scope_def_t
+
+
+
+	bool scope_def_t::check_invariant() const {
+		for(const auto s: _statements){
+			QUARK_ASSERT(s);
+			QUARK_ASSERT(s->check_invariant());
+		}
+		return true;
+	}
+
+	bool scope_def_t::operator==(const scope_def_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(_statements.size() != other._statements.size()){
+			return false;
+		}
+		for(int i = 0 ; i < _statements.size() ; i++){
+			if(!(*_statements[i] == *other._statements[i])){
+				return false;
+			}
+		}
+		return true;
+	}
+
+
 	//////////////////////////////////////////////////		ast_t
 
 
 
 	bool ast_t::parser_i__is_declared_function(const std::string& s) const{
 //		return _functions.find(s) != _functions.end();
-		return _types_collector.resolve_function_type(s) ? true : false;
+//		return _types_collector.resolve_function_type(s) ? true : false;
+		return true;
 	}
 
 	bool ast_t::parser_i__is_declared_constant_value(const std::string& s) const{
