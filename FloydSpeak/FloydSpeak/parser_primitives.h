@@ -248,7 +248,7 @@ namespace floyd_parser {
 			public: hosts_function_t _host_function = nullptr;
 			public: std::shared_ptr<host_data_i> _host_function_param;
 
-		public: frontend_types_collector_t _types_collector;
+		public: types_collector_t _types_collector;
 
 		/*
 			Key is symbol name or a random string if unnamed.

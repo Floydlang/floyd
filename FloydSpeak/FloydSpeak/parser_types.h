@@ -21,7 +21,7 @@
 
 namespace floyd_parser {
 	struct type_definition_t;
-	struct frontend_types_collector_t;
+	struct types_collector_t;
 	struct statement_t;
 	struct struct_def_t;
 	struct function_def_t;

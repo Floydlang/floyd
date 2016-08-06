@@ -22,26 +22,15 @@
 namespace floyd_parser {
 
 	struct type_definition_t;
-	struct frontend_types_collector_t;
+	struct types_collector_t;
 	struct statement_t;
 	struct struct_def_t;
 	struct function_def_t;
 	struct value_t;
 
 
-	typedef std::pair<std::size_t, std::size_t> byte_range_t;
 
-	/*
-		s: all types must be fully defined, deeply, for this function to work.
-		result, item[0] the memory range for the entire struct.
-				item[1] the first member in the struct. Members may be mapped in any order in memory!
-				item[2] the first member in the struct.
-	*/
-	std::vector<byte_range_t> calc_struct_default_memory_layout(const frontend_types_collector_t& types, const type_definition_t& s);
-
-
-
-	//////////////////////////////////////		frontend_types_collector_t
+	//////////////////////////////////////		types_collector_t
 
 	/*
 		What we know about a type-identifier so far.
@@ -61,7 +50,7 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////		frontend_types_collector_t
+	//////////////////////////////////////		types_collector_t
 
 
 	/*
@@ -77,8 +66,8 @@ namespace floyd_parser {
 
 		A type can be declared but not yet completely defined (maybe forward declared or a member type is still unknown).
 	*/
-	struct frontend_types_collector_t {
-		public: frontend_types_collector_t();
+	struct types_collector_t {
+		public: types_collector_t();
 		public: bool check_invariant() const;
 
 		/*
@@ -91,12 +80,12 @@ namespace floyd_parser {
 			existing_identifier: must already be registered (exception).
 			new_identifier: must not be registered (exception).
 		*/
-		public: frontend_types_collector_t define_alias_identifier(const std::string& new_identifier, const std::string& existing_identifier) const;
+		public: types_collector_t define_alias_identifier(const std::string& new_identifier, const std::string& existing_identifier) const;
 
 		/*
 			type_def == empty: just declare the new type-identifier, don't bind to a type-definition yet.
 		*/
-		public: frontend_types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_definition_t>& type_def) const;
+		public: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_definition_t>& type_def) const;
 
 
 
@@ -107,13 +96,13 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
+		public: std::pair<std::shared_ptr<type_definition_t>, types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
-		public: frontend_types_collector_t define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const;
+		public: types_collector_t define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const;
 
 
 
@@ -124,13 +113,13 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_definition_t>, frontend_types_collector_t> define_function_type(const function_def_t& function_def) const;
+		public: std::pair<std::shared_ptr<type_definition_t>, types_collector_t> define_function_type(const function_def_t& function_def) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
-		public: frontend_types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
+		public: types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
 
 
 		/*
@@ -176,6 +165,9 @@ namespace floyd_parser {
 		//	Key is the signature string. De-duplicated.
 		private: std::map<std::string, std::shared_ptr<type_definition_t> > _type_definitions;
 	};
+
+
+	types_collector_t define_test_struct5(const types_collector_t& types);
 
 
 }	//	floyd_parser

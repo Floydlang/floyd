@@ -56,6 +56,111 @@ bool vm_t::check_invariant() const {
 }
 
 
+
+
+
+
+
+
+
+	/*
+		alignment == 8: pos is roundet up untill nearest multiple of 8.
+	*/
+	std::size_t align_pos(std::size_t pos, std::size_t alignment){
+		std::size_t rem = pos % alignment;
+		std::size_t add = rem == 0 ? 0 : alignment - rem;
+		return pos + add;
+	}
+
+
+
+QUARK_UNIT_TESTQ("align_pos()", ""){
+	QUARK_TEST_VERIFY(align_pos(0, 8) == 0);
+	QUARK_TEST_VERIFY(align_pos(1, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(2, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(3, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(4, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(5, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(6, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(7, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(8, 8) == 8);
+	QUARK_TEST_VERIFY(align_pos(9, 8) == 16);
+}
+
+	std::vector<byte_range_t> calc_struct_default_memory_layout(const types_collector_t& types, const type_definition_t& s){
+		QUARK_ASSERT(types.check_invariant());
+		QUARK_ASSERT(s.check_invariant());
+
+		std::vector<byte_range_t> result;
+		std::size_t pos = 0;
+		for(const auto& member : s._struct_def->_members) {
+			const auto identifier_data = types.lookup_identifier_deep(member._type_and_default_value->get_type().to_string());
+			const auto type_def = identifier_data->_optional_def;
+			QUARK_ASSERT(type_def);
+
+			if(type_def->_base_type == k_int){
+				pos = align_pos(pos, 4);
+				result.push_back(byte_range_t(pos, 4));
+				pos += 4;
+			}
+			else if(type_def->_base_type == k_bool){
+				result.push_back(byte_range_t(pos, 1));
+				pos += 1;
+			}
+			else if(type_def->_base_type == k_string){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else if(type_def->_base_type == k_struct){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else if(type_def->_base_type == k_vector){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else if(type_def->_base_type == k_function){
+				pos = align_pos(pos, 8);
+				result.push_back(byte_range_t(pos, 8));
+				pos += 8;
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+		pos = align_pos(pos, 8);
+		result.insert(result.begin(), byte_range_t(0, pos));
+		return result;
+	}
+
+
+
+
+QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
+	const auto a = types_collector_t();
+	const auto b = define_test_struct5(a);
+	const auto t = b.resolve_identifier("struct5");
+	const auto layout = calc_struct_default_memory_layout(a, *t);
+	int i = 0;
+	for(const auto it: layout){
+		const string name = i == 0 ? "struct" : t->_struct_def->_members[i - 1]._name;
+		QUARK_TRACE_SS(it.first << "--" << (it.first + it.second) << ": " + name);
+		i++;
+	}
+	QUARK_TEST_VERIFY(true);
+//	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct_1>y,<string>z}");
+}
+
+
+
+
+
+
+
+
 std::shared_ptr<function_def_t> resolve_function_type_deep(const std::vector<shared_ptr<floyd_parser::scope_instance_t>>& scopes, const std::string& s, size_t depth){
 	QUARK_ASSERT(depth < scopes.size());
 	QUARK_ASSERT(depth >= 0);
