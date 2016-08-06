@@ -14,6 +14,7 @@
 #include "parser_primitives.h"
 #include "parser_statement.h"
 #include "parser_function.h"
+#include "parts/sha1_class.h"
 
 
 using std::make_shared;
@@ -129,6 +130,12 @@ namespace floyd_parser {
 	}
 
 
+
+
+
+
+
+
 	////////////////////////			arg_t
 
 
@@ -197,11 +204,11 @@ namespace floyd_parser {
 		}
 	}
 
-
-
-	////////////////////	Helpers for making tests.
-
-
+	TSHA1 calc_function_body_hash(const function_def_t& f){
+		static int s_counter = 1000;
+		s_counter++;
+		return CalcSHA1(std::to_string(s_counter));
+	}
 
 
 	function_def_t make_function_def(type_identifier_t return_type, const vector<arg_t>& args, const vector<statement_t>& statements){
@@ -212,9 +219,103 @@ namespace floyd_parser {
 		return function_def_t(return_type, args,statements2);
 	}
 
+
 	struct_def_t make_struct_def(const vector<member_t>& members){
 		return struct_def_t{ members };
 	}
+
+
+
+
+	////////////////////////			member_t
+
+
+	member_t::member_t(const value_t& type_and_default_value, const std::string& name) :
+		_type_and_default_value(make_shared<value_t>(type_and_default_value)),
+		_name(name)
+	{
+		QUARK_ASSERT(!type_and_default_value.is_null());
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	member_t::member_t(const type_identifier_t& type, const std::string& name) :
+		_type_and_default_value(make_shared<value_t>(value_t::make_default_value(type))),
+		_name(name)
+	{
+		QUARK_ASSERT(name.size() > 0);
+		QUARK_ASSERT(type.check_invariant());
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	bool member_t::check_invariant() const{
+		QUARK_ASSERT(_name.size() > 0);
+		QUARK_ASSERT(_type_and_default_value);
+		QUARK_ASSERT(_type_and_default_value->check_invariant());
+		return true;
+	}
+
+	bool member_t::operator==(const member_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return *_type_and_default_value == *other._type_and_default_value && _name == other._name;
+	}
+
+
+	void trace(const member_t& member){
+		QUARK_TRACE("<member> type: <" + member._type_and_default_value->get_type().to_string() + "> name: \"" + member._name + "\"");
+	}
+
+
+
+
+	////////////////////////			struct_def_t
+
+
+	bool struct_def_t::check_invariant() const{
+		return true;
+	}
+	bool struct_def_t::operator==(const struct_def_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return other._members == _members;
+	}
+
+	void trace(const struct_def_t& e){
+		QUARK_SCOPED_TRACE("struct_def_t");
+		trace_vec("members", e._members);
+	}
+
+
+	std::string to_signature(const struct_def_t& t){
+		QUARK_ASSERT(t.check_invariant());
+
+		const string label = "";
+		string body;
+		for(const auto& member : t._members) {
+			const auto member_name = member._name;
+			const type_identifier_t typedef_s = member._type_and_default_value->get_type();
+			const string member_type = "<" + typedef_s.to_string() + ">";
+
+			//	"<string>first_name"
+			const string member_result = member_type + member_name;
+
+			body = body + member_result + ",";
+		}
+		body = remove_trailing_comma(body);
+
+		return label + "<struct>" + "{" + body + "}";
+	}
+
+
+
+
+	////////////////////	Helpers for making tests.
+
+
 
 
 	struct_def_t make_struct0(){
@@ -275,222 +376,6 @@ struct_def_t make_struct5(){
 	);
 }
 
-	////////////////////////			member_t
-
-
-	member_t::member_t(const value_t& type_and_default_value, const std::string& name) :
-		_type_and_default_value(make_shared<value_t>(type_and_default_value)),
-		_name(name)
-	{
-		QUARK_ASSERT(!type_and_default_value.is_null());
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	member_t::member_t(const type_identifier_t& type, const std::string& name) :
-		_type_and_default_value(make_shared<value_t>(value_t::make_default_value(type))),
-		_name(name)
-	{
-		QUARK_ASSERT(name.size() > 0);
-		QUARK_ASSERT(type.check_invariant());
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	bool member_t::check_invariant() const{
-		QUARK_ASSERT(_name.size() > 0);
-		QUARK_ASSERT(_type_and_default_value);
-		QUARK_ASSERT(_type_and_default_value->check_invariant());
-		return true;
-	}
-
-	bool member_t::operator==(const member_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		return *_type_and_default_value == *other._type_and_default_value && _name == other._name;
-	}
-
-
-	void trace(const member_t& member){
-		QUARK_TRACE("<member> type: <" + member._type_and_default_value->get_type().to_string() + "> name: \"" + member._name + "\"");
-	}
-
-
-
-
-
-	////////////////////////			struct_def_t
-
-
-	bool struct_def_t::check_invariant() const{
-		return true;
-	}
-	bool struct_def_t::operator==(const struct_def_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		return other._members == _members;
-	}
-
-	void trace(const struct_def_t& e){
-		QUARK_SCOPED_TRACE("struct_def_t");
-		trace_vec("members", e._members);
-	}
-
-
-
-	////////////////////////			type_def_t
-
-
-	bool type_def_t::check_invariant() const{
-		if(_base_type == k_int){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_bool){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_string){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_struct){
-			QUARK_ASSERT(_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_vector){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_function){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(_function_def);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-		return true;
-	}
-
-	void trace_frontend_type(const type_def_t& t, const std::string& label){
-		QUARK_ASSERT(t.check_invariant());
-
-		if(t._base_type == k_int){
-			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
-		}
-		else if(t._base_type == k_bool){
-			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
-		}
-		else if(t._base_type == k_string){
-			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
-		}
-		else if(t._base_type == k_struct){
-			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			for(const auto m: t._struct_def->_members){
-				trace(m);
-			}
-		}
-		else if(t._base_type == k_vector){
-			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-//			trace_frontend_type(*t._vector_def->_value_type, "");
-		}
-		else if(t._base_type == k_function){
-			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			trace(*t._function_def);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-
-
-
-
-
-	std::string calc_function_body_hash(const function_def_t& f){
-		return "";
-	}
-
-	//	Remove trailing comma, if any.
-	std::string remove_trailing_comma(const std::string& a){
-		auto s = a;
-		if(s.size() > 1 && s.back() == ','){
-			s.pop_back();
-		}
-		return s;
-	}
-
-
-
-	std::string to_signature(const struct_def_t& t){
-		QUARK_ASSERT(t.check_invariant());
-
-		const string label = "";
-		string body;
-		for(const auto& member : t._members) {
-			const auto member_name = member._name;
-			const type_identifier_t typedef_s = member._type_and_default_value->get_type();
-			const string member_type = "<" + typedef_s.to_string() + ">";
-
-			//	"<string>first_name"
-			const string member_result = member_type + member_name;
-
-			body = body + member_result + ",";
-		}
-		body = remove_trailing_comma(body);
-
-		return label + "<struct>" + "{" + body + "}";
-	}
-
-
-
-	std::string to_signature(const type_def_t& t){
-		QUARK_ASSERT(t.check_invariant());
-
-		const auto base_type = to_string(t._base_type);
-
-		const string label = "";
-		if(t._base_type == k_struct){
-			return to_signature(*t._struct_def);
-		}
-		else if(t._base_type == k_vector){
-			const auto vector_value_s = "";
-			return label + "<vector>" + "[" + vector_value_s + "]";
-		}
-		else if(t._base_type == k_function){
-//			return label + "<function>" + "[" + vector_value_s + "]";
-
-			string arguments;
-			for(const auto& arg : t._function_def->_args) {
-				//	"<string>first_name"
-				const auto a = std::string("") + "<"  + arg._type.to_string() + ">" + arg._identifier;
-
-				arguments = arguments + a + ",";
-			}
-
-			arguments = remove_trailing_comma(arguments);
-
-
-			std::string body_hash = calc_function_body_hash(*t._function_def);
-
-			return label + "<function>" + "args(" + arguments + ") body_hash" + body_hash;
-
-		}
-		else{
-			return label + "<" + base_type + ">";
-		}
-	}
-
-
 
 } //	floyd_parser;
 
@@ -514,24 +399,5 @@ QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
 }
 
 
-//////////////////////////////////////		to_signature()
-
-
-QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
-	quark::ut_compare(to_signature(make_struct0()), "<struct>{}");
-}
-
-QUARK_UNIT_TESTQ("to_signature()", "struct3"){
-	quark::ut_compare(to_signature(make_struct3()), "<struct>{<int>a,<string>b}");
-}
-
-QUARK_UNIT_TESTQ("to_signature()", "struct4"){
-	quark::ut_compare(to_signature(make_struct4()), "<struct>{<string>x,<string>z}");
-}
-
 //??? more
-
-
-
-
 

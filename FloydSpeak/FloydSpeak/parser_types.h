@@ -14,6 +14,8 @@
 #include <vector>
 #include <string>
 
+struct TSHA1;
+
 /*
 	type signature:	a string the defines one level of any type. It can be
 	typedef: a typesafe identifier for any time.
@@ -47,6 +49,8 @@ namespace floyd_parser {
 //		k_dyn,
 		k_function
 	};
+
+	std::string to_string(const frontend_base_type t);
 
 
 	//////////////////////////////////////		type_identifier_t
@@ -141,9 +145,10 @@ namespace floyd_parser {
 	};
 
 	void trace(const function_def_t& v);
-
-
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
+	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
+	TSHA1 calc_function_body_hash(const function_def_t& f);
+
 
 
 
@@ -188,6 +193,10 @@ namespace floyd_parser {
 	};
 
 	void trace(const struct_def_t& e);
+	std::string to_signature(const struct_def_t& t);
+	struct_def_t make_struct_def(const std::vector<member_t>& members);
+
+
 
 
 	//////////////////////////////////////		vector_def_t
@@ -204,67 +213,9 @@ namespace floyd_parser {
 	};
 
 
-
-	//////////////////////////////////////		type_def_t
-
-	/*
-		Describes a frontend type. All sub-types may or may not be known yet.
-
-		TODO
-		- Add memory layout calculation and storage
-		- Add support for alternative layout.
-		- Add support for optional value (using "?").
-	*/
-	struct type_def_t {
-		public: type_def_t(){};
-		public: bool check_invariant() const;
-
-
-		///////////////////		STATE
-
-		/*
-			Plain types only use the _base_type.
-			### Add support for int-ranges etc.
-		*/
-		public: frontend_base_type _base_type;
-		public: std::shared_ptr<struct_def_t> _struct_def;
-		public: std::shared_ptr<vector_def_t> _vector_def;
-		public: std::shared_ptr<function_def_t> _function_def;
-	};
-
-
-
-
-
-	void trace_frontend_type(const type_def_t& t, const std::string& label);
-
-	std::string to_signature(const struct_def_t& t);
-
-	/*
-		Returns a normalized signature string unique for this data type.
-		Use to compare types.
-
-		"<float>"									float
-		"<string>"									string
-		"<vector>[<float>]"							vector containing floats
-		"<float>(<string>,<float>)"				function returning float, with string and float arguments
-		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
-		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
-	*/
-	std::string to_signature(const type_def_t& t);
-
-
-
-	std::string to_string(const frontend_base_type t);
-
-
-
 	////////////////////	Helpers for making tests.
 
 
-
-	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
-	struct_def_t make_struct_def(const std::vector<member_t>& members);
 
 
 	struct_def_t make_struct0();

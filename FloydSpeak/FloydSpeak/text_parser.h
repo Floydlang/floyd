@@ -35,10 +35,11 @@ struct seq2 {
 };
 
 
+//	Remove trailing comma, if any.
+std::string remove_trailing_comma(const std::string& a);
 
 seq read_while(const std::string& s, const std::string& match);
 seq read_until(const std::string& s, const std::string& match);
-
 
 
 std::pair<char, std::string> read_char(const std::string& s);

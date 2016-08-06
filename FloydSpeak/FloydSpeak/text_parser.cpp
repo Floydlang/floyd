@@ -97,6 +97,13 @@ QUARK_UNIT_TESTQ("seq2::first()", ""){
 
 
 
+	std::string remove_trailing_comma(const std::string& a){
+		auto s = a;
+		if(s.size() > 1 && s.back() == ','){
+			s.pop_back();
+		}
+		return s;
+	}
 
 
 

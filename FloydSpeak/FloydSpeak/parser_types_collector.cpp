@@ -18,6 +18,7 @@
 #include "parser_statement.h"
 #include "parser_function.h"
 #include "parser_value.h"
+#include "parts/sha1_class.h"
 
 
 using std::make_shared;
@@ -28,6 +29,122 @@ using std::vector;
 
 namespace floyd_parser {
 
+
+
+
+
+
+	////////////////////////			type_def_t
+
+
+	bool type_def_t::check_invariant() const{
+		if(_base_type == k_int){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_bool){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_string){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_struct){
+			QUARK_ASSERT(_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_vector){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_function){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(_function_def);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+		return true;
+	}
+
+	void trace_frontend_type(const type_def_t& t, const std::string& label){
+		QUARK_ASSERT(t.check_invariant());
+
+		if(t._base_type == k_int){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_bool){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_string){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_struct){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			for(const auto m: t._struct_def->_members){
+				trace(m);
+			}
+		}
+		else if(t._base_type == k_vector){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+//			trace_frontend_type(*t._vector_def->_value_type, "");
+		}
+		else if(t._base_type == k_function){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			trace(*t._function_def);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+
+
+
+
+	std::string to_signature(const type_def_t& t){
+		QUARK_ASSERT(t.check_invariant());
+
+		const auto base_type = to_string(t._base_type);
+
+		const string label = "";
+		if(t._base_type == k_struct){
+			return to_signature(*t._struct_def);
+		}
+		else if(t._base_type == k_vector){
+			const auto vector_value_s = "";
+			return label + "<vector>" + "[" + vector_value_s + "]";
+		}
+		else if(t._base_type == k_function){
+//			return label + "<function>" + "[" + vector_value_s + "]";
+
+			string arguments;
+			for(const auto& arg : t._function_def->_args) {
+				//	"<string>first_name"
+				const auto a = std::string("") + "<"  + arg._type.to_string() + ">" + arg._identifier;
+
+				arguments = arguments + a + ",";
+			}
+
+			arguments = remove_trailing_comma(arguments);
+
+
+			const auto body_hash = calc_function_body_hash(*t._function_def);
+
+			return label + "<function>" + "args(" + arguments + ") body_hash:" + SHA1ToStringPlain(body_hash);
+
+		}
+		else{
+			return label + "<" + base_type + ">";
+		}
+	}
 
 
 	////////////////////////			types_collector_t
@@ -241,17 +358,6 @@ namespace floyd_parser {
 		}
 	}
 
-
-
-QUARK_UNIT_TESTQ("define_function_type()", ""){
-	QUARK_TEST_VERIFY(to_string(k_int) == "int");
-	const auto a = types_collector_t{};
-	const auto b =  a.define_function_type("one", make_return_hello());
-}
-
-
-
-
 	std::shared_ptr<type_indentifier_data_ref> types_collector_t::lookup_identifier_shallow(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
@@ -350,6 +456,22 @@ types_collector_t define_test_struct5(const types_collector_t& types){
 using namespace floyd_parser;
 
 
+
+//////////////////////////////////////		to_signature()
+
+
+QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
+	quark::ut_compare(to_signature(make_struct0()), "<struct>{}");
+}
+
+QUARK_UNIT_TESTQ("to_signature()", "struct3"){
+	quark::ut_compare(to_signature(make_struct3()), "<struct>{<int>a,<string>b}");
+}
+
+QUARK_UNIT_TESTQ("to_signature()", "struct4"){
+	quark::ut_compare(to_signature(make_struct4()), "<struct>{<string>x,<string>z}");
+}
+
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	const auto a = types_collector_t();
 	const auto b = define_test_struct2(a);
@@ -380,6 +502,15 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 
 
 //////////////////////////////////////		types_collector_t
+
+
+
+
+QUARK_UNIT_TESTQ("define_function_type()", ""){
+	QUARK_TEST_VERIFY(to_string(k_int) == "int");
+	const auto a = types_collector_t{};
+	const auto b =  a.define_function_type("one", make_return_hello());
+}
 
 
 

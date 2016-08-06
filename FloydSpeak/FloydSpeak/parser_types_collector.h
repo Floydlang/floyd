@@ -16,7 +16,7 @@
 #include <vector>
 #include <string>
 #include <map>
-
+#include "parser_types.h"
 
 
 namespace floyd_parser {
@@ -27,6 +27,53 @@ namespace floyd_parser {
 	struct struct_def_t;
 	struct function_def_t;
 	struct value_t;
+
+
+
+
+	//////////////////////////////////////		type_def_t
+
+	/*
+		Describes a frontend type. All sub-types may or may not be known yet.
+
+		TODO
+		- Add memory layout calculation and storage
+		- Add support for alternative layout.
+		- Add support for optional value (using "?").
+	*/
+	struct type_def_t {
+		public: type_def_t(){};
+		public: bool check_invariant() const;
+
+
+		///////////////////		STATE
+
+		/*
+			Plain types only use the _base_type.
+			### Add support for int-ranges etc.
+		*/
+		public: frontend_base_type _base_type;
+		public: std::shared_ptr<struct_def_t> _struct_def;
+		public: std::shared_ptr<vector_def_t> _vector_def;
+		public: std::shared_ptr<function_def_t> _function_def;
+	};
+
+
+	void trace_frontend_type(const type_def_t& t, const std::string& label);
+
+	/*
+		Returns a normalized signature string unique for this data type.
+		Use to compare types.
+
+		"<float>"									float
+		"<string>"									string
+		"<vector>[<float>]"							vector containing floats
+		"<float>(<string>,<float>)"				function returning float, with string and float arguments
+		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
+		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
+	*/
+	std::string to_signature(const type_def_t& t);
+
 
 
 
@@ -55,7 +102,7 @@ namespace floyd_parser {
 
 	/*
 		This object is used during parsing.
-		It support partially defines types and slow lookups.
+		It support partially defined types and slow lookups.
 		You can do lookups recursively but it's pretty slow.
 
 		Holds all types of program:
@@ -63,6 +110,7 @@ namespace floyd_parser {
 			- vector<XYZ>, map etc.
 			- custom structs
 			- both named and unnamed types.
+			- type-defs (aliases)
 
 		A type can be declared but not yet completely defined (maybe forward declared or a member type is still unknown).
 	*/
@@ -71,7 +119,7 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 
 		/*
-			Returns true if this type identifier is registerd and defined (is an alias or is bound to a type-definition.
+			Returns true if this type identifier is registered and defined (is an alias or is bound to a type-definition.
 		*/
 		public: bool is_type_identifier_fully_defined(const std::string& type_identifier) const;
 
