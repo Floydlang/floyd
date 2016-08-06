@@ -49,10 +49,14 @@ bool load_expr_t::operator==(const load_expr_t& other) const{
 	return *_address == *other._address ;
 }
 
-bool resolve_member_expr_t::operator==(const resolve_member_expr_t& other) const{
-	//	Parent can by null or a proper expression.
-	bool parent = (!_parent_address && !other._parent_address) || (_parent_address && other._parent_address && *_parent_address == *other._parent_address);
-	return parent && _member_name == other._member_name ;
+bool resolve_variable_expr_t::operator==(const resolve_variable_expr_t& other) const{
+	return _variable_name == other._variable_name;
+}
+
+
+
+bool resolve_struct_member_expr_t::operator==(const resolve_struct_member_expr_t& other) const{
+	return *_parent_address == *other._parent_address && _member_name == other._member_name;
 }
 
 
@@ -72,7 +76,7 @@ bool expression_t::check_invariant() const{
 	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
 
 	//	Make sure exactly ONE pointer is set.
-	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
+	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_variable ? 1 : 0) + (_resolve_struct_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
 
 	return true;
 }
@@ -96,8 +100,11 @@ bool expression_t::operator==(const expression_t& other) const {
 	else if(_load){
 		return other._load && *_load == *other._load;
 	}
-	else if(_resolve_member){
-		return other._resolve_member && *_resolve_member == *other._resolve_member;
+	else if(_resolve_variable){
+		return other._resolve_variable && *_resolve_variable == *other._resolve_variable;
+	}
+	else if(_resolve_struct_member){
+		return other._resolve_struct_member && *_resolve_struct_member == *other._resolve_struct_member;
 	}
 	else if(_lookup_element){
 		return other._lookup_element && *_lookup_element == *other._lookup_element;
@@ -182,22 +189,26 @@ expression_t make_load(const expression_t& address_expression){
 expression_t make_load_variable(const std::string& name){
 	QUARK_ASSERT(name.size() > 0);
 
-	const auto address = make_resolve_member(name);
+	const auto address = make_resolve_variable(name);
 	return make_load(address);
 }
 
-expression_t make_resolve_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name){
-	QUARK_ASSERT(!parent_address || parent_address->check_invariant());
-	QUARK_ASSERT(member_name.size() > 0);
 
-	resolve_member_expr_t r = resolve_member_expr_t{ parent_address, member_name };
-	return std::make_shared<resolve_member_expr_t>(r);
+//??? Better handling of input strings to the expression. Validate etc. Use identifier_t etc.
+
+expression_t make_resolve_variable(const std::string& variable){
+	QUARK_ASSERT(variable.size() > 0);
+
+	return std::make_shared<resolve_variable_expr_t>(resolve_variable_expr_t{ variable });
 }
 
-expression_t make_resolve_member(const std::string& member_name){
+
+expression_t make_resolve_struct_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name){
+	QUARK_ASSERT(parent_address && parent_address->check_invariant());
 	QUARK_ASSERT(member_name.size() > 0);
 
-	return make_resolve_member(shared_ptr<expression_t>(), member_name);
+	resolve_struct_member_expr_t r = resolve_struct_member_expr_t{ parent_address, member_name };
+	return std::make_shared<resolve_struct_member_expr_t>(r);
 }
 
 expression_t make_lookup(const expression_t& parent_address, const expression_t& lookup_key){
@@ -269,8 +280,12 @@ void trace(const load_expr_t& e){
 	trace(*e._address);
 }
 
-void trace(const resolve_member_expr_t& e){
-	QUARK_TRACE_SS("resolve_member_expr_t: " << e._member_name);
+void trace(const resolve_variable_expr_t& e){
+	QUARK_TRACE_SS("resolve_variable_expr_t: " << e._variable_name);
+}
+
+void trace(const resolve_struct_member_expr_t& e){
+	QUARK_TRACE_SS("resolve_struct_member_expr_t: " << e._member_name);
 }
 
 void trace(const lookup_element_expr_t& e){
@@ -299,8 +314,11 @@ void trace(const expression_t& e){
 	else if(e._load){
 		trace(*e._load);
 	}
-	else if(e._resolve_member){
-		trace(*e._resolve_member);
+	else if(e._resolve_variable){
+		trace(*e._resolve_variable);
+	}
+	else if(e._resolve_struct_member){
+		trace(*e._resolve_struct_member);
 	}
 	else if(e._lookup_element){
 		trace(*e._lookup_element);
@@ -350,9 +368,13 @@ std::string to_string(const expression_t& e){
 		const auto address = to_string(*e2._address);
 		return string("(@load ") + address + ")";
 	}
-	else if(e._resolve_member){
-		const auto e2 = *e._resolve_member;
-		return string("(@resolve ") + (e2._parent_address ? to_string(*e2._parent_address) : "nullptr") + " '" + e2._member_name + "'" + ")";
+	else if(e._resolve_variable){
+		const auto e2 = *e._resolve_variable;
+		return string("(@res_var '") + e2._variable_name + "'" + ")";
+	}
+	else if(e._resolve_struct_member){
+		const auto e2 = *e._resolve_struct_member;
+		return string("(@res_member ") + to_string(*e2._parent_address) + " '" + e2._member_name + "'" + ")";
 	}
 	else if(e._lookup_element){
 		const auto e2 = *e._lookup_element;
@@ -396,21 +418,21 @@ QUARK_UNIT_TESTQ("to_string()", "call"){
 	);
 }
 
-QUARK_UNIT_TESTQ("to_string()", "read & resolve"){
+QUARK_UNIT_TESTQ("to_string()", "read & resolve_variable"){
 	quark::ut_compare(
 		to_string(
 			make_load_variable("param1")
 		),
-		"(@load (@resolve nullptr 'param1'))"
+		"(@load (@res_var 'param1'))"
 	);
 }
-
+//??? test all addressing.
 QUARK_UNIT_TESTQ("to_string()", "lookup"){
 	quark::ut_compare(
 		to_string(
-			make_lookup(make_resolve_member("hello"), make_constant("xyz"))
+			make_lookup(make_resolve_variable("hello"), make_constant("xyz"))
 		),
-		"(@lookup (@resolve nullptr 'hello') (@k <string>'xyz'))"
+		"(@lookup (@res_var 'hello') (@k <string>'xyz'))"
 	);
 }
 

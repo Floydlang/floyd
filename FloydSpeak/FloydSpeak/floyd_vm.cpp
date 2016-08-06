@@ -80,30 +80,6 @@ std::shared_ptr<function_def_t> vm_t::resolve_function_type(const std::string& s
 
 
 
-floyd_parser::value_t resolve_value_deep(const std::vector<shared_ptr<scope_instance_t>>& scopes, const std::string& s, size_t depth){
-	QUARK_ASSERT(depth < scopes.size());
-	QUARK_ASSERT(depth >= 0);
-
-	const auto it = scopes[depth]->_values.find(s);
-	if(it != scopes[depth]->_values.end()){
-		return it->second;
-	}
-	else if(depth > 0){
-		return resolve_value_deep(scopes, s, depth - 1);
-	}
-	else{
-		return {};
-	}
-}
-
-
-
-floyd_parser::value_t vm_t::resolve_value(const std::string& s) const{
-	QUARK_ASSERT(check_invariant());
-
-	return resolve_value_deep(_scope_instances, s, _scope_instances.size() - 1);
-}
-
 
 
 
@@ -222,8 +198,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 		"	return p.s;"
 		"}\n"
 	);
-	QUARK_TEST_VERIFY(a.first._ast._types_collector.lookup_identifier_shallow("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._root_scope->_types_collector.lookup_identifier_shallow("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._root_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
 #endif

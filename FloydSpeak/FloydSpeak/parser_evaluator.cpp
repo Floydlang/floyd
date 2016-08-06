@@ -165,6 +165,73 @@ value_t run_function(const vm_t& vm, const function_def_t& f, const vector<value
 
 
 
+
+
+
+floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<scope_instance_t>>& scopes, const std::string& s, size_t depth){
+	QUARK_ASSERT(depth < scopes.size());
+	QUARK_ASSERT(depth >= 0);
+
+	const auto it = scopes[depth]->_values.find(s);
+	if(it != scopes[depth]->_values.end()){
+		return it->second;
+	}
+	else if(depth > 0){
+		return resolve_variable_name_deep(scopes, s, depth - 1);
+	}
+	else{
+		return {};
+	}
+}
+
+floyd_parser::value_t resolve_variable_name(const vm_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	return resolve_variable_name_deep(vm._scope_instances, s, vm._scope_instances.size() - 1);
+}
+
+		/*
+			???
+			PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
+			We don't have any value we can return from each expression in tree.
+			Alternatives:
+			A) Have dedicated expression types:
+				struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
+				collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
+
+			B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
+			C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
+		*/
+
+/*
+	}
+	else if(e._resolve_struct_member){
+		return e;
+	}
+	else if(e._lookup_element){
+		return e;
+	}
+*/
+expression_t load(const vm_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e._load);
+
+	const auto e2 = *e._load;
+//	const auto input = evaluate3(vm, *e2._address);
+
+	if(!e2._address->_resolve_variable){
+		throw std::runtime_error("Cannot resolve read address.");
+	}
+
+	const auto variable_name = e2._address->_resolve_variable->_variable_name;
+	const value_t value = resolve_variable_name(vm, variable_name);
+
+	return make_constant(value);
+}
+
+
 //### Test string + etc.
 
 
@@ -287,6 +354,7 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 	else if(e._call){
 		const auto& call_function_expression = *e._call;
 
+		//	??? Function calls should also use resolve_address_expression() to find function.
 		const auto& function_def = vm.resolve_function_type(call_function_expression._function_name);
 		if(!function_def){
 			throw std::runtime_error("Failed calling function - unresolved function.");
@@ -308,7 +376,7 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 			}
 		}
 
-		//	WOha: all arguments were constants - replace this expression with result of function call instead!
+		//	Woha: all arguments are constants - replace this expression with the final output of the function call instead!
 		vector<value_t> constant_args;
 		for(const auto& i: simplified_args){
 			constant_args.push_back(*i._constant);
@@ -320,23 +388,18 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 		return make_constant(result);
 	}
 	else if(e._load){
-		const auto e2 = *e._load;
-//		const shared_ptr<expression_t> address = e2._parent_address ? make_shared<expression_t>(evaluate3(vm, *e2._parent_address)) : shared_ptr<expression_t>();
-
-		//??? Very limited addressing!
-		if(!e2._address->_resolve_member || e2._address->_resolve_member->_parent_address){
-			throw std::runtime_error("Cannot resolve read address.");
-		}
-
-		const auto member_name = e2._address->_resolve_member->_member_name;
-		const value_t value = vm.resolve_value(member_name);
-
-		return make_constant(value);
+		return load(vm, e);
 	}
-	else if(e._resolve_member){
+	else if(e._resolve_variable){
+		QUARK_ASSERT(false);
+		return e;
+	}
+	else if(e._resolve_struct_member){
+		QUARK_ASSERT(false);
 		return e;
 	}
 	else if(e._lookup_element){
+		QUARK_ASSERT(false);
 		return e;
 	}
 	else{

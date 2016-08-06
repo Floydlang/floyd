@@ -87,15 +87,29 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////////////////		resolve_member_expr_t
+	//////////////////////////////////////////////////		resolve_variable_expr_t
 
 
 
 	/*
-		Supports reading a named variable, like "int a = 10; print(a);"
+		Specify free variables.
+		Variable is directly accessable in the scope, like a local variable or function argument.
 	*/
-	struct resolve_member_expr_t {
-		bool operator==(const resolve_member_expr_t& other) const;
+	struct resolve_variable_expr_t {
+		bool operator==(const resolve_variable_expr_t& other) const;
+
+		const std::string _variable_name;
+	};
+
+	//////////////////////////////////////////////////		resolve_struct_member_expr_t
+
+
+
+	/*
+		Specifies a member variable of a struct.
+	*/
+	struct resolve_struct_member_expr_t {
+		bool operator==(const resolve_struct_member_expr_t& other) const;
 
 		std::shared_ptr<expression_t> _parent_address;
 		const std::string _member_name;
@@ -159,8 +173,16 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<resolve_member_expr_t>& a) :
-			_resolve_member(a)
+
+		public: expression_t(const std::shared_ptr<resolve_variable_expr_t>& a) :
+			_resolve_variable(a)
+		{
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: expression_t(const std::shared_ptr<resolve_struct_member_expr_t>& a) :
+			_resolve_struct_member(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
 			QUARK_ASSERT(check_invariant());
@@ -189,7 +211,8 @@ namespace floyd_parser {
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 		public: std::shared_ptr<function_call_expr_t> _call;
 		public: std::shared_ptr<load_expr_t> _load;
-		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
+		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
+		public: std::shared_ptr<resolve_struct_member_expr_t> _resolve_struct_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
 	};
 
@@ -211,11 +234,9 @@ namespace floyd_parser {
 	expression_t make_load(const expression_t& address_expression);
 	expression_t make_load_variable(const std::string& name);
 
-	/*
-		parent_address is optional.
-	*/
-	expression_t make_resolve_member(const std::shared_ptr<expression_t>& parent_address, const std::string& member_name);
-	expression_t make_resolve_member(const std::string& member_name);
+	expression_t make_resolve_variable(const std::string& variable);
+
+	expression_t make_resolve_struct_member(const std::shared_ptr<expression_t>& parent_address, const std::string& member_name);
 
 	expression_t make_lookup(const expression_t& parent_address, const expression_t& lookup_key);
 
@@ -227,7 +248,8 @@ namespace floyd_parser {
 	void trace(const math_operation2_expr_t& e);
 	void trace(const function_call_expr_t& e);
 	void trace(const load_expr_t& e);
-	void trace(const resolve_member_expr_t& e);
+	void trace(const resolve_variable_expr_t& e);
+	void trace(const resolve_struct_member_expr_t& e);
 	void trace(const lookup_element_expr_t& e);
 	void trace(const expression_t& e);
 
@@ -235,16 +257,16 @@ namespace floyd_parser {
 
 	/*
 	"hello[\"troll\"].kitty[10].cat" =>
-	"(@load (@resolve (@lookup (@resolve (@lookup (@resolve nullptr 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))"
+	"(@load (@res_member (@lookup (@res_member (@lookup (@res_var 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))"
 
 
 	### Encode using JSON! Easy to copy-paste, user JSON validators etc:
 
-	["@resolve",
+	["@res_member",
 		["@lookup",
-			["@resolve",
+			["@res_member",
 				["@lookup",
-					["@resolve", "nullptr", "hello"],
+					["@res_member", "nullptr", "hello"],
 					["@k", "<string>", "troll"]
 				],
 				"kitty"
