@@ -13,6 +13,7 @@
 #include "quark.h"
 #include <vector>
 #include <string>
+#include <map>
 
 #include "parser_types.h"
 
@@ -30,7 +31,8 @@ namespace floyd_parser {
 		const struct_def_t* __def;
 
 		//	Use index of member to find the value.
-		std::vector<value_t> _member_values;
+//???		std::vector<value_t> _member_values;
+		std::map<std::string, value_t> _member_values;
 	};
 
 

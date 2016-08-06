@@ -17,6 +17,7 @@ struct vm_t {
 	public: bool check_invariant() const;
 
 	public: std::shared_ptr<floyd_parser::function_def_t> resolve_function_type(const std::string& s) const;
+	public: std::shared_ptr<floyd_parser::struct_def_t> resolve_struct_type(const std::string& s) const;
 
 
 	////////////////////////		STATE

@@ -320,8 +320,9 @@ value_t make_struct_instance(const struct_def_t& def){
 
 	instance->__def = &def;
 	for(int i = 0 ; i < def._members.size() ; i++){
-		value_t value = *def._members[i]._type_and_default_value;
-		instance->_member_values.push_back(value);
+		const auto& member_def = def._members[i];
+		value_t value = *member_def._type_and_default_value;
+		instance->_member_values[member_def._name] = value;
 	}
 	return value_t(instance);
 }

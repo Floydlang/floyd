@@ -205,30 +205,58 @@ floyd_parser::value_t resolve_variable_name(const vm_t& vm, const std::string& s
 		*/
 
 /*
+	a = my_global_int;
+	b = my_global_obj.next;
+	c = my_global_obj.all[3].f(10).prev;
+*/
+
+expression_t load_deep(const vm_t& vm, const value_t& left_side, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e._resolve_variable || e._resolve_struct_member || e._lookup_element);
+
+	if(e._call){
+		QUARK_ASSERT(false);
+	}
+	else if(e._resolve_variable){
+		QUARK_ASSERT(left_side.is_null());
+		const auto variable_name = e._resolve_variable->_variable_name;
+		const value_t value = resolve_variable_name(vm, variable_name);
+		return make_constant(value);
 	}
 	else if(e._resolve_struct_member){
-		return e;
+		const auto parent = load_deep(vm, left_side, *e._resolve_struct_member->_parent_address);
+		QUARK_ASSERT(parent._constant && parent._constant->is_struct_instance());
+
+		const auto member_name = e._resolve_struct_member->_member_name;
+		const auto struct_instance = parent._constant->get_struct_instance();
+		const value_t value = struct_instance->_member_values[member_name];
+		return make_constant(value);
 	}
 	else if(e._lookup_element){
-		return e;
+		QUARK_ASSERT(false);
+		return make_constant(value_t());
 	}
-*/
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
 expression_t load(const vm_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e._load);
 
 	const auto e2 = *e._load;
-//	const auto input = evaluate3(vm, *e2._address);
+	QUARK_ASSERT(e2._address->_call || e2._address->_resolve_variable || e2._address->_resolve_struct_member || e2._address-> _lookup_element);
 
+	const auto e3 = load_deep(vm, value_t(), *e2._address);
+	return e3._constant;
+/*
 	if(!e2._address->_resolve_variable){
 		throw std::runtime_error("Cannot resolve read address.");
 	}
-
-	const auto variable_name = e2._address->_resolve_variable->_variable_name;
-	const value_t value = resolve_variable_name(vm, variable_name);
-
-	return make_constant(value);
+*/
 }
 
 

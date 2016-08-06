@@ -211,6 +211,7 @@ namespace floyd_parser {
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 		public: std::shared_ptr<function_call_expr_t> _call;
 		public: std::shared_ptr<load_expr_t> _load;
+
 		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
 		public: std::shared_ptr<resolve_struct_member_expr_t> _resolve_struct_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
