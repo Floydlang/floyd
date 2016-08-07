@@ -325,19 +325,24 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
+#if false
+QUARK_UNIT_TESTQ("struct", "Nesting structs"){
+	const auto a = run_program(
+		"struct pixel { string s = \"one\"; };"
+		"struct image { pixel background_color; int width; int height; };"
+		"string main(){\n"
+		"	image i = image_constructor();"
+		"	return i.background_color.s;"
+		"}\n"
+	);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.second == value_t("one"));
+}
+#endif
+
+
 /*
-	Can define custom constructor
-	Can call constructor
-
-	Can define member function
-	Can call member function
-
-	Can nest structs
-
-	Can use structs as arguments
-	Can return struct
-
-	Can write to struct
 
 	Scenario
 */

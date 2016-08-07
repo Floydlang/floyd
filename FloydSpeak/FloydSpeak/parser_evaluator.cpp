@@ -192,7 +192,6 @@ floyd_parser::value_t resolve_variable_name(const vm_t& vm, const std::string& s
 }
 
 		/*
-			???
 			PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
 			We don't have any value we can return from each expression in tree.
 			Alternatives:
@@ -216,6 +215,7 @@ expression_t load_deep(const vm_t& vm, const value_t& left_side, const expressio
 	QUARK_ASSERT(e._resolve_variable || e._resolve_struct_member || e._lookup_element);
 
 	if(e._call){
+		//	???
 		QUARK_ASSERT(false);
 	}
 	else if(e._resolve_variable){
@@ -234,6 +234,7 @@ expression_t load_deep(const vm_t& vm, const value_t& left_side, const expressio
 		return make_constant(value);
 	}
 	else if(e._lookup_element){
+		//	???
 		QUARK_ASSERT(false);
 		return make_constant(value_t());
 	}
@@ -252,11 +253,6 @@ expression_t load(const vm_t& vm, const expression_t& e){
 
 	const auto e3 = load_deep(vm, value_t(), *e2._address);
 	return e3._constant;
-/*
-	if(!e2._address->_resolve_variable){
-		throw std::runtime_error("Cannot resolve read address.");
-	}
-*/
 }
 
 
