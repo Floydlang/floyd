@@ -379,12 +379,14 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 		const auto& call_function_expression = *e._call;
 
 		//	??? Function calls should also use resolve_address_expression() to find function.
-		const auto& function_def = vm.resolve_function_type(call_function_expression._function_name);
-		if(!function_def){
+
+		const auto type = vm.resolve_type(call_function_expression._function_name);
+		if(!type->_function_def){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}
 
-		QUARK_ASSERT(function_def->_args.size() == call_function_expression._inputs.size());
+		const auto& function_def = *type->_function_def;
+		QUARK_ASSERT(function_def._args.size() == call_function_expression._inputs.size());
 
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
@@ -408,7 +410,7 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 				return make_function_call(call_function_expression._function_name, call_function_expression._inputs);
 			}
 		}
-		const value_t result = run_function(vm, *function_def, constant_args);
+		const value_t result = run_function(vm, function_def, constant_args);
 		return make_constant(result);
 	}
 	else if(e._load){

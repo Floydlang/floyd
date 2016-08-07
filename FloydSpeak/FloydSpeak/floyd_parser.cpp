@@ -273,6 +273,51 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 
 
+//////////////////////////////////////////////////		program_to_ast()
+
+
+
+//??? second pass for semantics (resolve all types and symbols, precalculate expressions.
+
+//??? add default-constructor to every type, even built-in types.
+value_t make_default_value(const floyd_parser::type_identifier_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
+	if(type == type_identifier_t("null")){
+		return value_t();
+	}
+	else if(type == type_identifier_t("bool")){
+		return value_t(false);
+	}
+	else if(type == type_identifier_t("int")){
+		return value_t(0);
+	}
+	else if(type == type_identifier_t("float")){
+		return value_t(0.0f);
+	}
+	else if(type == type_identifier_t("string")){
+		return value_t("");
+	}
+
+	//	Ce
+//	std::shared_ptr<floyd_parser::type_def_> str = vm.resolve_type(type.to_string());
+
+	//??? Need better way
+	else if(type == type_identifier_t("struct_instance")){
+		QUARK_ASSERT(false);
+		return value_t("");
+	}
+	else if(type == type_identifier_t("__type_value")){
+		QUARK_ASSERT(false);
+		return value_t("");
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+	return value_t();
+}
+
+
 
 
 //////////////////////////////////////////////////		program_to_ast()
@@ -301,7 +346,9 @@ value_t make_struct_instance(const struct_def_t& def){
 	instance->__def = &def;
 	for(int i = 0 ; i < def._members.size() ; i++){
 		const auto& member_def = def._members[i];
-		value_t value = *member_def._type_and_default_value;
+
+		//	If there is an initial value for this member, use that. Else use default value for this type.
+		value_t value = member_def._value ? *member_def._value : make_default_value(*member_def._type);
 		instance->_member_values[member_def._name] = value;
 	}
 	return value_t(instance);
@@ -377,7 +424,7 @@ pair<vector<shared_ptr<statement_t>>, ast_t> install_struct_support(const ast_t&
 
 
 
-
+//??? Make this a separate parse pass, that resolves symbols and take decisions.
 ast_t program_to_ast(const ast_t& init, const string& program){
 	ast_t ast2 = init;
 
@@ -394,11 +441,6 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 			const auto b = install_struct_support(ast2, a->_type_identifier, a->_struct_def);
 			ast2 = b.second;
 			statements.insert(statements.end(), b.first.begin(), b.first.end());
-
-
-
-
-//			ast2._types_collector = ast2._types_collector.define_struct_type(statement_pos._statement._define_struct->_type_identifier, statement_pos._statement._define_struct->_struct_def);
 		}
 		else if(statement_pos._statement._define_function){
 			ast2._global_scope->_types_collector = ast2._global_scope->_types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);

@@ -94,7 +94,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		std::vector<byte_range_t> result;
 		std::size_t pos = 0;
 		for(const auto& member : s._struct_def->_members) {
-			const auto identifier_data = types.lookup_identifier_deep(member._type_and_default_value->get_type().to_string());
+			const auto identifier_data = types.lookup_identifier_deep(member._type->to_string());
 			const auto type_def = identifier_data->_optional_def;
 			QUARK_ASSERT(type_def);
 
@@ -159,8 +159,7 @@ QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 
 
 
-
-
+/*
 std::shared_ptr<function_def_t> resolve_function_type_deep(const std::vector<shared_ptr<floyd_parser::scope_instance_t>>& scopes, const std::string& s, size_t depth){
 	QUARK_ASSERT(depth < scopes.size());
 	QUARK_ASSERT(depth >= 0);
@@ -182,7 +181,32 @@ std::shared_ptr<function_def_t> vm_t::resolve_function_type(const std::string& s
 
 	return resolve_function_type_deep(_scope_instances, s, _scope_instances.size() - 1);
 }
+*/
 
+
+
+
+std::shared_ptr<type_def_t> resolve_type_deep(const std::vector<shared_ptr<floyd_parser::scope_instance_t>>& scopes, const std::string& s, size_t depth){
+	QUARK_ASSERT(depth < scopes.size());
+	QUARK_ASSERT(depth >= 0);
+
+	const auto t = scopes[depth]->_def->_types_collector.resolve_identifier(s);
+	if(t){
+		return t;
+	}
+	else if(depth > 0){
+		return resolve_type_deep(scopes, s, depth - 1);
+	}
+	else{
+		return {};
+	}
+}
+
+std::shared_ptr<type_def_t> vm_t::resolve_type(const std::string& s) const{
+	QUARK_ASSERT(check_invariant());
+
+	return resolve_type_deep(_scope_instances, s, _scope_instances.size() - 1);
+}
 
 
 

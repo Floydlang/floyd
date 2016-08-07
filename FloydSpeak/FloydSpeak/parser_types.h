@@ -29,6 +29,8 @@ namespace floyd_parser {
 	struct function_def_t;
 	struct value_t;
 	struct scope_def_t;
+	struct struct_instance_t;
+
 
 	//////////////////////////////////////		frontend_base_type
 
@@ -160,12 +162,16 @@ namespace floyd_parser {
 	*/
 
 	struct member_t {
-		public: member_t(const value_t& type_and_default_value, const std::string& name);
+		public: member_t(const type_identifier_t& type, const std::string& name, const value_t& init_value);
 		public: member_t(const type_identifier_t& type, const std::string& name);
 		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
 
-		public: std::shared_ptr<value_t> _type_and_default_value;
+		public: std::shared_ptr<type_identifier_t> _type;
+
+		//	Optional -- must have same type as _type.
+		public: std::shared_ptr<value_t> _value;
+
 		public: std::string _name;
 	};
 
@@ -183,6 +189,7 @@ namespace floyd_parser {
 		- Add support for alternative layout.
 		- Add support for optional value (using "?").
 	*/
+	typedef struct_instance_t (*construct_default_t)(const struct_def_t& def);
 
 	struct struct_def_t {
 		public: bool check_invariant() const;
@@ -191,6 +198,8 @@ namespace floyd_parser {
 
 		///////////////////		STATE
 		public: std::vector<member_t> _members;
+//		public: construct_default_struct_t _construct_default;
+//		public: construct_default_struct_t _construct_default;
 	};
 
 	void trace(const struct_def_t& e);

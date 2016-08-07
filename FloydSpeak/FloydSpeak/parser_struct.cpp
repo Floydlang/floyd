@@ -58,7 +58,7 @@ namespace floyd_parser {
 					throw std::runtime_error("Struct member defaults type mismatch.");
 				}
 
-				const auto a = member_t(*constant_expr._constant, arg_name.first);
+				const auto a = member_t(member_type, arg_name.first, *constant_expr._constant);
 				members.push_back(a);
 				pos = skip_whitespace(constant_expr_pos_s.second);
 			}
@@ -143,9 +143,9 @@ namespace floyd_parser {
 		QUARK_TEST_VERIFY(std::get<1>(r) == make_struct_def
 			(
 				vector<member_t>{
-					member_t(value_t(255), "red"),
-					member_t(value_t(255), "green"),
-					member_t(value_t(255), "blue")
+					member_t(type_identifier_t::make_type("int"), "red", value_t(255)),
+					member_t(type_identifier_t::make_type("int"), "green", value_t(255)),
+					member_t(type_identifier_t::make_type("int"), "blue", value_t(255))
 				}
 			)
 		);
@@ -157,8 +157,8 @@ namespace floyd_parser {
 		QUARK_TEST_VERIFY(std::get<1>(r) == make_struct_def
 			(
 				vector<member_t>{
-					member_t(value_t("lisa"), "name"),
-					member_t(value_t(12.3f), "height")
+					member_t(type_identifier_t::make_type("string"), "name", value_t("lisa")),
+					member_t(type_identifier_t::make_type("float"), "height", value_t(12.3f))
 				}
 			)
 		);

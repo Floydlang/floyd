@@ -27,6 +27,11 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		type_identifier_t
 
+	/*
+		A string naming a type. "int", "string", "my_struct" etc.
+		It is guaranteed to contain correct characters.
+		It is NOT guaranteed to map to an actual type in the language or program.
+	*/
 
 	type_identifier_t type_identifier_t::make_type(std::string s){
 		const type_identifier_t result(s);
@@ -230,29 +235,36 @@ namespace floyd_parser {
 	////////////////////////			member_t
 
 
-	member_t::member_t(const value_t& type_and_default_value, const std::string& name) :
-		_type_and_default_value(make_shared<value_t>(type_and_default_value)),
-		_name(name)
+	member_t::member_t(const type_identifier_t& type, const std::string& name, const value_t& init_value) :
+		_type(make_shared<type_identifier_t>(type)),
+		_name(name),
+		_value(make_shared<value_t>(init_value))
 	{
-		QUARK_ASSERT(!type_and_default_value.is_null());
+		QUARK_ASSERT(type.check_invariant());
+		QUARK_ASSERT(name.size() > 0);
+		QUARK_ASSERT(init_value.check_invariant());
+		QUARK_ASSERT(type == init_value.get_type());
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	member_t::member_t(const type_identifier_t& type, const std::string& name) :
-		_type_and_default_value(make_shared<value_t>(value_t::make_default_value(type))),
+		_type(make_shared<type_identifier_t>(type)),
 		_name(name)
 	{
-		QUARK_ASSERT(name.size() > 0);
 		QUARK_ASSERT(type.check_invariant());
+		QUARK_ASSERT(name.size() > 0);
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool member_t::check_invariant() const{
+		QUARK_ASSERT(_type && _type->check_invariant());
 		QUARK_ASSERT(_name.size() > 0);
-		QUARK_ASSERT(_type_and_default_value);
-		QUARK_ASSERT(_type_and_default_value->check_invariant());
+		QUARK_ASSERT(!_value || _value->check_invariant());
+		if(_value){
+			QUARK_ASSERT(*_type == _value->get_type());
+		}
 		return true;
 	}
 
@@ -260,12 +272,18 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return *_type_and_default_value == *other._type_and_default_value && _name == other._name;
+		return (*_type == *other._type)
+			&& (_name == other._name)
+			&& (
+				(!_value && !other._value)
+				||
+				(_value && other._value && *_value == *other._value)
+			);
 	}
 
 
 	void trace(const member_t& member){
-		QUARK_TRACE("<member> type: <" + member._type_and_default_value->get_type().to_string() + "> name: \"" + member._name + "\"");
+		QUARK_TRACE("<member> type: <" + member._type->to_string() + "> name: \"" + member._name + "\"");
 	}
 
 
@@ -297,7 +315,7 @@ namespace floyd_parser {
 		string body;
 		for(const auto& member : t._members) {
 			const auto member_name = member._name;
-			const type_identifier_t typedef_s = member._type_and_default_value->get_type();
+			const type_identifier_t typedef_s = *member._type;
 			const string member_type = "<" + typedef_s.to_string() + ">";
 
 			//	"<string>first_name"

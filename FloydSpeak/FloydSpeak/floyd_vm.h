@@ -16,8 +16,9 @@ struct vm_t {
 	public: vm_t(const floyd_parser::ast_t& ast);
 	public: bool check_invariant() const;
 
-	public: std::shared_ptr<floyd_parser::function_def_t> resolve_function_type(const std::string& s) const;
-	public: std::shared_ptr<floyd_parser::struct_def_t> resolve_struct_type(const std::string& s) const;
+//	public: std::shared_ptr<floyd_parser::function_def_t> resolve_function_type(const std::string& s) const;
+	public: std::shared_ptr<floyd_parser::type_def_t> resolve_type(const std::string& s) const;
+
 
 
 	////////////////////////		STATE
@@ -26,6 +27,7 @@ struct vm_t {
 	//	Last scope if the current one. First scope is the root.
 	public: std::vector<std::shared_ptr<floyd_parser::scope_instance_t>> _scope_instances;
 };
+
 
 
 

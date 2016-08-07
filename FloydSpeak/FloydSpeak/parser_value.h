@@ -307,35 +307,6 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: static value_t make_default_value(const type_identifier_t& type){
-			if(type == type_identifier_t("null")){
-				return value_t();
-			}
-			else if(type == type_identifier_t("bool")){
-				return value_t(false);
-			}
-			else if(type == type_identifier_t("int")){
-				return value_t(0);
-			}
-			else if(type == type_identifier_t("float")){
-				return value_t(0.0f);
-			}
-			else if(type == type_identifier_t("string")){
-				return value_t("");
-			}
-			//??? Need better way
-			else if(type == type_identifier_t("struct_instance")){
-				QUARK_ASSERT(false);
-				return value_t("");
-			}
-			else if(type == type_identifier_t("__type_value")){
-				QUARK_ASSERT(false);
-				return value_t("");
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
-		}
 
 		////////////////		STATE
 
