@@ -156,6 +156,7 @@ namespace floyd_parser {
 
 	/*
 		Definition of a struct-member.
+		??? support expressions for default values.
 	*/
 
 	struct member_t {

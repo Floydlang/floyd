@@ -280,7 +280,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-//////////////////////////		TEST STRUCT SUPPORT
+//////////////////////////		TEST HELPERS
 
 
 
@@ -293,9 +293,13 @@ pair<vm_t, floyd_parser::value_t> run_program(const string& source){
 	return {vm, r};
 }
 
-#if true
-//??? "main" and "pixel_constructor" overwrites each other.
-QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
+
+//////////////////////////		TEST STRUCT SUPPORT
+
+
+
+
+QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member data"){
 	const auto a = run_program(
 		"struct pixel { string s; };"
 		"string main(){\n"
@@ -307,12 +311,22 @@ QUARK_UNIT_TESTQ("struct", "Can define struct & read member data"){
 	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
-#endif
+
+QUARK_UNIT_TESTQ("struct", "Struct member default value"){
+	const auto a = run_program(
+		"struct pixel { string s = \"one\"; };"
+		"string main(){\n"
+		"	pixel p = pixel_constructor();"
+		"	return p.s;"
+		"}\n"
+	);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.second == value_t("one"));
+}
 
 /*
-	Can read struct's member.
-
-	Can define constructor
+	Can define custom constructor
 	Can call constructor
 
 	Can define member function

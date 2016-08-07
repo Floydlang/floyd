@@ -126,26 +126,6 @@ void trace(const ast_t& program){
 
 
 
-
-
-statement_result_t parse_struct_definition(const ast_t& ast, const string& pos){
-	QUARK_ASSERT(ast.check_invariant());
-	QUARK_ASSERT(pos.size() > 0);
-
-	const auto token_pos = read_until(pos, whitespace_chars);
-	QUARK_ASSERT(token_pos.first == "struct");
-
-	const auto struct_name = read_required_single_symbol(token_pos.second);
-	pair<struct_def_t, string> body_pos = parse_struct_body(skip_whitespace(struct_name.second));
-
-	auto pos2 = skip_whitespace(body_pos.second);
-	pos2 = read_required_char(pos2, ';');
-
-	return { define_struct_statement_t{ struct_name.first, body_pos.first }, ast, skip_whitespace(pos2) };
-}
-
-
-
 //////////////////////////////////////////////////		read_statement()
 
 
@@ -209,8 +189,8 @@ statement_result_t read_statement(const ast_t& ast1, const string& pos){
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition(ast1, pos);
-        return a;
+		const auto a = parse_struct_definition(pos);
+		return { define_struct_statement_t{ std::get<0>(a), std::get<1>(a) }, ast1, skip_whitespace(std::get<2>(a)) };
 	}
 
 	else {

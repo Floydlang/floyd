@@ -13,15 +13,18 @@
 #include "quark.h"
 #include <vector>
 #include <string>
+#include <tuple>
 
 namespace floyd_parser {
 	struct struct_def_t;
+	struct ast_t;
+
 
 	/*
-		{}
-		{int a;}
+		struct pixel { int red; int green; int blue; };
+		struct pixel { int red = 255; int green = 255; int blue = 255; };
 	*/
-	std::pair<struct_def_t, std::string> parse_struct_body(const std::string& s);
+	std::tuple<std::string, struct_def_t, std::string> parse_struct_definition(const std::string& pos);
 
 
 	const std::string k_test_struct0_body = "{int x; string y; float z;}";

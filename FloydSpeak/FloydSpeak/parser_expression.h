@@ -10,12 +10,14 @@
 #define parse_expression_hpp
 
 #include "quark.h"
-
+#include "expressions.h"
 
 namespace floyd_parser {
 	struct expression_t;
 	struct ast_t;
 	struct parser_i;
+
+	std::pair<expression_t, std::string> parse_single(const parser_i& parser, const std::string& s);
 
 	/*
 		Parses the expression string
