@@ -190,7 +190,7 @@ statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_de
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition(pos);
+		const auto a = parse_struct_definition(scope_def, pos);
 		return { define_struct_statement_t{ std::get<0>(a), std::get<1>(a) }, ast1, skip_whitespace(std::get<2>(a)) };
 	}
 
@@ -243,8 +243,8 @@ statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_de
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	try{
-		auto scope_def = make_shared<scope_def_t>(scope_def_t(true, nullptr));
-		const auto result = read_statement({}, *scope_def, "int f()");
+		auto global = scope_def_t::make_global_scope();
+		const auto result = read_statement({}, *global, "int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
@@ -253,13 +253,13 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto scope_def = make_shared<scope_def_t>(scope_def_t(true, nullptr));
-	const auto result = read_statement({}, *scope_def, "float test = testx(1234);\n\treturn 3;\n");
+	auto global = scope_def_t::make_global_scope();
+	const auto result = read_statement({}, *global, "float test = testx(1234);\n\treturn 3;\n");
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto scope_def = make_shared<scope_def_t>(scope_def_t(true, nullptr));
-	const auto result = read_statement({}, *scope_def, test_function1);
+	auto global = scope_def_t::make_global_scope();
+	const auto result = read_statement({}, *global, test_function1);
 	QUARK_TEST_VERIFY(result._statement._define_function);
 	QUARK_TEST_VERIFY(result._statement._define_function->_type_identifier == "test_function1");
 	QUARK_TEST_VERIFY(result._statement._define_function->_function_def == make_test_function1());
@@ -267,59 +267,66 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto scope_def = make_shared<scope_def_t>(scope_def_t(true, nullptr));
-	const auto result = read_statement({}, *scope_def, "struct test_struct0 " + k_test_struct0_body + ";");
+	auto global = scope_def_t::make_global_scope();
+	const auto result = read_statement({}, *global, "struct test_struct0 " + k_test_struct0_body + ";");
 	QUARK_TEST_VERIFY(result._statement._define_struct);
 	QUARK_TEST_VERIFY(result._statement._define_struct->_type_identifier == "test_struct0");
-	QUARK_TEST_VERIFY(result._statement._define_struct->_struct_def == make_test_struct0());
+	QUARK_TEST_VERIFY(result._statement._define_struct->_struct_def == make_test_struct0(*global));
 }
 
 
 
 
 
-//////////////////////////////////////////////////		program_to_ast()
+
+//////////////////////////////////////////////////		resolve_type()
+
+
+
+
+
+std::shared_ptr<type_def_t> resolve_type_deep(const floyd_parser::scope_def_t& scope_def, const std::string& s){
+	QUARK_ASSERT(scope_def.check_invariant());
+
+	const auto t = scope_def._types_collector.resolve_identifier(s);
+	if(t){
+		return t;
+	}
+	else if(scope_def._parent_scope != nullptr){
+		return resolve_type_deep(*scope_def._parent_scope, s);
+	}
+	else{
+		return {};
+	}
+}
+
+std::shared_ptr<type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_def, const std::string& s){
+	QUARK_ASSERT(scope_def.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	return resolve_type_deep(scope_def, s);
+}
+
+
+
+
+//////////////////////////////////////////////////		make_default_value()
 
 
 
 //??? second pass for semantics (resolve all types and symbols, precalculate expressions.
 
 //??? add default-constructor to every type, even built-in types.
-value_t make_default_value(const floyd_parser::type_identifier_t& type){
+value_t make_default_value(const scope_def_t& scope_def, floyd_parser::type_identifier_t& type){
+	QUARK_ASSERT(scope_def.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	if(type == type_identifier_t("null")){
-		return value_t();
+	const auto t = resolve_type(scope_def, type.to_string());
+	if(!t){
+		throw std::runtime_error("Undefined struct!");
 	}
-	else if(type == type_identifier_t("bool")){
-		return value_t(false);
-	}
-	else if(type == type_identifier_t("int")){
-		return value_t(0);
-	}
-	else if(type == type_identifier_t("float")){
-		return value_t(0.0f);
-	}
-	else if(type == type_identifier_t("string")){
-		return value_t("");
-	}
-
-	//	Ce
-//	std::shared_ptr<floyd_parser::type_def_> str = vm.resolve_type(type.to_string());
-
-	//??? Need better way
-	else if(type == type_identifier_t("struct_instance")){
-		QUARK_ASSERT(false);
-		return value_t("");
-	}
-	else if(type == type_identifier_t("__type_value")){
-		QUARK_ASSERT(false);
-		return value_t("");
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-	return value_t();
+	const auto r = t->make_default_value();
+	return r;
 }
 
 
@@ -348,8 +355,19 @@ value_t make_struct_instance(const struct_def_t& def){
 	for(int i = 0 ; i < def._members.size() ; i++){
 		const auto& member_def = def._members[i];
 
+		const auto member_type = resolve_type(*def._struct_scope, member_def._type->to_string());
+		if(!member_type){
+			throw std::runtime_error("Undefined struct type!");
+		}
+
 		//	If there is an initial value for this member, use that. Else use default value for this type.
-		value_t value = member_def._value ? *member_def._value : make_default_value(*member_def._type);
+		value_t value;
+		if(member_def._value){
+			value = *member_def._value;
+		}
+		else{
+			value = make_default_value(*def._struct_scope, *member_def._type);
+		}
 		instance->_member_values[member_def._name] = value;
 	}
 	return value_t(instance);
@@ -395,7 +413,7 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_def_t& scope_def, c
 
 	{
 		const auto param = make_shared<alloc_struct_param>(s);
-		auto function_scope = make_shared<scope_def_t>(true, &scope_def);
+		auto function_scope = scope_def_t::make_subscope(scope_def);
 		function_scope->_host_function = hosts_function__alloc_struct;
 		function_scope->_host_function_param = param;
 		const auto a = make_function_def(struct_name_ident, struct_name_ident, {}, function_scope);
@@ -473,7 +491,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	const auto result = program_to_ast({}, kProgram1);
 	QUARK_TEST_VERIFY(result._global_scope->_statements.size() == 0);
 
-	auto scope_def = make_shared<scope_def_t>(true, result._global_scope.get());
+	auto scope_def = scope_def_t::make_subscope(*result._global_scope);
 	scope_def->_statements = {
 		make_shared<statement_t>(makie_return_statement(make_constant(3)))
 	};
@@ -498,7 +516,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	const auto result = program_to_ast({}, kProgram);
 	QUARK_TEST_VERIFY(result._global_scope->_statements.size() == 0);
 
-	auto scope_def = make_shared<scope_def_t>(true, result._global_scope.get());
+	auto scope_def = scope_def_t::make_subscope(*result._global_scope);
 	scope_def->_statements = {
 		make_shared<statement_t>(makie_return_statement(make_constant(3)))
 	};
@@ -531,7 +549,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	const auto result = program_to_ast({}, kProgram);
 	QUARK_TEST_VERIFY(result._global_scope->_statements.size() == 0);
 
-	auto scope_def = make_shared<scope_def_t>(true, result._global_scope.get());
+	auto scope_def = scope_def_t::make_subscope(*result._global_scope);
 	scope_def->_statements = {
 		make_shared<statement_t>(makie_return_statement(make_constant("test abc")))
 	};
@@ -548,7 +566,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		)
 	));
 
-	auto scope_def2 = make_shared<scope_def_t>(true, result._global_scope.get());
+	auto scope_def2 = scope_def_t::make_subscope(*result._global_scope);
 	scope_def2->_statements = {
 		make_shared<statement_t>(makie_return_statement(make_constant(3)))
 	};
@@ -577,7 +595,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 	auto result = program_to_ast({}, kProgram2);
 	QUARK_TEST_VERIFY(result._global_scope->_statements.size() == 0);
 
-	auto scope_def = make_shared<scope_def_t>(true, result._global_scope.get());
+	auto scope_def = scope_def_t::make_subscope(*result._global_scope);
 	scope_def->_statements = {
 		make_shared<statement_t>(makie_return_statement(make_constant(13.4f)))
 	};

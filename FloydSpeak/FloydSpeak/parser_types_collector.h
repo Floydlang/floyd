@@ -44,7 +44,7 @@ namespace floyd_parser {
 	struct type_def_t {
 		public: type_def_t(){};
 		public: bool check_invariant() const;
-
+		public: value_t make_default_value() const;
 
 		///////////////////		STATE
 
@@ -213,9 +213,6 @@ namespace floyd_parser {
 		//	Key is the signature string. De-duplicated.
 		private: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
 	};
-
-
-	types_collector_t define_test_struct5(const types_collector_t& types);
 
 
 }	//	floyd_parser

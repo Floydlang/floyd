@@ -594,15 +594,15 @@ ast_t make_test_ast(){
 	result._global_scope->_types_collector = result._global_scope->_types_collector.define_function_type("f", make_log_function());
 	result._global_scope->_types_collector = result._global_scope->_types_collector.define_function_type("return5", make_return5());
 
-	result._global_scope->_types_collector = result._global_scope->_types_collector.define_struct_type("test_struct0", make_struct0());
-	result._global_scope->_types_collector = result._global_scope->_types_collector.define_struct_type("test_struct1", make_struct1());
+	result._global_scope->_types_collector = result._global_scope->_types_collector.define_struct_type("test_struct0", make_struct0(*result._global_scope));
+	result._global_scope->_types_collector = result._global_scope->_types_collector.define_struct_type("test_struct1", make_struct1(*result._global_scope));
 	return result;
 }
 
 QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	auto a = make_test_ast();
-	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct0") == make_struct0());
-	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct1") == make_struct1());
+	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct0") == make_struct0(*a._global_scope));
+	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct1") == make_struct1(*a._global_scope));
 }
 
 

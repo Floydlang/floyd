@@ -232,7 +232,13 @@ namespace floyd_parser {
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 	*/
 	struct scope_def_t {
-		public: explicit scope_def_t(bool dummy, const scope_def_t* parent_scope) :
+		public: static std::shared_ptr<scope_def_t> make_subscope(const scope_def_t& parent_scope){
+			return std::make_shared<scope_def_t>(scope_def_t(true, &parent_scope));
+		}
+		public: static std::shared_ptr<scope_def_t> make_global_scope(){
+			return std::make_shared<scope_def_t>(scope_def_t(true, nullptr));
+		}
+		private: explicit scope_def_t(bool dummy, const scope_def_t* parent_scope) :
 			_parent_scope(parent_scope)
 		{
 		}
@@ -332,7 +338,7 @@ namespace floyd_parser {
 
 	struct ast_t : public parser_i {
 		public: ast_t() :
-			_global_scope(std::make_shared<scope_def_t>(scope_def_t(true, nullptr)))
+			_global_scope(scope_def_t::make_global_scope())
 		{
 		}
 

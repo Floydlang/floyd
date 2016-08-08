@@ -17,7 +17,14 @@
 namespace floyd_parser {
 	struct scope_def_t;
 
-	floyd_parser::value_t make_default_value(const floyd_parser::type_identifier_t& type);
+	/*
+		Resolves the type, starting at _scope_instances.back() then moving towards to global space. This is a compile-time operation.
+	*/
+	//??? const version
+	std::shared_ptr<floyd_parser::type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_def, const std::string& s);
+
+
+	floyd_parser::value_t make_default_value(const scope_def_t& scope_def, const floyd_parser::type_identifier_t& type);
 
     struct statement_result_t {
         statement_t _statement;

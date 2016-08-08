@@ -204,19 +204,34 @@ namespace floyd_parser {
 	typedef struct_instance_t (*construct_default_t)(const struct_def_t& def);
 
 	struct struct_def_t {
+		public: static struct_def_t make(
+			const type_identifier_t& name,
+			const std::vector<member_t>& members,
+			const std::shared_ptr<const scope_def_t>& struct_scope
+		);
+
+		private: struct_def_t(const type_identifier_t& name, const std::vector<member_t>& members, const std::shared_ptr<const scope_def_t>& struct_scope) :
+			_name(name),
+			_members(members),
+			_struct_scope(struct_scope)
+		{
+		}
 		public: bool check_invariant() const;
 		bool operator==(const struct_def_t& other) const;
 
+		value_t make_default_value() const;
+
 
 		///////////////////		STATE
-		public: std::vector<member_t> _members;
+		public: const type_identifier_t _name;
+		public: const std::vector<member_t> _members;
+		public: const std::shared_ptr<const scope_def_t> _struct_scope;
 //		public: construct_default_struct_t _construct_default;
 //		public: construct_default_struct_t _construct_default;
 	};
 
 	void trace(const struct_def_t& e);
 	std::string to_signature(const struct_def_t& t);
-	struct_def_t make_struct_def(const std::vector<member_t>& members);
 
 
 
@@ -240,14 +255,14 @@ namespace floyd_parser {
 
 
 
-	struct_def_t make_struct0();
-	struct_def_t make_struct1();
+	struct_def_t make_struct0(const scope_def_t& scope_def);
+	struct_def_t make_struct1(const scope_def_t& scope_def);
 
 	/*
 		struct struct2 {
 		}
 	*/
-	struct_def_t make_struct2();
+	struct_def_t make_struct2(const scope_def_t& scope_def);
 
 	/*
 		struct struct3 {
@@ -255,7 +270,7 @@ namespace floyd_parser {
 			string b
 		}
 	*/
-	struct_def_t make_struct3();
+	struct_def_t make_struct3(const scope_def_t& scope_def);
 
 	/*
 		struct struct4 {
@@ -264,9 +279,9 @@ namespace floyd_parser {
 			string z
 		}
 	*/
-	struct_def_t make_struct4();
+	struct_def_t make_struct4(const scope_def_t& scope_def);
 
-	struct_def_t make_struct5();
+	struct_def_t make_struct5(const scope_def_t& scope_def);
 
 
 }	//	floyd_parser

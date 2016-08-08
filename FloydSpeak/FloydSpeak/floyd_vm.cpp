@@ -138,7 +138,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 
 
 
-
+/*
 QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 	const auto a = types_collector_t();
 	const auto b = define_test_struct5(a);
@@ -153,31 +153,7 @@ QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 	QUARK_TEST_VERIFY(true);
 //	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<struct_1>y,<string>z}");
 }
-
-
-
-
-std::shared_ptr<type_def_t> resolve_type_deep(const floyd_parser::scope_def_t& scope_def, const std::string& s){
-	QUARK_ASSERT(scope_def.check_invariant());
-
-	const auto t = scope_def._types_collector.resolve_identifier(s);
-	if(t){
-		return t;
-	}
-	else if(scope_def._parent_scope != nullptr){
-		return resolve_type_deep(*scope_def._parent_scope, s);
-	}
-	else{
-		return {};
-	}
-}
-
-std::shared_ptr<type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_def, const std::string& s){
-	QUARK_ASSERT(scope_def.check_invariant());
-	QUARK_ASSERT(s.size() > 0);
-
-	return resolve_type_deep(scope_def, s);
-}
+*/
 
 
 

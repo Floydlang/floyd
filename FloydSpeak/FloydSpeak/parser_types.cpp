@@ -222,9 +222,6 @@ namespace floyd_parser {
 	}
 
 
-	struct_def_t make_struct_def(const vector<member_t>& members){
-		return struct_def_t{ members };
-	}
 
 
 
@@ -290,14 +287,36 @@ namespace floyd_parser {
 
 
 	bool struct_def_t::check_invariant() const{
+		QUARK_ASSERT(_name.check_invariant());
+		QUARK_ASSERT(_name.to_string().size() > 0 );
+
+		for(const auto m: _members){
+			QUARK_ASSERT(m.check_invariant());
+		}
+		QUARK_ASSERT(_struct_scope && _struct_scope->check_invariant());
 		return true;
 	}
+
 	bool struct_def_t::operator==(const struct_def_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return other._members == _members;
+		return _name == other._name && other._members == _members && *_struct_scope == *other._struct_scope;
 	}
+
+	struct_def_t struct_def_t::make(
+		const type_identifier_t& name,
+		const std::vector<member_t>& members,
+		const std::shared_ptr<const scope_def_t>& struct_scope)
+	{
+		return struct_def_t{ name, members, struct_scope };
+	}
+
+	value_t struct_def_t::make_default_value() const{
+		QUARK_ASSERT(check_invariant());
+		return value_t();
+	}
+
 
 	void trace(const struct_def_t& e){
 		QUARK_SCOPED_TRACE("struct_def_t");
@@ -333,63 +352,76 @@ namespace floyd_parser {
 
 
 
-	struct_def_t make_struct0(){
-		return make_struct_def({});
+	struct_def_t make_struct0(const scope_def_t& scope_def){
+		auto struct_scope = scope_def_t::make_subscope(scope_def);
+		return struct_def_t::make(type_identifier_t::make_type("struct0"), {}, struct_scope);
 	}
 
-	struct_def_t make_struct1(){
-		return make_struct_def(
+	struct_def_t make_struct1(const scope_def_t& scope_def){
+		auto struct_scope = scope_def_t::make_subscope(scope_def);
+		return struct_def_t::make(
+			type_identifier_t::make_type("struct1"),
 			{
 				{ make_type_identifier("float"), "x" },
 				{ make_type_identifier("float"), "y" },
 				{ make_type_identifier("string"), "name" }
-			}
+			},
+			struct_scope
 		);
 	}
 
 
-	struct_def_t make_struct2(){
-		return make_struct0();
+	struct_def_t make_struct2(const scope_def_t& scope_def){
+		return make_struct0(scope_def);
 	}
 
-	struct_def_t make_struct3(){
-		return make_struct_def(
+	struct_def_t make_struct3(const scope_def_t& scope_def){
+		auto struct_scope = scope_def_t::make_subscope(scope_def);
+		return struct_def_t::make(
+			type_identifier_t::make_type("struct3"),
 			{
 				{ make_type_identifier("int"), "a" },
 				{ make_type_identifier("string"), "b" }
-			}
+			},
+			struct_scope
 		);
 	}
 
-	struct_def_t make_struct4(){
-		return make_struct_def(
+	struct_def_t make_struct4(const scope_def_t& scope_def){
+		auto struct_scope = scope_def_t::make_subscope(scope_def);
+		return struct_def_t::make(
+			type_identifier_t::make_type("struct4"),
 			{
 				{ make_type_identifier("string"), "x" },
 //				{ make_type_identifier("struct3"), "y" },
 				{ make_type_identifier("string"), "z" }
-			}
+			},
+			struct_scope
 		);
 	}
 
 
-//??? check for duplicate member names.
-struct_def_t make_struct5(){
-	return make_struct_def(
-		{
-			{ make_type_identifier("bool"), "a" },
-			// pad
-			// pad
-			// pad
-			{ make_type_identifier("int"), "b" },
-			{ make_type_identifier("bool"), "c" },
-			{ make_type_identifier("bool"), "d" },
-			{ make_type_identifier("bool"), "e" },
-			{ make_type_identifier("bool"), "f" },
-			{ make_type_identifier("string"), "g" },
-			{ make_type_identifier("bool"), "h" }
-		}
-	);
-}
+	//??? check for duplicate member names.
+	struct_def_t make_struct5(const scope_def_t& scope_def){
+		auto struct_scope = scope_def_t::make_subscope(scope_def);
+		return struct_def_t::make(
+			type_identifier_t::make_type("struct5"),
+			{
+				{ make_type_identifier("bool"), "a" },
+				// pad
+				// pad
+				// pad
+				{ make_type_identifier("int"), "b" },
+				{ make_type_identifier("bool"), "c" },
+				{ make_type_identifier("bool"), "d" },
+				{ make_type_identifier("bool"), "e" },
+				{ make_type_identifier("bool"), "f" },
+				{ make_type_identifier("string"), "g" },
+				{ make_type_identifier("bool"), "h" }
+			},
+			struct_scope
+		);
+	}
 
 
 } //	floyd_parser;
