@@ -232,12 +232,26 @@ namespace floyd_parser {
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 	*/
 	struct scope_def_t {
+		public: explicit scope_def_t(bool dummy, const scope_def_t* parent_scope) :
+			_parent_scope(parent_scope)
+		{
+		}
+		public: scope_def_t(const scope_def_t& other) :
+			_parent_scope(other._parent_scope),
+			_statements(other._statements),
+			_host_function(other._host_function),
+			_host_function_param(other._host_function_param),
+			_types_collector(other._types_collector)
+		{
+		};
 		public: bool check_invariant() const;
 		public: bool operator==(const scope_def_t& other) const;
 
 
+		/////////////////////////////		STATE
+
 		//	Used for finding parent symbols, for making symbol paths.
-		public: scope_def_t* _parent_scope = nullptr;
+		public: const scope_def_t* _parent_scope = nullptr;
 
 		//	INSTRUCTIONS - either _host_function or _statements is used.
 
@@ -318,7 +332,7 @@ namespace floyd_parser {
 
 	struct ast_t : public parser_i {
 		public: ast_t() :
-			_global_scope(std::make_shared<scope_def_t>())
+			_global_scope(std::make_shared<scope_def_t>(scope_def_t(true, nullptr)))
 		{
 		}
 
@@ -339,10 +353,12 @@ namespace floyd_parser {
 	};
 
 
+/*
 	struct parser_state_t {
 		const ast_t _ast;
 		scope_def_t _open;
 	};
+*/
 
 }	//	floyd_parser
 

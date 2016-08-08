@@ -16,9 +16,6 @@ struct vm_t {
 	public: vm_t(const floyd_parser::ast_t& ast);
 	public: bool check_invariant() const;
 
-//	public: std::shared_ptr<floyd_parser::function_def_t> resolve_function_type(const std::string& s) const;
-	public: std::shared_ptr<floyd_parser::type_def_t> resolve_type(const std::string& s) const;
-
 
 
 	////////////////////////		STATE
@@ -30,6 +27,11 @@ struct vm_t {
 
 
 
+
+	/*
+		Resolves the type, starting at _scope_instances.back() then moving towards to global space. This is a compile-time operation.
+	*/
+	std::shared_ptr<floyd_parser::type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_def, const std::string& s);
 
 
 	typedef std::pair<std::size_t, std::size_t> byte_range_t;

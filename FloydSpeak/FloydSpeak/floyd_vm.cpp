@@ -157,55 +157,26 @@ QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 
 
 
+std::shared_ptr<type_def_t> resolve_type_deep(const floyd_parser::scope_def_t& scope_def, const std::string& s){
+	QUARK_ASSERT(scope_def.check_invariant());
 
-
-/*
-std::shared_ptr<function_def_t> resolve_function_type_deep(const std::vector<shared_ptr<floyd_parser::scope_instance_t>>& scopes, const std::string& s, size_t depth){
-	QUARK_ASSERT(depth < scopes.size());
-	QUARK_ASSERT(depth >= 0);
-
-	const auto f = scopes[depth]->_def->_types_collector.resolve_function_type(s);
-	if(f){
-		return f;
-	}
-	else if(depth > 0){
-		return resolve_function_type_deep(scopes, s, depth - 1);
-	}
-	else{
-		return {};
-	}
-}
-
-std::shared_ptr<function_def_t> vm_t::resolve_function_type(const std::string& s) const{
-	QUARK_ASSERT(check_invariant());
-
-	return resolve_function_type_deep(_scope_instances, s, _scope_instances.size() - 1);
-}
-*/
-
-
-
-
-std::shared_ptr<type_def_t> resolve_type_deep(const std::vector<shared_ptr<floyd_parser::scope_instance_t>>& scopes, const std::string& s, size_t depth){
-	QUARK_ASSERT(depth < scopes.size());
-	QUARK_ASSERT(depth >= 0);
-
-	const auto t = scopes[depth]->_def->_types_collector.resolve_identifier(s);
+	const auto t = scope_def._types_collector.resolve_identifier(s);
 	if(t){
 		return t;
 	}
-	else if(depth > 0){
-		return resolve_type_deep(scopes, s, depth - 1);
+	else if(scope_def._parent_scope != nullptr){
+		return resolve_type_deep(*scope_def._parent_scope, s);
 	}
 	else{
 		return {};
 	}
 }
 
-std::shared_ptr<type_def_t> vm_t::resolve_type(const std::string& s) const{
-	QUARK_ASSERT(check_invariant());
+std::shared_ptr<type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_def, const std::string& s){
+	QUARK_ASSERT(scope_def.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_type_deep(_scope_instances, s, _scope_instances.size() - 1);
+	return resolve_type_deep(scope_def, s);
 }
 
 

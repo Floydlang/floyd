@@ -21,6 +21,7 @@ namespace floyd_parser {
 	struct expression_t;
 	struct statement_t;
 	struct ast_t;
+	struct scope_def_t;
 
 
 	/*
@@ -40,7 +41,7 @@ namespace floyd_parser {
 			}
 		}
 	*/
-	std::pair<std::pair<std::string, function_def_t>, std::string> parse_function_definition(const ast_t& ast, const std::string& pos);
+	std::pair<std::pair<std::string, function_def_t>, std::string> parse_function_definition(const ast_t& ast, const scope_def_t& scope_def, const std::string& pos);
 
 
 

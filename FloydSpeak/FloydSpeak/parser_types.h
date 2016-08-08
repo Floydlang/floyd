@@ -136,19 +136,31 @@ namespace floyd_parser {
 	typedef value_t (*hosts_function_t)(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
 
 	struct function_def_t {
-		public: function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<std::shared_ptr<statement_t> > statements);
-		public: function_def_t(type_identifier_t return_type, const std::vector<arg_t>& args, hosts_function_t f, std::shared_ptr<host_data_i> param);
+		public: function_def_t(
+			const type_identifier_t& name,
+			const type_identifier_t& return_type,
+			const std::vector<arg_t>& args,
+			const std::shared_ptr<const scope_def_t>& function_scope
+		);
 		public: bool check_invariant() const;
 		public: bool operator==(const function_def_t& other) const;
 
+
+		///////////////////		STATE
+		public: const type_identifier_t _name;
 		public: const type_identifier_t _return_type;
 		public: const std::vector<arg_t> _args;
-		public: std::shared_ptr<scope_def_t> _scope_def;
+		public: std::shared_ptr<const scope_def_t> _function_scope;
 	};
 
 	void trace(const function_def_t& v);
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
-	function_def_t make_function_def(type_identifier_t return_type, const std::vector<arg_t>& args, const std::vector<statement_t>& statements);
+	function_def_t make_function_def(
+		const type_identifier_t& name,
+		const type_identifier_t& return_type,
+		const std::vector<arg_t>& args,
+		const std::shared_ptr<const scope_def_t>& function_scope
+	);
 	TSHA1 calc_function_body_hash(const function_def_t& f);
 
 

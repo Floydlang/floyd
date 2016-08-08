@@ -48,9 +48,6 @@ namespace {
 		return true;
 	}
 
-	/*
-		### Use callstack instead of duplicating all identifiers.
-	*/
 	vm_t open_function_scope(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f.check_invariant());
@@ -61,7 +58,7 @@ namespace {
 		}
 
 		scope_instance_t new_scope;
-		new_scope._def = f._scope_def.get();
+		new_scope._def = f._function_scope.get();
 
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f._args[i]._identifier;
@@ -80,9 +77,9 @@ namespace {
 value_t call_host_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
-	QUARK_ASSERT(f._scope_def->_statements.empty());
-	QUARK_ASSERT(f._scope_def->_host_function);
-	QUARK_ASSERT(f._scope_def->_host_function_param);
+	QUARK_ASSERT(f._function_scope->_statements.empty());
+	QUARK_ASSERT(f._function_scope->_host_function);
+	QUARK_ASSERT(f._function_scope->_host_function_param);
 
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -91,7 +88,7 @@ value_t call_host_function(const vm_t& vm, const function_def_t& f, const vector
 	}
 
 //	auto local_scope = add_args(ast, f, args);
-	const auto a = f._scope_def->_host_function(f._scope_def->_host_function_param, args);
+	const auto a = f._function_scope->_host_function(f._function_scope->_host_function_param, args);
 	return a;
 }
 
@@ -99,9 +96,9 @@ value_t call_host_function(const vm_t& vm, const function_def_t& f, const vector
 value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
-	QUARK_ASSERT(!f._scope_def->_statements.empty());
-	QUARK_ASSERT(!f._scope_def->_host_function);
-	QUARK_ASSERT(!f._scope_def->_host_function_param);
+	QUARK_ASSERT(!f._function_scope->_statements.empty());
+	QUARK_ASSERT(!f._function_scope->_host_function);
+	QUARK_ASSERT(!f._function_scope->_host_function_param);
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 	if(!check_args(f, args)){
@@ -111,7 +108,7 @@ value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const
 	auto vm2 = open_function_scope(vm, f, args);
 
 	//	??? Should respect {} for local variable scopes!
-	const auto& statements = f._scope_def->_statements;
+	const auto& statements = f._function_scope->_statements;
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
@@ -155,7 +152,7 @@ value_t run_function(const vm_t& vm, const function_def_t& f, const vector<value
 		throw std::runtime_error("function arguments do not match function");
 	}
 
-	if(f._scope_def->_host_function){
+	if(f._function_scope->_host_function){
 		return call_host_function(vm, f, args);
 	}
 	else{
@@ -380,8 +377,8 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 
 		//	??? Function calls should also use resolve_address_expression() to find function.
 
-		const auto type = vm.resolve_type(call_function_expression._function_name);
-		if(!type->_function_def){
+		const auto type = resolve_type(*vm._scope_instances.back()->_def, call_function_expression._function_name);
+		if(!type || !type->_function_def){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}
 
