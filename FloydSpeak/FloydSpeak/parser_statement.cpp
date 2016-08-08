@@ -120,7 +120,7 @@ pair<return_statement_t, string> parse_return_statement(const ast_t& ast, const 
 	const auto token_pos = read_until(s, whitespace_chars);
 	const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 	const auto expression1 = parse_expression(ast, expression_pos.first);
-//			const auto expression2 = evaluate3(local_scope, expression1);
+//			const auto expression2 = evalute_expression(local_scope, expression1);
 	const auto statement = return_statement_t{ make_shared<expression_t>(expression1) };
 
 	//	Skip trailing ";".

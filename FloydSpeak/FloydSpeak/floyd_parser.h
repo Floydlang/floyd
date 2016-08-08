@@ -26,6 +26,7 @@ namespace floyd_parser {
 
 	floyd_parser::value_t make_default_value(const scope_def_t& scope_def, const floyd_parser::type_identifier_t& type);
 
+
     struct statement_result_t {
         statement_t _statement;
         ast_t _ast;

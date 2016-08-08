@@ -118,7 +118,7 @@ value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const
 			if(vm2._scope_instances.back()->_values.count(name) != 0){
 				throw std::runtime_error("local constant already exists");
 			}
-			const auto result = evaluate3(vm2, *s->_expression);
+			const auto result = evalute_expression(vm2, *s->_expression);
 			if(!result._constant){
 				throw std::runtime_error("unknown variables");
 			}
@@ -126,7 +126,7 @@ value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const
 		}
 		else if(statement->_return_statement){
 			const auto expr = statement->_return_statement->_expression;
-			const auto result = evaluate3(vm2, *expr);
+			const auto result = evalute_expression(vm2, *expr);
 
 			if(!result._constant){
 				throw std::runtime_error("undefined");
@@ -181,6 +181,9 @@ floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<sc
 	}
 }
 
+/*
+	Uses runtime callstack to find a variable by its name.
+*/
 floyd_parser::value_t resolve_variable_name(const vm_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
@@ -258,7 +261,7 @@ expression_t load(const vm_t& vm, const expression_t& e){
 
 //??? tests
 //??? Split into several functions.
-expression_t evaluate3(const vm_t& vm, const expression_t& e){
+expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -267,8 +270,8 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 	}
 	else if(e._math2){
 		const auto e2 = *e._math2;
-		const auto left = evaluate3(vm, *e2._left);
-		const auto right = evaluate3(vm, *e2._right);
+		const auto left = evalute_expression(vm, *e2._left);
+		const auto right = evalute_expression(vm, *e2._right);
 
 		//	Both left and right are constant, replace the math_operation with a constant!
 		if(left._constant && right._constant){
@@ -334,7 +337,7 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
-		const auto input = evaluate3(vm, *e2._input);
+		const auto input = evalute_expression(vm, *e2._input);
 
 		//	Replace the with a constant!
 		if(input._constant){
@@ -388,7 +391,7 @@ expression_t evaluate3(const vm_t& vm, const expression_t& e){
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
 		for(const auto& i: call_function_expression._inputs){
-			const auto arg_expr = evaluate3(vm, *i);
+			const auto arg_expr = evalute_expression(vm, *i);
 			simplified_args.push_back(arg_expr);
 		}
 
@@ -456,7 +459,7 @@ struct test_parser : public parser_i {
 	expression_t test_evaluate_simple(string expression_string){
 		const ast_t ast;
 		const auto e = parse_expression(ast, expression_string);
-		const auto e2 = evaluate3(ast, e);
+		const auto e2 = evalute_expression(ast, e);
 		return e2;
 	}
 }

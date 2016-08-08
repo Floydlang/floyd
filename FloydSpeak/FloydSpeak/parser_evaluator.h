@@ -26,7 +26,7 @@ namespace floyd_parser {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	expression_t evaluate3(const vm_t& vm, const expression_t& e);
+	expression_t evalute_expression(const vm_t& vm, const expression_t& e);
 
 	value_t run_function(const vm_t& vm, const function_def_t& f, const std::vector<value_t>& args);
 

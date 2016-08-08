@@ -317,7 +317,7 @@ std::shared_ptr<type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_
 //??? second pass for semantics (resolve all types and symbols, precalculate expressions.
 
 //??? add default-constructor to every type, even built-in types.
-value_t make_default_value(const scope_def_t& scope_def, floyd_parser::type_identifier_t& type){
+value_t make_default_value(const scope_def_t& scope_def, const floyd_parser::type_identifier_t& type){
 	QUARK_ASSERT(scope_def.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -328,6 +328,8 @@ value_t make_default_value(const scope_def_t& scope_def, floyd_parser::type_iden
 	const auto r = t->make_default_value();
 	return r;
 }
+
+
 
 
 
@@ -347,32 +349,6 @@ struct alloc_struct_param : public host_data_i {
 };
 
 
-
-value_t make_struct_instance(const struct_def_t& def){
-	auto instance = make_shared<struct_instance_t>();
-
-	instance->__def = &def;
-	for(int i = 0 ; i < def._members.size() ; i++){
-		const auto& member_def = def._members[i];
-
-		const auto member_type = resolve_type(*def._struct_scope, member_def._type->to_string());
-		if(!member_type){
-			throw std::runtime_error("Undefined struct type!");
-		}
-
-		//	If there is an initial value for this member, use that. Else use default value for this type.
-		value_t value;
-		if(member_def._value){
-			value = *member_def._value;
-		}
-		else{
-			value = make_default_value(*def._struct_scope, *member_def._type);
-		}
-		instance->_member_values[member_def._name] = value;
-	}
-	return value_t(instance);
-}
-
 value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
 	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
 
@@ -381,7 +357,7 @@ value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, 
 		throw std::runtime_error("Undefined struct!");
 	}
 
-	const auto instance = make_struct_instance(*b);
+	const auto instance = b->make_default_value();
 	return instance;
 }
 

@@ -15,6 +15,7 @@
 #include "parser_statement.h"
 #include "parser_function.h"
 #include "parts/sha1_class.h"
+#include "floyd_parser.h"	//???spagetti
 
 
 using std::make_shared;
@@ -312,9 +313,39 @@ namespace floyd_parser {
 		return struct_def_t{ name, members, struct_scope };
 	}
 
+
+
+	value_t make_struct_instance(const struct_def_t& def){
+		QUARK_ASSERT(def.check_invariant());
+
+		auto instance = make_shared<struct_instance_t>();
+
+		instance->__def = &def;
+		for(int i = 0 ; i < def._members.size() ; i++){
+			const auto& member_def = def._members[i];
+
+			const auto member_type = resolve_type(*def._struct_scope, member_def._type->to_string());
+			if(!member_type){
+				throw std::runtime_error("Undefined struct type!");
+			}
+
+			//	If there is an initial value for this member, use that. Else use default value for this type.
+			value_t value;
+			if(member_def._value){
+				value = *member_def._value;
+			}
+			else{
+				value = make_default_value(*def._struct_scope, *member_def._type);
+			}
+			instance->_member_values[member_def._name] = value;
+		}
+		return value_t(instance);
+	}
+
+
 	value_t struct_def_t::make_default_value() const{
 		QUARK_ASSERT(check_invariant());
-		return value_t();
+		return make_struct_instance(*this);
 	}
 
 

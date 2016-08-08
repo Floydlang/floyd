@@ -296,7 +296,6 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
-#if false
 QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 	const auto a = run_program(
 		"struct pixel { string s = \"one\"; };"
@@ -310,7 +309,6 @@ QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
-#endif
 
 
 /*
