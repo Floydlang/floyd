@@ -17,6 +17,7 @@
 #include "parser_primitives.h"
 #include "text_parser.h"
 #include "steady_vector.h"
+#include "parse_statement.h"
 #include "parser_expression.h"
 #include "parser_statement.h"
 #include "parser_function.h"
@@ -166,7 +167,7 @@ statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_de
 
 	//	return statement?
 	if(token_pos.first == "return"){
-		const auto return_statement_pos = parse_return_statement(ast1, pos);
+		const auto return_statement_pos = parse_return_statement(pos);
 		return { make__return_statement(return_statement_pos.first), ast2, skip_whitespace(return_statement_pos.second) };
 	}
 
@@ -199,7 +200,7 @@ statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_de
 
 		else if(peek_string(skip_whitespace(identifier_pos.second), "=")){
 //		else if(ast.parser_i__is_known_type(token_pos.first))
-			pair<statement_t, string> assignment_statement = parse_assignment_statement(ast1, pos);
+			pair<statement_t, string> assignment_statement = parse_assignment_statement(pos);
 //			const string& identifier = assignment_statement.first._bind_statement->_identifier;
 
 /*

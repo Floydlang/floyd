@@ -134,33 +134,6 @@ namespace floyd_parser {
 
 	void trace(const statement_t& s);
 
-
-
-	/*
-		s:
-			Must start with "return".
-
-			Examples:
-				return 0;
-				return x + y;
-
-	*/
-	std::pair<return_statement_t, std::string> parse_return_statement(const ast_t& ast, const std::string& s);
-
-
-	/*
-		"int a = 10;"
-		"float b = 0.3;"
-		"int c = a + b;"
-		"int b = f(a);"
-		"string hello = f(a) + \"_suffix\";";
-
-		...can contain trailing whitespace.
-	*/
-	std::pair<statement_t, std::string> parse_assignment_statement(const ast_t& ast, const std::string& s);
-
-
-
 }	//	floyd_parser
 
 
