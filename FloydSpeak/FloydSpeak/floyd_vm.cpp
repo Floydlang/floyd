@@ -322,6 +322,18 @@ QUARK_UNIT_TESTQ("struct", "Can use struct as argument"){
 	QUARK_TEST_VERIFY(a.second == value_t("two"));
 }
 
+QUARK_UNIT_TESTQ("struct", "Can return struct"){
+	const auto a = run_program(
+		"struct pixel { string s = \"three\"; }"
+		"pixel test(){ return pixel_constructor(); }"
+		"string main(){\n"
+		"	pixel p = test();"
+		"	return p.s;"
+		"}\n"
+	);
+	QUARK_TEST_VERIFY(a.second == value_t("three"));
+}
+
 
 /*
 
