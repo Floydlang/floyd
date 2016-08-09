@@ -92,23 +92,13 @@ value_t call_host_function(const vm_t& vm, const function_def_t& f, const vector
 	return a;
 }
 
-//??? Make this operate on scope_def_t instead of function_def_t.
-value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+value_t execute_statements(const vm_t& vm, const vector<shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
-	QUARK_ASSERT(!f._function_scope->_statements.empty());
-	QUARK_ASSERT(!f._function_scope->_host_function);
-	QUARK_ASSERT(!f._function_scope->_host_function_param);
-	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
-	if(!check_args(f, args)){
-		throw std::runtime_error("function arguments do not match function");
-	}
-
-	auto vm2 = open_function_scope(vm, f, args);
+	auto vm2 = vm;
 
 	//	??? Should respect {} for local variable scopes!
-	const auto& statements = f._function_scope->_statements;
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
@@ -139,7 +129,32 @@ value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const
 		}
 		statement_index++;
 	}
+	return value_t();
+}
+
+
+//??? Make this operate on scope_def_t instead of function_def_t.
+value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(!f._function_scope->_statements.empty());
+	QUARK_ASSERT(!f._function_scope->_host_function);
+	QUARK_ASSERT(!f._function_scope->_host_function_param);
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+	if(!check_args(f, args)){
+		throw std::runtime_error("function arguments do not match function");
+	}
+
+	auto vm2 = open_function_scope(vm, f, args);
+	const auto& statements = f._function_scope->_statements;
+	const auto value = execute_statements(vm2, statements);
+	if(value.is_null()){
 	throw std::runtime_error("function missing return statement");
+	}
+	else{
+		return value;
+	}
 }
 
 
