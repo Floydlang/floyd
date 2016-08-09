@@ -47,6 +47,11 @@ vm_t::vm_t(const floyd_parser::ast_t& ast) :
 	auto global_scope = scope_instance_t();
 	global_scope._def = ast._global_scope.get();
 	_scope_instances.push_back(make_shared<scope_instance_t>(global_scope));
+
+	//	Run static intialization (basically run global statements before calling main()).
+	{
+	}
+
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -263,6 +268,23 @@ pair<vm_t, floyd_parser::value_t> run_program(const string& source){
 	const auto r = call_function(vm, f, {});
 	return {vm, r};
 }
+
+
+//////////////////////////		TEST GLOBAL CONSTANTS
+
+
+
+#if false
+QUARK_UNIT_TESTQ("struct", "Can make and read global int"){
+	const auto a = run_program(
+		"int test = 123;"
+		"string main(){\n"
+		"	return test;"
+		"}\n"
+	);
+	QUARK_TEST_VERIFY(a.second == value_t(123));
+}
+#endif
 
 
 //////////////////////////		TEST STRUCT SUPPORT
