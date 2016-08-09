@@ -15,9 +15,8 @@
 namespace floyd_parser {
 	struct expression_t;
 	struct ast_t;
-	struct parser_i;
 
-	std::pair<expression_t, std::string> parse_single(const parser_i& parser, const std::string& s);
+	std::pair<expression_t, std::string> parse_single(const std::string& s);
 
 	/*
 		Parses the expression string
@@ -44,7 +43,7 @@ namespace floyd_parser {
 
 			(my_fun1("hello, 3) + 4) * my_fun2(10))
 	*/
-	expression_t parse_expression(const parser_i& parser, std::string expression);
+	expression_t parse_expression(std::string expression);
 
 	ast_t make_test_ast();
 

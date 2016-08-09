@@ -119,7 +119,7 @@ pair<return_statement_t, string> parse_return_statement(const ast_t& ast, const 
 
 	const auto token_pos = read_until(s, whitespace_chars);
 	const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-	const auto expression1 = parse_expression(ast, expression_pos.first);
+	const auto expression1 = parse_expression(expression_pos.first);
 //			const auto expression2 = evalute_expression(local_scope, expression1);
 	const auto statement = return_statement_t{ make_shared<expression_t>(expression1) };
 
@@ -163,13 +163,13 @@ pair<statement_t, string> parse_assignment_statement(const ast_t& ast, const str
 
 	const auto token_pos = read_until(s, whitespace_chars);
 	const auto type = make_type_identifier(token_pos.first);
-	QUARK_ASSERT(ast.parser_i__is_known_type(read_until(s, whitespace_chars).first));
+//	QUARK_ASSERT(ast.parser_i__is_known_type(read_until(s, whitespace_chars).first));
 
 	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
 	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
 
-	const auto expression = parse_expression(ast, expression_pos.first);
+	const auto expression = parse_expression(expression_pos.first);
 
 	const auto statement = make__bind_statement(variable_pos.first, expression);
 	trace(statement);

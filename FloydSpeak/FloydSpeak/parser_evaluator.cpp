@@ -461,7 +461,7 @@ using namespace floyd_parser;
 //??? Needs test functs?
 	expression_t test_evaluate_simple(string expression_string){
 		const ast_t ast;
-		const auto e = parse_expression(ast, expression_string);
+		const auto e = parse_expression(expression_string);
 		const auto e2 = evalute_expression(ast, e);
 		return e2;
 	}

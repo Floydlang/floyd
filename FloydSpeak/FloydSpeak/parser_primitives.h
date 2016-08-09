@@ -209,17 +209,6 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////////////////		parser_i
-
-	//??? delete this
-	struct parser_i {
-		public: virtual ~parser_i(){};
-		public: virtual bool parser_i__is_declared_function(const std::string& s) const = 0;
-		public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const = 0;
-		public: virtual bool parser_i__is_known_type(const std::string& s) const = 0;
-	};
-
-
 	//////////////////////////////////////////////////		scope_def_t
 
 
@@ -336,7 +325,7 @@ namespace floyd_parser {
 		//	### Stuff all globals into a global struct in the floyd world.
 	*/
 
-	struct ast_t : public parser_i {
+	struct ast_t {
 		public: ast_t() :
 			_global_scope(scope_def_t::make_global_scope())
 		{
@@ -345,13 +334,6 @@ namespace floyd_parser {
 		public: bool check_invariant() const {
 			return true;
 		}
-
-
-		/////////////////////////////		parser_i
-
-		public: virtual bool parser_i__is_declared_function(const std::string& s) const;
-		public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const;
-		public: virtual bool parser_i__is_known_type(const std::string& s) const;
 
 
 		/////////////////////////////		STATE

@@ -45,7 +45,7 @@ namespace floyd_parser {
 
 				const auto constant_expr_pos_s = read_until(pos, ";");
 
-				const auto constant_expr_pos = parse_single({}, constant_expr_pos_s.first);
+				const auto constant_expr_pos = parse_single(constant_expr_pos_s.first);
 				const auto constant_expr = constant_expr_pos.first;
 				if(!constant_expr._constant){
 					throw std::runtime_error("Struct member defaults must be constants only, not expressions.");

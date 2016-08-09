@@ -346,25 +346,6 @@ type_identifier_t make_type_identifier(const std::string& s){
 	}
 
 
-	//////////////////////////////////////////////////		ast_t
-
-
-
-	bool ast_t::parser_i__is_declared_function(const std::string& s) const{
-//		return _functions.find(s) != _functions.end();
-//		return _types_collector.resolve_function_type(s) ? true : false;
-		return true;
-	}
-
-	bool ast_t::parser_i__is_declared_constant_value(const std::string& s) const{
-//		return _constant_values.find(s) != _constant_values.end();
-		return true;
-	}
-
-	bool ast_t::parser_i__is_known_type(const std::string& s) const{
-		return true;
-	}
-
 
 
 }	//	floyd_parser

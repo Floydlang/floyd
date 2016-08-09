@@ -31,19 +31,6 @@ seq to_seq(const pair<expression_t, string>& p){
 	return seq(to_string(p.first), p.second);
 }
 
-struct test_parser : public parser_i {
-	public: virtual bool parser_i__is_declared_function(const std::string& s) const{
-		return s == "log" || s == "log2" || s == "f" || s == "return5";
-	}
-	public: virtual bool parser_i__is_declared_constant_value(const std::string& s) const{
-		return false;
-	}
-
-	bool parser_i__is_known_type(const std::string& s) const{
-		return true;
-	}
-};
-
 
 
 /*
@@ -55,7 +42,7 @@ struct test_parser : public parser_i {
 
 	Returns a lookup_element_expr_t, including any expression within the brackets.
 */
-pair<expression_t, string> parse_lookup(const parser_i& parser, const expression_t& leftside, const string& s) {
+pair<expression_t, string> parse_lookup(const expression_t& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 2);
 
 	const auto pos = skip_whitespace(s);
@@ -65,7 +52,7 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const expression
 	}
 
 	const auto key_expression_s = trim_ends(body.first);
-	expression_t key_expression = parse_expression(parser, key_expression_s);
+	expression_t key_expression = parse_expression(key_expression_s);
 	return { make_lookup(leftside, key_expression), body.second };
 }
 
@@ -73,7 +60,7 @@ pair<expression_t, string> parse_lookup(const parser_i& parser, const expression
 	"f()"
 	"hello(a + b)"
 */
-pair<expression_t, string> parse_function_call(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
+pair<expression_t, string> parse_function_call(const std::shared_ptr<expression_t>& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto identifier_pos = read_required_single_symbol(s);
@@ -90,7 +77,7 @@ pair<expression_t, string> parse_function_call(const parser_i& parser, const std
 	vector<expression_t> args_expressions;
 	while(!p2.empty()){
 		const auto p3 = read_until(skip_whitespace(p2), ",");
-		expression_t arg_expr = parse_expression(parser, p3.first);
+		expression_t arg_expr = parse_expression(p3.first);
 		args_expressions.push_back(arg_expr);
 		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 	}
@@ -98,7 +85,7 @@ pair<expression_t, string> parse_function_call(const parser_i& parser, const std
 	return { make_function_call(identifier_pos.first, args_expressions), arg_list_pos.second };
 }
 
-pair<expression_t, string> parse_path_node(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
+pair<expression_t, string> parse_path_node(const std::shared_ptr<expression_t>& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto pos = skip_whitespace(s);
@@ -108,7 +95,7 @@ pair<expression_t, string> parse_path_node(const parser_i& parser, const std::sh
 		if(!leftside){
 			throw std::runtime_error("[] needs to operate on a value");
 		}
-		const auto lookup = parse_lookup(parser, *leftside.get(), pos);
+		const auto lookup = parse_lookup(*leftside.get(), pos);
 		return lookup;
 	}
 
@@ -120,7 +107,7 @@ pair<expression_t, string> parse_path_node(const parser_i& parser, const std::sh
 
 		//	Function call?
 		if(!p2.empty() && p2[0] == '('){
-			return parse_function_call(parser, leftside, pos);
+			return parse_function_call(leftside, pos);
 		}
 
 		//	Variable.
@@ -136,35 +123,35 @@ pair<expression_t, string> parse_path_node(const parser_i& parser, const std::sh
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, {}, "hello xxx")), seq("(@res_var 'hello')", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "hello xxx")), seq("(@res_var 'hello')", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, {}, "f () xxx")), seq("(@call 'f'())", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "f () xxx")), seq("(@call 'f'())", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, {}, "f (x + 10) xxx")), seq("(@call 'f'((@+ (@load (@res_var 'x')) (@k <int>10))))", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "f (x + 10) xxx")), seq("(@call 'f'((@+ (@load (@res_var 'x')) (@k <int>10))))", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-//	quark::ut_compare(to_seq(parse_path_node({}, {}, "[10] xxx")), seq("(@lookup nullptr (@k <int>10))", " xxx"));
+//	quark::ut_compare(to_seq(parse_path_node({}, "[10] xxx")), seq("(@lookup nullptr (@k <int>10))", " xxx"));
 }
 
 
-pair<expression_t, string> parse_calculated_value_recursive(const parser_i& parser, const std::shared_ptr<expression_t>& leftside, const string& s) {
+pair<expression_t, string> parse_calculated_value_recursive(const std::shared_ptr<expression_t>& leftside, const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	//	Read leftmost element in path. "hello" or "f(1 + 2)" or "[1 + 2]".
-	const auto a = parse_path_node(parser, leftside, s);
+	const auto a = parse_path_node(leftside, s);
 
 	//	Is there a chain of resolves, like "kitty" in "hello.kitty"?
 	const auto pos = skip_whitespace(a.second);
 	if(peek_compare_char(pos, '.')){
-		return parse_calculated_value_recursive(parser, make_shared<expression_t>(a.first), pos.substr(1));
+		return parse_calculated_value_recursive(make_shared<expression_t>(a.first), pos.substr(1));
 	}
 	else if(peek_compare_char(pos, '[')){
-		return parse_calculated_value_recursive(parser, make_shared<expression_t>(a.first), pos);
+		return parse_calculated_value_recursive(make_shared<expression_t>(a.first), pos);
 	}
 	else{
 		return a;
@@ -199,8 +186,8 @@ pair<expression_t, string> parse_calculated_value_recursive(const parser_i& pars
 		"hello["troll"] xxx"
 		"hello["troll"].kitty[10].cat xxx"
 */
-pair<expression_t, string> parse_calculated_value(const parser_i& parser, const string& s) {
-	const auto a = parse_calculated_value_recursive(parser, shared_ptr<expression_t>(), s);
+pair<expression_t, string> parse_calculated_value(const string& s) {
+	const auto a = parse_calculated_value_recursive(shared_ptr<expression_t>(), s);
 	if(a.first._resolve_variable){
 		return { make_load(a.first), a.second };
 	}
@@ -241,36 +228,36 @@ pair<expression_t, string> parse_calculated_value(const parser_i& parser, const 
 */
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello xxx")), seq("(@load (@res_var 'hello'))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello xxx")), seq("(@load (@res_var 'hello'))", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty xxx")), seq("(@load (@res_member (@res_var 'hello') 'kitty'))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty xxx")), seq("(@load (@res_member (@res_var 'hello') 'kitty'))", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello.kitty.cat xxx")), seq("(@load (@res_member (@res_member (@res_var 'hello') 'kitty') 'cat'))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty.cat xxx")), seq("(@load (@res_member (@res_member (@res_var 'hello') 'kitty') 'cat'))", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "f () xxx")), seq("(@call 'f'())", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("f () xxx")), seq("(@call 'f'())", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "f (x + 10) xxx")), seq("(@call 'f'((@+ (@load (@res_var 'x')) (@k <int>10))))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("f (x + 10) xxx")), seq("(@call 'f'((@+ (@load (@res_var 'x')) (@k <int>10))))", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello[10] xxx")), seq("(@load (@lookup (@res_var 'hello') (@k <int>10)))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[10] xxx")), seq("(@load (@lookup (@res_var 'hello') (@k <int>10)))", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello[\"troll\"] xxx")), seq("(@load (@lookup (@res_var 'hello') (@k <string>'troll')))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"] xxx")), seq("(@load (@lookup (@res_var 'hello') (@k <string>'troll')))", " xxx"));
 }
 
 //### allow nl and tab when writing result strings.
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value({}, "hello[\"troll\"].kitty[10].cat xxx")), seq("(@load (@res_member (@lookup (@res_member (@lookup (@res_var 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"].kitty[10].cat xxx")), seq("(@load (@res_member (@lookup (@res_member (@lookup (@res_var 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))", " xxx"));
 }
 
 /*
@@ -289,7 +276,7 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 */
 
 
-pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth);
+pair<expression_t, string> parse_summands(const string& s, int depth);
 
 
 expression_t negate_expression(const expression_t& e){
@@ -389,7 +376,7 @@ QUARK_UNIT_TESTQ("parse_string_constant()", ""){
 
 		x[10 + f()]
 */
-pair<expression_t, string> parse_single(const parser_i& parser, const string& s) {
+pair<expression_t, string> parse_single(const string& s) {
 	QUARK_ASSERT(s.size() > 0);
 
 	//	" => string constant.
@@ -405,18 +392,16 @@ pair<expression_t, string> parse_single(const parser_i& parser, const string& s)
 	}
 
 	else{
-		return parse_calculated_value(parser, s);
+		return parse_calculated_value(s);
 	}
 }
 
 QUARK_UNIT_TESTQ("parse_single", "number"){
-	test_parser parser;
-	QUARK_TEST_VERIFY((parse_single(parser, "9.0") == pair<expression_t, string>(make_constant(9.0f), "")));
+	QUARK_TEST_VERIFY((parse_single("9.0") == pair<expression_t, string>(make_constant(9.0f), "")));
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call"){
-	test_parser parser;
-	const auto a = parse_single(parser, "log(34.5)");
+	const auto a = parse_single("log(34.5)");
 	QUARK_TEST_VERIFY(a.first._call->_function_name == "log");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 1);
 	QUARK_TEST_VERIFY(*a.first._call->_inputs[0]->_constant == value_t(34.5f));
@@ -424,8 +409,7 @@ QUARK_UNIT_TESTQ("parse_single", "function call"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
-	test_parser parser;
-	const auto a = parse_single(parser, "log2(\"123\" + \"xyz\", 1000 * 3)");
+	const auto a = parse_single("log2(\"123\" + \"xyz\", 1000 * 3)");
 	QUARK_TEST_VERIFY(a.first._call->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_math2);
@@ -434,8 +418,7 @@ QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
-	test_parser parser;
-	const auto a = parse_single(parser, "log2(2.1, f(3.14))");
+	const auto a = parse_single("log2(2.1, f(3.14))");
 	QUARK_TEST_VERIFY(a.first._call->_function_name == "log2");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_constant);
@@ -446,20 +429,18 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "variable read"){
-	test_parser parser;
 	const auto a = pair<expression_t, string>(make_load_variable("k_my_global"), "");
-	const auto b = parse_single({}, "k_my_global");
+	const auto b = parse_single("k_my_global");
 	QUARK_TEST_VERIFY(a == b);
 }
 
 QUARK_UNIT_TESTQ("parse_single", "read struct member"){
-	test_parser parser;
-	quark::ut_compare(to_seq(parse_single(parser, "k_my_global.member")),  seq("(@load (@res_member (@res_var 'k_my_global') 'member'))", ""));
+	quark::ut_compare(to_seq(parse_single("k_my_global.member")),  seq("(@load (@res_member (@res_var 'k_my_global') 'member'))", ""));
 }
 
 
 // Parse a constant or an expression in parenthesis
-pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, int depth) {
+pair<expression_t, string> parse_atom(const string& s, int depth) {
 	string pos = skip_whitespace(s);
 
 	//	Handle the sign before parenthesis (or before number)
@@ -475,7 +456,7 @@ pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, i
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = parse_summands(parser, pos, depth);
+		auto res = parse_summands(pos, depth);
 		pos = skip_whitespace(res.second);
 		if(!(res.second.size() > 0 && res.second[0] == ')')) {
 			// Unmatched opening parenthesis
@@ -488,7 +469,7 @@ pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, i
 
 	//	Parse constant literal / function call / variable-access.
 	if(pos.size() > 0){
-		const auto single_pos = parse_single(parser, pos);
+		const auto single_pos = parse_single(pos);
 		return { negative ? negate_expression(single_pos.first) : single_pos.first, single_pos.second };
 	}
 
@@ -499,30 +480,28 @@ pair<expression_t, string> parse_atom(const parser_i& parser, const string& s, i
 
 //### more tests here!
 QUARK_UNIT_TEST("", "parse_atom", "", ""){
-	test_parser parser;
+	QUARK_TEST_VERIFY((parse_atom("0.0", 0) == pair<expression_t, string>(make_constant(0.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom("9.0", 0) == pair<expression_t, string>(make_constant(9.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom("12345.0", 0) == pair<expression_t, string>(make_constant(12345.0f), "")));
 
-	QUARK_TEST_VERIFY((parse_atom(parser, "0.0", 0) == pair<expression_t, string>(make_constant(0.0f), "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "9.0", 0) == pair<expression_t, string>(make_constant(9.0f), "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "12345.0", 0) == pair<expression_t, string>(make_constant(12345.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom("10.0", 0) == pair<expression_t, string>(make_constant(10.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom("-10.0", 0) == pair<expression_t, string>(make_constant(-10.0f), "")));
+	QUARK_TEST_VERIFY((parse_atom("+10.0", 0) == pair<expression_t, string>(make_constant( 10.0f), "")));
 
-	QUARK_TEST_VERIFY((parse_atom(parser, "10.0", 0) == pair<expression_t, string>(make_constant(10.0f), "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "-10.0", 0) == pair<expression_t, string>(make_constant(-10.0f), "")));
-	QUARK_TEST_VERIFY((parse_atom(parser, "+10.0", 0) == pair<expression_t, string>(make_constant( 10.0f), "")));
-
-	QUARK_TEST_VERIFY((parse_atom(parser, "4.0+", 0) == pair<expression_t, string>(make_constant(4.0f), "+")));
+	QUARK_TEST_VERIFY((parse_atom("4.0+", 0) == pair<expression_t, string>(make_constant(4.0f), "+")));
 
 
-	QUARK_TEST_VERIFY((parse_atom(parser, "\"hello\"", 0) == pair<expression_t, string>(make_constant("hello"), "")));
+	QUARK_TEST_VERIFY((parse_atom("\"hello\"", 0) == pair<expression_t, string>(make_constant("hello"), "")));
 }
 
 
-pair<expression_t, string> parse_factors(const parser_i& parser, const string& s, int depth) {
-	const auto num1_pos = parse_atom(parser, s, depth);
+pair<expression_t, string> parse_factors(const string& s, int depth) {
+	const auto num1_pos = parse_atom(s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = skip_whitespace(num1_pos.second);
 	while(!pos.empty() && (pos[0] == '*' || pos[0] == '/')){
 		const auto op_pos = read_char(pos);
-		const auto expression2_pos = parse_atom(parser, op_pos.second, depth);
+		const auto expression2_pos = parse_atom(op_pos.second, depth);
 		if(op_pos.first == '/') {
 			result_expression = make_math_operation2(math_operation2_expr_t::divide, result_expression, expression2_pos.first);
 		}
@@ -534,14 +513,14 @@ pair<expression_t, string> parse_factors(const parser_i& parser, const string& s
 	return { result_expression, pos };
 }
 
-pair<expression_t, string> parse_summands(const parser_i& parser, const string& s, int depth) {
-	const auto num1_pos = parse_factors(parser, s, depth);
+pair<expression_t, string> parse_summands(const string& s, int depth) {
+	const auto num1_pos = parse_factors(s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = num1_pos.second;
 	while(!pos.empty() && (pos[0] == '-' || pos[0] == '+')) {
 		const auto op_pos = read_char(pos);
 
-		const auto expression2_pos = parse_factors(parser, op_pos.second, depth);
+		const auto expression2_pos = parse_factors(op_pos.second, depth);
 		if(op_pos.first == '-'){
 			result_expression = make_math_operation2(math_operation2_expr_t::subtract, result_expression, expression2_pos.first);
 		}
@@ -556,11 +535,11 @@ pair<expression_t, string> parse_summands(const parser_i& parser, const string& 
 
 
 
-expression_t parse_expression(const parser_i& parser, string expression){
+expression_t parse_expression(string expression){
 	if(expression.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
-	auto result = parse_summands(parser, expression, 0);
+	auto result = parse_summands(expression, 0);
 	if(!result.second.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
@@ -572,12 +551,12 @@ expression_t parse_expression(const parser_i& parser, string expression){
 
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
-	const auto a = parse_expression({}, "pixel( \"hiya\" )");
+	const auto a = parse_expression("pixel( \"hiya\" )");
 	QUARK_TEST_VERIFY(a._call);
 }
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(to_string(parse_expression({}, "pixel.red")), "(@load (@res_member (@res_var 'pixel') 'red'))");
+	quark::ut_compare(to_string(parse_expression("pixel.red")), "(@load (@res_member (@res_var 'pixel') 'red'))");
 }
 
 
