@@ -48,7 +48,7 @@ namespace {
 		return true;
 	}
 
-	vm_t open_function_scope(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+	interpreter_t open_function_scope(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
@@ -66,7 +66,7 @@ namespace {
 			new_scope._values[arg_name] = arg_value;
 		}
 
-		vm_t result = vm;
+		interpreter_t result = vm;
 		result._scope_instances.push_back(make_shared<scope_instance_t>(new_scope));
 		return result;
 	}
@@ -74,7 +74,7 @@ namespace {
 }
 
 
-value_t call_host_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+value_t call_host_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	QUARK_ASSERT(f._function_scope->_statements.empty());
@@ -92,7 +92,7 @@ value_t call_host_function(const vm_t& vm, const function_def_t& f, const vector
 	return a;
 }
 
-value_t execute_statements(const vm_t& vm, const vector<shared_ptr<statement_t>>& statements){
+value_t execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
@@ -134,7 +134,7 @@ value_t execute_statements(const vm_t& vm, const vector<shared_ptr<statement_t>>
 
 
 //??? Make this operate on scope_def_t instead of function_def_t.
-value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+value_t call_interpreted_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	QUARK_ASSERT(!f._function_scope->_statements.empty());
@@ -158,7 +158,7 @@ value_t call_interpreted_function(const vm_t& vm, const function_def_t& f, const
 }
 
 
-value_t run_function(const vm_t& vm, const function_def_t& f, const vector<value_t>& args){
+value_t run_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
@@ -199,7 +199,7 @@ floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<sc
 /*
 	Uses runtime callstack to find a variable by its name.
 */
-floyd_parser::value_t resolve_variable_name(const vm_t& vm, const std::string& s){
+floyd_parser::value_t resolve_variable_name(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
@@ -224,7 +224,7 @@ floyd_parser::value_t resolve_variable_name(const vm_t& vm, const std::string& s
 	c = my_global_obj.all[3].f(10).prev;
 */
 
-expression_t load_deep(const vm_t& vm, const value_t& left_side, const expression_t& e){
+expression_t load_deep(const interpreter_t& vm, const value_t& left_side, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e._resolve_variable || e._resolve_struct_member || e._lookup_element);
@@ -258,7 +258,7 @@ expression_t load_deep(const vm_t& vm, const value_t& left_side, const expressio
 	}
 }
 
-expression_t load(const vm_t& vm, const expression_t& e){
+expression_t load(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e._load);
@@ -276,7 +276,7 @@ expression_t load(const vm_t& vm, const expression_t& e){
 
 //??? tests
 //??? Split into several functions.
-expression_t evalute_expression(const vm_t& vm, const expression_t& e){
+expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -459,10 +459,10 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 
 
 
-//////////////////////////		vm_t
+//////////////////////////		interpreter_t
 
 
-vm_t::vm_t(const floyd_parser::ast_t& ast) :
+interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
 	_ast(ast)
 {
 	QUARK_ASSERT(ast.check_invariant());
@@ -478,7 +478,7 @@ vm_t::vm_t(const floyd_parser::ast_t& ast) :
 	QUARK_ASSERT(check_invariant());
 }
 
-bool vm_t::check_invariant() const {
+bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_ast.check_invariant());
 	return true;
 }
@@ -587,7 +587,7 @@ QUARK_UNIT_TESTQ("calc_struct_default_memory_layout()", "struct 2"){
 
 
 
-shared_ptr<const floyd_parser::function_def_t> find_global_function(const vm_t& vm, const string& name){
+shared_ptr<const floyd_parser::function_def_t> find_global_function(const interpreter_t& vm, const string& name){
 	return vm._ast._global_scope->_types_collector.resolve_function_type(name);
 }
 
@@ -596,7 +596,7 @@ struct vm_stack_frame {
 	int _statement_index;
 };
 
-floyd_parser::value_t call_function(const vm_t& vm, shared_ptr<const floyd_parser::function_def_t> f, const vector<floyd_parser::value_t>& args){
+floyd_parser::value_t call_function(const interpreter_t& vm, shared_ptr<const floyd_parser::function_def_t> f, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -610,7 +610,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 		"	return 3 + 4;\n"
 		"}\n"
 	);
-	auto vm = vm_t(ast);
+	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t(7));
@@ -623,7 +623,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 		"	return \"123\" + \"456\";\n"
 		"}\n"
 	);
-	auto vm = vm_t(ast);
+	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("123456"));
@@ -636,7 +636,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 		"	return myfunc() + myfunc() * 2;\n"
 		"}\n"
 	);
-	auto vm = vm_t(ast);
+	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t(15));
@@ -650,7 +650,7 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
 	);
-	auto vm = vm_t(ast);
+	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("-xyz-"));
@@ -668,7 +668,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
 		"}\n"
 	);
-	auto vm = vm_t(ast);
+	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("--xyz<xyz>--"));
@@ -683,10 +683,10 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-pair<vm_t, floyd_parser::value_t> run_program(const string& source){
+pair<interpreter_t, floyd_parser::value_t> run_program(const string& source){
 	QUARK_ASSERT(source.size() > 0);
 	auto ast = program_to_ast({}, source);
-	auto vm = vm_t(ast);
+	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto r = call_function(vm, f, {});
 	return {vm, r};
@@ -796,7 +796,7 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 floyd_parser::value_t run_main(const string& source, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(source.size() > 0);
 	auto ast = program_to_ast({}, source);
-	auto vm = vm_t(ast);
+	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto r = call_function(vm, f, args);
 	return r;

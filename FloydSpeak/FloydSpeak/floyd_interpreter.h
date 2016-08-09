@@ -36,8 +36,8 @@ namespace floyd_interpreter {
 		public: std::map<std::string, floyd_parser::value_t> _values;
 	};
 
-	struct vm_t {
-		public: vm_t(const floyd_parser::ast_t& ast);
+	struct interpreter_t {
+		public: interpreter_t(const floyd_parser::ast_t& ast);
 		public: bool check_invariant() const;
 
 
@@ -54,16 +54,16 @@ namespace floyd_interpreter {
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	floyd_parser::value_t execute_statements(const vm_t& vm, const std::vector<std::shared_ptr<floyd_parser::statement_t>>& statements);
+	floyd_parser::value_t execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<floyd_parser::statement_t>>& statements);
 
 	/*
 		Evaluates an expression as far as possible.
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	floyd_parser::expression_t evalute_expression(const vm_t& vm, const floyd_parser::expression_t& e);
+	floyd_parser::expression_t evalute_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
 
-	floyd_parser::value_t run_function(const vm_t& vm, const floyd_parser::function_def_t& f, const std::vector<floyd_parser::value_t>& args);
+	floyd_parser::value_t run_function(const interpreter_t& vm, const floyd_parser::function_def_t& f, const std::vector<floyd_parser::value_t>& args);
 
 
 	typedef std::pair<std::size_t, std::size_t> byte_range_t;
