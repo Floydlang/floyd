@@ -418,10 +418,20 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_def_t& scope_def, c
 	return statements;
 }
 
-
-
-
 //??? Make this a separate parse pass, that resolves symbols and take decisions.
+/*
+	Pass2:Procsses parse-tree
+	- Collect types and symbols-
+	- Resolve types and symbols using compile-time scopes.
+	- Verifies all expression and statement semantics
+	- Inject automatic functions, like default constructors.
+	- Perform basic evaluation simplifications / optimizations.
+*/
+ast_t pass2(const ast_t& ast1){
+	auto ast2 = ast1;
+	return ast2;
+}
+
 ast_t program_to_ast(const ast_t& init, const string& program){
 	ast_t ast2 = init;
 
@@ -444,7 +454,6 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 		}
 		else{
 			statements.push_back(make_shared<statement_t>(statement_pos._statement));
-//			throw std::runtime_error("Unexpected statement.");
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
@@ -456,6 +465,11 @@ ast_t program_to_ast(const ast_t& init, const string& program){
 
 	return ast2;
 }
+
+/*
+	??? test defining a local struct
+	??? test defining a local function
+*/
 
 QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	const string kProgram1 =

@@ -458,18 +458,6 @@ namespace {
 using namespace floyd_parser;
 
 
-struct test_parser : public parser_i {
-	public: test_parser(){
-	}
-
-	public: virtual bool parser_i_is_declared_function(const std::string& s) const{
-		return s == "log" || s == "log2" || s == "f" || s == "return5";
-	}
-	public: virtual bool parser_i_is_declared_constant_value(const std::string& s) const{
-		return false;
-	}
-};
-
 //??? Needs test functs?
 	expression_t test_evaluate_simple(string expression_string){
 		const ast_t ast;
