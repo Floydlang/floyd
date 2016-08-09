@@ -17,7 +17,7 @@
 #include <cmath>
 
 
-#include "parser_evaluator.h"
+#include "floyd_interpreter.h"
 #include "parser_value.h"
 #include "parser_statement.h"
 #include "parser_ast.h"
@@ -177,7 +177,7 @@ floyd_parser::value_t call_function(const vm_t& vm, shared_ptr<const floyd_parse
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-	const auto r = floyd_parser::run_function(vm._ast, *f, args);
+	const auto r = floyd_interpreter::run_function(vm._ast, *f, args);
 	return r;
 }
 

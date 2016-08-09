@@ -6,7 +6,7 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_evaluator.h"
+#include "floyd_interpreter.h"
 
 
 #include "parser_expression.h"
@@ -17,7 +17,7 @@
 
 #include <cmath>
 
-namespace floyd_parser {
+namespace floyd_interpreter {
 
 
 using std::vector;
@@ -27,6 +27,7 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
 
+using namespace floyd_parser;
 
 
 namespace {
@@ -455,7 +456,7 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 
 namespace {
 
-using namespace floyd_parser;
+using namespace floyd_interpreter;
 
 
 //??? Needs test functs?
@@ -629,6 +630,6 @@ QUARK_UNIT_TEST("", "evaluate()", "", "") {
 		}
 	}
 
-}
+}	//	floyd_interpreter
 
 

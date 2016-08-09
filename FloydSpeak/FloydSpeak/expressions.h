@@ -9,8 +9,6 @@
 #ifndef expressions_hpp
 #define expressions_hpp
 
-
-
 #include "quark.h"
 #include <vector>
 #include <string>
