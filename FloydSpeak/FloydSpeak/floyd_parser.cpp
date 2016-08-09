@@ -314,7 +314,6 @@ std::shared_ptr<type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_
 
 
 
-//??? second pass for semantics (resolve all types and symbols, precalculate expressions.
 
 value_t make_default_value(const scope_def_t& scope_def, const floyd_parser::type_identifier_t& type){
 	QUARK_ASSERT(scope_def.check_invariant());
@@ -418,19 +417,7 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_def_t& scope_def, c
 	return statements;
 }
 
-//??? Make this a separate parse pass, that resolves symbols and take decisions.
-/*
-	Pass2:Procsses parse-tree
-	- Collect types and symbols-
-	- Resolve types and symbols using compile-time scopes.
-	- Verifies all expression and statement semantics
-	- Inject automatic functions, like default constructors.
-	- Perform basic evaluation simplifications / optimizations.
-*/
-ast_t pass2(const ast_t& ast1){
-	auto ast2 = ast1;
-	return ast2;
-}
+
 
 ast_t program_to_ast(const ast_t& init, const string& program){
 	ast_t ast2 = init;

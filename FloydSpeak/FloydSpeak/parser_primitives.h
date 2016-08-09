@@ -180,34 +180,6 @@ namespace floyd_parser {
 	}
 
 
-	//////////////////////////////////////////////////		type_definition2_t
-
-
-	struct type_definition2_t {
-		public: type_definition2_t(){};
-		public: bool check_invariant() const;
-
-
-		///////////////////		STATE
-
-		public: std::string _symbol;
-
-		// ### generate collections / templates, do not require them to be instantiated to be be able to make instances.
-		public: enum {
-			k_struct_def,
-			k_function_def
-		};
-
-		/*
-			Plain types only use the _base_type.
-			### Add support for int-ranges etc.
-		*/
-		public: frontend_base_type _base_type;
-		public: std::shared_ptr<struct_def_t> _struct_def;
-//		public: std::shared_ptr<vector_def_t> _vector_def;
-		public: std::shared_ptr<function_def_t> _function_def;
-	};
-
 
 	//////////////////////////////////////////////////		scope_def_t
 
