@@ -272,7 +272,7 @@ pair<vm_t, floyd_parser::value_t> run_program(const string& source){
 
 QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member data"){
 	const auto a = run_program(
-		"struct pixel { string s; };"
+		"struct pixel { string s; }"
 		"string main(){\n"
 		"	pixel p = pixel_constructor();"
 		"	return p.s;"
@@ -285,7 +285,7 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 
 QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	const auto a = run_program(
-		"struct pixel { string s = \"one\"; };"
+		"struct pixel { string s = \"one\"; }"
 		"string main(){\n"
 		"	pixel p = pixel_constructor();"
 		"	return p.s;"
@@ -298,8 +298,8 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 
 QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 	const auto a = run_program(
-		"struct pixel { string s = \"one\"; };"
-		"struct image { pixel background_color; int width; int height; };"
+		"struct pixel { string s = \"one\"; }"
+		"struct image { pixel background_color; int width; int height; }"
 		"string main(){\n"
 		"	image i = image_constructor();"
 		"	return i.background_color.s;"
@@ -308,6 +308,18 @@ QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel"));
 	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
+}
+
+QUARK_UNIT_TESTQ("struct", "Can use struct as argument"){
+	const auto a = run_program(
+		"string get_s(pixel p){ return p.s; }"
+		"struct pixel { string s = \"two\"; }"
+		"string main(){\n"
+		"	pixel p = pixel_constructor();"
+		"	return get_s(p);"
+		"}\n"
+	);
+	QUARK_TEST_VERIFY(a.second == value_t("two"));
 }
 
 

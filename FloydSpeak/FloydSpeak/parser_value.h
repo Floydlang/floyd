@@ -23,10 +23,13 @@ namespace floyd_parser {
 	struct value_t;
 	struct struct_def_t;
 
-	//////////////////////////////////////////////////		value_t
+	//////////////////////////////////////////////////		struct_instance_t
 
 
 	struct struct_instance_t {
+		public: bool check_invariant() const;
+		public: bool operator==(const struct_instance_t& other);
+
 		//	??? Remove this points at later time, when we statically track the type of structs OK.
 		const struct_def_t* __def;
 
@@ -34,6 +37,9 @@ namespace floyd_parser {
 //???		std::vector<value_t> _member_values;
 		std::map<std::string, value_t> _member_values;
 	};
+
+	std::string to_preview(const struct_instance_t& instance);
+
 
 
 	//////////////////////////////////////////////////		value_t
@@ -48,12 +54,28 @@ namespace floyd_parser {
 		float
 		string
 		struct
-		data_type
 	*/
 
 	struct value_t {
 		public: bool check_invariant() const{
-			QUARK_ASSERT((_type.to_string() == "__type_value") == (_type_value != nullptr));
+			if(_type.to_string() == "null"){
+			}
+			else if(_type.to_string() == "bool"){
+			}
+			else if(_type.to_string() == "int"){
+			}
+			else if(_type.to_string() == "float"){
+			}
+			else if(_type.to_string() == "string"){
+			}
+			else {
+				if(_struct_instance){
+					QUARK_ASSERT(_struct_instance->check_invariant());
+				}
+				else{
+					QUARK_ASSERT(false);
+				}
+			}
 			return true;
 		}
 
@@ -101,7 +123,7 @@ namespace floyd_parser {
 		}
 
 		public: value_t(const std::shared_ptr<struct_instance_t>& struct_instance) :
-			_type("struct_instance"),
+			_type(struct_instance->__def->_name),
 			_struct_instance(struct_instance)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -114,8 +136,7 @@ namespace floyd_parser {
 			_int(other._int),
 			_float(other._float),
 			_string(other._string),
-			_struct_instance(other._struct_instance),
-			_type_value(other._type_value)
+			_struct_instance(other._struct_instance)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
@@ -138,13 +159,33 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			return _type == other._type
-				&& _bool == other._bool
-				&& _int == other._int
-				&& _float == other._float
-				&& _string == other._string
-				&& _struct_instance == other._struct_instance
-				&& _type_value == other._type_value;
+			if(_type != other._type){
+				return false;
+			}
+
+			if(_type.to_string() == "null"){
+				return true;
+			}
+			else if(_type.to_string() == "bool"){
+				return _bool == other._bool;
+			}
+			else if(_type.to_string() == "int"){
+				return _int == other._int;
+			}
+			else if(_type.to_string() == "float"){
+				return _float == other._float;
+			}
+			else if(_type.to_string() == "string"){
+				return _string == other._string;
+			}
+			else {
+				if(_struct_instance){
+					return *_struct_instance == *other._struct_instance;
+				}
+				else{
+					QUARK_ASSERT(false);
+				}
+			}
 		}
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
@@ -169,14 +210,13 @@ namespace floyd_parser {
 			else if(d == "string"){
 				return std::string("'") + _string + "'";
 			}
-			else if(d == "struct_instance"){
-				return to_signature(*_struct_instance->__def);
-			}
-			else if(d == "__type_value"){
-				return _type_value->to_string();
-			}
 			else{
-				return "???";
+				if(_struct_instance){
+					return to_preview(*_struct_instance);
+				}
+				else{
+					return "???";
+				}
 			}
 		}
 
@@ -225,17 +265,11 @@ namespace floyd_parser {
 		public: bool is_struct_instance() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type == type_identifier_t("struct_instance");
+			return _struct_instance ? true : false
+			;
 		}
 
-		public: bool is_type_value() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _type == type_identifier_t("__type_value");
-		}
-
-
-		//	???	Use enums from type system instead of strings
+		//	???	Use enum from type system instead of strings
 		public: bool get_bool() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_bool()){
@@ -281,15 +315,6 @@ namespace floyd_parser {
 			return _struct_instance;
 		}
 
-		public: std::shared_ptr<type_identifier_t> get_type_value() const{
-			QUARK_ASSERT(check_invariant());
-			if(!is_type_value()){
-				throw std::runtime_error("Type mismatch!");
-			}
-
-			return _type_value;
-		}
-
 		public: void swap(value_t& other){
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
@@ -301,7 +326,6 @@ namespace floyd_parser {
 			std::swap(_float, other._float);
 			std::swap(_string, other._string);
 			std::swap(_struct_instance, other._struct_instance);
-			std::swap(_type_value, other._type_value);
 
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
@@ -317,7 +341,6 @@ namespace floyd_parser {
 		private: float _float = 0.0f;
 		private: std::string _string = "";
 		private: std::shared_ptr<struct_instance_t> _struct_instance;
-		private: std::shared_ptr<type_identifier_t> _type_value;
 
 	};
 

@@ -22,8 +22,9 @@ namespace floyd_parser {
 
 
 	/*
-		struct pixel { int red; int green; int blue; };
-		struct pixel { int red = 255; int green = 255; int blue = 255; };
+		"struct pixel { int red; int green; int blue; }"
+		"struct pixel { int red = 255; int green = 255; int blue = 255; }"
+		
 	*/
 	std::tuple<std::string, struct_def_t, std::string> parse_struct_definition(const scope_def_t& scope_def, const std::string& pos);
 

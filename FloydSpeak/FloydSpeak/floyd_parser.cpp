@@ -316,14 +316,13 @@ std::shared_ptr<type_def_t> resolve_type(const floyd_parser::scope_def_t& scope_
 
 //??? second pass for semantics (resolve all types and symbols, precalculate expressions.
 
-//??? add default-constructor to every type, even built-in types.
 value_t make_default_value(const scope_def_t& scope_def, const floyd_parser::type_identifier_t& type){
 	QUARK_ASSERT(scope_def.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto t = resolve_type(scope_def, type.to_string());
 	if(!t){
-		throw std::runtime_error("Undefined struct!");
+		throw std::runtime_error("Undefined type!");
 	}
 	const auto r = t->make_default_value();
 	return r;
@@ -610,7 +609,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can instantiate a struct"){
 	const auto result = program_to_ast(
 		{},
-		"struct pixel { string s; };"
+		"struct pixel { string s; }"
 		"string main(){\n"
 		"	return \"\";"
 		"}\n"
