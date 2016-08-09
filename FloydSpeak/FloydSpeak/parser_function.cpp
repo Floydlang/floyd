@@ -44,7 +44,7 @@ vector<arg_t> parse_functiondef_arguments(const string& s2){
 		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
-		const auto a = arg_t{ type_identifier_t::make_type(arg_type.first), arg_name.first };
+		const auto a = arg_t{ type_identifier_t::make(arg_type.first), arg_name.first };
 		args.push_back(a);
 		str = skip_whitespace(optional_comma.second);
 	}
@@ -61,8 +61,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
 	QUARK_TEST_VERIFY((r == vector<arg_t>{
 		{ type_identifier_t::make_int(), "x" },
-		{ type_identifier_t::make_type("string"), "y" },
-		{ type_identifier_t::make_type("float"), "z" }
+		{ type_identifier_t::make_string(), "y" },
+		{ type_identifier_t::make_float(), "z" }
 	}
 	));
 }
@@ -157,7 +157,7 @@ std::pair<std::pair<string, function_def_t>, string> parse_function_definition(c
 
 	auto function_scope = scope_def_t::make_subscope(scope_def);
 	function_scope->_statements = parse_function_body(ast, *function_scope, body_pos.first);
-	const auto function_name = type_identifier_t::make_type(function_name_pos.first);
+	const auto function_name = type_identifier_t::make(function_name_pos.first);
 	const auto a = make_function_def(function_name, return_type_pos.first, args, function_scope);
 
 	return { { function_name_pos.first, a }, body_pos.second };
@@ -189,8 +189,8 @@ QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of differen
 	QUARK_TEST_VERIFY(result.first.first == "printf");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
-		{ type_identifier_t::make_type("string"), "a" },
-		{ type_identifier_t::make_type("float"), "barry" },
+		{ type_identifier_t::make_string(), "a" },
+		{ type_identifier_t::make_float(), "barry" },
 		{ type_identifier_t::make_int(), "c" },
 	}));
 	QUARK_TEST_VERIFY(result.first.second._function_scope->_statements.empty());
@@ -203,8 +203,8 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""
 	QUARK_TEST_VERIFY(result.first.first == "printf");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
-		{ type_identifier_t::make_type("string"), "a" },
-		{ type_identifier_t::make_type("float"), "barry" },
+		{ type_identifier_t::make_string(), "a" },
+		{ type_identifier_t::make_float(), "barry" },
 		{ type_identifier_t::make_int(), "c" },
 	}));
 	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
@@ -225,7 +225,7 @@ function_def_t make_test_function1(){
 	};
 
 	return make_function_def(
-		type_identifier_t::make_type("test_function1"),
+		type_identifier_t::make("test_function1"),
 		type_identifier_t::make_int(),
 		{},
 		scope_def
@@ -239,11 +239,11 @@ function_def_t make_test_function2(){
 	};
 
 	return make_function_def(
-		type_identifier_t::make_type("test_function2"),
-		type_identifier_t::make_type("string"),
+		type_identifier_t::make("test_function2"),
+		type_identifier_t::make_string(),
 		{
 			{ type_identifier_t::make_int(), "a" },
-			{ type_identifier_t::make_type("float"), "b" }
+			{ type_identifier_t::make_float(), "b" }
 		},
 		scope_def
 	);
@@ -256,9 +256,9 @@ function_def_t make_log_function(){
 	};
 
 	return make_function_def(
-		type_identifier_t::make_type("test_log_function"),
-		type_identifier_t::make_type("float"),
-		{ {type_identifier_t::make_type("float"), "value"} },
+		type_identifier_t::make("test_log_function"),
+		type_identifier_t::make_float(),
+		{ {type_identifier_t::make_float(), "value"} },
 		scope_def
 	);
 }
@@ -270,9 +270,9 @@ function_def_t make_log2_function(){
 	};
 
 	return make_function_def(
-		type_identifier_t::make_type("test_log2_function"),
-		type_identifier_t::make_type("float"),
-		{ { type_identifier_t::make_type("string"), "s" }, { type_identifier_t::make_type("float"), "v" } },
+		type_identifier_t::make("test_log2_function"),
+		type_identifier_t::make_float(),
+		{ { type_identifier_t::make_string(), "s" }, { type_identifier_t::make_float(), "v" } },
 		scope_def
 	);
 }
@@ -283,7 +283,7 @@ function_def_t make_return5(){
 		make_shared<statement_t>(makie_return_statement(make_constant(5)))
 	};
 	return make_function_def(
-		type_identifier_t::make_type("return5"),
+		type_identifier_t::make("return5"),
 		type_identifier_t::make_int(),
 		{ },
 		scope_def
@@ -297,7 +297,7 @@ function_def_t make_return_hello(){
 		make_shared<statement_t>(makie_return_statement(make_constant("hello")))
 	};
 	return make_function_def(
-		type_identifier_t::make_type("hello"),
+		type_identifier_t::make("hello"),
 		type_identifier_t::make_int(),
 		{ },
 		scope_def

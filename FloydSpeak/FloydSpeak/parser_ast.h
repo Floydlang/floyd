@@ -10,8 +10,6 @@
 #define parser_ast_hpp
 
 #include "quark.h"
-//#include "parser_value.h"
-
 #include <string>
 #include <vector>
 #include <map>
@@ -53,9 +51,6 @@ namespace floyd_parser {
 
 	std::string to_string(const base_type t);
 	void trace_frontend_type(const type_def_t& t, const std::string& label);
-
-
-
 
 
 	//////////////////////////////////////		type_def_t
@@ -100,9 +95,6 @@ namespace floyd_parser {
 	std::string to_signature(const type_def_t& t);
 
 
-
-
-
 	//////////////////////////////////////		type_identifier_t
 
 	/*
@@ -112,18 +104,18 @@ namespace floyd_parser {
 	*/
 
 	struct type_identifier_t {
-		public: static type_identifier_t make_type(std::string s);
+		public: static type_identifier_t make(std::string s);
 		public: static type_identifier_t make_int(){
-			return make_type("int");
+			return make("int");
 		}
 		public: static type_identifier_t make_bool(){
-			return make_type("bool");
+			return make("bool");
 		}
 		public: static type_identifier_t make_float(){
-			return make_type("float");
+			return make("float");
 		}
 		public: static type_identifier_t make_string(){
-			return make_type("string");
+			return make("string");
 		}
 
 		public: type_identifier_t(const type_identifier_t& other);
@@ -164,9 +156,6 @@ namespace floyd_parser {
 	};
 
 	void trace(const type_identifier_t& v);
-
-
-
 
 
 
@@ -231,7 +220,6 @@ namespace floyd_parser {
 
 
 
-
 	//////////////////////////////////////		member_t
 
 	/*
@@ -267,7 +255,6 @@ namespace floyd_parser {
 		- Add support for alternative layout.
 		- Add support for optional value (using "?").
 	*/
-	typedef struct_instance_t (*construct_default_t)(const struct_def_t& def);
 
 	struct struct_def_t {
 		public: static struct_def_t make(
@@ -291,13 +278,10 @@ namespace floyd_parser {
 		public: const type_identifier_t _name;
 		public: const std::vector<member_t> _members;
 		public: const std::shared_ptr<const scope_def_t> _struct_scope;
-//		public: construct_default_struct_t _construct_default;
-//		public: construct_default_struct_t _construct_default;
 	};
 
 	void trace(const struct_def_t& e);
 	std::string to_signature(const struct_def_t& t);
-
 
 
 
@@ -313,7 +297,6 @@ namespace floyd_parser {
 		public: std::string _value_type_identifier;
 		public: std::string _key_type_identifier;
 	};
-
 
 
 
@@ -380,19 +363,6 @@ namespace floyd_parser {
 
 
 
-
-
-
-	///???? move to interpreter.
-	struct scope_instance_t {
-		public: const scope_def_t* _def = nullptr;
-
-		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
-		//	key string is name of variable.
-		public: std::map<std::string, value_t> _values;
-	};
-
-
 	//////////////////////////////////////////////////		ast_t
 
 	/*
@@ -436,7 +406,6 @@ namespace floyd_parser {
 
 		}
 		//### Function names should have namespace etc.
-		//	### Stuff all globals into a global struct in the floyd world.
 	*/
 
 	struct ast_t {

@@ -288,7 +288,7 @@ expression_t negate_expression(const expression_t& e){
 		if(value.get_type() == type_identifier_t::make_int()){
 			return make_constant(-value.get_int());
 		}
-		else if(value.get_type() == type_identifier_t::make_type("float")){
+		else if(value.get_type() == type_identifier_t::make_float()){
 			return make_constant(-value.get_float());
 		}
 	}

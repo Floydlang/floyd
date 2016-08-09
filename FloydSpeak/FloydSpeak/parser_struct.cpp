@@ -35,7 +35,7 @@ namespace floyd_parser {
 		auto pos = trim_ends(body_pos.first);
 		while(!pos.empty()){
 			const auto arg_type = read_type(pos);
-			const auto member_type = type_identifier_t::make_type(arg_type.first);
+			const auto member_type = type_identifier_t::make(arg_type.first);
 			const auto arg_name = read_required_single_symbol(arg_type.second);
 
 			string default_value;
@@ -82,7 +82,7 @@ namespace floyd_parser {
 		auto pos2 = skip_whitespace(body_pos.second);
 //		pos2 = read_required_char(pos2, ';');
 
-		const auto name = type_identifier_t::make_type(struct_name.first);
+		const auto name = type_identifier_t::make(struct_name.first);
 		const auto struct_scope = scope_def_t::make_subscope(scope_def);
 		const auto struct_def = struct_def_t::make(name, body_pos.first, struct_scope);
 		return { struct_name.first, struct_def, pos2 };
@@ -90,12 +90,12 @@ namespace floyd_parser {
 
 	struct_def_t make_test_struct0(const scope_def_t& scope_def){
 		return struct_def_t::make(
-			type_identifier_t::make_type("test_struct0"),
+			type_identifier_t::make("test_struct0"),
 			vector<member_t>
 			{
 				{ type_identifier_t::make_int(), "x" },
-				{ type_identifier_t::make_type("string"), "y" },
-				{ type_identifier_t::make_type("float"), "z" }
+				{ type_identifier_t::make_string(), "y" },
+				{ type_identifier_t::make_float(), "z" }
 			},
 			make_shared<const scope_def_t>(scope_def)
 		);
@@ -125,7 +125,7 @@ namespace floyd_parser {
 		QUARK_TEST_VERIFY(std::get<0>(r) == "pixel");
 		QUARK_TEST_VERIFY(std::get<1>(r) == struct_def_t::make
 			(
-				type_identifier_t::make_type("pixel"),
+				type_identifier_t::make("pixel"),
 				vector<member_t>{
 					member_t(type_identifier_t::make_int(), "red"),
 					member_t(type_identifier_t::make_int(), "green"),
@@ -143,7 +143,7 @@ namespace floyd_parser {
 		QUARK_TEST_VERIFY(std::get<0>(r) == "pixel");
 		QUARK_TEST_VERIFY(std::get<1>(r) == struct_def_t::make
 			(
-				type_identifier_t::make_type("pixel"),
+				type_identifier_t::make("pixel"),
 				vector<member_t>{
 					member_t(type_identifier_t::make_int(), "red", value_t(255)),
 					member_t(type_identifier_t::make_int(), "green", value_t(255)),
@@ -161,10 +161,10 @@ namespace floyd_parser {
 		QUARK_TEST_VERIFY(std::get<0>(r) == "pixel");
 		QUARK_TEST_VERIFY(std::get<1>(r) == struct_def_t::make
 			(
-				type_identifier_t::make_type("pixel"),
+				type_identifier_t::make("pixel"),
 				vector<member_t>{
-					member_t(type_identifier_t::make_type("string"), "name", value_t("lisa")),
-					member_t(type_identifier_t::make_type("float"), "height", value_t(12.3f))
+					member_t(type_identifier_t::make_string(), "name", value_t("lisa")),
+					member_t(type_identifier_t::make_float(), "height", value_t(12.3f))
 				},
 				struct_scope
 			)

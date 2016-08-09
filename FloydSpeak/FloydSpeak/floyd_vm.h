@@ -12,6 +12,17 @@
 #include "floyd_parser.h"
 
 
+
+
+	struct scope_instance_t {
+		public: const floyd_parser::scope_def_t* _def = nullptr;
+
+		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
+		//	key string is name of variable.
+		public: std::map<std::string, floyd_parser::value_t> _values;
+	};
+
+
 struct vm_t {
 	public: vm_t(const floyd_parser::ast_t& ast);
 	public: bool check_invariant() const;
@@ -22,7 +33,7 @@ struct vm_t {
 	public: const floyd_parser::ast_t _ast;
 
 	//	Last scope if the current one. First scope is the root.
-	public: std::vector<std::shared_ptr<floyd_parser::scope_instance_t>> _scope_instances;
+	public: std::vector<std::shared_ptr<scope_instance_t>> _scope_instances;
 };
 
 

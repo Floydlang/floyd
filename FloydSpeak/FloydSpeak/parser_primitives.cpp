@@ -206,7 +206,7 @@ pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 	if(type_pos.first.empty()){
 		throw std::runtime_error("illegal character in type identifier");
 	}
-	const auto type = type_identifier_t::make_type(type_pos.first);
+	const auto type = type_identifier_t::make(type_pos.first);
 	return { type, skip_whitespace(type_pos.second) };
 }
 

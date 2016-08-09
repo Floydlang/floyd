@@ -191,7 +191,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		It is NOT guaranteed to map to an actual type in the language or program.
 	*/
 
-	type_identifier_t type_identifier_t::make_type(std::string s){
+	type_identifier_t type_identifier_t::make(std::string s){
 		const type_identifier_t result(s);
 
 		QUARK_ASSERT(result.check_invariant());
@@ -527,17 +527,17 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 
 	struct_def_t make_struct0(const scope_def_t& scope_def){
 		auto struct_scope = scope_def_t::make_subscope(scope_def);
-		return struct_def_t::make(type_identifier_t::make_type("struct0"), {}, struct_scope);
+		return struct_def_t::make(type_identifier_t::make("struct0"), {}, struct_scope);
 	}
 
 	struct_def_t make_struct1(const scope_def_t& scope_def){
 		auto struct_scope = scope_def_t::make_subscope(scope_def);
 		return struct_def_t::make(
-			type_identifier_t::make_type("struct1"),
+			type_identifier_t::make("struct1"),
 			{
-				{ type_identifier_t::make_type("float"), "x" },
-				{ type_identifier_t::make_type("float"), "y" },
-				{ type_identifier_t::make_type("string"), "name" }
+				{ type_identifier_t::make_float(), "x" },
+				{ type_identifier_t::make_float(), "y" },
+				{ type_identifier_t::make_string(), "name" }
 			},
 			struct_scope
 		);
@@ -551,10 +551,10 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	struct_def_t make_struct3(const scope_def_t& scope_def){
 		auto struct_scope = scope_def_t::make_subscope(scope_def);
 		return struct_def_t::make(
-			type_identifier_t::make_type("struct3"),
+			type_identifier_t::make("struct3"),
 			{
 				{ type_identifier_t::make_int(), "a" },
-				{ type_identifier_t::make_type("string"), "b" }
+				{ type_identifier_t::make_string(), "b" }
 			},
 			struct_scope
 		);
@@ -563,11 +563,11 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	struct_def_t make_struct4(const scope_def_t& scope_def){
 		auto struct_scope = scope_def_t::make_subscope(scope_def);
 		return struct_def_t::make(
-			type_identifier_t::make_type("struct4"),
+			type_identifier_t::make("struct4"),
 			{
-				{ type_identifier_t::make_type("string"), "x" },
-//				{ type_identifier_t::make_type("struct3"), "y" },
-				{ type_identifier_t::make_type("string"), "z" }
+				{ type_identifier_t::make_string(), "x" },
+//				{ type_identifier_t::make("struct3"), "y" },
+				{ type_identifier_t::make_string(), "z" }
 			},
 			struct_scope
 		);
@@ -578,19 +578,19 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	struct_def_t make_struct5(const scope_def_t& scope_def){
 		auto struct_scope = scope_def_t::make_subscope(scope_def);
 		return struct_def_t::make(
-			type_identifier_t::make_type("struct5"),
+			type_identifier_t::make("struct5"),
 			{
-				{ type_identifier_t::make_type("bool"), "a" },
+				{ type_identifier_t::make_bool(), "a" },
 				// pad
 				// pad
 				// pad
 				{ type_identifier_t::make_int(), "b" },
-				{ type_identifier_t::make_type("bool"), "c" },
-				{ type_identifier_t::make_type("bool"), "d" },
-				{ type_identifier_t::make_type("bool"), "e" },
-				{ type_identifier_t::make_type("bool"), "f" },
-				{ type_identifier_t::make_type("string"), "g" },
-				{ type_identifier_t::make_type("bool"), "h" }
+				{ type_identifier_t::make_bool(), "c" },
+				{ type_identifier_t::make_bool(), "d" },
+				{ type_identifier_t::make_bool(), "e" },
+				{ type_identifier_t::make_bool(), "f" },
+				{ type_identifier_t::make_string(), "g" },
+				{ type_identifier_t::make_bool(), "h" }
 			},
 			struct_scope
 		);

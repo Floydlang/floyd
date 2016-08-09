@@ -413,7 +413,7 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_def_t& scope_def, c
 	QUARK_ASSERT(struct_name.size() > 0);
 	QUARK_ASSERT(struct_def.check_invariant());
 
-	const auto struct_name_ident = type_identifier_t::make_type(struct_name);
+	const auto struct_name_ident = type_identifier_t::make(struct_name);
 
 	//	Define struct type and data members.
 	scope_def._types_collector = scope_def._types_collector.define_struct_type(struct_name, struct_def);
@@ -444,7 +444,7 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_def_t& scope_def, c
 	//??? easier to use source code template and compile it.
 /*
 	const function_def_t function_def {
-		type_identifier_t::make_type(struct_name),
+		type_identifier_t::make(struct_name),
 		vector<arg_t>{
 			{type_identifier_t::make_int(), "this" }
 		},
@@ -518,9 +518,9 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	};
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("main") ==
 		make_function_def(
-			type_identifier_t::make_type("main"),
+			type_identifier_t::make("main"),
 			type_identifier_t::make_int(),
-			vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }},
+			vector<arg_t>{ arg_t{ type_identifier_t::make_string(), "args" }},
 			scope_def
 		)
 	));
@@ -543,12 +543,12 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	};
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("f") ==
 		make_function_def(
-			type_identifier_t::make_type("f"),
+			type_identifier_t::make("f"),
 			type_identifier_t::make_int(),
 			vector<arg_t>{
 				arg_t{ type_identifier_t::make_int(), "x" },
 				arg_t{ type_identifier_t::make_int(), "y" },
-				arg_t{ type_identifier_t::make_type("string"), "z" }
+				arg_t{ type_identifier_t::make_string(), "z" }
 			},
 			scope_def
 		)
@@ -576,12 +576,12 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	};
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("hello") ==
 		make_function_def(
-			type_identifier_t::make_type("hello"),
-			type_identifier_t::make_type("string"),
+			type_identifier_t::make("hello"),
+			type_identifier_t::make_string(),
 			vector<arg_t>{
 				arg_t{ type_identifier_t::make_int(), "x" },
 				arg_t{ type_identifier_t::make_int(), "y" },
-				arg_t{ type_identifier_t::make_type("string"), "z" }
+				arg_t{ type_identifier_t::make_string(), "z" }
 			},
 			scope_def
 		)
@@ -593,10 +593,10 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	};
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("main") ==
 		make_function_def(
-			type_identifier_t::make_type("main"),
+			type_identifier_t::make("main"),
 			type_identifier_t::make_int(),
 			vector<arg_t>{
-				arg_t{ type_identifier_t::make_type("string"), "args" }
+				arg_t{ type_identifier_t::make_string(), "args" }
 			},
 			scope_def2
 		)
@@ -622,10 +622,10 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 	};
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("testx") ==
 		make_function_def(
-			type_identifier_t::make_type("testx"),
-			type_identifier_t::make_type("float"),
+			type_identifier_t::make("testx"),
+			type_identifier_t::make_float(),
 			vector<arg_t>{
-				arg_t{ type_identifier_t::make_type("float"), "v" }
+				arg_t{ type_identifier_t::make_float(), "v" }
 			},
 			scope_def
 		)
@@ -636,7 +636,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 		make_function_def(
 			type_identifier_t::make_int(),
 			vector<arg_t>{
-				arg_t{ type_identifier_t::make_type("string"), "arg" }
+				arg_t{ type_identifier_t::make_string(), "arg" }
 			},
 			{
 				makie_return_statement(bind_statement_t{"test", function_call_expr_t{"testx", }})
@@ -667,7 +667,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can instantiate a struct"){
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
 		make_function_def(
-			type_identifier_t::make_type("string"),
+			type_identifier_t::make_string(),
 			vector<arg_t>{},
 			{
 				makie_return_statement(make_constant(value_t(3)))
@@ -689,7 +689,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member vari
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
 		make_function_def(
-			type_identifier_t::make_type("string"),
+			type_identifier_t::make_string(),
 			vector<arg_t>{},
 			{
 				makie_return_statement(make_constant(value_t(3)))
