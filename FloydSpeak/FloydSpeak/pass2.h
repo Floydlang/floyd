@@ -9,7 +9,7 @@
 #ifndef pass2_hpp
 #define pass2_hpp
 
-#include "parser_primitives.h"
+#include "parser_ast.h"
 
 
 //??? Make this a separate parse pass, that resolves symbols and take decisions.

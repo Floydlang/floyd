@@ -203,80 +203,12 @@ seq read_type(const string& s){
 
 pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 	const seq type_pos = read_type(s);
-	const auto type = make_type_identifier(type_pos.first);
-	return { type, skip_whitespace(type_pos.second) };
-}
-
-/*
-	Validates that this is a legal string, with legal characters. Exception.
-	Does NOT make sure this a known type-identifier.
-	String must not be empty.
-*/
-type_identifier_t make_type_identifier(const std::string& s){
-	QUARK_ASSERT(!s.empty());
-
-	//	Make sure string only contains valid characters.
-	const auto a = read_while(s, identifier_chars);
-	if(!a.second.empty()){
+	if(type_pos.first.empty()){
 		throw std::runtime_error("illegal character in type identifier");
 	}
-
-	return type_identifier_t::make_type(s);
-
-/*
-	if(s == "int"){
-		return type_identifier_t::make_type("int");
-	}
-	else if(s == "string"){
-		return type_identifier_t::make_type("string");
-	}
-	else if(s == "float"){
-		return type_identifier_t::make_type("float");
-	}
-	else if(s == "function"){
-		return type_identifier_t::make_type("function");
-	}
-	else if(s == "value_type"){
-		return type_identifier_t::make_type("value_type");
-	}
-	else{
-		return type_identifier_t("");
-	}
-*/
+	const auto type = type_identifier_t::make_type(type_pos.first);
+	return { type, skip_whitespace(type_pos.second) };
 }
-
-
-
-
-
-
-	//////////////////////////////////////////////////		scope_def_t
-
-
-
-	bool scope_def_t::check_invariant() const {
-		for(const auto s: _statements){
-			QUARK_ASSERT(s);
-			QUARK_ASSERT(s->check_invariant());
-		}
-		return true;
-	}
-
-	bool scope_def_t::operator==(const scope_def_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(_statements.size() != other._statements.size()){
-			return false;
-		}
-		for(int i = 0 ; i < _statements.size() ; i++){
-			if(!(*_statements[i] == *other._statements[i])){
-				return false;
-			}
-		}
-		return true;
-	}
-
 
 
 

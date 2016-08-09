@@ -19,6 +19,7 @@
 		2C8270041D46D9A300E697ED /* parser_primitives.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C8270021D46D9A300E697ED /* parser_primitives.cpp */; };
 		2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C8270051D46E0DD00E697ED /* text_parser.cpp */; };
 		2C95E6C91D5A8D5100186D5A /* json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C95E6C71D5A8D5100186D5A /* json.cpp */; };
+		2C95E6CC1D5A8E2B00186D5A /* parser_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C95E6CA1D5A8E2B00186D5A /* parser_ast.cpp */; };
 		2CA061CC1D4C317A0045AF86 /* parser_function.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA061CA1D4C317A0045AF86 /* parser_function.cpp */; };
 		2CA061CF1D4C34B70045AF86 /* parser_struct.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
@@ -32,7 +33,6 @@
 		2CD9283F1D515AF100243F0A /* expressions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CD9283D1D515AF100243F0A /* expressions.cpp */; };
 		2CFB36811D44F70B00F31A19 /* runtime_core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFB367F1D44F70B00F31A19 /* runtime_core.cpp */; };
 		2CFB36841D44F7B700F31A19 /* runtime_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFB36821D44F7B700F31A19 /* runtime_value.cpp */; };
-		2CFB36871D4506FA00F31A19 /* parser_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFB36851D4506FA00F31A19 /* parser_types.cpp */; };
 		2CFCCFAC1CCE3E7000F2BEC3 /* experimental_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CFCCFAA1CCE3E7000F2BEC3 /* experimental_runtime.cpp */; };
 /* End PBXBuildFile section */
 
@@ -77,6 +77,8 @@
 		2C8270061D46E0DD00E697ED /* text_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = text_parser.h; sourceTree = "<group>"; };
 		2C95E6C71D5A8D5100186D5A /* json.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json.cpp; sourceTree = "<group>"; };
 		2C95E6C81D5A8D5100186D5A /* json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json.h; sourceTree = "<group>"; };
+		2C95E6CA1D5A8E2B00186D5A /* parser_ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_ast.cpp; sourceTree = "<group>"; };
+		2C95E6CB1D5A8E2B00186D5A /* parser_ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_ast.h; sourceTree = "<group>"; };
 		2CA061CA1D4C317A0045AF86 /* parser_function.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_function.cpp; sourceTree = "<group>"; };
 		2CA061CB1D4C317A0045AF86 /* parser_function.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_function.h; sourceTree = "<group>"; };
 		2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_struct.cpp; sourceTree = "<group>"; };
@@ -101,8 +103,6 @@
 		2CFB36801D44F70B00F31A19 /* runtime_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime_core.h; sourceTree = "<group>"; };
 		2CFB36821D44F7B700F31A19 /* runtime_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime_value.cpp; sourceTree = "<group>"; };
 		2CFB36831D44F7B700F31A19 /* runtime_value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime_value.h; sourceTree = "<group>"; };
-		2CFB36851D4506FA00F31A19 /* parser_types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_types.cpp; sourceTree = "<group>"; };
-		2CFB36861D4506FA00F31A19 /* parser_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_types.h; sourceTree = "<group>"; };
 		2CFCCFAA1CCE3E7000F2BEC3 /* experimental_runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = experimental_runtime.cpp; sourceTree = "<group>"; };
 		2CFCCFAB1CCE3E7000F2BEC3 /* experimental_runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = experimental_runtime.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -147,6 +147,10 @@
 				2C789ED71CBA54C400DDBD3C /* floyd_parser.h */,
 				2C789ED01CBA533100DDBD3C /* floyd_vm.cpp */,
 				2C789ED11CBA533100DDBD3C /* floyd_vm.h */,
+				2C95E6C71D5A8D5100186D5A /* json.cpp */,
+				2C95E6C81D5A8D5100186D5A /* json.h */,
+				2C95E6CA1D5A8E2B00186D5A /* parser_ast.cpp */,
+				2C95E6CB1D5A8E2B00186D5A /* parser_ast.h */,
 				2C81894B1D47B62400030C96 /* parser_evaluator.cpp */,
 				2C81894C1D47B62400030C96 /* parser_evaluator.h */,
 				2C4F355A1D4792C60061CA93 /* parser_expression.cpp */,
@@ -161,8 +165,6 @@
 				2CA061CE1D4C34B70045AF86 /* parser_struct.h */,
 				2C3D6EAE1D54E918005926BE /* parser_types_collector.cpp */,
 				2C3D6EAF1D54E918005926BE /* parser_types_collector.h */,
-				2CFB36851D4506FA00F31A19 /* parser_types.cpp */,
-				2CFB36861D4506FA00F31A19 /* parser_types.h */,
 				2C4F355D1D4794CD0061CA93 /* parser_value.cpp */,
 				2C4F355E1D4794CD0061CA93 /* parser_value.h */,
 				2CBCA7D81D569C6D000FAE81 /* parts */,
@@ -181,8 +183,6 @@
 				2C8270051D46E0DD00E697ED /* text_parser.cpp */,
 				2C8270061D46E0DD00E697ED /* text_parser.h */,
 				2C789ED81CBA581200DDBD3C /* unused_bits.cpp */,
-				2C95E6C71D5A8D5100186D5A /* json.cpp */,
-				2C95E6C81D5A8D5100186D5A /* json.h */,
 			);
 			path = FloydSpeak;
 			sourceTree = "<group>";
@@ -283,11 +283,11 @@
 				2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */,
 				2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */,
 				2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */,
-				2CFB36871D4506FA00F31A19 /* parser_types.cpp in Sources */,
 				2CA061CF1D4C34B70045AF86 /* parser_struct.cpp in Sources */,
 				2CFCCFAC1CCE3E7000F2BEC3 /* experimental_runtime.cpp in Sources */,
 				2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */,
 				2CD68C611D5A71610070892A /* pass2.cpp in Sources */,
+				2C95E6CC1D5A8E2B00186D5A /* parser_ast.cpp in Sources */,
 				2CC50E2A1CE49F09008D78C7 /* game_of_life_ut.cpp in Sources */,
 				2CD9283F1D515AF100243F0A /* expressions.cpp in Sources */,
 				2CFB36841D44F7B700F31A19 /* runtime_value.cpp in Sources */,

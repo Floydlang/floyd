@@ -8,12 +8,11 @@
 
 #include "parser_statement.h"
 
-
-
-#include "parser_types.h"
+#include "parser_ast.h"
 #include "parser_expression.h"
 #include "parser_function.h"
 #include "parser_struct.h"
+#include "parser_primitives.h"
 
 
 namespace floyd_parser {
@@ -162,7 +161,7 @@ pair<statement_t, string> parse_assignment_statement(const ast_t& ast, const str
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto token_pos = read_until(s, whitespace_chars);
-	const auto type = make_type_identifier(token_pos.first);
+	const auto type = type_identifier_t::make_type(token_pos.first);
 //	QUARK_ASSERT(ast.parser_i__is_known_type(read_until(s, whitespace_chars).first));
 
 	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");

@@ -7,18 +7,17 @@
 //
 
 #include "parser_types_collector.h"
-#include "parser_types.h"
 
 #include "quark.h"
 #include <vector>
 #include <string>
 #include <map>
 
-#include "parser_primitives.h"
 #include "parser_statement.h"
 #include "parser_function.h"
 #include "parser_value.h"
 #include "parts/sha1_class.h"
+#include "parser_ast.h"
 
 
 using std::make_shared;
@@ -29,149 +28,6 @@ using std::vector;
 
 namespace floyd_parser {
 
-
-
-
-
-
-	////////////////////////			type_def_t
-
-
-	bool type_def_t::check_invariant() const{
-		if(_base_type == k_int){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_bool){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_string){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_struct){
-			QUARK_ASSERT(_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_vector){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(_vector_def);
-			QUARK_ASSERT(!_function_def);
-		}
-		else if(_base_type == k_function){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(_function_def);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-		return true;
-	}
-
-	value_t type_def_t::make_default_value() const{
-		QUARK_ASSERT(check_invariant());
-
-		if(_base_type == k_int){
-			return value_t(0);
-		}
-		else if(_base_type == k_bool){
-			return value_t(false);
-		}
-		else if(_base_type == k_string){
-			return value_t("");
-		}
-		else if(_base_type == k_struct){
-			return _struct_def->make_default_value();
-		}
-		else if(_base_type == k_vector){
-			QUARK_ASSERT(false);
-		}
-		else if(_base_type == k_function){
-			QUARK_ASSERT(false);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-
-	void trace_frontend_type(const type_def_t& t, const std::string& label){
-		QUARK_ASSERT(t.check_invariant());
-
-		if(t._base_type == k_int){
-			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
-		}
-		else if(t._base_type == k_bool){
-			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
-		}
-		else if(t._base_type == k_string){
-			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
-		}
-		else if(t._base_type == k_struct){
-			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			for(const auto m: t._struct_def->_members){
-				trace(m);
-			}
-		}
-		else if(t._base_type == k_vector){
-			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-//			trace_frontend_type(*t._vector_def->_value_type, "");
-		}
-		else if(t._base_type == k_function){
-			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			trace(*t._function_def);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-
-
-
-
-	std::string to_signature(const type_def_t& t){
-		QUARK_ASSERT(t.check_invariant());
-
-		const auto base_type = to_string(t._base_type);
-
-		const string label = "";
-		if(t._base_type == k_struct){
-			return to_signature(*t._struct_def);
-		}
-		else if(t._base_type == k_vector){
-			const auto vector_value_s = "";
-			return label + "<vector>" + "[" + vector_value_s + "]";
-		}
-		else if(t._base_type == k_function){
-//			return label + "<function>" + "[" + vector_value_s + "]";
-
-			string arguments;
-			for(const auto& arg : t._function_def->_args) {
-				//	"<string>first_name"
-				const auto a = std::string("") + "<"  + arg._type.to_string() + ">" + arg._identifier;
-
-				arguments = arguments + a + ",";
-			}
-
-			arguments = remove_trailing_comma(arguments);
-
-
-			const auto body_hash = calc_function_body_hash(*t._function_def);
-
-			return label + "<function>" + "args(" + arguments + ") body_hash:" + SHA1ToStringPlain(body_hash);
-
-		}
-		else{
-			return label + "<" + base_type + ">";
-		}
-	}
 
 
 	////////////////////////			types_collector_t

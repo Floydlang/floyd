@@ -15,13 +15,14 @@
 #include <string>
 #include <map>
 
-#include "parser_types.h"
+#include "parser_ast.h"
 
 
 namespace floyd_parser {
 	struct statement_t;
 	struct value_t;
 	struct struct_def_t;
+	struct type_identifier_t;
 
 	//////////////////////////////////////////////////		struct_instance_t
 
@@ -247,7 +248,7 @@ namespace floyd_parser {
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type == type_identifier_t("int");
+			return _type == type_identifier_t::make_int();
 		}
 
 		public: bool is_float() const {

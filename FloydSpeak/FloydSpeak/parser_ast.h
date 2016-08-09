@@ -1,25 +1,23 @@
 //
-//  parse_types.h
+//  parser_ast.hpp
 //  FloydSpeak
 //
-//  Created by Marcus Zetterquist on 24/07/16.
+//  Created by Marcus Zetterquist on 10/08/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef parser_types_hpp
-#define parser_types_hpp
+#ifndef parser_ast_hpp
+#define parser_ast_hpp
 
 #include "quark.h"
+//#include "parser_value.h"
 
-#include <vector>
 #include <string>
+#include <vector>
+#include <map>
+#include "parser_types_collector.h"
 
 struct TSHA1;
-
-/*
-	type signature:	a string the defines one level of any type. It can be
-	typedef: a typesafe identifier for any time.
-*/
 
 namespace floyd_parser {
 	struct type_def_t;
@@ -30,14 +28,15 @@ namespace floyd_parser {
 	struct value_t;
 	struct scope_def_t;
 	struct struct_instance_t;
+	struct vector_def_t;
 
 
-	//////////////////////////////////////		frontend_base_type
+	//////////////////////////////////////		base_type
 
 	/*
 		This type is tracked by compiler, not stored in the value-type.
 	*/
-	enum frontend_base_type {
+	enum base_type {
 //		k_float,
 		k_int,
 		k_bool,
@@ -52,7 +51,56 @@ namespace floyd_parser {
 		k_function
 	};
 
-	std::string to_string(const frontend_base_type t);
+	std::string to_string(const base_type t);
+	void trace_frontend_type(const type_def_t& t, const std::string& label);
+
+
+
+
+
+	//////////////////////////////////////		type_def_t
+
+	/*
+		Describes a frontend type. All sub-types may or may not be known yet.
+
+		TODO
+		- Add memory layout calculation and storage
+		- Add support for alternative layout.
+		- Add support for optional value (using "?").
+	*/
+	struct type_def_t {
+		public: type_def_t(){};
+		public: bool check_invariant() const;
+
+		///////////////////		STATE
+
+		/*
+			Plain types only use the _base_type.
+			### Add support for int-ranges etc.
+		*/
+		public: base_type _base_type;
+		public: std::shared_ptr<struct_def_t> _struct_def;
+		public: std::shared_ptr<vector_def_t> _vector_def;
+		public: std::shared_ptr<function_def_t> _function_def;
+	};
+
+
+
+	/*
+		Returns a normalized signature string unique for this data type.
+		Use to compare types.
+
+		"<float>"									float
+		"<string>"									string
+		"<vector>[<float>]"							vector containing floats
+		"<float>(<string>,<float>)"				function returning float, with string and float arguments
+		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
+		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
+	*/
+	std::string to_signature(const type_def_t& t);
+
+
+
 
 
 	//////////////////////////////////////		type_identifier_t
@@ -65,6 +113,18 @@ namespace floyd_parser {
 
 	struct type_identifier_t {
 		public: static type_identifier_t make_type(std::string s);
+		public: static type_identifier_t make_int(){
+			return make_type("int");
+		}
+		public: static type_identifier_t make_bool(){
+			return make_type("bool");
+		}
+		public: static type_identifier_t make_float(){
+			return make_type("float");
+		}
+		public: static type_identifier_t make_string(){
+			return make_type("string");
+		}
 
 		public: type_identifier_t(const type_identifier_t& other);
 		public: type_identifier_t operator=(const type_identifier_t& other);
@@ -102,6 +162,12 @@ namespace floyd_parser {
 		*/
 		private: std::string _type_magic;
 	};
+
+	void trace(const type_identifier_t& v);
+
+
+
+
 
 
 	//////////////////////////////////////		arg_t
@@ -219,7 +285,6 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 		bool operator==(const struct_def_t& other) const;
 
-		value_t make_default_value() const;
 
 
 		///////////////////		STATE
@@ -250,10 +315,171 @@ namespace floyd_parser {
 	};
 
 
+
+
+	//////////////////////////////////////////////////		scope_def_t
+
+
+	/*
+		Represents
+		- global scope
+		- struct definition, with member data and functions
+		- function definition, with arguments
+		- function body
+		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
+	*/
+	struct scope_def_t {
+		public: static std::shared_ptr<scope_def_t> make_subscope(const scope_def_t& parent_scope){
+			return std::make_shared<scope_def_t>(scope_def_t(true, &parent_scope));
+		}
+		public: static std::shared_ptr<scope_def_t> make_global_scope(){
+			return std::make_shared<scope_def_t>(scope_def_t(true, nullptr));
+		}
+		private: explicit scope_def_t(bool dummy, const scope_def_t* parent_scope) :
+			_parent_scope(parent_scope)
+		{
+		}
+		public: scope_def_t(const scope_def_t& other) :
+			_parent_scope(other._parent_scope),
+			_statements(other._statements),
+			_host_function(other._host_function),
+			_host_function_param(other._host_function_param),
+			_types_collector(other._types_collector)
+		{
+		};
+		public: bool check_invariant() const;
+		public: bool operator==(const scope_def_t& other) const;
+
+
+		/////////////////////////////		STATE
+
+		//	Used for finding parent symbols, for making symbol paths.
+		public: const scope_def_t* _parent_scope = nullptr;
+
+		//	INSTRUCTIONS - either _host_function or _statements is used.
+
+			//	Code, if any.
+			public: std::vector<std::shared_ptr<statement_t> > _statements;
+
+			//	Either _host_function or _statements is used.
+			public: hosts_function_t _host_function = nullptr;
+			public: std::shared_ptr<host_data_i> _host_function_param;
+
+		public: types_collector_t _types_collector;
+
+		/*
+			Key is symbol name or a random string if unnamed.
+			### Allow many types to have the same symbol name (pixel, pixel several pixel constructor etc.).
+				Maybe use better key that encodes those differences?
+		*/
+		//		public: std::map<std::string, std::vector<type_def_t>> _symbolsxxxx;
+
+		//	Specification of values to store in each instance.
+		//		public: std::vector<member_t> _runtime_value_spec;
+	};
+
+
+
+
+
+
+	///???? move to interpreter.
+	struct scope_instance_t {
+		public: const scope_def_t* _def = nullptr;
+
+		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
+		//	key string is name of variable.
+		public: std::map<std::string, value_t> _values;
+	};
+
+
+	//////////////////////////////////////////////////		ast_t
+
+	/*
+		Function definitions have a type and a body and an optional name.
+
+
+		This is a function definition for a function definition called "function4":
+			"int function4(int a, string b){
+				return a + 1;
+			}"
+
+
+		This is an unnamed function function definition.
+			"int(int a, string b){
+				return a + 1;
+			}"
+
+		Here a constant x points to the function definition.
+			auto x = function4
+
+		Functions and structs do not normally become values, they become *types*.
+
+
+		{
+			VALUE struct: __global_struct
+				int: my_global_int
+				function: <int>f(string a, string b) ----> function-def.
+
+				struct_def struct1
+
+				struct1 a = make_struct1()
+
+			types
+				struct struct1 --> struct_defs/struct1
+
+			struct_defs
+				(struct1) {
+					int: a
+					int: b
+				}
+
+		}
+		//### Function names should have namespace etc.
+		//	### Stuff all globals into a global struct in the floyd world.
+	*/
+
+	struct ast_t {
+		public: ast_t() :
+			_global_scope(scope_def_t::make_global_scope())
+		{
+		}
+
+		public: bool check_invariant() const {
+			return true;
+		}
+
+
+		/////////////////////////////		STATE
+		public: std::shared_ptr<scope_def_t> _global_scope;
+	};
+
+	void trace(const ast_t& program);
+
+/*
+	struct parser_state_t {
+		const ast_t _ast;
+		scope_def_t _open;
+	};
+*/
+
+
+
+
 	////////////////////	Helpers for making tests.
 
 
 
+	//////////////////////////////////////////////////		trace_vec()
+
+
+
+	template<typename T> void trace_vec(const std::string& title, const std::vector<T>& v){
+		QUARK_SCOPED_TRACE(title);
+		for(const auto i: v){
+			trace(i);
+		}
+	}
 
 	struct_def_t make_struct0(const scope_def_t& scope_def);
 	struct_def_t make_struct1(const scope_def_t& scope_def);
@@ -284,7 +510,7 @@ namespace floyd_parser {
 	struct_def_t make_struct5(const scope_def_t& scope_def);
 
 
+
 }	//	floyd_parser
 
-
-#endif
+#endif /* parser_ast_hpp */

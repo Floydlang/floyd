@@ -292,7 +292,7 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 		if(left._constant && right._constant){
 			const auto left_value = left._constant;
 			const auto right_value = right._constant;
-			if(left_value->get_type() == make_type_identifier("int") && right_value->get_type() == make_type_identifier("int")){
+			if(left_value->get_type() == type_identifier_t::make_int() && right_value->get_type() == type_identifier_t::make_int()){
 				if(e2._operation == math_operation2_expr_t::add){
 					return make_constant(left_value->get_int() + right_value->get_int());
 				}
@@ -312,7 +312,7 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(left_value->get_type() == make_type_identifier("float") && right_value->get_type() == make_type_identifier("float")){
+			else if(left_value->get_type() == type_identifier_t::make_type("float") && right_value->get_type() == type_identifier_t::make_type("float")){
 				if(e2._operation == math_operation2_expr_t::add){
 					return make_constant(left_value->get_float() + right_value->get_float());
 				}
@@ -332,7 +332,7 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(left_value->get_type() == make_type_identifier("string") && right_value->get_type() == make_type_identifier("string")){
+			else if(left_value->get_type() == type_identifier_t::make_type("string") && right_value->get_type() == type_identifier_t::make_type("string")){
 				if(e2._operation == math_operation2_expr_t::add){
 					return make_constant(left_value->get_string() + right_value->get_string());
 				}
@@ -357,7 +357,7 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 		//	Replace the with a constant!
 		if(input._constant){
 			const auto value = input._constant;
-			if(value->get_type() == make_type_identifier("int")){
+			if(value->get_type() == type_identifier_t::make_int()){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return make_constant(-value->get_int());
 				}
@@ -365,7 +365,7 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value->get_type() == make_type_identifier("float")){
+			else if(value->get_type() == type_identifier_t::make_type("float")){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return make_constant(-value->get_float());
 				}
@@ -373,7 +373,7 @@ expression_t evalute_expression(const vm_t& vm, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value->get_type() == make_type_identifier("string")){
+			else if(value->get_type() == type_identifier_t::make_type("string")){
 				throw std::runtime_error("Arithmetics failed.");
 			}
 			else{

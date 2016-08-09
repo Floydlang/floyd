@@ -14,12 +14,14 @@
 #define QUARK_UNIT_TESTS_ON true
 */
 
+#include "parser_primitives.h"
 #include "text_parser.h"
 #include "steady_vector.h"
 #include "parser_expression.h"
 #include "parser_statement.h"
 #include "parser_function.h"
 #include "parser_struct.h"
+#include "parser_ast.h"
 
 #include <string>
 #include <memory>
@@ -102,26 +104,6 @@ void visit_program(const ast_t& program, visitor_i& visitor){
 	}
 }
 */
-
-
-
-//////////////////////////////////////////////////		TRACE
-
-
-
-void trace(const type_identifier_t& v){
-	QUARK_TRACE("type_identifier_t <" + v.to_string() + ">");
-}
-
-
-
-void trace(const ast_t& program){
-	QUARK_SCOPED_TRACE("program");
-
-	for(const auto i: program._global_scope->_statements){
-		trace(*i);
-	}
-}
 
 
 
@@ -323,10 +305,73 @@ value_t make_default_value(const scope_def_t& scope_def, const floyd_parser::typ
 	if(!t){
 		throw std::runtime_error("Undefined type!");
 	}
-	const auto r = t->make_default_value();
+	const auto r = make_default_value(*t);
 	return r;
 }
 
+
+
+
+	//??? move to pass2 or interpreter
+	value_t make_struct_instance(const struct_def_t& def){
+		QUARK_ASSERT(def.check_invariant());
+
+		auto instance = make_shared<struct_instance_t>();
+
+		instance->__def = &def;
+		for(int i = 0 ; i < def._members.size() ; i++){
+			const auto& member_def = def._members[i];
+
+			const auto member_type = resolve_type(*def._struct_scope, member_def._type->to_string());
+			if(!member_type){
+				throw std::runtime_error("Undefined struct type!");
+			}
+
+			//	If there is an initial value for this member, use that. Else use default value for this type.
+			value_t value;
+			if(member_def._value){
+				value = *member_def._value;
+			}
+			else{
+				value = make_default_value(*def._struct_scope, *member_def._type);
+			}
+			instance->_member_values[member_def._name] = value;
+		}
+		return value_t(instance);
+	}
+
+
+	//??? move to pass2 or interpreter
+	value_t make_default_value(const struct_def_t& t){
+		QUARK_ASSERT(t.check_invariant());
+		return make_struct_instance(t);
+	}
+
+	value_t make_default_value(const type_def_t& t){
+		QUARK_ASSERT(t.check_invariant());
+
+		if(t._base_type == k_int){
+			return value_t(0);
+		}
+		else if(t._base_type == k_bool){
+			return value_t(false);
+		}
+		else if(t._base_type == k_string){
+			return value_t("");
+		}
+		else if(t._base_type == k_struct){
+			return make_default_value(*t._struct_def);
+		}
+		else if(t._base_type == k_vector){
+			QUARK_ASSERT(false);
+		}
+		else if(t._base_type == k_function){
+			QUARK_ASSERT(false);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
 
 
 
@@ -355,7 +400,7 @@ value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, 
 		throw std::runtime_error("Undefined struct!");
 	}
 
-	const auto instance = b->make_default_value();
+	const auto instance = make_default_value(*b);
 	return instance;
 }
 
@@ -401,7 +446,7 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_def_t& scope_def, c
 	const function_def_t function_def {
 		type_identifier_t::make_type(struct_name),
 		vector<arg_t>{
-			{type_identifier_t::make_type("int"), "this" }
+			{type_identifier_t::make_int(), "this" }
 		},
 		{}
 	};
@@ -474,7 +519,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("main") ==
 		make_function_def(
 			type_identifier_t::make_type("main"),
-			type_identifier_t::make_type("int"),
+			type_identifier_t::make_int(),
 			vector<arg_t>{ arg_t{ type_identifier_t::make_type("string"), "args" }},
 			scope_def
 		)
@@ -499,10 +544,10 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("f") ==
 		make_function_def(
 			type_identifier_t::make_type("f"),
-			type_identifier_t::make_type("int"),
+			type_identifier_t::make_int(),
 			vector<arg_t>{
-				arg_t{ type_identifier_t::make_type("int"), "x" },
-				arg_t{ type_identifier_t::make_type("int"), "y" },
+				arg_t{ type_identifier_t::make_int(), "x" },
+				arg_t{ type_identifier_t::make_int(), "y" },
 				arg_t{ type_identifier_t::make_type("string"), "z" }
 			},
 			scope_def
@@ -534,8 +579,8 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 			type_identifier_t::make_type("hello"),
 			type_identifier_t::make_type("string"),
 			vector<arg_t>{
-				arg_t{ type_identifier_t::make_type("int"), "x" },
-				arg_t{ type_identifier_t::make_type("int"), "y" },
+				arg_t{ type_identifier_t::make_int(), "x" },
+				arg_t{ type_identifier_t::make_int(), "y" },
 				arg_t{ type_identifier_t::make_type("string"), "z" }
 			},
 			scope_def
@@ -549,7 +594,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("main") ==
 		make_function_def(
 			type_identifier_t::make_type("main"),
-			type_identifier_t::make_type("int"),
+			type_identifier_t::make_int(),
 			vector<arg_t>{
 				arg_t{ type_identifier_t::make_type("string"), "args" }
 			},
@@ -589,7 +634,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
 		make_function_def(
-			type_identifier_t::make_type("int"),
+			type_identifier_t::make_int(),
 			vector<arg_t>{
 				arg_t{ type_identifier_t::make_type("string"), "arg" }
 			},

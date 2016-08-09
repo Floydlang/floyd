@@ -1,32 +1,189 @@
-
 //
-//  parser_types.cpp
+//  parser_ast.cpp
 //  FloydSpeak
 //
-//  Created by Marcus Zetterquist on 24/07/16.
+//  Created by Marcus Zetterquist on 10/08/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_types.h"
+#include "parser_ast.h"
 
-#include "quark.h"
-
-#include "parser_primitives.h"
 #include "parser_statement.h"
-#include "parser_function.h"
+#include "parser_value.h"
+#include "text_parser.h"
+
+#include <string>
+#include <memory>
+#include <map>
+#include <iostream>
+#include <cmath>
 #include "parts/sha1_class.h"
-#include "floyd_parser.h"	//???spagetti
-
-
-using std::make_shared;
-using std::string;
-using std::shared_ptr;
-using std::vector;
 
 
 namespace floyd_parser {
+	using std::vector;
+	using std::string;
+	using std::pair;
+	using std::make_shared;
+
+
+	//////////////////////////////////////////////////		base_type
+
+
+	string to_string(const base_type t){
+		if(t == k_int){
+			return "int";
+		}
+		if(t == k_bool){
+			return "bool";
+		}
+		else if(t == k_string){
+			return "string";
+		}
+		else if(t == k_struct){
+			return "struct";
+		}
+		else if(t == k_vector){
+			return "vector";
+		}
+		else if(t == k_function){
+			return "function";
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+
+	void trace_frontend_type(const type_def_t& t, const std::string& label){
+		QUARK_ASSERT(t.check_invariant());
+
+		if(t._base_type == k_int){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_bool){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_string){
+			QUARK_TRACE("<" + to_string(t._base_type) + "> " + label);
+		}
+		else if(t._base_type == k_struct){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			for(const auto m: t._struct_def->_members){
+				trace(m);
+			}
+		}
+		else if(t._base_type == k_vector){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+//			trace_frontend_type(*t._vector_def->_value_type, "");
+		}
+		else if(t._base_type == k_function){
+			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
+			trace(*t._function_def);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+
+
+//////////////////////////////////////		to_string(base_type)
+
+
+QUARK_UNIT_TESTQ("to_string(base_type)", ""){
+	QUARK_TEST_VERIFY(to_string(k_int) == "int");
+	QUARK_TEST_VERIFY(to_string(k_bool) == "bool");
+	QUARK_TEST_VERIFY(to_string(k_string) == "string");
+	QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
+	QUARK_TEST_VERIFY(to_string(k_vector) == "vector");
+	QUARK_TEST_VERIFY(to_string(k_function) == "function");
+}
+
+
+
+	////////////////////////			type_def_t
+
+
+	bool type_def_t::check_invariant() const{
+		if(_base_type == k_int){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_bool){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_string){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_struct){
+			QUARK_ASSERT(_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_vector){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_function){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(_function_def);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+		return true;
+	}
+
+
+	std::string to_signature(const type_def_t& t){
+		QUARK_ASSERT(t.check_invariant());
+
+		const auto base_type = to_string(t._base_type);
+
+		const string label = "";
+		if(t._base_type == k_struct){
+			return to_signature(*t._struct_def);
+		}
+		else if(t._base_type == k_vector){
+			const auto vector_value_s = "";
+			return label + "<vector>" + "[" + vector_value_s + "]";
+		}
+		else if(t._base_type == k_function){
+//			return label + "<function>" + "[" + vector_value_s + "]";
+
+			string arguments;
+			for(const auto& arg : t._function_def->_args) {
+				//	"<string>first_name"
+				const auto a = std::string("") + "<"  + arg._type.to_string() + ">" + arg._identifier;
+
+				arguments = arguments + a + ",";
+			}
+
+			arguments = remove_trailing_comma(arguments);
+
+
+			const auto body_hash = calc_function_body_hash(*t._function_def);
+
+			return label + "<function>" + "args(" + arguments + ") body_hash:" + SHA1ToStringPlain(body_hash);
+
+		}
+		else{
+			return label + "<" + base_type + ">";
+		}
+	}
+
+
 
 	//////////////////////////////////////////////////		type_identifier_t
+
 
 	/*
 		A string naming a type. "int", "string", "my_struct" etc.
@@ -57,7 +214,6 @@ namespace floyd_parser {
 		temp.swap(*this);
 		return *this;
 	}
-
 
 	bool type_identifier_t::operator==(const type_identifier_t& other) const{
 		QUARK_ASSERT(check_invariant());
@@ -106,37 +262,44 @@ namespace floyd_parser {
 
 
 
-	string to_string(const frontend_base_type t){
-		if(t == k_int){
-			return "int";
-		}
-		if(t == k_bool){
-			return "bool";
-		}
-		else if(t == k_string){
-			return "string";
-		}
-		else if(t == k_struct){
-			return "struct";
-		}
-		else if(t == k_vector){
-			return "vector";
-		}
-		else if(t == k_function){
-			return "function";
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-
 	bool is_valid_type_identifier(const std::string& s){
 		return true;
 	}
 
 
+	void trace(const type_identifier_t& v){
+		QUARK_TRACE("type_identifier_t <" + v.to_string() + ">");
+	}
 
+
+
+
+	//////////////////////////////////////////////////		scope_def_t
+
+
+
+	bool scope_def_t::check_invariant() const {
+		for(const auto s: _statements){
+			QUARK_ASSERT(s);
+			QUARK_ASSERT(s->check_invariant());
+		}
+		return true;
+	}
+
+	bool scope_def_t::operator==(const scope_def_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(_statements.size() != other._statements.size()){
+			return false;
+		}
+		for(int i = 0 ; i < _statements.size() ; i++){
+			if(!(*_statements[i] == *other._statements[i])){
+				return false;
+			}
+		}
+		return true;
+	}
 
 
 
@@ -314,41 +477,6 @@ namespace floyd_parser {
 	}
 
 
-
-	value_t make_struct_instance(const struct_def_t& def){
-		QUARK_ASSERT(def.check_invariant());
-
-		auto instance = make_shared<struct_instance_t>();
-
-		instance->__def = &def;
-		for(int i = 0 ; i < def._members.size() ; i++){
-			const auto& member_def = def._members[i];
-
-			const auto member_type = resolve_type(*def._struct_scope, member_def._type->to_string());
-			if(!member_type){
-				throw std::runtime_error("Undefined struct type!");
-			}
-
-			//	If there is an initial value for this member, use that. Else use default value for this type.
-			value_t value;
-			if(member_def._value){
-				value = *member_def._value;
-			}
-			else{
-				value = make_default_value(*def._struct_scope, *member_def._type);
-			}
-			instance->_member_values[member_def._name] = value;
-		}
-		return value_t(instance);
-	}
-
-
-	value_t struct_def_t::make_default_value() const{
-		QUARK_ASSERT(check_invariant());
-		return make_struct_instance(*this);
-	}
-
-
 	void trace(const struct_def_t& e){
 		QUARK_SCOPED_TRACE("struct_def_t");
 		trace_vec("members", e._members);
@@ -377,6 +505,20 @@ namespace floyd_parser {
 
 
 
+	////////////////////////			ast_t
+
+
+
+	void trace(const ast_t& program){
+		QUARK_SCOPED_TRACE("program");
+
+		for(const auto i: program._global_scope->_statements){
+			trace(*i);
+		}
+	}
+
+
+
 
 	////////////////////	Helpers for making tests.
 
@@ -393,9 +535,9 @@ namespace floyd_parser {
 		return struct_def_t::make(
 			type_identifier_t::make_type("struct1"),
 			{
-				{ make_type_identifier("float"), "x" },
-				{ make_type_identifier("float"), "y" },
-				{ make_type_identifier("string"), "name" }
+				{ type_identifier_t::make_type("float"), "x" },
+				{ type_identifier_t::make_type("float"), "y" },
+				{ type_identifier_t::make_type("string"), "name" }
 			},
 			struct_scope
 		);
@@ -411,8 +553,8 @@ namespace floyd_parser {
 		return struct_def_t::make(
 			type_identifier_t::make_type("struct3"),
 			{
-				{ make_type_identifier("int"), "a" },
-				{ make_type_identifier("string"), "b" }
+				{ type_identifier_t::make_int(), "a" },
+				{ type_identifier_t::make_type("string"), "b" }
 			},
 			struct_scope
 		);
@@ -423,9 +565,9 @@ namespace floyd_parser {
 		return struct_def_t::make(
 			type_identifier_t::make_type("struct4"),
 			{
-				{ make_type_identifier("string"), "x" },
-//				{ make_type_identifier("struct3"), "y" },
-				{ make_type_identifier("string"), "z" }
+				{ type_identifier_t::make_type("string"), "x" },
+//				{ type_identifier_t::make_type("struct3"), "y" },
+				{ type_identifier_t::make_type("string"), "z" }
 			},
 			struct_scope
 		);
@@ -438,44 +580,21 @@ namespace floyd_parser {
 		return struct_def_t::make(
 			type_identifier_t::make_type("struct5"),
 			{
-				{ make_type_identifier("bool"), "a" },
+				{ type_identifier_t::make_type("bool"), "a" },
 				// pad
 				// pad
 				// pad
-				{ make_type_identifier("int"), "b" },
-				{ make_type_identifier("bool"), "c" },
-				{ make_type_identifier("bool"), "d" },
-				{ make_type_identifier("bool"), "e" },
-				{ make_type_identifier("bool"), "f" },
-				{ make_type_identifier("string"), "g" },
-				{ make_type_identifier("bool"), "h" }
+				{ type_identifier_t::make_int(), "b" },
+				{ type_identifier_t::make_type("bool"), "c" },
+				{ type_identifier_t::make_type("bool"), "d" },
+				{ type_identifier_t::make_type("bool"), "e" },
+				{ type_identifier_t::make_type("bool"), "f" },
+				{ type_identifier_t::make_type("string"), "g" },
+				{ type_identifier_t::make_type("bool"), "h" }
 			},
 			struct_scope
 		);
 	}
 
-
-} //	floyd_parser;
-
-
-
-
-using namespace floyd_parser;
-
-
-
-//////////////////////////////////////		to_string(frontend_base_type)
-
-
-QUARK_UNIT_TESTQ("to_string(frontend_base_type)", ""){
-	QUARK_TEST_VERIFY(to_string(k_int) == "int");
-	QUARK_TEST_VERIFY(to_string(k_bool) == "bool");
-	QUARK_TEST_VERIFY(to_string(k_string) == "string");
-	QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
-	QUARK_TEST_VERIFY(to_string(k_vector) == "vector");
-	QUARK_TEST_VERIFY(to_string(k_function) == "function");
-}
-
-
-//??? more
+} //	floyd_parser
 

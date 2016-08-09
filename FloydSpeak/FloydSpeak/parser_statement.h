@@ -15,9 +15,7 @@
 #include <string>
 #include <map>
 
-#include "parser_types.h"
-#include "parser_primitives.h"
-#include "parser_expression.h"
+#include "parser_ast.h"
 #include "expressions.h"
 
 

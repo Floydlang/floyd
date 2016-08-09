@@ -8,11 +8,11 @@
 
 #include "parser_struct.h"
 
-#include "parser_types.h"
 #include "parser_expression.h"
 #include "parser_function.h"
 #include "parser_struct.h"
 #include "parser_primitives.h"
+#include "parser_ast.h"
 
 namespace floyd_parser {
 	using std::string;
@@ -35,7 +35,7 @@ namespace floyd_parser {
 		auto pos = trim_ends(body_pos.first);
 		while(!pos.empty()){
 			const auto arg_type = read_type(pos);
-			const auto member_type = make_type_identifier(arg_type.first);
+			const auto member_type = type_identifier_t::make_type(arg_type.first);
 			const auto arg_name = read_required_single_symbol(arg_type.second);
 
 			string default_value;
@@ -93,9 +93,9 @@ namespace floyd_parser {
 			type_identifier_t::make_type("test_struct0"),
 			vector<member_t>
 			{
-				{ make_type_identifier("int"), "x" },
-				{ make_type_identifier("string"), "y" },
-				{ make_type_identifier("float"), "z" }
+				{ type_identifier_t::make_int(), "x" },
+				{ type_identifier_t::make_type("string"), "y" },
+				{ type_identifier_t::make_type("float"), "z" }
 			},
 			make_shared<const scope_def_t>(scope_def)
 		);
@@ -127,9 +127,9 @@ namespace floyd_parser {
 			(
 				type_identifier_t::make_type("pixel"),
 				vector<member_t>{
-					member_t(type_identifier_t("int"), "red"),
-					member_t(type_identifier_t("int"), "green"),
-					member_t(type_identifier_t("int"), "blue")
+					member_t(type_identifier_t::make_int(), "red"),
+					member_t(type_identifier_t::make_int(), "green"),
+					member_t(type_identifier_t::make_int(), "blue")
 				},
 				struct_scope
 			)
@@ -145,9 +145,9 @@ namespace floyd_parser {
 			(
 				type_identifier_t::make_type("pixel"),
 				vector<member_t>{
-					member_t(type_identifier_t::make_type("int"), "red", value_t(255)),
-					member_t(type_identifier_t::make_type("int"), "green", value_t(255)),
-					member_t(type_identifier_t::make_type("int"), "blue", value_t(255))
+					member_t(type_identifier_t::make_int(), "red", value_t(255)),
+					member_t(type_identifier_t::make_int(), "green", value_t(255)),
+					member_t(type_identifier_t::make_int(), "blue", value_t(255))
 				},
 				struct_scope
 			)

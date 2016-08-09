@@ -12,6 +12,8 @@
 #include "parser_statement.h"
 #include "parser_value.h"
 #include "parser_function.h"
+#include "parser_ast.h"
+#include "parser_primitives.h"
 
 #include <cmath>
 
@@ -283,10 +285,10 @@ expression_t negate_expression(const expression_t& e){
 	//	Shortcut: directly negate numeric constants. This makes parse tree cleaner and is non-lossy.
 	if(e._constant){
 		const value_t& value = *e._constant;
-		if(value.get_type() == make_type_identifier("int")){
+		if(value.get_type() == type_identifier_t::make_int()){
 			return make_constant(-value.get_int());
 		}
-		else if(value.get_type() == make_type_identifier("float")){
+		else if(value.get_type() == type_identifier_t::make_type("float")){
 			return make_constant(-value.get_float());
 		}
 	}
