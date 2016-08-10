@@ -158,23 +158,21 @@ void visit_program(const ast_t& program, visitor_i& visitor){
 		- Add mutable variables
 	*/
 
-statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_def, const string& pos){
-	QUARK_ASSERT(ast1.check_invariant());
+statement_result_t read_statement(const scope_def_t& scope_def, const string& pos){
 	QUARK_ASSERT(scope_def.check_invariant());
 
-	ast_t ast2 = ast1;
 	const auto token_pos = read_until(pos, whitespace_chars);
 
 	//	return statement?
 	if(token_pos.first == "return"){
 		const auto return_statement_pos = parse_return_statement(pos);
-		return { make__return_statement(return_statement_pos.first), ast2, skip_whitespace(return_statement_pos.second) };
+		return { make__return_statement(return_statement_pos.first), skip_whitespace(return_statement_pos.second) };
 	}
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
 		const auto a = parse_struct_definition(scope_def, pos);
-		return { define_struct_statement_t{ std::get<0>(a), std::get<1>(a) }, ast1, skip_whitespace(std::get<2>(a)) };
+		return { define_struct_statement_t{ std::get<0>(a), std::get<1>(a) }, skip_whitespace(std::get<2>(a)) };
 	}
 
 	else {
@@ -188,8 +186,8 @@ statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_de
 			"int xyz(string a, string b){ ... }
 		*/
 		if(peek_string(skip_whitespace(identifier_pos.second), "(")){
-			const pair<pair<string, function_def_t>, string> function = parse_function_definition(ast1, scope_def, pos);
-            return { define_function_statement_t{ function.first.first, function.first.second }, ast2, skip_whitespace(function.second) };
+			const pair<pair<string, function_def_t>, string> function = parse_function_definition(scope_def, pos);
+            return { define_function_statement_t{ function.first.first, function.first.second }, skip_whitespace(function.second) };
 		}
 
 		//	Define variable?
@@ -199,22 +197,8 @@ statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_de
 		*/
 
 		else if(peek_string(skip_whitespace(identifier_pos.second), "=")){
-//		else if(ast.parser_i__is_known_type(token_pos.first))
 			pair<statement_t, string> assignment_statement = parse_assignment_statement(pos);
-//			const string& identifier = assignment_statement.first._bind_statement->_identifier;
-
-/*
-			//	??? If the value can be evaluted to a constant, do this. Else it's just a variable that can't be changed.
-			const auto it = ast2._constant_values.find(identifier);
-			if(it != ast2._constant_values.end()){
-				throw std::runtime_error("Variable name already in use!");
-			}
-
-			shared_ptr<const value_t> blank;
-			ast2._constant_values[identifier] = blank;
-*/
-
-			return { assignment_statement.first, ast2, skip_whitespace(assignment_statement.second) };
+			return { assignment_statement.first, skip_whitespace(assignment_statement.second) };
 		}
 
 		else{
@@ -223,26 +207,24 @@ statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_de
 	}
 }
 
-
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	try{
 		auto global = scope_def_t::make_global_scope();
-		const auto result = read_statement({}, *global, "int f()");
+		const auto result = read_statement(*global, "int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
 	}
 }
 
-
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	auto global = scope_def_t::make_global_scope();
-	const auto result = read_statement({}, *global, "float test = testx(1234);\n\treturn 3;\n");
+	const auto result = read_statement(*global, "float test = testx(1234);\n\treturn 3;\n");
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	auto global = scope_def_t::make_global_scope();
-	const auto result = read_statement({}, *global, test_function1);
+	const auto result = read_statement(*global, test_function1);
 	QUARK_TEST_VERIFY(result._statement._define_function);
 	QUARK_TEST_VERIFY(result._statement._define_function->_type_identifier == "test_function1");
 	QUARK_TEST_VERIFY(result._statement._define_function->_function_def == make_test_function1());
@@ -251,13 +233,11 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	auto global = scope_def_t::make_global_scope();
-	const auto result = read_statement({}, *global, "struct test_struct0 " + k_test_struct0_body + ";");
+	const auto result = read_statement(*global, "struct test_struct0 " + k_test_struct0_body + ";");
 	QUARK_TEST_VERIFY(result._statement._define_struct);
 	QUARK_TEST_VERIFY(result._statement._define_struct->_type_identifier == "test_struct0");
 	QUARK_TEST_VERIFY(result._statement._define_struct->_struct_def == make_test_struct0(*global));
 }
-
-
 
 
 
@@ -465,33 +445,40 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_def_t& scope_def, c
 
 
 
-ast_t program_to_ast(const ast_t& init, const string& program){
-	ast_t ast2 = init;
+std::tuple<shared_ptr<scope_def_t>, string> parse_statements(const scope_def_t& scope_def, const string& s){
+	auto pos = skip_whitespace(s);
 
-	auto pos = program;
-	pos = skip_whitespace(pos);
-
-	scope_def_t& scope_def = *init._global_scope;
+	auto scope2 = make_shared<scope_def_t>(scope_def);
 	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
-		const auto statement_pos = read_statement(ast2, scope_def, pos);
-		ast2 = statement_pos._ast;
+		const auto statement_pos = read_statement(*scope2, pos);
 
+		//	Definition statements are immediately removed from AST and the types are defined instead.
 		if(statement_pos._statement._define_struct){
 			const auto a = statement_pos._statement._define_struct;
-			const auto b = install_struct_support(scope_def, a->_type_identifier, a->_struct_def);
+			const auto b = install_struct_support(*scope2, a->_type_identifier, a->_struct_def);
 			statements.insert(statements.end(), b.begin(), b.end());
 		}
 		else if(statement_pos._statement._define_function){
-			scope_def._types_collector = scope_def._types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
+			scope2->_types_collector = scope2->_types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
 		}
 		else{
 			statements.push_back(make_shared<statement_t>(statement_pos._statement));
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
+	scope2->_statements = statements;
 
-	ast2._global_scope->_statements = statements;
+	return { scope2, pos };
+}
+
+
+ast_t program_to_ast(const ast_t& init, const string& program){
+	ast_t ast2 = init;
+
+	auto pos = program;
+	std::tuple<shared_ptr<scope_def_t>, string> statements_pos = parse_statements(*init._global_scope, program);
+	*ast2._global_scope = *std::get<0>(statements_pos);
 
 	QUARK_ASSERT(ast2.check_invariant());
 	trace(ast2);

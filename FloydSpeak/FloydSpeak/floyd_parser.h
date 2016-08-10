@@ -32,11 +32,10 @@ namespace floyd_parser {
 
     struct statement_result_t {
         statement_t _statement;
-        ast_t _ast;
         std::string _rest;
     };
 
-	statement_result_t read_statement(const ast_t& ast1, const scope_def_t& scope_def, const std::string& pos);
+	statement_result_t read_statement(const scope_def_t& scope_def, const std::string& pos);
 
 	ast_t program_to_ast(const ast_t& init, const std::string& program);
 

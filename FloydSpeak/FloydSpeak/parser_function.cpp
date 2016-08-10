@@ -70,7 +70,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-std::vector<shared_ptr<statement_t>> parse_function_body(const ast_t& ast, scope_def_t& function_scope, const string& s){
+std::vector<shared_ptr<statement_t>> parse_function_body(scope_def_t& function_scope, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(function_scope.check_invariant());
 	QUARK_ASSERT(s.size() >= 2);
@@ -82,7 +82,7 @@ std::vector<shared_ptr<statement_t>> parse_function_body(const ast_t& ast, scope
 
 	string pos = body_str;
 	while(!pos.empty()){
-		const auto statement_seq = read_statement(ast, function_scope, pos);
+		const auto statement_seq = read_statement(function_scope, pos);
 		pos = statement_seq._rest;
 		statements.push_back(make_shared<statement_t>(statement_seq._statement));
 	}
@@ -93,25 +93,25 @@ std::vector<shared_ptr<statement_t>> parse_function_body(const ast_t& ast, scope
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
 	const auto global = scope_def_t::make_global_scope();
 	const auto function_scope = scope_def_t::make_subscope(*global);
-	QUARK_TEST_VERIFY((parse_function_body({}, *function_scope, "{}").empty()));
+	QUARK_TEST_VERIFY((parse_function_body(*function_scope, "{}").empty()));
 }
 
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
 	const auto global = scope_def_t::make_global_scope();
 	const auto function_scope = scope_def_t::make_subscope(*global);
-	QUARK_TEST_VERIFY(parse_function_body({}, *function_scope, "{return 3;}").size() == 1);
+	QUARK_TEST_VERIFY(parse_function_body(*function_scope, "{return 3;}").size() == 1);
 }
 
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
 	const auto global = scope_def_t::make_global_scope();
 	const auto function_scope = scope_def_t::make_subscope(*global);
-	QUARK_TEST_VERIFY(parse_function_body({}, *function_scope, "{\n\treturn 3;\n}").size() == 1);
+	QUARK_TEST_VERIFY(parse_function_body(*function_scope, "{\n\treturn 3;\n}").size() == 1);
 }
 
 QUARK_UNIT_TESTQ("parse_function_body()", ""){
 	const auto global = scope_def_t::make_global_scope();
 	const auto function_scope = scope_def_t::make_subscope(*global);
-	const auto a = parse_function_body(make_test_ast(),
+	const auto a = parse_function_body(
 		*global,
 		"{	float test = log(10.11);\n"
 		"	return 3;\n}"
@@ -133,8 +133,8 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 
 
 
-std::pair<std::pair<string, function_def_t>, string> parse_function_definition(const ast_t& ast, const scope_def_t& scope_def, const string& pos){
-	QUARK_ASSERT(ast.check_invariant());
+std::pair<std::pair<string, function_def_t>, string> parse_function_definition(const scope_def_t& scope_def, const string& pos){
+	QUARK_ASSERT(scope_def.check_invariant());
 
 	const auto return_type_pos = read_required_type_identifier(pos);
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
@@ -156,7 +156,7 @@ std::pair<std::pair<string, function_def_t>, string> parse_function_definition(c
 	const auto body_pos = get_balanced(body_rest_pos);
 
 	auto function_scope = scope_def_t::make_subscope(scope_def);
-	function_scope->_statements = parse_function_body(ast, *function_scope, body_pos.first);
+	function_scope->_statements = parse_function_body(*function_scope, body_pos.first);
 	const auto function_name = type_identifier_t::make(function_name_pos.first);
 	const auto a = make_function_def(function_name, return_type_pos.first, args, function_scope);
 
@@ -166,7 +166,7 @@ std::pair<std::pair<string, function_def_t>, string> parse_function_definition(c
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	try{
 		const auto global = scope_def_t::make_global_scope();
-		const auto result = parse_function_definition({}, *global, "int f()");
+		const auto result = parse_function_definition(*global, "int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
@@ -175,7 +175,7 @@ QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	const auto global = scope_def_t::make_global_scope();
-	const auto result = parse_function_definition({}, *global, "int f(){}");
+	const auto result = parse_function_definition(*global, "int f(){}");
 	QUARK_TEST_VERIFY(result.first.first == "f");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY(result.first.second._args.empty());
@@ -185,7 +185,7 @@ QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 
 QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of different types"){
 	const auto global = scope_def_t::make_global_scope();
-	const auto result = parse_function_definition({}, *global, "int printf(string a, float barry, int c){}");
+	const auto result = parse_function_definition(*global, "int printf(string a, float barry, int c){}");
 	QUARK_TEST_VERIFY(result.first.first == "printf");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
