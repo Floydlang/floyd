@@ -20,6 +20,7 @@
 		2C95E6C91D5A8D5100186D5A /* json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C95E6C71D5A8D5100186D5A /* json.cpp */; };
 		2C95E6CC1D5A8E2B00186D5A /* parser_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C95E6CA1D5A8E2B00186D5A /* parser_ast.cpp */; };
 		2C95E6CE1D5A9F3500186D5A /* parser_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C95E6CD1D5A9F3500186D5A /* parser_statement.cpp */; };
+		2C95E6D21D5AA47200186D5A /* llvm_code_gen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C95E6D01D5AA47200186D5A /* llvm_code_gen.cpp */; };
 		2CA061CC1D4C317A0045AF86 /* parser_function.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA061CA1D4C317A0045AF86 /* parser_function.cpp */; };
 		2CA061CF1D4C34B70045AF86 /* parser_struct.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
@@ -79,6 +80,8 @@
 		2C95E6CB1D5A8E2B00186D5A /* parser_ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_ast.h; sourceTree = "<group>"; };
 		2C95E6CD1D5A9F3500186D5A /* parser_statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_statement.cpp; sourceTree = "<group>"; };
 		2C95E6CF1D5A9F4E00186D5A /* parser_statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_statement.h; sourceTree = "<group>"; };
+		2C95E6D01D5AA47200186D5A /* llvm_code_gen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = llvm_code_gen.cpp; sourceTree = "<group>"; };
+		2C95E6D11D5AA47200186D5A /* llvm_code_gen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = llvm_code_gen.h; sourceTree = "<group>"; };
 		2CA061CA1D4C317A0045AF86 /* parser_function.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_function.cpp; sourceTree = "<group>"; };
 		2CA061CB1D4C317A0045AF86 /* parser_function.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_function.h; sourceTree = "<group>"; };
 		2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_struct.cpp; sourceTree = "<group>"; };
@@ -142,17 +145,19 @@
 				2CFCCFAB1CCE3E7000F2BEC3 /* experimental_runtime.h */,
 				2CD9283D1D515AF100243F0A /* expressions.cpp */,
 				2CD9283E1D515AF100243F0A /* expressions.h */,
+				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
+				2C81894C1D47B62400030C96 /* floyd_interpreter.h */,
 				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
 				2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */,
 				2C789ED71CBA54C400DDBD3C /* floyd_parser.h */,
 				2C95E6C71D5A8D5100186D5A /* json.cpp */,
 				2C95E6C81D5A8D5100186D5A /* json.h */,
+				2C95E6D01D5AA47200186D5A /* llvm_code_gen.cpp */,
+				2C95E6D11D5AA47200186D5A /* llvm_code_gen.h */,
 				2C4F35601D4795C20061CA93 /* parse_statement.cpp */,
 				2C4F35611D4795C20061CA93 /* parse_statement.h */,
 				2C95E6CA1D5A8E2B00186D5A /* parser_ast.cpp */,
 				2C95E6CB1D5A8E2B00186D5A /* parser_ast.h */,
-				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
-				2C81894C1D47B62400030C96 /* floyd_interpreter.h */,
 				2C4F355A1D4792C60061CA93 /* parser_expression.cpp */,
 				2C4F355B1D4792C60061CA93 /* parser_expression.h */,
 				2CA061CA1D4C317A0045AF86 /* parser_function.cpp */,
@@ -281,6 +286,7 @@
 				2CC50E251CE48748008D78C7 /* game_of_life2.cpp in Sources */,
 				2C95E6C91D5A8D5100186D5A /* json.cpp in Sources */,
 				2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */,
+				2C95E6D21D5AA47200186D5A /* llvm_code_gen.cpp in Sources */,
 				2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */,
 				2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */,
 				2C95E6CE1D5A9F3500186D5A /* parser_statement.cpp in Sources */,

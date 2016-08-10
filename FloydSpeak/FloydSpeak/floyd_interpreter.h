@@ -28,6 +28,14 @@ namespace floyd_parser {
 
 namespace floyd_interpreter {
 
+
+
+	//////////////////////////////////////		type_identifier_t
+
+	/*
+		Runtime scope, similair to a stack frame.
+	*/
+
 	struct scope_instance_t {
 		public: const floyd_parser::scope_def_t* _def = nullptr;
 
@@ -35,6 +43,14 @@ namespace floyd_interpreter {
 		//	key string is name of variable.
 		public: std::map<std::string, floyd_parser::value_t> _values;
 	};
+
+
+
+	//////////////////////////////////////		type_identifier_t
+
+	/*
+		Complete runtime state of the interpreter.
+	*/
 
 	struct interpreter_t {
 		public: interpreter_t(const floyd_parser::ast_t& ast);
@@ -49,12 +65,15 @@ namespace floyd_interpreter {
 		public: std::vector<std::shared_ptr<scope_instance_t>> _scope_instances;
 	};
 
+
+
 	/*
 		Return value:
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
 	floyd_parser::value_t execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<floyd_parser::statement_t>>& statements);
+
 
 	/*
 		Evaluates an expression as far as possible.
@@ -63,18 +82,16 @@ namespace floyd_interpreter {
 	*/
 	floyd_parser::expression_t evalute_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
 
-	floyd_parser::value_t run_function(const interpreter_t& vm, const floyd_parser::function_def_t& f, const std::vector<floyd_parser::value_t>& args);
+	floyd_parser::value_t call_function(const interpreter_t& vm, const floyd_parser::function_def_t& f, const std::vector<floyd_parser::value_t>& args);
 
 
-	typedef std::pair<std::size_t, std::size_t> byte_range_t;
+	//////////////////////////		run_main()
+
 
 	/*
-		s: all types must be fully defined, deeply, for this function to work.
-		result, item[0] the memory range for the entire struct.
-				item[1] the first member in the struct. Members may be mapped in any order in memory!
-				item[2] the first member in the struct.
+		Quickie that compiles a program and calls its main() with the args.
 	*/
-	std::vector<byte_range_t> calc_struct_default_memory_layout(const floyd_parser::types_collector_t& types, const floyd_parser::type_def_t& s);
+	std::pair<interpreter_t, floyd_parser::value_t> run_main(const std::string& source, const std::vector<floyd_parser::value_t>& args);
 
 } //	floyd_interpreter
 
