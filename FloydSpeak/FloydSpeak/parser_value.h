@@ -220,6 +220,40 @@ namespace floyd_parser {
 			}
 		}
 
+		std::string to_json() const {
+			QUARK_ASSERT(check_invariant());
+
+			const auto d = _type.to_string();
+			if(d == "null"){
+				return "\"null\"";
+			}
+			else if(d == "bool"){
+				return _bool ? "\"true\"" : "\"false\"";
+			}
+			else if(d == "int"){
+				char temp[200 + 1];//### Use C++ function instead.
+				sprintf(temp, "%d", _int);
+				return std::string(temp);
+			}
+			else if(d == "float"){
+				char temp[200 + 1];//### Use C++ function instead.
+				sprintf(temp, "%f", _float);
+				return std::string(temp);
+			}
+			else if(d == "string"){
+				return std::string("\"") + _string + "\"";
+			}
+			else{
+				if(_struct_instance){
+					return to_preview(*_struct_instance);
+				}
+				else{
+					return "???";
+				}
+			}
+		}
+
+
 		std::string value_and_type_to_string() const {
 			QUARK_ASSERT(check_invariant());
 

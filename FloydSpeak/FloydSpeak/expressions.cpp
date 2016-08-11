@@ -330,8 +330,122 @@ void trace(const expression_t& e){
 
 
 
+string to_json(const std::vector<string>& values){
+	if(values.empty()){
+		return "[]";
+	}
+	else{
+		string r;
+		for(auto i = 0 ; i < values.size() ; i++){
+			r = r + values[i] + ", ";
+		}
+
+		//	Remove last ", ".
+		if(values.size() > 0){
+			r = r.substr(0, r.length() - 2);
+		}
+
+		const auto result = string("[ " + r + " ]");
+		return result;
+	}
+}
+
+QUARK_UNIT_TESTQ("to_json()", ""){
+	QUARK_UT_VERIFY(to_json({}) == "[]");
+}
+
+QUARK_UNIT_TESTQ("to_json()", ""){
+	QUARK_UT_VERIFY(to_json({ "\"a\"" }) == "[ \"a\" ]");
+}
+
+QUARK_UNIT_TESTQ("to_json()", ""){
+	QUARK_UT_VERIFY(to_json({ "\"a\"", "\"b\"" }) == "[ \"a\", \"b\" ]");
+}
+
+QUARK_UNIT_TESTQ("to_json()", ""){
+	QUARK_UT_VERIFY(to_json({ value_t(123).to_json(), value_t(456.7f).to_json() }) == "[ 123, 456.700012 ]");
+}
+
+string quote(const std::string& s){
+	return std::string("\"") + s + "\"";
+}
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("") == "\"\"");
+}
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("abc") == "\"abc\"");
+}
+
+
+std::string to_json(const expression_t& e){
+	if(e._constant){
+		return to_json({ "\"k\"", e._constant->to_json() });
+	}
+	else if(e._math2){
+		const auto e2 = *e._math2;
+		const auto left = to_json(*e2._left);
+		const auto right = to_json(*e2._right);
+		return to_json({ quote(operation_to_string(e2._operation)), left, right });
+	}
+	else if(e._math1){
+		const auto e2 = *e._math1;
+		const auto input = to_json(*e2._input);
+		return to_json({ quote(operation_to_string(e2._operation)), input });
+	}
+	else if(e._call){
+		const auto& call_function = *e._call;
+		vector<string>  args_json;
+		for(const auto& i: call_function._inputs){
+			const auto arg_expr = to_json(*i);
+			args_json.push_back(arg_expr);
+		}
+		return to_json({ "\"call\"", quote(call_function._function_name), to_json(args_json) });
+	}
+	else if(e._load){
+		const auto e2 = *e._load;
+		const auto address = to_json(*e2._address);
+		return to_json({ "\"load\"", address });
+	}
+	else if(e._resolve_variable){
+		const auto e2 = *e._resolve_variable;
+		return to_json({ "\"res_var\"", quote(e2._variable_name) });
+	}
+	else if(e._resolve_struct_member){
+		const auto e2 = *e._resolve_struct_member;
+		return to_json({ "\"res_member\"", to_json(*e2._parent_address), quote(e2._member_name) });
+	}
+	else if(e._lookup_element){
+		const auto e2 = *e._lookup_element;
+		const auto lookup_key = to_json(*e2._lookup_key);
+		return to_json({ "\"lookup\"", to_json(*e2._parent_address), lookup_key });
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+/*
+[
+  "+",
+  [ "load", [ "res_member", [ "res_var", "p" ],"s" ] ],
+  [ "load", [ "res_var", "a" ] ]
+]
+*/
+QUARK_UNIT_TESTQ("to_json()", "call"){
+	quark::ut_compare(
+		to_json(
+			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
+		),
+		"[ \"call\", \"my_func\", [ [ \"k\", \"xyz\" ], [ \"k\", 123 ] ] ]"
+	);
+}
+
+
+
 std::string to_string(const expression_t& e){
 //	QUARK_ASSERT(e.check_invariant());
+
+	QUARK_TRACE(to_json(e));
 
 	if(e._constant){
 		return string("(@k ") + e._constant->value_and_type_to_string() + ")";
@@ -347,15 +461,8 @@ std::string to_string(const expression_t& e){
 		const auto input = to_string(*e2._input);
 		return string("(@") + operation_to_string(e2._operation) + " " + input + ")";
 	}
-
-	/*
-		If inputs are constant, replace function call with a constant!
-	*/
 	else if(e._call){
 		const auto& call_function = *e._call;
-
-//		const auto& function_def = ast._types_collector.resolve_function_type(call_function_expression._function_name);
-
 		string  args;
 		for(const auto& i: call_function._inputs){
 			const auto arg_expr = to_string(*i);
@@ -435,6 +542,8 @@ QUARK_UNIT_TESTQ("to_string()", "lookup"){
 		"(@lookup (@res_var 'hello') (@k <string>'xyz'))"
 	);
 }
+
+
 
 
 
