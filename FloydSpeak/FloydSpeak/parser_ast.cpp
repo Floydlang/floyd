@@ -11,6 +11,7 @@
 #include "parser_statement.h"
 #include "parser_value.h"
 #include "text_parser.h"
+#include "parser_primitives.h"
 
 #include <string>
 #include <memory>
@@ -56,7 +57,7 @@ namespace floyd_parser {
 	}
 
 
-	void trace_frontend_type(const type_def_t& t, const std::string& label){
+	void trace(const type_def_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
 		if(t._base_type == k_int){
@@ -76,7 +77,7 @@ namespace floyd_parser {
 		}
 		else if(t._base_type == k_vector){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-//			trace_frontend_type(*t._vector_def->_value_type, "");
+//			trace(*t._vector_def->_value_type, "");
 		}
 		else if(t._base_type == k_function){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
@@ -89,17 +90,17 @@ namespace floyd_parser {
 
 
 
-//////////////////////////////////////		to_string(base_type)
+	//////////////////////////////////////		to_string(base_type)
 
 
-QUARK_UNIT_TESTQ("to_string(base_type)", ""){
-	QUARK_TEST_VERIFY(to_string(k_int) == "int");
-	QUARK_TEST_VERIFY(to_string(k_bool) == "bool");
-	QUARK_TEST_VERIFY(to_string(k_string) == "string");
-	QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
-	QUARK_TEST_VERIFY(to_string(k_vector) == "vector");
-	QUARK_TEST_VERIFY(to_string(k_function) == "function");
-}
+	QUARK_UNIT_TESTQ("to_string(base_type)", ""){
+		QUARK_TEST_VERIFY(to_string(k_int) == "int");
+		QUARK_TEST_VERIFY(to_string(k_bool) == "bool");
+		QUARK_TEST_VERIFY(to_string(k_string) == "string");
+		QUARK_TEST_VERIFY(to_string(k_struct) == "struct");
+		QUARK_TEST_VERIFY(to_string(k_vector) == "vector");
+		QUARK_TEST_VERIFY(to_string(k_function) == "function");
+	}
 
 
 
@@ -161,18 +162,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		if(!compare_shared_values(_function_def, other._function_def)){
 			return false;
 		}
-
-/*
-		if(_base_type == k_struct){
-			return *_struct_def == *other._struct_def;
-		}
-		else if(_base_type == k_vector){
-			QUARK_ASSERT(false);
-		}
-		else if(_base_type == k_function){
-			return *_function_def == *other._function_def;
-		}
-*/		return true;
+		return true;
 	}
 
 	std::string to_signature(const type_def_t& t){
@@ -198,9 +188,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 
 				arguments = arguments + a + ",";
 			}
-
 			arguments = remove_trailing_comma(arguments);
-
 
 			const auto body_hash = calc_function_body_hash(*t._function_def);
 
@@ -217,13 +205,9 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	//////////////////////////////////////////////////		type_identifier_t
 
 
-	/*
-		A string naming a type. "int", "string", "my_struct" etc.
-		It is guaranteed to contain correct characters.
-		It is NOT guaranteed to map to an actual type in the language or program.
-	*/
-
 	type_identifier_t type_identifier_t::make(std::string s){
+		QUARK_ASSERT(is_valid_type_identifier(s));
+
 		const type_identifier_t result(s);
 
 		QUARK_ASSERT(result.check_invariant());
@@ -263,6 +247,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		_type_magic(s)
 	{
 		QUARK_ASSERT(s != nullptr);
+		QUARK_ASSERT(is_valid_type_identifier(std::string(s)));
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -270,6 +255,8 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	type_identifier_t::type_identifier_t(const std::string& s) :
 		_type_magic(s)
 	{
+		QUARK_ASSERT(is_valid_type_identifier(s));
+
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -288,13 +275,8 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 
 	bool type_identifier_t::check_invariant() const {
 		QUARK_ASSERT(_type_magic != "");
+		QUARK_ASSERT(is_valid_type_identifier(_type_magic));
 //		QUARK_ASSERT(_type_magic == "" || _type_magic == "string" || _type_magic == "int" || _type_magic == "float" || _type_magic == "value_type");
-		return true;
-	}
-
-
-
-	bool is_valid_type_identifier(const std::string& s){
 		return true;
 	}
 
@@ -396,8 +378,6 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		QUARK_ASSERT(check_invariant());
 	}
 
-
-
 	bool scope_def_t::shallow_check_invariant() const {
 		const auto s = _parent_scope.lock();
 		QUARK_ASSERT(!s || s->shallow_check_invariant());
@@ -431,6 +411,13 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		}
 		return true;
 	}
+
+	QUARK_UNIT_TESTQ("scope_def_t::operator==", ""){
+		const auto a = scope_def_t::make_global_scope();
+		const auto b = scope_def_t::make_global_scope();
+		QUARK_TEST_VERIFY(*a == *b);
+	}
+
 
 
 
@@ -484,7 +471,6 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		QUARK_ASSERT(_function_scope && _function_scope->check_invariant());
 		return true;
 	}
-
 
 	bool function_def_t::operator==(const function_def_t& other) const{
 		QUARK_ASSERT(check_invariant());
@@ -725,7 +711,6 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 			scope_def
 		);
 	}
-
 
 	struct_def_t make_struct2(scope_ref_t scope_def){
 		return make_struct0(scope_def);

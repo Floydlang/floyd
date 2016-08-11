@@ -43,6 +43,19 @@ namespace floyd_parser {
 		return true;
 	}
 
+	QUARK_UNIT_TESTQ("type_indentifier_data_ref::operator==()", "operator==()"){
+		const type_indentifier_data_ref a{ "xyz", {} };
+		const type_indentifier_data_ref b{ "xyz", {} };
+		QUARK_UT_VERIFY(b == b);
+	}
+
+	QUARK_UNIT_TESTQ("type_indentifier_data_ref::operator==()", ""){
+		const type_indentifier_data_ref a{ "xyz", make_shared<type_def_t>(type_def_t::make_int()) };
+		const type_indentifier_data_ref b{ "xyz", {} };
+		QUARK_UT_VERIFY(b == b);
+	}
+
+
 
 	////////////////////////			types_collector_t
 
@@ -229,8 +242,6 @@ namespace floyd_parser {
 	}
 
 
-
-
 	std::pair<std::shared_ptr<type_def_t>, types_collector_t> types_collector_t::define_struct_type(const struct_def_t& struct_def) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(struct_def.check_invariant());
@@ -271,8 +282,6 @@ namespace floyd_parser {
 			return collector3;
 		}
 	}
-
-
 
 
 	//??? test!
@@ -456,6 +465,15 @@ QUARK_UNIT_TESTQ("define_function_type()", ""){
 	const auto a = types_collector_t{};
 	const auto b =  a.define_function_type("one", make_return_hello(global));
 }
+
+
+QUARK_UNIT_TESTQ("types_collector_t::operator==()", ""){
+	const auto a = types_collector_t();
+	const auto b = types_collector_t();
+
+	QUARK_TEST_VERIFY(a == b);
+}
+
 
 
 

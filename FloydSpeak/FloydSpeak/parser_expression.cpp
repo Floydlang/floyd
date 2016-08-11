@@ -208,6 +208,7 @@ pair<expression_t, string> parse_calculated_value(const string& s) {
 }
 
 /*
+??? Is this a test?
 	struct pixel { int red; int green; int blue; };
 	struct image { pixel background_color; int width; int height; };
 
@@ -305,8 +306,6 @@ float parse_float(const string& pos){
 	return res;
 }
 
-
-
 // [0-9] and "."  => numeric constant.
 pair<value_t, string> parse_numeric_constant(const string& s) {
 	QUARK_ASSERT(s.size() > 0);
@@ -333,9 +332,11 @@ pair<value_t, string> parse_numeric_constant(const string& s) {
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(parse_numeric_constant("0 xxx"), pair<value_t, string>(value_t(0), " xxx"));
 }
+
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(parse_numeric_constant("1234 xxx"), pair<value_t, string>(value_t(1234), " xxx"));
 }
+
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(parse_numeric_constant(".5 xxx"), pair<value_t, string>(value_t(0.5f), " xxx"));
 }
@@ -350,12 +351,15 @@ seq parse_string_constant(const string& s){
 	const auto r = string_constant_pos.second.substr(1);
 	return { string_constant_pos.first, r };
 }
+
 QUARK_UNIT_TESTQ("parse_string_constant()", ""){
 	quark::ut_compare(parse_string_constant("\"\" xxx"), seq("", " xxx"));
 }
+
 QUARK_UNIT_TESTQ("parse_string_constant()", ""){
 	quark::ut_compare(parse_string_constant("\"hello\" xxx"), seq("hello", " xxx"));
 }
+
 QUARK_UNIT_TESTQ("parse_string_constant()", ""){
 	quark::ut_compare(parse_string_constant("\".5\" xxx"), seq(".5", " xxx"));
 }
@@ -478,21 +482,36 @@ pair<expression_t, string> parse_atom(const string& s, int depth) {
 	throw std::runtime_error("Expected number");
 }
 
-
-
 //### more tests here!
-QUARK_UNIT_TEST("", "parse_atom", "", ""){
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("0.0", 0) == pair<expression_t, string>(make_constant(0.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("9.0", 0) == pair<expression_t, string>(make_constant(9.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("12345.0", 0) == pair<expression_t, string>(make_constant(12345.0f), "")));
+}
 
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("10.0", 0) == pair<expression_t, string>(make_constant(10.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("-10.0", 0) == pair<expression_t, string>(make_constant(-10.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("+10.0", 0) == pair<expression_t, string>(make_constant( 10.0f), "")));
+}
 
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("4.0+", 0) == pair<expression_t, string>(make_constant(4.0f), "+")));
+}
 
-
+QUARK_UNIT_TESTQ("parse_atom", ""){
 	QUARK_TEST_VERIFY((parse_atom("\"hello\"", 0) == pair<expression_t, string>(make_constant("hello"), "")));
 }
 
@@ -550,7 +569,6 @@ expression_t parse_expression(string expression){
 	trace(result.first);
 	return result.first;
 }
-
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
 	const auto a = parse_expression("pixel( \"hiya\" )");

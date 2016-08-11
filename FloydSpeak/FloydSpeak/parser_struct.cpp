@@ -125,33 +125,7 @@ namespace floyd_parser {
 		);
 	}
 
-	QUARK_UNIT_TESTQ("type_indentifier_data_ref::operator==()", "operator==()"){
-		const type_indentifier_data_ref a{ "xyz", {} };
-		const type_indentifier_data_ref b{ "xyz", {} };
-		QUARK_UT_VERIFY(b == b);
-	}
-
-	QUARK_UNIT_TESTQ("type_indentifier_data_ref::operator==()", ""){
-		const type_indentifier_data_ref a{ "xyz", make_shared<type_def_t>(type_def_t::make_int()) };
-		const type_indentifier_data_ref b{ "xyz", {} };
-		QUARK_UT_VERIFY(b == b);
-	}
-
-
-QUARK_UNIT_TESTQ("types_collector_t::operator==()", ""){
-	const auto a = types_collector_t();
-	const auto b = types_collector_t();
-
-	QUARK_TEST_VERIFY(a == b);
-}
-
-	QUARK_UNIT_TESTQ("scope_def_t::operator==", ""){
-		const auto a = scope_def_t::make_global_scope();
-		const auto b = scope_def_t::make_global_scope();
-		QUARK_TEST_VERIFY(*a == *b);
-	}
-
-	QUARK_UNIT_TESTQ("parse_struct_definition", ""){
+	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
 		const auto global = scope_def_t::make_global_scope();
 		const auto r = parse_struct_definition(global, "struct pixel { int red; int green; int blue;};");
 		const auto b = struct_def_t::make2(
@@ -167,7 +141,7 @@ QUARK_UNIT_TESTQ("types_collector_t::operator==()", ""){
 		QUARK_TEST_VERIFY(r.first == b);
 	}
 
-	QUARK_UNIT_TESTQ("parse_struct_definition", ""){
+	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
 		const auto global = scope_def_t::make_global_scope();
 		const auto r = parse_struct_definition(global, "struct pixel { int red = 255; int green = 255; int blue = 255; }");
 		QUARK_TEST_VERIFY(r.first == struct_def_t::make2
@@ -183,7 +157,7 @@ QUARK_UNIT_TESTQ("types_collector_t::operator==()", ""){
 		);
 	}
 
-	QUARK_UNIT_TESTQ("parse_struct_definition", ""){
+	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
 		const auto global = scope_def_t::make_global_scope();
 		const auto r = parse_struct_definition(global, "struct pixel { string name = \"lisa\"; float height = 12.3f; }xxx");
 		QUARK_TEST_VERIFY(r.first == struct_def_t::make2

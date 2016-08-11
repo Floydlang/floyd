@@ -540,9 +540,6 @@ json(a) -- output:
 		“alpha”: 255
 	}
 
-
-
-
 c = json(
 	“{
 		“red”: 100,
@@ -550,4 +547,27 @@ c = json(
 		“blue”:210,
 		“alpha”: 255
 	}”
+
+
+	### Define format for source-as-JSON roundtrip. Normalized source code format. Goal for JSON is easy machine transformation.
+!!! JSON does not support multi-line strings.
+	### Encode using JSON! Easy to copy-paste, user JSON validators etc:
+
+	"hello[\"troll\"].kitty[10].cat" =>
+	"(@load (@res_member (@lookup (@res_member (@lookup (@res_var 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))"
+
+
+	["@res_member",
+		["@lookup",
+			["@res_member",
+				["@lookup",
+					["@res_member", "nullptr", "hello"],
+					["@k", "<string>", "troll"]
+				],
+				"kitty"
+			],
+			["@k", "<int>", "10"]
+		],
+		"cat"
+	]
 

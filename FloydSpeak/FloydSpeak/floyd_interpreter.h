@@ -66,13 +66,15 @@ namespace floyd_interpreter {
 	};
 
 
-
 	/*
 		Return value:
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	floyd_parser::value_t execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<floyd_parser::statement_t>>& statements);
+	floyd_parser::value_t execute_statements(
+		const interpreter_t& vm,
+		const std::vector<std::shared_ptr<floyd_parser::statement_t>>& statements
+	);
 
 
 	/*
@@ -82,7 +84,11 @@ namespace floyd_interpreter {
 	*/
 	floyd_parser::expression_t evalute_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
 
-	floyd_parser::value_t call_function(const interpreter_t& vm, const floyd_parser::function_def_t& f, const std::vector<floyd_parser::value_t>& args);
+	floyd_parser::value_t call_function(
+		const interpreter_t& vm,
+		const floyd_parser::function_def_t& f,
+		const std::vector<floyd_parser::value_t>& args
+	);
 
 
 	//////////////////////////		run_main()
@@ -91,7 +97,10 @@ namespace floyd_interpreter {
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
-	std::pair<interpreter_t, floyd_parser::value_t> run_main(const std::string& source, const std::vector<floyd_parser::value_t>& args);
+	std::pair<interpreter_t, floyd_parser::value_t> run_main(
+		const std::string& source,
+		const std::vector<floyd_parser::value_t>& args
+	);
 
 } //	floyd_interpreter
 

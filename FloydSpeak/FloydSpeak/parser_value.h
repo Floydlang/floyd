@@ -34,8 +34,7 @@ namespace floyd_parser {
 		//	??? Remove this points at later time, when we statically track the type of structs OK.
 		const struct_def_t* __def;
 
-		//	Use index of member to find the value.
-//???		std::vector<value_t> _member_values;
+		//	### Use ::vector<value_t> _member_values and index of member to find the value.
 		std::map<std::string, value_t> _member_values;
 	};
 

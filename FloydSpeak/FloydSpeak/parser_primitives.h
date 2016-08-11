@@ -164,6 +164,7 @@ namespace floyd_parser {
 	*/
 	std::pair<type_identifier_t, std::string> read_required_type_identifier(const std::string& s);
 
+	bool is_valid_type_identifier(const std::string& s);
 
 }	//	floyd_parser
 

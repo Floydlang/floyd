@@ -22,26 +22,31 @@ namespace floyd_parser {
 		Parses the expression string
 		Requires all characters to be part of expression - does not stop until all characters have been evaluated.
 		Checks syntax
+
 		FALSE: Validates that called functions exists and has correct type.
 		FALSE: Validates that accessed variables exists and has correct types.
 
-		No optimization or evalution of any constant expressions etc. Must be non-lossy = cannot optimize.
+		- Supports nesting, full paths, like "my_global[10 + f(selector)].lookup("asd").next"
+		- Supports function calls-
+		- No optimization or evalution of any constant expressions etc. Must be non-lossy = cannot optimize.
 
 		Example input:
-			0
-			3
-			(3)
-			(1 + 2) * 3
-			"test"
-			"test number: " +
+			"0"
+			"3"
+			"(3)"
+			"(1 + 2) * 3"
+			\""test"\"
+			\""test number: "\"
 
-			x
-			x + y
+			"x"
+			"x + y"
 
-			f()
-			f(10, 122)
+			"f()"
+			"f(10, 122)"
 
-			(my_fun1("hello, 3) + 4) * my_fun2(10))
+			"(my_fun1("hello, 3) + 4) * my_fun2(10))"
+
+			"hello[\"troll\"].kitty[10].cat xxx"
 	*/
 	expression_t parse_expression(std::string expression);
 

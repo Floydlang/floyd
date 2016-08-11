@@ -30,6 +30,8 @@ namespace floyd_parser {
 
 	typedef std::shared_ptr<scope_def_t> scope_ref_t;
 
+
+
 	//////////////////////////////////////		base_type
 
 	/*
@@ -37,7 +39,7 @@ namespace floyd_parser {
 	*/
 	enum base_type {
 		k_null,
-//		k_float,
+//		k_float,	??? implemented in some places!? Inconsistent.
 		k_int,
 		k_bool,
 		k_string,
@@ -52,7 +54,8 @@ namespace floyd_parser {
 	};
 
 	std::string to_string(const base_type t);
-	void trace_frontend_type(const type_def_t& t, const std::string& label);
+	void trace(const type_def_t& t, const std::string& label);
+
 
 
 	//////////////////////////////////////		type_def_t
@@ -92,7 +95,6 @@ namespace floyd_parser {
 	};
 
 
-
 	/*
 		Returns a normalized signature string unique for this data type.
 		Use to compare types.
@@ -107,12 +109,13 @@ namespace floyd_parser {
 	std::string to_signature(const type_def_t& t);
 
 
+
 	//////////////////////////////////////		type_identifier_t
 
 	/*
-		Textual specification of a type-identifier.
-		It only contains valid characters.
-		There is no guarantee this type actually exists.
+		A string naming a type. "int", "string", "my_struct" etc.
+		It is guaranteed to contain correct characters.
+		It is NOT guaranteed to map to an actual type in the language or program.
 	*/
 
 	struct type_identifier_t {
@@ -160,7 +163,6 @@ namespace floyd_parser {
 			//	Specifies a data type.
 			"value_type"
 
-
 			"metronome"
 			"map<string, metronome>"
 			"game_engine:sprite"
@@ -171,6 +173,7 @@ namespace floyd_parser {
 	};
 
 	void trace(const type_identifier_t& v);
+
 
 
 	//////////////////////////////////////////////////		executable_t
@@ -202,6 +205,8 @@ namespace floyd_parser {
 		public: std::vector<std::shared_ptr<statement_t> > _statements;
 	};
 
+
+
 	//////////////////////////////////////		arg_t
 
 	/*
@@ -230,6 +235,7 @@ namespace floyd_parser {
 
 	//////////////////////////////////////		function_def_t
 
+	//### Function names should have namespace etc.
 
 
 	struct function_def_t {
@@ -351,6 +357,7 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		scope_def_t
 
 //??? make private data, immutable
+
 	/*
 		WARNING: We mutate this during parsing, adding executable, types while it exists.
 		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it a new address (move / copy) breaks this hearchy.
@@ -378,9 +385,7 @@ namespace floyd_parser {
 		/////////////////////////////		STATE
 
 		public: std::weak_ptr<scope_def_t> _parent_scope;
-
 		public: executable_t _executable;
-
 		public: types_collector_t _types_collector;
 
 		/*
@@ -392,6 +397,24 @@ namespace floyd_parser {
 
 		//	Specification of values to store in each instance.
 		//		public: std::vector<member_t> _runtime_value_spec;
+	};
+
+
+
+	//////////////////////////////////////////////////		xxxscope_node_t
+
+
+	/*
+		Idea for non-intrusive scope tree.
+	*/
+
+	struct xxxscope_node_t {
+		public: bool check_invariant() const {
+			return true;
+		};
+
+		scope_def_t _scope;
+		std::vector<scope_def_t> _children;
 	};
 
 
@@ -438,17 +461,7 @@ namespace floyd_parser {
 				}
 
 		}
-		//### Function names should have namespace etc.
 	*/
-
-	struct xxxscope_node_t {
-		public: bool check_invariant() const {
-			return true;
-		};
-
-		scope_def_t _scope;
-		std::vector<scope_def_t> _children;
-	};
 
 	struct ast_t {
 		public: ast_t() :
@@ -465,18 +478,10 @@ namespace floyd_parser {
 
 
 		/////////////////////////////		STATE
-//		public: scope_node_t _global_scope;
 		public: scope_ref_t _global_scope;
 	};
 
 	void trace(const ast_t& program);
-
-/*
-	struct parser_state_t {
-		const ast_t _ast;
-		scope_def_t _open;
-	};
-*/
 
 
 

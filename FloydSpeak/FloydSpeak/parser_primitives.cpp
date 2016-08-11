@@ -48,7 +48,6 @@ QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 }
 
 
-
 bool is_whitespace(char ch){
 	return whitespace_chars.find(string(1, ch)) != string::npos;
 }
@@ -59,9 +58,6 @@ QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('\t') == true);
 	QUARK_TEST_VERIFY(is_whitespace('\n') == true);
 }
-
-
-
 
 
 bool is_start_char(char c){
@@ -81,6 +77,7 @@ QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 
 	QUARK_TEST_VERIFY(!is_start_char(' '));
 }
+
 
 bool is_end_char(char c){
 	return c == ')' || c == ']' || c == '}' || c == '>';
@@ -189,8 +186,6 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 }
 
 
-
-
 //////////////////////////////////////		TYPE IDENTIFIERS
 
 
@@ -210,6 +205,10 @@ pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 	return { type, skip_whitespace(type_pos.second) };
 }
 
+	bool is_valid_type_identifier(const std::string& s){
+		const auto a = read_while(s, floyd_parser::type_chars);
+		return a.first == s;
+	}
 
 
 }	//	floyd_parser

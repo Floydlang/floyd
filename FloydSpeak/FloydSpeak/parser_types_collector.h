@@ -52,8 +52,8 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////		types_collector_t
 
+	//////////////////////////////////////		types_collector_t
 
 	/*
 		This object is used during parsing.

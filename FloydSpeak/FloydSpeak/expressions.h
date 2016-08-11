@@ -254,28 +254,6 @@ namespace floyd_parser {
 
 
 
-	/*
-	"hello[\"troll\"].kitty[10].cat" =>
-	"(@load (@res_member (@lookup (@res_member (@lookup (@res_var 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))"
-
-
-	### Encode using JSON! Easy to copy-paste, user JSON validators etc:
-
-	["@res_member",
-		["@lookup",
-			["@res_member",
-				["@lookup",
-					["@res_member", "nullptr", "hello"],
-					["@k", "<string>", "troll"]
-				],
-				"kitty"
-			],
-			["@k", "<int>", "10"]
-		],
-		"cat"
-	]
-	*/
-
 	std::string to_string(const expression_t& e);
 
 }	//	floyd_parser

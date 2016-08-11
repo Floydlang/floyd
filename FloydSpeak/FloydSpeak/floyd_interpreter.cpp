@@ -221,8 +221,6 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t(15));
 }
 
-
-
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	auto ast = program_to_ast(
 		"int main(string args){\n"
@@ -273,7 +271,6 @@ namespace {
 		}
 	}
 
-
 	/*
 		Uses runtime callstack to find a variable by its name.
 	*/
@@ -284,17 +281,17 @@ namespace {
 		return resolve_variable_name_deep(vm._scope_instances, s, vm._scope_instances.size() - 1);
 	}
 
-			/*
-				PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
-				We don't have any value we can return from each expression in tree.
-				Alternatives:
-				A) Have dedicated expression types:
-					struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
-					collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
+	/*
+		PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
+		We don't have any value we can return from each expression in tree.
+		Alternatives:
+		A) Have dedicated expression types:
+			struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
+			collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
 
-				B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
-				C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
-			*/
+		B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
+		C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
+	*/
 
 	/*
 		a = my_global_int;
@@ -351,9 +348,6 @@ namespace {
 }
 
 //### Test string + etc.
-
-
-//??? tests
 //??? Split into several functions.
 expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
@@ -559,6 +553,7 @@ bool interpreter_t::check_invariant() const {
 //////////////////////////		run_main()
 
 
+
 std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(source.size() > 0);
 	auto ast = program_to_ast(source);
@@ -680,182 +675,184 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 
 
 
-namespace {
 
 using namespace floyd_interpreter;
 
 
-//??? Needs test functs?
 	expression_t test_evaluate_simple(string expression_string){
 		const ast_t ast;
 		const auto e = parse_expression(expression_string);
 		const auto e2 = evalute_expression(ast, e);
 		return e2;
 	}
-}
+
 
 
 //??? Add tests for strings and floats.
-QUARK_UNIT_TEST("", "evaluate()", "", "") {
-	// Some simple expressions
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1234") == make_constant(1234));
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2") == make_constant(3));
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2+3") == make_constant(6));
 	QUARK_TEST_VERIFY(test_evaluate_simple("3*4") == make_constant(12));
 	QUARK_TEST_VERIFY(test_evaluate_simple("3*4*5") == make_constant(60));
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2*3") == make_constant(7));
+}
 
-	// Parenthesis
+QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*(4+4+1)") == make_constant(45));
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*(2*(1+3)+1)") == make_constant(45));
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*((1+3)*2+1)") == make_constant(45));
+}
 
-	// Spaces
+QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 * ((1 + 3) * 2 + 1) ") == make_constant(45));
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( 3 ) ") == make_constant(-1));
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( ( 4 )  - 1 ) ") == make_constant(-1));
+}
 
-	// Sign before parenthesis
+QUARK_UNIT_TESTQ("evalute_expression()", "Sign before parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("-(2+1)*4") == make_constant(-12));
 	QUARK_TEST_VERIFY(test_evaluate_simple("-4*(2+1)") == make_constant(-12));
-	
-	// Fractional numbers
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("5.5/5.0")._constant->get_float(), 1.1f));
 //	QUARK_TEST_VERIFY(test_evaluate_simple("1/5e10") == 2e-11);
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("(4.0-3.0)/(4.0*4.0)")._constant->get_float(), 0.0625f));
 	QUARK_TEST_VERIFY(test_evaluate_simple("1.0/2.0/2.0") == make_constant(0.25f));
 	QUARK_TEST_VERIFY(test_evaluate_simple("0.25 * .5 * 0.5") == make_constant(0.0625f));
 	QUARK_TEST_VERIFY(test_evaluate_simple(".25 / 2.0 * .5") == make_constant(0.0625f));
-	
-	// Repeated operators
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+-2") == make_constant(-1));
 	QUARK_TEST_VERIFY(test_evaluate_simple("--2") == make_constant(2));
 	QUARK_TEST_VERIFY(test_evaluate_simple("2---2") == make_constant(0));
 	QUARK_TEST_VERIFY(test_evaluate_simple("2-+-2") == make_constant(4));
+}
 
-
-	// === Errors ===
-
-	if(true){
-		//////////////////////////		Parenthesis error
-		try{
-			test_evaluate_simple("5*((1+3)*2+1");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "EEE_PARENTHESIS");
-		}
-
-		try{
-			test_evaluate_simple("5*((1+3)*2)+1)");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-		}
-
-
-		//////////////////////////		Repeated operators (wrong)
-		try{
-			test_evaluate_simple("5*/2");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-		}
-
-		//////////////////////////		Wrong position of an operator
-		try{
-			test_evaluate_simple("*2");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-		}
-
-		try{
-			test_evaluate_simple("2+");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
-		}
-
-		try{
-			test_evaluate_simple("2*");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
-		}
-
-		//////////////////////////		Division by zero
-
-		try{
-			test_evaluate_simple("2/0");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "EEE_DIVIDE_BY_ZERO");
-		}
-
-		try{
-			test_evaluate_simple("3+1/(5-5)+4");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "EEE_DIVIDE_BY_ZERO");
-		}
-
-		try{
-			test_evaluate_simple("2/");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
-		}
-
-		//////////////////////////		Invalid characters
-		try{
-			test_evaluate_simple("~5");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-		}
-		try{
-			test_evaluate_simple("5x");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(const std::runtime_error& e){
-			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-		}
-
-
-		//////////////////////////		Multiply errors
-			//	Multiple errors not possible/relevant now that we use exceptions for errors.
-	/*
-		//////////////////////////		Only one error will be detected (in this case, the last one)
-		QUARK_TEST_VERIFY(test_evaluate_simple("3+1/0+4$") == EEE_WRONG_CHAR);
-
-		QUARK_TEST_VERIFY(test_evaluate_simple("3+1/0+4") == EEE_DIVIDE_BY_ZERO);
-
-		// ...or the first one
-		QUARK_TEST_VERIFY(test_evaluate_simple("q+1/0)") == EEE_WRONG_CHAR);
-		QUARK_TEST_VERIFY(test_evaluate_simple("+1/0)") == EEE_PARENTHESIS);
-		QUARK_TEST_VERIFY(test_evaluate_simple("+1/0") == EEE_DIVIDE_BY_ZERO);
-	*/
-
-		// An emtpy string
-		try{
-			test_evaluate_simple("");
-			QUARK_TEST_VERIFY(false);
-		}
-		catch(...){
-//			QUARK_TEST_VERIFY(error == "EEE_WRONG_CHAR");
-		}
+QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis error") {
+	try{
+		test_evaluate_simple("5*((1+3)*2+1");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "EEE_PARENTHESIS");
 	}
 
-}	//	floyd_interpreter
+	try{
+		test_evaluate_simple("5*((1+3)*2)+1)");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
+	}
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators (wrong)") {
+	try{
+		test_evaluate_simple("5*/2");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
+	}
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Wrong position of an operator") {
+	try{
+		test_evaluate_simple("*2");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
+	}
+
+	try{
+		test_evaluate_simple("2+");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
+	}
+
+	try{
+		test_evaluate_simple("2*");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
+	}
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Division by zero") {
+	try{
+		test_evaluate_simple("2/0");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "EEE_DIVIDE_BY_ZERO");
+	}
+
+	try{
+		test_evaluate_simple("3+1/(5-5)+4");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "EEE_DIVIDE_BY_ZERO");
+	}
+
+	try{
+		test_evaluate_simple("2/");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
+	}
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
+	try{
+		test_evaluate_simple("~5");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
+	}
+	try{
+		test_evaluate_simple("5x");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
+	}
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Multiply errors") {
+		//	Multiple errors not possible/relevant now that we use exceptions for errors.
+/*
+	//////////////////////////		Only one error will be detected (in this case, the last one)
+	QUARK_TEST_VERIFY(test_evaluate_simple("3+1/0+4$") == EEE_WRONG_CHAR);
+
+	QUARK_TEST_VERIFY(test_evaluate_simple("3+1/0+4") == EEE_DIVIDE_BY_ZERO);
+
+	// ...or the first one
+	QUARK_TEST_VERIFY(test_evaluate_simple("q+1/0)") == EEE_WRONG_CHAR);
+	QUARK_TEST_VERIFY(test_evaluate_simple("+1/0)") == EEE_PARENTHESIS);
+	QUARK_TEST_VERIFY(test_evaluate_simple("+1/0") == EEE_DIVIDE_BY_ZERO);
+*/
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "An emtpy string") {
+	try{
+		test_evaluate_simple("");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(...){
+//			QUARK_TEST_VERIFY(error == "EEE_WRONG_CHAR");
+	}
+}
+
 
 
