@@ -32,6 +32,7 @@ namespace floyd_parser {
 			return b + 1;
 		}
 
+		Creates its own function sub-scope at the bottom of the ast.
 
 		LATER:
 		Lambda:
@@ -41,7 +42,7 @@ namespace floyd_parser {
 			}
 		}
 	*/
-	std::pair<std::pair<std::string, function_def_t>, std::string> parse_function_definition(const scope_def_t& scope_def, const std::string& pos);
+	std::pair<function_def_t, std::string> parse_function_definition(scope_ref_t scope_def, const std::string& pos);
 
 
 
@@ -50,16 +51,16 @@ namespace floyd_parser {
 
 
 	const std::string test_function1 = "int test_function1(){ return 100; }";
-	function_def_t make_test_function1();
+	function_def_t make_test_function1(scope_ref_t scope);
 
 	const std::string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
-	function_def_t make_test_function2();
+	function_def_t make_test_function2(scope_ref_t scope);
 
-	function_def_t make_log_function();
-	function_def_t make_log2_function();
-	function_def_t make_return5();
+	function_def_t make_log_function(scope_ref_t scope);
+	function_def_t make_log2_function(scope_ref_t scope);
+	function_def_t make_return5(scope_ref_t scope);
 
-	function_def_t make_return_hello();
+	function_def_t make_return_hello(scope_ref_t scope);
 
 }
 

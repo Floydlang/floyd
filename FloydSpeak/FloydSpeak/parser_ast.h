@@ -28,6 +28,7 @@ namespace floyd_parser {
 	struct struct_instance_t;
 	struct vector_def_t;
 
+	typedef std::shared_ptr<scope_def_t> scope_ref_t;
 
 	//////////////////////////////////////		base_type
 
@@ -35,6 +36,7 @@ namespace floyd_parser {
 		This type is tracked by compiler, not stored in the value-type.
 	*/
 	enum base_type {
+		k_null,
 //		k_float,
 		k_int,
 		k_bool,
@@ -64,8 +66,18 @@ namespace floyd_parser {
 		- Add support for optional value (using "?").
 	*/
 	struct type_def_t {
-		public: type_def_t(){};
+		public: type_def_t() :
+			_base_type(k_null)
+		{
+		}
+		public: static type_def_t make_int(){
+			type_def_t a;
+			a._base_type = k_int;
+			return a;
+		}
 		public: bool check_invariant() const;
+		public: bool operator==(const type_def_t& other) const;
+
 
 		///////////////////		STATE
 
@@ -124,7 +136,10 @@ namespace floyd_parser {
 		public: bool operator==(const type_identifier_t& other) const;
 		public: bool operator!=(const type_identifier_t& other) const;
 
-		private: type_identifier_t(){};
+		public: type_identifier_t() :
+			_type_magic("null")
+		{
+		}
 		public: explicit type_identifier_t(const char s[]);
 		public: explicit type_identifier_t(const std::string& s);
 		public: void swap(type_identifier_t& other);
@@ -158,30 +173,7 @@ namespace floyd_parser {
 	void trace(const type_identifier_t& v);
 
 
-
-	//////////////////////////////////////		arg_t
-
-	/*
-		Describes a function argument - it's type and the argument name.
-	*/
-	struct arg_t {
-		bool check_invariant() const {
-			QUARK_ASSERT(_type.check_invariant());
-			QUARK_ASSERT(_identifier.size() > 0);
-			return true;
-		}
-		bool operator==(const arg_t& other) const{
-			return _type == other._type && _identifier == other._identifier;
-		}
-
-		type_identifier_t _type;
-		std::string _identifier;
-	};
-
-	void trace(const arg_t& arg);
-
-
-	//////////////////////////////////////		function_def_t
+	//////////////////////////////////////////////////		executable_t
 
 
 	struct host_data_i {
@@ -190,14 +182,68 @@ namespace floyd_parser {
 
 	typedef value_t (*hosts_function_t)(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
 
+	struct executable_t {
+		public: executable_t(hosts_function_t host_function, std::shared_ptr<host_data_i> host_function_param);
+		public: executable_t(const std::vector<std::shared_ptr<statement_t> >& statements);
+		public: bool check_invariant() const;
+		public: bool operator==(const executable_t& other) const;
+
+
+		/////////////////////////////		STATE
+
+		//	_host_function != nullptr: this is host code.
+		//	_host_function == nullptr: _statements contains statements to interpret.
+		public: hosts_function_t _host_function = nullptr;
+		public: std::shared_ptr<host_data_i> _host_function_param;
+
+		//	INSTRUCTIONS - either _host_function or _statements is used.
+
+		//	Code, if any.
+		public: std::vector<std::shared_ptr<statement_t> > _statements;
+	};
+
+	//////////////////////////////////////		arg_t
+
+	/*
+		Describes a function argument - it's type and the argument name.
+	*/
+	struct arg_t {
+		public: bool check_invariant() const {
+			QUARK_ASSERT(_type.check_invariant());
+			QUARK_ASSERT(_identifier.size() > 0);
+			return true;
+		}
+		public: bool operator==(const arg_t& other) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
+			return _type == other._type && _identifier == other._identifier;
+		}
+
+		public: type_identifier_t _type;
+		public: std::string _identifier;
+	};
+
+	void trace(const arg_t& arg);
+
+
+
+	//////////////////////////////////////		function_def_t
+
+
+
 	struct function_def_t {
 		public: function_def_t(
 			const type_identifier_t& name,
 			const type_identifier_t& return_type,
 			const std::vector<arg_t>& args,
-			const std::shared_ptr<const scope_def_t>& function_scope
+			const scope_ref_t parent_scope,
+			const executable_t& executable,
+			const types_collector_t& types_collector
 		);
 		public: bool check_invariant() const;
+
+		//	Function scopes must point to the same parent_scope-object to be equal.
 		public: bool operator==(const function_def_t& other) const;
 
 
@@ -205,7 +251,9 @@ namespace floyd_parser {
 		public: const type_identifier_t _name;
 		public: const type_identifier_t _return_type;
 		public: const std::vector<arg_t> _args;
-		public: std::shared_ptr<const scope_def_t> _function_scope;
+
+		//	Also contains statements.
+		public: scope_ref_t _function_scope;
 	};
 
 	void trace(const function_def_t& v);
@@ -214,7 +262,9 @@ namespace floyd_parser {
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
 		const std::vector<arg_t>& args,
-		const std::shared_ptr<const scope_def_t>& function_scope
+		const scope_ref_t parent_scope,
+		const executable_t& executable,
+		const types_collector_t& types_collector
 	);
 	TSHA1 calc_function_body_hash(const function_def_t& f);
 
@@ -257,27 +307,24 @@ namespace floyd_parser {
 	*/
 
 	struct struct_def_t {
-		public: static struct_def_t make(
+		public: static struct_def_t make2(
 			const type_identifier_t& name,
 			const std::vector<member_t>& members,
-			const std::shared_ptr<const scope_def_t>& struct_scope
+			const scope_ref_t parent_scope
 		);
 
-		private: struct_def_t(const type_identifier_t& name, const std::vector<member_t>& members, const std::shared_ptr<const scope_def_t>& struct_scope) :
-			_name(name),
-			_members(members),
-			_struct_scope(struct_scope)
-		{
-		}
+		private: struct_def_t(){}
 		public: bool check_invariant() const;
-		bool operator==(const struct_def_t& other) const;
+
+		//	Function scopes must point to the same parent_scope-object to be equal.
+		public: bool operator==(const struct_def_t& other) const;
 
 
 
 		///////////////////		STATE
-		public: const type_identifier_t _name;
-		public: const std::vector<member_t> _members;
-		public: const std::shared_ptr<const scope_def_t> _struct_scope;
+		public: type_identifier_t _name;
+		public: std::vector<member_t> _members;
+		public: scope_ref_t _struct_scope;
 	};
 
 	void trace(const struct_def_t& e);
@@ -291,6 +338,7 @@ namespace floyd_parser {
 	struct vector_def_t {
 		public: vector_def_t(){};
 		public: bool check_invariant() const;
+		public: bool operator==(const vector_def_t& other) const{ return false; }
 
 
 		///////////////////		STATE
@@ -302,8 +350,11 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		scope_def_t
 
-
+//??? make private data, immutable
 	/*
+		WARNING: We mutate this during parsing, adding executable, types while it exists.
+		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it a new address (move / copy) breaks this hearchy.
+
 		Represents
 		- global scope
 		- struct definition, with member data and functions
@@ -312,41 +363,23 @@ namespace floyd_parser {
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 	*/
 	struct scope_def_t {
-		public: static std::shared_ptr<scope_def_t> make_subscope(const scope_def_t& parent_scope){
-			return std::make_shared<scope_def_t>(scope_def_t(true, &parent_scope));
-		}
-		public: static std::shared_ptr<scope_def_t> make_global_scope(){
-			return std::make_shared<scope_def_t>(scope_def_t(true, nullptr));
-		}
-		private: explicit scope_def_t(bool dummy, const scope_def_t* parent_scope) :
-			_parent_scope(parent_scope)
-		{
-		}
-		public: scope_def_t(const scope_def_t& other) :
-			_parent_scope(other._parent_scope),
-			_statements(other._statements),
-			_host_function(other._host_function),
-			_host_function_param(other._host_function_param),
-			_types_collector(other._types_collector)
-		{
-		};
+		public: static scope_ref_t make2(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
+		public: static scope_ref_t make_global_scope();
+		private: explicit scope_def_t(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
+		public: scope_def_t(const scope_def_t& other);
+
 		public: bool check_invariant() const;
+		public: bool shallow_check_invariant() const;
+
+		//	Must point to the same parent_scope-object, or both nullptr.
 		public: bool operator==(const scope_def_t& other) const;
 
 
 		/////////////////////////////		STATE
 
-		//	Used for finding parent symbols, for making symbol paths.
-		public: const scope_def_t* _parent_scope = nullptr;
+		public: std::weak_ptr<scope_def_t> _parent_scope;
 
-		//	INSTRUCTIONS - either _host_function or _statements is used.
-
-			//	Code, if any.
-			public: std::vector<std::shared_ptr<statement_t> > _statements;
-
-			//	Either _host_function or _statements is used.
-			public: hosts_function_t _host_function = nullptr;
-			public: std::shared_ptr<host_data_i> _host_function_param;
+		public: executable_t _executable;
 
 		public: types_collector_t _types_collector;
 
@@ -408,19 +441,32 @@ namespace floyd_parser {
 		//### Function names should have namespace etc.
 	*/
 
+	struct xxxscope_node_t {
+		public: bool check_invariant() const {
+			return true;
+		};
+
+		scope_def_t _scope;
+		std::vector<scope_def_t> _children;
+	};
+
 	struct ast_t {
 		public: ast_t() :
-			_global_scope(scope_def_t::make_global_scope())
+			_global_scope(
+				scope_def_t::make_global_scope()
+			)
 		{
 		}
 
 		public: bool check_invariant() const {
+			QUARK_ASSERT(_global_scope->check_invariant());
 			return true;
 		}
 
 
 		/////////////////////////////		STATE
-		public: std::shared_ptr<scope_def_t> _global_scope;
+//		public: scope_node_t _global_scope;
+		public: scope_ref_t _global_scope;
 	};
 
 	void trace(const ast_t& program);
@@ -450,14 +496,14 @@ namespace floyd_parser {
 		}
 	}
 
-	struct_def_t make_struct0(const scope_def_t& scope_def);
-	struct_def_t make_struct1(const scope_def_t& scope_def);
+	struct_def_t make_struct0(scope_ref_t scope_def);
+	struct_def_t make_struct1(scope_ref_t scope_def);
 
 	/*
 		struct struct2 {
 		}
 	*/
-	struct_def_t make_struct2(const scope_def_t& scope_def);
+	struct_def_t make_struct2(scope_ref_t scope_def);
 
 	/*
 		struct struct3 {
@@ -465,7 +511,7 @@ namespace floyd_parser {
 			string b
 		}
 	*/
-	struct_def_t make_struct3(const scope_def_t& scope_def);
+	struct_def_t make_struct3(scope_ref_t scope_def);
 
 	/*
 		struct struct4 {
@@ -474,9 +520,9 @@ namespace floyd_parser {
 			string z
 		}
 	*/
-	struct_def_t make_struct4(const scope_def_t& scope_def);
+	struct_def_t make_struct4(scope_ref_t scope_def);
 
-	struct_def_t make_struct5(const scope_def_t& scope_def);
+	struct_def_t make_struct5(scope_ref_t scope_def);
 
 
 

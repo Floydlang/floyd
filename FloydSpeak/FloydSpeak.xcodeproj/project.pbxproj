@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2C0056AB1D5CF2D2009F8219 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0056A91D5CF2D2009F8219 /* utils.cpp */; };
 		2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0AC17A1CADB26B00979C49 /* runtime.cpp */; };
 		2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
@@ -50,6 +51,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2C0056A91D5CF2D2009F8219 /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
+		2C0056AA1D5CF2D2009F8219 /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
 		2C0AC17A1CADB26B00979C49 /* runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime.cpp; sourceTree = "<group>"; };
 		2C0AC17B1CADB26B00979C49 /* runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime.h; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* FloydSpeak */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FloydSpeak; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -188,6 +191,8 @@
 				2C8270051D46E0DD00E697ED /* text_parser.cpp */,
 				2C8270061D46E0DD00E697ED /* text_parser.h */,
 				2C789ED81CBA581200DDBD3C /* unused_bits.cpp */,
+				2C0056A91D5CF2D2009F8219 /* utils.cpp */,
+				2C0056AA1D5CF2D2009F8219 /* utils.h */,
 			);
 			path = FloydSpeak;
 			sourceTree = "<group>";
@@ -310,6 +315,7 @@
 				2CC50E211CE485FF008D78C7 /* game_of_life1.cpp in Sources */,
 				2CA061CC1D4C317A0045AF86 /* parser_function.cpp in Sources */,
 				2C4F355C1D4792C60061CA93 /* parser_expression.cpp in Sources */,
+				2C0056AB1D5CF2D2009F8219 /* utils.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

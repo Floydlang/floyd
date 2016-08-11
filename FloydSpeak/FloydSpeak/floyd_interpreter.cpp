@@ -58,7 +58,7 @@ namespace {
 		}
 
 		scope_instance_t new_scope;
-		new_scope._def = f._function_scope.get();
+		new_scope._def = f._function_scope;
 
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f._args[i]._identifier;
@@ -74,9 +74,9 @@ namespace {
 	value_t call_host_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f.check_invariant());
-		QUARK_ASSERT(f._function_scope->_statements.empty());
-		QUARK_ASSERT(f._function_scope->_host_function);
-		QUARK_ASSERT(f._function_scope->_host_function_param);
+		QUARK_ASSERT(f._function_scope->_executable._statements.empty());
+		QUARK_ASSERT(f._function_scope->_executable._host_function);
+		QUARK_ASSERT(f._function_scope->_executable._host_function_param);
 
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -85,7 +85,7 @@ namespace {
 		}
 
 	//	auto local_scope = add_args(ast, f, args);
-		const auto a = f._function_scope->_host_function(f._function_scope->_host_function_param, args);
+		const auto a = f._function_scope->_executable._host_function(f._function_scope->_executable._host_function_param, args);
 		return a;
 	}
 
@@ -138,9 +138,9 @@ namespace {
 	value_t call_interpreted_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f.check_invariant());
-		QUARK_ASSERT(!f._function_scope->_statements.empty());
-		QUARK_ASSERT(!f._function_scope->_host_function);
-		QUARK_ASSERT(!f._function_scope->_host_function_param);
+		QUARK_ASSERT(!f._function_scope->_executable._statements.empty());
+		QUARK_ASSERT(!f._function_scope->_executable._host_function);
+		QUARK_ASSERT(!f._function_scope->_executable._host_function_param);
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 		if(!check_args(f, args)){
@@ -148,7 +148,7 @@ namespace {
 		}
 
 		auto vm2 = open_function_scope(vm, f, args);
-		const auto& statements = f._function_scope->_statements;
+		const auto& statements = f._function_scope->_executable._statements;
 		const auto value = execute_statements(vm2, statements);
 		if(value.is_null()){
 		throw std::runtime_error("function missing return statement");
@@ -169,7 +169,7 @@ value_t call_function(const interpreter_t& vm, const function_def_t& f, const ve
 		throw std::runtime_error("function arguments do not match function");
 	}
 
-	if(f._function_scope->_host_function){
+	if(f._function_scope->_executable._host_function){
 		return call_host_function(vm, f, args);
 	}
 	else{
@@ -184,7 +184,7 @@ namespace {
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
-	auto ast = program_to_ast({},
+	auto ast = program_to_ast(
 		"int main(string args){\n"
 		"	return 3 + 4;\n"
 		"}\n"
@@ -197,7 +197,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
-	auto ast = floyd_parser::program_to_ast({},
+	auto ast = floyd_parser::program_to_ast(
 		"int main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n"
@@ -209,7 +209,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
-	auto ast = floyd_parser::program_to_ast({},
+	auto ast = floyd_parser::program_to_ast(
 		"int myfunc(){ return 5; }\n"
 		"int main(string args){\n"
 		"	return myfunc() + myfunc() * 2;\n"
@@ -224,7 +224,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
-	auto ast = program_to_ast({},
+	auto ast = program_to_ast(
 		"int main(string args){\n"
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
@@ -241,7 +241,7 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 //### Check return value type.
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
-	auto ast = program_to_ast({},
+	auto ast = program_to_ast(
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
 		"string main(string args){\n"
 		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
@@ -474,7 +474,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 		//	??? Function calls should also use resolve_address_expression() to find function.
 
-		const auto type = resolve_type(*vm._scope_instances.back()->_def, call_function_expression._function_name);
+		const auto type = resolve_type(vm._scope_instances.back()->_def, call_function_expression._function_name);
 		if(!type || !type->_function_def){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}
@@ -539,7 +539,7 @@ interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
 	QUARK_ASSERT(ast.check_invariant());
 
 	auto global_scope = scope_instance_t();
-	global_scope._def = ast._global_scope.get();
+	global_scope._def = ast._global_scope;
 	_scope_instances.push_back(make_shared<scope_instance_t>(global_scope));
 
 	//	Run static intialization (basically run global statements before calling main()).
@@ -561,7 +561,7 @@ bool interpreter_t::check_invariant() const {
 
 std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(source.size() > 0);
-	auto ast = program_to_ast({}, source);
+	auto ast = program_to_ast(source);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto r = call_function(vm, *f, args);

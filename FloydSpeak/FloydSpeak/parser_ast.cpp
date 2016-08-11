@@ -18,6 +18,7 @@
 #include <iostream>
 #include <cmath>
 #include "parts/sha1_class.h"
+#include "utils.h"
 
 
 namespace floyd_parser {
@@ -123,6 +124,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		}
 		else if(_base_type == k_struct){
 			QUARK_ASSERT(_struct_def);
+			QUARK_ASSERT(_struct_def->check_invariant());
 			QUARK_ASSERT(!_vector_def);
 			QUARK_ASSERT(!_function_def);
 		}
@@ -135,6 +137,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
 			QUARK_ASSERT(_function_def);
+			QUARK_ASSERT(_function_def->check_invariant());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -142,6 +145,35 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		return true;
 	}
 
+	bool type_def_t::operator==(const type_def_t& other) const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(_base_type != other._base_type){
+			return false;
+		}
+		if(!compare_shared_values(_struct_def, other._struct_def)){
+			return false;
+		}
+		if(!compare_shared_values(_vector_def, other._vector_def)){
+			return false;
+		}
+		if(!compare_shared_values(_function_def, other._function_def)){
+			return false;
+		}
+
+/*
+		if(_base_type == k_struct){
+			return *_struct_def == *other._struct_def;
+		}
+		else if(_base_type == k_vector){
+			QUARK_ASSERT(false);
+		}
+		else if(_base_type == k_function){
+			return *_function_def == *other._function_def;
+		}
+*/		return true;
+	}
 
 	std::string to_signature(const type_def_t& t){
 		QUARK_ASSERT(t.check_invariant());
@@ -272,17 +304,111 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	}
 
 
+	//////////////////////////////////////////////////		executable_t
+
+
+		executable_t::executable_t(hosts_function_t host_function, std::shared_ptr<host_data_i> host_function_param) :
+			_host_function(host_function),
+			_host_function_param(host_function_param)
+		{
+			QUARK_ASSERT(host_function != nullptr);
+			QUARK_ASSERT(host_function_param);
+
+			QUARK_ASSERT(check_invariant());
+		}
+
+		executable_t::executable_t(const std::vector<std::shared_ptr<statement_t> >& statements) :
+			_host_function(nullptr),
+			_statements(statements)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		bool executable_t::check_invariant() const{
+			if(_host_function == nullptr){
+				for(const auto s: _statements){
+					QUARK_ASSERT(s && s->check_invariant());
+				}
+				QUARK_ASSERT(!_host_function_param);
+			}
+			else{
+				QUARK_ASSERT(_statements.empty());
+				QUARK_ASSERT(_host_function_param /*&& _host_function_param->check_invariant()*/);
+			}
+			return true;
+		 }
+
+		 bool executable_t::operator==(const executable_t& other) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
+			if(_host_function != other._host_function
+//???			|| ()compare_shared_values(_host_function_param, other._host_function_param)
+			|| _statements.size() != other._statements.size()){
+				return false;
+			}
+
+			if(_host_function == nullptr){
+				for(int i = 0 ; i < _statements.size() ; i++){
+					if(!(*_statements[i] == *other._statements[i])){
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
 
 
 	//////////////////////////////////////////////////		scope_def_t
 
 
 
+	scope_ref_t scope_def_t::make2(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector){
+		auto r = std::make_shared<scope_def_t>(scope_def_t(parent_scope, executable, types_collector));
+		QUARK_ASSERT(r->check_invariant());
+		return r;
+	}
+
+	scope_ref_t scope_def_t::make_global_scope(){
+		auto r = std::make_shared<scope_def_t>(
+			scope_def_t(std::shared_ptr<scope_def_t>(), executable_t({}), {})
+		);
+		QUARK_ASSERT(r->check_invariant());
+		return r;
+	}
+
+	scope_def_t::scope_def_t(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector) :
+		_parent_scope(parent_scope),
+		_executable(executable),
+		_types_collector(types_collector)
+	{
+		QUARK_ASSERT(parent_scope == nullptr || parent_scope->check_invariant());
+		QUARK_ASSERT(check_invariant());
+	}
+
+	scope_def_t::scope_def_t(const scope_def_t& other) :
+		_parent_scope(other._parent_scope),
+		_executable(other._executable),
+		_types_collector(other._types_collector)
+	{
+		QUARK_ASSERT(other.check_invariant());
+		QUARK_ASSERT(check_invariant());
+	}
+
+
+
+	bool scope_def_t::shallow_check_invariant() const {
+		const auto s = _parent_scope.lock();
+		QUARK_ASSERT(!s || s->shallow_check_invariant());
+//		QUARK_ASSERT(_types_collector.check_invariant());
+		return true;
+	}
+
 	bool scope_def_t::check_invariant() const {
-		for(const auto s: _statements){
-			QUARK_ASSERT(s);
-			QUARK_ASSERT(s->check_invariant());
-		}
+		QUARK_ASSERT(!_parent_scope.lock() || _parent_scope.lock()->shallow_check_invariant());
+		QUARK_ASSERT(_executable.check_invariant());
+		QUARK_ASSERT(_types_collector.check_invariant());
 		return true;
 	}
 
@@ -290,17 +416,21 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		if(_statements.size() != other._statements.size()){
+		const auto a = _parent_scope.lock();
+		const auto b = other._parent_scope.lock();
+
+		//	Must point to the SAME OBJECT / address.
+		if(a != b){
 			return false;
 		}
-		for(int i = 0 ; i < _statements.size() ; i++){
-			if(!(*_statements[i] == *other._statements[i])){
-				return false;
-			}
+		if(!(_executable == other._executable)){
+			return false;
+		}
+		if(!(_types_collector == other._types_collector)){
+			return false;
 		}
 		return true;
 	}
-
 
 
 
@@ -322,32 +452,63 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
 		const std::vector<arg_t>& args,
-		const std::shared_ptr<const scope_def_t>& function_scope
+		const scope_ref_t parent_scope,
+		const executable_t& executable,
+		const types_collector_t& types_collector
 	)
 	:
 		_name(name),
 		_return_type(return_type),
 		_args(args),
-		_function_scope(function_scope)
+		_function_scope(scope_def_t::make2(parent_scope, executable, types_collector))
 	{
+		QUARK_ASSERT(name.check_invariant());
+		QUARK_ASSERT(name.to_string().size() > 0);
+		QUARK_ASSERT(return_type.check_invariant());
+		for(const auto a: args){
+			QUARK_ASSERT(a.check_invariant());
+		}
+		QUARK_ASSERT(executable.check_invariant());
+		QUARK_ASSERT(types_collector.check_invariant());
+
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool function_def_t::check_invariant() const {
 		QUARK_ASSERT(_name.check_invariant());
+		QUARK_ASSERT(_name.to_string().size() > 0);
 		QUARK_ASSERT(_return_type.check_invariant());
+		for(const auto a: _args){
+			QUARK_ASSERT(a.check_invariant());
+		}
 		QUARK_ASSERT(_function_scope && _function_scope->check_invariant());
 		return true;
 	}
+
 
 	bool function_def_t::operator==(const function_def_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _name == other._name && *_function_scope == *other._function_scope && _return_type == other._return_type && _args == other._args;
+		if(_name != other._name){
+			return false;
+		}
+
+		//	The _function_scope objects are EQUAL not same ptr.
+		if(!(*_function_scope == *other._function_scope)){
+			return false;
+		}
+		if(_return_type != other._return_type){
+			return false;
+		}
+		if(_args != other._args){
+			return false;
+		}
+		return true;
 	}
 
 	void trace(const function_def_t& e){
+		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE(std::string("function_def_t: '") + e._name.to_string() + "'");
 
 		{
@@ -358,7 +519,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 			trace_vec("arguments", e._args);
 		}
 
-		trace(e._function_scope->_statements);
+		trace(e._function_scope->_executable._statements);
 	}
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
@@ -369,6 +530,8 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	}
 
 	TSHA1 calc_function_body_hash(const function_def_t& f){
+		QUARK_ASSERT(f.check_invariant());
+
 		static int s_counter = 1000;
 		s_counter++;
 		return CalcSHA1(std::to_string(s_counter));
@@ -379,15 +542,22 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
 		const std::vector<arg_t>& args,
-		const std::shared_ptr<const scope_def_t>& function_scope
+		const scope_ref_t parent_scope,
+		const executable_t& executable,
+		const types_collector_t& types_collector
 	)
 	{
-		return function_def_t(name, return_type, args, function_scope);
+		return function_def_t(name, return_type, args, parent_scope, executable, types_collector);
 	}
 
 
+	QUARK_UNIT_TESTQ("function_def_t(function_def_t&)", ""){
+		const auto scope_ref = scope_def_t::make_global_scope();
+		const auto a = make_function_def(type_identifier_t::make("a"), type_identifier_t::make_int(), {}, scope_ref, executable_t({}), {});
 
-
+		const auto b(a);
+		QUARK_TEST_VERIFY(b.check_invariant());
+	}
 
 
 	////////////////////////			member_t
@@ -432,11 +602,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 
 		return (*_type == *other._type)
 			&& (_name == other._name)
-			&& (
-				(!_value && !other._value)
-				||
-				(_value && other._value && *_value == *other._value)
-			);
+			&& compare_shared_values(_value, other._value);
 	}
 
 
@@ -445,10 +611,28 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	}
 
 
-
-
 	////////////////////////			struct_def_t
 
+
+
+	struct_def_t struct_def_t::make2(
+		const type_identifier_t& name,
+		const std::vector<member_t>& members,
+		const scope_ref_t parent_scope)
+	{
+		QUARK_ASSERT(name.check_invariant());
+		for(const auto m: members){
+			QUARK_ASSERT(m.check_invariant());
+		}
+
+		struct_def_t result;
+		result._name = name;
+		result._members = members;
+		result._struct_scope = scope_def_t::make2(parent_scope, executable_t({}), {});
+
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
 
 	bool struct_def_t::check_invariant() const{
 		QUARK_ASSERT(_name.check_invariant());
@@ -465,19 +649,20 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _name == other._name && other._members == _members && *_struct_scope == *other._struct_scope;
+		if(_name != other._name){
+			return false;
+		}
+		if(_members != other._members){
+			return false;
+		}
+		if(!(*_struct_scope == *other._struct_scope)){
+			return false;
+		}
+		return true;
 	}
-
-	struct_def_t struct_def_t::make(
-		const type_identifier_t& name,
-		const std::vector<member_t>& members,
-		const std::shared_ptr<const scope_def_t>& struct_scope)
-	{
-		return struct_def_t{ name, members, struct_scope };
-	}
-
 
 	void trace(const struct_def_t& e){
+		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("struct_def_t");
 		trace_vec("members", e._members);
 	}
@@ -512,7 +697,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 	void trace(const ast_t& program){
 		QUARK_SCOPED_TRACE("program");
 
-		for(const auto i: program._global_scope->_statements){
+		for(const auto i: program._global_scope->_executable._statements){
 			trace(*i);
 		}
 	}
@@ -525,59 +710,54 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 
 
 
-	struct_def_t make_struct0(const scope_def_t& scope_def){
-		auto struct_scope = scope_def_t::make_subscope(scope_def);
-		return struct_def_t::make(type_identifier_t::make("struct0"), {}, struct_scope);
+	struct_def_t make_struct0(scope_ref_t scope_def){
+		return struct_def_t::make2(type_identifier_t::make("struct0"), {}, scope_def);
 	}
 
-	struct_def_t make_struct1(const scope_def_t& scope_def){
-		auto struct_scope = scope_def_t::make_subscope(scope_def);
-		return struct_def_t::make(
+	struct_def_t make_struct1(scope_ref_t scope_def){
+		return struct_def_t::make2(
 			type_identifier_t::make("struct1"),
 			{
 				{ type_identifier_t::make_float(), "x" },
 				{ type_identifier_t::make_float(), "y" },
 				{ type_identifier_t::make_string(), "name" }
 			},
-			struct_scope
+			scope_def
 		);
 	}
 
 
-	struct_def_t make_struct2(const scope_def_t& scope_def){
+	struct_def_t make_struct2(scope_ref_t scope_def){
 		return make_struct0(scope_def);
 	}
 
-	struct_def_t make_struct3(const scope_def_t& scope_def){
-		auto struct_scope = scope_def_t::make_subscope(scope_def);
-		return struct_def_t::make(
+	struct_def_t make_struct3(scope_ref_t scope_def){
+		return struct_def_t::make2(
 			type_identifier_t::make("struct3"),
 			{
 				{ type_identifier_t::make_int(), "a" },
 				{ type_identifier_t::make_string(), "b" }
 			},
-			struct_scope
+			scope_def
 		);
 	}
 
-	struct_def_t make_struct4(const scope_def_t& scope_def){
-		auto struct_scope = scope_def_t::make_subscope(scope_def);
-		return struct_def_t::make(
+	struct_def_t make_struct4(scope_ref_t scope_def){
+		return struct_def_t::make2(
 			type_identifier_t::make("struct4"),
 			{
 				{ type_identifier_t::make_string(), "x" },
 //				{ type_identifier_t::make("struct3"), "y" },
 				{ type_identifier_t::make_string(), "z" }
 			},
-			struct_scope
+			scope_def
 		);
 	}
 
 
 	//??? check for duplicate member names.
-	struct_def_t make_struct5(const scope_def_t& scope_def){
-		auto struct_scope = scope_def_t::make_subscope(scope_def);
-		return struct_def_t::make(
+	struct_def_t make_struct5(scope_ref_t scope_def){
+		return struct_def_t::make2(
 			type_identifier_t::make("struct5"),
 			{
 				{ type_identifier_t::make_bool(), "a" },
@@ -592,7 +772,7 @@ QUARK_UNIT_TESTQ("to_string(base_type)", ""){
 				{ type_identifier_t::make_string(), "g" },
 				{ type_identifier_t::make_bool(), "h" }
 			},
-			struct_scope
+			scope_def
 		);
 	}
 

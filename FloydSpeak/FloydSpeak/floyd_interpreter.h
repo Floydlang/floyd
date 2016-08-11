@@ -37,7 +37,7 @@ namespace floyd_interpreter {
 	*/
 
 	struct scope_instance_t {
-		public: const floyd_parser::scope_def_t* _def = nullptr;
+		public: floyd_parser::scope_ref_t _def;
 
 		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
 		//	key string is name of variable.

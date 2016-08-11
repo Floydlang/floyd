@@ -42,10 +42,9 @@ namespace floyd_parser {
     
     struct define_struct_statement_t {
         bool operator==(const define_struct_statement_t& other) const {
-            return _type_identifier == other._type_identifier && _struct_def == other._struct_def;
+            return _struct_def == other._struct_def;
         }
         
-        std::string _type_identifier;
         struct_def_t _struct_def;
     };
     
@@ -55,10 +54,9 @@ namespace floyd_parser {
     
     struct define_function_statement_t {
         bool operator==(const define_function_statement_t& other) const {
-            return _type_identifier == other._type_identifier && _function_def == other._function_def;
+            return _function_def == other._function_def;
         }
         
-        std::string _type_identifier;
         function_def_t _function_def;
     };
     

@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include "parser_ast.h"
 
 namespace floyd_parser {
 	struct struct_def_t;
@@ -26,11 +27,11 @@ namespace floyd_parser {
 		"struct pixel { int red = 255; int green = 255; int blue = 255; }"
 		
 	*/
-	std::tuple<std::string, struct_def_t, std::string> parse_struct_definition(const scope_def_t& scope_def, const std::string& pos);
+	std::pair<struct_def_t, std::string> parse_struct_definition(scope_ref_t scope_def, const std::string& pos);
 
 
 	const std::string k_test_struct0_body = "{int x; string y; float z;}";
-	struct_def_t make_test_struct0(const scope_def_t& scope_def);
+	struct_def_t make_test_struct0(scope_ref_t scope_def);
 
 }
 

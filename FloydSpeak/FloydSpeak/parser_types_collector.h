@@ -47,6 +47,8 @@ namespace floyd_parser {
 
 		//	Can be empty. Only way it can be filled is if identifier is later updated
 		public: std::shared_ptr<type_def_t> _optional_def;
+
+		public: bool operator==(const type_indentifier_data_ref& other) const;
 	};
 
 
@@ -70,6 +72,8 @@ namespace floyd_parser {
 	struct types_collector_t {
 		public: types_collector_t();
 		public: bool check_invariant() const;
+
+		public: bool operator==(const types_collector_t& other) const;
 
 		/*
 			Returns true if this type identifier is registered and defined (is an alias or is bound to a type-definition.

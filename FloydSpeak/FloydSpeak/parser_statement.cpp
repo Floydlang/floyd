@@ -49,11 +49,11 @@ namespace floyd_parser {
 		}
 
 		else if(s._define_struct){
-			QUARK_SCOPED_TRACE("define_struct_statement_t: \"" + s._define_struct->_type_identifier);
+			QUARK_SCOPED_TRACE("define_struct_statement_t: \"" + s._define_struct->_struct_def._name.to_string());
 			trace(s._define_struct->_struct_def);
 		}
 		else if(s._define_function){
-			QUARK_SCOPED_TRACE("define_function_statement_t: \"" + s._define_function->_type_identifier);
+			QUARK_SCOPED_TRACE("define_function_statement_t: \"" + s._define_function->_function_def._name.to_string());
 			trace(s._define_function->_function_def);
 		}
 

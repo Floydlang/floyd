@@ -18,6 +18,7 @@
 #include "parser_value.h"
 #include "parts/sha1_class.h"
 #include "parser_ast.h"
+#include "utils.h"
 
 
 using std::make_shared;
@@ -28,6 +29,19 @@ using std::vector;
 
 namespace floyd_parser {
 
+
+	//////////////////////////////////////		types_collector_t
+
+
+	bool type_indentifier_data_ref::operator==(const type_indentifier_data_ref& other) const{
+		if(_alias_type_identifier != other._alias_type_identifier){
+			return false;
+		}
+		if(!compare_shared_values(_optional_def, other._optional_def)){
+			return false;
+		}
+		return true;
+	}
 
 
 	////////////////////////			types_collector_t
@@ -73,11 +87,27 @@ namespace floyd_parser {
 
 		QUARK_ASSERT(_identifiers.size() == 3);
 		QUARK_ASSERT(_type_definitions.size() == 3);
+
+		QUARK_ASSERT(check_invariant());
 	}
 	
 	bool types_collector_t::check_invariant() const{
 		for(const auto it: _identifiers){
 			QUARK_ASSERT(it.first != "");
+			const auto data = it.second;
+			if(!data._alias_type_identifier.empty()){
+				QUARK_ASSERT(!data._optional_def);
+
+//				const auto a = lookup_identifier_deep(data._alias_type_identifier);
+//				QUARK_ASSERT(a);//### test deeper?
+			}
+			else{
+				if(data._optional_def){
+					QUARK_ASSERT(data._optional_def->check_invariant());
+				}
+				else{
+				}
+			}
 		}
 
 		for(const auto it: _type_definitions){
@@ -98,6 +128,53 @@ namespace floyd_parser {
 				QUARK_ASSERT(defs_it != _type_definitions.end());
 			}
 		}
+		return true;
+	}
+
+	bool types_collector_t::operator==(const types_collector_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(!(_identifiers == other._identifiers)){
+			return false;
+		}
+
+/*
+		{
+			if(_identifiers.size() != other._identifiers.size()){
+				return false;
+			}
+
+			//??? deeper check?
+			auto j = other._identifiers.begin();
+			for(auto i = _identifiers.begin() ; i != _identifiers.end(); ++i){
+				if(i->first != j->first){
+					return false;
+				}
+				if(!(i->second == j->second)){
+					return false;
+				}
+				j++;
+			}
+		}
+*/
+		{
+			if(_type_definitions.size() != other._type_definitions.size()){
+				return false;
+			}
+
+			auto j = other._type_definitions.begin();
+			for(auto i = _type_definitions.begin() ; i != _type_definitions.end(); ++i){
+				if(i->first != j->first){
+					return false;
+				}
+				if(!(*i->second == *j->second)){
+					return false;
+				}
+				j++;
+			}
+		}
+
 		return true;
 	}
 
@@ -323,23 +400,23 @@ using namespace floyd_parser;
 
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	auto global = scope_def_t::make_global_scope();
-	quark::ut_compare(to_signature(make_struct0(*global)), "<struct>{}");
+	quark::ut_compare(to_signature(make_struct0(global)), "<struct>{}");
 }
 
 QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 	auto global = scope_def_t::make_global_scope();
-	quark::ut_compare(to_signature(make_struct3(*global)), "<struct>{<int>a,<string>b}");
+	quark::ut_compare(to_signature(make_struct3(global)), "<struct>{<int>a,<string>b}");
 }
 
 QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 	auto global = scope_def_t::make_global_scope();
-	quark::ut_compare(to_signature(make_struct4(*global)), "<struct>{<string>x,<string>z}");
+	quark::ut_compare(to_signature(make_struct4(global)), "<struct>{<string>x,<string>z}");
 }
 
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t();
-	const auto b = a.define_struct_type("", make_struct2(*global));
+	const auto b = a.define_struct_type("", make_struct2(global));
 	const auto t1 = b.lookup_signature("<struct>{}");
 	QUARK_TEST_VERIFY(t1);
 	QUARK_TEST_VERIFY(to_signature(*t1) == "<struct>{}");
@@ -348,7 +425,7 @@ QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t();
-	const auto b = a.define_struct_type("struct3", make_struct3(*global));
+	const auto b = a.define_struct_type("struct3", make_struct3(global));
 	const auto t1 = b.resolve_identifier("struct3");
 	const auto s1 = to_signature(*t1);
 	QUARK_TEST_VERIFY(s1 == "<struct>{<int>a,<string>b}");
@@ -358,8 +435,8 @@ QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t();
-	const auto b = a.define_struct_type("struct3", make_struct3(*global));
-	const auto c = b.define_struct_type("struct4", make_struct4(*global));
+	const auto b = a.define_struct_type("struct3", make_struct3(global));
+	const auto c = b.define_struct_type("struct4", make_struct4(global));
 	const auto t2 = c.resolve_identifier("struct4");
 	const auto s2 = to_signature(*t2);
 	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<string>z}");
@@ -374,9 +451,10 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 
 
 QUARK_UNIT_TESTQ("define_function_type()", ""){
+	auto global = scope_def_t::make_global_scope();
 	QUARK_TEST_VERIFY(to_string(k_int) == "int");
 	const auto a = types_collector_t{};
-	const auto b =  a.define_function_type("one", make_return_hello());
+	const auto b =  a.define_function_type("one", make_return_hello(global));
 }
 
 
@@ -398,6 +476,8 @@ QUARK_UNIT_TESTQ("types_collector_t::types_collector_t()", "default construction
 	QUARK_TEST_VERIFY(c);
 	QUARK_TEST_VERIFY(c->_base_type == k_string);
 }
+
+
 
 
 QUARK_UNIT_TESTQ("types_collector_t::resolve_identifier()", "not found"){
