@@ -15,43 +15,6 @@
 using std::string;
 using std::vector;
 
-std::string to_json2(const std::vector<std::string>& values){
-	if(values.empty()){
-		return "[]";
-	}
-	else{
-		string r;
-		for(auto i = 0 ; i < values.size() ; i++){
-			r = r + values[i] + ", ";
-		}
-
-		//	Remove last ", ".
-		if(values.size() > 0){
-			r = r.substr(0, r.length() - 2);
-		}
-
-		const auto result = string("[ " + r + " ]");
-		return result;
-	}
-}
-
-QUARK_UNIT_TESTQ("to_json2()", ""){
-	QUARK_UT_VERIFY(to_json2({}) == "[]");
-}
-
-QUARK_UNIT_TESTQ("to_json2()", ""){
-	QUARK_UT_VERIFY(to_json2({ "\"a\"" }) == "[ \"a\" ]");
-}
-
-QUARK_UNIT_TESTQ("to_json2()", ""){
-	QUARK_UT_VERIFY(to_json2({ "\"a\"", "\"b\"" }) == "[ \"a\", \"b\" ]");
-}
-
-QUARK_UNIT_TESTQ("to_json2()", ""){
-	QUARK_UT_VERIFY(to_json2({ std::to_string(123), std::to_string(456.7f) }) == "[ 123, 456.700012 ]");
-}
-
-
 
 ////////////////////////////////////////		json_value_t
 

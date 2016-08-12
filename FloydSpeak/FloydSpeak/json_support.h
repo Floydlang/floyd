@@ -6,16 +6,13 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef json_hpp
-#define json_hpp
+#ifndef json_support_hpp
+#define json_support_hpp
 
 #include <string>
 #include <vector>
 #include <map>
 #include "quark.h"
-
-
-std::string to_json2(const std::vector<std::string>& values);
 
 
 
@@ -187,4 +184,4 @@ struct json_value_t {
 
 
 
-#endif /* json_hpp */
+#endif /* json_support_hpp */
