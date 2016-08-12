@@ -23,4 +23,8 @@
 		}
 	}
 
+
+std::string quote(const std::string& s);
+
+
 #endif /* utils_hpp */

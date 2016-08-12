@@ -11,6 +11,8 @@
 #include "text_parser.h"
 #include "parser_statement.h"
 #include "parser_value.h"
+#include "json_support.h"
+#include "utils.h"
 
 #include <cmath>
 
@@ -330,67 +332,21 @@ void trace(const expression_t& e){
 
 
 
-string to_json(const std::vector<string>& values){
-	if(values.empty()){
-		return "[]";
-	}
-	else{
-		string r;
-		for(auto i = 0 ; i < values.size() ; i++){
-			r = r + values[i] + ", ";
-		}
-
-		//	Remove last ", ".
-		if(values.size() > 0){
-			r = r.substr(0, r.length() - 2);
-		}
-
-		const auto result = string("[ " + r + " ]");
-		return result;
-	}
-}
-
-QUARK_UNIT_TESTQ("to_json()", ""){
-	QUARK_UT_VERIFY(to_json({}) == "[]");
-}
-
-QUARK_UNIT_TESTQ("to_json()", ""){
-	QUARK_UT_VERIFY(to_json({ "\"a\"" }) == "[ \"a\" ]");
-}
-
-QUARK_UNIT_TESTQ("to_json()", ""){
-	QUARK_UT_VERIFY(to_json({ "\"a\"", "\"b\"" }) == "[ \"a\", \"b\" ]");
-}
-
-QUARK_UNIT_TESTQ("to_json()", ""){
-	QUARK_UT_VERIFY(to_json({ value_t(123).to_json(), value_t(456.7f).to_json() }) == "[ 123, 456.700012 ]");
-}
-
-string quote(const std::string& s){
-	return std::string("\"") + s + "\"";
-}
-QUARK_UNIT_TESTQ("quote()", ""){
-	QUARK_UT_VERIFY(quote("") == "\"\"");
-}
-QUARK_UNIT_TESTQ("quote()", ""){
-	QUARK_UT_VERIFY(quote("abc") == "\"abc\"");
-}
-
 
 std::string to_json(const expression_t& e){
 	if(e._constant){
-		return to_json({ "\"k\"", e._constant->to_json() });
+		return to_json2({ "\"k\"", e._constant->to_json() });
 	}
 	else if(e._math2){
 		const auto e2 = *e._math2;
 		const auto left = to_json(*e2._left);
 		const auto right = to_json(*e2._right);
-		return to_json({ quote(operation_to_string(e2._operation)), left, right });
+		return to_json2({ quote(operation_to_string(e2._operation)), left, right });
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
 		const auto input = to_json(*e2._input);
-		return to_json({ quote(operation_to_string(e2._operation)), input });
+		return to_json2({ quote(operation_to_string(e2._operation)), input });
 	}
 	else if(e._call){
 		const auto& call_function = *e._call;
@@ -399,25 +355,25 @@ std::string to_json(const expression_t& e){
 			const auto arg_expr = to_json(*i);
 			args_json.push_back(arg_expr);
 		}
-		return to_json({ "\"call\"", quote(call_function._function_name), to_json(args_json) });
+		return to_json2({ "\"call\"", quote(call_function._function_name), to_json2(args_json) });
 	}
 	else if(e._load){
 		const auto e2 = *e._load;
 		const auto address = to_json(*e2._address);
-		return to_json({ "\"load\"", address });
+		return to_json2({ "\"load\"", address });
 	}
 	else if(e._resolve_variable){
 		const auto e2 = *e._resolve_variable;
-		return to_json({ "\"res_var\"", quote(e2._variable_name) });
+		return to_json2({ "\"res_var\"", quote(e2._variable_name) });
 	}
 	else if(e._resolve_struct_member){
 		const auto e2 = *e._resolve_struct_member;
-		return to_json({ "\"res_member\"", to_json(*e2._parent_address), quote(e2._member_name) });
+		return to_json2({ "\"res_member\"", to_json(*e2._parent_address), quote(e2._member_name) });
 	}
 	else if(e._lookup_element){
 		const auto e2 = *e._lookup_element;
 		const auto lookup_key = to_json(*e2._lookup_key);
-		return to_json({ "\"lookup\"", to_json(*e2._parent_address), lookup_key });
+		return to_json2({ "\"lookup\"", to_json(*e2._parent_address), lookup_key });
 	}
 	else{
 		QUARK_ASSERT(false);

@@ -34,3 +34,17 @@ QUARK_UNIT_TESTQ("compare_shared_values()", ""){
 	const auto b = std::make_shared<std::string>("b");
 	QUARK_TEST_VERIFY(!compare_shared_values(a, b));
 }
+
+
+
+std::string quote(const std::string& s){
+	return std::string("\"") + s + "\"";
+}
+
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("") == "\"\"");
+}
+
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("abc") == "\"abc\"");
+}
