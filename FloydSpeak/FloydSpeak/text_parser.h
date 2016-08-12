@@ -62,4 +62,16 @@ std::string trim_ends(const std::string& s);
 float parse_float(const std::string& pos);
 
 
+/*
+	s[0] == start_char
+
+	Supports nesting.
+	Removes outer start_char and end_char
+
+	{ "{ hello }xxx", '{', '}' } => { " hello ", "xxx" }
+*/
+
+seq get_balanced_pair(const std::string& s, char start_char, char end_char);
+
+
 #endif /* text_parser_hpp */

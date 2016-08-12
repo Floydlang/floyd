@@ -23,6 +23,32 @@ std::string skip_whitespace(const std::string& s){
 	return read_while(s, whitespace_chars).second;
 }
 
+/*
+	"{}"
+	"{ "one": 10.0, "two": "2" }"
+*/
+
+std::pair<json_value_t, std::string> parse_json_object(const std::string& s){
+	QUARK_ASSERT(peek_string(s, "{"));
+	QUARK_ASSERT(skip_whitespace(s) == s);
+
+	seq body = get_balanced_pair(s, '{', '}');
+
+	const auto a = skip_whitespace(s);
+	if(a.empty()){
+		return { json_value_t(std::map<string, json_value_t>()), body.second };
+	}
+	else {
+		std::pair<json_value_t, std::string> key0 = parse_json(a);
+
+
+
+		return {};
+	}
+}
+
+
+
 std::pair<json_value_t, std::string> parse_json(const std::string& s){
 	const auto a = skip_whitespace(s);
 	if(peek_string(a, "{")){
@@ -80,4 +106,21 @@ QUARK_UNIT_TESTQ("parse_json()", ""){
 QUARK_UNIT_TESTQ("parse_json()", ""){
 	quark::ut_compare(parse_json("4 xxx"), pair<json_value_t, string>{ json_value_t(4.0), " xxx" });
 }
+
+
+QUARK_UNIT_TESTQ("parse_json()", ""){
+	quark::ut_compare(parse_json("true xxx"), pair<json_value_t, string>{ json_value_t(true), " xxx" });
+}
+
+QUARK_UNIT_TESTQ("parse_json()", ""){
+	quark::ut_compare(parse_json("false xxx"), pair<json_value_t, string>{ json_value_t(false), " xxx" });
+}
+
+QUARK_UNIT_TESTQ("parse_json()", ""){
+	quark::ut_compare(parse_json("null xxx"), pair<json_value_t, string>{ json_value_t(), " xxx" });
+}
+
+#if false
+	Parse objects and arrays
+#endif
 

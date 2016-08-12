@@ -226,3 +226,41 @@ float parse_float(const std::string& pos){
 	return res;
 }
 
+
+
+seq get_balanced_pair(const string& s, char start_char, char end_char){
+	QUARK_ASSERT(s[0] == start_char);
+	QUARK_ASSERT(s.size() >= 2);
+
+	int depth = 0;
+	size_t pos = 0;
+	while(pos < s.size() && !(depth == 1 && s[pos] == end_char)){
+		const char c = s[pos];
+		if(c == start_char) {
+			depth++;
+		}
+		else if(c == end_char){
+			if(depth == 0){
+				throw std::runtime_error("unbalanced ([{< >}])");
+			}
+			depth--;
+		}
+		pos++;
+	}
+
+	return { s.substr(1, pos - 1), s.substr(pos + 1) };
+}
+
+
+//	{ "{ hello }xxx", '{', '}' } => { " hello ", "xxx" }
+
+
+
+QUARK_UNIT_TEST("", "get_balanced_pair()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced_pair("()", '(', ')') == seq("", ""));
+	QUARK_TEST_VERIFY(get_balanced_pair("(abc)", '(', ')') == seq("abc", ""));
+	QUARK_TEST_VERIFY(get_balanced_pair("(abc)def", '(', ')') == seq("abc", "def"));
+	QUARK_TEST_VERIFY(get_balanced_pair("((abc))def", '(', ')') == seq("(abc)", "def"));
+	QUARK_TEST_VERIFY(get_balanced_pair("((abc)[])def", '(', ')') == seq("(abc)[]", "def"));
+}
+
