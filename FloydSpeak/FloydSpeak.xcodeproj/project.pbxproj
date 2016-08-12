@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2C0056AB1D5CF2D2009F8219 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0056A91D5CF2D2009F8219 /* utils.cpp */; };
 		2C0056AD1D5D53FD009F8219 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0056AC1D5D53FD009F8219 /* json_writer.cpp */; };
+		2C0056B11D5D5E88009F8219 /* json_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0056AF1D5D5E88009F8219 /* json_parser.cpp */; };
 		2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0AC17A1CADB26B00979C49 /* runtime.cpp */; };
 		2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
@@ -56,6 +57,8 @@
 		2C0056AA1D5CF2D2009F8219 /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
 		2C0056AC1D5D53FD009F8219 /* json_writer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_writer.cpp; sourceTree = "<group>"; };
 		2C0056AE1D5D5422009F8219 /* json_writer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_writer.h; sourceTree = "<group>"; };
+		2C0056AF1D5D5E88009F8219 /* json_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_parser.cpp; sourceTree = "<group>"; };
+		2C0056B01D5D5E88009F8219 /* json_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_parser.h; sourceTree = "<group>"; };
 		2C0AC17A1CADB26B00979C49 /* runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime.cpp; sourceTree = "<group>"; };
 		2C0AC17B1CADB26B00979C49 /* runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime.h; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* FloydSpeak */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FloydSpeak; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -156,6 +159,8 @@
 				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
 				2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */,
 				2C789ED71CBA54C400DDBD3C /* floyd_parser.h */,
+				2C0056AF1D5D5E88009F8219 /* json_parser.cpp */,
+				2C0056B01D5D5E88009F8219 /* json_parser.h */,
 				2C95E6C71D5A8D5100186D5A /* json_support.cpp */,
 				2C95E6C81D5A8D5100186D5A /* json_support.h */,
 				2C0056AC1D5D53FD009F8219 /* json_writer.cpp */,
@@ -297,6 +302,7 @@
 				2C95E6C91D5A8D5100186D5A /* json_support.cpp in Sources */,
 				2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */,
 				2C0056AD1D5D53FD009F8219 /* json_writer.cpp in Sources */,
+				2C0056B11D5D5E88009F8219 /* json_parser.cpp in Sources */,
 				2C95E6D21D5AA47200186D5A /* llvm_code_gen.cpp in Sources */,
 				2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */,
 				2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */,

@@ -13,7 +13,7 @@
 #include <memory>
 #include <map>
 #include <iostream>
-
+#include <cmath>
 
 
 using std::vector;
@@ -195,6 +195,19 @@ QUARK_UNIT_TEST("", "peek_string()", "", ""){
 	QUARK_TEST_VERIFY(peek_string("abc", "ab") == true);
 }
 
+std::string read_required_string(const std::string& s, const std::string& wanted){
+	if(s.size() >= wanted.size() && s.substr(0, wanted.size()) == wanted){
+		return s.substr(wanted.size());
+	}
+	else{
+		throw std::runtime_error("Expected string");
+	}
+}
+
+QUARK_UNIT_TESTQ("read_required_string", ""){
+	QUARK_TEST_VERIFY(read_required_string("abcdef", "ab") == "cdef");
+	QUARK_TEST_VERIFY(read_required_string("abcdef", "abcdef") == "");
+}
 
 
 string trim_ends(const string& s){
@@ -202,3 +215,14 @@ string trim_ends(const string& s){
 
 	return s.substr(1, s.size() - 2);
 }
+
+
+float parse_float(const std::string& pos){
+	size_t end = -1;
+	auto res = std::stof(pos, &end);
+	if(isnan(res) || end == 0){
+		throw std::runtime_error("EEE_WRONG_CHAR");
+	}
+	return res;
+}
+

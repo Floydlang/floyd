@@ -15,8 +15,6 @@
 #include "parser_ast.h"
 #include "parser_primitives.h"
 
-#include <cmath>
-
 namespace floyd_parser {
 
 
@@ -295,15 +293,6 @@ expression_t negate_expression(const expression_t& e){
 	}
 
 	return make_math_operation1(math_operation1_expr_t::negate, e);
-}
-
-float parse_float(const string& pos){
-	size_t end = -1;
-	auto res = std::stof(pos, &end);
-	if(isnan(res) || end == 0){
-		throw std::runtime_error("EEE_WRONG_CHAR");
-	}
-	return res;
 }
 
 // [0-9] and "."  => numeric constant.

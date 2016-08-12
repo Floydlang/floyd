@@ -54,10 +54,12 @@ std::pair<bool, std::string> read_optional_char(const std::string& s, char ch);
 bool peek_compare_char(const std::string& s, char ch);
 
 bool peek_string(const std::string& s, const std::string& peek);
+std::string read_required_string(const std::string& s, const std::string& wanted);
 
 
 std::string trim_ends(const std::string& s);
 
+float parse_float(const std::string& pos);
 
 
 #endif /* text_parser_hpp */
