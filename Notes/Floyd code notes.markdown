@@ -5,7 +5,6 @@
 - ### Compile for GPUs too.
 
 
-
 # FUTURE BUILT-IN TYPES
 
 - **text**			same as string but for user-texts.
@@ -31,7 +30,6 @@ int8_t			int8
 int16_t			int16
 int32_t			int32
 uint32_t		typedef int32(
-
 
 
 
@@ -159,9 +157,11 @@ When defining a data type (composite) you need to list 4 example instances. Can 
 	}
 
 
+
 # HINTS-SYSTEM
 	### add hints system for optimization
 	### Add profiler features
+
 
 
 # MAP
@@ -175,6 +175,7 @@ Clojure
 	{:a 1, :b 2, :c 3}
 	(assoc {:a 1, :b 2} :b 3)
 	reference: https://adambard.com/blog/clojure-in-15-minutes/
+
 
 # SEQ
 Seq is an interface built into every collection and struct. It allows you to read from the source, one entry at a time, in an immutable way.
@@ -201,6 +202,7 @@ How to add docs? Markdown. Tests, contracts etc.
 				return
 			}
 
+
 # FUNCTION CONTRACTS
 Arguments and return values always specifies their contracts using an expression within []. You can use constants, function calls and all function arguments in the expressions.
 
@@ -214,6 +216,7 @@ Arguments and return values always specifies their contracts using an expression
 	
 	### float< sin(float v<[_ >= 0.0f && _ <= 1.0f>);
 
+
 # FUNCTION TESTS
 	prove(function1) {
 		"Whenever flabbergast is 0, b don't matter) and result is 0
@@ -226,6 +229,17 @@ Arguments and return values always specifies their contracts using an expression
 	}
 
 ??? Freeze complex inputs to function and serialzie them for later exploration, adding proofs and keeping as regression tests.
+
+Special proof-construct (not a function but built in like "struct":
+		on / off
+		prove {
+			a = test_object1();
+			b = do_stuff
+			verify(a == b)
+
+		}
+		Better: make all tests lists of expression vs expected results as a JSON.
+
 
 
 
@@ -403,11 +417,7 @@ Tool extracts and switches text inside localizeable() automatically.
 
 
 
-
-# OUTSIDE
-#########################################################################################
 # ??? OPEN QUESTIONS
-	### fixed_size_vector
 
 
 ### SWITCH OPEN PROBLEM
@@ -519,11 +529,76 @@ file path
 
 
 
+# SOURCE CODE FILES
+All source code is markdown. Open and edit using Markdown editor.
+Code is insert as markdown code-segments
+Comments & docs is one concept, disabling code is another concept. All code is always compiled to keep it working - no #if 0.
 
+	proofs [
+		//	Make some values for test.
+		empty = [pixel_t]{};
+		image1x1 = [pixel_t]{};
+
+		smilie = from_json()
+
+
+		[ make_image(0,0), [pixel_t]{}, "empty" ],
+		[ make_image(0,0).width, 0, "checks for empty image" ],
+		[ make_image(0,0).height, 0, "checks for empty image" ],
+	]
+
+
+
+# Embedded JSON
+Embedd json inside source code file. Simple / no escaping needed. Use to paste data, test values etc. Round trip.
+
+## json keyword
+This keyword lets you put plain JSON scripts directly into your source code without any need to escape the string. The result is a string value, not any special data type. The json format is validated.
+??? how to generate json data / inject variables etc? Maybe better to just have raw-string support?
+
+	json { "age": 10, "last_name": "zoom" };
+	json [ "one", "two", "three" ];
+	json "one";
+	json {
+		"age": 10,
+		"last_name": "zoom"
+	};
+
+	assert(json { "age": 10, "last_name": "zoom" } == "{ \"age\": 10, \"last_name\": \"zoom\" }");	
+There are built in features to pack and unpack the JSON data:
+
+	my_json_string = json[
+		"+",
+		["load",["res_member", ["res_var", "p"], "s"]],
+		["load", ["res_var", "a"]]
+	];
+
+	my_obj = unpack_json(my_json_string);
+	assert(my_obj[0] == "+");
+	assert(my_obj[2][0] == "load");
+
+The returned value from unpack_json() is of type *dyn<string, number, vec<dyn>, map<string,dyn>,bool>* and can hold any value returned.
+
+If you are reading data you can do this:
+
+	string expect_string_load = my_obj[0][2];
+	// This throws exception if the value cannot be found or is not of type string = very convenient when parsing files.
+
+	//	Here you get a default value if you cannot read the string.
+	string except_string_load2 = try{ my_obj[0][2], "default_string" };
+
+
+JSON AST -> script file convertion
+No preprocessor in floyd - use AST / JSON
 
 
 
 # JSON / SERIALIZATION
+
+JavaScript Object Notation (JSON) Pointer: https://tools.ietf.org/html/rfc6901
+
+c++ library -- cool: https://github.com/nlohmann/json
+
 
 print(a.red)
 print(a)	— round trip: JSON? ??? deep vs shallow?
@@ -570,4 +645,3 @@ c = json(
 		],
 		"cat"
 	]
-
