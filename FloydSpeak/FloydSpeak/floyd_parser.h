@@ -27,7 +27,7 @@ namespace floyd_parser {
 	floyd_parser::value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);
 
 	floyd_parser::value_t make_default_value(const floyd_parser::type_def_t& t);
-	floyd_parser::value_t make_default_value(const floyd_parser::struct_def_t& t);
+	floyd_parser::value_t make_default_value(const std::shared_ptr<struct_def_t>& t);
 
 
     struct statement_result_t {

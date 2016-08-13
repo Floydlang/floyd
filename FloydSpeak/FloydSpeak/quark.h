@@ -553,7 +553,7 @@ void set_runtime(runtime_i* iRuntime);
 
 
 template <typename T> void ut_compare(const T& result, const T& expected){
-	if(result != expected){
+	if(!(result == expected)){
 		::quark::on_unit_test_failed_hook(
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),

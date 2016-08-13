@@ -237,30 +237,68 @@ json_value_t value_to_json(const value_t& v){
 		return json_value_t(v.get_string());
 	}
 	else if(v.is_struct_instance()){
-#if false
 		const auto struct_instance = v.get_struct_instance();
 		const auto struct_def = struct_instance->__def;
-		std::map<string, json_value_t> m;
 
+		std::map<string, json_value_t> result;
 
-		public: type_identifier_t _name;
-		public: std::vector<member_t> _members;
-		public: scope_ref_t _struct_scope;
+		//??? A scope_def should have a name string.
 
-
-		//??? scope_def should have names
 		for(const auto member: struct_def->_members){
 			const auto member_name = member._name;
-			struct_instance->_member_values[member_name];
+			const auto value = struct_instance->_member_values[member_name];
+			result[member_name] = value_to_json(value);
 		}
-		//??? Return
-#endif
-		return json_value_t();
+
+		return result;
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
 }
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+
+
+/*
+		public: value_t(const std::shared_ptr<struct_instance_t>& struct_instance) :
+			_type(struct_instance->__def->_name),
+			_struct_instance(struct_instance)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+
+
+
+	value_t
+//	const std::map<std::string, json_value_t>& get_object() const {
+	quark::ut_compare(value_to_json(value_t("hello")), json_value_t("hello"));
+*/
+}
+
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t("hello")), json_value_t("hello"));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t(123)), json_value_t(123.0));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t(true)), json_value_t(true));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t(false)), json_value_t(false));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t()), json_value_t());
+}
+
+
 
 
 

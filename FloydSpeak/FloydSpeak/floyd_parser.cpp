@@ -293,16 +293,16 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 
 
 	//??? move to pass2 or interpreter
-	value_t make_struct_instance(const struct_def_t& def){
-		QUARK_ASSERT(def.check_invariant());
+	value_t make_struct_instance(const std::shared_ptr<const struct_def_t>& def){
+		QUARK_ASSERT(def && def->check_invariant());
 
 		auto instance = make_shared<struct_instance_t>();
 
-		instance->__def = &def;
-		for(int i = 0 ; i < def._members.size() ; i++){
-			const auto& member_def = def._members[i];
+		instance->__def = def;
+		for(int i = 0 ; i < def->_members.size() ; i++){
+			const auto& member_def = def->_members[i];
 
-			const auto member_type = resolve_type(def._struct_scope, member_def._type->to_string());
+			const auto member_type = resolve_type(def->_struct_scope, member_def._type->to_string());
 			if(!member_type){
 				throw std::runtime_error("Undefined struct type!");
 			}
@@ -313,7 +313,7 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 				value = *member_def._value;
 			}
 			else{
-				value = make_default_value(def._struct_scope, *member_def._type);
+				value = make_default_value(def->_struct_scope, *member_def._type);
 			}
 			instance->_member_values[member_def._name] = value;
 		}
@@ -322,8 +322,8 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 
 
 	//??? move to pass2 or interpreter
-	value_t make_default_value(const struct_def_t& t){
-		QUARK_ASSERT(t.check_invariant());
+	value_t make_default_value(const std::shared_ptr<struct_def_t>& t){
+		QUARK_ASSERT(t && t->check_invariant());
 		return make_struct_instance(t);
 	}
 
@@ -340,7 +340,7 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 			return value_t("");
 		}
 		else if(t._base_type == k_struct){
-			return make_default_value(*t._struct_def);
+			return make_default_value(t._struct_def);
 		}
 		else if(t._base_type == k_vector){
 			QUARK_ASSERT(false);
@@ -380,7 +380,7 @@ value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, 
 		throw std::runtime_error("Undefined struct!");
 	}
 
-	const auto instance = make_default_value(*b);
+	const auto instance = make_default_value(b);
 	return instance;
 }
 
