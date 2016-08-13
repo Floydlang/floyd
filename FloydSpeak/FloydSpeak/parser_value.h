@@ -162,7 +162,7 @@ namespace floyd_parser {
 			if(_type != other._type){
 				return false;
 			}
-
+			//??? Use the base_type enum instead of strings for types.
 			if(_type.to_string() == "null"){
 				return true;
 			}
@@ -299,8 +299,7 @@ namespace floyd_parser {
 		public: bool is_struct_instance() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _struct_instance ? true : false
-			;
+			return _struct_instance ? true : false;
 		}
 
 		//	???	Use enum from type system instead of strings
