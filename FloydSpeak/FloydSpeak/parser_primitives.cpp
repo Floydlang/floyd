@@ -15,6 +15,9 @@
 #include "steady_vector.h"
 #include "parser_statement.h"
 #include "parser_value.h"
+#include "json_support.h"
+#include "json_parser.h"
+#include "json_writer.h"
 
 #include <string>
 #include <memory>
@@ -209,6 +212,58 @@ pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 		const auto a = read_while(s, floyd_parser::type_chars);
 		return a.first == s;
 	}
+
+
+
+//////////////////////////////////////		FLOYD JSON BASICS
+
+
+
+
+json_value_t value_to_json(const value_t& v){
+	if(v.is_null()){
+		return json_value_t();
+	}
+	else if(v.is_bool()){
+		return json_value_t(v.get_bool());
+	}
+	else if(v.is_int()){
+		return json_value_t(static_cast<double>(v.get_int()));
+	}
+	else if(v.is_float()){
+		return json_value_t(static_cast<double>(v.get_float()));
+	}
+	else if(v.is_string()){
+		return json_value_t(v.get_string());
+	}
+	else if(v.is_struct_instance()){
+#if false
+		const auto struct_instance = v.get_struct_instance();
+		const auto struct_def = struct_instance->__def;
+		std::map<string, json_value_t> m;
+
+
+		public: type_identifier_t _name;
+		public: std::vector<member_t> _members;
+		public: scope_ref_t _struct_scope;
+
+
+		//??? scope_def should have names
+		for(const auto member: struct_def->_members){
+			const auto member_name = member._name;
+			struct_instance->_member_values[member_name];
+		}
+		//??? Return
+#endif
+		return json_value_t();
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+
 
 
 }	//	floyd_parser

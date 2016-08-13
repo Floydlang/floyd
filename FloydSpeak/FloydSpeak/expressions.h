@@ -256,6 +256,8 @@ namespace floyd_parser {
 
 	std::string to_string(const expression_t& e);
 
+	std::string to_json(const expression_t& e);
+
 }	//	floyd_parser
 
 

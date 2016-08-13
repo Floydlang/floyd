@@ -24,9 +24,12 @@
 #include <map>
 
 
+struct json_value_t;
+
 namespace floyd_parser {
 	struct statement_t;
 	struct type_identifier_t;
+
 	
 	
 	const std::vector<std::string> basic_types {
@@ -165,6 +168,12 @@ namespace floyd_parser {
 	std::pair<type_identifier_t, std::string> read_required_type_identifier(const std::string& s);
 
 	bool is_valid_type_identifier(const std::string& s);
+
+
+
+	//////////////////////////////////////		FLOYD JSON BASICS
+
+	json_value_t value_to_json(const value_t& v);
 
 }	//	floyd_parser
 
