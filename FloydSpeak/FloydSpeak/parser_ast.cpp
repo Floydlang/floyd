@@ -205,7 +205,7 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		type_identifier_t
 
 
-	type_identifier_t type_identifier_t::make(std::string s){
+	type_identifier_t type_identifier_t::make(const std::string& s){
 		QUARK_ASSERT(is_valid_type_identifier(s));
 
 		const type_identifier_t result(s);
@@ -739,7 +739,6 @@ namespace floyd_parser {
 		);
 	}
 
-
 	//??? check for duplicate member names.
 	struct_def_t make_struct5(scope_ref_t scope_def){
 		return struct_def_t::make2(
@@ -760,6 +759,22 @@ namespace floyd_parser {
 			scope_def
 		);
 	}
+
+	struct_def_t make_struct6(scope_ref_t scope_def){
+		return struct_def_t::make2(
+			type_identifier_t::make("struct6"),
+			{
+				{ type_identifier_t::make_bool(), "_bool_true", value_t(true) },
+				{ type_identifier_t::make_bool(), "_bool_false", value_t(false) },
+				{ type_identifier_t::make_int(), "_int", value_t(111) },
+//???				{ type_identifier_t::make_float(), "_float" },
+				{ type_identifier_t::make_string(), "_string", value_t("test 123") },
+				{ type_identifier_t::make("pixel"), "_pixel" }
+			},
+			scope_def
+		);
+	}
+
 
 } //	floyd_parser
 

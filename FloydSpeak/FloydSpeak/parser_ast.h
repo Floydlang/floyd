@@ -119,16 +119,25 @@ namespace floyd_parser {
 	*/
 
 	struct type_identifier_t {
-		public: static type_identifier_t make(std::string s);
-		public: static type_identifier_t make_int(){
-			return make("int");
+		public: type_identifier_t() :
+			_type_magic("null")
+		{
 		}
+
 		public: static type_identifier_t make_bool(){
 			return make("bool");
 		}
+
+		public: static type_identifier_t make(const std::string& s);
+
+		public: static type_identifier_t make_int(){
+			return make("int");
+		}
+
 		public: static type_identifier_t make_float(){
 			return make("float");
 		}
+
 		public: static type_identifier_t make_string(){
 			return make("string");
 		}
@@ -139,10 +148,6 @@ namespace floyd_parser {
 		public: bool operator==(const type_identifier_t& other) const;
 		public: bool operator!=(const type_identifier_t& other) const;
 
-		public: type_identifier_t() :
-			_type_magic("null")
-		{
-		}
 		public: explicit type_identifier_t(const char s[]);
 		public: explicit type_identifier_t(const std::string& s);
 		public: void swap(type_identifier_t& other);
@@ -529,6 +534,8 @@ namespace floyd_parser {
 
 	struct_def_t make_struct5(scope_ref_t scope_def);
 
+	//	Test all types of members.
+	struct_def_t make_struct6(scope_ref_t scope_def);
 
 
 }	//	floyd_parser

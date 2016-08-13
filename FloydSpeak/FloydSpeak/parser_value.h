@@ -17,6 +17,8 @@
 
 #include "parser_ast.h"
 
+//??? add float & vector types to value_t
+
 
 namespace floyd_parser {
 	struct statement_t;
@@ -379,6 +381,24 @@ namespace floyd_parser {
 
 
 	void trace(const value_t& e);
+
+
+
+
+
+	/*
+		Resolves the type, starting at _scope_instances.back() then moving towards to global space. This is a compile-time operation.
+	*/
+	//??? const version
+	std::shared_ptr<floyd_parser::type_def_t> resolve_type(const scope_ref_t scope_def, const std::string& s);
+
+
+	floyd_parser::value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);
+
+	floyd_parser::value_t make_default_value(const floyd_parser::type_def_t& t);
+	floyd_parser::value_t make_default_value(const std::shared_ptr<struct_def_t>& t);
+
+	floyd_parser::value_t make_struct_instance(const std::shared_ptr<const floyd_parser::struct_def_t>& def);
 
 
 }	//	floyd_parser

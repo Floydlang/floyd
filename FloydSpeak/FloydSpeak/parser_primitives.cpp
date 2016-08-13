@@ -30,7 +30,8 @@ namespace floyd_parser {
 using std::vector;
 using std::string;
 using std::pair;
-
+using std::make_shared;
+using std::shared_ptr;
 
 
 
@@ -257,24 +258,38 @@ json_value_t value_to_json(const value_t& v){
 	}
 }
 
-QUARK_UNIT_TESTQ("value_to_json()", ""){
 
+QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
+	auto global = scope_def_t::make_global_scope();
+	auto pixel_def = struct_def_t::make2(
+		type_identifier_t::make("pixel"),
+		vector<member_t>(
+			{
+				member_t(type_identifier_t::make_int(), "red", value_t(55)),
+				member_t(type_identifier_t::make_int(), "green", value_t(66))
+			}
+		),
+		global);
+	global->_types_collector = global->_types_collector.define_struct_type("pixel", pixel_def);
+	const auto def = make_shared<struct_def_t>(make_struct6(global));
 
-/*
-		public: value_t(const std::shared_ptr<struct_instance_t>& struct_instance) :
-			_type(struct_instance->__def->_name),
-			_struct_instance(struct_instance)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
+	const auto struct_instance = make_struct_instance(def);
+	const value_t value(struct_instance);
 
+	const auto result = value_to_json(value);
 
+	QUARK_UT_VERIFY(result.is_object());
+	const auto obj = result.get_object();
 
+	QUARK_UT_VERIFY(obj.at("_bool_true").is_true());
+	QUARK_UT_VERIFY(obj.at("_bool_false").is_false());
+	QUARK_UT_VERIFY(obj.at("_int").get_number() == 111.0);
+	QUARK_UT_VERIFY(obj.at("_string").get_string() == "test 123");
+	QUARK_UT_VERIFY(obj.at("_pixel").is_object());
+	QUARK_UT_VERIFY(obj.at("_pixel").get_object().at("red").get_number() == 55.0);
+	QUARK_UT_VERIFY(obj.at("_pixel").get_object().at("green").get_number() == 66.0);
 
-	value_t
-//	const std::map<std::string, json_value_t>& get_object() const {
-	quark::ut_compare(value_to_json(value_t("hello")), json_value_t("hello"));
-*/
+	//??? Store value-type in the json? "__floyd_type": "graphics:pixel_t"
 }
 
 
