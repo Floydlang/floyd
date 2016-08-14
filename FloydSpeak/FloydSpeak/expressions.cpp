@@ -334,7 +334,13 @@ void trace(const expression_t& e){
 std::string to_string(const expression_t& e){
 //	QUARK_ASSERT(e.check_invariant());
 
-	QUARK_TRACE(to_json(e));
+	{
+	//	QUARK_TRACE(to_json(e));
+		const auto json = expression_to_json(e);
+		const auto json_string = to_string(json);
+		QUARK_TRACE(json_string);
+//		trace_json(json);
+	}
 
 	if(e._constant){
 		return string("(@k ") + e._constant->value_and_type_to_string() + ")";
@@ -447,10 +453,10 @@ QUARK_UNIT_TESTQ("to_string()", "lookup"){
 	[+ [+ 1 2] [k 10]]
 
 */
-json_value_t to_json_value(const expression_t& e){
+json_value_t expression_to_json(const expression_t& e){
 	if(e._constant){
 		return json_value_t(
-			vector<json_value_t>{ json_value_t("\"k\""), value_to_json(*e._constant) }
+			vector<json_value_t>{ json_value_t("k"), value_to_json(*e._constant) }
 		);
 	}
 	return json_value_t();

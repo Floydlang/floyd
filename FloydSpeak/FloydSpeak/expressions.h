@@ -13,10 +13,12 @@
 #include <vector>
 #include <string>
 
+	struct json_value_t;
 
 namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
+
 
 	//////////////////////////////////////////////////		constant expression
 	
@@ -257,6 +259,7 @@ namespace floyd_parser {
 	std::string to_string(const expression_t& e);
 
 	std::string to_json(const expression_t& e);
+	json_value_t expression_to_json(const expression_t& e);
 
 }	//	floyd_parser
 
