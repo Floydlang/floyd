@@ -58,7 +58,7 @@ This is used through out this document to demonstrate language features.
 # VALUES, VARIABLES AND CONSTANTS
 All "variables" aka values are by default constants / immutable.
 - Global variables
-- Functiona arguments
+- Function arguments
 - Local function variables
 - Member variables of structs etc.
 - Contents of collections
@@ -85,7 +85,7 @@ Used for function definitions, defining constants and structs.
 
 
 # FUNCTIONS
-Functions in Floyd are pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at differenttimes, like get_time().
+Functions in Floyd are pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at different times, like get_time().
 
 Function always have the same syntax, no matter if they are member functions of a struct, a constructor or a free function.
 
@@ -174,16 +174,11 @@ Comparisons are true-deep - they consider all members and also member structs an
 	!					inverts a bool: true becomes false, false becomes true.
 	~
 	^
-
 	+
 	-
 	*
 	/
 	%
-	+=
-	-=
-	++
-	--
 
 
 # LOOPS AND CONDITIONS
@@ -195,7 +190,7 @@ foreach(thing, [string]{ 1, 2, 3 })
 
 int r = a < b ? 1 : 2;
 
-switch() -- has modern update, no default or break.
+switch() -- has modern update, no default or break. ??? todo
 
 	for(int i = 0 ; i < 100 ; i++){
 	}
@@ -470,6 +465,8 @@ The vector is persistent so you can write elements to it, but you always get a n
 	b = a[1] = "zwei";
 	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
 
+	c = [string];	//	Empty vector of strings.
+	
 There are many potential backends for a vector - the runtime choses for each vector instances (not each type!):
 
 1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
@@ -481,7 +478,7 @@ Vector Reference:
 	vector(seq<t> in);
 	vector [T][ 1, 2, 3, ... };
 	vector<T> make(vector<T> other, int start, int end);
-	seq subset(vector<T> in, int start, int end);
+	vector<T> subset(vector<T> in, int start, int end);
 	a = b + c;
 
 
@@ -495,6 +492,9 @@ A collection that maps a key to a value.Unsorted. Like a dictionary.
 
 	//	Make a string->int map where collection type is deducted from the initialization values.
 	b = ["one": 1, "two": 2, "three", 3];
+
+	c = [string: int]; //	Empty map of string,int.
+	
 
 Map Reference
 
@@ -517,8 +517,6 @@ The result is always a normalized JSON stream. ???
 ??? De-duplication vs references vs equality vs diffing.
 	### Make reading and writing Floyd code simple, especially data definitions.
 //	Define serialised format of a type, usable as constant.
-
- ### floyd code = stored / edited in the serialized format.
 
 An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream.
 

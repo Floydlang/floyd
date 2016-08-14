@@ -97,6 +97,8 @@ _invariant_ is required for structs that have dependencies between members (that
 
 	### Allow adding invariant to _any_ type and getting a new, safer type. Cool for collections (they are sorted!) or integers (range is 0 to 7). Combine this with typedef feature.
 
+	### define invariant will block default constructors 
+
 ---Notice: a struct can expose a set of read properties but have a different set of arguments to its constructor(s). This in affect makes the constructor / property getters _refine_ the input arguments -- the struct is not a passive container of values but a function too. **??? Good or bad?
 
 - **Data member** = memory slot.
@@ -177,6 +179,7 @@ Clojure
 	reference: https://adambard.com/blog/clojure-in-15-minutes/
 
 
+
 # SEQ
 Seq is an interface built into every collection and struct. It allows you to read from the source, one entry at a time, in an immutable way.
 
@@ -189,7 +192,26 @@ Vectors (and all collections, composites) support the seq interface so you can c
 		result = f2([int](1, 2, 3))
 You can even do this with a struct: the members will be returned in order.
 
+cons, first, and rest
+http://www.braveclojure.com/core-functions-in-depth/
+Lazy
+into == adds stuff to a collection (empty or not) from a seq (or collection)
 
+concat
+map
+filter
+reduce
+take, take-white
+drop, drop-while
+
+
+seq<string> a = [string]( "one", "two", "three" );
+assert(a.first == "one");
+assert(a.rest == [string]( "two", "three" )));
+
+b = into([string][], a.rest);
+
+[string]
 
 
 # FUNCTION DOCUMENTATION
