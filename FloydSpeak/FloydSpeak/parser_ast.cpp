@@ -20,6 +20,9 @@
 #include <cmath>
 #include "parts/sha1_class.h"
 #include "utils.h"
+#include "json_support.h"
+#include "json_writer.h"
+#include "parser_types_collector.h"
 
 
 namespace floyd_parser {
@@ -421,6 +424,19 @@ namespace floyd_parser {
 
 
 
+	json_value_t executable_to_json(const executable_t& e){
+		return {};
+	}
+
+	json_value_t scope_def_to_json(const scope_def_t& scope_def){
+		const std::map<string, json_value_t> a {
+			{ "_parent_scope", json_value_t(123.0f) },
+			{ "_executable", executable_to_json(scope_def._executable) },
+			{ "_types_collector", types_collector_to_json(scope_def._types_collector) }
+		};
+		return a;
+	}
+
 
 	////////////////////////			arg_t
 
@@ -739,9 +755,14 @@ namespace floyd_parser {
 	void trace(const ast_t& program){
 		QUARK_SCOPED_TRACE("program");
 
+		const auto a = scope_def_to_json(*program._global_scope);
+		const auto s = json_to_compact_string(a);
+		QUARK_TRACE(s);
+/*
 		for(const auto i: program._global_scope->_executable._statements){
 			trace(*i);
 		}
+*/
 	}
 
 

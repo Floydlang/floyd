@@ -17,6 +17,7 @@
 #include <string>
 #include <map>
 
+struct json_value_t;
 
 namespace floyd_parser {
 
@@ -27,6 +28,7 @@ namespace floyd_parser {
 	struct function_def_t;
 	struct value_t;
 
+	json_value_t types_collector_to_json(const types_collector_t& types);
 
 
 
@@ -160,6 +162,7 @@ namespace floyd_parser {
 
 		public: std::shared_ptr<type_def_t> lookup_signature(const std::string& s) const;
 
+		friend json_value_t types_collector_to_json(const types_collector_t& types);
 
 		///////////////////		STATE
 
@@ -170,6 +173,7 @@ namespace floyd_parser {
 		//	Key is the signature string. De-duplicated.
 		private: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
 	};
+
 
 
 }	//	floyd_parser

@@ -16,6 +16,7 @@
 #include "parser_types_collector.h"
 
 struct TSHA1;
+struct json_value_t;
 
 namespace floyd_parser {
 	struct type_def_t;
@@ -372,6 +373,7 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		scope_def_t
 
 //??? make private data, immutable
+//??? add scope name!
 
 	/*
 		WARNING: We mutate this during parsing, adding executable, types while it exists.
@@ -414,6 +416,7 @@ namespace floyd_parser {
 		//		public: std::vector<member_t> _runtime_value_spec;
 	};
 
+	json_value_t scope_def_to_json(const scope_def_t& scope_def);
 
 
 	//////////////////////////////////////////////////		xxxscope_node_t

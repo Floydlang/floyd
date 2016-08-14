@@ -19,6 +19,9 @@
 #include "parts/sha1_class.h"
 #include "parser_ast.h"
 #include "utils.h"
+#include "json_support.h"
+#include "json_writer.h"
+#include "parser_primitives.h"
 
 
 using std::make_shared;
@@ -388,13 +391,98 @@ namespace floyd_parser {
 		}
 	}
 
-
+	//??? make signature a JSON string too.
 	std::shared_ptr<type_def_t> types_collector_t::lookup_signature(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _type_definitions.find(s);
 		return it == _type_definitions.end() ? std::shared_ptr<type_def_t>() : it->second;
 	}
+
+
+
+
+
+
+	json_value_t struct_def_to_json(const struct_def_t& s){
+		std::vector<json_value_t> members;
+		for(const auto i: s._members){
+			const auto member = std::map<string, json_value_t>{
+				{ "_name", json_value_t(s._name.to_string()) },
+//				{ "_members", s._name.to_string() },
+				{ "_struct_scope", scope_def_to_json(*s._struct_scope) }
+			};
+			members.push_back(json_value_t(member));
+		}
+
+		return {
+			std::map<string, json_value_t>{
+				{ "_name", json_value_t(s._name.to_string()) },
+				{ "_members", json_value_t(members) },
+				{ "_struct_scope", scope_def_to_json(*s._struct_scope) }
+			}
+		};
+	}
+
+	//???
+	json_value_t vector_def_to_json(const vector_def_t& s){
+		return {
+		};
+	}
+
+	//???
+	json_value_t function_def_to_json(const function_def_t& s){
+		return {
+		};
+	}
+
+	json_value_t type_def_to_json(const type_def_t& type_def){
+		return {
+			std::map<string, json_value_t>{
+				{ "_base_type", json_value_t(to_string(type_def._base_type)) },
+				{ "_struct_def", type_def._struct_def ? struct_def_to_json(*type_def._struct_def) : json_value_t() },
+				{ "_vector_def", type_def._vector_def ? vector_def_to_json(*type_def._vector_def) : json_value_t() },
+				{ "_function_def", type_def._function_def ? function_def_to_json(*type_def._function_def) : json_value_t() }
+			}
+		};
+	}
+
+	json_value_t type_indentifier_data_ref_to_json(const type_indentifier_data_ref& data_ref){
+		const std::map<string, json_value_t> a{
+			{ "_alias_type_identifier", json_value_t(data_ref._alias_type_identifier) },
+			{ "_optional_def", data_ref._optional_def ? json_value_t(to_signature(*data_ref._optional_def)) : json_value_t() }
+		};
+		return a;
+	}
+
+	json_value_t identifiers_to_json(const std::map<std::string, type_indentifier_data_ref >& identifiers){
+		std::map<string, json_value_t> a;
+		for(const auto i: identifiers){
+			a[i.first] = type_indentifier_data_ref_to_json(i.second);
+		}
+		return a;
+	}
+
+	json_value_t type_definitions_to_json(const std::map<std::string, std::shared_ptr<type_def_t> >& type_definitions){
+		std::map<string, json_value_t> result;
+		for(const auto i: type_definitions){
+			result[i.first] = type_def_to_json(*i.second);
+		}
+		return result;
+	}
+
+
+	json_value_t types_collector_to_json(const types_collector_t& types){
+		const std::map<string, json_value_t> a {
+			{ "_identifiers", identifiers_to_json(types._identifiers) },
+			{ "_type_definitions", type_definitions_to_json(types._type_definitions) }
+		};
+		return a;
+	}
+
+
+
+
 
 
 }	//	floyd_parser
@@ -518,6 +606,5 @@ QUARK_UNIT_TESTQ("types_collector_t::define_alias_identifier()", "int => my_int"
 	QUARK_TEST_VERIFY(b);
 	QUARK_TEST_VERIFY(b->_base_type == k_int);
 }
-
 
 
