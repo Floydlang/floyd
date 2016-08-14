@@ -172,7 +172,7 @@ std::string to_string(const std::vector<json_value_t>& array){
 		if(count > 0){
 			items = items + to_string(array[index]);
 		}
-		const auto result = std::string("[ ") + items + " ]";
+		const auto result = std::string("[") + items + "]";
 		return result;
 	}
 }
@@ -182,7 +182,7 @@ QUARK_UNIT_TESTQ("to_string()", ""){
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	quark::ut_compare(to_string(std::vector<json_value_t>{ json_value_t(13.4) }), "[ 13.4 ]");
+	quark::ut_compare(to_string(std::vector<json_value_t>{ json_value_t(13.4) }), "[13.4]");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
@@ -191,7 +191,7 @@ QUARK_UNIT_TESTQ("to_string()", ""){
 			json_value_t("a"),
 			json_value_t("b")
 		}),
-		"[ \"a\", \"b\" ]"
+		"[\"a\", \"b\"]"
 	);
 }
 
@@ -240,7 +240,7 @@ QUARK_UNIT_TESTQ("to_string()", ""){
 				json_value_t("b")
 			}
 		)),
-		"[ \"a\", \"b\" ]"
+		"[\"a\", \"b\"]"
 	);
 }
 

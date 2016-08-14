@@ -464,19 +464,19 @@ json_value_t expression_to_json(const expression_t& e){
 			vector<json_value_t>{ json_value_t("k"), value_to_json(*e._constant) }
 		);
 	}
-	return json_value_t();
-#if false
 	else if(e._math2){
 		const auto e2 = *e._math2;
-		const auto left = to_json(*e2._left);
-		const auto right = to_json(*e2._right);
-		return to_json2({ quote(operation_to_string(e2._operation)), left, right });
+		const auto left = expression_to_json(*e2._left);
+		const auto right = expression_to_json(*e2._right);
+		return json_value_t({ json_value_t(operation_to_string(e2._operation)), left, right });
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
-		const auto input = to_json(*e2._input);
-		return to_json2({ quote(operation_to_string(e2._operation)), input });
+		const auto input = expression_to_json(*e2._input);
+		return json_value_t(vector<json_value_t>{ json_value_t(operation_to_string(e2._operation)), input });
 	}
+	return json_value_t();
+#if false
 	else if(e._call){
 		const auto& call_function = *e._call;
 		vector<string>  args_json;
@@ -510,35 +510,43 @@ json_value_t expression_to_json(const expression_t& e){
 #endif
 }
 
-#if false
-//??? add type too? "[ "k", <int>, 13 ]"
+//??? add type too? "[ "k", <int>, 13 ]" OR "[ "int_k", 13 ]
+#if true
+
+namespace {
+	string expression_to_json_string(const expression_t& e){
+		const auto json = expression_to_json(e);
+		return to_string(json);
+	}
+}
+
 QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
-	quark::ut_compare(to_string(expression_to_json(make_constant(13))), "(@k <int>13)");
-	quark::ut_compare(to_string(expression_to_json(make_constant("xyz"))), "(@k <string>\"xyz\")");
-	quark::ut_compare(to_string(expression_to_json(make_constant(14.0f))), "(@k <float>14.000000)");
+	quark::ut_compare(expression_to_json_string(make_constant(13)), "[\"k\", 13]");
+	quark::ut_compare(expression_to_json_string(make_constant("xyz")), "[\"k\", \"xyz\"]");
+	quark::ut_compare(expression_to_json_string(make_constant(14.0f)), "[\"k\", 14]");
 }
 #endif
 
-#if false
 QUARK_UNIT_TESTQ("to_string()", "math1"){
 	quark::ut_compare(
-		to_string(
+		expression_to_json_string(
 			make_math_operation1(math_operation1_expr_t::operation::negate, make_constant(2))),
-		"(@negate (@k <int>2))"
+		"[\"negate\", [\"k\", 2]]"
 	);
 }
 
 QUARK_UNIT_TESTQ("to_string()", "math2"){
 	quark::ut_compare(
-		to_string(
+		expression_to_json_string(
 			make_math_operation2(math_operation2_expr_t::operation::add, make_constant(2), make_constant(3))),
-		"(@+ (@k <int>2) (@k <int>3))"
+		"[\"+\", [\"k\", 2], [\"k\", 3]]"
 	);
 }
 
+#if false
 QUARK_UNIT_TESTQ("to_string()", "call"){
 	quark::ut_compare(
-		to_string(
+		expression_to_json_string(
 			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
 		),
 		"(@call \"my_func\"((@k <string>\"xyz\")(@k <int>123)))"
@@ -547,7 +555,7 @@ QUARK_UNIT_TESTQ("to_string()", "call"){
 
 QUARK_UNIT_TESTQ("to_string()", "read & resolve_variable"){
 	quark::ut_compare(
-		to_string(
+		expression_to_json_string(
 			make_load_variable("param1")
 		),
 		"(@load (@res_var \"param1\"))"
@@ -556,7 +564,7 @@ QUARK_UNIT_TESTQ("to_string()", "read & resolve_variable"){
 //??? test all addressing.
 QUARK_UNIT_TESTQ("to_string()", "lookup"){
 	quark::ut_compare(
-		to_string(
+		expression_to_json_string(
 			make_lookup(make_resolve_variable("hello"), make_constant("xyz"))
 		),
 		"(@lookup (@res_var \"hello\") (@k <string>\"xyz\"))"
