@@ -464,7 +464,7 @@ namespace floyd_parser {
 	floyd_parser::value_t make_default_value(const std::shared_ptr<struct_def_t>& t);
 
 	floyd_parser::value_t make_struct_instance(const std::shared_ptr<const floyd_parser::struct_def_t>& def);
-	floyd_parser::value_t make_vector_instance(const std::shared_ptr<const floyd_parser::vector_def_t>& def);
+	floyd_parser::value_t make_vector_instance(const std::shared_ptr<const floyd_parser::vector_def_t>& def, const std::vector<value_t>& elements);
 
 
 

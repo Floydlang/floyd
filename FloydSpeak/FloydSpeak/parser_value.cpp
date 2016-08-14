@@ -107,11 +107,12 @@ namespace floyd_parser {
 
 
 
-	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def){
+	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def, const std::vector<value_t>& elements){
 		QUARK_ASSERT(def && def->check_invariant());
 
 		auto instance = make_shared<vector_instance_t>();
 		instance->__def = def;
+		instance->_elements = elements;
 		return value_t(instance);
 	}
 
@@ -259,8 +260,8 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 //??? Support unnamed vectors.
 QUARK_UNIT_TESTQ("value_t()", "vector"){
 	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
-	const auto a = make_vector_instance(vector_def);
-	const auto b = make_vector_instance(vector_def);
+	const auto a = make_vector_instance(vector_def, {});
+	const auto b = make_vector_instance(vector_def, {});
 
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(!a.is_bool());
@@ -277,6 +278,18 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	quark::ut_compare(a.value_and_type_to_string(), "<my_vec>[int][]");
 }
 
+
+QUARK_UNIT_TESTQ("value_t()", "vector"){
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
+	const auto a = make_vector_instance(vector_def, { 3, 4, 5});
+	const auto b = make_vector_instance(vector_def, { 3, 4 });
+
+	QUARK_TEST_VERIFY(a != b);
+	QUARK_TEST_VERIFY(a != value_t("xyza"));
+	QUARK_TEST_VERIFY(a.get_vector()->_elements[0] == 3);
+	QUARK_TEST_VERIFY(a.get_vector()->_elements[1] == 4);
+	QUARK_TEST_VERIFY(a.get_vector()->_elements[2] == 5);
+}
 
 
 

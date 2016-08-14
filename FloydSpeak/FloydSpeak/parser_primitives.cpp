@@ -238,17 +238,26 @@ json_value_t value_to_json(const value_t& v){
 		return json_value_t(v.get_string());
 	}
 	else if(v.is_struct()){
-		const auto struct_instance = v.get_struct();
-		const auto struct_def = struct_instance->__def;
-
-		std::map<string, json_value_t> result;
+		const auto value = v.get_struct();
 
 		//??? A scope_def should have a name string.
 
-		for(const auto member: struct_def->_members){
+		std::map<string, json_value_t> result;
+		for(const auto member: value->__def->_members){
 			const auto member_name = member._name;
-			const auto value = struct_instance->_member_values[member_name];
-			result[member_name] = value_to_json(value);
+			const auto member_value = value->_member_values[member_name];
+			result[member_name] = value_to_json(member_value);
+		}
+
+		return result;
+	}
+	else if(v.is_vector()){
+		const auto value = v.get_vector();
+
+		std::vector<json_value_t> result;
+		for(int i = 0 ; i < value->_elements.size() ; i++){
+			const auto element_value = value->_elements[i];
+			result.push_back(value_to_json(element_value));
 		}
 
 		return result;
@@ -258,7 +267,7 @@ json_value_t value_to_json(const value_t& v){
 	}
 }
 
-
+	//??? Store value-type in the json? "__floyd_type": "graphics:pixel_t"
 
 QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
 	struct_fixture_t f;
@@ -276,10 +285,22 @@ QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
 	QUARK_UT_VERIFY(obj.at("_pixel").is_object());
 	QUARK_UT_VERIFY(obj.at("_pixel").get_object().at("red").get_number() == 55.0);
 	QUARK_UT_VERIFY(obj.at("_pixel").get_object().at("green").get_number() == 66.0);
-
-	//??? Store value-type in the json? "__floyd_type": "graphics:pixel_t"
 }
 
+QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
+	const auto a = make_vector_instance(vector_def, { 10, 11, 12 });
+	const auto b = make_vector_instance(vector_def, { 10, 4 });
+
+	const auto result = value_to_json(a);
+
+	QUARK_UT_VERIFY(result.is_array());
+	const auto array = result.get_array();
+
+	QUARK_UT_VERIFY(array[0] == 10);
+	QUARK_UT_VERIFY(array[1] == 11);
+	QUARK_UT_VERIFY(array[2] == 12);
+}
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
 	quark::ut_compare(value_to_json(value_t("hello")), json_value_t("hello"));
