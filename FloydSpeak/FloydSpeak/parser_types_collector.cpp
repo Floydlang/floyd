@@ -234,46 +234,11 @@ namespace floyd_parser {
 
 
 
-
-	std::pair<std::shared_ptr<type_def_t>, types_collector_t> types_collector_t::define_struct_type(const struct_def_t& struct_def) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(struct_def.check_invariant());
-
+	types_collector_t types_collector_t::define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const{
 		auto type_def = make_shared<type_def_t>();
 		type_def->_base_type = k_struct;
 		type_def->_struct_def = make_shared<struct_def_t>(struct_def);
-
-		const string signature = to_signature(*type_def);
-
-		const auto existing_it = _type_definitions.find(signature);
-		if(existing_it != _type_definitions.end()){
-			return { existing_it->second, *this };
-		}
-		else{
-			auto result = *this;
-			result._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_def_t>>(signature, type_def));
-			return { type_def, result };
-		}
-	}
-
-	types_collector_t types_collector_t::define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(struct_def.check_invariant());
-
-		//	Make struct def, if not already done.
-		const auto a = types_collector_t::define_struct_type(struct_def);
-		const auto type_def = a.first;
-		const auto collector2 = a.second;
-
-		if(new_identifier.empty()){
-			return collector2;
-		}
-		else{
-			//	Make a type-identifier too.
-			const auto collector3 = collector2.define_type_identifier(new_identifier, type_def);
-
-			return collector3;
-		}
+		return define_type_xyz(new_identifier, type_def);
 	}
 
 

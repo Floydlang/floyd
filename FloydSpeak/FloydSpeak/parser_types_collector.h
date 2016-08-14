@@ -106,43 +106,6 @@ namespace floyd_parser {
 		public: types_collector_t define_type_xyz(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
 
 
-
-
-		/////////////////////////		STRUCTs
-
-
-		/*
-			Adds type-definition for a struct.
-			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
-		*/
-		private: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
-
-		/*
-			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
-			You can define a type identifier
-		*/
-		public: types_collector_t define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const;
-
-
-
-		/////////////////////////		FUNCTIONs
-
-
-		/*
-			Adds type-definition for a struct.
-			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
-		*/
-//		private: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_function_type(const function_def_t& function_def) const;
-
-		/*
-			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
-			You can define a type identifier
-		*/
-		public: types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
-
-
-
-
 		/*
 			return empty: the identifier is unknown.
 			return non-empty: the identifier is known, examine type_indentifier_data_ref to see if it's bound.
@@ -162,13 +125,34 @@ namespace floyd_parser {
 		*/
 		public: std::shared_ptr<type_def_t> resolve_identifier(const std::string& s) const;
 
+		public: std::shared_ptr<type_def_t> lookup_signature(const std::string& s) const;
 
+
+
+		///////////////////		STRUCT
+
+
+		/*
+			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
+			You can define a type identifier
+		*/
+		public: types_collector_t define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const;
 
 
 		/*
 			returns empty if type is unknown or the type is not fully defined.
 		*/
 		public: std::shared_ptr<struct_def_t> resolve_struct_type(const std::string& s) const;
+
+
+		///////////////////		FUNCTION
+
+
+		/*
+			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
+			You can define a type identifier
+		*/
+		public: types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
 
 		/*
 			returns empty if type is unknown or the type is not fully defined.
@@ -177,7 +161,6 @@ namespace floyd_parser {
 
 
 
-		public: std::shared_ptr<type_def_t> lookup_signature(const std::string& s) const;
 
 		friend json_value_t types_collector_to_json(const types_collector_t& types);
 
