@@ -11,7 +11,13 @@
 
 
 
-floyd_parser::ast_t pass2(const floyd_parser::ast_t& ast1){
+floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
+	auto ast2 = ast1;
+	return ast2;
+}
+
+
+floyd_parser::ast_t run_pass3(const floyd_parser::ast_t& ast1){
 	auto ast2 = ast1;
 	return ast2;
 }

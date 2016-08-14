@@ -13,6 +13,7 @@
 #include "parser_statement.h"
 #include "floyd_parser.h"
 #include "parser_value.h"
+#include "pass2.h"
 
 #include <cmath>
 
@@ -182,8 +183,17 @@ namespace {
 	}
 }
 
+
+ast_t program_to_ast2(const string& program){
+	const ast_t pass1 = program_to_ast(program);
+	const ast_t pass2 = run_pass2(pass1);
+	return pass2;
+}
+
+
+
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
-	auto ast = program_to_ast(
+	auto ast = program_to_ast2(
 		"int main(string args){\n"
 		"	return 3 + 4;\n"
 		"}\n"
@@ -196,7 +206,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
-	auto ast = floyd_parser::program_to_ast(
+	auto ast = program_to_ast2(
 		"int main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n"
@@ -208,7 +218,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
-	auto ast = floyd_parser::program_to_ast(
+	auto ast = program_to_ast2(
 		"int myfunc(){ return 5; }\n"
 		"int main(string args){\n"
 		"	return myfunc() + myfunc() * 2;\n"
@@ -221,7 +231,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 }
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
-	auto ast = program_to_ast(
+	auto ast = program_to_ast2(
 		"int main(string args){\n"
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
@@ -238,7 +248,7 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 //### Check return value type.
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
-	auto ast = program_to_ast(
+	auto ast = program_to_ast2(
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
 		"string main(string args){\n"
 		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
@@ -552,7 +562,7 @@ bool interpreter_t::check_invariant() const {
 
 std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(source.size() > 0);
-	auto ast = program_to_ast(source);
+	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
 	const auto r = call_function(vm, *f, args);
