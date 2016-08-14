@@ -424,8 +424,84 @@ namespace floyd_parser {
 
 
 
+
+
+
+//////		JSON
+
+
+
+
+	json_value_t struct_def_to_json(const struct_def_t& s){
+		std::vector<json_value_t> members;
+		for(const auto i: s._members){
+			const auto member = std::map<string, json_value_t>{
+				{ "_type", json_value_t(i._type->to_string()) },
+				{ "_value", i._value ? value_to_json(*i._value) : json_value_t() },
+				{ "_name", json_value_t(i._name) }
+			};
+			members.push_back(json_value_t(member));
+		}
+
+		return {
+			std::map<string, json_value_t>{
+				{ "_name", json_value_t(s._name.to_string()) },
+				{ "_members", json_value_t(members) },
+				{ "_struct_scope", scope_def_to_json(*s._struct_scope) }
+			}
+		};
+	}
+
+	//???
+	json_value_t vector_def_to_json(const vector_def_t& s){
+		return {
+		};
+	}
+
+	//???
+	json_value_t function_def_to_json(const function_def_t& s){
+		return {
+		};
+	}
+
+	json_value_t type_def_to_json(const type_def_t& type_def){
+		return {
+			std::map<string, json_value_t>{
+				{ "_base_type", json_value_t(to_string(type_def._base_type)) },
+				{ "_struct_def", type_def._struct_def ? struct_def_to_json(*type_def._struct_def) : json_value_t() },
+				{ "_vector_def", type_def._vector_def ? vector_def_to_json(*type_def._vector_def) : json_value_t() },
+				{ "_function_def", type_def._function_def ? function_def_to_json(*type_def._function_def) : json_value_t() }
+			}
+		};
+	}
+
+
+
+
+
+
+
+/*
+		//	_host_function != nullptr: this is host code.
+		//	_host_function == nullptr: _statements contains statements to interpret.
+		public: hosts_function_t _host_function = nullptr;
+		public: std::shared_ptr<host_data_i> _host_function_param;
+
+		//	INSTRUCTIONS - either _host_function or _statements is used.
+
+		//	Code, if any.
+		public: std::vector<std::shared_ptr<statement_t> > _statements;
+*/
 	json_value_t executable_to_json(const executable_t& e){
-		return {};
+		std::vector<json_value_t> statements;
+		for(const auto i: e._statements){
+			statements.push_back(statement_to_json(*i));
+		}
+
+		return std::map<string, json_value_t> {
+			{ "_host_function_param", e._host_function_param ? json_value_t("USED") : json_value_t() },
+			{ "_statements", json_value_t(statements) },
+		};
 	}
 
 	json_value_t scope_def_to_json(const scope_def_t& scope_def){
@@ -758,11 +834,6 @@ namespace floyd_parser {
 		const auto a = scope_def_to_json(*program._global_scope);
 		const auto s = json_to_compact_string(a);
 		QUARK_TRACE(s);
-/*
-		for(const auto i: program._global_scope->_executable._statements){
-			trace(*i);
-		}
-*/
 	}
 
 

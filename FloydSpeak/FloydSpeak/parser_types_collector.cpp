@@ -401,52 +401,6 @@ namespace floyd_parser {
 
 
 
-
-
-
-	json_value_t struct_def_to_json(const struct_def_t& s){
-		std::vector<json_value_t> members;
-		for(const auto i: s._members){
-			const auto member = std::map<string, json_value_t>{
-				{ "_name", json_value_t(s._name.to_string()) },
-//				{ "_members", s._name.to_string() },
-				{ "_struct_scope", scope_def_to_json(*s._struct_scope) }
-			};
-			members.push_back(json_value_t(member));
-		}
-
-		return {
-			std::map<string, json_value_t>{
-				{ "_name", json_value_t(s._name.to_string()) },
-				{ "_members", json_value_t(members) },
-				{ "_struct_scope", scope_def_to_json(*s._struct_scope) }
-			}
-		};
-	}
-
-	//???
-	json_value_t vector_def_to_json(const vector_def_t& s){
-		return {
-		};
-	}
-
-	//???
-	json_value_t function_def_to_json(const function_def_t& s){
-		return {
-		};
-	}
-
-	json_value_t type_def_to_json(const type_def_t& type_def){
-		return {
-			std::map<string, json_value_t>{
-				{ "_base_type", json_value_t(to_string(type_def._base_type)) },
-				{ "_struct_def", type_def._struct_def ? struct_def_to_json(*type_def._struct_def) : json_value_t() },
-				{ "_vector_def", type_def._vector_def ? vector_def_to_json(*type_def._vector_def) : json_value_t() },
-				{ "_function_def", type_def._function_def ? function_def_to_json(*type_def._function_def) : json_value_t() }
-			}
-		};
-	}
-
 	json_value_t type_indentifier_data_ref_to_json(const type_indentifier_data_ref& data_ref){
 		const std::map<string, json_value_t> a{
 			{ "_alias_type_identifier", json_value_t(data_ref._alias_type_identifier) },

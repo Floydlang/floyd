@@ -109,6 +109,8 @@ namespace floyd_parser {
 	*/
 	std::string to_signature(const type_def_t& t);
 
+	json_value_t type_def_to_json(const type_def_t& type_def);
+
 
 
 	//////////////////////////////////////		type_identifier_t
@@ -211,6 +213,7 @@ namespace floyd_parser {
 		public: std::vector<std::shared_ptr<statement_t> > _statements;
 	};
 
+	json_value_t executable_to_json(const executable_t& e);
 
 
 	//////////////////////////////////////		arg_t
@@ -270,6 +273,7 @@ namespace floyd_parser {
 
 	void trace(const function_def_t& v);
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
+
 	function_def_t make_function_def(
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
@@ -278,7 +282,9 @@ namespace floyd_parser {
 		const executable_t& executable,
 		const types_collector_t& types_collector
 	);
+
 	TSHA1 calc_function_body_hash(const function_def_t& f);
+	json_value_t function_def_to_json(const function_def_t& s);
 
 
 
@@ -341,7 +347,7 @@ namespace floyd_parser {
 
 	void trace(const struct_def_t& e);
 	std::string to_signature(const struct_def_t& t);
-
+	json_value_t struct_def_to_json(const struct_def_t& s);
 
 
 	//////////////////////////////////////		vector_def_t
@@ -368,6 +374,7 @@ namespace floyd_parser {
 
 	void trace(const vector_def_t& e);
 	std::string to_signature(const vector_def_t& t);
+	json_value_t vector_def_to_json(const vector_def_t& s);
 
 
 	//////////////////////////////////////////////////		scope_def_t
