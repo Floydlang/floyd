@@ -237,8 +237,8 @@ json_value_t value_to_json(const value_t& v){
 	else if(v.is_string()){
 		return json_value_t(v.get_string());
 	}
-	else if(v.is_struct_instance()){
-		const auto struct_instance = v.get_struct_instance();
+	else if(v.is_struct()){
+		const auto struct_instance = v.get_struct();
 		const auto struct_def = struct_instance->__def;
 
 		std::map<string, json_value_t> result;

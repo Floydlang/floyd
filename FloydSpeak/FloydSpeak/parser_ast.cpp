@@ -675,6 +675,62 @@ namespace floyd_parser {
 	}
 
 
+	//////////////////////////////////////		vector_def_t
+
+
+
+	vector_def_t vector_def_t::make2(
+		const type_identifier_t& name,
+		const type_identifier_t& element_type)
+	{
+		QUARK_ASSERT(name.check_invariant());
+		QUARK_ASSERT(element_type.check_invariant());
+
+		vector_def_t result;
+		result._name = name;
+		result._element_type = element_type;
+
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+
+	bool vector_def_t::check_invariant() const{
+		QUARK_ASSERT(_name.check_invariant());
+		QUARK_ASSERT(_name.to_string().size() > 0 );
+
+		QUARK_ASSERT(_element_type.check_invariant());
+		QUARK_ASSERT(_element_type.to_string().size() > 0 );
+		return true;
+	}
+
+	bool vector_def_t::operator==(const vector_def_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(_name != other._name){
+			return false;
+		}
+		if(_element_type != other._element_type){
+			return false;
+		}
+		return true;
+	}
+
+	void trace(const vector_def_t& e){
+		QUARK_ASSERT(e.check_invariant());
+		QUARK_SCOPED_TRACE("vector_def_t");
+		QUARK_TRACE_SS("element_type: " << e._element_type.to_string());
+	}
+
+
+	std::string to_signature(const vector_def_t& t){
+		QUARK_ASSERT(t.check_invariant());
+
+		return std::string("<vector>") + "[" + t._element_type.to_string() + "]";
+	}
+
+
+
 
 	////////////////////////			ast_t
 

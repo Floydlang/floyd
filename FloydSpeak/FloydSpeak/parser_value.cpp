@@ -78,6 +78,46 @@ namespace floyd_parser {
 	}
 
 
+	//////////////////////////////////////////////////		vector_instance_t
+
+
+		bool vector_instance_t::check_invariant() const{
+			for(const auto m: _elements){
+				QUARK_ASSERT(m.check_invariant());
+				//??? check type of member value is the same as in the type_def.
+			}
+			return true;
+		}
+
+		bool vector_instance_t::operator==(const vector_instance_t& other){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
+			return __def == other.__def && _elements == other._elements;
+		}
+
+
+		std::string to_preview(const vector_instance_t& instance){
+			string r;
+			for(const auto m: instance._elements){
+				r = r + m.plain_value_to_string() + " ";
+			}
+			return string("{") + r + "}";
+		}
+
+
+
+	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def){
+		QUARK_ASSERT(def && def->check_invariant());
+
+		auto instance = make_shared<vector_instance_t>();
+		instance->__def = def;
+		return value_t(instance);
+	}
+
+
+
+
 
 
 	//////////////////////////////////////////////////		value_t
@@ -89,26 +129,110 @@ void trace(const value_t& e){
 	QUARK_TRACE("value_t: " + e.value_and_type_to_string());
 }
 
+//??? swap(), operator=, copy-constructor.
 
 QUARK_UNIT_TESTQ("value_t()", "null"){
-	QUARK_TEST_VERIFY(value_t().plain_value_to_string() == "<null>");
+	const auto a = value_t();
+	QUARK_TEST_VERIFY(a.is_null());
+	QUARK_TEST_VERIFY(!a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+
+	QUARK_TEST_VERIFY(a == value_t());
+	QUARK_TEST_VERIFY(a != value_t("test"));
+	QUARK_TEST_VERIFY(a.plain_value_to_string() == "<null>");
+	QUARK_TEST_VERIFY(a.to_json() == "null");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<null>");
 }
 
-QUARK_UNIT_TESTQ("value_t()", "bool"){
-	QUARK_TEST_VERIFY(value_t(true).plain_value_to_string() == "true");
+QUARK_UNIT_TESTQ("value_t()", "bool - true"){
+	const auto a = value_t(true);
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+
+	QUARK_TEST_VERIFY(a == value_t(true));
+	QUARK_TEST_VERIFY(a != value_t(false));
+	QUARK_TEST_VERIFY(a.plain_value_to_string() == "true");
+	QUARK_TEST_VERIFY(a.to_json() == "true");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>true");
+}
+
+QUARK_UNIT_TESTQ("value_t()", "bool - false"){
+	const auto a = value_t(false);
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+
+	QUARK_TEST_VERIFY(a == value_t(false));
+	QUARK_TEST_VERIFY(a != value_t(true));
+	QUARK_TEST_VERIFY(a.plain_value_to_string() == "false");
+	QUARK_TEST_VERIFY(a.to_json() == "false");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>false");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "int"){
-	QUARK_TEST_VERIFY(value_t(13).plain_value_to_string() == "13");
+	const auto a = value_t(13);
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(!a.is_bool());
+	QUARK_TEST_VERIFY(a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+
+	QUARK_TEST_VERIFY(a == value_t(13));
+	QUARK_TEST_VERIFY(a != value_t(14));
+	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13");
+	QUARK_TEST_VERIFY(a.to_json() == "13");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<int>13");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "float"){
-	QUARK_TEST_VERIFY(value_t(13.5f).plain_value_to_string() == "13.500000");
+	const auto a = value_t(13.5f);
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(!a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+
+	QUARK_TEST_VERIFY(a == value_t(13.5f));
+	QUARK_TEST_VERIFY(a != value_t(14.0f));
+	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13.500000");
+	QUARK_TEST_VERIFY(a.to_json() == "13.500000");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<float>13.500000");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "string"){
-	QUARK_TEST_VERIFY(value_t("hello").plain_value_to_string() == "'hello'");
+	const auto a = value_t("xyz");
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(!a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+
+	QUARK_TEST_VERIFY(a == value_t("xyz"));
+	QUARK_TEST_VERIFY(a != value_t("xyza"));
+	QUARK_TEST_VERIFY(a.plain_value_to_string() == "\"xyz\"");
+	QUARK_TEST_VERIFY(a.to_json() == "\"xyz\"");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<string>\"xyz\"");
 }
+
 
 //??? more
 

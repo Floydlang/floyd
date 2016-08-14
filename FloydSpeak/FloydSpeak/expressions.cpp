@@ -357,7 +357,7 @@ std::string to_string(const expression_t& e){
 			const auto arg_expr = to_string(*i);
 			args = args + arg_expr;
 		}
-		return string("(@call ") + "'" + call_function._function_name + "'(" + args + "))";
+		return string("(@call ") + "\"" + call_function._function_name + "\"(" + args + "))";
 	}
 	else if(e._load){
 		const auto e2 = *e._load;
@@ -366,11 +366,11 @@ std::string to_string(const expression_t& e){
 	}
 	else if(e._resolve_variable){
 		const auto e2 = *e._resolve_variable;
-		return string("(@res_var '") + e2._variable_name + "'" + ")";
+		return string("(@res_var \"") + e2._variable_name + "\"" + ")";
 	}
 	else if(e._resolve_struct_member){
 		const auto e2 = *e._resolve_struct_member;
-		return string("(@res_member ") + to_string(*e2._parent_address) + " '" + e2._member_name + "'" + ")";
+		return string("(@res_member ") + to_string(*e2._parent_address) + " \"" + e2._member_name + "\"" + ")";
 	}
 	else if(e._lookup_element){
 		const auto e2 = *e._lookup_element;
@@ -385,7 +385,7 @@ std::string to_string(const expression_t& e){
 
 QUARK_UNIT_TESTQ("to_string()", "constants"){
 	quark::ut_compare(to_string(make_constant(13)), "(@k <int>13)");
-	quark::ut_compare(to_string(make_constant("xyz")), "(@k <string>'xyz')");
+	quark::ut_compare(to_string(make_constant("xyz")), "(@k <string>\"xyz\")");
 	quark::ut_compare(to_string(make_constant(14.0f)), "(@k <float>14.000000)");
 }
 
@@ -410,7 +410,7 @@ QUARK_UNIT_TESTQ("to_string()", "call"){
 		to_string(
 			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
 		),
-		"(@call 'my_func'((@k <string>'xyz')(@k <int>123)))"
+		"(@call \"my_func\"((@k <string>\"xyz\")(@k <int>123)))"
 	);
 }
 
@@ -419,7 +419,7 @@ QUARK_UNIT_TESTQ("to_string()", "read & resolve_variable"){
 		to_string(
 			make_load_variable("param1")
 		),
-		"(@load (@res_var 'param1'))"
+		"(@load (@res_var \"param1\"))"
 	);
 }
 //??? test all addressing.
@@ -428,7 +428,7 @@ QUARK_UNIT_TESTQ("to_string()", "lookup"){
 		to_string(
 			make_lookup(make_resolve_variable("hello"), make_constant("xyz"))
 		),
-		"(@lookup (@res_var 'hello') (@k <string>'xyz'))"
+		"(@lookup (@res_var \"hello\") (@k <string>\"xyz\"))"
 	);
 }
 

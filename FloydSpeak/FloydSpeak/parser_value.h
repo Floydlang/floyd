@@ -44,6 +44,23 @@ namespace floyd_parser {
 
 
 
+	//////////////////////////////////////////////////		vector_instance_t
+
+
+	struct vector_instance_t {
+		public: bool check_invariant() const;
+		public: bool operator==(const vector_instance_t& other);
+
+		//	??? Remove this points at later time, when we statically track the type of structs OK.
+		std::shared_ptr<const vector_def_t> __def;
+
+		std::vector<value_t> _elements;
+	};
+
+	std::string to_preview(const vector_instance_t& instance);
+
+
+
 	//////////////////////////////////////////////////		value_t
 
 	/*
@@ -56,6 +73,7 @@ namespace floyd_parser {
 		float
 		string
 		struct
+		vector
 	*/
 
 	struct value_t {
@@ -71,8 +89,11 @@ namespace floyd_parser {
 			else if(_type.to_string() == "string"){
 			}
 			else {
-				if(_struct_instance){
-					QUARK_ASSERT(_struct_instance->check_invariant());
+				if(_struct){
+					QUARK_ASSERT(_struct->check_invariant());
+				}
+				else if(_vector){
+					QUARK_ASSERT(_vector->check_invariant());
 				}
 				else{
 					QUARK_ASSERT(false);
@@ -124,9 +145,16 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(const std::shared_ptr<struct_instance_t>& struct_instance) :
-			_type(struct_instance->__def->_name),
-			_struct_instance(struct_instance)
+		public: value_t(const std::shared_ptr<struct_instance_t>& instance) :
+			_type(instance->__def->_name),
+			_struct(instance)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: value_t(const std::shared_ptr<vector_instance_t>& instance) :
+			_type(instance->__def->_name),
+			_vector(instance)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -138,7 +166,8 @@ namespace floyd_parser {
 			_int(other._int),
 			_float(other._float),
 			_string(other._string),
-			_struct_instance(other._struct_instance)
+			_struct(other._struct),
+			_vector(other._vector)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
@@ -181,14 +210,22 @@ namespace floyd_parser {
 				return _string == other._string;
 			}
 			else {
-				if(_struct_instance){
-					return *_struct_instance == *other._struct_instance;
+				if(_struct){
+					return *_struct == *other._struct;
+				}
+				else if(_vector){
+					return *_vector == *other._vector;
 				}
 				else{
 					QUARK_ASSERT(false);
 				}
 			}
 		}
+
+		public: bool operator!=(const value_t& other) const{
+			return !(*this == other);
+		}
+
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -210,11 +247,14 @@ namespace floyd_parser {
 				return std::string(temp);
 			}
 			else if(d == "string"){
-				return std::string("'") + _string + "'";
+				return std::string("\"") + _string + "\"";
 			}
 			else{
-				if(_struct_instance){
-					return to_preview(*_struct_instance);
+				if(_struct){
+					return to_preview(*_struct);
+				}
+				else if(_vector){
+					return to_preview(*_vector);
 				}
 				else{
 					return "???";
@@ -227,10 +267,10 @@ namespace floyd_parser {
 
 			const auto d = _type.to_string();
 			if(d == "null"){
-				return "\"null\"";
+				return "null";
 			}
 			else if(d == "bool"){
-				return _bool ? "\"true\"" : "\"false\"";
+				return _bool ? "true" : "false";
 			}
 			else if(d == "int"){
 				char temp[200 + 1];//### Use C++ function instead.
@@ -246,8 +286,11 @@ namespace floyd_parser {
 				return std::string("\"") + _string + "\"";
 			}
 			else{
-				if(_struct_instance){
-					return to_preview(*_struct_instance);
+				if(_struct){
+					return to_preview(*_struct);
+				}
+				else if(_vector){
+					return to_preview(*_vector);
 				}
 				else{
 					return "???";
@@ -259,7 +302,12 @@ namespace floyd_parser {
 		std::string value_and_type_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return "<" + _type.to_string() + ">" + plain_value_to_string();
+			if(is_null()){
+				return "<null>";
+			}
+			else{
+				return "<" + _type.to_string() + ">" + plain_value_to_string();
+			}
 		}
 
 		public: type_identifier_t get_type() const{
@@ -298,10 +346,16 @@ namespace floyd_parser {
 			return _type == type_identifier_t("string");
 		}
 
-		public: bool is_struct_instance() const {
+		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _struct_instance ? true : false;
+			return _struct ? true : false;
+		}
+
+		public: bool is_vector() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _vector ? true : false;
 		}
 
 		//	???	Use enum from type system instead of strings
@@ -341,13 +395,22 @@ namespace floyd_parser {
 			return _string;
 		}
 
-		public: std::shared_ptr<struct_instance_t> get_struct_instance() const{
+		public: std::shared_ptr<struct_instance_t> get_struct() const{
 			QUARK_ASSERT(check_invariant());
-			if(!is_struct_instance()){
+			if(!is_struct()){
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _struct_instance;
+			return _struct;
+		}
+
+		public: std::shared_ptr<vector_instance_t> get_vector() const{
+			QUARK_ASSERT(check_invariant());
+			if(!is_vector()){
+				throw std::runtime_error("Type mismatch!");
+			}
+
+			return _vector;
 		}
 
 		public: void swap(value_t& other){
@@ -360,7 +423,8 @@ namespace floyd_parser {
 			std::swap(_int, other._int);
 			std::swap(_float, other._float);
 			std::swap(_string, other._string);
-			std::swap(_struct_instance, other._struct_instance);
+			std::swap(_struct, other._struct);
+			std::swap(_vector, other._vector);
 
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
@@ -375,7 +439,8 @@ namespace floyd_parser {
 		private: int _int = 0;
 		private: float _float = 0.0f;
 		private: std::string _string = "";
-		private: std::shared_ptr<struct_instance_t> _struct_instance;
+		private: std::shared_ptr<struct_instance_t> _struct;
+		private: std::shared_ptr<vector_instance_t> _vector;
 
 	};
 
@@ -399,6 +464,7 @@ namespace floyd_parser {
 	floyd_parser::value_t make_default_value(const std::shared_ptr<struct_def_t>& t);
 
 	floyd_parser::value_t make_struct_instance(const std::shared_ptr<const floyd_parser::struct_def_t>& def);
+	floyd_parser::value_t make_vector_instance(const std::shared_ptr<const floyd_parser::vector_def_t>& def);
 
 
 }	//	floyd_parser

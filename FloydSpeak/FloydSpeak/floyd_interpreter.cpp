@@ -316,10 +316,10 @@ namespace {
 		}
 		else if(e._resolve_struct_member){
 			const auto parent = load_deep(vm, left_side, *e._resolve_struct_member->_parent_address);
-			QUARK_ASSERT(parent._constant && parent._constant->is_struct_instance());
+			QUARK_ASSERT(parent._constant && parent._constant->is_struct());
 
 			const auto member_name = e._resolve_struct_member->_member_name;
-			const auto struct_instance = parent._constant->get_struct_instance();
+			const auto struct_instance = parent._constant->get_struct();
 			const value_t value = struct_instance->_member_values[member_name];
 			return make_constant(value);
 		}

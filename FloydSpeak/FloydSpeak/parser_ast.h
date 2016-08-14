@@ -346,17 +346,27 @@ namespace floyd_parser {
 	//////////////////////////////////////		vector_def_t
 
 
+	/*
+		Notice that vector has no scope of its own.
+	*/
 	struct vector_def_t {
+		public: static vector_def_t make2(
+			const type_identifier_t& name,
+			const type_identifier_t& element_type
+		);
+
 		public: vector_def_t(){};
 		public: bool check_invariant() const;
-		public: bool operator==(const vector_def_t& other) const{ return false; }
+		public: bool operator==(const vector_def_t& other) const;
 
 
 		///////////////////		STATE
-		public: std::string _value_type_identifier;
-		public: std::string _key_type_identifier;
+		public: type_identifier_t _name;
+		public: type_identifier_t _element_type;
 	};
 
+	void trace(const vector_def_t& e);
+	std::string to_signature(const vector_def_t& t);
 
 
 	//////////////////////////////////////////////////		scope_def_t
