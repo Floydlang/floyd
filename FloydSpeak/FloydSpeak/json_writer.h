@@ -18,7 +18,5 @@ struct json_value_t;
 
 std::string to_string(const json_value_t& v);
 
-std::string to_json2(const std::vector<std::string>& values);
-
 
 #endif /* json_writer_hpp */
