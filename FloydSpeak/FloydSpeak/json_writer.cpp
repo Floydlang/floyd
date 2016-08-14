@@ -121,14 +121,14 @@ QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
 
 
 
-std::string to_string(const std::map<std::string, json_value_t>& object){
+std::string object_to_compact_string(const std::map<std::string, json_value_t>& object){
 	if(object.empty()){
 		return "{}";
 	}
 	else{
 		string members;
 		for(const auto m: object){
-			const auto s = quote(m.first) + ": " + to_string(m.second) + ", ";
+			const auto s = quote(m.first) + ": " + json_to_compact_string(m.second) + ", ";
 			members = members + s;
 		}
 
@@ -140,23 +140,23 @@ std::string to_string(const std::map<std::string, json_value_t>& object){
 	}
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
-	quark::ut_compare(to_string(json_value_t(std::map<string, json_value_t>{})), "{}");
+QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
+	quark::ut_compare(object_to_compact_string(std::map<string, json_value_t>{}), "{}");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
 	quark::ut_compare(
-		to_string(json_value_t(std::map<string, json_value_t>{
+		object_to_compact_string(std::map<string, json_value_t>{
 			{ "one", json_value_t("1") },
 			{ "two", json_value_t("2") }
 		}
-		)),
+		),
 		"{ \"one\": \"1\", \"two\": \"2\" }"
 	);
 }
 
 
-std::string to_string(const std::vector<json_value_t>& array){
+std::string array_to_compact_string(const std::vector<json_value_t>& array){
 	if(array.empty()){
 		return "[]";
 	}
@@ -165,29 +165,29 @@ std::string to_string(const std::vector<json_value_t>& array){
 		size_t count = array.size();
 		size_t index = 0;
 		while(count > 1){
-			items = items + to_string(array[index]) + ", ";
+			items = items + json_to_compact_string(array[index]) + ", ";
 			count--;
 			index++;
 		}
 		if(count > 0){
-			items = items + to_string(array[index]);
+			items = items + json_to_compact_string(array[index]);
 		}
 		const auto result = std::string("[") + items + "]";
 		return result;
 	}
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
-	quark::ut_compare(to_string(std::vector<json_value_t>{}), "[]");
+QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
+	quark::ut_compare(array_to_compact_string(std::vector<json_value_t>{}), "[]");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
-	quark::ut_compare(to_string(std::vector<json_value_t>{ json_value_t(13.4) }), "[13.4]");
+QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
+	quark::ut_compare(array_to_compact_string(std::vector<json_value_t>{ json_value_t(13.4) }), "[13.4]");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
 	quark::ut_compare(
-		to_string(vector<json_value_t>{
+		array_to_compact_string(vector<json_value_t>{
 			json_value_t("a"),
 			json_value_t("b")
 		}),
@@ -196,12 +196,12 @@ QUARK_UNIT_TESTQ("to_string()", ""){
 }
 
 
-std::string to_string(const json_value_t& v){
+std::string json_to_compact_string(const json_value_t& v){
 	if(v.is_object()){
-		return to_string(v.get_object());
+		return object_to_compact_string(v.get_object());
 	}
 	else if(v.is_array()){
-		return to_string(v.get_array());
+		return array_to_compact_string(v.get_array());
 	}
 	else if(v.is_string()){
 		return quote(v.get_string());
@@ -223,18 +223,18 @@ std::string to_string(const json_value_t& v){
 	}
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	const auto a = std::map<string, json_value_t>{
 		{ "firstName", json_value_t("John") },
 		{ "lastName", json_value_t("Doe") }
 	};
-	quark::ut_compare(to_string(json_value_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
-	quark::ut_compare(to_string(json_value_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
+	quark::ut_compare(json_to_compact_string(json_value_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	quark::ut_compare(json_to_compact_string(json_value_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
 	quark::ut_compare(
-		to_string(json_value_t(
+		json_to_compact_string(json_value_t(
 			vector<json_value_t>{
 				json_value_t("a"),
 				json_value_t("b")
@@ -245,27 +245,27 @@ QUARK_UNIT_TESTQ("to_string()", ""){
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(to_string(json_value_t("")) == "\"\"");
+	QUARK_UT_VERIFY(json_to_compact_string(json_value_t("")) == "\"\"");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(to_string(json_value_t("xyz")) == "\"xyz\"");
+	QUARK_UT_VERIFY(json_to_compact_string(json_value_t("xyz")) == "\"xyz\"");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(to_string(json_value_t(12.3)) == "12.3");
+	QUARK_UT_VERIFY(json_to_compact_string(json_value_t(12.3)) == "12.3");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(to_string(json_value_t(true)) == "true");
+	QUARK_UT_VERIFY(json_to_compact_string(json_value_t(true)) == "true");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(to_string(json_value_t(false)) == "false");
+	QUARK_UT_VERIFY(json_to_compact_string(json_value_t(false)) == "false");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(to_string(json_value_t()) == "null");
+	QUARK_UT_VERIFY(json_to_compact_string(json_value_t()) == "null");
 }
 
 

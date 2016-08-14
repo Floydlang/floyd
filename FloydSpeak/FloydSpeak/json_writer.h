@@ -16,7 +16,7 @@
 
 struct json_value_t;
 
-std::string to_string(const json_value_t& v);
+std::string json_to_compact_string(const json_value_t& v);
 
 
 #endif /* json_writer_hpp */

@@ -255,7 +255,7 @@ string operation_to_string(const math_operation1_expr_t::operation& op){
 void trace(const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
 	const auto json = expression_to_json(e);
-	const auto s = to_string(json);
+	const auto s = json_to_compact_string(json);
 	QUARK_TRACE(s);
 }
 
@@ -444,7 +444,7 @@ json_value_t expression_to_json(const expression_t& e){
 namespace {
 	string expression_to_json_string(const expression_t& e){
 		const auto json = expression_to_json(e);
-		return to_string(json);
+		return json_to_compact_string(json);
 	}
 }
 
