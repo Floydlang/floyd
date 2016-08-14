@@ -34,7 +34,7 @@ namespace floyd_parser {
 	
 	const std::vector<std::string> basic_types {
 		"bool",
-		"char???",
+		"char",	//	???
 		"-code_point",
 		"-double",
 		"float",
@@ -82,7 +82,7 @@ namespace floyd_parser {
 		"-invariant",
 		"log",
 		"mutable",
-		"-namespace???",
+		"-namespace",	//	???
 		"-null",
 		"-private",
 		"-property",

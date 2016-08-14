@@ -239,9 +239,6 @@ json_value_t value_to_json(const value_t& v){
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct();
-
-		//??? A scope_def should have a name string.
-
 		std::map<string, json_value_t> result;
 		for(const auto member: value->__def->_members){
 			const auto member_name = member._name;
@@ -253,7 +250,6 @@ json_value_t value_to_json(const value_t& v){
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector();
-
 		std::vector<json_value_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
 			const auto element_value = value->_elements[i];

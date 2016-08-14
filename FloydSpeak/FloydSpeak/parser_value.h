@@ -17,8 +17,6 @@
 
 #include "parser_ast.h"
 
-//??? add float & vector types to value_t
-
 
 namespace floyd_parser {
 	struct statement_t;
@@ -257,47 +255,10 @@ namespace floyd_parser {
 					return to_preview(*_vector);
 				}
 				else{
-					return "???";
+					return "??";
 				}
 			}
 		}
-
-		std::string to_json_deprecated() const {
-			QUARK_ASSERT(check_invariant());
-
-			const auto d = _type.to_string();
-			if(d == "null"){
-				return "null";
-			}
-			else if(d == "bool"){
-				return _bool ? "true" : "false";
-			}
-			else if(d == "int"){
-				char temp[200 + 1];//### Use C++ function instead.
-				sprintf(temp, "%d", _int);
-				return std::string(temp);
-			}
-			else if(d == "float"){
-				char temp[200 + 1];//### Use C++ function instead.
-				sprintf(temp, "%f", _float);
-				return std::string(temp);
-			}
-			else if(d == "string"){
-				return std::string("\"") + _string + "\"";
-			}
-			else{
-				if(_struct){
-					return to_preview(*_struct);
-				}
-				else if(_vector){
-					return to_preview(*_vector);
-				}
-				else{
-					return "???";
-				}
-			}
-		}
-
 
 		std::string value_and_type_to_string() const {
 			QUARK_ASSERT(check_invariant());
@@ -358,7 +319,6 @@ namespace floyd_parser {
 			return _vector ? true : false;
 		}
 
-		//	???	Use enum from type system instead of strings
 		public: bool get_bool() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_bool()){

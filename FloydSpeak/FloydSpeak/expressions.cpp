@@ -196,9 +196,6 @@ expression_t make_load_variable(const std::string& name){
 	return make_load(address);
 }
 
-
-//??? Better handling of input strings to the expression. Validate etc. Use identifier_t etc.
-
 expression_t make_resolve_variable(const std::string& variable){
 	QUARK_ASSERT(variable.size() > 0);
 

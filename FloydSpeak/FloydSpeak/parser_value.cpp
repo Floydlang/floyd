@@ -145,7 +145,6 @@ QUARK_UNIT_TESTQ("value_t()", "null"){
 	QUARK_TEST_VERIFY(a == value_t());
 	QUARK_TEST_VERIFY(a != value_t("test"));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "<null>");
-	QUARK_TEST_VERIFY(a.to_json_deprecated() == "null");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<null>");
 }
 
@@ -162,7 +161,6 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(a == value_t(true));
 	QUARK_TEST_VERIFY(a != value_t(false));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "true");
-	QUARK_TEST_VERIFY(a.to_json_deprecated() == "true");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>true");
 }
 
@@ -179,7 +177,6 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(a == value_t(false));
 	QUARK_TEST_VERIFY(a != value_t(true));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "false");
-	QUARK_TEST_VERIFY(a.to_json_deprecated() == "false");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>false");
 }
 
@@ -196,7 +193,6 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(a == value_t(13));
 	QUARK_TEST_VERIFY(a != value_t(14));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13");
-	QUARK_TEST_VERIFY(a.to_json_deprecated() == "13");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<int>13");
 }
 
@@ -213,7 +209,6 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
 	QUARK_TEST_VERIFY(a != value_t(14.0f));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13.500000");
-	QUARK_TEST_VERIFY(a.to_json_deprecated() == "13.500000");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<float>13.500000");
 }
 
@@ -230,7 +225,6 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "\"xyz\"");
-	QUARK_TEST_VERIFY(a.to_json_deprecated() == "\"xyz\"");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<string>\"xyz\"");
 }
 
@@ -249,9 +243,6 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 	QUARK_TEST_VERIFY(a == f._struct6_instance1);
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 	quark::ut_compare(a.plain_value_to_string(), "{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
-
-
-//???	quark::ut_compare(a.to_json_deprecated(), "\"xyz\"");
 	quark::ut_compare(a.value_and_type_to_string(), "<struct6>{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
 }
 
@@ -274,7 +265,6 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	QUARK_TEST_VERIFY(a == b);
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 	quark::ut_compare(a.plain_value_to_string(), "[int][]");
-//???	quark::ut_compare(a.to_json_deprecated(), "\"xyz\"");
 	quark::ut_compare(a.value_and_type_to_string(), "<my_vec>[int][]");
 }
 

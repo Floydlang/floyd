@@ -90,7 +90,7 @@ namespace floyd_parser {
 		}
 
 		for(const auto it: _type_definitions){
-		//??? Cannot call to_signature() from here - recursion!
+		//!!! Cannot call to_signature() from here - recursion!
 //			const auto signature = to_signature(*it.second);
 //			QUARK_ASSERT(it.first == signature);
 			QUARK_ASSERT(it.second->check_invariant());

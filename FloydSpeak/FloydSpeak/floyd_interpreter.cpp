@@ -348,7 +348,7 @@ namespace {
 }
 
 //### Test string + etc.
-//??? Split into several functions.
+//### Split into several functions.
 expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -666,10 +666,6 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 	);
 	QUARK_TEST_VERIFY(a.second == value_t("three"));
 }
-
-/*
-	Scenario ???add
-*/
 
 }	//	floyd_interpreter
 
