@@ -262,7 +262,7 @@ namespace floyd_parser {
 			}
 		}
 
-		std::string to_json() const {
+		std::string to_json_deprecated() const {
 			QUARK_ASSERT(check_invariant());
 
 			const auto d = _type.to_string();
@@ -465,6 +465,18 @@ namespace floyd_parser {
 
 	floyd_parser::value_t make_struct_instance(const std::shared_ptr<const floyd_parser::struct_def_t>& def);
 	floyd_parser::value_t make_vector_instance(const std::shared_ptr<const floyd_parser::vector_def_t>& def);
+
+
+
+
+struct struct_fixture_t {
+	public: scope_ref_t _global;
+	public: std::shared_ptr<struct_def_t> _struct6_def;
+	public: value_t _struct6_instance0;
+	public: value_t _struct6_instance1;
+
+	public: struct_fixture_t();
+};
 
 
 }	//	floyd_parser

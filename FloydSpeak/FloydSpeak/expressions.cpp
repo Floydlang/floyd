@@ -511,7 +511,7 @@ QUARK_UNIT_TESTQ("to_json()", "call"){
 
 std::string to_json(const expression_t& e){
 	if(e._constant){
-		return to_json2({ "\"k\"", e._constant->to_json() });
+		return to_json2({ "\"k\"", e._constant->to_json_deprecated() });
 	}
 	else if(e._math2){
 		const auto e2 = *e._math2;

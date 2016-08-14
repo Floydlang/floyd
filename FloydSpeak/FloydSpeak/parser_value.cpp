@@ -43,7 +43,7 @@ namespace floyd_parser {
 		std::string to_preview(const struct_instance_t& instance){
 			string r;
 			for(const auto m: instance._member_values){
-				r = r + (string("<") + m.first + ">" + m.second.plain_value_to_string());
+				r = r + (string("<") + m.second.get_type().to_string() + ">" + m.first + "=" + m.second.plain_value_to_string());
 			}
 			return string("{") + r + "}";
 		}
@@ -144,7 +144,7 @@ QUARK_UNIT_TESTQ("value_t()", "null"){
 	QUARK_TEST_VERIFY(a == value_t());
 	QUARK_TEST_VERIFY(a != value_t("test"));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "<null>");
-	QUARK_TEST_VERIFY(a.to_json() == "null");
+	QUARK_TEST_VERIFY(a.to_json_deprecated() == "null");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<null>");
 }
 
@@ -161,7 +161,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(a == value_t(true));
 	QUARK_TEST_VERIFY(a != value_t(false));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "true");
-	QUARK_TEST_VERIFY(a.to_json() == "true");
+	QUARK_TEST_VERIFY(a.to_json_deprecated() == "true");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>true");
 }
 
@@ -178,7 +178,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(a == value_t(false));
 	QUARK_TEST_VERIFY(a != value_t(true));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "false");
-	QUARK_TEST_VERIFY(a.to_json() == "false");
+	QUARK_TEST_VERIFY(a.to_json_deprecated() == "false");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>false");
 }
 
@@ -195,7 +195,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(a == value_t(13));
 	QUARK_TEST_VERIFY(a != value_t(14));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13");
-	QUARK_TEST_VERIFY(a.to_json() == "13");
+	QUARK_TEST_VERIFY(a.to_json_deprecated() == "13");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<int>13");
 }
 
@@ -212,7 +212,7 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
 	QUARK_TEST_VERIFY(a != value_t(14.0f));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13.500000");
-	QUARK_TEST_VERIFY(a.to_json() == "13.500000");
+	QUARK_TEST_VERIFY(a.to_json_deprecated() == "13.500000");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<float>13.500000");
 }
 
@@ -229,8 +229,29 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "\"xyz\"");
-	QUARK_TEST_VERIFY(a.to_json() == "\"xyz\"");
+	QUARK_TEST_VERIFY(a.to_json_deprecated() == "\"xyz\"");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<string>\"xyz\"");
+}
+
+
+QUARK_UNIT_TESTQ("value_t()", "struct"){
+	struct_fixture_t f;
+	const auto a = f._struct6_instance0;
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(!a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+
+	QUARK_TEST_VERIFY(a == f._struct6_instance1);
+	QUARK_TEST_VERIFY(a != value_t("xyza"));
+	quark::ut_compare(a.plain_value_to_string(), "{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
+
+
+//???	quark::ut_compare(a.to_json_deprecated(), "\"xyz\"");
+	quark::ut_compare(a.value_and_type_to_string(), "<struct6>{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
 }
 
 
@@ -325,6 +346,26 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 
 
 
+struct_fixture_t::struct_fixture_t() :
+	_global(scope_def_t::make_global_scope())
+{
+	auto pixel_def = struct_def_t::make2(
+		type_identifier_t::make("pixel"),
+		std::vector<member_t>(
+			{
+				member_t(type_identifier_t::make_int(), "red", value_t(55)),
+				member_t(type_identifier_t::make_int(), "green", value_t(66)),
+				member_t(type_identifier_t::make_int(), "blue", value_t(77))
+			}
+		),
+		_global);
+
+	_global->_types_collector = _global->_types_collector.define_struct_type("pixel", pixel_def);
+	_struct6_def = make_shared<struct_def_t>(make_struct6(_global));
+
+	_struct6_instance0 = make_struct_instance(_struct6_def);
+	_struct6_instance1 = make_struct_instance(_struct6_def);
+}
 
 
 

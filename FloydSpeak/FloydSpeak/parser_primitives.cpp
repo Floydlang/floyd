@@ -259,22 +259,10 @@ json_value_t value_to_json(const value_t& v){
 }
 
 
-QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
-	auto global = scope_def_t::make_global_scope();
-	auto pixel_def = struct_def_t::make2(
-		type_identifier_t::make("pixel"),
-		vector<member_t>(
-			{
-				member_t(type_identifier_t::make_int(), "red", value_t(55)),
-				member_t(type_identifier_t::make_int(), "green", value_t(66))
-			}
-		),
-		global);
-	global->_types_collector = global->_types_collector.define_struct_type("pixel", pixel_def);
-	const auto def = make_shared<struct_def_t>(make_struct6(global));
 
-	const auto struct_instance = make_struct_instance(def);
-	const value_t value(struct_instance);
+QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
+	struct_fixture_t f;
+	const value_t value = f._struct6_instance0;
 
 	const auto result = value_to_json(value);
 
