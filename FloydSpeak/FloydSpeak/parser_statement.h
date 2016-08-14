@@ -74,8 +74,6 @@ namespace floyd_parser {
 	};
 
 
-	statement_t makie_return_statement(const expression_t& expression);
-
 
     
 	//////////////////////////////////////		statement_t
@@ -130,6 +128,7 @@ namespace floyd_parser {
 	statement_t make__bind_statement(const bind_statement_t& value);
 	statement_t make__bind_statement(const std::string& identifier, const expression_t& e);
 	statement_t make__return_statement(const return_statement_t& value);
+	statement_t make__return_statement(const expression_t& expression);
 
 	void trace(const statement_t& s);
 	json_value_t statement_to_json(const statement_t& e);

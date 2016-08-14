@@ -66,7 +66,7 @@ namespace floyd_parser {
 	/*
 		Holds all types of program.
 	*/
-
+//??? move these to make_global()! Only store in global scope.
 	types_collector_t::types_collector_t(){
 		QUARK_ASSERT(check_invariant());
 

@@ -39,7 +39,7 @@ namespace floyd_parser {
 	}
 
 
-	statement_t makie_return_statement(const expression_t& expression){
+	statement_t make__return_statement(const expression_t& expression){
 		return statement_t(return_statement_t{make_shared<expression_t>(expression)});
 	}
 
@@ -142,10 +142,27 @@ namespace floyd_parser {
 
 
 //???
-QUARK_UNIT_TESTQ("statement_to_json", ""){
+QUARK_UNIT_TESTQ("statement_to_json", "bind"){
 	quark::ut_compare(
 		json_to_compact_string(
-			statement_to_json(makie_return_statement(make_constant("abc")))
+			statement_to_json(make__bind_statement("a", make_constant(400)))
+		)
+		,
+		R"(["bind", "a", ["k", 400]])"
+	);
+}
+
+QUARK_UNIT_TESTQ("statement_to_json", "defstruct"){
+	const auto global = scope_def_t::make_global_scope();
+	const auto result = statement_to_json(define_struct_statement_t{ make_struct1(global) });
+
+	quark::ut_compare(result.get_array()[0].get_string(), "defstruct");
+}
+
+QUARK_UNIT_TESTQ("statement_to_json", "return"){
+	quark::ut_compare(
+		json_to_compact_string(
+			statement_to_json(make__return_statement(make_constant("abc")))
 		)
 		,
 		R"(["return", ["k", "abc"]])"

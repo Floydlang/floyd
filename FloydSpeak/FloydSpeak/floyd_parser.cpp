@@ -389,7 +389,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(makie_return_statement(make_constant(3)))
+			make_shared<statement_t>(make__return_statement(make_constant(3)))
 		}),
 		{}
 	);
@@ -416,7 +416,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(makie_return_statement(make_constant(3)))
+			make_shared<statement_t>(make__return_statement(make_constant(3)))
 		}),
 		{}
 	);
@@ -448,7 +448,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(makie_return_statement(make_constant("test abc")))
+			make_shared<statement_t>(make__return_statement(make_constant("test abc")))
 		}),
 		{}
 	);
@@ -462,7 +462,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(makie_return_statement(make_constant(3)))
+			make_shared<statement_t>(make__return_statement(make_constant(3)))
 		}),
 		{}
 	);
@@ -490,7 +490,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(makie_return_statement(make_constant(13.4f)))
+			make_shared<statement_t>(make__return_statement(make_constant(13.4f)))
 		}),
 		{}
 	);
@@ -504,8 +504,8 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 				arg_t{ type_identifier_t::make_string(), "arg" }
 			},
 			{
-				makie_return_statement(bind_statement_t{"test", function_call_expr_t{"testx", }})
-				makie_return_statement(make_constant(value_t(13.4f)))
+				make__return_statement(bind_statement_t{"test", function_call_expr_t{"testx", }})
+				make__return_statement(make_constant(value_t(13.4f)))
 			}
 		)
 	));
@@ -534,7 +534,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can instantiate a struct"){
 			type_identifier_t::make_string(),
 			vector<arg_t>{},
 			{
-				makie_return_statement(make_constant(value_t(3)))
+				make__return_statement(make_constant(value_t(3)))
 			}
 		)
 	));
@@ -555,7 +555,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member vari
 			type_identifier_t::make_string(),
 			vector<arg_t>{},
 			{
-				makie_return_statement(make_constant(value_t(3)))
+				make__return_statement(make_constant(value_t(3)))
 			}
 		)
 	));
