@@ -512,7 +512,6 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		};
 	}
 
-	//???
 	json_value_t vector_def_to_json(const vector_def_t& s){
 		return {
 		};
@@ -972,7 +971,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 				{ type_identifier_t::make_bool(), "_bool_true", value_t(true) },
 				{ type_identifier_t::make_bool(), "_bool_false", value_t(false) },
 				{ type_identifier_t::make_int(), "_int", value_t(111) },
-//???				{ type_identifier_t::make_float(), "_float" },
+//				{ type_identifier_t::make_float(), "_float" },
 				{ type_identifier_t::make_string(), "_string", value_t("test 123") },
 				{ type_identifier_t::make("pixel"), "_pixel" }
 			},

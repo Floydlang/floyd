@@ -40,7 +40,7 @@ namespace floyd_parser {
 	*/
 	enum base_type {
 		k_null,
-//		k_float,	??? implemented in some places!? Inconsistent.
+//		k_float,
 		k_int,
 		k_bool,
 		k_string,

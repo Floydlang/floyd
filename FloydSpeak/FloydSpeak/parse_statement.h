@@ -32,8 +32,6 @@ namespace floyd_parser {
 
 
 	/*
-		//??? support "auto a = hello();" and "a = hello();"
-
 		"int a = 10;"
 		"float b = 0.3;"
 		"int c = a + b;"

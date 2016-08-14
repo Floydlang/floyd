@@ -263,8 +263,6 @@ json_value_t value_to_json(const value_t& v){
 	}
 }
 
-	//??? Store value-type in the json? "__floyd_type": "graphics:pixel_t"
-
 QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
 	struct_fixture_t f;
 	const value_t value = f._struct6_instance0;

@@ -319,8 +319,6 @@ json_value_t expression_to_json(const expression_t& e){
 	}
 }
 
-//??? add type too? "[ "k", <int>, 13 ]" OR "[ "int_k", 13 ]
-
 string expression_to_json_string(const expression_t& e){
 	const auto json = expression_to_json(e);
 	return json_to_compact_string(json);
@@ -366,7 +364,6 @@ QUARK_UNIT_TESTQ("expression_to_json()", "read & resolve_variable"){
 	);
 }
 
-//??? test function calls in path.
 QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(

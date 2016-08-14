@@ -312,7 +312,6 @@ namespace floyd_parser {
 		}
 	}
 
-	//??? make signature a JSON string too.
 	std::shared_ptr<type_def_t> types_collector_t::lookup_signature(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 

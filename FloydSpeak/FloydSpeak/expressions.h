@@ -70,7 +70,6 @@ namespace floyd_parser {
 			return _function_name == other._function_name && _inputs == other._inputs;
 		}
 
-		//??? Change for a path.
 		const std::string _function_name;
 		const std::vector<std::shared_ptr<expression_t>> _inputs;
 	};

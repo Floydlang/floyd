@@ -179,7 +179,7 @@ statement_result_t read_statement(scope_ref_t scope_def, const string& pos){
 		const auto type_pos = read_required_type_identifier(pos);
 		const auto identifier_pos = read_required_single_symbol(type_pos.second);
 
-		//	??? check for "a = 3"-type assignment, with inferred type.
+		//	Check for "a = 3"-type assignment, with inferred type.
 
 		/*
 			Function definition?
@@ -303,7 +303,7 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, co
 
 //	statements.push_back(make_shared<statement_t>(statement_pos._statement));
 
-	//??? easier to use source code template and compile it.
+	//Easier to use source code template and compile it?
 /*
 	const function_def_t function_def {
 		type_identifier_t::make(struct_name),
@@ -366,11 +366,6 @@ ast_t program_to_ast(const string& program){
 	trace(ast);
 	return ast;
 }
-
-/*
-	??? test defining a local struct
-	??? test defining a local function
-*/
 
 QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	const string kProgram1 =

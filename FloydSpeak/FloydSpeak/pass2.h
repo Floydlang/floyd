@@ -12,7 +12,7 @@
 #include "parser_ast.h"
 
 
-//??? Make this a separate parse pass, that resolves symbols and take decisions.
+//Make this a separate parse pass, that resolves symbols and take decisions.
 /*
 	Pass2:Procsses parse-tree
 	- Collect types and symbols-

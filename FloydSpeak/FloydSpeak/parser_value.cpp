@@ -247,8 +247,6 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 }
 
 
-//??? Support unnamed structs.
-//??? Support unnamed vectors.
 QUARK_UNIT_TESTQ("value_t()", "vector"){
 	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
 	const auto a = make_vector_instance(vector_def, {});
@@ -336,7 +334,6 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 
 
 
-	//??? move to pass2 or interpreter
 	value_t make_default_value(const std::shared_ptr<struct_def_t>& t){
 		QUARK_ASSERT(t && t->check_invariant());
 		return make_struct_instance(t);

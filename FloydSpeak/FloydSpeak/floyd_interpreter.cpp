@@ -97,7 +97,6 @@ value_t execute_statements(const interpreter_t& vm, const vector<shared_ptr<stat
 
 	auto vm2 = vm;
 
-	//	??? Should respect {} for local variable scopes!
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
@@ -324,7 +323,6 @@ namespace {
 			return make_constant(value);
 		}
 		else if(e._lookup_element){
-			//	???
 			QUARK_ASSERT(false);
 			return make_constant(value_t());
 		}
@@ -465,8 +463,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	*/
 	else if(e._call){
 		const auto& call_function_expression = *e._call;
-
-		//	??? Function calls should also use resolve_address_expression() to find function.
 
 		const auto type = resolve_type(vm._scope_instances.back()->_def, call_function_expression._function_name);
 		if(!type || !type->_function_def){
