@@ -19,7 +19,8 @@ namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
 
-	std::string to_string(const expression_t& e);
+	std::string expression_to_json_string(const expression_t& e);
+
 
 	//////////////////////////////////////////////////		constant expression
 	
@@ -141,35 +142,35 @@ namespace floyd_parser {
 		public: expression_t(const std::shared_ptr<value_t>& a) :
 			_constant(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<math_operation1_expr_t>& a) :
 			_math1(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<math_operation2_expr_t>& a) :
 			_math2(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<function_call_expr_t>& a) :
 			_call(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<load_expr_t>& a) :
 			_load(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -177,21 +178,21 @@ namespace floyd_parser {
 		public: expression_t(const std::shared_ptr<resolve_variable_expr_t>& a) :
 			_resolve_variable(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<resolve_struct_member_expr_t>& a) :
 			_resolve_struct_member(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: expression_t(const std::shared_ptr<lookup_element_expr_t>& a) :
 			_lookup_element(a)
 		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = to_string(*this);
+			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -247,7 +248,6 @@ namespace floyd_parser {
 
 	void trace(const expression_t& e);
 
-	std::string to_oldschool_string(const expression_t& e);
 	json_value_t expression_to_json(const expression_t& e);
 
 }	//	floyd_parser

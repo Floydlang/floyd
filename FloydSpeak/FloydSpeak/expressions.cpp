@@ -259,126 +259,10 @@ void trace(const expression_t& e){
 	QUARK_TRACE(s);
 }
 
-std::string to_string(const expression_t& e){
-//	return to_string(expression_to_json(e));
-	return to_oldschool_string(e);
-}
-
-std::string to_oldschool_string(const expression_t& e){
-//	QUARK_ASSERT(e.check_invariant());
-
-#if false
-	{
-	//	QUARK_TRACE(to_json(e));
-		const auto json = expression_to_json(e);
-		const auto json_string = to_string(json);
-		QUARK_TRACE(json_string);
-//		trace_json(json);
-	}
-#endif
-
-	if(e._constant){
-		return string("(@k ") + e._constant->value_and_type_to_string() + ")";
-	}
-	else if(e._math2){
-		const auto e2 = *e._math2;
-		const auto left = to_oldschool_string(*e2._left);
-		const auto right = to_oldschool_string(*e2._right);
-		return string("(@") + operation_to_string(e2._operation) + " " + left + " " + right + ")";
-	}
-	else if(e._math1){
-		const auto e2 = *e._math1;
-		const auto input = to_oldschool_string(*e2._input);
-		return string("(@") + operation_to_string(e2._operation) + " " + input + ")";
-	}
-	else if(e._call){
-		const auto& call_function = *e._call;
-		string  args;
-		for(const auto& i: call_function._inputs){
-			const auto arg_expr = to_oldschool_string(*i);
-			args = args + arg_expr;
-		}
-		return string("(@call ") + "\"" + call_function._function_name + "\"(" + args + "))";
-	}
-	else if(e._load){
-		const auto e2 = *e._load;
-		const auto address = to_oldschool_string(*e2._address);
-		return string("(@load ") + address + ")";
-	}
-	else if(e._resolve_variable){
-		const auto e2 = *e._resolve_variable;
-		return string("(@res_var \"") + e2._variable_name + "\"" + ")";
-	}
-	else if(e._resolve_struct_member){
-		const auto e2 = *e._resolve_struct_member;
-		return string("(@res_member ") + to_oldschool_string(*e2._parent_address) + " \"" + e2._member_name + "\"" + ")";
-	}
-	else if(e._lookup_element){
-		const auto e2 = *e._lookup_element;
-		const auto lookup_key = to_oldschool_string(*e2._lookup_key);
-		return string("(@lookup ") + to_oldschool_string(*e2._parent_address) + " " + lookup_key + ")";
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
-QUARK_UNIT_TESTQ("to_oldschool_string()", "constants"){
-	quark::ut_compare(to_oldschool_string(make_constant(13)), "(@k <int>13)");
-	quark::ut_compare(to_oldschool_string(make_constant("xyz")), "(@k <string>\"xyz\")");
-	quark::ut_compare(to_oldschool_string(make_constant(14.0f)), "(@k <float>14.000000)");
-}
-
-QUARK_UNIT_TESTQ("to_oldschool_string()", "math1"){
-	quark::ut_compare(
-		to_oldschool_string(
-			make_math_operation1(math_operation1_expr_t::operation::negate, make_constant(2))),
-		"(@negate (@k <int>2))"
-	);
-}
-
-QUARK_UNIT_TESTQ("to_oldschool_string()", "math2"){
-	quark::ut_compare(
-		to_oldschool_string(
-			make_math_operation2(math_operation2_expr_t::operation::add, make_constant(2), make_constant(3))),
-		"(@+ (@k <int>2) (@k <int>3))"
-	);
-}
-
-QUARK_UNIT_TESTQ("to_oldschool_string()", "call"){
-	quark::ut_compare(
-		to_oldschool_string(
-			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
-		),
-		"(@call \"my_func\"((@k <string>\"xyz\")(@k <int>123)))"
-	);
-}
-
-QUARK_UNIT_TESTQ("to_oldschool_string()", "read & resolve_variable"){
-	quark::ut_compare(
-		to_oldschool_string(
-			make_load_variable("param1")
-		),
-		"(@load (@res_var \"param1\"))"
-	);
-}
-//??? test all addressing.
-QUARK_UNIT_TESTQ("to_oldschool_string()", "lookup"){
-	quark::ut_compare(
-		to_oldschool_string(
-			make_lookup(make_resolve_variable("hello"), make_constant("xyz"))
-		),
-		"(@lookup (@res_var \"hello\") (@k <string>\"xyz\"))"
-	);
-}
-
 
 
 
 ////////////////////////////////////////////		JSON SUPPORT
-
-
 
 
 
@@ -431,7 +315,6 @@ json_value_t expression_to_json(const expression_t& e){
 		const auto e2 = *e._lookup_element;
 		const auto lookup_key = expression_to_json(*e2._lookup_key);
 		const auto parent_address = expression_to_json(*e2._parent_address);
-//		return to_json2({ "\"lookup\"", to_json(*e2._parent_address), lookup_key });
 		return json_value_t::make_array({ json_value_t("lookup"), parent_address, lookup_key });
 	}
 	else{
@@ -441,11 +324,9 @@ json_value_t expression_to_json(const expression_t& e){
 
 //??? add type too? "[ "k", <int>, 13 ]" OR "[ "int_k", 13 ]
 
-namespace {
-	string expression_to_json_string(const expression_t& e){
-		const auto json = expression_to_json(e);
-		return json_to_compact_string(json);
-	}
+string expression_to_json_string(const expression_t& e){
+	const auto json = expression_to_json(e);
+	return json_to_compact_string(json);
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "constants"){

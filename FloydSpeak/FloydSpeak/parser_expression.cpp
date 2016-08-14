@@ -28,7 +28,7 @@ using std::make_shared;
 
 
 seq to_seq(const pair<expression_t, string>& p){
-	return seq(to_string(p.first), p.second);
+	return seq(expression_to_json_string(p.first), p.second);
 }
 
 
@@ -123,15 +123,15 @@ pair<expression_t, string> parse_path_node(const std::shared_ptr<expression_t>& 
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, "hello xxx")), seq("(@res_var \"hello\")", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "hello xxx")), seq(R"(["res_var", "hello"])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, "f () xxx")), seq("(@call \"f\"())", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "f () xxx")), seq(R"(["call", "f", []])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, "f (x + 10) xxx")), seq("(@call \"f\"((@+ (@load (@res_var \"x\")) (@k <int>10))))", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "f (x + 10) xxx")), seq(R"(["call", "f", [["+", ["load", ["res_var", "x"]], ["k", 10]]]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
@@ -229,36 +229,36 @@ pair<expression_t, string> parse_calculated_value(const string& s) {
 */
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello xxx")), seq("(@load (@res_var \"hello\"))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello xxx")), seq(R"(["load", ["res_var", "hello"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty xxx")), seq("(@load (@res_member (@res_var \"hello\") \"kitty\"))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty xxx")), seq(R"(["load", ["res_member", ["res_var", "hello"], "kitty"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty.cat xxx")), seq("(@load (@res_member (@res_member (@res_var \"hello\") \"kitty\") \"cat\"))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty.cat xxx")), seq(R"(["load", ["res_member", ["res_member", ["res_var", "hello"], "kitty"], "cat"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("f () xxx")), seq("(@call \"f\"())", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("f () xxx")), seq(R"(["call", "f", []])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("f (x + 10) xxx")), seq("(@call \"f\"((@+ (@load (@res_var \"x\")) (@k <int>10))))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("f (x + 10) xxx")), seq(R"(["call", "f", [["+", ["load", ["res_var", "x"]], ["k", 10]]]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello[10] xxx")), seq("(@load (@lookup (@res_var \"hello\") (@k <int>10)))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[10] xxx")), seq(R"(["load", ["lookup", ["res_var", "hello"], ["k", 10]]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"] xxx")), seq("(@load (@lookup (@res_var \"hello\") (@k <string>\"troll\")))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"] xxx")), seq(R"(["load", ["lookup", ["res_var", "hello"], ["k", "troll"]]])", " xxx"));
 }
 
 //### allow nl and tab when writing result strings.
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"].kitty[10].cat xxx")), seq("(@load (@res_member (@lookup (@res_member (@lookup (@res_var \"hello\") (@k <string>\"troll\")) \"kitty\") (@k <int>10)) \"cat\"))", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"].kitty[10].cat xxx")), seq(R"(["load", ["res_member", ["lookup", ["res_member", ["lookup", ["res_var", "hello"], ["k", "troll"]], "kitty"], ["k", 10]], "cat"]])", " xxx"));
 }
 
 /*
@@ -430,7 +430,7 @@ QUARK_UNIT_TESTQ("parse_single", "variable read"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "read struct member"){
-	quark::ut_compare(to_seq(parse_single("k_my_global.member")),  seq("(@load (@res_member (@res_var \"k_my_global\") \"member\"))", ""));
+	quark::ut_compare(to_seq(parse_single("k_my_global.member")),  seq(R"(["load", ["res_member", ["res_var", "k_my_global"], "member"]])", ""));
 }
 
 
@@ -565,7 +565,7 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 }
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(to_string(parse_expression("pixel.red")), "(@load (@res_member (@res_var \"pixel\") \"red\"))");
+	quark::ut_compare(expression_to_json_string(parse_expression("pixel.red")), R"(["load", ["res_member", ["res_var", "pixel"], "red"]])");
 }
 
 
