@@ -16,12 +16,29 @@
 
 
 
+/*
+PRETTY FORMAT FOR READING:
+
+[
+  "+",
+  [ "load", [ "res_member", [ "res_var", "p" ],"s" ] ],
+  [ "load", [ "res_var", "a" ] ]
+]
+*/
 
 ////////////////////////////////////////		json_value_t
 
 
 
 struct json_value_t {
+	public: static json_value_t make_object(const std::map<std::string, json_value_t>& m){
+		return json_value_t(m);
+	}
+
+	public: static json_value_t make_array(const std::vector<json_value_t>& elements){
+		return json_value_t(elements);
+	}
+
 	public: json_value_t(const std::map<std::string, json_value_t>& object) :
 		_type(k_object),
 		_object(object)

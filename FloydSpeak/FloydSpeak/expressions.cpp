@@ -475,43 +475,41 @@ json_value_t expression_to_json(const expression_t& e){
 		const auto input = expression_to_json(*e2._input);
 		return json_value_t(vector<json_value_t>{ json_value_t(operation_to_string(e2._operation)), input });
 	}
-	return json_value_t();
-#if false
 	else if(e._call){
 		const auto& call_function = *e._call;
-		vector<string>  args_json;
+		vector<json_value_t>  args_json;
 		for(const auto& i: call_function._inputs){
-			const auto arg_expr = to_json(*i);
+			const auto arg_expr = expression_to_json(*i);
 			args_json.push_back(arg_expr);
 		}
-		return to_json2({ "\"call\"", quote(call_function._function_name), to_json2(args_json) });
+		return json_value_t({ json_value_t("call"), json_value_t(call_function._function_name), args_json });
 	}
 	else if(e._load){
 		const auto e2 = *e._load;
-		const auto address = to_json(*e2._address);
-		return to_json2({ "\"load\"", address });
+		const auto address = expression_to_json(*e2._address);
+		return json_value_t::make_array({ json_value_t("load"), address });
 	}
 	else if(e._resolve_variable){
 		const auto e2 = *e._resolve_variable;
-		return to_json2({ "\"res_var\"", quote(e2._variable_name) });
+		return json_value_t::make_array({ json_value_t("res_var"), json_value_t(e2._variable_name) });
 	}
 	else if(e._resolve_struct_member){
 		const auto e2 = *e._resolve_struct_member;
-		return to_json2({ "\"res_member\"", to_json(*e2._parent_address), quote(e2._member_name) });
+		return json_value_t::make_array({ json_value_t("res_member"), expression_to_json(*e2._parent_address), json_value_t(e2._member_name) });
 	}
 	else if(e._lookup_element){
 		const auto e2 = *e._lookup_element;
-		const auto lookup_key = to_json(*e2._lookup_key);
-		return to_json2({ "\"lookup\"", to_json(*e2._parent_address), lookup_key });
+		const auto lookup_key = expression_to_json(*e2._lookup_key);
+		const auto parent_address = expression_to_json(*e2._parent_address);
+//		return to_json2({ "\"lookup\"", to_json(*e2._parent_address), lookup_key });
+		return json_value_t::make_array({ json_value_t("lookup"), parent_address, lookup_key });
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
-#endif
 }
 
 //??? add type too? "[ "k", <int>, 13 ]" OR "[ "int_k", 13 ]
-#if true
 
 namespace {
 	string expression_to_json_string(const expression_t& e){
@@ -521,140 +519,54 @@ namespace {
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
-	quark::ut_compare(expression_to_json_string(make_constant(13)), "[\"k\", 13]");
-	quark::ut_compare(expression_to_json_string(make_constant("xyz")), "[\"k\", \"xyz\"]");
-	quark::ut_compare(expression_to_json_string(make_constant(14.0f)), "[\"k\", 14]");
+	quark::ut_compare(expression_to_json_string(make_constant(13)), R"(["k", 13])");
+	quark::ut_compare(expression_to_json_string(make_constant("xyz")), R"(["k", "xyz"])");
+	quark::ut_compare(expression_to_json_string(make_constant(14.0f)), R"(["k", 14])");
 }
-#endif
 
-QUARK_UNIT_TESTQ("to_string()", "math1"){
+QUARK_UNIT_TESTQ("expression_to_json()", "math1"){
 	quark::ut_compare(
 		expression_to_json_string(
 			make_math_operation1(math_operation1_expr_t::operation::negate, make_constant(2))),
-		"[\"negate\", [\"k\", 2]]"
+		R"(["negate", ["k", 2]])"
 	);
 }
 
-QUARK_UNIT_TESTQ("to_string()", "math2"){
+QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
 			make_math_operation2(math_operation2_expr_t::operation::add, make_constant(2), make_constant(3))),
-		"[\"+\", [\"k\", 2], [\"k\", 3]]"
+		R"(["+", ["k", 2], ["k", 3]])"
 	);
 }
 
-#if false
-QUARK_UNIT_TESTQ("to_string()", "call"){
+QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare(
 		expression_to_json_string(
 			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
 		),
-		"(@call \"my_func\"((@k <string>\"xyz\")(@k <int>123)))"
+		R"(["call", "my_func", [["k", "xyz"], ["k", 123]]])"
 	);
 }
 
-QUARK_UNIT_TESTQ("to_string()", "read & resolve_variable"){
+QUARK_UNIT_TESTQ("expression_to_json()", "read & resolve_variable"){
 	quark::ut_compare(
 		expression_to_json_string(
 			make_load_variable("param1")
 		),
-		"(@load (@res_var \"param1\"))"
+		R"(["load", ["res_var", "param1"]])"
 	);
 }
-//??? test all addressing.
-QUARK_UNIT_TESTQ("to_string()", "lookup"){
+
+//??? test function calls in path.
+QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(
 			make_lookup(make_resolve_variable("hello"), make_constant("xyz"))
 		),
-		"(@lookup (@res_var \"hello\") (@k <string>\"xyz\"))"
+		R"(["lookup", ["res_var", "hello"], ["k", "xyz"]])"
 	);
 }
-#endif
-
-
-
-
-
-
-#if false
-QUARK_UNIT_TESTQ("expression_to_json_string()", "call"){
-	quark::ut_compare(
-		expression_to_json_string(
-			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
-		),
-		"[ \"call\", \"my_func\", [ [ \"k\", \"xyz\" ], [ \"k\", 123 ] ] ]"
-	);
-}
-
-
-std::string expression_to_json_string(const expression_t& e){
-	if(e._constant){
-		return to_json2({ "\"k\"", e._constant->to_json_deprecated() });
-	}
-	else if(e._math2){
-		const auto e2 = *e._math2;
-		const auto left = expression_to_json_string(*e2._left);
-		const auto right = expression_to_json_string(*e2._right);
-		return to_json2({ quote(operation_to_string(e2._operation)), left, right });
-	}
-	else if(e._math1){
-		const auto e2 = *e._math1;
-		const auto input = expression_to_json_string(*e2._input);
-		return to_json2({ quote(operation_to_string(e2._operation)), input });
-	}
-	else if(e._call){
-		const auto& call_function = *e._call;
-		vector<string>  args_json;
-		for(const auto& i: call_function._inputs){
-			const auto arg_expr = expression_to_json_string(*i);
-			args_json.push_back(arg_expr);
-		}
-		return to_json2({ "\"call\"", quote(call_function._function_name), to_json2(args_json) });
-	}
-	else if(e._load){
-		const auto e2 = *e._load;
-		const auto address = expression_to_json_string(*e2._address);
-		return to_json2({ "\"load\"", address });
-	}
-	else if(e._resolve_variable){
-		const auto e2 = *e._resolve_variable;
-		return to_json2({ "\"res_var\"", quote(e2._variable_name) });
-	}
-	else if(e._resolve_struct_member){
-		const auto e2 = *e._resolve_struct_member;
-		return to_json2({ "\"res_member\"", expression_to_json_string(*e2._parent_address), quote(e2._member_name) });
-	}
-	else if(e._lookup_element){
-		const auto e2 = *e._lookup_element;
-		const auto lookup_key = expression_to_json_string(*e2._lookup_key);
-		return to_json2({ "\"lookup\"", expression_to_json_string(*e2._parent_address), lookup_key });
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
-
-
-/*
-[
-  "+",
-  [ "load", [ "res_member", [ "res_var", "p" ],"s" ] ],
-  [ "load", [ "res_var", "a" ] ]
-]
-*/
-QUARK_UNIT_TESTQ("expression_to_json_string()", "call"){
-	quark::ut_compare(
-		expression_to_json_string(
-			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
-		),
-		"[ \"call\", \"my_func\", [ [ \"k\", \"xyz\" ], [ \"k\", 123 ] ] ]"
-	);
-}
-#endif
-
 
 
 }	//	floyd_parser

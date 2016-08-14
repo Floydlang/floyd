@@ -567,7 +567,7 @@ inline void ut_compare(const std::string& result, const std::string& expected){
 		::quark::on_unit_test_failed_hook(
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),
-			QUARK_STRING(result) " != " QUARK_STRING(expected)
+			(result + " != " + expected).c_str()
 		);
 	}
 }
