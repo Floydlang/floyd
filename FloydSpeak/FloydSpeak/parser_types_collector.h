@@ -89,10 +89,23 @@ namespace floyd_parser {
 		*/
 		public: types_collector_t define_alias_identifier(const std::string& new_identifier, const std::string& existing_identifier) const;
 
+
+
 		/*
+			new_identifier: must be a valid type identifier.
 			type_def == empty: just declare the new type-identifier, don't bind to a type-definition yet.
 		*/
 		public: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
+
+
+		/*
+			new_identifier: can be empty (for unnamed type definition)
+			type_def: must be valid type def.
+			
+		*/
+		public: types_collector_t define_type_xyz(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
+
+
 
 
 
@@ -129,6 +142,10 @@ namespace floyd_parser {
 		public: types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
 
 
+
+
+
+
 		/*
 			return empty: the identifier is unknown.
 			return non-empty: the identifier is known, examine type_indentifier_data_ref to see if it's bound.
@@ -142,12 +159,14 @@ namespace floyd_parser {
 		*/
 		public: std::shared_ptr<type_indentifier_data_ref> lookup_identifier_deep(const std::string& s) const;
 
-
 		/*
 			return empty: the identifier is unknown or has no type-definition.
 			NOTICE: any found alias is resolved recursively.
 		*/
 		public: std::shared_ptr<type_def_t> resolve_identifier(const std::string& s) const;
+
+
+
 
 		/*
 			returns empty if type is unknown or the type is not fully defined.
@@ -160,9 +179,12 @@ namespace floyd_parser {
 		public: std::shared_ptr<function_def_t> resolve_function_type(const std::string& s) const;
 
 
+
+
 		public: std::shared_ptr<type_def_t> lookup_signature(const std::string& s) const;
 
 		friend json_value_t types_collector_to_json(const types_collector_t& types);
+
 
 		///////////////////		STATE
 
@@ -173,7 +195,6 @@ namespace floyd_parser {
 		//	Key is the signature string. De-duplicated.
 		private: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
 	};
-
 
 
 }	//	floyd_parser

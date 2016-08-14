@@ -347,6 +347,62 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		scope_def_t
 
+	types_collector_t add_builtin_types(const types_collector_t& types){
+		auto result = types;
+
+		//	int
+		{
+			auto def = make_shared<type_def_t>();
+			def->_base_type = k_int;
+			result = result.define_type_xyz("int", def);
+		}
+
+		//	bool
+		{
+			auto def = make_shared<type_def_t>();
+			def->_base_type = k_bool;
+			result = result.define_type_xyz("bool", def);
+		}
+
+		//	string
+		{
+			auto def = make_shared<type_def_t>();
+			def->_base_type = k_string;
+			QUARK_ASSERT(def->check_invariant());
+			result = result.define_type_xyz("string", def);
+		}
+
+
+//		QUARK_ASSERT(_identifiers.size() == 3);
+//		QUARK_ASSERT(_type_definitions.size() == 3);
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+
+
+
+
+QUARK_UNIT_TESTQ("add_builtin_types()", ""){
+	const auto t = types_collector_t();
+	const auto a = add_builtin_types(t);
+	QUARK_TEST_VERIFY(a.check_invariant());
+
+
+	const auto b = a.resolve_identifier("int");
+	QUARK_TEST_VERIFY(b);
+	QUARK_TEST_VERIFY(b->_base_type == k_int);
+
+	const auto d = a.resolve_identifier("bool");
+	QUARK_TEST_VERIFY(d);
+	QUARK_TEST_VERIFY(d->_base_type == k_bool);
+
+	const auto c = a.resolve_identifier("string");
+	QUARK_TEST_VERIFY(c);
+	QUARK_TEST_VERIFY(c->_base_type == k_string);
+}
+
+
+
 
 
 	scope_ref_t scope_def_t::make2(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector){
@@ -359,6 +415,10 @@ namespace floyd_parser {
 		auto r = std::make_shared<scope_def_t>(
 			scope_def_t(std::shared_ptr<scope_def_t>(), executable_t({}), {})
 		);
+
+		r->_types_collector = add_builtin_types(r->_types_collector);
+
+
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}

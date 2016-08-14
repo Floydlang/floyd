@@ -66,44 +66,7 @@ namespace floyd_parser {
 	/*
 		Holds all types of program.
 	*/
-//??? move these to make_global()! Only store in global scope.
 	types_collector_t::types_collector_t(){
-		QUARK_ASSERT(check_invariant());
-
-
-		//	int
-		{
-			auto def = make_shared<type_def_t>();
-			def->_base_type = k_int;
-			QUARK_ASSERT(def->check_invariant());
-
-			_identifiers["int"] = { "", def };
-			_type_definitions[to_signature(*def)] = def;
-		}
-
-		//	bool
-		{
-			auto def = make_shared<type_def_t>();
-			def->_base_type = k_bool;
-			QUARK_ASSERT(def->check_invariant());
-
-			_identifiers["bool"] = { "", def };
-			_type_definitions[to_signature(*def)] = def;
-		}
-
-		//	string
-		{
-			auto def = make_shared<type_def_t>();
-			def->_base_type = k_string;
-			QUARK_ASSERT(def->check_invariant());
-
-			_identifiers["string"] = { "", def };
-			_type_definitions[to_signature(*def)] = def;
-		}
-
-		QUARK_ASSERT(_identifiers.size() == 3);
-		QUARK_ASSERT(_type_definitions.size() == 3);
-
 		QUARK_ASSERT(check_invariant());
 	}
 	
@@ -243,6 +206,33 @@ namespace floyd_parser {
 		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
+
+	types_collector_t types_collector_t::define_type_xyz(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(type_def && type_def->check_invariant());
+
+		auto types2 = *this;
+		const string signature = to_signature(*type_def);
+
+		//	Add to _type_definitions if not already there.
+		if(_type_definitions.find(signature) == _type_definitions.end()){
+			types2._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_def_t>>(signature, type_def));
+		}
+
+		//	Add type-identifier if needed.
+		if(new_identifier.empty()){
+			QUARK_ASSERT(types2.check_invariant());
+			return types2;
+		}
+		else{
+			//	Make a type-identifier too.
+			const auto types3 = types2.define_type_identifier(new_identifier, type_def);
+			QUARK_ASSERT(types3.check_invariant());
+			return types3;
+		}
+	}
+
+
 
 
 	std::pair<std::shared_ptr<type_def_t>, types_collector_t> types_collector_t::define_struct_type(const struct_def_t& struct_def) const{
@@ -519,26 +509,6 @@ QUARK_UNIT_TESTQ("types_collector_t::operator==()", ""){
 
 
 
-QUARK_UNIT_TESTQ("types_collector_t::types_collector_t()", "default construction"){
-	const auto a = types_collector_t();
-	QUARK_TEST_VERIFY(a.check_invariant());
-
-
-	const auto b = a.resolve_identifier("int");
-	QUARK_TEST_VERIFY(b);
-	QUARK_TEST_VERIFY(b->_base_type == k_int);
-
-	const auto d = a.resolve_identifier("bool");
-	QUARK_TEST_VERIFY(d);
-	QUARK_TEST_VERIFY(d->_base_type == k_bool);
-
-	const auto c = a.resolve_identifier("string");
-	QUARK_TEST_VERIFY(c);
-	QUARK_TEST_VERIFY(c->_base_type == k_string);
-}
-
-
-
 
 QUARK_UNIT_TESTQ("types_collector_t::resolve_identifier()", "not found"){
 	const auto a = types_collector_t();
@@ -546,13 +516,7 @@ QUARK_UNIT_TESTQ("types_collector_t::resolve_identifier()", "not found"){
 	QUARK_TEST_VERIFY(!b);
 }
 
-QUARK_UNIT_TESTQ("types_collector_t::resolve_identifier()", "int found"){
-	const auto a = types_collector_t();
-	const auto b = a.resolve_identifier("int");
-	QUARK_TEST_VERIFY(b);
-}
-
-
+/*
 QUARK_UNIT_TESTQ("types_collector_t::define_alias_identifier()", "int => my_int"){
 	auto a = types_collector_t();
 	a = a.define_alias_identifier("my_int", "int");
@@ -560,5 +524,6 @@ QUARK_UNIT_TESTQ("types_collector_t::define_alias_identifier()", "int => my_int"
 	QUARK_TEST_VERIFY(b);
 	QUARK_TEST_VERIFY(b->_base_type == k_int);
 }
+*/
 
 
