@@ -252,83 +252,11 @@ string operation_to_string(const math_operation1_expr_t::operation& op){
 	}
 }
 
-
-
-//??? replace all tracing with using JSON.
-
-void trace(const math_operation2_expr_t& e){
-	string s = "math_operation2_expr_t: " + operation_to_string(e._operation);
-	QUARK_SCOPED_TRACE(s);
-	trace(*e._left);
-	trace(*e._right);
-}
-
-void trace(const math_operation1_expr_t& e){
-	string s = "math_operation1_expr_t: " + operation_to_string(e._operation);
-	QUARK_SCOPED_TRACE(s);
-	trace(*e._input);
-}
-
-void trace(const function_call_expr_t& e){
-	string s = "function_call_expr_t: " + e._function_name;
-	QUARK_SCOPED_TRACE(s);
-	for(const auto i: e._inputs){
-		trace(*i);
-	}
-}
-
-void trace(const load_expr_t& e){
-	string s = "load_expr_t: address:";
-	QUARK_SCOPED_TRACE(s);
-	trace(*e._address);
-}
-
-void trace(const resolve_variable_expr_t& e){
-	QUARK_TRACE_SS("resolve_variable_expr_t: " << e._variable_name);
-}
-
-void trace(const resolve_struct_member_expr_t& e){
-	QUARK_TRACE_SS("resolve_struct_member_expr_t: " << e._member_name);
-}
-
-void trace(const lookup_element_expr_t& e){
-	string s = "lookup_element_expr_t: ";
-	QUARK_SCOPED_TRACE(s);
-	trace(*e._lookup_key);
-}
-
-
-
 void trace(const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
-
-	if(e._constant){
-		trace(*e._constant);
-	}
-	else if(e._math2){
-		trace(*e._math2);
-	}
-	else if(e._math1){
-		trace(*e._math1);
-	}
-	else if(e._call){
-		trace(*e._call);
-	}
-	else if(e._load){
-		trace(*e._load);
-	}
-	else if(e._resolve_variable){
-		trace(*e._resolve_variable);
-	}
-	else if(e._resolve_struct_member){
-		trace(*e._resolve_struct_member);
-	}
-	else if(e._lookup_element){
-		trace(*e._lookup_element);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
+	const auto json = expression_to_json(e);
+	const auto s = to_string(json);
+	QUARK_TRACE(s);
 }
 
 std::string to_string(const expression_t& e){
@@ -339,6 +267,7 @@ std::string to_string(const expression_t& e){
 std::string to_oldschool_string(const expression_t& e){
 //	QUARK_ASSERT(e.check_invariant());
 
+#if false
 	{
 	//	QUARK_TRACE(to_json(e));
 		const auto json = expression_to_json(e);
@@ -346,6 +275,7 @@ std::string to_oldschool_string(const expression_t& e){
 		QUARK_TRACE(json_string);
 //		trace_json(json);
 	}
+#endif
 
 	if(e._constant){
 		return string("(@k ") + e._constant->value_and_type_to_string() + ")";

@@ -245,17 +245,7 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		trace()
 
 
-	void trace(const math_operation1_expr_t& e);
-	void trace(const math_operation2_expr_t& e);
-	void trace(const function_call_expr_t& e);
-	void trace(const load_expr_t& e);
-	void trace(const resolve_variable_expr_t& e);
-	void trace(const resolve_struct_member_expr_t& e);
-	void trace(const lookup_element_expr_t& e);
 	void trace(const expression_t& e);
-
-
-
 
 	std::string to_oldschool_string(const expression_t& e);
 	json_value_t expression_to_json(const expression_t& e);
