@@ -102,7 +102,7 @@ namespace floyd_parser {
 			for(const auto m: instance._elements){
 				r = r + m.plain_value_to_string() + " ";
 			}
-			return string("{") + r + "}";
+			return /*string("<") + instance.__def->_name.to_string() + ">*/ std::string("[") + instance.__def->_element_type.to_string() + "][" + r + "]";
 		}
 
 
@@ -255,7 +255,29 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 }
 
 
-//??? more
+//??? Support unnamed structs.
+//??? Support unnamed vectors.
+QUARK_UNIT_TESTQ("value_t()", "vector"){
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
+	const auto a = make_vector_instance(vector_def);
+	const auto b = make_vector_instance(vector_def);
+
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(!a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(a.is_vector());
+
+	QUARK_TEST_VERIFY(a == b);
+	QUARK_TEST_VERIFY(a != value_t("xyza"));
+	quark::ut_compare(a.plain_value_to_string(), "[int][]");
+//???	quark::ut_compare(a.to_json_deprecated(), "\"xyz\"");
+	quark::ut_compare(a.value_and_type_to_string(), "<my_vec>[int][]");
+}
+
+
 
 
 
