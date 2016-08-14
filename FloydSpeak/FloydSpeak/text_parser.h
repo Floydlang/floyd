@@ -74,4 +74,5 @@ float parse_float(const std::string& pos);
 seq get_balanced_pair(const std::string& s, char start_char, char end_char);
 
 
+
 #endif /* text_parser_hpp */

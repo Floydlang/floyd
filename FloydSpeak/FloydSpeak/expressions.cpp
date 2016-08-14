@@ -511,13 +511,15 @@ json_value_t expression_to_json(const expression_t& e){
 }
 
 #if false
-??? add type too? "[ "k", <int>, 13 ]"
+//??? add type too? "[ "k", <int>, 13 ]"
 QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
 	quark::ut_compare(to_string(expression_to_json(make_constant(13))), "(@k <int>13)");
 	quark::ut_compare(to_string(expression_to_json(make_constant("xyz"))), "(@k <string>\"xyz\")");
 	quark::ut_compare(to_string(expression_to_json(make_constant(14.0f))), "(@k <float>14.000000)");
 }
+#endif
 
+#if false
 QUARK_UNIT_TESTQ("to_string()", "math1"){
 	quark::ut_compare(
 		to_string(
