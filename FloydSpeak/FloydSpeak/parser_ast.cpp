@@ -518,9 +518,23 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		};
 	}
 
-	//???
 	json_value_t function_def_to_json(const function_def_t& s){
+		std::vector<json_value_t> args;
+		for(const auto i: s._args){
+			const auto arg = std::map<string, json_value_t>{
+				{ "_type", json_value_t(i._type.to_string()) },
+				{ "_identifier", json_value_t(i._identifier) }
+			};
+			args.push_back(json_value_t(args));
+		}
+
 		return {
+			std::map<string, json_value_t>{
+				{ "_name", json_value_t(s._name.to_string()) },
+				{ "_return_type", json_value_t(s._return_type.to_string()) },
+				{ "_args", json_value_t(args) },
+				{ "_function_scope", scope_def_to_json(*s._function_scope) }
+			}
 		};
 	}
 
@@ -535,23 +549,6 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		};
 	}
 
-
-
-
-
-
-
-/*
-		//	_host_function != nullptr: this is host code.
-		//	_host_function == nullptr: _statements contains statements to interpret.
-		public: hosts_function_t _host_function = nullptr;
-		public: std::shared_ptr<host_data_i> _host_function_param;
-
-		//	INSTRUCTIONS - either _host_function or _statements is used.
-
-		//	Code, if any.
-		public: std::vector<std::shared_ptr<statement_t> > _statements;
-*/
 	json_value_t executable_to_json(const executable_t& e){
 		std::vector<json_value_t> statements;
 		for(const auto i: e._statements){
