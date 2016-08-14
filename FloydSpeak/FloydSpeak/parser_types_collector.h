@@ -95,7 +95,7 @@ namespace floyd_parser {
 			new_identifier: must be a valid type identifier.
 			type_def == empty: just declare the new type-identifier, don't bind to a type-definition yet.
 		*/
-		public: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
+		private: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
 
 
 		/*
@@ -108,7 +108,6 @@ namespace floyd_parser {
 
 
 
-
 		/////////////////////////		STRUCTs
 
 
@@ -116,7 +115,7 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
+		private: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_struct_type(const struct_def_t& struct_def) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
@@ -133,15 +132,13 @@ namespace floyd_parser {
 			Adds type-definition for a struct.
 			If the exact same struct (same signature) already exists, the old one is returned. No duplicates.
 		*/
-		public: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_function_type(const function_def_t& function_def) const;
+//		private: std::pair<std::shared_ptr<type_def_t>, types_collector_t> define_function_type(const function_def_t& function_def) const;
 
 		/*
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
 		public: types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
-
-
 
 
 
@@ -177,7 +174,6 @@ namespace floyd_parser {
 			returns empty if type is unknown or the type is not fully defined.
 		*/
 		public: std::shared_ptr<function_def_t> resolve_function_type(const std::string& s) const;
-
 
 
 
