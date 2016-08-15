@@ -74,9 +74,7 @@ namespace floyd_parser {
 		}
 		else if(t._base_type == k_struct){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			for(const auto m: t._struct_def->_members){
-				trace(m);
-			}
+			trace(t._struct_def);
 		}
 		else if(t._base_type == k_vector){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
@@ -84,7 +82,7 @@ namespace floyd_parser {
 		}
 		else if(t._base_type == k_function){
 			QUARK_SCOPED_TRACE("<" + to_string(t._base_type) + "> " + label);
-			trace(*t._function_def);
+			trace(t._struct_def);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -182,21 +180,7 @@ namespace floyd_parser {
 			return label + "<vector>" + "[" + vector_value_s + "]";
 		}
 		else if(t._base_type == k_function){
-//			return label + "<function>" + "[" + vector_value_s + "]";
-
-			string arguments;
-			for(const auto& arg : t._function_def->_args) {
-				//	"<string>first_name"
-				const auto a = std::string("") + "<"  + arg._type.to_string() + ">" + arg._identifier;
-
-				arguments = arguments + a + ",";
-			}
-			arguments = remove_trailing_comma(arguments);
-
-			const auto body_hash = calc_function_body_hash(*t._function_def);
-
-			return label + "<function>" + "args(" + arguments + ") body_hash:" + SHA1ToStringPlain(body_hash);
-
+			return to_signature(t._function_def);
 		}
 		else{
 			return label + "<" + base_type + ">";
@@ -513,50 +497,8 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 
 
 
-/*
-	json_value_t struct_def_to_json(const struct_def_t& s){
-		std::vector<json_value_t> members;
-		for(const auto i: s._members){
-			const auto member = std::map<string, json_value_t>{
-				{ "_type", json_value_t(i._type->to_string()) },
-				{ "_value", i._value ? value_to_json(*i._value) : json_value_t() },
-				{ "_name", json_value_t(i._name) }
-			};
-			members.push_back(json_value_t(member));
-		}
-
-		return {
-			std::map<string, json_value_t>{
-				{ "_name", json_value_t(s._name.to_string()) },
-				{ "_members", json_value_t(members) },
-				{ "_struct_scope", scope_def_to_json(*s._struct_scope) }
-			}
-		};
-	}
-*/
-
 	json_value_t vector_def_to_json(const vector_def_t& s){
 		return {
-		};
-	}
-
-	json_value_t function_def_to_json(const function_def_t& s){
-		std::vector<json_value_t> args;
-		for(const auto i: s._args){
-			const auto arg = std::map<string, json_value_t>{
-				{ "_type", json_value_t(i._type.to_string()) },
-				{ "_identifier", json_value_t(i._identifier) }
-			};
-			args.push_back(json_value_t(args));
-		}
-
-		return {
-			std::map<string, json_value_t>{
-				{ "_name", json_value_t(s._name.to_string()) },
-				{ "_return_type", json_value_t(s._return_type.to_string()) },
-				{ "_args", json_value_t(args) },
-				{ "_function_scope", scope_def_to_json(*s._function_scope) }
-			}
 		};
 	}
 
@@ -566,7 +508,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 				{ "_base_type", json_value_t(to_string(type_def._base_type)) },
 				{ "_struct_def", type_def._struct_def ? scope_def_to_json(*type_def._struct_def) : json_value_t() },
 				{ "_vector_def", type_def._vector_def ? vector_def_to_json(*type_def._vector_def) : json_value_t() },
-				{ "_function_def", type_def._function_def ? function_def_to_json(*type_def._function_def) : json_value_t() }
+				{ "_function_def", type_def._function_def ? scope_def_to_json(*type_def._function_def) : json_value_t() }
 			}
 		};
 	}
@@ -617,7 +559,8 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 			{ "_members", json_value_t(members) },
 			{ "_parent_scope", json_value_t(123.0f) },
 			{ "_executable", executable_to_json(scope_def._executable) },
-			{ "_types_collector", types_collector_to_json(scope_def._types_collector) }
+			{ "_types_collector", types_collector_to_json(scope_def._types_collector) },
+			{ "_return_type", json_value_t(scope_def._return_type.to_string()) }
 		};
 		return a;
 	}
@@ -632,83 +575,6 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	}
 
 
-	//////////////////////////////////////		function_def_t
-
-
-
-	function_def_t::function_def_t(
-		const type_identifier_t& name,
-		const type_identifier_t& return_type,
-		const std::vector<arg_t>& args,
-		const scope_ref_t parent_scope,
-		const executable_t& executable,
-		const types_collector_t& types_collector
-	)
-	:
-		_name(name),
-		_return_type(return_type),
-		_args(args),
-		_function_scope(scope_def_t::make2(scope_def_t::k_function, name, {}, parent_scope, executable, types_collector))
-	{
-		QUARK_ASSERT(name.check_invariant());
-		QUARK_ASSERT(name.to_string().size() > 0);
-		QUARK_ASSERT(return_type.check_invariant());
-		for(const auto a: args){
-			QUARK_ASSERT(a.check_invariant());
-		}
-		QUARK_ASSERT(executable.check_invariant());
-		QUARK_ASSERT(types_collector.check_invariant());
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	bool function_def_t::check_invariant() const {
-		QUARK_ASSERT(_name.check_invariant());
-		QUARK_ASSERT(_name.to_string().size() > 0);
-		QUARK_ASSERT(_return_type.check_invariant());
-		for(const auto a: _args){
-			QUARK_ASSERT(a.check_invariant());
-		}
-		QUARK_ASSERT(_function_scope && _function_scope->check_invariant());
-		return true;
-	}
-
-	bool function_def_t::operator==(const function_def_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(_name != other._name){
-			return false;
-		}
-
-		//	The _function_scope objects are EQUAL not same ptr.
-		if(!(*_function_scope == *other._function_scope)){
-			return false;
-		}
-		if(_return_type != other._return_type){
-			return false;
-		}
-		if(_args != other._args){
-			return false;
-		}
-		return true;
-	}
-
-	void trace(const function_def_t& e){
-		QUARK_ASSERT(e.check_invariant());
-		QUARK_SCOPED_TRACE(std::string("function_def_t: '") + e._name.to_string() + "'");
-
-		{
-			QUARK_SCOPED_TRACE("return");
-			QUARK_TRACE(e._return_type.to_string());
-		}
-		{
-			trace_vec("arguments", e._args);
-		}
-
-		trace(e._function_scope->_executable._statements);
-	}
-
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
 		QUARK_SCOPED_TRACE("statements");
 		for(const auto s: e){
@@ -716,8 +582,8 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		}
 	}
 
-	TSHA1 calc_function_body_hash(const function_def_t& f){
-		QUARK_ASSERT(f.check_invariant());
+	TSHA1 calc_function_body_hash(const scope_ref_t& f){
+		QUARK_ASSERT(f && f->check_invariant());
 
 		static int s_counter = 1000;
 		s_counter++;
@@ -725,7 +591,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	}
 
 
-	function_def_t make_function_def(
+	scope_ref_t make_function_def(
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
 		const std::vector<arg_t>& args,
@@ -734,7 +600,13 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		const types_collector_t& types_collector
 	)
 	{
-		return function_def_t(name, return_type, args, parent_scope, executable, types_collector);
+		auto members = vector<member_t>();
+		for(const auto i: args){
+			members.push_back(member_t(i._type, i._identifier));
+		}
+		auto r = scope_def_t::make2(scope_def_t::k_function, name, members, parent_scope, executable, types_collector);
+		r->_return_type = return_type;
+		return r;
 	}
 
 
@@ -743,8 +615,9 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		const auto a = make_function_def(type_identifier_t::make("a"), type_identifier_t::make_int(), {}, scope_ref, executable_t({}), {});
 
 		const auto b(a);
-		QUARK_TEST_VERIFY(b.check_invariant());
+		QUARK_TEST_VERIFY(b->check_invariant());
 	}
+
 
 
 	////////////////////////			member_t
@@ -811,7 +684,6 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	std::string to_signature(const scope_ref_t& t){
 		QUARK_ASSERT(t && t->check_invariant());
 
-		const string label = "";
 		string body;
 		for(const auto& member : t->_members) {
 			const auto member_name = member._name;
@@ -825,7 +697,13 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		}
 		body = remove_trailing_comma(body);
 
-		return label + "<" + scope_type_to_string(t->_type) + ">" + "{" + body + "}";
+		if(t->_type== scope_def_t::k_function){
+			const auto body_hash = calc_function_body_hash(t);
+			body = body + std::string("body_hash:") + SHA1ToStringPlain(body_hash);
+		}
+		else{
+		}
+		return "<" + scope_type_to_string(t->_type) + ">" + "{" + body + "}";
 	}
 
 

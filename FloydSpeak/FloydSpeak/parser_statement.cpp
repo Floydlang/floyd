@@ -55,7 +55,7 @@ namespace floyd_parser {
 			trace(s._define_struct->_struct_def);
 		}
 		else if(s._define_function){
-			QUARK_SCOPED_TRACE("define_function_statement_t: \"" + s._define_function->_function_def._name.to_string());
+			QUARK_SCOPED_TRACE("define_function_statement_t: \"" + s._define_function->_function_def->_name.to_string());
 			trace(s._define_function->_function_def);
 		}
 
@@ -126,7 +126,7 @@ namespace floyd_parser {
 		else if(e._define_function){
 			return json_value_t::make_array({
 				json_value_t("deffunc"),
-				function_def_to_json(e._define_function->_function_def)
+				scope_def_to_json(*e._define_function->_function_def)
 			});
 		}
 		else if(e._return_statement){

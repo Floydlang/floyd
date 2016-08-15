@@ -58,7 +58,7 @@ namespace floyd_parser {
             return _function_def == other._function_def;
         }
         
-        function_def_t _function_def;
+        scope_ref_t _function_def;
     };
     
     

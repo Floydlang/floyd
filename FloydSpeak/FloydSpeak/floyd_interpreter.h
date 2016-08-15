@@ -18,7 +18,6 @@
 
 namespace floyd_parser {
 	struct expression_t;
-	struct function_def_t;
 	struct value_t;
 	struct ast_t;
 	struct statement_t;
@@ -86,7 +85,7 @@ namespace floyd_interpreter {
 
 	floyd_parser::value_t call_function(
 		const interpreter_t& vm,
-		const floyd_parser::function_def_t& f,
+		const floyd_parser::scope_ref_t& f,
 		const std::vector<floyd_parser::value_t>& args
 	);
 

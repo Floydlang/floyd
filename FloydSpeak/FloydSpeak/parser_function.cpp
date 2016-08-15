@@ -113,7 +113,7 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 }
 
 
-std::pair<function_def_t, std::string> parse_function_definition(scope_ref_t scope_def, const string& pos){
+std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_def, const string& pos){
 	QUARK_ASSERT(scope_def->check_invariant());
 
 	const auto return_type_pos = read_required_type_identifier(pos);
@@ -145,8 +145,8 @@ std::pair<function_def_t, std::string> parse_function_definition(scope_ref_t sco
 		executable_t({}),
 		{}
 	);
-	const auto statements = parse_function_body(function_def._function_scope, body_pos.first);
-	function_def._function_scope->_executable = executable_t(statements);
+	const auto statements = parse_function_body(function_def, body_pos.first);
+	function_def->_executable = executable_t(statements);
 
 	return { function_def, body_pos.second };
 }
@@ -164,24 +164,24 @@ QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	const auto global = scope_def_t::make_global_scope();
 	const auto result = parse_function_definition(global, "int f(){}");
-	QUARK_TEST_VERIFY(result.first._name == type_identifier_t::make("f"));
-	QUARK_TEST_VERIFY(result.first._return_type == type_identifier_t::make_int());
-	QUARK_TEST_VERIFY(result.first._args.empty());
-	QUARK_TEST_VERIFY(result.first._function_scope->_executable._statements.empty());
+	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("f"));
+	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
+	QUARK_TEST_VERIFY(result.first->_members.empty());
+	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
 QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of different types"){
 	const auto global = scope_def_t::make_global_scope();
 	const auto result = parse_function_definition(global, "int printf(string a, float barry, int c){}");
-	QUARK_TEST_VERIFY(result.first._name == type_identifier_t::make("printf"));
-	QUARK_TEST_VERIFY(result.first._return_type == type_identifier_t::make_int());
-	QUARK_TEST_VERIFY((result.first._args == vector<arg_t>{
+	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("printf"));
+	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
+	QUARK_TEST_VERIFY((result.first->_members == vector<member_t>{
 		{ type_identifier_t::make_string(), "a" },
 		{ type_identifier_t::make_float(), "barry" },
 		{ type_identifier_t::make_int(), "c" },
 	}));
-	QUARK_TEST_VERIFY(result.first._function_scope->_executable._statements.empty());
+	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
@@ -200,7 +200,7 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""
 }
 */
 
-function_def_t make_test_function1(scope_ref_t scope){
+scope_ref_t make_test_function1(scope_ref_t scope){
 	return make_function_def(
 		type_identifier_t::make("test_function1"),
 		type_identifier_t::make_int(),
@@ -213,7 +213,7 @@ function_def_t make_test_function1(scope_ref_t scope){
 	);
 }
 
-function_def_t make_test_function2(scope_ref_t scope){
+scope_ref_t make_test_function2(scope_ref_t scope){
 	return make_function_def(
 		type_identifier_t::make("test_function2"),
 		type_identifier_t::make_string(),
@@ -229,7 +229,7 @@ function_def_t make_test_function2(scope_ref_t scope){
 	);
 }
 
-function_def_t make_log_function(scope_ref_t scope){
+scope_ref_t make_log_function(scope_ref_t scope){
 	return make_function_def(
 		type_identifier_t::make("test_log_function"),
 		type_identifier_t::make_float(),
@@ -244,7 +244,7 @@ function_def_t make_log_function(scope_ref_t scope){
 	);
 }
 
-function_def_t make_log2_function(scope_ref_t scope){
+scope_ref_t make_log2_function(scope_ref_t scope){
 	return make_function_def(
 		type_identifier_t::make("test_log2_function"),
 		type_identifier_t::make_float(),
@@ -260,7 +260,7 @@ function_def_t make_log2_function(scope_ref_t scope){
 	);
 }
 
-function_def_t make_return5(scope_ref_t scope){
+scope_ref_t make_return5(scope_ref_t scope){
 	return make_function_def(
 		type_identifier_t::make("return5"),
 		type_identifier_t::make_float(),
@@ -274,7 +274,7 @@ function_def_t make_return5(scope_ref_t scope){
 	);
 }
 
-function_def_t make_return_hello(scope_ref_t scope){
+scope_ref_t make_return_hello(scope_ref_t scope){
 	return make_function_def(
 		type_identifier_t::make("hello"),
 		type_identifier_t::make_int(),

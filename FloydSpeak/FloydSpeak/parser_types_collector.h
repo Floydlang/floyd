@@ -26,7 +26,6 @@ namespace floyd_parser {
 	struct type_def_t;
 	struct types_collector_t;
 	struct statement_t;
-	struct function_def_t;
 	struct value_t;
 	struct scope_def_t;
 
@@ -135,6 +134,7 @@ namespace floyd_parser {
 
 
 		/*
+		??? remove. Use define_type_xyz() instead.
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
@@ -142,6 +142,7 @@ namespace floyd_parser {
 
 
 		/*
+			??? remove
 			returns empty if type is unknown or the type is not fully defined.
 		*/
 		public: std::shared_ptr<scope_def_t> resolve_struct_type(const std::string& s) const;
@@ -151,15 +152,17 @@ namespace floyd_parser {
 
 
 		/*
+			??? remove
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
-		public: types_collector_t define_function_type(const std::string& new_identifier, const function_def_t& function_def) const;
+		public: types_collector_t define_function_type(const std::string& new_identifier, const std::shared_ptr<scope_def_t>& function_def) const;
 
 		/*
+			??? remove
 			returns empty if type is unknown or the type is not fully defined.
 		*/
-		public: std::shared_ptr<function_def_t> resolve_function_type(const std::string& s) const;
+		public: std::shared_ptr<scope_def_t> resolve_function_type(const std::string& s) const;
 
 
 

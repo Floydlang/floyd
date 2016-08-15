@@ -37,21 +37,22 @@ namespace {
 		return diff < 0.00001;
 	}
 
-	bool check_arg_types(const function_def_t& f, const vector<value_t>& args){
-		if(f._args.size() != args.size()){
+	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
+		if(f->_members.size() != args.size()){
 			return false;
 		}
 		for(int i = 0 ; i < args.size() ; i++){
-			if(f._args[i]._type != args[i].get_type()){
+			if(*f->_members[i]._type != args[i].get_type()){
 				return false;
 			}
 		}
 		return true;
 	}
 
-	interpreter_t open_function_scope(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
+	//??? Remove this -- instead use struct for arguments as use that as parent_scope for the function call.
+	interpreter_t open_function_scope(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(f.check_invariant());
+		QUARK_ASSERT(f && f->check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 		if(!check_arg_types(f, args)){
@@ -59,10 +60,10 @@ namespace {
 		}
 
 		scope_instance_t new_scope;
-		new_scope._def = f._function_scope;
+		new_scope._def = f;
 
 		for(int i = 0 ; i < args.size() ; i++){
-			const auto& arg_name = f._args[i]._identifier;
+			const auto& arg_name = f->_members[i]._name;
 			const auto& arg_value = args[i];
 			new_scope._values[arg_name] = arg_value;
 		}
@@ -72,12 +73,12 @@ namespace {
 		return result;
 	}
 
-	value_t call_host_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
+	value_t call_host_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(f.check_invariant());
-		QUARK_ASSERT(f._function_scope->_executable._statements.empty());
-		QUARK_ASSERT(f._function_scope->_executable._host_function);
-		QUARK_ASSERT(f._function_scope->_executable._host_function_param);
+		QUARK_ASSERT(f && f->check_invariant());
+		QUARK_ASSERT(f->_executable._statements.empty());
+		QUARK_ASSERT(f->_executable._host_function);
+		QUARK_ASSERT(f->_executable._host_function_param);
 
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -86,7 +87,7 @@ namespace {
 		}
 
 	//	auto local_scope = add_args(ast, f, args);
-		const auto a = f._function_scope->_executable._host_function(f._function_scope->_executable._host_function_param, args);
+		const auto a = f->_executable._host_function(f->_executable._host_function_param, args);
 		return a;
 	}
 
@@ -135,12 +136,12 @@ namespace {
 
 	//??? Make this operate on scope_def_t instead of function_def_t. == use scope_def:s as generic nodes.
 
-	value_t call_interpreted_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
+	value_t call_interpreted_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(f.check_invariant());
-		QUARK_ASSERT(!f._function_scope->_executable._statements.empty());
-		QUARK_ASSERT(!f._function_scope->_executable._host_function);
-		QUARK_ASSERT(!f._function_scope->_executable._host_function_param);
+		QUARK_ASSERT(f && f->check_invariant());
+		QUARK_ASSERT(!f->_executable._statements.empty());
+		QUARK_ASSERT(!f->_executable._host_function);
+		QUARK_ASSERT(!f->_executable._host_function_param);
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 		if(!check_arg_types(f, args)){
@@ -148,7 +149,7 @@ namespace {
 		}
 
 		auto vm2 = open_function_scope(vm, f, args);
-		const auto& statements = f._function_scope->_executable._statements;
+		const auto& statements = f->_executable._statements;
 		const auto value = execute_statements(vm2, statements);
 		if(value.is_null()){
 		throw std::runtime_error("function missing return statement");
@@ -160,16 +161,16 @@ namespace {
 
 }
 
-value_t call_function(const interpreter_t& vm, const function_def_t& f, const vector<value_t>& args){
+value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(f && f->check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 	if(!check_arg_types(f, args)){
 		throw std::runtime_error("function arguments do not match function");
 	}
 
-	if(f._function_scope->_executable._host_function){
+	if(f->_executable._host_function){
 		return call_host_function(vm, f, args);
 	}
 	else{
@@ -178,7 +179,7 @@ value_t call_function(const interpreter_t& vm, const function_def_t& f, const ve
 }
 
 namespace {
-	shared_ptr<const floyd_parser::function_def_t> find_global_function(const interpreter_t& vm, const string& name){
+	scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
 		return vm._ast._global_scope->_types_collector.resolve_function_type(name);
 	}
 }
@@ -200,7 +201,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, *f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t(7));
 }
 
@@ -213,7 +214,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, *f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("123456"));
 }
 
@@ -226,7 +227,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, *f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t(15));
 }
 
@@ -238,10 +239,10 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, *f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("-xyz-"));
 
-	const auto result2 = call_function(vm, *f, vector<floyd_parser::value_t>{ floyd_parser::value_t("Hello, world!") });
+	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("Hello, world!") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
 }
 
@@ -256,10 +257,10 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, *f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("--xyz<xyz>--"));
 
-	const auto result2 = call_function(vm, *f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
+	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
 
@@ -479,8 +480,8 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}
 
-		const auto& function_def = *type->_function_def;
-		QUARK_ASSERT(function_def._args.size() == call_function_expression._inputs.size());
+		const auto& function_def = type->_function_def;
+		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
 
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
@@ -565,7 +566,7 @@ std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, c
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
-	const auto r = call_function(vm, *f, args);
+	const auto r = call_function(vm, f, args);
 	return { vm, r };
 }
 

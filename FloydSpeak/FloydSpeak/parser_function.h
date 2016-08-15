@@ -42,7 +42,7 @@ namespace floyd_parser {
 			}
 		}
 	*/
-	std::pair<function_def_t, std::string> parse_function_definition(scope_ref_t scope_def, const std::string& pos);
+	std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_def, const std::string& pos);
 
 
 
@@ -50,16 +50,16 @@ namespace floyd_parser {
 
 
 	const std::string test_function1 = "int test_function1(){ return 100; }";
-	function_def_t make_test_function1(scope_ref_t scope);
+	scope_ref_t make_test_function1(scope_ref_t scope);
 
 	const std::string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
-	function_def_t make_test_function2(scope_ref_t scope);
+	scope_ref_t make_test_function2(scope_ref_t scope);
 
-	function_def_t make_log_function(scope_ref_t scope);
-	function_def_t make_log2_function(scope_ref_t scope);
-	function_def_t make_return5(scope_ref_t scope);
+	scope_ref_t make_log_function(scope_ref_t scope);
+	scope_ref_t make_log2_function(scope_ref_t scope);
+	scope_ref_t make_return5(scope_ref_t scope);
 
-	function_def_t make_return_hello(scope_ref_t scope);
+	scope_ref_t make_return_hello(scope_ref_t scope);
 
 }
 

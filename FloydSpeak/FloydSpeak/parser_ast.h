@@ -23,7 +23,6 @@ namespace floyd_parser {
 	struct type_def_t;
 	struct types_collector_t;
 	struct statement_t;
-	struct function_def_t;
 	struct value_t;
 	struct scope_def_t;
 	struct struct_instance_t;
@@ -161,7 +160,6 @@ namespace floyd_parser {
 
 	json_value_t executable_to_json(const executable_t& e);
 
-
 	//////////////////////////////////////		arg_t
 
 	/*
@@ -185,42 +183,9 @@ namespace floyd_parser {
 	};
 
 	void trace(const arg_t& arg);
-
-
-
-	//////////////////////////////////////		function_def_t
-
-	//### Function names should have namespace etc.
-
-
-	struct function_def_t {
-		public: function_def_t(
-			const type_identifier_t& name,
-			const type_identifier_t& return_type,
-			const std::vector<arg_t>& args,
-			const scope_ref_t parent_scope,
-			const executable_t& executable,
-			const types_collector_t& types_collector
-		);
-		public: bool check_invariant() const;
-
-		//	Function scopes must point to the same parent_scope-object to be equal.
-		public: bool operator==(const function_def_t& other) const;
-
-
-		///////////////////		STATE
-		public: const type_identifier_t _name;
-		public: const type_identifier_t _return_type;
-		public: const std::vector<arg_t> _args;
-
-		//	Also contains statements.
-		public: scope_ref_t _function_scope;
-	};
-
-	void trace(const function_def_t& v);
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
 
-	function_def_t make_function_def(
+	scope_ref_t make_function_def(
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
 		const std::vector<arg_t>& args,
@@ -229,9 +194,7 @@ namespace floyd_parser {
 		const types_collector_t& types_collector
 	);
 
-	TSHA1 calc_function_body_hash(const function_def_t& f);
-	json_value_t function_def_to_json(const function_def_t& s);
-
+	TSHA1 calc_function_body_hash(const scope_ref_t& f);
 
 
 	//////////////////////////////////////		member_t
@@ -289,7 +252,6 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		scope_def_t
 
 //??? make private data, immutable
-//??? add scope name!
 
 	/*
 		WARNING: We mutate this during parsing, adding executable, types while it exists.
@@ -315,7 +277,6 @@ namespace floyd_parser {
 
 		public: static scope_ref_t make2(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
 		public: static scope_ref_t make_global_scope();
-		private: explicit scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
 		public: scope_def_t(const scope_def_t& other);
 
 		public: bool check_invariant() const;
@@ -323,6 +284,14 @@ namespace floyd_parser {
 
 		//	Must point to the same parent_scope-object, or both nullptr.
 		public: bool operator==(const scope_def_t& other) const;
+
+
+		private: explicit scope_def_t(etype type,
+			const type_identifier_t& name,
+			const std::vector<member_t>& members,
+			const scope_ref_t parent_scope,
+			const executable_t& executable,
+			const types_collector_t& types_collector);
 
 
 		/////////////////////////////		STATE
@@ -333,6 +302,7 @@ namespace floyd_parser {
 		public: std::weak_ptr<scope_def_t> _parent_scope;
 		public: executable_t _executable;
 		public: types_collector_t _types_collector;
+		public: type_identifier_t _return_type;
 
 		/*
 			Key is symbol name or a random string if unnamed.
@@ -385,7 +355,7 @@ namespace floyd_parser {
 		public: base_type _base_type;
 		public: scope_ref_t _struct_def;
 		public: std::shared_ptr<vector_def_t> _vector_def;
-		public: std::shared_ptr<function_def_t> _function_def;
+		public: scope_ref_t _function_def;
 	};
 
 
