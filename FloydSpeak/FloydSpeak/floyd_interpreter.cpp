@@ -476,11 +476,11 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		const auto& call_function_expression = *e._call;
 
 		const auto type = resolve_type(vm._scope_instances.back()->_def, call_function_expression._function_name);
-		if(!type || !type->_function_def){
+		if(!type || type->get_type() != base_type::k_function){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}
 
-		const auto& function_def = type->_function_def;
+		const auto& function_def = type->get_function_def();
 		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
 
 		//	Simplify each argument.

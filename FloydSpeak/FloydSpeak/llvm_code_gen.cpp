@@ -42,36 +42,38 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 
 		std::vector<byte_range_t> result;
 		std::size_t pos = 0;
-		for(const auto& member : s._struct_def->_members) {
+		const auto struct_def = s.get_struct_def();
+		for(const auto& member : struct_def->_members) {
 			const auto identifier_data = types.lookup_identifier_deep(member._type->to_string());
 			const auto type_def = identifier_data->_optional_def;
 			QUARK_ASSERT(type_def);
 
-			if(type_def->_base_type == k_int){
+			base_type base = type_def->get_type();
+			if(base == k_int){
 				pos = align_pos(pos, 4);
 				result.push_back(byte_range_t(pos, 4));
 				pos += 4;
 			}
-			else if(type_def->_base_type == k_bool){
+			else if(base == k_bool){
 				result.push_back(byte_range_t(pos, 1));
 				pos += 1;
 			}
-			else if(type_def->_base_type == k_string){
+			else if(base == k_string){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;
 			}
-			else if(type_def->_base_type == k_struct){
+			else if(base == k_struct){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;
 			}
-			else if(type_def->_base_type == k_vector){
+			else if(base == k_vector){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;
 			}
-			else if(type_def->_base_type == k_function){
+			else if(base == k_function){
 				pos = align_pos(pos, 8);
 				result.push_back(byte_range_t(pos, 8));
 				pos += 8;

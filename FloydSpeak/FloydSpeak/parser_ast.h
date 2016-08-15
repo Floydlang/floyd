@@ -164,6 +164,7 @@ namespace floyd_parser {
 
 	/*
 		Describes a function argument - it's type and the argument name.
+		//??? delete
 	*/
 	struct arg_t {
 		public: bool check_invariant() const {
@@ -342,8 +343,42 @@ namespace floyd_parser {
 			a._base_type = k_int;
 			return a;
 		}
+		public: static type_def_t make(base_type type){
+			type_def_t a;
+			a._base_type = type;
+			return a;
+		}
+		public: static type_def_t make_struct_def(scope_ref_t struct_def){
+			type_def_t a;
+			a._base_type = k_struct;
+			a._struct_def = struct_def;
+			return a;
+		}
+		public: static type_def_t make_function_def(scope_ref_t function_def){
+			type_def_t a;
+			a._base_type = k_function;
+			a._function_def = function_def;
+			return a;
+		}
 		public: bool check_invariant() const;
 		public: bool operator==(const type_def_t& other) const;
+
+		public: base_type get_type() const {
+			return _base_type;
+		}
+
+		public: scope_ref_t get_struct_def() const {
+			QUARK_ASSERT(_base_type == k_struct);
+			return _struct_def;
+		}
+		public: std::shared_ptr<vector_def_t> get_vector_def() const {
+			QUARK_ASSERT(_base_type == k_vector);
+			return _vector_def;
+		}
+		public: scope_ref_t get_function_def() const {
+			QUARK_ASSERT(_base_type == k_function);
+			return _function_def;
+		}
 
 
 		///////////////////		STATE
@@ -352,10 +387,10 @@ namespace floyd_parser {
 			Plain types only use the _base_type.
 			### Add support for int-ranges etc.
 		*/
-		public: base_type _base_type;
-		public: scope_ref_t _struct_def;
-		public: std::shared_ptr<vector_def_t> _vector_def;
-		public: scope_ref_t _function_def;
+		private: base_type _base_type;
+		private: scope_ref_t _struct_def;
+		private: std::shared_ptr<vector_def_t> _vector_def;
+		private: scope_ref_t _function_def;
 	};
 
 

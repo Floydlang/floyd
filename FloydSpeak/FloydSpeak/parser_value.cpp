@@ -342,22 +342,23 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 	value_t make_default_value(const type_def_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
-		if(t._base_type == k_int){
+		const auto type = t.get_type();
+		if(type == k_int){
 			return value_t(0);
 		}
-		else if(t._base_type == k_bool){
+		else if(type == k_bool){
 			return value_t(false);
 		}
-		else if(t._base_type == k_string){
+		else if(type == k_string){
 			return value_t("");
 		}
-		else if(t._base_type == k_struct){
-			return make_default_value(t._struct_def);
+		else if(type == k_struct){
+			return make_default_value(t.get_struct_def());
 		}
-		else if(t._base_type == k_vector){
+		else if(type == k_vector){
 			QUARK_ASSERT(false);
 		}
-		else if(t._base_type == k_function){
+		else if(type == k_function){
 			QUARK_ASSERT(false);
 		}
 		else{

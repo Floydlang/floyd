@@ -235,17 +235,13 @@ namespace floyd_parser {
 
 
 	types_collector_t types_collector_t::define_struct_type(const std::string& new_identifier, const std::shared_ptr<scope_def_t>& struct_def) const{
-		auto type_def = make_shared<type_def_t>();
-		type_def->_base_type = k_struct;
-		type_def->_struct_def = struct_def;
+		auto type_def = make_shared<type_def_t>(type_def_t::make_struct_def(struct_def));
 		return define_type_xyz(new_identifier, type_def);
 	}
 
 
 	types_collector_t types_collector_t::define_function_type(const std::string& new_identifier, const std::shared_ptr<scope_def_t>& function_def) const{
-		auto type_def = make_shared<type_def_t>();
-		type_def->_base_type = k_function;
-		type_def->_function_def = function_def;
+		auto type_def = make_shared<type_def_t>(type_def_t::make_function_def(function_def));
 		return define_type_xyz(new_identifier, type_def);
 	}
 
@@ -292,8 +288,8 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 
 		const auto a = resolve_identifier(s);
-		if(a && a->_base_type == k_struct){
-			return a->_struct_def;
+		if(a && a->get_type() == base_type::k_struct){
+			return a->get_struct_def();
 		}
 		else {
 			return {};
@@ -304,8 +300,8 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 
 		const auto a = resolve_identifier(s);
-		if(a && a->_base_type == k_function){
-			return a->_function_def;
+		if(a && a->get_type() == base_type::k_function){
+			return a->get_function_def();
 		}
 		else {
 			return {};

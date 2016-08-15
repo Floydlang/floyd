@@ -9,6 +9,10 @@
 #include "pass2.h"
 
 
+
+using floyd_parser::scope_def_t;
+using floyd_parser::base_type;
+
 /*
 		public: base_type _base_type;
 		public: std::shared_ptr<struct_def_t> _struct_def;
@@ -38,14 +42,14 @@ bool are_symbols_resolvable(const floyd_parser::scope_ref_t& scope){
 	for(const auto t: scope->_types_collector._type_definitions){
 		const auto type_def = t.second;
 
-		if(type_def->_struct_def){
-			are_symbols_resolvable2(type_def->_struct_def);
+		if(type_def->get_type() == base_type::k_struct){
+			are_symbols_resolvable2(type_def->get_struct_def());
 		}
-		else if(type_def->_vector_def){
+		else if(type_def->get_type() == base_type::k_vector){
 //			type_def->_struct_def
 		}
-		else if(type_def->_function_def){
-//			type_def->_function_def
+		else if(type_def->get_type() == base_type::k_function){
+			are_symbols_resolvable2(type_def->get_function_def());
 		}
 	}
 	return true;
