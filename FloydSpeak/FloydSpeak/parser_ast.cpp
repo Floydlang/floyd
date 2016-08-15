@@ -405,15 +405,15 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 
 
 
-	scope_ref_t scope_def_t::make2(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(parent_scope, executable, types_collector));
+	scope_ref_t scope_def_t::make2(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector){
+		auto r = std::make_shared<scope_def_t>(scope_def_t(type, name, values, parent_scope, executable, types_collector));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
 	scope_ref_t scope_def_t::make_global_scope(){
 		auto r = std::make_shared<scope_def_t>(
-			scope_def_t(std::shared_ptr<scope_def_t>(), executable_t({}), {})
+			scope_def_t(k_global, type_identifier_t::make("global"), {}, std::shared_ptr<scope_def_t>(), executable_t({}), {})
 		);
 
 		r->_types_collector = add_builtin_types(r->_types_collector);
@@ -423,7 +423,10 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		return r;
 	}
 
-	scope_def_t::scope_def_t(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector) :
+	scope_def_t::scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector) :
+		_type(type),
+		_name(name),
+		_values(values),
 		_parent_scope(parent_scope),
 		_executable(executable),
 		_types_collector(types_collector)
@@ -433,6 +436,9 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	}
 
 	scope_def_t::scope_def_t(const scope_def_t& other) :
+		_type(other._type),
+		_name(other._name),
+		_values(other._values),
 		_parent_scope(other._parent_scope),
 		_executable(other._executable),
 		_types_collector(other._types_collector)
@@ -448,6 +454,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		return true;
 	}
 
+	//??? check name,values,type
 	bool scope_def_t::check_invariant() const {
 		QUARK_ASSERT(!_parent_scope.lock() || _parent_scope.lock()->shallow_check_invariant());
 		QUARK_ASSERT(_executable.check_invariant());
@@ -464,6 +471,16 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 
 		//	Must point to the SAME OBJECT / address.
 		if(a != b){
+			return false;
+		}
+
+		if(_type != other._type){
+			return false;
+		}
+		if(_name != other._name){
+			return false;
+		}
+		if(_values != other._values){
 			return false;
 		}
 		if(!(_executable == other._executable)){
@@ -595,7 +612,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		_name(name),
 		_return_type(return_type),
 		_args(args),
-		_function_scope(scope_def_t::make2(parent_scope, executable, types_collector))
+		_function_scope(scope_def_t::make2(scope_def_t::k_function, name, {}, parent_scope, executable, types_collector))
 	{
 		QUARK_ASSERT(name.check_invariant());
 		QUARK_ASSERT(name.to_string().size() > 0);
@@ -762,7 +779,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		struct_def_t result;
 		result._name = name;
 		result._members = members;
-		result._struct_scope = scope_def_t::make2(parent_scope, executable_t({}), {});
+		result._struct_scope = scope_def_t::make2(scope_def_t::k_struct, name, {}, parent_scope, executable_t({}), {});
 
 		QUARK_ASSERT(result.check_invariant());
 		return result;

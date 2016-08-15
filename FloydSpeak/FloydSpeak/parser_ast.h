@@ -324,6 +324,7 @@ namespace floyd_parser {
 		- Add support for optional value (using "?").
 	*/
 
+//	typedef scope_def_t struct_def_t;
 	struct struct_def_t {
 		public: static struct_def_t make2(
 			const type_identifier_t& name,
@@ -394,9 +395,16 @@ namespace floyd_parser {
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 	*/
 	struct scope_def_t {
-		public: static scope_ref_t make2(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
+		public: enum etype {
+			k_function,
+			k_struct,
+			k_global,
+			k_subscope
+		};
+
+		public: static scope_ref_t make2(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
 		public: static scope_ref_t make_global_scope();
-		private: explicit scope_def_t(const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
+		private: explicit scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
 		public: scope_def_t(const scope_def_t& other);
 
 		public: bool check_invariant() const;
@@ -408,6 +416,9 @@ namespace floyd_parser {
 
 		/////////////////////////////		STATE
 
+		public: etype _type;
+		public: type_identifier_t _name;
+		public: std::vector<member_t> _values;
 		public: std::weak_ptr<scope_def_t> _parent_scope;
 		public: executable_t _executable;
 		public: types_collector_t _types_collector;
