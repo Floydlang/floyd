@@ -37,7 +37,7 @@ namespace {
 		return diff < 0.00001;
 	}
 
-	bool check_args(const function_def_t& f, const vector<value_t>& args){
+	bool check_arg_types(const function_def_t& f, const vector<value_t>& args){
 		if(f._args.size() != args.size()){
 			return false;
 		}
@@ -54,7 +54,7 @@ namespace {
 		QUARK_ASSERT(f.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-		if(!check_args(f, args)){
+		if(!check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
 
@@ -81,7 +81,7 @@ namespace {
 
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-		if(!check_args(f, args)){
+		if(!check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
 
@@ -143,7 +143,7 @@ namespace {
 		QUARK_ASSERT(!f._function_scope->_executable._host_function_param);
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-		if(!check_args(f, args)){
+		if(!check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
 
@@ -165,7 +165,7 @@ value_t call_function(const interpreter_t& vm, const function_def_t& f, const ve
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-	if(!check_args(f, args)){
+	if(!check_arg_types(f, args)){
 		throw std::runtime_error("function arguments do not match function");
 	}
 

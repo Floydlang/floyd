@@ -17,9 +17,9 @@
 	Non-lossy. Use to validate sematics, generate compiler errors.
 	Inserts resolved links
 
-	- Collect types and symbols-
-	- Resolve types and symbols using compile-time scopes.
+	- Resolve types and symbols using compile-time scopes. Record these?
 	- Verifies all expression and statement semantics
+	- Checks that all types are compatible.
 	- Generate compiler errors.
 */
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1);

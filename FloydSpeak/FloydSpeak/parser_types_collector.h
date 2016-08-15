@@ -172,7 +172,7 @@ namespace floyd_parser {
 		private: std::map<std::string, type_indentifier_data_ref > _identifiers;
 
 		//	Key is the signature string. De-duplicated.
-		private: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
+		public: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
 	};
 
 
