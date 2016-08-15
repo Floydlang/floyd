@@ -264,32 +264,75 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
 
+
+
+//??? move to somewhere else
+std::pair<scope_ref_t, int> resolve_scoped_variable(floyd_parser::scope_ref_t scope_def, const std::string& s){
+	QUARK_ASSERT(scope_def && scope_def->check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	for(int index = 0 ; index < scope_def->_members.size() ; index++){
+		const auto& member = scope_def->_members[index];
+		if(member._name == s){
+			return std::pair<scope_ref_t, int>(scope_def, index);
+		}
+	}
+
+	//	Not, found - try parent scope.
+	const auto parent = scope_def->_parent_scope.lock();
+	if(parent){
+		return resolve_scoped_variable(parent, s);
+	}
+	else{
+		return {};
+	}
+}
+
+std::pair<scope_ref_t, std::shared_ptr<type_def_t> > resolve_scoped_type(floyd_parser::scope_ref_t scope_def, const std::string& s){
+	QUARK_ASSERT(scope_def && scope_def->check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto a = scope_def->_types_collector.resolve_identifier(s);
+	if(a){
+		return { scope_def, a };
+	}
+
+	//	Not, found - try parent scope.
+	const auto parent = scope_def->_parent_scope.lock();
+	if(parent){
+		return resolve_scoped_type(parent, s);
+	}
+	else{
+		return {};
+	}
+}
+
+
+floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<scope_instance_t>>& scopes, const std::string& s, size_t depth){
+	QUARK_ASSERT(depth < scopes.size());
+	QUARK_ASSERT(depth >= 0);
+
+	const auto it = scopes[depth]->_values.find(s);
+	if(it != scopes[depth]->_values.end()){
+		return it->second;
+	}
+	else if(depth > 0){
+		return resolve_variable_name_deep(scopes, s, depth - 1);
+	}
+	else{
+		return {};
+	}
+}
+
+floyd_parser::value_t resolve_variable_name(const interpreter_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	return resolve_variable_name_deep(vm._scope_instances, s, vm._scope_instances.size() - 1);
+}
+
+
 namespace {
-	floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<scope_instance_t>>& scopes, const std::string& s, size_t depth){
-		QUARK_ASSERT(depth < scopes.size());
-		QUARK_ASSERT(depth >= 0);
-
-		const auto it = scopes[depth]->_values.find(s);
-		if(it != scopes[depth]->_values.end()){
-			return it->second;
-		}
-		else if(depth > 0){
-			return resolve_variable_name_deep(scopes, s, depth - 1);
-		}
-		else{
-			return {};
-		}
-	}
-
-	/*
-		Uses runtime callstack to find a variable by its name.
-	*/
-	floyd_parser::value_t resolve_variable_name(const interpreter_t& vm, const std::string& s){
-		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(s.size() > 0);
-
-		return resolve_variable_name_deep(vm._scope_instances, s, vm._scope_instances.size() - 1);
-	}
 
 	/*
 		PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
@@ -322,6 +365,7 @@ namespace {
 			QUARK_ASSERT(left_side.is_null());
 			const auto variable_name = e._resolve_variable->_variable_name;
 			const value_t value = resolve_variable_name(vm, variable_name);
+//			const value_t found_scope = resolve_scoped_symbol(vm._ast._global_scope, variable_name);
 			return make_constant(value);
 		}
 		else if(e._resolve_struct_member){
