@@ -129,6 +129,31 @@ namespace floyd_parser {
 
 
 
+	//////////////////////////////////////		member_t
+
+	/*
+		Definition of a struct-member.
+		??? support expressions for default values.
+	*/
+
+	struct member_t {
+		public: member_t(const type_identifier_t& type, const std::string& name, const value_t& init_value);
+		public: member_t(const type_identifier_t& type, const std::string& name);
+		bool operator==(const member_t& other) const;
+		public: bool check_invariant() const;
+
+		public: std::shared_ptr<type_identifier_t> _type;
+
+		//	Optional -- must have same type as _type.
+		public: std::shared_ptr<value_t> _value;
+
+		public: std::string _name;
+	};
+
+	void trace(const member_t& member);
+
+
+
 	//////////////////////////////////////////////////		executable_t
 
 
@@ -160,36 +185,12 @@ namespace floyd_parser {
 
 	json_value_t executable_to_json(const executable_t& e);
 
-	//////////////////////////////////////		arg_t
-
-	/*
-		Describes a function argument - it's type and the argument name.
-		//??? delete
-	*/
-	struct arg_t {
-		public: bool check_invariant() const {
-			QUARK_ASSERT(_type.check_invariant());
-			QUARK_ASSERT(_identifier.size() > 0);
-			return true;
-		}
-		public: bool operator==(const arg_t& other) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(other.check_invariant());
-
-			return _type == other._type && _identifier == other._identifier;
-		}
-
-		public: type_identifier_t _type;
-		public: std::string _identifier;
-	};
-
-	void trace(const arg_t& arg);
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
 
 	scope_ref_t make_function_def(
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
-		const std::vector<arg_t>& args,
+		const std::vector<member_t>& args,
 		const scope_ref_t parent_scope,
 		const executable_t& executable,
 		const types_collector_t& types_collector
@@ -197,29 +198,6 @@ namespace floyd_parser {
 
 	TSHA1 calc_function_body_hash(const scope_ref_t& f);
 
-
-	//////////////////////////////////////		member_t
-
-	/*
-		Definition of a struct-member.
-		??? support expressions for default values.
-	*/
-
-	struct member_t {
-		public: member_t(const type_identifier_t& type, const std::string& name, const value_t& init_value);
-		public: member_t(const type_identifier_t& type, const std::string& name);
-		bool operator==(const member_t& other) const;
-		public: bool check_invariant() const;
-
-		public: std::shared_ptr<type_identifier_t> _type;
-
-		//	Optional -- must have same type as _type.
-		public: std::shared_ptr<value_t> _value;
-
-		public: std::string _name;
-	};
-
-	void trace(const member_t& member);
 
 
 
@@ -250,20 +228,24 @@ namespace floyd_parser {
 	json_value_t vector_def_to_json(const vector_def_t& s);
 
 
+
 	//////////////////////////////////////////////////		scope_def_t
 
-//??? make private data, immutable
+	//??? make private data, immutable
 
 	/*
-		WARNING: We mutate this during parsing, adding executable, types while it exists.
-		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it a new address (move / copy) breaks this hearchy.
-
-		Represents
+		This is a core piece of the AST. It represents a static, compile-time scope. Instances are used to define
 		- global scope
 		- struct definition, with member data and functions
 		- function definition, with arguments
 		- function body
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
+
+		The scope_def_t includes optional code, optional member variables and optional local types.
+
+
+		WARNING: We mutate this during parsing, adding executable, types while it exists.
+		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it a new address (move / copy) breaks this hearchy.
 	*/
 	struct scope_def_t {
 		public: enum etype {
@@ -304,16 +286,6 @@ namespace floyd_parser {
 		public: executable_t _executable;
 		public: types_collector_t _types_collector;
 		public: type_identifier_t _return_type;
-
-		/*
-			Key is symbol name or a random string if unnamed.
-			### Allow many types to have the same symbol name (pixel, pixel several pixel constructor etc.).
-				Maybe use better key that encodes those differences?
-		*/
-		//		public: std::map<std::string, std::vector<type_def_t>> _symbolsxxxx;
-
-		//	Specification of values to store in each instance.
-		//		public: std::vector<member_t> _runtime_value_spec;
 	};
 
 	json_value_t scope_def_to_json(const scope_def_t& scope_def);
@@ -431,48 +403,10 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		ast_t
 
+
 	/*
-		Function definitions have a type and a body and an optional name.
-
-
-		This is a function definition for a function definition called "function4":
-			"int function4(int a, string b){
-				return a + 1;
-			}"
-
-
-		This is an unnamed function function definition.
-			"int(int a, string b){
-				return a + 1;
-			}"
-
-		Here a constant x points to the function definition.
-			auto x = function4
-
-		Functions and structs do not normally become values, they become *types*.
-
-
-		{
-			VALUE struct: __global_struct
-				int: my_global_int
-				function: <int>f(string a, string b) ----> function-def.
-
-				struct_def struct1
-
-				struct1 a = make_struct1()
-
-			types
-				struct struct1 --> struct_defs/struct1
-
-			struct_defs
-				(struct1) {
-					int: a
-					int: b
-				}
-
-		}
+		Represents the root of the parse tree - the Abstract Syntax Tree
 	*/
-
 	struct ast_t {
 		public: ast_t() :
 			_global_scope(

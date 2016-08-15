@@ -190,7 +190,6 @@ namespace floyd_parser {
 	}
 
 
-
 	//////////////////////////////////////////////////		type_identifier_t
 
 
@@ -330,7 +329,6 @@ namespace floyd_parser {
 		}
 
 
-
 	//////////////////////////////////////////////////		scope_def_t
 
 	types_collector_t add_builtin_types(const types_collector_t& types){
@@ -359,26 +357,24 @@ namespace floyd_parser {
 
 
 
+	QUARK_UNIT_TESTQ("add_builtin_types()", ""){
+		const auto t = types_collector_t();
+		const auto a = add_builtin_types(t);
+		QUARK_TEST_VERIFY(a.check_invariant());
 
-QUARK_UNIT_TESTQ("add_builtin_types()", ""){
-	const auto t = types_collector_t();
-	const auto a = add_builtin_types(t);
-	QUARK_TEST_VERIFY(a.check_invariant());
 
+		const auto b = a.resolve_identifier("int");
+		QUARK_TEST_VERIFY(b);
+		QUARK_TEST_VERIFY(b->get_type() == k_int);
 
-	const auto b = a.resolve_identifier("int");
-	QUARK_TEST_VERIFY(b);
-	QUARK_TEST_VERIFY(b->get_type() == k_int);
+		const auto d = a.resolve_identifier("bool");
+		QUARK_TEST_VERIFY(d);
+		QUARK_TEST_VERIFY(d->get_type() == k_bool);
 
-	const auto d = a.resolve_identifier("bool");
-	QUARK_TEST_VERIFY(d);
-	QUARK_TEST_VERIFY(d->get_type() == k_bool);
-
-	const auto c = a.resolve_identifier("string");
-	QUARK_TEST_VERIFY(c);
-	QUARK_TEST_VERIFY(c->get_type() == k_string);
-}
-
+		const auto c = a.resolve_identifier("string");
+		QUARK_TEST_VERIFY(c);
+		QUARK_TEST_VERIFY(c->get_type() == k_string);
+	}
 
 
 
@@ -485,9 +481,27 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 
 
 
+	string scope_type_to_string(scope_def_t::etype type){
+		if(type == scope_def_t::etype::k_function){
+			return "function";
+		}
+		else if(type == scope_def_t::etype::k_struct){
+			return "struct";
+		}
+		else if(type == scope_def_t::etype::k_global){
+			return "global";
+		}
+		else if(type == scope_def_t::etype::k_subscope){
+			return "subscope";
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
 
 
-//////		JSON
+
+	//////		JSON
 
 
 
@@ -519,23 +533,6 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		};
 	}
 
-	string scope_type_to_string(scope_def_t::etype type){
-		if(type == scope_def_t::etype::k_function){
-			return "function";
-		}
-		else if(type == scope_def_t::etype::k_struct){
-			return "struct";
-		}
-		else if(type == scope_def_t::etype::k_global){
-			return "global";
-		}
-		else if(type == scope_def_t::etype::k_subscope){
-			return "subscope";
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
 	json_value_t scope_def_to_json(const scope_def_t& scope_def){
 		std::vector<json_value_t> members;
 		for(const auto i: scope_def._members){
@@ -560,14 +557,6 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	}
 
 
-	////////////////////////			arg_t
-
-
-
-	void trace(const arg_t& arg){
-		QUARK_TRACE("<arg_t> data type: <" + arg._type.to_string() + "> indentifier: \"" + arg._identifier + "\"");
-	}
-
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
 		QUARK_SCOPED_TRACE("statements");
@@ -588,17 +577,13 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	scope_ref_t make_function_def(
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
-		const std::vector<arg_t>& args,
+		const std::vector<member_t>& args,
 		const scope_ref_t parent_scope,
 		const executable_t& executable,
 		const types_collector_t& types_collector
 	)
 	{
-		auto members = vector<member_t>();
-		for(const auto i: args){
-			members.push_back(member_t(i._type, i._identifier));
-		}
-		auto r = scope_def_t::make2(scope_def_t::k_function, name, members, parent_scope, executable, types_collector);
+		auto r = scope_def_t::make2(scope_def_t::k_function, name, args, parent_scope, executable, types_collector);
 		r->_return_type = return_type;
 		return r;
 	}

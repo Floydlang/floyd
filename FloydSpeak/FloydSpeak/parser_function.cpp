@@ -28,16 +28,16 @@ namespace floyd_parser {
 		(int a)
 		(int x, int y)
 	*/
-vector<arg_t> parse_functiondef_arguments(const string& s2){
+vector<member_t> parse_functiondef_arguments(const string& s2){
 	const auto s(s2.substr(1, s2.length() - 2));
-	vector<arg_t> args;
+	vector<member_t> args;
 	auto str = s;
 	while(!str.empty()){
 		const auto arg_type = read_type(str);
 		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
-		const auto a = arg_t{ type_identifier_t::make(arg_type.first), arg_name.first };
+		const auto a = member_t{ type_identifier_t::make(arg_type.first), arg_name.first };
 		args.push_back(a);
 		str = skip_whitespace(optional_comma.second);
 	}
@@ -47,12 +47,12 @@ vector<arg_t> parse_functiondef_arguments(const string& s2){
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_TEST_VERIFY((parse_functiondef_arguments("()") == vector<arg_t>{}));
+	QUARK_TEST_VERIFY((parse_functiondef_arguments("()") == vector<member_t>{}));
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
-	QUARK_TEST_VERIFY((r == vector<arg_t>{
+	QUARK_TEST_VERIFY((r == vector<member_t>{
 		{ type_identifier_t::make_int(), "x" },
 		{ type_identifier_t::make_string(), "y" },
 		{ type_identifier_t::make_float(), "z" }
@@ -190,7 +190,7 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""
 	const auto result = parse_function_definition("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
 	QUARK_TEST_VERIFY(result.first.first == "printf");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_int());
-	QUARK_TEST_VERIFY((result.first.second._args == vector<arg_t>{
+	QUARK_TEST_VERIFY((result.first.second._args == vector<member_t>{
 		{ type_identifier_t::make_string(), "a" },
 		{ type_identifier_t::make_float(), "barry" },
 		{ type_identifier_t::make_int(), "c" },
