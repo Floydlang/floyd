@@ -39,17 +39,12 @@ namespace floyd_parser {
 	*/
 	enum base_type {
 		k_null,
-//		k_float,
 		k_int,
 		k_bool,
 		k_string,
 
-//		k_enum,
 		k_struct,
-//		k_map,
 		k_vector,
-//		k_seq,
-//		k_dyn,
 		k_function
 	};
 
@@ -243,9 +238,9 @@ namespace floyd_parser {
 
 		The scope_def_t includes optional code, optional member variables and optional local types.
 
-
 		WARNING: We mutate this during parsing, adding executable, types while it exists.
-		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it a new address (move / copy) breaks this hearchy.
+		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it
+			a new address (move / copy) breaks this hearchy.
 	*/
 	struct scope_def_t {
 		public: enum etype {
@@ -258,7 +253,14 @@ namespace floyd_parser {
 		public: static scope_ref_t make_struct(const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope);
 
 
-		public: static scope_ref_t make2(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
+		public: static scope_ref_t make2(
+			etype type,
+			const type_identifier_t& name,
+			const std::vector<member_t>& members,
+			const scope_ref_t parent_scope,
+			const executable_t& executable,
+			const types_collector_t& types_collector
+		);
 		public: static scope_ref_t make_global_scope();
 		public: scope_def_t(const scope_def_t& other);
 
@@ -426,11 +428,6 @@ namespace floyd_parser {
 	};
 
 	void trace(const ast_t& program);
-
-
-
-
-	////////////////////	Helpers for making tests.
 
 
 
