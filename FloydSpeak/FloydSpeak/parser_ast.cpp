@@ -175,7 +175,7 @@ namespace floyd_parser {
 
 		const string label = "";
 		if(t._base_type == k_struct){
-			return to_signature(*t._struct_def);
+			return to_signature(t._struct_def);
 		}
 		else if(t._base_type == k_vector){
 			const auto vector_value_s = "";
@@ -404,9 +404,14 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 
 
 
+	scope_ref_t scope_def_t::make_struct(const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope){
+		auto r = std::make_shared<scope_def_t>(scope_def_t(k_struct, name, members, parent_scope, executable_t({}), types_collector_t()));
+		QUARK_ASSERT(r->check_invariant());
+		return r;
+	}
 
-	scope_ref_t scope_def_t::make2(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(type, name, values, parent_scope, executable, types_collector));
+	scope_ref_t scope_def_t::make2(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector){
+		auto r = std::make_shared<scope_def_t>(scope_def_t(type, name, members, parent_scope, executable, types_collector));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
@@ -423,10 +428,10 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		return r;
 	}
 
-	scope_def_t::scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector) :
+	scope_def_t::scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector) :
 		_type(type),
 		_name(name),
-		_values(values),
+		_members(members),
 		_parent_scope(parent_scope),
 		_executable(executable),
 		_types_collector(types_collector)
@@ -438,7 +443,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	scope_def_t::scope_def_t(const scope_def_t& other) :
 		_type(other._type),
 		_name(other._name),
-		_values(other._values),
+		_members(other._members),
 		_parent_scope(other._parent_scope),
 		_executable(other._executable),
 		_types_collector(other._types_collector)
@@ -480,7 +485,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		if(_name != other._name){
 			return false;
 		}
-		if(_values != other._values){
+		if(_members != other._members){
 			return false;
 		}
 		if(!(_executable == other._executable)){
@@ -508,7 +513,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 
 
 
-
+/*
 	json_value_t struct_def_to_json(const struct_def_t& s){
 		std::vector<json_value_t> members;
 		for(const auto i: s._members){
@@ -528,6 +533,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 			}
 		};
 	}
+*/
 
 	json_value_t vector_def_to_json(const vector_def_t& s){
 		return {
@@ -558,7 +564,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		return {
 			std::map<string, json_value_t>{
 				{ "_base_type", json_value_t(to_string(type_def._base_type)) },
-				{ "_struct_def", type_def._struct_def ? struct_def_to_json(*type_def._struct_def) : json_value_t() },
+				{ "_struct_def", type_def._struct_def ? scope_def_to_json(*type_def._struct_def) : json_value_t() },
 				{ "_vector_def", type_def._vector_def ? vector_def_to_json(*type_def._vector_def) : json_value_t() },
 				{ "_function_def", type_def._function_def ? function_def_to_json(*type_def._function_def) : json_value_t() }
 			}
@@ -577,8 +583,38 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		};
 	}
 
+	string scope_type_to_string(scope_def_t::etype type){
+		if(type == scope_def_t::etype::k_function){
+			return "function";
+		}
+		else if(type == scope_def_t::etype::k_struct){
+			return "struct";
+		}
+		else if(type == scope_def_t::etype::k_global){
+			return "global";
+		}
+		else if(type == scope_def_t::etype::k_subscope){
+			return "subscope";
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
 	json_value_t scope_def_to_json(const scope_def_t& scope_def){
+		std::vector<json_value_t> members;
+		for(const auto i: scope_def._members){
+			const auto member = std::map<string, json_value_t>{
+				{ "_type", json_value_t(i._type->to_string()) },
+				{ "_value", i._value ? value_to_json(*i._value) : json_value_t() },
+				{ "_name", json_value_t(i._name) }
+			};
+			members.push_back(json_value_t(member));
+		}
+
 		const std::map<string, json_value_t> a {
+			{ "_type", json_value_t(scope_type_to_string(scope_def._type)) },
+			{ "_name", json_value_t(scope_def._name.to_string()) },
+			{ "_members", json_value_t(members) },
 			{ "_parent_scope", json_value_t(123.0f) },
 			{ "_executable", executable_to_json(scope_def._executable) },
 			{ "_types_collector", types_collector_to_json(scope_def._types_collector) }
@@ -762,69 +798,22 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	}
 
 
-	////////////////////////			struct_def_t
-
-
-
-	struct_def_t struct_def_t::make2(
-		const type_identifier_t& name,
-		const std::vector<member_t>& members,
-		const scope_ref_t parent_scope)
-	{
-		QUARK_ASSERT(name.check_invariant());
-		for(const auto m: members){
-			QUARK_ASSERT(m.check_invariant());
-		}
-
-		struct_def_t result;
-		result._name = name;
-		result._members = members;
-		result._struct_scope = scope_def_t::make2(scope_def_t::k_struct, name, {}, parent_scope, executable_t({}), {});
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-
-	bool struct_def_t::check_invariant() const{
-		QUARK_ASSERT(_name.check_invariant());
-		QUARK_ASSERT(_name.to_string().size() > 0 );
-
-		for(const auto m: _members){
-			QUARK_ASSERT(m.check_invariant());
-		}
-		QUARK_ASSERT(_struct_scope && _struct_scope->check_invariant());
-		return true;
-	}
-
-	bool struct_def_t::operator==(const struct_def_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(_name != other._name){
-			return false;
-		}
-		if(_members != other._members){
-			return false;
-		}
-		if(!(*_struct_scope == *other._struct_scope)){
-			return false;
-		}
-		return true;
-	}
-
-	void trace(const struct_def_t& e){
+	//??? more. Use to_json().
+	void trace(const scope_ref_t& e){
+		QUARK_ASSERT(e && e->check_invariant());
+/*
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("struct_def_t");
 		trace_vec("members", e._members);
+*/
 	}
-
-
-	std::string to_signature(const struct_def_t& t){
-		QUARK_ASSERT(t.check_invariant());
+	//??? more
+	std::string to_signature(const scope_ref_t& t){
+		QUARK_ASSERT(t && t->check_invariant());
 
 		const string label = "";
 		string body;
-		for(const auto& member : t._members) {
+		for(const auto& member : t->_members) {
 			const auto member_name = member._name;
 			const type_identifier_t typedef_s = *member._type;
 			const string member_type = "<" + typedef_s.to_string() + ">";
@@ -836,7 +825,7 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		}
 		body = remove_trailing_comma(body);
 
-		return label + "<struct>" + "{" + body + "}";
+		return label + "<" + scope_type_to_string(t->_type) + ">" + "{" + body + "}";
 	}
 
 
@@ -917,12 +906,12 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 
 
 
-	struct_def_t make_struct0(scope_ref_t scope_def){
-		return struct_def_t::make2(type_identifier_t::make("struct0"), {}, scope_def);
+	scope_ref_t make_struct0(scope_ref_t scope_def){
+		return scope_def_t::make_struct(type_identifier_t::make("struct0"), {}, scope_def);
 	}
 
-	struct_def_t make_struct1(scope_ref_t scope_def){
-		return struct_def_t::make2(
+	scope_ref_t make_struct1(scope_ref_t scope_def){
+		return scope_def_t::make_struct(
 			type_identifier_t::make("struct1"),
 			{
 				{ type_identifier_t::make_float(), "x" },
@@ -933,12 +922,12 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		);
 	}
 
-	struct_def_t make_struct2(scope_ref_t scope_def){
+	scope_ref_t make_struct2(scope_ref_t scope_def){
 		return make_struct0(scope_def);
 	}
 
-	struct_def_t make_struct3(scope_ref_t scope_def){
-		return struct_def_t::make2(
+	scope_ref_t make_struct3(scope_ref_t scope_def){
+		return scope_def_t::make_struct(
 			type_identifier_t::make("struct3"),
 			{
 				{ type_identifier_t::make_int(), "a" },
@@ -948,8 +937,8 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		);
 	}
 
-	struct_def_t make_struct4(scope_ref_t scope_def){
-		return struct_def_t::make2(
+	scope_ref_t make_struct4(scope_ref_t scope_def){
+		return scope_def_t::make_struct(
 			type_identifier_t::make("struct4"),
 			{
 				{ type_identifier_t::make_string(), "x" },
@@ -961,8 +950,8 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 	}
 
 	//??? check for duplicate member names.
-	struct_def_t make_struct5(scope_ref_t scope_def){
-		return struct_def_t::make2(
+	scope_ref_t make_struct5(scope_ref_t scope_def){
+		return scope_def_t::make_struct(
 			type_identifier_t::make("struct5"),
 			{
 				{ type_identifier_t::make_bool(), "a" },
@@ -981,8 +970,8 @@ QUARK_UNIT_TESTQ("add_builtin_types()", ""){
 		);
 	}
 
-	struct_def_t make_struct6(scope_ref_t scope_def){
-		return struct_def_t::make2(
+	scope_ref_t make_struct6(scope_ref_t scope_def){
+		return scope_def_t::make_struct(
 			type_identifier_t::make("struct6"),
 			{
 				{ type_identifier_t::make_bool(), "_bool_true", value_t(true) },

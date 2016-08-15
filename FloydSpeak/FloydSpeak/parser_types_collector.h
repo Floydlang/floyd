@@ -11,11 +11,13 @@
 
 
 #include "quark.h"
+//#include "parser_ast.h"
 
 #include <cstdio>
 #include <vector>
 #include <string>
 #include <map>
+
 
 struct json_value_t;
 
@@ -24,9 +26,9 @@ namespace floyd_parser {
 	struct type_def_t;
 	struct types_collector_t;
 	struct statement_t;
-	struct struct_def_t;
 	struct function_def_t;
 	struct value_t;
+	struct scope_def_t;
 
 	json_value_t types_collector_to_json(const types_collector_t& types);
 
@@ -136,13 +138,13 @@ namespace floyd_parser {
 			new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 			You can define a type identifier
 		*/
-		public: types_collector_t define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const;
+		public: types_collector_t define_struct_type(const std::string& new_identifier, const std::shared_ptr<scope_def_t>& struct_def) const;
 
 
 		/*
 			returns empty if type is unknown or the type is not fully defined.
 		*/
-		public: std::shared_ptr<struct_def_t> resolve_struct_type(const std::string& s) const;
+		public: std::shared_ptr<scope_def_t> resolve_struct_type(const std::string& s) const;
 
 
 		///////////////////		FUNCTION

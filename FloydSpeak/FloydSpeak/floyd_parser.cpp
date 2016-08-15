@@ -234,7 +234,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	auto global = scope_def_t::make_global_scope();
 	const auto result = read_statement(global, "struct test_struct0 " + k_test_struct0_body + ";");
 	QUARK_TEST_VERIFY(result._statement._define_struct);
-	QUARK_TEST_VERIFY(result._statement._define_struct->_struct_def == make_test_struct0(global));
+	QUARK_TEST_VERIFY(*result._statement._define_struct->_struct_def == *make_test_struct0(global));
 }
 
 
@@ -248,24 +248,19 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 struct alloc_struct_param : public host_data_i {
 	public: virtual ~alloc_struct_param(){};
 
-	alloc_struct_param(const shared_ptr<struct_def_t>& struct_def) :
+	alloc_struct_param(const scope_ref_t& struct_def) :
 		_struct_def(struct_def)
 	{
 	}
 
-	std::shared_ptr<struct_def_t> _struct_def;
+	scope_ref_t _struct_def;
 };
 
 
 value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
 	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
 
-	std::shared_ptr<struct_def_t> b = a._struct_def;
-	if(!b){
-		throw std::runtime_error("Undefined struct!");
-	}
-
-	const auto instance = make_default_value(b);
+	const auto instance = make_default_value(a._struct_def);
 	return instance;
 }
 
@@ -273,16 +268,16 @@ value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, 
 	Take struct definition and creates all types, member variables, constructors, member functions etc.
 			//??? add constructors and generated stuff.
 */
-vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, const struct_def_t& struct_def){
+vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, const scope_ref_t& struct_def){
 	QUARK_ASSERT(scope_def->check_invariant());
-	QUARK_ASSERT(struct_def.check_invariant());
+	QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
-	const std::string struct_name = struct_def._name.to_string();
+	const std::string struct_name = struct_def->_name.to_string();
 	const auto struct_name_ident = type_identifier_t::make(struct_name);
 
 	//	Define struct type in current scope.
 	auto types_collector2 = scope_def->_types_collector.define_struct_type(struct_name, struct_def);
-	std::shared_ptr<struct_def_t> s = types_collector2.resolve_struct_type(struct_name);
+	scope_ref_t s = types_collector2.resolve_struct_type(struct_name);
 
 	//	Make constructor with same name as struct.
 	/*{

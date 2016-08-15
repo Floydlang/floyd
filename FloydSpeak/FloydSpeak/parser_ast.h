@@ -18,11 +18,11 @@
 struct TSHA1;
 struct json_value_t;
 
+
 namespace floyd_parser {
 	struct type_def_t;
 	struct types_collector_t;
 	struct statement_t;
-	struct struct_def_t;
 	struct function_def_t;
 	struct value_t;
 	struct scope_def_t;
@@ -56,60 +56,6 @@ namespace floyd_parser {
 
 	std::string to_string(const base_type t);
 	void trace(const type_def_t& t, const std::string& label);
-
-
-
-	//////////////////////////////////////		type_def_t
-
-	/*
-		Describes a frontend type. All sub-types may or may not be known yet.
-
-		TODO
-		- Add memory layout calculation and storage
-		- Add support for alternative layout.
-		- Add support for optional value (using "?").
-	*/
-	struct type_def_t {
-		public: type_def_t() :
-			_base_type(k_null)
-		{
-		}
-		public: static type_def_t make_int(){
-			type_def_t a;
-			a._base_type = k_int;
-			return a;
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const type_def_t& other) const;
-
-
-		///////////////////		STATE
-
-		/*
-			Plain types only use the _base_type.
-			### Add support for int-ranges etc.
-		*/
-		public: base_type _base_type;
-		public: std::shared_ptr<struct_def_t> _struct_def;
-		public: std::shared_ptr<vector_def_t> _vector_def;
-		public: std::shared_ptr<function_def_t> _function_def;
-	};
-
-
-	/*
-		Returns a normalized signature string unique for this data type.
-		Use to compare types.
-
-		"<float>"									float
-		"<string>"									string
-		"<vector>[<float>]"							vector containing floats
-		"<float>(<string>,<float>)"				function returning float, with string and float arguments
-		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
-		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
-	*/
-	std::string to_signature(const type_def_t& t);
-
-	json_value_t type_def_to_json(const type_def_t& type_def);
 
 
 
@@ -312,44 +258,6 @@ namespace floyd_parser {
 	void trace(const member_t& member);
 
 
-	//////////////////////////////////////		struct_def_t
-
-	/*
-		Defines a struct, including all members.
-
-		TODO
-		- Add member functions / vtable
-		- Add memory layout calculation and storage
-		- Add support for alternative layout.
-		- Add support for optional value (using "?").
-	*/
-
-//	typedef scope_def_t struct_def_t;
-	struct struct_def_t {
-		public: static struct_def_t make2(
-			const type_identifier_t& name,
-			const std::vector<member_t>& members,
-			const scope_ref_t parent_scope
-		);
-
-		private: struct_def_t(){}
-		public: bool check_invariant() const;
-
-		//	Function scopes must point to the same parent_scope-object to be equal.
-		public: bool operator==(const struct_def_t& other) const;
-
-
-
-		///////////////////		STATE
-		public: type_identifier_t _name;
-		public: std::vector<member_t> _members;
-		public: scope_ref_t _struct_scope;
-	};
-
-	void trace(const struct_def_t& e);
-	std::string to_signature(const struct_def_t& t);
-	json_value_t struct_def_to_json(const struct_def_t& s);
-
 
 	//////////////////////////////////////		vector_def_t
 
@@ -402,9 +310,12 @@ namespace floyd_parser {
 			k_subscope
 		};
 
-		public: static scope_ref_t make2(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
+		public: static scope_ref_t make_struct(const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope);
+
+
+		public: static scope_ref_t make2(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
 		public: static scope_ref_t make_global_scope();
-		private: explicit scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& values, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
+		private: explicit scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope, const executable_t& executable, const types_collector_t& types_collector);
 		public: scope_def_t(const scope_def_t& other);
 
 		public: bool check_invariant() const;
@@ -418,7 +329,7 @@ namespace floyd_parser {
 
 		public: etype _type;
 		public: type_identifier_t _name;
-		public: std::vector<member_t> _values;
+		public: std::vector<member_t> _members;
 		public: std::weak_ptr<scope_def_t> _parent_scope;
 		public: executable_t _executable;
 		public: types_collector_t _types_collector;
@@ -435,6 +346,64 @@ namespace floyd_parser {
 	};
 
 	json_value_t scope_def_to_json(const scope_def_t& scope_def);
+	void trace(const scope_ref_t& e);
+	std::string to_signature(const scope_ref_t& t);
+
+
+
+
+	//////////////////////////////////////		type_def_t
+
+	/*
+		Describes a frontend type. All sub-types may or may not be known yet.
+
+		TODO
+		- Add memory layout calculation and storage
+		- Add support for alternative layout.
+		- Add support for optional value (using "?").
+	*/
+	struct type_def_t {
+		public: type_def_t() :
+			_base_type(k_null)
+		{
+		}
+		public: static type_def_t make_int(){
+			type_def_t a;
+			a._base_type = k_int;
+			return a;
+		}
+		public: bool check_invariant() const;
+		public: bool operator==(const type_def_t& other) const;
+
+
+		///////////////////		STATE
+
+		/*
+			Plain types only use the _base_type.
+			### Add support for int-ranges etc.
+		*/
+		public: base_type _base_type;
+		public: scope_ref_t _struct_def;
+		public: std::shared_ptr<vector_def_t> _vector_def;
+		public: std::shared_ptr<function_def_t> _function_def;
+	};
+
+
+	/*
+		Returns a normalized signature string unique for this data type.
+		Use to compare types.
+
+		"<float>"									float
+		"<string>"									string
+		"<vector>[<float>]"							vector containing floats
+		"<float>(<string>,<float>)"				function returning float, with string and float arguments
+		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
+		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
+	*/
+	std::string to_signature(const type_def_t& t);
+
+	json_value_t type_def_to_json(const type_def_t& type_def);
+
 
 
 	//////////////////////////////////////////////////		xxxscope_node_t
@@ -537,14 +506,14 @@ namespace floyd_parser {
 		}
 	}
 
-	struct_def_t make_struct0(scope_ref_t scope_def);
-	struct_def_t make_struct1(scope_ref_t scope_def);
+	scope_ref_t make_struct0(scope_ref_t scope_def);
+	scope_ref_t make_struct1(scope_ref_t scope_def);
 
 	/*
 		struct struct2 {
 		}
 	*/
-	struct_def_t make_struct2(scope_ref_t scope_def);
+	scope_ref_t make_struct2(scope_ref_t scope_def);
 
 	/*
 		struct struct3 {
@@ -552,7 +521,7 @@ namespace floyd_parser {
 			string b
 		}
 	*/
-	struct_def_t make_struct3(scope_ref_t scope_def);
+	scope_ref_t make_struct3(scope_ref_t scope_def);
 
 	/*
 		struct struct4 {
@@ -561,12 +530,12 @@ namespace floyd_parser {
 			string z
 		}
 	*/
-	struct_def_t make_struct4(scope_ref_t scope_def);
+	scope_ref_t make_struct4(scope_ref_t scope_def);
 
-	struct_def_t make_struct5(scope_ref_t scope_def);
+	scope_ref_t make_struct5(scope_ref_t scope_def);
 
 	//	Test all types of members.
-	struct_def_t make_struct6(scope_ref_t scope_def);
+	scope_ref_t make_struct6(scope_ref_t scope_def);
 
 
 }	//	floyd_parser

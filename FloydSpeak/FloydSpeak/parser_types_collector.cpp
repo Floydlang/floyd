@@ -234,10 +234,10 @@ namespace floyd_parser {
 
 
 
-	types_collector_t types_collector_t::define_struct_type(const std::string& new_identifier, const struct_def_t& struct_def) const{
+	types_collector_t types_collector_t::define_struct_type(const std::string& new_identifier, const std::shared_ptr<scope_def_t>& struct_def) const{
 		auto type_def = make_shared<type_def_t>();
 		type_def->_base_type = k_struct;
-		type_def->_struct_def = make_shared<struct_def_t>(struct_def);
+		type_def->_struct_def = struct_def;
 		return define_type_xyz(new_identifier, type_def);
 	}
 
@@ -288,7 +288,7 @@ namespace floyd_parser {
 		}
 	}
 
-	std::shared_ptr<struct_def_t> types_collector_t::resolve_struct_type(const std::string& s) const{
+	std::shared_ptr<scope_def_t> types_collector_t::resolve_struct_type(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto a = resolve_identifier(s);

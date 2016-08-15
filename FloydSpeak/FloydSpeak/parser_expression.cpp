@@ -589,8 +589,8 @@ ast_t make_test_ast(){
 
 QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	auto a = make_test_ast();
-	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct0") == make_struct0(a._global_scope));
-	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct1") == make_struct1(a._global_scope));
+	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct0") == *make_struct0(a._global_scope));
+	QUARK_TEST_VERIFY(*a._global_scope->_types_collector.resolve_struct_type("test_struct1") == *make_struct1(a._global_scope));
 }
 
 

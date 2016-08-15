@@ -50,7 +50,7 @@ namespace floyd_parser {
 
 
 
-	value_t make_struct_instance(const std::shared_ptr<const struct_def_t>& def){
+	value_t make_struct_instance(scope_ref_t def){
 		QUARK_ASSERT(def && def->check_invariant());
 
 		auto instance = make_shared<struct_instance_t>();
@@ -59,7 +59,7 @@ namespace floyd_parser {
 		for(int i = 0 ; i < def->_members.size() ; i++){
 			const auto& member_def = def->_members[i];
 
-			const auto member_type = resolve_type(def->_struct_scope, member_def._type->to_string());
+			const auto member_type = resolve_type(def, member_def._type->to_string());
 			if(!member_type){
 				throw std::runtime_error("Undefined struct type!");
 			}
@@ -70,7 +70,7 @@ namespace floyd_parser {
 				value = *member_def._value;
 			}
 			else{
-				value = make_default_value(def->_struct_scope, *member_def._type);
+				value = make_default_value(def, *member_def._type);
 			}
 			instance->_member_values[member_def._name] = value;
 		}
@@ -334,7 +334,7 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 
 
 
-	value_t make_default_value(const std::shared_ptr<struct_def_t>& t){
+	value_t make_default_value(scope_ref_t t){
 		QUARK_ASSERT(t && t->check_invariant());
 		return make_struct_instance(t);
 	}
@@ -371,7 +371,7 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 struct_fixture_t::struct_fixture_t() :
 	_global(scope_def_t::make_global_scope())
 {
-	auto pixel_def = struct_def_t::make2(
+	auto pixel_def = scope_def_t::make_struct(
 		type_identifier_t::make("pixel"),
 		std::vector<member_t>(
 			{
@@ -383,7 +383,7 @@ struct_fixture_t::struct_fixture_t() :
 		_global);
 
 	_global->_types_collector = _global->_types_collector.define_struct_type("pixel", pixel_def);
-	_struct6_def = make_shared<struct_def_t>(make_struct6(_global));
+	_struct6_def = make_struct6(_global);
 
 	_struct6_instance0 = make_struct_instance(_struct6_def);
 	_struct6_instance1 = make_struct_instance(_struct6_def);

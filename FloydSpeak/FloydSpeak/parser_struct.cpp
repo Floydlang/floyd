@@ -87,12 +87,12 @@ namespace floyd_parser {
 		const auto global = scope_def_t::make_global_scope();
 		const auto r = parse_struct_body(global, k_test_struct0_body);
 		QUARK_TEST_VERIFY((
-			r == pair<vector<member_t>, string>(make_test_struct0(global)._members, "" )
+			r == pair<vector<member_t>, string>(make_test_struct0(global)->_members, "" )
 		));
 	}
 
 
-	std::pair<struct_def_t, std::string>  parse_struct_definition(scope_ref_t scope_def, const string& pos){
+	std::pair<scope_ref_t, std::string>  parse_struct_definition(scope_ref_t scope_def, const string& pos){
 		QUARK_ASSERT(scope_def && scope_def->check_invariant());
 		QUARK_ASSERT(pos.size() > 0);
 
@@ -102,9 +102,10 @@ namespace floyd_parser {
 		const auto struct_name = read_required_single_symbol(token_pos.second);
 		const auto name = type_identifier_t::make(struct_name.first);
 
-		auto struct_def = struct_def_t::make2(name, {}, scope_def);
-		pair<vector<member_t>, string> body_pos = parse_struct_body(struct_def._struct_scope, skip_whitespace(struct_name.second));
-		struct_def._members = body_pos.first;
+//		auto struct_def = struct_def_t::make2(name, {}, scope_def);
+		auto struct_def = scope_def_t::make_struct(name, {}, scope_def);
+		pair<vector<member_t>, string> body_pos = parse_struct_body(struct_def, skip_whitespace(struct_name.second));
+		struct_def->_members = body_pos.first;
 
 		auto pos2 = skip_whitespace(body_pos.second);
 //		pos2 = read_required_char(pos2, ';');
@@ -112,8 +113,8 @@ namespace floyd_parser {
 		return { struct_def, pos2 };
 	}
 
-	struct_def_t make_test_struct0(scope_ref_t scope_def){
-		return struct_def_t::make2(
+	scope_ref_t make_test_struct0(scope_ref_t scope_def){
+		return scope_def_t::make_struct(
 			type_identifier_t::make("test_struct0"),
 			vector<member_t>
 			{
@@ -128,7 +129,7 @@ namespace floyd_parser {
 	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
 		const auto global = scope_def_t::make_global_scope();
 		const auto r = parse_struct_definition(global, "struct pixel { int red; int green; int blue;};");
-		const auto b = struct_def_t::make2(
+		const auto b = scope_def_t::make_struct(
 			type_identifier_t::make("pixel"),
 			vector<member_t>{
 				member_t(type_identifier_t::make_int(), "red"),
@@ -138,13 +139,13 @@ namespace floyd_parser {
 			global
 		);
 
-		QUARK_TEST_VERIFY(r.first == b);
+		QUARK_TEST_VERIFY(*r.first == *b);
 	}
 
 	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
 		const auto global = scope_def_t::make_global_scope();
 		const auto r = parse_struct_definition(global, "struct pixel { int red = 255; int green = 255; int blue = 255; }");
-		QUARK_TEST_VERIFY(r.first == struct_def_t::make2
+		QUARK_TEST_VERIFY(*r.first == *scope_def_t::make_struct
 			(
 				type_identifier_t::make("pixel"),
 				vector<member_t>{
@@ -160,7 +161,7 @@ namespace floyd_parser {
 	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
 		const auto global = scope_def_t::make_global_scope();
 		const auto r = parse_struct_definition(global, "struct pixel { string name = \"lisa\"; float height = 12.3f; }xxx");
-		QUARK_TEST_VERIFY(r.first == struct_def_t::make2
+		QUARK_TEST_VERIFY(*r.first == *scope_def_t::make_struct
 			(
 				type_identifier_t::make("pixel"),
 				vector<member_t>{

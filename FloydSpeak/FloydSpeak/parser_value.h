@@ -21,18 +21,18 @@
 namespace floyd_parser {
 	struct statement_t;
 	struct value_t;
-	struct struct_def_t;
 	struct type_identifier_t;
 
 	//////////////////////////////////////////////////		struct_instance_t
 
 
+	//??? Make into generic scope_instance_t
 	struct struct_instance_t {
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_instance_t& other);
 
 		//	??? Remove this points at later time, when we statically track the type of structs OK.
-		std::shared_ptr<const struct_def_t> __def;
+		scope_ref_t __def;
 
 		//	### Use ::vector<value_t> _member_values and index of member to find the value.
 		std::map<std::string, value_t> _member_values;
@@ -410,7 +410,6 @@ namespace floyd_parser {
 
 
 
-
 	/*
 		Resolves the type, starting at _scope_instances.back() then moving towards to global space. This is a compile-time operation.
 	*/
@@ -421,9 +420,9 @@ namespace floyd_parser {
 	floyd_parser::value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);
 
 	floyd_parser::value_t make_default_value(const floyd_parser::type_def_t& t);
-	floyd_parser::value_t make_default_value(const std::shared_ptr<struct_def_t>& t);
+	floyd_parser::value_t make_default_value(scope_ref_t t);
 
-	floyd_parser::value_t make_struct_instance(const std::shared_ptr<const floyd_parser::struct_def_t>& def);
+	floyd_parser::value_t make_struct_instance(scope_ref_t def);
 	floyd_parser::value_t make_vector_instance(const std::shared_ptr<const floyd_parser::vector_def_t>& def, const std::vector<value_t>& elements);
 
 
@@ -431,7 +430,7 @@ namespace floyd_parser {
 
 struct struct_fixture_t {
 	public: scope_ref_t _global;
-	public: std::shared_ptr<struct_def_t> _struct6_def;
+	public: scope_ref_t _struct6_def;
 	public: value_t _struct6_instance0;
 	public: value_t _struct6_instance1;
 

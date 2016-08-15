@@ -30,7 +30,7 @@ Remove all symbols, convert struct members to vectors and use index.
 Convert all
 */
 
-bool are_symbols_resolvable(const std::shared_ptr<floyd_parser::struct_def_t>& struct_def){
+bool are_symbols_resolvable2(const floyd_parser::scope_ref_t& struct_def){
 	return true;
 }
 
@@ -39,7 +39,7 @@ bool are_symbols_resolvable(const floyd_parser::scope_ref_t& scope){
 		const auto type_def = t.second;
 
 		if(type_def->_struct_def){
-			are_symbols_resolvable(type_def->_struct_def);
+			are_symbols_resolvable2(type_def->_struct_def);
 		}
 		else if(type_def->_vector_def){
 //			type_def->_struct_def

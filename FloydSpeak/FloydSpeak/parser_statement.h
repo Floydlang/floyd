@@ -46,7 +46,7 @@ namespace floyd_parser {
             return _struct_def == other._struct_def;
         }
         
-        struct_def_t _struct_def;
+        scope_ref_t _struct_def;
     };
     
     
