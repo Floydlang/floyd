@@ -114,6 +114,8 @@ namespace floyd_parser {
 		public: std::shared_ptr<type_indentifier_data_ref> lookup_identifier_shallow(const std::string& s) const;
 
 		/*
+			??? Needs to work across scopes.
+
 			return empty: the identifier is unknown.
 			return non-empty: the identifier is known, examine type_indentifier_data_ref to see if it's bound.
 			NOTICE: any found alias is resolved recursively.
@@ -176,6 +178,7 @@ namespace floyd_parser {
 		//	Value refers to a type_def_t stored in _type_definition.
 		private: std::map<std::string, type_indentifier_data_ref > _identifiers;
 
+		//??? These should be shared across all scopes, not local to each.
 		//	Key is the signature string. De-duplicated.
 		public: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
 	};

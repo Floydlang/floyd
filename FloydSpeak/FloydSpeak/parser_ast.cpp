@@ -544,11 +544,12 @@ namespace floyd_parser {
 			members.push_back(json_value_t(member));
 		}
 
+		const auto parent_scope = scope_def._parent_scope.lock();
 		const std::map<string, json_value_t> a {
 			{ "_type", json_value_t(scope_type_to_string(scope_def._type)) },
 			{ "_name", json_value_t(scope_def._name.to_string()) },
 			{ "_members", json_value_t(members) },
-			{ "_parent_scope", json_value_t(123.0f) },
+			{ "_parent_scope", parent_scope ? json_value_t(parent_scope->_name.to_string()) : json_value_t() },
 			{ "_executable", executable_to_json(scope_def._executable) },
 			{ "_types_collector", types_collector_to_json(scope_def._types_collector) },
 			{ "_return_type", json_value_t(scope_def._return_type.to_string()) }
