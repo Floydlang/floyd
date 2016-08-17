@@ -301,8 +301,19 @@ pair<vector<shared_ptr<statement_t>>, string> parse_statements(scope_ref_t scope
 			statements.insert(statements.end(), b.begin(), b.end());
 		}
 		else if(statement_pos._statement._define_function){
-			const auto function_def = statement_pos._statement._define_function->_function_def;
+			auto function_def = statement_pos._statement._define_function->_function_def;
 			const auto function_name = function_def->_name;
+
+/*
+			//	Make struct to hold arguments to function. It has no identifer.
+			//	Define struct type in current scope. ??? type_defs shall have no scope -they shall be global.
+			auto arg_struct_def = scope_def_t::make_struct(type_identifier_t(), function_def->_members, scope_def);
+			auto arg_struct_type_def = make_shared<type_def_t>(type_def_t::make_struct_def(arg_struct_def));
+			scope_def->_types_collector = scope_def->_types_collector.define_type_xyz("", arg_struct_type_def);
+
+			//	Function def gets ONE member called "args". ??? This forces us to use "args.param1" to access arguments. Not OK!??? Better to nest scopes?
+			function_def->_members = { member_t() };
+*/
 			scope_def->_types_collector = define_function_type(scope_def->_types_collector, function_name.to_string(), function_def);
 		}
 		else{
