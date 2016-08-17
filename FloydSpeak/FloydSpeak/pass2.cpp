@@ -28,7 +28,7 @@ using std::string;
 
 // ??? use visitor?
 
-void are_symbols_resolvable(const floyd_parser::scope_ref_t& scope);
+scope_ref_t pass2_scope_def(const scope_ref_t& scope);
 
 
 
@@ -83,7 +83,6 @@ void are_types_compatible(const type_identifier_t& type, const expression_t& exp
 
 
 
-
 void are_symbols_resolvable(const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -107,11 +106,11 @@ void are_symbols_resolvable(const scope_ref_t& scope_def, const statement_t& sta
 	}
 	else if(statement._define_struct){
 		QUARK_ASSERT(false);
-		are_symbols_resolvable(statement._define_struct->_struct_def);
+		pass2_scope_def(statement._define_struct->_struct_def);
 	}
 	else if(statement._define_function){
 		QUARK_ASSERT(false);
-		are_symbols_resolvable(statement._define_function->_function_def);
+		pass2_scope_def(statement._define_function->_function_def);
 	}
 	else if(statement._return_statement){
 		are_symbols_resolvable(scope_def, *statement._return_statement->_expression);
@@ -121,47 +120,52 @@ void are_symbols_resolvable(const scope_ref_t& scope_def, const statement_t& sta
 	}
 }
 
-/*
-		public: etype _type;
-		public: type_identifier_t _name;
-		public: std::vector<member_t> _members;
-		public: std::weak_ptr<scope_def_t> _parent_scope;
-		public: executable_t _executable;
-		public: types_collector_t _types_collector;
-		public: type_identifier_t _return_type;
-*/
-
-void are_symbols_resolvable(const scope_ref_t& scope_def){
+scope_ref_t pass2_scope_def(const scope_ref_t& scope_def){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 
-	if(scope_def->_type == scope_def_t::k_function){
-		check_type(scope_def->_parent_scope.lock(), scope_def->_return_type.to_string());
+	scope_ref_t result = scope_def;
+
+	if(result->_type == scope_def_t::k_function){
+		check_type(result->_parent_scope.lock(), result->_return_type.to_string());
+	}
+	else if(result->_type == scope_def_t::k_struct){
+	}
+	else if(result->_type == scope_def_t::k_global){
+	}
+	else if(result->_type == scope_def_t::k_subscope){
+	}
+	else{
+		QUARK_ASSERT(false);
 	}
 
 	//	Make sure all statements can resolve their symbols.
-	for(const auto t: scope_def->_executable._statements){
-		are_symbols_resolvable(scope_def, *t);
+	for(const auto t: result->_executable._statements){
+		are_symbols_resolvable(result, *t);
 	}
 
 	//	Make sure all types can resolve their symbols.
-	for(const auto t: scope_def->_types_collector._type_definitions){
+	for(const auto t: result->_types_collector._type_definitions){
 		const auto type_def = t.second;
 
 		if(type_def->get_type() == base_type::k_struct){
-			are_symbols_resolvable(type_def->get_struct_def());
+			pass2_scope_def(type_def->get_struct_def());
 		}
 		else if(type_def->get_type() == base_type::k_vector){
 //			type_def->_struct_def
 		}
 		else if(type_def->get_type() == base_type::k_function){
-			are_symbols_resolvable(type_def->get_function_def());
+			pass2_scope_def(type_def->get_function_def());
 		}
 	}
+	return result;
 }
+
+
 
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 	auto ast2 = ast1;
-	are_symbols_resolvable(ast2._global_scope);
+
+	ast2._global_scope = pass2_scope_def(ast2._global_scope);
 	return ast2;
 }
 
@@ -263,9 +267,6 @@ QUARK_UNIT_TESTQ("struct", "Return type mismatch"){
 	}
 }
 #endif
-
-
-
 
 
 

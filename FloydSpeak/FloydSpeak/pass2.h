@@ -15,7 +15,11 @@
 /*
 	Pass2:
 	Non-lossy. Use to validate sematics, generate compiler errors.
-	Inserts resolved links
+	Inserts resolved links, inserts more info.
+
+	- Resolves types: replace type_indentifier_t with a shared_ptr<type_def_t>.
+	- Resolves variable accesses (when possible): use *index* of member, not the name.
+	- Assign a result-type to each expression.
 
 	- Resolve types and symbols using compile-time scopes. Record the resolves?
 	- Verifies all expression and statement semantics
