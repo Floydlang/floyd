@@ -180,7 +180,7 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 
 namespace {
 	scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
-		return vm._ast._global_scope->_types_collector.resolve_function_type(name);
+		return resolve_function_type(vm._ast._global_scope->_types_collector, name);
 	}
 }
 
@@ -658,8 +658,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
 
@@ -672,8 +672,8 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
@@ -687,8 +687,8 @@ QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_shallow("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 

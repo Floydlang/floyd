@@ -383,7 +383,7 @@ struct_fixture_t::struct_fixture_t() :
 		),
 		_global);
 
-	_global->_types_collector = _global->_types_collector.define_struct_type("pixel", pixel_def);
+	_global->_types_collector = define_struct_type(_global->_types_collector, "pixel", pixel_def);
 	_struct6_def = make_struct6(_global);
 
 	_struct6_instance0 = make_struct_instance(_struct6_def);

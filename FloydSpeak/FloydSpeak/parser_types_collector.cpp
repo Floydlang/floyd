@@ -234,19 +234,6 @@ namespace floyd_parser {
 
 
 
-	types_collector_t types_collector_t::define_struct_type(const std::string& new_identifier, const std::shared_ptr<scope_def_t>& struct_def) const{
-		auto type_def = make_shared<type_def_t>(type_def_t::make_struct_def(struct_def));
-		return define_type_xyz(new_identifier, type_def);
-	}
-
-
-	types_collector_t types_collector_t::define_function_type(const std::string& new_identifier, const std::shared_ptr<scope_def_t>& function_def) const{
-		auto type_def = make_shared<type_def_t>(type_def_t::make_function_def(function_def));
-		return define_type_xyz(new_identifier, type_def);
-	}
-
-
-
 	std::shared_ptr<type_indentifier_data_ref> types_collector_t::lookup_identifier_shallow(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
@@ -284,29 +271,6 @@ namespace floyd_parser {
 		}
 	}
 
-	std::shared_ptr<scope_def_t> types_collector_t::resolve_struct_type(const std::string& s) const{
-		QUARK_ASSERT(check_invariant());
-
-		const auto a = resolve_identifier(s);
-		if(a && a->get_type() == base_type::k_struct){
-			return a->get_struct_def();
-		}
-		else {
-			return {};
-		}
-	}
-
-	std::shared_ptr<scope_def_t> types_collector_t::resolve_function_type(const std::string& s) const{
-		QUARK_ASSERT(check_invariant());
-
-		const auto a = resolve_identifier(s);
-		if(a && a->get_type() == base_type::k_function){
-			return a->get_function_def();
-		}
-		else {
-			return {};
-		}
-	}
 
 	std::shared_ptr<type_def_t> types_collector_t::lookup_signature(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
@@ -314,6 +278,11 @@ namespace floyd_parser {
 		const auto it = _type_definitions.find(s);
 		return it == _type_definitions.end() ? std::shared_ptr<type_def_t>() : it->second;
 	}
+
+
+
+
+	//////////////////////////////////////		free
 
 
 
@@ -355,6 +324,55 @@ namespace floyd_parser {
 
 
 
+	types_collector_t define_struct_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<scope_def_t>& struct_def){
+		QUARK_ASSERT(types.check_invariant());
+
+		auto type_def = make_shared<type_def_t>(type_def_t::make_struct_def(struct_def));
+		return types.define_type_xyz(new_identifier, type_def);
+	}
+
+
+	types_collector_t define_function_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<scope_def_t>& function_def){
+		QUARK_ASSERT(types.check_invariant());
+
+		auto type_def = make_shared<type_def_t>(type_def_t::make_function_def(function_def));
+		return types.define_type_xyz(new_identifier, type_def);
+	}
+
+
+
+
+	std::shared_ptr<scope_def_t> resolve_struct_type(const types_collector_t& types, const std::string& s){
+		QUARK_ASSERT(types.check_invariant());
+		QUARK_ASSERT(s.size() > 0);
+
+		const auto a = types.resolve_identifier(s);
+		if(a && a->get_type() == base_type::k_struct){
+			return a->get_struct_def();
+		}
+		else {
+			return {};
+		}
+	}
+
+	std::shared_ptr<scope_def_t> resolve_function_type(const types_collector_t& types, const std::string& s){
+		QUARK_ASSERT(types.check_invariant());
+		QUARK_ASSERT(s.size() > 0);
+
+		const auto a = types.resolve_identifier(s);
+		if(a && a->get_type() == base_type::k_function){
+			return a->get_function_def();
+		}
+		else {
+			return {};
+		}
+	}
+
+
+
+
+
+
 }	//	floyd_parser
 
 
@@ -383,7 +401,7 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t();
-	const auto b = a.define_struct_type("", make_struct2(global));
+	const auto b = define_struct_type(a, "", make_struct2(global));
 	const auto t1 = b.lookup_signature("<struct>{}");
 	QUARK_TEST_VERIFY(t1);
 	QUARK_TEST_VERIFY(to_signature(*t1) == "<struct>{}");
@@ -392,7 +410,7 @@ QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t();
-	const auto b = a.define_struct_type("struct3", make_struct3(global));
+	const auto b = define_struct_type(a, "struct3", make_struct3(global));
 	const auto t1 = b.resolve_identifier("struct3");
 	const auto s1 = to_signature(*t1);
 	QUARK_TEST_VERIFY(s1 == "<struct>{<int>a,<string>b}");
@@ -402,8 +420,8 @@ QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t();
-	const auto b = a.define_struct_type("struct3", make_struct3(global));
-	const auto c = b.define_struct_type("struct4", make_struct4(global));
+	const auto b = define_struct_type(a, "struct3", make_struct3(global));
+	const auto c = define_struct_type(b, "struct4", make_struct4(global));
 	const auto t2 = c.resolve_identifier("struct4");
 	const auto s2 = to_signature(*t2);
 	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<string>z}");
@@ -421,7 +439,7 @@ QUARK_UNIT_TESTQ("define_function_type()", ""){
 	auto global = scope_def_t::make_global_scope();
 	QUARK_TEST_VERIFY(to_string(k_int) == "int");
 	const auto a = types_collector_t{};
-	const auto b =  a.define_function_type("one", make_return_hello(global));
+	const auto b =  define_function_type(a, "one", make_return_hello(global));
 }
 
 

@@ -276,8 +276,8 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, co
 	const auto struct_name_ident = type_identifier_t::make(struct_name);
 
 	//	Define struct type in current scope.
-	auto types_collector2 = scope_def->_types_collector.define_struct_type(struct_name, struct_def);
-	scope_ref_t s = types_collector2.resolve_struct_type(struct_name);
+	auto types_collector2 = define_struct_type(scope_def->_types_collector, struct_name, struct_def);
+	scope_ref_t s = resolve_struct_type(types_collector2, struct_name);
 
 	//	Make constructor with same name as struct.
 	/*{
@@ -293,7 +293,7 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, co
 		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
 		const auto executable = executable_t(hosts_function__alloc_struct, make_shared<alloc_struct_param>(s));
 		const auto a = make_function_def(constructor_name, struct_name_ident, {}, scope_def, executable, {});
-		types_collector2 = types_collector2.define_function_type(constructor_name.to_string(), a);
+		types_collector2 = define_function_type(types_collector2, constructor_name.to_string(), a);
 	}
 
 //	statements.push_back(make_shared<statement_t>(statement_pos._statement));
@@ -339,7 +339,7 @@ pair<vector<shared_ptr<statement_t>>, string> parse_statements(scope_ref_t scope
 		else if(statement_pos._statement._define_function){
 			const auto function_def = statement_pos._statement._define_function->_function_def;
 			const auto function_name = function_def->_name;
-			scope_def->_types_collector = scope_def->_types_collector.define_function_type(function_name.to_string(), function_def);
+			scope_def->_types_collector = define_function_type(scope_def->_types_collector, function_name.to_string(), function_def);
 		}
 		else{
 			statements.push_back(make_shared<statement_t>(statement_pos._statement));
@@ -384,7 +384,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 		{}
 	);
 
-	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("main") == *f));
+	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "main") == *f));
 }
 
 QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
@@ -411,7 +411,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 		{}
 	);
 
-	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("f") == *f));
+	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "f") == *f));
 }
 
 QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
@@ -442,7 +442,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		}),
 		{}
 	);
-	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("hello") == *f));
+	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "hello") == *f));
 
 	const auto f2 = make_function_def(
 		type_identifier_t::make("main"),
@@ -456,7 +456,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		}),
 		{}
 	);
-	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("main") == *f2));
+	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "main") == *f2));
 }
 
 
@@ -484,7 +484,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 		}),
 		{}
 	);
-	QUARK_TEST_VERIFY((*result._global_scope->_types_collector.resolve_function_type("testx") == *f));
+	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "testx") == *f));
 
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
