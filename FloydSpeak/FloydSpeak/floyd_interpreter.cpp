@@ -418,60 +418,65 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		if(left._constant && right._constant){
 			const auto left_value = left._constant;
 			const auto right_value = right._constant;
-			if(left_value->get_type() == type_identifier_t::make_int() && right_value->get_type() == type_identifier_t::make_int()){
-				if(e2._operation == math_operation2_expr_t::add){
-					return make_constant(left_value->get_int() + right_value->get_int());
-				}
-				else if(e2._operation == math_operation2_expr_t::subtract){
-					return make_constant(left_value->get_int() - right_value->get_int());
-				}
-				else if(e2._operation == math_operation2_expr_t::multiply){
-					return make_constant(left_value->get_int() * right_value->get_int());
-				}
-				else if(e2._operation == math_operation2_expr_t::divide){
-					if(right_value->get_int() == 0){
-						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+
+			//	Perform math operation on the two constants => new constant.
+			{
+				if(left_value->get_type() == type_identifier_t::make_int() && right_value->get_type() == type_identifier_t::make_int()){
+					if(e2._operation == math_operation2_expr_t::add){
+						return make_constant(left_value->get_int() + right_value->get_int());
 					}
-					return make_constant(left_value->get_int() / right_value->get_int());
-				}
-				else{
-					QUARK_ASSERT(false);
-				}
-			}
-			else if(left_value->get_type() == type_identifier_t::make_float() && right_value->get_type() == type_identifier_t::make_float()){
-				if(e2._operation == math_operation2_expr_t::add){
-					return make_constant(left_value->get_float() + right_value->get_float());
-				}
-				else if(e2._operation == math_operation2_expr_t::subtract){
-					return make_constant(left_value->get_float() - right_value->get_float());
-				}
-				else if(e2._operation == math_operation2_expr_t::multiply){
-					return make_constant(left_value->get_float() * right_value->get_float());
-				}
-				else if(e2._operation == math_operation2_expr_t::divide){
-					if(right_value->get_float() == 0.0f){
-						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+					else if(e2._operation == math_operation2_expr_t::subtract){
+						return make_constant(left_value->get_int() - right_value->get_int());
 					}
-					return make_constant(left_value->get_float() / right_value->get_float());
+					else if(e2._operation == math_operation2_expr_t::multiply){
+						return make_constant(left_value->get_int() * right_value->get_int());
+					}
+					else if(e2._operation == math_operation2_expr_t::divide){
+						if(right_value->get_int() == 0){
+							throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+						}
+						return make_constant(left_value->get_int() / right_value->get_int());
+					}
+					else{
+						QUARK_ASSERT(false);
+					}
 				}
-				else{
-					QUARK_ASSERT(false);
+				else if(left_value->get_type() == type_identifier_t::make_float() && right_value->get_type() == type_identifier_t::make_float()){
+					if(e2._operation == math_operation2_expr_t::add){
+						return make_constant(left_value->get_float() + right_value->get_float());
+					}
+					else if(e2._operation == math_operation2_expr_t::subtract){
+						return make_constant(left_value->get_float() - right_value->get_float());
+					}
+					else if(e2._operation == math_operation2_expr_t::multiply){
+						return make_constant(left_value->get_float() * right_value->get_float());
+					}
+					else if(e2._operation == math_operation2_expr_t::divide){
+						if(right_value->get_float() == 0.0f){
+							throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+						}
+						return make_constant(left_value->get_float() / right_value->get_float());
+					}
+					else{
+						QUARK_ASSERT(false);
+					}
 				}
-			}
-			else if(left_value->get_type() == type_identifier_t::make_string() && right_value->get_type() == type_identifier_t::make_string()){
-				if(e2._operation == math_operation2_expr_t::add){
-					return make_constant(left_value->get_string() + right_value->get_string());
+				else if(left_value->get_type() == type_identifier_t::make_string() && right_value->get_type() == type_identifier_t::make_string()){
+					if(e2._operation == math_operation2_expr_t::add){
+						return make_constant(left_value->get_string() + right_value->get_string());
+					}
+					else{
+						throw std::runtime_error("Arithmetics failed.");
+					}
 				}
 				else{
 					throw std::runtime_error("Arithmetics failed.");
 				}
 			}
-			else{
-				throw std::runtime_error("Arithmetics failed.");
-			}
 		}
 
-		//	Else use a math_operation to make the calculation later. We make a NEW math_operation since sub-nodes may have been evaluated.
+		//	Else use a math_operation expression to perform the calculation later.
+		//	We make a NEW math_operation since sub-nodes may have been evaluated.
 		else{
 			return make_math_operation2(e2._operation, left, right);
 		}

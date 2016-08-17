@@ -59,6 +59,9 @@ namespace floyd_parser {
 
 
 	/*
+		"int a = 13";
+		"int b = f("hello");"
+
 		Returns
 			[bind_statement_t]
 				[expression_t]
@@ -77,7 +80,7 @@ namespace floyd_parser {
 
 		const auto expression = parse_expression(expression_pos.first);
 
-		const auto statement = make__bind_statement(variable_pos.first, expression);
+		const auto statement = make__bind_statement(type, variable_pos.first, expression);
 		trace(statement);
 
 		//	Skip trailing ";".

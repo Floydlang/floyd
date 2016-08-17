@@ -72,42 +72,6 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
 
 
 
-/*
-//////////////////////////////////////////////////		VISITOR
-
-
-struct visitor_i {
-	virtual ~visitor_i(){};
-
-	virtual void visitor_interface__on_math_operation2(const math_operation2_expr_t& e) = 0;
-	virtual void visitor_interface__on_function_def_expr(const function_def_expr_t& e) = 0;
-
-	virtual void visitor_interface__on_bind_statement_statement(const bind_statement_t& s) = 0;
-	virtual void visitor_interface__on_return_statement(const return_statement_t& s) = 0;
-};
-
-void visit_statement(const statement_t& s, visitor_i& visitor){
-	if(s._bind_statement){
-		visitor.visitor_interface__on_bind_statement_statement(*s._bind_statement);
-	}
-	else if(s._return_statement){
-		visitor.visitor_interface__on_return_statement(*s._return_statement);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
-void visit_program(const ast_t& program, visitor_i& visitor){
-	for(const auto i: program._top_level_statements){
-		visit_statement(*i, visitor);
-	}
-}
-*/
-
-
-
 
 //////////////////////////////////////////////////		read_statement()
 

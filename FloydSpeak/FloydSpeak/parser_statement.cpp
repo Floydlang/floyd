@@ -30,8 +30,12 @@ namespace floyd_parser {
 		return statement_t(value);
 	}
 
-	statement_t make__bind_statement(const std::string& identifier, const expression_t& e){
-		return statement_t(bind_statement_t{identifier, std::make_shared<expression_t>(e)});
+	statement_t make__bind_statement(const type_identifier_t& type, const std::string& identifier, const expression_t& e){
+		QUARK_ASSERT(type.check_invariant());
+		QUARK_ASSERT(identifier.size () > 0);
+		QUARK_ASSERT(e.check_invariant());
+
+		return statement_t(bind_statement_t{ type, identifier, std::make_shared<expression_t>(e) });
 	}
 
 	statement_t make__return_statement(const return_statement_t& value){
@@ -144,7 +148,7 @@ namespace floyd_parser {
 QUARK_UNIT_TESTQ("statement_to_json", "bind"){
 	quark::ut_compare(
 		json_to_compact_string(
-			statement_to_json(make__bind_statement("a", make_constant(400)))
+			statement_to_json(make__bind_statement(type_identifier_t::make_int(), "a", make_constant(400)))
 		)
 		,
 		R"(["bind", "a", ["k", 400]])"
