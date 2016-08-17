@@ -543,6 +543,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		//	All arguments to functions are constants? Else return new call_function, but with simplified arguments.
 		for(const auto& i: simplified_args){
 			if(!i._constant){
+				//??? should use simplified_args.
 				return make_function_call(call_function_expression._function_name, call_function_expression._inputs);
 			}
 		}

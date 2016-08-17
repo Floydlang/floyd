@@ -18,6 +18,7 @@
 namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
+	struct scope_def_t;
 
 	std::string expression_to_json_string(const expression_t& e);
 
@@ -67,10 +68,24 @@ namespace floyd_parser {
 
 	struct function_call_expr_t {
 		bool operator==(const function_call_expr_t& other) const{
-			return _function_name == other._function_name && _inputs == other._inputs;
+			return _function_name == other._function_name && _resolved_function_def == other._resolved_function_def && _inputs == other._inputs;
+		}
+
+		public: function_call_expr_t(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs) :
+			_function_name(function_name),
+			_inputs(inputs)
+		{
+		}
+
+		public: function_call_expr_t(std::shared_ptr<scope_def_t> function_def, const std::vector<std::shared_ptr<expression_t>>& inputs) :
+			_resolved_function_def(function_def),
+			_inputs(inputs)
+		{
 		}
 
 		const std::string _function_name;
+		const std::shared_ptr<scope_def_t> _resolved_function_def;
+
 		const std::vector<std::shared_ptr<expression_t>> _inputs;
 	};
 
@@ -231,6 +246,10 @@ namespace floyd_parser {
 
 	expression_t make_function_call(const std::string& function_name, const std::vector<expression_t>& inputs);
 	expression_t make_function_call(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs);
+
+	expression_t make_function_call(const std::shared_ptr<scope_def_t>& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs);
+
+
 
 	expression_t make_load(const expression_t& address_expression);
 	expression_t make_load_variable(const std::string& name);

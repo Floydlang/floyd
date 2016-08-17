@@ -181,6 +181,12 @@ expression_t make_function_call(const std::string& function_name, const std::vec
 	return expression_t(a);
 }
 
+expression_t make_function_call(const scope_ref_t& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs){
+	function_call_expr_t r = function_call_expr_t(function_def, inputs);
+	const auto a = std::make_shared<function_call_expr_t>(r);
+	return expression_t(a);
+}
+
 
 expression_t make_load(const expression_t& address_expression){
 	QUARK_ASSERT(address_expression.check_invariant());
