@@ -82,7 +82,7 @@ pair<expression_t, string> parse_function_call(const std::shared_ptr<expression_
 		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 	}
 
-	return { make_function_call(identifier_pos.first, args_expressions), arg_list_pos.second };
+	return { make_function_call(type_identifier_t::make(identifier_pos.first), args_expressions), arg_list_pos.second };
 }
 
 pair<expression_t, string> parse_path_node(const std::shared_ptr<expression_t>& leftside, const string& s) {
@@ -397,7 +397,7 @@ QUARK_UNIT_TESTQ("parse_single", "number"){
 
 QUARK_UNIT_TESTQ("parse_single", "function call"){
 	const auto a = parse_single("log(34.5)");
-	QUARK_TEST_VERIFY(a.first._call->_function_name == "log");
+	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 1);
 	QUARK_TEST_VERIFY(*a.first._call->_inputs[0]->_constant == value_t(34.5f));
 	QUARK_TEST_VERIFY(a.second == "");
@@ -405,7 +405,7 @@ QUARK_UNIT_TESTQ("parse_single", "function call"){
 
 QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 	const auto a = parse_single("log2(\"123\" + \"xyz\", 1000 * 3)");
-	QUARK_TEST_VERIFY(a.first._call->_function_name == "log2");
+	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log2");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_math2);
 	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_math2);
@@ -414,10 +414,10 @@ QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 
 QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 	const auto a = parse_single("log2(2.1, f(3.14))");
-	QUARK_TEST_VERIFY(a.first._call->_function_name == "log2");
+	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log2");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
 	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_constant);
-	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_function_name == "f");
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_function.to_string() == "f");
 	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_inputs.size() == 1);
 	QUARK_TEST_VERIFY(*a.first._call->_inputs[1]->_call->_inputs[0] == make_constant(3.14f));
 	QUARK_TEST_VERIFY(a.second == "");

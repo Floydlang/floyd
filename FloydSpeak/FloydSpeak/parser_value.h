@@ -414,7 +414,7 @@ namespace floyd_parser {
 		Resolves the type, starting at _scope_instances.back() then moving towards to global space. This is a compile-time operation.
 	*/
 	//??? const version
-	std::shared_ptr<floyd_parser::type_def_t> resolve_type(const scope_ref_t scope_def, const std::string& s);
+	std::shared_ptr<type_def_t> resolve_type(const scope_ref_t scope_def, const type_identifier_t& s);
 
 
 	floyd_parser::value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);

@@ -48,7 +48,7 @@ namespace floyd_parser {
 		k_function
 	};
 
-	std::string to_string(const base_type t);
+	std::string base_type_to_string(const base_type t);
 	void trace(const type_def_t& t, const std::string& label);
 
 
@@ -59,12 +59,25 @@ namespace floyd_parser {
 		A string naming a type. "int", "string", "my_struct" etc.
 		It is guaranteed to contain correct characters.
 		It is NOT guaranteed to map to an actual type in the language or program.
+
+		There are two modes:
+			A) _type_magic !="" && !_resolved
+			B) _type_magic =="" && _resolved
 	*/
 
 	struct type_identifier_t {
 		public: type_identifier_t() :
 			_type_magic("null")
 		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: static type_identifier_t resolve(const std::shared_ptr<type_def_t>& resolved){
+			type_identifier_t result;
+			result._type_magic = "";
+			result._resolved = resolved;
+			QUARK_ASSERT(result.check_invariant());
+			return result;
 		}
 
 		public: static type_identifier_t make_bool(){
@@ -86,7 +99,7 @@ namespace floyd_parser {
 		}
 
 		public: type_identifier_t(const type_identifier_t& other);
-		public: type_identifier_t operator=(const type_identifier_t& other);
+//		public: type_identifier_t operator=(const type_identifier_t& other);
 
 		public: bool operator==(const type_identifier_t& other) const;
 		public: bool operator!=(const type_identifier_t& other) const;
@@ -96,6 +109,9 @@ namespace floyd_parser {
 		public: void swap(type_identifier_t& other);
 		public: std::string to_string() const;
 		public: bool check_invariant() const;
+
+		public: std::shared_ptr<type_def_t> get_resolved() const;
+		public: bool is_resolved() const;
 
 
 		///////////////////		STATE
@@ -118,6 +134,8 @@ namespace floyd_parser {
 			"int (string, vector<game_engine:sprite>)"
 		*/
 		private: std::string _type_magic;
+
+		private: std::shared_ptr<type_def_t> _resolved;
 	};
 
 	void trace(const type_identifier_t& v);
@@ -340,6 +358,8 @@ namespace floyd_parser {
 		public: base_type get_type() const {
 			return _base_type;
 		}
+
+		public: std::string to_string() const;
 
 		public: scope_ref_t get_struct_def() const {
 			QUARK_ASSERT(_base_type == k_struct);

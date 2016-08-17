@@ -105,7 +105,7 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 	);
 	QUARK_TEST_VERIFY(a.size() == 2);
 	QUARK_TEST_VERIFY(a[0]->_bind_statement->_identifier == "test");
-	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call->_function_name == "log");
+	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call->_function.to_string() == "log");
 	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call->_inputs.size() == 1);
 	QUARK_TEST_VERIFY(*a[0]->_bind_statement->_expression->_call->_inputs[0]->_constant == value_t(10.11f));
 

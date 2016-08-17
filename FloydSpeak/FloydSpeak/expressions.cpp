@@ -159,8 +159,8 @@ expression_t make_math_operation2(math_operation2_expr_t::operation op, const ex
 
 
 
-expression_t make_function_call(const std::string& function_name, const std::vector<expression_t>& inputs){
-	QUARK_ASSERT(function_name.size() > 0);
+expression_t make_function_call(const type_identifier_t& function, const std::vector<expression_t>& inputs){
+	QUARK_ASSERT(function.check_invariant());
 	for(const auto arg: inputs){
 		QUARK_ASSERT(arg.check_invariant());
 	}
@@ -170,19 +170,22 @@ expression_t make_function_call(const std::string& function_name, const std::vec
 		inputs2.push_back(make_shared<expression_t>(arg));
 	}
 
-	function_call_expr_t r = function_call_expr_t{ function_name, inputs2 };
+	function_call_expr_t r = function_call_expr_t{ function, inputs2 };
 	const auto a = std::make_shared<function_call_expr_t>(r);
 	return expression_t(a);
 }
 
-expression_t make_function_call(const std::string& function_name, const std::vector<std::shared_ptr<expression_t>>& inputs){
-	function_call_expr_t r = function_call_expr_t{ function_name, inputs };
+expression_t make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs){
+	function_call_expr_t r = function_call_expr_t{ function, inputs };
 	const auto a = std::make_shared<function_call_expr_t>(r);
 	return expression_t(a);
 }
 
 expression_t make_function_call(const scope_ref_t& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs){
-	function_call_expr_t r = function_call_expr_t(function_def, inputs);
+	function_call_expr_t r = function_call_expr_t(
+		type_identifier_t::resolve(make_shared<type_def_t>(type_def_t::make_function_def(function_def))),
+		inputs
+	);
 	const auto a = std::make_shared<function_call_expr_t>(r);
 	return expression_t(a);
 }
@@ -299,7 +302,7 @@ json_value_t expression_to_json(const expression_t& e){
 			const auto arg_expr = expression_to_json(*i);
 			args_json.push_back(arg_expr);
 		}
-		return json_value_t({ json_value_t("call"), json_value_t(call_function._function_name), args_json });
+		return json_value_t({ json_value_t("call"), json_value_t(call_function._function.to_string()), args_json });
 	}
 	else if(e._load){
 		const auto e2 = *e._load;
@@ -355,7 +358,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare(
 		expression_to_json_string(
-			make_function_call("my_func", { make_constant("xyz"), make_constant(123) })
+			make_function_call(type_identifier_t::make("my_func"), { make_constant("xyz"), make_constant(123) })
 		),
 		R"(["call", "my_func", [["k", "xyz"], ["k", 123]]])"
 	);

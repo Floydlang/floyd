@@ -62,7 +62,7 @@ void check_type(const scope_ref_t& scope_def, const string& s){
 //	Returns pre-computed expression type. Must have been pre-computed or defect.
 std::shared_ptr<type_def_t> get_expression_type(const scope_ref_t& scope_def, const expression_t& e){
 	if(e._call){
-		QUARK_ASSERT(e._call->_resolved_function_def);
+//		QUARK_ASSERT(e._call->_resolved_function_def);
 //		return e._call->_resolved_function_def->_return_type;
 	}
 	else if(e._math2){
@@ -94,7 +94,7 @@ expression_t resolve_expression_type(const scope_ref_t& scope_def, const express
 	if(e._call){
 		const auto& call_function_expression = *e._call;
 
-		const auto function_def_type = resolve_type(scope_def, call_function_expression._function_name);
+		const auto function_def_type = resolve_type(scope_def, call_function_expression._function);
 		if(!function_def_type || function_def_type->get_type() != base_type::k_function){
 			throw std::runtime_error("Unresolved function.");
 		}
@@ -134,7 +134,7 @@ void are_symbols_resolvable(const scope_ref_t& scope_def, const expression_t& e)
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e._call){
-		check_type(scope_def, e._call->_function_name);
+		check_type(scope_def, e._call->_function.to_string());
 		for(const auto a: e._call->_inputs){
 			are_symbols_resolvable(scope_def, *a);
 		}

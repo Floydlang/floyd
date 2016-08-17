@@ -437,7 +437,6 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 
 QUARK_UNIT_TESTQ("define_function_type()", ""){
 	auto global = scope_def_t::make_global_scope();
-	QUARK_TEST_VERIFY(to_string(k_int) == "int");
 	const auto a = types_collector_t{};
 	const auto b =  define_function_type(a, "one", make_return_hello(global));
 }

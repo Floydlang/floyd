@@ -525,7 +525,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	else if(e._call){
 		const auto& call_function_expression = *e._call;
 
-		const auto type = resolve_type(vm._scope_instances.back()->_def, call_function_expression._function_name);
+		const auto type = resolve_type(vm._scope_instances.back()->_def, call_function_expression._function);
 		if(!type || type->get_type() != base_type::k_function){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}
@@ -544,7 +544,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		for(const auto& i: simplified_args){
 			if(!i._constant){
 				//??? should use simplified_args.
-				return make_function_call(call_function_expression._function_name, call_function_expression._inputs);
+				return make_function_call(call_function_expression._function, call_function_expression._inputs);
 			}
 		}
 
@@ -553,7 +553,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		for(const auto& i: simplified_args){
 			constant_args.push_back(*i._constant);
 			if(!i._constant){
-				return make_function_call(call_function_expression._function_name, call_function_expression._inputs);
+				return make_function_call(call_function_expression._function, call_function_expression._inputs);
 			}
 		}
 		const value_t result = call_function(vm, function_def, constant_args);

@@ -59,7 +59,7 @@ namespace floyd_parser {
 		for(int i = 0 ; i < def->_members.size() ; i++){
 			const auto& member_def = def->_members[i];
 
-			const auto member_type = resolve_type(def, member_def._type->to_string());
+			const auto member_type = resolve_type(def, *member_def._type);
 			if(!member_type){
 				throw std::runtime_error("Undefined struct type!");
 			}
@@ -290,27 +290,21 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 
-std::shared_ptr<type_def_t> resolve_type_deep(const scope_ref_t scope_def, const std::string& s){
+std::shared_ptr<type_def_t> resolve_type(const scope_ref_t scope_def, const type_identifier_t& s){
 	QUARK_ASSERT(scope_def->check_invariant());
+	QUARK_ASSERT(s.check_invariant());
 
-	const auto t = scope_def->_types_collector.resolve_identifier(s);
+	const auto t = scope_def->_types_collector.resolve_identifier(s.to_string());
 	if(t){
 		return t;
 	}
 	auto parent_scope = scope_def->_parent_scope.lock();
 	if(parent_scope){
-		return resolve_type_deep(parent_scope, s);
+		return resolve_type(parent_scope, s);
 	}
 	else{
 		return {};
 	}
-}
-
-std::shared_ptr<type_def_t> resolve_type(const scope_ref_t scope_def, const std::string& s){
-	QUARK_ASSERT(scope_def->check_invariant());
-	QUARK_ASSERT(s.size() > 0);
-
-	return resolve_type_deep(scope_def, s);
 }
 
 
@@ -324,7 +318,7 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 	QUARK_ASSERT(scope_def->check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto t = resolve_type(scope_def, type.to_string());
+	const auto t = resolve_type(scope_def, type);
 	if(!t){
 		throw std::runtime_error("Undefined type!");
 	}
