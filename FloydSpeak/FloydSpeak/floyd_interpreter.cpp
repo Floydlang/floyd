@@ -38,12 +38,17 @@ namespace {
 		return diff < 0.00001;
 	}
 
+	//	Notice that scope_ref_t:members are resolved, "args" are not.
+		//??? notice  copy local variables too!?
 	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
 		if(f->_members.size() != args.size()){
 			return false;
 		}
+
 		for(int i = 0 ; i < args.size() ; i++){
-			if(*f->_members[i]._type != args[i].get_type()){
+			const auto farg = *f->_members[i]._type;
+			const auto call_arg = args[i].get_type();
+			if(farg.to_string() != call_arg.to_string()){
 				return false;
 			}
 		}
@@ -63,6 +68,7 @@ namespace {
 		scope_instance_t new_scope;
 		new_scope._def = f;
 
+		//??? notice  copy local variables too!?
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f->_members[i]._name;
 			const auto& arg_value = args[i];
@@ -87,7 +93,6 @@ namespace {
 			throw std::runtime_error("function arguments do not match function");
 		}
 
-	//	auto local_scope = add_args(ast, f, args);
 		const auto a = f->_executable._host_function(f->_executable._host_function_param, args);
 		return a;
 	}

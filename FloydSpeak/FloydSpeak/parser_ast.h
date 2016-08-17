@@ -302,6 +302,8 @@ namespace floyd_parser {
 
 		public: etype _type;
 		public: type_identifier_t _name;
+
+		//	For functions, the _members contains both the input arguments and any local variables.
 		public: std::vector<member_t> _members;
 		public: std::weak_ptr<scope_def_t> _parent_scope;
 		public: executable_t _executable;

@@ -224,7 +224,9 @@ namespace floyd_parser {
 
 
 	type_identifier_t::type_identifier_t(const type_identifier_t& other) :
-		_type_magic(other._type_magic)
+		_type_magic(other._type_magic),
+		
+		_resolved(other._resolved)
 	{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
@@ -728,7 +730,7 @@ namespace floyd_parser {
 
 		if(t->_type== scope_def_t::k_function){
 			const auto body_hash = calc_function_body_hash(t);
-			body = body + std::string("body_hash:") + SHA1ToStringPlain(body_hash);
+			body = body + std::string("<body_hash>") + SHA1ToStringPlain(body_hash);
 		}
 		else{
 		}

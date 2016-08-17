@@ -81,29 +81,43 @@ namespace floyd_parser {
 
 
 	struct statement_t {
-		bool check_invariant() const;
+		public: statement_t(const statement_t& other) = default;
 
-		statement_t(const bind_statement_t& value) :
+/*
+		public: statement_t(const statement_t& other) :
+			_bind_statement(other._bind_statement),
+			_define_struct(other._define_struct),
+			_define_function(other._define_function),
+			_return_statement(other._return_statement)
+		{
+		}
+*/
+
+		public: statement_t& operator=(const statement_t& other) = default;
+
+		public: bool check_invariant() const;
+
+		public: statement_t(const bind_statement_t& value) :
 			_bind_statement(std::make_shared<bind_statement_t>(value))
 		{
 		}
 
-        statement_t(const define_struct_statement_t& value) :
+        public: statement_t(const define_struct_statement_t& value) :
             _define_struct(std::make_shared<define_struct_statement_t>(value))
         {
         }
 
-        statement_t(const define_function_statement_t& value) :
+        public: statement_t(const define_function_statement_t& value) :
             _define_function(std::make_shared<define_function_statement_t>(value))
         {
         }
 
-        statement_t(const return_statement_t& value) :
+        public: statement_t(const return_statement_t& value) :
 			_return_statement(std::make_shared<return_statement_t>(value))
 		{
 		}
 
-		bool operator==(const statement_t& other) const {
+		public: bool operator==(const statement_t& other) const {
 			if(_bind_statement){
 				return other._bind_statement && *_bind_statement == *other._bind_statement;
 			}
@@ -116,10 +130,10 @@ namespace floyd_parser {
 			}
 		}
 
-        const std::shared_ptr<bind_statement_t> _bind_statement;
-        const std::shared_ptr<define_struct_statement_t> _define_struct;
-        const std::shared_ptr<define_function_statement_t> _define_function;
-		const std::shared_ptr<return_statement_t> _return_statement;
+        public: std::shared_ptr<bind_statement_t> _bind_statement;
+        public: std::shared_ptr<define_struct_statement_t> _define_struct;
+        public: std::shared_ptr<define_function_statement_t> _define_function;
+		public: std::shared_ptr<return_statement_t> _return_statement;
 	};
 
 

@@ -35,7 +35,7 @@ using std::shared_ptr;
 
 // ??? use visitor?
 
-scope_ref_t pass2_scope_def(const scope_ref_t& scope);
+void pass2_scope_def(scope_ref_t scope);
 
 
 
@@ -51,7 +51,7 @@ void check_variable(const scope_ref_t& scope_def, const string& s){
 	}
 }
 
-void check_type(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
+type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
@@ -59,17 +59,39 @@ void check_type(const scope_ref_t& scope_def, const floyd_parser::type_identifie
 	if(!a){
 		throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
 	}
+	return floyd_parser::type_identifier_t::resolve(a);
 }
 
-//	Returns pre-computed expression type. Must have been pre-computed or defect.
-type_identifier_t get_expression_type(const scope_ref_t& scope_def, const expression_t& e){
-	if(e._call){
-		QUARK_ASSERT(e._call->_function.is_resolved());
-		return e._call->_function;
+//	Returns pre-computed result of the expression - the type of value it represents. Must have been pre-computed or defect.
+type_identifier_t get_expression_type(const expression_t& e){
+	if(e._constant){
+		return e._constant->get_type();
+	}
+	else if(e._math1){
+		QUARK_ASSERT(false);
 	}
 	else if(e._math2){
+		QUARK_ASSERT(false);
+	}
+	else if(e._call){
+		QUARK_ASSERT(e._call->_function.is_resolved());
+		return e._call->_function.get_resolved()->get_function_def()->_return_type;
+	}
+	else if(e._load){
+		QUARK_ASSERT(false);
+	}
+
+	else if(e._resolve_variable){
+		QUARK_ASSERT(false);
+	}
+	else if(e._resolve_struct_member){
+		QUARK_ASSERT(false);
+	}
+	else if(e._lookup_element){
+		QUARK_ASSERT(false);
 	}
 	else{
+		QUARK_ASSERT(false);
 	}
 	return {};
 }
@@ -78,81 +100,56 @@ type_identifier_t get_expression_type(const scope_ref_t& scope_def, const expres
 /*
 	Returns new expression were the types and symbols are explicit, deeply.
 */
-expression_t resolve_expression_type(const scope_ref_t& scope_def, const expression_t& e){
+expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e._call){
-		const auto& call_function_expression = *e._call;
+		const auto& call = *e._call;
 
-		const auto function_def_type = resolve_type(scope_def, call_function_expression._function);
-		if(!function_def_type || function_def_type->get_type() != base_type::k_function){
+		//	Resolve function name.
+		const auto function2 = resolve_type(scope_def, call._function);
+		if(!function2 || function2->get_type() != base_type::k_function){
 			throw std::runtime_error("Unresolved function.");
 		}
 
-		const auto function_def = function_def_type->get_function_def();
-		if(function_def->_members.size() != call_function_expression._inputs.size()){
+		//	Verify & resolve all arguments in the call vs the actual function definition.
+		const auto function_def = function2->get_function_def();
+		if(function_def->_members.size() != call._inputs.size()){
 			throw std::runtime_error("Wrong number of argument to function call.");
 		}
 
-		//	Resolves types in the function definition itself, if needed. Argument types, types used in statements, return value etc.
-
-		//	Resolve types for all function argument expressions.
 		vector<std::shared_ptr<expression_t>> args2;
-		for(int argument_index = 0 ; argument_index < call_function_expression._inputs.size() ; argument_index++){
-			const auto i = call_function_expression._inputs[argument_index];
-			const auto arg2 = make_shared<expression_t>(resolve_expression_type(scope_def, *i));
-			args2.push_back(arg2);
+		for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
+			const auto call_arg = call._inputs[argument_index];
+			const auto call_arg2 = make_shared<expression_t>(pass2_expression(scope_def, *call_arg));
+//???			const auto call_arg2_type = get_expression_type(*call_arg2);
 
-			const auto arg2_type = get_expression_type(scope_def, *arg2);
 			const auto function_arg_type = *function_def->_members[argument_index]._type;
 
-//			if(!(compare_shared_values(arg2_type, function_arg_type))){
-			if(!(arg2_type == function_arg_type)){
-				throw std::runtime_error("Argument type missmatch.");
-			}
+//			if(!(call_arg2_type == function_arg_type)){
+//???				throw std::runtime_error("Argument type missmatch.");
+//			}
+
+			args2.push_back(call_arg2);
 		}
 
-		return floyd_parser::make_function_call(function_def, args2);
+		return floyd_parser::make_function_call(type_identifier_t::resolve(function2), args2);
 	}
-	else if(e._math2){
-	}
-	else{
-	}
-
 	return e;
 }
 
-
-void are_types_compatible(const type_identifier_t& type, const expression_t& expression){
-	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(expression.check_invariant());
-}
-
-
-
-void are_symbols_resolvable(const scope_ref_t& scope_def, const expression_t& e){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	if(e._call){
-		check_type(scope_def, e._call->_function);
-		for(const auto a: e._call->_inputs){
-			are_symbols_resolvable(scope_def, *a);
-		}
-	}
-}
-
-scope_ref_t pass2_statements(const scope_ref_t& scope_def, const statement_t& statement){
+statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& statement){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
-	auto result = scope_def;
-
 	if(statement._bind_statement){
 //		_bind_statement->_identifier	??? make sure this identifier is not already defined in this scope!
-		are_symbols_resolvable(scope_def, *statement._bind_statement->_expression);
-		are_types_compatible(statement._bind_statement->_type, *statement._bind_statement->_expression);
+
+		const auto e2 = pass2_expression(scope_def, *statement._bind_statement->_expression);
+		auto result = statement;
+		result._bind_statement->_expression = make_shared<expression_t>(e2);
+		return result;
 	}
 	else if(statement._define_struct){
 		QUARK_ASSERT(false);
@@ -161,34 +158,33 @@ scope_ref_t pass2_statements(const scope_ref_t& scope_def, const statement_t& st
 		QUARK_ASSERT(false);
 	}
 	else if(statement._return_statement){
-		are_symbols_resolvable(scope_def, *statement._return_statement->_expression);
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
-	return result;
+	return statement;
 }
 
-scope_ref_t pass2_scope_def(const scope_ref_t& scope_def){
+
+// Mutates the scope_def in-place.
+void pass2_scope_def(scope_ref_t scope_def){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 
-	scope_ref_t result = scope_def;
-
-	if(result->_type == scope_def_t::k_function){
-		check_type(result->_parent_scope.lock(), result->_return_type);
+	if(scope_def->_type == scope_def_t::k_function){
+		scope_def->_return_type = resolve_type_err(scope_def->_parent_scope.lock(), scope_def->_return_type);
 	}
-	else if(result->_type == scope_def_t::k_struct){
+	else if(scope_def->_type == scope_def_t::k_struct){
 	}
-	else if(result->_type == scope_def_t::k_global){
+	else if(scope_def->_type == scope_def_t::k_global){
 	}
-	else if(result->_type == scope_def_t::k_subscope){
+	else if(scope_def->_type == scope_def_t::k_subscope){
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
 
 	//	Make sure all types can resolve their symbols.
-	for(const auto t: result->_types_collector._type_definitions){
+	for(const auto t: scope_def->_types_collector._type_definitions){
 		const auto type_def = t.second;
 
 		if(type_def->get_type() == base_type::k_struct){
@@ -202,11 +198,15 @@ scope_ref_t pass2_scope_def(const scope_ref_t& scope_def){
 		}
 	}
 
-	//	Make sure all statements can resolve their symbols.
-	for(const auto t: result->_executable._statements){
-		result = pass2_statements(result, *t);
+	//	Make sure all members can resolve their symbols.
+	for(auto member: scope_def->_members){
+		*member._type = resolve_type_err(scope_def, *member._type);
 	}
-	return result;
+
+	//	Make sure all statements can resolve their symbols.
+	for(auto s: scope_def->_executable._statements){
+		 *s = pass2_statements(scope_def, *s);
+	}
 }
 
 
@@ -214,7 +214,7 @@ scope_ref_t pass2_scope_def(const scope_ref_t& scope_def){
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 	auto ast2 = ast1;
 
-	ast2._global_scope = pass2_scope_def(ast2._global_scope);
+	pass2_scope_def(ast2._global_scope);
 	return ast2;
 }
 
@@ -227,7 +227,6 @@ floyd_parser::ast_t run_pass3(const floyd_parser::ast_t& ast1){
 
 
 ///////////////////////////////////////			TESTS
-
 
 
 QUARK_UNIT_TESTQ("struct", "Call undefined function"){
