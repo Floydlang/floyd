@@ -155,6 +155,7 @@ namespace floyd_parser {
 		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
 
+		//??? Skip shared_ptr<>
 		public: std::shared_ptr<type_identifier_t> _type;
 
 		//	Optional -- must have same type as _type.

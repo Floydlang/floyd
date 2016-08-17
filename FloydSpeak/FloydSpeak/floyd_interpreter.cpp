@@ -13,6 +13,7 @@
 #include "parser_statement.h"
 #include "floyd_parser.h"
 #include "parser_value.h"
+#include "ast_utils.h"
 #include "pass2.h"
 
 #include <cmath>
@@ -267,46 +268,6 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-//??? move to somewhere else
-std::pair<scope_ref_t, int> resolve_scoped_variable(floyd_parser::scope_ref_t scope_def, const std::string& s){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-	QUARK_ASSERT(s.size() > 0);
-
-	for(int index = 0 ; index < scope_def->_members.size() ; index++){
-		const auto& member = scope_def->_members[index];
-		if(member._name == s){
-			return std::pair<scope_ref_t, int>(scope_def, index);
-		}
-	}
-
-	//	Not, found - try parent scope.
-	const auto parent = scope_def->_parent_scope.lock();
-	if(parent){
-		return resolve_scoped_variable(parent, s);
-	}
-	else{
-		return {};
-	}
-}
-
-std::pair<scope_ref_t, std::shared_ptr<type_def_t> > resolve_scoped_type(floyd_parser::scope_ref_t scope_def, const std::string& s){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-	QUARK_ASSERT(s.size() > 0);
-
-	const auto a = scope_def->_types_collector.resolve_identifier(s);
-	if(a){
-		return { scope_def, a };
-	}
-
-	//	Not, found - try parent scope.
-	const auto parent = scope_def->_parent_scope.lock();
-	if(parent){
-		return resolve_scoped_type(parent, s);
-	}
-	else{
-		return {};
-	}
-}
 
 
 floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<scope_instance_t>>& scopes, const std::string& s, size_t depth){

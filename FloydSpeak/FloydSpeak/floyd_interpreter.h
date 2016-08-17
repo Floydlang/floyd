@@ -91,15 +91,6 @@ namespace floyd_interpreter {
 
 
 
-	/*
-		Searches for a symbol in the scope, traversing to parent scopes if needed.
-		Returns the scope where the symbol can be found, or empty if not found. Int tells which member.
-	*/
-	std::pair<floyd_parser::scope_ref_t, int> resolve_scoped_variable(floyd_parser::scope_ref_t scope_def, const std::string& s);
-	std::pair<floyd_parser::scope_ref_t, std::shared_ptr<floyd_parser::type_def_t> > resolve_scoped_type(floyd_parser::scope_ref_t scope_def, const std::string& s);
-
-
-
 
 	//////////////////////////		run_main()
 

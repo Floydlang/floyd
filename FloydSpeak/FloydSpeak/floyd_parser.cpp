@@ -23,6 +23,7 @@
 #include "parser_function.h"
 #include "parser_struct.h"
 #include "parser_ast.h"
+#include "ast_utils.h"
 
 #include <string>
 #include <memory>

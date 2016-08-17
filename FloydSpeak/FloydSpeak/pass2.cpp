@@ -12,6 +12,8 @@
 #include "floyd_parser.h"
 #include "floyd_interpreter.h"
 #include "parser_value.h"
+#include "ast_utils.h"
+#include "utils.h"
 
 using floyd_parser::scope_def_t;
 using floyd_parser::base_type;
@@ -43,27 +45,27 @@ void check_variable(const scope_ref_t& scope_def, const string& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto a = floyd_interpreter::resolve_scoped_variable(scope_def, s);
+	const auto a = floyd_parser::resolve_scoped_variable(scope_def, s);
 	if(!a.first){
 		throw std::runtime_error("Undefined variable \"" + s + "\"");
 	}
 }
 
-void check_type(const scope_ref_t& scope_def, const string& s){
+void check_type(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-	QUARK_ASSERT(s.size() > 0);
+	QUARK_ASSERT(s.check_invariant());
 
-	const auto a = floyd_interpreter::resolve_scoped_type(scope_def, s);
-	if(!a.first){
-		throw std::runtime_error("Undefined type \"" + s + "\"");
+	const auto a = floyd_parser::resolve_type(scope_def, s);
+	if(!a){
+		throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
 	}
 }
 
 //	Returns pre-computed expression type. Must have been pre-computed or defect.
-std::shared_ptr<type_def_t> get_expression_type(const scope_ref_t& scope_def, const expression_t& e){
+type_identifier_t get_expression_type(const scope_ref_t& scope_def, const expression_t& e){
 	if(e._call){
-//		QUARK_ASSERT(e._call->_resolved_function_def);
-//		return e._call->_resolved_function_def->_return_type;
+		QUARK_ASSERT(e._call->_function.is_resolved());
+		return e._call->_function;
 	}
 	else if(e._math2){
 	}
@@ -72,24 +74,13 @@ std::shared_ptr<type_def_t> get_expression_type(const scope_ref_t& scope_def, co
 	return {};
 }
 
+//??? Merge types_collector_t with scope_def_t::members_t ===> one local symbol table that holds types, variables etc.
 /*
-	Returns new expression were the type is explicit.
+	Returns new expression were the types and symbols are explicit, deeply.
 */
 expression_t resolve_expression_type(const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-
-/*
-		public: std::shared_ptr<value_t> _constant;
-		public: std::shared_ptr<math_operation1_expr_t> _math1;
-		public: std::shared_ptr<math_operation2_expr_t> _math2;
-		public: std::shared_ptr<function_call_expr_t> _call;
-		public: std::shared_ptr<load_expr_t> _load;
-
-		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
-		public: std::shared_ptr<resolve_struct_member_expr_t> _resolve_struct_member;
-		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
-*/
 
 	if(e._call){
 		const auto& call_function_expression = *e._call;
@@ -104,11 +95,22 @@ expression_t resolve_expression_type(const scope_ref_t& scope_def, const express
 			throw std::runtime_error("Wrong number of argument to function call.");
 		}
 
+		//	Resolves types in the function definition itself, if needed. Argument types, types used in statements, return value etc.
+
 		//	Resolve types for all function argument expressions.
 		vector<std::shared_ptr<expression_t>> args2;
-		for(const auto& i: call_function_expression._inputs){
+		for(int argument_index = 0 ; argument_index < call_function_expression._inputs.size() ; argument_index++){
+			const auto i = call_function_expression._inputs[argument_index];
 			const auto arg2 = make_shared<expression_t>(resolve_expression_type(scope_def, *i));
 			args2.push_back(arg2);
+
+			const auto arg2_type = get_expression_type(scope_def, *arg2);
+			const auto function_arg_type = *function_def->_members[argument_index]._type;
+
+//			if(!(compare_shared_values(arg2_type, function_arg_type))){
+			if(!(arg2_type == function_arg_type)){
+				throw std::runtime_error("Argument type missmatch.");
+			}
 		}
 
 		return floyd_parser::make_function_call(function_def, args2);
@@ -134,7 +136,7 @@ void are_symbols_resolvable(const scope_ref_t& scope_def, const expression_t& e)
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e._call){
-		check_type(scope_def, e._call->_function.to_string());
+		check_type(scope_def, e._call->_function);
 		for(const auto a: e._call->_inputs){
 			are_symbols_resolvable(scope_def, *a);
 		}
@@ -173,7 +175,7 @@ scope_ref_t pass2_scope_def(const scope_ref_t& scope_def){
 	scope_ref_t result = scope_def;
 
 	if(result->_type == scope_def_t::k_function){
-		check_type(result->_parent_scope.lock(), result->_return_type.to_string());
+		check_type(result->_parent_scope.lock(), result->_return_type);
 	}
 	else if(result->_type == scope_def_t::k_struct){
 	}
@@ -183,11 +185,6 @@ scope_ref_t pass2_scope_def(const scope_ref_t& scope_def){
 	}
 	else{
 		QUARK_ASSERT(false);
-	}
-
-	//	Make sure all statements can resolve their symbols.
-	for(const auto t: result->_executable._statements){
-		result = pass2_statements(result, *t);
 	}
 
 	//	Make sure all types can resolve their symbols.
@@ -203,6 +200,11 @@ scope_ref_t pass2_scope_def(const scope_ref_t& scope_def){
 		else if(type_def->get_type() == base_type::k_function){
 			pass2_scope_def(type_def->get_function_def());
 		}
+	}
+
+	//	Make sure all statements can resolve their symbols.
+	for(const auto t: result->_executable._statements){
+		result = pass2_statements(result, *t);
 	}
 	return result;
 }
@@ -324,55 +326,6 @@ QUARK_UNIT_TESTQ("struct", "Return type mismatch"){
 
 
 #if false
-void check_variable(const scope_ref_t& scope_def, const string& s){
-	const auto a = floyd_interpreter::resolve_scoped_variable(scope_def, s);
-	if(!a.first){
-		throw std::runtime_error("Undefined variable \"" + s + "\"");
-	}
-}
-
-void check_type(const scope_ref_t& scope_def, const string& s){
-	const auto a = floyd_interpreter::resolve_scoped_type(scope_def, s);
-	if(!a.first){
-		throw std::runtime_error("Undefined type \"" + s + "\"");
-	}
-}
-
-void are_symbols_resolvable(const scope_ref_t& scope_def, const expression_t& e){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	if(e._call){
-		check_type(scope_def, e._call->_function_name);
-		for(const auto a: e._call->_inputs){
-			are_symbols_resolvable(scope_def, *a);
-		}
-	}
-}
-
-void are_symbols_resolvable(const scope_ref_t& scope_def, const statement_t& statement){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-	QUARK_ASSERT(statement.check_invariant());
-
-	if(statement._bind_statement){
-//		_bind_statement->_identifier	??? make sure this identifier is not already defined in this scope!
-		are_symbols_resolvable(scope_def, *statement._bind_statement->_expression);
-	}
-	else if(statement._define_struct){
-		QUARK_ASSERT(false);
-		are_symbols_resolvable(statement._define_struct->_struct_def);
-	}
-	else if(statement._define_function){
-		QUARK_ASSERT(false);
-		are_symbols_resolvable(statement._define_function->_function_def);
-	}
-	else if(statement._return_statement){
-		are_symbols_resolvable(scope_def, *statement._return_statement->_expression);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
 
 class visitor_i {
 	public: virtual ~visitor_i(){};

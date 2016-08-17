@@ -408,20 +408,6 @@ namespace floyd_parser {
 	void trace(const value_t& e);
 
 
-
-
-	/*
-		Resolves the type, starting at _scope_instances.back() then moving towards to global space. This is a compile-time operation.
-	*/
-	//??? const version
-	std::shared_ptr<type_def_t> resolve_type(const scope_ref_t scope_def, const type_identifier_t& s);
-
-
-	floyd_parser::value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);
-
-	floyd_parser::value_t make_default_value(const floyd_parser::type_def_t& t);
-	floyd_parser::value_t make_default_value(scope_ref_t t);
-
 	floyd_parser::value_t make_struct_instance(scope_ref_t def);
 	floyd_parser::value_t make_vector_instance(const std::shared_ptr<const floyd_parser::vector_def_t>& def, const std::vector<value_t>& elements);
 
