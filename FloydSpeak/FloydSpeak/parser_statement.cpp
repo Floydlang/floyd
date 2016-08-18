@@ -148,10 +148,10 @@ namespace floyd_parser {
 QUARK_UNIT_TESTQ("statement_to_json", "bind"){
 	quark::ut_compare(
 		json_to_compact_string(
-			statement_to_json(make__bind_statement(type_identifier_t::make_int(), "a", make_constant(400)))
+			statement_to_json(make__bind_statement(type_identifier_t::make_int(), "a", expression_t::make_constant(400)))
 		)
 		,
-		R"(["bind", "a", ["k", 400]])"
+		R"(["bind", "a", ["k", "<>", 400]])"
 	);
 }
 
@@ -172,10 +172,10 @@ QUARK_UNIT_TESTQ("statement_to_json", "deffunc"){
 QUARK_UNIT_TESTQ("statement_to_json", "return"){
 	quark::ut_compare(
 		json_to_compact_string(
-			statement_to_json(make__return_statement(make_constant("abc")))
+			statement_to_json(make__return_statement(expression_t::make_constant("abc")))
 		)
 		,
-		R"(["return", ["k", "abc"]])"
+		R"(["return", ["k", "<>", "abc"]])"
 	);
 }
 

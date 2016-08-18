@@ -40,6 +40,7 @@ namespace {
 
 	//	Notice that scope_ref_t:members are resolved, "args" are not.
 		//??? notice  copy local variables too!?
+		//??? Local variables are not stored in function_def -- they are defined while executing instructions = bad!
 	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
 		if(f->_members.size() != args.size()){
 			return false;
@@ -139,8 +140,6 @@ value_t execute_statements(const interpreter_t& vm, const vector<shared_ptr<stat
 }
 
 namespace {
-
-	//??? Make this operate on scope_def_t instead of function_def_t. == use scope_def:s as generic nodes.
 
 	value_t call_interpreted_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
@@ -333,7 +332,7 @@ namespace {
 			const auto variable_name = e._resolve_variable->_variable_name;
 			const value_t value = resolve_variable_name(vm, variable_name);
 //			const value_t found_scope = resolve_scoped_symbol(vm._ast._global_scope, variable_name);
-			return make_constant(value);
+			return expression_t::make_constant(value);
 		}
 		else if(e._resolve_struct_member){
 			const auto parent = load_deep(vm, left_side, *e._resolve_struct_member->_parent_address);
@@ -342,11 +341,11 @@ namespace {
 			const auto member_name = e._resolve_struct_member->_member_name;
 			const auto struct_instance = parent._constant->get_struct();
 			const value_t value = struct_instance->_member_values[member_name];
-			return make_constant(value);
+			return expression_t::make_constant(value);
 		}
 		else if(e._lookup_element){
 			QUARK_ASSERT(false);
-			return make_constant(value_t());
+			return expression_t::make_constant(value_t());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -362,7 +361,7 @@ namespace {
 		QUARK_ASSERT(e2._address->_call || e2._address->_resolve_variable || e2._address->_resolve_struct_member || e2._address-> _lookup_element);
 
 		const auto e3 = load_deep(vm, value_t(), *e2._address);
-		return e3._constant;
+		return expression_t::make_constant(*e3._constant);
 	}
 
 }
@@ -390,19 +389,19 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 			{
 				if(left_value->get_type() == type_identifier_t::make_int() && right_value->get_type() == type_identifier_t::make_int()){
 					if(e2._operation == math_operation2_expr_t::add){
-						return make_constant(left_value->get_int() + right_value->get_int());
+						return expression_t::make_constant(left_value->get_int() + right_value->get_int());
 					}
 					else if(e2._operation == math_operation2_expr_t::subtract){
-						return make_constant(left_value->get_int() - right_value->get_int());
+						return expression_t::make_constant(left_value->get_int() - right_value->get_int());
 					}
 					else if(e2._operation == math_operation2_expr_t::multiply){
-						return make_constant(left_value->get_int() * right_value->get_int());
+						return expression_t::make_constant(left_value->get_int() * right_value->get_int());
 					}
 					else if(e2._operation == math_operation2_expr_t::divide){
 						if(right_value->get_int() == 0){
 							throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 						}
-						return make_constant(left_value->get_int() / right_value->get_int());
+						return expression_t::make_constant(left_value->get_int() / right_value->get_int());
 					}
 					else{
 						QUARK_ASSERT(false);
@@ -410,19 +409,19 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 				}
 				else if(left_value->get_type() == type_identifier_t::make_float() && right_value->get_type() == type_identifier_t::make_float()){
 					if(e2._operation == math_operation2_expr_t::add){
-						return make_constant(left_value->get_float() + right_value->get_float());
+						return expression_t::make_constant(left_value->get_float() + right_value->get_float());
 					}
 					else if(e2._operation == math_operation2_expr_t::subtract){
-						return make_constant(left_value->get_float() - right_value->get_float());
+						return expression_t::make_constant(left_value->get_float() - right_value->get_float());
 					}
 					else if(e2._operation == math_operation2_expr_t::multiply){
-						return make_constant(left_value->get_float() * right_value->get_float());
+						return expression_t::make_constant(left_value->get_float() * right_value->get_float());
 					}
 					else if(e2._operation == math_operation2_expr_t::divide){
 						if(right_value->get_float() == 0.0f){
 							throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 						}
-						return make_constant(left_value->get_float() / right_value->get_float());
+						return expression_t::make_constant(left_value->get_float() / right_value->get_float());
 					}
 					else{
 						QUARK_ASSERT(false);
@@ -430,7 +429,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 				}
 				else if(left_value->get_type() == type_identifier_t::make_string() && right_value->get_type() == type_identifier_t::make_string()){
 					if(e2._operation == math_operation2_expr_t::add){
-						return make_constant(left_value->get_string() + right_value->get_string());
+						return expression_t::make_constant(left_value->get_string() + right_value->get_string());
 					}
 					else{
 						throw std::runtime_error("Arithmetics failed.");
@@ -445,7 +444,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		//	Else use a math_operation expression to perform the calculation later.
 		//	We make a NEW math_operation since sub-nodes may have been evaluated.
 		else{
-			return make_math_operation2(e2._operation, left, right);
+			return expression_t::make_math_operation2(e2._operation, left, right);
 		}
 	}
 	else if(e._math1){
@@ -457,7 +456,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 			const auto value = input._constant;
 			if(value->get_type() == type_identifier_t::make_int()){
 				if(e2._operation == math_operation1_expr_t::negate){
-					return make_constant(-value->get_int());
+					return expression_t::make_constant(-value->get_int());
 				}
 				else{
 					QUARK_ASSERT(false);
@@ -465,7 +464,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 			}
 			else if(value->get_type() == type_identifier_t::make_float()){
 				if(e2._operation == math_operation1_expr_t::negate){
-					return make_constant(-value->get_float());
+					return expression_t::make_constant(-value->get_float());
 				}
 				else{
 					QUARK_ASSERT(false);
@@ -481,7 +480,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 		//	Else use a math_operation to make the calculation later. We make a NEW math_operation since sub-nodes may have been evaluated.
 		else{
-			return make_math_operation1(e2._operation, input);
+			return expression_t::make_math_operation1(e2._operation, input);
 		}
 	}
 
@@ -510,7 +509,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		for(const auto& i: simplified_args){
 			if(!i._constant){
 				//??? should use simplified_args.
-				return make_function_call(call_function_expression._function, call_function_expression._inputs);
+				return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
 			}
 		}
 
@@ -519,11 +518,11 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		for(const auto& i: simplified_args){
 			constant_args.push_back(*i._constant);
 			if(!i._constant){
-				return make_function_call(call_function_expression._function, call_function_expression._inputs);
+				return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
 			}
 		}
 		const value_t result = call_function(vm, function_def, constant_args);
-		return make_constant(result);
+		return expression_t::make_constant(result);
 	}
 	else if(e._load){
 		return load(vm, e);
@@ -711,45 +710,45 @@ using namespace floyd_interpreter;
 //??? Add tests for strings and floats.
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
-	QUARK_TEST_VERIFY(test_evaluate_simple("1234") == make_constant(1234));
-	QUARK_TEST_VERIFY(test_evaluate_simple("1+2") == make_constant(3));
-	QUARK_TEST_VERIFY(test_evaluate_simple("1+2+3") == make_constant(6));
-	QUARK_TEST_VERIFY(test_evaluate_simple("3*4") == make_constant(12));
-	QUARK_TEST_VERIFY(test_evaluate_simple("3*4*5") == make_constant(60));
-	QUARK_TEST_VERIFY(test_evaluate_simple("1+2*3") == make_constant(7));
+	QUARK_TEST_VERIFY(test_evaluate_simple("1234") == expression_t::make_constant(1234));
+	QUARK_TEST_VERIFY(test_evaluate_simple("1+2") == expression_t::make_constant(3));
+	QUARK_TEST_VERIFY(test_evaluate_simple("1+2+3") == expression_t::make_constant(6));
+	QUARK_TEST_VERIFY(test_evaluate_simple("3*4") == expression_t::make_constant(12));
+	QUARK_TEST_VERIFY(test_evaluate_simple("3*4*5") == expression_t::make_constant(60));
+	QUARK_TEST_VERIFY(test_evaluate_simple("1+2*3") == expression_t::make_constant(7));
 }
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
-	QUARK_TEST_VERIFY(test_evaluate_simple("5*(4+4+1)") == make_constant(45));
-	QUARK_TEST_VERIFY(test_evaluate_simple("5*(2*(1+3)+1)") == make_constant(45));
-	QUARK_TEST_VERIFY(test_evaluate_simple("5*((1+3)*2+1)") == make_constant(45));
+	QUARK_TEST_VERIFY(test_evaluate_simple("5*(4+4+1)") == expression_t::make_constant(45));
+	QUARK_TEST_VERIFY(test_evaluate_simple("5*(2*(1+3)+1)") == expression_t::make_constant(45));
+	QUARK_TEST_VERIFY(test_evaluate_simple("5*((1+3)*2+1)") == expression_t::make_constant(45));
 }
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
-	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 * ((1 + 3) * 2 + 1) ") == make_constant(45));
-	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( 3 ) ") == make_constant(-1));
-	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( ( 4 )  - 1 ) ") == make_constant(-1));
+	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 * ((1 + 3) * 2 + 1) ") == expression_t::make_constant(45));
+	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( 3 ) ") == expression_t::make_constant(-1));
+	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( ( 4 )  - 1 ) ") == expression_t::make_constant(-1));
 }
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Sign before parenthesis") {
-	QUARK_TEST_VERIFY(test_evaluate_simple("-(2+1)*4") == make_constant(-12));
-	QUARK_TEST_VERIFY(test_evaluate_simple("-4*(2+1)") == make_constant(-12));
+	QUARK_TEST_VERIFY(test_evaluate_simple("-(2+1)*4") == expression_t::make_constant(-12));
+	QUARK_TEST_VERIFY(test_evaluate_simple("-4*(2+1)") == expression_t::make_constant(-12));
 }
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("5.5/5.0")._constant->get_float(), 1.1f));
 //	QUARK_TEST_VERIFY(test_evaluate_simple("1/5e10") == 2e-11);
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("(4.0-3.0)/(4.0*4.0)")._constant->get_float(), 0.0625f));
-	QUARK_TEST_VERIFY(test_evaluate_simple("1.0/2.0/2.0") == make_constant(0.25f));
-	QUARK_TEST_VERIFY(test_evaluate_simple("0.25 * .5 * 0.5") == make_constant(0.0625f));
-	QUARK_TEST_VERIFY(test_evaluate_simple(".25 / 2.0 * .5") == make_constant(0.0625f));
+	QUARK_TEST_VERIFY(test_evaluate_simple("1.0/2.0/2.0") == expression_t::make_constant(0.25f));
+	QUARK_TEST_VERIFY(test_evaluate_simple("0.25 * .5 * 0.5") == expression_t::make_constant(0.0625f));
+	QUARK_TEST_VERIFY(test_evaluate_simple(".25 / 2.0 * .5") == expression_t::make_constant(0.0625f));
 }
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
-	QUARK_TEST_VERIFY(test_evaluate_simple("1+-2") == make_constant(-1));
-	QUARK_TEST_VERIFY(test_evaluate_simple("--2") == make_constant(2));
-	QUARK_TEST_VERIFY(test_evaluate_simple("2---2") == make_constant(0));
-	QUARK_TEST_VERIFY(test_evaluate_simple("2-+-2") == make_constant(4));
+	QUARK_TEST_VERIFY(test_evaluate_simple("1+-2") == expression_t::make_constant(-1));
+	QUARK_TEST_VERIFY(test_evaluate_simple("--2") == expression_t::make_constant(2));
+	QUARK_TEST_VERIFY(test_evaluate_simple("2---2") == expression_t::make_constant(0));
+	QUARK_TEST_VERIFY(test_evaluate_simple("2-+-2") == expression_t::make_constant(4));
 }
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis error") {

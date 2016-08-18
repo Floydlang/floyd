@@ -23,6 +23,7 @@ using floyd_parser::ast_t;
 using floyd_parser::type_identifier_t;
 using floyd_parser::scope_ref_t;
 using floyd_parser::type_def_t;
+using floyd_parser::value_t;
 
 using std::string;
 using std::vector;
@@ -96,7 +97,8 @@ type_identifier_t get_expression_type(const expression_t& e){
 	return {};
 }
 
-//??? Merge types_collector_t with scope_def_t::members_t ===> one local symbol table that holds types, variables etc.
+
+
 /*
 	Returns new expression were the types and symbols are explicit, deeply.
 */
@@ -104,7 +106,13 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	if(e._call){
+	if(e._constant){
+	}
+	else if(e._math1){
+	}
+	else if(e._math2){
+	}
+	else if(e._call){
 		const auto& call = *e._call;
 
 		//	Resolve function name.
@@ -112,6 +120,8 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 		if(!function2 || function2->get_type() != base_type::k_function){
 			throw std::runtime_error("Unresolved function.");
 		}
+		const auto return_type = function2->get_function_def()->_return_type;
+
 
 		//	Verify & resolve all arguments in the call vs the actual function definition.
 		const auto function_def = function2->get_function_def();
@@ -134,7 +144,15 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 			args2.push_back(call_arg2);
 		}
 
-		return floyd_parser::make_function_call(type_identifier_t::resolve(function2), args2);
+		return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(function2), args2, return_type);
+	}
+	else if(e._load){
+	}
+	else if(e._resolve_variable){
+	}
+	else if(e._resolve_struct_member){
+	}
+	else if(e._lookup_element){
 	}
 	return e;
 }
@@ -158,11 +176,11 @@ statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& st
 		QUARK_ASSERT(false);
 	}
 	else if(statement._return_statement){
+		return statement;
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
-	return statement;
 }
 
 
@@ -215,6 +233,7 @@ floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 	auto ast2 = ast1;
 
 	pass2_scope_def(ast2._global_scope);
+	trace(ast2);
 	return ast2;
 }
 

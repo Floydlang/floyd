@@ -41,7 +41,7 @@ namespace floyd_parser {
 	}
 
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
-		const auto t = make_shared<expression_t>(make_constant(0));
+		const auto t = make_shared<expression_t>(expression_t::make_constant(0));
 		
 		QUARK_TEST_VERIFY((
 			parse_return_statement("return 0;") == pair<return_statement_t, string>(return_statement_t{t}, "")
@@ -49,7 +49,7 @@ namespace floyd_parser {
 	}
 
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
-		const auto t = make_shared<expression_t>(make_constant(123));
+		const auto t = make_shared<expression_t>(expression_t::make_constant(123));
 		
 		QUARK_TEST_VERIFY((
 			parse_return_statement("return \t123\t;\t\nxyz}") == pair<return_statement_t, string>(return_statement_t{t}, "xyz}")

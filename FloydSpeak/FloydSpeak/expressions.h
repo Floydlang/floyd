@@ -145,38 +145,64 @@ namespace floyd_parser {
 
 
 	struct expression_t {
+		public: static expression_t make_constant(const value_t& value);
+		public: static expression_t make_constant(const std::string& s);
+		public: static expression_t make_constant(const int i);
+		public: static expression_t make_constant(const float f);
+
+		public: static expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input);
+		public: static expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right);
+
+
+		public: static expression_t make_function_call(const type_identifier_t& function, const std::vector<expression_t>& inputs, const type_identifier_t& resolved_expression_type);
+		public: static expression_t make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type);
+
+		//??? Let clients do this work.
+		public: static expression_t make_function_call(const std::shared_ptr<scope_def_t>& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type);
+
+
+		public: static expression_t make_load(const expression_t& address_expression);
+		public: static expression_t make_load_variable(const std::string& name);
+
+		public: static expression_t make_resolve_variable(const std::string& variable);
+
+		public: static expression_t make_resolve_struct_member(const std::shared_ptr<expression_t>& parent_address, const std::string& member_name);
+
+		public: static expression_t make_lookup(const expression_t& parent_address, const expression_t& lookup_key);
+
+
 		public: bool check_invariant() const;
 
 
-		public: expression_t(const std::shared_ptr<value_t>& a) :
+		private: expression_t(const std::shared_ptr<value_t>& a) :
 			_constant(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<math_operation1_expr_t>& a) :
+		private: expression_t(const std::shared_ptr<math_operation1_expr_t>& a) :
 			_math1(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<math_operation2_expr_t>& a) :
+		private: expression_t(const std::shared_ptr<math_operation2_expr_t>& a) :
 			_math2(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<function_call_expr_t>& a) :
+		private: expression_t(const std::shared_ptr<function_call_expr_t>& a) :
 			_call(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<load_expr_t>& a) :
+		private: expression_t(const std::shared_ptr<load_expr_t>& a) :
 			_load(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
@@ -184,21 +210,21 @@ namespace floyd_parser {
 		}
 
 
-		public: expression_t(const std::shared_ptr<resolve_variable_expr_t>& a) :
+		private: expression_t(const std::shared_ptr<resolve_variable_expr_t>& a) :
 			_resolve_variable(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<resolve_struct_member_expr_t>& a) :
+		private: expression_t(const std::shared_ptr<resolve_struct_member_expr_t>& a) :
 			_resolve_struct_member(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: expression_t(const std::shared_ptr<lookup_element_expr_t>& a) :
+		private: expression_t(const std::shared_ptr<lookup_element_expr_t>& a) :
 			_lookup_element(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
@@ -208,6 +234,12 @@ namespace floyd_parser {
 
 
 		public: bool operator==(const expression_t& other) const;
+
+
+		private: expression_t(){
+			// Invariant is broken here - expression type is setup.
+		}
+
 
 
 		//////////////////////////		STATE
@@ -225,39 +257,32 @@ namespace floyd_parser {
 		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
 		public: std::shared_ptr<resolve_struct_member_expr_t> _resolve_struct_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
+
+		//	Tell what type of value this expression represents. Null if not yet defined.
+		public: type_identifier_t _resolved_expression_type;
 	};
 
 
-
-	//////////////////////////////////////////////////		make specific expressions
-
-	expression_t make_constant(const value_t& value);
-	expression_t make_constant(const std::string& s);
-	expression_t make_constant(const int i);
-	expression_t make_constant(const float f);
-
-	expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input);
-	expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right);
-
-	expression_t make_function_call(const type_identifier_t& function, const std::vector<expression_t>& inputs);
-	expression_t make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs);
-
-	//??? Let clients do this work.
-	expression_t make_function_call(const std::shared_ptr<scope_def_t>& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs);
+	//////////////////////////////////////////////////		visit()
 
 
+/*
+	struct visit_expression_i {
+		public: virtual ~visit_expression_i(){};
 
-	expression_t make_load(const expression_t& address_expression);
-	expression_t make_load_variable(const std::string& name);
+		public: virtual expression_t visit_expression_i__on_constant(const value_t& value) const = 0;
+		public: virtual expression_t visit_expression_i__on_math1(const math_operation1_expr_t& e) const = 0;
+		public: virtual expression_t visit_expression_i__on_math2(const math_operation2_expr_t& e) const = 0;
+		public: virtual expression_t visit_expression_i__on_call(const function_call_expr_t& e) const = 0;
+		public: virtual expression_t visit_expression_i__on_load(const load_expr_t& e) const = 0;
 
-	expression_t make_resolve_variable(const std::string& variable);
+		public: virtual expression_t visit_expression_i__on_resolve_variable(const resolve_variable_expr_t& e) const = 0;
+		public: virtual expression_t visit_expression_i__on_resolve_struct_member(const resolve_struct_member_expr_t& e) const = 0;
+		public: virtual expression_t visit_expression_i__on_lookup_element(const lookup_element_expr_t& e) const = 0;
+	};
 
-	expression_t make_resolve_struct_member(const std::shared_ptr<expression_t>& parent_address, const std::string& member_name);
-
-	expression_t make_lookup(const expression_t& parent_address, const expression_t& lookup_key);
-
-
-
+	expression_t visit(const visit_expression_i& visitor, const expression_t& e);
+*/
 	//////////////////////////////////////////////////		trace()
 
 

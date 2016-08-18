@@ -355,7 +355,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(3)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(3)))
 		}),
 		{}
 	);
@@ -382,7 +382,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(3)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(3)))
 		}),
 		{}
 	);
@@ -414,7 +414,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant("test abc")))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant("test abc")))
 		}),
 		{}
 	);
@@ -428,7 +428,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(3)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(3)))
 		}),
 		{}
 	);
@@ -456,7 +456,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 		},
 		result._global_scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(13.4f)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(13.4f)))
 		}),
 		{}
 	);

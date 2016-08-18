@@ -207,7 +207,7 @@ scope_ref_t make_test_function1(scope_ref_t scope){
 		{},
 		scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(100)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(100)))
 		}),
 		{}
 	);
@@ -223,7 +223,7 @@ scope_ref_t make_test_function2(scope_ref_t scope){
 		},
 		scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant("sdf")))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant("sdf")))
 		}),
 		{}
 	);
@@ -238,7 +238,7 @@ scope_ref_t make_log_function(scope_ref_t scope){
 		},
 		scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(123.f)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(123.f)))
 		}),
 		{}
 	);
@@ -254,7 +254,7 @@ scope_ref_t make_log2_function(scope_ref_t scope){
 		},
 		scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(456.7f)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(456.7f)))
 		}),
 		{}
 	);
@@ -268,7 +268,7 @@ scope_ref_t make_return5(scope_ref_t scope){
 		},
 		scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant(5)))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant(5)))
 		}),
 		{}
 	);
@@ -282,7 +282,7 @@ scope_ref_t make_return_hello(scope_ref_t scope){
 		},
 		scope,
 		executable_t({
-			make_shared<statement_t>(make__return_statement(make_constant("hello")))
+			make_shared<statement_t>(make__return_statement(expression_t::make_constant("hello")))
 		}),
 		{}
 	);

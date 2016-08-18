@@ -15,6 +15,7 @@
 #include "quark.h"
 
 
+#include "json_writer.h"
 
 /*
 PRETTY FORMAT FOR READING:
@@ -43,6 +44,7 @@ struct json_value_t {
 		_type(k_object),
 		_object(object)
 	{
+		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -50,6 +52,7 @@ struct json_value_t {
 		_type(k_array),
 		_array(array)
 	{
+		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -57,6 +60,7 @@ struct json_value_t {
 		_type(k_string),
 		_string(s)
 	{
+		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -65,6 +69,7 @@ struct json_value_t {
 		_string(std::string(s))
 	{
 		QUARK_ASSERT(s != nullptr);
+		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -72,18 +77,21 @@ struct json_value_t {
 		_type(k_number),
 		_number(number)
 	{
+		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
 
 	public: explicit json_value_t(bool value) :
 		_type(value ? k_true : k_false)
 	{
+		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
 
 	public: json_value_t() :
 		_type(k_null)
 	{
+		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -190,8 +198,10 @@ struct json_value_t {
 		return _type == k_null;
 	}
 
+
 	/////////////////////////////////////		STATE
 
+	private: std::string __debug;
 	private: etype _type = k_null;
 	private: std::map<std::string, json_value_t> _object;
 	private: std::vector<json_value_t> _array;
