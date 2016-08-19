@@ -212,24 +212,36 @@ expression_t expression_t::make_function_call(const scope_ref_t& function_def, c
 }
 
 
-expression_t expression_t::make_load(const expression_t& address_expression){
+expression_t expression_t::make_load(const expression_t& address_expression, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(address_expression.check_invariant());
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
+	auto result = expression_t();
 	auto address = make_shared<expression_t>(address_expression);
-	return std::make_shared<load_expr_t>(load_expr_t{address});
+	result._load = std::make_shared<load_expr_t>(load_expr_t{ address });
+	result._resolved_expression_type = resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
 }
 
 expression_t expression_t::make_load_variable(const std::string& name){
 	QUARK_ASSERT(name.size() > 0);
 
-	const auto address = make_resolve_variable(name);
-	return make_load(address);
+	const auto address = make_resolve_variable(name, type_identifier_t());
+	return make_load(address, type_identifier_t());
 }
 
-expression_t expression_t::make_resolve_variable(const std::string& variable){
+expression_t expression_t::make_resolve_variable(const std::string& variable, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(variable.size() > 0);
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
-	return std::make_shared<resolve_variable_expr_t>(resolve_variable_expr_t{ variable });
+	auto result = expression_t();
+	result._resolve_variable = std::make_shared<resolve_variable_expr_t>(resolve_variable_expr_t{ variable });
+	result._resolved_expression_type = resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
 }
 
 
@@ -381,16 +393,16 @@ string expression_to_json_string(const expression_t& e){
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant(13)), R"(["k", "<>", 13])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant("xyz")), R"(["k", "<>", "xyz"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant(14.0f)), R"(["k", "<>", 14])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_constant(13)), R"(["k", "<int>", 13])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_constant("xyz")), R"(["k", "<string>", "xyz"])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_constant(14.0f)), R"(["k", "<float>", 14])");
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "math1"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_math_operation1(math_operation1_expr_t::operation::negate, expression_t::make_constant(2))),
-		R"(["negate", "<>", ["k", "<>", 2]])"
+		R"(["negate", "<>", ["k", "<int>", 2]])"
 	);
 }
 
@@ -398,7 +410,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_math_operation2(math_operation2_expr_t::operation::add, expression_t::make_constant(2), expression_t::make_constant(3))),
-		R"(["+", "<>", ["k", "<>", 2], ["k", "<>", 3]])"
+		R"(["+", "<>", ["k", "<int>", 2], ["k", "<int>", 3]])"
 	);
 }
 
@@ -411,7 +423,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 				type_identifier_t()
 			)
 		),
-		R"(["call", "my_func", "<>", [["k", "<>", "xyz"], ["k", "<>", 123]]])"
+		R"(["call", "my_func", "<>", [["k", "<string>", "xyz"], ["k", "<int>", 123]]])"
 	);
 }
 
@@ -427,9 +439,9 @@ QUARK_UNIT_TESTQ("expression_to_json()", "read & resolve_variable"){
 QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(
-			expression_t::make_lookup(expression_t::make_resolve_variable("hello"), expression_t::make_constant("xyz"))
+			expression_t::make_lookup(expression_t::make_resolve_variable("hello", type_identifier_t()), expression_t::make_constant("xyz"))
 		),
-		R"(["lookup", "<>", ["res_var", "<>", "hello"], ["k", "<>", "xyz"]])"
+		R"(["lookup", "<>", ["res_var", "<>", "hello"], ["k", "<string>", "xyz"]])"
 	);
 }
 

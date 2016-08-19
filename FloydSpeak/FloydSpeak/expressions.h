@@ -14,6 +14,7 @@
 #include <string>
 
 #include "parser_ast.h"
+#include "parser_value.h"
 
 	struct json_value_t;
 
@@ -161,10 +162,10 @@ namespace floyd_parser {
 		public: static expression_t make_function_call(const std::shared_ptr<scope_def_t>& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type);
 
 
-		public: static expression_t make_load(const expression_t& address_expression);
+		public: static expression_t make_load(const expression_t& address_expression, const type_identifier_t& resolved_expression_type);
 		public: static expression_t make_load_variable(const std::string& name);
 
-		public: static expression_t make_resolve_variable(const std::string& variable);
+		public: static expression_t make_resolve_variable(const std::string& variable, const type_identifier_t& resolved_expression_type);
 
 		public: static expression_t make_resolve_struct_member(const std::shared_ptr<expression_t>& parent_address, const std::string& member_name);
 
@@ -173,11 +174,21 @@ namespace floyd_parser {
 
 		public: bool check_invariant() const;
 
+		/*
+			Returns pre-computed result of the expression - the type of value it represents.
+			null if not resolved.
+		*/
+		public: type_identifier_t get_expression_type() const{
+			QUARK_ASSERT(check_invariant());
+
+			return _resolved_expression_type;
+		}
 
 		private: expression_t(const std::shared_ptr<value_t>& a) :
 			_constant(a)
 		{
 			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
+			_resolved_expression_type = a->get_type();
 			QUARK_ASSERT(check_invariant());
 		}
 

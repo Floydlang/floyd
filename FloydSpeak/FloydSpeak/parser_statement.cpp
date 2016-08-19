@@ -151,7 +151,7 @@ QUARK_UNIT_TESTQ("statement_to_json", "bind"){
 			statement_to_json(make__bind_statement(type_identifier_t::make_int(), "a", expression_t::make_constant(400)))
 		)
 		,
-		R"(["bind", "a", ["k", "<>", 400]])"
+		R"(["bind", "a", ["k", "<int>", 400]])"
 	);
 }
 
@@ -175,7 +175,7 @@ QUARK_UNIT_TESTQ("statement_to_json", "return"){
 			statement_to_json(make__return_statement(expression_t::make_constant("abc")))
 		)
 		,
-		R"(["return", ["k", "<>", "abc"]])"
+		R"(["return", ["k", "<string>", "abc"]])"
 	);
 }
 

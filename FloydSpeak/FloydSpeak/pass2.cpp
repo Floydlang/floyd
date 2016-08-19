@@ -63,54 +63,29 @@ type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_par
 	return floyd_parser::type_identifier_t::resolve(a);
 }
 
-//	Returns pre-computed result of the expression - the type of value it represents. Must have been pre-computed or defect.
-type_identifier_t get_expression_type(const expression_t& e){
-	if(e._constant){
-		return e._constant->get_type();
-	}
-	else if(e._math1){
-		QUARK_ASSERT(false);
-	}
-	else if(e._math2){
-		QUARK_ASSERT(false);
-	}
-	else if(e._call){
-		QUARK_ASSERT(e._call->_function.is_resolved());
-		return e._call->_function.get_resolved()->get_function_def()->_return_type;
-	}
-	else if(e._load){
-		QUARK_ASSERT(false);
-	}
-
-	else if(e._resolve_variable){
-		QUARK_ASSERT(false);
-	}
-	else if(e._resolve_struct_member){
-		QUARK_ASSERT(false);
-	}
-	else if(e._lookup_element){
-		QUARK_ASSERT(false);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-	return {};
-}
 
 
 
 /*
-	Returns new expression were the types and symbols are explicit, deeply.
+	Returns new expression were
+	- the types and symbols are explicit, deeply.
+	- all types in the expressions match.
+	- all symbols could be found
+	- all types could be found and are correct
 */
 expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	if(e._constant){
+		//	Nothing to resolve -- always automatically resolved.
+		return e;
 	}
 	else if(e._math1){
+		return e;
 	}
 	else if(e._math2){
+		return e;
 	}
 	else if(e._call){
 		const auto& call = *e._call;
@@ -133,13 +108,14 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 		for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
 			const auto call_arg = call._inputs[argument_index];
 			const auto call_arg2 = make_shared<expression_t>(pass2_expression(scope_def, *call_arg));
-//???			const auto call_arg2_type = get_expression_type(*call_arg2);
+			const auto call_arg2_type = call_arg2->get_expression_type();
+			QUARK_ASSERT(call_arg2_type.is_resolved());
 
 			const auto function_arg_type = *function_def->_members[argument_index]._type;
 
-//			if(!(call_arg2_type == function_arg_type)){
-//???				throw std::runtime_error("Argument type missmatch.");
-//			}
+			if(!(call_arg2_type.to_string() == function_arg_type.to_string())){
+				throw std::runtime_error("Argument type mismatch.");
+			}
 
 			args2.push_back(call_arg2);
 		}
@@ -147,14 +123,27 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 		return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(function2), args2, return_type);
 	}
 	else if(e._load){
+		const auto& load = *e._load;
+		const auto address = pass2_expression(scope_def, *load._address);
+		return floyd_parser::expression_t::make_load(address, address.get_expression_type());
 	}
 	else if(e._resolve_variable){
+		const auto& e2 = *e._resolve_variable;
+		std::pair<floyd_parser::scope_ref_t, int> x = resolve_scoped_variable(scope_def, e2._variable_name);
+
+		const auto& member = x.first->_members[x.second];
+		QUARK_ASSERT(member._type->is_resolved());
+		return floyd_parser::expression_t::make_resolve_variable(e2._variable_name, *member._type);
 	}
 	else if(e._resolve_struct_member){
+		return e;
 	}
 	else if(e._lookup_element){
+		return e;
 	}
-	return e;
+	else{
+		QUARK_ASSERT(false);
+	}
 }
 
 statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& statement){
@@ -165,6 +154,12 @@ statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& st
 //		_bind_statement->_identifier	??? make sure this identifier is not already defined in this scope!
 
 		const auto e2 = pass2_expression(scope_def, *statement._bind_statement->_expression);
+
+			if(!(e2.get_expression_type().to_string() == statement._bind_statement->_type.to_string())){
+				throw std::runtime_error("Argument type mismatch.");
+			}
+
+
 		auto result = statement;
 		result._bind_statement->_expression = make_shared<expression_t>(e2);
 		return result;
@@ -296,7 +291,7 @@ QUARK_UNIT_TESTQ("struct", ""){
 	const ast_t pass2 = run_pass2(pass1);
 }
 
-#if false
+#if true
 QUARK_UNIT_TESTQ("struct", "Bind type mismatch"){
 	const auto a = R"(
 		int main(){
@@ -311,7 +306,7 @@ QUARK_UNIT_TESTQ("struct", "Bind type mismatch"){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
+		quark::ut_compare(string(e.what()), "Argument type mismatch.");
 	}
 }
 #endif
