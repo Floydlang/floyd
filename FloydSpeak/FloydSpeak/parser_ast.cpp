@@ -654,6 +654,7 @@ namespace floyd_parser {
 
 
 		auto body = scope_def_t::make2(scope_def_t::k_subscope, body_identifier, {}, function, executable, {});
+		body->_return_type = return_type;
 		auto body_type_def = make_shared<type_def_t>(type_def_t::make_function_def(body));
 
 		function->_types_collector = function->_types_collector.define_type_xyz(body_identifier.to_string(), body_type_def);

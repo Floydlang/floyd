@@ -295,7 +295,7 @@ expression_t negate_expression(const expression_t& e){
 		}
 	}
 
-	return expression_t::make_math_operation1(math_operation1_expr_t::negate, e);
+	return expression_t::make_math_operation1(math_operation1_expr_t::negate, e, type_identifier_t());
 }
 
 // [0-9] and "."  => numeric constant.

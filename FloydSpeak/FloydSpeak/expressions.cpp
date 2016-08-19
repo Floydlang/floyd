@@ -127,40 +127,60 @@ bool expression_t::operator==(const expression_t& other) const {
 
 
 
-expression_t expression_t::make_constant(const value_t& value){
+expression_t expression_t::make_constant(const value_t& value, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
-	return std::make_shared<value_t>(value);
+	auto result = expression_t();
+	result._constant = std::make_shared<value_t>(value);
+	result._resolved_expression_type = resolved_expression_type.is_null() ? value.get_type() : resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
 }
 
 expression_t expression_t::make_constant(const std::string& s){
-	return std::make_shared<value_t>(value_t(s));
+	return make_constant(value_t(s));
 }
 
 expression_t expression_t::make_constant(const int i){
-	return std::make_shared<value_t>(value_t(i));
+	return make_constant(value_t(i));
 }
 
 expression_t expression_t::make_constant(const float f){
-	return std::make_shared<value_t>(value_t(f));
+	return make_constant(value_t(f));
 }
 
 
 
-expression_t expression_t::make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input){
+expression_t expression_t::make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(input.check_invariant());
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
 	auto input2 = make_shared<expression_t>(input);
-	return std::make_shared<math_operation1_expr_t>(math_operation1_expr_t{ op, input2 });
+
+	auto result = expression_t();
+	result._math1 = std::make_shared<math_operation1_expr_t>(math_operation1_expr_t{ op, input2 });
+	result._resolved_expression_type = resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
 }
 
-expression_t expression_t::make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right){
+expression_t expression_t::make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
 	auto left2 = make_shared<expression_t>(left);
 	auto right2 = make_shared<expression_t>(right);
-	return std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ op, left2, right2 });
+
+	auto result = expression_t();
+	result._math2 = std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ op, left2, right2 });
+	result._resolved_expression_type = resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
 }
 
 
@@ -245,21 +265,33 @@ expression_t expression_t::make_resolve_variable(const std::string& variable, co
 }
 
 
-expression_t expression_t::make_resolve_struct_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name){
+expression_t expression_t::make_resolve_struct_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(parent_address && parent_address->check_invariant());
 	QUARK_ASSERT(member_name.size() > 0);
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
-	resolve_struct_member_expr_t r = resolve_struct_member_expr_t{ parent_address, member_name };
-	return std::make_shared<resolve_struct_member_expr_t>(r);
+	auto result = expression_t();
+	result._resolve_struct_member = std::make_shared<resolve_struct_member_expr_t>(resolve_struct_member_expr_t{ parent_address, member_name });
+	result._resolved_expression_type = resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
 }
 
-expression_t expression_t::make_lookup(const expression_t& parent_address, const expression_t& lookup_key){
+expression_t expression_t::make_lookup(const expression_t& parent_address, const expression_t& lookup_key, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(parent_address.check_invariant());
 	QUARK_ASSERT(lookup_key.check_invariant());
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
 	auto parent_address2 = make_shared<expression_t>(parent_address);
 	auto lookup_key2 = make_shared<expression_t>(lookup_key);
-	return std::make_shared<lookup_element_expr_t>(lookup_element_expr_t{parent_address2, lookup_key2});
+
+	auto result = expression_t();
+	result._lookup_element = std::make_shared<lookup_element_expr_t>(lookup_element_expr_t{ parent_address2, lookup_key2 });
+	result._resolved_expression_type = resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
 }
 
 

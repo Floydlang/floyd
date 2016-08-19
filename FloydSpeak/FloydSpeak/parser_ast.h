@@ -114,6 +114,10 @@ namespace floyd_parser {
 		public: std::shared_ptr<type_def_t> get_resolved() const;
 		public: bool is_resolved() const;
 
+		public: bool is_null() const{
+			QUARK_ASSERT(check_invariant());
+			return _type_magic == "null";
+		}
 
 		///////////////////		STATE
 		/*

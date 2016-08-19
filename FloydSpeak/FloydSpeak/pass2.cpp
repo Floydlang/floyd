@@ -65,6 +65,7 @@ type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_par
 }
 
 
+expression_t pass2_expression_internal(const scope_ref_t& scope_def, const expression_t& e);
 
 
 /*
@@ -77,31 +78,52 @@ type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_par
 expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+	const auto r = pass2_expression_internal(scope_def, e);
+	QUARK_ASSERT(!r.get_expression_type().is_null());
+	return r;
+}
+
+expression_t pass2_expression_internal(const scope_ref_t& scope_def, const expression_t& e){
+	QUARK_ASSERT(scope_def && scope_def->check_invariant());
+	QUARK_ASSERT(e.check_invariant());
 
 	if(e._constant){
-		//	Nothing to resolve -- always automatically resolved.
-		return e;
+		const auto& con = *e._constant;
+		const auto const_type = resolve_type(scope_def, con.get_type());
+		if(!const_type){
+			throw std::runtime_error("Unresolved constant type.");
+		}
+		return floyd_parser::expression_t::make_constant(con, floyd_parser::type_identifier_t::resolve(const_type));
 	}
 	else if(e._math1){
+		QUARK_ASSERT(false);
 		return e;
 	}
 	else if(e._math2){
-		return e;
+		const auto& math2 = *e._math2;
+		const auto left = pass2_expression(scope_def, *math2._left);
+		const auto right = pass2_expression(scope_def, *math2._right);
+		const auto type = left.get_expression_type();
+		if(left.get_expression_type().to_string() != right.get_expression_type().to_string()){
+			throw std::runtime_error("Left & right side of math2 must have same type.");
+		}
+		return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
 	}
 	else if(e._call){
 		const auto& call = *e._call;
 
 		//	Resolve function name.
-		const auto function2 = resolve_type(scope_def, call._function);
-		if(!function2 || function2->get_type() != base_type::k_function){
+		const auto f = resolve_type(scope_def, call._function);
+		if(!f || f->get_type() != base_type::k_function){
 			throw std::runtime_error("Unresolved function.");
 		}
-		const auto return_type = function2->get_function_def()->_return_type;
+		const auto f2 = f->get_function_def();
 
+		const auto return_type = f2->_return_type;
+		QUARK_ASSERT(return_type.is_resolved());
 
 		//	Verify & resolve all arguments in the call vs the actual function definition.
-		const auto function_def = function2->get_function_def();
-		if(function_def->_members.size() != call._inputs.size()){
+		if(f2->_members.size() != call._inputs.size()){
 			throw std::runtime_error("Wrong number of argument to function call.");
 		}
 
@@ -112,7 +134,7 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 			const auto call_arg2_type = call_arg2->get_expression_type();
 			QUARK_ASSERT(call_arg2_type.is_resolved());
 
-			const auto function_arg_type = *function_def->_members[argument_index]._type;
+			const auto function_arg_type = *f2->_members[argument_index]._type;
 
 			if(!(call_arg2_type.to_string() == function_arg_type.to_string())){
 				throw std::runtime_error("Argument type mismatch.");
@@ -121,7 +143,7 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 			args2.push_back(call_arg2);
 		}
 
-		return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(function2), args2, return_type);
+		return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), args2, return_type);
 	}
 	else if(e._load){
 		const auto& load = *e._load;
@@ -141,9 +163,11 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 		return floyd_parser::expression_t::make_resolve_variable(e2._variable_name, *member._type);
 	}
 	else if(e._resolve_struct_member){
+		QUARK_ASSERT(false);
 		return e;
 	}
 	else if(e._lookup_element){
+		QUARK_ASSERT(false);
 		return e;
 	}
 	else{
@@ -200,7 +224,7 @@ statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& st
 		QUARK_ASSERT(false);
 	}
 	else if(statement._return_statement){
-#if false
+#if true
 		const auto e2 = pass2_expression(scope_def, *statement._return_statement->_expression);
 
 		const auto function = find_enclosing_function(scope_def);
@@ -262,17 +286,17 @@ void pass2_scope_def(scope_ref_t scope_def){
 		QUARK_ASSERT(false);
 	}
 
-/*
+#if false
 	//	Make sure all statements can resolve their symbols.
 	for(auto s: scope_def->_executable._statements){
 		 *s = pass2_statements(scope_def, *s);
 	}
-*/
+#endif
 }
 
 
-
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
+//??? Copy ast shared mutable state!!
 	auto ast2 = ast1;
 
 	pass2_scope_def(ast2._global_scope);
@@ -310,6 +334,7 @@ QUARK_UNIT_TESTQ("struct", "Call undefined function"){
 #endif
 
 
+#if false
 QUARK_UNIT_TESTQ("struct", "Return undefine type"){
 	const auto a = R"(
 		xyz main(){
@@ -326,9 +351,11 @@ QUARK_UNIT_TESTQ("struct", "Return undefine type"){
 		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
 	}
 }
+#endif
 
 //??? cannot find variable "p" inside main() because local variables are not stored as function-members at compile time.
 
+#if false
 QUARK_UNIT_TESTQ("struct", ""){
 	const auto a = R"(
 		string get_s(pixel p){ return p.s; }
@@ -343,7 +370,6 @@ QUARK_UNIT_TESTQ("struct", ""){
 	const ast_t pass2 = run_pass2(pass1);
 }
 
-#if false
 QUARK_UNIT_TESTQ("struct", "Bind type mismatch"){
 	const auto a = R"(
 		int main(){
