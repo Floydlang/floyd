@@ -201,6 +201,9 @@ namespace floyd_parser {
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
 
+	/*
+		Returns a scope_def_t of type k_function.
+	*/
 	scope_ref_t make_function_def(
 		const type_identifier_t& name,
 		const type_identifier_t& return_type,
@@ -248,8 +251,8 @@ namespace floyd_parser {
 	//??? make private data, immutable
 
 	/*
-		This is a core piece of the AST. It represents a static, compile-time scope. Instances are used to define
-		- global scope
+		This is a core piece of the AST. It represents a static, compile-time scope. scope_def_t:s are used to define
+		- The global scope
 		- struct definition, with member data and functions
 		- function definition, with arguments
 		- function body
@@ -260,6 +263,57 @@ namespace floyd_parser {
 		WARNING: We mutate this during parsing, adding executable, types while it exists.
 		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it
 			a new address (move / copy) breaks this hearchy.
+
+
+
+		Functions are really a tree of scopes like this:
+
+			global_scope
+				_members: global variables
+				_types: -- global typedefs, struct-defs, function-defs. Owns/tracks all sub-scopes.
+					type_def
+						function_scope "main"
+							function_body_scope
+								if_scope
+								if_scope
+								if_scope
+								foreach_scope
+									if_scope
+										foreach_scope
+
+								struct_def_scope
+
+
+			<scope_def_t> function_def
+				_name = function name ("main")
+				_members = function arguments
+				_return_type = function return type
+				_executable = RUN_FUNCTION_BODY-statement.
+				_types
+					<scope_def_t> function_body
+						_name = function name ("body")
+						_members = local variables
+						_return_type = null
+						_executable = body statements
+
+						<scope_def_t> if_statement_body
+							_name = function name ("")
+							_members = local variables
+							_return_type = null
+							_executable = body statements
+
+							<scope_def_t> if_statement_body
+								_name = function name ("")
+								_members = local variables
+								_return_type = null
+								_executable = body statements
+
+						<scope_def_t> if_statement_body
+							_name = function name ("")
+							_members = local variables
+							_return_type = null
+							_executable = body statements
+		}
 	*/
 	struct scope_def_t {
 		public: enum etype {

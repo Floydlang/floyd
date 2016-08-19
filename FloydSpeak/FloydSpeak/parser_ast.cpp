@@ -638,6 +638,12 @@ namespace floyd_parser {
 		auto r = scope_def_t::make2(scope_def_t::k_function, name, args, parent_scope, executable, types_collector);
 		r->_return_type = return_type;
 		return r;
+/*
+		auto function = scope_def_t::make2(scope_def_t::k_function, name, args, parent_scope, executable_t({}), {});
+		function->_return_type = return_type;
+		auto body = scope_def_t::make2(scope_def_t::k_subscope, type_identifier_t::make("body"), {}, function, executable, types_collector);
+		return body;
+*/
 	}
 
 

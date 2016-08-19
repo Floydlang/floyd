@@ -200,7 +200,7 @@ statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& st
 		QUARK_ASSERT(false);
 	}
 	else if(statement._return_statement){
-/*
+#if false
 		const auto e2 = pass2_expression(scope_def, *statement._return_statement->_expression);
 
 		const auto function = find_enclosing_function(scope_def);
@@ -215,8 +215,9 @@ statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& st
 		auto result = statement;
 		result._return_statement->_expression = make_shared<expression_t>(e2);
 		return result;
-*/
+#else
 		return statement;
+#endif
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -338,7 +339,6 @@ QUARK_UNIT_TESTQ("struct", ""){
 	const ast_t pass2 = run_pass2(pass1);
 }
 
-#if true
 QUARK_UNIT_TESTQ("struct", "Bind type mismatch"){
 	const auto a = R"(
 		int main(){
@@ -356,7 +356,6 @@ QUARK_UNIT_TESTQ("struct", "Bind type mismatch"){
 		quark::ut_compare(string(e.what()), "Argument type mismatch.");
 	}
 }
-#endif
 
 #if false
 QUARK_UNIT_TESTQ("struct", "Return type mismatch"){
