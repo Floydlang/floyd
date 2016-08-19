@@ -24,6 +24,7 @@ using floyd_parser::type_identifier_t;
 using floyd_parser::scope_ref_t;
 using floyd_parser::type_def_t;
 using floyd_parser::value_t;
+using floyd_parser::member_t;
 
 using std::string;
 using std::vector;
@@ -131,6 +132,10 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 		const auto& e2 = *e._resolve_variable;
 		std::pair<floyd_parser::scope_ref_t, int> x = resolve_scoped_variable(scope_def, e2._variable_name);
 
+		if(!x.first){
+			throw std::runtime_error("Undefined variable \"" + e2._variable_name + "\".");
+		}
+
 		const auto& member = x.first->_members[x.second];
 		QUARK_ASSERT(member._type->is_resolved());
 		return floyd_parser::expression_t::make_resolve_variable(e2._variable_name, *member._type);
@@ -146,19 +151,43 @@ expression_t pass2_expression(const scope_ref_t& scope_def, const expression_t& 
 	}
 }
 
+scope_ref_t find_enclosing_function(scope_ref_t scope_ref){
+	QUARK_ASSERT(scope_ref && scope_ref->check_invariant());
+
+	if(scope_ref->_type == scope_def_t::k_function){
+		return scope_ref;
+	}
+	auto parent = scope_ref->_parent_scope.lock();
+	if(parent){
+		return find_enclosing_function(parent);
+	}
+	else{
+		return {};
+	}
+}
+
 statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& statement){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
 	if(statement._bind_statement){
-//		_bind_statement->_identifier	??? make sure this identifier is not already defined in this scope!
+		//??? test this exception (add tests for all exceptions!)
+		//	make sure this identifier is not already defined in this scope!
+		const string new_identifier = statement._bind_statement->_identifier;
+		const auto found_it = find_if(
+			scope_def->_members.begin(),
+			scope_def->_members.end(),
+			[&] (const member_t& member) { return member._name == new_identifier; }
+		);
+		if(found_it != scope_def->_members.end()){
+			throw std::runtime_error("Identifier \"" + new_identifier + "\" already defined.");
+		}
 
 		const auto e2 = pass2_expression(scope_def, *statement._bind_statement->_expression);
 
-			if(!(e2.get_expression_type().to_string() == statement._bind_statement->_type.to_string())){
-				throw std::runtime_error("Argument type mismatch.");
-			}
-
+		if(!(e2.get_expression_type().to_string() == statement._bind_statement->_type.to_string())){
+			throw std::runtime_error("Argument type mismatch.");
+		}
 
 		auto result = statement;
 		result._bind_statement->_expression = make_shared<expression_t>(e2);
@@ -171,6 +200,22 @@ statement_t pass2_statements(const scope_ref_t& scope_def, const statement_t& st
 		QUARK_ASSERT(false);
 	}
 	else if(statement._return_statement){
+/*
+		const auto e2 = pass2_expression(scope_def, *statement._return_statement->_expression);
+
+		const auto function = find_enclosing_function(scope_def);
+		if(!function){
+			throw std::runtime_error("Return-statement not allowed outside function definition.");
+		}
+
+		if(!(e2.get_expression_type().to_string() == function->_return_type.to_string())){
+			throw std::runtime_error("Argument type mismatch.");
+		}
+
+		auto result = statement;
+		result._return_statement->_expression = make_shared<expression_t>(e2);
+		return result;
+*/
 		return statement;
 	}
 	else{
@@ -276,6 +321,8 @@ QUARK_UNIT_TESTQ("struct", "Return undefine type"){
 		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
 	}
 }
+
+//??? cannot find variable "p" inside main() because local variables are not stored as function-members at compile time.
 
 QUARK_UNIT_TESTQ("struct", ""){
 	const auto a = R"(
