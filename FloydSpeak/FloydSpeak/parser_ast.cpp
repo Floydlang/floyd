@@ -430,7 +430,7 @@ namespace floyd_parser {
 
 
 	scope_ref_t scope_def_t::make_struct(const type_identifier_t& name, const std::vector<member_t>& members, const scope_ref_t parent_scope){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(k_struct, name, members, parent_scope, executable_t({}), types_collector_t()));
+		auto r = std::make_shared<scope_def_t>(scope_def_t(k_struct_scope, name, members, parent_scope, executable_t({}), types_collector_t()));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
@@ -443,7 +443,7 @@ namespace floyd_parser {
 
 	scope_ref_t scope_def_t::make_global_scope(){
 		auto r = std::make_shared<scope_def_t>(
-			scope_def_t(k_global, type_identifier_t::make("global"), {}, std::shared_ptr<scope_def_t>(), executable_t({}), {})
+			scope_def_t(k_global_scope, type_identifier_t::make("global"), {}, std::shared_ptr<scope_def_t>(), executable_t({}), {})
 		);
 
 		r->_types_collector = add_builtin_types(r->_types_collector);
@@ -533,13 +533,13 @@ namespace floyd_parser {
 
 
 	string scope_type_to_string(scope_def_t::etype type){
-		if(type == scope_def_t::etype::k_function){
+		if(type == scope_def_t::etype::k_function_scope){
 			return "function";
 		}
-		else if(type == scope_def_t::etype::k_struct){
+		else if(type == scope_def_t::etype::k_struct_scope){
 			return "struct";
 		}
-		else if(type == scope_def_t::etype::k_global){
+		else if(type == scope_def_t::etype::k_global_scope){
 			return "global";
 		}
 		else if(type == scope_def_t::etype::k_subscope){
@@ -635,15 +635,29 @@ namespace floyd_parser {
 		const types_collector_t& types_collector
 	)
 	{
+/*
 		auto r = scope_def_t::make2(scope_def_t::k_function, name, args, parent_scope, executable, types_collector);
 		r->_return_type = return_type;
 		return r;
-/*
-		auto function = scope_def_t::make2(scope_def_t::k_function, name, args, parent_scope, executable_t({}), {});
-		function->_return_type = return_type;
-		auto body = scope_def_t::make2(scope_def_t::k_subscope, type_identifier_t::make("body"), {}, function, executable, types_collector);
-		return body;
 */
+		const auto body_identifier = type_identifier_t::make("___body");
+
+		const auto f_statements = std::vector<std::shared_ptr<statement_t> >{
+			make_shared<statement_t>(
+				statement_t{ make__return_statement(expression_t::make_function_call(body_identifier, std::vector<expression_t>{}, return_type)) }
+			)
+		};
+
+		auto function = scope_def_t::make2(scope_def_t::k_function_scope, name, args, parent_scope, executable_t({}), types_collector);
+		function->_return_type = return_type;
+		function->_executable = executable_t(f_statements);
+
+
+		auto body = scope_def_t::make2(scope_def_t::k_subscope, body_identifier, {}, function, executable, {});
+		auto body_type_def = make_shared<type_def_t>(type_def_t::make_function_def(body));
+
+		function->_types_collector = function->_types_collector.define_type_xyz(body_identifier.to_string(), body_type_def);
+		return function;
 	}
 
 
@@ -734,7 +748,7 @@ namespace floyd_parser {
 		}
 		body = remove_trailing_comma(body);
 
-		if(t->_type== scope_def_t::k_function){
+		if(t->_type== scope_def_t::k_function_scope || t->_type== scope_def_t::k_subscope){
 			const auto body_hash = calc_function_body_hash(t);
 			body = body + std::string("<body_hash>") + SHA1ToStringPlain(body_hash);
 		}

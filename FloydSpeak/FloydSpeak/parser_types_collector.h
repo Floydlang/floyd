@@ -135,8 +135,8 @@ namespace floyd_parser {
 		//	Value refers to a type_def_t stored in _type_definition.
 		private: std::map<std::string, type_indentifier_data_ref > _identifiers;
 
-		//??? These should be shared across all scopes, not local to each.
 		//	Key is the signature string. De-duplicated.
+		//	These are difficult to share between scopes since they have parent-scope references etc.
 		public: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
 	};
 

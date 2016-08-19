@@ -193,7 +193,7 @@ namespace {
 ast_t program_to_ast2(const string& program){
 	const ast_t pass1 = program_to_ast(program);
 	const ast_t pass2 = run_pass2(pass1);
-	const ast_t pass3 = run_pass2(pass2);
+	const ast_t pass3 = run_pass3(pass2);
 	return pass3;
 }
 

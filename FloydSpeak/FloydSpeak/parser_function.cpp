@@ -134,21 +134,26 @@ std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
-
-
 	const auto function_name = type_identifier_t::make(function_name_pos.first);
-	const auto function_def = make_function_def(
-		function_name,
-		return_type_pos.first,
-		args,
-		scope_def,
-		executable_t({}),
-		{}
-	);
-	const auto statements = parse_function_body(function_def, body_pos.first);
-	function_def->_executable = executable_t(statements);
 
-	return { function_def, body_pos.second };
+	{
+		const auto function_def = make_function_def(
+			function_name,
+			return_type_pos.first,
+			args,
+			scope_def,
+			executable_t({}),
+			{}
+		);
+
+		const auto function_body_def = resolve_function_type(function_def->_types_collector, "___body");
+		QUARK_ASSERT(function_body_def);
+
+		const auto statements = parse_function_body(function_body_def, body_pos.first);
+		function_body_def->_executable = executable_t(statements);
+
+		return { function_def, body_pos.second };
+	}
 }
 
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
@@ -167,7 +172,7 @@ QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("f"));
 	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY(result.first->_members.empty());
-	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
+//	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 
@@ -181,7 +186,7 @@ QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of differen
 		{ type_identifier_t::make_float(), "barry" },
 		{ type_identifier_t::make_int(), "c" },
 	}));
-	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
+//	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
 	QUARK_TEST_VERIFY(result.second == "");
 }
 

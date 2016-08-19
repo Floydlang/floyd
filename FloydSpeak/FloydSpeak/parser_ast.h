@@ -45,7 +45,8 @@ namespace floyd_parser {
 
 		k_struct,
 		k_vector,
-		k_function
+		k_function,
+		k_subscope
 	};
 
 	std::string base_type_to_string(const base_type t);
@@ -203,6 +204,7 @@ namespace floyd_parser {
 
 	/*
 		Returns a scope_def_t of type k_function.
+		NOTICE: This function will/can cause a number of subscopes to be defined recursively!
 	*/
 	scope_ref_t make_function_def(
 		const type_identifier_t& name,
@@ -291,7 +293,7 @@ namespace floyd_parser {
 				_executable = RUN_FUNCTION_BODY-statement.
 				_types
 					<scope_def_t> function_body
-						_name = function name ("body")
+						_name = function name ("body") --- no need for name!
 						_members = local variables
 						_return_type = null
 						_executable = body statements
@@ -317,9 +319,9 @@ namespace floyd_parser {
 	*/
 	struct scope_def_t {
 		public: enum etype {
-			k_function,
-			k_struct,
-			k_global,
+			k_function_scope,
+			k_struct_scope,
+			k_global_scope,
 			k_subscope
 		};
 
