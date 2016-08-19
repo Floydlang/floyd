@@ -214,7 +214,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	auto ast = program_to_ast2(
-		"int main(string args){\n"
+		"string main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n"
 	);
@@ -239,7 +239,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	auto ast = program_to_ast2(
-		"int main(string args){\n"
+		"string main(string args){\n"
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
 	);
@@ -252,7 +252,8 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
 }
 
-//### Check return value type.
+#if true
+//???pass2 cannot find "a" since it's not stored by parser as a member in function body. Fix.
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto ast = program_to_ast2(
@@ -269,6 +270,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
+#endif
 
 
 
@@ -588,7 +590,7 @@ std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, c
 
 QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	const auto result = run_main(
-		"int main(string args){\n"
+		"string main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n",
 		vector<floyd_parser::value_t>{floyd_parser::value_t("program_name 1 2 3 4")}

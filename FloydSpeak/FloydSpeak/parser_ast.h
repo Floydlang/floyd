@@ -278,47 +278,34 @@ namespace floyd_parser {
 				_members: global variables
 				_types: -- global typedefs, struct-defs, function-defs. Owns/tracks all sub-scopes.
 					type_def
-						function_scope "main"
-							function_body_scope
-								if_scope
-								if_scope
-								if_scope
-								foreach_scope
-									if_scope
-										foreach_scope
-
-								struct_def_scope
-
-
-			<scope_def_t> function_def
-				_name = function name ("main")
-				_members = function arguments
-				_return_type = function return type
-				_executable = RUN_FUNCTION_BODY-statement.
-				_types
-					<scope_def_t> function_body
-						_name = function name ("body") --- no need for name!
-						_members = local variables
-						_return_type = null
-						_executable = body statements
-
-						<scope_def_t> if_statement_body
-							_name = function name ("")
-							_members = local variables
-							_return_type = null
-							_executable = body statements
-
-							<scope_def_t> if_statement_body
-								_name = function name ("")
-								_members = local variables
-								_return_type = null
-								_executable = body statements
-
-						<scope_def_t> if_statement_body
-							_name = function name ("")
-							_members = local variables
-							_return_type = null
-							_executable = body statements
+						<scope_def_t> function_def
+							_name = function name ("main")
+							_members = function arguments
+							_return_type = function return type
+							_executable = RUN_FUNCTION_BODY-statement.
+							_types
+								<scope_def_t> function_body
+									_name = function name ("body") --- no need for name!
+									_members = local variables
+									_return_type = null
+									_executable = body statements
+									_types
+										<scope_def_t> if_statement_body
+											_name = function name ("")
+											_members = local variables
+											_return_type = null
+											_executable = body statements
+											_types
+												<scope_def_t> if_statement_body
+													_name = function name ("")
+													_members = local variables
+													_return_type = null
+													_executable = body statements
+										<scope_def_t> if_statement_body
+											_name = function name ("")
+											_members = local variables
+											_return_type = null
+											_executable = body statements
 		}
 	*/
 	struct scope_def_t {
@@ -491,6 +478,7 @@ namespace floyd_parser {
 
 	/*
 		Represents the root of the parse tree - the Abstract Syntax Tree
+		??? COPIES SHARE AST TREE!!!
 	*/
 	struct ast_t {
 		public: ast_t() :
@@ -499,6 +487,10 @@ namespace floyd_parser {
 			)
 		{
 		}
+
+		
+//		public: ast_t& operator=(const ast_t& other) = delete;
+//		public: ast_t(const ast_t& other) = delete;
 
 		public: bool check_invariant() const {
 			QUARK_ASSERT(_global_scope->check_invariant());
