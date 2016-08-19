@@ -14,15 +14,13 @@
 #include "parser_statement.h"
 #include "parser_ast.h"
 
+#include <string>
+
 namespace floyd_parser {
 	struct scope_def_t;
 
-    struct statement_result_t {
-        statement_t _statement;
-        std::string _rest;
-    };
 
-	statement_result_t read_statement(scope_ref_t scope_def, const std::string& pos);
+	std::string read_statements_into_scope_def(scope_ref_t scope_def, const std::string& s);
 
 	ast_t program_to_ast(const std::string& program);
 

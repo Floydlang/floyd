@@ -60,7 +60,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	));
 }
 
-
+#if false
 std::vector<shared_ptr<statement_t>> parse_function_body(scope_ref_t function_scope, const string& s){
 	QUARK_SCOPED_TRACE("parse_function_body()");
 	QUARK_ASSERT(function_scope->check_invariant());
@@ -111,6 +111,7 @@ QUARK_UNIT_TESTQ("parse_function_body()", ""){
 
 	QUARK_TEST_VERIFY(*a[1]->_return_statement->_expression->_constant == value_t(3));
 }
+#endif
 
 
 std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_def, const string& pos){
@@ -149,8 +150,7 @@ std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_
 		const auto function_body_def = resolve_function_type(function_def->_types_collector, "___body");
 		QUARK_ASSERT(function_body_def);
 
-		const auto statements = parse_function_body(function_body_def, body_pos.first);
-		function_body_def->_executable = executable_t(statements);
+		read_statements_into_scope_def(function_body_def, body_pos.first.substr(1, body_pos.first.size() - 2));
 
 		return { function_def, body_pos.second };
 	}

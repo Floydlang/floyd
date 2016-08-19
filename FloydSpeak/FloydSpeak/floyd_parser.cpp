@@ -124,6 +124,11 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
 		- Add mutable variables
 	*/
 
+    struct statement_result_t {
+        statement_t _statement;
+        std::string _rest;
+    };
+
 statement_result_t read_statement(scope_ref_t scope_def, const string& pos){
 	QUARK_ASSERT(scope_def->check_invariant());
 
@@ -237,9 +242,9 @@ value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, 
 
 /*
 	Take struct definition and creates all types, member variables, constructors, member functions etc.
-			//??? add constructors and generated stuff.
+	??? add constructors and generated stuff.
 */
-vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, const scope_ref_t& struct_def){
+void install_struct_support(scope_ref_t scope_def, const scope_ref_t& struct_def){
 	QUARK_ASSERT(scope_def->check_invariant());
 	QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
@@ -251,15 +256,6 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, co
 	scope_ref_t s = resolve_struct_type(types_collector2, struct_name);
 
 	//	Make constructor with same name as struct.
-	/*{
-		const auto b = "pixel pixel_constructor(){ pixel temp = allocate_struct(\"pixel\"); return temp; }";
-		const auto statement_pos = read_statement(ast2, b);
-		ast2 = statement_pos._ast;
-		QUARK_ASSERT(statement_pos._statement._define_function);
-		const auto define_function_statement = *statement_pos._statement._define_function;
-		ast2._types_collector = ast2._types_collector.define_function_type(define_function_statement._type_identifier, define_function_statement._function_def);
-	}*/
-
 	{
 		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
 		const auto executable = executable_t(hosts_function__alloc_struct, make_shared<alloc_struct_param>(s));
@@ -267,33 +263,12 @@ vector<shared_ptr<statement_t>> install_struct_support(scope_ref_t scope_def, co
 		types_collector2 = define_function_type(types_collector2, constructor_name.to_string(), a);
 	}
 
-//	statements.push_back(make_shared<statement_t>(statement_pos._statement));
-
-	//Easier to use source code template and compile it?
-/*
-	const function_def_t function_def {
-		type_identifier_t::make(struct_name),
-		vector<member_t>{
-			{type_identifier_t::make_int(), "this" }
-		},
-		{}
-	};
-*/
-
-/*
-		else if(statement_pos._statement._define_function){
-			ast2._types_collector = ast2._types_collector.define_function_type(statement_pos._statement._define_function->_type_identifier, statement_pos._statement._define_function->_function_def);
-		}
-*/
-
 	scope_def->_types_collector = types_collector2;
-	std::vector<std::shared_ptr<statement_t> > statements;
-	return statements;
 }
 
+//??? Track when / order of definitions and binds so statements can't access them before they're in scope.
 
-
-pair<vector<shared_ptr<statement_t>>, string> parse_statements(scope_ref_t scope_def, const string& s){
+std::string read_statements_into_scope_def(scope_ref_t scope_def, const string& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 
 	auto pos = skip_whitespace(s);
@@ -304,32 +279,20 @@ pair<vector<shared_ptr<statement_t>>, string> parse_statements(scope_ref_t scope
 		//	Definition statements are immediately removed from AST and the types are defined instead.
 		if(statement_pos._statement._define_struct){
 			const auto a = statement_pos._statement._define_struct;
-			const auto b = install_struct_support(scope_def, a->_struct_def);
-			statements.insert(statements.end(), b.begin(), b.end());
+			install_struct_support(scope_def, a->_struct_def);
 		}
 		else if(statement_pos._statement._define_function){
 			auto function_def = statement_pos._statement._define_function->_function_def;
 			const auto function_name = function_def->_name;
-
-/*
-			//	Make struct to hold arguments to function. It has no identifer.
-			//	Define struct type in current scope. ??? type_defs shall have no scope -they shall be global.
-			auto arg_struct_def = scope_def_t::make_struct(type_identifier_t(), function_def->_members, scope_def);
-			auto arg_struct_type_def = make_shared<type_def_t>(type_def_t::make_struct_def(arg_struct_def));
-			scope_def->_types_collector = scope_def->_types_collector.define_type_xyz("", arg_struct_type_def);
-
-			//	Function def gets ONE member called "args". ??? This forces us to use "args.param1" to access arguments. Not OK!??? Better to nest scopes?
-			function_def->_members = { member_t() };
-*/
 			scope_def->_types_collector = define_function_type(scope_def->_types_collector, function_name.to_string(), function_def);
 		}
 		else{
-			statements.push_back(make_shared<statement_t>(statement_pos._statement));
+			scope_def->_executable._statements.push_back(make_shared<statement_t>(statement_pos._statement));
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
 
-	return { statements, pos };
+	return pos;
 }
 
 
@@ -337,7 +300,7 @@ ast_t program_to_ast(const string& program){
 	ast_t ast;
 
 	auto pos = program;
-	const auto statements_pos = parse_statements(ast._global_scope, program);
+	const auto statements_pos = read_statements_into_scope_def(ast._global_scope, program);
 
 	QUARK_ASSERT(ast.check_invariant());
 	trace(ast);
