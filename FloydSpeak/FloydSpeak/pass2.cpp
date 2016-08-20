@@ -349,7 +349,20 @@ void test_error(const std::string& program, const std::string& error_string){
 	}
 }
 
-QUARK_UNIT_TESTQ("run_pass2()", ""){
+
+
+QUARK_UNIT_TESTQ("run_pass2()", "1001"){
+	test_error(
+		R"(
+			string main(){
+				return 10 * "hello";
+			}
+		)",
+		"1001 - Left & right side of math2 must have same type."
+	);
+}
+
+QUARK_UNIT_TESTQ("run_pass2()", "1002"){
 	test_error(
 		R"(
 			string main(){
@@ -358,6 +371,44 @@ QUARK_UNIT_TESTQ("run_pass2()", ""){
 			}
 		)",
 		"1002 - Undefined function \"f\"."
+	);
+}
+
+QUARK_UNIT_TESTQ("run_pass2()", "1003"){
+	test_error(
+		R"(
+			string main(){
+				int p = main(42);
+				return p;
+			}
+		)",
+		"1003 - Wrong number of argument to function \"main\"."
+	);
+}
+
+QUARK_UNIT_TESTQ("run_pass2()", "1004"){
+	test_error(
+		R"(
+			int a(string p1){
+				return 31;
+			}
+			string main(){
+				int p = a(42);
+				return p;
+			}
+		)",
+		"1004 - Argument 0 to function \"a\" mismatch."
+	);
+}
+
+QUARK_UNIT_TESTQ("run_pass2()", "1005"){
+	test_error(
+		R"(
+			string main(){
+				return p;
+			}
+		)",
+		"1005 - Undefined variable \"p\"."
 	);
 }
 
@@ -372,7 +423,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "Return undefine type"){
 	);
 }
 
-QUARK_UNIT_TESTQ("run_pass2()", "Bind type mismatch"){
+QUARK_UNIT_TESTQ("run_pass2()", "1006"){
 	test_error(
 		R"(
 			int main(){
@@ -384,7 +435,20 @@ QUARK_UNIT_TESTQ("run_pass2()", "Bind type mismatch"){
 	);
 }
 
-QUARK_UNIT_TESTQ("run_pass2()", "Return type mismatch"){
+QUARK_UNIT_TESTQ("run_pass2()", "1007"){
+	test_error(
+		R"(
+			return 4;
+			int main(){
+				return 0;
+			}
+		)",
+		"1007 - Return-statement not allowed outside function definition."
+	);
+}
+
+
+QUARK_UNIT_TESTQ("run_pass2()", "1008"){
 	test_error(
 		R"(
 			int main(){
@@ -395,3 +459,36 @@ QUARK_UNIT_TESTQ("run_pass2()", "Return type mismatch"){
 	);
 }
 
+
+QUARK_UNIT_TESTQ("run_pass2()", "1010"){
+	test_error(
+		R"(
+			struct pixel { string s = "two"; }
+			string main(){
+				pixel p = pixel_constructor();
+				int a = p.xyz;
+				return 1;
+			}
+		)",
+		"Unresolved member \"xyz\""
+	);
+}
+
+/*
+Can't get this test past the parser...
+Make a json_to_ast() so we can try arbitrary asts with run_pass2().
+
+QUARK_UNIT_TESTQ("run_pass2()", "1011"){
+	test_error(
+		R"(
+			struct pixel { rgb s = "two"; }
+			string main(){
+				pixel p = pixel_constructor();
+				int a = p.s;
+				return 1;
+			}
+		)",
+		"Unresolved member \"xyz\""
+	);
+}
+*/
