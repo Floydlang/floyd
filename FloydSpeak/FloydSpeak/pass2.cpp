@@ -45,13 +45,6 @@ void resolve_types__scope_def(scope_ref_t scope);
 expression_t pass2_expression_internal(const scope_ref_t& scope_def, const expression_t& e);
 
 
-/*
-	Returns new expression were
-	- the types and symbols are explicit, deeply.
-	- all types in the expressions match.
-	- all symbols could be found
-	- all types could be found and are correct
-*/
 expression_t resolve_types__expression(const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());

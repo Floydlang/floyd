@@ -13,22 +13,31 @@
 
 
 /*
-	Pass2:
-	Non-lossy. Use to validate sematics, generate compiler errors.
-	Inserts resolved links, inserts more info.
+	Pass2: Semantic pass - resolve types, resolve variables, generate compiler error.
 
+	Non-lossy.
 	- Resolves types: replace type_indentifier_t with a shared_ptr<type_def_t>.
-	- Resolves variable accesses (when possible): use *index* of member, not the name.
+	- Resolves variable accesses (when possible).
 	- Assign a result-type to each expression.
-
-	- Resolve types and symbols using compile-time scopes. Record the resolves?
 	- Verifies all expression and statement semantics
-	- Inject automatic functions, like default constructors.
 	- Checks that all types are compatible.
 	- Generate compiler errors.
+
+
+	TODO
+	- Use *index* of member, not the name.
+	- Full tests
+	- Validate result lives up to goal (all types resolved).
+	- Check input as if user input -- allows pass2 to be run on external JSON of AST.
 */
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1);
 
+
+
+
+/*
+	- Inject automatic functions, like default constructors.
+*/
 
 /*
 	Optimizes expressions, lossy.
