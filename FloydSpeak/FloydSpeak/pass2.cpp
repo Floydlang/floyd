@@ -337,77 +337,61 @@ QUARK_UNIT_TESTQ("run_pass2()", "Maxium program"){
 
 
 
-
-
-//??? Make compact test function.
-QUARK_UNIT_TESTQ("run_pass2()", ""){
-	const auto a = R"(
-		string main(){
-			int p = f();
-			return p;
-		}
-		)";
-
-	const ast_t pass1 = floyd_parser::program_to_ast(a);
+void test_error(const std::string& program, const std::string& error_string){
+	const ast_t pass1 = floyd_parser::program_to_ast(program);
 	try{
 		const ast_t pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		quark::ut_compare(string(e.what()), "1002 - Undefined function \"f\".");
+		const auto s = std::string(e.what());
+		quark::ut_compare(s, error_string);
 	}
 }
 
+QUARK_UNIT_TESTQ("run_pass2()", ""){
+	test_error(
+		R"(
+			string main(){
+				int p = f();
+				return p;
+			}
+		)",
+		"1002 - Undefined function \"f\"."
+	);
+}
 
 QUARK_UNIT_TESTQ("run_pass2()", "Return undefine type"){
-	const auto a = R"(
-		xyz main(){
-			return 10;
-		}
-		)";
-
-	const ast_t pass1 = floyd_parser::program_to_ast(a);
-	try{
-		const ast_t pass2 = run_pass2(pass1);
-		QUARK_UT_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
-	}
+	test_error(
+		R"(
+			xyz main(){
+				return 10;
+			}
+		)",
+		"Undefined type \"xyz\""
+	);
 }
 
 QUARK_UNIT_TESTQ("run_pass2()", "Bind type mismatch"){
-	const auto a = R"(
-		int main(){
-			int a = "hello";
-			return 0;
-		}
-		)";
-
-	const ast_t pass1 = floyd_parser::program_to_ast(a);
-	try{
-		const ast_t pass2 = run_pass2(pass1);
-		QUARK_UT_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		quark::ut_compare(string(e.what()), "1006 - Bind type mismatch.");
-	}
+	test_error(
+		R"(
+			int main(){
+				int a = "hello";
+				return 0;
+			}
+		)",
+		"1006 - Bind type mismatch."
+	);
 }
 
 QUARK_UNIT_TESTQ("run_pass2()", "Return type mismatch"){
-	const auto a = R"(
-		int main(){
-			return "goodbye";
-		}
-		)";
-
-	const ast_t pass1 = floyd_parser::program_to_ast(a);
-	try{
-		const ast_t pass2 = run_pass2(pass1);
-		QUARK_UT_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		quark::ut_compare(string(e.what()), "1008 - return value doesn't match function return type.");
-	}
+	test_error(
+		R"(
+			int main(){
+				return "goodbye";
+			}
+		)",
+		"1008 - return value doesn't match function return type."
+	);
 }
 
