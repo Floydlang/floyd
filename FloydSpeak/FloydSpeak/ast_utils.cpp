@@ -194,7 +194,7 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 
 
 
-member_t read_struct_member(const scope_ref_t& struct_ref, const std::string& member_name){
+member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name){
 	QUARK_ASSERT(struct_ref && struct_ref->check_invariant());
 	QUARK_ASSERT(member_name.size() > 0);
 
@@ -212,7 +212,7 @@ member_t read_struct_member(const scope_ref_t& struct_ref, const std::string& me
 
 
 
-type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
+type_identifier_t resolve_type_throw(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
