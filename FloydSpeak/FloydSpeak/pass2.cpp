@@ -14,6 +14,7 @@
 #include "parser_value.h"
 #include "ast_utils.h"
 #include "utils.h"
+#include "json_support.h"
 
 using floyd_parser::scope_def_t;
 using floyd_parser::base_type;
@@ -31,11 +32,6 @@ using std::vector;
 using std::make_shared;
 using std::shared_ptr;
 
-/*
-	Remove all symbols, convert struct members to vectors and use index.
-*/
-
-// ??? use visitor?
 
 void resolve_types__scope_def(scope_ref_t scope);
 
@@ -270,17 +266,58 @@ void resolve_types__scope_def(scope_ref_t scope_def){
 	}
 }
 
+bool has_unresolved_types(const floyd_parser::ast_t& ast1){
+	const auto a = floyd_parser::scope_def_to_json(*ast1._global_scope);
+	const auto s = json_to_compact_string(a);
+
+	const auto found = s.find("<>");
+	return found != std::string::npos;
+}
+
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 //??? Copy ast shared mutable state!!
 	auto ast2 = ast1;
 
 	resolve_types__scope_def(ast2._global_scope);
 	trace(ast2);
+
+	//	Make sure there are no unresolved types left in program.
+	QUARK_ASSERT(!has_unresolved_types(ast2));
+
 	return ast2;
 }
 
 
 ///////////////////////////////////////			TESTS
+
+
+QUARK_UNIT_TESTQ("Minimum program", ""){
+	const auto a = R"(
+		int main(){
+			return 3;
+		}
+		)";
+	const ast_t pass1 = floyd_parser::program_to_ast(a);
+	const ast_t pass2 = run_pass2(pass1);
+}
+
+
+//	This program uses all features of pass2.???
+QUARK_UNIT_TESTQ("Maxium program", ""){
+	const auto a = R"(
+		string get_s(pixel p){ return p.s; }
+		struct pixel { string s = "two"; }
+		string main(){
+			pixel p = pixel_constructor();
+			return get_s(p);
+		}
+		)";
+	const ast_t pass1 = floyd_parser::program_to_ast(a);
+	const ast_t pass2 = run_pass2(pass1);
+}
+
+
+
 
 
 
@@ -317,20 +354,6 @@ QUARK_UNIT_TESTQ("struct", "Return undefine type"){
 	catch(const std::runtime_error& e){
 		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
 	}
-}
-
-QUARK_UNIT_TESTQ("struct", ""){
-	const auto a = R"(
-		string get_s(pixel p){ return p.s; }
-		struct pixel { string s = "two"; }
-		string main(){
-			pixel p = pixel_constructor();
-			return get_s(p);
-		}
-		)";
-
-	const ast_t pass1 = floyd_parser::program_to_ast(a);
-	const ast_t pass2 = run_pass2(pass1);
 }
 
 QUARK_UNIT_TESTQ("struct", "Bind type mismatch"){
