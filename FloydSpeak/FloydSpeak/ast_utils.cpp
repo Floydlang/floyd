@@ -97,7 +97,12 @@ std::shared_ptr<floyd_parser::type_def_t> resolve_type(const floyd_parser::scope
 
 floyd_parser::type_identifier_t resolve_type2(const floyd_parser::scope_ref_t scope_def, const type_identifier_t& s){
 	const auto a = resolve_type(scope_def, s);
-	return type_identifier_t::resolve(a);
+	if(a){
+		return type_identifier_t::resolve(a);
+	}
+	else{
+		return s;
+	}
 }
 
 

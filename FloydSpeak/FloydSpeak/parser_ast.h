@@ -73,13 +73,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: static type_identifier_t resolve(const std::shared_ptr<type_def_t>& resolved){
-			type_identifier_t result;
-			result._type_magic = "";
-			result._resolved = resolved;
-			QUARK_ASSERT(result.check_invariant());
-			return result;
-		}
+		public: static type_identifier_t resolve(const std::shared_ptr<type_def_t>& resolved);
 
 		public: static type_identifier_t make_bool(){
 			return make("bool");

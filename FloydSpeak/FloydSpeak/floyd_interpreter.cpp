@@ -56,13 +56,12 @@ namespace {
 		return true;
 	}
 
-	//??? Remove this -- instead use struct for arguments as use that as parent_scope for the function call.
 	interpreter_t open_function_scope(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-		if(!check_arg_types(f, args)){
+		if(f->_type == scope_def_t::k_function_scope && !check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
 
@@ -149,7 +148,7 @@ namespace {
 		QUARK_ASSERT(!f->_executable._host_function_param);
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-		if(!check_arg_types(f, args)){
+		if(f->_type == scope_def_t::k_function_scope && !check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
 
@@ -171,7 +170,7 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 	QUARK_ASSERT(f && f->check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-	if(!check_arg_types(f, args)){
+	if(f->_type == scope_def_t::k_function_scope && !check_arg_types(f, args)){
 		throw std::runtime_error("function arguments do not match function");
 	}
 
@@ -498,7 +497,14 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		}
 
 		const auto& function_def = type->get_function_def();
-		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
+		if(function_def->_type == scope_def_t::k_function_scope){
+			QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
+		}
+		else if(function_def->_type == scope_def_t::k_subscope){
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 
 		//	Simplify each argument.
 		vector<expression_t> simplified_args;
@@ -601,6 +607,7 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 
 
 //////////////////////////		TEST GLOBAL CONSTANTS
+
 
 
 

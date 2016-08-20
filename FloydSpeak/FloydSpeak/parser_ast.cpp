@@ -213,6 +213,17 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		type_identifier_t
 
 
+	type_identifier_t type_identifier_t::resolve(const std::shared_ptr<type_def_t>& resolved){
+		QUARK_ASSERT(resolved && resolved->check_invariant());
+
+		type_identifier_t result;
+		result._type_magic = "";
+		result._resolved = resolved;
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+
+
 	type_identifier_t type_identifier_t::make(const std::string& s){
 		QUARK_ASSERT(is_valid_type_identifier(s));
 
@@ -552,6 +563,7 @@ namespace floyd_parser {
 
 
 
+
 	//////		JSON
 
 
@@ -562,14 +574,12 @@ namespace floyd_parser {
 	}
 
 	json_value_t type_def_to_json(const type_def_t& type_def){
-		return {
-			std::map<string, json_value_t>{
-				{ "_base_type", json_value_t(type_def.to_string()) },
-				{ "_struct_def", type_def.get_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_value_t() },
-				{ "_vector_def", type_def.get_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_value_t() },
-				{ "_function_def", type_def.get_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_value_t() }
-			}
-		};
+		return make_object({
+			{ "_base_type", json_value_t(type_def.to_string()) },
+			{ "_struct_def", type_def.get_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_value_t() },
+			{ "_vector_def", type_def.get_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_value_t() },
+			{ "_function_def", type_def.get_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_value_t() }
+		});
 	}
 
 	json_value_t executable_to_json(const executable_t& e){
@@ -578,34 +588,33 @@ namespace floyd_parser {
 			statements.push_back(statement_to_json(*i));
 		}
 
-		return std::map<string, json_value_t> {
+		return make_object({
 			{ "_host_function_param", e._host_function_param ? json_value_t("USED") : json_value_t() },
 			{ "_statements", json_value_t(statements) },
-		};
+		});
 	}
 
 	json_value_t scope_def_to_json(const scope_def_t& scope_def){
 		std::vector<json_value_t> members;
 		for(const auto i: scope_def._members){
-			const auto member = std::map<string, json_value_t>{
+			const auto member = make_object({
 				{ "_type", json_value_t(i._type->to_string()) },
 				{ "_value", i._value ? value_to_json(*i._value) : json_value_t() },
 				{ "_name", json_value_t(i._name) }
-			};
+		});
 			members.push_back(json_value_t(member));
 		}
 
 		const auto parent_scope = scope_def._parent_scope.lock();
-		const std::map<string, json_value_t> a {
+		return make_object({
 			{ "_type", json_value_t(scope_type_to_string(scope_def._type)) },
 			{ "_name", json_value_t(scope_def._name.to_string()) },
-			{ "_members", json_value_t(members) },
+			{ "_members", members.empty() ? json_value_t() :json_value_t(members) },
 			{ "_parent_scope", parent_scope ? json_value_t(parent_scope->_name.to_string()) : json_value_t() },
 			{ "_executable", executable_to_json(scope_def._executable) },
 			{ "_types_collector", types_collector_to_json(scope_def._types_collector) },
 			{ "_return_type", json_value_t(scope_def._return_type.to_string()) }
-		};
-		return a;
+		});
 	}
 
 

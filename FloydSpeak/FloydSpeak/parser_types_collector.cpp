@@ -287,11 +287,10 @@ namespace floyd_parser {
 
 
 	json_value_t type_indentifier_data_ref_to_json(const type_indentifier_data_ref& data_ref){
-		const std::map<string, json_value_t> a{
+		return make_object({
 			{ "_alias_type_identifier", json_value_t(data_ref._alias_type_identifier) },
 			{ "_optional_def", data_ref._optional_def ? json_value_t(to_signature(*data_ref._optional_def)) : json_value_t() }
-		};
-		return a;
+		});
 	}
 
 	json_value_t identifiers_to_json(const std::map<std::string, type_indentifier_data_ref >& identifiers){
@@ -312,11 +311,15 @@ namespace floyd_parser {
 
 
 	json_value_t types_collector_to_json(const types_collector_t& types){
-		const std::map<string, json_value_t> a {
-			{ "_identifiers", identifiers_to_json(types._identifiers) },
-			{ "_type_definitions", type_definitions_to_json(types._type_definitions) }
-		};
-		return a;
+		if(types._identifiers.empty() && types._type_definitions.empty()){
+			return json_value_t();
+		}
+		else{
+			return make_object({
+				{ "_identifiers", identifiers_to_json(types._identifiers) },
+				{ "_type_definitions", type_definitions_to_json(types._type_definitions) }
+			});
+		}
 	}
 
 

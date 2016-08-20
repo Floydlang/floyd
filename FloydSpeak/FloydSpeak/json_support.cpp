@@ -235,3 +235,16 @@ QUARK_UNIT_TESTQ("json_value_t()", ""){
 
 
 
+
+	json_value_t make_object(const std::vector<std::pair<std::string, json_value_t>>& entries){
+		std::map<string, json_value_t> result;
+
+		for(const auto i: entries){
+			if(i.second.is_null()){
+			}
+			else{
+				result.insert(i);
+			}
+		}
+		return json_value_t(result);
+	}

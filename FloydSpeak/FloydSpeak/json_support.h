@@ -210,5 +210,8 @@ struct json_value_t {
 };
 
 
+	json_value_t make_object(const std::vector<std::pair<std::string, json_value_t>>& entries);
+
+
 
 #endif /* json_support_hpp */

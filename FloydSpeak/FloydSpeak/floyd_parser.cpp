@@ -150,8 +150,6 @@ statement_result_t read_statement(scope_ref_t scope_def, const string& pos){
 		const auto type_pos = read_required_type_identifier(pos);
 		const auto identifier_pos = read_required_single_symbol(type_pos.second);
 
-		//	Check for "a = 3"-type assignment, with inferred type.
-
 		/*
 			Function definition?
 			"int xyz(string a, string b){ ... }
@@ -285,6 +283,14 @@ std::string read_statements_into_scope_def(scope_ref_t scope_def, const string& 
 			auto function_def = statement_pos._statement._define_function->_function_def;
 			const auto function_name = function_def->_name;
 			scope_def->_types_collector = define_function_type(scope_def->_types_collector, function_name.to_string(), function_def);
+		}
+		else if(statement_pos._statement._bind_statement){
+			const auto& bind = *statement_pos._statement._bind_statement;
+
+			//	Reserve an entry in _members-vector for our variable.
+			scope_def->_members.push_back(member_t(bind._type, bind._identifier));
+
+			scope_def->_executable._statements.push_back(make_shared<statement_t>(statement_pos._statement));
 		}
 		else{
 			scope_def->_executable._statements.push_back(make_shared<statement_t>(statement_pos._statement));
@@ -505,6 +511,4 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member vari
 
 
 }	//	floyd_parser
-
-
 

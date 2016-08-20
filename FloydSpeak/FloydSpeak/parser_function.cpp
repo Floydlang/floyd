@@ -60,59 +60,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 	));
 }
 
-#if false
-std::vector<shared_ptr<statement_t>> parse_function_body(scope_ref_t function_scope, const string& s){
-	QUARK_SCOPED_TRACE("parse_function_body()");
-	QUARK_ASSERT(function_scope->check_invariant());
-	QUARK_ASSERT(s.size() >= 2);
-	QUARK_ASSERT(s[0] == '{' && s[s.size() - 1] == '}');
-
-	const string body_str = skip_whitespace(s.substr(1, s.size() - 2));
-
-	std::vector<shared_ptr<statement_t>> statements;
-
-	string pos = body_str;
-	while(!pos.empty()){
-		const auto statement_seq = read_statement(function_scope, pos);
-		pos = statement_seq._rest;
-		statements.push_back(make_shared<statement_t>(statement_seq._statement));
-	}
-//	trace(statements);
-	return statements;
-}
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	auto global = scope_def_t::make_global_scope();
-	QUARK_TEST_VERIFY((parse_function_body(global, "{}").empty()));
-}
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	auto global = scope_def_t::make_global_scope();
-	QUARK_TEST_VERIFY(parse_function_body(global, "{return 3;}").size() == 1);
-}
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	auto global = scope_def_t::make_global_scope();
-	QUARK_TEST_VERIFY(parse_function_body(global, "{\n\treturn 3;\n}").size() == 1);
-}
-
-QUARK_UNIT_TESTQ("parse_function_body()", ""){
-	auto global = scope_def_t::make_global_scope();
-	const auto a = parse_function_body(
-		global,
-		"{	float test = log(10.11);\n"
-		"	return 3;\n}"
-	);
-	QUARK_TEST_VERIFY(a.size() == 2);
-	QUARK_TEST_VERIFY(a[0]->_bind_statement->_identifier == "test");
-	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call->_function.to_string() == "log");
-	QUARK_TEST_VERIFY(a[0]->_bind_statement->_expression->_call->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a[0]->_bind_statement->_expression->_call->_inputs[0]->_constant == value_t(10.11f));
-
-	QUARK_TEST_VERIFY(*a[1]->_return_statement->_expression->_constant == value_t(3));
-}
-#endif
-
 
 std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_def, const string& pos){
 	QUARK_ASSERT(scope_def->check_invariant());

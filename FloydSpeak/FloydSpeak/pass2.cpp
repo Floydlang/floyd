@@ -43,15 +43,38 @@ void resolve_types__scope_def(scope_ref_t scope);
 
 
 
+member_t read_struct_member(const scope_ref_t& struct_ref, const std::string& member_name){
+	QUARK_ASSERT(struct_ref && struct_ref->check_invariant());
+	QUARK_ASSERT(member_name.size() > 0);
+
+	const auto found_it = find_if(
+		struct_ref->_members.begin(),
+		struct_ref->_members.end(),
+		[&] (const member_t& member) { return member._name == member_name; }
+	);
+	if(found_it == struct_ref->_members.end()){
+		throw std::runtime_error("Unresolved member \"" + member_name + "\"");
+	}
+
+	return *found_it;
+}
+
+
+
 type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
-	const auto a = floyd_parser::resolve_type(scope_def, s);
-	if(!a){
-		throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
+	if(s.is_resolved()){
+		return s;
 	}
-	return floyd_parser::type_identifier_t::resolve(a);
+	else{
+		const auto a = floyd_parser::resolve_type2(scope_def, s);
+		if(!a.is_resolved()){
+			throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
+		}
+		return a;
+	}
 }
 
 
@@ -112,53 +135,67 @@ expression_t pass2_expression_internal(const scope_ref_t& scope_def, const expre
 		const auto return_type = resolve_type2(scope_def, f2->_return_type);
 		QUARK_ASSERT(return_type.is_resolved());
 
-		//	Verify & resolve all arguments in the call vs the actual function definition.
-		if(f2->_members.size() != call._inputs.size()){
-			throw std::runtime_error("Wrong number of argument to function call.");
-		}
-
-		vector<std::shared_ptr<expression_t>> args2;
-		for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
-			const auto call_arg = call._inputs[argument_index];
-			const auto call_arg2 = make_shared<expression_t>(resolve_types__expression(scope_def, *call_arg));
-			const auto call_arg2_type = call_arg2->get_expression_type();
-			QUARK_ASSERT(call_arg2_type.is_resolved());
-
-			const auto function_arg_type = *f2->_members[argument_index]._type;
-
-			if(!(call_arg2_type.to_string() == function_arg_type.to_string())){
-				throw std::runtime_error("Argument type mismatch.");
+		if(f2->_type == scope_def_t::k_function_scope){
+			//	Verify & resolve all arguments in the call vs the actual function definition.
+			if(f2->_members.size() != call._inputs.size()){
+				throw std::runtime_error("Wrong number of argument to function call.");
 			}
 
-			args2.push_back(call_arg2);
-		}
+			vector<std::shared_ptr<expression_t>> args2;
+			for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
+				const auto call_arg = call._inputs[argument_index];
+				const auto call_arg2 = make_shared<expression_t>(resolve_types__expression(scope_def, *call_arg));
+				const auto call_arg2_type = call_arg2->get_expression_type();
+				QUARK_ASSERT(call_arg2_type.is_resolved());
 
-		return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), args2, return_type);
+				const auto function_arg_type = *f2->_members[argument_index]._type;
+
+				if(!(call_arg2_type.to_string() == function_arg_type.to_string())){
+					throw std::runtime_error("Argument type mismatch.");
+				}
+
+				args2.push_back(call_arg2);
+			}
+
+			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), args2, return_type);
+		}
+		else if(f2->_type == scope_def_t::k_subscope){
+			//	Verify & resolve all arguments in the call vs the actual function definition.
+			QUARK_ASSERT(call._inputs.empty());
+			//??? Throw exceptions -- treat JSON-AST as user input.
+
+			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), std::vector<expression_t>{}, return_type);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 	}
 	else if(e._load){
 		const auto& load = *e._load;
 		const auto address = resolve_types__expression(scope_def, *load._address);
-		return floyd_parser::expression_t::make_load(address, address.get_expression_type());
+		const auto resolved_type = address.get_expression_type();
+		return floyd_parser::expression_t::make_load(address, resolved_type);
 	}
-
-
 	else if(e._resolve_variable){
 		const auto& e2 = *e._resolve_variable;
 		std::pair<floyd_parser::scope_ref_t, int> x = resolve_scoped_variable(scope_def, e2._variable_name);
-
 		if(!x.first){
 			throw std::runtime_error("Undefined variable \"" + e2._variable_name + "\".");
 		}
-
 		const auto& member = x.first->_members[x.second];
-//		QUARK_ASSERT(member._type->is_resolved());
-		
-		const auto type = member._type->is_resolved() ? *member._type : resolve_type_err(scope_def, *member._type);
+		const auto type = resolve_type_err(scope_def, *member._type);
 		return floyd_parser::expression_t::make_resolve_variable(e2._variable_name, type);
 	}
 	else if(e._resolve_struct_member){
-		QUARK_ASSERT(false);
-		return e;
+		const auto& e2 = *e._resolve_struct_member;
+		const auto parent_address2 = make_shared<expression_t>(resolve_types__expression(scope_def, *e2._parent_address));
+
+		const auto resolved_type = parent_address2->get_expression_type();
+		const auto s = resolved_type.get_resolved()->get_struct_def();
+		const string member_name = e2._member_name;
+		member_t member_meta = read_struct_member(s, member_name);
+		const auto value_type = resolve_type_err(scope_def, *member_meta._type);
+		return floyd_parser::expression_t::make_resolve_struct_member(parent_address2, e2._member_name, value_type);
 	}
 	else if(e._lookup_element){
 		QUARK_ASSERT(false);
@@ -197,8 +234,8 @@ statement_t resolve_types__statements(const scope_ref_t& scope_def, const statem
 			scope_def->_members.end(),
 			[&] (const member_t& member) { return member._name == new_identifier; }
 		);
-		if(found_it != scope_def->_members.end()){
-			throw std::runtime_error("Identifier \"" + new_identifier + "\" already defined.");
+		if(found_it == scope_def->_members.end()){
+			throw std::runtime_error("Unknown identifier \"" + new_identifier + "\".");
 		}
 
 		const auto e2 = resolve_types__expression(scope_def, *statement._bind_statement->_expression);
@@ -277,12 +314,10 @@ void resolve_types__scope_def(scope_ref_t scope_def){
 		QUARK_ASSERT(false);
 	}
 
-#if false
 	//	Make sure all statements can resolve their symbols.
 	for(auto s: scope_def->_executable._statements){
 		 *s = resolve_types__statements(scope_def, *s);
 	}
-#endif
 }
 
 
@@ -305,7 +340,6 @@ floyd_parser::ast_t run_pass3(const floyd_parser::ast_t& ast1){
 
 ///////////////////////////////////////			TESTS
 
-#if false
 QUARK_UNIT_TESTQ("struct", "Call undefined function"){
 	const auto a = R"(
 		string main(){
@@ -322,10 +356,8 @@ QUARK_UNIT_TESTQ("struct", "Call undefined function"){
 	catch(...){
 	}
 }
-#endif
 
 
-#if false
 QUARK_UNIT_TESTQ("struct", "Return undefine type"){
 	const auto a = R"(
 		xyz main(){
@@ -342,11 +374,9 @@ QUARK_UNIT_TESTQ("struct", "Return undefine type"){
 		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
 	}
 }
-#endif
 
 //??? cannot find variable "p" inside main() because local variables are not stored as function-members at compile time.
 
-#if false
 QUARK_UNIT_TESTQ("struct", ""){
 	const auto a = R"(
 		string get_s(pixel p){ return p.s; }
@@ -378,9 +408,7 @@ QUARK_UNIT_TESTQ("struct", "Bind type mismatch"){
 		quark::ut_compare(string(e.what()), "Argument type mismatch.");
 	}
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("struct", "Return type mismatch"){
 	const auto a = R"(
 		int main(){
@@ -394,12 +422,9 @@ QUARK_UNIT_TESTQ("struct", "Return type mismatch"){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
+		quark::ut_compare(string(e.what()), "Argument type mismatch.");
 	}
 }
-#endif
-
-
 
 
 

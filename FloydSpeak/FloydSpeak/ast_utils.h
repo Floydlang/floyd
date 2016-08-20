@@ -30,8 +30,11 @@ namespace floyd_parser {
 	/*
 		Resolves the type, starting at scope_def, moving via parents up towards to global space. This is a compile-time operation.
 		Returns the scope where the type is found + the type_def for the type.
+		If the type is already resolved, it's simply returned.
 	*/
 	std::shared_ptr<floyd_parser::type_def_t> resolve_type(const floyd_parser::scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);
+
+	//	Attempts to resolve type (if not already resolved). If it fails, the input type is returned unresolved.
 	floyd_parser::type_identifier_t resolve_type2(const floyd_parser::scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);
 
 
