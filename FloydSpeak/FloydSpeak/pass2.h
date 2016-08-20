@@ -33,19 +33,4 @@
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1);
 
 
-
-
-/*
-	- Inject automatic functions, like default constructors.
-*/
-
-/*
-	Optimizes expressions, lossy.
-	- Perform basic evaluation simplifications / optimizations.
-
-	Remove all symbols, convert struct members to vectors and use index.
-*/
-floyd_parser::ast_t run_pass3(const floyd_parser::ast_t& ast1);
-
-
 #endif /* pass2_hpp */

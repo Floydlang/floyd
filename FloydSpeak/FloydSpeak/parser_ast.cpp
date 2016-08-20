@@ -950,3 +950,52 @@ namespace floyd_parser {
 
 } //	floyd_parser
 
+
+
+
+
+
+
+#if false
+
+class visitor_i {
+	public: virtual ~visitor_i(){};
+	public: virtual void visitor_i_on_scope(const scope_ref_t& scope_def){};
+	public: virtual void visitor_i_on_function_def(const scope_ref_t& scope_def){};
+	public: virtual void visitor_i_on_struct_def(const scope_ref_t& scope_def){};
+	public: virtual void visitor_i_on_global_scope(const scope_ref_t& scope_def){};
+
+	public: virtual void visitor_i_on_expression(const scope_ref_t& scope_def){};
+};
+
+scope_ref_t visit_scope(const scope_ref_t& scope_def){
+	QUARK_ASSERT(scope_def && scope_def->check_invariant());
+
+	if(scope_def->_type == scope_def_t::k_function){
+		check_type(scope_def->_parent_scope.lock(), scope_def->_return_type.to_string());
+	}
+
+	//	Make sure all statements can resolve their symbols.
+	for(const auto t: scope_def->_executable._statements){
+		are_symbols_resolvable(scope_def, *t);
+	}
+
+	//	Make sure all types can resolve their symbols.
+	for(const auto t: scope_def->_types_collector._type_definitions){
+		const auto type_def = t.second;
+
+		if(type_def->get_type() == base_type::k_struct){
+			are_symbols_resolvable(type_def->get_struct_def());
+		}
+		else if(type_def->get_type() == base_type::k_vector){
+//			type_def->_struct_def
+		}
+		else if(type_def->get_type() == base_type::k_function){
+			are_symbols_resolvable(type_def->get_function_def());
+		}
+	}
+}
+#endif
+
+
+

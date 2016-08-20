@@ -40,8 +40,6 @@ using std::shared_ptr;
 void resolve_types__scope_def(scope_ref_t scope);
 
 
-
-
 expression_t pass2_expression_internal(const scope_ref_t& scope_def, const expression_t& e);
 
 
@@ -228,7 +226,6 @@ statement_t resolve_types__statements(const scope_ref_t& scope_def, const statem
 	}
 }
 
-
 // Mutates the scope_def in-place.
 void resolve_types__scope_def(scope_ref_t scope_def){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
@@ -273,7 +270,6 @@ void resolve_types__scope_def(scope_ref_t scope_def){
 	}
 }
 
-
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 //??? Copy ast shared mutable state!!
 	auto ast2 = ast1;
@@ -284,14 +280,9 @@ floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 }
 
 
-floyd_parser::ast_t run_pass3(const floyd_parser::ast_t& ast1){
-	auto ast2 = ast1;
-	return ast2;
-}
-
-
-
 ///////////////////////////////////////			TESTS
+
+
 
 QUARK_UNIT_TESTQ("struct", "Call undefined function"){
 	const auto a = R"(
@@ -376,51 +367,4 @@ QUARK_UNIT_TESTQ("struct", "Return type mismatch"){
 		quark::ut_compare(string(e.what()), "Argument type mismatch.");
 	}
 }
-
-
-
-
-
-
-
-#if false
-
-class visitor_i {
-	public: virtual ~visitor_i(){};
-	public: virtual void visitor_i_on_scope(const scope_ref_t& scope_def){};
-	public: virtual void visitor_i_on_function_def(const scope_ref_t& scope_def){};
-	public: virtual void visitor_i_on_struct_def(const scope_ref_t& scope_def){};
-	public: virtual void visitor_i_on_global_scope(const scope_ref_t& scope_def){};
-
-	public: virtual void visitor_i_on_expression(const scope_ref_t& scope_def){};
-};
-
-scope_ref_t visit_scope(const scope_ref_t& scope_def){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-
-	if(scope_def->_type == scope_def_t::k_function){
-		check_type(scope_def->_parent_scope.lock(), scope_def->_return_type.to_string());
-	}
-
-	//	Make sure all statements can resolve their symbols.
-	for(const auto t: scope_def->_executable._statements){
-		are_symbols_resolvable(scope_def, *t);
-	}
-
-	//	Make sure all types can resolve their symbols.
-	for(const auto t: scope_def->_types_collector._type_definitions){
-		const auto type_def = t.second;
-
-		if(type_def->get_type() == base_type::k_struct){
-			are_symbols_resolvable(type_def->get_struct_def());
-		}
-		else if(type_def->get_type() == base_type::k_vector){
-//			type_def->_struct_def
-		}
-		else if(type_def->get_type() == base_type::k_function){
-			are_symbols_resolvable(type_def->get_function_def());
-		}
-	}
-}
-#endif
 

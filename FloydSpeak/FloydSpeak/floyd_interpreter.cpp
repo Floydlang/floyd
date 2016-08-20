@@ -15,6 +15,7 @@
 #include "parser_value.h"
 #include "ast_utils.h"
 #include "pass2.h"
+#include "pass3.h"
 
 #include <cmath>
 

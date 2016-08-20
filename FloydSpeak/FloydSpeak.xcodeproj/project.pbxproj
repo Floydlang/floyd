@@ -27,6 +27,7 @@
 		2C95E6D21D5AA47200186D5A /* llvm_code_gen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C95E6D01D5AA47200186D5A /* llvm_code_gen.cpp */; };
 		2CA061CC1D4C317A0045AF86 /* parser_function.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA061CA1D4C317A0045AF86 /* parser_function.cpp */; };
 		2CA061CF1D4C34B70045AF86 /* parser_struct.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */; };
+		2CA0F8971D6910D000068871 /* pass3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA0F8951D6910D000068871 /* pass3.cpp */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
 		2CC50E211CE485FF008D78C7 /* game_of_life1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC50E201CE485AF008D78C7 /* game_of_life1.cpp */; };
@@ -99,6 +100,8 @@
 		2CA061CB1D4C317A0045AF86 /* parser_function.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_function.h; sourceTree = "<group>"; };
 		2CA061CD1D4C34B70045AF86 /* parser_struct.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_struct.cpp; sourceTree = "<group>"; };
 		2CA061CE1D4C34B70045AF86 /* parser_struct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_struct.h; sourceTree = "<group>"; };
+		2CA0F8951D6910D000068871 /* pass3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pass3.cpp; sourceTree = "<group>"; };
+		2CA0F8961D6910D000068871 /* pass3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pass3.h; sourceTree = "<group>"; };
 		2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
 		2CBCA7DB1D569C6D000FAE81 /* sha1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1.h; sourceTree = "<group>"; };
 		2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1_class.cpp; sourceTree = "<group>"; };
@@ -195,6 +198,8 @@
 				2CBCA7D81D569C6D000FAE81 /* parts */,
 				2CD68C5F1D5A71610070892A /* pass2.cpp */,
 				2CD68C601D5A71610070892A /* pass2.h */,
+				2CA0F8951D6910D000068871 /* pass3.cpp */,
+				2CA0F8961D6910D000068871 /* pass3.h */,
 				2C1D84E81CA766470042F0A8 /* quark.cpp */,
 				2C1D84E91CA766470042F0A8 /* quark.h */,
 				2CFB367F1D44F70B00F31A19 /* runtime_core.cpp */,
@@ -312,6 +317,7 @@
 				2C0056B11D5D5E88009F8219 /* json_parser.cpp in Sources */,
 				2C95E6D21D5AA47200186D5A /* llvm_code_gen.cpp in Sources */,
 				2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */,
+				2CA0F8971D6910D000068871 /* pass3.cpp in Sources */,
 				2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */,
 				2C95E6CE1D5A9F3500186D5A /* parser_statement.cpp in Sources */,
 				2CA061CF1D4C34B70045AF86 /* parser_struct.cpp in Sources */,
