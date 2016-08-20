@@ -495,11 +495,40 @@ namespace floyd_parser {
 		return true;
 	}
 
-	//??? check name,values,type
 	bool scope_def_t::check_invariant() const {
-		QUARK_ASSERT(!_parent_scope.lock() || _parent_scope.lock()->shallow_check_invariant());
+		const auto parent_scope = _parent_scope.lock();
+
+		QUARK_ASSERT(!parent_scope || parent_scope->shallow_check_invariant());
+		QUARK_ASSERT(_name.check_invariant());
+
 		QUARK_ASSERT(_executable.check_invariant());
 		QUARK_ASSERT(_types_collector.check_invariant());
+		QUARK_ASSERT(_return_type.check_invariant());
+
+
+		//??? Check for duplicates? Other things?
+		for(const auto& m: _members){
+			QUARK_ASSERT(m.check_invariant());
+		}
+
+
+		if(_type == k_function_scope){
+			QUARK_ASSERT(parent_scope);
+		}
+		else if(_type == k_struct_scope){
+			QUARK_ASSERT(parent_scope);
+			QUARK_ASSERT(_return_type.is_null());
+		}
+		else if(_type == k_global_scope){
+			QUARK_ASSERT(!parent_scope);
+			QUARK_ASSERT(_return_type.is_null());
+		}
+		else if(_type == k_subscope){
+			QUARK_ASSERT(parent_scope);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 		return true;
 	}
 
@@ -644,16 +673,11 @@ namespace floyd_parser {
 		const types_collector_t& types_collector
 	)
 	{
-/*
-		auto r = scope_def_t::make2(scope_def_t::k_function, name, args, parent_scope, executable, types_collector);
-		r->_return_type = return_type;
-		return r;
-*/
 		const auto body_identifier = type_identifier_t::make("___body");
 
 		const auto f_statements = std::vector<std::shared_ptr<statement_t> >{
 			make_shared<statement_t>(
-				statement_t{ make__return_statement(expression_t::make_function_call(body_identifier, std::vector<expression_t>{}, return_type)) }
+				statement_t{ make__return_statement(expression_t::make_function_call(body_identifier, std::vector<std::shared_ptr<expression_t>>{}, return_type)) }
 			)
 		};
 
@@ -712,7 +736,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(_name.size() > 0);
 		QUARK_ASSERT(!_value || _value->check_invariant());
 		if(_value){
-			QUARK_ASSERT(*_type == _value->get_type());
+			QUARK_ASSERT(_type->to_string() == _value->get_type().to_string());
 		}
 		return true;
 	}
@@ -888,7 +912,6 @@ namespace floyd_parser {
 		);
 	}
 
-	//??? check for duplicate member names.
 	scope_ref_t make_struct5(scope_ref_t scope_def){
 		return scope_def_t::make_struct(
 			type_identifier_t::make("struct5"),

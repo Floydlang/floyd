@@ -185,20 +185,6 @@ expression_t expression_t::make_math_operation2(math_operation2_expr_t::operatio
 
 
 
-expression_t expression_t::make_function_call(const type_identifier_t& function, const std::vector<expression_t>& inputs, const type_identifier_t& resolved_expression_type){
-	QUARK_ASSERT(function.check_invariant());
-	for(const auto arg: inputs){
-		QUARK_ASSERT(arg.check_invariant());
-	}
-	QUARK_ASSERT(resolved_expression_type.check_invariant());
-
-	auto inputs2 = vector<shared_ptr<expression_t>>();
-	for(auto arg: inputs){
-		inputs2.push_back(make_shared<expression_t>(arg));
-	}
-	return make_function_call(function, inputs2, resolved_expression_type);
-}
-
 expression_t expression_t::make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(function.check_invariant());
 	for(const auto arg: inputs){
@@ -214,22 +200,6 @@ expression_t expression_t::make_function_call(const type_identifier_t& function,
 	return result;
 }
 
-expression_t expression_t::make_function_call(const scope_ref_t& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type){
-	QUARK_ASSERT(function_def && function_def->check_invariant());
-	for(const auto arg: inputs){
-		QUARK_ASSERT(arg && arg->check_invariant());
-	}
-	QUARK_ASSERT(resolved_expression_type.check_invariant());
-
-	const auto function = type_identifier_t::resolve(make_shared<type_def_t>(type_def_t::make_function_def(function_def)));
-
-	auto result = expression_t();
-	result._call = std::make_shared<function_call_expr_t>(function_call_expr_t{ function, inputs });
-	result._resolved_expression_type = resolved_expression_type;
-	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
 
 
 expression_t expression_t::make_load(const expression_t& address_expression, const type_identifier_t& resolved_expression_type){
@@ -451,7 +421,10 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 		expression_to_json_string(
 			expression_t::make_function_call(
 				type_identifier_t::make("my_func"),
-				{ expression_t::make_constant("xyz"), expression_t::make_constant(123) },
+				{
+					make_shared<expression_t>(expression_t::make_constant("xyz")),
+					make_shared<expression_t>(expression_t::make_constant(123))
+				},
 				type_identifier_t()
 			)
 		),

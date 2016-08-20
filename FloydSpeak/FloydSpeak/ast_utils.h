@@ -43,6 +43,10 @@ namespace floyd_parser {
 	floyd_parser::value_t make_default_value(const floyd_parser::type_def_t& t);
 	floyd_parser::value_t make_default_value(scope_ref_t t);
 
+
+	member_t read_struct_member(const scope_ref_t& struct_ref, const std::string& member_name);
+	type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s);
+
 }	//	floyd_parser
 
 

@@ -26,9 +26,16 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		struct_instance_t
 
 		bool struct_instance_t::check_invariant() const{
+			QUARK_ASSERT(__def && __def->check_invariant());
+
+			QUARK_ASSERT(__def->_members.size() == _member_values.size());
+
 			for(const auto m: _member_values){
 				QUARK_ASSERT(m.second.check_invariant());
-				//??? check type of member value is the same as in the type_def.
+
+				const member_t& def_member = read_struct_member(__def, m.first);
+
+				QUARK_ASSERT(m.second.get_type().to_string() == def_member._type->to_string());
 			}
 			return true;
 		}

@@ -20,6 +20,7 @@ namespace floyd_parser {
 
 
 
+// ??? move to ast_utils
 std::pair<scope_ref_t, int> resolve_scoped_variable(floyd_parser::scope_ref_t scope_def, const std::string& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.size() > 0);
@@ -71,6 +72,7 @@ std::pair<scope_ref_t, floyd_parser::type_identifier_t> resolve_type2(const floy
 	return { a.first, type_identifier_t::resolve(a.second) };
 }
 */
+// ??? move to ast_utils
 std::shared_ptr<floyd_parser::type_def_t> resolve_type(const floyd_parser::scope_ref_t scope_def, const type_identifier_t& s){
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.check_invariant());
@@ -95,6 +97,7 @@ std::shared_ptr<floyd_parser::type_def_t> resolve_type(const floyd_parser::scope
 	}
 }
 
+// ??? move to ast_utils
 floyd_parser::type_identifier_t resolve_type2(const floyd_parser::scope_ref_t scope_def, const type_identifier_t& s){
 	const auto a = resolve_type(scope_def, s);
 	if(a){
@@ -184,6 +187,49 @@ value_t make_default_value(const scope_ref_t scope_def, const floyd_parser::type
 			QUARK_ASSERT(false);
 		}
 	}
+
+
+
+
+
+
+
+member_t read_struct_member(const scope_ref_t& struct_ref, const std::string& member_name){
+	QUARK_ASSERT(struct_ref && struct_ref->check_invariant());
+	QUARK_ASSERT(member_name.size() > 0);
+
+	const auto found_it = find_if(
+		struct_ref->_members.begin(),
+		struct_ref->_members.end(),
+		[&] (const member_t& member) { return member._name == member_name; }
+	);
+	if(found_it == struct_ref->_members.end()){
+		throw std::runtime_error("Unresolved member \"" + member_name + "\"");
+	}
+
+	return *found_it;
+}
+
+
+
+type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
+	QUARK_ASSERT(scope_def && scope_def->check_invariant());
+	QUARK_ASSERT(s.check_invariant());
+
+	if(s.is_resolved()){
+		return s;
+	}
+	else{
+		const auto a = floyd_parser::resolve_type2(scope_def, s);
+		if(!a.is_resolved()){
+			throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
+		}
+		return a;
+	}
+}
+
+
+
 
 
 

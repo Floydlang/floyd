@@ -155,11 +155,7 @@ namespace floyd_parser {
 		public: static expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
 
-		public: static expression_t make_function_call(const type_identifier_t& function, const std::vector<expression_t>& inputs, const type_identifier_t& resolved_expression_type = type_identifier_t());
 		public: static expression_t make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type = type_identifier_t());
-
-		//??? Let clients do this work.
-		public: static expression_t make_function_call(const std::shared_ptr<scope_def_t>& function_def, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
 
 		public: static expression_t make_load(const expression_t& address_expression, const type_identifier_t& resolved_expression_type = type_identifier_t());

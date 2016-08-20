@@ -50,7 +50,7 @@ namespace floyd_parser {
 	};
 
 	std::string base_type_to_string(const base_type t);
-	void trace(const type_def_t& t, const std::string& label);
+	void trace2(const type_def_t& t, const std::string& label);
 
 
 
@@ -145,7 +145,6 @@ namespace floyd_parser {
 
 	/*
 		Definition of a struct-member.
-		??? support expressions for default values.
 	*/
 
 	struct member_t {

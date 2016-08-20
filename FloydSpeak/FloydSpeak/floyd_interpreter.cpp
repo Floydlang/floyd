@@ -38,9 +38,7 @@ namespace {
 		return diff < 0.00001;
 	}
 
-	//	Notice that scope_ref_t:members are resolved, "args" are not.
-		//??? notice  copy local variables too!?
-		//??? Local variables are not stored in function_def -- they are defined while executing instructions = bad!
+	//	Notice that scope_ref_t:members are resolved, "args" are not??? Resolve on the fly?
 	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
 		if(f->_members.size() != args.size()){
 			return false;
@@ -59,6 +57,7 @@ namespace {
 	interpreter_t open_function_scope(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
+		QUARK_ASSERT(f->_type == scope_def_t::k_function_scope || f->_type == scope_def_t::k_subscope)
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 		if(f->_type == scope_def_t::k_function_scope && !check_arg_types(f, args)){
@@ -68,7 +67,8 @@ namespace {
 		scope_instance_t new_scope;
 		new_scope._def = f;
 
-		//??? notice  copy local variables too!?
+		// Copy only input arguments to the function scope. The function's local variables are null until written by a statement.
+		//	??? Precalculate local variables / constants when possible!
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f->_members[i]._name;
 			const auto& arg_value = args[i];
@@ -251,9 +251,6 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
 }
 
-#if true
-//???pass2 cannot find "a" since it's not stored by parser as a member in function body. Fix.
-
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto ast = program_to_ast2(
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
@@ -269,7 +266,6 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
-#endif
 
 
 
@@ -319,6 +315,7 @@ namespace {
 		c = my_global_obj.all[3].f(10).prev;
 	*/
 
+	//??? Make simpler implementation of pathing -- now that address is defined as struct_ptr + member.
 	expression_t load_deep(const interpreter_t& vm, const value_t& left_side, const expression_t& e){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(e.check_invariant());
@@ -332,13 +329,11 @@ namespace {
 			QUARK_ASSERT(left_side.is_null());
 			const auto variable_name = e._resolve_variable->_variable_name;
 			const value_t value = resolve_variable_name(vm, variable_name);
-//			const value_t found_scope = resolve_scoped_symbol(vm._ast._global_scope, variable_name);
 			return expression_t::make_constant(value);
 		}
 		else if(e._resolve_struct_member){
 			const auto parent = load_deep(vm, left_side, *e._resolve_struct_member->_parent_address);
 			QUARK_ASSERT(parent._constant && parent._constant->is_struct());
-
 			const auto member_name = e._resolve_struct_member->_member_name;
 			const auto struct_instance = parent._constant->get_struct();
 			const value_t value = struct_instance->_member_values[member_name];

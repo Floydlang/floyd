@@ -74,11 +74,11 @@ pair<expression_t, string> parse_function_call(const std::shared_ptr<expression_
 	const auto args = trim_ends(arg_list_pos.first);
 
 	p2 = args;
-	vector<expression_t> args_expressions;
+	vector<shared_ptr<expression_t>> args_expressions;
 	while(!p2.empty()){
 		const auto p3 = read_until(skip_whitespace(p2), ",");
 		expression_t arg_expr = parse_expression(p3.first);
-		args_expressions.push_back(arg_expr);
+		args_expressions.push_back(make_shared<expression_t>(arg_expr));
 		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 	}
 

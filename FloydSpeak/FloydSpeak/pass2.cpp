@@ -42,42 +42,6 @@ void resolve_types__scope_def(scope_ref_t scope);
 
 
 
-
-member_t read_struct_member(const scope_ref_t& struct_ref, const std::string& member_name){
-	QUARK_ASSERT(struct_ref && struct_ref->check_invariant());
-	QUARK_ASSERT(member_name.size() > 0);
-
-	const auto found_it = find_if(
-		struct_ref->_members.begin(),
-		struct_ref->_members.end(),
-		[&] (const member_t& member) { return member._name == member_name; }
-	);
-	if(found_it == struct_ref->_members.end()){
-		throw std::runtime_error("Unresolved member \"" + member_name + "\"");
-	}
-
-	return *found_it;
-}
-
-
-
-type_identifier_t resolve_type_err(const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-	QUARK_ASSERT(s.check_invariant());
-
-	if(s.is_resolved()){
-		return s;
-	}
-	else{
-		const auto a = floyd_parser::resolve_type2(scope_def, s);
-		if(!a.is_resolved()){
-			throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
-		}
-		return a;
-	}
-}
-
-
 expression_t pass2_expression_internal(const scope_ref_t& scope_def, const expression_t& e);
 
 
@@ -164,7 +128,7 @@ expression_t pass2_expression_internal(const scope_ref_t& scope_def, const expre
 			QUARK_ASSERT(call._inputs.empty());
 			//??? Throw exceptions -- treat JSON-AST as user input.
 
-			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), std::vector<expression_t>{}, return_type);
+			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), std::vector<shared_ptr<expression_t>>{}, return_type);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -229,14 +193,10 @@ statement_t resolve_types__statements(const scope_ref_t& scope_def, const statem
 		//??? test this exception (add tests for all exceptions!)
 		//	make sure this identifier is not already defined in this scope!
 		const string new_identifier = statement._bind_statement->_identifier;
-		const auto found_it = find_if(
-			scope_def->_members.begin(),
-			scope_def->_members.end(),
-			[&] (const member_t& member) { return member._name == new_identifier; }
-		);
-		if(found_it == scope_def->_members.end()){
-			throw std::runtime_error("Unknown identifier \"" + new_identifier + "\".");
-		}
+
+		//	Make sure we have a spot for this member, or throw.
+		const auto& member = floyd_parser::read_struct_member(scope_def, new_identifier);
+		QUARK_ASSERT(member.check_invariant());
 
 		const auto e2 = resolve_types__expression(scope_def, *statement._bind_statement->_expression);
 
@@ -374,8 +334,6 @@ QUARK_UNIT_TESTQ("struct", "Return undefine type"){
 		quark::ut_compare(string(e.what()), "Undefined type \"xyz\"");
 	}
 }
-
-//??? cannot find variable "p" inside main() because local variables are not stored as function-members at compile time.
 
 QUARK_UNIT_TESTQ("struct", ""){
 	const auto a = R"(
