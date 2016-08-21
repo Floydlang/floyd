@@ -145,12 +145,115 @@ std::string OnGetPrivateTestDataPath(runtime_i* iRuntime, const char iModuleUnde
 }
 */
 
+
+std::string path_to_name(const std::string& path){
+	size_t pos = path.size();
+	while(pos > 0 && path[pos - 1] != '/'){
+		pos--;
+	}
+	return path.substr(pos);
+}
+
+QUARK_UNIT_TESTQ("path_to_name()", ""){
+	QUARK_UT_VERIFY(path_to_name("/Users/marcus/Repositories/Floyd/examples/game_of_life2.cpp") == "game_of_life2.cpp");
+}
+QUARK_UNIT_TESTQ("path_to_name()", ""){
+	QUARK_UT_VERIFY(path_to_name("game_of_life2.cpp") == "game_of_life2.cpp");
+}
+QUARK_UNIT_TESTQ("path_to_name()", ""){
+	QUARK_UT_VERIFY(path_to_name("") == "");
+}
+
+
+
+int run_test_list(const std::string& source_file, const std::vector<unit_test_def>& tests){
+	int fail_count = 0;
+	for(std::size_t i = 0 ; i < tests.size() ; i++){
+		const unit_test_def& test = tests[i];
+
+		std::stringstream testInfo;
+		testInfo << source_file << " Test #" << i
+			<< " " << test._class_under_test
+			<< " | " << test._function_under_test
+			<< " | " << test._scenario
+			<< " | " << test._expected_result;
+
+		try{
+			QUARK_SCOPED_TRACE(testInfo.str());
+			test._test_f();
+		}
+		catch(...){
+			QUARK_TRACE("FAILURE: " + testInfo.str());
+			fail_count++;
+		}
+	}
+	return fail_count;
+}
+
+/*
+sort(mMyClassVector.begin(), mMyClassVector.end(), 
+    [](const MyClass & a, const MyClass & b) -> bool
+{ 
+    return a.mProperty > b.mProperty; 
+});
+*/
+void run_tests(const unit_test_registry& registry, const std::vector<std::string>& source_file_order){
+	QUARK_TRACE_FUNCTION();
+
+	std::size_t test_count = registry._tests.size();
+	std::size_t fail_count = 0;
+
+	QUARK_TRACE_SS("Running " << test_count << " tests...");
+
+	std::vector<unit_test_def> tests = registry._tests;
+
+	for(const auto f: source_file_order){
+
+		//	Make list of all tests for this source file.
+		std::vector<unit_test_def> file_tests;
+		auto it = tests.begin();
+		while(it != tests.end()){
+
+			//	If this test belongs to our source file, MOVE it to file_tests.
+			const std::string file = path_to_name(it->_source_file);
+			if(file == f){
+				file_tests.push_back(*it);
+				it = tests.erase(it);
+			}
+			else{
+				it++;
+			}
+		}
+
+		QUARK_SCOPED_TRACE(f);
+		fail_count += run_test_list(f, file_tests);
+	}
+
+	if(!tests.empty()){
+		QUARK_SCOPED_TRACE("UNSORTED TESTS");
+		fail_count += run_test_list("More...", tests);
+	}
+
+	if(fail_count == 0){
+		QUARK_TRACE_SS("SUCCESS " << test_count << " tests!");
+	}
+	else{
+		QUARK_TRACE_SS("FAILED " << fail_count << " out of " << test_count << " tests!");
+		exit(-1);
+	}
+}
+
+void run_tests(const std::vector<std::string>& source_file_order){
+	QUARK_ASSERT(unit_test_rec::_registry_instance != nullptr);
+	run_tests(*unit_test_rec::_registry_instance, source_file_order);
+}
+
 void run_tests(){
 	QUARK_TRACE_FUNCTION();
 	QUARK_ASSERT(unit_test_rec::_registry_instance != nullptr);
 
 	std::size_t test_count = unit_test_rec::_registry_instance->_tests.size();
-//	std::size_t fail_count = 0;
+	std::size_t fail_count = 0;
 
 	QUARK_TRACE_SS("Running " << test_count << " tests...");
 
@@ -170,24 +273,20 @@ void run_tests(){
 		}
 		catch(...){
 			QUARK_TRACE("FAILURE: " + testInfo.str());
-//			fail_count++;
-			exit(-1);
+			fail_count++;
 		}
 	}
 
-//	if(fail_count == 0){
-		QUARK_TRACE_SS("Success - " << test_count << " tests!");
-//	}
-//	else{
-//		TRACE_SS("FAILED " << fail_count << " out of " << test_count << " tests!");
-//		exit(-1);
-//	}
+	if(fail_count == 0){
+		QUARK_TRACE_SS("SUCCESS - " << test_count << " tests!");
+	}
+	else{
+		QUARK_TRACE_SS("FAILED " << fail_count << " out of " << test_count << " tests!");
+		exit(-1);
+	}
 }
 
 #endif
-
-
-
 
 
 //	Default implementation

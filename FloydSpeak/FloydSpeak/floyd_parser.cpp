@@ -253,7 +253,7 @@ void install_struct_support(scope_ref_t scope_def, const scope_ref_t& struct_def
 	auto types_collector2 = define_struct_type(scope_def->_types_collector, struct_name, struct_def);
 	scope_ref_t s = resolve_struct_type(types_collector2, struct_name);
 
-	//	Make constructor with same name as struct.
+	//	Make constructor-function with same name as struct.
 	{
 		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
 		const auto executable = executable_t(hosts_function__alloc_struct, make_shared<alloc_struct_param>(s));

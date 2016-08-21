@@ -465,8 +465,9 @@ void set_runtime(runtime_i* iRuntime);
 		The defintion of a single unit test, including the function itself.
 	*/
 	struct unit_test_def {
-		unit_test_def(const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f)
+		unit_test_def(const std::string& source_file, const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f)
 		:
+			_source_file(source_file),
 			_class_under_test(p1),
 			_function_under_test(p2),
 			_scenario(p3),
@@ -476,6 +477,7 @@ void set_runtime(runtime_i* iRuntime);
 		}
 
 		////////////////		State.
+			std::string _source_file;
 			std::string _class_under_test;
 
 			std::string _function_under_test;
@@ -500,8 +502,8 @@ void set_runtime(runtime_i* iRuntime);
 		This is part of an RAII-mechansim to register and unregister unit-tests.
 	*/
 	struct unit_test_rec {
-		unit_test_rec(const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f){
-			unit_test_def test(p1, p2, p3, p4, f);
+		unit_test_rec(const std::string& source_file, const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f){
+			unit_test_def test(source_file, p1, p2, p3, p4, f);
 			if(!_registry_instance){
 				_registry_instance = new unit_test_registry();
 			}
@@ -530,6 +532,8 @@ void set_runtime(runtime_i* iRuntime);
 	*/
 	void run_tests();
 
+	void run_tests(const std::vector<std::string>& source_file_order);
+
 
 	////////////////////////////		Macros used by client code
 
@@ -537,12 +541,12 @@ void set_runtime(runtime_i* iRuntime);
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
 	#define QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 	#define QUARK_UNIT_TESTQ(function_under_test, scenario) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)("", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().

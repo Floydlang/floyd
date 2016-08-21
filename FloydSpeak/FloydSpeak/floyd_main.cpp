@@ -20,7 +20,52 @@
 int main(int argc, const char * argv[]) {
 	try {
 #if QUARK_UNIT_TESTS_ON
-		quark::run_tests();
+//		quark::run_tests();
+		quark::run_tests({
+			//	Core libs
+			"quark.cpp",
+			"steady_vector.cpp",
+			"text_parser.cpp",
+			"unused_bits.cpp",
+			"sha1_class.cpp",
+			"sha1.cpp",
+			"json_parser.cpp",
+			"json_support.cpp",
+			"json_writer.cpp",
+
+
+			"parser_ast.cpp",
+			"ast_utils.cpp",
+			"experimental_runtime.cpp",
+			"expressions.cpp",
+
+			"llvm_code_gen.cpp",
+
+			"parser_value.cpp",
+			"parser_types_collector.cpp",
+			"parser_expression.cpp",
+			"parser_function.cpp",
+			"parser_primitives.cpp",
+			"parser_statement.cpp",
+			"parser_struct.cpp",
+			"parse_statement.cpp",
+
+			"floyd_parser.cpp",
+
+			"runtime_core.cpp",
+			"runtime_value.cpp",
+			"runtime.cpp",
+
+			"utils.cpp",
+
+
+			"pass2.cpp",
+			"pass3.cpp",
+
+			"floyd_interpreter.cpp",
+
+			"floyd_main.cpp",
+		});
 #endif
 	}
 	catch(...){
