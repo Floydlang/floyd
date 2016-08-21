@@ -245,6 +245,55 @@ namespace floyd_parser {
 
 
 
+
+	//////////////////////////////////////////////////		scope_def_t
+
+
+
+	struct scope_def2_immutable_t {
+		public: enum etype {
+			k_function_scope,
+			k_struct_scope,
+			k_global_scope,
+			k_subscope
+		};
+		public: etype _type;
+		public: type_identifier_t _name;
+
+		public: std::vector<member_t> _members;
+		public: std::shared_ptr<executable_t> _executable;
+		public: std::shared_ptr<types_collector_t> _types_collector;
+		public: type_identifier_t _return_type;
+	};
+
+	struct ast_t;
+	struct ast_path {
+		std::vector<std::string> _path;
+	};
+	scope_def2_immutable_t add_type(const ast_t& ast, const ast_path& path, const scope_def2_immutable_t& scope_def, const std::string& name, const std::shared_ptr<type_def_t>& aaa);
+
+	struct ast_i {
+		ast_path get_root();
+		ast_path get_parent(const ast_path& path);
+		const scope_def2_immutable_t get_scope(const ast_path& path);
+		ast_t store_scope(const ast_path& path, const scope_def2_immutable_t& scope_def);
+	};
+	scope_def2_immutable_t add_type(const ast_i& ast, const scope_def2_immutable_t& scope_def, const std::string& name, const std::shared_ptr<type_def_t>& aaa);
+
+	struct ast2_t {
+		ast_path get_root() const;
+		ast_path get_parent(const ast_path& path) const;
+		scope_def2_immutable_t get_scope(const ast_path& path);
+		ast2_t store_scope(const ast_path& path, const scope_def2_immutable_t& scope_def);
+	};
+	ast2_t add_type(const ast2_t& ast, const ast_path& p, const std::string& name, const std::shared_ptr<type_def_t>& aaa);
+
+
+
+
+
+
+
 	//////////////////////////////////////////////////		scope_def_t
 
 	//??? make private data, immutable
@@ -343,7 +392,6 @@ namespace floyd_parser {
 		public: etype _type;
 		public: type_identifier_t _name;
 
-		//	For functions, the _members contains both the input arguments and any local variables.
 		public: std::vector<member_t> _members;
 		public: std::weak_ptr<scope_def_t> _parent_scope;
 		public: executable_t _executable;
