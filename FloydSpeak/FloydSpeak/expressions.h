@@ -68,11 +68,11 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////////////////		questional_operator_expr_t
+	//////////////////////////////////////////////////		conditional_operator_expr_t
 
 
-	struct questional_operator_expr_t {
-		bool operator==(const questional_operator_expr_t& other) const;
+	struct conditional_operator_expr_t {
+		bool operator==(const conditional_operator_expr_t& other) const;
 
 
 		const std::shared_ptr<expression_t> _condition;
@@ -172,7 +172,7 @@ namespace floyd_parser {
 		public: static expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input, const type_identifier_t& resolved_expression_type = type_identifier_t());
 		public: static expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
-		public: static expression_t make_questional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
 		public: static expression_t make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
@@ -217,7 +217,7 @@ namespace floyd_parser {
 		public: std::shared_ptr<value_t> _constant;
 		public: std::shared_ptr<math_operation1_expr_t> _math1;
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
-		public: std::shared_ptr<questional_operator_expr_t> _questional_operator;
+		public: std::shared_ptr<conditional_operator_expr_t> _conditional_operator;
 		public: std::shared_ptr<function_call_expr_t> _call;
 		public: std::shared_ptr<load_expr_t> _load;
 

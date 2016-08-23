@@ -803,6 +803,33 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 }
 
 
+#if false
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	const auto result = run_main(
+		R"(
+			string main(bool input_flag){
+				return input_flag ? "123" : "456";
+			}
+		)",
+		vector<floyd_parser::value_t>{floyd_parser::value_t(true)}
+	);
+	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("123"));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	const auto result = run_main(
+		R"(
+			string main(bool input_flag){
+				return input_flag ? "123" : "456";
+			}
+		)",
+		vector<floyd_parser::value_t>{floyd_parser::value_t(false)}
+	);
+	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("456"));
+}
+#endif
+
+
 
 //////////////////////////		TEST GLOBAL CONSTANTS
 
