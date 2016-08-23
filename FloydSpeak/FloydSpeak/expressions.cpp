@@ -56,7 +56,7 @@ bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) con
 
 
 
-bool operator_question_colon_expr_t::operator==(const operator_question_colon_expr_t& other) const {
+bool questional_operator_expr_t::operator==(const questional_operator_expr_t& other) const {
 	return *_condition == *other._condition && *_a == *other._a && *_b == *other._b;
 }
 
@@ -98,7 +98,7 @@ bool expression_t::check_invariant() const{
 	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
 
 	//	Make sure exactly ONE pointer is set.
-	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_operator_question_colon ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_variable ? 1 : 0) + (_resolve_struct_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
+	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_questional_operator ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_variable ? 1 : 0) + (_resolve_struct_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
 
 	return true;
 }
@@ -116,8 +116,8 @@ bool expression_t::operator==(const expression_t& other) const {
 	else if(_math2){
 		return compare_shared_values(_math2, other._math2);
 	}
-	else if(_operator_question_colon){
-		return compare_shared_values(_operator_question_colon, other._operator_question_colon);
+	else if(_questional_operator){
+		return compare_shared_values(_questional_operator, other._questional_operator);
 	}
 	else if(_call){
 		return compare_shared_values(_call, other._call);
@@ -199,7 +199,7 @@ expression_t expression_t::make_math_operation2(math_operation2_expr_t::operatio
 	return result;
 }
 
-expression_t expression_t::make_operator_question_colon(const expression_t& condition, const expression_t& a, const expression_t& b, const type_identifier_t& resolved_expression_type){
+expression_t expression_t::make_questional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(condition.check_invariant());
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(b.check_invariant());
@@ -210,7 +210,7 @@ expression_t expression_t::make_operator_question_colon(const expression_t& cond
 	auto b2 = make_shared<expression_t>(b);
 
 	auto result = expression_t();
-	result._operator_question_colon = std::make_shared<operator_question_colon_expr_t>(operator_question_colon_expr_t{ condition2, a2,b2 });
+	result._questional_operator = std::make_shared<questional_operator_expr_t>(questional_operator_expr_t{ condition2, a2,b2 });
 	result._resolved_expression_type = resolved_expression_type;
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
@@ -371,8 +371,8 @@ json_value_t expression_to_json(const expression_t& e){
 		const auto input = expression_to_json(*e2._input);
 		return json_value_t(vector<json_value_t>{ json_value_t(operation_to_string(e2._operation)), type, input });
 	}
-	else if(e._operator_question_colon){
-		const auto e2 = *e._operator_question_colon;
+	else if(e._questional_operator){
+		const auto e2 = *e._questional_operator;
 		const auto condition = expression_to_json(*e2._condition);
 		const auto a = expression_to_json(*e2._a);
 		const auto b = expression_to_json(*e2._b);
