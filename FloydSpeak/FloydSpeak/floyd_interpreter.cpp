@@ -364,6 +364,20 @@ namespace {
 
 }
 
+QUARK_UNIT_TESTQ("C++ bool", ""){
+	quark::ut_compare(true, true);
+	quark::ut_compare(true, !false);
+	quark::ut_compare(false, false);
+	quark::ut_compare(!false, true);
+
+	const auto x = false + false;
+	const auto y = false - false;
+
+	QUARK_UT_VERIFY(x == false);
+	QUARK_UT_VERIFY(y == false);
+}
+
+
 //### Test string + etc.
 //### Split into several functions.
 expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
@@ -385,7 +399,10 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 			//	Perform math operation on the two constants => new constant.
 			{
-				if(left_value->get_type() == type_identifier_t::make_int() && right_value->get_type() == type_identifier_t::make_int()){
+				if(left_value->is_bool() && right_value->is_bool()){
+					throw std::runtime_error("Arithmetics on bool not allowed.");
+				}
+				else if(left_value->is_int() && right_value->is_int()){
 					if(e2._operation == math_operation2_expr_t::add){
 						return expression_t::make_constant(left_value->get_int() + right_value->get_int());
 					}
@@ -405,7 +422,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 						QUARK_ASSERT(false);
 					}
 				}
-				else if(left_value->get_type() == type_identifier_t::make_float() && right_value->get_type() == type_identifier_t::make_float()){
+				else if(left_value->is_float() && right_value->is_float()){
 					if(e2._operation == math_operation2_expr_t::add){
 						return expression_t::make_constant(left_value->get_float() + right_value->get_float());
 					}
@@ -425,7 +442,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 						QUARK_ASSERT(false);
 					}
 				}
-				else if(left_value->get_type() == type_identifier_t::make_string() && right_value->get_type() == type_identifier_t::make_string()){
+				else if(left_value->is_string() && right_value->is_string()){
 					if(e2._operation == math_operation2_expr_t::add){
 						return expression_t::make_constant(left_value->get_string() + right_value->get_string());
 					}
@@ -452,7 +469,10 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		//	Replace the with a constant!
 		if(input._constant){
 			const auto value = input._constant;
-			if(value->get_type() == type_identifier_t::make_int()){
+			if(value->get_type() == type_identifier_t::make_bool()){
+				throw std::runtime_error("Arithmetics failed.");
+			}
+			else if(value->get_type() == type_identifier_t::make_int()){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return expression_t::make_constant(-value->get_int());
 				}
@@ -698,12 +718,8 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 	QUARK_TEST_VERIFY(a.second == value_t("three"));
 }
 
-}	//	floyd_interpreter
 
 
-
-
-using namespace floyd_interpreter;
 
 
 	expression_t test_evaluate_simple(string expression_string){
@@ -882,4 +898,5 @@ QUARK_UNIT_TESTQ("evalute_expression()", "An emtpy string") {
 }
 
 
+}	//	floyd_interpreter
 

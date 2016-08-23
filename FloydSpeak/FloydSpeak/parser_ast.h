@@ -41,8 +41,9 @@ namespace floyd_parser {
 	*/
 	enum base_type {
 		k_null,
-		k_int,
 		k_bool,
+		k_int,
+//		k_float,
 		k_string,
 
 		k_struct,
@@ -77,11 +78,11 @@ namespace floyd_parser {
 
 		public: static type_identifier_t resolve(const std::shared_ptr<const type_def_t>& resolved);
 
+		public: static type_identifier_t make(const std::string& s);
+
 		public: static type_identifier_t make_bool(){
 			return make("bool");
 		}
-
-		public: static type_identifier_t make(const std::string& s);
 
 		public: static type_identifier_t make_int(){
 			return make("int");

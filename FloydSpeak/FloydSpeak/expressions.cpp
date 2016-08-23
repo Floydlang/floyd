@@ -444,6 +444,8 @@ QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant(13)), R"(["k", "<int>", 13])");
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant("xyz")), R"(["k", "<string>", "xyz"])");
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant(14.0f)), R"(["k", "<float>", 14])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_constant(true)), R"(["k", "<bool>", true])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_constant(false)), R"(["k", "<bool>", false])");
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "math1"){
