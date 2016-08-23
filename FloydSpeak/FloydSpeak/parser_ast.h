@@ -30,7 +30,6 @@ namespace floyd_parser {
 	struct ast_t;
 	struct ast_path_t;
 
-	//??? Make const
 	typedef std::shared_ptr<const scope_def_t> scope_ref_t;
 
 
@@ -157,10 +156,10 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 
 		//??? Skip shared_ptr<>
-		public: std::shared_ptr<type_identifier_t> _type;
+		public: std::shared_ptr<const type_identifier_t> _type;
 
 		//	Optional -- must have same type as _type.
-		public: std::shared_ptr<value_t> _value;
+		public: std::shared_ptr<const value_t> _value;
 
 		public: std::string _name;
 	};
@@ -263,8 +262,6 @@ namespace floyd_parser {
 
 
 	//////////////////////////////////////////////////		scope_def_t
-
-	//??? make private data, immutable
 
 	/*
 		This is a core piece of the AST. It represents a static, compile-time scope. scope_def_t:s are used to define
@@ -377,7 +374,6 @@ namespace floyd_parser {
 
 
 		/////////////////////////////		STATE
-//??? make private
 		public: etype _type;
 		public: type_identifier_t _name;
 		public: std::vector<member_t> _members;
@@ -454,6 +450,25 @@ namespace floyd_parser {
 			QUARK_ASSERT(false);
 		}
 
+		public: type_def_t replace_subscope(const std::shared_ptr<const scope_def_t>& new_scope) const {
+			QUARK_ASSERT(is_subscope());
+			QUARK_ASSERT(
+				(get_type() == k_struct && new_scope->_type == scope_def_t::k_struct_scope)
+				|| (get_type() == k_function && (new_scope->_type == scope_def_t::k_function_scope || new_scope->_type== scope_def_t::k_subscope))
+			);
+			QUARK_ASSERT(new_scope && new_scope->check_invariant());
+
+			if(_base_type == k_struct){
+				return make_struct_def(new_scope);
+			}
+			else if(_base_type == k_function){
+				return make_function_def(new_scope);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+
 
 		public: std::shared_ptr<const scope_def_t> get_struct_def() const {
 			QUARK_ASSERT(_base_type == k_struct);
@@ -504,16 +519,12 @@ namespace floyd_parser {
 
 	/*
 		Represents the root of the parse tree - the Abstract Syntax Tree
-		??? COPIES SHARE AST TREE!!!
 	*/
 	struct ast_t {
 		public: ast_t();
 		public: ast_t(const std::shared_ptr<const scope_def_t>& global_scope);
-		
-//		public: ast_t& operator=(const ast_t& other) = delete;
-//		public: ast_t(const ast_t& other) = delete;
-
 		public: bool check_invariant() const;
+
 
 		/////////////////////////////		STATE
 		public: std::shared_ptr<const scope_def_t> _global_scope;

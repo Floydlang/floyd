@@ -27,14 +27,16 @@ using floyd_parser::type_def_t;
 using floyd_parser::value_t;
 using floyd_parser::member_t;
 using floyd_parser::ast_path_t;
+using floyd_parser::types_collector_t;
 
 using std::string;
 using std::vector;
 using std::make_shared;
 using std::shared_ptr;
+using std::pair;
 
 
-void resolve_types__scope_def_mut(const ast_t& ast, const ast_path_t& path, scope_ref_t& scope_def_mut);
+scope_ref_t resolve_types__scope_def(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def1);
 
 
 expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const expression_t& e);
@@ -45,7 +47,9 @@ expression_t resolve_types__expression(const ast_t& ast, const ast_path_t& path,
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+
 	const auto r = pass2_expression_internal(ast, path, scope_def, e);
+
 	QUARK_ASSERT(!r.get_expression_type().is_null());
 	return r;
 }
@@ -97,7 +101,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 				throw std::runtime_error("1003 - Wrong number of argument to function \"" + call._function.to_string() + "\".");
 			}
 
-			vector<std::shared_ptr<expression_t>> args2;
+			vector<shared_ptr<expression_t>> args2;
 			for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
 				const auto call_arg = call._inputs[argument_index];
 				const auto call_arg2 = make_shared<expression_t>(resolve_types__expression(ast, path, scope_def, *call_arg));
@@ -119,7 +123,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 			QUARK_ASSERT(call._inputs.empty());
 			//??? Throw exceptions -- treat JSON-AST as user input.
 
-			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), std::vector<shared_ptr<expression_t>>{}, return_type);
+			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), vector<shared_ptr<expression_t>>{}, return_type);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -180,7 +184,7 @@ scope_ref_t find_enclosing_function(const ast_t& ast, const ast_path_t& path, sc
 	return {};
 }
 
-statement_t resolve_types__statements(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const statement_t& statement){
+statement_t resolve_types__statement(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const statement_t& statement){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
@@ -233,67 +237,137 @@ statement_t resolve_types__statements(const ast_t& ast, const ast_path_t& path, 
 	}
 }
 
-void resolve_types__scope_def_mut(const ast_t& ast, const ast_path_t& path, scope_ref_t& scope_def_mut){
+scope_ref_t resolve_types__scope_def(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def1){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(scope_def_mut && scope_def_mut->check_invariant());
+	QUARK_ASSERT(scope_def1 && scope_def1->check_invariant());
+
+	scope_ref_t scope2 = scope_def1;
 
 	//	Make sure all types can resolve their symbols.
-	for(const auto t: scope_def_mut->_types_collector._type_definitions){
-		if(t.second->is_subscope()){
-			auto scope2_mut = t.second->get_subscope();
-			const ast_path_t path2 { path._names + scope2_mut->_name.to_string() };
-			resolve_types__scope_def_mut(ast, path2, scope2_mut);
+	//	!!! Updated type_collector_t - _type_definitions directly!!
+	{
+		auto identifiers2 = scope2->_types_collector._identifiers;
+		std::map<string, shared_ptr<type_def_t> > type_definitions2;
+
+		for(const auto t: scope2->_types_collector._type_definitions){
+			shared_ptr<type_def_t> type_def1 = t.second;
+			shared_ptr<type_def_t> type_def2;
+
+			if(type_def1->is_subscope()){
+				auto scope3 = type_def1->get_subscope();
+				const ast_path_t path2 { path._names + scope3->_name.to_string() };
+				scope_ref_t scope4 = resolve_types__scope_def(ast, path2, scope3);
+				type_def2 = make_shared<type_def_t>(type_def1->replace_subscope(scope4));
+
+
+				//	Also update any use of this typedef from within _identifiers. Mutate our local copy.
+				for(auto& id: identifiers2){
+					if(id.second._optional_def == type_def1){
+						id.second._optional_def = type_def2;
+					}
+				}
+			}
+			else{
+				type_def2 = type_def1;
+			}
+			type_definitions2.insert(pair<string, shared_ptr<type_def_t>>(t.first, type_def2));
 		}
+		types_collector_t types2;
+		types2._identifiers = identifiers2;
+		types2._type_definitions = type_definitions2;
+		scope2 = scope2->set_types(types2);
 	}
 
 	//	Make sure all members can resolve their symbols.
-	for(auto member: scope_def_mut->_members){
-		//	Error 1013
-		//??? Tries to mutate scope_def.
-		*member._type = resolve_type_throw(ast, path, scope_def_mut, *member._type);
+	{
+		vector<floyd_parser::member_t> members2;
+		for(const auto& member1: scope2->_members){
+			//	Error 1013
+			const auto type2 = resolve_type_throw(ast, path, scope2, *member1._type);
+
+			if(member1._value){
+				//	Error ???
+				const auto init_value_type = resolve_type_throw(ast, path, scope2, *member1._type);
+
+				const auto init_value2 = member1._value->resolve_type(init_value_type);
+
+				//	Error ???
+				if(init_value_type.to_string() != type2.to_string()){
+					throw std::runtime_error("??? \"" + init_value_type.to_string() + "\".");
+				}
+
+				const member_t member2 = floyd_parser::member_t(type2, member1._name, init_value2);
+				members2.push_back(member2);
+			}
+			else{
+				const member_t member2 = member_t(type2, member1._name);
+				members2.push_back(member2);
+			}
+		}
+		scope2 = scope_def_t::make2(
+			scope2->_type,
+			scope2->_name,
+			members2,
+			scope2->_executable,
+			scope2->_types_collector,
+			scope2->_return_type
+		);
 	}
 
-	if(scope_def_mut->_type == scope_def_t::k_function_scope){
+	if(scope2->_type == scope_def_t::k_function_scope){
 		//	Error 1014
-		const auto return_type = resolve_type_throw(ast, path, scope_def_mut, scope_def_mut->_return_type);
+		const auto return_type = resolve_type_throw(ast, path, scope2, scope2->_return_type);
 
-		scope_ref_t scope2 = scope_def_t::make2(
-			scope_def_mut->_type,
-			scope_def_mut->_name,
-			scope_def_mut->_members,
-			scope_def_mut->_executable,
-			scope_def_mut->_types_collector,
+		scope2 = scope_def_t::make2(
+			scope2->_type,
+			scope2->_name,
+			scope2->_members,
+			scope2->_executable,
+			scope2->_types_collector,
 			return_type
 		);
-		scope_def_mut.swap(scope2);
 	}
-	else if(scope_def_mut->_type == scope_def_t::k_struct_scope){
+	else if(scope2->_type == scope_def_t::k_struct_scope){
 	}
-	else if(scope_def_mut->_type == scope_def_t::k_global_scope){
+	else if(scope2->_type == scope_def_t::k_global_scope){
 	}
-	else if(scope_def_mut->_type == scope_def_t::k_subscope){
+	else if(scope2->_type == scope_def_t::k_subscope){
 		//	Error 1015
-		const auto return_type = resolve_type_throw(ast, path, scope_def_mut, scope_def_mut->_return_type);
+		const auto return_type = resolve_type_throw(ast, path, scope2, scope2->_return_type);
 
-		scope_ref_t scope2 = scope_def_t::make2(
-			scope_def_mut->_type,
-			scope_def_mut->_name,
-			scope_def_mut->_members,
-			scope_def_mut->_executable,
-			scope_def_mut->_types_collector,
+		scope2 = scope_def_t::make2(
+			scope2->_type,
+			scope2->_name,
+			scope2->_members,
+			scope2->_executable,
+			scope2->_types_collector,
 			return_type
 		);
-		scope_def_mut.swap(scope2);
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
 
 	//	Make sure all statements can resolve their symbols.
-	for(auto s: scope_def_mut->_executable._statements){
-		 *s = resolve_types__statements(ast, path, scope_def_mut, *s);
+	{
+		vector<shared_ptr<statement_t>> statements2;
+		for(auto s: scope2->_executable._statements){
+			 const auto statement2 = resolve_types__statement(ast, path, scope2, *s);
+			 statements2.push_back(make_shared<statement_t>(statement2));
+		}
+
+		scope2 = scope_def_t::make2(
+			scope2->_type,
+			scope2->_name,
+			scope2->_members,
+			floyd_parser::executable_t(statements2),
+			scope2->_types_collector,
+			scope2->_return_type
+		);
 	}
+	QUARK_ASSERT(scope2->check_invariant());
+	return scope2;
 }
 
 bool has_unresolved_types(const floyd_parser::ast_t& ast1){
@@ -301,18 +375,15 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 	const auto s = json_to_compact_string(a);
 
 	const auto found = s.find("<>");
-	return found != std::string::npos;
+	return found != string::npos;
 }
 
 
-
-//??? mutates!!!
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 	string stage0 = json_to_compact_string(ast_to_json(ast1));
 
-	auto ast2 = ast1;
-
-	resolve_types__scope_def_mut(ast2, make_root(ast2), ast2._global_scope);
+	const auto global = resolve_types__scope_def(ast1, make_root(ast1), ast1._global_scope);
+	const ast_t ast2(global);
 	trace(ast2);
 
 	//	Make sure there are no unresolved types left in program.
@@ -360,14 +431,14 @@ QUARK_UNIT_TESTQ("run_pass2()", "Maxium program"){
 
 
 
-void test_error(const std::string& program, const std::string& error_string){
+void test_error(const string& program, const string& error_string){
 	const ast_t pass1 = floyd_parser::program_to_ast(program);
 	try{
 		const ast_t pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		const auto s = std::string(e.what());
+		const auto s = string(e.what());
 		quark::ut_compare(s, error_string);
 	}
 }

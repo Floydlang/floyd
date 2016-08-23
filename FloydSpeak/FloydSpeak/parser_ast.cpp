@@ -236,7 +236,6 @@ namespace floyd_parser {
 
 	type_identifier_t::type_identifier_t(const type_identifier_t& other) :
 		_type_magic(other._type_magic),
-		
 		_resolved(other._resolved)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -288,6 +287,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(other.check_invariant());
 
 		_type_magic.swap(other._type_magic);
+		_resolved.swap(other._resolved);
 	}
 
 	std::string type_identifier_t::to_string() const {

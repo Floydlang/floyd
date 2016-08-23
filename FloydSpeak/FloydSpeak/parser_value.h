@@ -46,10 +46,10 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_instance_t& other);
 
-		//	??? Remove this points at later time, when we statically track the type of structs OK.
+		//	??? Remove this points at later time, when we statically track the type of structs OK. We alreay know this via __def!
 		scope_ref_t __def;
 
-		//	### Use ::vector<value_t> _member_values and index of member to find the value.
+		//	??? Use ::vector<value_t> _member_values and index of member to find the value.
 		std::map<std::string, value_t> _member_values;
 	};
 
@@ -203,10 +203,12 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			if(_type != other._type){
+//??? Use better way to compare types!!!
+			// Use the base_type enum instead of strings for basic types? Use string for basics, hash for composite, functions, typedefs?
+
+			if(_type.to_string() != other._type.to_string()){
 				return false;
 			}
-			//??? Use the base_type enum instead of strings for types.
 			if(_type.to_string() == "null"){
 				return true;
 			}
@@ -295,31 +297,31 @@ namespace floyd_parser {
 		public: bool is_null() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type == type_identifier_t("null");
+			return _type.to_string() == "null";
 		}
 
 		public: bool is_bool() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type == type_identifier_t("bool");
+			return _type.to_string() == "bool";
 		}
 
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type == type_identifier_t::make_int();
+			return _type.to_string() == "int";
 		}
 
 		public: bool is_float() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type == type_identifier_t("float");
+			return _type.to_string() == "float";
 		}
 
 		public: bool is_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type == type_identifier_t("string");
+			return _type.to_string() == "string";
 		}
 
 		public: bool is_struct() const {
@@ -403,6 +405,17 @@ namespace floyd_parser {
 
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
+		}
+
+		public: value_t resolve_type(const type_identifier_t& resolved) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(resolved.check_invariant());
+			QUARK_ASSERT(get_type().to_string() == resolved.to_string());
+
+			value_t result = *this;
+			result._type = resolved;
+			QUARK_ASSERT(result.check_invariant());
+			return result;
 		}
 
 
