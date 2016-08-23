@@ -273,12 +273,7 @@ namespace floyd_parser {
 
 		The scope_def_t includes optional code, optional member variables and optional local types.
 
-		WARNING: We mutate this during parsing, adding executable, types while it exists.
-		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it
-			a new address (move / copy) breaks this hearchy.
-
 		Functions are really a tree of scopes like this:
-
 			global_scope
 				_members: global variables
 				_types: -- global typedefs, struct-defs, function-defs. Owns/tracks all sub-scopes.

@@ -47,6 +47,7 @@ namespace floyd_parser {
 		const std::shared_ptr<expression_t> _input;
 	};
 
+
 	//////////////////////////////////////////////////		math_operation2_expr_t
 
 
@@ -65,6 +66,21 @@ namespace floyd_parser {
 		const std::shared_ptr<expression_t> _left;
 		const std::shared_ptr<expression_t> _right;
 	};
+
+
+	//////////////////////////////////////////////////		operator_question_colon_expr_t
+
+
+	struct operator_question_colon_expr_t {
+		bool operator==(const operator_question_colon_expr_t& other) const;
+
+
+		const std::shared_ptr<expression_t> _condition;
+		const std::shared_ptr<expression_t> _a;
+		const std::shared_ptr<expression_t> _b;
+	};
+
+
 
 
 	//////////////////////////////////////////////////		function_call_expr_t
@@ -154,6 +170,7 @@ namespace floyd_parser {
 		public: static expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input, const type_identifier_t& resolved_expression_type = type_identifier_t());
 		public: static expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
+		public: static expression_t make_operator_question_colon(const expression_t& condition, const expression_t& a, const expression_t& b, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
 		public: static expression_t make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
@@ -180,67 +197,6 @@ namespace floyd_parser {
 			return _resolved_expression_type;
 		}
 
-/*
-		private: expression_t(const std::shared_ptr<value_t>& a) :
-			_constant(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			_resolved_expression_type = a->get_type();
-			QUARK_ASSERT(check_invariant());
-		}
-
-		private: expression_t(const std::shared_ptr<math_operation1_expr_t>& a) :
-			_math1(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			QUARK_ASSERT(check_invariant());
-		}
-
-		private: expression_t(const std::shared_ptr<math_operation2_expr_t>& a) :
-			_math2(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			QUARK_ASSERT(check_invariant());
-		}
-
-		private: expression_t(const std::shared_ptr<function_call_expr_t>& a) :
-			_call(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			QUARK_ASSERT(check_invariant());
-		}
-
-		private: expression_t(const std::shared_ptr<load_expr_t>& a) :
-			_load(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			QUARK_ASSERT(check_invariant());
-		}
-
-
-		private: expression_t(const std::shared_ptr<resolve_variable_expr_t>& a) :
-			_resolve_variable(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			QUARK_ASSERT(check_invariant());
-		}
-
-		private: expression_t(const std::shared_ptr<resolve_struct_member_expr_t>& a) :
-			_resolve_struct_member(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			QUARK_ASSERT(check_invariant());
-		}
-
-		private: expression_t(const std::shared_ptr<lookup_element_expr_t>& a) :
-			_lookup_element(a)
-		{
-			_debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(*this);
-			QUARK_ASSERT(check_invariant());
-		}
-*/
-
-
 		public: bool operator==(const expression_t& other) const;
 
 
@@ -259,6 +215,7 @@ namespace floyd_parser {
 		public: std::shared_ptr<value_t> _constant;
 		public: std::shared_ptr<math_operation1_expr_t> _math1;
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
+		public: std::shared_ptr<operator_question_colon_expr_t> _operator_question_colon;
 		public: std::shared_ptr<function_call_expr_t> _call;
 		public: std::shared_ptr<load_expr_t> _load;
 
