@@ -36,6 +36,13 @@ namespace floyd_parser {
 
 	//??? Make into generic scope_instance_t
 	struct struct_instance_t {
+		public: struct_instance_t(const scope_ref_t& def, const std::map<std::string, value_t>& member_values) :
+			__def(def),
+			_member_values(member_values)
+		{
+			QUARK_ASSERT(def && def->check_invariant());
+			QUARK_ASSERT(check_invariant());
+		}
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_instance_t& other);
 
@@ -416,14 +423,14 @@ namespace floyd_parser {
 	void trace(const value_t& e);
 
 
-	floyd_parser::value_t make_struct_instance(scope_ref_t def);
+	floyd_parser::value_t make_struct_instance(const ast_t& ast, const ast_path_t& path, scope_ref_t def);
 	floyd_parser::value_t make_vector_instance(const std::shared_ptr<const floyd_parser::vector_def_t>& def, const std::vector<value_t>& elements);
 
 
 
 
 struct struct_fixture_t {
-	public: scope_ref_t _global;
+	public: ast_t _ast;
 	public: scope_ref_t _struct6_def;
 	public: value_t _struct6_instance0;
 	public: value_t _struct6_instance1;

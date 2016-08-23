@@ -42,7 +42,7 @@ namespace floyd_parser {
 			}
 		}
 	*/
-	std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_def, const std::string& pos);
+	std::pair<scope_ref_t, std::string> parse_function_definition(const ast_t& ast, const std::string& pos);
 
 
 

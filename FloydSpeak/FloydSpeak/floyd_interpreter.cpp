@@ -94,7 +94,8 @@ namespace {
 			throw std::runtime_error("function arguments do not match function");
 		}
 
-		const auto a = f->_executable._host_function(f->_executable._host_function_param, args);
+		const auto path = find_path_slow(vm._ast, f);
+		const auto a = f->_executable._host_function(vm._ast, unresolve_path(path), f->_executable._host_function_param, args);
 		return a;
 	}
 
@@ -487,7 +488,9 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	else if(e._call){
 		const auto& call_function_expression = *e._call;
 
-		const auto type = resolve_type(vm._scope_instances.back()->_def, call_function_expression._function);
+		scope_ref_t scope_def = vm._scope_instances.back()->_def;
+		const auto path = find_path_slow(vm._ast, scope_def);
+		const auto type = resolve_type(vm._ast, unresolve_path(path), scope_def, call_function_expression._function);
 		if(!type || type->get_type() != base_type::k_function){
 			throw std::runtime_error("Failed calling function - unresolved function.");
 		}

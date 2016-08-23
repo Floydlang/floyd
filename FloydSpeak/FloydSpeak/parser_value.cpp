@@ -58,16 +58,16 @@ namespace floyd_parser {
 
 
 
-	value_t make_struct_instance(scope_ref_t def){
+	value_t make_struct_instance(const ast_t& ast, const ast_path_t& path, scope_ref_t def){
+		QUARK_ASSERT(ast.check_invariant());
+		QUARK_ASSERT(path.check_invariant());
 		QUARK_ASSERT(def && def->check_invariant());
 
-		auto instance = make_shared<struct_instance_t>();
-
-		instance->__def = def;
+		std::map<std::string, value_t> member_values;
 		for(int i = 0 ; i < def->_members.size() ; i++){
 			const auto& member_def = def->_members[i];
 
-			const auto member_type = resolve_type(def, *member_def._type);
+			const auto member_type = resolve_type(ast, path, def, *member_def._type);
 			if(!member_type){
 				throw std::runtime_error("Undefined struct type!");
 			}
@@ -78,10 +78,11 @@ namespace floyd_parser {
 				value = *member_def._value;
 			}
 			else{
-				value = make_default_value(def, *member_def._type);
+				value = make_default_value(ast, path, def, *member_def._type);
 			}
-			instance->_member_values[member_def._name] = value;
+			member_values[member_def._name] = value;
 		}
+		auto instance = make_shared<struct_instance_t>(def, member_values);
 		return value_t(instance);
 	}
 
@@ -292,7 +293,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 struct_fixture_t::struct_fixture_t() :
-	_global(scope_def_t::make_global_scope())
+	_struct6_def(make_struct6(_ast._global_scope))
 {
 	auto pixel_def = scope_def_t::make_struct(
 		type_identifier_t::make("pixel"),
@@ -302,14 +303,12 @@ struct_fixture_t::struct_fixture_t() :
 				member_t(type_identifier_t::make_int(), "green", value_t(66)),
 				member_t(type_identifier_t::make_int(), "blue", value_t(77))
 			}
-		),
-		_global);
+		));
 
-	_global->_types_collector = define_struct_type(_global->_types_collector, "pixel", pixel_def);
-	_struct6_def = make_struct6(_global);
+	_ast._global_scope = _ast._global_scope->set_types(define_struct_type(_ast._global_scope->_types_collector, "pixel", pixel_def));
 
-	_struct6_instance0 = make_struct_instance(_struct6_def);
-	_struct6_instance1 = make_struct_instance(_struct6_def);
+	_struct6_instance0 = make_struct_instance(_ast, make_root(_ast), _struct6_def);
+	_struct6_instance1 = make_struct_instance(_ast, make_root(_ast), _struct6_def);
 }
 
 
