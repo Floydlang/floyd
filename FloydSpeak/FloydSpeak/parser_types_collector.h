@@ -102,15 +102,15 @@ namespace floyd_parser {
 			return non-empty: the identifier is known, examine type_indentifier_data_ref to see if it's bound.
 			NOTICE: any found alias is resolved recursively.
 		*/
-		public: std::shared_ptr<type_indentifier_data_ref> lookup_identifier_deep(const std::string& s) const;
+		public: std::shared_ptr<const type_indentifier_data_ref> lookup_identifier_deep(const std::string& s) const;
 
 		/*
 			return empty: the identifier is unknown or has no type-definition.
 			NOTICE: any found alias is resolved recursively.
 		*/
-		public: std::shared_ptr<type_def_t> resolve_identifier(const std::string& s) const;
+		public: std::shared_ptr<const type_def_t> resolve_identifier(const std::string& s) const;
 
-		public: std::shared_ptr<type_def_t> lookup_signature(const std::string& s) const;
+		public: std::shared_ptr<const type_def_t> lookup_signature(const std::string& s) const;
 
 		/*
 			Returns true if this type identifier is registered and defined (is an alias or is bound to a type-definition.
@@ -131,7 +131,7 @@ namespace floyd_parser {
 
 		//	Key is the type identifier.
 		//	Value refers to a type_def_t stored in _type_definition.
-		private: std::map<std::string, type_indentifier_data_ref > _identifiers;
+		public: std::map<std::string, type_indentifier_data_ref > _identifiers;
 
 		//	Key is the signature string. De-duplicated.
 		//	These are difficult to share between scopes since they have parent-scope references etc.
@@ -148,13 +148,13 @@ namespace floyd_parser {
 		new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 		You can define a type identifier
 	*/
-	types_collector_t define_struct_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<scope_def_t>& struct_def);
+	types_collector_t define_struct_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<const scope_def_t>& struct_def);
 
 
 	/*
 		returns empty if type is unknown or the type is not fully defined.
 	*/
-	std::shared_ptr<scope_def_t> resolve_struct_type(const types_collector_t& types, const std::string& s);
+	std::shared_ptr<const scope_def_t> resolve_struct_type(const types_collector_t& types, const std::string& s);
 
 
 	///////////////////		FUNCTION
@@ -164,12 +164,12 @@ namespace floyd_parser {
 		new_identifier == "": no identifier is registerd for the struct, it is anonymous.
 		You can define a type identifier
 	*/
-	types_collector_t define_function_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<scope_def_t>& function_def);
+	types_collector_t define_function_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<const scope_def_t>& function_def);
 
 	/*
 		returns empty if type is unknown or the type is not fully defined.
 	*/
-	std::shared_ptr<scope_def_t> resolve_function_type(const types_collector_t& types, const std::string& s);
+	std::shared_ptr<const scope_def_t> resolve_function_type(const types_collector_t& types, const std::string& s);
 
 
 }	//	floyd_parser

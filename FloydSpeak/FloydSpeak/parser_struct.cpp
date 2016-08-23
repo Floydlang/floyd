@@ -26,8 +26,7 @@ namespace floyd_parser {
 		{int a;}
 		{int a = 13;}
 	*/
-	std::pair<vector<member_t>, std::string> parse_struct_body(scope_ref_t struct_scope, const string& s){
-		QUARK_ASSERT(struct_scope && struct_scope->check_invariant());
+	std::pair<scope_ref_t, std::string> parse_struct_body(const type_identifier_t& struct_name, const string& s){
 		QUARK_ASSERT(peek_string(skip_whitespace(s), "{"));
 
 		const auto s2 = skip_whitespace(s);
@@ -69,26 +68,25 @@ namespace floyd_parser {
 			pos = skip_whitespace(read_required_char(pos, ';'));
 		}
 
-		return { members, body_pos.second };
+		return { scope_def_t::make_struct(struct_name, members), body_pos.second };
 	}
 
 	QUARK_UNIT_TESTQ("parse_struct_body", ""){
-		const auto global = scope_def_t::make_global_scope();
-		QUARK_TEST_VERIFY((parse_struct_body(global, "{}") == pair<vector<member_t>, string>({}, "")));
+//???		QUARK_TEST_VERIFY((parse_struct_body(type_identifier_t::"{}") == pair<vector<member_t>, string>({}, "")));
 	}
 
 	QUARK_UNIT_TESTQ("parse_struct_body", ""){
-		const auto global = scope_def_t::make_global_scope();
-		QUARK_TEST_VERIFY((parse_struct_body(global, " {} x") == pair<vector<member_t>, string>({}, " x")));
+//???		QUARK_TEST_VERIFY((parse_struct_body(" {} x") == pair<vector<member_t>, string>({}, " x")));
 	}
 
 
 	QUARK_UNIT_TESTQ("parse_struct_body", ""){
-		const auto global = scope_def_t::make_global_scope();
-		const auto r = parse_struct_body(global, k_test_struct0_body);
+		const auto r = parse_struct_body(type_identifier_t::make("test_struct0"), k_test_struct0_body);
+/*???
 		QUARK_TEST_VERIFY((
 			r == pair<vector<member_t>, string>(make_test_struct0(global)->_members, "" )
 		));
+*/
 	}
 
 
@@ -102,15 +100,12 @@ namespace floyd_parser {
 		const auto struct_name = read_required_single_symbol(token_pos.second);
 		const auto name = type_identifier_t::make(struct_name.first);
 
-//		auto struct_def = struct_def_t::make2(name, {}, scope_def);
-		auto struct_def = scope_def_t::make_struct(name, {}, scope_def);
-		pair<vector<member_t>, string> body_pos = parse_struct_body(struct_def, skip_whitespace(struct_name.second));
-		struct_def->_members = body_pos.first;
-
+		pair<scope_ref_t, string> body_pos = parse_struct_body(name, skip_whitespace(struct_name.second));
 		auto pos2 = skip_whitespace(body_pos.second);
+
 //		pos2 = read_required_char(pos2, ';');
 
-		return { struct_def, pos2 };
+		return { body_pos.first, pos2 };
 	}
 
 	scope_ref_t make_test_struct0(scope_ref_t scope_def){
@@ -121,8 +116,7 @@ namespace floyd_parser {
 				{ type_identifier_t::make_int(), "x" },
 				{ type_identifier_t::make_string(), "y" },
 				{ type_identifier_t::make_float(), "z" }
-			},
-			scope_def
+			}
 		);
 	}
 
@@ -135,8 +129,7 @@ namespace floyd_parser {
 				member_t(type_identifier_t::make_int(), "red"),
 				member_t(type_identifier_t::make_int(), "green"),
 				member_t(type_identifier_t::make_int(), "blue")
-			},
-			global
+			}
 		);
 
 		QUARK_TEST_VERIFY(*r.first == *b);
@@ -152,8 +145,7 @@ namespace floyd_parser {
 					member_t(type_identifier_t::make_int(), "red", value_t(255)),
 					member_t(type_identifier_t::make_int(), "green", value_t(255)),
 					member_t(type_identifier_t::make_int(), "blue", value_t(255))
-				},
-				global
+				}
 			)
 		);
 	}
@@ -167,8 +159,7 @@ namespace floyd_parser {
 				vector<member_t>{
 					member_t(type_identifier_t::make_string(), "name", value_t("lisa")),
 					member_t(type_identifier_t::make_float(), "height", value_t(12.3f))
-				},
-				global
+				}
 			)
 		);
 	}

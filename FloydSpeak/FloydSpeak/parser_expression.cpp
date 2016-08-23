@@ -580,13 +580,13 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 
 ast_t make_test_ast(){
 	ast_t result;
-	result._global_scope->_types_collector = define_function_type(result._global_scope->_types_collector, "log", make_log_function(result._global_scope));
-	result._global_scope->_types_collector = define_function_type(result._global_scope->_types_collector, "log2", make_log2_function(result._global_scope));
-	result._global_scope->_types_collector = define_function_type(result._global_scope->_types_collector, "f", make_log_function(result._global_scope));
-	result._global_scope->_types_collector = define_function_type(result._global_scope->_types_collector, "return5", make_return5(result._global_scope));
+	result._global_scope = result._global_scope->set_types(define_function_type(result._global_scope->_types_collector, "log", make_log_function(result._global_scope)));
+	result._global_scope = result._global_scope->set_types(define_function_type(result._global_scope->_types_collector, "log2", make_log2_function(result._global_scope)));
+	result._global_scope = result._global_scope->set_types(define_function_type(result._global_scope->_types_collector, "f", make_log_function(result._global_scope)));
+	result._global_scope = result._global_scope->set_types(define_function_type(result._global_scope->_types_collector, "return5", make_return5(result._global_scope)));
 
-	result._global_scope->_types_collector = define_struct_type(result._global_scope->_types_collector, "test_struct0", make_struct0(result._global_scope));
-	result._global_scope->_types_collector = define_struct_type(result._global_scope->_types_collector, "test_struct1", make_struct1(result._global_scope));
+	result._global_scope = result._global_scope->set_types(define_struct_type(result._global_scope->_types_collector, "test_struct0", make_struct0(result._global_scope)));
+	result._global_scope = result._global_scope->set_types(define_struct_type(result._global_scope->_types_collector, "test_struct1", make_struct1(result._global_scope)));
 	return result;
 }
 

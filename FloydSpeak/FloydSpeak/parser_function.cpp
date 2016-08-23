@@ -61,9 +61,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_def, const string& pos){
-	QUARK_ASSERT(scope_def->check_invariant());
-
+std::pair<scope_ref_t, std::string> parse_function_definition(const ast_t& ast, const string& pos){
 	const auto return_type_pos = read_required_type_identifier(pos);
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
 
@@ -85,47 +83,67 @@ std::pair<scope_ref_t, std::string> parse_function_definition(scope_ref_t scope_
 	const auto function_name = type_identifier_t::make(function_name_pos.first);
 
 	{
-		const auto function_def = make_function_def(
+		//	Makes both function-scope and its body-scope.
+		const auto function_def1 = make_function_def(
 			function_name,
 			return_type_pos.first,
 			args,
-			scope_def,
 			executable_t({}),
+			{},
 			{}
 		);
 
-		const auto function_body_def = resolve_function_type(function_def->_types_collector, "___body");
+		auto function_body_def = resolve_function_type(function_def1->_types_collector, "___body");
 		QUARK_ASSERT(function_body_def);
 
-		read_statements_into_scope_def(function_body_def, body_pos.first.substr(1, body_pos.first.size() - 2));
+		//	temp will get all statements.
+		const auto temp = read_statements_into_scope_def(ast, function_body_def, body_pos.first.substr(1, body_pos.first.size() - 2));
 
-		return { function_def, body_pos.second };
+		const auto function_def2 = make_function_def(
+			function_name,
+			return_type_pos.first,
+			args,
+			temp.first->_executable,
+			temp.first->_types_collector,
+			temp.first->_members
+		);
+
+		return { function_def2, body_pos.second };
 	}
 }
 
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	try{
-		const auto global = scope_def_t::make_global_scope();
-		const auto result = parse_function_definition(global, "int f()");
+		const auto ast = ast_t();
+		const auto result = parse_function_definition(ast, "int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
 	}
 }
 
+//??? Check that all function paths return a value.
+
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
-	const auto global = scope_def_t::make_global_scope();
-	const auto result = parse_function_definition(global, "int f(){}");
+	const auto ast = ast_t();
+	const auto result = parse_function_definition(ast, "int f(){ return 3; }");
 	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("f"));
 	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY(result.first->_members.empty());
-//	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
+	QUARK_TEST_VERIFY(result.first->_executable._statements.size() == 1);
 	QUARK_TEST_VERIFY(result.second == "");
+
+	const auto body_f = resolve_function_type(result.first->_types_collector, "___body");
+	QUARK_UT_VERIFY(body_f && body_f->check_invariant());
+	QUARK_UT_VERIFY(body_f->_type == scope_def_t::k_subscope);
+	QUARK_UT_VERIFY(body_f->_return_type.to_string() == "int");
+	QUARK_UT_VERIFY(body_f->_executable._statements.size() == 1);
+	QUARK_UT_VERIFY(body_f->_return_type == type_identifier_t::make_int());
 }
 
 QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of different types"){
-	const auto global = scope_def_t::make_global_scope();
-	const auto result = parse_function_definition(global, "int printf(string a, float barry, int c){}");
+	const auto ast = ast_t();
+	const auto result = parse_function_definition(ast, "int printf(string a, float barry, int c){}");
 	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("printf"));
 	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY((result.first->_members == vector<member_t>{
@@ -157,10 +175,10 @@ scope_ref_t make_test_function1(scope_ref_t scope){
 		type_identifier_t::make("test_function1"),
 		type_identifier_t::make_int(),
 		{},
-		scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(100)))
 		}),
+		{},
 		{}
 	);
 }
@@ -173,10 +191,10 @@ scope_ref_t make_test_function2(scope_ref_t scope){
 			{ type_identifier_t::make_int(), "a" },
 			{ type_identifier_t::make_float(), "b" }
 		},
-		scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant("sdf")))
 		}),
+		{},
 		{}
 	);
 }
@@ -188,10 +206,10 @@ scope_ref_t make_log_function(scope_ref_t scope){
 		{
 			{type_identifier_t::make_float(), "value"}
 		},
-		scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(123.f)))
 		}),
+		{},
 		{}
 	);
 }
@@ -204,10 +222,10 @@ scope_ref_t make_log2_function(scope_ref_t scope){
 			{ type_identifier_t::make_string(), "s" },
 			{ type_identifier_t::make_float(), "v" }
 		},
-		scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(456.7f)))
 		}),
+		{},
 		{}
 	);
 }
@@ -218,10 +236,10 @@ scope_ref_t make_return5(scope_ref_t scope){
 		type_identifier_t::make_float(),
 		{
 		},
-		scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(5)))
 		}),
+		{},
 		{}
 	);
 }
@@ -232,10 +250,10 @@ scope_ref_t make_return_hello(scope_ref_t scope){
 		type_identifier_t::make_int(),
 		{
 		},
-		scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant("hello")))
 		}),
+		{},
 		{}
 	);
 }

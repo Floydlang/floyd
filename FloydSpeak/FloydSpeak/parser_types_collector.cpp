@@ -241,7 +241,7 @@ namespace floyd_parser {
 		return it == _identifiers.end() ? std::shared_ptr<type_indentifier_data_ref>() : make_shared<type_indentifier_data_ref>(it->second);
 	}
 
-	std::shared_ptr<type_indentifier_data_ref> types_collector_t::lookup_identifier_deep(const std::string& s) const{
+	std::shared_ptr<const type_indentifier_data_ref> types_collector_t::lookup_identifier_deep(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _identifiers.find(s);
@@ -259,7 +259,7 @@ namespace floyd_parser {
 		}
 	}
 
-	std::shared_ptr<type_def_t> types_collector_t::resolve_identifier(const std::string& s) const{
+	std::shared_ptr<const type_def_t> types_collector_t::resolve_identifier(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto identifier_data = lookup_identifier_deep(s);
@@ -272,7 +272,7 @@ namespace floyd_parser {
 	}
 
 
-	std::shared_ptr<type_def_t> types_collector_t::lookup_signature(const std::string& s) const{
+	std::shared_ptr<const type_def_t> types_collector_t::lookup_signature(const std::string& s) const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto it = _type_definitions.find(s);
@@ -327,7 +327,7 @@ namespace floyd_parser {
 
 
 
-	types_collector_t define_struct_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<scope_def_t>& struct_def){
+	types_collector_t define_struct_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<const scope_def_t>& struct_def){
 		QUARK_ASSERT(types.check_invariant());
 
 		auto type_def = make_shared<type_def_t>(type_def_t::make_struct_def(struct_def));
@@ -335,7 +335,7 @@ namespace floyd_parser {
 	}
 
 
-	types_collector_t define_function_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<scope_def_t>& function_def){
+	types_collector_t define_function_type(const types_collector_t& types, const std::string& new_identifier, const std::shared_ptr<const scope_def_t>& function_def){
 		QUARK_ASSERT(types.check_invariant());
 
 		auto type_def = make_shared<type_def_t>(type_def_t::make_function_def(function_def));
@@ -345,7 +345,7 @@ namespace floyd_parser {
 
 
 
-	std::shared_ptr<scope_def_t> resolve_struct_type(const types_collector_t& types, const std::string& s){
+	std::shared_ptr<const scope_def_t> resolve_struct_type(const types_collector_t& types, const std::string& s){
 		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(s.size() > 0);
 
@@ -358,7 +358,7 @@ namespace floyd_parser {
 		}
 	}
 
-	std::shared_ptr<scope_def_t> resolve_function_type(const types_collector_t& types, const std::string& s){
+	std::shared_ptr<const scope_def_t> resolve_function_type(const types_collector_t& types, const std::string& s){
 		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(s.size() > 0);
 

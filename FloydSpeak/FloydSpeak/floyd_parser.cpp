@@ -24,6 +24,7 @@
 #include "parser_struct.h"
 #include "parser_ast.h"
 #include "ast_utils.h"
+#include "utils.h"
 #include "json_support.h"
 
 #include <string>
@@ -129,7 +130,7 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
         std::string _rest;
     };
 
-statement_result_t read_statement(scope_ref_t scope_def, const string& pos){
+statement_result_t read_statement(const ast_t& ast, const scope_ref_t scope_def, const string& pos){
 	QUARK_ASSERT(scope_def->check_invariant());
 
 	const auto token_pos = read_until(pos, whitespace_chars);
@@ -155,7 +156,7 @@ statement_result_t read_statement(scope_ref_t scope_def, const string& pos){
 			"int xyz(string a, string b){ ... }
 		*/
 		if(peek_string(skip_whitespace(identifier_pos.second), "(")){
-			const auto function = parse_function_definition(scope_def, pos);
+			const auto function = parse_function_definition(ast, pos);
 			{
 				QUARK_SCOPED_TRACE("FUNCTION DEF");
 				QUARK_TRACE(json_to_compact_string(scope_def_to_json(*function.first)));
@@ -182,8 +183,8 @@ statement_result_t read_statement(scope_ref_t scope_def, const string& pos){
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	try{
-		auto global = scope_def_t::make_global_scope();
-		const auto result = read_statement(global, "int f()");
+		auto ast = ast_t();
+		const auto result = read_statement(ast, ast._global_scope, "int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
@@ -191,13 +192,13 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto global = scope_def_t::make_global_scope();
-	const auto result = read_statement(global, "float test = testx(1234);\n\treturn 3;\n");
+	auto ast = ast_t();
+	const auto result = read_statement(ast, ast._global_scope, "float test = testx(1234);\n\treturn 3;\n");
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto global = scope_def_t::make_global_scope();
-	const auto result = read_statement(global, test_function1);
+	auto ast = ast_t();
+	const auto result = read_statement(ast, ast._global_scope, test_function1);
 	QUARK_TEST_VERIFY(result._statement._define_function);
 //	QUARK_TEST_VERIFY(*result._statement._define_function->_function_def == *make_test_function1(global));
 	QUARK_TEST_VERIFY(result._statement._define_function->_function_def);
@@ -205,10 +206,10 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto global = scope_def_t::make_global_scope();
-	const auto result = read_statement(global, "struct test_struct0 " + k_test_struct0_body + ";");
+	auto ast = ast_t();
+	const auto result = read_statement(ast, ast._global_scope, "struct test_struct0 " + k_test_struct0_body + ";");
 	QUARK_TEST_VERIFY(result._statement._define_struct);
-	QUARK_TEST_VERIFY(*result._statement._define_struct->_struct_def == *make_test_struct0(global));
+	QUARK_TEST_VERIFY(*result._statement._define_struct->_struct_def == *make_test_struct0(ast._global_scope));
 }
 
 
@@ -231,10 +232,10 @@ struct alloc_struct_param : public host_data_i {
 };
 
 
-value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
+value_t host_function__alloc_struct(const ast_t& ast, const ast_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
 	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
 
-	const auto instance = make_default_value(a._struct_def);
+	const auto instance = make_default_struct_value(ast, path, a._struct_def);
 	return instance;
 }
 
@@ -242,7 +243,7 @@ value_t hosts_function__alloc_struct(const std::shared_ptr<host_data_i>& param, 
 	Take struct definition and creates all types, member variables, constructors, member functions etc.
 	??? add constructors and generated stuff.
 */
-void install_struct_support(scope_ref_t scope_def, const scope_ref_t& struct_def){
+scope_ref_t install_struct_support(const ast_t& ast, const scope_ref_t scope_def, const scope_ref_t& struct_def){
 	QUARK_ASSERT(scope_def->check_invariant());
 	QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
@@ -256,61 +257,90 @@ void install_struct_support(scope_ref_t scope_def, const scope_ref_t& struct_def
 	//	Make constructor-function with same name as struct.
 	{
 		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
-		const auto executable = executable_t(hosts_function__alloc_struct, make_shared<alloc_struct_param>(s));
-		const auto a = make_function_def(constructor_name, struct_name_ident, {}, scope_def, executable, {});
+		const auto executable = executable_t(host_function__alloc_struct, make_shared<alloc_struct_param>(s));
+		const auto a = make_function_def(constructor_name, struct_name_ident, {}, executable, {}, {});
 		types_collector2 = define_function_type(types_collector2, constructor_name.to_string(), a);
 	}
 
-	scope_def->_types_collector = types_collector2;
+	return scope_def->set_types(types_collector2);
 }
 
 //??? Track when / order of definitions and binds so statements can't access them before they're in scope.
 
-std::string read_statements_into_scope_def(scope_ref_t scope_def, const string& s){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
+
+std::pair<scope_ref_t, std::string> read_statements_into_scope_def(const ast_t& ast, const scope_ref_t scope_def2, const string& s){
+	QUARK_ASSERT(scope_def2 && scope_def2->check_invariant());
+
+	//	Copy input scope_def.
+	shared_ptr<const scope_def_t> result_scope = make_shared<scope_def_t>(*scope_def2);
 
 	auto pos = skip_whitespace(s);
 	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
-		const auto statement_pos = read_statement(scope_def, pos);
+		const auto statement_pos = read_statement(ast, result_scope, pos);
 
 		//	Definition statements are immediately removed from AST and the types are defined instead.
 		if(statement_pos._statement._define_struct){
 			const auto a = statement_pos._statement._define_struct;
-			install_struct_support(scope_def, a->_struct_def);
+			result_scope = install_struct_support(ast, result_scope, a->_struct_def);
 		}
 		else if(statement_pos._statement._define_function){
 			auto function_def = statement_pos._statement._define_function->_function_def;
 			const auto function_name = function_def->_name;
-			scope_def->_types_collector = define_function_type(scope_def->_types_collector, function_name.to_string(), function_def);
+			result_scope = result_scope->set_types(define_function_type(result_scope->_types_collector, function_name.to_string(), function_def));
 		}
 		else if(statement_pos._statement._bind_statement){
 			const auto& bind = *statement_pos._statement._bind_statement;
 
 			//	Reserve an entry in _members-vector for our variable.
-			scope_def->_members.push_back(member_t(bind._type, bind._identifier));
-
-			scope_def->_executable._statements.push_back(make_shared<statement_t>(statement_pos._statement));
+			const auto members2 = result_scope->_members + std::vector<member_t>{ member_t(bind._type, bind._identifier) };
+			executable_t executable2 = result_scope->_executable;
+			executable2._statements.push_back(make_shared<statement_t>(statement_pos._statement));
+			scope_ref_t scope2 = scope_def_t::make2(
+				result_scope->_type,
+				result_scope->_name,
+				members2,
+				executable2,
+				result_scope->_types_collector,
+				result_scope->_return_type
+			);
+			result_scope.swap(scope2);
 		}
 		else{
-			scope_def->_executable._statements.push_back(make_shared<statement_t>(statement_pos._statement));
+			executable_t executable2 = result_scope->_executable;
+			executable2._statements.push_back(make_shared<statement_t>(statement_pos._statement));
+			scope_ref_t scope2 = scope_def_t::make2(
+				result_scope->_type,
+				result_scope->_name,
+				result_scope->_members,
+				executable2,
+				result_scope->_types_collector,
+				result_scope->_return_type
+			);
+			result_scope.swap(scope2);
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
 
-	return pos;
+	return { result_scope, pos };
 }
 
 
 ast_t program_to_ast(const string& program){
 	ast_t ast;
+	string stage0 = json_to_compact_string(ast_to_json(ast));
+	const auto statements_pos = read_statements_into_scope_def(ast, ast._global_scope, program);
+	string stage1 = json_to_compact_string(ast_to_json(ast));
 
-	auto pos = program;
-	const auto statements_pos = read_statements_into_scope_def(ast._global_scope, program);
+	ast_t ast2(statements_pos.first);
+	string stage2 = json_to_compact_string(ast_to_json(ast2));
 
-	QUARK_ASSERT(ast.check_invariant());
-	trace(ast);
-	return ast;
+	QUARK_ASSERT(stage0 == stage1);
+	QUARK_ASSERT(stage1 != stage2);
+	trace(ast2);
+
+	QUARK_ASSERT(ast2.check_invariant());
+	return ast2;
 }
 
 QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
@@ -319,7 +349,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 		"	return 3;\n"
 		"}\n";
 
-	const auto result = program_to_ast(kProgram1);
+	auto result = program_to_ast(kProgram1);
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
 
 	const auto f = make_function_def(
@@ -328,13 +358,14 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 		{
 			{ type_identifier_t::make_string(), "args" }
 		},
-		result._global_scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(3)))
 		}),
+		{},
 		{}
 	);
 
+//	result._global_scope = result._global_scope->set_types(define_function_type(result._global_scope->_types_collector, "main", f));
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "main"));
 //	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "main") == *f));
 }
@@ -356,17 +387,49 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 			member_t{ type_identifier_t::make_int(), "y" },
 			member_t{ type_identifier_t::make_string(), "z" }
 		},
-		result._global_scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(3)))
 		}),
+		{},
 		{}
 	);
 
 //	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "f") == *f));
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "f"));
+
+	const auto f2 = resolve_function_type(result._global_scope->_types_collector, "f");
+	QUARK_UT_VERIFY(f2->_type == scope_def_t::k_function_scope);
+
+	const auto body = resolve_function_type(f2->_types_collector, "___body");
+	QUARK_UT_VERIFY(body->_type == scope_def_t::k_subscope);
+	QUARK_UT_VERIFY(body->_executable._statements.size() == 1);
 }
 
+
+QUARK_UNIT_TEST("", "program_to_ast()", "Local variables", ""){
+	const string kProgram1 =
+		"int main(string args){\n"
+		"	int a = 4;\n"
+		"	return 3;\n"
+		"}\n";
+
+	auto result = program_to_ast(kProgram1);
+	const auto f2 = resolve_function_type(result._global_scope->_types_collector, "main");
+	QUARK_UT_VERIFY(f2);
+	QUARK_UT_VERIFY(f2->_type == scope_def_t::k_function_scope);
+
+	const auto body = resolve_function_type(f2->_types_collector, "___body");
+	QUARK_UT_VERIFY(body);
+	QUARK_UT_VERIFY(body->_type == scope_def_t::k_subscope);
+	QUARK_UT_VERIFY(body->_members.size() == 1);
+	QUARK_UT_VERIFY(body->_members[0]._name == "a");
+	QUARK_UT_VERIFY(body->_executable._statements.size() == 2);
+
+}
+
+
+
+#if 0
 QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	const string kProgram =
 		"string hello(int x, int y, string z){\n"
@@ -389,7 +452,6 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 			member_t{ type_identifier_t::make_int(), "y" },
 			member_t{ type_identifier_t::make_string(), "z" }
 		},
-		result._global_scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant("test abc")))
 		}),
@@ -404,7 +466,6 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		{
 			member_t{ type_identifier_t::make_string(), "args" }
 		},
-		result._global_scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(3)))
 		}),
@@ -413,8 +474,10 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 //	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "main") == *f2));
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "main"));
 }
+#endif
 
 
+#if false
 QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 	const string kProgram2 =
 	"float testx(float v){\n"
@@ -433,7 +496,6 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 		{
 			member_t{ type_identifier_t::make_float(), "v" }
 		},
-		result._global_scope,
 		executable_t({
 			make_shared<statement_t>(make__return_statement(expression_t::make_constant(13.4f)))
 		}),
@@ -457,6 +519,9 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 	));
 */
 }
+#endif
+
+
 
 ////////////////////////////		STRUCT SUPPORT
 
