@@ -860,14 +860,44 @@ namespace floyd_parser {
 
 
 
+
+
+	ast_t::ast_t() :
+		_global_scope(scope_def_t::make_global_scope())
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	ast_t::ast_t(const std::shared_ptr<const scope_def_t>& global_scope) :
+		_global_scope(global_scope)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	bool ast_t::check_invariant() const {
+		QUARK_ASSERT(_global_scope);
+		QUARK_ASSERT(_global_scope->check_invariant());
+		return true;
+	}
+
+
+
+
 	void trace(const ast_t& program){
+		QUARK_ASSERT(program.check_invariant());
 		QUARK_SCOPED_TRACE("program");
 
-		const auto a = scope_def_to_json(*program._global_scope);
-		const auto s = json_to_compact_string(a);
+		const auto s = json_to_compact_string(ast_to_json(program));
 		QUARK_TRACE(s);
 	}
 
+	json_value_t ast_to_json(const ast_t& ast){
+		QUARK_ASSERT(ast.check_invariant());
+
+		return make_object({
+			{ "_global_scope", scope_def_to_json(*ast._global_scope) }
+		});
+	}
 
 
 

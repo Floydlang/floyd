@@ -97,16 +97,15 @@ std::pair<scope_ref_t, std::string> parse_function_definition(const ast_t& ast, 
 		QUARK_ASSERT(function_body_def);
 
 		//	temp will get all statements.
-		scope_ref_t temp = function_body_def;
-		read_statements_into_scope_def_mut(ast, temp, body_pos.first.substr(1, body_pos.first.size() - 2));
+		const auto temp = read_statements_into_scope_def(ast, function_body_def, body_pos.first.substr(1, body_pos.first.size() - 2));
 
 		const auto function_def2 = make_function_def(
 			function_name,
 			return_type_pos.first,
 			args,
-			temp->_executable,
-			temp->_types_collector,
-			temp->_members
+			temp.first->_executable,
+			temp.first->_types_collector,
+			temp.first->_members
 		);
 
 		return { function_def2, body_pos.second };

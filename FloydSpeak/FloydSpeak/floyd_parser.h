@@ -20,7 +20,7 @@ namespace floyd_parser {
 	struct scope_def_t;
 
 
-	std::string read_statements_into_scope_def_mut(const ast_t& ast, scope_ref_t& scope_def_mut, const std::string& s);
+	std::pair<scope_ref_t, std::string> read_statements_into_scope_def(const ast_t& ast, const scope_ref_t scope_def, const std::string& s);
 
 	ast_t program_to_ast(const std::string& program);
 

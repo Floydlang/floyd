@@ -130,7 +130,7 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
         std::string _rest;
     };
 
-statement_result_t read_statement(const ast_t& ast, scope_ref_t scope_def, const string& pos){
+statement_result_t read_statement(const ast_t& ast, const scope_ref_t scope_def, const string& pos){
 	QUARK_ASSERT(scope_def->check_invariant());
 
 	const auto token_pos = read_until(pos, whitespace_chars);
@@ -268,74 +268,79 @@ scope_ref_t install_struct_support(const ast_t& ast, const scope_ref_t scope_def
 //??? Track when / order of definitions and binds so statements can't access them before they're in scope.
 
 
+std::pair<scope_ref_t, std::string> read_statements_into_scope_def(const ast_t& ast, const scope_ref_t scope_def2, const string& s){
+	QUARK_ASSERT(scope_def2 && scope_def2->check_invariant());
 
-//??? return new scope_def - no mutation
-std::string read_statements_into_scope_def_mut(const ast_t& ast, scope_ref_t& scope_def_mut, const string& s){
-	QUARK_ASSERT(scope_def_mut && scope_def_mut->check_invariant());
+	//	Copy input scope_def.
+	shared_ptr<const scope_def_t> result_scope = make_shared<scope_def_t>(*scope_def2);
 
 	auto pos = skip_whitespace(s);
 	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
-		const auto statement_pos = read_statement(ast, scope_def_mut, pos);
+		const auto statement_pos = read_statement(ast, result_scope, pos);
 
 		//	Definition statements are immediately removed from AST and the types are defined instead.
 		if(statement_pos._statement._define_struct){
 			const auto a = statement_pos._statement._define_struct;
-			scope_ref_t scope2 = install_struct_support(ast, scope_def_mut, a->_struct_def);
-			scope_def_mut.swap(scope2);
+			result_scope = install_struct_support(ast, result_scope, a->_struct_def);
 		}
 		else if(statement_pos._statement._define_function){
 			auto function_def = statement_pos._statement._define_function->_function_def;
 			const auto function_name = function_def->_name;
-			auto scope2 = scope_def_mut->set_types(define_function_type(scope_def_mut->_types_collector, function_name.to_string(), function_def));
-			scope_def_mut.swap(scope2);
+			result_scope = result_scope->set_types(define_function_type(result_scope->_types_collector, function_name.to_string(), function_def));
 		}
 		else if(statement_pos._statement._bind_statement){
 			const auto& bind = *statement_pos._statement._bind_statement;
 
 			//	Reserve an entry in _members-vector for our variable.
-			const auto members2 = scope_def_mut->_members + std::vector<member_t>{ member_t(bind._type, bind._identifier) };
-			executable_t executable2 = scope_def_mut->_executable;
+			const auto members2 = result_scope->_members + std::vector<member_t>{ member_t(bind._type, bind._identifier) };
+			executable_t executable2 = result_scope->_executable;
 			executable2._statements.push_back(make_shared<statement_t>(statement_pos._statement));
 			scope_ref_t scope2 = scope_def_t::make2(
-				scope_def_mut->_type,
-				scope_def_mut->_name,
+				result_scope->_type,
+				result_scope->_name,
 				members2,
 				executable2,
-				scope_def_mut->_types_collector,
-				scope_def_mut->_return_type
+				result_scope->_types_collector,
+				result_scope->_return_type
 			);
-			scope_def_mut.swap(scope2);
+			result_scope.swap(scope2);
 		}
 		else{
-			executable_t executable2 = scope_def_mut->_executable;
+			executable_t executable2 = result_scope->_executable;
 			executable2._statements.push_back(make_shared<statement_t>(statement_pos._statement));
 			scope_ref_t scope2 = scope_def_t::make2(
-				scope_def_mut->_type,
-				scope_def_mut->_name,
-				scope_def_mut->_members,
+				result_scope->_type,
+				result_scope->_name,
+				result_scope->_members,
 				executable2,
-				scope_def_mut->_types_collector,
-				scope_def_mut->_return_type
+				result_scope->_types_collector,
+				result_scope->_return_type
 			);
-			scope_def_mut.swap(scope2);
+			result_scope.swap(scope2);
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
 
-	return pos;
+	return { result_scope, pos };
 }
 
 
 ast_t program_to_ast(const string& program){
 	ast_t ast;
+	string stage0 = json_to_compact_string(ast_to_json(ast));
+	const auto statements_pos = read_statements_into_scope_def(ast, ast._global_scope, program);
+	string stage1 = json_to_compact_string(ast_to_json(ast));
 
-	auto pos = program;
-	const auto statements_pos = read_statements_into_scope_def_mut(ast, ast._global_scope, program);
+	ast_t ast2(statements_pos.first);
+	string stage2 = json_to_compact_string(ast_to_json(ast2));
 
-	QUARK_ASSERT(ast.check_invariant());
-	trace(ast);
-	return ast;
+	QUARK_ASSERT(stage0 == stage1);
+	QUARK_ASSERT(stage1 != stage2);
+	trace(ast2);
+
+	QUARK_ASSERT(ast2.check_invariant());
+	return ast2;
 }
 
 QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){

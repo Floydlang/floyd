@@ -507,28 +507,21 @@ namespace floyd_parser {
 		??? COPIES SHARE AST TREE!!!
 	*/
 	struct ast_t {
-		public: ast_t() :
-			_global_scope(
-				scope_def_t::make_global_scope()
-			)
-		{
-		}
-
+		public: ast_t();
+		public: ast_t(const std::shared_ptr<const scope_def_t>& global_scope);
 		
 //		public: ast_t& operator=(const ast_t& other) = delete;
 //		public: ast_t(const ast_t& other) = delete;
 
-		public: bool check_invariant() const {
-			QUARK_ASSERT(_global_scope->check_invariant());
-			return true;
-		}
-
+		public: bool check_invariant() const;
 
 		/////////////////////////////		STATE
-		public: scope_ref_t _global_scope;
+		public: std::shared_ptr<const scope_def_t> _global_scope;
 	};
 
 	void trace(const ast_t& program);
+	json_value_t ast_to_json(const ast_t& ast);
+
 
 	inline ast_path_t make_root(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());

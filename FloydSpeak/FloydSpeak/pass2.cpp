@@ -304,9 +304,12 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 	return found != std::string::npos;
 }
 
-// !!! Mutates ast1???
+
+
+//??? mutates!!!
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
-	//??? Copy ast shared mutable state!!
+	string stage0 = json_to_compact_string(ast_to_json(ast1));
+
 	auto ast2 = ast1;
 
 	resolve_types__scope_def_mut(ast2, make_root(ast2), ast2._global_scope);
