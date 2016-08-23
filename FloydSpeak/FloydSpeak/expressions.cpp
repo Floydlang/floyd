@@ -155,11 +155,18 @@ expression_t expression_t::make_constant(const value_t& value, const type_identi
 	return result;
 }
 
+expression_t expression_t::make_constant(const char s[]){
+	return make_constant(value_t(s));
+}
 expression_t expression_t::make_constant(const std::string& s){
 	return make_constant(value_t(s));
 }
 
 expression_t expression_t::make_constant(const int i){
+	return make_constant(value_t(i));
+}
+
+expression_t expression_t::make_constant(const bool i){
 	return make_constant(value_t(i));
 }
 

@@ -61,6 +61,7 @@ namespace floyd_parser {
 	/*
 		"int a = 13";
 		"int b = f("hello");"
+		"bool a = is_hello("hello")";
 
 		Returns
 			[bind_statement_t]
@@ -72,7 +73,6 @@ namespace floyd_parser {
 
 		const auto token_pos = read_until(s, whitespace_chars);
 		const auto type = type_identifier_t::make(token_pos.first);
-	//	QUARK_ASSERT(ast.parser_i__is_known_type(read_until(s, whitespace_chars).first));
 
 		const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
 		const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
@@ -85,6 +85,20 @@ namespace floyd_parser {
 
 		//	Skip trailing ";".
 		return { statement, expression_pos.second.substr(1) };
+	}
+
+	QUARK_UNIT_TESTQ("parse_assignment_statement", "bool true"){
+		const auto a = parse_assignment_statement("bool bb = true; \n");
+		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "bb");
+		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(true));
+		QUARK_TEST_VERIFY(a.second == " \n");
+	}
+
+	QUARK_UNIT_TESTQ("parse_assignment_statement", "bool false"){
+		const auto a = parse_assignment_statement("bool bb = false; \n");
+		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "bb");
+		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(false));
+		QUARK_TEST_VERIFY(a.second == " \n");
 	}
 
 	QUARK_UNIT_TESTQ("parse_assignment_statement", "int"){

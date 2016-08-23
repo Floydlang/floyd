@@ -399,6 +399,11 @@ namespace floyd_parser {
 			_base_type(k_null)
 		{
 		}
+		public: static type_def_t make_bool(){
+			type_def_t a;
+			a._base_type = k_bool;
+			return a;
+		}
 		public: static type_def_t make_int(){
 			type_def_t a;
 			a._base_type = k_int;

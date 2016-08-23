@@ -162,10 +162,12 @@ namespace floyd_parser {
 
 
 	struct expression_t {
-		public: static expression_t make_constant(const value_t& value, const type_identifier_t& resolved_expression_type = type_identifier_t());
-		public: static expression_t make_constant(const std::string& s);
+		public: static expression_t make_constant(const bool i);
 		public: static expression_t make_constant(const int i);
 		public: static expression_t make_constant(const float f);
+		public: static expression_t make_constant(const char s[]);
+		public: static expression_t make_constant(const std::string& s);
+		public: static expression_t make_constant(const value_t& value, const type_identifier_t& resolved_expression_type = type_identifier_t());
 
 		public: static expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input, const type_identifier_t& resolved_expression_type = type_identifier_t());
 		public: static expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right, const type_identifier_t& resolved_expression_type = type_identifier_t());
