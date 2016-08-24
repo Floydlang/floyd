@@ -145,4 +145,8 @@ QUARK_UNIT_TESTQ("evaluate()", ""){
 	QUARK_UT_VERIFY(evaluate2("1 + 3 * 2 + 100") == 107);
 }
 
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("-(3 * 2 + (8 * 2)) + (((1))) * 2") == -(3 * 2 + (8 * 2)) + (((1))) * 2);
+}
+
 
