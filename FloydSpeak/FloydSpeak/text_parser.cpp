@@ -25,7 +25,6 @@ using std::make_shared;
 
 
 
-const std::string test_whitespace_chars = " \n\t";
 
 
 
@@ -54,6 +53,13 @@ seq_t::seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos) :
 	QUARK_ASSERT(pos <= str->size());
 
 	QUARK_ASSERT(check_invariant());
+}
+
+bool seq_t::operator==(const seq_t& other) const {
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(other.check_invariant());
+
+	return first(1) == other.first(1) && rest_string() == other.rest_string();
 }
 
 bool seq_t::check_invariant() const {
@@ -85,6 +91,7 @@ std::string seq_t::first(size_t chars) const{
 
 seq_t seq_t::rest() const{
 	QUARK_ASSERT(check_invariant());
+
 	return rest(1);
 }
 
@@ -95,11 +102,30 @@ seq_t seq_t::rest(size_t skip) const{
 	return seq_t(_str, p);
 }
 
+std::string seq_t::rest_string() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _str->substr(_pos);
+}
+
 
 std::size_t seq_t::rest_size() const{
 	QUARK_ASSERT(check_invariant());
 
-	return _str->size() - _pos;
+	return empty() ? 0 : _str->size() - _pos - 1;
+}
+
+
+bool seq_t::empty() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _str->size() == _pos;
+}
+
+const char* seq_t::c_str() const{
+	QUARK_ASSERT(check_invariant());
+
+	return empty() ? nullptr : _str->c_str() + _pos;
 }
 
 
@@ -168,14 +194,53 @@ QUARK_UNIT_TESTQ("rest(n)", ""){
 
 
 QUARK_UNIT_TESTQ("rest_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest_size() == 3);
+	QUARK_TEST_VERIFY(seq_t("abc").rest_size() == 2);
 }
 QUARK_UNIT_TESTQ("rest_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest().rest_size() == 2);
+	QUARK_TEST_VERIFY(seq_t("abc").rest().rest_size() == 1);
 }
 QUARK_UNIT_TESTQ("rest_size()", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").rest(100).rest_size() == 0);
 }
+
+
+
+
+
+pair<string, seq_t> read_while(const seq_t& p1, const string& match){
+	string a;
+	seq_t p2 = p1;
+
+	while(!p2.empty() && match.find(p2.first_char()) != string::npos){
+		a = a + p2.first_char();
+		p2 = p2.rest();
+	}
+
+	return { a, p2 };
+}
+
+QUARK_UNIT_TEST("", "read_while()", "", ""){
+	QUARK_TEST_VERIFY((read_while(seq_t(""), test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("") }));
+}
+
+QUARK_UNIT_TEST("", "read_while()", "", ""){
+	QUARK_TEST_VERIFY((read_while(seq_t("\t"), test_whitespace_chars) == pair<string, seq_t>{ "\t", seq_t("") }));
+}
+
+QUARK_UNIT_TEST("", "read_while()", "", ""){
+	QUARK_TEST_VERIFY((read_while(seq_t("end\t"), test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("end\t") }));
+}
+
+QUARK_UNIT_TEST("", "read_while()", "", ""){
+	QUARK_TEST_VERIFY((read_while(seq_t("\nend"), test_whitespace_chars) == pair<string, seq_t>{ "\n", seq_t("end") }));
+}
+
+QUARK_UNIT_TEST("", "read_while()", "", ""){
+	QUARK_TEST_VERIFY((read_while(seq_t("\n\t\rend"), test_whitespace_chars) == pair<string, seq_t>{ "\n\t\r", seq_t("end") }));
+}
+
+
+
 
 
 

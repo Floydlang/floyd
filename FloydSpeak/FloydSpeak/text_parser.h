@@ -15,12 +15,13 @@
 typedef std::pair<std::string, std::string> seq;
 
 
+const std::string test_whitespace_chars = " \n\t\r";
 
 ///////////////////////////////		seq_t
 
 
 struct seq_t {
-	public: seq_t(const std::string& s);
+	public: explicit seq_t(const std::string& s);
 	public: bool check_invariant() const;
 
 	public: char first_char() const;
@@ -37,15 +38,29 @@ struct seq_t {
 	//	Limited to rest_size().
 	public: seq_t rest(size_t skip) const;
 
+	public: std::string rest_string() const;
+
+	//	Skips first char.
 	public: std::size_t rest_size() const;
+
+	//	If true, there is no first-char and rest is empty.
+	public: bool empty() const;
 
 	private: seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos);
 
+	public: bool operator==(const seq_t& other) const;
+
+	//	Returns point to first char and rest.
+	const char* c_str() const;
 
 	/////////////		STATE
 	private: std::shared_ptr<const std::string> _str;
 	private: std::size_t _pos;
 };
+
+
+std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& match);
+
 
 
 

@@ -10,53 +10,55 @@
 
 #include <string>
 
+#include "text_parser.h"
+
 using namespace std;
 
 
-
-string skipWhite(const string& p) {
-	const auto count = strspn(p.c_str(), " \t\n\r");
-	return p.substr(count);
+seq_t skipWhite(const seq_t& p1) {
+	return read_while(p1, " \t\n\r").second;
 }
 
 
-pair<int, string> toNumber(const string& s) {
+pair<int, seq_t> toNumber(const seq_t& s) {
 	char* e = nullptr;
 	long value = strtol(s.c_str(), &e, 0);
 	size_t used = e - s.c_str();
 	if (used == 0){
 		throw std::runtime_error("Invalid number");
 	}
-	return { (int)value, s.substr(used) };
+	return { (int)value, s.rest(used) };
 }
 
 QUARK_UNIT_TESTQ("toNumber()", ""){
-	QUARK_UT_VERIFY((toNumber("0") == pair<int, string>{ 0, "" }));
+	QUARK_UT_VERIFY((toNumber(seq_t("0")) == pair<int, seq_t>{ 0, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("toNumber()", ""){
-	QUARK_UT_VERIFY((toNumber("0xyz") == pair<int, string>{ 0, "xyz" }));
+	QUARK_UT_VERIFY((toNumber(seq_t("0xyz")) == pair<int, seq_t>{ 0, seq_t("xyz") }));
 }
 
 QUARK_UNIT_TESTQ("toNumber()", ""){
-	QUARK_UT_VERIFY((toNumber("13xyz") == pair<int, string>{ 13, "xyz" }));
+	QUARK_UT_VERIFY((toNumber(seq_t("13xyz")) == pair<int, seq_t>{ 13, seq_t("xyz") }));
 }
 
 
 
-pair<int, string> evaluate(const string& p1, int precedence = 0){
+pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0){
     auto p = skipWhite(p1);
+	if(p.empty()){
+		throw std::runtime_error("Unexpected end of string");
+	}
 
 	int value = 0;
-    switch (p[0]) {
+	char ch1 = p.first_char();
+    switch (ch1) {
         case '\0':
-			throw std::runtime_error("Unexpected end of string");
 
 		//	"-xxx"
         case '-':
 			{
-				p = p.substr(1);
-				const auto a = evaluate(p, 3);
+				const auto a = evaluate(p.rest(), 3);
 				value = -a.first;
 				p = a.second;
 			}
@@ -65,15 +67,14 @@ pair<int, string> evaluate(const string& p1, int precedence = 0){
 		//	"(yyy)xxx"
         case '(':
 			{
-				p = p.substr(1);
-				const auto a = evaluate(p, 0);
+				const auto a = evaluate(p.rest(), 0);
 				value = a.first;
 				p = a.second;
 
-				if (a.second[0] != ')'){
+				if (a.second.first(1) != ")"){
 					throw std::runtime_error("Expected ')'");
 				}
-				p = p.substr(1);
+				p = p.rest();
 			}
 			break;
 
@@ -92,25 +93,30 @@ pair<int, string> evaluate(const string& p1, int precedence = 0){
 		bool loop = false;
 		do {
 			loop = true;
-			char ch = p[0];
-			if((ch == '+' || ch == '-') && precedence < 1){
-				const auto a = evaluate(p.substr(1), 1);
-				value = ch == '+' ? value + a.first : value - a.first;
-				p = a.second;
-			}
-			else if((ch == '*' || ch == '/') && precedence < 2) {
-				const auto a = evaluate(p.substr(1), 2);
-				value = ch == '*' ? value * a.first : value / a.first;
-				p = a.second;
-			}
-			else if(ch == '\0'){
-				loop = false;
-			}
-			else if(ch == ')'){
+			if(p.empty()){
 				loop = false;
 			}
 			else{
-				loop = false;
+				char ch = p.first_char();
+				if((ch == '+' || ch == '-') && precedence < 1){
+					const auto a = evaluate(p.rest(), 1);
+					value = ch == '+' ? value + a.first : value - a.first;
+					p = a.second;
+				}
+				else if((ch == '*' || ch == '/') && precedence < 2) {
+					const auto a = evaluate(p.rest(), 2);
+					value = ch == '*' ? value * a.first : value / a.first;
+					p = a.second;
+				}
+				else if(ch == '\0'){
+					loop = false;
+				}
+				else if(ch == ')'){
+					loop = false;
+				}
+				else{
+					loop = false;
+				}
 			}
 		} while (loop);
 		p = skipWhite(p);
@@ -120,7 +126,7 @@ pair<int, string> evaluate(const string& p1, int precedence = 0){
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
 	try{
-		evaluate("");
+		evaluate(seq_t(""));
 		QUARK_UT_VERIFY(false);
 	}
 	catch(...){
@@ -128,34 +134,34 @@ QUARK_UNIT_TESTQ("evaluate()", ""){
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("0") == pair<int, string>{ 0, "" }));
+	QUARK_UT_VERIFY((evaluate(seq_t("0")) == pair<int, seq_t>{ 0, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("1234567890") == pair<int, string>{ 1234567890, "" }));
+	QUARK_UT_VERIFY((evaluate(seq_t("1234567890")) == pair<int, seq_t>{ 1234567890, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("10 + 4") == pair<int, string>{ 14, ""}));
+	QUARK_UT_VERIFY((evaluate(seq_t("10 + 4")) == pair<int, seq_t>{ 14, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("10 * 4") == pair<int, string>{ 40, ""}));
+	QUARK_UT_VERIFY((evaluate(seq_t("10 * 4")) == pair<int, seq_t>{ 40, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("(3)") == pair<int, string>{ 3, ""}));
+	QUARK_UT_VERIFY((evaluate(seq_t("(3)")) == pair<int, seq_t>{ 3, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("(3 * 8)") == pair<int, string>{ 24, ""}));
+	QUARK_UT_VERIFY((evaluate(seq_t("(3 * 8)")) == pair<int, seq_t>{ 24, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("1 + 3 * 2 + 100") == pair<int, string>{ 107, ""}));
+	QUARK_UT_VERIFY((evaluate(seq_t("1 + 3 * 2 + 100")) == pair<int, seq_t>{ 107, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate("-(3 * 2 + (8 * 2)) - (((1))) * 2") == pair<int, string>{ -(3 * 2 + (8 * 2)) - (((1))) * 2, ""}));
+	QUARK_UT_VERIFY((evaluate(seq_t("-(3 * 2 + (8 * 2)) - (((1))) * 2")) == pair<int, seq_t>{ -(3 * 2 + (8 * 2)) - (((1))) * 2, seq_t("") }));
 }
 
