@@ -8,132 +8,175 @@
 
 #include "quark.h"
 
+#include <string>
 
-void skipWhite(const char*& p) {
-	p += strspn(p, " \t\n\r");
+using namespace std;
+
+
+struct SEQ {
+	public: SEQ(const std::string& s) :
+		_string(make_shared<std::string>(s)),
+		_pos(0)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	public: SEQ(const SEQ& s, size_t pos) :
+		_string(s._string),
+		_pos(pos)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	public: bool check_invariant() const {
+		QUARK_ASSERT(_string);
+		QUARK_ASSERT(_pos <= _string->size());
+
+		return true;
+	}
+
+	public: size_t size() const {
+		QUARK_ASSERT(check_invariant());
+
+		return _string->size() - _pos;
+	}
+
+	public: char first_char() const{
+		QUARK_ASSERT(_pos < _string->size());
+
+		return _string->operator[](_pos);
+	}
+
+	public: string first() const{
+		QUARK_ASSERT(check_invariant());
+
+		return _pos < _string->size() ? _string->substr(_pos, 1) : string();
+	}
+
+	public: SEQ rest() const{
+		QUARK_ASSERT(check_invariant());
+
+		return SEQ(*this, _pos);
+	}
+
+
+	///////////////////		STATE.
+
+	private: shared_ptr<string> _string;
+	private: size_t _pos;
+};
+
+
+
+
+
+string skipWhite(const string& p) {
+	const auto count = strspn(p.c_str(), " \t\n\r");
+	return p.substr(count);
 }
 
-void toNumber(const char*& p, double& d) {
-	char* e;
-	d = strtod(p, &e);
-	if (p == e){
+
+pair<int, string> toNumber(const string& s) {
+	char* e = nullptr;
+	long value = strtol(s.c_str(), &e, 0);
+	size_t used = e - s.c_str();
+	if (used == 0){
 		throw std::runtime_error("Invalid number");
 	}
-	p = e;
+	return { (int)value, s.substr(used) };
 }
 
-void toNumber(const char*& p, long& l) {
-	char* e;
-	l = strtol(p, &e, 0);
-	if (p == e){
-		throw std::runtime_error("Invalid number");
-	}
-	p = e;
+QUARK_UNIT_TESTQ("toNumber()", ""){
+	QUARK_UT_VERIFY((toNumber("0") == pair<int, string>{ 0, "" }));
 }
 
-void skipWhite(const wchar_t*& p) {
-	p += wcsspn(p, L" \t\n\r");
+QUARK_UNIT_TESTQ("toNumber()", ""){
+	QUARK_UT_VERIFY((toNumber("0xyz") == pair<int, string>{ 0, "xyz" }));
 }
 
-void toNumber(const wchar_t*& p, double& d) {
-	wchar_t* e;
-	d = wcstod(p, &e);
-	if (p == e){
-		throw std::runtime_error("Invalid number");
-	}
-	p = e;
-}
-
-void toNumber(const wchar_t*& p, long& l) {
-	wchar_t* e;
-	l = wcstol(p, &e, 0);
-	if (p == e){
-		throw std::runtime_error("Invalid number");
-	}
-	p = e;
-}
-
-template<class C> void toNumber(C*& p, float& f) {
-	double d;
-	toNumber(p, d);
-	f = static_cast<float>(d);
-}
-
-template<class C, class T> void toNumber(C*& p, T& i) {
-	long l;
-	toNumber(p, l);
-	i = static_cast<int>(l);
+QUARK_UNIT_TESTQ("toNumber()", ""){
+	QUARK_UT_VERIFY((toNumber("13xyz") == pair<int, string>{ 13, "xyz" }));
 }
 
 
 
-void evaluate(const char*& p, int& v, int precedence = 0){
-    skipWhite(p);
-    switch (*p) {
+pair<int, string> evaluate(const string& p1, int precedence = 0){
+    auto p = skipWhite(p1);
+
+	int value = 0;
+    switch (p[0]) {
         case '\0':
 			throw std::runtime_error("Unexpected end of string");
 
 		//	"-xxx"
         case '-':
-			evaluate(++p, v, 3);
-			v = -v;
+			{
+				p = p.substr(1);
+				const auto a = evaluate(p, 3);
+				value = -a.first;
+				p = a.second;
+			}
 			break;
 
 		//	"(yyy)xxx"
         case '(':
-			evaluate(++p, v, 0);
-			if (*p != ')'){
-				throw std::runtime_error("Expected ')'");
+			{
+				p = p.substr(1);
+				const auto a = evaluate(p, 0);
+				value = a.first;
+				p = a.second;
+
+				if (a.second[0] != ')'){
+					throw std::runtime_error("Expected ')'");
+				}
+				p = p.substr(1);
 			}
-			++p;
 			break;
 
 		//	"1234xxx"
         default:
-			toNumber(p, v);
+			{
+				const auto a = toNumber(p);
+				value = a.first;
+				p = a.second;
+			}
 			break;
     }
-    skipWhite(p);
+    p = skipWhite(p);
 
-    bool loop = false;
-    do {
-        loop = true;
-		char ch = *p;
-
-		if((ch == '+' || ch == '-') && precedence < 1){
-			int r = 0;
-			evaluate(++p, r, 1);
-			v = ch == '+' ? v + r : v - r;
-		}
-		else if((ch == '*' || ch == '/') && precedence < 2) {
-			int r = 0;
-			evaluate(++p, r, 2);
-			v = ch == '*' ? v * r : v / r;
-		}
-
-		else if(ch == '\0'){
-			loop = false;
-		}
-		else if(ch == ')'){
-			loop = false;
-		}
-		else{
-			loop = false;
-		}
-    } while (loop);
-    skipWhite(p);
-}
-
-int evaluate2(const std::string& s){
-	const char* p = s.c_str();
-	int value = 0;
-	evaluate(p, value, 0);
-	return value;
+	if(!p.empty()){
+		bool loop = false;
+		do {
+			loop = true;
+			char ch = p[0];
+			if((ch == '+' || ch == '-') && precedence < 1){
+				const auto a = evaluate(p.substr(1), 1);
+				value = ch == '+' ? value + a.first : value - a.first;
+				p = a.second;
+			}
+			else if((ch == '*' || ch == '/') && precedence < 2) {
+				const auto a = evaluate(p.substr(1), 2);
+				value = ch == '*' ? value * a.first : value / a.first;
+				p = a.second;
+			}
+			else if(ch == '\0'){
+				loop = false;
+			}
+			else if(ch == ')'){
+				loop = false;
+			}
+			else{
+				loop = false;
+			}
+		} while (loop);
+		p = skipWhite(p);
+	}
+	return { value, p };
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
 	try{
-		evaluate2("");
+		evaluate("");
 		QUARK_UT_VERIFY(false);
 	}
 	catch(...){
@@ -141,34 +184,34 @@ QUARK_UNIT_TESTQ("evaluate()", ""){
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("0") == 0);
+	QUARK_UT_VERIFY((evaluate("0") == pair<int, string>{ 0, "" }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("1234567890") == 1234567890);
+	QUARK_UT_VERIFY((evaluate("1234567890") == pair<int, string>{ 1234567890, "" }));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("10 + 4") == 14);
+	QUARK_UT_VERIFY((evaluate("10 + 4") == pair<int, string>{ 14, ""}));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("10 * 4") == 40);
+	QUARK_UT_VERIFY((evaluate("10 * 4") == pair<int, string>{ 40, ""}));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("(3)") == 3);
+	QUARK_UT_VERIFY((evaluate("(3)") == pair<int, string>{ 3, ""}));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("(3 * 8)") == 24);
+	QUARK_UT_VERIFY((evaluate("(3 * 8)") == pair<int, string>{ 24, ""}));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("1 + 3 * 2 + 100") == 107);
+	QUARK_UT_VERIFY((evaluate("1 + 3 * 2 + 100") == pair<int, string>{ 107, ""}));
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("-(3 * 2 + (8 * 2)) - (((1))) * 2") == -(3 * 2 + (8 * 2)) - (((1))) * 2);
+	QUARK_UT_VERIFY((evaluate("-(3 * 2 + (8 * 2)) - (((1))) * 2") == pair<int, string>{ -(3 * 2 + (8 * 2)) - (((1))) * 2, ""}));
 }
 
