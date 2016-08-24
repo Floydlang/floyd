@@ -280,7 +280,7 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 */
 
 
-pair<expression_t, string> parse_summands(const string& s, int depth);
+pair<expression_t, string> parse_expression(string expression, int depth);
 
 
 expression_t negate_expression(const expression_t& e){
@@ -459,7 +459,15 @@ QUARK_UNIT_TESTQ("parse_single", "read struct member"){
 }
 
 
-// Parse a single constant or an expression in parenthesis
+/*
+	Parse a single constant or an expression in parenthesis
+
+	"123"
+	"-123"
+	"--+-123"
+	"(123 + 123 * x + f(y*3))"
+*/
+
 pair<expression_t, string> parse_atom(const string& s, int depth) {
 	string pos = skip_whitespace(s);
 
@@ -476,7 +484,7 @@ pair<expression_t, string> parse_atom(const string& s, int depth) {
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = parse_summands(pos, depth);
+		auto res = parse_expression(pos, depth);
 		pos = skip_whitespace(res.second);
 		if(!(res.second.size() > 0 && res.second[0] == ')')) {
 			// Unmatched opening parenthesis
@@ -549,6 +557,8 @@ pair<expression_t, string> parse_factors(const string& s, int depth) {
 }
 
 pair<expression_t, string> parse_summands(const string& s, int depth) {
+	QUARK_ASSERT(depth >= 0);
+
 	const auto num1_pos = parse_factors(s, depth);
 	auto result_expression = num1_pos.first;
 	string pos = num1_pos.second;
@@ -569,18 +579,25 @@ pair<expression_t, string> parse_summands(const string& s, int depth) {
 }
 
 
+pair<expression_t, string> parse_expression(string expression, int depth){
+	QUARK_ASSERT(depth >= 0);
 
-expression_t parse_expression(string expression){
 	if(expression.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
 	auto result = parse_summands(expression, 0);
-	if(!result.second.empty()){
-		throw std::runtime_error("EEE_WRONG_CHAR");
-	}
 
 	QUARK_TRACE("Expression: \"" + expression + "\"");
 	trace(result.first);
+	return result;
+}
+
+
+expression_t parse_expression(string expression){
+	const auto result = parse_expression(expression, 0);
+	if(!result.second.empty()){
+		throw std::runtime_error("EEE_WRONG_CHAR");
+	}
 	return result.first;
 }
 
