@@ -6,11 +6,11 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_function.h"
+#include "parse_function_def.h"
 
-#include "parser_expression.h"
+#include "parse_expression.h"
 #include "text_parser.h"
-#include "parser_statement.h"
+#include "statements.h"
 #include "floyd_parser.h"
 #include "parser_primitives.h"
 

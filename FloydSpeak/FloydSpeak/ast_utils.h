@@ -67,7 +67,10 @@ namespace floyd_parser {
 	std::shared_ptr<const floyd_parser::type_def_t> resolve_type(const ast_t& ast, const floyd_parser::ast_path_t& path, const floyd_parser::scope_ref_t scope_def, const type_identifier_t& type);
 
 	//	Attempts to resolve type (if not already resolved). If it fails, the input type is returned unresolved.
-	floyd_parser::type_identifier_t resolve_type2(const ast_t& ast, const ast_path_t& path, const floyd_parser::scope_ref_t scope_def, const floyd_parser::type_identifier_t& type);
+	floyd_parser::type_identifier_t resolve_type2(const ast_t& ast,
+		const ast_path_t& path,
+		const floyd_parser::scope_ref_t scope_def,
+		const floyd_parser::type_identifier_t& type);
 
 
 	floyd_parser::value_t make_default_value(const ast_t& ast, const ast_path_t& path, const scope_ref_t scope_def, const type_identifier_t& type);
@@ -77,7 +80,6 @@ namespace floyd_parser {
 
 	member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name);
 	type_identifier_t resolve_type_throw(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const type_identifier_t& s);
-
 
 
 

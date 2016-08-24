@@ -9,7 +9,7 @@
 #include "expressions.h"
 
 #include "text_parser.h"
-#include "parser_statement.h"
+#include "statements.h"
 #include "parser_value.h"
 #include "json_writer.h"
 #include "utils.h"
@@ -54,6 +54,16 @@ bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) con
 	return _operation == other._operation && *_input == *other._input;
 }
 
+
+
+bool conditional_operator_expr_t::operator==(const conditional_operator_expr_t& other) const {
+	return *_condition == *other._condition && *_a == *other._a && *_b == *other._b;
+}
+
+
+
+
+
 bool load_expr_t::operator==(const load_expr_t& other) const{
 	return *_address == *other._address ;
 }
@@ -77,6 +87,9 @@ bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const
 
 
 
+
+
+
 //////////////////////////////////////////////////		expression_t
 
 
@@ -85,7 +98,17 @@ bool expression_t::check_invariant() const{
 	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
 
 	//	Make sure exactly ONE pointer is set.
-	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_variable ? 1 : 0) + (_resolve_struct_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
+	QUARK_ASSERT(
+		(_constant ? 1 : 0)
+		+ (_math1 ? 1 : 0)
+		+ (_math2 ? 1 : 0)
+		+ (_conditional_operator ? 1 : 0)
+		+ (_call ? 1 : 0)
+		+ (_load ? 1 : 0)
+		+ (_resolve_variable ? 1 : 0)
+		+ (_resolve_struct_member ? 1 : 0)
+		+ (_lookup_element ? 1 : 0)
+		 == 1);
 
 	return true;
 }
@@ -95,28 +118,31 @@ bool expression_t::operator==(const expression_t& other) const {
 	QUARK_ASSERT(other.check_invariant());
 
 	if(_constant){
-		return other._constant && *_constant == *other._constant;
+		return compare_shared_values(_constant, other._constant);
 	}
 	else if(_math1){
-		return other._math1 && *_math1 == *other._math1;
+		return compare_shared_values(_math1, other._math1);
 	}
 	else if(_math2){
-		return other._math2 && *_math2 == *other._math2;
+		return compare_shared_values(_math2, other._math2);
+	}
+	else if(_conditional_operator){
+		return compare_shared_values(_conditional_operator, other._conditional_operator);
 	}
 	else if(_call){
-		return other._call && *_call == *other._call;
+		return compare_shared_values(_call, other._call);
 	}
 	else if(_load){
-		return other._load && *_load == *other._load;
+		return compare_shared_values(_load, other._load);
 	}
 	else if(_resolve_variable){
-		return other._resolve_variable && *_resolve_variable == *other._resolve_variable;
+		return compare_shared_values(_resolve_variable, other._resolve_variable);
 	}
 	else if(_resolve_struct_member){
-		return other._resolve_struct_member && *_resolve_struct_member == *other._resolve_struct_member;
+		return compare_shared_values(_resolve_struct_member, other._resolve_struct_member);
 	}
 	else if(_lookup_element){
-		return other._lookup_element && *_lookup_element == *other._lookup_element;
+		return compare_shared_values(_lookup_element, other._lookup_element);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -139,11 +165,18 @@ expression_t expression_t::make_constant(const value_t& value, const type_identi
 	return result;
 }
 
+expression_t expression_t::make_constant(const char s[]){
+	return make_constant(value_t(s));
+}
 expression_t expression_t::make_constant(const std::string& s){
 	return make_constant(value_t(s));
 }
 
 expression_t expression_t::make_constant(const int i){
+	return make_constant(value_t(i));
+}
+
+expression_t expression_t::make_constant(const bool i){
 	return make_constant(value_t(i));
 }
 
@@ -183,7 +216,23 @@ expression_t expression_t::make_math_operation2(math_operation2_expr_t::operatio
 	return result;
 }
 
+expression_t expression_t::make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const type_identifier_t& resolved_expression_type){
+	QUARK_ASSERT(condition.check_invariant());
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(b.check_invariant());
+	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
+	auto condition2 = make_shared<expression_t>(condition);
+	auto a2 = make_shared<expression_t>(a);
+	auto b2 = make_shared<expression_t>(b);
+
+	auto result = expression_t();
+	result._conditional_operator = std::make_shared<conditional_operator_expr_t>(conditional_operator_expr_t{ condition2, a2,b2 });
+	result._resolved_expression_type = resolved_expression_type;
+	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
+}
 
 expression_t expression_t::make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(function.check_invariant());
@@ -339,6 +388,13 @@ json_value_t expression_to_json(const expression_t& e){
 		const auto input = expression_to_json(*e2._input);
 		return json_value_t(vector<json_value_t>{ json_value_t(operation_to_string(e2._operation)), type, input });
 	}
+	else if(e._conditional_operator){
+		const auto e2 = *e._conditional_operator;
+		const auto condition = expression_to_json(*e2._condition);
+		const auto a = expression_to_json(*e2._a);
+		const auto b = expression_to_json(*e2._b);
+		return json_value_t({ json_value_t("?:"), condition, a, b });
+	}
 	else if(e._call){
 		const auto& call_function = *e._call;
 		vector<json_value_t>  args_json;
@@ -372,23 +428,6 @@ json_value_t expression_to_json(const expression_t& e){
 	}
 }
 
-/*
-json_value_t expression_to_json(const expression_t& e){
-	//	Add resolved type, if any.
-	auto a = expression_to_json_internal(e);
-	const auto t = e._resolved_expression_type.to_string();
-	QUARK_ASSERT(a.is_array());
-	auto a1 = a.get_array();
-
-
-	const string type = e._resolved_expression_type != type_identifier_t() ? t : "?";
-	const string type_string = std::string("<") + type + ">";
-
-	a1.insert(a1.begin(), json_value_t(type_string));
-	return json_value_t(a1);
-}
-*/
-
 string expression_to_json_string(const expression_t& e){
 	const auto json = expression_to_json(e);
 	return json_to_compact_string(json);
@@ -398,6 +437,8 @@ QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant(13)), R"(["k", "<int>", 13])");
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant("xyz")), R"(["k", "<string>", "xyz"])");
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant(14.0f)), R"(["k", "<float>", 14])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_constant(true)), R"(["k", "<bool>", true])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_constant(false)), R"(["k", "<bool>", false])");
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "math1"){

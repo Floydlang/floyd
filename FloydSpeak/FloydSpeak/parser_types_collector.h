@@ -11,7 +11,6 @@
 
 
 #include "quark.h"
-//#include "parser_ast.h"
 
 #include <cstdio>
 #include <vector>
@@ -22,14 +21,11 @@
 struct json_value_t;
 
 namespace floyd_parser {
-
 	struct type_def_t;
 	struct types_collector_t;
 	struct statement_t;
 	struct value_t;
 	struct scope_def_t;
-
-	json_value_t types_collector_to_json(const types_collector_t& types);
 
 
 
@@ -141,7 +137,7 @@ namespace floyd_parser {
 
 
 
-	///////////////////		STRUCT
+	///////////////////		STRUCTs
 
 
 	/*
@@ -157,7 +153,7 @@ namespace floyd_parser {
 	std::shared_ptr<const scope_def_t> resolve_struct_type(const types_collector_t& types, const std::string& s);
 
 
-	///////////////////		FUNCTION
+	///////////////////		FUNCTIONs
 
 
 	/*

@@ -82,19 +82,7 @@ namespace floyd_parser {
 
 	struct statement_t {
 		public: statement_t(const statement_t& other) = default;
-
-/*
-		public: statement_t(const statement_t& other) :
-			_bind_statement(other._bind_statement),
-			_define_struct(other._define_struct),
-			_define_function(other._define_function),
-			_return_statement(other._return_statement)
-		{
-		}
-*/
-
 		public: statement_t& operator=(const statement_t& other) = default;
-
 		public: bool check_invariant() const;
 
 		public: statement_t(const bind_statement_t& value) :

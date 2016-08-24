@@ -8,7 +8,7 @@
 
 #include "pass3.h"
 
-#include "parser_statement.h"
+#include "parse_statement.h"
 #include "floyd_parser.h"
 #include "floyd_interpreter.h"
 #include "parser_value.h"

@@ -6,12 +6,12 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_expression.h"
+#include "parse_expression.h"
 
 #include "text_parser.h"
-#include "parser_statement.h"
+#include "statements.h"
 #include "parser_value.h"
-#include "parser_function.h"
+#include "parse_function_def.h"
 #include "parser_ast.h"
 #include "parser_primitives.h"
 
@@ -362,6 +362,8 @@ QUARK_UNIT_TESTQ("parse_string_constant()", ""){
 		"3"
 		"3.0"
 		"\"three\""
+		"true"
+		"false"
 	Function call
 		"f ()"
 		"f(g())"
@@ -389,9 +391,29 @@ pair<expression_t, string> parse_single(const string& s) {
 		return { expression_t::make_constant(n.first), n.second };
 	}
 
+	else if(peek_string(s, "true")){
+		return { expression_t::make_constant(true), read_required_string(s, "true") };
+	}
+	else if(peek_string(s, "false")){
+		return { expression_t::make_constant(false), read_required_string(s, "false") };
+	}
 	else{
 		return parse_calculated_value(s);
 	}
+}
+
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("truexyz") == pair<expression_t, string>(expression_t::make_constant(true), "xyz")));
+}
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("falsexyz") == pair<expression_t, string>(expression_t::make_constant(false), "xyz")));
+}
+
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("\"\"") == pair<expression_t, string>(expression_t::make_constant(""), "")));
+}
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("\"abcd\"") == pair<expression_t, string>(expression_t::make_constant("abcd"), "")));
 }
 
 QUARK_UNIT_TESTQ("parse_single", "number"){
@@ -437,7 +459,7 @@ QUARK_UNIT_TESTQ("parse_single", "read struct member"){
 }
 
 
-// Parse a constant or an expression in parenthesis
+// Parse a single constant or an expression in parenthesis
 pair<expression_t, string> parse_atom(const string& s, int depth) {
 	string pos = skip_whitespace(s);
 
@@ -572,9 +594,21 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 }
 
 
+#if false
+QUARK_UNIT_TESTQ("parse_expression()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? 100 + 10 * 2 : 1000 - 3 * 4")), R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "pixel"], "red"]])");
+}
+
+QUARK_UNIT_TESTQ("parse_expression()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? \"123\" : \"456\"")), R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "pixel"], "red"]])");
+}
+#endif
+
+
+
+
 
 //////////////////////////////////////////////////		test rig
-
 
 
 

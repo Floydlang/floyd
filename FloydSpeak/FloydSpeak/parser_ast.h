@@ -41,8 +41,9 @@ namespace floyd_parser {
 	*/
 	enum base_type {
 		k_null,
-		k_int,
 		k_bool,
+		k_int,
+//		k_float,
 		k_string,
 
 		k_struct,
@@ -77,11 +78,11 @@ namespace floyd_parser {
 
 		public: static type_identifier_t resolve(const std::shared_ptr<const type_def_t>& resolved);
 
+		public: static type_identifier_t make(const std::string& s);
+
 		public: static type_identifier_t make_bool(){
 			return make("bool");
 		}
-
-		public: static type_identifier_t make(const std::string& s);
 
 		public: static type_identifier_t make_int(){
 			return make("int");
@@ -273,12 +274,7 @@ namespace floyd_parser {
 
 		The scope_def_t includes optional code, optional member variables and optional local types.
 
-		WARNING: We mutate this during parsing, adding executable, types while it exists.
-		WARNING 2: this object forms an intrusive hiearchy between scopes and sub-scopes -- give it
-			a new address (move / copy) breaks this hearchy.
-
 		Functions are really a tree of scopes like this:
-
 			global_scope
 				_members: global variables
 				_types: -- global typedefs, struct-defs, function-defs. Owns/tracks all sub-scopes.
@@ -403,6 +399,11 @@ namespace floyd_parser {
 		public: type_def_t() :
 			_base_type(k_null)
 		{
+		}
+		public: static type_def_t make_bool(){
+			type_def_t a;
+			a._base_type = k_bool;
+			return a;
 		}
 		public: static type_def_t make_int(){
 			type_def_t a;

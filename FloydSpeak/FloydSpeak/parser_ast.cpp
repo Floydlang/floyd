@@ -8,7 +8,7 @@
 
 #include "parser_ast.h"
 
-#include "parser_statement.h"
+#include "statements.h"
 #include "parser_value.h"
 #include "text_parser.h"
 #include "parser_primitives.h"
@@ -396,15 +396,15 @@ namespace floyd_parser {
 	types_collector_t add_builtin_types(const types_collector_t& types){
 		auto result = types;
 
-		//	int
-		{
-			result = result.define_type_xyz("int", make_shared<type_def_t>(type_def_t::make_int()));
-		}
-
 		//	bool
 		{
 			auto def = make_shared<type_def_t>(type_def_t::make(k_bool));
 			result = result.define_type_xyz("bool", def);
+		}
+
+		//	int
+		{
+			result = result.define_type_xyz("int", make_shared<type_def_t>(type_def_t::make_int()));
 		}
 
 		//	string
@@ -425,13 +425,13 @@ namespace floyd_parser {
 		QUARK_TEST_VERIFY(a.check_invariant());
 
 
-		const auto b = a.resolve_identifier("int");
-		QUARK_TEST_VERIFY(b);
-		QUARK_TEST_VERIFY(b->get_type() == k_int);
-
 		const auto d = a.resolve_identifier("bool");
 		QUARK_TEST_VERIFY(d);
 		QUARK_TEST_VERIFY(d->get_type() == k_bool);
+
+		const auto b = a.resolve_identifier("int");
+		QUARK_TEST_VERIFY(b);
+		QUARK_TEST_VERIFY(b->get_type() == k_int);
 
 		const auto c = a.resolve_identifier("string");
 		QUARK_TEST_VERIFY(c);

@@ -60,7 +60,6 @@ namespace floyd_parser {
 	scope_ref_t make_return5(scope_ref_t scope);
 
 	scope_ref_t make_return_hello(scope_ref_t scope);
-
 }
 
 

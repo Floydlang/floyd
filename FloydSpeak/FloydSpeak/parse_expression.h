@@ -47,6 +47,10 @@ namespace floyd_parser {
 			"(my_fun1("hello, 3) + 4) * my_fun2(10))"
 
 			"hello[\"troll\"].kitty[10].cat xxx"
+
+			"condition_expr ? result_true_expr : result_false_expr"
+			"condition_expr ? result_true_expr : result_false_expr"
+			"a == 1 ? "one" : ”some other number""
 	*/
 	expression_t parse_expression(std::string expression);
 

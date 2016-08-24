@@ -6,12 +6,12 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_statement.h"
+#include "statements.h"
 
 #include "parser_ast.h"
-#include "parser_expression.h"
-#include "parser_function.h"
-#include "parser_struct.h"
+#include "parse_expression.h"
+#include "parse_function_def.h"
+#include "parse_struct_def.h"
 #include "parser_primitives.h"
 #include "json_support.h"
 #include "json_writer.h"
@@ -145,38 +145,38 @@ namespace floyd_parser {
 	}
 
 
-QUARK_UNIT_TESTQ("statement_to_json", "bind"){
-	quark::ut_compare(
-		json_to_compact_string(
-			statement_to_json(make__bind_statement(type_identifier_t::make_int(), "a", expression_t::make_constant(400)))
-		)
-		,
-		R"(["bind", "a", ["k", "<int>", 400]])"
-	);
-}
+	QUARK_UNIT_TESTQ("statement_to_json", "bind"){
+		quark::ut_compare(
+			json_to_compact_string(
+				statement_to_json(make__bind_statement(type_identifier_t::make_int(), "a", expression_t::make_constant(400)))
+			)
+			,
+			R"(["bind", "a", ["k", "<int>", 400]])"
+		);
+	}
 
-QUARK_UNIT_TESTQ("statement_to_json", "defstruct"){
-	const auto global = scope_def_t::make_global_scope();
-	const auto result = statement_to_json(define_struct_statement_t{ make_struct1(global) });
+	QUARK_UNIT_TESTQ("statement_to_json", "defstruct"){
+		const auto global = scope_def_t::make_global_scope();
+		const auto result = statement_to_json(define_struct_statement_t{ make_struct1(global) });
 
-	quark::ut_compare(result.get_array()[0].get_string(), "defstruct");
-}
+		quark::ut_compare(result.get_array()[0].get_string(), "defstruct");
+	}
 
-QUARK_UNIT_TESTQ("statement_to_json", "deffunc"){
-	const auto global = scope_def_t::make_global_scope();
-	const auto result = statement_to_json(define_function_statement_t{ make_test_function2(global) });
+	QUARK_UNIT_TESTQ("statement_to_json", "deffunc"){
+		const auto global = scope_def_t::make_global_scope();
+		const auto result = statement_to_json(define_function_statement_t{ make_test_function2(global) });
 
-	quark::ut_compare(result.get_array()[0].get_string(), "deffunc");
-}
+		quark::ut_compare(result.get_array()[0].get_string(), "deffunc");
+	}
 
-QUARK_UNIT_TESTQ("statement_to_json", "return"){
-	quark::ut_compare(
-		json_to_compact_string(
-			statement_to_json(make__return_statement(expression_t::make_constant("abc")))
-		)
-		,
-		R"(["return", ["k", "<string>", "abc"]])"
-	);
-}
+	QUARK_UNIT_TESTQ("statement_to_json", "return"){
+		quark::ut_compare(
+			json_to_compact_string(
+				statement_to_json(make__return_statement(expression_t::make_constant("abc")))
+			)
+			,
+			R"(["return", ["k", "<string>", "abc"]])"
+		);
+	}
 
 }	//	floyd_parser

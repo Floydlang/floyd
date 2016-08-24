@@ -26,7 +26,6 @@
 
 	TODO
 	- Use *index* of member, not the name.
-	- Full tests
 	- Check input as if user input -- allows pass2 to be run on external JSON of AST.
 */
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1);

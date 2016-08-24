@@ -9,8 +9,9 @@
 #include "floyd_interpreter.h"
 
 
-#include "parser_expression.h"
-#include "parser_statement.h"
+#include "parse_expression.h"
+#include "parse_statement.h"
+#include "statements.h"
 #include "floyd_parser.h"
 #include "parser_value.h"
 #include "ast_utils.h"
@@ -364,6 +365,20 @@ namespace {
 
 }
 
+QUARK_UNIT_TESTQ("C++ bool", ""){
+	quark::ut_compare(true, true);
+	quark::ut_compare(true, !false);
+	quark::ut_compare(false, false);
+	quark::ut_compare(!false, true);
+
+	const auto x = false + false;
+	const auto y = false - false;
+
+	QUARK_UT_VERIFY(x == false);
+	QUARK_UT_VERIFY(y == false);
+}
+
+
 //### Test string + etc.
 //### Split into several functions.
 expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
@@ -385,7 +400,10 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 			//	Perform math operation on the two constants => new constant.
 			{
-				if(left_value->get_type() == type_identifier_t::make_int() && right_value->get_type() == type_identifier_t::make_int()){
+				if(left_value->is_bool() && right_value->is_bool()){
+					throw std::runtime_error("Arithmetics on bool not allowed.");
+				}
+				else if(left_value->is_int() && right_value->is_int()){
 					if(e2._operation == math_operation2_expr_t::add){
 						return expression_t::make_constant(left_value->get_int() + right_value->get_int());
 					}
@@ -405,7 +423,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 						QUARK_ASSERT(false);
 					}
 				}
-				else if(left_value->get_type() == type_identifier_t::make_float() && right_value->get_type() == type_identifier_t::make_float()){
+				else if(left_value->is_float() && right_value->is_float()){
 					if(e2._operation == math_operation2_expr_t::add){
 						return expression_t::make_constant(left_value->get_float() + right_value->get_float());
 					}
@@ -425,7 +443,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 						QUARK_ASSERT(false);
 					}
 				}
-				else if(left_value->get_type() == type_identifier_t::make_string() && right_value->get_type() == type_identifier_t::make_string()){
+				else if(left_value->is_string() && right_value->is_string()){
 					if(e2._operation == math_operation2_expr_t::add){
 						return expression_t::make_constant(left_value->get_string() + right_value->get_string());
 					}
@@ -452,7 +470,10 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		//	Replace the with a constant!
 		if(input._constant){
 			const auto value = input._constant;
-			if(value->get_type() == type_identifier_t::make_int()){
+			if(value->get_type() == type_identifier_t::make_bool()){
+				throw std::runtime_error("Arithmetics failed.");
+			}
+			else if(value->get_type() == type_identifier_t::make_int()){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return expression_t::make_constant(-value->get_int());
 				}
@@ -484,6 +505,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 	/*
 		If inputs are constant, replace function call with a constant!
+		??? Have different expression-classes to tell if they are resolved / unresolved. Makes it possible to execute both types of expression but not check at runtime.
 	*/
 	else if(e._call){
 		const auto& call_function_expression = *e._call;
@@ -553,165 +575,12 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 
 
-//////////////////////////		interpreter_t
-
-
-
-interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
-	_ast(ast)
-{
-	QUARK_ASSERT(ast.check_invariant());
-
-	auto global_scope = scope_instance_t();
-	global_scope._def = ast._global_scope;
-	_scope_instances.push_back(make_shared<scope_instance_t>(global_scope));
-
-	//	Run static intialization (basically run global statements before calling main()).
-	{
-	}
-
-	QUARK_ASSERT(check_invariant());
+expression_t test_evaluate_simple(string expression_string){
+	const ast_t ast;
+	const auto e = parse_expression(expression_string);
+	const auto e2 = evalute_expression(ast, e);
+	return e2;
 }
-
-bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_ast.check_invariant());
-	return true;
-}
-
-
-
-//////////////////////////		run_main()
-
-
-
-std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, const vector<floyd_parser::value_t>& args){
-	QUARK_ASSERT(source.size() > 0);
-	auto ast = program_to_ast2(source);
-	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
-	const auto r = call_function(vm, f, args);
-	return { vm, r };
-}
-
-QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
-	const auto result = run_main(
-		"string main(string args){\n"
-		"	return \"123\" + \"456\";\n"
-		"}\n",
-		vector<floyd_parser::value_t>{floyd_parser::value_t("program_name 1 2 3 4")}
-	);
-	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("123456"));
-}
-
-
-
-//////////////////////////		TEST GLOBAL CONSTANTS
-
-
-
-
-#if false
-QUARK_UNIT_TESTQ("struct", "Can make and read global int"){
-	const auto a = run_main(
-		"int test = 123;"
-		"string main(){\n"
-		"	return test;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t(123));
-}
-#endif
-
-
-//////////////////////////		TEST STRUCT SUPPORT
-
-
-
-
-QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member data"){
-	const auto a = run_main(
-		"struct pixel { string s; }"
-		"string main(){\n"
-		"	pixel p = pixel_constructor();"
-		"	return p.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
-	QUARK_TEST_VERIFY(a.second == value_t(""));
-}
-
-QUARK_UNIT_TESTQ("struct", "Struct member default value"){
-	const auto a = run_main(
-		"struct pixel { string s = \"one\"; }"
-		"string main(){\n"
-		"	pixel p = pixel_constructor();"
-		"	return p.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
-	QUARK_TEST_VERIFY(a.second == value_t("one"));
-}
-
-QUARK_UNIT_TESTQ("struct", "Nesting structs"){
-	const auto a = run_main(
-		"struct pixel { string s = \"one\"; }"
-		"struct image { pixel background_color; int width; int height; }"
-		"string main(){\n"
-		"	image i = image_constructor();"
-		"	return i.background_color.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
-	QUARK_TEST_VERIFY(a.second == value_t("one"));
-}
-
-QUARK_UNIT_TESTQ("struct", "Can use struct as argument"){
-	const auto a = run_main(
-		"string get_s(pixel p){ return p.s; }"
-		"struct pixel { string s = \"two\"; }"
-		"string main(){\n"
-		"	pixel p = pixel_constructor();"
-		"	return get_s(p);"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t("two"));
-}
-
-QUARK_UNIT_TESTQ("struct", "Can return struct"){
-	const auto a = run_main(
-		"struct pixel { string s = \"three\"; }"
-		"pixel test(){ return pixel_constructor(); }"
-		"string main(){\n"
-		"	pixel p = test();"
-		"	return p.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t("three"));
-}
-
-}	//	floyd_interpreter
-
-
-
-
-using namespace floyd_interpreter;
-
-
-	expression_t test_evaluate_simple(string expression_string){
-		const ast_t ast;
-		const auto e = parse_expression(expression_string);
-		const auto e2 = evalute_expression(ast, e);
-		return e2;
-	}
 
 
 
@@ -882,4 +751,185 @@ QUARK_UNIT_TESTQ("evalute_expression()", "An emtpy string") {
 }
 
 
+
+
+
+//////////////////////////		interpreter_t
+
+
+
+interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
+	_ast(ast)
+{
+	QUARK_ASSERT(ast.check_invariant());
+
+	auto global_scope = scope_instance_t();
+	global_scope._def = ast._global_scope;
+	_scope_instances.push_back(make_shared<scope_instance_t>(global_scope));
+
+	//	Run static intialization (basically run global statements before calling main()).
+	{
+	}
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bool interpreter_t::check_invariant() const {
+	QUARK_ASSERT(_ast.check_invariant());
+	return true;
+}
+
+
+
+//////////////////////////		run_main()
+
+
+
+std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, const vector<floyd_parser::value_t>& args){
+	QUARK_ASSERT(source.size() > 0);
+	auto ast = program_to_ast2(source);
+	auto vm = interpreter_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto r = call_function(vm, f, args);
+	return { vm, r };
+}
+
+QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
+	const auto result = run_main(
+		"string main(string args){\n"
+		"	return \"123\" + \"456\";\n"
+		"}\n",
+		vector<floyd_parser::value_t>{floyd_parser::value_t("program_name 1 2 3 4")}
+	);
+	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("123456"));
+}
+
+
+#if false
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	const auto result = run_main(
+		R"(
+			string main(bool input_flag){
+				return input_flag ? "123" : "456";
+			}
+		)",
+		vector<floyd_parser::value_t>{floyd_parser::value_t(true)}
+	);
+	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("123"));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	const auto result = run_main(
+		R"(
+			string main(bool input_flag){
+				return input_flag ? "123" : "456";
+			}
+		)",
+		vector<floyd_parser::value_t>{floyd_parser::value_t(false)}
+	);
+	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("456"));
+}
+#endif
+
+
+
+//////////////////////////		TEST GLOBAL CONSTANTS
+
+
+
+
+#if false
+QUARK_UNIT_TESTQ("struct", "Can make and read global int"){
+	const auto a = run_main(
+		"int test = 123;"
+		"string main(){\n"
+		"	return test;"
+		"}\n",
+		{}
+	);
+	QUARK_TEST_VERIFY(a.second == value_t(123));
+}
+#endif
+
+
+//////////////////////////		TEST STRUCT SUPPORT
+
+
+
+
+QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member data"){
+	const auto a = run_main(
+		"struct pixel { string s; }"
+		"string main(){\n"
+		"	pixel p = pixel_constructor();"
+		"	return p.s;"
+		"}\n",
+		{}
+	);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.second == value_t(""));
+}
+
+QUARK_UNIT_TESTQ("struct", "Struct member default value"){
+	const auto a = run_main(
+		"struct pixel { string s = \"one\"; }"
+		"string main(){\n"
+		"	pixel p = pixel_constructor();"
+		"	return p.s;"
+		"}\n",
+		{}
+	);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.second == value_t("one"));
+}
+
+QUARK_UNIT_TESTQ("struct", "Nesting structs"){
+	const auto a = run_main(
+		"struct pixel { string s = \"one\"; }"
+		"struct image { pixel background_color; int width; int height; }"
+		"string main(){\n"
+		"	image i = image_constructor();"
+		"	return i.background_color.s;"
+		"}\n",
+		{}
+	);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.second == value_t("one"));
+}
+
+QUARK_UNIT_TESTQ("struct", "Can use struct as argument"){
+	const auto a = run_main(
+		"string get_s(pixel p){ return p.s; }"
+		"struct pixel { string s = \"two\"; }"
+		"string main(){\n"
+		"	pixel p = pixel_constructor();"
+		"	return get_s(p);"
+		"}\n",
+		{}
+	);
+	QUARK_TEST_VERIFY(a.second == value_t("two"));
+}
+
+QUARK_UNIT_TESTQ("struct", "Can return struct"){
+	const auto a = run_main(
+		"struct pixel { string s = \"three\"; }"
+		"pixel test(){ return pixel_constructor(); }"
+		"string main(){\n"
+		"	pixel p = test();"
+		"	return p.s;"
+		"}\n",
+		{}
+	);
+	QUARK_TEST_VERIFY(a.second == value_t("three"));
+}
+
+
+
+
+
+
+}	//	floyd_interpreter
 
