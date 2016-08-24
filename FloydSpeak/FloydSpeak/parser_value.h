@@ -34,7 +34,7 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		struct_instance_t
 
 
-	//??? Make into generic scope_instance_t
+	//??? Merge into stack_frame_t to make a generic construct.
 	struct struct_instance_t {
 		public: struct_instance_t(const scope_ref_t& def, const std::map<std::string, value_t>& member_values) :
 			__def(def),
