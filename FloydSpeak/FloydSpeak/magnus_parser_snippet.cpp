@@ -9,30 +9,69 @@
 #include "quark.h"
 
 
-class ConstStringException : public std::exception {
-    public: ConstStringException(const char* s) : _s(s) { };
-    public: virtual const char *what() const throw() { return _s; }
-    protected: const char* _s;
-};
+void skipWhite(const char*& p) {
+	p += strspn(p, " \t\n\r");
+}
 
-void skipWhite(const char*& p) { p += strspn(p, " \t\n\r"); }
-void toNumber(const char*& p, double& d) { char* e; d = strtod(p, &e); if (p == e) throw ConstStringException("Invalid number"); p = e; }
-void toNumber(const char*& p, long& l) { char* e; l = strtol(p, &e, 0); if (p == e) throw ConstStringException("Invalid number"); p = e; }
-void skipWhite(const wchar_t*& p) { p += wcsspn(p, L" \t\n\r"); }
-void toNumber(const wchar_t*& p, double& d) { wchar_t* e; d = wcstod(p, &e); if (p == e) throw ConstStringException("Invalid number"); p = e; }
-void toNumber(const wchar_t*& p, long& l) { wchar_t* e; l = wcstol(p, &e, 0); if (p == e) throw ConstStringException("Invalid number"); p = e; }
+void toNumber(const char*& p, double& d) {
+	char* e;
+	d = strtod(p, &e);
+	if (p == e){
+		throw std::runtime_error("Invalid number");
+	}
+	p = e;
+}
+
+void toNumber(const char*& p, long& l) {
+	char* e;
+	l = strtol(p, &e, 0);
+	if (p == e){
+		throw std::runtime_error("Invalid number");
+	}
+	p = e;
+}
+
+void skipWhite(const wchar_t*& p) {
+	p += wcsspn(p, L" \t\n\r");
+}
+
+void toNumber(const wchar_t*& p, double& d) {
+	wchar_t* e;
+	d = wcstod(p, &e);
+	if (p == e){
+		throw std::runtime_error("Invalid number");
+	}
+	p = e;
+}
+
+void toNumber(const wchar_t*& p, long& l) {
+	wchar_t* e;
+	l = wcstol(p, &e, 0);
+	if (p == e){
+		throw std::runtime_error("Invalid number");
+	}
+	p = e;
+}
+
+template<class C> void toNumber(C*& p, float& f) {
+	double d;
+	toNumber(p, d);
+	f = static_cast<float>(d);
+}
+
+template<class C, class T> void toNumber(C*& p, T& i) {
+	long l;
+	toNumber(p, l);
+	i = static_cast<int>(l);
+}
 
 
-template<class C> void toNumber(C*& p, float& f) { double d; toNumber(p, d); f = static_cast<float>(d); }
-template<class C, class T> void toNumber(C*& p, T& i) { long l; toNumber(p, l); i = static_cast<int>(l); }
 
-
-
-template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
+void evaluate(const char*& p, int& v, int precedence = 0){
     skipWhite(p);
     switch (*p) {
         case '\0':
-			throw ConstStringException("Unexpected end of string");
+			throw std::runtime_error("Unexpected end of string");
 
 		//	"-xxx"
         case '-':
@@ -44,7 +83,7 @@ template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
         case '(':
 			evaluate(++p, v, 0);
 			if (*p != ')'){
-				throw ConstStringException("Expected ')'");
+				throw std::runtime_error("Expected ')'");
 			}
 			++p;
 			break;
@@ -55,18 +94,19 @@ template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
 			break;
     }
     skipWhite(p);
+
     bool loop = false;
     do {
         loop = true;
 		char ch = *p;
 
 		if((ch == '+' || ch == '-') && precedence < 1){
-			V r = 0;
+			int r = 0;
 			evaluate(++p, r, 1);
 			v = ch == '+' ? v + r : v - r;
 		}
 		else if((ch == '*' || ch == '/') && precedence < 2) {
-			V r = 0;
+			int r = 0;
 			evaluate(++p, r, 2);
 			v = ch == '*' ? v * r : v / r;
 		}
@@ -87,7 +127,7 @@ template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
 int evaluate2(const std::string& s){
 	const char* p = s.c_str();
 	int value = 0;
-	evaluate<int, char>(p, value, 0);
+	evaluate(p, value, 0);
 	return value;
 }
 
