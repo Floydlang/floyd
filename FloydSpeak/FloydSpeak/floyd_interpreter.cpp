@@ -66,19 +66,19 @@ namespace {
 			throw std::runtime_error("function arguments do not match function");
 		}
 
-		scope_instance_t new_scope;
-		new_scope._def = f;
+		stack_frame_t new_frame;
+		new_frame._def = f;
 
 		// Copy only input arguments to the function scope. The function's local variables are null until written by a statement.
 		//	??? Precalculate local variables / constants when possible!
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto& arg_name = f->_members[i]._name;
 			const auto& arg_value = args[i];
-			new_scope._values[arg_name] = arg_value;
+			new_frame._values[arg_name] = arg_value;
 		}
 
 		interpreter_t result = vm;
-		result._scope_instances.push_back(make_shared<scope_instance_t>(new_scope));
+		result._call_stack.push_back(make_shared<stack_frame_t>(new_frame));
 		return result;
 	}
 
@@ -114,14 +114,14 @@ value_t execute_statements(const interpreter_t& vm, const vector<shared_ptr<stat
 		if(statement->_bind_statement){
 			const auto s = statement->_bind_statement;
 			const auto name = s->_identifier;
-			if(vm2._scope_instances.back()->_values.count(name) != 0){
+			if(vm2._call_stack.back()->_values.count(name) != 0){
 				throw std::runtime_error("local constant already exists");
 			}
 			const auto result = evalute_expression(vm2, *s->_expression);
 			if(!result._constant){
 				throw std::runtime_error("unknown variables");
 			}
-			vm2._scope_instances.back()->_values[name] = *result._constant;
+			vm2._call_stack.back()->_values[name] = *result._constant;
 		}
 		else if(statement->_return_statement){
 			const auto expr = statement->_return_statement->_expression;
@@ -274,16 +274,16 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<scope_instance_t>>& scopes, const std::string& s, size_t depth){
-	QUARK_ASSERT(depth < scopes.size());
+floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<stack_frame_t>>& stack_frames, const std::string& s, size_t depth){
+	QUARK_ASSERT(depth < stack_frames.size());
 	QUARK_ASSERT(depth >= 0);
 
-	const auto it = scopes[depth]->_values.find(s);
-	if(it != scopes[depth]->_values.end()){
+	const auto it = stack_frames[depth]->_values.find(s);
+	if(it != stack_frames[depth]->_values.end()){
 		return it->second;
 	}
 	else if(depth > 0){
-		return resolve_variable_name_deep(scopes, s, depth - 1);
+		return resolve_variable_name_deep(stack_frames, s, depth - 1);
 	}
 	else{
 		return {};
@@ -294,7 +294,7 @@ floyd_parser::value_t resolve_variable_name(const interpreter_t& vm, const std::
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_variable_name_deep(vm._scope_instances, s, vm._scope_instances.size() - 1);
+	return resolve_variable_name_deep(vm._call_stack, s, vm._call_stack.size() - 1);
 }
 
 
@@ -510,7 +510,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	else if(e._call){
 		const auto& call_function_expression = *e._call;
 
-		scope_ref_t scope_def = vm._scope_instances.back()->_def;
+		scope_ref_t scope_def = vm._call_stack.back()->_def;
 		const auto path = find_path_slow(vm._ast, scope_def);
 		const auto type = resolve_type(vm._ast, unresolve_path(path), scope_def, call_function_expression._function);
 		if(!type || type->get_type() != base_type::k_function){
@@ -763,9 +763,9 @@ interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
 {
 	QUARK_ASSERT(ast.check_invariant());
 
-	auto global_scope = scope_instance_t();
-	global_scope._def = ast._global_scope;
-	_scope_instances.push_back(make_shared<scope_instance_t>(global_scope));
+	auto global_stack_frame = stack_frame_t();
+	global_stack_frame._def = ast._global_scope;
+	_call_stack.push_back(make_shared<stack_frame_t>(global_stack_frame));
 
 	//	Run static intialization (basically run global statements before calling main()).
 	{

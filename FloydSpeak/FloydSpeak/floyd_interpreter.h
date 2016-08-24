@@ -35,7 +35,7 @@ namespace floyd_interpreter {
 		Runtime scope, similair to a stack frame.
 	*/
 
-	struct scope_instance_t {
+	struct stack_frame_t {
 		public: floyd_parser::scope_ref_t _def;
 
 		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
@@ -61,7 +61,7 @@ namespace floyd_interpreter {
 		public: const floyd_parser::ast_t _ast;
 
 		//	Last scope if the current one. First scope is the root.
-		public: std::vector<std::shared_ptr<scope_instance_t>> _scope_instances;
+		public: std::vector<std::shared_ptr<stack_frame_t>> _call_stack;
 	};
 
 
