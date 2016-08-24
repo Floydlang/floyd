@@ -6,10 +6,7 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-
 #include "quark.h"
-
-
 
 
 class ConstStringException : public std::exception {
@@ -24,8 +21,12 @@ void toNumber(const char*& p, long& l) { char* e; l = strtol(p, &e, 0); if (p ==
 void skipWhite(const wchar_t*& p) { p += wcsspn(p, L" \t\n\r"); }
 void toNumber(const wchar_t*& p, double& d) { wchar_t* e; d = wcstod(p, &e); if (p == e) throw ConstStringException("Invalid number"); p = e; }
 void toNumber(const wchar_t*& p, long& l) { wchar_t* e; l = wcstol(p, &e, 0); if (p == e) throw ConstStringException("Invalid number"); p = e; }
+
+
 template<class C> void toNumber(C*& p, float& f) { double d; toNumber(p, d); f = static_cast<float>(d); }
 template<class C, class T> void toNumber(C*& p, T& i) { long l; toNumber(p, l); i = static_cast<int>(l); }
+
+
 
 template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
     skipWhite(p);
@@ -33,11 +34,13 @@ template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
         case '\0':
 			throw ConstStringException("Unexpected end of string");
 
+		//	"-xxx"
         case '-':
 			evaluate(++p, v, 3);
 			v = -v;
 			break;
 
+		//	"(yyy)xxx"
         case '(':
 			evaluate(++p, v, 0);
 			if (*p != ')'){
@@ -46,57 +49,37 @@ template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
 			++p;
 			break;
 
+		//	"1234xxx"
         default:
 			toNumber(p, v);
 			break;
     }
     skipWhite(p);
-    bool loop;
+    bool loop = false;
     do {
-        loop = false;
-        switch (*p) {
-            case '+':
-				if (precedence < 1) {
-					V r;
-					evaluate(++p, r, 1);
-					v += r;
-					loop = true;
-				}
-				break;
-            case '-':
-				if (precedence < 1) {
-					V r;
-					evaluate(++p, r, 1);
-					v -= r;
-					loop = true;
-				}
-				break;
-            case '*':
-				if (precedence < 2) {
-					V r;
-					evaluate(++p, r, 2);
-					v *= r;
-					loop = true;
-				}
-				break;
-            case '/':
-				if (precedence < 2) {
-					V r;
-					evaluate(++p, r, 2);
-					v /= r;
-					loop = true;
-				}
-				break;
-			case '\0':
-				break;
+        loop = true;
+		char ch = *p;
 
-			case ')':
-				break;
+		if((ch == '+' || ch == '-') && precedence < 1){
+			V r = 0;
+			evaluate(++p, r, 1);
+			v = ch == '+' ? v + r : v - r;
+		}
+		else if((ch == '*' || ch == '/') && precedence < 2) {
+			V r = 0;
+			evaluate(++p, r, 2);
+			v = ch == '*' ? v * r : v / r;
+		}
 
-			default:
-				QUARK_ASSERT(false);
-				break;
-        }
+		else if(ch == '\0'){
+			loop = false;
+		}
+		else if(ch == ')'){
+			loop = false;
+		}
+		else{
+			loop = false;
+		}
     } while (loop);
     skipWhite(p);
 }
@@ -146,7 +129,6 @@ QUARK_UNIT_TESTQ("evaluate()", ""){
 }
 
 QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY(evaluate2("-(3 * 2 + (8 * 2)) + (((1))) * 2") == -(3 * 2 + (8 * 2)) + (((1))) * 2);
+	QUARK_UT_VERIFY(evaluate2("-(3 * 2 + (8 * 2)) - (((1))) * 2") == -(3 * 2 + (8 * 2)) - (((1))) * 2);
 }
-
 
