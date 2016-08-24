@@ -27,41 +27,122 @@ void toNumber(const wchar_t*& p, long& l) { wchar_t* e; l = wcstol(p, &e, 0); if
 template<class C> void toNumber(C*& p, float& f) { double d; toNumber(p, d); f = static_cast<float>(d); }
 template<class C, class T> void toNumber(C*& p, T& i) { long l; toNumber(p, l); i = static_cast<int>(l); }
 
-template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0)
-{
+template<class V, class C> void evaluate(const C*& p, V& v, int precedence = 0){
     skipWhite(p);
     switch (*p) {
-        case 0: throw ConstStringException("Unexpected end of string");
-        case '-': evaluate(++p, v, 3); v = -v; break;
-        case '(': evaluate(++p, v, 0); if (*p != ')') throw ConstStringException("Expected ')'"); ++p; break;
-        default: toNumber(p, v); break;
+        case '\0':
+			throw ConstStringException("Unexpected end of string");
+
+        case '-':
+			evaluate(++p, v, 3);
+			v = -v;
+			break;
+
+        case '(':
+			evaluate(++p, v, 0);
+			if (*p != ')'){
+				throw ConstStringException("Expected ')'");
+			}
+			++p;
+			break;
+
+        default:
+			toNumber(p, v);
+			break;
     }
     skipWhite(p);
     bool loop;
     do {
         loop = false;
         switch (*p) {
-            case '+': if (precedence < 1) { V r; evaluate(++p, r, 1); v += r; loop = true; } break;
-            case '-': if (precedence < 1) { V r; evaluate(++p, r, 1); v -= r; loop = true; } break;
-            case '*': if (precedence < 2) { V r; evaluate(++p, r, 2); v *= r; loop = true; } break;
-            case '/': if (precedence < 2) { V r; evaluate(++p, r, 2); v /= r; loop = true; } break;
+            case '+':
+				if (precedence < 1) {
+					V r;
+					evaluate(++p, r, 1);
+					v += r;
+					loop = true;
+				}
+				break;
+            case '-':
+				if (precedence < 1) {
+					V r;
+					evaluate(++p, r, 1);
+					v -= r;
+					loop = true;
+				}
+				break;
+            case '*':
+				if (precedence < 2) {
+					V r;
+					evaluate(++p, r, 2);
+					v *= r;
+					loop = true;
+				}
+				break;
+            case '/':
+				if (precedence < 2) {
+					V r;
+					evaluate(++p, r, 2);
+					v /= r;
+					loop = true;
+				}
+				break;
+			case '\0':
+				break;
+
+			case ')':
+				break;
+
+			default:
+				QUARK_ASSERT(false);
+				break;
         }
     } while (loop);
     skipWhite(p);
 }
 
-
-
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	char a[] = "10 + 4";
-
-	const char* p = a;
+int evaluate2(const std::string& s){
+	const char* p = s.c_str();
 	int value = 0;
 	evaluate<int, char>(p, value, 0);
-
-	QUARK_UT_VERIFY(value == 14);
-//	quark::ut_compare(expression_to_json_string(parse_expression("pixel.red")), R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "pixel"], "red"]])");
+	return value;
 }
 
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	try{
+		evaluate2("");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("0") == 0);
+}
+
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("1234567890") == 1234567890);
+}
+
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("10 + 4") == 14);
+}
+
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("10 * 4") == 40);
+}
+
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("(3)") == 3);
+}
+
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("(3 * 8)") == 24);
+}
+
+QUARK_UNIT_TESTQ("evaluate()", ""){
+	QUARK_UT_VERIFY(evaluate2("1 + 3 * 2 + 100") == 107);
+}
 
 
