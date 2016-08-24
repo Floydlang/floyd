@@ -15,24 +15,39 @@
 typedef std::pair<std::string, std::string> seq;
 
 
-///////////////////////////////		seq2
+
+///////////////////////////////		seq_t
 
 
-struct seq2 {
-	public: seq2(const std::string& s);
+struct seq_t {
+	public: seq_t(const std::string& s);
 	public: bool check_invariant() const;
 
-	public: char first() const;
-	public: const seq2 rest() const;
+	public: char first_char() const;
+
+	//	Throws if there is no more char to read.
+	public: std::string first() const;
+
+	//	Returned string can be "" or shorter than chars if there aren't enough chars.
+	public: std::string first(size_t chars) const;
+
+	//	Nothing happens if rest_size() == 0.
+	public: seq_t rest() const;
+
+	//	Limited to rest_size().
+	public: seq_t rest(size_t skip) const;
+
 	public: std::size_t rest_size() const;
 
-	private: seq2(const std::shared_ptr<const std::string>& str, std::size_t rest_pos);
+	private: seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos);
 
 
 	/////////////		STATE
-	private: const std::shared_ptr<const std::string> _str;
-	private: std::size_t _rest_pos;
+	private: std::shared_ptr<const std::string> _str;
+	private: std::size_t _pos;
 };
+
+
 
 
 //	Remove trailing comma, if any.

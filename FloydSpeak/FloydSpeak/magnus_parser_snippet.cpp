@@ -13,62 +13,6 @@
 using namespace std;
 
 
-struct SEQ {
-	public: SEQ(const std::string& s) :
-		_string(make_shared<std::string>(s)),
-		_pos(0)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: SEQ(const SEQ& s, size_t pos) :
-		_string(s._string),
-		_pos(pos)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: bool check_invariant() const {
-		QUARK_ASSERT(_string);
-		QUARK_ASSERT(_pos <= _string->size());
-
-		return true;
-	}
-
-	public: size_t size() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _string->size() - _pos;
-	}
-
-	public: char first_char() const{
-		QUARK_ASSERT(_pos < _string->size());
-
-		return _string->operator[](_pos);
-	}
-
-	public: string first() const{
-		QUARK_ASSERT(check_invariant());
-
-		return _pos < _string->size() ? _string->substr(_pos, 1) : string();
-	}
-
-	public: SEQ rest() const{
-		QUARK_ASSERT(check_invariant());
-
-		return SEQ(*this, _pos);
-	}
-
-
-	///////////////////		STATE.
-
-	private: shared_ptr<string> _string;
-	private: size_t _pos;
-};
-
-
-
-
 
 string skipWhite(const string& p) {
 	const auto count = strspn(p.c_str(), " \t\n\r");

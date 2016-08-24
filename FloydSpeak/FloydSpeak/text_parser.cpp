@@ -31,68 +31,152 @@ const std::string test_whitespace_chars = " \n\t";
 
 
 
-///////////////////////////////		seq2
+
+
+
+///////////////////////////////		seq_t
 
 
 
 
-seq2::seq2(const std::string& s) :
+seq_t::seq_t(const std::string& s) :
 	_str(make_shared<string>(s)),
-	_rest_pos(0)
+	_pos(0)
 {
 	QUARK_ASSERT(check_invariant());
 }
 
-seq2::seq2(const std::shared_ptr<const std::string>& str, std::size_t rest_pos) :
+seq_t::seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos) :
 	_str(str),
-	_rest_pos(rest_pos)
+	_pos(pos)
 {
+	QUARK_ASSERT(str);
+	QUARK_ASSERT(pos <= str->size());
+
 	QUARK_ASSERT(check_invariant());
 }
 
-bool seq2::check_invariant() const {
+bool seq_t::check_invariant() const {
 	QUARK_ASSERT(_str);
-	QUARK_ASSERT(_rest_pos <= _str->size());
+	QUARK_ASSERT(_pos <= _str->size());
 	return true;
 }
 
 
-char seq2::first() const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(_rest_pos <= _str->size());
-
-	return (*_str)[_rest_pos];
-}
-
-const seq2 seq2::rest() const{
+char seq_t::first_char() const{
 	QUARK_ASSERT(check_invariant());
 
-	return seq2(_str, _rest_pos + 1);
+	if(_pos >= _str->size()){
+		throw std::runtime_error("");
+	}
+
+	return (*_str)[_pos];
 }
 
-std::size_t seq2::rest_size() const{
+std::string seq_t::first() const{
+	return first(1);
+}
+
+std::string seq_t::first(size_t chars) const{
 	QUARK_ASSERT(check_invariant());
 
-	return _str->size() - _rest_pos;
+	return _pos < _str->size() ? _str->substr(_pos, chars) : string();
+}
+
+seq_t seq_t::rest() const{
+	QUARK_ASSERT(check_invariant());
+	return rest(1);
+}
+
+seq_t seq_t::rest(size_t skip) const{
+	QUARK_ASSERT(check_invariant());
+
+	const auto p = std::min(_str->size(), _pos + skip);
+	return seq_t(_str, p);
+}
+
+
+std::size_t seq_t::rest_size() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _str->size() - _pos;
 }
 
 
 
-QUARK_UNIT_TESTQ("seq2::seq2()", ""){
-	QUARK_TEST_VERIFY(seq2("").rest_size() == 0);
+QUARK_UNIT_TESTQ("seq_t()", ""){
+	seq_t("");
+}
+QUARK_UNIT_TESTQ("seq_t()", ""){
+	seq_t("hello, world!");
 }
 
-QUARK_UNIT_TESTQ("seq2::seq2()", ""){
-	QUARK_TEST_VERIFY(seq2("xyz").rest_size() == 3);
+
+QUARK_UNIT_TESTQ("first_char()", ""){
+	QUARK_TEST_VERIFY(seq_t("a").first_char() == 'a');
+}
+QUARK_UNIT_TESTQ("first_char()", ""){
+	QUARK_TEST_VERIFY(seq_t("abcd").first_char() == 'a');
 }
 
-QUARK_UNIT_TESTQ("seq2::first()", ""){
-	QUARK_TEST_VERIFY(seq2("xyz").first() == 'x');
+
+QUARK_UNIT_TESTQ("first()", ""){
+	QUARK_TEST_VERIFY(seq_t("").first() == "");
+}
+QUARK_UNIT_TESTQ("first()", ""){
+	QUARK_TEST_VERIFY(seq_t("a").first() == "a");
+}
+QUARK_UNIT_TESTQ("first()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").first() == "a");
 }
 
-QUARK_UNIT_TESTQ("seq2::first()", ""){
-	QUARK_TEST_VERIFY(seq2("xyz").rest().first() == 'y');
+
+QUARK_UNIT_TESTQ("first(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").first(0) == "");
 }
+QUARK_UNIT_TESTQ("first(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("").first(0) == "");
+}
+QUARK_UNIT_TESTQ("first(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("").first(3) == "");
+}
+QUARK_UNIT_TESTQ("first(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").first(1) == "a");
+}
+QUARK_UNIT_TESTQ("first(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").first(3) == "abc");
+}
+
+
+QUARK_UNIT_TESTQ("rest()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest().first() == "b");
+}
+QUARK_UNIT_TESTQ("rest()", ""){
+	QUARK_TEST_VERIFY(seq_t("").rest().first() == "");
+}
+
+
+QUARK_UNIT_TESTQ("rest(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest(2).first() == "c");
+}
+QUARK_UNIT_TESTQ("rest(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("").rest().first() == "");
+}
+QUARK_UNIT_TESTQ("rest(n)", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest(100).first(100) == "");
+}
+
+
+QUARK_UNIT_TESTQ("rest_size()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest_size() == 3);
+}
+QUARK_UNIT_TESTQ("rest_size()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest().rest_size() == 2);
+}
+QUARK_UNIT_TESTQ("rest_size()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest(100).rest_size() == 0);
+}
+
 
 
 
