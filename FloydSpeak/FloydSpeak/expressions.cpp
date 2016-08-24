@@ -9,7 +9,7 @@
 #include "expressions.h"
 
 #include "text_parser.h"
-#include "parser_statement.h"
+#include "statements.h"
 #include "parser_value.h"
 #include "json_writer.h"
 #include "utils.h"
@@ -98,7 +98,17 @@ bool expression_t::check_invariant() const{
 	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
 
 	//	Make sure exactly ONE pointer is set.
-	QUARK_ASSERT((_constant ? 1 : 0) + (_math1 ? 1 : 0) + (_math2 ? 1 : 0) + (_conditional_operator ? 1 : 0) + (_call ? 1 : 0) + (_load ? 1 : 0) + (_resolve_variable ? 1 : 0) + (_resolve_struct_member ? 1 : 0) + (_lookup_element ? 1 : 0) == 1);
+	QUARK_ASSERT(
+		(_constant ? 1 : 0)
+		+ (_math1 ? 1 : 0)
+		+ (_math2 ? 1 : 0)
+		+ (_conditional_operator ? 1 : 0)
+		+ (_call ? 1 : 0)
+		+ (_load ? 1 : 0)
+		+ (_resolve_variable ? 1 : 0)
+		+ (_resolve_struct_member ? 1 : 0)
+		+ (_lookup_element ? 1 : 0)
+		 == 1);
 
 	return true;
 }
@@ -417,23 +427,6 @@ json_value_t expression_to_json(const expression_t& e){
 		QUARK_ASSERT(false);
 	}
 }
-
-/*
-json_value_t expression_to_json(const expression_t& e){
-	//	Add resolved type, if any.
-	auto a = expression_to_json_internal(e);
-	const auto t = e._resolved_expression_type.to_string();
-	QUARK_ASSERT(a.is_array());
-	auto a1 = a.get_array();
-
-
-	const string type = e._resolved_expression_type != type_identifier_t() ? t : "?";
-	const string type_string = std::string("<") + type + ">";
-
-	a1.insert(a1.begin(), json_value_t(type_string));
-	return json_value_t(a1);
-}
-*/
 
 string expression_to_json_string(const expression_t& e){
 	const auto json = expression_to_json(e);

@@ -9,8 +9,9 @@
 #include "floyd_interpreter.h"
 
 
-#include "parser_expression.h"
-#include "parser_statement.h"
+#include "parse_expression.h"
+#include "parse_statement.h"
+#include "statements.h"
 #include "floyd_parser.h"
 #include "parser_value.h"
 #include "ast_utils.h"
@@ -504,6 +505,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 	/*
 		If inputs are constant, replace function call with a constant!
+		??? Have different expression-classes to tell if they are resolved / unresolved. Makes it possible to execute both types of expression but not check at runtime.
 	*/
 	else if(e._call){
 		const auto& call_function_expression = *e._call;

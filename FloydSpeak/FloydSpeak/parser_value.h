@@ -203,7 +203,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-//??? Use better way to compare types!!!
+			//??? Use better way to compare types!!!
 			// Use the base_type enum instead of strings for basic types? Use string for basics, hash for composite, functions, typedefs?
 
 			if(_type.to_string() != other._type.to_string()){

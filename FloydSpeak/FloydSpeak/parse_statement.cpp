@@ -8,11 +8,11 @@
 
 #include "parse_statement.h"
 
-#include "parser_statement.h"
+#include "statements.h"
 #include "parser_ast.h"
-#include "parser_expression.h"
-#include "parser_function.h"
-#include "parser_struct.h"
+#include "parse_expression.h"
+#include "parse_function_def.h"
+#include "parse_struct_def.h"
 #include "parser_primitives.h"
 
 namespace floyd_parser {
@@ -32,7 +32,6 @@ namespace floyd_parser {
 		const auto token_pos = read_until(s, whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 		const auto expression1 = parse_expression(expression_pos.first);
-	//			const auto expression2 = evalute_expression(local_scope, expression1);
 		const auto statement = return_statement_t{ make_shared<expression_t>(expression1) };
 
 		//	Skip trailing ";".

@@ -18,10 +18,10 @@
 #include "text_parser.h"
 #include "steady_vector.h"
 #include "parse_statement.h"
-#include "parser_expression.h"
-#include "parser_statement.h"
-#include "parser_function.h"
-#include "parser_struct.h"
+#include "parse_expression.h"
+#include "statements.h"
+#include "parse_function_def.h"
+#include "parse_struct_def.h"
 #include "parser_ast.h"
 #include "ast_utils.h"
 #include "utils.h"
@@ -79,56 +79,56 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
 //////////////////////////////////////////////////		read_statement()
 
 
-	/*
-		Read one statement, including any expressions it uses.
-		Supports all statments:
-			- return statement
-			- struct-definition
-			- function-definition
-			- define constant, with initializating.
+/*
+	Read one statement, including any expressions it uses.
+	Supports all statments:
+		- return statement
+		- struct-definition
+		- function-definition
+		- define constant, with initializating.
 
-		Never simplifes expressions- the parser is non-lossy.
+	Never simplifes expressions- the parser is non-lossy.
 
-		Returns:
-			_statement
-				[return_statement]
-					[expression]
-				...
-			_ast
-				May have been updated to hold new function-definition or struct-definition.
-			_rest
-				will never start with whitespace.
-				trailing ";" will be consumed.
-
-
-
-		Example return statement:
-			#1	"return 3;..."
-			#2	"return f(3, 4) + 2;..."
-
-		Example function definitions:
-			#1	"int test_func1(){ return 100; };..."
-			#2	"string test_func2(int a, float b){ return "sdf" };..."
-
-		Example struct definitions:
-			"struct my_image { int width; int height; };"
-			"struct my_sprite { string name; my_image image; };..."
-
-		Example variable definitions
-			"int a = 10;..."
-			"int b = f(a);..."
+	Returns:
+		_statement
+			[return_statement]
+				[expression]
+			...
+		_ast
+			May have been updated to hold new function-definition or struct-definition.
+		_rest
+			will never start with whitespace.
+			trailing ";" will be consumed.
 
 
-		FUTURE
-		- Add local scopes / blocks.
-		- Include comments
-		- Add mutable variables
-	*/
 
-    struct statement_result_t {
-        statement_t _statement;
-        std::string _rest;
-    };
+	Example return statement:
+		#1	"return 3;..."
+		#2	"return f(3, 4) + 2;..."
+
+	Example function definitions:
+		#1	"int test_func1(){ return 100; };..."
+		#2	"string test_func2(int a, float b){ return "sdf" };..."
+
+	Example struct definitions:
+		"struct my_image { int width; int height; };"
+		"struct my_sprite { string name; my_image image; };..."
+
+	Example variable definitions
+		"int a = 10;..."
+		"int b = f(a);..."
+
+
+	FUTURE
+	- Add local scopes / blocks.
+	- Include comments
+	- Add mutable variables
+*/
+
+struct statement_result_t {
+	statement_t _statement;
+	std::string _rest;
+};
 
 statement_result_t read_statement(const ast_t& ast, const scope_ref_t scope_def, const string& pos){
 	QUARK_ASSERT(scope_def->check_invariant());

@@ -13,8 +13,8 @@
 #include <string>
 #include <map>
 
-#include "parser_statement.h"
-#include "parser_function.h"
+#include "statements.h"
+#include "parse_function_def.h"
 #include "parser_value.h"
 #include "parts/sha1_class.h"
 #include "parser_ast.h"

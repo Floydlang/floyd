@@ -167,24 +167,59 @@ namespace floyd_parser {
 		public: static expression_t make_constant(const float f);
 		public: static expression_t make_constant(const char s[]);
 		public: static expression_t make_constant(const std::string& s);
-		public: static expression_t make_constant(const value_t& value, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_constant(
+			const value_t& value,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 
-		public: static expression_t make_math_operation1(math_operation1_expr_t::operation op, const expression_t& input, const type_identifier_t& resolved_expression_type = type_identifier_t());
-		public: static expression_t make_math_operation2(math_operation2_expr_t::operation op, const expression_t& left, const expression_t& right, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_math_operation1(
+			math_operation1_expr_t::operation op,
+			const expression_t& input,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
+		public: static expression_t make_math_operation2(
+			math_operation2_expr_t::operation op,
+			const expression_t& left,
+			const expression_t& right,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 
-		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_conditional_operator(
+			const expression_t& condition,
+			const expression_t& a,
+			const expression_t& b,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 
-		public: static expression_t make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_function_call(
+			const type_identifier_t& function,
+			const std::vector<std::shared_ptr<expression_t>>& inputs,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 
 
-		public: static expression_t make_load(const expression_t& address_expression, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_load(
+			const expression_t& address_expression,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 		public: static expression_t make_load_variable(const std::string& name);
 
-		public: static expression_t make_resolve_variable(const std::string& variable, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_resolve_variable(
+			const std::string& variable,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 
-		public: static expression_t make_resolve_struct_member(const std::shared_ptr<expression_t>& parent_address, const std::string& member_name, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_resolve_struct_member(
+			const std::shared_ptr<expression_t>& parent_address,
+			const std::string& member_name,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 
-		public: static expression_t make_lookup(const expression_t& parent_address, const expression_t& lookup_key, const type_identifier_t& resolved_expression_type = type_identifier_t());
+		public: static expression_t make_lookup(
+			const expression_t& parent_address,
+			const expression_t& lookup_key,
+			const type_identifier_t& resolved_expression_type = type_identifier_t()
+		);
 
 
 		public: bool check_invariant() const;

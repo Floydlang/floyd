@@ -6,11 +6,11 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_struct.h"
+#include "parse_struct_def.h"
 
-#include "parser_expression.h"
-#include "parser_function.h"
-#include "parser_struct.h"
+#include "parse_expression.h"
+#include "parse_function_def.h"
+#include "parse_struct_def.h"
 #include "parser_primitives.h"
 #include "parser_ast.h"
 

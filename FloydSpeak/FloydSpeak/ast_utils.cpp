@@ -9,7 +9,7 @@
 #include "ast_utils.h"
 
 
-#include "parser_statement.h"
+#include "statements.h"
 #include "parser_value.h"
 #include "utils.h"
 
@@ -264,7 +264,6 @@ value_t make_default_value(const ast_t& ast, const ast_path_t& path, const type_
 		QUARK_ASSERT(false);
 	}
 }
-
 
 
 
