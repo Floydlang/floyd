@@ -1,40 +1,19 @@
-# Floyd Programming Language Reference
-
-Floyd is a fast and modern C-like program language that tries to make writing correct programs simpler and faster.
-
-It uses pure functions, immutability and composition.
-
-It as a unique concept to handle mutation of data, control of the outside world (files, network, UI) and controlling time.
-
-Functions and classes are pure. A pure function can only call pure functions. This delegates all mutation / time to the top levels of your program. Here you need to call non-pure functions of the OS. You must tag your functions with "nonpure" to be able to call other nonpure functions.
-
-This makes those risk. Have as little nonpure code as possible. Try to not have any conditional code inside nonpure code - this makes testing easier.
-
-
 # BASIC TYPES
-These are the privitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
-
 - **float**					Same as float32
 - **float32**				32 bit floating point
 - **float80**				80 bit floating point
-- **int**					Same as int64
 - **int8**					8 bit integer
 - **int16**
 - **int32**
 - **int64**
-- **bool**					**true** or **false**
-- **string**					built-in string type. 8bit pure (supports embedded nulls).
-	 								Use for computer strings. Not localizable.
 - **function**				function pointer. Functions can be Floyd functions or C functions.
 
 
 ### MORE TYPES
-These are composites and collections of other types.
 
-- **enum**		same as struct with only static constant data members
-- **struct**		like C struct or class or tuple.
 - **map**			look up values from a key. Localizable.
 - **vector**		look up values from a 0-based continous range of integer indexes.
+- **enum**		same as struct with only static constant data members
 
 
 # CORE TYPE FEATURES
@@ -56,20 +35,10 @@ This is used through out this document to demonstrate language features.
 
 
 # VALUES, VARIABLES AND CONSTANTS
-All "variables" aka values are by default constants / immutable.
+
 - Global variables
-- Function arguments
-- Local function variables
-- Member variables of structs etc.
 - Contents of collections
-- 
-	assert(floyd_verify(
-		"int hello1(){
-			a = "hello";
-			a = "goodbye";	//	Compilation error - you cannot change variable a.
-			return 3;
-		}"
-	) == -3);
+
 
 Use _mutable_ to define a local variable that can be mutated. Only _local variables_ can be mutable.
 
@@ -80,38 +49,10 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 	}
 
 
-# GLOBAL SCOPE
-Used for function definitions, defining constants and structs.
-
-
 # FUNCTIONS
-Functions in Floyd are pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at different times, like get_time().
-
 Function always have the same syntax, no matter if they are member functions of a struct, a constructor or a free function.
 
-NOTE: A function is a thing that takes a struct/tuple as an argument and returns another struct/tuple or basic type.
-
-Functions always return exactly one value. Use a tuple or struct to return more values.
-
-A function without return value usually makes no sense since function cannot have side effects. Possible uses would be logging, asserting or throwing exceptions.
-
-Example function definitions:
-
-	int f1(string x){
-		return 3;
-	}
-
-	int f2(int a, int b){
-		return 5
-	}
-
-	int f3(){	
-		return 100;
-	}
-
-	string f4(string x, bool y){
-		return "<" + x + ">";
-	}
+NOTE: A function is a thing that takes a structas an argument and returns another struct/or basic type.
 
 
 # IF - THEN -ELSE
@@ -130,7 +71,24 @@ This is a normal if-else-if-else construct, like in most languages.
 In each body you can write any statements. There is no "break" keyword. { and } are required.
 
 
-# QUESTION OPERATOR
+# EXPRESSIONS
+	%		Modulus Operator and remainder of after an integer division.				"B % A = 0"
+
+### Relational Operators
+	a == b				true if a and b have the same value
+	a != b				true if a and b have different values
+	a > b				true if the value of a is greater than the value of b
+	a < b				true if the value of a is smaller than the value of b
+	a >= b
+	a <= b
+
+### Logical Operators
+a && b
+a ||b
+!a
+
+### Trinary Operators
+condition ? a : b
 
 	bool is_polite(string x){
 		return x == "hello" ? "polite" : "rude"
@@ -138,47 +96,10 @@ In each body you can write any statements. There is no "break" keyword. { and }�
 	assert(is_polity("hiya!") == false);
 	assert(is_polity("hello") == true);
 
-
-# EXPRESSIONS
-		http://www.tutorialspoint.com/cprogramming/c_operators.htm
-Comparisons are true-deep - they consider all members and also member structs and collections.
-
-
-###	Arithmetic Operators
-	
-	+		Adds two operands.																					"A + B = 30"
-	−		Subtracts second operand from the first.												"A − B = -10"
-	*		Multiplies both operands.																		"A * B = 200"
-	/		Divides numerator by de-numerator.														"B / A = 2"
-	%		Modulus Operator and remainder of after an integer division.				"B % A = 0"
-
-
-### Relational Operators
-	a == b				true if a and b have the same value
-	a != b				true if a and b have different values
-	a > b				true if the value of a is greater than the value of b
-	a < b				true if the value of a is smaller than the value of b
-	>=
-	<=
-
-
-### Logical Operators
-	&&
-	||
-	!
-
-
 ### Bitwise Operators
-
-	One operand:
-	!					inverts a bool: true becomes false, false becomes true.
-	~
-	^
-	+
-	-
-	*
-	/
-	%
+!a					inverts a bool: true becomes false, false becomes true.
+~a
+^a
 
 
 # LOOPS AND CONDITIONS
@@ -187,8 +108,6 @@ The foreach uses the seq-protocol to process all items in a seq, one by one.
 foreach(a in stuff){
 }
 foreach(thing, [string]{ 1, 2, 3 })
-
-int r = a < b ? 1 : 2;
 
 switch() -- has modern update, no default or break. ??? todo
 
@@ -199,23 +118,13 @@ while(expression){
 }
 
 
+
 # STRUCTs
-Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view).
-
-	struct pixel { 
-		int red;
-		int green;
-		int blue;
-	};
-
-
-**True-deep** is a Floyd term that means that all values and sub-values are considered, for example in equally checks. The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
-
 You can chose to name members or not. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0". Named members are also numbered - a parallell name.
 
+??? How to block mutation of member variable? Some members makes no sense to write in isolation.
 
 ## Struct Signature
-This is the properties exposed by a struct in the order they are listed in the struct.
 
 * Users of the struct are not affected if you introduce a setter or getter to a property. They are also unaffected if you move a function from being a member function to a free function - they call them the same way.
 * There is no implicit _this_.
@@ -227,46 +136,20 @@ Clients to a struct should not care if:
 
 This makes it easier to refactor code: you can change a function from non-member to member without affecting any client code!
 
-
-## Member Data
-All members have default value. This makes simple value classes extremely simple to create.
-Clients can directly access all member variables, unless they are marked as "private".
-You can take control over reading / writing members by replacing its default getter / setter with your own functions. 
-
-	struct test {
-		float f;
-		float g = 3.1415f;
-	};
-
-Simple but fully functional struct. "f" will be initialized to 0.0f, g will be initialized to 3.1415f.
-
-??? How to block mutation of member variable? Some members makes no sense to write in isolation.
+??? private member data
 
 
 ## Constructors
-These are member functions that are named the same as the struct that sets up the initial state of a struct value. All member variables are first automatically initialized to default values: either explicitly or using that type's default. A constructor overrides these defaults. The value does not exist to the rest of the program until the constructor finishes.
 
 Two constructors are automatically generated:
 	The first one takes no argument and initializes all members to their defaults
 	The second one has one argument for each member, in the order they appear in the struct.
 
+You cannot stop these two contructors, but you can reimplement them if you wish.??? yes you want to be able to block them. Some struct have no meaningful default.
 
-## Using default contructors:
 
-	struct test {
-		float f;
-		float g = 3.1415f;
-	}
 
-	a = test();
-	assert(a.f == 0.0f);
-	assert(a.g == 3.1415f);
 
-	b = test(1.1f, 2.2f);
-	assert(b.f == 1.1f);
-	assert(b.g == 2.2f);
-
-You cannot stop these two contructors, but you can reimplement them if you wish.
 
 
 ## Explicit constructors
@@ -400,15 +283,10 @@ This works with nested values too:
 	assert(b.image.red == 4);
 
 
-## Built in Features of Structs
-Destruction: destruction is automatic when there are no references to a struct. Copying is done automatically, no need to write code for this. All copies behave as true-deep copies.
-All structs automatically support the built in features of every data type like comparison, copies etc: see separate description.
 
-Notice about optimizations: many accellerations are made behind the scenes:
 
-- causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
-- You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
-- There is no way for client code to see if the struct instances are _the same_ - that is access the same memory via two separate pointers.
+
+
 
 
 # TUPLES (unnnamed structs)
@@ -508,6 +386,8 @@ Map Reference
 	map<K, V> my_map.erase(K key)
 
 
+
+
 # SERIALIZATION
 Serializing a value is a built in mechanism. It is based on the seq-type.
 It is always deep. ### Always shallow with interning when values are shared.
@@ -530,67 +410,3 @@ Functions.
 
 
 # C GLUE
-
-
-# RESERVED KEYWORDS
-assert
-bool
-catch
-char???
-clock
-code_point
-defect_exception
-deserialize()
-diff()
-double
-dyn
-dyn**<>
-else
-ensure
-enum
-exception
-false
-float
-float32
-float80
-foreach
-hash
-hash()
-if
-int
-int16
-int32
-int64
-int8
-invariant
-log
-map
-mutable
-namespace???
-null
-path
-private
-property
-protocol
-prove
-require
-return
-rights
-runtime_exception
-seq
-serialize()
-string
-struct
-swap
-switch
-tag
-test
-text
-this
-true
-try
-typecast
-typedef
-typeof
-vector
-while
