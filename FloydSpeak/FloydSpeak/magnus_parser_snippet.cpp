@@ -15,12 +15,18 @@
 using namespace std;
 
 
-seq_t skipWhite(const seq_t& p1) {
-	return read_while(p1, " \t\n\r").second;
+pair<int, seq_t> evaluate_expression(const seq_t& p, int precedence);
+
+seq_t skip_whitespace(const seq_t& p) {
+	QUARK_ASSERT(p.check_invariant());
+
+	return read_while(p, " \t\n\r").second;
 }
 
 
-pair<int, seq_t> toNumber(const seq_t& s) {
+pair<int, seq_t> parse_number(const seq_t& s) {
+	QUARK_ASSERT(s.check_invariant());
+
 	char* e = nullptr;
 	long value = strtol(s.c_str(), &e, 0);
 	size_t used = e - s.c_str();
@@ -30,114 +36,102 @@ pair<int, seq_t> toNumber(const seq_t& s) {
 	return { (int)value, s.rest(used) };
 }
 
-QUARK_UNIT_TESTQ("toNumber()", ""){
-	QUARK_UT_VERIFY((toNumber(seq_t("0")) == pair<int, seq_t>{ 0, seq_t("") }));
+QUARK_UNIT_TESTQ("parse_number()", ""){
+	QUARK_UT_VERIFY((parse_number(seq_t("0")) == pair<int, seq_t>{ 0, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("toNumber()", ""){
-	QUARK_UT_VERIFY((toNumber(seq_t("0xyz")) == pair<int, seq_t>{ 0, seq_t("xyz") }));
+QUARK_UNIT_TESTQ("parse_number()", ""){
+	QUARK_UT_VERIFY((parse_number(seq_t("0xyz")) == pair<int, seq_t>{ 0, seq_t("xyz") }));
 }
 
-QUARK_UNIT_TESTQ("toNumber()", ""){
-	QUARK_UT_VERIFY((toNumber(seq_t("13xyz")) == pair<int, seq_t>{ 13, seq_t("xyz") }));
-}
-
-
-pair<int, seq_t> evaluate_single(const seq_t& s) {
-	return toNumber(s);
+QUARK_UNIT_TESTQ("parse_number()", ""){
+	QUARK_UT_VERIFY((parse_number(seq_t("13xyz")) == pair<int, seq_t>{ 13, seq_t("xyz") }));
 }
 
 
+pair<int, seq_t> evaluate_single(const seq_t& p) {
+	QUARK_ASSERT(p.check_invariant());
 
-pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0);
+	return parse_number(p);
+}
 
+pair<int, seq_t> evaluate_atom(const seq_t& p){
+	QUARK_ASSERT(p.check_invariant());
 
-
-pair<int, seq_t> evaluate_atom(const seq_t& p1){
-    auto p = skipWhite(p1);
-	if(p.empty()){
+    auto p2 = skip_whitespace(p);
+	if(p2.empty()){
 		throw std::runtime_error("Unexpected end of string");
 	}
 
-	int value = 0;
-	char ch1 = p.first_char();
-    switch (ch1) {
-		//	"-xxx"
-        case '-':
-			{
-				const auto a = evaluate(p.rest(), 3);
-				value = -a.first;
-				p = a.second;
-			}
-			break;
+	char ch1 = p2.first_char();
 
-		//	"(yyy)xxx"
-        case '(':
-			{
-				const auto a = evaluate(p.rest(), 0);
-				value = a.first;
-				p = a.second;
-
-				if (a.second.first(1) != ")"){
-					throw std::runtime_error("Expected ')'");
-				}
-				p = p.rest();
-			}
-			break;
-
-		//	"1234xxx" or "my_function(3)xxx"
-        default:
-			{
-				const auto a = evaluate_single(p);
-				value = a.first;
-				p = a.second;
-			}
-			break;
-    }
-    p = skipWhite(p);
-	return { value, p };
-}
-
-pair<int, seq_t> evaluate(const seq_t& p1, int precedence){
-	auto b = evaluate_atom(p1);
-	int value = b.first;
-	auto p = b.second;
-
-	if(!p.empty()){
-		bool loop = false;
-		do {
-			loop = true;
-			if(p.empty()){
-				loop = false;
-			}
-			else{
-				char ch = p.first_char();
-				if((ch == '+' || ch == '-') && precedence < 1){
-					const auto a = evaluate(p.rest(), 1);
-					value = ch == '+' ? value + a.first : value - a.first;
-					p = a.second;
-				}
-				else if((ch == '*' || ch == '/') && precedence < 2) {
-					const auto a = evaluate(p.rest(), 2);
-					value = ch == '*' ? value * a.first : value / a.first;
-					p = a.second;
-				}
-				else if(ch == ')'){
-					loop = false;
-				}
-				else{
-					loop = false;
-				}
-			}
-		} while (loop);
-		p = skipWhite(p);
+	//	"-xxx"
+	if(ch1 == '-'){
+		const auto a = evaluate_expression(p2.rest(), 3);
+		return { -a.first, skip_whitespace(a.second) };
 	}
-	return { value, p };
+	//	"(yyy)xxx"
+	else if(ch1 == '('){
+		const auto a = evaluate_expression(p2.rest(), 0);
+		if (a.second.first(1) != ")"){
+			throw std::runtime_error("Expected ')'");
+		}
+		return { a.first, skip_whitespace(a.second.rest()) };
+	}
+
+	//	"1234xxx" or "my_function(3)xxx"
+	else {
+		const auto a = evaluate_single(p2);
+		return { a.first, skip_whitespace(a.second) };
+	}
 }
 
-pair<int, seq_t> evaluate_expression(const seq_t& p1){
-	return evaluate(p1, 0);
+pair<int, seq_t> evaluate_operation(const seq_t& p1, const int value, const int precedence){
+	QUARK_ASSERT(p1.check_invariant());
+	QUARK_ASSERT(precedence >= 0);
+
+	auto p = p1;
+	if(!p.empty()){
+		char ch = p.first_char();
+		if((ch == '+' || ch == '-') && precedence < 1){
+			const auto a = evaluate_expression(p.rest(), 1);
+			const auto value2 = ch == '+' ? value + a.first : value - a.first;
+			const auto p2 = a.second;
+			return p2.empty() ? pair<int, seq_t>{ value2, p2 } : evaluate_operation(p2, value2, precedence);
+		}
+		else if((ch == '*' || ch == '/') && precedence < 2) {
+			const auto a = evaluate_expression(p.rest(), 2);
+			const auto value2 = ch == '*' ? value * a.first : value / a.first;
+			const auto p2 = a.second;
+			return p2.empty() ? pair<int, seq_t>{ value2, p2 } : evaluate_operation(p2, value2, precedence);
+		}
+		else if(ch == ')'){
+			return { value, p };
+		}
+		else{
+			return { value, p };
+		}
+	}
+	else{
+		return { value, p };
+	}
 }
+
+pair<int, seq_t> evaluate_expression(const seq_t& p, int precedence){
+	QUARK_ASSERT(p.check_invariant());
+	QUARK_ASSERT(precedence >= 0);
+
+	auto a = evaluate_atom(p);
+	return evaluate_operation(a.second, a.first, precedence);
+}
+
+pair<int, seq_t> evaluate_expression(const seq_t& p){
+	QUARK_ASSERT(p.check_invariant());
+
+	return evaluate_expression(p, 0);
+}
+
+
 
 QUARK_UNIT_TESTQ("evaluate_expression()", ""){
 	try{
@@ -158,6 +152,14 @@ QUARK_UNIT_TESTQ("evaluate_expression()", ""){
 
 QUARK_UNIT_TESTQ("evaluate_expression()", ""){
 	QUARK_UT_VERIFY((evaluate_expression(seq_t("10 + 4")) == pair<int, seq_t>{ 14, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 + 2 + 3 + 4")) == pair<int, seq_t>{ 10, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 + 8 + 7 + 2 * 3 + 4 * 5 + 6")) == pair<int, seq_t>{ 48, seq_t("") }));
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", ""){
