@@ -16,8 +16,14 @@
 #include <memory>
 
 
+/*
+	C99-language constants.
+*/
+const std::string k_c99_number_chars = "0123456789.";
+const std::string k_c99_whitespace_chars = " \n\t\r";
+	const std::string k_identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 
-
+//	Precedence same as C99.
 enum class eoperator_precedence {
 	k_super_strong = 0,
 
@@ -41,12 +47,15 @@ enum class eoperator_precedence {
 
 template<typename EXPRESSION> struct on_node_i {
 	public: virtual ~on_node_i(){};
-	public: virtual const EXPRESSION on_node_i__on_terminal(const std::string& terminal) const = 0;
+	public: virtual const EXPRESSION on_node_i__on_number_constant(const std::string& terminal) const = 0;
+	public: virtual const EXPRESSION on_node_i__on_identifier(const std::string& terminal) const = 0;
+	public: virtual const EXPRESSION on_node_i__on_string_constant(const std::string& terminal) const = 0;
 
 	public: virtual const EXPRESSION on_node_i__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_minus(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_multiply(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
+
 	public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_logical_and(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
@@ -65,25 +74,41 @@ std::pair<EXPRESSION, seq_t> evaluate_expression(const on_node_i<EXPRESSION>& he
 inline seq_t skip_whitespace(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
-	return read_while(p, " \t\n\r").second;
+	return read_while(p, k_c99_whitespace_chars).second;
 }
+
 
 
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_single(const on_node_i<EXPRESSION>& helper, const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
-	const std::string number_chars = "0123456789.";
-	const auto number_s = read_while(p, number_chars);
-	if(!number_s.first.empty()){
-		const EXPRESSION result = helper.on_node_i__on_terminal(number_s.first);
-		return { result, number_s.second };
+	{
+		const auto number_s = read_while(p, k_c99_number_chars);
+		if(!number_s.first.empty()){
+			const EXPRESSION result = helper.on_node_i__on_number_constant(number_s.first);
+			return { result, number_s.second };
+		}
+	}
+
+	{
+		const auto identifier_s = read_while(p, k_identifier_chars);
+		if(!identifier_s.first.empty()){
+			const EXPRESSION result = helper.on_node_i__on_identifier(identifier_s.first);
+			return { result, identifier_s.second };
+		}
+	}
+
+	if(p.first() == "\""){
+		const auto s = read_while_not(p.rest(), "\"");
+		const EXPRESSION result = helper.on_node_i__on_string_constant(s.first);
+		return { result, s.second.rest() };
 	}
 
 	//??? Identifiers, string constants, true/false.
-	else{
-		QUARK_ASSERT(false);
-	}
+
+
+	QUARK_ASSERT(false);
 }
 
 template<typename EXPRESSION>
@@ -125,8 +150,8 @@ std::pair<EXPRESSION, seq_t> evaluate_atom(const on_node_i<EXPRESSION>& helper, 
 	}
 }
 
-
-template<typename EXPRESSION> std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& value, const eoperator_precedence precedence){
+template<typename EXPRESSION>
+std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& value, const eoperator_precedence precedence){
 	QUARK_ASSERT(p1.check_invariant());
 
 	const auto p = p1;
@@ -140,19 +165,32 @@ template<typename EXPRESSION> std::pair<EXPRESSION, seq_t> evaluate_operation(co
 		}
 
 		//	EXPRESSION + EXPRESSION +
-		//	EXPRESSION - EXPRESSION -
-		else if((op1 == '+' || op1 == '-') && precedence > eoperator_precedence::k_add_sub){
+		else if(op1 == '+'  && precedence > eoperator_precedence::k_add_sub){
 			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
-			const auto value2 = op1 == '+' ? helper.on_node_i__on_plus(value, a.first) : helper.on_node_i__on_minus(value, a.first);
+			const auto value2 = helper.on_node_i__on_plus(value, a.first);
+			const auto p2 = a.second;
+			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+		}
+
+		//	EXPRESSION - EXPRESSION -
+		else if(op1 == '-' && precedence > eoperator_precedence::k_add_sub){
+			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
+			const auto value2 = helper.on_node_i__on_minus(value, a.first);
 			const auto p2 = a.second;
 			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
 		}
 
 		//	EXPRESSION * EXPRESSION *
+		else if((op1 == '*' || op1 == '/') && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto value2 = helper.on_node_i__on_multiply(value, a.first);
+			const auto p2 = a.second;
+			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+		}
 		//	EXPRESSION / EXPRESSION /
 		else if((op1 == '*' || op1 == '/') && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = op1 == '*' ? helper.on_node_i__on_multiply(value, a.first) : helper.on_node_i__on_divide(value, a.first);
+			const auto value2 = helper.on_node_i__on_divide(value, a.first);
 			const auto p2 = a.second;
 			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
 		}

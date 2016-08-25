@@ -249,6 +249,18 @@ QUARK_UNIT_TEST("", "read_while()", "", ""){
 
 
 
+pair<string, seq_t> read_while_not(const seq_t& p1, const string& match){
+	string a;
+	seq_t p2 = p1;
+
+	while(!p2.empty() && match.find(p2.first_char()) == string::npos){
+		a = a + p2.first_char();
+		p2 = p2.rest();
+	}
+
+	return { a, p2 };
+}
+
 
 
 

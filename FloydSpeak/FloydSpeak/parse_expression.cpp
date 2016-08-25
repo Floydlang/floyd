@@ -666,9 +666,16 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	template<typename EXPRESSION>
 	struct my_helper2 : public on_node_i<EXPRESSION> {
 
-		public: virtual const EXPRESSION on_node_i__on_terminal(const std::string& terminal) const{
+		public: virtual const EXPRESSION on_node_i__on_number_constant(const std::string& terminal) const{
 			return stoi(terminal);
 		}
+		public: virtual const EXPRESSION on_node_i__on_identifier(const std::string& terminal) const{
+			return 0;
+		}
+		public: virtual const EXPRESSION on_node_i__on_string_constant(const std::string& terminal) const{
+			return 0;
+		}
+
 
 		public: virtual const EXPRESSION on_node_i__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs + rhs;

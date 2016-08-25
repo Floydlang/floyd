@@ -116,8 +116,14 @@ QUARK_UNIT_TESTQ("parse_long()", ""){
 	template<typename EXPRESSION>
 	struct my_helper : public on_node_i<EXPRESSION> {
 
-		public: virtual const EXPRESSION on_node_i__on_terminal(const std::string& terminal) const{
-			return stol(terminal);
+		public: virtual const EXPRESSION on_node_i__on_number_constant(const std::string& terminal) const{
+			return stoi(terminal);
+		}
+		public: virtual const EXPRESSION on_node_i__on_identifier(const std::string& terminal) const{
+			return 0;
+		}
+		public: virtual const EXPRESSION on_node_i__on_string_constant(const std::string& terminal) const{
+			return 0;
 		}
 
 		public: virtual const EXPRESSION on_node_i__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
@@ -318,6 +324,15 @@ QUARK_UNIT_TESTQ("test_evaluate_int_expr()", "||"){
 }
 QUARK_UNIT_TESTQ("test_evaluate_int_expr()", "||"){
 	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("1 || 1 || 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+
+
+QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("10 + my_variable")) == pair<int, seq_t>{ 10, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("10 + \"my string\"")) == pair<int, seq_t>{ 10, seq_t("") }));
 }
 
 

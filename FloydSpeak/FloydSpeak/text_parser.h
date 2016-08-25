@@ -62,6 +62,7 @@ struct seq_t {
 
 
 std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& match);
+std::pair<std::string, seq_t> read_while_not(const seq_t& p1, const std::string& match);
 
 
 

@@ -83,9 +83,9 @@ In each body you can write any statements. There is no "break" keyword. { and }Â
 	a <= b
 
 ### Logical Operators
-a && b
-a ||b
-!a
+	a && b
+	a || b
+	!a
 
 ### Trinary Operators
 condition ? a : b
