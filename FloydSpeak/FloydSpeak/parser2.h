@@ -28,7 +28,7 @@ enum class eoperator_precedence {
 	k_super_strong = 0,
 
 	//	(xyz)
-	k_parentesis,
+	k_parentesis = 0,
 
 	k_multiply_divider_remainder = 5,
 
@@ -152,7 +152,7 @@ std::pair<EXPRESSION, seq_t> evaluate_atom(const on_node_i<EXPRESSION>& helper, 
 }
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& value, const eoperator_precedence precedence){
+std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence){
 	QUARK_ASSERT(p1.check_invariant());
 
 	const auto p = p1;
@@ -162,46 +162,41 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 
 		//	Ending parantesis
 		if(op1 == ')' && precedence > eoperator_precedence::k_parentesis){
-			return { value, p };
+			return { lhs, p };
 		}
 
 		//	EXPRESSION + EXPRESSION +
 		else if(op1 == '+'  && precedence > eoperator_precedence::k_add_sub){
-			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
-			const auto value2 = helper.on_node_i__on_plus(value, a.first);
-			const auto p2 = a.second;
-			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
+			const auto value2 = helper.on_node_i__on_plus(lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION - EXPRESSION -
 		else if(op1 == '-' && precedence > eoperator_precedence::k_add_sub){
-			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
-			const auto value2 = helper.on_node_i__on_minus(value, a.first);
-			const auto p2 = a.second;
-			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
+			const auto value2 = helper.on_node_i__on_minus(lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION * EXPRESSION *
 		else if(op1 == '*' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = helper.on_node_i__on_multiply(value, a.first);
-			const auto p2 = a.second;
-			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto value2 = helper.on_node_i__on_multiply(lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 		//	EXPRESSION / EXPRESSION /
 		else if(op1 == '/' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = helper.on_node_i__on_divide(value, a.first);
-			const auto p2 = a.second;
-			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto value2 = helper.on_node_i__on_divide(lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION % EXPRESSION %
 		else if(op1 == '%' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = helper.on_node_i__on_remainder(value, a.first);
-			const auto p2 = a.second;
-			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto value2 = helper.on_node_i__on_remainder(lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION ? EXPRESSION : EXPRESSION
@@ -214,7 +209,7 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 			}
 
 			const auto false_expr_p = evaluate_expression(helper, true_expr_p.second.rest(), precedence);
-			const auto value2 = helper.on_node_i__on_conditional_operator(value, true_expr_p.first, false_expr_p.first);
+			const auto value2 = helper.on_node_i__on_conditional_operator(lhs, true_expr_p.first, false_expr_p.first);
 
 			//	End this precedence level.
 			return { value2, false_expr_p.second.rest() };
@@ -222,43 +217,41 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 
 		//	EXPRESSION == EXPRESSION
 		else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
-			const auto right = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
-			const auto value2 = helper.on_node_i__on_logical_equal(value, right.first);
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
+			const auto value2 = helper.on_node_i__on_logical_equal(lhs, rhs.first);
 
 			//	End this precedence level.
-			return { value2, right.second.rest() };
+			return { value2, rhs.second.rest() };
 		}
 		//	EXPRESSION != EXPRESSION
 		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
-			const auto right = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
-			const auto value2 = helper.on_node_i__on_logical_nonequal(value, right.first);
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
+			const auto value2 = helper.on_node_i__on_logical_nonequal(lhs, rhs.first);
 
 			//	End this precedence level.
-			return { value2, right.second.rest() };
+			return { value2, rhs.second.rest() };
 		}
 
 		//	EXPRESSION && EXPRESSION
 		else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
-			const auto right = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_and);
-			const auto value2 = helper.on_node_i__on_logical_and(value, right.first);
-			const auto p2 = right.second;
-			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_and);
+			const auto value2 = helper.on_node_i__on_logical_and(lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION || EXPRESSION
 		else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
-			const auto right = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_or);
-			const auto value2 = helper.on_node_i__on_logical_or(value, right.first);
-			const auto p2 = right.second;
-			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_or);
+			const auto value2 = helper.on_node_i__on_logical_or(lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		else{
-			return { value, p };
+			return { lhs, p };
 		}
 	}
 	else{
-		return { value, p };
+		return { lhs, p };
 	}
 }
 
