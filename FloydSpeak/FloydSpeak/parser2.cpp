@@ -218,16 +218,29 @@ struct my_helper : public maker<EXPRESSION> {
 		}
 	}
 
-	public: virtual const EXPRESSION maker__make(const eoperation op, const std::vector<const EXPRESSION>& args) const{
-		if(op == eoperation::k_n_call){
-			return 0;
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+	public: virtual const EXPRESSION maker__call(const std::string& f, const std::vector<EXPRESSION>& args) const{
+		return 0;
 	}
 
 };
+
+
+bool test_evaluate_single(const std::string& expression, int expected_value, const std::string& expected_seq){
+	my_helper<int64_t> helper;
+	const auto result = evaluate_single<int64_t>(helper, seq_t(expression));
+	if(result.first != expected_value){
+		return false;
+	}
+	else if(result.second.get_all() != expected_seq){
+		return false;
+	}
+	return true;
+}
+
+QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3)", 0, ""));
+QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(1000 + 2345), 5)", 0, ""));
+QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(\"hello\"), 5)", 0, ""));
+
 
 pair<int, seq_t> test_evaluate_int_expr(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
@@ -236,12 +249,12 @@ pair<int, seq_t> test_evaluate_int_expr(const seq_t& p){
 	return evaluate_expression2<int64_t>(helper, p);
 }
 
-bool test(const std::string& expression, int expected_int, string expected_rest){
+bool test(const std::string& expression, int expected_int, string expected_seq){
 	const auto result = test_evaluate_int_expr(seq_t(expression));
 	if(result.first != expected_int){
 		return false;
 	}
-	else if(result.second.get_all() != expected_rest){
+	else if(result.second.get_all() != expected_seq){
 		return false;
 	}
 	return true;
@@ -341,7 +354,11 @@ QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 + my_variable", 10, ""));
 QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 + \"my string\"", 10, ""));
 
 
-//QUARK_UNIT_1("test_evaluate_int_expr()", "f()", test("f()", 0, ""));
+QUARK_UNIT_1("test_evaluate_int_expr()", "f()", test("f()", 0, ""));
+QUARK_UNIT_1("test_evaluate_int_expr()", "f(3)", test("f(3)", 0, ""));
+QUARK_UNIT_1("test_evaluate_int_expr()", "f(3)", test("f(3, 4, 5)", 0, ""));
+
+
 
 
 

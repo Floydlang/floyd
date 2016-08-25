@@ -172,7 +172,7 @@ int run_test_list(const std::string& source_file, const std::vector<unit_test_de
 		const unit_test_def& test = tests[i];
 
 		std::stringstream testInfo;
-		testInfo << source_file << " Test #" << i
+		testInfo << source_file << ":" << std::to_string(test._source_line) << " Test #" << i
 			<< " " << test._class_under_test
 			<< " | " << test._function_under_test
 			<< " | " << test._scenario

@@ -89,7 +89,7 @@ template<typename EXPRESSION> struct maker {
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const = 0;
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const = 0;
-	public: virtual const EXPRESSION maker__make(const eoperation op, const std::vector<const EXPRESSION>& args) const = 0;
+	public: virtual const EXPRESSION maker__call(const std::string& f, const std::vector<EXPRESSION>& args) const = 0;
 };
 
 
@@ -126,14 +126,58 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 	{
 		const auto identifier_s = read_while(p, k_identifier_chars);
 		if(!identifier_s.first.empty()){
-			const EXPRESSION result = helper.maker__on_string(eoperation::k_0_identifer, identifier_s.first);
-			return { result, identifier_s.second };
+			const auto pos2 = skip_whitespace(identifier_s.second);
+			const auto next_char1 = pos2.first();
+
+			if(next_char1 == "["){
+				QUARK_ASSERT(false);
+			}
+			else if(next_char1 == "."){
+				QUARK_ASSERT(false);
+			}
+			else if(next_char1 == "("){
+				const auto pos3 = skip_whitespace(pos2.rest());
+				const auto next_char = pos3.first();
+
+				//	No arguments.
+				if(next_char == ")"){
+					const EXPRESSION result = helper.maker__call(identifier_s.first, {});
+					return { result, pos3.rest() };
+				}
+
+				//	Arguments.
+				else{
+					auto pos_loop = skip_whitespace(pos3);
+					std::vector<EXPRESSION> arg_exprs;
+					bool more = true;
+					while(more){
+						const auto a = evaluate_expression(helper, pos_loop, eoperator_precedence::k_super_weak);
+						arg_exprs.push_back(a.first);
+						const auto ch = a.second.first(1);
+						if(ch == ","){
+							more = true;
+						}
+						else if(ch == ")"){
+							more = false;
+						}
+						else{
+							throw std::runtime_error("Unexpected char");
+						}
+						pos_loop = a.second.rest();
+					}
+
+					const EXPRESSION result = helper.maker__call(identifier_s.first, arg_exprs);
+					return { result, pos_loop };
+				}
+			}
+			else{
+				const EXPRESSION result = helper.maker__on_string(eoperation::k_0_identifer, identifier_s.first);
+				return { result, identifier_s.second };
+			}
 		}
 	}
 
-
 	//??? Identifiers, string constants, true/false.
-
 
 	QUARK_ASSERT(false);
 }
