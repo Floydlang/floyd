@@ -34,6 +34,11 @@ enum class eoperator_precedence {
 
 	k_add_sub = 6,
 
+	//	<   <=	For relational operators < and ≤ respectively
+	//	>   >=
+	k_larger_smaller = 8,
+
+
 	k_equal__not_equal = 9,
 
 	k_logical_and = 13,
@@ -43,6 +48,32 @@ enum class eoperator_precedence {
 
 	k_super_weak
 };
+
+enum class eoperation {
+	k_number_constant = 100,
+	k_identifer,
+	k_string_constant,
+
+	k_add,
+	k_subtract,
+	k_multiply,
+	k_divide,
+	k_remainder,
+
+	k_smaller_or_equal,
+	k_smaller,
+
+	k_larger_or_equal,
+	k_larger,
+
+	k_logical_equal,
+	k_logical_nonequal,
+	k_logical_and,
+	k_logical_or,
+	k_conditional_operator,
+	k_logical_not
+};
+
 
 
 template<typename EXPRESSION> struct on_node_i {
@@ -57,6 +88,13 @@ template<typename EXPRESSION> struct on_node_i {
 	public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 
+/*
+	public: virtual const EXPRESSION on_node_i__on_smaller_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
+	public: virtual const EXPRESSION on_node_i__on_smaller(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
+	public: virtual const EXPRESSION on_node_i__on_larger_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
+	public: virtual const EXPRESSION on_node_i__on_larger(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
+*/
+	
 	public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_logical_and(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
@@ -165,6 +203,7 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 			return { lhs, p };
 		}
 
+
 		//	EXPRESSION + EXPRESSION +
 		else if(op1 == '+'  && precedence > eoperator_precedence::k_add_sub){
 			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
@@ -199,6 +238,7 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
+
 		//	EXPRESSION ? EXPRESSION : EXPRESSION
 		else if(op1 == '?' && precedence > eoperator_precedence::k_comparison_operator) {
 			const auto true_expr_p = evaluate_expression(helper, p.rest(), eoperator_precedence::k_comparison_operator);
@@ -214,6 +254,7 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 			//	End this precedence level.
 			return { value2, false_expr_p.second.rest() };
 		}
+
 
 		//	EXPRESSION == EXPRESSION
 		else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
@@ -231,6 +272,27 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 			//	End this precedence level.
 			return { value2, rhs.second.rest() };
 		}
+
+/*
+		//	!!! Check for "<=" before we check for "<".
+		//	EXPRESSION < EXPRESSION
+		else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto value2 = helper.on_node_i__on_smaller_equal(lhs, rhs.first);
+
+			//	End this precedence level.
+			return { value2, rhs.second.rest() };
+		}
+
+		//	EXPRESSION < EXPRESSION
+		else if(op1 == '<' && precedence > eoperator_precedence::k_larger_smaller){
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto value2 = helper.on_node_i__on_logical_equal(lhs, rhs.first);
+
+			//	End this precedence level.
+			return { value2, rhs.second.rest() };
+		}
+*/
 
 		//	EXPRESSION && EXPRESSION
 		else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
