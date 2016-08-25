@@ -138,6 +138,10 @@ QUARK_UNIT_TESTQ("parse_long()", ""){
 		public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs / rhs;
 		};
+		public: virtual const EXPRESSION on_node_i__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs % rhs;
+		};
+
 		public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs == rhs ? 1 : 0;
 		};
@@ -185,6 +189,8 @@ QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
 	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("1234567890")) == pair<int, seq_t>{ 1234567890, seq_t("") }));
 }
 
+
+
 QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
 	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("10 + 4")) == pair<int, seq_t>{ 14, seq_t("") }));
 }
@@ -197,9 +203,36 @@ QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
 	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("1 + 8 + 7 + 2 * 3 + 4 * 5 + 6")) == pair<int, seq_t>{ 48, seq_t("") }));
 }
 
+
+
 QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
 	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("10 * 4")) == pair<int, seq_t>{ 40, seq_t("") }));
 }
+
+QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("10 * 4 * 3")) == pair<int, seq_t>{ 120, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("40 / 4")) == pair<int, seq_t>{ 10, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+	QUARK_ASSERT((40 / 5 / 2) == 4);
+	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("40 / 5 / 2")) == pair<int, seq_t>{ 4, seq_t("") }));
+}
+
+
+QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("41 % 5")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+	QUARK_ASSERT((413 % 50 % 10) == 3);
+	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("413 % 50 % 10")) == pair<int, seq_t>{ 3, seq_t("") }));
+}
+
+
 
 QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
 	QUARK_UT_VERIFY((test_evaluate_int_expr(seq_t("(3)")) == pair<int, seq_t>{ 3, seq_t("") }));

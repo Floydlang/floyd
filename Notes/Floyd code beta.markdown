@@ -78,6 +78,7 @@ Comparisons are true-deep - they consider all members and also member structs an
 	−		Subtracts second operand from the first.									"a = b - c", "a = b - c - d"
 	*		Multiplies both operands.															"a = b * c", "a = b * c * d"
 	/		Divides numerator by de-numerator.											"a = b / c", "a = b / c / d"
+	%		Divides numerator by de-numerator.											"a = b / c", "a = b / c / d"
 
 
 # STRUCTs

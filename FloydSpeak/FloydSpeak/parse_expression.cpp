@@ -689,6 +689,10 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 		public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs / rhs;
 		};
+		public: virtual const EXPRESSION on_node_i__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs % rhs;
+		};
+
 		public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs == rhs ? 1 : 0;
 		};

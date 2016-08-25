@@ -55,6 +55,7 @@ template<typename EXPRESSION> struct on_node_i {
 	public: virtual const EXPRESSION on_node_i__on_minus(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_multiply(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
+	public: virtual const EXPRESSION on_node_i__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 
 	public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION on_node_i__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
@@ -181,16 +182,24 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 		}
 
 		//	EXPRESSION * EXPRESSION *
-		else if((op1 == '*' || op1 == '/') && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+		else if(op1 == '*' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 			const auto value2 = helper.on_node_i__on_multiply(value, a.first);
 			const auto p2 = a.second;
 			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
 		}
 		//	EXPRESSION / EXPRESSION /
-		else if((op1 == '*' || op1 == '/') && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+		else if(op1 == '/' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 			const auto value2 = helper.on_node_i__on_divide(value, a.first);
+			const auto p2 = a.second;
+			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
+		}
+
+		//	EXPRESSION % EXPRESSION %
+		else if(op1 == '%' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+			const auto a = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto value2 = helper.on_node_i__on_remainder(value, a.first);
 			const auto p2 = a.second;
 			return p2.empty() ? std::pair<EXPRESSION, seq_t>{ value2, p2 } : evaluate_operation(helper, p2, value2, precedence);
 		}
