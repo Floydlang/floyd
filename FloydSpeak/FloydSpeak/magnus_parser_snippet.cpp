@@ -79,6 +79,12 @@ pair<int, seq_t> evaluate_atom(const seq_t& p){
 		return { a.first, skip_whitespace(a.second.rest()) };
 	}
 
+	//	":yyy xxx"
+	else if(ch1 == ':'){
+		const auto a = evaluate_expression(p2.rest(), 0);
+		return { a.first, skip_whitespace(a.second.rest()) };
+	}
+
 	//	"1234xxx" or "my_function(3)xxx"
 	else {
 		const auto a = evaluate_single(p2);
@@ -105,8 +111,43 @@ pair<int, seq_t> evaluate_operation(const seq_t& p1, const int value, const int 
 			const auto p2 = a.second;
 			return p2.empty() ? pair<int, seq_t>{ value2, p2 } : evaluate_operation(p2, value2, precedence);
 		}
+
+		/*
+			Så efter '?' gör du liksom { trueExpression = parseStandardExpression(); expectToken(':'); falseExpression = parseStandardExpression(); }
+		*/
+		else if(ch == '?' && precedence < 2000) {
+			const auto true_expr_p = evaluate_expression(p.rest(), 2000);
+
+			const auto colon = true_expr_p.second.first(1);
+			if(colon != ":"){
+				throw std::runtime_error("Expected ':'");
+			}
+
+			const auto false_expr_p = evaluate_expression(true_expr_p.second.rest(), 2000);
+			const auto value2 = value != 0 ? true_expr_p.first : false_expr_p.first;
+
+			//	End this precedence level.
+			return { value2, false_expr_p.second.rest() };
+		}
 		else if(ch == ')'){
 			return { value, p };
+		}
+
+		//	EXPRESSION "==" EXPRESSION
+		else if(p.first(2) == "=="){
+			const auto right = evaluate_expression(p.rest(2), 1);
+			const auto value2 = (value == right.first) ? 1 : 0;
+
+			//	End this precedence level.
+			return { value2, right.second.rest() };
+		}
+		//	EXPRESSION "!=" EXPRESSION
+		else if(p.first(2) == "!="){
+			const auto right = evaluate_expression(p.rest(2), 1);
+			const auto value2 = (value == right.first) ? 0 : 1;
+
+			//	End this precedence level.
+			return { value2, right.second.rest() };
 		}
 		else{
 			return { value, p };
@@ -182,3 +223,25 @@ QUARK_UNIT_TESTQ("evaluate_expression()", ""){
 	QUARK_UT_VERIFY((evaluate_expression(seq_t("-(3 * 2 + (8 * 2)) - (((1))) * 2")) == pair<int, seq_t>{ -(3 * 2 + (8 * 2)) - (((1))) * 2, seq_t("") }));
 }
 
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 ? 2 : 3")) == pair<int, seq_t>{ 2, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 ? 2 : 3")) == pair<int, seq_t>{ 3, seq_t("") }));
+}
+
+
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("4 == 4")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("4 == 5")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 != 2")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("3 != 3")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
