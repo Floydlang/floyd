@@ -9,6 +9,7 @@
 #include "quark.h"
 
 #include <string>
+#include <memory>
 
 #include "text_parser.h"
 
@@ -70,6 +71,29 @@ QUARK_UNIT_TESTQ("enum class()", ""){
 	QUARK_UT_VERIFY(my_enum::k_one != my_enum::k_four);
 	QUARK_UT_VERIFY(static_cast<int>(my_enum::k_one) == 1);
 }
+
+
+struct node_t {
+	public: static shared_ptr<node_t> make_terminal(const std::string& op, const std::string& terminal){
+		return make_shared<node_t>(node_t{ op, terminal, {} });
+	};
+
+	public: static shared_ptr<node_t> make_op(const std::string& op, const vector<shared_ptr<const node_t>>& expressions){
+		return make_shared<node_t>(node_t{ op, string(""), expressions });
+	};
+
+	private: node_t(const string& op, const string& terminal, const vector<shared_ptr<const node_t>>& expressions) :
+		_op(op),
+		_terminal(terminal),
+		_expressions(expressions)
+	{
+	}
+
+	private: string _op;
+	private: string _terminal;
+	private: vector<shared_ptr<const node_t>> _expressions;
+};
+
 
 
 
