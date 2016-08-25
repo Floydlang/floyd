@@ -42,6 +42,9 @@ seq_t::seq_t(const std::string& s) :
 	_str(make_shared<string>(s)),
 	_pos(0)
 {
+	FIRST_debug = _str->c_str() + _pos + 0;
+	REST_debug = _str->c_str() + _pos + 1;
+
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -51,6 +54,9 @@ seq_t::seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos) :
 {
 	QUARK_ASSERT(str);
 	QUARK_ASSERT(pos <= str->size());
+
+	FIRST_debug = _str->c_str() + _pos + 0;
+	REST_debug = _str->c_str() + _pos + 1;
 
 	QUARK_ASSERT(check_invariant());
 }
