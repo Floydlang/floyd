@@ -15,21 +15,49 @@
 using namespace std;
 
 
+/*
+	http://en.cppreference.com/w/cpp/language/operator_precedence
+*/
+
+#if 0
+	//	a::b
+	k_scope_resolution = 1,
+
+	//	a()
+	k_function_call = 2,
+
+	//	a[]
+	k_looup = 2,
+
+	// a.b
+	k_member_access = 2,
+
+	//	!a
+	k_logical_not = 3,
+
+	//	~a
+	k_bitwize_not = 3,
+#endif
+
 
 enum class eoperator_precedence {
-	k_super_weak = 0,
+	k_super_strong = 0,
 
-	k_equal,
-	k_not_equal,
-
-	k_and,
-
-	k_add_sub,
-	k_multiply_divide,
-	k_comparison_operator,
-
+	//	(xyz)
 	k_parentesis,
-	k_super_strong
+
+	k_multiply_divider_remainder = 5,
+
+	k_add_sub = 6,
+
+	k_equal__not_equal = 9,
+
+	k_logical_and = 13,
+	k_logical_or = 14,
+
+	k_comparison_operator = 15,
+
+	k_super_weak
 };
 
 QUARK_UNIT_TESTQ("enum class()", ""){
@@ -45,8 +73,7 @@ QUARK_UNIT_TESTQ("enum class()", ""){
 
 
 
-
-pair<int, seq_t> evaluate_expression(const seq_t& p, eoperator_precedence precedence);
+pair<int, seq_t> evaluate_expression(const seq_t& p, const eoperator_precedence precedence);
 
 seq_t skip_whitespace(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
@@ -133,20 +160,32 @@ pair<int, seq_t> evaluate_operation(const seq_t& p1, const int value, const eope
 	if(!p.empty()){
 		const char op1 = p.first_char();
 		const string op2 = p.first(2);
-		if((op1 == '+' || op1 == '-') && precedence < eoperator_precedence::k_add_sub){
+
+		//	Ending parantesis
+		if(op1 == ')' && precedence > eoperator_precedence::k_parentesis){
+			return { value, p };
+		}
+
+		//	EXPRESSION + EXPRESSION +
+		//	EXPRESSION - EXPRESSION -
+		else if((op1 == '+' || op1 == '-') && precedence > eoperator_precedence::k_add_sub){
 			const auto a = evaluate_expression(p.rest(), eoperator_precedence::k_add_sub);
 			const auto value2 = op1 == '+' ? value + a.first : value - a.first;
 			const auto p2 = a.second;
 			return p2.empty() ? pair<int, seq_t>{ value2, p2 } : evaluate_operation(p2, value2, precedence);
 		}
-		else if((op1 == '*' || op1 == '/') && precedence < eoperator_precedence::k_multiply_divide) {
-			const auto a = evaluate_expression(p.rest(), eoperator_precedence::k_multiply_divide);
+
+		//	EXPRESSION * EXPRESSION *
+		//	EXPRESSION / EXPRESSION /
+		else if((op1 == '*' || op1 == '/') && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+			const auto a = evaluate_expression(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 			const auto value2 = op1 == '*' ? value * a.first : value / a.first;
 			const auto p2 = a.second;
 			return p2.empty() ? pair<int, seq_t>{ value2, p2 } : evaluate_operation(p2, value2, precedence);
 		}
 
-		else if(op1 == '?' && precedence < eoperator_precedence::k_comparison_operator) {
+		//	EXPRESSION ? EXPRESSION : EXPRESSION
+		else if(op1 == '?' && precedence > eoperator_precedence::k_comparison_operator) {
 			const auto true_expr_p = evaluate_expression(p.rest(), eoperator_precedence::k_comparison_operator);
 
 			const auto colon = true_expr_p.second.first(1);
@@ -160,34 +199,38 @@ pair<int, seq_t> evaluate_operation(const seq_t& p1, const int value, const eope
 			//	End this precedence level.
 			return { value2, false_expr_p.second.rest() };
 		}
-		else if(op1 == ')' && precedence < eoperator_precedence::k_parentesis){
-			return { value, p };
-		}
 
-		//	EXPRESSION "==" EXPRESSION
-		else if(op2 == "==" && precedence < eoperator_precedence::k_equal){
-			const auto right = evaluate_expression(p.rest(2), eoperator_precedence::k_equal);
+		//	EXPRESSION == EXPRESSION
+		else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
+			const auto right = evaluate_expression(p.rest(2), eoperator_precedence::k_equal__not_equal);
 			const auto value2 = (value == right.first) ? 1 : 0;
 
 			//	End this precedence level.
 			return { value2, right.second.rest() };
 		}
-		//	EXPRESSION "!=" EXPRESSION
-		else if(op2 == "!=" && precedence < eoperator_precedence::k_not_equal){
-			const auto right = evaluate_expression(p.rest(2), eoperator_precedence::k_not_equal);
+		//	EXPRESSION != EXPRESSION
+		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
+			const auto right = evaluate_expression(p.rest(2), eoperator_precedence::k_equal__not_equal);
 			const auto value2 = (value == right.first) ? 0 : 1;
 
 			//	End this precedence level.
 			return { value2, right.second.rest() };
 		}
 
-		//	EXPRESSION && EXPRESSION
-		else if(op2 == "&&" && precedence < eoperator_precedence::k_and){
-			const auto right = evaluate_expression(p.rest(2), eoperator_precedence::k_and);
-			const auto value2 = (value !=0 && right.first != 0) ? 1 : 0;
+		//	EXPRESSION || EXPRESSION
+		else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
+			const auto a = evaluate_expression(p.rest(2), eoperator_precedence::k_logical_and);
+			const auto value2 = (value !=0 && a.first != 0) ? 1 : 0;
+			const auto p2 = a.second;
+			return p2.empty() ? pair<int, seq_t>{ value2, p2 } : evaluate_operation(p2, value2, precedence);
+		}
 
-			//	End this precedence level.
-			return { value2, right.second.rest() };
+		//	EXPRESSION || EXPRESSION
+		else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
+			const auto a = evaluate_expression(p.rest(2), eoperator_precedence::k_logical_or);
+			const auto value2 = (value !=0 || a.first != 0) ? 1 : 0;
+			const auto p2 = a.second;
+			return p2.empty() ? pair<int, seq_t>{ value2, p2 } : evaluate_operation(p2, value2, precedence);
 		}
 
 		else{
@@ -199,7 +242,7 @@ pair<int, seq_t> evaluate_operation(const seq_t& p1, const int value, const eope
 	}
 }
 
-pair<int, seq_t> evaluate_expression(const seq_t& p, eoperator_precedence precedence){
+pair<int, seq_t> evaluate_expression(const seq_t& p, const eoperator_precedence precedence){
 	QUARK_ASSERT(p.check_invariant());
 
 	auto a = evaluate_atom(p);
@@ -288,11 +331,43 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "!="){
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
-	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 && 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 && 0")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 && 1")) == pair<int, seq_t>{ 0, seq_t("") }));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
 	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 && 0")) == pair<int, seq_t>{ 0, seq_t("") }));
 }
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 && 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 && 0 && 0")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 && 0 && 1")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 && 1 && 0")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 && 1 && 1")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 && 0 && 0")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 && 0 && 1")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 && 1 && 0")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 && 1 && 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
 	QUARK_UT_VERIFY((1 * 1 && 0 + 1) == true);
 	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 * 1 && 0 + 1")) == pair<int, seq_t>{ 1, seq_t("") }));
@@ -300,3 +375,47 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&"){
 	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 * 1 && 0 * 1")) == pair<int, seq_t>{ 0, seq_t("") }));
 }
+
+
+
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 || 0")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 || 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 || 0")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 || 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 || 0 || 0")) == pair<int, seq_t>{ 0, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 || 0 || 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 || 1 || 0")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0 || 1 || 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 || 0 || 0")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 || 0 || 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 || 1 || 0")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||"){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 || 1 || 1")) == pair<int, seq_t>{ 1, seq_t("") }));
+}
+
+
+
+
+
