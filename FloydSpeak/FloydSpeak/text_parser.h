@@ -38,7 +38,8 @@ struct seq_t {
 	//	Limited to rest_size().
 	public: seq_t rest(size_t skip) const;
 
-	public: std::string rest_string() const;
+	//	Returns first + rest as one string.
+	public: std::string get_all() const;
 
 	//	Skips first char.
 	public: std::size_t rest_size() const;

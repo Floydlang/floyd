@@ -65,7 +65,7 @@ bool seq_t::operator==(const seq_t& other) const {
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(other.check_invariant());
 
-	return first(1) == other.first(1) && rest_string() == other.rest_string();
+	return first(1) == other.first(1) && get_all() == other.get_all();
 }
 
 bool seq_t::check_invariant() const {
@@ -108,7 +108,7 @@ seq_t seq_t::rest(size_t skip) const{
 	return seq_t(_str, p);
 }
 
-std::string seq_t::rest_string() const{
+std::string seq_t::get_all() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _str->substr(_pos);

@@ -660,56 +660,56 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 
 
 
-
+/*
 
 
 	template<typename EXPRESSION>
-	struct my_helper2 : public on_node_i<EXPRESSION> {
+	struct my_helper2 : public maker<EXPRESSION> {
 
-		public: virtual const EXPRESSION on_node_i__on_number_constant(const std::string& terminal) const{
+		public: virtual const EXPRESSION maker__on_number_constant(const std::string& terminal) const{
 			return stoi(terminal);
 		}
-		public: virtual const EXPRESSION on_node_i__on_identifier(const std::string& terminal) const{
+		public: virtual const EXPRESSION maker__on_identifier(const std::string& terminal) const{
 			return 0;
 		}
-		public: virtual const EXPRESSION on_node_i__on_string_constant(const std::string& terminal) const{
+		public: virtual const EXPRESSION maker__on_string_constant(const std::string& terminal) const{
 			return 0;
 		}
 
 
-		public: virtual const EXPRESSION on_node_i__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs + rhs;
 		};
-		public: virtual const EXPRESSION on_node_i__on_minus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_minus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs - rhs;
 		}
-		public: virtual const EXPRESSION on_node_i__on_multiply(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_multiply(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs * rhs;
 		};
-		public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs / rhs;
 		};
-		public: virtual const EXPRESSION on_node_i__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs % rhs;
 		};
 
-		public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs == rhs ? 1 : 0;
 		};
-		public: virtual const EXPRESSION on_node_i__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs != rhs ? 1 : 0;
 		};
-		public: virtual const EXPRESSION on_node_i__on_logical_and(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_logical_and(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs != 0 && rhs != 0 ? 1 : 0;
 		};
-		public: virtual const EXPRESSION on_node_i__on_logical_or(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		public: virtual const EXPRESSION maker__on_logical_or(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 			return lhs != 0 || rhs != 0 ? 1 : 0;
 		};
 
-		public: virtual const EXPRESSION on_node_i__on_conditional_operator(const EXPRESSION& condition, const EXPRESSION& true_expr, const EXPRESSION& false_expr) const{
+		public: virtual const EXPRESSION maker__on_conditional_operator(const EXPRESSION& condition, const EXPRESSION& true_expr, const EXPRESSION& false_expr) const{
 			return condition != 0 ? true_expr : false_expr;
 		}
-		public: virtual const EXPRESSION on_node_i__on_arithm_negate(const EXPRESSION& value) const{
+		public: virtual const EXPRESSION maker__on_arithm_negate(const EXPRESSION& value) const{
 			return -value;
 		}
 	};
@@ -723,7 +723,7 @@ pair<int, seq_t> evaluate_expression(const seq_t& p){
 	my_helper2<int> helper;
 	return evaluate_expression2<int>(helper, p);
 }
-
+*/
 
 
 

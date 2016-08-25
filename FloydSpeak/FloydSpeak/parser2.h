@@ -50,63 +50,46 @@ enum class eoperator_precedence {
 };
 
 enum class eoperation {
-	k_number_constant = 100,
-	k_identifer,
-	k_string_constant,
+	k_0_number_constant = 100,
+	k_0_identifer,
+	k_0_string_literal,
 
-	k_add,
-	k_subtract,
-	k_multiply,
-	k_divide,
-	k_remainder,
+	k_2_add,
+	k_2_subtract,
+	k_2_multiply,
+	k_2_divide,
+	k_2_remainder,
 
-	k_smaller_or_equal,
-	k_smaller,
+	k_2_smaller_or_equal,
+	k_2_smaller,
 
-	k_larger_or_equal,
-	k_larger,
+	k_2_larger_or_equal,
+	k_2_larger,
 
-	k_logical_equal,
-	k_logical_nonequal,
-	k_logical_and,
-	k_logical_or,
-	k_conditional_operator,
-	k_logical_not
+	k_2_logical_equal,
+	k_2_logical_nonequal,
+	k_2_logical_and,
+	k_2_logical_or,
+
+	k_3_conditional_operator,
+
+	k_1_logical_not
 };
 
 
 
-template<typename EXPRESSION> struct on_node_i {
-	public: virtual ~on_node_i(){};
-	public: virtual const EXPRESSION on_node_i__on_number_constant(const std::string& terminal) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_identifier(const std::string& terminal) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_string_constant(const std::string& terminal) const = 0;
-
-	public: virtual const EXPRESSION on_node_i__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_minus(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_multiply(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-
-/*
-	public: virtual const EXPRESSION on_node_i__on_smaller_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_smaller(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_larger_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_larger(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-*/
-	
-	public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_logical_and(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_logical_or(const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_conditional_operator(const EXPRESSION& condition, const EXPRESSION& true_expr, const EXPRESSION& false_expr) const = 0;
-	public: virtual const EXPRESSION on_node_i__on_arithm_negate(const EXPRESSION& value) const = 0;
+template<typename EXPRESSION> struct maker {
+	public: virtual ~maker(){};
+	public: virtual const EXPRESSION maker__on_string(const eoperation op, const std::string& s) const = 0;
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const = 0;
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const = 0;
 };
 
 
 //??? Add support for member variable/function/lookup paths.
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_expression(const on_node_i<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence);
+std::pair<EXPRESSION, seq_t> evaluate_expression(const maker<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence);
 
 
 
@@ -119,13 +102,13 @@ inline seq_t skip_whitespace(const seq_t& p) {
 
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_single(const on_node_i<EXPRESSION>& helper, const seq_t& p) {
+std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
 	{
 		const auto number_s = read_while(p, k_c99_number_chars);
 		if(!number_s.first.empty()){
-			const EXPRESSION result = helper.on_node_i__on_number_constant(number_s.first);
+			const EXPRESSION result = helper.maker__on_string(eoperation::k_0_number_constant, number_s.first);
 			return { result, number_s.second };
 		}
 	}
@@ -133,14 +116,14 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const on_node_i<EXPRESSION>& helper
 	{
 		const auto identifier_s = read_while(p, k_identifier_chars);
 		if(!identifier_s.first.empty()){
-			const EXPRESSION result = helper.on_node_i__on_identifier(identifier_s.first);
+			const EXPRESSION result = helper.maker__on_string(eoperation::k_0_identifer, identifier_s.first);
 			return { result, identifier_s.second };
 		}
 	}
 
 	if(p.first() == "\""){
 		const auto s = read_while_not(p.rest(), "\"");
-		const EXPRESSION result = helper.on_node_i__on_string_constant(s.first);
+		const EXPRESSION result = helper.maker__on_string(eoperation::k_0_string_literal, s.first);
 		return { result, s.second.rest() };
 	}
 
@@ -151,7 +134,7 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const on_node_i<EXPRESSION>& helper
 }
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_atom(const on_node_i<EXPRESSION>& helper, const seq_t& p){
+std::pair<EXPRESSION, seq_t> evaluate_atom(const maker<EXPRESSION>& helper, const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
     const auto p2 = skip_whitespace(p);
@@ -164,7 +147,7 @@ std::pair<EXPRESSION, seq_t> evaluate_atom(const on_node_i<EXPRESSION>& helper, 
 	//	"-xxx"
 	if(ch1 == '-'){
 		const auto a = evaluate_expression(helper, p2.rest(), eoperator_precedence::k_super_strong);
-		const auto value2 = helper.on_node_i__on_arithm_negate(a.first);
+		const auto value2 = helper.maker__make(eoperation::k_1_logical_not, a.first);
 		return { value2, skip_whitespace(a.second) };
 	}
 	//	"(yyy)xxx"
@@ -190,7 +173,7 @@ std::pair<EXPRESSION, seq_t> evaluate_atom(const on_node_i<EXPRESSION>& helper, 
 }
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence){
+std::pair<EXPRESSION, seq_t> evaluate_operation(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence){
 	QUARK_ASSERT(p1.check_invariant());
 
 	const auto p = p1;
@@ -207,34 +190,34 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 		//	EXPRESSION + EXPRESSION +
 		else if(op1 == '+'  && precedence > eoperator_precedence::k_add_sub){
 			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
-			const auto value2 = helper.on_node_i__on_plus(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_add, lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION - EXPRESSION -
 		else if(op1 == '-' && precedence > eoperator_precedence::k_add_sub){
 			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
-			const auto value2 = helper.on_node_i__on_minus(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_subtract, lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION * EXPRESSION *
 		else if(op1 == '*' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = helper.on_node_i__on_multiply(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_multiply, lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 		//	EXPRESSION / EXPRESSION /
 		else if(op1 == '/' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = helper.on_node_i__on_divide(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_divide, lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION % EXPRESSION %
 		else if(op1 == '%' && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = helper.on_node_i__on_remainder(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_remainder, lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
@@ -249,7 +232,7 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 			}
 
 			const auto false_expr_p = evaluate_expression(helper, true_expr_p.second.rest(), precedence);
-			const auto value2 = helper.on_node_i__on_conditional_operator(lhs, true_expr_p.first, false_expr_p.first);
+			const auto value2 = helper.maker__make(eoperation::k_3_conditional_operator, lhs, true_expr_p.first, false_expr_p.first);
 
 			//	End this precedence level.
 			return { value2, false_expr_p.second.rest() };
@@ -259,7 +242,7 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 		//	EXPRESSION == EXPRESSION
 		else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
 			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
-			const auto value2 = helper.on_node_i__on_logical_equal(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_logical_equal, lhs, rhs.first);
 
 			//	End this precedence level.
 			return { value2, rhs.second.rest() };
@@ -267,18 +250,17 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 		//	EXPRESSION != EXPRESSION
 		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
 			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
-			const auto value2 = helper.on_node_i__on_logical_nonequal(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_logical_nonequal, lhs, rhs.first);
 
 			//	End this precedence level.
 			return { value2, rhs.second.rest() };
 		}
 
-/*
 		//	!!! Check for "<=" before we check for "<".
-		//	EXPRESSION < EXPRESSION
+		//	EXPRESSION <= EXPRESSION
 		else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
 			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
-			const auto value2 = helper.on_node_i__on_smaller_equal(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_smaller_or_equal, lhs, rhs.first);
 
 			//	End this precedence level.
 			return { value2, rhs.second.rest() };
@@ -287,24 +269,44 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 		//	EXPRESSION < EXPRESSION
 		else if(op1 == '<' && precedence > eoperator_precedence::k_larger_smaller){
 			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
-			const auto value2 = helper.on_node_i__on_logical_equal(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_smaller, lhs, rhs.first);
 
 			//	End this precedence level.
 			return { value2, rhs.second.rest() };
 		}
-*/
+
+
+		//	!!! Check for ">=" before we check for ">".
+		//	EXPRESSION >= EXPRESSION
+		else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto value2 = helper.maker__make(eoperation::k_2_larger_or_equal, lhs, rhs.first);
+
+			//	End this precedence level.
+			return { value2, rhs.second.rest() };
+		}
+
+		//	EXPRESSION > EXPRESSION
+		else if(op1 == '>' && precedence > eoperator_precedence::k_larger_smaller){
+			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto value2 = helper.maker__make(eoperation::k_2_larger, lhs, rhs.first);
+
+			//	End this precedence level.
+			return { value2, rhs.second.rest() };
+		}
+
 
 		//	EXPRESSION && EXPRESSION
 		else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
 			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_and);
-			const auto value2 = helper.on_node_i__on_logical_and(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_logical_and, lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION || EXPRESSION
 		else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
 			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_or);
-			const auto value2 = helper.on_node_i__on_logical_or(lhs, rhs.first);
+			const auto value2 = helper.maker__make(eoperation::k_2_logical_or, lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
 
@@ -318,7 +320,7 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const on_node_i<EXPRESSION>& hel
 }
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_expression(const on_node_i<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence){
+std::pair<EXPRESSION, seq_t> evaluate_expression(const maker<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence){
 	QUARK_ASSERT(p.check_invariant());
 
 	auto a = evaluate_atom(helper, p);
@@ -327,7 +329,7 @@ std::pair<EXPRESSION, seq_t> evaluate_expression(const on_node_i<EXPRESSION>& he
 
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_expression2(const on_node_i<EXPRESSION>& helper, const seq_t& p){
+std::pair<EXPRESSION, seq_t> evaluate_expression2(const maker<EXPRESSION>& helper, const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
 	auto a = evaluate_atom(helper, p);
