@@ -54,6 +54,8 @@ pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0){
 	char ch1 = p.first_char();
     switch (ch1) {
         case '\0':
+			QUARK_UT_VERIFY(false);
+			break;
 
 		//	"-xxx"
         case '-':
@@ -107,9 +109,6 @@ pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0){
 					const auto a = evaluate(p.rest(), 2);
 					value = ch == '*' ? value * a.first : value / a.first;
 					p = a.second;
-				}
-				else if(ch == '\0'){
-					loop = false;
 				}
 				else if(ch == ')'){
 					loop = false;
