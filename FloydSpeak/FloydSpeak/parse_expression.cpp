@@ -14,6 +14,7 @@
 #include "parse_function_def.h"
 #include "parser_ast.h"
 #include "parser_primitives.h"
+#include "parser2.h"
 
 namespace floyd_parser {
 
@@ -647,6 +648,79 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	QUARK_TEST_VERIFY(*resolve_struct_type(a._global_scope->_types_collector, "test_struct0") == *make_struct0(a._global_scope));
 	QUARK_TEST_VERIFY(*resolve_struct_type(a._global_scope->_types_collector, "test_struct1") == *make_struct1(a._global_scope));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	template<typename EXPRESSION>
+	struct my_helper2 : public on_node_i<EXPRESSION> {
+
+		public: virtual const EXPRESSION on_node_i__on_terminal(const std::string& terminal) const{
+			return stoi(terminal);
+		}
+
+		public: virtual const EXPRESSION on_node_i__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs + rhs;
+		};
+		public: virtual const EXPRESSION on_node_i__on_minus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs - rhs;
+		}
+		public: virtual const EXPRESSION on_node_i__on_multiply(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs * rhs;
+		};
+		public: virtual const EXPRESSION on_node_i__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs / rhs;
+		};
+		public: virtual const EXPRESSION on_node_i__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs == rhs ? 1 : 0;
+		};
+		public: virtual const EXPRESSION on_node_i__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs != rhs ? 1 : 0;
+		};
+		public: virtual const EXPRESSION on_node_i__on_logical_and(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs != 0 && rhs != 0 ? 1 : 0;
+		};
+		public: virtual const EXPRESSION on_node_i__on_logical_or(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+			return lhs != 0 || rhs != 0 ? 1 : 0;
+		};
+
+		public: virtual const EXPRESSION on_node_i__on_conditional_operator(const EXPRESSION& condition, const EXPRESSION& true_expr, const EXPRESSION& false_expr) const{
+			return condition != 0 ? true_expr : false_expr;
+		}
+		public: virtual const EXPRESSION on_node_i__on_arithm_negate(const EXPRESSION& value) const{
+			return -value;
+		}
+	};
+
+pair<int, seq_t> evaluate_expression(const seq_t& p){
+	QUARK_ASSERT(p.check_invariant());
+
+	struct secret_t {
+	};
+
+	my_helper2<int> helper;
+	return evaluate_expression2<int>(helper, p);
+}
+
+
+
+
+
+
+
+
+
 
 
 }	//	floyd_parser
