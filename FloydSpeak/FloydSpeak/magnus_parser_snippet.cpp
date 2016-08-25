@@ -43,8 +43,17 @@ QUARK_UNIT_TESTQ("toNumber()", ""){
 }
 
 
+pair<int, seq_t> evaluate_single(const seq_t& s) {
+	return toNumber(s);
+}
 
-pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0){
+
+
+pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0);
+
+
+
+pair<int, seq_t> evaluate_atom(const seq_t& p1){
     auto p = skipWhite(p1);
 	if(p.empty()){
 		throw std::runtime_error("Unexpected end of string");
@@ -53,10 +62,6 @@ pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0){
 	int value = 0;
 	char ch1 = p.first_char();
     switch (ch1) {
-        case '\0':
-			QUARK_UT_VERIFY(false);
-			break;
-
 		//	"-xxx"
         case '-':
 			{
@@ -80,16 +85,23 @@ pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0){
 			}
 			break;
 
-		//	"1234xxx"
+		//	"1234xxx" or "my_function(3)xxx"
         default:
 			{
-				const auto a = toNumber(p);
+				const auto a = evaluate_single(p);
 				value = a.first;
 				p = a.second;
 			}
 			break;
     }
     p = skipWhite(p);
+	return { value, p };
+}
+
+pair<int, seq_t> evaluate(const seq_t& p1, int precedence){
+	auto b = evaluate_atom(p1);
+	int value = b.first;
+	auto p = b.second;
 
 	if(!p.empty()){
 		bool loop = false;
@@ -123,44 +135,48 @@ pair<int, seq_t> evaluate(const seq_t& p1, int precedence = 0){
 	return { value, p };
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
+pair<int, seq_t> evaluate_expression(const seq_t& p1){
+	return evaluate(p1, 0);
+}
+
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
 	try{
-		evaluate(seq_t(""));
+		evaluate_expression(seq_t(""));
 		QUARK_UT_VERIFY(false);
 	}
 	catch(...){
 	}
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("0")) == pair<int, seq_t>{ 0, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("0")) == pair<int, seq_t>{ 0, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("1234567890")) == pair<int, seq_t>{ 1234567890, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1234567890")) == pair<int, seq_t>{ 1234567890, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("10 + 4")) == pair<int, seq_t>{ 14, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("10 + 4")) == pair<int, seq_t>{ 14, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("10 * 4")) == pair<int, seq_t>{ 40, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("10 * 4")) == pair<int, seq_t>{ 40, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("(3)")) == pair<int, seq_t>{ 3, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("(3)")) == pair<int, seq_t>{ 3, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("(3 * 8)")) == pair<int, seq_t>{ 24, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("(3 * 8)")) == pair<int, seq_t>{ 24, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("1 + 3 * 2 + 100")) == pair<int, seq_t>{ 107, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("1 + 3 * 2 + 100")) == pair<int, seq_t>{ 107, seq_t("") }));
 }
 
-QUARK_UNIT_TESTQ("evaluate()", ""){
-	QUARK_UT_VERIFY((evaluate(seq_t("-(3 * 2 + (8 * 2)) - (((1))) * 2")) == pair<int, seq_t>{ -(3 * 2 + (8 * 2)) - (((1))) * 2, seq_t("") }));
+QUARK_UNIT_TESTQ("evaluate_expression()", ""){
+	QUARK_UT_VERIFY((evaluate_expression(seq_t("-(3 * 2 + (8 * 2)) - (((1))) * 2")) == pair<int, seq_t>{ -(3 * 2 + (8 * 2)) - (((1))) * 2, seq_t("") }));
 }
 
