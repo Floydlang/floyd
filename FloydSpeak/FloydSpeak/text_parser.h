@@ -65,7 +65,8 @@ struct seq_t {
 std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& match);
 std::pair<std::string, seq_t> read_while_not(const seq_t& p1, const std::string& match);
 
-
+//	If p starts with wanted_string, return true and consume those chars. Else return false and thesame seq_t.
+std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string);
 
 
 

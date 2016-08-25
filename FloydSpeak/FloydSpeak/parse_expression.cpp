@@ -322,15 +322,15 @@ pair<value_t, string> parse_numeric_constant(const string& s) {
 	}
 }
 
-QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	quark::ut_compare(parse_numeric_constant("0 xxx"), pair<value_t, string>(value_t(0), " xxx"));
 }
 
-QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	quark::ut_compare(parse_numeric_constant("1234 xxx"), pair<value_t, string>(value_t(1234), " xxx"));
 }
 
-QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	quark::ut_compare(parse_numeric_constant(".5 xxx"), pair<value_t, string>(value_t(0.5f), " xxx"));
 }
 

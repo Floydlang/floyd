@@ -263,6 +263,25 @@ pair<string, seq_t> read_while_not(const seq_t& p1, const string& match){
 
 
 
+std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string){
+	const auto size = wanted_string.size();
+	if(p.first(size) == wanted_string){
+		return { true, p.rest(size) };
+	}
+	else{
+		return { false, p };
+	}
+}
+
+QUARK_UNIT_TESTQ("peek()", ""){
+	const auto result = peek(seq_t("hello, world!"), "hell");
+	const auto expected = std::pair<bool, seq_t>(true, seq_t("o, world!"));
+
+	QUARK_TEST_VERIFY(result == expected);
+}
+
+
+
 
 	std::string remove_trailing_comma(const std::string& a){
 		auto s = a;

@@ -38,8 +38,6 @@ using namespace std;
 	// a.b
 	k_member_access = 2,
 
-	//	!a
-	k_logical_not = 3,
 
 	//	~a
 	k_bitwize_not = 3,
@@ -298,4 +296,11 @@ QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("1 || 1 || 1", 1, ""));
 
 QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 + my_variable", 10, ""));
 QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 + \"my string\"", 10, ""));
+
+
+//QUARK_UNIT_1("test_evaluate_int_expr()", "f()", test("f()", 0, ""));
+
+
+
+
 

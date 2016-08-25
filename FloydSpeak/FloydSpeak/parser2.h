@@ -105,6 +105,12 @@ template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
+	if(p.first() == "\""){
+		const auto s = read_while_not(p.rest(), "\"");
+		const EXPRESSION result = helper.maker__on_string(eoperation::k_0_string_literal, s.first);
+		return { result, s.second.rest() };
+	}
+
 	{
 		const auto number_s = read_while(p, k_c99_number_chars);
 		if(!number_s.first.empty()){
@@ -121,11 +127,6 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 		}
 	}
 
-	if(p.first() == "\""){
-		const auto s = read_while_not(p.rest(), "\"");
-		const EXPRESSION result = helper.maker__on_string(eoperation::k_0_string_literal, s.first);
-		return { result, s.second.rest() };
-	}
 
 	//??? Identifiers, string constants, true/false.
 
