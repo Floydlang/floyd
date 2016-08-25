@@ -30,6 +30,9 @@ enum class eoperator_precedence {
 	//	(xyz)
 	k_parentesis = 0,
 
+	//	a()
+	k_function_call = 2,
+
 	k_multiply_divider_remainder = 5,
 
 	k_add_sub = 6,
@@ -73,6 +76,8 @@ enum class eoperation {
 
 	k_3_conditional_operator,
 
+	k_n_call,
+
 	k_1_logical_not
 };
 
@@ -84,6 +89,7 @@ template<typename EXPRESSION> struct maker {
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const = 0;
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const = 0;
+	public: virtual const EXPRESSION maker__make(const eoperation op, const std::vector<const EXPRESSION>& args) const = 0;
 };
 
 
@@ -93,11 +99,9 @@ std::pair<EXPRESSION, seq_t> evaluate_expression(const maker<EXPRESSION>& helper
 
 
 
-inline seq_t skip_whitespace(const seq_t& p) {
-	QUARK_ASSERT(p.check_invariant());
+seq_t skip_whitespace(const seq_t& p);
 
-	return read_while(p, k_c99_whitespace_chars).second;
-}
+std::pair<std::string, seq_t> parse_string_literal(const seq_t& p);
 
 
 

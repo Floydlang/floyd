@@ -335,27 +335,6 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 }
 
 
-seq parse_string_constant(const string& s){
-	QUARK_ASSERT(s.size() > 0);
-	QUARK_ASSERT(s[0] == '\"');
-
-	const auto pos = s.substr(1);
-	const auto string_constant_pos = read_until(pos, "\"");
-	const auto r = string_constant_pos.second.substr(1);
-	return { string_constant_pos.first, r };
-}
-
-QUARK_UNIT_TESTQ("parse_string_constant()", ""){
-	quark::ut_compare(parse_string_constant("\"\" xxx"), seq("", " xxx"));
-}
-
-QUARK_UNIT_TESTQ("parse_string_constant()", ""){
-	quark::ut_compare(parse_string_constant("\"hello\" xxx"), seq("hello", " xxx"));
-}
-
-QUARK_UNIT_TESTQ("parse_string_constant()", ""){
-	quark::ut_compare(parse_string_constant("\".5\" xxx"), seq(".5", " xxx"));
-}
 
 
 /*
@@ -382,8 +361,8 @@ pair<expression_t, string> parse_single(const string& s) {
 
 	//	" => string constant.
 	if(peek_string(s, "\"")){
-		const auto a = parse_string_constant(s);
-		return { expression_t::make_constant(a.first), a.second };
+		const auto a = parse_string_literal(seq_t(s));
+		return { expression_t::make_constant(a.first), a.second.get_all() };
 	}
 
 	// [0-9] and "."  => numeric constant.
@@ -648,86 +627,6 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 	QUARK_TEST_VERIFY(*resolve_struct_type(a._global_scope->_types_collector, "test_struct0") == *make_struct0(a._global_scope));
 	QUARK_TEST_VERIFY(*resolve_struct_type(a._global_scope->_types_collector, "test_struct1") == *make_struct1(a._global_scope));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-	template<typename EXPRESSION>
-	struct my_helper2 : public maker<EXPRESSION> {
-
-		public: virtual const EXPRESSION maker__on_number_constant(const std::string& terminal) const{
-			return stoi(terminal);
-		}
-		public: virtual const EXPRESSION maker__on_identifier(const std::string& terminal) const{
-			return 0;
-		}
-		public: virtual const EXPRESSION maker__on_string_constant(const std::string& terminal) const{
-			return 0;
-		}
-
-
-		public: virtual const EXPRESSION maker__on_plus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs + rhs;
-		};
-		public: virtual const EXPRESSION maker__on_minus(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs - rhs;
-		}
-		public: virtual const EXPRESSION maker__on_multiply(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs * rhs;
-		};
-		public: virtual const EXPRESSION maker__on_divide(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs / rhs;
-		};
-		public: virtual const EXPRESSION maker__on_remainder(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs % rhs;
-		};
-
-		public: virtual const EXPRESSION maker__on_logical_equal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs == rhs ? 1 : 0;
-		};
-		public: virtual const EXPRESSION maker__on_logical_nonequal(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs != rhs ? 1 : 0;
-		};
-		public: virtual const EXPRESSION maker__on_logical_and(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs != 0 && rhs != 0 ? 1 : 0;
-		};
-		public: virtual const EXPRESSION maker__on_logical_or(const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			return lhs != 0 || rhs != 0 ? 1 : 0;
-		};
-
-		public: virtual const EXPRESSION maker__on_conditional_operator(const EXPRESSION& condition, const EXPRESSION& true_expr, const EXPRESSION& false_expr) const{
-			return condition != 0 ? true_expr : false_expr;
-		}
-		public: virtual const EXPRESSION maker__on_arithm_negate(const EXPRESSION& value) const{
-			return -value;
-		}
-	};
-
-pair<int, seq_t> evaluate_expression(const seq_t& p){
-	QUARK_ASSERT(p.check_invariant());
-
-	struct secret_t {
-	};
-
-	my_helper2<int> helper;
-	return evaluate_expression2<int>(helper, p);
-}
-*/
-
-
-
-
 
 
 

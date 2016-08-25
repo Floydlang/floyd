@@ -29,8 +29,6 @@ using namespace std;
 	//	a::b
 	k_scope_resolution = 1,
 
-	//	a()
-	k_function_call = 2,
 
 	//	a[]
 	k_looup = 2,
@@ -85,6 +83,41 @@ struct node_t {
 
 
 
+seq_t skip_whitespace(const seq_t& p) {
+	QUARK_ASSERT(p.check_invariant());
+
+	return read_while(p, k_c99_whitespace_chars).second;
+}
+
+
+pair<std::string, seq_t> parse_string_literal(const seq_t& p){
+	QUARK_ASSERT(!p.empty());
+	QUARK_ASSERT(p.first_char() == '\"');
+
+	const auto pos = p.rest();
+	const auto s = read_while_not(pos, "\"");
+	return { s.first, s.second.rest() };
+}
+
+QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+	quark::ut_compare(parse_string_literal(seq_t("\"\" xxx")), pair<std::string, seq_t>("", seq_t(" xxx")));
+}
+
+QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+	quark::ut_compare(parse_string_literal(seq_t("\"hello\" xxx")), pair<std::string, seq_t>("hello", seq_t(" xxx")));
+}
+
+QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+	quark::ut_compare(parse_string_literal(seq_t("\".5\" xxx")), pair<std::string, seq_t>(".5", seq_t(" xxx")));
+}
+
+
+
+
+
+
+
+
 pair<int, seq_t> parse_long(const seq_t& s) {
 	QUARK_ASSERT(s.check_invariant());
 
@@ -103,88 +136,98 @@ QUARK_UNIT_1("parse_long()", "", (parse_long(seq_t("13xyz")) == pair<int, seq_t>
 
 
 
-	template<typename EXPRESSION>
-	struct my_helper : public maker<EXPRESSION> {
+template<typename EXPRESSION>
+struct my_helper : public maker<EXPRESSION> {
 
 
-		public: virtual const EXPRESSION maker__on_string(const eoperation op, const std::string& s) const{
-			if(op == eoperation::k_0_number_constant){
-				return stoi(s);
-			}
-			else if(op == eoperation::k_0_identifer){
-				return 0;
-			}
-			else if(op == eoperation::k_0_string_literal){
-				return 0;
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+	public: virtual const EXPRESSION maker__on_string(const eoperation op, const std::string& s) const{
+		if(op == eoperation::k_0_number_constant){
+			return stoi(s);
 		}
-		public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
-			if(op == eoperation::k_1_logical_not){
-				return -expr;
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+		else if(op == eoperation::k_0_identifer){
+			return 0;
 		}
-		public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-			if(op == eoperation::k_2_add){
-				return lhs + rhs;
-			}
-			else if(op == eoperation::k_2_subtract){
-				return lhs - rhs;
-			}
-			else if(op == eoperation::k_2_multiply){
-				return lhs * rhs;
-			}
-			else if(op == eoperation::k_2_divide){
-				return lhs / rhs;
-			}
-			else if(op == eoperation::k_2_remainder){
-				return lhs % rhs;
-			}
-
-			else if(op == eoperation::k_2_smaller_or_equal){
-				return lhs <= rhs;
-			}
-			else if(op == eoperation::k_2_smaller){
-				return lhs < rhs;
-			}
-			else if(op == eoperation::k_2_larger_or_equal){
-				return lhs >= rhs;
-			}
-			else if(op == eoperation::k_2_larger){
-				return lhs > rhs;
-			}
-
-
-			else if(op == eoperation::k_2_logical_equal){
-				return lhs == rhs;
-			}
-			else if(op == eoperation::k_2_logical_nonequal){
-				return lhs != rhs;
-			}
-			else if(op == eoperation::k_2_logical_and){
-				return lhs != 0 && rhs != 0;
-			}
-			else if(op == eoperation::k_2_logical_or){
-				return lhs != 0 || rhs != 0;
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+		else if(op == eoperation::k_0_string_literal){
+			return 0;
 		}
-		public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
-			if(op == eoperation::k_3_conditional_operator){
-				return e1 != 0 ? e2 : e3;
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+		else{
+			QUARK_ASSERT(false);
 		}
-	};
+	}
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
+		if(op == eoperation::k_1_logical_not){
+			return -expr;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		if(op == eoperation::k_2_add){
+			return lhs + rhs;
+		}
+		else if(op == eoperation::k_2_subtract){
+			return lhs - rhs;
+		}
+		else if(op == eoperation::k_2_multiply){
+			return lhs * rhs;
+		}
+		else if(op == eoperation::k_2_divide){
+			return lhs / rhs;
+		}
+		else if(op == eoperation::k_2_remainder){
+			return lhs % rhs;
+		}
+
+		else if(op == eoperation::k_2_smaller_or_equal){
+			return lhs <= rhs;
+		}
+		else if(op == eoperation::k_2_smaller){
+			return lhs < rhs;
+		}
+		else if(op == eoperation::k_2_larger_or_equal){
+			return lhs >= rhs;
+		}
+		else if(op == eoperation::k_2_larger){
+			return lhs > rhs;
+		}
+
+
+		else if(op == eoperation::k_2_logical_equal){
+			return lhs == rhs;
+		}
+		else if(op == eoperation::k_2_logical_nonequal){
+			return lhs != rhs;
+		}
+		else if(op == eoperation::k_2_logical_and){
+			return lhs != 0 && rhs != 0;
+		}
+		else if(op == eoperation::k_2_logical_or){
+			return lhs != 0 || rhs != 0;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
+		if(op == eoperation::k_3_conditional_operator){
+			return e1 != 0 ? e2 : e3;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const EXPRESSION maker__make(const eoperation op, const std::vector<const EXPRESSION>& args) const{
+		if(op == eoperation::k_n_call){
+			return 0;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+};
 
 pair<int, seq_t> test_evaluate_int_expr(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
