@@ -393,53 +393,12 @@ struct json_helper : public maker<EXPRESSION> {
 			QUARK_ASSERT(false);
 		}
 	}
+
+	private: static const std::map<eoperation, string> _2_operator_to_string;
+
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-		//	### Use lookup instead of if-else
-		if(op == eoperation::k_2_add){
-			return json_value_t::make_array({ json_value_t("+"), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_subtract){
-			return json_value_t::make_array({ json_value_t("-"), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_multiply){
-			return json_value_t::make_array({ json_value_t("*"), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_divide){
-			return json_value_t::make_array({ json_value_t("/"), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_remainder){
-			return json_value_t::make_array({ json_value_t("%"), lhs, rhs });
-		}
-
-		else if(op == eoperation::k_2_smaller_or_equal){
-			return json_value_t::make_array({ json_value_t("<="), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_smaller){
-			return json_value_t::make_array({ json_value_t("<"), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_larger_or_equal){
-			return json_value_t::make_array({ json_value_t("=>"), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_larger){
-			return json_value_t::make_array({ json_value_t(">"), lhs, rhs });
-		}
-
-
-		else if(op == eoperation::k_2_logical_equal){
-			return json_value_t::make_array({ json_value_t("=="), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_logical_nonequal){
-			return json_value_t::make_array({ json_value_t("!="), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_logical_and){
-			return json_value_t::make_array({ json_value_t("&&"), lhs, rhs });
-		}
-		else if(op == eoperation::k_2_logical_or){
-			return json_value_t::make_array({ json_value_t("||"), lhs, rhs });
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+		const auto op_str = _2_operator_to_string.at(op);
+		return json_value_t::make_array({ json_value_t(op_str), lhs, rhs });
 	}
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
 		if(op == eoperation::k_3_conditional_operator){
@@ -456,8 +415,24 @@ struct json_helper : public maker<EXPRESSION> {
 
 };
 
+template<typename EXPRESSION>
+const std::map<eoperation, string> json_helper<EXPRESSION>::_2_operator_to_string{
+		{ eoperation::k_2_add, "+" },
+		{ eoperation::k_2_subtract, "-" },
+		{ eoperation::k_2_multiply, "*" },
+		{ eoperation::k_2_divide, "/" },
+		{ eoperation::k_2_remainder, "%" },
 
+		{ eoperation::k_2_smaller_or_equal, "<=" },
+		{ eoperation::k_2_smaller, "<" },
+		{ eoperation::k_2_larger_or_equal, ">=" },
+		{ eoperation::k_2_larger, ">" },
 
+		{ eoperation::k_2_logical_equal, "==" },
+		{ eoperation::k_2_logical_nonequal, "!=" },
+		{ eoperation::k_2_logical_and, "&&" },
+		{ eoperation::k_2_logical_or, "||" },
+	};
 
 
 
