@@ -417,6 +417,7 @@ struct json_helper : public maker<EXPRESSION> {
 
 template<typename EXPRESSION>
 const std::map<eoperation, string> json_helper<EXPRESSION>::_2_operator_to_string{
+		{ eoperation::k_2_member_access, "res_member" },
 		{ eoperation::k_2_add, "+" },
 		{ eoperation::k_2_subtract, "-" },
 		{ eoperation::k_2_multiply, "*" },
@@ -463,6 +464,34 @@ QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
 QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
 	"f(3 + 4, 4 * g(\"hello\"), 5)",
 	R"(["call", "f", "<>", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", "<>", [["k", "<string>", "hello"]]]], ["k", "<int>", 5]]])", ""));
+
+QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
+	"hello",
+	R"(["res_val", "<>", "hello"])",
+	""
+));
+
+QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
+	"hello",
+	R"(["res_val", "<>", "hello"])",
+	""
+));
+
+/*
+QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
+	"a.b()",
+	R"(["call", "b", ""<>", "a"]["res_val", "<>", "a"])",
+	""
+));
+*/
+
+#if false
+QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
+	"hello.kitty",
+	R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "hello"], "kitty"]])",
+	""
+));
+#endif
 
 
 

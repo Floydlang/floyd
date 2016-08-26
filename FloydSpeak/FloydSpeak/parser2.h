@@ -33,6 +33,9 @@ enum class eoperator_precedence {
 	//	a()
 	k_function_call = 2,
 
+	//	a.b
+	k_member_access = 2,
+
 	k_multiply_divider_remainder = 5,
 
 	k_add_sub = 6,
@@ -56,6 +59,8 @@ enum class eoperation {
 	k_0_number_constant = 100,
 	k_0_identifer,
 	k_0_string_literal,
+
+	k_2_member_access,
 
 	k_2_add,
 	k_2_subtract,
@@ -93,9 +98,15 @@ template<typename EXPRESSION> struct maker {
 };
 
 
+
+
+template<typename EXPRESSION>
+std::pair<EXPRESSION, seq_t> evaluate_operation(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence);
+
 //??? Add support for member variable/function/lookup paths.
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_expression(const maker<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence);
+
 
 
 
@@ -132,8 +143,10 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 			if(next_char1 == "["){
 				QUARK_ASSERT(false);
 			}
+
 			else if(next_char1 == "."){
-				QUARK_ASSERT(false);
+				const EXPRESSION lhs = helper.maker__on_string(eoperation::k_0_identifer, identifier_s.first);
+				return evaluate_operation(helper, pos2, lhs, eoperator_precedence::k_super_weak);
 			}
 			else if(next_char1 == "("){
 				const auto pos3 = skip_whitespace(pos2.rest());
@@ -235,6 +248,16 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const maker<EXPRESSION>& helper,
 		if(op1 == ')' && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p };
 		}
+
+		//	Member access
+		//	EXPRESSION . EXPRESSION +
+		else if(op1 == '.'  && precedence > eoperator_precedence::k_member_access){
+			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_member_access);
+			const auto value2 = helper.maker__make(eoperation::k_2_member_access, lhs, rhs.first);
+			return evaluate_operation(helper, rhs.second, value2, precedence);
+		}
+
+
 
 
 		//	EXPRESSION + EXPRESSION +
