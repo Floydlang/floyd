@@ -193,13 +193,13 @@ std::pair<EXPRESSION, seq_t> evaluate_atom(const maker<EXPRESSION>& helper, cons
 
 	const char ch1 = p2.first_char();
 
-	//	"-xxx"
+	//	Negate? "-xxx"
 	if(ch1 == '-'){
 		const auto a = evaluate_expression(helper, p2.rest(), eoperator_precedence::k_super_strong);
 		const auto value2 = helper.maker__make(eoperation::k_1_logical_not, a.first);
 		return { value2, skip_whitespace(a.second) };
 	}
-	//	"(yyy)xxx"
+	//	Expression within paranthesis? "(yyy)xxx"
 	else if(ch1 == '('){
 		const auto a = evaluate_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
 		if (a.second.first(1) != ")"){
@@ -208,12 +208,13 @@ std::pair<EXPRESSION, seq_t> evaluate_atom(const maker<EXPRESSION>& helper, cons
 		return { a.first, skip_whitespace(a.second.rest()) };
 	}
 
-	//	":yyy xxx"
+	//	Colon for (?:) ":yyy xxx"
 	else if(ch1 == ':'){
 		const auto a = evaluate_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
 		return { a.first, skip_whitespace(a.second.rest()) };
 	}
 
+	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
 	//	"1234xxx" or "my_function(3)xxx"
 	else {
 		const auto a = evaluate_single(helper, p2);

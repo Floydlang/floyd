@@ -240,6 +240,7 @@ bool test_evaluate_single(const std::string& expression, int expected_value, con
 QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3)", 0, ""));
 QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(1000 + 2345), 5)", 0, ""));
 QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(\"hello\"), 5)", 0, ""));
+//??? test member access etc.QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(\"hello\"), 5)", 0, ""));
 
 
 pair<int, seq_t> test_evaluate_int_expr(const seq_t& p){
@@ -361,6 +362,172 @@ QUARK_UNIT_1("test_evaluate_int_expr()", "f(3)", test("f(3, 4, 5)", 0, ""));
 
 
 
+
+/////////////////////////////////		TO JSON
+
+#include "json_support.h"
+
+template<typename EXPRESSION>
+struct json_helper : public maker<EXPRESSION> {
+
+
+	public: virtual const EXPRESSION maker__on_string(const eoperation op, const std::string& s) const{
+		if(op == eoperation::k_0_number_constant){
+			return json_value_t::make_array({ json_value_t("k"), json_value_t("<int>"), json_value_t((double)stoi(s)) });
+		}
+		else if(op == eoperation::k_0_identifer){
+			return json_value_t::make_array({ json_value_t("res_val"), json_value_t("<>"), json_value_t(s) });
+		}
+		else if(op == eoperation::k_0_string_literal){
+			return json_value_t::make_array({ json_value_t("k"), json_value_t("<string>"), json_value_t(s) });
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
+		if(op == eoperation::k_1_logical_not){
+			return json_value_t::make_array({ json_value_t("neg"), expr });
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+		//	### Use lookup instead of if-else
+		if(op == eoperation::k_2_add){
+			return json_value_t::make_array({ json_value_t("+"), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_subtract){
+			return json_value_t::make_array({ json_value_t("-"), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_multiply){
+			return json_value_t::make_array({ json_value_t("*"), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_divide){
+			return json_value_t::make_array({ json_value_t("/"), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_remainder){
+			return json_value_t::make_array({ json_value_t("%"), lhs, rhs });
+		}
+
+		else if(op == eoperation::k_2_smaller_or_equal){
+			return json_value_t::make_array({ json_value_t("<="), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_smaller){
+			return json_value_t::make_array({ json_value_t("<"), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_larger_or_equal){
+			return json_value_t::make_array({ json_value_t("=>"), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_larger){
+			return json_value_t::make_array({ json_value_t(">"), lhs, rhs });
+		}
+
+
+		else if(op == eoperation::k_2_logical_equal){
+			return json_value_t::make_array({ json_value_t("=="), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_logical_nonequal){
+			return json_value_t::make_array({ json_value_t("!="), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_logical_and){
+			return json_value_t::make_array({ json_value_t("&&"), lhs, rhs });
+		}
+		else if(op == eoperation::k_2_logical_or){
+			return json_value_t::make_array({ json_value_t("||"), lhs, rhs });
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
+		if(op == eoperation::k_3_conditional_operator){
+			return json_value_t::make_array({ json_value_t("?:"), e1, e2, e3 });
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const EXPRESSION maker__call(const std::string& f, const std::vector<EXPRESSION>& args) const{
+			return json_value_t::make_array({ json_value_t("call"), json_value_t(f), json_value_t("<>"), args });
+	}
+
+};
+
+
+
+
+
+
+bool test__evaluate_single(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
+	json_helper<json_value_t> helper;
+	const auto result = evaluate_single<json_value_t>(helper, seq_t(expression));
+	const string json_s = json_to_compact_string(result.first);
+	QUARK_TRACE_SS(expression << " =====> " << json_s);
+	if(json_s != expected_value){
+		return false;
+	}
+	else if(result.second.get_all() != expected_seq){
+		return false;
+	}
+	return true;
+}
+
+QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
+	"f(3)",
+	R"(["call", "f", "<>", [["k", "<int>", 3]]])",
+	""
+));
+QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
+	"f(3 + 4, 4 * g(1000 + 2345), 5)",
+	R"(["call", "f", "<>", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", "<>", [["+", ["k", "<int>", 1000], ["k", "<int>", 2345]]]]], ["k", "<int>", 5]]])",
+	""
+));
+QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
+	"f(3 + 4, 4 * g(\"hello\"), 5)",
+	R"(["call", "f", "<>", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", "<>", [["k", "<string>", "hello"]]]], ["k", "<int>", 5]]])", ""));
+
+
+
+
+bool test__evaluate_expression(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
+	json_helper<json_value_t> helper;
+	const auto result = evaluate_expression2<json_value_t>(helper, seq_t(expression));
+	const string json_s = json_to_compact_string(result.first);
+	QUARK_TRACE_SS(expression << " =====> " << json_s);
+	if(json_s != expected_value){
+		return false;
+	}
+	else if(result.second.get_all() != expected_seq){
+		return false;
+	}
+	return true;
+}
+
+QUARK_UNIT_1("evaluate_expression()", "||", test__evaluate_expression(
+	"1 || 0 || 1",
+	R"(["||", ["||", ["k", "<int>", 1], ["k", "<int>", 0]], ["k", "<int>", 1]])",
+	""
+));
+
+//??? test member access etc.QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(\"hello\"), 5)", "JSON", ""));
+
+/*
+bool test__evaluate_expression(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
+	my_helper<json_value_t> helper;
+	const auto result = evaluate_expression2<json_value_t>(helper, seq_t(expression));
+	const string json_s = json_to_compact_string(result.first);
+	if(json_s != expected_value){
+		return false;
+	}
+	else if(result.second.get_all() != expected_seq){
+		return false;
+	}
+	return true;
+}
+*/
 
 
 
