@@ -148,8 +148,8 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 
 		return floyd_parser::expression_t::make_resolve_variable(e2._variable_name, type);
 	}
-	else if(e._resolve_struct_member){
-		const auto& e2 = *e._resolve_struct_member;
+	else if(e._resolve_member){
+		const auto& e2 = *e._resolve_member;
 		const auto parent_address2 = make_shared<expression_t>(resolve_types__expression(ast, path, scope_def, *e2._parent_address));
 
 		const auto resolved_type = parent_address2->get_expression_type();
@@ -161,7 +161,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 
 		//	Error 1011
 		const auto value_type = resolve_type_throw(ast, path, scope_def, *member_meta._type);
-		return floyd_parser::expression_t::make_resolve_struct_member(parent_address2, e2._member_name, value_type);
+		return floyd_parser::expression_t::make_resolve_member(parent_address2, e2._member_name, value_type);
 	}
 	else if(e._lookup_element){
 		QUARK_ASSERT(false);

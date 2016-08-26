@@ -389,11 +389,6 @@ namespace floyd_parser {
 
 	/*
 		Describes a frontend type. All sub-types may or may not be known yet.
-
-		TODO
-		- Add memory layout calculation and storage
-		- Add support for alternative layout.
-		- Add support for optional value (using "?").
 	*/
 	struct type_def_t {
 		public: type_def_t() :

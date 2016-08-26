@@ -17,15 +17,6 @@
 
 #include "parser_ast.h"
 
-/*
-	???
-	address {
-		base: value_t (struct_ptr/function_ptr/vector_ptr)
-		int/string key
-
-		Key can be an integer or a string.
-*/
-
 namespace floyd_parser {
 	struct statement_t;
 	struct value_t;

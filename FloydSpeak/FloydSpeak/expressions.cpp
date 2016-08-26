@@ -74,7 +74,7 @@ bool resolve_variable_expr_t::operator==(const resolve_variable_expr_t& other) c
 
 
 
-bool resolve_struct_member_expr_t::operator==(const resolve_struct_member_expr_t& other) const{
+bool resolve_member_expr_t::operator==(const resolve_member_expr_t& other) const{
 	return *_parent_address == *other._parent_address && _member_name == other._member_name;
 }
 
@@ -106,7 +106,7 @@ bool expression_t::check_invariant() const{
 		+ (_call ? 1 : 0)
 		+ (_load ? 1 : 0)
 		+ (_resolve_variable ? 1 : 0)
-		+ (_resolve_struct_member ? 1 : 0)
+		+ (_resolve_member ? 1 : 0)
 		+ (_lookup_element ? 1 : 0)
 		 == 1);
 
@@ -138,8 +138,8 @@ bool expression_t::operator==(const expression_t& other) const {
 	else if(_resolve_variable){
 		return compare_shared_values(_resolve_variable, other._resolve_variable);
 	}
-	else if(_resolve_struct_member){
-		return compare_shared_values(_resolve_struct_member, other._resolve_struct_member);
+	else if(_resolve_member){
+		return compare_shared_values(_resolve_member, other._resolve_member);
 	}
 	else if(_lookup_element){
 		return compare_shared_values(_lookup_element, other._lookup_element);
@@ -284,13 +284,13 @@ expression_t expression_t::make_resolve_variable(const std::string& variable, co
 }
 
 
-expression_t expression_t::make_resolve_struct_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name, const type_identifier_t& resolved_expression_type){
+expression_t expression_t::make_resolve_member(const shared_ptr<expression_t>& parent_address, const std::string& member_name, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(parent_address && parent_address->check_invariant());
 	QUARK_ASSERT(member_name.size() > 0);
 	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
 	auto result = expression_t();
-	result._resolve_struct_member = std::make_shared<resolve_struct_member_expr_t>(resolve_struct_member_expr_t{ parent_address, member_name });
+	result._resolve_member = std::make_shared<resolve_member_expr_t>(resolve_member_expr_t{ parent_address, member_name });
 	result._resolved_expression_type = resolved_expression_type;
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
@@ -413,8 +413,8 @@ json_value_t expression_to_json(const expression_t& e){
 		const auto e2 = *e._resolve_variable;
 		return json_value_t::make_array({ json_value_t("res_var"), type, json_value_t(e2._variable_name) });
 	}
-	else if(e._resolve_struct_member){
-		const auto e2 = *e._resolve_struct_member;
+	else if(e._resolve_member){
+		const auto e2 = *e._resolve_member;
 		return json_value_t::make_array({ json_value_t("res_member"), type, expression_to_json(*e2._parent_address), json_value_t(e2._member_name) });
 	}
 	else if(e._lookup_element){
@@ -517,8 +517,8 @@ expression_t visit(const visit_expression_i& v, const expression_t& e){
 	else if(e._resolve_variable){
 		return v.visit_expression_i__on_resolve_variable(*e._resolve_variable);
 	}
-	else if(e._resolve_struct_member){
-		return v.visit_expression_i__on_resolve_struct_member(*e._resolve_struct_member);
+	else if(e._resolve_member){
+		return v.visit_expression_i__on_resolve_member(*e._resolve_member);
 	}
 	else if(e._lookup_element){
 		return v.visit_expression_i__on_lookup_element(*e._lookup_element);

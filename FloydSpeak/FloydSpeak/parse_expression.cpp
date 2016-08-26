@@ -120,7 +120,7 @@ pair<expression_t, string> parse_path_node(const std::shared_ptr<expression_t>& 
 				return { expression_t::make_resolve_variable(identifier_pos.first, type_identifier_t()), identifier_pos.second };
 			}
 			else{
-				return { expression_t::make_resolve_struct_member(leftside, identifier_pos.first), identifier_pos.second };
+				return { expression_t::make_resolve_member(leftside, identifier_pos.first), identifier_pos.second };
 			}
 		}
 	}
@@ -190,12 +190,15 @@ pair<expression_t, string> parse_calculated_value_recursive(const std::shared_pt
 		"hello["troll"] xxx"
 		"hello["troll"].kitty[10].cat xxx"
 */
+
+//??? BREAK OUT PARSE_ADDRESS, WITHOUT THE LOAD.
+
 pair<expression_t, string> parse_calculated_value(const string& s) {
 	const auto a = parse_calculated_value_recursive(shared_ptr<expression_t>(), s);
 	if(a.first._resolve_variable){
 		return { expression_t::make_load(a.first, type_identifier_t()), a.second };
 	}
-	else if(a.first._resolve_struct_member){
+	else if(a.first._resolve_member){
 		return { expression_t::make_load(a.first, type_identifier_t()), a.second };
 	}
 	else if(a.first._lookup_element){
@@ -232,12 +235,14 @@ pair<expression_t, string> parse_calculated_value(const string& s) {
 	}
 */
 
+
+
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(to_seq(parse_calculated_value("hello xxx")), seq(R"(["load", "<>", ["res_var", "<>", "hello"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty xxx")), seq(R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "hello"], "kitty"]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty xxx")), seq(R"(["load", "<>", ["resolve_member", "<>", ["res_var", "<>", "hello"], "kitty"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){

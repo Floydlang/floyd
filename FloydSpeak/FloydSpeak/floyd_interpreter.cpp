@@ -300,29 +300,10 @@ floyd_parser::value_t resolve_variable_name(const interpreter_t& vm, const std::
 
 namespace {
 
-	/*
-		PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
-		We don't have any value we can return from each expression in tree.
-		Alternatives:
-		A) Have dedicated expression types:
-			struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
-			collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
-
-		B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
-		C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
-	*/
-
-	/*
-		a = my_global_int;
-		b = my_global_obj.next;
-		c = my_global_obj.all[3].f(10).prev;
-	*/
-
-	//??? Make simpler implementation of pathing -- now that address is defined as struct_ptr + member.
 	expression_t load_deep(const interpreter_t& vm, const value_t& left_side, const expression_t& e){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(e.check_invariant());
-		QUARK_ASSERT(e._resolve_variable || e._resolve_struct_member || e._lookup_element);
+		QUARK_ASSERT(e._resolve_variable || e._resolve_member || e._lookup_element);
 
 		if(e._call){
 			//	???
@@ -334,10 +315,10 @@ namespace {
 			const value_t value = resolve_variable_name(vm, variable_name);
 			return expression_t::make_constant(value);
 		}
-		else if(e._resolve_struct_member){
-			const auto parent = load_deep(vm, left_side, *e._resolve_struct_member->_parent_address);
+		else if(e._resolve_member){
+			const auto parent = load_deep(vm, left_side, *e._resolve_member->_parent_address);
 			QUARK_ASSERT(parent._constant && parent._constant->is_struct());
-			const auto member_name = e._resolve_struct_member->_member_name;
+			const auto member_name = e._resolve_member->_member_name;
 			const auto struct_instance = parent._constant->get_struct();
 			const value_t value = struct_instance->_member_values[member_name];
 			return expression_t::make_constant(value);
@@ -357,7 +338,7 @@ namespace {
 		QUARK_ASSERT(e._load);
 
 		const auto e2 = *e._load;
-		QUARK_ASSERT(e2._address->_call || e2._address->_resolve_variable || e2._address->_resolve_struct_member || e2._address-> _lookup_element);
+		QUARK_ASSERT(e2._address->_call || e2._address->_resolve_variable || e2._address->_resolve_member || e2._address-> _lookup_element);
 
 		const auto e3 = load_deep(vm, value_t(), *e2._address);
 		return expression_t::make_constant(*e3._constant);
@@ -560,7 +541,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		QUARK_ASSERT(false);
 		return e;
 	}
-	else if(e._resolve_struct_member){
+	else if(e._resolve_member){
 		QUARK_ASSERT(false);
 		return e;
 	}
