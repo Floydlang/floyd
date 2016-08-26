@@ -50,26 +50,18 @@
 
 	PATHS
 
-	load
-	store
-	call
-	resolve_variable
-		find
-		resolve
-		variable
-		
-	resolve_member
-		resolve_member
-		res_member
-		member
-		"."
-	lookup
+	load						"load"
+	store						"store"
+	call						"call"
+	resolve_variable			"@"
+	resolve_member				"->"
+	lookup						"[-]"
 
 		a = my_global_int;
-		["load", ["res_var", "my_global_int"], "next"]
+		["load", ["@", "my_global_int"], "next"]
 
 		"my_global.next"
-		["load", ["res_member", ["res_var", "my_global"], "next"]]
+		["load", ["->", ["@", "my_global"], "next"]]
 
 		c = my_global_obj.all[3].f(10).prev;
 */

@@ -22,8 +22,8 @@ PRETTY FORMAT FOR READING:
 
 [
   "+",
-  [ "load", [ "res_member", [ "res_var", "p" ],"s" ] ],
-  [ "load", [ "res_var", "a" ] ]
+  [ "load", [ "->", [ "@", "p" ],"s" ] ],
+  [ "load", [ "@", "a" ] ]
 ]
 */
 

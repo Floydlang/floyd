@@ -411,17 +411,17 @@ json_value_t expression_to_json(const expression_t& e){
 	}
 	else if(e._resolve_variable){
 		const auto e2 = *e._resolve_variable;
-		return json_value_t::make_array({ json_value_t("res_var"), type, json_value_t(e2._variable_name) });
+		return json_value_t::make_array({ json_value_t("@"), type, json_value_t(e2._variable_name) });
 	}
 	else if(e._resolve_member){
 		const auto e2 = *e._resolve_member;
-		return json_value_t::make_array({ json_value_t("res_member"), type, expression_to_json(*e2._parent_address), json_value_t(e2._member_name) });
+		return json_value_t::make_array({ json_value_t("->"), type, expression_to_json(*e2._parent_address), json_value_t(e2._member_name) });
 	}
 	else if(e._lookup_element){
 		const auto e2 = *e._lookup_element;
 		const auto lookup_key = expression_to_json(*e2._lookup_key);
 		const auto parent_address = expression_to_json(*e2._parent_address);
-		return json_value_t::make_array({ json_value_t("lookup"), type, parent_address, lookup_key });
+		return json_value_t::make_array({ json_value_t("[-]"), type, parent_address, lookup_key });
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -478,7 +478,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "read & resolve_variable"){
 		expression_to_json_string(
 			expression_t::make_load_variable("param1")
 		),
-		R"(["load", "<>", ["res_var", "<>", "param1"]])"
+		R"(["load", "<>", ["@", "<>", "param1"]])"
 	);
 }
 
@@ -487,7 +487,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 		expression_to_json_string(
 			expression_t::make_lookup(expression_t::make_resolve_variable("hello", type_identifier_t()), expression_t::make_constant("xyz"))
 		),
-		R"(["lookup", "<>", ["res_var", "<>", "hello"], ["k", "<string>", "xyz"]])"
+		R"(["[-]", "<>", ["@", "<>", "hello"], ["k", "<string>", "xyz"]])"
 	);
 }
 

@@ -417,7 +417,7 @@ struct json_helper : public maker<EXPRESSION> {
 
 template<typename EXPRESSION>
 const std::map<eoperation, string> json_helper<EXPRESSION>::_2_operator_to_string{
-		{ eoperation::k_2_member_access, "res_member" },
+		{ eoperation::k_2_member_access, "->" },
 		{ eoperation::k_2_add, "+" },
 		{ eoperation::k_2_subtract, "-" },
 		{ eoperation::k_2_multiply, "*" },
@@ -488,7 +488,7 @@ QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 #if false
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"hello.kitty",
-	R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "hello"], "kitty"]])",
+	R"(["load", "<>", ["->", "<>", ["@", "<>", "hello"], "kitty"]])",
 	""
 ));
 #endif
