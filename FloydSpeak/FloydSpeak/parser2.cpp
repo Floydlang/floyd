@@ -380,13 +380,13 @@ struct json_helper : public maker<EXPRESSION> {
 
 	public: virtual const EXPRESSION maker__on_string(const eoperation op, const std::string& s) const{
 		if(op == eoperation::k_0_number_constant){
-			return json_value_t::make_array({ json_value_t("k"), json_value_t("<int>"), json_value_t((double)stoi(s)) });
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<int>"), json_value_t((double)stoi(s)) });
 		}
 		else if(op == eoperation::k_0_resolve){
-			return json_value_t::make_array({ json_value_t("@"), json_value_t("<>"), json_value_t(s) });
+			return json_value_t::make_array_skip_nulls({ json_value_t("@"), json_value_t(), json_value_t(s) });
 		}
 		else if(op == eoperation::k_0_string_literal){
-			return json_value_t::make_array({ json_value_t("k"), json_value_t("<string>"), json_value_t(s) });
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<string>"), json_value_t(s) });
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -394,10 +394,10 @@ struct json_helper : public maker<EXPRESSION> {
 	}
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
 		if(op == eoperation::k_1_logical_not){
-			return json_value_t::make_array({ json_value_t("neg"), expr });
+			return json_value_t::make_array_skip_nulls({ json_value_t("neg"), json_value_t(), expr });
 		}
 		else if(op == eoperation::k_1_load){
-			return json_value_t::make_array({ json_value_t("load"), json_value_t("<>"), expr });
+			return json_value_t::make_array_skip_nulls({ json_value_t("load"), json_value_t(), expr });
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -408,11 +408,11 @@ struct json_helper : public maker<EXPRESSION> {
 
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 		const auto op_str = _2_operator_to_string.at(op);
-		return json_value_t::make_array({ json_value_t(op_str), lhs, rhs });
+		return json_value_t::make_array2({ json_value_t(op_str), lhs, rhs });
 	}
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
 		if(op == eoperation::k_3_conditional_operator){
-			return json_value_t::make_array({ json_value_t("?:"), e1, e2, e3 });
+			return json_value_t::make_array2({ json_value_t("?:"), e1, e2, e3 });
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -420,11 +420,11 @@ struct json_helper : public maker<EXPRESSION> {
 	}
 
 	public: virtual const EXPRESSION maker__call(const std::string& f, const std::vector<EXPRESSION>& args) const{
-		return json_value_t::make_array({ json_value_t("call"), json_value_t(f), json_value_t("<>"), args });
+		return json_value_t::make_array_skip_nulls({ json_value_t("call"), json_value_t(f), json_value_t(), args });
 	}
 
 	public: virtual const EXPRESSION maker__member_access(const EXPRESSION& address, const std::string& member_name) const{
-		return json_value_t::make_array({ json_value_t("->"), json_value_t("<>"), address, json_value_t(member_name) });
+		return json_value_t::make_array_skip_nulls({ json_value_t("->"), json_value_t(), address, json_value_t(member_name) });
 	}
 
 };
@@ -467,41 +467,41 @@ bool test__evaluate_single(const std::string& expression, const std::string& exp
 
 QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
 	"f(3)",
-	R"(["call", "f", "<>", [["k", "<int>", 3]]])",
+	R"(["call", "f", [["k", "<int>", 3]]])",
 	""
 ));
 QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
 	"f(3 + 4, 4 * g(1000 + 2345), 5)",
-	R"(["call", "f", "<>", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", "<>", [["+", ["k", "<int>", 1000], ["k", "<int>", 2345]]]]], ["k", "<int>", 5]]])",
+	R"(["call", "f", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", [["+", ["k", "<int>", 1000], ["k", "<int>", 2345]]]]], ["k", "<int>", 5]]])",
 	""
 ));
 QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
 	"f(3 + 4, 4 * g(\"hello\"), 5)",
-	R"(["call", "f", "<>", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", "<>", [["k", "<string>", "hello"]]]], ["k", "<int>", 5]]])", ""));
+	R"(["call", "f", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", [["k", "<string>", "hello"]]]], ["k", "<int>", 5]]])", ""));
 
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"hello",
-	R"(["@", "<>", "hello"])",
+	R"(["@", "hello"])",
 	""
 ));
 
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"hello",
-	R"(["@", "<>", "hello"])",
+	R"(["@", "hello"])",
 	""
 ));
 
 #if false
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"a.b()",
-	R"(["call", "b", "<>", ["@", "<>", "a"]])",
+	R"(["call", "b", ["@", "a"]])",
 	""
 ));
 #endif
 
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"hello.kitty",
-	R"(["load", "<>", ["->", "<>", ["@", "<>", "hello"], "kitty"]])",
+	R"(["load", ["->", ["@", "hello"], "kitty"]])",
 	""
 ));
 
