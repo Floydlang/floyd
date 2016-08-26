@@ -70,6 +70,7 @@ bool json_value_t::check_invariant() const {
 }
 
 json_value_t::json_value_t(const json_value_t& other) :
+	__debug(other.__debug),
 	_type(other._type),
 	_object(other._object),
 	_array(other._array),
@@ -97,6 +98,7 @@ void json_value_t::swap(json_value_t& other){
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(other.check_invariant());
 
+	std::swap(__debug, other.__debug);
 	std::swap(_type, other._type);
 	_object.swap(other._object);
 	_array.swap(other._array);

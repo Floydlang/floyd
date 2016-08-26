@@ -144,7 +144,7 @@ struct my_helper : public maker<EXPRESSION> {
 		if(op == eoperation::k_0_number_constant){
 			return stoi(s);
 		}
-		else if(op == eoperation::k_0_identifer){
+		else if(op == eoperation::k_0_resolve){
 			return 0;
 		}
 		else if(op == eoperation::k_0_string_literal){
@@ -157,6 +157,9 @@ struct my_helper : public maker<EXPRESSION> {
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
 		if(op == eoperation::k_1_logical_not){
 			return -expr;
+		}
+		else if(op == eoperation::k_1_load){
+			return 0;
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -219,6 +222,10 @@ struct my_helper : public maker<EXPRESSION> {
 	}
 
 	public: virtual const EXPRESSION maker__call(const std::string& f, const std::vector<EXPRESSION>& args) const{
+		return 0;
+	}
+
+	public: virtual const EXPRESSION maker__member_access(const EXPRESSION& address, const std::string& member_name) const{
 		return 0;
 	}
 
@@ -375,8 +382,8 @@ struct json_helper : public maker<EXPRESSION> {
 		if(op == eoperation::k_0_number_constant){
 			return json_value_t::make_array({ json_value_t("k"), json_value_t("<int>"), json_value_t((double)stoi(s)) });
 		}
-		else if(op == eoperation::k_0_identifer){
-			return json_value_t::make_array({ json_value_t("res_val"), json_value_t("<>"), json_value_t(s) });
+		else if(op == eoperation::k_0_resolve){
+			return json_value_t::make_array({ json_value_t("@"), json_value_t("<>"), json_value_t(s) });
 		}
 		else if(op == eoperation::k_0_string_literal){
 			return json_value_t::make_array({ json_value_t("k"), json_value_t("<string>"), json_value_t(s) });
@@ -388,6 +395,9 @@ struct json_helper : public maker<EXPRESSION> {
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
 		if(op == eoperation::k_1_logical_not){
 			return json_value_t::make_array({ json_value_t("neg"), expr });
+		}
+		else if(op == eoperation::k_1_load){
+			return json_value_t::make_array({ json_value_t("load"), json_value_t("<>"), expr });
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -410,14 +420,18 @@ struct json_helper : public maker<EXPRESSION> {
 	}
 
 	public: virtual const EXPRESSION maker__call(const std::string& f, const std::vector<EXPRESSION>& args) const{
-			return json_value_t::make_array({ json_value_t("call"), json_value_t(f), json_value_t("<>"), args });
+		return json_value_t::make_array({ json_value_t("call"), json_value_t(f), json_value_t("<>"), args });
+	}
+
+	public: virtual const EXPRESSION maker__member_access(const EXPRESSION& address, const std::string& member_name) const{
+		return json_value_t::make_array({ json_value_t("->"), json_value_t("<>"), address, json_value_t(member_name) });
 	}
 
 };
 
 template<typename EXPRESSION>
 const std::map<eoperation, string> json_helper<EXPRESSION>::_2_operator_to_string{
-		{ eoperation::k_2_member_access, "->" },
+//		{ eoperation::k_2_member_access, "->" },
 		{ eoperation::k_2_add, "+" },
 		{ eoperation::k_2_subtract, "-" },
 		{ eoperation::k_2_multiply, "*" },
@@ -467,31 +481,29 @@ QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
 
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"hello",
-	R"(["res_val", "<>", "hello"])",
+	R"(["@", "<>", "hello"])",
 	""
 ));
 
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"hello",
-	R"(["res_val", "<>", "hello"])",
+	R"(["@", "<>", "hello"])",
 	""
 ));
-
-/*
-QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
-	"a.b()",
-	R"(["call", "b", ""<>", "a"]["res_val", "<>", "a"])",
-	""
-));
-*/
 
 #if false
+QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
+	"a.b()",
+	R"(["call", "b", "<>", ["@", "<>", "a"]])",
+	""
+));
+#endif
+
 QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
 	"hello.kitty",
 	R"(["load", "<>", ["->", "<>", ["@", "<>", "hello"], "kitty"]])",
 	""
 ));
-#endif
 
 
 

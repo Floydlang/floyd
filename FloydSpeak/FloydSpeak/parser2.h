@@ -57,7 +57,10 @@ enum class eoperator_precedence {
 
 enum class eoperation {
 	k_0_number_constant = 100,
-	k_0_identifer,
+
+	//	This is string specifying a local variable, member variable, argument, global etc. Only the first entry in a chain.
+	k_0_resolve,
+
 	k_0_string_literal,
 
 	k_2_member_access,
@@ -83,7 +86,8 @@ enum class eoperation {
 
 	k_n_call,
 
-	k_1_logical_not
+	k_1_logical_not,
+	k_1_load
 };
 
 
@@ -95,6 +99,7 @@ template<typename EXPRESSION> struct maker {
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const = 0;
 	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const = 0;
 	public: virtual const EXPRESSION maker__call(const std::string& f, const std::vector<EXPRESSION>& args) const = 0;
+	public: virtual const EXPRESSION maker__member_access(const EXPRESSION& address, const std::string& member_name) const = 0;
 };
 
 
@@ -122,14 +127,14 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 
 	if(p.first() == "\""){
 		const auto s = read_while_not(p.rest(), "\"");
-		const EXPRESSION result = helper.maker__on_string(eoperation::k_0_string_literal, s.first);
+		const auto result = helper.maker__on_string(eoperation::k_0_string_literal, s.first);
 		return { result, s.second.rest() };
 	}
 
 	{
 		const auto number_s = read_while(p, k_c99_number_chars);
 		if(!number_s.first.empty()){
-			const EXPRESSION result = helper.maker__on_string(eoperation::k_0_number_constant, number_s.first);
+			const auto result = helper.maker__on_string(eoperation::k_0_number_constant, number_s.first);
 			return { result, number_s.second };
 		}
 	}
@@ -145,8 +150,10 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 			}
 
 			else if(next_char1 == "."){
-				const EXPRESSION lhs = helper.maker__on_string(eoperation::k_0_identifer, identifier_s.first);
-				return evaluate_operation(helper, pos2, lhs, eoperator_precedence::k_super_weak);
+				const auto resolve_variable_expr = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
+				const auto address_expr =  evaluate_operation(helper, pos2, resolve_variable_expr, eoperator_precedence::k_super_weak);
+				const auto load_expr = helper.maker__make(eoperation::k_1_load, address_expr.first);
+				return { load_expr, address_expr.second };
 			}
 			else if(next_char1 == "("){
 				const auto pos3 = skip_whitespace(pos2.rest());
@@ -154,7 +161,7 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 
 				//	No arguments.
 				if(next_char == ")"){
-					const EXPRESSION result = helper.maker__call(identifier_s.first, {});
+					const auto result = helper.maker__call(identifier_s.first, {});
 					return { result, pos3.rest() };
 				}
 
@@ -179,12 +186,12 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 						pos_loop = a.second.rest();
 					}
 
-					const EXPRESSION result = helper.maker__call(identifier_s.first, arg_exprs);
+					const auto result = helper.maker__call(identifier_s.first, arg_exprs);
 					return { result, pos_loop };
 				}
 			}
 			else{
-				const EXPRESSION result = helper.maker__on_string(eoperation::k_0_identifer, identifier_s.first);
+				const auto result = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
 				return { result, identifier_s.second };
 			}
 		}
@@ -252,13 +259,10 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const maker<EXPRESSION>& helper,
 		//	Member access
 		//	EXPRESSION . EXPRESSION +
 		else if(op1 == '.'  && precedence > eoperator_precedence::k_member_access){
-			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_member_access);
-			const auto value2 = helper.maker__make(eoperation::k_2_member_access, lhs, rhs.first);
+			const auto rhs = read_while(p.rest(), k_identifier_chars);
+			const auto value2 = helper.maker__member_access(lhs, rhs.first);
 			return evaluate_operation(helper, rhs.second, value2, precedence);
 		}
-
-
-
 
 		//	EXPRESSION + EXPRESSION +
 		else if(op1 == '+'  && precedence > eoperator_precedence::k_add_sub){
