@@ -105,14 +105,13 @@ template<typename EXPRESSION> struct maker {
 
 
 
+
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_operation(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence);
 
 //??? Add support for member variable/function/lookup paths.
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_expression(const maker<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence);
-
-
 
 
 seq_t skip_whitespace(const seq_t& p);
@@ -202,6 +201,14 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 	QUARK_ASSERT(false);
 }
 
+/*
+	number
+	string literal
+	somethigne within ().
+	function call
+	a ? b : c
+	-a
+*/
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_atom(const maker<EXPRESSION>& helper, const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
@@ -242,6 +249,30 @@ std::pair<EXPRESSION, seq_t> evaluate_atom(const maker<EXPRESSION>& helper, cons
 	}
 }
 
+
+//	Member access
+//	EXPRESSION . EXPRESSION +
+
+/*
+	hello.func(x)
+	lhs = ["@", "hello"]
+	return = ["->", [], "kitty"]
+*/
+template<typename EXPRESSION>
+std::pair<EXPRESSION, seq_t> on_member_access_operator(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence){
+	QUARK_ASSERT(p1.check_invariant());
+	QUARK_ASSERT(p1.first() == ".");
+	QUARK_ASSERT(precedence > eoperator_precedence::k_member_access);
+
+	const auto p = p1;
+
+	const auto member_name = read_while(p.rest(), k_identifier_chars);
+	const auto value2 = helper.maker__member_access(lhs, member_name.first);
+	const auto address_base = evaluate_operation(helper, member_name.second, value2, precedence);
+	return { value2, address_base.second.rest() };
+}
+
+
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_operation(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence){
 	QUARK_ASSERT(p1.check_invariant());
@@ -258,10 +289,9 @@ std::pair<EXPRESSION, seq_t> evaluate_operation(const maker<EXPRESSION>& helper,
 
 		//	Member access
 		//	EXPRESSION . EXPRESSION +
+
 		else if(op1 == '.'  && precedence > eoperator_precedence::k_member_access){
-			const auto rhs = read_while(p.rest(), k_identifier_chars);
-			const auto value2 = helper.maker__member_access(lhs, rhs.first);
-			return evaluate_operation(helper, rhs.second, value2, precedence);
+			return on_member_access_operator(helper, p1, lhs, precedence);
 		}
 
 		//	EXPRESSION + EXPRESSION +
