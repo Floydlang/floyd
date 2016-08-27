@@ -455,7 +455,9 @@ bool test__evaluate_single(const std::string& expression, const std::string& exp
 	json_helper<json_value_t> helper;
 	const auto result = evaluate_single<json_value_t>(helper, seq_t(expression));
 	const string json_s = json_to_compact_string(result.first);
-	QUARK_TRACE_SS(expression << " =====> " << json_s);
+	QUARK_TRACE_SS("input:" << expression);
+	QUARK_TRACE_SS("result:" << json_s);
+	QUARK_TRACE_SS("expect:" << expected_value);
 	if(json_s != expected_value){
 		return false;
 	}
@@ -465,46 +467,71 @@ bool test__evaluate_single(const std::string& expression, const std::string& exp
 	return true;
 }
 
-QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
+QUARK_UNIT_1("parse_calculated_value()", "identifier", test__evaluate_single(
+	"hello xxx",
+	R"(["load", ["@", "hello"]])",
+	" xxx"
+));
+
+
+
+QUARK_UNIT_1("parse_calculated_value()", "struct member access", test__evaluate_single(
+	"hello.kitty xxx",
+	R"(["load", ["->", ["@", "hello"], "kitty"]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_calculated_value()", "struct member access", test__evaluate_single(
+	"hello.kitty.cat xxx",
+	R"(["load", ["->", ["->", ["@", "hello"], "kitty"], "cat"]])",
+	" xxx"
+));
+
+
+
+
+QUARK_UNIT_1("parse_calculated_value()", "function call", test__evaluate_single(
+	"f () xxx",
+	R"(["call", "f", []])", " xxx"
+));
+
+QUARK_UNIT_1("evaluate_single()", "function call, one simple arg", test__evaluate_single(
 	"f(3)",
 	R"(["call", "f", [["k", "<int>", 3]]])",
 	""
 ));
-QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
-	"f(3 + 4, 4 * g(1000 + 2345), 5)",
+
+QUARK_UNIT_1("parse_calculated_value()", "call with expression-arg", test__evaluate_single(
+	"f (x + 10) xxx",
+	R"(["call", "f", [["+", ["load", ["@", "x"]], ["k", "<int>", 10]]]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_calculated_value()", "function call with expression-args", test__evaluate_single(
+	"f(3 + 4, 4 * g(1000 + 2345), \"hello\", 5)",
 	R"(["call", "f", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", [["+", ["k", "<int>", 1000], ["k", "<int>", 2345]]]]], ["k", "<int>", 5]]])",
 	""
 ));
-QUARK_UNIT_1("evaluate_single()", "f(3)", test__evaluate_single(
-	"f(3 + 4, 4 * g(\"hello\"), 5)",
-	R"(["call", "f", [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", "g", [["k", "<string>", "hello"]]]], ["k", "<int>", 5]]])", ""));
 
-QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
-	"hello",
-	R"(["@", "hello"])",
-	""
+
+/*
+QUARK_UNIT_1("parse_calculated_value()", "lookup with int", test__evaluate_single(
+	"hello[10] xxx",
+	R"(["load", ["[-]", ["@", "hello"], ["k", "<int>", 10]]])", " xxx"
 ));
 
-QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
-	"hello",
-	R"(["@", "hello"])",
-	""
+QUARK_UNIT_1("parse_calculated_value()", "lookup with string", test__evaluate_single(
+	"hello[\"troll\"] xxx",
+	R"(["load", ["[-]", ["@", "hello"], ["k", "<string>", "troll"]]])", " xxx"
 ));
 
-#if false
-QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
-	"a.b()",
-	R"(["call", "b", ["@", "a"]])",
-	""
+//### allow nl and tab when writing result strings.
+QUARK_UNIT_1("parse_calculated_value()", "complex chain", test__evaluate_single(
+	"hello[\"troll\"].kitty[10].cat xxx",
+	R"(["load", ["->", ["[-]", ["->", ["[-]", ["@", "hello"], ["k", "<string>", "troll"]], "kitty"], ["k", "<int>", 10]], "cat"]])",
+	" xxx"
 ));
-#endif
-
-QUARK_UNIT_1("evaluate_single()", "", test__evaluate_single(
-	"hello.kitty",
-	R"(["load", ["->", ["@", "hello"], "kitty"]])",
-	""
-));
-
+*/
 
 
 

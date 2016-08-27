@@ -164,32 +164,7 @@ pair<expression_t, string> parse_calculated_value_recursive(const std::shared_pt
 
 
 
-/*
-	Parse non-constant value.
-	This is a recursive function since you can use lookups, function calls, structure members - all nested.
 
-	Each step in the path can be one of these:
-	1) *read* from a variable / constant, structure member.
-	2) Function call
-	3) Looking up using []
-
-	Returns either a variable_read_expr_t or a function_call_expr_t. The hold potentially many levels of nested lookups, function calls and member reads.
-
-	load "[4]"
-	call "f()"
-	load "my_global"
-	load "my_local"
-
-
-	Examples:
-		"hello xxx"
-		"hello.kitty xxx"
-		"f ()"
-		"f(x + 10)"
-		"hello[10] xxx"
-		"hello["troll"] xxx"
-		"hello["troll"].kitty[10].cat xxx"
-*/
 
 //??? BREAK OUT PARSE_ADDRESS, WITHOUT THE LOAD.
 
@@ -234,8 +209,6 @@ pair<expression_t, string> parse_calculated_value(const string& s) {
 		return a;
 	}
 */
-
-
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 	quark::ut_compare(to_seq(parse_calculated_value("hello xxx")), seq(R"(["load", ["@", "hello"]])", " xxx"));

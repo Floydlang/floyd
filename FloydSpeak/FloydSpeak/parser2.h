@@ -120,6 +120,103 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& p);
 
 
 
+
+/*
+	Parse non-constant value. Called calcval ??? find real term.
+	This is a recursive function since you can use lookups, function calls, structure members - all nested.
+	This includes expressions that calculates lookup keys/index.
+
+	Each step in the path can be one of these:
+	1) *read* from a variable / constant, structure member.
+	2) Function call
+	3) Looking up using []
+
+	Returns either a load_expr_t or a function_call_expr_t. The hold potentially many levels of nested lookups, function calls and member reads.
+
+	Example input:
+		"hello[4]" --->	lookup, load. Eventuallt the result-type of this expression becomes T, the type of the elements in the array.
+		"f()" ---> resolve "f", function_call. Eventually the result-type of this expr becomes T, the return type of the function.
+		"my_global" ---> resolve "my_global", load
+		"my_local" ---> resolve "my_global", load
+		"a.b" ---> resolve "a", resolve member b, load
+
+		You can chain calcvarg:s and even nest them.
+
+		"my_global.hello[4].f(my_local))" and so on.
+
+		"a.b.c."
+*/
+template<typename EXPRESSION>
+std::pair<EXPRESSION, seq_t> parse_calculated_value(const maker<EXPRESSION>& helper, const seq_t& p) {
+	QUARK_ASSERT(p.check_invariant());
+
+	const auto identifier_s = read_while(p, k_identifier_chars);
+	QUARK_ASSERT(!identifier_s.first.empty());
+
+	const auto pos2 = skip_whitespace(identifier_s.second);
+	const auto next_char1 = pos2.first();
+
+	//	Lookup expression?
+	if(next_char1 == "["){
+		QUARK_ASSERT(false);
+	}
+
+	//	Member access?
+	else if(next_char1 == "."){
+		const auto resolve_variable_expr = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
+		const auto address_expr =  evaluate_operation(helper, pos2, resolve_variable_expr, eoperator_precedence::k_super_weak);
+		const auto load_expr = helper.maker__make(eoperation::k_1_load, address_expr.first);
+		return { load_expr, address_expr.second };
+	}
+
+	//	Function call?
+	else if(next_char1 == "("){
+		const auto pos3 = skip_whitespace(pos2.rest());
+		const auto next_char = pos3.first();
+
+		//	No arguments.
+		if(next_char == ")"){
+			const auto result = helper.maker__call(identifier_s.first, {});
+			return { result, pos3.rest() };
+		}
+
+		//	Arguments.
+		else{
+			auto pos_loop = skip_whitespace(pos3);
+			std::vector<EXPRESSION> arg_exprs;
+			bool more = true;
+			while(more){
+				const auto a = evaluate_expression(helper, pos_loop, eoperator_precedence::k_super_weak);
+				arg_exprs.push_back(a.first);
+				const auto ch = a.second.first(1);
+				if(ch == ","){
+					more = true;
+				}
+				else if(ch == ")"){
+					more = false;
+				}
+				else{
+					throw std::runtime_error("Unexpected char");
+				}
+				pos_loop = a.second.rest();
+			}
+
+			const auto result = helper.maker__call(identifier_s.first, arg_exprs);
+			return { result, pos_loop };
+		}
+	}
+
+	//	Must be a plain variable access.
+	else{
+		const auto resolve = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
+		const auto load = helper.maker__make(eoperation::k_1_load, resolve);
+		return { load, identifier_s.second };
+	}
+}
+
+
+
+
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
@@ -141,58 +238,7 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 	{
 		const auto identifier_s = read_while(p, k_identifier_chars);
 		if(!identifier_s.first.empty()){
-			const auto pos2 = skip_whitespace(identifier_s.second);
-			const auto next_char1 = pos2.first();
-
-			if(next_char1 == "["){
-				QUARK_ASSERT(false);
-			}
-
-			else if(next_char1 == "."){
-				const auto resolve_variable_expr = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
-				const auto address_expr =  evaluate_operation(helper, pos2, resolve_variable_expr, eoperator_precedence::k_super_weak);
-				const auto load_expr = helper.maker__make(eoperation::k_1_load, address_expr.first);
-				return { load_expr, address_expr.second };
-			}
-			else if(next_char1 == "("){
-				const auto pos3 = skip_whitespace(pos2.rest());
-				const auto next_char = pos3.first();
-
-				//	No arguments.
-				if(next_char == ")"){
-					const auto result = helper.maker__call(identifier_s.first, {});
-					return { result, pos3.rest() };
-				}
-
-				//	Arguments.
-				else{
-					auto pos_loop = skip_whitespace(pos3);
-					std::vector<EXPRESSION> arg_exprs;
-					bool more = true;
-					while(more){
-						const auto a = evaluate_expression(helper, pos_loop, eoperator_precedence::k_super_weak);
-						arg_exprs.push_back(a.first);
-						const auto ch = a.second.first(1);
-						if(ch == ","){
-							more = true;
-						}
-						else if(ch == ")"){
-							more = false;
-						}
-						else{
-							throw std::runtime_error("Unexpected char");
-						}
-						pos_loop = a.second.rest();
-					}
-
-					const auto result = helper.maker__call(identifier_s.first, arg_exprs);
-					return { result, pos_loop };
-				}
-			}
-			else{
-				const auto result = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
-				return { result, identifier_s.second };
-			}
+			return parse_calculated_value(helper, p);
 		}
 	}
 
@@ -200,6 +246,8 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 
 	QUARK_ASSERT(false);
 }
+
+//??? define parser white-space policy: all function input SUPPORTS whitespace. Filter at function input. No need to filter when you return for next function. Why: ony one function entry, often many function exists.
 
 /*
 	number
