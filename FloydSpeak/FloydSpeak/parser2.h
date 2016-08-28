@@ -32,6 +32,15 @@ const std::string k_c99_whitespace_chars = " \n\t\r";
 #endif
 
 
+/*
+	White-space policy:
+	All function inputs SUPPORTS whitespace.
+	Filter at function input. No need to filter when you return for next function.
+	Why: ony one function entry, often many function exists.
+*/
+
+
+
 ///////////////////////////////////			eoperator_precedence
 
 
@@ -160,58 +169,18 @@ seq_t skip_whitespace(const seq_t& p);
 std::pair<std::string, seq_t> parse_string_literal(const seq_t& p);
 
 
-/*
-??? docs
-	Parse non-constant value. Called calcval ??? find real term.
-	This is a recursive function since you can use lookups, function calls, structure members - all nested.
-	This includes expressions that calculates lookup keys/index.
-
-	Each step in the path can be one of these:
-	1) *read* from a variable / constant, structure member.
-	2) Function call
-	3) Looking up using []
-
-	Returns either a load_expr_t or a function_call_expr_t. The hold potentially many levels of nested lookups, function calls and member reads.
-
-	Example input:
-		"hello[4]" --->	lookup, load. Eventuallt the result-type of this expression becomes T, the type of the elements in the array.
-		"f()" ---> resolve "f", function_call. Eventually the result-type of this expr becomes T, the return type of the function.
-		"my_global" ---> resolve "my_global", load
-		"my_local" ---> resolve "my_global", load
-		"a.b" ---> resolve "a", resolve member b, load
-
-		You can chain calcvarg:s and even nest them.
-
-		"my_global.hello[4].f(my_local))" and so on.
-
-		"a.b.c."
-*/
-
-template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> parse_calculated_value(const maker<EXPRESSION>& helper, const seq_t& p) {
-	QUARK_ASSERT(p.check_invariant());
-
-	const auto identifier_s = read_while(p, k_identifier_chars);
-	QUARK_ASSERT(!identifier_s.first.empty());
-
-	const auto pos2 = skip_whitespace(identifier_s.second);
-	const auto next_char1 = pos2.first();
-
-	const auto resolve = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
-	return { resolve, identifier_s.second };
-}
-
-
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
+	//	String literal?
 	if(p.first() == "\""){
 		const auto s = read_while_not(p.rest(), "\"");
 		const auto result = helper.maker__on_string(eoperation::k_0_string_literal, s.first);
 		return { result, s.second.rest() };
 	}
 
+	//	Number constant?
 	{
 		const auto number_s = read_while(p, k_c99_number_chars);
 		if(!number_s.first.empty()){
@@ -220,24 +189,17 @@ std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const
 		}
 	}
 
+	//	Identifier?
 	{
 		const auto identifier_s = read_while(p, k_identifier_chars);
 		if(!identifier_s.first.empty()){
-			return parse_calculated_value(helper, p);
+			const auto resolve = helper.maker__on_string(eoperation::k_0_resolve, identifier_s.first);
+			return { resolve, identifier_s.second };
 		}
 	}
 
 	QUARK_ASSERT(false);
 }
-
-
-/*
-	White-space policy:
-	All function inputs SUPPORTS whitespace.
-	Filter at function input. No need to filter when you return for next function.
-	Why: ony one function entry, often many function exists.
-*/
-
 
 /*
 	number
