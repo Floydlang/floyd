@@ -22,8 +22,6 @@ using namespace std;
 
 
 
-
-
 QUARK_UNIT_TESTQ("enum class()", ""){
 	enum class my_enum {
 		k_one = 1,
@@ -34,7 +32,6 @@ QUARK_UNIT_TESTQ("enum class()", ""){
 	QUARK_UT_VERIFY(my_enum::k_one != my_enum::k_four);
 	QUARK_UT_VERIFY(static_cast<int>(my_enum::k_one) == 1);
 }
-
 
 
 
@@ -66,7 +63,6 @@ QUARK_UNIT_TESTQ("parse_string_literal()", ""){
 QUARK_UNIT_TESTQ("parse_string_literal()", ""){
 	quark::ut_compare(parse_string_literal(seq_t("\".5\" xxx")), pair<std::string, seq_t>(".5", seq_t(" xxx")));
 }
-
 
 
 
@@ -481,6 +477,7 @@ QUARK_UNIT_1("evaluate_expression()", "||", test__evaluate_expression(
 	""
 ));
 
+//??? Change all int-tests to json tests.
 
 
 
@@ -529,6 +526,12 @@ QUARK_UNIT_1("evaluate_expression()", "function call", test__evaluate_expression
 	R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])", " xxx"
 ));
 
+#if false
+QUARK_UNIT_1("evaluate_expression()", "function call", test__evaluate_expression(
+	"f().g() xxx",
+	R"(["call", "["->", "["call", ["@", "f"], []], "g"], []])", " xxx"
+));
+#endif
 
 
 QUARK_UNIT_1("evaluate_expression()", "complex chain", test__evaluate_expression(
