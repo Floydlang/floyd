@@ -526,12 +526,10 @@ QUARK_UNIT_1("evaluate_expression()", "function call", test__evaluate_expression
 	R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])", " xxx"
 ));
 
-#if false
 QUARK_UNIT_1("evaluate_expression()", "function call", test__evaluate_expression(
 	"f().g() xxx",
-	R"(["call", "["->", "["call", ["@", "f"], []], "g"], []])", " xxx"
+	R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])", " xxx"
 ));
-#endif
 
 
 QUARK_UNIT_1("evaluate_expression()", "complex chain", test__evaluate_expression(

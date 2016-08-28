@@ -309,7 +309,7 @@ std::pair<EXPRESSION, seq_t> on_function_call(const maker<EXPRESSION>& helper, c
 	//	No arguments.
 	if(pos3.first() == ")"){
 		const auto result = helper.maker__call(lhs, {});
-		return { result, pos3.rest() };
+		return parse_operation(helper, pos3.rest(), result, prev_precedence);
 	}
 	//	1-many arguments.
 	else{
@@ -333,12 +333,9 @@ std::pair<EXPRESSION, seq_t> on_function_call(const maker<EXPRESSION>& helper, c
 		}
 
 		const auto result = helper.maker__call(lhs, arg_exprs);
-		return { result, pos_loop };
+		return parse_operation(helper, pos_loop, result, prev_precedence);
 	}
 }
-
-
-
 
 //	Member access
 //	EXPRESSION . EXPRESSION +
@@ -364,8 +361,6 @@ std::pair<EXPRESSION, seq_t> on_member_access_operator(const maker<EXPRESSION>& 
 	return parse_operation(helper, identifier_s.second, value2, prev_precedence);
 }
 
-
-
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> on_lookup(const maker<EXPRESSION>& helper, const seq_t& p, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
 	QUARK_ASSERT(p.check_invariant());
@@ -384,7 +379,6 @@ std::pair<EXPRESSION, seq_t> on_lookup(const maker<EXPRESSION>& helper, const se
 	return parse_operation(helper, pos4, result, prev_precedence);
 }
 
-
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, const seq_t& p3, const EXPRESSION& lhs, const eoperator_precedence precedence){
 	QUARK_ASSERT(p3.check_invariant());
@@ -399,39 +393,10 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 			return { lhs, p };
 		}
 
-		//	Function call?
+		//	Function call
+		//	EXPRESSION (EXPRESSION +, EXPRESSION)
 		else if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
-			const auto pos3 = skip_whitespace(p.rest());
-
-			//	No arguments.
-			if(pos3.first() == ")"){
-				const auto result = helper.maker__call(lhs, {});
-				return { result, pos3.rest() };
-			}
-			//	1-many arguments.
-			else{
-				auto pos_loop = skip_whitespace(pos3);
-				std::vector<EXPRESSION> arg_exprs;
-				bool more = true;
-				while(more){
-					const auto a = evaluate_expression(helper, pos_loop, eoperator_precedence::k_super_weak);
-					arg_exprs.push_back(a.first);
-					const auto ch = a.second.first(1);
-					if(ch == ","){
-						more = true;
-					}
-					else if(ch == ")"){
-						more = false;
-					}
-					else{
-						throw std::runtime_error("Unexpected char");
-					}
-					pos_loop = a.second.rest();
-				}
-
-				const auto result = helper.maker__call(lhs, arg_exprs);
-				return { result, pos_loop };
-			}
+			return on_function_call(helper, p, lhs, precedence);
 		}
 
 		//	Member access
