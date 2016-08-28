@@ -19,7 +19,7 @@
 	struct json_value_t;
 
 /*
-	ABOUT ADDRESSING AND PATHS
+	ABOUT ADDRESSING AND CHAINS
 
 	Each value are refered to via an address which is a construct like this: { scope + member }.
 	Encoded as { value_t scope, string member_name } or { value_t scope int _member_offset }.
@@ -48,20 +48,23 @@
 		B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
 		C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
 
-	PATHS
 
-	load						"load"
-	store						"store"
+	CHAINS
+	"hello.test.a[10 + x].next.last.get_ptr().title"
+
 	call						"call"
 	resolve_variable			"@"
 	resolve_member				"->"
 	lookup						"[-]"
 
+	!!! AST DOES NOT GENERATE LOADs, ONLY IDENTIFIER, FOR EXAMPLE.
+
+
 		a = my_global_int;
-		["load", ["@", "my_global_int"], "next"]
+		["bind", "a", ["@", "my_global_int"]]
 
 		"my_global.next"
-		["load", ["->", ["@", "my_global"], "next"]]
+		["->", ["@", "my_global"], "next"]
 
 		c = my_global_obj.all[3].f(10).prev;
 */
