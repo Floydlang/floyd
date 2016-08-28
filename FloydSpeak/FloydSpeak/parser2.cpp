@@ -67,24 +67,43 @@ QUARK_UNIT_TESTQ("parse_string_literal()", ""){
 
 
 
+std::pair<constant_value_t, seq_t> parse_numeric_constant(const seq_t& p) {
+	QUARK_ASSERT(p.check_invariant());
+	QUARK_ASSERT(k_c99_number_chars.find(p.first()) != std::string::npos);
 
-pair<int, seq_t> parse_long(const seq_t& s) {
-	QUARK_ASSERT(s.check_invariant());
-
-	char* e = nullptr;
-	long value = strtol(s.c_str(), &e, 0);
-	size_t used = e - s.c_str();
-	if (used == 0){
-		throw std::runtime_error("Invalid number");
+	const auto number_pos = read_while(p, k_c99_number_chars);
+	if(number_pos.first.empty()){
+		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
-	return { (int)value, s.rest(used) };
+
+	//	If it contains a "." its a float, else an int.
+	if(number_pos.first.find('.') != std::string::npos){
+		const auto number = parse_float(number_pos.first);
+		return { constant_value_t(number), number_pos.second };
+	}
+	else{
+		int number = atoi(number_pos.first.c_str());
+		return { constant_value_t(number), number_pos.second };
+	}
 }
 
-QUARK_UNIT_1("parse_long()", "", (parse_long(seq_t("0")) == pair<int, seq_t>{ 0, seq_t("") }));
-QUARK_UNIT_1("parse_long()", "", (parse_long(seq_t("0xyz")) == pair<int, seq_t>{ 0, seq_t("xyz") }));
-QUARK_UNIT_1("parse_long()", "", (parse_long(seq_t("13xyz")) == pair<int, seq_t>{ 13, seq_t("xyz") }));
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
+	const auto a = parse_numeric_constant(seq_t("0 xxx"));
+	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_int && a.first._int == 0);
+	QUARK_UT_VERIFY(a.second.get_all() == " xxx");
+}
 
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
+	const auto a = parse_numeric_constant(seq_t("1234 xxx"));
+	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_int && a.first._int == 1234);
+	QUARK_UT_VERIFY(a.second.get_all() == " xxx");
+}
 
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
+	const auto a = parse_numeric_constant(seq_t("0.5 xxx"));
+	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_float && a.first._float == 0.5f);
+	QUARK_UT_VERIFY(a.second.get_all() == " xxx");
+}
 
 
 
@@ -92,21 +111,10 @@ template<typename EXPRESSION>
 struct my_helper : public maker<EXPRESSION> {
 
 
-	public: virtual const EXPRESSION maker__on_string(const eoperation op, const std::string& s) const{
-		if(op == eoperation::k_0_number_constant){
-			return stoi(s);
-		}
-		else if(op == eoperation::k_0_resolve){
-			return 0;
-		}
-		else if(op == eoperation::k_0_string_literal){
-			return 0;
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+	public: virtual const EXPRESSION maker__make_identifier(const std::string& s) const{
+		return 0;
 	}
-	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
+	public: virtual const EXPRESSION maker__make1(const eoperation op, const EXPRESSION& expr) const{
 		if(op == eoperation::k_1_logical_not){
 			return -expr;
 		}
@@ -117,7 +125,7 @@ struct my_helper : public maker<EXPRESSION> {
 			QUARK_ASSERT(false);
 		}
 	}
-	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+	public: virtual const EXPRESSION maker__make2(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 		if(op == eoperation::k_2_add){
 			return lhs + rhs;
 		}
@@ -164,7 +172,7 @@ struct my_helper : public maker<EXPRESSION> {
 			QUARK_ASSERT(false);
 		}
 	}
-	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
+	public: virtual const EXPRESSION maker__make3(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
 		if(op == eoperation::k_3_conditional_operator){
 			return e1 != 0 ? e2 : e3;
 		}
@@ -181,6 +189,24 @@ struct my_helper : public maker<EXPRESSION> {
 		return 0;
 	}
 
+	public: virtual const EXPRESSION maker__make_constant(const constant_value_t& value) const{
+		if(value._type == constant_value_t::etype::k_bool){
+			return 0;
+		}
+		else if(value._type == constant_value_t::etype::k_int){
+			return value._int;
+		}
+		else if(value._type == constant_value_t::etype::k_float){
+			return 0;
+		}
+		else if(value._type == constant_value_t::etype::k_string){
+			return 0;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
 };
 
 
@@ -195,6 +221,107 @@ bool test_parse_single(const std::string& expression, int expected_value, const 
 	}
 	return true;
 }
+
+
+
+#if false
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("truexyz") == pair<expression_t, string>(expression_t::make_constant(true), "xyz")));
+}
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("falsexyz") == pair<expression_t, string>(expression_t::make_constant(false), "xyz")));
+}
+
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("\"\"") == pair<expression_t, string>(expression_t::make_constant(""), "")));
+}
+QUARK_UNIT_TESTQ("parse_single", ""){
+	QUARK_TEST_VERIFY((parse_single("\"abcd\"") == pair<expression_t, string>(expression_t::make_constant("abcd"), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_single", "number"){
+	QUARK_TEST_VERIFY((parse_single("9.0") == pair<expression_t, string>(expression_t::make_constant(9.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_single", "function call"){
+	const auto a = parse_single("log(34.5)");
+	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log");
+	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a.first._call->_inputs[0]->_constant == value_t(34.5f));
+	QUARK_TEST_VERIFY(a.second == "");
+}
+
+QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
+	const auto a = parse_single("log2(\"123\" + \"xyz\", 1000 * 3)");
+	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log2");
+	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_math2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_math2);
+	QUARK_TEST_VERIFY(a.second == "");
+}
+
+QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
+	const auto a = parse_single("log2(2.1, f(3.14))");
+	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log2");
+	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_constant);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_function.to_string() == "f");
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a.first._call->_inputs[1]->_call->_inputs[0] == expression_t::make_constant(3.14f));
+	QUARK_TEST_VERIFY(a.second == "");
+}
+
+QUARK_UNIT_TESTQ("parse_single", "variable read"){
+	const auto a = pair<expression_t, string>(expression_t::make_load_variable("k_my_global"), "");
+	const auto b = parse_single("k_my_global");
+	QUARK_TEST_VERIFY(a == b);
+}
+
+QUARK_UNIT_TESTQ("parse_single", "read struct member"){
+	quark::ut_compare(to_seq(parse_single("k_my_global.member")),  seq(R"(["load", ["->", ["@", "k_my_global"], "member"]])", ""));
+}
+#endif
+
+
+
+
+#if false
+//### more tests here!
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("0.0", 0) == pair<expression_t, string>(expression_t::make_constant(0.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("9.0", 0) == pair<expression_t, string>(expression_t::make_constant(9.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("12345.0", 0) == pair<expression_t, string>(expression_t::make_constant(12345.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("10.0", 0) == pair<expression_t, string>(expression_t::make_constant(10.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("-10.0", 0) == pair<expression_t, string>(expression_t::make_constant(-10.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("+10.0", 0) == pair<expression_t, string>(expression_t::make_constant( 10.0f), "")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("4.0+", 0) == pair<expression_t, string>(expression_t::make_constant(4.0f), "+")));
+}
+
+QUARK_UNIT_TESTQ("parse_atom", ""){
+	QUARK_TEST_VERIFY((parse_atom("\"hello\"", 0) == pair<expression_t, string>(expression_t::make_constant("hello"), "")));
+}
+//??? check function calls with paths.
+#endif
+
+
 
 
 pair<int, seq_t> test_evaluate_int_expr(const seq_t& p){
@@ -327,21 +454,10 @@ template<typename EXPRESSION>
 struct json_helper : public maker<EXPRESSION> {
 
 
-	public: virtual const EXPRESSION maker__on_string(const eoperation op, const std::string& s) const{
-		if(op == eoperation::k_0_number_constant){
-			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<int>"), json_value_t((double)stoi(s)) });
-		}
-		else if(op == eoperation::k_0_resolve){
-			return json_value_t::make_array_skip_nulls({ json_value_t("@"), json_value_t(), json_value_t(s) });
-		}
-		else if(op == eoperation::k_0_string_literal){
-			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<string>"), json_value_t(s) });
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+	public: virtual const EXPRESSION maker__make_identifier(const std::string& s) const{
+		return json_value_t::make_array_skip_nulls({ json_value_t("@"), json_value_t(), json_value_t(s) });
 	}
-	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& expr) const{
+	public: virtual const EXPRESSION maker__make1(const eoperation op, const EXPRESSION& expr) const{
 		if(op == eoperation::k_1_logical_not){
 			return json_value_t::make_array_skip_nulls({ json_value_t("neg"), json_value_t(), expr });
 		}
@@ -355,11 +471,11 @@ struct json_helper : public maker<EXPRESSION> {
 
 	private: static const std::map<eoperation, string> _2_operator_to_string;
 
-	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+	public: virtual const EXPRESSION maker__make2(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 		const auto op_str = _2_operator_to_string.at(op);
 		return json_value_t::make_array2({ json_value_t(op_str), lhs, rhs });
 	}
-	public: virtual const EXPRESSION maker__make(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
+	public: virtual const EXPRESSION maker__make3(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
 		if(op == eoperation::k_3_conditional_operator){
 			return json_value_t::make_array2({ json_value_t("?:"), e1, e2, e3 });
 		}
@@ -376,6 +492,23 @@ struct json_helper : public maker<EXPRESSION> {
 		return json_value_t::make_array_skip_nulls({ json_value_t("->"), json_value_t(), address, json_value_t(member_name) });
 	}
 
+	public: virtual const EXPRESSION maker__make_constant(const constant_value_t& value) const{
+		if(value._type == constant_value_t::etype::k_bool){
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<bool>"), json_value_t(value._bool) });
+		}
+		else if(value._type == constant_value_t::etype::k_int){
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<int>"), json_value_t((double)value._int) });
+		}
+		else if(value._type == constant_value_t::etype::k_float){
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<float>"), json_value_t(value._float) });
+		}
+		else if(value._type == constant_value_t::etype::k_string){
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<string>"), json_value_t(value._string) });
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
 };
 
 template<typename EXPRESSION>
@@ -426,13 +559,11 @@ QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	" xxx"
 ));
 
-/*??? add support for floats
 QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	"123.4 xxx",
 	R"(["k", "<float>", 123.4])",
 	" xxx"
 ));
-*/
 
 QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	"hello xxx",
@@ -582,6 +713,17 @@ QUARK_UNIT_1("parse_expression()", "lookup with string -- whitespace", test__par
 
 
 
+
+
+#if false
+QUARK_UNIT_TESTQ("parse_expression()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? 100 + 10 * 2 : 1000 - 3 * 4")), R"(["load", ["->", ["@", "pixel"], "red"]])");
+}
+
+QUARK_UNIT_TESTQ("parse_expression()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? \"123\" : \"456\"")), R"(["load", ["->", ["@", "pixel"], "red"]])");
+}
+#endif
 
 
 
