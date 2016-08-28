@@ -312,16 +312,9 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 	//	Expression within paranthesis? "(yyy)xxx"
 	else if(ch1 == '('){
 		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
-		if (a.second.first(1) != ")"){
+		if (a.second.first() != ")"){
 			throw std::runtime_error("Expected ')'");
 		}
-		return { a.first, skip_whitespace(a.second.rest()) };
-	}
-
-	//?? Wrong spot, put in parse_operation().
-	//	Colon for (?:) ":yyy xxx"
-	else if(ch1 == ':'){
-		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
 		return { a.first, skip_whitespace(a.second.rest()) };
 	}
 
@@ -362,7 +355,7 @@ std::pair<EXPRESSION, seq_t> parse_function_call(const maker<EXPRESSION>& helper
 			arg_exprs.push_back(a.first);
 
 			const auto pos5 = skip_whitespace(a.second);
-			const auto ch = pos5.first(1);
+			const auto ch = pos5.first();
 			if(ch == ","){
 				more = true;
 			}
@@ -497,16 +490,17 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		else if(op1 == "?" && precedence > eoperator_precedence::k_comparison_operator) {
 			const auto true_expr_p = parse_expression(helper, p.rest(), eoperator_precedence::k_comparison_operator);
 
-			const auto colon = true_expr_p.second.first(1);
+			const auto pos2 = skip_whitespace(true_expr_p.second);
+			const auto colon = pos2.first();
 			if(colon != ":"){
 				throw std::runtime_error("Expected \":\"");
 			}
 
-			const auto false_expr_p = parse_expression(helper, true_expr_p.second.rest(), precedence);
+			const auto false_expr_p = parse_expression(helper, pos2.rest(), precedence);
 			const auto value2 = helper.maker__make3(eoperation::k_3_conditional_operator, lhs, true_expr_p.first, false_expr_p.first);
 
 			//	End this precedence level.
-			return { value2, false_expr_p.second.rest() };
+			return { value2, false_expr_p.second };
 		}
 
 

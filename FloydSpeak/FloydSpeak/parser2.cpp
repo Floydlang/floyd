@@ -378,10 +378,8 @@ QUARK_UNIT_1("test_evaluate_int_expr()", "", test("(3 * 8)", 24, ""));
 QUARK_UNIT_1("test_evaluate_int_expr()", "", test("1 + 3 * 2 + 100", 107, ""));
 QUARK_UNIT_1("test_evaluate_int_expr()", "", test("-(3 * 2 + (8 * 2)) - (((1))) * 2", -(3 * 2 + (8 * 2)) - (((1))) * 2, ""));
 
-#if false
-QUARK_UNIT_1("test_evaluate_int_expr()", "?:", test("1 ? 2 : 3", 2, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "?:", test("0 ? 2 : 3", 3, ""));
-#endif
+QUARK_UNIT_1("test_evaluate_int_expr()", "?:", test("1 ? 2 : 3 xxx", 2, " xxx"));
+QUARK_UNIT_1("test_evaluate_int_expr()", "?:", test("0 ? 2 : 3 xxx", 3, " xxx"));
 
 QUARK_UNIT_1("test_evaluate_int_expr()", "<=", test("4 <= 4", 1, ""));
 QUARK_UNIT_1("test_evaluate_int_expr()", "<=", test("3 <= 4", 1, ""));
