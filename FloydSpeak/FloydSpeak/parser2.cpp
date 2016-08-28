@@ -184,9 +184,9 @@ struct my_helper : public maker<EXPRESSION> {
 };
 
 
-bool test_evaluate_single(const std::string& expression, int expected_value, const std::string& expected_seq){
+bool test_parse_single(const std::string& expression, int expected_value, const std::string& expected_seq){
 	my_helper<int64_t> helper;
-	const auto result = evaluate_single<int64_t>(helper, seq_t(expression));
+	const auto result = parse_single<int64_t>(helper, seq_t(expression));
 	if(result.first != expected_value){
 		return false;
 	}
@@ -196,19 +196,12 @@ bool test_evaluate_single(const std::string& expression, int expected_value, con
 	return true;
 }
 
-/*
-QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3)", 0, ""));
-QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(1000 + 2345), 5)", 0, ""));
-QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(\"hello\"), 5)", 0, ""));
-*/
-//??? test member access etc.QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(\"hello\"), 5)", 0, ""));
-
 
 pair<int, seq_t> test_evaluate_int_expr(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
 	my_helper<int64_t> helper;
-	return evaluate_expression<int64_t>(helper, p);
+	return parse_expression<int64_t>(helper, p);
 }
 
 bool test(const std::string& expression, int expected_int, string expected_seq){
@@ -410,12 +403,12 @@ const std::map<eoperation, string> json_helper<EXPRESSION>::_2_operator_to_strin
 
 
 
-bool test__evaluate_single(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
+bool test__parse_single(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
 
 	json_helper<json_value_t> helper;
-	const auto result = evaluate_single<json_value_t>(helper, seq_t(expression));
+	const auto result = parse_single<json_value_t>(helper, seq_t(expression));
 	const string json_s = json_to_compact_string(result.first);
 	QUARK_TRACE_SS("result:" << json_s);
 	if(json_s != expected_value){
@@ -427,39 +420,41 @@ bool test__evaluate_single(const std::string& expression, const std::string& exp
 	return true;
 }
 
-QUARK_UNIT_1("evaluate_single()", "identifier", test__evaluate_single(
+QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	"123 xxx",
 	R"(["k", "<int>", 123])",
 	" xxx"
 ));
 
 /*??? add support for floats
-QUARK_UNIT_1("evaluate_single()", "identifier", test__evaluate_single(
+QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	"123.4 xxx",
 	R"(["k", "<float>", 123.4])",
 	" xxx"
 ));
 */
 
-QUARK_UNIT_1("evaluate_single()", "identifier", test__evaluate_single(
+QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	"hello xxx",
 	R"(["@", "hello"])",
 	" xxx"
 ));
 
-QUARK_UNIT_1("evaluate_single()", "identifier", test__evaluate_single(
+QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	"\"world!\" xxx",
 	R"(["k", "<string>", "world!"])",
 	" xxx"
 ));
 
 
-bool test__evaluate_expression(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
+
+
+bool test__parse_expression(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
 
 	json_helper<json_value_t> helper;
-	const auto result = evaluate_expression<json_value_t>(helper, seq_t(expression));
+	const auto result = parse_expression<json_value_t>(helper, seq_t(expression));
 	const string json_s = json_to_compact_string(result.first);
 	QUARK_TRACE_SS("result:" << json_s);
 	if(json_s != expected_value){
@@ -471,7 +466,7 @@ bool test__evaluate_expression(const std::string& expression, const std::string&
 	return true;
 }
 
-QUARK_UNIT_1("evaluate_expression()", "||", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "||", test__parse_expression(
 	"1 || 0 || 1",
 	R"(["||", ["||", ["k", "<int>", 1], ["k", "<int>", 0]], ["k", "<int>", 1]])",
 	""
@@ -481,20 +476,26 @@ QUARK_UNIT_1("evaluate_expression()", "||", test__evaluate_expression(
 
 
 
-QUARK_UNIT_1("evaluate_expression()", "identifier", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "identifier", test__parse_expression(
 	"hello xxx",
 	R"(["@", "hello"])",
 	" xxx"
 ));
 
-QUARK_UNIT_1("evaluate_expression()", "struct member access", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "struct member access", test__parse_expression(
 	"hello.kitty xxx",
 	R"(["->", ["@", "hello"], "kitty"])",
 	" xxx"
 ));
 
-QUARK_UNIT_1("evaluate_expression()", "struct member access", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "struct member access", test__parse_expression(
 	"hello.kitty.cat xxx",
+	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "struct member access -- whitespace", test__parse_expression(
+	"hello . kitty . cat xxx",
 	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
 	" xxx"
 ));
@@ -502,51 +503,60 @@ QUARK_UNIT_1("evaluate_expression()", "struct member access", test__evaluate_exp
 
 
 
-QUARK_UNIT_1("evaluate_expression()", "function call", test__evaluate_expression(
-	"f () xxx",
+QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
+	"f() xxx",
 	R"(["call", ["@", "f"], []])", " xxx"
 ));
 
-QUARK_UNIT_1("evaluate_single()", "function call, one simple arg", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "function call, one simple arg", test__parse_expression(
 	"f(3)",
 	R"(["call", ["@", "f"], [["k", "<int>", 3]]])",
 	""
 ));
 
-QUARK_UNIT_1("evaluate_expression()", "call with expression-arg", test__evaluate_expression(
-	"f (x + 10) xxx",
+QUARK_UNIT_1("parse_expression()", "call with expression-arg", test__parse_expression(
+	"f(x+10) xxx",
 	R"(["call", ["@", "f"], [["+", ["@", "x"], ["k", "<int>", 10]]]])",
 	" xxx"
 ));
+QUARK_UNIT_1("parse_expression()", "call with expression-arg", test__parse_expression(
+	"f(1,2) xxx",
+	R"(["call", ["@", "f"], [["k", "<int>", 1], ["k", "<int>", 2]]])",
+	" xxx"
+));
+QUARK_UNIT_1("parse_expression()", "call with expression-arg -- whitespace", test__parse_expression(
+	"f ( 1 , 2 ) xxx",
+	R"(["call", ["@", "f"], [["k", "<int>", 1], ["k", "<int>", 2]]])",
+	" xxx"
+));
 
-
-
-QUARK_UNIT_1("evaluate_expression()", "function call", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
 	"poke.mon.f() xxx",
 	R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])", " xxx"
 ));
 
-QUARK_UNIT_1("evaluate_expression()", "function call", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
 	"f().g() xxx",
 	R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])", " xxx"
 ));
 
 
-QUARK_UNIT_1("evaluate_expression()", "complex chain", test__evaluate_expression(
+
+QUARK_UNIT_1("parse_expression()", "complex chain", test__parse_expression(
 	"hello[\"troll\"].kitty[10].cat xxx",
 	R"(["->", ["[-]", ["->", ["[-]", ["@", "hello"], ["k", "<string>", "troll"]], "kitty"], ["k", "<int>", 10]], "cat"])",
 	" xxx"
 ));
 
 
-QUARK_UNIT_1("evaluate_expression()", "chain", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "chain", test__parse_expression(
 	"poke.mon.v[10].a.b.c[\"three\"] xxx",
 	R"(["[-]", ["->", ["->", ["->", ["[-]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", "<int>", 10]], "a"], "b"], "c"], ["k", "<string>", "three"]])",
 	" xxx"
 ));
 
 
-QUARK_UNIT_1("evaluate_expression()", "function call with expression-args", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "function call with expression-args", test__parse_expression(
 	"f(3 + 4, 4 * g(1000 + 2345), \"hello\", 5)",
 	R"(["call", ["@", "f"], [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", ["@", "g"], [["+", ["k", "<int>", 1000], ["k", "<int>", 2345]]]]], ["k", "<string>", "hello"], ["k", "<int>", 5]]])",
 	""
@@ -555,34 +565,24 @@ QUARK_UNIT_1("evaluate_expression()", "function call with expression-args", test
 
 
 
-QUARK_UNIT_1("evaluate_expression()", "lookup with int", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "lookup with int", test__parse_expression(
 	"hello[10] xxx",
 	R"(["[-]", ["@", "hello"], ["k", "<int>", 10]])", " xxx"
 ));
 
-QUARK_UNIT_1("evaluate_expression()", "lookup with string", test__evaluate_expression(
+QUARK_UNIT_1("parse_expression()", "lookup with string", test__parse_expression(
 	"hello[\"troll\"] xxx",
+	R"(["[-]", ["@", "hello"], ["k", "<string>", "troll"]])", " xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "lookup with string -- whitespace", test__parse_expression(
+	"hello [ \"troll\" ] xxx",
 	R"(["[-]", ["@", "hello"], ["k", "<string>", "troll"]])", " xxx"
 ));
 
 
 
-//??? test member access etc.QUARK_UNIT_1("evaluate_single()", "f(3)", test_evaluate_single("f(3 + 4, 4 * g(\"hello\"), 5)", "JSON", ""));
 
-/*
-bool test__evaluate_expression(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
-	my_helper<json_value_t> helper;
-	const auto result = evaluate_expression2<json_value_t>(helper, seq_t(expression));
-	const string json_s = json_to_compact_string(result.first);
-	if(json_s != expected_value){
-		return false;
-	}
-	else if(result.second.get_all() != expected_seq){
-		return false;
-	}
-	return true;
-}
-*/
 
 
 

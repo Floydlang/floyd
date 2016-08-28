@@ -149,10 +149,6 @@ template<typename EXPRESSION> struct maker {
 
 
 
-/*
-	??? Naming use "parse_expression() etc.
-*/
-
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence precedence);
 
@@ -207,7 +203,7 @@ std::pair<EXPRESSION, seq_t> parse_calculated_value(const maker<EXPRESSION>& hel
 
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, const seq_t& p) {
+std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
 	if(p.first() == "\""){
@@ -230,8 +226,6 @@ std::pair<EXPRESSION, seq_t> evaluate_single(const maker<EXPRESSION>& helper, co
 			return parse_calculated_value(helper, p);
 		}
 	}
-
-	//??? Identifiers, string constants, true/false.
 
 	QUARK_ASSERT(false);
 }
@@ -266,13 +260,13 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 
 	//	Negate? "-xxx"
 	if(ch1 == '-'){
-		const auto a = evaluate_expression(helper, p2.rest(), eoperator_precedence::k_super_strong);
+		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_strong);
 		const auto value2 = helper.maker__make(eoperation::k_1_logical_not, a.first);
 		return { value2, skip_whitespace(a.second) };
 	}
 	//	Expression within paranthesis? "(yyy)xxx"
 	else if(ch1 == '('){
-		const auto a = evaluate_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
+		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
 		if (a.second.first(1) != ")"){
 			throw std::runtime_error("Expected ')'");
 		}
@@ -282,23 +276,20 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 	//?? Wrong spot, put in parse_operation().
 	//	Colon for (?:) ":yyy xxx"
 	else if(ch1 == ':'){
-		const auto a = evaluate_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
+		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
 		return { a.first, skip_whitespace(a.second.rest()) };
 	}
 
 	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
 	//	"1234xxx" or "my_function(3)xxx"
 	else {
-		const auto a = evaluate_single(helper, p2);
+		const auto a = parse_single(helper, p2);
 		return { a.first, a.second };
 	}
 }
 
-//??? Make test expression with max number of whitespaces.
-
-
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> on_function_call(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
+std::pair<EXPRESSION, seq_t> parse_function_call(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
 	QUARK_ASSERT(p1.check_invariant());
 	QUARK_ASSERT(p1.first() == "(");
 	QUARK_ASSERT(prev_precedence > eoperator_precedence::k_function_call);
@@ -317,9 +308,11 @@ std::pair<EXPRESSION, seq_t> on_function_call(const maker<EXPRESSION>& helper, c
 		std::vector<EXPRESSION> arg_exprs;
 		bool more = true;
 		while(more){
-			const auto a = evaluate_expression(helper, pos_loop, eoperator_precedence::k_super_weak);
+			const auto a = parse_expression(helper, pos_loop, eoperator_precedence::k_super_weak);
 			arg_exprs.push_back(a.first);
-			const auto ch = a.second.first(1);
+
+			const auto pos5 = skip_whitespace(a.second);
+			const auto ch = pos5.first(1);
 			if(ch == ","){
 				more = true;
 			}
@@ -329,7 +322,7 @@ std::pair<EXPRESSION, seq_t> on_function_call(const maker<EXPRESSION>& helper, c
 			else{
 				throw std::runtime_error("Unexpected char");
 			}
-			pos_loop = a.second.rest();
+			pos_loop = pos5.rest();
 		}
 
 		const auto result = helper.maker__call(lhs, arg_exprs);
@@ -346,14 +339,12 @@ std::pair<EXPRESSION, seq_t> on_function_call(const maker<EXPRESSION>& helper, c
 	return = ["->", [], "kitty"]
 */
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> on_member_access_operator(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
-	QUARK_ASSERT(p1.check_invariant());
-	QUARK_ASSERT(p1.first() == ".");
+std::pair<EXPRESSION, seq_t> parse_member_access_operator(const maker<EXPRESSION>& helper, const seq_t& p, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
+	QUARK_ASSERT(p.check_invariant());
+	QUARK_ASSERT(p.first() == ".");
 	QUARK_ASSERT(prev_precedence > eoperator_precedence::k_member_access);
 
-	const auto p = p1;
-
-	const auto identifier_s = read_while(p.rest(), k_identifier_chars);
+	const auto identifier_s = read_while(skip_whitespace(p.rest()), k_identifier_chars);
 	if(identifier_s.first.empty()){
 		throw std::runtime_error("Expected ')'");
 	}
@@ -362,85 +353,85 @@ std::pair<EXPRESSION, seq_t> on_member_access_operator(const maker<EXPRESSION>& 
 }
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> on_lookup(const maker<EXPRESSION>& helper, const seq_t& p, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
+std::pair<EXPRESSION, seq_t> parse_lookup(const maker<EXPRESSION>& helper, const seq_t& p, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(p.first() == "[");
 	QUARK_ASSERT(prev_precedence > eoperator_precedence::k_looup);
 
 	const auto p2 = skip_whitespace(p.rest());
-	const auto key = evaluate_expression(helper, p2, eoperator_precedence::k_super_weak);
+	const auto key = parse_expression(helper, p2, eoperator_precedence::k_super_weak);
 	const auto result = helper.maker__make(eoperation::k_2_looup, lhs, key.first);
+	const auto p3 = skip_whitespace(key.second);
 
 	// Closing "]".
-	if(key.second.first() != "]"){
+	if(p3.first() != "]"){
 		throw std::runtime_error("Expected closing \"]\"");
 	}
-	const auto pos4 = key.second.rest();
-	return parse_operation(helper, pos4, result, prev_precedence);
+	return parse_operation(helper, p3.rest(), result, prev_precedence);
 }
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, const seq_t& p3, const EXPRESSION& lhs, const eoperator_precedence precedence){
-	QUARK_ASSERT(p3.check_invariant());
+std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, const seq_t& p0, const EXPRESSION& lhs, const eoperator_precedence precedence){
+	QUARK_ASSERT(p0.check_invariant());
 
-	const auto p = skip_whitespace(p3);
+	const auto p = skip_whitespace(p0);
 	if(!p.empty()){
 		const auto op1 = p.first();
 		const auto op2 = p.first(2);
 
 		//	Ending parantesis
 		if(op1 == ")" && precedence > eoperator_precedence::k_parentesis){
-			return { lhs, p };
+			return { lhs, p0 };
 		}
 
 		//	Function call
 		//	EXPRESSION (EXPRESSION +, EXPRESSION)
 		else if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
-			return on_function_call(helper, p, lhs, precedence);
+			return parse_function_call(helper, p, lhs, precedence);
 		}
 
 		//	Member access
 		//	EXPRESSION . EXPRESSION +
 		else if(op1 == "."  && precedence > eoperator_precedence::k_member_access){
-			return on_member_access_operator(helper, p, lhs, precedence);
+			return parse_member_access_operator(helper, p, lhs, precedence);
 		}
 
 		//	Lookup / subscription
 		//	EXPRESSION [ EXPRESSIONS ] +
 		else if(op1 == "["  && precedence > eoperator_precedence::k_looup){
-			return on_lookup(helper, p, lhs, precedence);
+			return parse_lookup(helper, p, lhs, precedence);
 		}
 
 		//	EXPRESSION + EXPRESSION +
 		else if(op1 == "+"  && precedence > eoperator_precedence::k_add_sub){
-			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
+			const auto rhs = parse_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
 			const auto value2 = helper.maker__make(eoperation::k_2_add, lhs, rhs.first);
 			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION - EXPRESSION -
 		else if(op1 == "-" && precedence > eoperator_precedence::k_add_sub){
-			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
+			const auto rhs = parse_expression(helper, p.rest(), eoperator_precedence::k_add_sub);
 			const auto value2 = helper.maker__make(eoperation::k_2_subtract, lhs, rhs.first);
 			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION * EXPRESSION *
 		else if(op1 == "*" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto rhs = parse_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 			const auto value2 = helper.maker__make(eoperation::k_2_multiply, lhs, rhs.first);
 			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 		//	EXPRESSION / EXPRESSION /
 		else if(op1 == "/" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto rhs = parse_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 			const auto value2 = helper.maker__make(eoperation::k_2_divide, lhs, rhs.first);
 			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION % EXPRESSION %
 		else if(op1 == "%" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto rhs = evaluate_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+			const auto rhs = parse_expression(helper, p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 			const auto value2 = helper.maker__make(eoperation::k_2_remainder, lhs, rhs.first);
 			return parse_operation(helper, rhs.second, value2, precedence);
 		}
@@ -448,14 +439,14 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 
 		//	EXPRESSION ? EXPRESSION : EXPRESSION
 		else if(op1 == "?" && precedence > eoperator_precedence::k_comparison_operator) {
-			const auto true_expr_p = evaluate_expression(helper, p.rest(), eoperator_precedence::k_comparison_operator);
+			const auto true_expr_p = parse_expression(helper, p.rest(), eoperator_precedence::k_comparison_operator);
 
 			const auto colon = true_expr_p.second.first(1);
 			if(colon != ":"){
 				throw std::runtime_error("Expected \":\"");
 			}
 
-			const auto false_expr_p = evaluate_expression(helper, true_expr_p.second.rest(), precedence);
+			const auto false_expr_p = parse_expression(helper, true_expr_p.second.rest(), precedence);
 			const auto value2 = helper.maker__make(eoperation::k_3_conditional_operator, lhs, true_expr_p.first, false_expr_p.first);
 
 			//	End this precedence level.
@@ -465,7 +456,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 
 		//	EXPRESSION == EXPRESSION
 		else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
 			const auto value2 = helper.maker__make(eoperation::k_2_logical_equal, lhs, rhs.first);
 
 			//	End this precedence level.
@@ -473,7 +464,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		}
 		//	EXPRESSION != EXPRESSION
 		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
 			const auto value2 = helper.maker__make(eoperation::k_2_logical_nonequal, lhs, rhs.first);
 
 			//	End this precedence level.
@@ -483,7 +474,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		//	!!! Check for "<=" before we check for "<".
 		//	EXPRESSION <= EXPRESSION
 		else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make(eoperation::k_2_smaller_or_equal, lhs, rhs.first);
 
 			//	End this precedence level.
@@ -492,7 +483,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 
 		//	EXPRESSION < EXPRESSION
 		else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make(eoperation::k_2_smaller, lhs, rhs.first);
 
 			//	End this precedence level.
@@ -503,7 +494,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		//	!!! Check for ">=" before we check for ">".
 		//	EXPRESSION >= EXPRESSION
 		else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make(eoperation::k_2_larger_or_equal, lhs, rhs.first);
 
 			//	End this precedence level.
@@ -512,7 +503,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 
 		//	EXPRESSION > EXPRESSION
 		else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make(eoperation::k_2_larger, lhs, rhs.first);
 
 			//	End this precedence level.
@@ -522,39 +513,39 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 
 		//	EXPRESSION && EXPRESSION
 		else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_and);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_logical_and);
 			const auto value2 = helper.maker__make(eoperation::k_2_logical_and, lhs, rhs.first);
 			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION || EXPRESSION
 		else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
-			const auto rhs = evaluate_expression(helper, p.rest(2), eoperator_precedence::k_logical_or);
+			const auto rhs = parse_expression(helper, p.rest(2), eoperator_precedence::k_logical_or);
 			const auto value2 = helper.maker__make(eoperation::k_2_logical_or, lhs, rhs.first);
 			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		else{
-			return { lhs, p3 };
+			return { lhs, p0 };
 		}
 	}
 	else{
-		return { lhs, p3 };
+		return { lhs, p0 };
 	}
 }
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_expression(const maker<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence){
+std::pair<EXPRESSION, seq_t> parse_expression(const maker<EXPRESSION>& helper, const seq_t& p, const eoperator_precedence precedence){
 	QUARK_ASSERT(p.check_invariant());
 
-	auto a = parse_atom(helper, p);
-	return parse_operation<EXPRESSION>(helper, a.second, a.first, precedence);
+	auto lhs = parse_atom(helper, p);
+	return parse_operation<EXPRESSION>(helper, lhs.second, lhs.first, precedence);
 }
 
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> evaluate_expression(const maker<EXPRESSION>& helper, const seq_t& p){
-	return evaluate_expression<EXPRESSION>(helper, p, eoperator_precedence::k_super_weak);
+std::pair<EXPRESSION, seq_t> parse_expression(const maker<EXPRESSION>& helper, const seq_t& p){
+	return parse_expression<EXPRESSION>(helper, p, eoperator_precedence::k_super_weak);
 }
 
 
