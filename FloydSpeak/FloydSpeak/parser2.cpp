@@ -712,6 +712,23 @@ QUARK_UNIT_1("parse_expression()", "lookup with string -- whitespace", test__par
 
 
 
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"1 ? 2 : 3 xxx",
+	R"(["?:", ["k", "<int>", 1], ["k", "<int>", 2], ["k", "<int>", 3]])", " xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"1 ? \"true!!!\" : \"false!!!\" xxx",
+	R"(["?:", ["k", "<int>", 1], ["k", "<string>", "true!!!"], ["k", "<string>", "false!!!"]])", " xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"1 + 2 ? 3 + 4 : 5 + 6 xxx",
+	R"(["?:", ["+", ["k", "<int>", 1], ["k", "<int>", 2]], ["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["+", ["k", "<int>", 5], ["k", "<int>", 6]]])", " xxx"
+));
+
+//??? Add more test to see precedence works as it should!
+
 
 #if false
 QUARK_UNIT_TESTQ("parse_expression()", ""){
