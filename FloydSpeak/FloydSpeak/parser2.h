@@ -249,6 +249,9 @@ template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
+	// ???
+	QUARK_ASSERT(p.first() != " ");
+
 	//	String literal?
 	if(p.first() == "\""){
 		const auto s = read_while_not(p.rest(), "\"");
@@ -264,6 +267,15 @@ std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const
 		return { result, value_p.second };
 	}
 
+	else if(peek(p, "true").first){
+		const auto result = helper.maker__make_constant(constant_value_t(true));
+		return { result, peek(p, "true").second };
+	}
+	else if(peek(p, "false").first){
+		const auto result = helper.maker__make_constant(constant_value_t(false));
+		return { result, peek(p, "false").second };
+	}
+
 	//	Identifier?
 	{
 		const auto identifier_s = read_while(p, k_identifier_chars);
@@ -273,7 +285,7 @@ std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const
 		}
 	}
 
-	QUARK_ASSERT(false);
+	throw std::runtime_error("Expected constant or identifier.");
 }
 
 /*
@@ -308,22 +320,27 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 	if(ch1 == '-'){
 		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_strong);
 		const auto value2 = helper.maker__make1(eoperation::k_1_logical_not, a.first);
-		return { value2, skip_whitespace(a.second) };
+		return { value2, a.second };
+	}
+	else if(ch1 == '+'){
+		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_strong);
+		return a;
 	}
 	//	Expression within paranthesis? "(yyy)xxx"
 	else if(ch1 == '('){
 		const auto a = parse_expression(helper, p2.rest(), eoperator_precedence::k_super_weak);
-		if (a.second.first() != ")"){
+		const auto p3 = skip_whitespace(a.second);
+		if (p3.first() != ")"){
 			throw std::runtime_error("Expected ')'");
 		}
-		return { a.first, skip_whitespace(a.second.rest()) };
+		return { a.first, p3.rest() };
 	}
 
 	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
 	//	"1234xxx" or "my_function(3)xxx"
 	else {
 		const auto a = parse_single(helper, p2);
-		return { a.first, a.second };
+		return a;
 	}
 }
 

@@ -22,8 +22,14 @@ using namespace std;
 
 //	???Encode constants more compactly, like this:		R"([">=", ["<int>", 3], ["<int>", 4]])"
 
+QUARK_UNIT_TESTQ("C++ operators", ""){
+	const int a = 2-+-2;
+	QUARK_TEST_VERIFY(a == 4);
+}
 
-QUARK_UNIT_TESTQ("enum class()", ""){
+
+
+QUARK_UNIT_TESTQ("C++ enum class()", ""){
 	enum class my_enum {
 		k_one = 1,
 		k_four = 4
@@ -181,7 +187,7 @@ struct json_helper : public maker<string> {
 
 	public: virtual const string maker__make_constant(const constant_value_t& value) const{
 		if(value._type == constant_value_t::etype::k_bool){
-			return make3("\"k\"", "\"<bool>\"", std::to_string(value._bool));
+			return make3("\"k\"", "\"<bool>\"", value._bool ? "true" : "false");
 		}
 		else if(value._type == constant_value_t::etype::k_int){
 			return make3("\"k\"", "\"<int>\"", std::to_string(value._int));
@@ -238,6 +244,7 @@ bool test__parse_single(const std::string& expression, const std::string& expect
 	return true;
 }
 
+
 QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	"123 xxx",
 	R"(["k", "<int>", 123])",
@@ -275,6 +282,19 @@ QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 ));
 
 
+QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
+	"true xxx",
+	R"(["k", "<bool>", true])",
+	" xxx"
+));
+QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
+	"false xxx",
+	R"(["k", "<bool>", false])",
+	" xxx"
+));
+
+
+
 bool test__parse_expression(const std::string& expression, string expected_value, string expected_seq){
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
@@ -292,6 +312,7 @@ bool test__parse_expression(const std::string& expression, string expected_value
 }
 
 
+
 //////////////////////////////////			EMPTY
 
 QUARK_UNIT_TESTQ("parse_expression()", ""){
@@ -306,6 +327,7 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 //////////////////////////////////			CONSTANTS
 
 QUARK_UNIT_1("parse_expression()", "", test__parse_expression("0", "[\"k\", \"<int>\", 0]", ""));
+QUARK_UNIT_1("parse_expression()", "", test__parse_expression("0 xxx", "[\"k\", \"<int>\", 0]", " xxx"));
 QUARK_UNIT_1("parse_expression()", "", test__parse_expression("1234567890", "[\"k\", \"<int>\", 1234567890]", ""));
 QUARK_UNIT_1("parse_expression()", "", test__parse_expression("\"hello, world!\"", "[\"k\", \"<string>\", \"hello, world!\"]", ""));
 
@@ -394,11 +416,26 @@ QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression(
 
 //////////////////////////////////			NEG
 
+QUARK_UNIT_1("parse_expression()", "", test__parse_expression("-2 xxx", "[\"neg\", [\"k\", \"<int>\", 2]]", " xxx"));
+
 QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
 	"-(3)",
 	R"(["neg", ["k", "<int>", 3]])",
 	""
 ));
+
+QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
+	"2---2 xxx",
+	R"(["-", ["k", "<int>", 2], ["neg", ["neg", ["k", "<int>", 2]]]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
+	"2-+-2 xxx",
+	R"(["-", ["k", "<int>", 2], ["neg", ["k", "<int>", 2]]])",
+	" xxx"
+));
+
 
 
 //////////////////////////////////			COMPARISON OPERATOR
@@ -628,8 +665,73 @@ QUARK_UNIT_1("parse_expression()", "chain", test__parse_expression(
 	" xxx"
 ));
 
+QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
+	" 5 - 2 * ( 3 ) xxx",
+	R"(["-", ["k", "<int>", 5], ["*", ["k", "<int>", 2], ["k", "<int>", 3]]])",
+	" xxx"
+));
 
 
+
+
+//////////////////////////////////			EXPRESSION ERRORS
+
+void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
+	try{
+		const auto result = parse_expression(json_helper(), seq_t(expression));
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		const std::string es(e.what());
+		if(!exception_message.empty()){
+			QUARK_TEST_VERIFY(es == exception_message);
+		}
+	}
+}
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis error") {
+	test__parse_expression__throw("5*((1+3)*2+1", "");
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis error") {
+//	test__parse_expression__throw("5*((1+3)*2)+1)", "");
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators (wrong)") {
+	test__parse_expression__throw("5*/2", "");
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Wrong position of an operator") {
+	test__parse_expression__throw("*2", "");
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Wrong position of an operator") {
+	test__parse_expression__throw("2+", "Unexpected end of string");
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Wrong position of an operator") {
+	test__parse_expression__throw("2*", "Unexpected end of string");
+}
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
+	test__parse_expression__throw("~5", "Expected constant or identifier.");
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
+	test__parse_expression__throw("~5", "");
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
+//	test__parse_expression__throw("5x", "EEE_WRONG_CHAR");
+}
+
+
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
+	test__parse_expression__throw("2/", "Unexpected end of string");
+}
 
 /*
 /////////////////////////////////		TO JSON

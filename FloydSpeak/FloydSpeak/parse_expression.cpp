@@ -707,8 +707,16 @@ struct parse_helper : public maker<expression_t> {
 	}
 
 	public: virtual const expression_t maker__call(const expression_t& f, const std::vector<expression_t>& args) const{
-		//???
-		return expression_t::make_function_call(type_identifier_t::make("f"), {});
+		std::vector<shared_ptr<expression_t>> args2;
+		for(const auto& a: args){
+			args2.push_back(make_shared<expression_t>(a));
+		}
+		if(f._resolve_variable){
+			return expression_t::make_function_call(type_identifier_t::make(f._resolve_variable->_variable_name), args2);
+		}
+		else{
+			throw std::runtime_error("??? function names must be constant identifiers right now. Broken");
+		}
 	}
 
 	public: virtual const expression_t maker__member_access(const expression_t& address, const std::string& member_name) const{
@@ -760,12 +768,15 @@ expression_t parse_expression2(std::string expression){
 	parse_helper helper;
 
 	const auto result = parse_expression(helper, seq_t(expression));
+	if(!skip_whitespace(result.second).empty()){
+		throw std::runtime_error("All of expression not used");
+	}
 	return result.first;
 }
 
 
 expression_t parse_expression(std::string expression){
-	return parse_expression1(expression);
+	return parse_expression2(expression);
 }
 
 

@@ -298,53 +298,6 @@ floyd_parser::value_t resolve_variable_name(const interpreter_t& vm, const std::
 }
 
 
-namespace {
-
-	expression_t load_deep(const interpreter_t& vm, const value_t& left_side, const expression_t& e){
-		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(e.check_invariant());
-		QUARK_ASSERT(e._resolve_variable || e._resolve_member || e._lookup_element);
-
-		if(e._call){
-			//	???
-			QUARK_ASSERT(false);
-		}
-		else if(e._resolve_variable){
-			QUARK_ASSERT(left_side.is_null());
-			const auto variable_name = e._resolve_variable->_variable_name;
-			const value_t value = resolve_variable_name(vm, variable_name);
-			return expression_t::make_constant(value);
-		}
-		else if(e._resolve_member){
-			const auto parent = load_deep(vm, left_side, *e._resolve_member->_parent_address);
-			QUARK_ASSERT(parent._constant && parent._constant->is_struct());
-			const auto member_name = e._resolve_member->_member_name;
-			const auto struct_instance = parent._constant->get_struct();
-			const value_t value = struct_instance->_member_values[member_name];
-			return expression_t::make_constant(value);
-		}
-		else if(e._lookup_element){
-			QUARK_ASSERT(false);
-			return expression_t::make_constant(value_t());
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-	expression_t load(const interpreter_t& vm, const expression_t& e){
-		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(e.check_invariant());
-		QUARK_ASSERT(e._load);
-
-		const auto e2 = *e._load;
-		QUARK_ASSERT(e2._address->_call || e2._address->_resolve_variable || e2._address->_resolve_member || e2._address-> _lookup_element);
-
-		const auto e3 = load_deep(vm, value_t(), *e2._address);
-		return expression_t::make_constant(*e3._constant);
-	}
-
-}
 
 QUARK_UNIT_TESTQ("C++ bool", ""){
 	quark::ut_compare(true, true);
@@ -535,15 +488,23 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		return expression_t::make_constant(result);
 	}
 	else if(e._load){
-		return load(vm, e);
+		QUARK_ASSERT(false);
 	}
 	else if(e._resolve_variable){
-		QUARK_ASSERT(false);
-		return e;
+		const auto variable_name = e._resolve_variable->_variable_name;
+		const value_t value = resolve_variable_name(vm, variable_name);
+		return expression_t::make_constant(value);
 	}
 	else if(e._resolve_member){
-		QUARK_ASSERT(false);
-		return e;
+		const auto parent_expr = evalute_expression(vm, *e._resolve_member->_parent_address);
+		if(parent_expr._constant && parent_expr._constant->is_struct()){
+			const auto struct_instance = parent_expr._constant->get_struct();
+			const value_t value = struct_instance->_member_values[e._resolve_member->_member_name];
+			return expression_t::make_constant(value);
+		}
+		else{
+			throw std::runtime_error("Resolve member failed.");
+		}
 	}
 	else if(e._lookup_element){
 		QUARK_ASSERT(false);
@@ -602,6 +563,7 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(".25 / 2.0 * .5") == expression_t::make_constant(0.0625f));
 }
 
+
 QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+-2") == expression_t::make_constant(-1));
 	QUARK_TEST_VERIFY(test_evaluate_simple("--2") == expression_t::make_constant(2));
@@ -609,59 +571,6 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("2-+-2") == expression_t::make_constant(4));
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis error") {
-	try{
-		test_evaluate_simple("5*((1+3)*2+1");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "EEE_PARENTHESIS");
-	}
-
-	try{
-		test_evaluate_simple("5*((1+3)*2)+1)");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-	}
-}
-
-QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators (wrong)") {
-	try{
-		test_evaluate_simple("5*/2");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-	}
-}
-
-QUARK_UNIT_TESTQ("evalute_expression()", "Wrong position of an operator") {
-	try{
-		test_evaluate_simple("*2");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-	}
-
-	try{
-		test_evaluate_simple("2+");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
-	}
-
-	try{
-		test_evaluate_simple("2*");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
-	}
-}
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Division by zero") {
 	try{
@@ -671,38 +580,15 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Division by zero") {
 	catch(const std::runtime_error& e){
 		QUARK_TEST_VERIFY(string(e.what()) == "EEE_DIVIDE_BY_ZERO");
 	}
+}
 
+QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero"){
 	try{
 		test_evaluate_simple("3+1/(5-5)+4");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
 		QUARK_TEST_VERIFY(string(e.what()) == "EEE_DIVIDE_BY_ZERO");
-	}
-
-	try{
-		test_evaluate_simple("2/");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expected number");
-	}
-}
-
-QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
-	try{
-		test_evaluate_simple("~5");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-//			QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
-	}
-	try{
-		test_evaluate_simple("5x");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "EEE_WRONG_CHAR");
 	}
 }
 
@@ -720,17 +606,6 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Multiply errors") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("+1/0") == EEE_DIVIDE_BY_ZERO);
 */
 }
-
-QUARK_UNIT_TESTQ("evalute_expression()", "An emtpy string") {
-	try{
-		test_evaluate_simple("");
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(...){
-//			QUARK_TEST_VERIFY(error == "EEE_WRONG_CHAR");
-	}
-}
-
 
 
 
