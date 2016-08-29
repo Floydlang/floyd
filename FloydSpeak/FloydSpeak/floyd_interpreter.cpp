@@ -505,46 +505,108 @@ expression_t test_evaluate_simple(string expression_string){
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1234") == expression_t::make_constant(1234));
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2") == expression_t::make_constant(3));
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2+3") == expression_t::make_constant(6));
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3*4") == expression_t::make_constant(12));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3*4*5") == expression_t::make_constant(60));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2*3") == expression_t::make_constant(7));
 }
 
+
 QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*(4+4+1)") == expression_t::make_constant(45));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*(2*(1+3)+1)") == expression_t::make_constant(45));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*((1+3)*2+1)") == expression_t::make_constant(45));
 }
 
+
 QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 * ((1 + 3) * 2 + 1) ") == expression_t::make_constant(45));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( 3 ) ") == expression_t::make_constant(-1));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( ( 4 )  - 1 ) ") == expression_t::make_constant(-1));
 }
 
+
 QUARK_UNIT_TESTQ("evalute_expression()", "Sign before parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("-(2+1)*4") == expression_t::make_constant(-12));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Sign before parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("-4*(2+1)") == expression_t::make_constant(-12));
 }
 
+
 QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("5.5/5.0")._constant->get_float(), 1.1f));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 //	QUARK_TEST_VERIFY(test_evaluate_simple("1/5e10") == 2e-11);
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("(4.0-3.0)/(4.0*4.0)")._constant->get_float(), 0.0625f));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1.0/2.0/2.0") == expression_t::make_constant(0.25f));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("0.25 * .5 * 0.5") == expression_t::make_constant(0.0625f));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(".25 / 2.0 * .5") == expression_t::make_constant(0.0625f));
 }
 
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+-2") == expression_t::make_constant(-1));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("--2") == expression_t::make_constant(2));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("2---2") == expression_t::make_constant(0));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("2-+-2") == expression_t::make_constant(4));
 }
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Bool") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "Bool") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false") == expression_t::make_constant(false));
+}
+
+
+//??? add tests  for pass2()
+QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true ? 4 : 6") == expression_t::make_constant(4));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false ? 4 : 6") == expression_t::make_constant(6));
+}
+
+
 
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Division by zero") {
