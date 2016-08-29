@@ -53,7 +53,7 @@ pair<expression_t, string> parse_lookup(const expression_t& leftside, const stri
 	}
 
 	const auto key_expression_s = trim_ends(body.first);
-	expression_t key_expression = parse_expression(key_expression_s);
+	expression_t key_expression = parse_expression1(key_expression_s);
 	return { expression_t::make_lookup(leftside, key_expression), body.second };
 }
 
@@ -78,7 +78,7 @@ pair<expression_t, string> parse_function_call(const std::shared_ptr<expression_
 	vector<shared_ptr<expression_t>> args_expressions;
 	while(!p2.empty()){
 		const auto p3 = read_until(skip_whitespace(p2), ",");
-		expression_t arg_expr = parse_expression(p3.first);
+		expression_t arg_expr = parse_expression1(p3.first);
 		args_expressions.push_back(make_shared<expression_t>(arg_expr));
 		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 	}
@@ -259,7 +259,7 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 */
 
 
-pair<expression_t, string> parse_expression(string expression, int depth);
+pair<expression_t, string> parse_expression1(string expression, int depth);
 
 
 expression_t negate_expression(const expression_t& e){
@@ -442,7 +442,7 @@ pair<expression_t, string> parse_atom(const string& s, int depth) {
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = parse_expression(pos, depth);
+		auto res = parse_expression1(pos, depth);
 		pos = skip_whitespace(res.second);
 		if(!(res.second.size() > 0 && res.second[0] == ')')) {
 			// Unmatched opening parenthesis
@@ -538,7 +538,7 @@ pair<expression_t, string> parse_summands(const string& s, int depth) {
 }
 
 
-pair<expression_t, string> parse_expression(string expression, int depth){
+pair<expression_t, string> parse_expression1(string expression, int depth){
 	QUARK_ASSERT(depth >= 0);
 
 	if(expression.empty()){
@@ -552,31 +552,31 @@ pair<expression_t, string> parse_expression(string expression, int depth){
 }
 
 
-expression_t parse_expression(string expression){
-	const auto result = parse_expression(expression, 0);
+expression_t parse_expression1(string expression){
+	const auto result = parse_expression1(expression, 0);
 	if(!result.second.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
 	return result.first;
 }
 
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	const auto a = parse_expression("pixel( \"hiya\" )");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	const auto a = parse_expression1("pixel( \"hiya\" )");
 	QUARK_TEST_VERIFY(a._call);
 }
 
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression("pixel.red")), R"(["load", ["->", ["@", "pixel"], "red"]])");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression1("pixel.red")), R"(["load", ["->", ["@", "pixel"], "red"]])");
 }
 
 
 #if false
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? 100 + 10 * 2 : 1000 - 3 * 4")), R"(["load", ["->", ["@", "pixel"], "red"]])");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression1("input_flag ? 100 + 10 * 2 : 1000 - 3 * 4")), R"(["load", ["->", ["@", "pixel"], "red"]])");
 }
 
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? \"123\" : \"456\"")), R"(["load", ["->", ["@", "pixel"], "red"]])");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression1("input_flag ? \"123\" : \"456\"")), R"(["load", ["->", ["@", "pixel"], "red"]])");
 }
 #endif
 
@@ -756,7 +756,7 @@ const std::map<eoperation, string> parse_helper::_2_operator_to_string{
 	{ eoperation::k_2_logical_or, "||" },
 };
 
-expression_t parse_expression2000(std::string expression){
+expression_t parse_expression2(std::string expression){
 	parse_helper helper;
 
 	const auto result = parse_expression(helper, seq_t(expression));
@@ -764,8 +764,9 @@ expression_t parse_expression2000(std::string expression){
 }
 
 
-
-
+expression_t parse_expression(std::string expression){
+	return parse_expression1(expression);
+}
 
 
 
@@ -797,4 +798,3 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 
 
 }	//	floyd_parser
-
