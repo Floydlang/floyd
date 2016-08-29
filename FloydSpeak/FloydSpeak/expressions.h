@@ -133,7 +133,6 @@ namespace floyd_parser {
 
 
 
-
 	//////////////////////////////////////////////////		function_call_expr_t
 
 
@@ -142,14 +141,14 @@ namespace floyd_parser {
 			return _function == other._function && _inputs == other._inputs;
 		}
 
-		public: function_call_expr_t(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs) :
+		public: function_call_expr_t(const type_identifier_t& function, const std::vector<expression_t>& inputs) :
 			_function(function),
 			_inputs(inputs)
 		{
 		}
 
 		const type_identifier_t _function;
-		const std::vector<std::shared_ptr<expression_t>> _inputs;
+		const std::vector<expression_t> _inputs;
 	};
 
 
@@ -250,7 +249,7 @@ namespace floyd_parser {
 
 		public: static expression_t make_function_call(
 			const type_identifier_t& function,
-			const std::vector<std::shared_ptr<expression_t>>& inputs,
+			const std::vector<expression_t>& inputs,
 			const type_identifier_t& resolved_expression_type = type_identifier_t()
 		);
 

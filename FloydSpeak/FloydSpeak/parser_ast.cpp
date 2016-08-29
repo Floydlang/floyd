@@ -668,7 +668,7 @@ namespace floyd_parser {
 
 		const auto f_statements = std::vector<std::shared_ptr<statement_t> >{
 			make_shared<statement_t>(
-				statement_t{ make__return_statement(expression_t::make_function_call(body_identifier, std::vector<std::shared_ptr<expression_t>>{}, return_type)) }
+				statement_t{ make__return_statement(expression_t::make_function_call(body_identifier, std::vector<expression_t>{}, return_type)) }
 			)
 		};
 

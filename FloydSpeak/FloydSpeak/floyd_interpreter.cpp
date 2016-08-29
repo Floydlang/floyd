@@ -448,7 +448,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	//	Simplify each argument.
 	vector<expression_t> simplified_args;
 	for(const auto& i: call_function_expression._inputs){
-		const auto arg_expr = evalute_expression(vm, *i);
+		const auto arg_expr = evalute_expression(vm, i);
 		simplified_args.push_back(arg_expr);
 	}
 

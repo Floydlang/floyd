@@ -113,11 +113,11 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 				throw std::runtime_error("1003 - Wrong number of argument to function \"" + call._function.to_string() + "\".");
 			}
 
-			vector<shared_ptr<expression_t>> args2;
+			vector<expression_t> args2;
 			for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
 				const auto call_arg = call._inputs[argument_index];
-				const auto call_arg2 = make_shared<expression_t>(resolve_types__expression(ast, path, scope_def, *call_arg));
-				const auto call_arg2_type = call_arg2->get_expression_type();
+				const auto call_arg2 = resolve_types__expression(ast, path, scope_def, call_arg);
+				const auto call_arg2_type = call_arg2.get_expression_type();
 				QUARK_ASSERT(call_arg2_type.is_resolved());
 
 				const auto function_arg_type = *f2->_members[argument_index]._type;
@@ -135,7 +135,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 			QUARK_ASSERT(call._inputs.empty());
 			//??? Throw exceptions -- treat JSON-AST as user input.
 
-			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), vector<shared_ptr<expression_t>>{}, return_type);
+			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), vector<expression_t>{}, return_type);
 		}
 		else{
 			QUARK_ASSERT(false);

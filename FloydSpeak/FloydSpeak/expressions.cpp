@@ -234,10 +234,10 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	return result;
 }
 
-expression_t expression_t::make_function_call(const type_identifier_t& function, const std::vector<std::shared_ptr<expression_t>>& inputs, const type_identifier_t& resolved_expression_type){
+expression_t expression_t::make_function_call(const type_identifier_t& function, const std::vector<expression_t>& inputs, const type_identifier_t& resolved_expression_type){
 	QUARK_ASSERT(function.check_invariant());
 	for(const auto arg: inputs){
-		QUARK_ASSERT(arg && arg->check_invariant());
+		QUARK_ASSERT(arg.check_invariant());
 	}
 	QUARK_ASSERT(resolved_expression_type.check_invariant());
 
@@ -396,7 +396,7 @@ json_value_t expression_to_json(const expression_t& e){
 		const auto& call_function = *e._call;
 		vector<json_value_t>  args_json;
 		for(const auto& i: call_function._inputs){
-			const auto arg_expr = expression_to_json(*i);
+			const auto arg_expr = expression_to_json(i);
 			args_json.push_back(arg_expr);
 		}
 		return json_value_t::make_array_skip_nulls({ json_value_t("call"), json_value_t(call_function._function.to_string()), type, args_json });
@@ -460,8 +460,8 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 			expression_t::make_function_call(
 				type_identifier_t::make("my_func"),
 				{
-					make_shared<expression_t>(expression_t::make_constant("xyz")),
-					make_shared<expression_t>(expression_t::make_constant(123))
+					expression_t::make_constant("xyz"),
+					expression_t::make_constant(123)
 				},
 				type_identifier_t()
 			)

@@ -119,7 +119,7 @@ namespace floyd_parser {
 		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
 		QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_function.to_string() == "log");
 		QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_inputs.size() == 1);
-		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_call->_inputs[0]->_constant ==value_t("hello"));
+		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_call->_inputs[0]._constant ==value_t("hello"));
 		QUARK_TEST_VERIFY(a.second == "\n");
 	}
 

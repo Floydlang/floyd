@@ -75,11 +75,11 @@ pair<expression_t, string> parse_function_call(const std::shared_ptr<expression_
 	const auto args = trim_ends(arg_list_pos.first);
 
 	p2 = args;
-	vector<shared_ptr<expression_t>> args_expressions;
+	vector<expression_t> args_expressions;
 	while(!p2.empty()){
 		const auto p3 = read_until(skip_whitespace(p2), ",");
 		expression_t arg_expr = parse_expression1(p3.first);
-		args_expressions.push_back(make_shared<expression_t>(arg_expr));
+		args_expressions.push_back(arg_expr);
 		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 	}
 
@@ -382,7 +382,7 @@ QUARK_UNIT_TESTQ("parse_single", "function call"){
 	const auto a = parse_single("log(34.5)");
 	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a.first._call->_inputs[0]->_constant == value_t(34.5f));
+	QUARK_TEST_VERIFY(*a.first._call->_inputs[0]._constant == value_t(34.5f));
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
@@ -390,8 +390,8 @@ QUARK_UNIT_TESTQ("parse_single", "function call with two args"){
 	const auto a = parse_single("log2(\"123\" + \"xyz\", 1000 * 3)");
 	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log2");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
-	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_math2);
-	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_math2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[0]._math2);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]._math2);
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
@@ -399,10 +399,10 @@ QUARK_UNIT_TESTQ("parse_single", "nested function calls"){
 	const auto a = parse_single("log2(2.1, f(3.14))");
 	QUARK_TEST_VERIFY(a.first._call->_function.to_string() == "log2");
 	QUARK_TEST_VERIFY(a.first._call->_inputs.size() == 2);
-	QUARK_TEST_VERIFY(a.first._call->_inputs[0]->_constant);
-	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_function.to_string() == "f");
-	QUARK_TEST_VERIFY(a.first._call->_inputs[1]->_call->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a.first._call->_inputs[1]->_call->_inputs[0] == expression_t::make_constant(3.14f));
+	QUARK_TEST_VERIFY(a.first._call->_inputs[0]._constant);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]._call->_function.to_string() == "f");
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]._call->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(a.first._call->_inputs[1]._call->_inputs[0] == expression_t::make_constant(3.14f));
 	QUARK_TEST_VERIFY(a.second == "");
 }
 
@@ -689,12 +689,8 @@ struct parse_helper : public maker<expression_t> {
 	}
 
 	public: virtual const expression_t maker__call(const expression_t& f, const std::vector<expression_t>& args) const{
-		std::vector<shared_ptr<expression_t>> args2;
-		for(const auto& a: args){
-			args2.push_back(make_shared<expression_t>(a));
-		}
 		if(f._resolve_variable){
-			return expression_t::make_function_call(type_identifier_t::make(f._resolve_variable->_variable_name), args2);
+			return expression_t::make_function_call(type_identifier_t::make(f._resolve_variable->_variable_name), args);
 		}
 		else{
 			throw std::runtime_error("??? function names must be constant identifiers right now. Broken");
