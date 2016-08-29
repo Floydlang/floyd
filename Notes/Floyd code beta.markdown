@@ -78,8 +78,29 @@ Comparisons are true-deep - they consider all members and also member structs an
 	−		Subtracts second operand from the first.									"a = b - c", "a = b - c - d"
 	*		Multiplies both operands.															"a = b * c", "a = b * c * d"
 	/		Divides numerator by de-numerator.											"a = b / c", "a = b / c / d"
-	%		Divides numerator by de-numerator.											"a = b / c", "a = b / c / d"
+	%		Modulus Operator and remainder of after an integer division		"a = b / c", "a = b / c / d"
 
+### Relational Operators
+	a == b				true if a and b have the same value
+	a != b				true if a and b have different values
+	a > b				true if the value of a is greater than the value of b
+	a < b				true if the value of a is smaller than the value of b
+	a >= b
+	a <= b
+
+### Logical Operators
+	a && b
+	a || b
+
+### Conditional Operator
+condition ? a : b		When condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls etc.
+
+
+	bool is_polite(string x){
+		return x == "hello" ? "polite" : "rude"
+	}
+	assert(is_polity("hiya!") == false);
+	assert(is_polity("hello") == true);
 
 # STRUCTs
 Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view).

@@ -72,29 +72,7 @@ In each body you can write any statements. There is no "break" keyword. { and }Â
 
 
 # EXPRESSIONS
-	%		Modulus Operator and remainder of after an integer division.				"B % A = 0"
-
-### Relational Operators
-	a == b				true if a and b have the same value
-	a != b				true if a and b have different values
-	a > b				true if the value of a is greater than the value of b
-	a < b				true if the value of a is smaller than the value of b
-	a >= b
-	a <= b
-
-### Logical Operators
-	a && b
-	a || b
 	!a
-
-### Trinary Operators
-condition ? a : b
-
-	bool is_polite(string x){
-		return x == "hello" ? "polite" : "rude"
-	}
-	assert(is_polity("hiya!") == false);
-	assert(is_polity("hello") == true);
 
 ### Bitwise Operators
 !a					inverts a bool: true becomes false, false becomes true.
