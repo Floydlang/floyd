@@ -41,6 +41,18 @@ QUARK_UNIT_TESTQ("C++ enum class()", ""){
 }
 
 
+bool is_valid_chars(const std::string& s){
+	const auto allowed = k_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[]().?:=!<>&,|";
+	for(auto i = 0 ; i < s.size() ; i++){
+		const char ch = s[i];
+		if(allowed.find(ch) == string::npos){
+			return false;
+		}
+	}
+	return true;
+}
+
+
 
 seq_t skip_whitespace(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
@@ -729,7 +741,7 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Wrong position of an operator") {
 
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
-	test__parse_expression__throw("~5", "Expected constant or identifier.");
+	test__parse_expression__throw("~5", "Illegal characters.");
 }
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {

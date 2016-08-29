@@ -820,6 +820,86 @@ QUARK_UNIT_TESTQ("evalute_expression()", "<") {
 }
 
 
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false && false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false && true") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true && false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true && true") == expression_t::make_constant(true));
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false && false && false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false && false && true") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false && true && false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false && true && true") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true && false && false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true && true && false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true && true && true") == expression_t::make_constant(true));
+}
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false || false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false || true") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true || false") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true || true") == expression_t::make_constant(true));
+}
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false || false || false") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false || false || true") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false || true || false") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("false || true || true") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true || false || false") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true || false || true") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true || true || false") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("true || true || true") == expression_t::make_constant(true));
+}
+
+
+//??? more
+
+
+
 QUARK_UNIT_TESTQ("evalute_expression()", "Division by zero") {
 	try{
 		test_evaluate_simple("2/0");
