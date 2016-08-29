@@ -772,7 +772,52 @@ QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3==3 ? 4 : 6") == expression_t::make_constant(4));
 }
 
+QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("3==3 ? 2 + 2 : 2 * 3") == expression_t::make_constant(4));
+}
 
+QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("3==1+2 ? 2 + 2 : 2 * 3") == expression_t::make_constant(4));
+}
+
+
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("1 == 1") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("1 == 2") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("1.3 == 1.3") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("\"hello\" == \"hello\"") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("\"hello\" == \"bye\"") == expression_t::make_constant(false));
+}
+
+
+QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("1 < 2") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("5 < 2") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("0.3 < 0.4") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("1.5 < 0.4") == expression_t::make_constant(false));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("\"adwark\" < \"boat\"") == expression_t::make_constant(true));
+}
+QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+	QUARK_TEST_VERIFY(test_evaluate_simple("\"boat\" < \"adwark\"") == expression_t::make_constant(false));
+}
 
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Division by zero") {
