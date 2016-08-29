@@ -402,53 +402,23 @@ expression_t evaluate_conditional_operator(const interpreter_t& vm, const expres
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e._conditional_operator);
 
-	return e;
-/*
-	const auto& call_function_expression = *e._call;
+	const auto& ce = *e._conditional_operator;
 
-	scope_ref_t scope_def = vm._call_stack.back()->_def;
-	const auto path = find_path_slow(vm._ast, scope_def);
-	const auto type = resolve_type(vm._ast, unresolve_path(path), scope_def, call_function_expression._function);
-	if(!type || type->get_type() != base_type::k_function){
-		throw std::runtime_error("Failed calling function - unresolved function.");
-	}
+	const auto cond_result = evalute_expression(vm, *ce._condition);
+	if(cond_result._constant&& cond_result._constant->is_bool()){
+		const bool cond_flag = cond_result._constant->get_bool();
 
-	const auto& function_def = type->get_function_def();
-	if(function_def->_type == scope_def_t::k_function_scope){
-		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
-	}
-	else if(function_def->_type == scope_def_t::k_subscope){
+		//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
+		if(cond_flag){
+			return evalute_expression(vm, *ce._a);
+		}
+		else{
+			return evalute_expression(vm, *ce._b);
+		}
 	}
 	else{
-		QUARK_ASSERT(false);
+		throw std::runtime_error("Could not evaluate contion in conditional expression.");
 	}
-
-	//	Simplify each argument.
-	vector<expression_t> simplified_args;
-	for(const auto& i: call_function_expression._inputs){
-		const auto arg_expr = evalute_expression(vm, *i);
-		simplified_args.push_back(arg_expr);
-	}
-
-	//	All arguments to functions are constants? Else return new call_function, but with simplified arguments.
-	for(const auto& i: simplified_args){
-		if(!i._constant){
-			//??? should use simplified_args.
-			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
-		}
-	}
-
-	//	Woha: all arguments are constants - replace this expression with the final output of the function call instead!
-	vector<value_t> constant_args;
-	for(const auto& i: simplified_args){
-		constant_args.push_back(*i._constant);
-		if(!i._constant){
-			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
-		}
-	}
-	const value_t result = call_function(vm, function_def, constant_args);
-	return expression_t::make_constant(result);
-*/
 }
 
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
@@ -740,7 +710,7 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 }
 
 
-#if false
+#if true
 QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 	const auto result = run_main(
 		R"(
