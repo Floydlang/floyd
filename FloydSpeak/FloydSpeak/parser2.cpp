@@ -12,7 +12,7 @@
 
 #include <string>
 #include <memory>
-
+#include <map>
 #include "text_parser.h"
 
 
@@ -110,6 +110,8 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	Generates expressions encode as JSON in std::string values. Use for testing.
 */
 struct test_helper : public maker<string> {
+	private: static const std::map<eoperation, string> _2_operator_to_string;
+
 	private: static string make_2op(string lhs, string op, string rhs){
 		return make3(quote(op), lhs, rhs);
 	}
@@ -129,6 +131,7 @@ struct test_helper : public maker<string> {
 	public: virtual const string maker__make_identifier(const std::string& s) const{
 		return make2(quote("@"), quote(s));
 	}
+
 	public: virtual const string maker__make1(const eoperation op, const string& expr) const{
 		if(op == eoperation::k_1_logical_not){
 			return "[\"neg\", " + expr + "]";
@@ -140,56 +143,12 @@ struct test_helper : public maker<string> {
 			QUARK_ASSERT(false);
 		}
 	}
+
 	public: virtual const string maker__make2(const eoperation op, const string& lhs, const string& rhs) const{
-		if(op == eoperation::k_2_looup){
-			return make_2op(lhs, "[-]", rhs);
-		}
-
-		else if(op == eoperation::k_2_add){
-			return make_2op(lhs, "+", rhs);
-		}
-		else if(op == eoperation::k_2_subtract){
-			return make_2op(lhs, "-", rhs);
-		}
-		else if(op == eoperation::k_2_multiply){
-			return make_2op(lhs, "*", rhs);
-		}
-		else if(op == eoperation::k_2_divide){
-			return make_2op(lhs, "/", rhs);
-		}
-		else if(op == eoperation::k_2_remainder){
-			return make_2op(lhs, "%", rhs);
-		}
-
-		else if(op == eoperation::k_2_smaller_or_equal){
-			return make_2op(lhs, "<=", rhs);
-		}
-		else if(op == eoperation::k_2_smaller){
-			return make_2op(lhs, "<", rhs);
-		}
-		else if(op == eoperation::k_2_larger_or_equal){
-			return make_2op(lhs, ">=", rhs);
-		}
-		else if(op == eoperation::k_2_larger){
-			return make_2op(lhs, ">", rhs);
-		}
-
-		else if(op == eoperation::k_2_logical_equal){
-			return make_2op(lhs, "==", rhs);
-		}
-		else if(op == eoperation::k_2_logical_nonequal){
-			return make_2op(lhs, "!=", rhs);
-		}
-		else if(op == eoperation::k_2_logical_and){
-			return make_2op(lhs, "&&", rhs);
-		}
-		else if(op == eoperation::k_2_logical_or){
-			return make_2op(lhs, "||", rhs);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+		const auto op_str = _2_operator_to_string.at(op);
+		return make3(quote(op_str), lhs, rhs);
 	}
+
 	public: virtual const string maker__make3(const eoperation op, const string& e1, const string& e2, const string& e3) const{
 		if(op == eoperation::k_3_conditional_operator){
 			std::ostringstream ss;
@@ -236,7 +195,28 @@ struct test_helper : public maker<string> {
 			QUARK_ASSERT(false);
 		}
 	}
+};
 
+const std::map<eoperation, string> test_helper::_2_operator_to_string{
+//	{ eoperation::k_2_member_access, "->" },
+
+	{ eoperation::k_2_looup, "[-]" },
+
+	{ eoperation::k_2_add, "+" },
+	{ eoperation::k_2_subtract, "-" },
+	{ eoperation::k_2_multiply, "*" },
+	{ eoperation::k_2_divide, "/" },
+	{ eoperation::k_2_remainder, "%" },
+
+	{ eoperation::k_2_smaller_or_equal, "<=" },
+	{ eoperation::k_2_smaller, "<" },
+	{ eoperation::k_2_larger_or_equal, ">=" },
+	{ eoperation::k_2_larger, ">" },
+
+	{ eoperation::k_2_logical_equal, "==" },
+	{ eoperation::k_2_logical_nonequal, "!=" },
+	{ eoperation::k_2_logical_and, "&&" },
+	{ eoperation::k_2_logical_or, "||" },
 };
 
 
