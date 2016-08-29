@@ -65,7 +65,7 @@ bool seq_t::operator==(const seq_t& other) const {
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(other.check_invariant());
 
-	return first(1) == other.first(1) && rest_string() == other.rest_string();
+	return first(1) == other.first(1) && get_all() == other.get_all();
 }
 
 bool seq_t::check_invariant() const {
@@ -108,7 +108,7 @@ seq_t seq_t::rest(size_t skip) const{
 	return seq_t(_str, p);
 }
 
-std::string seq_t::rest_string() const{
+std::string seq_t::get_all() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _str->substr(_pos);
@@ -248,6 +248,37 @@ QUARK_UNIT_TEST("", "read_while()", "", ""){
 
 
 
+
+pair<string, seq_t> read_while_not(const seq_t& p1, const string& match){
+	string a;
+	seq_t p2 = p1;
+
+	while(!p2.empty() && match.find(p2.first_char()) == string::npos){
+		a = a + p2.first_char();
+		p2 = p2.rest();
+	}
+
+	return { a, p2 };
+}
+
+
+
+std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string){
+	const auto size = wanted_string.size();
+	if(p.first(size) == wanted_string){
+		return { true, p.rest(size) };
+	}
+	else{
+		return { false, p };
+	}
+}
+
+QUARK_UNIT_TESTQ("peek()", ""){
+	const auto result = peek(seq_t("hello, world!"), "hell");
+	const auto expected = std::pair<bool, seq_t>(true, seq_t("o, world!"));
+
+	QUARK_TEST_VERIFY(result == expected);
+}
 
 
 
@@ -417,6 +448,61 @@ QUARK_UNIT_TEST("", "get_balanced_pair()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced_pair("(abc)def", '(', ')') == seq("abc", "def"));
 	QUARK_TEST_VERIFY(get_balanced_pair("((abc))def", '(', ')') == seq("(abc)", "def"));
 	QUARK_TEST_VERIFY(get_balanced_pair("((abc)[])def", '(', ')') == seq("(abc)[]", "def"));
+}
+
+
+
+
+
+
+std::string quote(const std::string& s){
+	return std::string("\"") + s + "\"";
+}
+
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("") == "\"\"");
+}
+
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("abc") == "\"abc\"");
+}
+
+
+
+std::string float_to_string(float value){
+	std::stringstream s;
+	s << value;
+	const auto result = s.str();
+	return result;
+}
+
+QUARK_UNIT_TESTQ("float_to_string()", ""){
+	quark::ut_compare(float_to_string(0.0f), "0");
+}
+QUARK_UNIT_TESTQ("float_to_string()", ""){
+	quark::ut_compare(float_to_string(13.0f), "13");
+}
+QUARK_UNIT_TESTQ("float_to_string()", ""){
+	quark::ut_compare(float_to_string(13.5f), "13.5");
+}
+
+
+
+std::string double_to_string(double value){
+	std::stringstream s;
+	s << value;
+	const auto result = s.str();
+	return result;
+}
+
+QUARK_UNIT_TESTQ("double_to_string()", ""){
+	quark::ut_compare(float_to_string(0.0), "0");
+}
+QUARK_UNIT_TESTQ("double_to_string()", ""){
+	quark::ut_compare(float_to_string(13.0), "13");
+}
+QUARK_UNIT_TESTQ("double_to_string()", ""){
+	quark::ut_compare(float_to_string(13.5), "13.5");
 }
 
 

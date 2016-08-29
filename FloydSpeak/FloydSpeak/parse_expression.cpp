@@ -14,6 +14,7 @@
 #include "parse_function_def.h"
 #include "parser_ast.h"
 #include "parser_primitives.h"
+#include "parser2.h"
 
 namespace floyd_parser {
 
@@ -52,7 +53,7 @@ pair<expression_t, string> parse_lookup(const expression_t& leftside, const stri
 	}
 
 	const auto key_expression_s = trim_ends(body.first);
-	expression_t key_expression = parse_expression(key_expression_s);
+	expression_t key_expression = parse_expression1(key_expression_s);
 	return { expression_t::make_lookup(leftside, key_expression), body.second };
 }
 
@@ -77,7 +78,7 @@ pair<expression_t, string> parse_function_call(const std::shared_ptr<expression_
 	vector<shared_ptr<expression_t>> args_expressions;
 	while(!p2.empty()){
 		const auto p3 = read_until(skip_whitespace(p2), ",");
-		expression_t arg_expr = parse_expression(p3.first);
+		expression_t arg_expr = parse_expression1(p3.first);
 		args_expressions.push_back(make_shared<expression_t>(arg_expr));
 		p2 = p3.second[0] == ',' ? p3.second.substr(1) : p3.second;
 	}
@@ -119,22 +120,22 @@ pair<expression_t, string> parse_path_node(const std::shared_ptr<expression_t>& 
 				return { expression_t::make_resolve_variable(identifier_pos.first, type_identifier_t()), identifier_pos.second };
 			}
 			else{
-				return { expression_t::make_resolve_struct_member(leftside, identifier_pos.first), identifier_pos.second };
+				return { expression_t::make_resolve_member(leftside, identifier_pos.first), identifier_pos.second };
 			}
 		}
 	}
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, "hello xxx")), seq(R"(["res_var", "<>", "hello"])", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "hello xxx")), seq(R"(["@", "hello"])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, "f () xxx")), seq(R"(["call", "f", "<>", []])", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "f () xxx")), seq(R"(["call", "f", []])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
-	quark::ut_compare(to_seq(parse_path_node({}, "f (x + 10) xxx")), seq(R"(["call", "f", "<>", [["+", "<>", ["load", "<>", ["res_var", "<>", "x"]], ["k", "<int>", 10]]]])", " xxx"));
+	quark::ut_compare(to_seq(parse_path_node({}, "f (x + 10) xxx")), seq(R"(["call", "f", [["+", ["load", ["@", "x"]], ["k", "<int>", 10]]]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_path_node()", ""){
@@ -163,38 +164,16 @@ pair<expression_t, string> parse_calculated_value_recursive(const std::shared_pt
 
 
 
-/*
-	Parse non-constant value.
-	This is a recursive function since you can use lookups, function calls, structure members - all nested.
-
-	Each step in the path can be one of these:
-	1) *read* from a variable / constant, structure member.
-	2) Function call
-	3) Looking up using []
-
-	Returns either a variable_read_expr_t or a function_call_expr_t. The hold potentially many levels of nested lookups, function calls and member reads.
-
-	load "[4]"
-	call "f()"
-	load "my_global"
-	load "my_local"
 
 
-	Examples:
-		"hello xxx"
-		"hello.kitty xxx"
-		"f ()"
-		"f(x + 10)"
-		"hello[10] xxx"
-		"hello["troll"] xxx"
-		"hello["troll"].kitty[10].cat xxx"
-*/
+//??? BREAK OUT PARSE_ADDRESS, WITHOUT THE LOAD.
+
 pair<expression_t, string> parse_calculated_value(const string& s) {
 	const auto a = parse_calculated_value_recursive(shared_ptr<expression_t>(), s);
 	if(a.first._resolve_variable){
 		return { expression_t::make_load(a.first, type_identifier_t()), a.second };
 	}
-	else if(a.first._resolve_struct_member){
+	else if(a.first._resolve_member){
 		return { expression_t::make_load(a.first, type_identifier_t()), a.second };
 	}
 	else if(a.first._lookup_element){
@@ -232,36 +211,36 @@ pair<expression_t, string> parse_calculated_value(const string& s) {
 */
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello xxx")), seq(R"(["load", "<>", ["res_var", "<>", "hello"]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello xxx")), seq(R"(["load", ["@", "hello"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty xxx")), seq(R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "hello"], "kitty"]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty xxx")), seq(R"(["load", ["->", ["@", "hello"], "kitty"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty.cat xxx")), seq(R"(["load", "<>", ["res_member", "<>", ["res_member", "<>", ["res_var", "<>", "hello"], "kitty"], "cat"]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello.kitty.cat xxx")), seq(R"(["load", ["->", ["->", ["@", "hello"], "kitty"], "cat"]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("f () xxx")), seq(R"(["call", "f", "<>", []])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("f () xxx")), seq(R"(["call", "f", []])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("f (x + 10) xxx")), seq(R"(["call", "f", "<>", [["+", "<>", ["load", "<>", ["res_var", "<>", "x"]], ["k", "<int>", 10]]]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("f (x + 10) xxx")), seq(R"(["call", "f", [["+", ["load", ["@", "x"]], ["k", "<int>", 10]]]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello[10] xxx")), seq(R"(["load", "<>", ["lookup", "<>", ["res_var", "<>", "hello"], ["k", "<int>", 10]]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[10] xxx")), seq(R"(["load", ["[-]", ["@", "hello"], ["k", "<int>", 10]]])", " xxx"));
 }
 
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"] xxx")), seq(R"(["load", "<>", ["lookup", "<>", ["res_var", "<>", "hello"], ["k", "<string>", "troll"]]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"] xxx")), seq(R"(["load", ["[-]", ["@", "hello"], ["k", "<string>", "troll"]]])", " xxx"));
 }
 
 //### allow nl and tab when writing result strings.
 QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
-	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"].kitty[10].cat xxx")), seq(R"(["load", "<>", ["res_member", "<>", ["lookup", "<>", ["res_member", "<>", ["lookup", "<>", ["res_var", "<>", "hello"], ["k", "<string>", "troll"]], "kitty"], ["k", "<int>", 10]], "cat"]])", " xxx"));
+	quark::ut_compare(to_seq(parse_calculated_value("hello[\"troll\"].kitty[10].cat xxx")), seq(R"(["load", ["->", ["[-]", ["->", ["[-]", ["@", "hello"], ["k", "<string>", "troll"]], "kitty"], ["k", "<int>", 10]], "cat"]])", " xxx"));
 }
 
 /*
@@ -280,7 +259,7 @@ QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
 */
 
 
-pair<expression_t, string> parse_expression(string expression, int depth);
+pair<expression_t, string> parse_expression1(string expression, int depth);
 
 
 expression_t negate_expression(const expression_t& e){
@@ -321,40 +300,19 @@ pair<value_t, string> parse_numeric_constant(const string& s) {
 	}
 }
 
-QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	quark::ut_compare(parse_numeric_constant("0 xxx"), pair<value_t, string>(value_t(0), " xxx"));
 }
 
-QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	quark::ut_compare(parse_numeric_constant("1234 xxx"), pair<value_t, string>(value_t(1234), " xxx"));
 }
 
-QUARK_UNIT_TESTQ("parse_calculated_value()", ""){
+QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	quark::ut_compare(parse_numeric_constant(".5 xxx"), pair<value_t, string>(value_t(0.5f), " xxx"));
 }
 
 
-seq parse_string_constant(const string& s){
-	QUARK_ASSERT(s.size() > 0);
-	QUARK_ASSERT(s[0] == '\"');
-
-	const auto pos = s.substr(1);
-	const auto string_constant_pos = read_until(pos, "\"");
-	const auto r = string_constant_pos.second.substr(1);
-	return { string_constant_pos.first, r };
-}
-
-QUARK_UNIT_TESTQ("parse_string_constant()", ""){
-	quark::ut_compare(parse_string_constant("\"\" xxx"), seq("", " xxx"));
-}
-
-QUARK_UNIT_TESTQ("parse_string_constant()", ""){
-	quark::ut_compare(parse_string_constant("\"hello\" xxx"), seq("hello", " xxx"));
-}
-
-QUARK_UNIT_TESTQ("parse_string_constant()", ""){
-	quark::ut_compare(parse_string_constant("\".5\" xxx"), seq(".5", " xxx"));
-}
 
 
 /*
@@ -381,8 +339,8 @@ pair<expression_t, string> parse_single(const string& s) {
 
 	//	" => string constant.
 	if(peek_string(s, "\"")){
-		const auto a = parse_string_constant(s);
-		return { expression_t::make_constant(a.first), a.second };
+		const auto a = parse_string_literal(seq_t(s));
+		return { expression_t::make_constant(a.first), a.second.get_all() };
 	}
 
 	// [0-9] and "."  => numeric constant.
@@ -455,7 +413,7 @@ QUARK_UNIT_TESTQ("parse_single", "variable read"){
 }
 
 QUARK_UNIT_TESTQ("parse_single", "read struct member"){
-	quark::ut_compare(to_seq(parse_single("k_my_global.member")),  seq(R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "k_my_global"], "member"]])", ""));
+	quark::ut_compare(to_seq(parse_single("k_my_global.member")),  seq(R"(["load", ["->", ["@", "k_my_global"], "member"]])", ""));
 }
 
 
@@ -484,7 +442,7 @@ pair<expression_t, string> parse_atom(const string& s, int depth) {
 	if(pos.size() > 0 && pos[0] == '(') {
 		pos = pos.substr(1);
 
-		auto res = parse_expression(pos, depth);
+		auto res = parse_expression1(pos, depth);
 		pos = skip_whitespace(res.second);
 		if(!(res.second.size() > 0 && res.second[0] == ')')) {
 			// Unmatched opening parenthesis
@@ -580,7 +538,7 @@ pair<expression_t, string> parse_summands(const string& s, int depth) {
 }
 
 
-pair<expression_t, string> parse_expression(string expression, int depth){
+pair<expression_t, string> parse_expression1(string expression, int depth){
 	QUARK_ASSERT(depth >= 0);
 
 	if(expression.empty()){
@@ -594,35 +552,232 @@ pair<expression_t, string> parse_expression(string expression, int depth){
 }
 
 
-expression_t parse_expression(string expression){
-	const auto result = parse_expression(expression, 0);
+expression_t parse_expression1(string expression){
+	const auto result = parse_expression1(expression, 0);
 	if(!result.second.empty()){
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
 	return result.first;
 }
 
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	const auto a = parse_expression("pixel( \"hiya\" )");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	const auto a = parse_expression1("pixel( \"hiya\" )");
 	QUARK_TEST_VERIFY(a._call);
 }
 
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression("pixel.red")), R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "pixel"], "red"]])");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression1("pixel.red")), R"(["load", ["->", ["@", "pixel"], "red"]])");
 }
 
 
 #if false
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? 100 + 10 * 2 : 1000 - 3 * 4")), R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "pixel"], "red"]])");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression1("input_flag ? 100 + 10 * 2 : 1000 - 3 * 4")), R"(["load", ["->", ["@", "pixel"], "red"]])");
 }
 
-QUARK_UNIT_TESTQ("parse_expression()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression("input_flag ? \"123\" : \"456\"")), R"(["load", "<>", ["res_member", "<>", ["res_var", "<>", "pixel"], "red"]])");
+QUARK_UNIT_TESTQ("parse_expression1()", ""){
+	quark::ut_compare(expression_to_json_string(parse_expression1("input_flag ? \"123\" : \"456\"")), R"(["load", ["->", ["@", "pixel"], "red"]])");
 }
 #endif
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct parse_helper : public maker<expression_t> {
+	private: static const std::map<eoperation, string> _2_operator_to_string;
+
+	private: static string make_2op(string lhs, string op, string rhs){
+		return make3(quote(op), lhs, rhs);
+	}
+
+	private: static string make2(string s0, string s1){
+		std::ostringstream ss;
+		ss << "[" << s0 << ", " << s1 << "]";
+		return ss.str();
+	}
+
+	private: static string make3(string s0, string s1, string s2){
+		std::ostringstream ss;
+		ss << "[" << s0 << ", " << s1 << ", " << s2 << "]";
+		return ss.str();
+	}
+
+
+	public: virtual const expression_t maker__make_identifier(const std::string& s) const{
+		return expression_t::make_resolve_variable(s);
+	}
+
+	public: virtual const expression_t maker__make1(const eoperation op, const expression_t& expr) const{
+		if(op == eoperation::k_1_logical_not){
+			return expression_t::make_math_operation1(math_operation1_expr_t::operation::negate, expr);
+		}
+/*
+		else if(op == eoperation::k_1_load){
+			return expr;
+		}
+*/
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const expression_t maker__make2(const eoperation op, const expression_t& lhs, const expression_t& rhs) const{
+//		const auto op_str = _2_operator_to_string.at(op);
+//		return make3(quote(op_str), lhs, rhs);
+
+		if(op == eoperation::k_2_looup){
+			return expression_t::make_lookup(lhs, rhs);
+		}
+		else if(op == eoperation::k_2_add){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::add, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_subtract){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::subtract, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_multiply){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::multiply, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_divide){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::divide, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_remainder){
+			QUARK_ASSERT(false);
+		}
+
+		else if(op == eoperation::k_2_smaller_or_equal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_smaller){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_larger_or_equal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_larger){
+			QUARK_ASSERT(false);
+		}
+
+
+		else if(op == eoperation::k_2_logical_equal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_logical_nonequal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_logical_and){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_logical_or){
+			QUARK_ASSERT(false);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const expression_t maker__make3(const eoperation op, const expression_t& e1, const expression_t& e2, const expression_t& e3) const{
+		if(op == eoperation::k_3_conditional_operator){
+			return expression_t::make_conditional_operator(e1, e2, e3);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const expression_t maker__call(const expression_t& f, const std::vector<expression_t>& args) const{
+		std::vector<shared_ptr<expression_t>> args2;
+		for(const auto& a: args){
+			args2.push_back(make_shared<expression_t>(a));
+		}
+		if(f._resolve_variable){
+			return expression_t::make_function_call(type_identifier_t::make(f._resolve_variable->_variable_name), args2);
+		}
+		else{
+			throw std::runtime_error("??? function names must be constant identifiers right now. Broken");
+		}
+	}
+
+	public: virtual const expression_t maker__member_access(const expression_t& address, const std::string& member_name) const{
+		return expression_t::make_resolve_member(make_shared<expression_t>(address), member_name);
+	}
+
+	public: virtual const expression_t maker__make_constant(const constant_value_t& value) const{
+		if(value._type == constant_value_t::etype::k_bool){
+			return expression_t::make_constant(value._bool);
+		}
+		else if(value._type == constant_value_t::etype::k_int){
+			return expression_t::make_constant(value._int);
+		}
+		else if(value._type == constant_value_t::etype::k_float){
+			return expression_t::make_constant(value._float);
+		}
+		else if(value._type == constant_value_t::etype::k_string){
+			return expression_t::make_constant(value._string);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+};
+
+const std::map<eoperation, string> parse_helper::_2_operator_to_string{
+//	{ eoperation::k_x_member_access, "->" },
+
+	{ eoperation::k_2_looup, "[-]" },
+
+	{ eoperation::k_2_add, "+" },
+	{ eoperation::k_2_subtract, "-" },
+	{ eoperation::k_2_multiply, "*" },
+	{ eoperation::k_2_divide, "/" },
+	{ eoperation::k_2_remainder, "%" },
+
+	{ eoperation::k_2_smaller_or_equal, "<=" },
+	{ eoperation::k_2_smaller, "<" },
+	{ eoperation::k_2_larger_or_equal, ">=" },
+	{ eoperation::k_2_larger, ">" },
+
+	{ eoperation::k_2_logical_equal, "==" },
+	{ eoperation::k_2_logical_nonequal, "!=" },
+	{ eoperation::k_2_logical_and, "&&" },
+	{ eoperation::k_2_logical_or, "||" },
+};
+
+expression_t parse_expression2(std::string expression){
+	parse_helper helper;
+
+	const auto result = parse_expression(helper, seq_t(expression));
+	if(!skip_whitespace(result.second).empty()){
+		throw std::runtime_error("All of expression not used");
+	}
+	return result.first;
+}
+
+
+expression_t parse_expression(std::string expression){
+	return parse_expression2(expression);
+}
 
 
 
@@ -649,5 +804,8 @@ QUARK_UNIT_TESTQ("make_test_ast()", ""){
 }
 
 
-}	//	floyd_parser
 
+
+
+
+}	//	floyd_parser

@@ -23,7 +23,7 @@ int main(int argc, const char * argv[]) {
 //		quark::run_tests();
 		quark::run_tests({
 			//	UNDER DEVELOPMENT - RUN FIRST!
-			"magnus_parser_snippet.cpp",
+			"parser2.cpp",
 
 			//	Core libs
 			"quark.cpp",

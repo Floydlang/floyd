@@ -18,6 +18,57 @@
 
 	struct json_value_t;
 
+/*
+	ABOUT ADDRESSING AND CHAINS
+
+	Each value are refered to via an address which is a construct like this: { scope + member }.
+	Encoded as { value_t scope, string member_name } or { value_t scope int _member_offset }.
+
+	This address can specifify any value in the system:
+
+	- To a local variable in the function-body-scope
+	- a function argument in the function-scope
+	- a global variable as a value in the global scope
+	- point to a struct + which member.
+
+
+	LOAD is performed via an address.
+	STORE is performed via an addres
+	CALL is made on a function_scope
+
+
+		PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
+		We don't have any value we can return from each expression in tree.
+		Alternatives:
+
+		A) Have dedicated expression types:
+			struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
+			collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
+
+		B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
+		C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
+
+
+	CHAINS
+	"hello.test.a[10 + x].next.last.get_ptr().title"
+
+	call						"call"
+	resolve_variable			"@"
+	resolve_member				"->"
+	lookup						"[-]"
+
+	!!! AST DOES NOT GENERATE LOADs, ONLY IDENTIFIER, FOR EXAMPLE.
+
+
+		a = my_global_int;
+		["bind", "a", ["@", "my_global_int"]]
+
+		"my_global.next"
+		["->", ["@", "my_global"], "next"]
+
+		c = my_global_obj.all[3].f(10).prev;
+*/
+
 namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
@@ -106,6 +157,8 @@ namespace floyd_parser {
 
 	/*
 		Supports reading a named variable, like "int a = 10; print(a);"
+
+		The address must resolve to a resolve_member_expr_t to be able to execute LOAD.
 	*/
 	struct load_expr_t {
 		bool operator==(const load_expr_t& other) const;
@@ -121,7 +174,9 @@ namespace floyd_parser {
 
 	/*
 		Specify free variables.
-		Variable is directly accessable in the scope, like a local variable or function argument.
+		It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
+
+		When compiler resolves this expression it may replace it with a resolve_
 	*/
 	struct resolve_variable_expr_t {
 		bool operator==(const resolve_variable_expr_t& other) const;
@@ -129,15 +184,15 @@ namespace floyd_parser {
 		const std::string _variable_name;
 	};
 
-	//////////////////////////////////////////////////		resolve_struct_member_expr_t
+	//////////////////////////////////////////////////		resolve_member_expr_t
 
 
 
 	/*
 		Specifies a member variable of a struct.
 	*/
-	struct resolve_struct_member_expr_t {
-		bool operator==(const resolve_struct_member_expr_t& other) const;
+	struct resolve_member_expr_t {
+		bool operator==(const resolve_member_expr_t& other) const;
 
 		std::shared_ptr<expression_t> _parent_address;
 		const std::string _member_name;
@@ -162,11 +217,13 @@ namespace floyd_parser {
 
 
 	struct expression_t {
+		//	Shortcuts were you don't need to make a value_t first.
 		public: static expression_t make_constant(const bool i);
 		public: static expression_t make_constant(const int i);
 		public: static expression_t make_constant(const float f);
 		public: static expression_t make_constant(const char s[]);
 		public: static expression_t make_constant(const std::string& s);
+
 		public: static expression_t make_constant(
 			const value_t& value,
 			const type_identifier_t& resolved_expression_type = type_identifier_t()
@@ -209,7 +266,8 @@ namespace floyd_parser {
 			const type_identifier_t& resolved_expression_type = type_identifier_t()
 		);
 
-		public: static expression_t make_resolve_struct_member(
+		//??? Why shared_ptr?
+		public: static expression_t make_resolve_member(
 			const std::shared_ptr<expression_t>& parent_address,
 			const std::string& member_name,
 			const type_identifier_t& resolved_expression_type = type_identifier_t()
@@ -257,7 +315,7 @@ namespace floyd_parser {
 		public: std::shared_ptr<load_expr_t> _load;
 
 		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
-		public: std::shared_ptr<resolve_struct_member_expr_t> _resolve_struct_member;
+		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
@@ -279,7 +337,7 @@ namespace floyd_parser {
 		public: virtual expression_t visit_expression_i__on_load(const load_expr_t& e) const = 0;
 
 		public: virtual expression_t visit_expression_i__on_resolve_variable(const resolve_variable_expr_t& e) const = 0;
-		public: virtual expression_t visit_expression_i__on_resolve_struct_member(const resolve_struct_member_expr_t& e) const = 0;
+		public: virtual expression_t visit_expression_i__on_resolve_member(const resolve_member_expr_t& e) const = 0;
 		public: virtual expression_t visit_expression_i__on_lookup_element(const lookup_element_expr_t& e) const = 0;
 	};
 

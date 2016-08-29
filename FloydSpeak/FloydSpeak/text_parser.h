@@ -38,7 +38,8 @@ struct seq_t {
 	//	Limited to rest_size().
 	public: seq_t rest(size_t skip) const;
 
-	public: std::string rest_string() const;
+	//	Returns first + rest as one string.
+	public: std::string get_all() const;
 
 	//	Skips first char.
 	public: std::size_t rest_size() const;
@@ -62,8 +63,10 @@ struct seq_t {
 
 
 std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& match);
+std::pair<std::string, seq_t> read_while_not(const seq_t& p1, const std::string& match);
 
-
+//	If p starts with wanted_string, return true and consume those chars. Else return false and thesame seq_t.
+std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string);
 
 
 
@@ -105,6 +108,14 @@ float parse_float(const std::string& pos);
 
 seq get_balanced_pair(const std::string& s, char start_char, char end_char);
 
+
+
+
+
+std::string quote(const std::string& s);
+
+std::string float_to_string(float value);
+std::string double_to_string(double value);
 
 
 #endif /* text_parser_hpp */

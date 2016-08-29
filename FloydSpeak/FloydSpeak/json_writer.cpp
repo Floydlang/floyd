@@ -10,6 +10,7 @@
 
 #include "json_support.h"
 #include "utils.h"
+#include "text_parser.h"
 
 #include <map>
 

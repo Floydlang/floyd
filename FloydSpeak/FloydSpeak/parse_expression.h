@@ -53,6 +53,9 @@ namespace floyd_parser {
 			"a == 1 ? "one" : ”some other number""
 	*/
 	expression_t parse_expression(std::string expression);
+	expression_t parse_expression1(std::string expression);
+
+	expression_t parse_expression2(std::string expression);
 
 	ast_t make_test_ast();
 

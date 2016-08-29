@@ -17,7 +17,7 @@ These are the privitive data types built into the language itself. The goals is 
 - **int**					Same as int64
 - **bool**					**true** or **false**
 - **string**					built-in string type. 8bit pure (supports embedded nulls).
-	 								Use for computer strings. Not localizable.
+	 								Use for machine strings, basic UI. Not localizable.
 
 ### MORE TYPES
 These are composites and collections of other types.
@@ -74,10 +74,11 @@ Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep - they consider all members and also member structs and collections.
 
 ###	Arithmetic Operators
-	+		Adds two operands.																					"A + B = 30"
-	−		Subtracts second operand from the first.												"A − B = -10"
-	*		Multiplies both operands.																		"A * B = 200"
-	/		Divides numerator by de-numerator.														"B / A = 2"
+	+		Addition - adds two operands.														"a = b + c", "a = b + c + d"
+	−		Subtracts second operand from the first.									"a = b - c", "a = b - c - d"
+	*		Multiplies both operands.															"a = b * c", "a = b * c * d"
+	/		Divides numerator by de-numerator.											"a = b / c", "a = b / c / d"
+	%		Divides numerator by de-numerator.											"a = b / c", "a = b / c / d"
 
 
 # STRUCTs

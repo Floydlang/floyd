@@ -22,22 +22,41 @@ PRETTY FORMAT FOR READING:
 
 [
   "+",
-  [ "load", [ "res_member", [ "res_var", "p" ],"s" ] ],
-  [ "load", [ "res_var", "a" ] ]
+  [ "load", [ "->", [ "@", "p" ],"s" ] ],
+  [ "load", [ "@", "a" ] ]
 ]
 */
 
 ////////////////////////////////////////		json_value_t
 
-
+/*???
+template <typename T>
+std::vector<T> filter(const std::vector<T>& source, bool (const T& entry) predicate){
+	std::vector<json_value_t> temp;
+	std::copy_if(soure.begin(), source.end(), temp.begin(), predicate);
+	return temp;
+}
+*/
 
 struct json_value_t {
 	public: static json_value_t make_object(const std::map<std::string, json_value_t>& m){
 		return json_value_t(m);
 	}
 
-	public: static json_value_t make_array(const std::vector<json_value_t>& elements){
+	public: static json_value_t make_array2(const std::vector<json_value_t>& elements){
 		return json_value_t(elements);
+	}
+
+	public: static json_value_t make_array_skip_nulls(const std::vector<json_value_t>& elements){
+#if 1
+		for(const auto& i: elements){ QUARK_ASSERT(i.check_invariant()); }
+
+		std::vector<json_value_t> elements2;
+		std::copy_if(elements.begin(), elements.end(), std::back_inserter(elements2), [&] (const json_value_t& v) { return !v.is_null(); });
+		return json_value_t(elements2);
+#else
+		return make_array2(elements);
+#endif
 	}
 
 	public: json_value_t(const std::map<std::string, json_value_t>& object) :
