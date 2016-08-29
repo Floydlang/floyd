@@ -110,4 +110,12 @@ seq get_balanced_pair(const std::string& s, char start_char, char end_char);
 
 
 
+
+
+std::string quote(const std::string& s);
+
+std::string float_to_string(float value);
+std::string double_to_string(double value);
+
+
 #endif /* text_parser_hpp */

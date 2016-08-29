@@ -181,6 +181,8 @@ You call a member function just like a normal function, draw(my_struct, 10).
 There is no special implicit "this" argument to functions, you need to add it manually.
 It is not possible to change member variables, instead you return a completely new instance of the struct.
 
+??? While a constructor executes, the object does not exist and you can mutate it.
+
 	struct pixel { 
 		/*
 			This is how the implicitly generated getter for member "red" looks.

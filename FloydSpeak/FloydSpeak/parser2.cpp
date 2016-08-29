@@ -106,101 +106,119 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 }
 
 
+struct test_helper : public maker<string> {
 
-template<typename EXPRESSION>
-struct my_helper : public maker<EXPRESSION> {
-
-
-	public: virtual const EXPRESSION maker__make_identifier(const std::string& s) const{
-		return 0;
+	private: static string make_2op(string lhs, string op, string rhs){
+		return make3(quote(op), lhs, rhs);
 	}
-	public: virtual const EXPRESSION maker__make1(const eoperation op, const EXPRESSION& expr) const{
+
+	private: static string make3(string s0, string s1, string s2){
+		std::ostringstream ss;
+		ss << "[" << s0 << ", " << s1 << ", " << s2 << "]";
+		return ss.str();
+	}
+
+	public: virtual const string maker__make_identifier(const std::string& s) const{
+		return s;
+	}
+	public: virtual const string maker__make1(const eoperation op, const string& expr) const{
 		if(op == eoperation::k_1_logical_not){
-			return -expr;
+			return "[\"neg\", " + expr + "]";
 		}
 		else if(op == eoperation::k_1_load){
-			return 0;
+			return expr;
 		}
 		else{
 			QUARK_ASSERT(false);
 		}
 	}
-	public: virtual const EXPRESSION maker__make2(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
+	public: virtual const string maker__make2(const eoperation op, const string& lhs, const string& rhs) const{
 		if(op == eoperation::k_2_add){
-			return lhs + rhs;
+			return make_2op(lhs, "+", rhs);
 		}
 		else if(op == eoperation::k_2_subtract){
-			return lhs - rhs;
+			return make_2op(lhs, "-", rhs);
 		}
 		else if(op == eoperation::k_2_multiply){
-			return lhs * rhs;
+			return make_2op(lhs, "*", rhs);
 		}
 		else if(op == eoperation::k_2_divide){
-			return lhs / rhs;
+			return make_2op(lhs, "/", rhs);
 		}
 		else if(op == eoperation::k_2_remainder){
-			return lhs % rhs;
+			return make_2op(lhs, "%", rhs);
 		}
 
 		else if(op == eoperation::k_2_smaller_or_equal){
-			return lhs <= rhs;
+			return make_2op(lhs, "<=", rhs);
 		}
 		else if(op == eoperation::k_2_smaller){
-			return lhs < rhs;
+			return make_2op(lhs, "<", rhs);
 		}
 		else if(op == eoperation::k_2_larger_or_equal){
-			return lhs >= rhs;
+			return make_2op(lhs, ">=", rhs);
 		}
 		else if(op == eoperation::k_2_larger){
-			return lhs > rhs;
+			return make_2op(lhs, ">", rhs);
 		}
-
 
 		else if(op == eoperation::k_2_logical_equal){
-			return lhs == rhs;
+			return make_2op(lhs, "==", rhs);
 		}
 		else if(op == eoperation::k_2_logical_nonequal){
-			return lhs != rhs;
+			return make_2op(lhs, "!=", rhs);
 		}
 		else if(op == eoperation::k_2_logical_and){
-			return lhs != 0 && rhs != 0;
+			return make_2op(lhs, "&&", rhs);
 		}
 		else if(op == eoperation::k_2_logical_or){
-			return lhs != 0 || rhs != 0;
+			return make_2op(lhs, "||", rhs);
 		}
 		else{
 			QUARK_ASSERT(false);
 		}
 	}
-	public: virtual const EXPRESSION maker__make3(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
+	public: virtual const string maker__make3(const eoperation op, const string& e1, const string& e2, const string& e3) const{
 		if(op == eoperation::k_3_conditional_operator){
-			return e1 != 0 ? e2 : e3;
+			std::ostringstream ss;
+			ss << "[\"?:\", ", e1 + ", " + e2 + ", " + e3 + "]";
+			return ss.str();
 		}
 		else{
 			QUARK_ASSERT(false);
 		}
 	}
 
-	public: virtual const EXPRESSION maker__call(const EXPRESSION& f, const std::vector<EXPRESSION>& args) const{
-		return 0;
+	public: virtual const string maker__call(const string& f, const std::vector<string>& args) const{
+		std::ostringstream ss;
+		ss << "[\"call\", " + f + ", [";
+		for(auto i = 0 ; i < args.size() ; i++){
+			const auto& arg = args[i];
+			ss << arg;
+			if(i != arg.size() - 1){
+				ss << ", ";
+			}
+		}
+		ss << "]]";
+		return ss.str();
 	}
 
-	public: virtual const EXPRESSION maker__member_access(const EXPRESSION& address, const std::string& member_name) const{
-		return 0;
+	public: virtual const string maker__member_access(const string& address, const std::string& member_name) const{
+		return make3("->", address, quote(member_name));
 	}
 
-	public: virtual const EXPRESSION maker__make_constant(const constant_value_t& value) const{
+	public: virtual const string maker__make_constant(const constant_value_t& value) const{
 		if(value._type == constant_value_t::etype::k_bool){
-			return 0;
+			return make3("\"k\"", "\"<bool>\"", std::to_string(value._bool));
 		}
 		else if(value._type == constant_value_t::etype::k_int){
-			return value._int;
+			return make3("\"k\"", "\"<int>\"", std::to_string(value._int));
 		}
 		else if(value._type == constant_value_t::etype::k_float){
-			return 0;
+			return make3("\"k\"", "\"<float>\"", std::to_string(value._float));
 		}
 		else if(value._type == constant_value_t::etype::k_string){
-			return 0;
+			return make3("\"k\"", "\"<string>\"", value._string);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -210,9 +228,9 @@ struct my_helper : public maker<EXPRESSION> {
 };
 
 
-bool test_parse_single(const std::string& expression, int expected_value, const std::string& expected_seq){
-	my_helper<int64_t> helper;
-	const auto result = parse_single<int64_t>(helper, seq_t(expression));
+bool test_parse_single(const std::string& expression, string expected_value, const std::string& expected_seq){
+	test_helper helper;
+	const auto result = parse_single<string>(helper, seq_t(expression));
 	if(result.first != expected_value){
 		return false;
 	}
@@ -324,16 +342,14 @@ QUARK_UNIT_TESTQ("parse_atom", ""){
 
 
 
-pair<int, seq_t> test_evaluate_int_expr(const seq_t& p){
-	QUARK_ASSERT(p.check_invariant());
+bool test(const std::string& expression, string expected_value, string expected_seq){
+	QUARK_TRACE_SS("input:" << expression);
+	QUARK_TRACE_SS("expect:" << expected_value);
 
-	my_helper<int64_t> helper;
-	return parse_expression<int64_t>(helper, p);
-}
-
-bool test(const std::string& expression, int expected_int, string expected_seq){
-	const auto result = test_evaluate_int_expr(seq_t(expression));
-	if(result.first != expected_int){
+	test_helper helper;
+	const auto result = parse_expression(helper, seq_t(expression));
+	QUARK_TRACE_SS("result:" << result.first);
+	if(result.first != expected_value){
 		return false;
 	}
 	else if(result.second.get_all() != expected_seq){
@@ -342,105 +358,126 @@ bool test(const std::string& expression, int expected_int, string expected_seq){
 	return true;
 }
 
-QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
+QUARK_UNIT_TESTQ("parse_expression()", ""){
 	try{
-		test_evaluate_int_expr(seq_t(""));
+		test("", "", "");
 		QUARK_UT_VERIFY(false);
 	}
 	catch(...){
 	}
 }
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("1234567890", 1234567890, ""));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 + 4", 14, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("1 + 2 + 3 + 4", 10, ""));
+//////////////////////////////////			CONSTANTS
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("1 + 8 + 7 + 2 * 3 + 4 * 5 + 6", 48, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 * 4", 40, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 * 4 * 3", 120, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("40 / 4", 10, ""));
+QUARK_UNIT_1("parse_expression()", "", test("0", "[\"k\", \"<int>\", 0]", ""));
+QUARK_UNIT_1("parse_expression()", "", test("1234567890", "[\"k\", \"<int>\", 1234567890]", ""));
 
-QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){ 
-	QUARK_ASSERT((40 / 5 / 2) == 4);
-	QUARK_UT_VERIFY(test("40 / 5 / 2", 4, ""));
-}
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("41 % 5", 1, ""));
-QUARK_UNIT_TESTQ("test_evaluate_int_expr()", ""){
-	QUARK_ASSERT((413 % 50 % 10) == 3);
-	QUARK_UT_VERIFY(test("413 % 50 % 10", 3, ""));
-}
+//////////////////////////////////			ADD
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("(3)", 3, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("(3 * 8)", 24, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("1 + 3 * 2 + 100", 107, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("-(3 * 2 + (8 * 2)) - (((1))) * 2", -(3 * 2 + (8 * 2)) - (((1))) * 2, ""));
+QUARK_UNIT_1("parse_expression()", "", test("10 + 4", R"(["+", ["k", "<int>", 10], ["k", "<int>", 4]])", ""));
+QUARK_UNIT_1("parse_expression()", "", test("1 + 2 + 3 + 4", R"(["+", ["+", ["+", ["k", "<int>", 1], ["k", "<int>", 2]], ["k", "<int>", 3]], ["k", "<int>", 4]])", ""));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "?:", test("1 ? 2 : 3 xxx", 2, " xxx"));
-QUARK_UNIT_1("test_evaluate_int_expr()", "?:", test("0 ? 2 : 3 xxx", 3, " xxx"));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "<=", test("4 <= 4", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "<=", test("3 <= 4", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "<=", test("5 <= 4", 0, ""));
+//////////////////////////////////			MULTIPLY & DIVIDE & REMAINDER
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "<", test("2 < 3", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "<", test("3 < 3", 0, ""));
+QUARK_UNIT_1("parse_expression()", "", test("10 * 4", R"(["*", ["k", "<int>", 10], ["k", "<int>", 4]])", ""));
+QUARK_UNIT_1("parse_expression()", "", test("10 * 4 * 3", R"(["*", ["*", ["k", "<int>", 10], ["k", "<int>", 4]], ["k", "<int>", 3]])", ""));
+QUARK_UNIT_1("parse_expression()", "", test("40 / 4", R"(["/", ["k", "<int>", 40], ["k", "<int>", 4]])", ""));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", ">=", test("4 >= 4", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", ">=", test("4 >= 3", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", ">=", test("4 >= 5", 0, ""));
+QUARK_UNIT_1("parse_expression()", "", test("40 / 5 / 2", R"(["/", ["/", ["k", "<int>", 40], ["k", "<int>", 5]], ["k", "<int>", 2]])", ""));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", ">", test("3 > 2", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", ">", test("3 > 3", 0, ""));
+QUARK_UNIT_1("parse_expression()", "", test("41 % 5", R"(["%", ["k", "<int>", 41], ["k", "<int>", 5]])", ""));
+QUARK_UNIT_1("parse_expression()", "", test("413 % 50 % 10", R"(["%", ["%", ["k", "<int>", 413], ["k", "<int>", 50]], ["k", "<int>", 10]])", ""));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "==", test("4 == 4", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "==", test("4 == 5", 0, ""));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "!=", test("1 != 2", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "!=", test("3 != 3", 0, ""));
+//////////////////////////////////			PARANTHESIS
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("0 && 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("0 && 1", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("1 && 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("1 && 1", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("0 && 0 && 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("0 && 0 && 1", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("0 && 1 && 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("0 && 1 && 1", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("1 && 0 && 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("1 && 0 && 1", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("1 && 1 && 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("1 && 1 && 1", 1, ""));
-QUARK_UNIT_TESTQ("test_evaluate_int_expr()", "&&"){
+QUARK_UNIT_1("parse_expression()", "", test("(3)", "[\"k\", \"<int>\", 3]", ""));
+QUARK_UNIT_1("parse_expression()", "", test("(3 * 8)", R"(["*", ["k", "<int>", 3], ["k", "<int>", 8]])", ""));
+
+
+#if false
+//////////////////////////////////			COMBOS
+
+QUARK_UNIT_1("parse_expression()", "", test("1 + 3 * 2 + 100", "107", ""));
+QUARK_UNIT_1("parse_expression()", "", test("-(3 * 2 + (8 * 2)) - (((1))) * 2", "-(3 * 2 + (8 * 2)) - (((1))) * 2", ""));
+QUARK_UNIT_1("parse_expression()", "", test("1 + 8 + 7 + 2 * 3 + 4 * 5 + 6", R"(["+", ["+", ["+", ["+", ["+", ["k", "<int>", 1], ["k", "<int>", 8]], ["k", "<int>", 7]], ["*", ["k", "<int>", 2], ["k", "<int>", 3]]], ["*", ["k", "<int>", 4], ["k", "<int>", 5]]], ["k", "<int>", 6]])", ""));
+
+
+//////////////////////////////////			COMPARISON OPERATOR
+
+QUARK_UNIT_1("parse_expression()", "?:", test("1 ? 2 : 3 xxx", "2", " xxx"));
+QUARK_UNIT_1("parse_expression()", "?:", test("0 ? 2 : 3 xxx", "3", " xxx"));
+
+
+//////////////////////////////////			LOGICAL EQUALITY
+
+QUARK_UNIT_1("parse_expression()", "<=", test("4 <= 4", "1", ""));
+QUARK_UNIT_1("parse_expression()", "<=", test("3 <= 4", "1", ""));
+QUARK_UNIT_1("parse_expression()", "<=", test("5 <= 4", "0", ""));
+
+QUARK_UNIT_1("parse_expression()", "<", test("2 < 3", "1", ""));
+QUARK_UNIT_1("parse_expression()", "<", test("3 < 3", "0", ""));
+
+QUARK_UNIT_1("parse_expression()", ">=", test("4 >= 4", "1", ""));
+QUARK_UNIT_1("parse_expression()", ">=", test("4 >= 3", "1", ""));
+QUARK_UNIT_1("parse_expression()", ">=", test("4 >= 5", "0", ""));
+
+QUARK_UNIT_1("parse_expression()", ">", test("3 > 2", "1", ""));
+QUARK_UNIT_1("parse_expression()", ">", test("3 > 3", "0", ""));
+
+QUARK_UNIT_1("parse_expression()", "==", test("4 == 4", "1", ""));
+QUARK_UNIT_1("parse_expression()", "==", test("4 == 5", "0", ""));
+
+QUARK_UNIT_1("parse_expression()", "!=", test("1 != 2", "1", ""));
+QUARK_UNIT_1("parse_expression()", "!=", test("3 != 3", "0", ""));
+
+QUARK_UNIT_1("parse_expression()", "&&", test("0 && 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("0 && 1", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("1 && 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("1 && 1", "1", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("0 && 0 && 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("0 && 0 && 1", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("0 && 1 && 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("0 && 1 && 1", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("1 && 0 && 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("1 && 0 && 1", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("1 && 1 && 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("1 && 1 && 1", "1", ""));
+QUARK_UNIT_TESTQ("parse_expression()", "&&"){
 	QUARK_UT_VERIFY((1 * 1 && 0 + 1) == true);
-	QUARK_UT_VERIFY(test("1 * 1 && 0 + 1", 1, ""));
+	QUARK_UT_VERIFY(test("1 * 1 && 0 + 1", "1", ""));
 }
-QUARK_UNIT_1("test_evaluate_int_expr()", "&&", test("1 * 1 && 0 * 1", 0, ""));
+QUARK_UNIT_1("parse_expression()", "&&", test("1 * 1 && 0 * 1", 0, ""));
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("0 || 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("0 || 1", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("1 || 0", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("1 || 1", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("0 || 0 || 0", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("0 || 0 || 1", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("0 || 1 || 0", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("0 || 1 || 1", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("1 || 0 || 0", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("1 || 0 || 1", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("1 || 1 || 0", 1, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "||", test("1 || 1 || 1", 1, ""));
-
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 + my_variable", 10, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "", test("10 + \"my string\"", 10, ""));
+QUARK_UNIT_1("parse_expression()", "||", test("0 || 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("0 || 1", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("1 || 0", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("1 || 1", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("0 || 0 || 0", "0", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("0 || 0 || 1", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("0 || 1 || 0", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("0 || 1 || 1", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("1 || 0 || 0", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("1 || 0 || 1", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("1 || 1 || 0", "1", ""));
+QUARK_UNIT_1("parse_expression()", "||", test("1 || 1 || 1", "1", ""));
 
 
-QUARK_UNIT_1("test_evaluate_int_expr()", "f()", test("f()", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "f(3)", test("f(3)", 0, ""));
-QUARK_UNIT_1("test_evaluate_int_expr()", "f(3)", test("f(3, 4, 5)", 0, ""));
+//////////////////////////////////			IDENTIFIERS
+
+QUARK_UNIT_1("parse_expression()", "", test("10 + my_variable", "10", ""));
+QUARK_UNIT_1("parse_expression()", "", test("10 + \"my string\"", "10", ""));
 
 
+//////////////////////////////////			FUNCTION CALLS
+
+QUARK_UNIT_1("parse_expression()", "f()", test("f()", "0", ""));
+QUARK_UNIT_1("parse_expression()", "f(3)", test("f(3)", "0", ""));
+QUARK_UNIT_1("parse_expression()", "f(3)", test("f(3, 4, 5)", "0", ""));
+#endif
 
 
 
