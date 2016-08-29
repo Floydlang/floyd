@@ -22,10 +22,8 @@ These are features built into every type: integer, string, struct, collections e
 * string **serialize**(T a)					converts value T to json
 * T **T.deserialize**(string s)			makes a value T from a json string
 - **hash hash(v)**							computes a true-deep hash of the value
-- **a = b** This true-deep copies the value b to the new name a.
-	- Auto conversion: You can directly and silently convert structs between different types. It works if the destination type has a contructor that exactly matches the struct signature of the source struct.
-- **a < b**										tests all member data in the order they appear in the struct.
-- **a <= b**, **a > b**, **a >= b**	these are derivated of a < b
+
+ Auto conversion: You can directly and silently convert structs between different types. It works if the destination type has a contructor that exactly matches the struct signature of the source struct.
 
 
 # PROOF

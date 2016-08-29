@@ -16,13 +16,21 @@ These are the privitive data types built into the language itself. The goals is 
 
 - **int**					Same as int64
 - **bool**					**true** or **false**
-- **string**					built-in string type. 8bit pure (supports embedded nulls).
-	 								Use for machine strings, basic UI. Not localizable.
+- **string**				built-in string type. 8bit pure (supports embedded nulls).
+	- 							Use for machine strings, basic UI. Not localizable.
 
-### MORE TYPES
+# COMPOSITE TYPES
 These are composites and collections of other types.
-
 - **struct**		like C struct or class or tuple.
+
+
+# CORE TYPE FEATURES
+These are features built into every type: integer, string, struct, collections etc.
+
+- **a = b** 	This true-deep copies the value b to the new name a.
+- **a != b**										derivated of a = b.
+- **a < b**										tests all member data in the order they appear in the struct.
+- **a <= b**, **a > b**, **a >= b**	these are derivated of a < b
 
 
 # VALUES, VARIABLES AND CONSTANTS
@@ -94,7 +102,6 @@ Comparisons are true-deep - they consider all members and also member structs an
 
 ### Conditional Operator
 condition ? a : b		When condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls etc.
-
 
 	bool is_polite(string x){
 		return x == "hello" ? "polite" : "rude"

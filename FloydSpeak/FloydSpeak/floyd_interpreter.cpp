@@ -1050,6 +1050,18 @@ QUARK_UNIT_TESTQ("run_main()", ""){
 	));
 }
 
+QUARK_UNIT_TESTQ("run_main()", ""){
+	try {
+		test_prg(
+			"struct t { int a;} bool main(){ t a = t_constructor(); int b = 1055; return a == b; }",
+			floyd_parser::value_t(true)
+		);
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
 
 
 
