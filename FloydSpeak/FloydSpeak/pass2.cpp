@@ -69,6 +69,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 		return floyd_parser::expression_t::make_constant(con, floyd_parser::type_identifier_t::resolve(const_type));
 	}
 	else if(e._math1){
+		//???
 		QUARK_ASSERT(false);
 		return e;
 	}
@@ -81,6 +82,17 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 			throw std::runtime_error("1001 - Left & right side of math2 must have same type.");
 		}
 		return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
+	}
+	else if(e._conditional_operator){
+		const auto& cond = *e._conditional_operator;
+		const auto condition_expr = resolve_types__expression(ast, path, scope_def, *cond._condition);
+		const auto true_expr = resolve_types__expression(ast, path, scope_def, *cond._a);
+		const auto false_expr = resolve_types__expression(ast, path, scope_def, *cond._b);
+		const auto type = true_expr.get_expression_type();
+		if(true_expr.get_expression_type().to_string() != false_expr.get_expression_type().to_string()){
+			throw std::runtime_error("1001 - Left & right side of (?:) must have same type.");
+		}
+		return floyd_parser::expression_t::make_conditional_operator(condition_expr, true_expr, false_expr, type);
 	}
 	else if(e._call){
 		const auto& call = *e._call;

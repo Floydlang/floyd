@@ -570,24 +570,6 @@ QUARK_UNIT_TESTQ("parse_expression1()", ""){
 }
 
 
-#if false
-QUARK_UNIT_TESTQ("parse_expression1()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression1("input_flag ? 100 + 10 * 2 : 1000 - 3 * 4")), R"(["load", ["->", ["@", "pixel"], "red"]])");
-}
-
-QUARK_UNIT_TESTQ("parse_expression1()", ""){
-	quark::ut_compare(expression_to_json_string(parse_expression1("input_flag ? \"123\" : \"456\"")), R"(["load", ["->", ["@", "pixel"], "red"]])");
-}
-#endif
-
-
-
-
-
-
-
-
-
 
 
 

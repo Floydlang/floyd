@@ -313,8 +313,198 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 }
 
 
+expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e._math2);
+
+	const auto e2 = *e._math2;
+	const auto left = evalute_expression(vm, *e2._left);
+	const auto right = evalute_expression(vm, *e2._right);
+
+	//	Both left and right are constant, replace the math_operation with a constant!
+	if(left._constant && right._constant){
+		const auto left_value = left._constant;
+		const auto right_value = right._constant;
+
+		//	Perform math operation on the two constants => new constant.
+		{
+			if(left_value->is_bool() && right_value->is_bool()){
+				throw std::runtime_error("Arithmetics on bool not allowed.");
+			}
+			else if(left_value->is_int() && right_value->is_int()){
+				if(e2._operation == math_operation2_expr_t::add){
+					return expression_t::make_constant(left_value->get_int() + right_value->get_int());
+				}
+				else if(e2._operation == math_operation2_expr_t::subtract){
+					return expression_t::make_constant(left_value->get_int() - right_value->get_int());
+				}
+				else if(e2._operation == math_operation2_expr_t::multiply){
+					return expression_t::make_constant(left_value->get_int() * right_value->get_int());
+				}
+				else if(e2._operation == math_operation2_expr_t::divide){
+					if(right_value->get_int() == 0){
+						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+					}
+					return expression_t::make_constant(left_value->get_int() / right_value->get_int());
+				}
+				else{
+					QUARK_ASSERT(false);
+				}
+			}
+			else if(left_value->is_float() && right_value->is_float()){
+				if(e2._operation == math_operation2_expr_t::add){
+					return expression_t::make_constant(left_value->get_float() + right_value->get_float());
+				}
+				else if(e2._operation == math_operation2_expr_t::subtract){
+					return expression_t::make_constant(left_value->get_float() - right_value->get_float());
+				}
+				else if(e2._operation == math_operation2_expr_t::multiply){
+					return expression_t::make_constant(left_value->get_float() * right_value->get_float());
+				}
+				else if(e2._operation == math_operation2_expr_t::divide){
+					if(right_value->get_float() == 0.0f){
+						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+					}
+					return expression_t::make_constant(left_value->get_float() / right_value->get_float());
+				}
+				else{
+					QUARK_ASSERT(false);
+				}
+			}
+			else if(left_value->is_string() && right_value->is_string()){
+				if(e2._operation == math_operation2_expr_t::add){
+					return expression_t::make_constant(left_value->get_string() + right_value->get_string());
+				}
+				else{
+					throw std::runtime_error("Arithmetics failed.");
+				}
+			}
+			else{
+				throw std::runtime_error("Arithmetics failed.");
+			}
+		}
+	}
+
+	//	Else use a math_operation expression to perform the calculation later.
+	//	We make a NEW math_operation since sub-nodes may have been evaluated.
+	else{
+		return expression_t::make_math_operation2(e2._operation, left, right);
+	}
+}
+
+/*
+	If inputs are constant, replace function call with a constant!
+	??? Have different expression-classes to tell if they are resolved / unresolved. Makes it possible to execute both types of expression but not check at runtime.
+*/
+expression_t evaluate_conditional_operator(const interpreter_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e._conditional_operator);
+
+	return e;
+/*
+	const auto& call_function_expression = *e._call;
+
+	scope_ref_t scope_def = vm._call_stack.back()->_def;
+	const auto path = find_path_slow(vm._ast, scope_def);
+	const auto type = resolve_type(vm._ast, unresolve_path(path), scope_def, call_function_expression._function);
+	if(!type || type->get_type() != base_type::k_function){
+		throw std::runtime_error("Failed calling function - unresolved function.");
+	}
+
+	const auto& function_def = type->get_function_def();
+	if(function_def->_type == scope_def_t::k_function_scope){
+		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
+	}
+	else if(function_def->_type == scope_def_t::k_subscope){
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+
+	//	Simplify each argument.
+	vector<expression_t> simplified_args;
+	for(const auto& i: call_function_expression._inputs){
+		const auto arg_expr = evalute_expression(vm, *i);
+		simplified_args.push_back(arg_expr);
+	}
+
+	//	All arguments to functions are constants? Else return new call_function, but with simplified arguments.
+	for(const auto& i: simplified_args){
+		if(!i._constant){
+			//??? should use simplified_args.
+			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
+		}
+	}
+
+	//	Woha: all arguments are constants - replace this expression with the final output of the function call instead!
+	vector<value_t> constant_args;
+	for(const auto& i: simplified_args){
+		constant_args.push_back(*i._constant);
+		if(!i._constant){
+			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
+		}
+	}
+	const value_t result = call_function(vm, function_def, constant_args);
+	return expression_t::make_constant(result);
+*/
+}
+
+expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e._call);
+
+	const auto& call_function_expression = *e._call;
+
+	scope_ref_t scope_def = vm._call_stack.back()->_def;
+	const auto path = find_path_slow(vm._ast, scope_def);
+	const auto type = resolve_type(vm._ast, unresolve_path(path), scope_def, call_function_expression._function);
+	if(!type || type->get_type() != base_type::k_function){
+		throw std::runtime_error("Failed calling function - unresolved function.");
+	}
+
+	const auto& function_def = type->get_function_def();
+	if(function_def->_type == scope_def_t::k_function_scope){
+		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
+	}
+	else if(function_def->_type == scope_def_t::k_subscope){
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+
+	//	Simplify each argument.
+	vector<expression_t> simplified_args;
+	for(const auto& i: call_function_expression._inputs){
+		const auto arg_expr = evalute_expression(vm, *i);
+		simplified_args.push_back(arg_expr);
+	}
+
+	//	All arguments to functions are constants? Else return new call_function, but with simplified arguments.
+	for(const auto& i: simplified_args){
+		if(!i._constant){
+			//??? should use simplified_args.
+			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
+		}
+	}
+
+	//	Woha: all arguments are constants - replace this expression with the final output of the function call instead!
+	vector<value_t> constant_args;
+	for(const auto& i: simplified_args){
+		constant_args.push_back(*i._constant);
+		if(!i._constant){
+			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
+		}
+	}
+	const value_t result = call_function(vm, function_def, constant_args);
+	return expression_t::make_constant(result);
+}
+
+
 //### Test string + etc.
-//### Split into several functions.
+
 expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -323,79 +513,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		return e;
 	}
 	else if(e._math2){
-		const auto e2 = *e._math2;
-		const auto left = evalute_expression(vm, *e2._left);
-		const auto right = evalute_expression(vm, *e2._right);
-
-		//	Both left and right are constant, replace the math_operation with a constant!
-		if(left._constant && right._constant){
-			const auto left_value = left._constant;
-			const auto right_value = right._constant;
-
-			//	Perform math operation on the two constants => new constant.
-			{
-				if(left_value->is_bool() && right_value->is_bool()){
-					throw std::runtime_error("Arithmetics on bool not allowed.");
-				}
-				else if(left_value->is_int() && right_value->is_int()){
-					if(e2._operation == math_operation2_expr_t::add){
-						return expression_t::make_constant(left_value->get_int() + right_value->get_int());
-					}
-					else if(e2._operation == math_operation2_expr_t::subtract){
-						return expression_t::make_constant(left_value->get_int() - right_value->get_int());
-					}
-					else if(e2._operation == math_operation2_expr_t::multiply){
-						return expression_t::make_constant(left_value->get_int() * right_value->get_int());
-					}
-					else if(e2._operation == math_operation2_expr_t::divide){
-						if(right_value->get_int() == 0){
-							throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-						}
-						return expression_t::make_constant(left_value->get_int() / right_value->get_int());
-					}
-					else{
-						QUARK_ASSERT(false);
-					}
-				}
-				else if(left_value->is_float() && right_value->is_float()){
-					if(e2._operation == math_operation2_expr_t::add){
-						return expression_t::make_constant(left_value->get_float() + right_value->get_float());
-					}
-					else if(e2._operation == math_operation2_expr_t::subtract){
-						return expression_t::make_constant(left_value->get_float() - right_value->get_float());
-					}
-					else if(e2._operation == math_operation2_expr_t::multiply){
-						return expression_t::make_constant(left_value->get_float() * right_value->get_float());
-					}
-					else if(e2._operation == math_operation2_expr_t::divide){
-						if(right_value->get_float() == 0.0f){
-							throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-						}
-						return expression_t::make_constant(left_value->get_float() / right_value->get_float());
-					}
-					else{
-						QUARK_ASSERT(false);
-					}
-				}
-				else if(left_value->is_string() && right_value->is_string()){
-					if(e2._operation == math_operation2_expr_t::add){
-						return expression_t::make_constant(left_value->get_string() + right_value->get_string());
-					}
-					else{
-						throw std::runtime_error("Arithmetics failed.");
-					}
-				}
-				else{
-					throw std::runtime_error("Arithmetics failed.");
-				}
-			}
-		}
-
-		//	Else use a math_operation expression to perform the calculation later.
-		//	We make a NEW math_operation since sub-nodes may have been evaluated.
-		else{
-			return expression_t::make_math_operation2(e2._operation, left, right);
-		}
+		return evaluate_math2(vm, e);
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
@@ -437,55 +555,16 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		}
 	}
 
+	else if(e._conditional_operator){
+		return evaluate_conditional_operator(vm, e);
+	}
+
 	/*
 		If inputs are constant, replace function call with a constant!
 		??? Have different expression-classes to tell if they are resolved / unresolved. Makes it possible to execute both types of expression but not check at runtime.
 	*/
 	else if(e._call){
-		const auto& call_function_expression = *e._call;
-
-		scope_ref_t scope_def = vm._call_stack.back()->_def;
-		const auto path = find_path_slow(vm._ast, scope_def);
-		const auto type = resolve_type(vm._ast, unresolve_path(path), scope_def, call_function_expression._function);
-		if(!type || type->get_type() != base_type::k_function){
-			throw std::runtime_error("Failed calling function - unresolved function.");
-		}
-
-		const auto& function_def = type->get_function_def();
-		if(function_def->_type == scope_def_t::k_function_scope){
-			QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
-		}
-		else if(function_def->_type == scope_def_t::k_subscope){
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-
-		//	Simplify each argument.
-		vector<expression_t> simplified_args;
-		for(const auto& i: call_function_expression._inputs){
-			const auto arg_expr = evalute_expression(vm, *i);
-			simplified_args.push_back(arg_expr);
-		}
-
-		//	All arguments to functions are constants? Else return new call_function, but with simplified arguments.
-		for(const auto& i: simplified_args){
-			if(!i._constant){
-				//??? should use simplified_args.
-				return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
-			}
-		}
-
-		//	Woha: all arguments are constants - replace this expression with the final output of the function call instead!
-		vector<value_t> constant_args;
-		for(const auto& i: simplified_args){
-			constant_args.push_back(*i._constant);
-			if(!i._constant){
-				return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
-			}
-		}
-		const value_t result = call_function(vm, function_def, constant_args);
-		return expression_t::make_constant(result);
+		return evaluate_call(vm, e);
 	}
 	else if(e._load){
 		QUARK_ASSERT(false);
