@@ -228,6 +228,18 @@ namespace floyd_parser {
 			}
 		}
 
+		/*
+			diff == 0: equal
+			diff == 1: left side is bigger
+			diff == -1: right side is bigger.
+
+			Think (left_struct - right_struct).
+
+			This technique lets us do most comparison operations *ontop* of compare_value_true_deep() with
+			only a single compare function.
+		*/
+		public: static int compare_value_true_deep(const value_t& left, const value_t& right);
+
 		public: bool operator!=(const value_t& other) const{
 			return !(*this == other);
 		}
@@ -408,6 +420,9 @@ namespace floyd_parser {
 			QUARK_ASSERT(result.check_invariant());
 			return result;
 		}
+
+
+		private: static int compare_value_true_deep(const struct_instance_t& left, const struct_instance_t& right);
 
 
 		////////////////		STATE

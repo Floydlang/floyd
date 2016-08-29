@@ -122,6 +122,105 @@ namespace floyd_parser {
 
 
 
+int limit(int value, int min, int max){
+	if(value < min){
+		return min;
+	}
+	else if(value > max){
+		return max;
+	}
+	else{
+		return value;
+	}
+}
+
+int compare_string(const std::string& left, const std::string& right){
+	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
+	return limit(std::strcmp(left.c_str(), right.c_str()), -1, 1);
+}
+
+QUARK_UNIT_TESTQ("compare_string()", ""){
+	QUARK_TEST_VERIFY(compare_string("", "") == 0);
+}
+QUARK_UNIT_TESTQ("compare_string()", ""){
+	QUARK_TEST_VERIFY(compare_string("aaa", "aaa") == 0);
+}
+QUARK_UNIT_TESTQ("compare_string()", ""){
+	QUARK_TEST_VERIFY(compare_string("b", "a") == 1);
+}
+
+
+
+int value_t::compare_value_true_deep(const struct_instance_t& left, const struct_instance_t& right){
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+
+	auto a_it = left._member_values.begin();
+	auto b_it = right._member_values.begin();
+
+	while(a_it !=left._member_values.end()){
+		int diff = compare_value_true_deep(a_it->second, b_it->second);
+		if(diff != 0){
+			return diff;
+		}
+
+		a_it++;
+		b_it++;
+	}
+	return 0;
+}
+
+int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+	QUARK_ASSERT(left.get_type().to_string() == right.get_type().to_string());
+
+	const auto type = left._type.to_string();
+	if(type == "null"){
+		return 0;
+	}
+	else if(type == "bool"){
+		return (left.get_bool() ? 1 : 0) - (right.get_bool() ? 1 : 0);
+	}
+	else if(type == "int"){
+		return limit(left.get_int() - right.get_int(), -1, 1);
+	}
+	else if(type == "float"){
+		const auto a = left.get_float();
+		const auto b = right.get_float();
+		if(a > b){
+			return 1;
+		}
+		else if(a < b){
+			return -1;
+		}
+		else{
+			return 0;
+		}
+	}
+	else if(type == "string"){
+		return compare_string(left.get_string(), right.get_string());
+	}
+	else {
+		if(left.is_struct()){
+			if(left.get_struct() == right.get_struct()){
+				return 0;
+			}
+			else{
+				return compare_value_true_deep(*left.get_struct(), *right.get_struct());
+			}
+		}
+		if(left.is_vector()){
+			QUARK_ASSERT(false);
+			return 0;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
+
+
 
 
 

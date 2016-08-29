@@ -54,6 +54,33 @@ expression_t resolve_types__expression(const ast_t& ast, const ast_path_t& path,
 	return r;
 }
 
+
+bool returns_same_type(floyd_parser::math_operation2_expr_t::operation op){
+	using floyd_parser::math_operation2_expr_t;
+	return
+		op == math_operation2_expr_t::operation::k_add
+		|| op == math_operation2_expr_t::operation::k_subtract
+		|| op == math_operation2_expr_t::operation::k_multiply
+		|| op == math_operation2_expr_t::operation::k_divide
+		|| op == math_operation2_expr_t::operation::k_remainder;
+}
+
+bool returns_bool(floyd_parser::math_operation2_expr_t::operation op){
+	using floyd_parser::math_operation2_expr_t;
+
+	return
+		op == math_operation2_expr_t::operation::k_smaller_or_equal
+		|| op == math_operation2_expr_t::operation::k_smaller
+		|| op == math_operation2_expr_t::operation::k_larger_or_equal
+		|| op == math_operation2_expr_t::operation::k_larger
+
+		|| op == math_operation2_expr_t::operation::k_logical_equal
+		|| op == math_operation2_expr_t::operation::k_logical_nonequal
+		|| op == math_operation2_expr_t::operation::k_logical_and
+		|| op == math_operation2_expr_t::operation::k_logical_or;
+}
+
+
 expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
@@ -77,11 +104,23 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 		const auto& math2 = *e._math2;
 		const auto left = resolve_types__expression(ast, path, scope_def, *math2._left);
 		const auto right = resolve_types__expression(ast, path, scope_def, *math2._right);
-		const auto type = left.get_expression_type();
+
 		if(left.get_expression_type().to_string() != right.get_expression_type().to_string()){
 			throw std::runtime_error("1001 - Left & right side of math2 must have same type.");
 		}
-		return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
+
+		if(returns_same_type(math2._operation)){
+			const auto type = left.get_expression_type();
+			return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
+		}
+		else if(returns_bool(math2._operation)){
+			const auto type = resolve_type2(ast, path, scope_def, floyd_parser::type_identifier_t::make_bool());
+			return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+
 	}
 	else if(e._conditional_operator){
 		const auto& cond = *e._conditional_operator;

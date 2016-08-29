@@ -65,14 +65,14 @@ QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 
 
 bool is_start_char(char c){
-	return c == '(' || c == '[' || c == '{' || c == '<';
+	return c == '(' || c == '[' || c == '{';
 }
 
 QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(is_start_char('('));
 	QUARK_TEST_VERIFY(is_start_char('['));
 	QUARK_TEST_VERIFY(is_start_char('{'));
-	QUARK_TEST_VERIFY(is_start_char('<'));
+	QUARK_TEST_VERIFY(!is_start_char('<'));
 
 	QUARK_TEST_VERIFY(!is_start_char(')'));
 	QUARK_TEST_VERIFY(!is_start_char(']'));
@@ -84,7 +84,7 @@ QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 
 
 bool is_end_char(char c){
-	return c == ')' || c == ']' || c == '}' || c == '>';
+	return c == ')' || c == ']' || c == '}';
 }
 
 QUARK_UNIT_TEST("", "is_end_char()", "", ""){
@@ -96,7 +96,7 @@ QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(is_end_char(')'));
 	QUARK_TEST_VERIFY(is_end_char(']'));
 	QUARK_TEST_VERIFY(is_end_char('}'));
-	QUARK_TEST_VERIFY(is_end_char('>'));
+	QUARK_TEST_VERIFY(!is_end_char('>'));
 
 	QUARK_TEST_VERIFY(!is_end_char(' '));
 }
@@ -114,9 +114,6 @@ char start_char_to_end_char(char start_char){
 	else if(start_char == '{'){
 		return '}';
 	}
-	else if(start_char == '<'){
-		return '>';
-	}
 	else {
 		QUARK_ASSERT(false);
 	}
@@ -126,13 +123,13 @@ QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
 	QUARK_TEST_VERIFY(start_char_to_end_char('(') == ')');
 	QUARK_TEST_VERIFY(start_char_to_end_char('[') == ']');
 	QUARK_TEST_VERIFY(start_char_to_end_char('{') == '}');
-	QUARK_TEST_VERIFY(start_char_to_end_char('<') == '>');
 }
 
 /*
 	First char is the start char, like '(' or '{'.
-*/
 
+	Checks *all* balancing-chars
+*/
 seq get_balanced(const string& s){
 	QUARK_ASSERT(s.size() > 0);
 
@@ -144,11 +141,11 @@ seq get_balanced(const string& s){
 	int depth = 0;
 	size_t pos = 0;
 	while(pos < s.size() && !(depth == 1 && s[pos] == end_char)){
-		const char c = s[pos];
-		if(is_start_char(c)) {
+		const char ch = s[pos];
+		if(is_start_char(ch)) {
 			depth++;
 		}
-		else if(is_end_char(c)){
+		else if(is_end_char(ch)){
 			if(depth == 0){
 				throw std::runtime_error("unbalanced ([{< >}])");
 			}
@@ -167,9 +164,14 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced("(abc)def") == seq("(abc)", "def"));
 	QUARK_TEST_VERIFY(get_balanced("((abc))def") == seq("((abc))", "def"));
 	QUARK_TEST_VERIFY(get_balanced("((abc)[])def") == seq("((abc)[])", "def"));
+	QUARK_TEST_VERIFY(get_balanced("(return 4 < 5;)xxx") == seq("(return 4 < 5;)", "xxx"));
+
+	QUARK_TEST_VERIFY(get_balanced("{}") == seq("{}", ""));
+	QUARK_TEST_VERIFY(get_balanced("{aaa}bbb") == seq("{aaa}", "bbb"));
+	QUARK_TEST_VERIFY(get_balanced("{return 4 < 5;}xxx") == seq("{return 4 < 5;}", "xxx"));
+
+//	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "def"));
 }
-
-
 
 //////////////////////////////////////		SYMBOLS
 
