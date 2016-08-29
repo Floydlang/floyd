@@ -20,6 +20,7 @@
 
 using namespace std;
 
+//	???Encode constants more compactly, like this:		R"([">=", ["<int>", 3], ["<int>", 4]])"
 
 
 QUARK_UNIT_TESTQ("enum class()", ""){
@@ -109,7 +110,7 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 /*
 	Generates expressions encode as JSON in std::string values. Use for testing.
 */
-struct test_helper : public maker<string> {
+struct json_helper : public maker<string> {
 	private: static const std::map<eoperation, string> _2_operator_to_string;
 
 	private: static string make_2op(string lhs, string op, string rhs){
@@ -197,7 +198,7 @@ struct test_helper : public maker<string> {
 	}
 };
 
-const std::map<eoperation, string> test_helper::_2_operator_to_string{
+const std::map<eoperation, string> json_helper::_2_operator_to_string{
 //	{ eoperation::k_2_member_access, "->" },
 
 	{ eoperation::k_2_looup, "[-]" },
@@ -224,7 +225,7 @@ bool test__parse_single(const std::string& expression, const std::string& expect
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
 
-	test_helper helper;
+	json_helper helper;
 	const auto result = parse_single(helper, seq_t(expression));
 	const string json_s = result.first;
 	QUARK_TRACE_SS("result:" << json_s);
@@ -278,7 +279,7 @@ bool test__parse_expression(const std::string& expression, string expected_value
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
 
-	test_helper helper;
+	json_helper helper;
 	const auto result = parse_expression(helper, seq_t(expression));
 	QUARK_TRACE_SS("result:" << result.first);
 	if(result.first != expected_value){
@@ -306,239 +307,101 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 
 QUARK_UNIT_1("parse_expression()", "", test__parse_expression("0", "[\"k\", \"<int>\", 0]", ""));
 QUARK_UNIT_1("parse_expression()", "", test__parse_expression("1234567890", "[\"k\", \"<int>\", 1234567890]", ""));
+QUARK_UNIT_1("parse_expression()", "", test__parse_expression("\"hello, world!\"", "[\"k\", \"<string>\", \"hello, world!\"]", ""));
 
 
-//////////////////////////////////			ADD
+//////////////////////////////////			ARITHMETICS
 
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("10 + 4", R"(["+", ["k", "<int>", 10], ["k", "<int>", 4]])", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("1 + 2 + 3 + 4", R"(["+", ["+", ["+", ["k", "<int>", 1], ["k", "<int>", 2]], ["k", "<int>", 3]], ["k", "<int>", 4]])", ""));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"10 + 4",
+	R"(["+", ["k", "<int>", 10], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"1 + 2 + 3 + 4",
+	R"(["+", ["+", ["+", ["k", "<int>", 1], ["k", "<int>", 2]], ["k", "<int>", 3]], ["k", "<int>", 4]])",
+	""
+));
 
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"10 * 4",
+	R"(["*", ["k", "<int>", 10], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"10 * 4 * 3",
+	R"(["*", ["*", ["k", "<int>", 10], ["k", "<int>", 4]], ["k", "<int>", 3]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"40 / 4",
+	R"(["/", ["k", "<int>", 40], ["k", "<int>", 4]])",
+	""
+));
 
-//////////////////////////////////			MULTIPLY & DIVIDE & REMAINDER
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"40 / 5 / 2",
+	R"(["/", ["/", ["k", "<int>", 40], ["k", "<int>", 5]], ["k", "<int>", 2]])",
+	""
+));
 
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("10 * 4", R"(["*", ["k", "<int>", 10], ["k", "<int>", 4]])", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("10 * 4 * 3", R"(["*", ["*", ["k", "<int>", 10], ["k", "<int>", 4]], ["k", "<int>", 3]])", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("40 / 4", R"(["/", ["k", "<int>", 40], ["k", "<int>", 4]])", ""));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"41 % 5",
+	R"(["%", ["k", "<int>", 41], ["k", "<int>", 5]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"413 % 50 % 10",
+	R"(["%", ["%", ["k", "<int>", 413], ["k", "<int>", 50]], ["k", "<int>", 10]])",
+	""
+));
 
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("40 / 5 / 2", R"(["/", ["/", ["k", "<int>", 40], ["k", "<int>", 5]], ["k", "<int>", 2]])", ""));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"1 + 3 * 2 + 100",
+	R"(["+", ["+", ["k", "<int>", 1], ["*", ["k", "<int>", 3], ["k", "<int>", 2]]], ["k", "<int>", 100]])",
+	""
+));
 
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("41 % 5", R"(["%", ["k", "<int>", 41], ["k", "<int>", 5]])", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("413 % 50 % 10", R"(["%", ["%", ["k", "<int>", 413], ["k", "<int>", 50]], ["k", "<int>", 10]])", ""));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"1 + 8 + 7 + 2 * 3 + 4 * 5 + 6",
+	R"(["+", ["+", ["+", ["+", ["+", ["k", "<int>", 1], ["k", "<int>", 8]], ["k", "<int>", 7]], ["*", ["k", "<int>", 2], ["k", "<int>", 3]]], ["*", ["k", "<int>", 4], ["k", "<int>", 5]]], ["k", "<int>", 6]])",
+""
+));
+
 
 
 //////////////////////////////////			PARANTHESIS
 
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("(3)", "[\"k\", \"<int>\", 3]", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("(3 * 8)", R"(["*", ["k", "<int>", 3], ["k", "<int>", 8]])", ""));
+QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression("(3)", "[\"k\", \"<int>\", 3]", ""));
+QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression("(3 * 8)", R"(["*", ["k", "<int>", 3], ["k", "<int>", 8]])", ""));
+
+/*
+	["-",
+		["+",
+			["*", ["k", "<int>", 3], 	["k", "<int>", 2]],
+			["*", ["k", "<int>", 8], ["k", "<int>", 2]]
+		],
+		["*",["k", "<int>", 1], ["k", "<int>", 2]]
+	]
+*/
+
+QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression(
+	"(3 * 2 + (8 * 2)) - (((1))) * 2",
+	R"(["-", ["+", ["*", ["k", "<int>", 3], ["k", "<int>", 2]], ["*", ["k", "<int>", 8], ["k", "<int>", 2]]], ["*", ["k", "<int>", 1], ["k", "<int>", 2]]])",
+	""
+));
 
 
-#if false
-//////////////////////////////////			COMBOS
+//////////////////////////////////			NEG
 
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("1 + 3 * 2 + 100", "107", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("-(3 * 2 + (8 * 2)) - (((1))) * 2", "-(3 * 2 + (8 * 2)) - (((1))) * 2", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("1 + 8 + 7 + 2 * 3 + 4 * 5 + 6", R"(["+", ["+", ["+", ["+", ["+", ["k", "<int>", 1], ["k", "<int>", 8]], ["k", "<int>", 7]], ["*", ["k", "<int>", 2], ["k", "<int>", 3]]], ["*", ["k", "<int>", 4], ["k", "<int>", 5]]], ["k", "<int>", 6]])", ""));
+QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
+	"-(3)",
+	R"(["neg", ["k", "<int>", 3]])",
+	""
+));
 
 
 //////////////////////////////////			COMPARISON OPERATOR
-
-QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression("1 ? 2 : 3 xxx", "2", " xxx"));
-QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression("0 ? 2 : 3 xxx", "3", " xxx"));
-
-
-//////////////////////////////////			LOGICAL EQUALITY
-
-QUARK_UNIT_1("parse_expression()", "<=", test__parse_expression("4 <= 4", "1", ""));
-QUARK_UNIT_1("parse_expression()", "<=", test__parse_expression("3 <= 4", "1", ""));
-QUARK_UNIT_1("parse_expression()", "<=", test__parse_expression("5 <= 4", "0", ""));
-
-QUARK_UNIT_1("parse_expression()", "<", test__parse_expression("2 < 3", "1", ""));
-QUARK_UNIT_1("parse_expression()", "<", test__parse_expression("3 < 3", "0", ""));
-
-QUARK_UNIT_1("parse_expression()", ">=", test__parse_expression("4 >= 4", "1", ""));
-QUARK_UNIT_1("parse_expression()", ">=", test__parse_expression("4 >= 3", "1", ""));
-QUARK_UNIT_1("parse_expression()", ">=", test__parse_expression("4 >= 5", "0", ""));
-
-QUARK_UNIT_1("parse_expression()", ">", test__parse_expression("3 > 2", "1", ""));
-QUARK_UNIT_1("parse_expression()", ">", test__parse_expression("3 > 3", "0", ""));
-
-QUARK_UNIT_1("parse_expression()", "==", test__parse_expression("4 == 4", "1", ""));
-QUARK_UNIT_1("parse_expression()", "==", test__parse_expression("4 == 5", "0", ""));
-
-QUARK_UNIT_1("parse_expression()", "!=", test__parse_expression("1 != 2", "1", ""));
-QUARK_UNIT_1("parse_expression()", "!=", test__parse_expression("3 != 3", "0", ""));
-
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("0 && 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("0 && 1", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("1 && 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("1 && 1", "1", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("0 && 0 && 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("0 && 0 && 1", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("0 && 1 && 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("0 && 1 && 1", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("1 && 0 && 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("1 && 0 && 1", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("1 && 1 && 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("1 && 1 && 1", "1", ""));
-
-QUARK_UNIT_TESTQ("parse_expression()", "&&"){
-	QUARK_UT_VERIFY((1 * 1 && 0 + 1) == true);
-	QUARK_UT_VERIFY(test__parse_expression("1 * 1 && 0 + 1", "1", ""));
-}
-
-QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression("1 * 1 && 0 * 1", 0, ""));
-
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("0 || 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("0 || 1", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("1 || 0", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("1 || 1", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("0 || 0 || 0", "0", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("0 || 0 || 1", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("0 || 1 || 0", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("0 || 1 || 1", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("1 || 0 || 0", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("1 || 0 || 1", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("1 || 1 || 0", "1", ""));
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression("1 || 1 || 1", "1", ""));
-
-
-
-
-//////////////////////////////////			IDENTIFIERS
-
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("10 + my_variable", "10", ""));
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("10 + \"my string\"", "10", ""));
-
-
-//////////////////////////////////			FUNCTION CALLS
-
-QUARK_UNIT_1("parse_expression()", "f()", test__parse_expression("f()", "0", ""));
-QUARK_UNIT_1("parse_expression()", "f(3)", test__parse_expression("f(3)", "0", ""));
-QUARK_UNIT_1("parse_expression()", "f(3)", test__parse_expression("f(3, 4, 5)", "0", ""));
-#endif
-
-
-
-
-
-QUARK_UNIT_1("parse_expression()", "||", test__parse_expression(
-	"1 || 0 || 1",
-	R"(["||", ["||", ["k", "<int>", 1], ["k", "<int>", 0]], ["k", "<int>", 1]])",
-	""
-));
-
-//??? Change all int-tests to json tests.
-
-QUARK_UNIT_1("parse_expression()", "identifier", test__parse_expression(
-	"hello xxx",
-	R"(["@", "hello"])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "struct member access", test__parse_expression(
-	"hello.kitty xxx",
-	R"(["->", ["@", "hello"], "kitty"])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "struct member access", test__parse_expression(
-	"hello.kitty.cat xxx",
-	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "struct member access -- whitespace", test__parse_expression(
-	"hello . kitty . cat xxx",
-	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
-	" xxx"
-));
-
-
-QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
-	"f() xxx",
-	R"(["call", ["@", "f"], []])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "function call, one simple arg", test__parse_expression(
-	"f(3)",
-	R"(["call", ["@", "f"], [["k", "<int>", 3]]])",
-	""
-));
-
-QUARK_UNIT_1("parse_expression()", "call with expression-arg", test__parse_expression(
-	"f(x+10) xxx",
-	R"(["call", ["@", "f"], [["+", ["@", "x"], ["k", "<int>", 10]]]])",
-	" xxx"
-));
-QUARK_UNIT_1("parse_expression()", "call with expression-arg", test__parse_expression(
-	"f(1,2) xxx",
-	R"(["call", ["@", "f"], [["k", "<int>", 1], ["k", "<int>", 2]]])",
-	" xxx"
-));
-QUARK_UNIT_1("parse_expression()", "call with expression-arg -- whitespace", test__parse_expression(
-	"f ( 1 , 2 ) xxx",
-	R"(["call", ["@", "f"], [["k", "<int>", 1], ["k", "<int>", 2]]])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
-	"poke.mon.f() xxx",
-	R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
-	"f().g() xxx",
-	R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])",
-	" xxx"
-));
-
-
-
-QUARK_UNIT_1("parse_expression()", "complex chain", test__parse_expression(
-	"hello[\"troll\"].kitty[10].cat xxx",
-	R"(["->", ["[-]", ["->", ["[-]", ["@", "hello"], ["k", "<string>", "troll"]], "kitty"], ["k", "<int>", 10]], "cat"])",
-	" xxx"
-));
-
-
-QUARK_UNIT_1("parse_expression()", "chain", test__parse_expression(
-	"poke.mon.v[10].a.b.c[\"three\"] xxx",
-	R"(["[-]", ["->", ["->", ["->", ["[-]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", "<int>", 10]], "a"], "b"], "c"], ["k", "<string>", "three"]])",
-	" xxx"
-));
-
-
-QUARK_UNIT_1("parse_expression()", "function call with expression-args", test__parse_expression(
-	"f(3 + 4, 4 * g(1000 + 2345), \"hello\", 5)",
-	R"(["call", ["@", "f"], [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", ["@", "g"], [["+", ["k", "<int>", 1000], ["k", "<int>", 2345]]]]], ["k", "<string>", "hello"], ["k", "<int>", 5]]])",
-	""
-));
-
-
-
-
-QUARK_UNIT_1("parse_expression()", "lookup with int", test__parse_expression(
-	"hello[10] xxx",
-	R"(["[-]", ["@", "hello"], ["k", "<int>", 10]])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "lookup with string", test__parse_expression(
-	"hello[\"troll\"] xxx",
-	R"(["[-]", ["@", "hello"], ["k", "<string>", "troll"]])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "lookup with string -- whitespace", test__parse_expression(
-	"hello [ \"troll\" ] xxx",
-	R"(["[-]", ["@", "hello"], ["k", "<string>", "troll"]])",
-	" xxx"
-));
-
-
-
 
 QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
 	"1 ? 2 : 3 xxx",
@@ -575,8 +438,195 @@ QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
 ));
 
 
+//////////////////////////////////			LOGICAL EQUALITY
 
 
+QUARK_UNIT_1("parse_expression()", "<=", test__parse_expression(
+	"3 <= 4",
+	R"(["<=", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "<", test__parse_expression(
+	"3 < 4",
+	R"(["<", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", ">=", test__parse_expression(
+	"3 >= 4",
+	R"([">=", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", ">", test__parse_expression(
+	"3 > 4",
+	R"([">", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "==", test__parse_expression(
+	"3 == 4",
+	R"(["==", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "!=", test__parse_expression(
+	"3 != 4",
+	R"(["!=", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+
+QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression(
+	"3 && 4",
+	R"(["&&", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression(
+	"3 && 4 && 5",
+	R"(["&&", ["&&", ["k", "<int>", 3], ["k", "<int>", 4]], ["k", "<int>", 5]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "&&", test__parse_expression(
+	"1 * 1 && 0 * 1",
+	R"(["&&", ["*", ["k", "<int>", 1], ["k", "<int>", 1]], ["*", ["k", "<int>", 0], ["k", "<int>", 1]]])",
+	""
+));
+
+QUARK_UNIT_1("parse_expression()", "||", test__parse_expression(
+	"3 || 4",
+	R"(["||", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "||", test__parse_expression(
+	"3 || 4 || 5",
+	R"(["||", ["||", ["k", "<int>", 3], ["k", "<int>", 4]], ["k", "<int>", 5]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "||", test__parse_expression(
+	"1 * 1 || 0 * 1",
+	R"(["||", ["*", ["k", "<int>", 1], ["k", "<int>", 1]], ["*", ["k", "<int>", 0], ["k", "<int>", 1]]])",
+	""
+));
+
+//??? Check combos of || and &&
+
+
+
+//////////////////////////////////			IDENTIFIERS
+
+
+QUARK_UNIT_1("parse_expression()", "identifier", test__parse_expression(
+	"hello xxx",
+	R"(["@", "hello"])",
+	" xxx"
+));
+
+
+//////////////////////////////////			FUNCTION CALLS
+
+QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
+	"f() xxx",
+	R"(["call", ["@", "f"], []])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "function call, one simple arg", test__parse_expression(
+	"f(3)",
+	R"(["call", ["@", "f"], [["k", "<int>", 3]]])",
+	""
+));
+
+QUARK_UNIT_1("parse_expression()", "call with expression-arg", test__parse_expression(
+	"f(x+10) xxx",
+	R"(["call", ["@", "f"], [["+", ["@", "x"], ["k", "<int>", 10]]]])",
+	" xxx"
+));
+QUARK_UNIT_1("parse_expression()", "call with expression-arg", test__parse_expression(
+	"f(1,2) xxx",
+	R"(["call", ["@", "f"], [["k", "<int>", 1], ["k", "<int>", 2]]])",
+	" xxx"
+));
+QUARK_UNIT_1("parse_expression()", "call with expression-arg -- whitespace", test__parse_expression(
+	"f ( 1 , 2 ) xxx",
+	R"(["call", ["@", "f"], [["k", "<int>", 1], ["k", "<int>", 2]]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "function call with expression-args", test__parse_expression(
+	"f(3 + 4, 4 * g(1000 + 2345), \"hello\", 5)",
+	R"(["call", ["@", "f"], [["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["*", ["k", "<int>", 4], ["call", ["@", "g"], [["+", ["k", "<int>", 1000], ["k", "<int>", 2345]]]]], ["k", "<string>", "hello"], ["k", "<int>", 5]]])",
+	""
+));
+
+
+//////////////////////////////////			MEMBER ACCESS
+
+QUARK_UNIT_1("parse_expression()", "struct member access", test__parse_expression(
+	"hello.kitty xxx",
+	R"(["->", ["@", "hello"], "kitty"])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "struct member access", test__parse_expression(
+	"hello.kitty.cat xxx",
+	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "struct member access -- whitespace", test__parse_expression(
+	"hello . kitty . cat xxx",
+	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
+	" xxx"
+));
+
+
+//////////////////////////////////			LOOKUP
+
+QUARK_UNIT_1("parse_expression()", "lookup with int", test__parse_expression(
+	"hello[10] xxx",
+	R"(["[-]", ["@", "hello"], ["k", "<int>", 10]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "lookup with string", test__parse_expression(
+	"hello[\"troll\"] xxx",
+	R"(["[-]", ["@", "hello"], ["k", "<string>", "troll"]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "lookup with string -- whitespace", test__parse_expression(
+	"hello [ \"troll\" ] xxx",
+	R"(["[-]", ["@", "hello"], ["k", "<string>", "troll"]])",
+	" xxx"
+));
+
+
+
+//////////////////////////////////			COMBOS
+
+
+QUARK_UNIT_1("parse_expression()", "combo - function call", test__parse_expression(
+	"poke.mon.f() xxx",
+	R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "combo - function call", test__parse_expression(
+	"f().g() xxx",
+	R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])",
+	" xxx"
+));
+
+
+
+QUARK_UNIT_1("parse_expression()", "complex chain", test__parse_expression(
+	"hello[\"troll\"].kitty[10].cat xxx",
+	R"(["->", ["[-]", ["->", ["[-]", ["@", "hello"], ["k", "<string>", "troll"]], "kitty"], ["k", "<int>", 10]], "cat"])",
+	" xxx"
+));
+
+
+QUARK_UNIT_1("parse_expression()", "chain", test__parse_expression(
+	"poke.mon.v[10].a.b.c[\"three\"] xxx",
+	R"(["[-]", ["->", ["->", ["->", ["[-]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", "<int>", 10]], "a"], "b"], "c"], ["k", "<string>", "three"]])",
+	" xxx"
+));
 
 
 
