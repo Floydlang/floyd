@@ -505,10 +505,10 @@ pair<expression_t, string> parse_factors(const string& s, int depth) {
 		const auto op_pos = read_char(pos);
 		const auto expression2_pos = parse_atom(op_pos.second, depth);
 		if(op_pos.first == '/') {
-			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::divide, result_expression, expression2_pos.first);
+			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::k_divide, result_expression, expression2_pos.first);
 		}
 		else{
-			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::multiply, result_expression, expression2_pos.first);
+			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::k_multiply, result_expression, expression2_pos.first);
 		}
 		pos = skip_whitespace(expression2_pos.second);
 	}
@@ -526,10 +526,10 @@ pair<expression_t, string> parse_summands(const string& s, int depth) {
 
 		const auto expression2_pos = parse_factors(op_pos.second, depth);
 		if(op_pos.first == '-'){
-			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::subtract, result_expression, expression2_pos.first);
+			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::k_subtract, result_expression, expression2_pos.first);
 		}
 		else{
-			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::add, result_expression, expression2_pos.first);
+			result_expression = expression_t::make_math_operation2(math_operation2_expr_t::k_add, result_expression, expression2_pos.first);
 		}
 
 		pos = skip_whitespace(expression2_pos.second);
@@ -633,46 +633,46 @@ struct parse_helper : public maker<expression_t> {
 			return expression_t::make_lookup(lhs, rhs);
 		}
 		else if(op == eoperation::k_2_add){
-			return expression_t::make_math_operation2(math_operation2_expr_t::operation::add, lhs, rhs);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_add, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_subtract){
-			return expression_t::make_math_operation2(math_operation2_expr_t::operation::subtract, lhs, rhs);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_subtract, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_multiply){
-			return expression_t::make_math_operation2(math_operation2_expr_t::operation::multiply, lhs, rhs);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_multiply, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_divide){
-			return expression_t::make_math_operation2(math_operation2_expr_t::operation::divide, lhs, rhs);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_divide, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_remainder){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_remainder, lhs, rhs);
 		}
 
 		else if(op == eoperation::k_2_smaller_or_equal){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_smaller_or_equal, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_smaller){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_smaller, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_larger_or_equal){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_larger_or_equal, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_larger){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_larger, lhs, rhs);
 		}
 
 
 		else if(op == eoperation::k_2_logical_equal){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_logical_equal, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_logical_nonequal){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_logical_nonequal, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_logical_and){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_logical_and, lhs, rhs);
 		}
 		else if(op == eoperation::k_2_logical_or){
-			QUARK_ASSERT(false);
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::k_logical_or, lhs, rhs);
 		}
 		else{
 			QUARK_ASSERT(false);

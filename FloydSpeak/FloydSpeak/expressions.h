@@ -107,10 +107,21 @@ namespace floyd_parser {
 
 
 		enum operation {
-			add = 10,
-			subtract,
-			multiply,
-			divide
+			k_add = 10,
+			k_subtract,
+			k_multiply,
+			k_divide,
+			k_remainder,
+
+			k_smaller_or_equal,
+			k_smaller,
+			k_larger_or_equal,
+			k_larger,
+
+			k_logical_equal,
+			k_logical_nonequal,
+			k_logical_and,
+			k_logical_or
 		};
 
 		const operation _operation;

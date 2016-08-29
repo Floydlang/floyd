@@ -1,3 +1,4 @@
+
 //
 //  parser2.h
 //  FloydSpeak
@@ -518,7 +519,8 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 			const auto value2 = helper.maker__make3(eoperation::k_3_conditional_operator, lhs, true_expr_p.first, false_expr_p.first);
 
 			//	End this precedence level.
-			return { value2, false_expr_p.second };
+//			return { value2, false_expr_p.second };
+			return parse_operation(helper, false_expr_p.second, value2, precedence);
 		}
 
 
@@ -528,7 +530,8 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 			const auto value2 = helper.maker__make2(eoperation::k_2_logical_equal, lhs, rhs.first);
 
 			//	End this precedence level.
-			return { value2, rhs.second.rest() };
+//			return { value2, rhs.second.rest() };
+			return parse_operation(helper, rhs.second.rest(), value2, precedence);
 		}
 		//	EXPRESSION != EXPRESSION
 		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
@@ -546,7 +549,8 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 			const auto value2 = helper.maker__make2(eoperation::k_2_smaller_or_equal, lhs, rhs.first);
 
 			//	End this precedence level.
-			return { value2, rhs.second.rest() };
+//			return { value2, rhs.second.rest() };
+			return parse_operation(helper, rhs.second.rest(), value2, precedence);
 		}
 
 		//	EXPRESSION < EXPRESSION
@@ -555,7 +559,8 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 			const auto value2 = helper.maker__make2(eoperation::k_2_smaller, lhs, rhs.first);
 
 			//	End this precedence level.
-			return { value2, rhs.second.rest() };
+//			return { value2, rhs.second.rest() };
+			return parse_operation(helper, rhs.second.rest(), value2, precedence);
 		}
 
 
@@ -566,7 +571,8 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 			const auto value2 = helper.maker__make2(eoperation::k_2_larger_or_equal, lhs, rhs.first);
 
 			//	End this precedence level.
-			return { value2, rhs.second.rest() };
+//			return { value2, rhs.second.rest() };
+			return parse_operation(helper, rhs.second.rest(), value2, precedence);
 		}
 
 		//	EXPRESSION > EXPRESSION
@@ -575,7 +581,8 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 			const auto value2 = helper.maker__make2(eoperation::k_2_larger, lhs, rhs.first);
 
 			//	End this precedence level.
-			return { value2, rhs.second.rest() };
+//			return { value2, rhs.second.rest() };
+			return parse_operation(helper, rhs.second.rest(), value2, precedence);
 		}
 
 

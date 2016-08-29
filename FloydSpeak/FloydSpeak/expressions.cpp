@@ -34,11 +34,11 @@ using std::make_shared;
 
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_math_operation2(
-		math_operation2_expr_t::add,
+		math_operation2_expr_t::k_add,
 		expression_t::make_constant(3),
 		expression_t::make_constant(4));
 	const auto b = expression_t::make_math_operation2(
-		math_operation2_expr_t::add,
+		math_operation2_expr_t::k_add,
 		expression_t::make_constant(3),
 		expression_t::make_constant(4));
 	QUARK_TEST_VERIFY(a == b);
@@ -316,18 +316,48 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 
 
 string operation_to_string(const math_operation2_expr_t::operation& op){
-	if(op == math_operation2_expr_t::add){
+	if(op == math_operation2_expr_t::k_add){
 		return "+";
 	}
-	else if(op == math_operation2_expr_t::subtract){
+	else if(op == math_operation2_expr_t::k_subtract){
 		return "-";
 	}
-	else if(op == math_operation2_expr_t::multiply){
+	else if(op == math_operation2_expr_t::k_multiply){
 		return "*";
 	}
-	else if(op == math_operation2_expr_t::divide){
+	else if(op == math_operation2_expr_t::k_divide){
 		return "/";
 	}
+	else if(op == math_operation2_expr_t::k_remainder){
+		return "%";
+	}
+
+	else if(op == math_operation2_expr_t::k_smaller_or_equal){
+		return "<=";
+	}
+	else if(op == math_operation2_expr_t::k_smaller){
+		return "<";
+	}
+	else if(op == math_operation2_expr_t::k_larger_or_equal){
+		return ">=";
+	}
+	else if(op == math_operation2_expr_t::k_larger){
+		return ">";
+	}
+
+	else if(op == math_operation2_expr_t::k_logical_equal){
+		return "==";
+	}
+	else if(op == math_operation2_expr_t::k_logical_nonequal){
+		return "!=";
+	}
+	else if(op == math_operation2_expr_t::k_logical_and){
+		return "&&";
+	}
+	else if(op == math_operation2_expr_t::k_logical_or){
+		return "||";
+	}
+
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -449,7 +479,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math1"){
 QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
-			expression_t::make_math_operation2(math_operation2_expr_t::operation::add, expression_t::make_constant(2), expression_t::make_constant(3))),
+			expression_t::make_math_operation2(math_operation2_expr_t::operation::k_add, expression_t::make_constant(2), expression_t::make_constant(3))),
 		R"(["+", ["k", "<int>", 2], ["k", "<int>", 3]])"
 	);
 }

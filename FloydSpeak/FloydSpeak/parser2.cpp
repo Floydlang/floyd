@@ -438,42 +438,6 @@ QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
 
 
 
-//////////////////////////////////			COMPARISON OPERATOR
-
-QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
-	"1 ? 2 : 3 xxx",
-	R"(["?:", ["k", "<int>", 1], ["k", "<int>", 2], ["k", "<int>", 3]])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
-	"1 ? \"true!!!\" : \"false!!!\" xxx",
-	R"(["?:", ["k", "<int>", 1], ["k", "<string>", "true!!!"], ["k", "<string>", "false!!!"]])",
-	" xxx"
-));
-
-QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
-	"1 + 2 ? 3 + 4 : 5 + 6 xxx",
-	R"(["?:", ["+", ["k", "<int>", 1], ["k", "<int>", 2]], ["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["+", ["k", "<int>", 5], ["k", "<int>", 6]]])",
-	" xxx"
-));
-
-//??? Add more test to see precedence works as it should!
-
-
-QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
-	"input_flag ? \"123\" : \"456\"",
-	R"(["?:", ["@", "input_flag"], ["k", "<string>", "123"], ["k", "<string>", "456"]])",
-	""
-));
-
-
-QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
-	"input_flag ? 100 + 10 * 2 : 1000 - 3 * 4",
-	R"(["?:", ["@", "input_flag"], ["+", ["k", "<int>", 100], ["*", ["k", "<int>", 10], ["k", "<int>", 2]]], ["-", ["k", "<int>", 1000], ["*", ["k", "<int>", 3], ["k", "<int>", 4]]]])",
-	""
-));
-
 
 //////////////////////////////////			LOGICAL EQUALITY
 
@@ -501,6 +465,11 @@ QUARK_UNIT_1("parse_expression()", ">", test__parse_expression(
 QUARK_UNIT_1("parse_expression()", "==", test__parse_expression(
 	"3 == 4",
 	R"(["==", ["k", "<int>", 3], ["k", "<int>", 4]])",
+	""
+));
+QUARK_UNIT_1("parse_expression()", "==", test__parse_expression(
+	"1==3",
+	R"(["==", ["k", "<int>", 1], ["k", "<int>", 3]])",
 	""
 ));
 QUARK_UNIT_1("parse_expression()", "!=", test__parse_expression(
@@ -553,6 +522,51 @@ QUARK_UNIT_1("parse_expression()", "identifier", test__parse_expression(
 	R"(["@", "hello"])",
 	" xxx"
 ));
+
+
+//////////////////////////////////			COMPARISON OPERATOR
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"1 ? 2 : 3 xxx",
+	R"(["?:", ["k", "<int>", 1], ["k", "<int>", 2], ["k", "<int>", 3]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"1==3 ? 4 : 6 xxx",
+	R"(["?:", ["==", ["k", "<int>", 1], ["k", "<int>", 3]], ["k", "<int>", 4], ["k", "<int>", 6]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"1 ? \"true!!!\" : \"false!!!\" xxx",
+	R"(["?:", ["k", "<int>", 1], ["k", "<string>", "true!!!"], ["k", "<string>", "false!!!"]])",
+	" xxx"
+));
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"1 + 2 ? 3 + 4 : 5 + 6 xxx",
+	R"(["?:", ["+", ["k", "<int>", 1], ["k", "<int>", 2]], ["+", ["k", "<int>", 3], ["k", "<int>", 4]], ["+", ["k", "<int>", 5], ["k", "<int>", 6]]])",
+	" xxx"
+));
+
+//??? Add more test to see precedence works as it should!
+
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"input_flag ? \"123\" : \"456\"",
+	R"(["?:", ["@", "input_flag"], ["k", "<string>", "123"], ["k", "<string>", "456"]])",
+	""
+));
+
+
+QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
+	"input_flag ? 100 + 10 * 2 : 1000 - 3 * 4",
+	R"(["?:", ["@", "input_flag"], ["+", ["k", "<int>", 100], ["*", ["k", "<int>", 10], ["k", "<int>", 2]]], ["-", ["k", "<int>", 1000], ["*", ["k", "<int>", 3], ["k", "<int>", 4]]]])",
+	""
+));
+
+
 
 
 //////////////////////////////////			FUNCTION CALLS
