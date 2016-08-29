@@ -54,6 +54,8 @@ namespace floyd_parser {
 	*/
 	expression_t parse_expression(std::string expression);
 
+	expression_t parse_expression2000(std::string expression);
+
 	ast_t make_test_ast();
 
 }	//	floyd_parser

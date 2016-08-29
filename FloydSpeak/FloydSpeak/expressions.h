@@ -217,11 +217,13 @@ namespace floyd_parser {
 
 
 	struct expression_t {
+		//	Shortcuts were you don't need to make a value_t first.
 		public: static expression_t make_constant(const bool i);
 		public: static expression_t make_constant(const int i);
 		public: static expression_t make_constant(const float f);
 		public: static expression_t make_constant(const char s[]);
 		public: static expression_t make_constant(const std::string& s);
+
 		public: static expression_t make_constant(
 			const value_t& value,
 			const type_identifier_t& resolved_expression_type = type_identifier_t()
@@ -264,6 +266,7 @@ namespace floyd_parser {
 			const type_identifier_t& resolved_expression_type = type_identifier_t()
 		);
 
+		//??? Why shared_ptr?
 		public: static expression_t make_resolve_member(
 			const std::shared_ptr<expression_t>& parent_address,
 			const std::string& member_name,

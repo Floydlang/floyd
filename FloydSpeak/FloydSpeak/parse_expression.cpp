@@ -584,6 +584,191 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct parse_helper : public maker<expression_t> {
+	private: static const std::map<eoperation, string> _2_operator_to_string;
+
+	private: static string make_2op(string lhs, string op, string rhs){
+		return make3(quote(op), lhs, rhs);
+	}
+
+	private: static string make2(string s0, string s1){
+		std::ostringstream ss;
+		ss << "[" << s0 << ", " << s1 << "]";
+		return ss.str();
+	}
+
+	private: static string make3(string s0, string s1, string s2){
+		std::ostringstream ss;
+		ss << "[" << s0 << ", " << s1 << ", " << s2 << "]";
+		return ss.str();
+	}
+
+
+	public: virtual const expression_t maker__make_identifier(const std::string& s) const{
+		return expression_t::make_resolve_variable(s);
+	}
+
+	public: virtual const expression_t maker__make1(const eoperation op, const expression_t& expr) const{
+		if(op == eoperation::k_1_logical_not){
+			return expression_t::make_math_operation1(math_operation1_expr_t::operation::negate, expr);
+		}
+/*
+		else if(op == eoperation::k_1_load){
+			return expr;
+		}
+*/
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const expression_t maker__make2(const eoperation op, const expression_t& lhs, const expression_t& rhs) const{
+//		const auto op_str = _2_operator_to_string.at(op);
+//		return make3(quote(op_str), lhs, rhs);
+
+		if(op == eoperation::k_2_looup){
+			return expression_t::make_lookup(lhs, rhs);
+		}
+		else if(op == eoperation::k_2_add){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::add, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_subtract){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::subtract, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_multiply){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::multiply, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_divide){
+			return expression_t::make_math_operation2(math_operation2_expr_t::operation::divide, lhs, rhs);
+		}
+		else if(op == eoperation::k_2_remainder){
+			QUARK_ASSERT(false);
+		}
+
+		else if(op == eoperation::k_2_smaller_or_equal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_smaller){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_larger_or_equal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_larger){
+			QUARK_ASSERT(false);
+		}
+
+
+		else if(op == eoperation::k_2_logical_equal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_logical_nonequal){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_logical_and){
+			QUARK_ASSERT(false);
+		}
+		else if(op == eoperation::k_2_logical_or){
+			QUARK_ASSERT(false);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const expression_t maker__make3(const eoperation op, const expression_t& e1, const expression_t& e2, const expression_t& e3) const{
+		if(op == eoperation::k_3_conditional_operator){
+			return expression_t::make_conditional_operator(e1, e2, e3);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	public: virtual const expression_t maker__call(const expression_t& f, const std::vector<expression_t>& args) const{
+		//???
+		return expression_t::make_function_call(type_identifier_t::make("f"), {});
+	}
+
+	public: virtual const expression_t maker__member_access(const expression_t& address, const std::string& member_name) const{
+		return expression_t::make_resolve_member(make_shared<expression_t>(address), member_name);
+	}
+
+	public: virtual const expression_t maker__make_constant(const constant_value_t& value) const{
+		if(value._type == constant_value_t::etype::k_bool){
+			return expression_t::make_constant(value._bool);
+		}
+		else if(value._type == constant_value_t::etype::k_int){
+			return expression_t::make_constant(value._int);
+		}
+		else if(value._type == constant_value_t::etype::k_float){
+			return expression_t::make_constant(value._float);
+		}
+		else if(value._type == constant_value_t::etype::k_string){
+			return expression_t::make_constant(value._string);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+};
+
+const std::map<eoperation, string> parse_helper::_2_operator_to_string{
+//	{ eoperation::k_x_member_access, "->" },
+
+	{ eoperation::k_2_looup, "[-]" },
+
+	{ eoperation::k_2_add, "+" },
+	{ eoperation::k_2_subtract, "-" },
+	{ eoperation::k_2_multiply, "*" },
+	{ eoperation::k_2_divide, "/" },
+	{ eoperation::k_2_remainder, "%" },
+
+	{ eoperation::k_2_smaller_or_equal, "<=" },
+	{ eoperation::k_2_smaller, "<" },
+	{ eoperation::k_2_larger_or_equal, ">=" },
+	{ eoperation::k_2_larger, ">" },
+
+	{ eoperation::k_2_logical_equal, "==" },
+	{ eoperation::k_2_logical_nonequal, "!=" },
+	{ eoperation::k_2_logical_and, "&&" },
+	{ eoperation::k_2_logical_or, "||" },
+};
+
+expression_t parse_expression2000(std::string expression){
+	parse_helper helper;
+
+	const auto result = parse_expression(helper, seq_t(expression));
+	return result.first;
+}
+
+
+
+
+
+
+
 //////////////////////////////////////////////////		test rig
 
 

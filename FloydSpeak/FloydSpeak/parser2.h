@@ -102,7 +102,8 @@ enum class eoperation {
 
 	k_0_string_literal,
 
-	k_2_member_access,
+	k_x_member_access,
+
 	k_2_looup,
 
 	k_2_add,

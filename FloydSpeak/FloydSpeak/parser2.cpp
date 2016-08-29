@@ -199,7 +199,7 @@ struct json_helper : public maker<string> {
 };
 
 const std::map<eoperation, string> json_helper::_2_operator_to_string{
-//	{ eoperation::k_2_member_access, "->" },
+//	{ eoperation::k_x_member_access, "->" },
 
 	{ eoperation::k_2_looup, "[-]" },
 
@@ -699,7 +699,7 @@ struct json_helper : public maker<EXPRESSION> {
 
 template<typename EXPRESSION>
 const std::map<eoperation, string> json_helper<EXPRESSION>::_2_operator_to_string{
-//	{ eoperation::k_2_member_access, "->" },
+//	{ eoperation::k_x_member_access, "->" },
 
 	{ eoperation::k_2_looup, "[-]" },
 
