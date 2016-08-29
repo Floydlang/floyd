@@ -32,6 +32,7 @@ using std::make_shared;
 
 using namespace floyd_parser;
 
+//??? The order of stuff is confusing in this file!
 
 namespace {
 
@@ -198,81 +199,6 @@ ast_t program_to_ast2(const string& program){
 	const ast_t pass3 = run_pass3(pass2);
 	return pass3;
 }
-
-
-
-QUARK_UNIT_TESTQ("call_function()", "minimal program"){
-	auto ast = program_to_ast2(
-		"int main(string args){\n"
-		"	return 3 + 4;\n"
-		"}\n"
-	);
-	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == floyd_parser::value_t(7));
-}
-
-
-QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
-	auto ast = program_to_ast2(
-		"string main(string args){\n"
-		"	return \"123\" + \"456\";\n"
-		"}\n"
-	);
-	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == floyd_parser::value_t("123456"));
-}
-
-QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
-	auto ast = program_to_ast2(
-		"int myfunc(){ return 5; }\n"
-		"int main(string args){\n"
-		"	return myfunc() + myfunc() * 2;\n"
-		"}\n"
-	);
-	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == floyd_parser::value_t(15));
-}
-
-QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
-	auto ast = program_to_ast2(
-		"string main(string args){\n"
-		"	return \"-\" + args + \"-\";\n"
-		"}\n"
-	);
-	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
-	QUARK_TEST_VERIFY(result == floyd_parser::value_t("-xyz-"));
-
-	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("Hello, world!") });
-	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
-}
-
-QUARK_UNIT_TESTQ("call_function()", "use local variables"){
-	auto ast = program_to_ast2(
-		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
-		"string main(string args){\n"
-		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
-		"}\n"
-	);
-	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
-	QUARK_TEST_VERIFY(result == floyd_parser::value_t("--xyz<xyz>--"));
-
-	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
-	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
-}
-
-
-
-
 
 floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<stack_frame_t>>& stack_frames, const std::string& s, size_t depth){
 	QUARK_ASSERT(depth < stack_frames.size());
@@ -566,14 +492,14 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 
 
+
+
 expression_t test_evaluate_simple(string expression_string){
 	const ast_t ast;
 	const auto e = parse_expression(expression_string);
 	const auto e2 = evalute_expression(ast, e);
 	return e2;
 }
-
-
 
 //??? Add tests for strings and floats.
 
@@ -690,6 +616,7 @@ bool interpreter_t::check_invariant() const {
 
 
 
+
 std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, const vector<floyd_parser::value_t>& args){
 	QUARK_ASSERT(source.size() > 0);
 	auto ast = program_to_ast2(source);
@@ -710,7 +637,10 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 }
 
 
-#if true
+
+//////////////////////////		TEST conditional expression
+
+
 QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 	const auto result = run_main(
 		R"(
@@ -734,7 +664,86 @@ QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 	);
 	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("456"));
 }
-#endif
+
+
+
+
+
+
+
+
+QUARK_UNIT_TESTQ("call_function()", "minimal program"){
+	auto ast = program_to_ast2(
+		"int main(string args){\n"
+		"	return 3 + 4;\n"
+		"}\n"
+	);
+	auto vm = interpreter_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
+	QUARK_TEST_VERIFY(result == floyd_parser::value_t(7));
+}
+
+
+QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
+	auto ast = program_to_ast2(
+		"string main(string args){\n"
+		"	return \"123\" + \"456\";\n"
+		"}\n"
+	);
+	auto vm = interpreter_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
+	QUARK_TEST_VERIFY(result == floyd_parser::value_t("123456"));
+}
+
+QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
+	auto ast = program_to_ast2(
+		"int myfunc(){ return 5; }\n"
+		"int main(string args){\n"
+		"	return myfunc() + myfunc() * 2;\n"
+		"}\n"
+	);
+	auto vm = interpreter_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
+	QUARK_TEST_VERIFY(result == floyd_parser::value_t(15));
+}
+
+QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
+	auto ast = program_to_ast2(
+		"string main(string args){\n"
+		"	return \"-\" + args + \"-\";\n"
+		"}\n"
+	);
+	auto vm = interpreter_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
+	QUARK_TEST_VERIFY(result == floyd_parser::value_t("-xyz-"));
+
+	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("Hello, world!") });
+	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
+}
+
+QUARK_UNIT_TESTQ("call_function()", "use local variables"){
+	auto ast = program_to_ast2(
+		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
+		"string main(string args){\n"
+		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
+		"}\n"
+	);
+	auto vm = interpreter_t(ast);
+	const auto f = find_global_function(vm, "main");
+	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
+	QUARK_TEST_VERIFY(result == floyd_parser::value_t("--xyz<xyz>--"));
+
+	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("123") });
+	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
+}
+
+
+
+
 
 
 
