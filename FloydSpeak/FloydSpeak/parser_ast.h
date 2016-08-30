@@ -28,7 +28,6 @@ namespace floyd_parser {
 	struct struct_instance_t;
 	struct vector_def_t;
 	struct ast_t;
-//	struct ast_path_t;
 	struct resolved_path_t;
 
 	typedef std::shared_ptr<const scope_def_t> scope_ref_t;
@@ -249,20 +248,6 @@ namespace floyd_parser {
 
 
 
-	/*
-		First item is global scope, then subscopes from global scope.
-	*/
-/*
-	struct ast_path_t {
-		public: bool check_invariant() const {
-			for(const auto i: _names){
-				QUARK_ASSERT(_names.size() > 0);
-			}
-			return true;
-		};
-		std::vector<std::string> _names;
-	};
-*/
 
 	//////////////////////////////////////////////////		scope_def_t
 
@@ -531,8 +516,6 @@ namespace floyd_parser {
 	void trace(const ast_t& program);
 	json_value_t ast_to_json(const ast_t& ast);
 
-
-//	ast_path_t make_root(const ast_t& ast);
 	resolved_path_t make_resolved_root(const ast_t& ast);
 
 

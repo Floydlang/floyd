@@ -430,7 +430,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "Local variables", ""){
 
 
 
-#if 0
+#if false
 QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	const string kProgram =
 		"string hello(int x, int y, string z){\n"

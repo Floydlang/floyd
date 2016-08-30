@@ -26,7 +26,6 @@ using floyd_parser::scope_ref_t;
 using floyd_parser::type_def_t;
 using floyd_parser::value_t;
 using floyd_parser::member_t;
-//using floyd_parser::ast_path_t;
 using floyd_parser::types_collector_t;
 using floyd_parser::type_name_entry_t;
 using floyd_parser::resolved_path_t;

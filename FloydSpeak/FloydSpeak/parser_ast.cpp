@@ -902,16 +902,6 @@ namespace floyd_parser {
 		});
 	}
 
-/*
-	ast_path_t make_root(const ast_t& ast){
-		QUARK_ASSERT(ast.check_invariant());
-
-		return ast_path_t{
-			std::vector<std::string>{ ast._global_scope->_name.to_string() }
-		};
-	}
-*/
-
 	resolved_path_t make_resolved_root(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 

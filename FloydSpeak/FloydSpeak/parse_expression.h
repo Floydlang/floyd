@@ -12,11 +12,11 @@
 #include "quark.h"
 #include "expressions.h"
 
+	struct seq_t;
+	
 namespace floyd_parser {
 	struct expression_t;
 	struct ast_t;
-
-	std::pair<expression_t, std::string> parse_single(const std::string& s);
 
 	/*
 		Parses the expression string
@@ -53,9 +53,8 @@ namespace floyd_parser {
 			"a == 1 ? "one" : ”some other number""
 	*/
 	expression_t parse_expression(std::string expression);
-	expression_t parse_expression1(std::string expression);
 
-	expression_t parse_expression2(std::string expression);
+	std::pair<expression_t, seq_t> parse_expression(const seq_t& expression);
 
 	ast_t make_test_ast();
 

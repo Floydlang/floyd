@@ -27,23 +27,10 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 
 
-		std::vector<scope_ref_t> _scopes;
+		public: std::vector<const scope_ref_t> _scopes;
 	};
 
 	resolved_path_t go_down(const resolved_path_t& path, const scope_ref_t child);
-
-//	floyd_parser::ast_path_t unresolve_path(const resolved_path_t& path);
-
-
-//	floyd_parser::ast_path_t go_down(const floyd_parser::ast_path_t& path, const std::string& sub_scope_name);
-//	floyd_parser::ast_path_t go_up(const floyd_parser::ast_path_t& path);
-
-	/*
-		Searches the entire AST for the specified scope_def, returns path to it or empty path.
-		Name and type of scope is used for search.
-	*/
-//	resolved_path_t find_resolved_path_slow(const ast_t& ast, const scope_ref_t& scope_def);
-
 
 
 	//////////////////////		Finding stuff in AST graph
