@@ -44,7 +44,7 @@ namespace floyd_parser {
 	//////////////////////////////////////		types_collector_t
 
 
-	bool type_indentifier_data_ref::operator==(const type_indentifier_data_ref& other) const{
+	bool type_entry_t::operator==(const type_entry_t& other) const{
 		if(_alias_type_identifier != other._alias_type_identifier){
 			return false;
 		}
@@ -54,15 +54,15 @@ namespace floyd_parser {
 		return true;
 	}
 
-	QUARK_UNIT_TESTQ("type_indentifier_data_ref::operator==()", "operator==()"){
-		const type_indentifier_data_ref a{ "xyz", {} };
-		const type_indentifier_data_ref b{ "xyz", {} };
+	QUARK_UNIT_TESTQ("type_entry_t::operator==()", "operator==()"){
+		const type_entry_t a{ "xyz", {} };
+		const type_entry_t b{ "xyz", {} };
 		QUARK_UT_VERIFY(b == b);
 	}
 
-	QUARK_UNIT_TESTQ("type_indentifier_data_ref::operator==()", ""){
-		const type_indentifier_data_ref a{ "xyz", make_shared<type_def_t>(type_def_t::make_int()) };
-		const type_indentifier_data_ref b{ "xyz", {} };
+	QUARK_UNIT_TESTQ("type_entry_t::operator==()", ""){
+		const type_entry_t a{ "xyz", make_shared<type_def_t>(type_def_t::make_int()) };
+		const type_entry_t b{ "xyz", {} };
 		QUARK_UT_VERIFY(b == b);
 	}
 
@@ -242,7 +242,7 @@ namespace floyd_parser {
 
 
 
-	std::shared_ptr<const type_indentifier_data_ref> types_collector_t::lookup_identifier_deep(const std::string& name) const{
+	std::shared_ptr<const type_entry_t> types_collector_t::lookup_identifier_deep(const std::string& name) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_valid_identifier(name));
 
@@ -256,7 +256,7 @@ namespace floyd_parser {
 				return lookup_identifier_deep(alias);
 			}
 			else{
-				return make_shared<type_indentifier_data_ref>(it->second);
+				return make_shared<type_entry_t>(it->second);
 			}
 		}
 	}
@@ -290,17 +290,17 @@ namespace floyd_parser {
 
 
 
-	json_value_t type_indentifier_data_ref_to_json(const type_indentifier_data_ref& data_ref){
+	json_value_t type_entry_t_to_json(const type_entry_t& data_ref){
 		return make_object({
 			{ "_alias_type_identifier", json_value_t(data_ref._alias_type_identifier) },
 			{ "_optional_def", data_ref._optional_def ? json_value_t(to_signature(*data_ref._optional_def)) : json_value_t() }
 		});
 	}
 
-	json_value_t identifiers_to_json(const std::map<std::string, type_indentifier_data_ref >& identifiers){
+	json_value_t identifiers_to_json(const std::map<std::string, type_entry_t >& identifiers){
 		std::map<string, json_value_t> a;
 		for(const auto i: identifiers){
-			a[i.first] = type_indentifier_data_ref_to_json(i.second);
+			a[i.first] = type_entry_t_to_json(i.second);
 		}
 		return a;
 	}

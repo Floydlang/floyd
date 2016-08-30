@@ -31,7 +31,7 @@ namespace floyd_parser {
 	bool is_valid_identifier(const std::string& name);
 
 
-	//////////////////////////////////////		types_collector_t
+	//////////////////////////////////////		type_entry_t
 
 	/*
 		What we know about a type-identifier so far.
@@ -40,7 +40,7 @@ namespace floyd_parser {
 		B) defined using a type-definition
 		C) Neither = the type-identifier is declared but not defined.
 	*/
-	struct type_indentifier_data_ref {
+	struct type_entry_t {
 		//	Used only when this type_identifier is a straigh up alias of an existing type.
 		//	The _optional_def is never used in this case.
 		//	Instead we chain the type-identifiers.
@@ -49,7 +49,7 @@ namespace floyd_parser {
 		//	Can be empty. Only way it can be filled is if identifier is later updated
 		public: std::shared_ptr<type_def_t> _optional_def;
 
-		public: bool operator==(const type_indentifier_data_ref& other) const;
+		public: bool operator==(const type_entry_t& other) const;
 	};
 
 
@@ -96,10 +96,10 @@ namespace floyd_parser {
 
 		/*
 			return empty: the identifier is unknown.
-			return non-empty: the identifier is known, examine type_indentifier_data_ref to see if it's bound.
+			return non-empty: the identifier is known, examine type_entry_t to see if it's bound.
 			NOTICE: any found alias is resolved recursively.
 		*/
-		private: std::shared_ptr<const type_indentifier_data_ref> lookup_identifier_deep(const std::string& name) const;
+		private: std::shared_ptr<const type_entry_t> lookup_identifier_deep(const std::string& name) const;
 
 		/*
 			existing_identifier: must already be registered (exception).
@@ -131,7 +131,7 @@ namespace floyd_parser {
 
 		//	Key is the type identifier.
 		//	Value refers to a type_def_t stored in _type_definition.
-		public: std::map<std::string, type_indentifier_data_ref > _identifiers;
+		public: std::map<std::string, type_entry_t > _identifiers;
 
 		//	Key is the signature string. De-duplicated.
 		//	These are difficult to share between scopes since they have parent-scope references etc.
