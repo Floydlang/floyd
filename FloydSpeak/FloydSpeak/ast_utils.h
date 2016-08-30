@@ -30,7 +30,7 @@ namespace floyd_parser {
 		public: std::vector<const scope_ref_t> _scopes;
 	};
 
-	resolved_path_t go_down(const resolved_path_t& path, const scope_ref_t child);
+	resolved_path_t go_down(const resolved_path_t& path, const scope_ref_t& child);
 
 
 	//////////////////////		Finding stuff in AST graph
@@ -48,23 +48,22 @@ namespace floyd_parser {
 		Returns the scope where the type is found + the type_def for the type.
 		If the type is already resolved, it's simply returned.
 	*/
-	std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const ast_t& ast, const resolved_path_t& path, const floyd_parser::scope_ref_t scope_def, const type_identifier_t& type);
+	std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const ast_t& ast, const resolved_path_t& path, const type_identifier_t& type);
 
 	//	Attempts to resolve type (if not already resolved). If it fails, the input type is returned unresolved.
 	floyd_parser::type_identifier_t resolve_type_to_id(const ast_t& ast,
 		const resolved_path_t& path,
-		const floyd_parser::scope_ref_t scope_def,
 		const floyd_parser::type_identifier_t& type);
 
 
-	floyd_parser::value_t make_default_value(const ast_t& ast, const resolved_path_t& path, const scope_ref_t scope_def, const type_identifier_t& type);
+	floyd_parser::value_t make_default_value(const ast_t& ast, const resolved_path_t& path, const type_identifier_t& type);
 	floyd_parser::value_t make_default_value(const ast_t& ast, const resolved_path_t& path, const floyd_parser::type_def_t& t);
-	floyd_parser::value_t make_default_struct_value(const ast_t& ast, const resolved_path_t& path, scope_ref_t t);
+	floyd_parser::value_t make_default_struct_value(const ast_t& ast, const resolved_path_t& path, scope_ref_t struct_def);
 
 
 //??? WHen you have a resolved_path_t there is no need for separate scope_def arg.
 	member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name);
-	type_identifier_t resolve_type_throw(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& scope_def, const type_identifier_t& s);
+	type_identifier_t resolve_type_throw(const ast_t& ast, const resolved_path_t& path, const type_identifier_t& s);
 
 
 

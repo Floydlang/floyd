@@ -41,7 +41,7 @@ bool resolved_path_t::check_invariant() const {
 //////////////////////////////////////////////////		free
 
 
-resolved_path_t go_down(const resolved_path_t& path, const scope_ref_t child){
+resolved_path_t go_down(const resolved_path_t& path, const scope_ref_t& child){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(child && child->check_invariant());
 
@@ -66,7 +66,7 @@ std::pair<scope_ref_t, int> resolve_scoped_variable(const ast_t& ast, const floy
 
 	//	Look s in each scope's members, one at a time until we searched the global scope.
 	for(auto i = path2._scopes.size() ; i > 0 ; i--){
-		const scope_ref_t scope_def = path2._scopes[i - 1];
+		const scope_ref_t& scope_def = path2._scopes[i - 1];
 
 		for(int index = 0 ; index < scope_def->_members.size() ; index++){
 			const auto& member = scope_def->_members[index];
@@ -78,10 +78,9 @@ std::pair<scope_ref_t, int> resolve_scoped_variable(const ast_t& ast, const floy
 	return {{}, -1};
 }
 
-std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const ast_t& ast, const floyd_parser::resolved_path_t& path, const floyd_parser::scope_ref_t scope_def, const type_identifier_t& s){
+std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const ast_t& ast, const floyd_parser::resolved_path_t& path, const type_identifier_t& s){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
 	if(s.is_resolved()){
@@ -89,7 +88,7 @@ std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const ast_t&
 	}
 	else{
 		for(auto i = path._scopes.size() ; i > 0 ; i--){
-			const scope_ref_t scope = path._scopes[i - 1];
+			const scope_ref_t& scope = path._scopes[i - 1];
 			const auto a = scope->_types_collector.resolve_identifier(s.to_string());
 			if(a.size() > 1){
 				throw std::runtime_error("Multiple definitions for type-identifier \"" + s.to_string() + "\".");
@@ -102,13 +101,12 @@ std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const ast_t&
 	}
 }
 
-floyd_parser::type_identifier_t resolve_type_to_id(const ast_t& ast, const floyd_parser::resolved_path_t& path, const floyd_parser::scope_ref_t scope_def, const type_identifier_t& s){
+floyd_parser::type_identifier_t resolve_type_to_id(const ast_t& ast, const floyd_parser::resolved_path_t& path, const type_identifier_t& s){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
-	const auto a = resolve_type_to_def(ast, path, scope_def, s);
+	const auto a = resolve_type_to_def(ast, path, s);
 	if(a){
 		return type_identifier_t::resolve(a);
 	}
@@ -123,13 +121,12 @@ floyd_parser::type_identifier_t resolve_type_to_id(const ast_t& ast, const floyd
 
 
 
-value_t make_default_value(const ast_t& ast, const floyd_parser::resolved_path_t& path, const scope_ref_t scope_def, const floyd_parser::type_identifier_t& type){
+value_t make_default_value(const ast_t& ast, const floyd_parser::resolved_path_t& path, const floyd_parser::type_identifier_t& type){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(scope_def->check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto t = resolve_type_to_def(ast, path, scope_def, type);
+	const auto t = resolve_type_to_def(ast, path, type);
 	if(!t){
 		throw std::runtime_error("Undefined type!");
 	}
@@ -138,12 +135,12 @@ value_t make_default_value(const ast_t& ast, const floyd_parser::resolved_path_t
 }
 
 //??? Each struct_def should store its path?
-value_t make_default_struct_value(const ast_t& ast, const resolved_path_t& path, scope_ref_t t){
+value_t make_default_struct_value(const ast_t& ast, const resolved_path_t& path, scope_ref_t struct_def){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(t && t->check_invariant());
+	QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
-	return make_struct_instance(ast, path, t);
+	return make_struct_instance(ast, path, struct_def);
 }
 
 value_t make_default_value(const ast_t& ast, const resolved_path_t& path, const type_def_t& t){
@@ -192,17 +189,16 @@ member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::stri
 	return *found_it;
 }
 
-type_identifier_t resolve_type_throw(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& scope_def, const floyd_parser::type_identifier_t& s){
+type_identifier_t resolve_type_throw(const ast_t& ast, const resolved_path_t& path, const floyd_parser::type_identifier_t& s){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
 	if(s.is_resolved()){
 		return s;
 	}
 	else{
-		const auto a = floyd_parser::resolve_type_to_id(ast, path, scope_def, s);
+		const auto a = floyd_parser::resolve_type_to_id(ast, path, s);
 		if(!a.is_resolved()){
 			throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
 		}

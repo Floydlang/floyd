@@ -513,7 +513,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
 	const auto resolved_path = vm.get_resolved_path();
-	const auto type = resolve_type_to_def(vm._ast, resolved_path, scope_def, call_function_expression._function);
+	const auto type = resolve_type_to_def(vm._ast, resolved_path, call_function_expression._function);
 	if(!type || type->get_type() != base_type::k_function){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}

@@ -62,7 +62,7 @@ namespace floyd_parser {
 		for(int i = 0 ; i < def->_members.size() ; i++){
 			const auto& member_def = def->_members[i];
 
-			const auto member_type = resolve_type_to_def(ast, path, def, *member_def._type);
+			const auto member_type = resolve_type_to_def(ast, path, *member_def._type);
 			if(!member_type){
 				throw std::runtime_error("Undefined struct type!");
 			}
@@ -73,7 +73,7 @@ namespace floyd_parser {
 				value = *member_def._value;
 			}
 			else{
-				value = make_default_value(ast, path, def, *member_def._type);
+				value = make_default_value(ast, path, *member_def._type);
 			}
 			member_values[member_def._name] = value;
 		}
