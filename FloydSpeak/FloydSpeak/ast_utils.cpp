@@ -143,12 +143,12 @@ value_t make_default_struct_value(const ast_t& ast, const resolved_path_t& path,
 	return make_struct_instance(ast, path, struct_def);
 }
 
-value_t make_default_value(const ast_t& ast, const resolved_path_t& path, const type_def_t& t){
+value_t make_default_value(const ast_t& ast, const resolved_path_t& path, const type_def_t& type_def){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
+	QUARK_ASSERT(type_def.check_invariant());
 
-	const auto type = t.get_type();
+	const auto type = type_def.get_type();
 	if(type == k_int){
 		return value_t(0);
 	}
@@ -159,7 +159,7 @@ value_t make_default_value(const ast_t& ast, const resolved_path_t& path, const 
 		return value_t("");
 	}
 	else if(type == k_struct){
-		return make_default_struct_value(ast, path, t.get_struct_def());
+		return make_default_struct_value(ast, path, type_def.get_struct_def());
 	}
 	else if(type == k_vector){
 		QUARK_ASSERT(false);

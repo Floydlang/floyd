@@ -53,14 +53,14 @@ namespace floyd_parser {
 
 
 
-	value_t make_struct_instance(const ast_t& ast, const resolved_path_t& path, scope_ref_t def){
+	value_t make_struct_instance(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& struct_def){
 		QUARK_ASSERT(ast.check_invariant());
 		QUARK_ASSERT(path.check_invariant());
-		QUARK_ASSERT(def && def->check_invariant());
+		QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
 		std::map<std::string, value_t> member_values;
-		for(int i = 0 ; i < def->_members.size() ; i++){
-			const auto& member_def = def->_members[i];
+		for(int i = 0 ; i < struct_def->_members.size() ; i++){
+			const auto& member_def = struct_def->_members[i];
 
 			const auto member_type = resolve_type_to_def(ast, path, *member_def._type);
 			if(!member_type){
@@ -77,7 +77,7 @@ namespace floyd_parser {
 			}
 			member_values[member_def._name] = value;
 		}
-		auto instance = make_shared<struct_instance_t>(def, member_values);
+		auto instance = make_shared<struct_instance_t>(struct_def, member_values);
 		return value_t(instance);
 	}
 

@@ -422,6 +422,11 @@ namespace floyd_parser {
 			return result;
 		}
 
+		public: bool is_type_resolved() const{
+			QUARK_ASSERT(check_invariant());
+			return _type.is_resolved();
+		}
+
 
 		private: static int compare_value_true_deep(const struct_instance_t& left, const struct_instance_t& right);
 
@@ -443,7 +448,7 @@ namespace floyd_parser {
 	void trace(const value_t& e);
 
 
-	value_t make_struct_instance(const ast_t& ast, const resolved_path_t& path, scope_ref_t def);
+	value_t make_struct_instance(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& struct_def);
 	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def, const std::vector<value_t>& elements);
 
 

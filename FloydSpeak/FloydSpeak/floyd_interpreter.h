@@ -56,7 +56,7 @@ namespace floyd_interpreter {
 		public: interpreter_t(const floyd_parser::ast_t& ast);
 		public: bool check_invariant() const;
 
-		public: floyd_parser::resolved_path_t get_resolved_path()const;
+		public: floyd_parser::resolved_path_t get_resolved_path() const;
 
 
 		////////////////////////		STATE

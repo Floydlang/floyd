@@ -38,8 +38,6 @@ using std::pair;
 
 
 scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& path);
-
-
 expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& path, const expression_t& e);
 
 
@@ -193,7 +191,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 			throw std::runtime_error("1005 - Undefined variable \"" + e2._variable_name + "\".");
 		}
 		const auto& member = x.first->_members[x.second];
-
+//??? Replace this with a pointer to the scope_def and the index! It's statically resolved now!
 		//	Error 1009
 		const auto type = resolve_type_throw(ast, path, *member._type);
 
@@ -223,8 +221,9 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 	}
 }
 
-scope_ref_t find_enclosing_function(const ast_t& ast, const resolved_path_t& path, scope_ref_t scope_ref){
-	QUARK_ASSERT(scope_ref && scope_ref->check_invariant());
+scope_ref_t find_enclosing_function(const ast_t& ast, const resolved_path_t& path){
+	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(path.check_invariant());
 
 	for(auto i = path._scopes.size() ; i > 0 ; i--){
 		if(path._scopes[i - 1]->_type == floyd_parser::scope_def_t::k_function_scope){
@@ -234,12 +233,12 @@ scope_ref_t find_enclosing_function(const ast_t& ast, const resolved_path_t& pat
 	return {};
 }
 
-statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& scope_def, const statement_t& statement){
+statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& path, const statement_t& statement){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
+	const auto scope_def = path.get_leaf();
 	if(statement._bind_statement){
 		//??? test this exception (add tests for all exceptions!)
 		//	make sure this identifier is not already defined in this scope!
@@ -269,7 +268,7 @@ statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& pa
 	else if(statement._return_statement){
 		const auto e2 = resolve_types__expression(ast, path, *statement._return_statement->_expression);
 
-		const auto function = find_enclosing_function(ast, path, scope_def);
+		const auto function = find_enclosing_function(ast, path);
 		if(!function){
 			throw std::runtime_error("1007 - Return-statement not allowed outside function definition.");
 		}
@@ -397,7 +396,7 @@ scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& pa
 	{
 		vector<shared_ptr<statement_t>> statements2;
 		for(auto s: scope2->_executable._statements){
-			 const auto statement2 = resolve_types__statement(ast, path, scope2, *s);
+			 const auto statement2 = resolve_types__statement(ast, path, *s);
 			 statements2.push_back(make_shared<statement_t>(statement2));
 		}
 
@@ -422,6 +421,141 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 	return found != string::npos;
 }
 
+#if 0
+
+		bool has_unresolved_types(shared_ptr<type_def_t> type_def){
+			return false;
+/*
+			type_def
+			if(type_def1->is_subscope()){
+				auto scope3 = type_def1->get_subscope();
+				const resolved_path_t path2 = go_down(path, scope3);
+				scope_ref_t scope4 = resolve_types__scope_def(ast, path2);
+				shared_ptr<type_def_t> type_def2 = make_shared<type_def_t>(type_def1->replace_subscope(scope4));
+				type_entry2._defs.push_back(type_def2);
+			}
+			else{
+				type_entry2._defs.push_back(type_def1);
+			}
+*/
+		}
+
+		bool has_unresolved_types(const statement_t& statement){
+			QUARK_ASSERT(ast.check_invariant());
+			QUARK_ASSERT(path.check_invariant());
+			QUARK_ASSERT(statement.check_invariant());
+
+			const auto scope_def = path.get_leaf();
+			if(statement._bind_statement){
+				//??? test this exception (add tests for all exceptions!)
+				//	make sure this identifier is not already defined in this scope!
+				const string new_identifier = statement._bind_statement->_identifier;
+
+				//	Make sure we have a spot for this member, or throw.
+				//	Error 1012
+				const auto& member = floyd_parser::find_struct_member_throw(scope_def, new_identifier);
+				QUARK_ASSERT(member.check_invariant());
+
+				const auto e2 = resolve_types__expression(ast, path, *statement._bind_statement->_expression);
+
+				if(!(e2.get_expression_type().to_string() == statement._bind_statement->_type.to_string())){
+					throw std::runtime_error("1006 - Bind type mismatch.");
+				}
+
+				auto result = statement;
+				result._bind_statement->_expression = make_shared<expression_t>(e2);
+				return result;
+			}
+			else if(statement._define_struct){
+				QUARK_ASSERT(false);
+			}
+			else if(statement._define_function){
+				QUARK_ASSERT(false);
+			}
+			else if(statement._return_statement){
+				const auto e2 = resolve_types__expression(ast, path, *statement._return_statement->_expression);
+
+				const auto function = find_enclosing_function(ast, path);
+				if(!function){
+					throw std::runtime_error("1007 - Return-statement not allowed outside function definition.");
+				}
+
+				if(!(e2.get_expression_type().to_string() == function->_return_type.to_string())){
+					throw std::runtime_error("1008 - return value doesn't match function return type.");
+				}
+
+				auto result = statement;
+				result._return_statement->_expression = make_shared<expression_t>(e2);
+				return result;
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+
+	bool has_unresolved_types(const ast_t& ast, const resolved_path_t& path){
+		QUARK_ASSERT(ast.check_invariant());
+		QUARK_ASSERT(path.check_invariant());
+
+		scope_ref_t scope = path.get_leaf();
+
+		for(const auto type_entry_pair: scope->_types_collector._types){
+			const floyd_parser::type_name_entry_t& type_entry = type_entry_pair.second;
+			type_name_entry_t type_entry2;
+
+			for(const auto& def: type_entry._defs){
+				if(has_unresolved_types(def)){
+					return true;
+				}
+			}
+		}
+
+		//	Make sure all members can resolve their symbols.
+		{
+			for(const auto& member1: scope->_members){
+				if(!member1._type->is_resolved()){
+					return true;
+				}
+				if(member1._value && !member1._value->is_type_resolved()){
+					return true;
+				}
+			}
+		}
+
+		if(scope->_type == scope_def_t::k_function_scope){
+			if(!scope->_return_type.is_resolved()){
+				return true;
+			}
+		}
+		else if(scope->_type == scope_def_t::k_struct_scope){
+		}
+		else if(scope->_type == scope_def_t::k_global_scope){
+		}
+		else if(scope->_type == scope_def_t::k_subscope){
+			if(!scope->_return_type.is_resolved()){
+				return true;
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+
+		//	Make sure all statements can resolve their symbols.
+		{
+			for(auto s: scope->_executable._statements){
+				if(has_unresolved_types(s)){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+bool has_unresolved_types(const floyd_parser::ast_t& ast1){
+	return has_unresolved_types(ast1, make_resolved_root(ast1));
+}
+#endif
+
 
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 	string stage0 = json_to_compact_string(ast_to_json(ast1));
@@ -435,6 +569,7 @@ floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 
 	return ast2;
 }
+
 
 
 
