@@ -44,8 +44,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		std::size_t pos = 0;
 		const auto struct_def = s.get_struct_def();
 		for(const auto& member : struct_def->_members) {
-			const auto identifier_data = types.lookup_identifier_deep(member._type->to_string());
-			const auto type_def = identifier_data->_optional_def;
+			const auto type_def = types.resolve_identifier(member._type->to_string());
 			QUARK_ASSERT(type_def);
 
 			base_type base = type_def->get_type();

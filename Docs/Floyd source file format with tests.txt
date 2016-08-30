@@ -1,0 +1,95 @@
+-- Illustrative programming -- like spreadsheets. Idea: Show all values for each example: show callstack expanded with all values on the stack! Let you scroll through it. This is passive information.
+	Show entire callstack as foldable json.
+	Allow inserting probes into positions in the callstack
+
+- DOT language for drawing JSON, callstack etc. OmniGraffle imports .gv!
+	http://stackoverflow.com/questions/22727974/automatic-visualization-of-json
+	
+
+Ascii art coding
+
+	a = <menu_item_t>
+	<string>			title	"Edit"
+	<bool>				enabled		true
+	<[menu_item_t]>		items
+		<menu_item_t>
+		<string>			title	"Cut"
+		<bool>				enabled		true
+		<bool>				checked		false
+		<menu_item_t>
+		<string>			title	"Copy"
+		<bool>				enabled		true
+		<bool>				checked		false
+		<menu_item_t>
+		<string>			title	"Paste"
+		<bool>				enabled		true
+		<bool>				checked		false
+	
+
+
+	### IDEA: Use JSON as outer wrapper for source file. Entries can be code, markdown or whatever. Roundtrip. Hmm. 
+
+
+	###
+	// Comparing json or normalized json-string or original values == guaranteed same result.
+	
+	json_to_compact_string()
+	json_to_normalized_string()
+	json_to_beautiful_string()
+	
+This is markdown text. All code is indented one step. Column 1 is markdown.
+
+> #tag
+			This is not code for compiler!
+<
+
+- Item A
+- Item B
+- Item C
+
+[x]
+[ ] Rename
+
+#my_tag	-- use to add tags to code
+
+#??? Can't ship problem
+#!!! Warning
+#### idea
+
+@marcus.zetterquist@gmail.com -- used to link to programmer
+
+
+	
+	test_value1 = json{"menu": {
+	  "id": "file",
+	  "value": "File",
+	  "popup": {
+	    "menuitem": [
+	      {"value": "New", "onclick": "CreateNewDoc()"},
+	      {"value": "Open", "onclick": "OpenDoc()"},
+	      {"value": "Close", "onclick": "CloseDoc()"}
+	    ]
+	  }
+	}}
+	
+	test_value2 = []{
+		[string] result;
+		for(int i = 0 ; i < 100 ; i++){
+			result = to_string(sin(i * 3.14));
+		}
+		return result;
+	}
+	
+	test_value3 = menu_def({
+		menu: "menu", id: "File", "popup" { menuItem = [menuItem]{}})
+	});
+	
+	
+	//	Use declarative style so IDE know all details about what's expected etc.
+	tests = {
+		{	to_string(merge_menus(test_value1, test_value1)), "[k, int, 41]", Make sure we can merge ints }
+		{	merge_menus(test_value1, test_value1), "[k, int, 41]", Make sure we can merge ints }
+	}
+	
+	menu_setup_t merge_menus(menu_setup_t a, menu_setup_t b){
+	}

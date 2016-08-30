@@ -15,6 +15,8 @@
 - **vector**		look up values from a 0-based continous range of integer indexes.
 - **enum**		same as struct with only static constant data members
 
+	### json_value	built-in type that models the JSON format. You can initialize it from a bit of json, like this:
+			json_value default_preferences = { "window_title": "unnamed", "warnings_on": false }
 
 # CORE TYPE FEATURES
 These are features built into every type: integer, string, struct, collections etc.

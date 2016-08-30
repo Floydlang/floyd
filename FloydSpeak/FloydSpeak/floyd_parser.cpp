@@ -256,6 +256,7 @@ scope_ref_t install_struct_support(const ast_t& ast, const scope_ref_t scope_def
 
 	//	Make constructor-function with same name as struct.
 	{
+//		const auto constructor_name = type_identifier_t::make(struct_name + "");
 		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
 		const auto executable = executable_t(host_function__alloc_struct, make_shared<alloc_struct_param>(s));
 		const auto a = make_function_def(constructor_name, struct_name_ident, {}, executable, {}, {});

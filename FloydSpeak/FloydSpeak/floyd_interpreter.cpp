@@ -1178,8 +1178,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
 
@@ -1192,8 +1192,8 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
@@ -1207,8 +1207,8 @@ QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.lookup_identifier_deep("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor"));
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 

@@ -74,17 +74,6 @@ namespace floyd_parser {
 
 		public: bool operator==(const types_collector_t& other) const;
 
-		/*
-			existing_identifier: must already be registered (exception).
-			new_identifier: must not be registered (exception).
-		*/
-		public: types_collector_t define_alias_identifier(const std::string& new_identifier, const std::string& existing_identifier) const;
-
-		/*
-			new_identifier: must be a valid type identifier.
-			type_def == empty: just declare the new type-identifier, don't bind to a type-definition yet.
-		*/
-		private: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
 
 		/*
 			new_identifier: can be empty (for unnamed type definition)
@@ -94,19 +83,38 @@ namespace floyd_parser {
 		public: types_collector_t define_type_xyz(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
 
 		/*
-			return empty: the identifier is unknown.
-			return non-empty: the identifier is known, examine type_indentifier_data_ref to see if it's bound.
-			NOTICE: any found alias is resolved recursively.
-		*/
-		public: std::shared_ptr<const type_indentifier_data_ref> lookup_identifier_deep(const std::string& s) const;
-
-		/*
 			return empty: the identifier is unknown or has no type-definition.
 			NOTICE: any found alias is resolved recursively.
 		*/
 		public: std::shared_ptr<const type_def_t> resolve_identifier(const std::string& s) const;
 
-		public: std::shared_ptr<const type_def_t> lookup_signature(const std::string& s) const;
+
+
+		//////////////////////////////////////		INTERNALS
+
+		/*
+			return empty: the identifier is unknown.
+			return non-empty: the identifier is known, examine type_indentifier_data_ref to see if it's bound.
+			NOTICE: any found alias is resolved recursively.
+		*/
+		private: std::shared_ptr<const type_indentifier_data_ref> lookup_identifier_deep(const std::string& s) const;
+
+		/*
+			existing_identifier: must already be registered (exception).
+			new_identifier: must not be registered (exception).
+		*/
+		private: types_collector_t define_alias_identifier(const std::string& new_identifier, const std::string& existing_identifier) const;
+
+		/*
+			Search type definitions for signature.
+		*/
+		private: std::shared_ptr<const type_def_t> lookup_signature(const std::string& signature) const;
+
+		/*
+			new_identifier: must be a valid type identifier.
+			type_def == empty: just declare the new type-identifier, don't bind to a type-definition yet.
+		*/
+		private: types_collector_t define_type_identifier(const std::string& new_identifier, const std::shared_ptr<type_def_t>& type_def) const;
 
 		/*
 			Returns true if this type identifier is registered and defined (is an alias or is bound to a type-definition.
@@ -123,7 +131,7 @@ namespace floyd_parser {
 		friend json_value_t types_collector_to_json(const types_collector_t& types);
 
 
-		///////////////////		STATE
+		//////////////////////////////////////		STATE
 
 		//	Key is the type identifier.
 		//	Value refers to a type_def_t stored in _type_definition.

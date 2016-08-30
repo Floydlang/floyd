@@ -401,6 +401,7 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 	quark::ut_compare(to_signature(make_struct4(global)), "<struct>{<string>x,<string>z}");
 }
 
+/*
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t();
@@ -409,6 +410,7 @@ QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	QUARK_TEST_VERIFY(t1);
 	QUARK_TEST_VERIFY(to_signature(*t1) == "<struct>{}");
 }
+*/
 
 QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 	auto global = scope_def_t::make_global_scope();
