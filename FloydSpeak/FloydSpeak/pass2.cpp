@@ -26,8 +26,10 @@ using floyd_parser::scope_ref_t;
 using floyd_parser::type_def_t;
 using floyd_parser::value_t;
 using floyd_parser::member_t;
-using floyd_parser::ast_path_t;
+//using floyd_parser::ast_path_t;
 using floyd_parser::types_collector_t;
+using floyd_parser::type_name_entry_t;
+using floyd_parser::resolved_path_t;
 
 using std::string;
 using std::vector;
@@ -36,19 +38,19 @@ using std::shared_ptr;
 using std::pair;
 
 
-scope_ref_t resolve_types__scope_def(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def1);
+scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& scope_def1);
 
 
-expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const expression_t& e);
+expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& path, const expression_t& e);
 
 
-expression_t resolve_types__expression(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const expression_t& e){
+expression_t resolve_types__expression(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& scope_def, const expression_t& e){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto r = pass2_expression_internal(ast, path, scope_def, e);
+	const auto r = pass2_expression_internal(ast, path, e);
 
 	QUARK_ASSERT(!r.get_expression_type().is_null());
 	return r;
@@ -81,15 +83,15 @@ bool returns_bool(floyd_parser::math_operation2_expr_t::operation op){
 }
 
 
-expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const expression_t& e){
+expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& path, const expression_t& e){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
+	const auto scope_def = path.get_leaf();
 	if(e._constant){
 		const auto& con = *e._constant;
-		const auto const_type = resolve_type(ast, path, scope_def, con.get_type());
+		const auto const_type = resolve_type_to_def(ast, path, scope_def, con.get_type());
 		if(!const_type){
 			throw std::runtime_error("1000 - Unknown constant type \"" + con.get_type().to_string() + "\".");
 		}
@@ -114,7 +116,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 			return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
 		}
 		else if(returns_bool(math2._operation)){
-			const auto type = resolve_type2(ast, path, scope_def, floyd_parser::type_identifier_t::make_bool());
+			const auto type = resolve_type_to_id(ast, path, scope_def, floyd_parser::type_identifier_t::make_bool());
 			return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
 		}
 		else{
@@ -137,13 +139,13 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 		const auto& call = *e._call;
 
 		//	Resolve function name.
-		const auto f = resolve_type(ast, path, scope_def, call._function);
+		const auto f = resolve_type_to_def(ast, path, scope_def, call._function);
 		if(!f || f->get_type() != base_type::k_function){
 			throw std::runtime_error("1002 - Undefined function \"" + call._function.to_string() + "\".");
 		}
 		const auto f2 = f->get_function_def();
 
-		const auto return_type = resolve_type2(ast, path, scope_def, f2->_return_type);
+		const auto return_type = resolve_type_to_id(ast, path, scope_def, f2->_return_type);
 		QUARK_ASSERT(return_type.is_resolved());
 
 		if(f2->_type == scope_def_t::k_function_scope){
@@ -223,19 +225,18 @@ expression_t pass2_expression_internal(const ast_t& ast, const ast_path_t& path,
 	}
 }
 
-scope_ref_t find_enclosing_function(const ast_t& ast, const ast_path_t& path, scope_ref_t scope_ref){
+scope_ref_t find_enclosing_function(const ast_t& ast, const resolved_path_t& path, scope_ref_t scope_ref){
 	QUARK_ASSERT(scope_ref && scope_ref->check_invariant());
 
-	const auto res = resolve_path(ast, path);
-	for(auto i = res._scopes.size() ; i > 0 ; i--){
-		if(res._scopes[i - 1]->_type == floyd_parser::scope_def_t::k_function_scope){
-			return res._scopes[i - 1];
+	for(auto i = path._scopes.size() ; i > 0 ; i--){
+		if(path._scopes[i - 1]->_type == floyd_parser::scope_def_t::k_function_scope){
+			return path._scopes[i - 1];
 		}
 	}
 	return {};
 }
 
-statement_t resolve_types__statement(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def, const statement_t& statement){
+statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& scope_def, const statement_t& statement){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(scope_def && scope_def->check_invariant());
@@ -288,7 +289,7 @@ statement_t resolve_types__statement(const ast_t& ast, const ast_path_t& path, c
 	}
 }
 
-scope_ref_t resolve_types__scope_def(const ast_t& ast, const ast_path_t& path, const scope_ref_t& scope_def1){
+scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& scope_def1){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(scope_def1 && scope_def1->check_invariant());
@@ -296,37 +297,32 @@ scope_ref_t resolve_types__scope_def(const ast_t& ast, const ast_path_t& path, c
 	scope_ref_t scope2 = scope_def1;
 
 	//	Make sure all types can resolve their symbols.
-	//	!!! Updated type_collector_t - _type_definitions directly!!
+	//	!!! Updates type_collector_t - _type_definitions directly!!
 	{
-		auto identifiers2 = scope2->_types_collector._identifiers;
-		std::map<string, shared_ptr<type_def_t> > type_definitions2;
+		std::map<string, type_name_entry_t> type_definitions2;
 
-		for(const auto t: scope2->_types_collector._type_definitions){
-			shared_ptr<type_def_t> type_def1 = t.second;
-			shared_ptr<type_def_t> type_def2;
+		for(const auto type_entry_pair: scope2->_types_collector._types){
+			const floyd_parser::type_name_entry_t& type_entry = type_entry_pair.second;
+			type_name_entry_t type_entry2;
 
-			if(type_def1->is_subscope()){
-				auto scope3 = type_def1->get_subscope();
-				const ast_path_t path2 { path._names + scope3->_name.to_string() };
-				scope_ref_t scope4 = resolve_types__scope_def(ast, path2, scope3);
-				type_def2 = make_shared<type_def_t>(type_def1->replace_subscope(scope4));
+			for(const auto& def: type_entry._defs){
+				shared_ptr<type_def_t> type_def1 = def;
 
-
-				//	Also update any use of this typedef from within _identifiers. Mutate our local copy.
-				for(auto& id: identifiers2){
-					if(id.second._optional_def == type_def1){
-						id.second._optional_def = type_def2;
-					}
+				if(type_def1->is_subscope()){
+					auto scope3 = type_def1->get_subscope();
+					const resolved_path_t path2 = go_down(path, scope3);
+					scope_ref_t scope4 = resolve_types__scope_def(ast, path2, scope3);
+					shared_ptr<type_def_t> type_def2 = make_shared<type_def_t>(type_def1->replace_subscope(scope4));
+					type_entry2._defs.push_back(type_def2);
+				}
+				else{
+					type_entry2._defs.push_back(type_def1);
 				}
 			}
-			else{
-				type_def2 = type_def1;
-			}
-			type_definitions2.insert(pair<string, shared_ptr<type_def_t>>(t.first, type_def2));
+			type_definitions2.insert(pair<string, type_name_entry_t>(type_entry_pair.first, type_entry2));
 		}
 		types_collector_t types2;
-		types2._identifiers = identifiers2;
-		types2._type_definitions = type_definitions2;
+		types2._types = type_definitions2;
 		scope2 = scope2->set_types(types2);
 	}
 
@@ -433,7 +429,7 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
 	string stage0 = json_to_compact_string(ast_to_json(ast1));
 
-	const auto global = resolve_types__scope_def(ast1, make_root(ast1), ast1._global_scope);
+	const auto global = resolve_types__scope_def(ast1, make_resolved_root(ast1), ast1._global_scope);
 	const ast_t ast2(global);
 	trace(ast2);
 
@@ -463,8 +459,11 @@ QUARK_UNIT_TESTQ("run_pass2()", "Minimum program"){
 		)";
 	const ast_t pass1 = floyd_parser::program_to_ast(a);
 	const ast_t pass2 = run_pass2(pass1);
-}
 
+
+	const auto int_types = pass2._global_scope->_types_collector.resolve_identifier("int");
+	QUARK_UT_VERIFY(int_types.size() == 1 && int_types[0]->to_string() == "int");
+}
 
 //	This program uses all features of pass2.???
 QUARK_UNIT_TESTQ("run_pass2()", "Maxium program"){

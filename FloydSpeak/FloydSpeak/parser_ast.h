@@ -28,7 +28,8 @@ namespace floyd_parser {
 	struct struct_instance_t;
 	struct vector_def_t;
 	struct ast_t;
-	struct ast_path_t;
+//	struct ast_path_t;
+	struct resolved_path_t;
 
 	typedef std::shared_ptr<const scope_def_t> scope_ref_t;
 
@@ -176,7 +177,7 @@ namespace floyd_parser {
 		public: virtual ~host_data_i(){};
 	};
 
-	typedef value_t (*hosts_function_t)(const ast_t& ast, const ast_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
+	typedef value_t (*hosts_function_t)(const ast_t& ast, const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
 
 	struct executable_t {
 		public: executable_t(hosts_function_t host_function, std::shared_ptr<host_data_i> host_function_param);
@@ -251,6 +252,7 @@ namespace floyd_parser {
 	/*
 		First item is global scope, then subscopes from global scope.
 	*/
+/*
 	struct ast_path_t {
 		public: bool check_invariant() const {
 			for(const auto i: _names){
@@ -260,7 +262,7 @@ namespace floyd_parser {
 		};
 		std::vector<std::string> _names;
 	};
-
+*/
 
 	//////////////////////////////////////////////////		scope_def_t
 
@@ -530,12 +532,8 @@ namespace floyd_parser {
 	json_value_t ast_to_json(const ast_t& ast);
 
 
-	inline ast_path_t make_root(const ast_t& ast){
-		QUARK_ASSERT(ast.check_invariant());
-		return ast_path_t{
-			std::vector<std::string>{ ast._global_scope->_name.to_string() }
-		};
-	}
+//	ast_path_t make_root(const ast_t& ast);
+	resolved_path_t make_resolved_root(const ast_t& ast);
 
 
 	//////////////////////////////////////////////////		trace_vec()

@@ -41,6 +41,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		QUARK_ASSERT(s.check_invariant());
 
 		std::vector<byte_range_t> result;
+#if 0
 		std::size_t pos = 0;
 		const auto struct_def = s.get_struct_def();
 		for(const auto& member : struct_def->_members) {
@@ -83,6 +84,7 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		}
 		pos = align_pos(pos, 8);
 		result.insert(result.begin(), byte_range_t(0, pos));
+#endif
 		return result;
 	}
 

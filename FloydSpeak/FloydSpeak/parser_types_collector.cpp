@@ -44,76 +44,53 @@ namespace floyd_parser {
 	//////////////////////////////////////		types_collector_t
 
 
-	bool type_entry_t::operator==(const type_entry_t& other) const{
-		if(_alias_type_identifier != other._alias_type_identifier){
-			return false;
-		}
-		if(!compare_shared_values(_optional_def, other._optional_def)){
-			return false;
+	bool type_name_entry_t::check_invariant() const{
+		for(const auto& def: _defs){
+			QUARK_ASSERT(def);
+			QUARK_ASSERT(def->check_invariant());
 		}
 		return true;
 	}
 
-	QUARK_UNIT_TESTQ("type_entry_t::operator==()", "operator==()"){
-		const type_entry_t a{ "xyz", {} };
-		const type_entry_t b{ "xyz", {} };
+	bool type_name_entry_t::operator==(const type_name_entry_t& other) const{
+		if(_defs.size() != other._defs.size()){
+			return false;
+		}
+		for(auto i = 0 ; i < _defs.size() ; i++){
+			if(!compare_shared_values(_defs[i], other._defs[i])){
+				return false;
+			}
+		}
+		return true;
+	}
+
+/*
+	QUARK_UNIT_TESTQ("type_name_entry_t::operator==()", "operator==()"){
+		const type_name_entry_t a{ "xyz", {} };
+		const type_name_entry_t b{ "xyz", {} };
 		QUARK_UT_VERIFY(b == b);
 	}
 
-	QUARK_UNIT_TESTQ("type_entry_t::operator==()", ""){
-		const type_entry_t a{ "xyz", make_shared<type_def_t>(type_def_t::make_int()) };
-		const type_entry_t b{ "xyz", {} };
+	QUARK_UNIT_TESTQ("type_name_entry_t::operator==()", ""){
+		const type_name_entry_t a{ "xyz", make_shared<type_def_t>(type_def_t::make_int()) };
+		const type_name_entry_t b{ "xyz", {} };
 		QUARK_UT_VERIFY(b == b);
 	}
-
+*/
 
 
 	////////////////////////			types_collector_t
 
 
-	/*
-		Holds all types of program.
-	*/
+
+
 	types_collector_t::types_collector_t(){
 		QUARK_ASSERT(check_invariant());
 	}
 	
 	bool types_collector_t::check_invariant() const{
-		for(const auto it: _identifiers){
-			QUARK_ASSERT(it.first != "");
-			const auto data = it.second;
-			if(!data._alias_type_identifier.empty()){
-				QUARK_ASSERT(!data._optional_def);
-
-//				const auto a = lookup_identifier_deep(data._alias_type_identifier);
-//				QUARK_ASSERT(a);//### test deeper?
-			}
-			else{
-				if(data._optional_def){
-					QUARK_ASSERT(data._optional_def->check_invariant());
-				}
-				else{
-				}
-			}
-		}
-
-		for(const auto it: _type_definitions){
-		//!!! Cannot call to_signature() from here - recursion!
-//			const auto signature = to_signature(*it.second);
-//			QUARK_ASSERT(it.first == signature);
-			QUARK_ASSERT(it.second->check_invariant());
-		}
-
-		//	Make sure all types referenced from _identifiers are also stored inside _type_definition.
-		for(const auto identifiers_it: _identifiers){
-			if(identifiers_it.second._optional_def){
-				auto defs_it = _type_definitions.begin();
-				while(defs_it != _type_definitions.end() && defs_it->second != identifiers_it.second._optional_def){
-					 defs_it++;
-				}
-
-				QUARK_ASSERT(defs_it != _type_definitions.end());
-			}
+		for(const auto it: _types){
+			QUARK_ASSERT(it.second.check_invariant());
 		}
 		return true;
 	}
@@ -122,165 +99,38 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		if(!(_identifiers == other._identifiers)){
-			return false;
-		}
-
-/*
-		{
-			if(_identifiers.size() != other._identifiers.size()){
-				return false;
-			}
-
-			//??? deeper check?
-			auto j = other._identifiers.begin();
-			for(auto i = _identifiers.begin() ; i != _identifiers.end(); ++i){
-				if(i->first != j->first){
-					return false;
-				}
-				if(!(i->second == j->second)){
-					return false;
-				}
-				j++;
-			}
-		}
-*/
-		{
-			if(_type_definitions.size() != other._type_definitions.size()){
-				return false;
-			}
-
-			auto j = other._type_definitions.begin();
-			for(auto i = _type_definitions.begin() ; i != _type_definitions.end(); ++i){
-				if(i->first != j->first){
-					return false;
-				}
-				if(!(*i->second == *j->second)){
-					return false;
-				}
-				j++;
-			}
-		}
-
-		return true;
-	}
-
-	bool types_collector_t::is_type_identifier_fully_defined(const std::string& name) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_valid_identifier(name));
-
-		const auto existing_it = _identifiers.find(name);
-		if(existing_it != _identifiers.end() && (!existing_it->second._alias_type_identifier.empty() || existing_it->second._optional_def)){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-
-	types_collector_t types_collector_t::define_alias_identifier(const std::string& new_name, const std::string& existing_name) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_valid_identifier(new_name));
-		QUARK_ASSERT(is_valid_identifier(existing_name));
-
-		if(_identifiers.find(existing_name) == _identifiers.end()){
-			throw std::runtime_error("unknown type identifier to base alias on");
-		}
-
-		if(is_type_identifier_fully_defined(new_name)){
-			throw std::runtime_error("new type identifier already defined");
-		}
-
-		auto result = *this;
-		result._identifiers[new_name] = { existing_name, {} };
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-
-
-	types_collector_t types_collector_t::define_type_identifier(const std::string& new_name, const std::shared_ptr<type_def_t>& type_def) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(!new_name.empty());
-
-		//	### Be quite if existing identifier matches new one 100% == same type_def.
-		if(is_type_identifier_fully_defined(new_name)){
-			throw std::runtime_error("new type identifier already defined");
-		}
-
-		auto result = *this;
-		result._identifiers[new_name] = { "", type_def };
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
+		return _types == other._types;
 	}
 
 	types_collector_t types_collector_t::define_type_xyz(const std::string& new_name, const std::shared_ptr<type_def_t>& type_def) const{
 		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(is_valid_identifier(new_name));
 		QUARK_ASSERT(type_def && type_def->check_invariant());
 
 		auto types2 = *this;
-		const string signature = to_signature(*type_def);
 
-		//	Add to _type_definitions if not already there.
-		if(_type_definitions.find(signature) == _type_definitions.end()){
-			types2._type_definitions.insert(std::pair<std::string, std::shared_ptr<type_def_t>>(signature, type_def));
+		type_name_entry_t entry;
+		const auto it = types2._types.find(new_name);
+		if(it != types2._types.end()){
+			entry = it->second;
 		}
 
-		//	Add type-identifier if needed.
-		if(new_name.empty()){
-			QUARK_ASSERT(types2.check_invariant());
-			return types2;
-		}
-		else{
-			//	Make a type-identifier too.
-			const auto types3 = types2.define_type_identifier(new_name, type_def);
-			QUARK_ASSERT(types3.check_invariant());
-			return types3;
-		}
+		entry._defs.push_back(type_def);
+		types2._types[new_name] = entry;
+		return types2;
 	}
 
-
-
-	std::shared_ptr<const type_entry_t> types_collector_t::lookup_identifier_deep(const std::string& name) const{
+	std::vector<std::shared_ptr<type_def_t>> types_collector_t::resolve_identifier(const std::string& name) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_valid_identifier(name));
-
-		const auto it = _identifiers.find(name);
-		if(it == _identifiers.end()){
+		
+		const auto it = _types.find(name);
+		if(it == _types.end()){
 			return {};
 		}
 		else {
-			const auto alias = it->second._alias_type_identifier;
-			if(!alias.empty()){
-				return lookup_identifier_deep(alias);
-			}
-			else{
-				return make_shared<type_entry_t>(it->second);
-			}
+			return it->second._defs;
 		}
-	}
-
-	std::shared_ptr<const type_def_t> types_collector_t::resolve_identifier(const std::string& name) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(is_valid_identifier(name));
-
-		const auto identifier_data = lookup_identifier_deep(name);
-		if(!identifier_data){
-			return {};
-		}
-		else{
-			return identifier_data->_optional_def;
-		}
-	}
-
-
-	std::shared_ptr<const type_def_t> types_collector_t::lookup_signature(const std::string& signature) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(signature.size() > 0);
-
-		const auto it = _type_definitions.find(signature);
-		return it == _type_definitions.end() ? std::shared_ptr<type_def_t>() : it->second;
 	}
 
 
@@ -290,38 +140,36 @@ namespace floyd_parser {
 
 
 
-	json_value_t type_entry_t_to_json(const type_entry_t& data_ref){
+
+	json_value_t type_name_entry_t_to_json(const type_name_entry_t& data_ref){
+		QUARK_ASSERT(data_ref.check_invariant());
+
+		std::vector<json_value_t> defs;
+		for(const auto i: data_ref._defs){
+			defs.push_back(type_def_to_json(*i));
+		}
 		return make_object({
-			{ "_alias_type_identifier", json_value_t(data_ref._alias_type_identifier) },
-			{ "_optional_def", data_ref._optional_def ? json_value_t(to_signature(*data_ref._optional_def)) : json_value_t() }
+			{ "_defs", defs }
 		});
 	}
 
-	json_value_t identifiers_to_json(const std::map<std::string, type_entry_t >& identifiers){
+	json_value_t type_definitions_to_json(const std::map<std::string, type_name_entry_t>& types){
 		std::map<string, json_value_t> a;
-		for(const auto i: identifiers){
-			a[i.first] = type_entry_t_to_json(i.second);
+		for(const auto i: types){
+			a[i.first] = type_name_entry_t_to_json(i.second);
 		}
 		return a;
 	}
 
-	json_value_t type_definitions_to_json(const std::map<std::string, std::shared_ptr<type_def_t> >& type_definitions){
-		std::map<string, json_value_t> result;
-		for(const auto i: type_definitions){
-			result[i.first] = type_def_to_json(*i.second);
-		}
-		return result;
-	}
-
-
 	json_value_t types_collector_to_json(const types_collector_t& types){
-		if(types._identifiers.empty() && types._type_definitions.empty()){
+		QUARK_ASSERT(types.check_invariant());
+
+		if(types._types.empty()){
 			return json_value_t();
 		}
 		else{
 			return make_object({
-				{ "_identifiers", identifiers_to_json(types._identifiers) },
-				{ "_type_definitions", type_definitions_to_json(types._type_definitions) }
+				{ "_type_definitions", type_definitions_to_json(types._types) }
 			});
 		}
 	}
@@ -358,12 +206,12 @@ namespace floyd_parser {
 		QUARK_ASSERT(is_valid_identifier(name));
 
 		const auto a = types.resolve_identifier(name);
-		if(a && a->get_type() == base_type::k_struct){
-			return a->get_struct_def();
+		for(const auto& t: a){
+			if(t->get_type() == base_type::k_struct){
+				return t->get_struct_def();
+			}
 		}
-		else {
-			return {};
-		}
+		return {};
 	}
 
 	std::shared_ptr<const scope_def_t> resolve_function_type(const types_collector_t& types, const std::string& name){
@@ -371,12 +219,12 @@ namespace floyd_parser {
 		QUARK_ASSERT(is_valid_identifier(name));
 
 		const auto a = types.resolve_identifier(name);
-		if(a && a->get_type() == base_type::k_function){
-			return a->get_function_def();
+		for(const auto& t: a){
+			if(t->get_type() == base_type::k_function){
+				return t->get_function_def();
+			}
 		}
-		else {
-			return {};
-		}
+		return {};
 	}
 
 
@@ -425,8 +273,9 @@ QUARK_UNIT_TESTQ("to_signature()", "struct3"){
 	const auto a = types_collector_t();
 	const auto b = define_struct_type(a, "struct3", make_struct3(global));
 	const auto t1 = b.resolve_identifier("struct3");
-	const auto s1 = to_signature(*t1);
-	QUARK_TEST_VERIFY(s1 == "<struct>{<int>a,<string>b}");
+	QUARK_UT_VERIFY(t1.size() == 1);
+//	const auto s1 = to_signature(*t1);
+//	QUARK_TEST_VERIFY(s1 == "<struct>{<int>a,<string>b}");
 }
 
 
@@ -436,8 +285,9 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 	const auto b = define_struct_type(a, "struct3", make_struct3(global));
 	const auto c = define_struct_type(b, "struct4", make_struct4(global));
 	const auto t2 = c.resolve_identifier("struct4");
-	const auto s2 = to_signature(*t2);
-	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<string>z}");
+	QUARK_UT_VERIFY(t2.size() == 1);
+//	const auto s2 = to_signature(*t2);
+//	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<string>z}");
 }
 
 
@@ -469,17 +319,8 @@ QUARK_UNIT_TESTQ("types_collector_t::operator==()", ""){
 QUARK_UNIT_TESTQ("types_collector_t::resolve_identifier()", "not found"){
 	const auto a = types_collector_t();
 	const auto b = a.resolve_identifier("xyz");
-	QUARK_TEST_VERIFY(!b);
+	QUARK_TEST_VERIFY(b.empty());
 }
 
-/*
-QUARK_UNIT_TESTQ("types_collector_t::define_alias_identifier()", "int => my_int"){
-	auto a = types_collector_t();
-	a = a.define_alias_identifier("my_int", "int");
-	const auto b = a.resolve_identifier("my_int");
-	QUARK_TEST_VERIFY(b);
-	QUARK_TEST_VERIFY(b->_base_type == k_int);
-}
-*/
 
 

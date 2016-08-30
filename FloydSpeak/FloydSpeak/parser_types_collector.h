@@ -31,25 +31,26 @@ namespace floyd_parser {
 	bool is_valid_identifier(const std::string& name);
 
 
-	//////////////////////////////////////		type_entry_t
+	//////////////////////////////////////		type_name_entry_t
 
 	/*
 		What we know about a type-identifier so far.
 		It can be:
+
 		A) an alias for another type-identifier
 		B) defined using a type-definition
 		C) Neither = the type-identifier is declared but not defined.
 	*/
-	struct type_entry_t {
-		//	Used only when this type_identifier is a straigh up alias of an existing type.
-		//	The _optional_def is never used in this case.
-		//	Instead we chain the type-identifiers.
-		public: std::string _alias_type_identifier;
+	struct type_name_entry_t {
+		/*
+			Owns all known types with this name.
+			Can be empty if the type has not been defined (yet).
+		*/
+		//??? Make const.
+		public: std::vector<std::shared_ptr<type_def_t>> _defs;
 
-		//	Can be empty. Only way it can be filled is if identifier is later updated
-		public: std::shared_ptr<type_def_t> _optional_def;
-
-		public: bool operator==(const type_entry_t& other) const;
+		public: bool check_invariant() const;
+		public: bool operator==(const type_name_entry_t& other) const;
 	};
 
 
@@ -76,9 +77,8 @@ namespace floyd_parser {
 
 		public: bool operator==(const types_collector_t& other) const;
 
-
 		/*
-			new_identifier: can be empty (for unnamed type definition)
+			new_identifier. Cannot be empty.
 			type_def: must be valid type def.
 			
 		*/
@@ -88,40 +88,12 @@ namespace floyd_parser {
 			return empty: the identifier is unknown or has no type-definition.
 			NOTICE: any found alias is resolved recursively.
 		*/
-		public: std::shared_ptr<const type_def_t> resolve_identifier(const std::string& name) const;
+		public: std::vector<std::shared_ptr<type_def_t>> resolve_identifier(const std::string& name) const;
 
 
 
 		//////////////////////////////////////		INTERNALS
 
-		/*
-			return empty: the identifier is unknown.
-			return non-empty: the identifier is known, examine type_entry_t to see if it's bound.
-			NOTICE: any found alias is resolved recursively.
-		*/
-		private: std::shared_ptr<const type_entry_t> lookup_identifier_deep(const std::string& name) const;
-
-		/*
-			existing_identifier: must already be registered (exception).
-			new_identifier: must not be registered (exception).
-		*/
-		private: types_collector_t define_alias_identifier(const std::string& new_name, const std::string& existing_name) const;
-
-		/*
-			Search type definitions for signature.
-		*/
-		private: std::shared_ptr<const type_def_t> lookup_signature(const std::string& signature) const;
-
-		/*
-			new_identifier: must be a valid type identifier.
-			type_def == empty: just declare the new type-identifier, don't bind to a type-definition yet.
-		*/
-		private: types_collector_t define_type_identifier(const std::string& new_name, const std::shared_ptr<type_def_t>& type_def) const;
-
-		/*
-			Returns true if this type identifier is registered and defined (is an alias or is bound to a type-definition.
-		*/
-		private: bool is_type_identifier_fully_defined(const std::string& name) const;
 
 
 		friend json_value_t types_collector_to_json(const types_collector_t& types);
@@ -130,12 +102,7 @@ namespace floyd_parser {
 		//////////////////////////////////////		STATE
 
 		//	Key is the type identifier.
-		//	Value refers to a type_def_t stored in _type_definition.
-		public: std::map<std::string, type_entry_t > _identifiers;
-
-		//	Key is the signature string. De-duplicated.
-		//	These are difficult to share between scopes since they have parent-scope references etc.
-		public: std::map<std::string, std::shared_ptr<type_def_t> > _type_definitions;
+		public: std::map<std::string, type_name_entry_t> _types;
 	};
 
 

@@ -96,8 +96,8 @@ namespace {
 			throw std::runtime_error("function arguments do not match function");
 		}
 
-		const auto path = find_path_slow(vm._ast, f);
-		const auto a = f->_executable._host_function(vm._ast, unresolve_path(path), f->_executable._host_function_param, args);
+		const auto resolved_path = vm.get_resolved_path();
+		const auto a = f->_executable._host_function(vm._ast, resolved_path, f->_executable._host_function_param, args);
 		return a;
 	}
 
@@ -512,8 +512,8 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	const auto& call_function_expression = *e._call;
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
-	const auto path = find_path_slow(vm._ast, scope_def);
-	const auto type = resolve_type(vm._ast, unresolve_path(path), scope_def, call_function_expression._function);
+	const auto resolved_path = vm.get_resolved_path();
+	const auto type = resolve_type_to_def(vm._ast, resolved_path, scope_def, call_function_expression._function);
 	if(!type || type->get_type() != base_type::k_function){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
@@ -961,6 +961,16 @@ bool interpreter_t::check_invariant() const {
 	return true;
 }
 
+resolved_path_t interpreter_t::get_resolved_path() const{
+	QUARK_ASSERT(check_invariant());
+
+	resolved_path_t result;
+	for(const auto& frame: _call_stack){
+		result._scopes.push_back(frame->_def);
+	}
+	return result;
+}
+
 
 
 //////////////////////////		run_main()
@@ -1178,8 +1188,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel").size() > 0);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor").size() > 0);
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
 
@@ -1192,8 +1202,8 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel").size() > 0);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor").size() > 0);
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
@@ -1207,8 +1217,8 @@ QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel"));
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor"));
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel").size() > 0);
+	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor").size() > 0);
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 

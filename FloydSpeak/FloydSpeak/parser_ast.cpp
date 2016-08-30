@@ -23,6 +23,7 @@
 #include "json_support.h"
 #include "json_writer.h"
 #include "parser_types_collector.h"
+#include "ast_utils.h"
 
 
 namespace floyd_parser {
@@ -424,7 +425,8 @@ namespace floyd_parser {
 		const auto a = add_builtin_types(t);
 		QUARK_TEST_VERIFY(a.check_invariant());
 
-
+/*
+???
 		const auto d = a.resolve_identifier("bool");
 		QUARK_TEST_VERIFY(d);
 		QUARK_TEST_VERIFY(d->get_type() == k_bool);
@@ -436,6 +438,7 @@ namespace floyd_parser {
 		const auto c = a.resolve_identifier("string");
 		QUARK_TEST_VERIFY(c);
 		QUARK_TEST_VERIFY(c->get_type() == k_string);
+*/
 	}
 
 
@@ -899,6 +902,21 @@ namespace floyd_parser {
 		});
 	}
 
+/*
+	ast_path_t make_root(const ast_t& ast){
+		QUARK_ASSERT(ast.check_invariant());
+
+		return ast_path_t{
+			std::vector<std::string>{ ast._global_scope->_name.to_string() }
+		};
+	}
+*/
+
+	resolved_path_t make_resolved_root(const ast_t& ast){
+		QUARK_ASSERT(ast.check_invariant());
+
+		return resolved_path_t{ { ast._global_scope } };
+	}
 
 
 	////////////////////	Helpers for making tests.

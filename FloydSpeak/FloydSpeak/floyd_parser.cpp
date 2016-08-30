@@ -232,7 +232,7 @@ struct alloc_struct_param : public host_data_i {
 };
 
 
-value_t host_function__alloc_struct(const ast_t& ast, const ast_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
+value_t host_function__alloc_struct(const ast_t& ast, const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
 	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
 
 	const auto instance = make_default_struct_value(ast, path, a._struct_def);
