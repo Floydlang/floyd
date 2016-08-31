@@ -12,7 +12,7 @@
 #include "quark.h"
 #include "expressions.h"
 
-	struct seq_t;
+struct seq_t;
 	
 namespace floyd_parser {
 	struct expression_t;
@@ -54,8 +54,6 @@ namespace floyd_parser {
 	expression_t parse_expression(std::string expression);
 
 	std::pair<expression_t, seq_t> parse_expression(const seq_t& expression);
-
-	ast_t make_test_ast();
 
 }	//	floyd_parser
 
