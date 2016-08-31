@@ -13,6 +13,9 @@
 
 #include "quark.h"
 
+
+//	### This can be compiled-out of code in release mode!
+
 /*
 	This is like a smart pointer, but it is immutable and has value sematics and cannot be null. It has operator==().
 	### Make it store the value in-place. At least as an option.
@@ -97,6 +100,52 @@ template <typename T, class... Args> immutable_ref_value_t<T> make_immutable_ref
 }
 
 
+
+
+
+
+//	### This can be compiled-out of code in release mode!
+//	### Use move operator to avoid copying value.
+template <typename T> struct immutable_value_t {
+	public: immutable_value_t(const T& value) :
+		_value(value)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
+	public: bool check_invariant() const {
+		return true;
+	};
+
+	public: bool operator==(const immutable_value_t& rhs) const{
+		QUARK_ASSERT(check_invariant());
+
+		return _value == rhs._value;
+	};
+
+	public: bool operator!=(const immutable_value_t& rhs) const{
+		QUARK_ASSERT(check_invariant());
+
+		return !(*this == rhs);
+	};
+
+	public:  const T& operator*() const{
+		return _value;
+	}
+
+	public:  const T* operator->() const{
+		return &_value;
+	}
+
+
+	/////////////////////////////////////		STATE
+		private: T _value;
+};
+
+template <typename T, class... Args> immutable_value_t<T> make_immutable_value(Args&&... args){
+	const auto r = immutable_value_t<T>(T(args...));
+	return r;
+}
 
 
 #endif /* immutable_ref_value_hpp */
