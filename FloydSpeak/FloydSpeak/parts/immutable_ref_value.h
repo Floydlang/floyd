@@ -14,14 +14,16 @@
 #include "quark.h"
 
 
-//	### This can be compiled-out of code in release mode!
+
+/////////////////////////////////////		immutable_ref_value_t
+
 
 /*
-	This is like a smart pointer, but it is immutable and has value sematics and cannot be null. It has operator==().
-	### Make it store the value in-place. At least as an option.
+	This is like a smart pointer, but it is immutable and has value semantics.
+	It cannot be null.
+	It has an operator==() that checks if the two objects have the same value. It does NOT check if it's the same object.
 
-	operator==() checks if the two objects have the same values. It does NOT check if it's the same object.
-
+	It can cheaply be copied around, stored in collections etc.
 
 	Use make_immutable_ref() to make instances:
 
@@ -33,19 +35,23 @@
 		const auto a = make_immutable_ref<my_secret_stuff>("My title", 13);
 
 
-	About T
+	ABOUT T
 
-	- This struct / class can have all its member data public.
+	- This struct / class can have all its member data public. Clients can read but not modify them.
 	- It will never be copied
 	- It will be deleted when the last immutable_ref_value_t is destructed.
 
 	- T MUST have operator==() that compares its members' values. Creating two different T:s from scratch using the same input shall make operator==() return true.
 		bool T::operator==(const T& rhs);
 
+
+	FUTURE
+
 	### Require operator<() for sorting?
 		bool T::operator==(const T& rhs);
-*/
 
+//	### This can be compiled-out of code in release mode!
+*/
 template <typename T> struct immutable_ref_value_t {
 	public: immutable_ref_value_t(){
 		_ptr.reset(new T());
@@ -96,22 +102,52 @@ template <typename T> struct immutable_ref_value_t {
 };
 
 
-/////////////////////////////////////		make_immutable_ref
+/////////////////////////////////////		make_immutable_ref()
 
 
 //	c++11 Variadic templates
 template <typename T, class... Args> immutable_ref_value_t<T> make_immutable_ref(Args&&... args){
-	immutable_ref_value_t<T> r(new T(args...));
-	return r;
+	return immutable_ref_value_t<T>(new T(args...));
 }
 
 
 
+/////////////////////////////////////		immutable_value_t
 
 
 
-//	### This can be compiled-out of code in release mode!
-//	### Use move operator to avoid copying value.
+
+/*
+	This class wraps another struct/class and makes it immutable/const. The new type is a read-only value object.
+
+	It has an operator==() that checks if the two objects have the same value. It does NOT check if it's the same object.
+
+	Use make_immutable_value() to make instances:
+
+		struct my_secret_stuff {
+			my_secret_stuff(std::string title, int height){
+			}
+		};
+
+		const auto a = make_immutable_value<my_secret_stuff>("My title", 13);
+
+
+	ABOUT T
+
+	- This struct / class can have all its member data public. Clients can read but not modify them.
+	- T is embedded inside the immutable_value_t and be copied along with it, needs propery copy constructor.
+
+	- T MUST have operator==() that compares its members' values. Creating two different T:s from scratch using the same input shall make operator==() return true.
+		bool T::operator==(const T& rhs);
+
+
+	FUTURE
+
+	### Require operator<() for sorting?
+		bool T::operator==(const T& rhs);
+	### Use move operator to avoid copying value.
+	### This can be compiled-out of code in release mode!
+*/
 template <typename T> struct immutable_value_t {
 	public: immutable_value_t(const T& value) :
 		_value(value)
@@ -148,9 +184,12 @@ template <typename T> struct immutable_value_t {
 		private: T _value;
 };
 
+
+/////////////////////////////////////		make_immutable_value()
+
+
 template <typename T, class... Args> immutable_value_t<T> make_immutable_value(Args&&... args){
-	const auto r = immutable_value_t<T>(T(args...));
-	return r;
+	return immutable_value_t<T>(T(args...));
 }
 
 

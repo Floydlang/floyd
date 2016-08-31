@@ -94,6 +94,11 @@ QUARK_UNIT_TESTQ("make_immutable_ref()", "Test using std::string"){
 
 
 
+QUARK_UNIT_TESTQ("make_immutable_value()", "Basic construction"){
+	const auto a = make_immutable_value<smurf_impl_t>();
+	QUARK_TEST_VERIFY(a.check_invariant());
+}
+
 
 QUARK_UNIT_TESTQ("make_immutable_value()", "Basic construction"){
 	const auto a = make_immutable_value<smurf_impl_t>(12.4f, "Hungry-Smurf");
