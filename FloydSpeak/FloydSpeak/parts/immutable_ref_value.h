@@ -47,6 +47,12 @@
 */
 
 template <typename T> struct immutable_ref_value_t {
+	public: immutable_ref_value_t(){
+		_ptr.reset(new T());
+
+		QUARK_ASSERT(check_invariant());
+	}
+
 	public: immutable_ref_value_t(const T* will_own){
 		QUARK_ASSERT(will_own != nullptr);
 

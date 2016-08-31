@@ -16,7 +16,6 @@
 	
 namespace floyd_parser {
 	struct expression_t;
-	struct ast_t;
 
 	/*
 		Parses the expression string

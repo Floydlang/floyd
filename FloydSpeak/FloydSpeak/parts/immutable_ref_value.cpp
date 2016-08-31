@@ -15,6 +15,11 @@
 
 
 struct smurf_impl_t {
+	public: smurf_impl_t() :
+		_a(1.2f),
+		_name("default smurf")
+	{
+	}
 	public: smurf_impl_t(float a, std::string name) :
 		_a(a),
 		_name(name)
@@ -41,6 +46,11 @@ struct smurf_impl_t {
 	std::string _name;
 };
 
+
+QUARK_UNIT_TESTQ("make_immutable_ref()", "Basic construction"){
+	const auto a = immutable_ref_value_t<smurf_impl_t>();
+	QUARK_TEST_VERIFY(a.check_invariant());
+}
 
 
 QUARK_UNIT_TESTQ("make_immutable_ref()", "Basic construction"){
@@ -77,6 +87,8 @@ QUARK_UNIT_TESTQ("make_immutable_ref()", "Test using std::string"){
 
 	QUARK_TEST_VERIFY(a.check_invariant());
 	QUARK_UT_VERIFY(*a == "Hello, world!");
+
+	QUARK_UT_VERIFY(a->size() == 13);
 }
 
 

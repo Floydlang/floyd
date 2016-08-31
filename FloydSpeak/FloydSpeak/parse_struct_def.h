@@ -17,7 +17,6 @@
 #include "parser_ast.h"
 
 namespace floyd_parser {
-	struct ast_t;
 	struct scope_def_t;
 
 

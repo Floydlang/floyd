@@ -15,7 +15,6 @@
 #include <string>
 
 namespace floyd_parser {
-	struct ast_t;
 	struct return_statement_t;
 	struct statement_t;
 
