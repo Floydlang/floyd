@@ -279,8 +279,8 @@ QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
 	QUARK_UT_VERIFY(obj.at("_int").get_number() == 111.0);
 	QUARK_UT_VERIFY(obj.at("_string").get_string() == "test 123");
 	QUARK_UT_VERIFY(obj.at("_pixel").is_object());
-	QUARK_UT_VERIFY(obj.at("_pixel").get_object().at("red").get_number() == 55.0);
-	QUARK_UT_VERIFY(obj.at("_pixel").get_object().at("green").get_number() == 66.0);
+	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("red").get_number() == 55.0);
+	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("green").get_number() == 66.0);
 }
 
 QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
@@ -319,6 +319,23 @@ QUARK_UNIT_TESTQ("value_to_json()", ""){
 }
 
 
+
+
+json_value_t make_scope_def(){
+	return json_value_t::make_object({
+		{ "_type", "" },
+		{ "_name", "" },
+		{ "_members", json_value_t::make_array2({}) },
+		{ "_types_collector", json_value_t::make_object({}) },
+
+		//??? New in JSON, used to stored as sub-function body.
+		{ "_locals", json_value_t::make_array2({}) },
+
+		//	??? New in JSON version - used to be stored in _executable.
+		{ "_statements", json_value_t::make_array2({}) },
+		{ "_return_type", "" }
+	});
+}
 
 
 

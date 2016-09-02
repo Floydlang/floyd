@@ -297,12 +297,13 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 
 
 
-
+#if false
 QUARK_UNIT_TESTQ("define_function_type()", ""){
 	auto global = scope_def_t::make_global_scope();
 	const auto a = types_collector_t{};
 	const auto b =  define_function_type(a, "one", make_return_hello(global));
 }
+#endif
 
 
 QUARK_UNIT_TESTQ("types_collector_t::operator==()", ""){

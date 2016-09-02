@@ -17,6 +17,7 @@
 #include "ast_utils.h"
 #include "pass2.h"
 #include "pass3.h"
+#include "json_support.h"
 
 #include <cmath>
 
@@ -194,7 +195,7 @@ namespace {
 
 
 ast_t program_to_ast2(const string& program){
-	const ast_t pass1 = program_to_ast(program);
+	const auto pass1 = program_to_ast(program);
 	const ast_t pass2 = run_pass2(pass1);
 	const ast_t pass3 = run_pass3(pass2);
 	return pass3;
@@ -513,7 +514,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
 	const auto resolved_path = vm.get_resolved_path();
-	const auto type = resolve_type_to_def(vm._ast, resolved_path, call_function_expression._function);
+	const auto type = resolve_type_to_def(resolved_path, call_function_expression._function);
 	if(!type || type->get_type() != base_type::k_function){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
@@ -650,10 +651,11 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 
 
-
+#if false
+??? use pass2!
 expression_t test_evaluate_simple(string expression_string){
 	const ast_t ast;
-	const auto e = parse_expression(expression_string);
+	const auto e = parse_expression_all(expression_string);
 	const auto e2 = evalute_expression(ast, e);
 	return e2;
 }
@@ -932,6 +934,8 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Multiply errors") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("+1/0") == EEE_DIVIDE_BY_ZERO);
 */
 }
+
+#endif
 
 
 

@@ -13,9 +13,9 @@
 #include "expressions.h"
 
 struct seq_t;
-	
+struct json_value_t;
+
 namespace floyd_parser {
-	struct expression_t;
 
 	/*
 		Parses the expression string
@@ -51,9 +51,9 @@ namespace floyd_parser {
 			"condition_expr ? result_true_expr : result_false_expr"
 			"a == 1 ? "one" : ”some other number""
 	*/
-	expression_t parse_expression(std::string expression);
+	json_value_t parse_expression_all(std::string expression);
 
-	std::pair<expression_t, seq_t> parse_expression(const seq_t& expression);
+	std::pair<json_value_t, seq_t> parse_expression_seq(const seq_t& expression);
 
 }	//	floyd_parser
 

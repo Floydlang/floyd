@@ -53,8 +53,7 @@ namespace floyd_parser {
 
 
 
-	value_t make_struct_instance(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& struct_def){
-		QUARK_ASSERT(ast.check_invariant());
+	value_t make_struct_instance(const resolved_path_t& path, const scope_ref_t& struct_def){
 		QUARK_ASSERT(path.check_invariant());
 		QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
@@ -62,7 +61,7 @@ namespace floyd_parser {
 		for(int i = 0 ; i < struct_def->_members.size() ; i++){
 			const auto& member_def = struct_def->_members[i];
 
-			const auto member_type = resolve_type_to_def(ast, path, *member_def._type);
+			const auto member_type = resolve_type_to_def(path, *member_def._type);
 			if(!member_type){
 				throw std::runtime_error("Undefined struct type!");
 			}
@@ -73,7 +72,7 @@ namespace floyd_parser {
 				value = *member_def._value;
 			}
 			else{
-				value = make_default_value(ast, path, *member_def._type);
+				value = make_default_value(path, *member_def._type);
 			}
 			member_values[member_def._name] = value;
 		}
@@ -401,8 +400,8 @@ struct_fixture_t::struct_fixture_t() :
 
 	_ast._global_scope = _ast._global_scope->set_types(define_struct_type(_ast._global_scope->_types_collector, "pixel", pixel_def));
 
-	_struct6_instance0 = make_struct_instance(_ast, make_resolved_root(_ast), _struct6_def);
-	_struct6_instance1 = make_struct_instance(_ast, make_resolved_root(_ast), _struct6_def);
+	_struct6_instance0 = make_struct_instance(make_resolved_root(_ast), _struct6_def);
+	_struct6_instance1 = make_struct_instance(make_resolved_root(_ast), _struct6_def);
 }
 
 

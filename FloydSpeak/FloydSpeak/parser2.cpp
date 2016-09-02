@@ -312,7 +312,7 @@ bool test__parse_expression(const std::string& expression, string expected_value
 	QUARK_TRACE_SS("expect:" << expected_value);
 
 	json_helper helper;
-	const auto result = parse_expression(helper, seq_t(expression));
+	const auto result = parse_expression_template(helper, seq_t(expression));
 	QUARK_TRACE_SS("result:" << result.first);
 	if(result.first != expected_value){
 		return false;
@@ -704,7 +704,7 @@ QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
 
 void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
 	try{
-		const auto result = parse_expression(json_helper(), seq_t(expression));
+		const auto result = parse_expression_template(json_helper(), seq_t(expression));
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){

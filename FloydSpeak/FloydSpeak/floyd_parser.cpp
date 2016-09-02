@@ -8,22 +8,12 @@
 
 #include "floyd_parser.h"
 
-/*
-#define QUARK_ASSERT_ON true
-#define QUARK_TRACE_ON true
-#define QUARK_UNIT_TESTS_ON true
-*/
-
 #include "parser_primitives.h"
 #include "text_parser.h"
-#include "steady_vector.h"
 #include "parse_statement.h"
 #include "parse_expression.h"
-#include "statements.h"
 #include "parse_function_def.h"
 #include "parse_struct_def.h"
-#include "parser_ast.h"
-#include "ast_utils.h"
 #include "utils.h"
 #include "json_support.h"
 
@@ -119,6 +109,14 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
 		"int b = f(a);..."
 
 
+	OUTPUT
+
+	["return", EXPRESSION ]
+	["bind", "local_name", EXPRESSION ]
+	["define_struct", STRUCT_DEF ]
+	["define_function", FUNCTION_DEF ]
+
+
 	FUTURE
 	- Add local scopes / blocks.
 	- Include comments
@@ -126,25 +124,23 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
 */
 
 struct statement_result_t {
-	statement_t _statement;
+	json_value_t _statement;
 	std::string _rest;
 };
 
-statement_result_t read_statement(const ast_t& ast, const scope_ref_t scope_def, const string& pos){
-	QUARK_ASSERT(scope_def->check_invariant());
-
+statement_result_t read_statement(const string& pos){
 	const auto token_pos = read_until(pos, whitespace_chars);
 
 	//	return statement?
 	if(token_pos.first == "return"){
 		const auto return_statement_pos = parse_return_statement(pos);
-		return { make__return_statement(return_statement_pos.first), skip_whitespace(return_statement_pos.second) };
+		return { return_statement_pos.first, skip_whitespace(return_statement_pos.second) };
 	}
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition(scope_def, pos);
-		return { define_struct_statement_t{ a.first }, skip_whitespace(a.second) };
+		const auto a = parse_struct_definition(pos);
+		return { json_value_t::make_array2({ json_value_t("define_struct"), a.first }), skip_whitespace(a.second) };
 	}
 
 	else {
@@ -156,12 +152,12 @@ statement_result_t read_statement(const ast_t& ast, const scope_ref_t scope_def,
 			"int xyz(string a, string b){ ... }
 		*/
 		if(peek_string(skip_whitespace(identifier_pos.second), "(")){
-			const auto function = parse_function_definition(ast, pos);
+			const auto function = parse_function_definition(pos);
 			{
 				QUARK_SCOPED_TRACE("FUNCTION DEF");
-				QUARK_TRACE(json_to_compact_string(scope_def_to_json(*function.first)));
+//				QUARK_TRACE(json_to_compact_string(scope_def_to_json(*function.first)));
 			}
-            return { define_function_statement_t{ function.first }, skip_whitespace(function.second) };
+            return { json_value_t::make_array2({ json_value_t("define_function"), function.first }), skip_whitespace(function.second) };
 		}
 
 		//	Define variable?
@@ -171,7 +167,7 @@ statement_result_t read_statement(const ast_t& ast, const scope_ref_t scope_def,
 		*/
 
 		else if(peek_string(skip_whitespace(identifier_pos.second), "=")){
-			pair<statement_t, string> assignment_statement = parse_assignment_statement(pos);
+			const auto assignment_statement = parse_assignment_statement(pos);
 			return { assignment_statement.first, skip_whitespace(assignment_statement.second) };
 		}
 
@@ -181,10 +177,13 @@ statement_result_t read_statement(const ast_t& ast, const scope_ref_t scope_def,
 	}
 }
 
+#if false
+??? check json
+#endif
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	try{
 		auto ast = ast_t();
-		const auto result = read_statement(ast, ast._global_scope, "int f()");
+		const auto result = read_statement("int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
@@ -193,12 +192,13 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	auto ast = ast_t();
-	const auto result = read_statement(ast, ast._global_scope, "float test = testx(1234);\n\treturn 3;\n");
+	const auto result = read_statement("float test = testx(1234);\n\treturn 3;\n");
 }
 
+#if false
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	auto ast = ast_t();
-	const auto result = read_statement(ast, ast._global_scope, test_function1);
+	const auto result = read_statement(test_function1);
 	QUARK_TEST_VERIFY(result._statement._define_function);
 //	QUARK_TEST_VERIFY(*result._statement._define_function->_function_def == *make_test_function1(global));
 	QUARK_TEST_VERIFY(result._statement._define_function->_function_def);
@@ -211,6 +211,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 	QUARK_TEST_VERIFY(result._statement._define_struct);
 	QUARK_TEST_VERIFY(*result._statement._define_struct->_struct_def == *make_test_struct0(ast._global_scope));
 }
+#endif
 
 
 
@@ -219,7 +220,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 //////////////////////////////////////////////////		program_to_ast()
 
 
-
+//??? move to pass2
 struct alloc_struct_param : public host_data_i {
 	public: virtual ~alloc_struct_param(){};
 
@@ -231,19 +232,21 @@ struct alloc_struct_param : public host_data_i {
 	scope_ref_t _struct_def;
 };
 
-
-value_t host_function__alloc_struct(const ast_t& ast, const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
+#if false
+value_t host_function__alloc_struct(const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
 	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
 
-	const auto instance = make_default_struct_value(ast, path, a._struct_def);
+	const auto instance = make_default_struct_value(path, a._struct_def);
 	return instance;
 }
+#endif
 
 /*
 	Take struct definition and creates all types, member variables, constructors, member functions etc.
 	??? add constructors and generated stuff.
 */
-scope_ref_t install_struct_support(const ast_t& ast, const scope_ref_t scope_def, const scope_ref_t& struct_def){
+json_value_t install_struct_support(const json_value_t scope_def, const json_value_t& struct_def){
+#if 0
 	QUARK_ASSERT(scope_def->check_invariant());
 	QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
@@ -264,61 +267,61 @@ scope_ref_t install_struct_support(const ast_t& ast, const scope_ref_t scope_def
 	}
 
 	return scope_def->set_types(types_collector2);
+#endif
+//???
+return scope_def;
 }
 
 //??? Track when / order of definitions and binds so statements can't access them before they're in scope.
 
 
-std::pair<scope_ref_t, std::string> read_statements_into_scope_def(const ast_t& ast, const scope_ref_t scope_def2, const string& s){
-	QUARK_ASSERT(scope_def2 && scope_def2->check_invariant());
+
+std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& scope_def2, const string& s){
+	QUARK_ASSERT(scope_def2.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
 
 	//	Copy input scope_def.
-	shared_ptr<const scope_def_t> result_scope = make_shared<scope_def_t>(*scope_def2);
+	json_value_t result_scope = scope_def2;
 
 	auto pos = skip_whitespace(s);
-	std::vector<std::shared_ptr<statement_t> > statements;
 	while(!pos.empty()){
-		const auto statement_pos = read_statement(ast, result_scope, pos);
+		const auto statement_pos = read_statement(pos);
+
+		//	Ex: ["return", EXPRESSION]
+		const auto statement = statement_pos._statement;
+
+		const auto statement_type = statement.get_array_element(0).get_string();
 
 		//	Definition statements are immediately removed from AST and the types are defined instead.
-		if(statement_pos._statement._define_struct){
-			const auto a = statement_pos._statement._define_struct;
-			result_scope = install_struct_support(ast, result_scope, a->_struct_def);
+		if(statement_type == "define_struct"){
+			result_scope = install_struct_support(result_scope, statement.get_array_element(1));
 		}
-		else if(statement_pos._statement._define_function){
-			auto function_def = statement_pos._statement._define_function->_function_def;
-			const auto function_name = function_def->_name;
-			result_scope = result_scope->set_types(define_function_type(result_scope->_types_collector, function_name.to_string(), function_def));
+		else if(statement_type == "define_function"){
+			auto function_def = statement.get_array_element(1);
+			const auto function_name = function_def.get_object_element("_name").get_string();
+//			result_scope = add_type(result_scope, function_name, function_def);
+
+			if(exists_in(result_scope, make_vec({ "_types_collector", function_name }))){
+				const auto index = get_in(result_scope, make_vec({ "_types_collector", function_name })).get_array_size();
+				result_scope = assoc_in(result_scope, make_vec({"_types_collector", function_name, index }), function_def);
+			}
+			else{
+				result_scope = assoc_in(
+					result_scope,
+					make_vec({"_types_collector", function_name }),
+					json_value_t::make_array2({ function_def })
+				);
+			}
 		}
-		else if(statement_pos._statement._bind_statement){
-			const auto& bind = *statement_pos._statement._bind_statement;
+		else if(statement_type == "bind"){
+			auto expr = statement.get_array_element(1);
 
 			//	Reserve an entry in _members-vector for our variable.
-			const auto members2 = result_scope->_members + std::vector<member_t>{ member_t(bind._type, bind._identifier) };
-			executable_t executable2 = result_scope->_executable;
-			executable2._statements.push_back(make_shared<statement_t>(statement_pos._statement));
-			scope_ref_t scope2 = scope_def_t::make2(
-				result_scope->_type,
-				result_scope->_name,
-				members2,
-				executable2,
-				result_scope->_types_collector,
-				result_scope->_return_type
-			);
-			result_scope.swap(scope2);
+			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), expr));
+			result_scope = store_object_member(result_scope, "_statements", push_back(result_scope.get_object_element("_statements"), statement));
 		}
 		else{
-			executable_t executable2 = result_scope->_executable;
-			executable2._statements.push_back(make_shared<statement_t>(statement_pos._statement));
-			scope_ref_t scope2 = scope_def_t::make2(
-				result_scope->_type,
-				result_scope->_name,
-				result_scope->_members,
-				executable2,
-				result_scope->_types_collector,
-				result_scope->_return_type
-			);
-			result_scope.swap(scope2);
+			result_scope = store_object_member(result_scope, "_statements", push_back(result_scope.get_object_element("_statements"), statement));
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
@@ -326,24 +329,23 @@ std::pair<scope_ref_t, std::string> read_statements_into_scope_def(const ast_t& 
 	return { result_scope, pos };
 }
 
+json_value_t program_to_ast(const string& program){
+	const json_value_t a = make_scope_def();
+	const auto statements_pos = read_statements_into_scope_def(a, program);
+//	string stage1 = json_to_compact_string(ast_to_json(ast));
 
-ast_t program_to_ast(const string& program){
-	ast_t ast;
-	string stage0 = json_to_compact_string(ast_to_json(ast));
-	const auto statements_pos = read_statements_into_scope_def(ast, ast._global_scope, program);
-	string stage1 = json_to_compact_string(ast_to_json(ast));
+//	ast_t ast2(statements_pos.first);
+//	string stage2 = json_to_compact_string(ast_to_json(ast2));
 
-	ast_t ast2(statements_pos.first);
-	string stage2 = json_to_compact_string(ast_to_json(ast2));
+//	QUARK_ASSERT(stage0 == stage1);
+//	QUARK_ASSERT(stage1 != stage2);
+//	trace(ast2);
 
-	QUARK_ASSERT(stage0 == stage1);
-	QUARK_ASSERT(stage1 != stage2);
-	trace(ast2);
-
-	QUARK_ASSERT(ast2.check_invariant());
-	return ast2;
+//	QUARK_ASSERT(ast2.check_invariant());
+	return statements_pos.first;
 }
 
+#if false
 QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	const string kProgram1 =
 		"int main(string args){\n"
@@ -573,7 +575,7 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member vari
 	));
 */
 }
-
+#endif
 
 
 }	//	floyd_parser

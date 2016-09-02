@@ -11,13 +11,12 @@
 
 
 #include "quark.h"
-#include <vector>
 #include <string>
-#include <tuple>
-#include "parser_ast.h"
+
+struct json_value_t;
 
 namespace floyd_parser {
-	struct scope_def_t;
+//	struct scope_def_t;
 
 
 	/*
@@ -25,11 +24,11 @@ namespace floyd_parser {
 		"struct pixel { int red = 255; int green = 255; int blue = 255; }"
 		
 	*/
-	std::pair<scope_ref_t, std::string> parse_struct_definition(scope_ref_t scope_def, const std::string& pos);
+	std::pair<json_value_t, std::string> parse_struct_definition(const std::string& pos);
 
 
 	const std::string k_test_struct0_body = "{int x; string y; float z;}";
-	scope_ref_t make_test_struct0(scope_ref_t scope_def);
+	json_value_t make_test_struct0();
 
 }
 

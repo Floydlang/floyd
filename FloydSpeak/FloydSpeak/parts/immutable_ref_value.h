@@ -17,7 +17,7 @@
 
 /////////////////////////////////////		immutable_ref_value_t
 
-
+//??? add operator=, copy-constructor and SWAP().
 /*
 	This is like a smart pointer, but it is immutable and has value semantics.
 	It cannot be null.

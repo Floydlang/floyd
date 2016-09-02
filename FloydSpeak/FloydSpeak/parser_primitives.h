@@ -175,6 +175,11 @@ namespace floyd_parser {
 
 	json_value_t value_to_json(const value_t& v);
 
+
+	json_value_t make_scope_def();
+
+
+
 }	//	floyd_parser
 
 

@@ -9,9 +9,9 @@
 #include "parse_function_def.h"
 
 #include "text_parser.h"
-#include "statements.h"
 #include "floyd_parser.h"
 #include "parser_primitives.h"
+#include "json_support.h"
 
 #include <cmath>
 
@@ -27,28 +27,29 @@ namespace floyd_parser {
 		(int a)
 		(int x, int y)
 	*/
-vector<member_t> parse_functiondef_arguments(const string& s2){
+vector<json_value_t> parse_functiondef_arguments(const string& s2){
 	const auto s(s2.substr(1, s2.length() - 2));
-	vector<member_t> args;
+	vector<json_value_t> args;
 	auto str = s;
 	while(!str.empty()){
 		const auto arg_type = read_type(str);
 		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
-		const auto a = member_t{ type_identifier_t::make(arg_type.first), arg_name.first };
+		const auto a = json_value_t::make_array2({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first) });
 		args.push_back(a);
 		str = skip_whitespace(optional_comma.second);
 	}
 
-	trace_vec("parsed arguments:", args);
+//	trace_vec("parsed arguments:", args);
 	return args;
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_TEST_VERIFY((parse_functiondef_arguments("()") == vector<member_t>{}));
+	QUARK_TEST_VERIFY((parse_functiondef_arguments("()") == vector<json_value_t>{}));
 }
 
+#if false
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
 	QUARK_TEST_VERIFY((r == vector<member_t>{
@@ -58,9 +59,10 @@ QUARK_UNIT_TEST("", "", "", ""){
 	}
 	));
 }
+#endif
 
 
-std::pair<scope_ref_t, std::string> parse_function_definition(const ast_t& ast, const string& pos){
+std::pair<json_value_t, std::string> parse_function_definition(const string& pos){
 	const auto return_type_pos = read_required_type_identifier(pos);
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
 
@@ -79,48 +81,39 @@ std::pair<scope_ref_t, std::string> parse_function_definition(const ast_t& ast, 
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
-	const auto function_name = type_identifier_t::make(function_name_pos.first);
+	const auto function_name = function_name_pos.first;
 
 	{
-		//	Makes both function-scope and its body-scope.
-		const auto function_def1 = make_function_def(
-			function_name,
-			return_type_pos.first,
-			args,
-			executable_t({}),
-			{},
-			{}
-		);
-
-		auto function_body_def = resolve_function_type(function_def1->_types_collector, "___body");
-		QUARK_ASSERT(function_body_def);
+		json_value_t function_body_def = make_scope_def();
 
 		//	temp will get all statements.
-		const auto temp = read_statements_into_scope_def(ast, function_body_def, body_pos.first.substr(1, body_pos.first.size() - 2));
+		const auto temp = read_statements_into_scope_def(function_body_def, body_pos.first.substr(1, body_pos.first.size() - 2));
 
-		const auto function_def2 = make_function_def(
-			function_name,
-			return_type_pos.first,
-			args,
-			temp.first->_executable,
-			temp.first->_types_collector,
-			temp.first->_members
-		);
+		const auto locals = temp.first.get_object_element("_locals");
+		const auto statements = temp.first.get_object_element("_statements");
+		const auto types_collector = temp.first.get_object_element("_types_collector");
 
-		return { function_def2, body_pos.second };
+		json_value_t function_def = make_scope_def();
+		function_def = store_object_member(function_def, "_name", function_name);
+		function_def = store_object_member(function_def, "_args", args);
+		function_def = store_object_member(function_def, "_locals", locals);
+		function_def = store_object_member(function_def, "_statements", statements);
+		function_def = store_object_member(function_def, "_types_collector", statements);
+		function_def = store_object_member(function_def, "_return_type", return_type_pos.first.to_string());
+		return { function_def, body_pos.second };
 	}
 }
 
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	try{
-		const auto ast = ast_t();
-		const auto result = parse_function_definition(ast, "int f()");
+		const auto result = parse_function_definition("int f()");
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(...){
 	}
 }
 
+#if false
 //??? Check that all function paths return a value.
 
 QUARK_UNIT_TESTQ("parse_function_definition()", ""){
@@ -169,7 +162,7 @@ QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""
 }
 */
 
-scope_ref_t make_test_function1(scope_ref_t scope){
+scope_ref_t make_test_function1(){
 	return make_function_def(
 		type_identifier_t::make("test_function1"),
 		type_identifier_t::make_int(),
@@ -182,7 +175,7 @@ scope_ref_t make_test_function1(scope_ref_t scope){
 	);
 }
 
-scope_ref_t make_test_function2(scope_ref_t scope){
+scope_ref_t make_test_function2(){
 	return make_function_def(
 		type_identifier_t::make("test_function2"),
 		type_identifier_t::make_string(),
@@ -198,7 +191,7 @@ scope_ref_t make_test_function2(scope_ref_t scope){
 	);
 }
 
-scope_ref_t make_log_function(scope_ref_t scope){
+scope_ref_t make_log_function(){
 	return make_function_def(
 		type_identifier_t::make("test_log_function"),
 		type_identifier_t::make_float(),
@@ -213,7 +206,7 @@ scope_ref_t make_log_function(scope_ref_t scope){
 	);
 }
 
-scope_ref_t make_log2_function(scope_ref_t scope){
+scope_ref_t make_log2_function(){
 	return make_function_def(
 		type_identifier_t::make("test_log2_function"),
 		type_identifier_t::make_float(),
@@ -229,7 +222,7 @@ scope_ref_t make_log2_function(scope_ref_t scope){
 	);
 }
 
-scope_ref_t make_return5(scope_ref_t scope){
+scope_ref_t make_return5(){
 	return make_function_def(
 		type_identifier_t::make("return5"),
 		type_identifier_t::make_float(),
@@ -243,7 +236,7 @@ scope_ref_t make_return5(scope_ref_t scope){
 	);
 }
 
-scope_ref_t make_return_hello(scope_ref_t scope){
+scope_ref_t make_return_hello(){
 	return make_function_def(
 		type_identifier_t::make("hello"),
 		type_identifier_t::make_int(),
@@ -256,6 +249,7 @@ scope_ref_t make_return_hello(scope_ref_t scope){
 		{}
 	);
 }
+#endif
 
 
 }	//	floyd_parser

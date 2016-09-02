@@ -11,13 +11,11 @@
 
 
 #include "quark.h"
-#include <vector>
 #include <string>
 
-namespace floyd_parser {
-	struct return_statement_t;
-	struct statement_t;
+struct json_value_t;
 
+namespace floyd_parser {
 	/*
 		s:
 			Must start with "return".
@@ -27,7 +25,7 @@ namespace floyd_parser {
 				return x + y;
 
 	*/
-	std::pair<return_statement_t, std::string> parse_return_statement(const std::string& s);
+	std::pair<json_value_t, std::string> parse_return_statement(const std::string& s);
 
 
 	/*
@@ -39,7 +37,7 @@ namespace floyd_parser {
 
 		...can contain trailing whitespace.
 	*/
-	std::pair<statement_t, std::string> parse_assignment_statement(const std::string& s);
+	std::pair<json_value_t, std::string> parse_assignment_statement(const std::string& s);
 
 }	//	floyd_parser
 

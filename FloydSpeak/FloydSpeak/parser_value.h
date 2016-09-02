@@ -448,7 +448,7 @@ namespace floyd_parser {
 	void trace(const value_t& e);
 
 
-	value_t make_struct_instance(const ast_t& ast, const resolved_path_t& path, const scope_ref_t& struct_def);
+	value_t make_struct_instance(const resolved_path_t& path, const scope_ref_t& struct_def);
 	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def, const std::vector<value_t>& elements);
 
 

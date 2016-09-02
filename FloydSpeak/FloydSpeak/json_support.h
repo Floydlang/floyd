@@ -75,7 +75,7 @@ struct json_value_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: explicit json_value_t(const std::string& s) :
+	public: json_value_t(const std::string& s) :
 		_type(k_string),
 		_string(s)
 	{
@@ -83,7 +83,7 @@ struct json_value_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: explicit json_value_t(const char s[]) :
+	public: json_value_t(const char s[]) :
 		_type(k_string),
 		_string(std::string(s))
 	{
@@ -121,6 +121,9 @@ struct json_value_t {
 
 	//	Deep equality compare.
 	public: bool operator==(const json_value_t& other) const;
+	public: bool operator!=(const json_value_t& other) const{
+		return !(*this == other);
+	}
 
 	enum etype {
 		k_object,
@@ -152,6 +155,55 @@ struct json_value_t {
 		return _object;
 	}
 
+	/*
+		Throws exception if this isn't an object.
+		Throws exception if key doesn't exist.
+	*/
+	const json_value_t& get_object_element(const std::string& key) const {
+		QUARK_ASSERT(check_invariant());
+
+		if(!is_object()){
+			throw std::runtime_error("Wrong type of JSON value");
+		}
+		return _object.at(key);
+	}
+
+	/*
+		Throws exception if this isn't an object.
+		if key doesn't exist, return def_value.
+	*/
+	json_value_t get_optional_object_element(const std::string& key, const json_value_t& def_value = json_value_t()) const {
+		QUARK_ASSERT(check_invariant());
+
+		if(!is_object()){
+			throw std::runtime_error("Wrong type of JSON value");
+		}
+		if(does_object_element_exist(key)){
+			return get_object_element(key);
+		}
+		else{
+			return def_value;
+		}
+	}
+
+	const bool does_object_element_exist(const std::string& key) const {
+		QUARK_ASSERT(check_invariant());
+
+		if(!is_object()){
+			throw std::runtime_error("Wrong type of JSON value");
+		}
+		return _object.find(key) != _object.end();
+	}
+
+	size_t get_object_size() const {
+		QUARK_ASSERT(check_invariant());
+
+		if(!is_object()){
+			throw std::runtime_error("Wrong type of JSON value");
+		}
+		return _object.size();
+	}
+
 
 	bool is_array() const {
 		QUARK_ASSERT(check_invariant());
@@ -159,6 +211,9 @@ struct json_value_t {
 		return _type == k_array;
 	}
 
+	/*
+		Throws exception if this isn't an array.
+	*/
 	const std::vector<json_value_t>& get_array() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -168,6 +223,25 @@ struct json_value_t {
 		return _array;
 	}
 
+	const json_value_t& get_array_element(size_t index) const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(index >= 0);
+
+		if(!is_array()){
+			throw std::runtime_error("Wrong type of JSON value");
+		}
+		QUARK_ASSERT(index < _array.size());
+		return _array[index];
+	}
+
+	size_t get_array_size() const {
+		QUARK_ASSERT(check_invariant());
+
+		if(!is_array()){
+			throw std::runtime_error("Wrong type of JSON value");
+		}
+		return _array.size();
+	}
 
 	bool is_string() const {
 		QUARK_ASSERT(check_invariant());
@@ -229,7 +303,41 @@ struct json_value_t {
 };
 
 
-	json_value_t make_object(const std::vector<std::pair<std::string, json_value_t>>& entries);
+
+////////////////////////////////////////		HELPERS
+
+
+
+inline std::vector<json_value_t> make_vec(std::initializer_list<json_value_t> args){
+	return std::vector<json_value_t>(args.begin(), args.end());
+}
+
+json_value_t make_object(const std::vector<std::pair<std::string, json_value_t>>& entries);
+json_value_t store_object_member(const json_value_t& obj, const std::string& key, const json_value_t& value);
+
+/*
+	Adds element last to this vector, or inserts it if object is a map.
+*/
+json_value_t push_back(const json_value_t& obj, const json_value_t& element);
+
+
+bool exists_in(const json_value_t& parent, const std::vector<json_value_t>& path);
+
+json_value_t get_in(const json_value_t& parent, const std::vector<json_value_t>& path);
+
+/*
+	Arrays entries can be overwritten or appended precisely at end of array.
+*/
+json_value_t assoc(const json_value_t& obj, const json_value_t& member, const json_value_t& new_element);
+
+/*
+	Will walk a path of maps and arrays and add/replace the new element to the last object.
+	Path nodes are string for object-member, number for array-index.
+	Arrays entries can be overwritten or appended precisely at end of array.
+*/
+json_value_t assoc_in(const json_value_t& parent, const std::vector<json_value_t>& path, const json_value_t& new_element);
+
+
 
 
 

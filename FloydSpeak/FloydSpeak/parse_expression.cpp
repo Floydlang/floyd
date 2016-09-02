@@ -16,6 +16,8 @@
 #include "parser_primitives.h"
 #include "parser2.h"
 
+#include "json_support.h"
+
 namespace floyd_parser {
 
 
@@ -28,9 +30,8 @@ using std::make_shared;
 
 
 
-struct parse_helper : public maker<expression_t> {
-	private: static const std::map<eoperation, string> _2_operator_to_string;
 
+struct parse_helper : public maker<expression_t> {
 	private: static string make_2op(string lhs, string op, string rhs){
 		return make3(quote(op), lhs, rhs);
 	}
@@ -67,9 +68,6 @@ struct parse_helper : public maker<expression_t> {
 	}
 
 	public: virtual const expression_t maker__make2(const eoperation op, const expression_t& lhs, const expression_t& rhs) const{
-//		const auto op_str = _2_operator_to_string.at(op);
-//		return make3(quote(op_str), lhs, rhs);
-
 		if(op == eoperation::k_2_looup){
 			return expression_t::make_lookup(lhs, rhs);
 		}
@@ -161,7 +159,29 @@ struct parse_helper : public maker<expression_t> {
 	}
 };
 
-const std::map<eoperation, string> parse_helper::_2_operator_to_string{
+/*
+std::pair<expression_t, seq_t> parse_expression(const seq_t& expression){
+	parse_helper helper;
+	return parse_expression(helper, expression);
+}
+
+expression_t parse_expression(std::string expression){
+	parse_helper helper;
+
+	const auto result = parse_expression(helper, seq_t(expression));
+	if(!skip_whitespace(result.second).empty()){
+		throw std::runtime_error("All of expression not used");
+	}
+	return result.first;
+}
+*/
+
+
+
+/////////////////////////////////		TO JSON
+
+
+const std::map<eoperation, string> k_2_operator_to_string{
 //	{ eoperation::k_x_member_access, "->" },
 
 	{ eoperation::k_2_looup, "[-]" },
@@ -183,34 +203,8 @@ const std::map<eoperation, string> parse_helper::_2_operator_to_string{
 	{ eoperation::k_2_logical_or, "||" },
 };
 
-
-std::pair<expression_t, seq_t> parse_expression(const seq_t& expression){
-	parse_helper helper;
-	return parse_expression(helper, expression);
-}
-
-expression_t parse_expression(std::string expression){
-	parse_helper helper;
-
-	const auto result = parse_expression(helper, seq_t(expression));
-	if(!skip_whitespace(result.second).empty()){
-		throw std::runtime_error("All of expression not used");
-	}
-	return result.first;
-}
-
-
-
-
-/*
-/////////////////////////////////		TO JSON
-
-#include "json_support.h"
-
 template<typename EXPRESSION>
 struct json_helper : public maker<EXPRESSION> {
-
-
 	public: virtual const EXPRESSION maker__make_identifier(const std::string& s) const{
 		return json_value_t::make_array_skip_nulls({ json_value_t("@"), json_value_t(), json_value_t(s) });
 	}
@@ -226,10 +220,8 @@ struct json_helper : public maker<EXPRESSION> {
 		}
 	}
 
-	private: static const std::map<eoperation, string> _2_operator_to_string;
-
 	public: virtual const EXPRESSION maker__make2(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
-		const auto op_str = _2_operator_to_string.at(op);
+		const auto op_str = k_2_operator_to_string.at(op);
 		return json_value_t::make_array2({ json_value_t(op_str), lhs, rhs });
 	}
 	public: virtual const EXPRESSION maker__make3(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
@@ -268,29 +260,18 @@ struct json_helper : public maker<EXPRESSION> {
 	}
 };
 
-template<typename EXPRESSION>
-const std::map<eoperation, string> json_helper<EXPRESSION>::_2_operator_to_string{
-//	{ eoperation::k_x_member_access, "->" },
+json_value_t parse_expression_all(std::string expression){
+	const auto result = parse_expression_seq(seq_t(expression));
+	if(!skip_whitespace(result.second).empty()){
+		throw std::runtime_error("All of expression not used");
+	}
+	return result.first;
+}
 
-	{ eoperation::k_2_looup, "[-]" },
-
-	{ eoperation::k_2_add, "+" },
-	{ eoperation::k_2_subtract, "-" },
-	{ eoperation::k_2_multiply, "*" },
-	{ eoperation::k_2_divide, "/" },
-	{ eoperation::k_2_remainder, "%" },
-
-	{ eoperation::k_2_smaller_or_equal, "<=" },
-	{ eoperation::k_2_smaller, "<" },
-	{ eoperation::k_2_larger_or_equal, ">=" },
-	{ eoperation::k_2_larger, ">" },
-
-	{ eoperation::k_2_logical_equal, "==" },
-	{ eoperation::k_2_logical_nonequal, "!=" },
-	{ eoperation::k_2_logical_and, "&&" },
-	{ eoperation::k_2_logical_or, "||" },
-};
-*/
+std::pair<json_value_t, seq_t> parse_expression_seq(const seq_t& expression){
+	json_helper<json_value_t> helper;
+	return parse_expression_template<json_value_t>(helper, expression);
+}
 
 
 

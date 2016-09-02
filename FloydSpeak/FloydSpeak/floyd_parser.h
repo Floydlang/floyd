@@ -10,19 +10,14 @@
 #define floyd_parser_h
 
 #include "quark.h"
-
-#include "statements.h"
-#include "parser_ast.h"
-
 #include <string>
 
+struct json_value_t;
+
 namespace floyd_parser {
-	struct scope_def_t;
+	std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& scope_def2, const std::string& s);
 
-
-	std::pair<scope_ref_t, std::string> read_statements_into_scope_def(const ast_t& ast, const scope_ref_t scope_def, const std::string& s);
-
-	ast_t program_to_ast(const std::string& program);
+	json_value_t program_to_ast(const std::string& program);
 
 }	//	floyd_parser
 

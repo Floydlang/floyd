@@ -597,7 +597,7 @@ std::pair<EXPRESSION, seq_t> parse_expression_int(const maker<EXPRESSION>& helpe
 
 
 template<typename EXPRESSION>
-std::pair<EXPRESSION, seq_t> parse_expression(const maker<EXPRESSION>& helper, const seq_t& p){
+std::pair<EXPRESSION, seq_t> parse_expression_template(const maker<EXPRESSION>& helper, const seq_t& p){
 	if(!is_valid_chars(p.get_all())){
 		throw std::runtime_error("Illegal characters.");
 	}

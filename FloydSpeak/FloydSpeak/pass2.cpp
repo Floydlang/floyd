@@ -37,16 +37,15 @@ using std::shared_ptr;
 using std::pair;
 
 
-scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& path);
-expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& path, const expression_t& e);
+scope_ref_t resolve_types__scope_def(const resolved_path_t& path);
+expression_t pass2_expression_internal(const resolved_path_t& path, const expression_t& e);
 
 
-expression_t resolve_types__expression(const ast_t& ast, const resolved_path_t& path, const expression_t& e){
-	QUARK_ASSERT(ast.check_invariant());
+expression_t resolve_types__expression(const resolved_path_t& path, const expression_t& e){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto r = pass2_expression_internal(ast, path, e);
+	const auto r = pass2_expression_internal(path, e);
 
 	QUARK_ASSERT(!r.get_expression_type().is_null());
 	return r;
@@ -79,15 +78,14 @@ bool returns_bool(floyd_parser::math_operation2_expr_t::operation op){
 }
 
 
-expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& path, const expression_t& e){
-	QUARK_ASSERT(ast.check_invariant());
+expression_t pass2_expression_internal(const resolved_path_t& path, const expression_t& e){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto scope_def = path.get_leaf();
 	if(e._constant){
 		const auto& con = *e._constant;
-		const auto const_type = resolve_type_to_def(ast, path, con.get_type());
+		const auto const_type = resolve_type_to_def(path, con.get_type());
 		if(!const_type){
 			throw std::runtime_error("1000 - Unknown constant type \"" + con.get_type().to_string() + "\".");
 		}
@@ -100,8 +98,8 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 	}
 	else if(e._math2){
 		const auto& math2 = *e._math2;
-		const auto left = resolve_types__expression(ast, path, *math2._left);
-		const auto right = resolve_types__expression(ast, path, *math2._right);
+		const auto left = resolve_types__expression(path, *math2._left);
+		const auto right = resolve_types__expression(path, *math2._right);
 
 		if(left.get_expression_type().to_string() != right.get_expression_type().to_string()){
 			throw std::runtime_error("1001 - Left & right side of math2 must have same type.");
@@ -112,7 +110,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 			return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
 		}
 		else if(returns_bool(math2._operation)){
-			const auto type = resolve_type_to_id(ast, path, floyd_parser::type_identifier_t::make_bool());
+			const auto type = resolve_type_to_id(path, floyd_parser::type_identifier_t::make_bool());
 			return floyd_parser::expression_t::make_math_operation2(math2._operation, left, right, type);
 		}
 		else{
@@ -122,9 +120,9 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 	}
 	else if(e._conditional_operator){
 		const auto& cond = *e._conditional_operator;
-		const auto condition_expr = resolve_types__expression(ast, path, *cond._condition);
-		const auto true_expr = resolve_types__expression(ast, path, *cond._a);
-		const auto false_expr = resolve_types__expression(ast, path, *cond._b);
+		const auto condition_expr = resolve_types__expression(path, *cond._condition);
+		const auto true_expr = resolve_types__expression(path, *cond._a);
+		const auto false_expr = resolve_types__expression(path, *cond._b);
 		const auto type = true_expr.get_expression_type();
 		if(true_expr.get_expression_type().to_string() != false_expr.get_expression_type().to_string()){
 			throw std::runtime_error("1001 - Left & right side of (?:) must have same type.");
@@ -135,13 +133,13 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 		const auto& call = *e._call;
 
 		//	Resolve function name.
-		const auto f = resolve_type_to_def(ast, path, call._function);
+		const auto f = resolve_type_to_def(path, call._function);
 		if(!f || f->get_type() != base_type::k_function){
 			throw std::runtime_error("1002 - Undefined function \"" + call._function.to_string() + "\".");
 		}
 		const auto f2 = f->get_function_def();
 
-		const auto return_type = resolve_type_to_id(ast, path, f2->_return_type);
+		const auto return_type = resolve_type_to_id(path, f2->_return_type);
 		QUARK_ASSERT(return_type.is_resolved());
 
 		if(f2->_type == scope_def_t::k_function_scope){
@@ -153,7 +151,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 			vector<expression_t> args2;
 			for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
 				const auto call_arg = call._inputs[argument_index];
-				const auto call_arg2 = resolve_types__expression(ast, path, call_arg);
+				const auto call_arg2 = resolve_types__expression(path, call_arg);
 				const auto call_arg2_type = call_arg2.get_expression_type();
 				QUARK_ASSERT(call_arg2_type.is_resolved());
 
@@ -180,26 +178,26 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 	}
 	else if(e._load){
 		const auto& load = *e._load;
-		const auto address = resolve_types__expression(ast, path, *load._address);
+		const auto address = resolve_types__expression(path, *load._address);
 		const auto resolved_type = address.get_expression_type();
 		return floyd_parser::expression_t::make_load(address, resolved_type);
 	}
 	else if(e._resolve_variable){
 		const auto& e2 = *e._resolve_variable;
-		std::pair<floyd_parser::scope_ref_t, int> x = resolve_scoped_variable(ast, path, e2._variable_name);
+		std::pair<floyd_parser::scope_ref_t, int> x = resolve_scoped_variable(path, e2._variable_name);
 		if(!x.first){
 			throw std::runtime_error("1005 - Undefined variable \"" + e2._variable_name + "\".");
 		}
 		const auto& member = x.first->_members[x.second];
 //??? Replace this with a pointer to the scope_def and the index! It's statically resolved now!
 		//	Error 1009
-		const auto type = resolve_type_throw(ast, path, *member._type);
+		const auto type = resolve_type_throw(path, *member._type);
 
 		return floyd_parser::expression_t::make_resolve_variable(e2._variable_name, type);
 	}
 	else if(e._resolve_member){
 		const auto& e2 = *e._resolve_member;
-		const auto parent_address2 = make_shared<expression_t>(resolve_types__expression(ast, path, *e2._parent_address));
+		const auto parent_address2 = make_shared<expression_t>(resolve_types__expression(path, *e2._parent_address));
 
 		const auto resolved_type = parent_address2->get_expression_type();
 		const auto s = resolved_type.get_resolved()->get_struct_def();
@@ -209,7 +207,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 		member_t member_meta = find_struct_member_throw(s, member_name);
 
 		//	Error 1011
-		const auto value_type = resolve_type_throw(ast, path, *member_meta._type);
+		const auto value_type = resolve_type_throw(path, *member_meta._type);
 		return floyd_parser::expression_t::make_resolve_member(parent_address2, e2._member_name, value_type);
 	}
 	else if(e._lookup_element){
@@ -221,8 +219,7 @@ expression_t pass2_expression_internal(const ast_t& ast, const resolved_path_t& 
 	}
 }
 
-scope_ref_t find_enclosing_function(const ast_t& ast, const resolved_path_t& path){
-	QUARK_ASSERT(ast.check_invariant());
+scope_ref_t find_enclosing_function(const resolved_path_t& path){
 	QUARK_ASSERT(path.check_invariant());
 
 	for(auto i = path._scopes.size() ; i > 0 ; i--){
@@ -233,8 +230,7 @@ scope_ref_t find_enclosing_function(const ast_t& ast, const resolved_path_t& pat
 	return {};
 }
 
-statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& path, const statement_t& statement){
-	QUARK_ASSERT(ast.check_invariant());
+statement_t resolve_types__statement(const resolved_path_t& path, const statement_t& statement){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
@@ -249,7 +245,7 @@ statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& pa
 		const auto& member = floyd_parser::find_struct_member_throw(scope_def, new_identifier);
 		QUARK_ASSERT(member.check_invariant());
 
-		const auto e2 = resolve_types__expression(ast, path, *statement._bind_statement->_expression);
+		const auto e2 = resolve_types__expression(path, *statement._bind_statement->_expression);
 
 		if(!(e2.get_expression_type().to_string() == statement._bind_statement->_type.to_string())){
 			throw std::runtime_error("1006 - Bind type mismatch.");
@@ -266,9 +262,9 @@ statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& pa
 		QUARK_ASSERT(false);
 	}
 	else if(statement._return_statement){
-		const auto e2 = resolve_types__expression(ast, path, *statement._return_statement->_expression);
+		const auto e2 = resolve_types__expression(path, *statement._return_statement->_expression);
 
-		const auto function = find_enclosing_function(ast, path);
+		const auto function = find_enclosing_function(path);
 		if(!function){
 			throw std::runtime_error("1007 - Return-statement not allowed outside function definition.");
 		}
@@ -286,8 +282,7 @@ statement_t resolve_types__statement(const ast_t& ast, const resolved_path_t& pa
 	}
 }
 
-scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& path){
-	QUARK_ASSERT(ast.check_invariant());
+scope_ref_t resolve_types__scope_def(const resolved_path_t& path){
 	QUARK_ASSERT(path.check_invariant());
 
 	scope_ref_t scope2 = path.get_leaf();
@@ -307,7 +302,7 @@ scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& pa
 				if(type_def1->is_subscope()){
 					auto scope3 = type_def1->get_subscope();
 					const resolved_path_t path2 = go_down(path, scope3);
-					scope_ref_t scope4 = resolve_types__scope_def(ast, path2);
+					scope_ref_t scope4 = resolve_types__scope_def(path2);
 					shared_ptr<type_def_t> type_def2 = make_shared<type_def_t>(type_def1->replace_subscope(scope4));
 					type_entry2._defs.push_back(type_def2);
 				}
@@ -327,11 +322,11 @@ scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& pa
 		vector<floyd_parser::member_t> members2;
 		for(const auto& member1: scope2->_members){
 			//	Error 1013
-			const auto type2 = resolve_type_throw(ast, path, *member1._type);
+			const auto type2 = resolve_type_throw(path, *member1._type);
 
 			if(member1._value){
 				//	Error ???
-				const auto init_value_type = resolve_type_throw(ast, path, *member1._type);
+				const auto init_value_type = resolve_type_throw(path, *member1._type);
 
 				const auto init_value2 = member1._value->resolve_type(init_value_type);
 
@@ -360,7 +355,7 @@ scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& pa
 
 	if(scope2->_type == scope_def_t::k_function_scope){
 		//	Error 1014
-		const auto return_type = resolve_type_throw(ast, path, scope2->_return_type);
+		const auto return_type = resolve_type_throw(path, scope2->_return_type);
 
 		scope2 = scope_def_t::make2(
 			scope2->_type,
@@ -377,7 +372,7 @@ scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& pa
 	}
 	else if(scope2->_type == scope_def_t::k_subscope){
 		//	Error 1015
-		const auto return_type = resolve_type_throw(ast, path, scope2->_return_type);
+		const auto return_type = resolve_type_throw(path, scope2->_return_type);
 
 		scope2 = scope_def_t::make2(
 			scope2->_type,
@@ -396,7 +391,7 @@ scope_ref_t resolve_types__scope_def(const ast_t& ast, const resolved_path_t& pa
 	{
 		vector<shared_ptr<statement_t>> statements2;
 		for(auto s: scope2->_executable._statements){
-			 const auto statement2 = resolve_types__statement(ast, path, *s);
+			 const auto statement2 = resolve_types__statement(path, *s);
 			 statements2.push_back(make_shared<statement_t>(statement2));
 		}
 
@@ -441,7 +436,6 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 		}
 
 		bool has_unresolved_types(const statement_t& statement){
-			QUARK_ASSERT(ast.check_invariant());
 			QUARK_ASSERT(path.check_invariant());
 			QUARK_ASSERT(statement.check_invariant());
 
@@ -456,7 +450,7 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 				const auto& member = floyd_parser::find_struct_member_throw(scope_def, new_identifier);
 				QUARK_ASSERT(member.check_invariant());
 
-				const auto e2 = resolve_types__expression(ast, path, *statement._bind_statement->_expression);
+				const auto e2 = resolve_types__expression(path, *statement._bind_statement->_expression);
 
 				if(!(e2.get_expression_type().to_string() == statement._bind_statement->_type.to_string())){
 					throw std::runtime_error("1006 - Bind type mismatch.");
@@ -473,9 +467,9 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 				QUARK_ASSERT(false);
 			}
 			else if(statement._return_statement){
-				const auto e2 = resolve_types__expression(ast, path, *statement._return_statement->_expression);
+				const auto e2 = resolve_types__expression(path, *statement._return_statement->_expression);
 
-				const auto function = find_enclosing_function(ast, path);
+				const auto function = find_enclosing_function(path);
 				if(!function){
 					throw std::runtime_error("1007 - Return-statement not allowed outside function definition.");
 				}
@@ -493,8 +487,7 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 			}
 		}
 
-	bool has_unresolved_types(const ast_t& ast, const resolved_path_t& path){
-		QUARK_ASSERT(ast.check_invariant());
+	bool has_unresolved_types(const resolved_path_t& path){
 		QUARK_ASSERT(path.check_invariant());
 
 		scope_ref_t scope = path.get_leaf();
@@ -557,10 +550,11 @@ bool has_unresolved_types(const floyd_parser::ast_t& ast1){
 #endif
 
 
-floyd_parser::ast_t run_pass2(const floyd_parser::ast_t& ast1){
+floyd_parser::ast_t run_pass2(const json_value_t& parse_tree){
+	ast_t ast1;
 	string stage0 = json_to_compact_string(ast_to_json(ast1));
 
-	const auto global = resolve_types__scope_def(ast1, make_resolved_root(ast1));
+	const auto global = resolve_types__scope_def(make_resolved_root(ast1));
 	const ast_t ast2(global);
 	trace(ast2);
 
@@ -589,7 +583,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "Minimum program"){
 			return 3;
 		}
 		)";
-	const ast_t pass1 = floyd_parser::program_to_ast(a);
+	const auto pass1 = floyd_parser::program_to_ast(a);
 	const ast_t pass2 = run_pass2(pass1);
 
 
@@ -607,14 +601,14 @@ QUARK_UNIT_TESTQ("run_pass2()", "Maxium program"){
 			return get_s(p);
 		}
 		)";
-	const ast_t pass1 = floyd_parser::program_to_ast(a);
+	const auto pass1 = floyd_parser::program_to_ast(a);
 	const ast_t pass2 = run_pass2(pass1);
 }
 
 
 
 void test_error(const string& program, const string& error_string){
-	const ast_t pass1 = floyd_parser::program_to_ast(program);
+	const auto pass1 = floyd_parser::program_to_ast(program);
 	try{
 		const ast_t pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);

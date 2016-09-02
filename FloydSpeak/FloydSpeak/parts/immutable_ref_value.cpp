@@ -122,6 +122,17 @@ QUARK_UNIT_TESTQ("make_immutable_value()", "operator==() -- equal BY VALUE"){
 	QUARK_TEST_VERIFY(a == b);
 }
 
+#if false
+QUARK_UNIT_TESTQ("make_immutable_value()", "operator=()"){
+	const auto a = make_immutable_value<smurf_impl_t>(12.4f, "Hungry-Smurf");
+	const auto b = a;
+	b = a;
+
+	QUARK_TEST_VERIFY(a == b);
+}
+#endif
+
+
 QUARK_UNIT_TESTQ("make_immutable_value()", "Test using std::string"){
 	const auto a = make_immutable_value<std::string>("Hello, world!");
 

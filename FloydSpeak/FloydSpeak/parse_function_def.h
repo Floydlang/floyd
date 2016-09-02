@@ -10,19 +10,11 @@
 #define parser_function_hpp
 
 #include "quark.h"
-#include <vector>
 #include <string>
 
-#include "parser_ast.h"
-#include "parser_value.h"
-
+struct json_value_t;
 
 namespace floyd_parser {
-	struct expression_t;
-	struct statement_t;
-	struct scope_def_t;
-
-
 	/*
 		Named function definition:
 
@@ -41,7 +33,7 @@ namespace floyd_parser {
 			}
 		}
 	*/
-	std::pair<scope_ref_t, std::string> parse_function_definition(const ast_t& ast, const std::string& pos);
+	std::pair<json_value_t, std::string> parse_function_definition(const std::string& pos);
 
 
 
@@ -49,16 +41,16 @@ namespace floyd_parser {
 
 
 	const std::string test_function1 = "int test_function1(){ return 100; }";
-	scope_ref_t make_test_function1(scope_ref_t scope);
+	json_value_t make_test_function1();
 
 	const std::string test_function2 = "string test_function2(int a, float b){ return \"sdf\"; }";
-	scope_ref_t make_test_function2(scope_ref_t scope);
+	json_value_t make_test_function2();
 
-	scope_ref_t make_log_function(scope_ref_t scope);
-	scope_ref_t make_log2_function(scope_ref_t scope);
-	scope_ref_t make_return5(scope_ref_t scope);
+	json_value_t make_log_function();
+	json_value_t make_log2_function();
+	json_value_t make_return5();
 
-	scope_ref_t make_return_hello(scope_ref_t scope);
+	json_value_t make_return_hello();
 }
 
 
