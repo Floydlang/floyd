@@ -91,14 +91,15 @@ std::pair<json_value_t, std::string> parse_function_definition(const string& pos
 
 		const auto locals = temp.first.get_object_element("_locals");
 		const auto statements = temp.first.get_object_element("_statements");
-		const auto types_collector = temp.first.get_object_element("_types_collector");
+		const auto types_collector = temp.first.get_object_element("_types");
 
 		json_value_t function_def = make_scope_def();
+		function_def = store_object_member(function_def, "_type", "function");
 		function_def = store_object_member(function_def, "_name", function_name);
 		function_def = store_object_member(function_def, "_args", args);
 		function_def = store_object_member(function_def, "_locals", locals);
 		function_def = store_object_member(function_def, "_statements", statements);
-		function_def = store_object_member(function_def, "_types_collector", statements);
+		function_def = store_object_member(function_def, "_types", statements);
 		function_def = store_object_member(function_def, "_return_type", return_type_pos.first.to_string());
 		return { function_def, body_pos.second };
 	}

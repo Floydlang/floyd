@@ -290,31 +290,35 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 		//	Ex: ["return", EXPRESSION]
 		const auto statement = statement_pos._statement;
 
-		const auto statement_type = statement.get_array_element(0).get_string();
+		const auto statement_type = statement.get_array_n(0).get_string();
 
 		//	Definition statements are immediately removed from AST and the types are defined instead.
 		if(statement_type == "define_struct"){
-			result_scope = install_struct_support(result_scope, statement.get_array_element(1));
+			result_scope = install_struct_support(result_scope, statement.get_array_n(1));
 		}
 		else if(statement_type == "define_function"){
-			auto function_def = statement.get_array_element(1);
+			const auto function_def = statement.get_array_n(1);
 			const auto function_name = function_def.get_object_element("_name").get_string();
-//			result_scope = add_type(result_scope, function_name, function_def);
 
-			if(exists_in(result_scope, make_vec({ "_types_collector", function_name }))){
-				const auto index = get_in(result_scope, make_vec({ "_types_collector", function_name })).get_array_size();
-				result_scope = assoc_in(result_scope, make_vec({"_types_collector", function_name, index }), function_def);
+			const auto type_entry = json_value_t::make_object({
+				{ "base_type", "function" },
+				{ "scope_def", function_def }
+			});
+			if(exists_in(result_scope, make_vec({ "_types", function_name }))){
+				const auto index = get_in(result_scope, make_vec({ "_types", function_name })).get_array_size();
+
+				result_scope = assoc_in(result_scope, make_vec({"_types", function_name, index }), type_entry);
 			}
 			else{
 				result_scope = assoc_in(
 					result_scope,
-					make_vec({"_types_collector", function_name }),
-					json_value_t::make_array2({ function_def })
+					make_vec({"_types", function_name }),
+					json_value_t::make_array2({ type_entry })
 				);
 			}
 		}
 		else if(statement_type == "bind"){
-			auto expr = statement.get_array_element(1);
+			auto expr = statement.get_array_n(1);
 
 			//	Reserve an entry in _members-vector for our variable.
 			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), expr));
@@ -330,9 +334,12 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 }
 
 json_value_t program_to_ast(const string& program){
-	const json_value_t a = make_scope_def();
+	json_value_t a = make_scope_def();
+	a = store_object_member(a, "_name", "global");
+	a = store_object_member(a, "_type", "global");
+
 	const auto statements_pos = read_statements_into_scope_def(a, program);
-//	string stage1 = json_to_compact_string(ast_to_json(ast));
+	QUARK_TRACE(json_to_compact_string(statements_pos.first));
 
 //	ast_t ast2(statements_pos.first);
 //	string stage2 = json_to_compact_string(ast_to_json(ast2));

@@ -29,7 +29,7 @@ using std::make_shared;
 
 
 
-
+using namespace parser2;
 
 struct parse_helper : public maker<expression_t> {
 	private: static string make_2op(string lhs, string op, string rhs){
@@ -262,7 +262,7 @@ struct json_helper : public maker<EXPRESSION> {
 
 json_value_t parse_expression_all(std::string expression){
 	const auto result = parse_expression_seq(seq_t(expression));
-	if(!skip_whitespace(result.second).empty()){
+	if(!parser2::skip_whitespace(result.second).empty()){
 		throw std::runtime_error("All of expression not used");
 	}
 	return result.first;

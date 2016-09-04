@@ -627,7 +627,7 @@ namespace floyd_parser {
 			{ "_name", json_value_t(scope_def._name.to_string()) },
 			{ "_members", members.empty() ? json_value_t() :json_value_t(members) },
 			{ "_executable", executable_to_json(scope_def._executable) },
-			{ "_types_collector", types_collector_to_json(scope_def._types_collector) },
+			{ "_types", types_collector_to_json(scope_def._types_collector) },
 			{ "_return_type", json_value_t(scope_def._return_type.to_string()) }
 		});
 	}

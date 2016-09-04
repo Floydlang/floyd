@@ -16,6 +16,8 @@
 #include <string>
 #include <memory>
 
+
+namespace parser2 {
 /*
 	C99-language constants.
 	http://en.cppreference.com/w/cpp/language/operator_precedence
@@ -604,5 +606,7 @@ std::pair<EXPRESSION, seq_t> parse_expression_template(const maker<EXPRESSION>& 
 	return parse_expression_int<EXPRESSION>(helper, p, eoperator_precedence::k_super_weak);
 }
 
+
+}	//	parser2
 
 #endif /* parser2_h */

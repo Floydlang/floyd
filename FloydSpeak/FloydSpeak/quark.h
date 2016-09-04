@@ -312,6 +312,7 @@ class runtime_i {
 	public: virtual ~runtime_i(){};
 	public: virtual void runtime_i__trace(const char s[]) = 0;
 	public: virtual void runtime_i__add_log_indent(long add) = 0;
+	public: virtual int runtime_i__get_log_indent() const = 0;
 	public: virtual void runtime_i__on_assert(const source_code_location& location, const char expression[]) = 0;
 	public: virtual void runtime_i__on_unit_test_failed(const source_code_location& location, const char s[]) = 0;
 };
@@ -448,7 +449,9 @@ void set_runtime(runtime_i* iRuntime);
 
 #endif
 
-
+	inline int get_log_indent(){
+		return get_runtime()->runtime_i__get_log_indent();
+	}
 
 
 //	UNIT TEST SUPPORT
@@ -615,6 +618,7 @@ struct default_runtime : public runtime_i {
 
 	public: virtual void runtime_i__trace(const char s[]);
 	public: virtual void runtime_i__add_log_indent(long add);
+	public: virtual int runtime_i__get_log_indent() const;
 	public: virtual void runtime_i__on_assert(const source_code_location& location, const char expression[]);
 	public: virtual void runtime_i__on_unit_test_failed(const source_code_location& location, const char expression[]);
 

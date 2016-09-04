@@ -20,7 +20,6 @@
 int main(int argc, const char * argv[]) {
 	try {
 #if QUARK_UNIT_TESTS_ON
-//		quark::run_tests();
 		quark::run_tests({
 			//	UNDER DEVELOPMENT - RUN FIRST!
 			"parser2.cpp",

@@ -369,7 +369,7 @@ bool exists_in(const json_value_t& parent, const std::vector<json_value_t>& path
 		}
 		else if(path.size() > 1){
 			return exists_in(
-				parent.get_array_element(index),
+				parent.get_array_n(index),
 				std::vector<json_value_t>(path.begin() + 1, path.end())
 			);
 		}
@@ -445,11 +445,11 @@ json_value_t get_in(const json_value_t& parent, const std::vector<json_value_t>&
 
 		const size_t index = double_to_int(path[0].get_number());
 		if(path.size() == 1){
-			return parent.get_array_element(index);
+			return parent.get_array_n(index);
 		}
 		else if(path.size() > 1){
 			return get_in(
-				parent.get_array_element(index),
+				parent.get_array_n(index),
 				std::vector<json_value_t>(path.begin() + 1, path.end())
 			);
 		}
@@ -617,7 +617,7 @@ json_value_t assoc_in(const json_value_t& parent, const std::vector<json_value_t
 			QUARK_ASSERT(member_index >= 0);
 			QUARK_ASSERT(member_index <= parent.get_array_size());
 
-			const auto member_value = parent.get_array_element(member_index);
+			const auto member_value = parent.get_array_n(member_index);
 			const auto member_value2 = assoc_in(
 				member_value,
 				std::vector<json_value_t>(path.begin() + 1, path.end()),

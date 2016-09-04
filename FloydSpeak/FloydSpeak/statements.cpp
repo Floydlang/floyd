@@ -159,7 +159,7 @@ namespace floyd_parser {
 		const auto global = scope_def_t::make_global_scope();
 		const auto result = statement_to_json(define_struct_statement_t{ make_struct1(global) });
 
-		quark::ut_compare(result.get_array_element(0).get_string(), "defstruct");
+		quark::ut_compare(result.get_array_n(0).get_string(), "defstruct");
 	}
 
 #if false
@@ -167,7 +167,7 @@ namespace floyd_parser {
 		const auto global = scope_def_t::make_global_scope();
 		const auto result = statement_to_json(define_function_statement_t{ make_test_function2() });
 
-		quark::ut_compare(result.get_array_element(0).get_string(), "deffunc");
+		quark::ut_compare(result.get_array_n(0).get_string(), "deffunc");
 	}
 #endif
 

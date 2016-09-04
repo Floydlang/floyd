@@ -19,4 +19,15 @@ struct json_value_t;
 std::string json_to_compact_string(const json_value_t& v);
 
 
+//	Defaults to 120 chars width print out, 4 space-tabs.
+std::string json_to_pretty_string(const json_value_t& v);
+
+struct pretty_t {
+	int _max_column_chars;
+	int _tab_char_setting;
+};
+std::string json_to_pretty_string(const json_value_t& value, int pos, const pretty_t& pretty);
+
+
+
 #endif /* json_writer_hpp */

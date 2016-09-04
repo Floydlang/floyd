@@ -326,7 +326,7 @@ json_value_t make_scope_def(){
 		{ "_type", "" },
 		{ "_name", "" },
 		{ "_members", json_value_t::make_array2({}) },
-		{ "_types_collector", json_value_t::make_object({}) },
+		{ "_types", json_value_t::make_object({}) },
 
 		//??? New in JSON, used to stored as sub-function body.
 		{ "_locals", json_value_t::make_array2({}) },

@@ -20,6 +20,10 @@
 
 using namespace std;
 
+
+
+namespace parser2 {
+
 //	???Encode constants more compactly, like this:		R"([">=", ["<int>", 3], ["<int>", 4]])"
 
 QUARK_UNIT_TESTQ("C++ operators", ""){
@@ -758,3 +762,6 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
 QUARK_UNIT_TESTQ("evalute_expression()", "Invalid characters") {
 	test__parse_expression__throw("2/", "Unexpected end of string");
 }
+
+
+}	//	parser2

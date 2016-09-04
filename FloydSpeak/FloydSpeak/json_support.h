@@ -223,7 +223,7 @@ struct json_value_t {
 		return _array;
 	}
 
-	const json_value_t& get_array_element(size_t index) const {
+	const json_value_t& get_array_n(size_t index) const {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(index >= 0);
 
@@ -291,9 +291,32 @@ struct json_value_t {
 		return _type == k_null;
 	}
 
+/*
+	class const_iterator
+	{
+		public:
+			typedef const_iterator self_type;
+			typedef json_value_t value_type;
+			typedef json_value_t& reference;
+			typedef json_value_t* pointer;
+			typedef int difference_type;
+			typedef std::forward_iterator_tag iterator_category;
+			const_iterator(pointer ptr) : ptr_(ptr) { }
+			self_type operator++() { self_type i = *this; ptr_++; return i; }
+			self_type operator++(int junk) { ptr_++; return *this; }
+			const reference operator*() { return *ptr_; }
+			const pointer operator->() { return ptr_; }
+			bool operator==(const self_type& rhs) { return ptr_ == rhs.ptr_; }
+			bool operator!=(const self_type& rhs) { return ptr_ != rhs.ptr_; }
+		private:
+			pointer ptr_;
+	};
+*/
+
+
 
 	/////////////////////////////////////		STATE
-
+	//???? Make this fast to copy = move map/ vector into shared_ptr.
 	private: std::string __debug;
 	private: etype _type = k_null;
 	private: std::map<std::string, json_value_t> _object;
@@ -301,6 +324,9 @@ struct json_value_t {
 	private: std::string _string;
 	private: double _number = 0.0;
 };
+
+
+
 
 
 

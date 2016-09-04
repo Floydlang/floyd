@@ -320,6 +320,10 @@ void default_runtime::runtime_i__add_log_indent(long add){
 	_indent += add;
 }
 
+int default_runtime::runtime_i__get_log_indent() const{
+	return static_cast<int>(_indent);
+}
+
 void default_runtime::runtime_i__on_assert(const source_code_location& location, const char expression[]){
 	QUARK_TRACE_SS(std::string("Assertion failed ") << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
 	perror("perror() says");

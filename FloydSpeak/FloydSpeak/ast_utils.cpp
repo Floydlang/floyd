@@ -12,6 +12,7 @@
 #include "statements.h"
 #include "parser_value.h"
 #include "utils.h"
+#include "json_support.h"
 
 
 namespace floyd_parser {
@@ -35,6 +36,26 @@ bool resolved_path_t::check_invariant() const {
 	}
 	return true;
 };
+
+
+//////////////////////////////////////////////////		parser_path_t
+
+
+json_value_t parser_path_t::get_leaf() const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(!_scopes.empty());
+
+	return _scopes.back();
+}
+
+bool parser_path_t::check_invariant() const {
+	for(const auto i: _scopes){
+		QUARK_ASSERT(i.check_invariant());
+	}
+	return true;
+};
+
+
 
 
 
@@ -99,6 +120,7 @@ std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const floyd_
 	}
 }
 
+//	Remove this function. Client can use resolve_type_to_def().
 floyd_parser::type_identifier_t resolve_type_to_id(const floyd_parser::resolved_path_t& path, const type_identifier_t& s){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
