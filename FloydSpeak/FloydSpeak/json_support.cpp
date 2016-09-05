@@ -575,6 +575,71 @@ QUARK_UNIT_TESTQ("assoc()", "replace array element"){
 
 
 /*
+	key must exist.
+	Can remove entire subtree.
+	Works on arrays and objects.
+*/
+json_value_t dissoc(const json_value_t& obj, const json_value_t& key){
+	QUARK_ASSERT(obj.check_invariant());
+	QUARK_ASSERT(obj.is_null() || obj.is_object() || obj.is_array());
+	QUARK_ASSERT(key.check_invariant());
+	QUARK_ASSERT(key.is_string() || key.is_number());;
+
+	if(obj.is_null()){
+		throw std::out_of_range("");
+	}
+	else if(obj.is_object()){
+		QUARK_ASSERT(key.is_string());
+		auto temp = obj.get_object();
+		temp.erase(key.get_string());
+		return json_value_t(temp);
+	}
+	else if(obj.is_array()){
+		QUARK_ASSERT(key.is_number());
+		const auto index = double_to_int(key.get_number());
+		QUARK_ASSERT(index >= 0);
+
+		auto array = obj.get_array();
+		if(index >= array.size()){
+			throw std::out_of_range("");
+		}
+		array.erase(array.begin() + index);
+		return json_value_t(array);
+	}
+	else{
+		throw std::runtime_error("");
+	}
+}
+
+QUARK_UNIT_TESTQ("dissoc()", "erase obj member value"){
+	const auto obj1 = json_value_t::make_object({
+		{ "name", json_value_t("James Bond") },
+		{ "height", json_value_t(178.0) }
+	});
+	const auto obj2 = dissoc(obj1, json_value_t("name"));
+	QUARK_UT_VERIFY(!exists_in(obj2, {"name"}));
+	QUARK_UT_VERIFY(obj2.get_object_element("height") == json_value_t(178.0));
+}
+
+QUARK_UNIT_TESTQ("dissoc()", "erase non-existing object member"){
+	const auto obj1 = json_value_t::make_object({
+		{ "name", json_value_t("James Bond") },
+		{ "height", json_value_t(178.0) }
+	});
+	const auto obj2 = dissoc(obj1, json_value_t("XYZ"));
+}
+
+QUARK_UNIT_TESTQ("dissoc()", "erase array entry"){
+	const auto obj1 = json_value_t::make_array2({ "one", "two", "three" });
+	const auto obj2 = dissoc(obj1, json_value_t(1.0));
+	QUARK_UT_VERIFY(obj2 == json_value_t::make_array2({ "one", "three" }));
+}
+
+
+
+
+
+/*
 	Entries in path are strings for specifying object-members or integer number for array indexes.
 	If node is missing, an object is created for it.
 */

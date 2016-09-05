@@ -770,9 +770,6 @@ QUARK_UNIT_TESTQ("pass_b__scope_def()", ""){
 
 
 
-json_value_t dissoc(const json_value_t& value, const json_value_t& key){
-	return value;
-}
 
 //	Returns new scope + lookup.
 pair<json_value_t, json_value_t> pass_c__scope_def_internal(const json_value_t& lookup, const parser_path_t& path){
@@ -811,14 +808,19 @@ pair<json_value_t, json_value_t> pass_c__scope_def_internal(const json_value_t& 
 }
 
 json_value_t pass_c__scope_def(const parser_path_t& path){
+	QUARK_TRACE(json_to_pretty_string(path._scopes.front()));
+
 	QUARK_ASSERT(path.check_invariant());
 
 	const auto a = pass_c__scope_def_internal(json_value_t::make_object({}), path);
 
-	return json_value_t::make_object({
+	const auto result = json_value_t::make_object({
 		{ "global", a.first },
 		{ "lookup", a.second }
 	});
+
+	QUARK_TRACE(json_to_pretty_string(result));
+	return result;
 }
 
 

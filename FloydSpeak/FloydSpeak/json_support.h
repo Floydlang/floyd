@@ -351,10 +351,12 @@ bool exists_in(const json_value_t& parent, const std::vector<json_value_t>& path
 
 json_value_t get_in(const json_value_t& parent, const std::vector<json_value_t>& path);
 
+
 /*
+	Works on both arrays and objects.
 	Arrays entries can be overwritten or appended precisely at end of array.
 */
-json_value_t assoc(const json_value_t& obj, const json_value_t& member, const json_value_t& new_element);
+json_value_t assoc(const json_value_t& parent, const json_value_t& member, const json_value_t& new_element);
 
 /*
 	Will walk a path of maps and arrays and add/replace the new element to the last object.
@@ -363,7 +365,10 @@ json_value_t assoc(const json_value_t& obj, const json_value_t& member, const js
 */
 json_value_t assoc_in(const json_value_t& parent, const std::vector<json_value_t>& path, const json_value_t& new_element);
 
-
+/*
+	Erase member
+*/
+json_value_t dissoc(const json_value_t& value, const json_value_t& key);
 
 
 
