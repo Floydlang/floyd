@@ -243,16 +243,16 @@ struct json_helper : public maker<EXPRESSION> {
 
 	public: virtual const EXPRESSION maker__make_constant(const constant_value_t& value) const{
 		if(value._type == constant_value_t::etype::k_bool){
-			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<bool>"), json_value_t(value._bool) });
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t(value._bool), json_value_t("<bool>") });
 		}
 		else if(value._type == constant_value_t::etype::k_int){
-			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<int>"), json_value_t((double)value._int) });
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t((double)value._int), json_value_t("<int>") });
 		}
 		else if(value._type == constant_value_t::etype::k_float){
-			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<float>"), json_value_t(value._float) });
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t(value._float), json_value_t("<float>") });
 		}
 		else if(value._type == constant_value_t::etype::k_string){
-			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t("<string>"), json_value_t(value._string) });
+			return json_value_t::make_array_skip_nulls({ json_value_t("k"), json_value_t(value._string), json_value_t("<string>") });
 		}
 		else{
 			QUARK_ASSERT(false);

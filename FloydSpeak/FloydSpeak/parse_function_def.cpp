@@ -102,7 +102,7 @@ std::pair<json_value_t, std::string> parse_function_definition(const string& pos
 		function_def = store_object_member(function_def, "_locals", locals);
 		function_def = store_object_member(function_def, "_statements", statements);
 		function_def = store_object_member(function_def, "_types", types_collector);
-		function_def = store_object_member(function_def, "_return_type", return_type_pos.first.to_string());
+		function_def = store_object_member(function_def, "_return_type", "<" + return_type_pos.first.to_string() + ">");
 		return { function_def, body_pos.second };
 	}
 }

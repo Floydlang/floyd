@@ -10,8 +10,7 @@
 
 /*
 
-??? How to store links to resolved to types or variables?
-
+PROBLEM: How to store links to resolved to types or variables?
 
 Augument existing data, don't replace typename / variable name.
 
@@ -25,9 +24,10 @@ CHOSEN ==>>>> D) Create global type-lookup table. Use original static-scope-path
 
 Solution D algo steps:
 Pass A) Scan tree, give each found type a unique ID. (Tag each scope and assign parent-scope ID.)
-Pass B) Scan tree: resolve type references by storing the type-ID.
-Pass C) Scan tree: move all types to global list.
-Pass D) Scan tree: bind variables to type-ID + offset. Tag expressions with their output-type.
+Pass B) Scan tree: resolve type references by storing the type-ID. Tag expressions with their output-type. Do this will we can see the scope of each type.
+Pass C) Scan tree: move all types to global list for fast finding from ID.
+Pass D) Scan tree: bind variables to type-ID + offset.
+??? make a pass that inserts generated functions, like constructors.
 
 Now we can convert to a typesafe AST!
 
@@ -158,46 +158,6 @@ scope_def_t::etype string_to_scope_type(const std::string s){
 	};
 	return lookup.at(s);
 }
-
-#if 0
-std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def2(const parser_path_t& path, const type_identifier_t& s){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(s.check_invariant());
-
-	if(s.is_resolved()){
-		return s.get_resolved();
-	}
-	else{
-		for(auto i = path._scopes.size() ; i > 0 ; i--){
-			const auto& scope = path._scopes[i - 1];
-			const auto a = scope->_types_collector.resolve_identifier(s.to_string());
-			if(a.size() > 1){
-				throw std::runtime_error("Multiple definitions for type-identifier \"" + s.to_string() + "\".");
-			}
-			if(!a.empty()){
-				return a[0];
-			}
-		}
-		return {};
-	}
-}
-
-type_identifier_t resolve_type_throw2(const parser_path_t& path, const floyd_parser::type_identifier_t& s){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(s.check_invariant());
-
-	if(s.is_resolved()){
-		return s;
-	}
-	else{
-		const auto a = floyd_parser::resolve_type_to_def2(path, s);
-		if(!a){
-			throw std::runtime_error("Undefined type \"" + s.to_string() + "\"");
-		}
-		return type_identifier_t
-	}
-}
-#endif
 
 expression_t resolve_types__expression(const resolved_path_t& path, const expression_t& e){
 	QUARK_ASSERT(path.check_invariant());
@@ -467,83 +427,6 @@ parser_path_t go_down(const parser_path_t& path, const json_value_t& child){
 
 
 
-const json_value_t make_test1(){
-std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
-	R"(
-		{
-			"_name": "global",
-			"_type": "global",
-			"_members": [
-				{ "type": "<int>", "name": "g_version", "expr": 1.0 },
-				{ "type": "<string>", "name": "message", "expr": "Welcome!" }
-			],
-			"_types": {
-				"bool": [ { "base_type": "bool" } ],
-				"int": [ { "base_type": "int" } ],
-				"string": [ { "base_type": "string" } ],
-				"pixel_t": [
-					{
-						"base_type": "function",
-						"scope_def": {
-							"_name": "pixel_t",
-							"_type": "function",
-							"_args": [],
-							"_locals": [
-								{ "type": "<pixel_t>", "name": "it" },
-								{ "type": "<int>", "name": "x2" }
-							],
-							"_types": {},
-							"_statements": [
-								["return", ["call", ["@", "___body"], [ ["k", "<pixel_t>", 100] ]]]
-							],
-							"_return_type": "<int>"
-						}
-					},
-					{
-						"base_type": "struct",
-						"scope_def": {
-							"_name": "pixel_t",
-							"_type": "struct",
-							"_members": [
-								{ "type": "<int>", "name": "red" },
-								{ "type": "<int>", "name": "green" },
-								{ "type": "<int>", "name": "blue" }
-							],
-							"_types": {},
-							"_statements": [],
-							"_return_type": null
-						}
-					}
-				],
-				"main": [
-					{
-						"base_type": "function",
-						"scope_def": {
-							"_name": "main",
-							"_type": "function",
-							"_args": [
-								{ "type": "<string>", "name": "args" }
-							],
-							"_locals": [
-								{ "type": "<pixel_t>", "name": "p1" },
-								{ "type": "<pixel_t>", "name": "p2" }
-							],
-							"_types": {},
-							"_statements": [
-								["bind", "p1", ["call", ["@", "pixel_t"], [["k", "<int>", 42]]]],
-								["return", ["+", ["@", "p1"], ["@", "g_version"]]]
-							],
-							"_return_type": "<int>"
-						}
-					}
-				]
-			}
-		}
-	)"
-));
-
-	return k_test.first;
-}
 
 
 
@@ -614,8 +497,86 @@ pair<json_value_t, int> pass_a__scope_def(const parser_path_t& path, int type_id
 	return { scope2, type_id_count2 };
 }
 
+const json_value_t make_test_pass_a(){
+	std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
+		R"(
+			{
+				"_name": "global",
+				"_type": "global",
+				"_members": [
+					{ "type": "<int>", "name": "g_version", "expr": 1.0 },
+					{ "type": "<string>", "name": "message", "expr": "Welcome!" }
+				],
+				"_types": {
+					"bool": [ { "base_type": "bool" } ],
+					"int": [ { "base_type": "int" } ],
+					"string": [ { "base_type": "string" } ],
+					"pixel_t": [
+						{
+							"base_type": "function",
+							"scope_def": {
+								"_name": "pixel_t",
+								"_type": "function",
+								"_args": [],
+								"_locals": [
+									{ "type": "<pixel_t>", "name": "it" },
+									{ "type": "<int>", "name": "x2" }
+								],
+								"_types": {},
+								"_statements": [
+									["return", ["call", ["@", "___body"], [ ["k", "<pixel_t>", 100] ]]]
+								],
+								"_return_type": "<int>"
+							}
+						},
+						{
+							"base_type": "struct",
+							"scope_def": {
+								"_name": "pixel_t",
+								"_type": "struct",
+								"_members": [
+									{ "type": "<int>", "name": "red" },
+									{ "type": "<int>", "name": "green" },
+									{ "type": "<int>", "name": "blue" }
+								],
+								"_types": {},
+								"_statements": [],
+								"_return_type": null
+							}
+						}
+					],
+					"main": [
+						{
+							"base_type": "function",
+							"scope_def": {
+								"_name": "main",
+								"_type": "function",
+								"_args": [
+									{ "type": "<string>", "name": "args" }
+								],
+								"_locals": [
+									{ "type": "<pixel_t>", "name": "p1" },
+									{ "type": "<pixel_t>", "name": "p2" }
+								],
+								"_types": {},
+								"_statements": [
+									["bind", "p1", ["call", ["@", "pixel_t"], [["k", "<int>", 42]]]],
+									["return", ["+", ["@", "p1"], ["@", "g_version"]]]
+								],
+								"_return_type": "<int>"
+							}
+						}
+					]
+				}
+			}
+		)"
+	));
+
+	return k_test.first;
+}
+
 QUARK_UNIT_TESTQ("pass_a__scope_def()", ""){
-	const auto test = make_test1();
+	const auto test = make_test_pass_a();
 	QUARK_TRACE(json_to_pretty_string(test));
 
 	const auto result = pass_a__scope_def(make_parser_path(test), 1000);
@@ -629,20 +590,35 @@ QUARK_UNIT_TESTQ("pass_a__scope_def()", ""){
 ///////////////////////////////////////////		PASS B
 
 
-//	Pass B) Scan tree: resolve type references by storing the type-ID.
+/*
+	Pass B) Scan tree: resolve type references by storing the type-ID.
+	Turns "<int>" to "$1041" etc.
+
+	Also tags each expression with its output type. It is appended to back of each expression.
+*/
+
 
 
 enum class eresolve_types {
 	k_all,
-	k_all_but_function
+	k_all_but_function,
+	k_only_function,
 };
 
+
+
+
+
+
 /*
-	returns "$1003" or similar.
+	returns "$1003"-style ID-string.
+	Throws if not found.
 */
-std::string pass_b__resolve_type(const parser_path_t& path, const string& type_name0, eresolve_types types){
+pair<std::string, json_value_t> pass_b__resolve_type_xxx(const parser_path_t& path, const string& type_name0, eresolve_types types){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(type_name0.size() > 2);
+	QUARK_ASSERT(type_name0.front() == '<' && type_name0.back() == '>');
+	QUARK_TRACE(json_to_pretty_string(path._scopes.front()));
 
 	const string type_name = type_name0.substr(1, type_name0.size() - 2);
 	for(auto i = path._scopes.size() ; i > 0 ; i--){
@@ -654,21 +630,31 @@ std::string pass_b__resolve_type(const parser_path_t& path, const string& type_n
 			if(types == eresolve_types::k_all){
 				hits1 = hits0;
 			}
-			else{
+			else if(types == eresolve_types::k_all_but_function){
 				for(const auto& hit: hits0){
 					const auto base_type = hit.get_object_element("base_type").get_string();
-					if(base_type == "function"){
-					}
-					else{
+					if(base_type != "function"){
 						hits1.push_back(hit);
 					}
 				}
+			}
+			else if(types == eresolve_types::k_only_function){
+				for(const auto& hit: hits0){
+					const auto base_type = hit.get_object_element("base_type").get_string();
+					if(base_type == "function"){
+						hits1.push_back(hit);
+					}
+				}
+			}
+			else{
+				QUARK_ASSERT(false);
 			}
 
 			if(hits1.size() == 0){
 			}
 			else if(hits1.size() == 1){
-				return type.get_array_n(0).get_object_element("id").get_string();
+				const auto id = type.get_array_n(0).get_object_element("id").get_string();
+				return { id, type.get_array_n(0) };
 			}
 			else {
 				QUARK_TRACE(json_to_pretty_string(scope));
@@ -682,7 +668,70 @@ std::string pass_b__resolve_type(const parser_path_t& path, const string& type_n
 	}
 	throw std::runtime_error("Undefined type \"" + type_name + "\"");
 }
+std::string pass_b__resolve_type(const parser_path_t& path, const string& type_name0, eresolve_types types){
+	QUARK_ASSERT(path.check_invariant());
+	QUARK_ASSERT(type_name0.size() > 2);
 
+	if(type_name0.front() == '$'){
+		return type_name0;
+	}
+	else{
+		return pass_b__resolve_type_xxx(path, type_name0, types).first;
+	}
+}
+
+
+//??? Should already have separated functions into outer + body-scopes before doing this!
+
+//	Resolve a variable is done by scanning the compile-time scopes upwards towards globals.
+//	Returns the member-list/arg_list etc. that holds the variable AND the index inside _members where it is found.
+pair<json_value_t, int> pass_b__resolve_scoped_variable(const parser_path_t& path, const string& variable_name){
+	QUARK_ASSERT(path.check_invariant());
+	QUARK_ASSERT(variable_name.size() > 0);
+
+	//	Look s in each scope's members, one at a time until we searched the global scope.
+	for(auto i = path._scopes.size() ; i > 0 ; i--){
+		const auto& scope_def = path._scopes[i - 1];
+
+		if(scope_def.does_object_element_exist("_members")){
+			const auto members = scope_def.get_object_element("_members").get_array();
+			for(auto index = 0 ; index < members.size() ; index++){
+				const auto& member = members[index];
+				const auto member_name = member.get_object_element("name").get_string();
+				if(member_name == variable_name){
+					return { scope_def.get_object_element("_members"), index };
+				}
+			}
+		}
+
+		if(scope_def.does_object_element_exist("_args")){
+			const auto members = scope_def.get_object_element("_args").get_array();
+			for(auto index = 0 ; index < members.size() ; index++){
+				const auto& member = members[index];
+				const auto member_name = member.get_object_element("name").get_string();
+				if(member_name == variable_name){
+					return { scope_def.get_object_element("_args"), index };
+				}
+			}
+		}
+
+		if(scope_def.does_object_element_exist("_locals")){
+			const auto members = scope_def.get_object_element("_locals").get_array();
+			for(auto index = 0 ; index < members.size() ; index++){
+				const auto& member = members[index];
+				const auto member_name = member.get_object_element("name").get_string();
+				if(member_name == variable_name){
+					return { scope_def.get_object_element("_locals"), index };
+				}
+			}
+		}
+	}
+	return { {}, -1 };
+}
+
+
+
+//??? optional expression missing?
 json_value_t pass_b__members(const parser_path_t& path, const json_value_t& members){
 	if(members.is_null()){
 		return members;
@@ -735,58 +784,194 @@ json_value_t pass_b__arguments(const parser_path_t& path, const json_value_t& ar
 	}
 	return args2;
 }
+
+json_value_t get_array_back(const json_value_t& array){
+	if(!array.is_array()){
+		throw;
+	}
+	else if(array.get_array_size() == 0){
+		throw;
+	}
+	return array.get_array_n(array.get_array_size() - 1);
+}
+
+
+
+/*
+	Resolves all uses types into "$1234" syntax, deeply. Also puts the expression's type at end of each expression.
+*/
 json_value_t pass_b__expression(const parser_path_t& path, const json_value_t& e){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(e));
 
 	const auto op = e.get_array_n(0).get_string();
 	if(op == "k"){
 		QUARK_ASSERT(e.get_array_size() == 3);
+
+		const auto value = e.get_array_n(1);
+		const auto type = e.get_array_n(2);
+		const auto type2 = pass_b__resolve_type(path, type.get_string(), eresolve_types::k_all_but_function);
+
 		return json_value_t::make_array2({
 			op,
-			pass_b__resolve_type(path, e.get_array_n(1).get_string(), eresolve_types::k_all_but_function),
-			e.get_array_n(2)
+			value,
+			type2,
 		});
 	}
 	else if(is_math1_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		return json_value_t::make_array2({ op, pass_b__expression(path, e.get_array_n(1))});
+		const auto expr = pass_b__expression(path, e.get_array_n(1));
+		const auto type = expr.get_array_n(3);
+		return json_value_t::make_array2({ op, expr, type });
 	}
 	else if(is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		return json_value_t::make_array2({ op, pass_b__expression(path, e.get_array_n(1)), pass_b__expression(path, e.get_array_n(2))});
+		const auto lhs_expr = pass_b__expression(path, e.get_array_n(1));
+		const auto rhs_expr = pass_b__expression(path, e.get_array_n(2));
+
+		const auto lhs_type = get_array_back(lhs_expr);
+		const auto rhs_type = get_array_back(rhs_expr);
+		if(lhs_type != rhs_type){
+			throw std::runtime_error("1001 - Left & right side of math2 must have same type.");
+		}
+		return json_value_t::make_array2({ op, lhs_expr, rhs_expr, lhs_type });
 	}
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 4);
-		return json_value_t::make_array2({
-			op,
-			pass_b__expression(path, e.get_array_n(1)),
-			pass_b__expression(path, e.get_array_n(2)),
-			pass_b__expression(path, e.get_array_n(3)),
-		});
+
+		const auto condition_expr = pass_b__expression(path, e.get_array_n(1));
+		const auto a_expr = pass_b__expression(path, e.get_array_n(2));
+		const auto b_expr = pass_b__expression(path, e.get_array_n(3));
+
+		const auto condition_type = get_array_back(condition_expr);
+
+		//??? Find bool ID.
+		if(condition_type != "bool"){
+			throw std::runtime_error("xxxx - condition of (?:) must evaluate to bool.");
+		}
+
+		const auto a_type = get_array_back(a_expr);
+		const auto b_type = get_array_back(b_expr);
+		if(a_type != b_type){
+			throw std::runtime_error("1001 - Left & right side of (?:) must have same type.");
+		}
+		return json_value_t::make_array2({ op, condition_expr, a_expr, b_expr, a_type });
 	}
-	else if(op == "call"){//??? call arguments duh!
+	else if(op == "call"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		return json_value_t::make_array2({ op, pass_b__expression(path, e.get_array_n(1)), pass_b__arguments(path, e.get_array_n(2))});
+
+		const json_value_t function_expr = pass_b__expression(path, e.get_array_n(1));
+		const json_value_t args_expr = pass_b__arguments(path, e.get_array_n(2));
+
+		//	The call-expression's output type will be the same as the return-type of the function-def.
+		const auto return_type = pass_b__resolve_type(path, get_array_back(function_expr).get_string(), eresolve_types::k_only_function);
+//			throw std::runtime_error("1002 - Undefined function \"" + call._function.to_string() + "\".");
+//		const auto function_def; // = function_type_info
+
+
+		//??? Check arguments too.
+/*
+	else if(e._call){
+		const auto& call = *e._call;
+
+		//	Resolve function name.
+		const auto f = resolve_type_to_def(path, call._function);
+		if(!f || f->get_type() != base_type::k_function){
+			throw std::runtime_error("1002 - Undefined function \"" + call._function.to_string() + "\".");
+		}
+		const auto f2 = f->get_function_def();
+
+		const auto return_type = resolve_type_to_id(path, f2->_return_type);
+		QUARK_ASSERT(return_type.is_resolved());
+
+		if(f2->_type == scope_def_t::k_function_scope){
+			//	Verify & resolve all arguments in the call vs the actual function definition.
+			if(f2->_members.size() != call._inputs.size()){
+				throw std::runtime_error("1003 - Wrong number of argument to function \"" + call._function.to_string() + "\".");
+			}
+
+			vector<expression_t> args2;
+			for(int argument_index = 0 ; argument_index < call._inputs.size() ; argument_index++){
+				const auto call_arg = call._inputs[argument_index];
+				const auto call_arg2 = resolve_types__expression(path, call_arg);
+				const auto call_arg2_type = call_arg2.get_expression_type();
+				QUARK_ASSERT(call_arg2_type.is_resolved());
+
+				const auto function_arg_type = *f2->_members[argument_index]._type;
+
+				if(!(call_arg2_type.to_string() == function_arg_type.to_string())){
+					throw std::runtime_error("1004 - Argument " + std::to_string(argument_index) + " to function \"" + call._function.to_string() + "\" mismatch.");
+				}
+				args2.push_back(call_arg2);
+			}
+
+			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), args2, return_type);
+		}
+		else if(f2->_type == scope_def_t::k_subscope){
+			//	Verify & resolve all arguments in the call vs the actual function definition.
+			QUARK_ASSERT(call._inputs.empty());
+			//??? Throw exceptions -- treat JSON-AST as user input.
+
+			return floyd_parser::expression_t::make_function_call(type_identifier_t::resolve(f), vector<expression_t>{}, return_type);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+*/
+
+		return json_value_t::make_array2({ op, function_expr, args_expr, return_type });
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		return json_value_t::make_array2({ op, pass_b__expression(path, e.get_array_n(1)), e.get_array_n(2)});
+		const auto base_expr = pass_b__expression(path, e.get_array_n(1));
+		const auto type = get_array_back(base_expr).get_string();
+		QUARK_ASSERT(type.front() == '$');
+		return json_value_t::make_array2({ op, base_expr, e.get_array_n(2), type });
 	}
 	else if(op == "@"){
+		//	###: Idea: Functions are found via a variable called the function name, pointing to the function_def.
 		QUARK_ASSERT(e.get_array_size() == 2);
-		return e;
+
+		const auto variable_name = e.get_array_n(1).get_string();
+		pair<json_value_t, int> found_variable = pass_b__resolve_scoped_variable(path, variable_name);
+		if(!found_variable.first.is_null()){
+			json_value_t member = found_variable.first.get_array_n(found_variable.second);
+			const auto type = member.get_object_element("type").get_string();
+			const auto type_id = pass_b__resolve_type(path, type, eresolve_types::k_all);
+			return json_value_t::make_array2({ op, variable_name, type_id });
+		}
+		else{
+			auto found_function = pass_b__resolve_type_xxx(path, "<" + variable_name + ">", eresolve_types::k_only_function);
+
+			//	OK, we're resolving a function, not a variable. ### Code this differently?
+			const auto return_type = found_function.second.get_object_element("scope_def").get_object_element("_return_type").get_string();
+			QUARK_ASSERT(return_type.back() == '>');
+			const auto return_type_id = pass_b__resolve_type(path, return_type, eresolve_types::k_all);
+			return json_value_t::make_array2({ op, variable_name, return_type_id });
+		}
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
 }
 
-json_value_t pass_b__scope_def(const parser_path_t& path){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_TRACE(json_to_pretty_string(path._scopes.back()));
+parser_path_t update_leaf(const parser_path_t& path, const json_value_t& leaf){
+	vector<const json_value_t> temp(path._scopes.begin(), path._scopes.end() - 1);
+	temp.push_back(leaf);
 
-	const auto scope1 = path._scopes.back();
+	parser_path_t temp2;
+	temp2._scopes.swap(temp);
+	return temp2;
+}
+
+//	All types have already been tagged.
+json_value_t pass_b__scope_def(const parser_path_t& path0){
+	QUARK_ASSERT(path0.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(path0._scopes.back()));
+
+	const auto scope1 = path0._scopes.back();
 
 	auto types_collector2 = json_value_t::make_object({});
 	{
@@ -795,8 +980,7 @@ json_value_t pass_b__scope_def(const parser_path_t& path){
 
 		for(const auto type_entry_pair: types){
 			const string type_name = type_entry_pair.first;
-			const auto type_defs_js = type_entry_pair.second;
-			const auto type_defs_vec = type_defs_js.get_array();
+			const auto type_defs_vec = type_entry_pair.second.get_array();
 
 			std::vector<json_value_t> type_defs2;
 			for(const auto& type_def: type_defs_vec){
@@ -805,7 +989,7 @@ json_value_t pass_b__scope_def(const parser_path_t& path){
 				const auto type_def3 = [&](){
 					const json_value_t subscope = type_def.get_optional_object_element("scope_def");
 					if(!subscope.is_null()){
-						const auto subscope2 = pass_b__scope_def(go_down(path, subscope));
+						const auto subscope2 = pass_b__scope_def(go_down(update_leaf(path0, scope1), subscope));
 						return assoc(type_def, "scope_def", subscope2);
 					}
 					else{
@@ -817,20 +1001,30 @@ json_value_t pass_b__scope_def(const parser_path_t& path){
 			types_collector2 = assoc(types_collector2, type_name, json_value_t(type_defs2));
 		}
 	}
-
 	auto scope2 = assoc(scope1, "_types", types_collector2);
-	scope2 = assoc(scope2, {"_members"}, pass_b__members(path, scope2.get_optional_object_element("_members")));
-	scope2 = assoc(scope2, {"_args"}, pass_b__members(path, scope2.get_optional_object_element("_args")));
-	scope2 = assoc(scope2, {"_locals"}, pass_b__members(path, scope2.get_optional_object_element("_locals")));
+
+	auto path1 = update_leaf(path0, scope2);
+	scope2 = assoc(scope2, {"_members"}, pass_b__members(path1, scope2.get_optional_object_element("_members")));
+	scope2 = assoc(scope2, {"_args"}, pass_b__members(path1, scope2.get_optional_object_element("_args")));
+	scope2 = assoc(scope2, {"_locals"}, pass_b__members(path1, scope2.get_optional_object_element("_locals")));
+
+
+	if(scope2.does_object_element_exist("_return_type") && scope2.get_object_element("_return_type").get_string() != ""){
+		scope2 = assoc(
+			scope2,
+			{"_return_type"},
+			pass_b__resolve_type(path1, scope2.get_optional_object_element("_return_type", "<null>").get_string(), eresolve_types::k_all)
+		);
+	}
 
 	const auto statements = scope2.get_optional_object_element("_statements");
 	if(!statements.is_null()){
-		vector<json_value_t> statements_vec2;
+		vector<json_value_t> statements2;
 		const auto statements_vec = statements.get_array();
 		for(const auto& s: statements_vec){
 			json_value_t op = s.get_array_n(0);
 			if(op == "bind"){
-				statements_vec2.push_back(json_value_t::make_array2({ op, s.get_array_n(1), pass_b__expression(path, s.get_array_n(2))}));
+				statements2.push_back(json_value_t::make_array2({ op, s.get_array_n(1), pass_b__expression(path1, s.get_array_n(2))}));
 			}
 			else if(op == "define_struct"){
 				QUARK_ASSERT(false);
@@ -839,31 +1033,189 @@ json_value_t pass_b__scope_def(const parser_path_t& path){
 				QUARK_ASSERT(false);
 			}
 			else if(op == "return"){
-				statements_vec2.push_back(json_value_t::make_array2({ op, pass_b__expression(path, s.get_array_n(1))}));
+				const auto expr = pass_b__expression(path1, s.get_array_n(1));
+				statements2.push_back(json_value_t::make_array2({ op, expr }));
 			}
 			else{
 				throw std::runtime_error("Unknown statement operation");
 			}
 		}
+		scope2 = assoc(scope2, {"_statements"}, statements2);
 	}
 
 	QUARK_TRACE(json_to_pretty_string(scope2));
 	return scope2;
 }
 
-QUARK_UNIT_TESTQ("pass_b__scope_def()", ""){
-	const auto test = make_test1();
+QUARK_UNIT_TESTQ("pass_b__scope_def()", "Test minimal program -- are all references to types resolved?"){
+	const auto test = parse_json(seq_t(
+		R"(
+		{
+			"_members": [],
+			"_name": "global",
+			"_type": "global",
+			"_types": {
+				"bool": [{ "base_type": "bool", "id": "$100001" }],
+				"int": [{ "base_type": "int", "id": "$100002" }],
+				"main": [
+					{
+						"base_type": "function",
+						"id": "$100003",
+						"scope_def": {
+							"_args": [],
+							"_locals": [],
+							"_name": "main",
+							"_return_type": "<int>",
+							"_statements": [ ["return", ["k", "hello!", "<string>"]]],
+							"_type": "function",
+							"_types": {}
+						}
+					}
+				],
+				"string": [{ "base_type": "string", "id": "$100004" }]
+			}
+		}
+		)"
+	)).first;
+
 	QUARK_TRACE(json_to_pretty_string(test));
 
-	const auto pass_a = pass_a__scope_def(make_parser_path(test), 1000);
-	const auto pass_b = pass_b__scope_def(make_parser_path(pass_a.first));
+	const auto result = pass_b__scope_def(make_parser_path(test));
+	QUARK_UT_VERIFY(result.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(result));
+}
 
-	QUARK_UT_VERIFY(pass_b.check_invariant());
-	QUARK_TRACE(json_to_pretty_string(pass_b));
+QUARK_UNIT_TESTQ("pass_b__scope_def()", "Are types of locals resolved?"){
+	const auto test = parse_json(seq_t(
+		R"(
+		{
+			"_members": [],
+			"_name": "global",
+			"_type": "global",
+			"_types": {
+				"bool": [{ "base_type": "bool", "id": "$100001" }],
+				"int": [{ "base_type": "int", "id": "$100002" }],
+				"main": [
+					{
+						"base_type": "function",
+						"id": "$100003",
+						"scope_def": {
+							"_args": [],
+							"_locals": [
+								{ "name": "p1", "type": "<int>" },
+								{ "name": "p2", "type": "<string>" },
+								{ "name": "p3", "type": "<bool>" }
+							],
+							"_name": "main",
+							"_return_type": "<int>",
+							"_statements": [ ["return", ["k", "hello!", "<string>"]]],
+							"_type": "function",
+							"_types": {}
+						}
+					}
+				],
+				"string": [{ "base_type": "string", "id": "$100004" }]
+			}
+		}
+		)"
+	)).first;
+
+	QUARK_TRACE(json_to_pretty_string(test));
+
+	const auto result = pass_b__scope_def(make_parser_path(test));
+	QUARK_UT_VERIFY(result.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(result));
 }
 
 
+QUARK_UNIT_TESTQ("pass_b__scope_def()", ""){
+	const auto test = parse_json(seq_t(
+		R"(
+		{
+			"_members": [
+				{ "expr": 1, "name": "g_version", "type": "<int>" },
+				{ "expr": 1, "name": "g_base_version", "type": "<int>" },
+				{ "expr": "Welcome!", "name": "message", "type": "<string>" }
+			],
+			"_name": "global",
+			"_type": "global",
+			"_types": {
+				"bool": [{ "base_type": "bool", "id": "$1000" }],
+				"int": [{ "base_type": "int", "id": "$1001" }],
+				"main": [
+					{
+						"base_type": "function",
+						"id": "$1002",
+						"scope_def": {
+							"_args": [{ "name": "args", "type": "<string>" }],
+							"_locals": [
+								{ "name": "p1", "type": "<pixel_t>" },
+								{ "name": "p2", "type": "<pixel_t>" }
+							],
+							"_name": "main",
+							"_return_type": "<int>",
+							"_statements": [
+								["bind", "p1", ["call", ["@", "pixel_constructor"], [["k", 42, "<int>"]]]],
+								["return", ["+", ["@", "g_base_version"], ["@", "g_version"]]]
+							],
+							"_type": "function",
+							"_types": {
+							}
+						}
+					}
+				],
+				"pixel_constructor": [
+					{
+						"base_type": "function",
+						"id": "$1003",
+						"scope_def": {
+							"_args": [],
+							"_locals": [{ "name": "it", "type": "<pixel_t>" }, { "name": "x2", "type": "<int>" }],
+							"_name": "pixel_t",
+							"_return_type": "<int>",
+							"_statements": [
+							],
+							"_type": "function",
+							"_types": {}
+						}
+					},
+				],
 
+				"pixel_t": [
+					{
+						"base_type": "struct",
+						"id": "$1004",
+						"scope_def": {
+							"_members": [
+								{ "name": "red", "type": "<int>" },
+								{ "name": "green", "type": "<int>" },
+								{ "name": "blue", "type": "<int>" }
+							],
+							"_name": "pixel_t",
+							"_statements": [],
+							"_type": "struct",
+							"_types": {}
+						}
+					}
+				],
+				"string": [{ "base_type": "string", "id": "$1005" }]
+			}
+		}
+		)"
+	)).first;
+
+	QUARK_TRACE(json_to_pretty_string(test));
+
+	const auto result = pass_b__scope_def(make_parser_path(test));
+	QUARK_UT_VERIFY(result.check_invariant());
+
+
+	const string result_str = json_to_pretty_string(result);
+	QUARK_TRACE(result_str);
+	const auto it = result_str.find(">\"");
+	QUARK_ASSERT(it == string::npos);
+
+}
 
 
 
@@ -928,9 +1280,317 @@ json_value_t pass_c__scope_def(const parser_path_t& path){
 	return result;
 }
 
-
-
 const json_value_t make_test_pass_c(){
+std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
+	R"(
+			{
+				"_args": null,
+				"_locals": null,
+				"_members": [
+					{ "expr": 1, "name": "g_version", "type": "$1001" },
+					{ "expr": 1, "name": "g_base_version", "type": "$1001" },
+					{ "expr": "Welcome!", "name": "message", "type": "$1005" }
+				],
+				"_name": "global",
+				"_type": "global",
+				"_types": {
+					"bool": [{ "base_type": "bool", "id": "$1000" }],
+					"int": [{ "base_type": "int", "id": "$1001" }],
+					"main": [
+						{
+							"base_type": "function",
+							"id": "$1002",
+							"scope_def": {
+								"_args": [{ "name": "args", "type": "$1005" }],
+								"_locals": [{ "name": "p1", "type": "$1004" }, { "name": "p2", "type": "$1004" }],
+								"_members": null,
+								"_name": "main",
+								"_return_type": "$1001",
+								"_statements": [
+									[
+										"bind",
+										"p1",
+										["call", ["@", "pixel_constructor", "$1001"], [["k", 42, "$1001"]], "$1001"]
+									],
+									[
+										"return",
+										["+", ["@", "g_base_version", "$1001"], ["@", "g_version", "$1001"], "$1001"]
+									]
+								],
+								"_type": "function",
+								"_types": {}
+							}
+						}
+					],
+					"pixel_constructor": [
+						{
+							"base_type": "function",
+							"id": "$1003",
+							"scope_def": {
+								"_args": [],
+								"_locals": [{ "name": "it", "type": "$1004" }, { "name": "x2", "type": "$1001" }],
+								"_members": null,
+								"_name": "pixel_t",
+								"_return_type": "$1001",
+								"_statements": [],
+								"_type": "function",
+								"_types": {}
+							}
+						}
+					],
+					"pixel_t": [
+						{
+							"base_type": "struct",
+							"id": "$1004",
+							"scope_def": {
+								"_args": null,
+								"_locals": null,
+								"_members": [
+									{ "name": "red", "type": "$1001" },
+									{ "name": "green", "type": "$1001" },
+									{ "name": "blue", "type": "$1001" }
+								],
+								"_name": "pixel_t",
+								"_statements": [],
+								"_type": "struct",
+								"_types": {}
+							}
+						}
+					],
+					"string": [{ "base_type": "string", "id": "$1005" }]
+				}
+			}
+	)"
+));
+
+	return k_test.first;
+}
+
+QUARK_UNIT_TESTQ("pass_c__scope_def()", ""){
+	const auto test = make_test_pass_c();
+	QUARK_TRACE(json_to_pretty_string(test));
+
+	const auto c = pass_c__scope_def(make_parser_path(test));
+
+	QUARK_UT_VERIFY(c.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(c));
+}
+
+
+
+
+
+
+
+///////////////////////////////////////////		PASS D
+
+
+
+
+//	Pass D) Scan tree: bind variables to type-ID + offset.
+
+
+
+std::string pass_d__resolve_type(const parser_path_t& path, const string& type_name0, eresolve_types types){
+	QUARK_ASSERT(path.check_invariant());
+	QUARK_ASSERT(type_name0.size() > 2);
+
+	const string type_name = type_name0.substr(1, type_name0.size() - 2);
+	for(auto i = path._scopes.size() ; i > 0 ; i--){
+		const auto& scope = path._scopes[i - 1];
+		const auto type = scope.get_object_element("_types").get_optional_object_element(type_name);
+		if(!type.is_null()){
+			const auto hits0 = type.get_array();
+			vector<json_value_t> hits1;
+			if(types == eresolve_types::k_all){
+				hits1 = hits0;
+			}
+			else{
+				for(const auto& hit: hits0){
+					const auto base_type = hit.get_object_element("base_type").get_string();
+					if(base_type == "function"){
+					}
+					else{
+						hits1.push_back(hit);
+					}
+				}
+			}
+
+			if(hits1.size() == 0){
+			}
+			else if(hits1.size() == 1){
+				return type.get_array_n(0).get_object_element("id").get_string();
+			}
+			else {
+				QUARK_TRACE(json_to_pretty_string(scope));
+
+				//??? DO better matching - if a function is wanted, see if there is only one function.
+				throw std::runtime_error("Multiple definitions for type-identifier \"" + type_name + "\".");
+			}
+		}
+		else{
+		}
+	}
+	throw std::runtime_error("Undefined type \"" + type_name + "\"");
+}
+
+json_value_t pass_d__members(const parser_path_t& path, const json_value_t& members){
+	if(members.is_null()){
+		return members;
+	}
+	else{
+		const auto member_vec = members.get_array();
+		vector<json_value_t> member_vec2;
+		for(const auto& member: member_vec){
+			if(!member.is_object()){
+				throw std::runtime_error("Member definitions must be JSON objects.");
+			}
+
+			const auto type = member.get_object_element("type").get_string();
+
+			if(type != ""){
+				const auto type2 = pass_d__resolve_type(path, type, eresolve_types::k_all_but_function);
+				const auto member2 = assoc(member, "type", type2);
+				member_vec2.push_back(member2);
+			}
+			else{
+				member_vec2.push_back(member);
+			}
+		}
+		return json_value_t(member_vec2);
+	}
+}
+
+json_value_t pass_d__expression(const parser_path_t& path, const json_value_t& e);
+
+//	Array of arguments, part of function call.
+json_value_t pass_d__arguments(const parser_path_t& path, const json_value_t& args1){
+	QUARK_ASSERT(path.check_invariant());
+	QUARK_ASSERT(args1.check_invariant());
+
+	vector<json_value_t> args2;
+	for(const auto& arg: args1.get_array()){
+		args2.push_back(pass_d__expression(path, arg));
+	}
+	return args2;
+}
+json_value_t pass_d__expression(const parser_path_t& path, const json_value_t& e){
+	QUARK_ASSERT(path.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	const auto op = e.get_array_n(0).get_string();
+	if(op == "k"){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		return json_value_t::make_array2({
+			op,
+			pass_d__resolve_type(path, e.get_array_n(1).get_string(), eresolve_types::k_all_but_function),
+			e.get_array_n(2)
+		});
+	}
+	else if(is_math1_op(op)){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		return json_value_t::make_array2({ op, pass_d__expression(path, e.get_array_n(1))});
+	}
+	else if(is_math2_op(op)){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		return json_value_t::make_array2({ op, pass_d__expression(path, e.get_array_n(1)), pass_d__expression(path, e.get_array_n(2))});
+	}
+	else if(op == "?:"){
+		QUARK_ASSERT(e.get_array_size() == 4);
+		return json_value_t::make_array2({
+			op,
+			pass_d__expression(path, e.get_array_n(1)),
+			pass_d__expression(path, e.get_array_n(2)),
+			pass_d__expression(path, e.get_array_n(3)),
+		});
+	}
+	else if(op == "call"){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		return json_value_t::make_array2({ op, pass_d__expression(path, e.get_array_n(1)), pass_d__arguments(path, e.get_array_n(2))});
+	}
+	else if(op == "->"){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		return json_value_t::make_array2({ op, pass_d__expression(path, e.get_array_n(1)), e.get_array_n(2)});
+	}
+	else if(op == "@"){
+		QUARK_ASSERT(e.get_array_size() == 2);
+		return e;
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+json_value_t pass_d__scope_def(const parser_path_t& path){
+	QUARK_ASSERT(path.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(path._scopes.back()));
+
+	const auto scope1 = path._scopes.back();
+
+	auto types_collector2 = json_value_t::make_object({});
+	if(scope1.does_object_element_exist("_types")){
+		const auto types = get_in(scope1, { "_types" }).get_object();
+		QUARK_TRACE(json_to_pretty_string(types));
+
+		for(const auto type_entry_pair: types){
+			const string type_name = type_entry_pair.first;
+			const auto type_defs_js = type_entry_pair.second;
+			const auto type_defs_vec = type_defs_js.get_array();
+
+			std::vector<json_value_t> type_defs2;
+			for(const auto& type_def: type_defs_vec){
+				QUARK_TRACE(json_to_pretty_string(type_def));
+
+				const auto type_def3 = [&](){
+					const json_value_t subscope = type_def.get_optional_object_element("scope_def");
+					if(!subscope.is_null()){
+						const auto subscope2 = pass_d__scope_def(go_down(path, subscope));
+						return assoc(type_def, "scope_def", subscope2);
+					}
+					else{
+						return type_def;
+					}
+				}();
+				type_defs2.push_back(type_def3);
+			}
+			types_collector2 = assoc(types_collector2, type_name, json_value_t(type_defs2));
+		}
+	}
+
+	auto scope2 = assoc(scope1, "_types", types_collector2);
+	scope2 = assoc(scope2, {"_members"}, pass_d__members(path, scope2.get_optional_object_element("_members")));
+	scope2 = assoc(scope2, {"_args"}, pass_d__members(path, scope2.get_optional_object_element("_args")));
+	scope2 = assoc(scope2, {"_locals"}, pass_d__members(path, scope2.get_optional_object_element("_locals")));
+
+	const auto statements = scope2.get_optional_object_element("_statements");
+	if(!statements.is_null()){
+		vector<json_value_t> statements_vec2;
+		const auto statements_vec = statements.get_array();
+		for(const auto& s: statements_vec){
+			json_value_t op = s.get_array_n(0);
+			if(op == "bind"){
+				statements_vec2.push_back(json_value_t::make_array2({ op, s.get_array_n(1), pass_d__expression(path, s.get_array_n(2))}));
+			}
+			else if(op == "define_struct"){
+				QUARK_ASSERT(false);
+			}
+			else if(op == "define_function"){
+				QUARK_ASSERT(false);
+			}
+			else if(op == "return"){
+				statements_vec2.push_back(json_value_t::make_array2({ op, pass_d__expression(path, s.get_array_n(1))}));
+			}
+			else{
+				throw std::runtime_error("Unknown statement operation");
+			}
+		}
+	}
+
+	QUARK_TRACE(json_to_pretty_string(scope2));
+	return scope2;
+}
+
+const json_value_t make_test_pass_d(){
 std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
 	R"(
 		{
@@ -1002,17 +1662,22 @@ std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
 	return k_test.first;
 }
 
-
-
-QUARK_UNIT_TESTQ("pass_c__scope_def()", ""){
-	const auto test = make_test_pass_c();
+QUARK_UNIT_TESTQ("pass_d__scope_def()", ""){
+	const auto test = make_test_pass_d();
 	QUARK_TRACE(json_to_pretty_string(test));
 
-	const auto c = pass_c__scope_def(make_parser_path(test));
+	const auto c = pass_d__scope_def(make_parser_path(test));
 
 	QUARK_UT_VERIFY(c.check_invariant());
 	QUARK_TRACE(json_to_pretty_string(c));
 }
+
+
+
+
+
+
+
 
 
 
@@ -1230,8 +1895,9 @@ floyd_parser::ast_t run_pass2(const json_value_t& parse_tree){
 	const auto pass_a = pass_a__scope_def(make_parser_path(parse_tree), 1000);
 	const auto pass_b = pass_b__scope_def(make_parser_path(pass_a.first));
 	const auto pass_c = pass_c__scope_def(make_parser_path(pass_b));
+	const auto pass_d = pass_d__scope_def(make_parser_path(pass_c));
 
-	const auto global = json_to_ast(pass_c);
+	const auto global = json_to_ast(pass_d);
 	const ast_t ast2(global);
 	trace(ast2);
 

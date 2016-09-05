@@ -184,10 +184,11 @@ namespace floyd_parser {
 			function's local variable
 
 
+		type is optional, can be "".
 		expr is optional, can be null.
 		member
 		{
-			"type": "<int",
+			"type": "<int>",
 			"name": "my_local",
 			"expr": "[\"k\", 1000]
 		}

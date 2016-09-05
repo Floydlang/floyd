@@ -22,7 +22,7 @@ int main(int argc, const char * argv[]) {
 #if QUARK_UNIT_TESTS_ON
 		quark::run_tests({
 			//	UNDER DEVELOPMENT - RUN FIRST!
-			"parser2.cpp",
+			"pass2.cpp",
 
 			//	Core libs
 			"quark.cpp",
@@ -43,6 +43,7 @@ int main(int argc, const char * argv[]) {
 
 			"llvm_code_gen.cpp",
 
+			"parser2.cpp",
 			"parser_value.cpp",
 			"parser_types_collector.cpp",
 			"parser_expression.cpp",
@@ -61,7 +62,6 @@ int main(int argc, const char * argv[]) {
 			"utils.cpp",
 
 
-			"pass2.cpp",
 			"pass3.cpp",
 
 			"floyd_interpreter.cpp",

@@ -324,28 +324,15 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 		}
 		else if(statement_type == "define_function"){
 			result_scope = define_scope_type(result_scope, statement.get_array_n(1));
+
+			//	Add a local variable pointing to our function.??? This removes need for scoped type_defs?
+//			auto loc = make_member_def("", local_name.get_string(), expr);
+//			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
 		}
 		else if(statement_type == "bind"){
 			auto local_name = statement.get_array_n(1);
 			auto expr = statement.get_array_n(2);
-
-//			auto loc = json_value_t::make_array2({ local_name, expr });
-/*
-	Used for:
-		struct member variable
-		function's local variable
-
-
-	expr is optional, can be null.
-	member
-	{
-		"type": "<int",
-		"name": "my_local",
-		"expr": "[\"k\", 1000]
-	}
-*/
-			auto loc = make_member_def("", local_name.get_string(), expr);
-
+			auto loc = make_member_def("", local_name.get_string(), json_value_t());
 
 			//	Reserve an entry in _members-vector for our variable.
 			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
