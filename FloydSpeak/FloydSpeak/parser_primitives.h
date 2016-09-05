@@ -176,6 +176,24 @@ namespace floyd_parser {
 	json_value_t value_to_json(const value_t& v);
 
 
+
+
+	/*
+		Used for:
+			struct member variable
+			function's local variable
+
+
+		expr is optional, can be null.
+		member
+		{
+			"type": "<int",
+			"name": "my_local",
+			"expr": "[\"k\", 1000]
+		}
+	*/
+	json_value_t make_member_def(const std::string& type, const std::string& name, const json_value_t& expression);
+
 	json_value_t make_scope_def();
 
 

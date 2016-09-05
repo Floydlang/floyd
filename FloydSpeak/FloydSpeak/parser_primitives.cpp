@@ -319,6 +319,14 @@ QUARK_UNIT_TESTQ("value_to_json()", ""){
 }
 
 
+json_value_t make_member_def(const std::string& type, const std::string& name, const json_value_t& expression){
+	return json_value_t::make_object({
+		{ "type", type },
+		{ "name", name },
+		{ "expr", expression }
+	});
+}
+
 
 
 json_value_t make_scope_def(){

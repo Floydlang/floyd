@@ -16,6 +16,7 @@
 #include "parse_struct_def.h"
 #include "utils.h"
 #include "json_support.h"
+#include "json_parser.h"
 
 #include <string>
 #include <memory>
@@ -245,8 +246,8 @@ value_t host_function__alloc_struct(const resolved_path_t& path, const std::shar
 	Take struct definition and creates all types, member variables, constructors, member functions etc.
 	??? add constructors and generated stuff.
 */
-json_value_t install_struct_support(const json_value_t scope_def, const json_value_t& struct_def){
 #if 0
+json_value_t install_struct_support(const json_value_t scope_def, const json_value_t& struct_def){
 	QUARK_ASSERT(scope_def->check_invariant());
 	QUARK_ASSERT(struct_def && struct_def->check_invariant());
 
@@ -267,12 +268,37 @@ json_value_t install_struct_support(const json_value_t scope_def, const json_val
 	}
 
 	return scope_def->set_types(types_collector2);
-#endif
 //???
-return scope_def;
+}
+#endif
+
+
+
+json_value_t define_scope_type(const json_value_t& result_scope, const json_value_t& new_scope){
+	QUARK_ASSERT(result_scope.check_invariant());
+	QUARK_ASSERT(new_scope.check_invariant());
+
+	const auto name = new_scope.get_object_element("_name").get_string();
+	const auto type = new_scope.get_object_element("_type").get_string();
+	const auto type_entry = json_value_t::make_object({
+		{ "base_type", type },
+		{ "scope_def", new_scope }
+	});
+	if(exists_in(result_scope, make_vec({ "_types", name }))){
+		const auto index = get_in(result_scope, make_vec({ "_types", name })).get_array_size();
+		return assoc_in(result_scope, make_vec({"_types", name, index }), type_entry);
+	}
+	else{
+		return assoc_in(
+			result_scope,
+			make_vec({"_types", name }),
+			json_value_t::make_array2({ type_entry })
+		);
+	}
 }
 
 //??? Track when / order of definitions and binds so statements can't access them before they're in scope.
+
 
 
 
@@ -294,34 +320,35 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 
 		//	Definition statements are immediately removed from AST and the types are defined instead.
 		if(statement_type == "define_struct"){
-			result_scope = install_struct_support(result_scope, statement.get_array_n(1));
+			result_scope = define_scope_type(result_scope, statement.get_array_n(1));
 		}
 		else if(statement_type == "define_function"){
-			const auto function_def = statement.get_array_n(1);
-			const auto function_name = function_def.get_object_element("_name").get_string();
-
-			const auto type_entry = json_value_t::make_object({
-				{ "base_type", "function" },
-				{ "scope_def", function_def }
-			});
-			if(exists_in(result_scope, make_vec({ "_types", function_name }))){
-				const auto index = get_in(result_scope, make_vec({ "_types", function_name })).get_array_size();
-
-				result_scope = assoc_in(result_scope, make_vec({"_types", function_name, index }), type_entry);
-			}
-			else{
-				result_scope = assoc_in(
-					result_scope,
-					make_vec({"_types", function_name }),
-					json_value_t::make_array2({ type_entry })
-				);
-			}
+			result_scope = define_scope_type(result_scope, statement.get_array_n(1));
 		}
 		else if(statement_type == "bind"){
-			auto expr = statement.get_array_n(1);
+			auto local_name = statement.get_array_n(1);
+			auto expr = statement.get_array_n(2);
+
+//			auto loc = json_value_t::make_array2({ local_name, expr });
+/*
+	Used for:
+		struct member variable
+		function's local variable
+
+
+	expr is optional, can be null.
+	member
+	{
+		"type": "<int",
+		"name": "my_local",
+		"expr": "[\"k\", 1000]
+	}
+*/
+			auto loc = make_member_def("", local_name.get_string(), expr);
+
 
 			//	Reserve an entry in _members-vector for our variable.
-			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), expr));
+			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
 			result_scope = store_object_member(result_scope, "_statements", push_back(result_scope.get_object_element("_statements"), statement));
 		}
 		else{
@@ -338,8 +365,17 @@ json_value_t program_to_ast(const string& program){
 	a = store_object_member(a, "_name", "global");
 	a = store_object_member(a, "_type", "global");
 
+	const auto builtin_types = parse_json(seq_t(R"(
+		{
+			"int": [ { "base_type": "int" } ],
+			"bool": [ { "base_type": "bool" } ],
+			"string": [ { "base_type": "string" } ]
+		}
+	)"));
+	a = store_object_member(a, "_types", builtin_types.first);
+
 	const auto statements_pos = read_statements_into_scope_def(a, program);
-	QUARK_TRACE(json_to_compact_string(statements_pos.first));
+	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
 
 //	ast_t ast2(statements_pos.first);
 //	string stage2 = json_to_compact_string(ast_to_json(ast2));

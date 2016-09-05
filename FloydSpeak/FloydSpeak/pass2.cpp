@@ -369,8 +369,8 @@ std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
 			"_name": "global",
 			"_type": "global",
 			"_members": [
-				["<int>", "g_version", "1.0"],
-				["<string>", "message", "Welcome!"]
+				{ "type": "<int>", "name": "g_version", "expr": 1.0 },
+				{ "type": "<string>", "name": "message", "expr": "Welcome!" }
 			],
 			"_types": {
 				"bool": [ { "base_type": "bool" } ],
@@ -384,8 +384,8 @@ std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
 							"_type": "function",
 							"_args": [],
 							"_locals": [
-								["<pixel_t>", "it"],
-								["<int>", "x2"]
+								{ "type": "<pixel_t>", "name": "it" },
+								{ "type": "<int>", "name": "x2" }
 							],
 							"_types": {},
 							"_statements": [
@@ -400,9 +400,9 @@ std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
 							"_name": "pixel_t",
 							"_type": "struct",
 							"_members": [
-								["<int>", "red"],
-								["<int>", "green"],
-								["<int>", "blue"]
+								{ "type": "<int>", "name": "red" },
+								{ "type": "<int>", "name": "green" },
+								{ "type": "<int>", "name": "blue" }
 							],
 							"_types": {},
 							"_statements": [],
@@ -417,11 +417,11 @@ std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
 							"_name": "main",
 							"_type": "function",
 							"_args": [
-								["<string>", "args"]
+								{ "type": "<string>", "name": "args" }
 							],
 							"_locals": [
-								["<pixel_t>", "p1"],
-								["<pixel_t>", "p2"]
+								{ "type": "<pixel_t>", "name": "p1" },
+								{ "type": "<pixel_t>", "name": "p2" }
 							],
 							"_types": {},
 							"_statements": [
@@ -588,10 +588,20 @@ json_value_t pass_b__members(const parser_path_t& path, const json_value_t& memb
 		const auto member_vec = members.get_array();
 		vector<json_value_t> member_vec2;
 		for(const auto& member: member_vec){
-			const auto type = member.get_array_n(0).get_string();
-			const auto type2 = resolve_type(path, type, eresolve_types::k_all_but_function);
-			const auto member2 = assoc(member, json_value_t(0.0), type2);
-			member_vec2.push_back(member2);
+			if(!member.is_object()){
+				throw std::runtime_error("Member definitions must be JSON objects.");
+			}
+
+			const auto type = member.get_object_element("type").get_string();
+
+			if(type != ""){
+				const auto type2 = resolve_type(path, type, eresolve_types::k_all_but_function);
+				const auto member2 = assoc(member, "type", type2);
+				member_vec2.push_back(member2);
+			}
+			else{
+				member_vec2.push_back(member);
+			}
 		}
 		return json_value_t(member_vec2);
 	}

@@ -67,7 +67,8 @@ namespace floyd_parser {
 				}
 */
 
-				const auto a = json_value_t::make_array_skip_nulls({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first), constant_expr_pos.first });
+//				const auto a = json_value_t::make_array_skip_nulls({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first), constant_expr_pos.first });
+				const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, constant_expr_pos.first);
 				members.push_back(a);
 				pos = skip_whitespace(constant_expr_pos_s.second);
 			}
@@ -79,10 +80,10 @@ namespace floyd_parser {
 			pos = skip_whitespace(read_required_char(pos, ';'));
 		}
 
-		const auto obj = make_object({
-			{ "_name", json_value_t(struct_name) },
-			{ "_members", members }
-		});
+		json_value_t obj = make_scope_def();
+		obj = store_object_member(obj, "_type", "struct");
+		obj = store_object_member(obj, "_name", json_value_t(struct_name));
+		obj = store_object_member(obj, "_members", members);
 		return { obj, body_pos.second };
 	}
 

@@ -36,7 +36,9 @@ vector<json_value_t> parse_functiondef_arguments(const string& s2){
 		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(arg_name.second, ',');
 
-		const auto a = json_value_t::make_array2({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first) });
+
+		const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, json_value_t());
+//		const auto a = json_value_t::make_array2({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first) });
 		args.push_back(a);
 		str = skip_whitespace(optional_comma.second);
 	}
@@ -99,7 +101,7 @@ std::pair<json_value_t, std::string> parse_function_definition(const string& pos
 		function_def = store_object_member(function_def, "_args", args);
 		function_def = store_object_member(function_def, "_locals", locals);
 		function_def = store_object_member(function_def, "_statements", statements);
-		function_def = store_object_member(function_def, "_types", statements);
+		function_def = store_object_member(function_def, "_types", types_collector);
 		function_def = store_object_member(function_def, "_return_type", return_type_pos.first.to_string());
 		return { function_def, body_pos.second };
 	}
