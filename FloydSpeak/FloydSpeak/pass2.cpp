@@ -578,8 +578,6 @@ std::string resolve_type(const parser_path_t& path, const string& type_name0, er
 	throw std::runtime_error("Undefined type \"" + type_name + "\"");
 }
 
-
-
 json_value_t pass_b__members(const parser_path_t& path, const json_value_t& members){
 	if(members.is_null()){
 		return members;
@@ -606,46 +604,6 @@ json_value_t pass_b__members(const parser_path_t& path, const json_value_t& memb
 		return json_value_t(member_vec2);
 	}
 }
-
-/*
-		public: std::shared_ptr<value_t> _constant;
-		public: std::shared_ptr<math_operation1_expr_t> _math1;
-		public: std::shared_ptr<math_operation2_expr_t> _math2;
-		public: std::shared_ptr<conditional_operator_expr_t> _conditional_operator;
-		public: std::shared_ptr<function_call_expr_t> _call;
-		public: std::shared_ptr<load_expr_t> _load;
-
-		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
-		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
-		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
-
-		//	Tell what type of value this expression represents. Null if not yet defined.
-		public: type_identifier_t _resolved_expression_type;
-
-
-const std::map<eoperation, string> k_2_operator_to_string{
-//	{ eoperation::k_x_member_access, "->" },
-
-	{ eoperation::k_2_looup, "[-]" },
-
-	{ eoperation::k_2_add, "+" },
-	{ eoperation::k_2_subtract, "-" },
-	{ eoperation::k_2_multiply, "*" },
-	{ eoperation::k_2_divide, "/" },
-	{ eoperation::k_2_remainder, "%" },
-
-	{ eoperation::k_2_smaller_or_equal, "<=" },
-	{ eoperation::k_2_smaller, "<" },
-	{ eoperation::k_2_larger_or_equal, ">=" },
-	{ eoperation::k_2_larger, ">" },
-
-	{ eoperation::k_2_logical_equal, "==" },
-	{ eoperation::k_2_logical_nonequal, "!=" },
-	{ eoperation::k_2_logical_and, "&&" },
-	{ eoperation::k_2_logical_or, "||" },
-};
-
-*/
 
 bool is_math1_op(const string& op){
 	return op == "neg";
@@ -861,9 +819,12 @@ Pass B) Scan tree: resolve type references by storing the type-ID.
 Pass C) Scan tree: move all types to global list.
 Pass D) Scan tree: bind variables to type-ID + offset. Tag expressions with their output-type.
 
+NOW WE HAVE typesafe AST!
+
+
 Result after transform C.
 ======================================
-{
+"lookup": {
 	"$1": { "name": "bool", "base_type": "bool" },
 	"$2": { "name": "int", "base_type": "int" },
 	"$3": { "name": "string", "base_type": "string" },
@@ -926,8 +887,8 @@ Result after transform C.
 			}
 		}
 	}
-}
-{
+},
+"global_scope": {
 	"_name": "global",
 	"_type": "global",
 	"_members": [
