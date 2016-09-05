@@ -6,6 +6,111 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
+
+
+/*
+
+??? How to store links to resolved to types or variables?
+
+
+Augument existing data, don't replace typename / variable name.
+
+- Need to be able to insert new types, function, variables without breaking links.
+
+A) { int scope_up_count, int item_index }. Problem - item_index breaks if we insert / reorder parent scope members.
+B) Resolve by checking types exist, but do not store new info.
+C) Generate IDs for types. Use type-lookup from ID to correct entry. Store ID in each resolved place. Put all
+CHOSEN ==>>>> D) Create global type-lookup table. Use original static-scope-path as ID. Use these paths to refer from client to type.
+
+
+Solution D algo steps:
+Pass A) Scan tree, give each found type a unique ID. (Tag each scope and assign parent-scope ID.)
+Pass B) Scan tree: resolve type references by storing the type-ID.
+Pass C) Scan tree: move all types to global list.
+Pass D) Scan tree: bind variables to type-ID + offset. Tag expressions with their output-type.
+
+Now we can convert to a typesafe AST!
+
+
+Result after transform C.
+======================================
+"lookup": {
+	"$1": { "name": "bool", "base_type": "bool" },
+	"$2": { "name": "int", "base_type": "int" },
+	"$3": { "name": "string", "base_type": "string" },
+	"$4": { "name": "pixel_t", "base_type": "function", "scope_def":
+		{
+			"parent_scope": "$5",		//	Parent scope.
+			"base_type": "function",
+			"scope_def": {
+				"_name": "pixel_t",
+				"_type": "function",
+				"_args": [],
+				"_locals": [
+					["$5", "it"],
+					["$4", "x2"]
+				],
+				"_statements": [
+					["call", "___body"],
+					["return", ["k", "$5", 100]]
+				],
+				"_return_type": "$4"
+			}
+		}
+	},
+	"$5": { "name": "pixel_t", "base_type": "struct", "scope_def":
+		{
+			"base_type": "struct",
+			"scope_def": {
+				"_name": "pixel_t",
+				"_type": "struct",
+				"_members": [
+					["$4", "red"],
+					["$4", "green"],
+					["$4", "blue"]
+				],
+				"_types": {},
+				"_statements": [],
+				"_return_type": null
+			}
+		}
+	},
+	"$6": { "name": "main", "base_type": "function", "scope_def":
+		{
+			"base_type": "function",
+			"scope_def": {
+				"_name": "main",
+				"_type": "function",
+				"_args": [
+					["$3", "args"]
+				],
+				"_locals": [
+					["$5", "p1"],
+					["$5", "p2"]
+				],
+				"_types": {},
+				"_statements": [
+					["bind", "p1", ["call", "pixel_t"]],
+					["return", ["+", ["@", "p1"], ["@", "g_version"]]]
+				],
+				"_return_type": "$4"
+			}
+		}
+	}
+},
+"global_scope": {
+	"_name": "global",
+	"_type": "global",
+	"_members": [
+		["$4", "g_version", "1.0"],
+		["$3", "message", "Welcome!"]
+	],
+}
+*/
+
+
+
+
 #include "pass2.h"
 
 #include "statements.h"
@@ -446,6 +551,7 @@ std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
 ///////////////////////////////////////////		PASS A
 
 
+//Pass A) Scan tree, give each found type a unique ID. (Tag each scope and assign parent-scope ID.)
 
 
 string make_type_id_string(int id){
@@ -453,7 +559,6 @@ string make_type_id_string(int id){
 }
 
 
-//Pass A) Scan tree, give each found type a unique ID. (Tag each scope and assign parent-scope ID.)
 
 
 pair<json_value_t, int> pass_a__scope_def(const parser_path_t& path, int type_id_count){
@@ -953,103 +1058,6 @@ json_value_t resolve_type_def(const parser_path_t& path, const json_value_t& typ
 }
 #endif
 
-
-/*
-??? How to store links to resolved to types or variables?
-
-Augument existing data, don't replace typename / variable name.
-
-- Need to be able to insert new types, function, variables without breaking links.
-
-A) { int scope_up_count, int item_index }. Problem - item_index breaks if we insert / reorder parent scope members.
-B) Resolve by checking types exist, but do not store new info.
-C) Generate IDs for types. Use type-lookup from ID to correct entry. Store ID in each resolved place. Put all
-D) Create global type-lookup table. Use original static-scope-path as ID. Use these paths to refer from client to type.
-
-
-Pass A) Scan tree, give each found type a unique ID. Tag each scope and assign parent-scope ID.
-Pass B) Scan tree: resolve type references by storing the type-ID.
-Pass C) Scan tree: move all types to global list.
-Pass D) Scan tree: bind variables to type-ID + offset. Tag expressions with their output-type.
-
-NOW WE HAVE typesafe AST!
-
-
-Result after transform C.
-======================================
-"lookup": {
-	"$1": { "name": "bool", "base_type": "bool" },
-	"$2": { "name": "int", "base_type": "int" },
-	"$3": { "name": "string", "base_type": "string" },
-	"$4": { "name": "pixel_t", "base_type": "function", "scope_def":
-		{
-			"parent_scope": "$5",		//	Parent scope.
-			"base_type": "function",
-			"scope_def": {
-				"_name": "pixel_t",
-				"_type": "function",
-				"_args": [],
-				"_locals": [
-					["$5", "it"],
-					["$4", "x2"]
-				],
-				"_statements": [
-					["call", "___body"],
-					["return", ["k", "$5", 100]]
-				],
-				"_return_type": "$4"
-			}
-		}
-	},
-	"$5": { "name": "pixel_t", "base_type": "struct", "scope_def":
-		{
-			"base_type": "struct",
-			"scope_def": {
-				"_name": "pixel_t",
-				"_type": "struct",
-				"_members": [
-					["$4", "red"],
-					["$4", "green"],
-					["$4", "blue"]
-				],
-				"_types": {},
-				"_statements": [],
-				"_return_type": null
-			}
-		}
-	},
-	"$6": { "name": "main", "base_type": "function", "scope_def":
-		{
-			"base_type": "function",
-			"scope_def": {
-				"_name": "main",
-				"_type": "function",
-				"_args": [
-					["$3", "args"]
-				],
-				"_locals": [
-					["$5", "p1"],
-					["$5", "p2"]
-				],
-				"_types": {},
-				"_statements": [
-					["bind", "p1", ["call", "pixel_t"]],
-					["return", ["+", ["@", "p1"], ["@", "g_version"]]]
-				],
-				"_return_type": "$4"
-			}
-		}
-	}
-},
-"global_scope": {
-	"_name": "global",
-	"_type": "global",
-	"_members": [
-		["$4", "g_version", "1.0"],
-		["$3", "message", "Welcome!"]
-	],
-}
-*/
 
 
 #if 0
