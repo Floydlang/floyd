@@ -197,8 +197,7 @@ namespace {
 ast_t program_to_ast2(const string& program){
 	const auto pass1 = program_to_ast(program);
 	const ast_t pass2 = run_pass2(pass1);
-	const ast_t pass3 = run_pass3(pass2);
-	return pass3;
+	return pass2;
 }
 
 floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<stack_frame_t>>& stack_frames, const std::string& s, size_t depth){

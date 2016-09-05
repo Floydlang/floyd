@@ -535,7 +535,7 @@ enum class eresolve_types {
 /*
 	returns "$1003" or similar.
 */
-std::string resolve_type(const parser_path_t& path, const string& type_name0, eresolve_types types){
+std::string pass_b__resolve_type(const parser_path_t& path, const string& type_name0, eresolve_types types){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(type_name0.size() > 2);
 
@@ -593,7 +593,7 @@ json_value_t pass_b__members(const parser_path_t& path, const json_value_t& memb
 			const auto type = member.get_object_element("type").get_string();
 
 			if(type != ""){
-				const auto type2 = resolve_type(path, type, eresolve_types::k_all_but_function);
+				const auto type2 = pass_b__resolve_type(path, type, eresolve_types::k_all_but_function);
 				const auto member2 = assoc(member, "type", type2);
 				member_vec2.push_back(member2);
 			}
@@ -639,7 +639,7 @@ json_value_t pass_b__expression(const parser_path_t& path, const json_value_t& e
 		QUARK_ASSERT(e.get_array_size() == 3);
 		return json_value_t::make_array2({
 			op,
-			resolve_type(path, e.get_array_n(1).get_string(), eresolve_types::k_all_but_function),
+			pass_b__resolve_type(path, e.get_array_n(1).get_string(), eresolve_types::k_all_but_function),
 			e.get_array_n(2)
 		});
 	}
@@ -756,6 +756,157 @@ QUARK_UNIT_TESTQ("pass_b__scope_def()", ""){
 	QUARK_UT_VERIFY(pass_b.check_invariant());
 	QUARK_TRACE(json_to_pretty_string(pass_b));
 }
+
+
+
+
+
+
+
+///////////////////////////////////////////		PASS C
+
+
+//	Pass C) Make central type lookup.
+
+
+
+json_value_t dissoc(const json_value_t& value, const json_value_t& key){
+	return value;
+}
+
+//	Returns new scope + lookup.
+pair<json_value_t, json_value_t> pass_c__scope_def_internal(const json_value_t& lookup, const parser_path_t& path){
+	QUARK_ASSERT(lookup.check_invariant());
+	QUARK_ASSERT(lookup.is_object());
+	QUARK_ASSERT(path.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(path._scopes.back()));
+
+	auto scope1 = path._scopes.back();
+	const auto types = get_in(scope1, { "_types" }).get_object();
+	auto lookup1 = lookup;
+	scope1 = dissoc(scope1, "_types");
+
+	for(const auto type_entry_pair: types){
+		const auto type_defs_js = type_entry_pair.second;
+		const auto type_defs_vec = type_defs_js.get_array();
+
+		for(const auto& type_def: type_defs_vec){
+			QUARK_TRACE(json_to_pretty_string(type_def));
+
+			const auto type_id = type_def.get_object_element("id");
+			lookup1 = assoc(lookup1, type_id, dissoc(type_def, "id"));
+
+			const json_value_t subscope = type_def.get_optional_object_element("scope_def");
+			if(!subscope.is_null()){
+				const auto res = pass_c__scope_def_internal(lookup1, go_down(path, subscope));
+				scope1 = res.first;
+				lookup1 = res.second;
+			}
+		}
+	}
+
+	QUARK_TRACE(json_to_pretty_string(scope1));
+	QUARK_TRACE(json_to_pretty_string(lookup1));
+	return { scope1, lookup1 };
+}
+
+json_value_t pass_c__scope_def(const parser_path_t& path){
+	QUARK_ASSERT(path.check_invariant());
+
+	const auto a = pass_c__scope_def_internal(json_value_t::make_object({}), path);
+
+	return json_value_t::make_object({
+		{ "global", a.first },
+		{ "lookup", a.second }
+	});
+}
+
+
+
+const json_value_t make_test_pass_c(){
+std::pair<json_value_t, seq_t> k_test = parse_json(seq_t(
+	R"(
+		{
+			"_name": "global",
+			"_type": "global",
+			"_members": [
+				{ "type": "<string>", "name": "message", "expr": "Welcome!" }
+			],
+			"_types": {
+				"bool": [ { "id": "$1", "base_type": "bool" } ],
+				"int": [ { "id": "$2", "base_type": "int" } ],
+				"string": [ { "id": "$3", "base_type": "string" } ],
+				"pixel_t": [
+					{
+						"id": "$4",
+						"base_type": "function",
+						"scope_def": {
+							"_name": "pixel_t",
+							"_type": "function",
+							"_args": [],
+							"_locals": [
+								{ "type": "<int>", "name": "x2" }
+							],
+							"_types": {},
+							"_statements": [
+								["return", ["call", ["@", "___body"], [ ["k", "<pixel_t>", 100] ]]]
+							],
+							"_return_type": "<int>"
+						}
+					},
+					{
+						"id": "$5",
+						"base_type": "struct",
+						"scope_def": {
+							"_name": "pixel_t",
+							"_type": "struct",
+							"_members": [
+								{ "type": "<int>", "name": "blue" }
+							],
+							"_types": {},
+							"_statements": [],
+							"_return_type": null
+						}
+					}
+				],
+				"main": [
+					{
+						"id": "$6",
+						"base_type": "function",
+						"scope_def": {
+							"_name": "main",
+							"_type": "function",
+							"_args": [
+							],
+							"_locals": [
+							],
+							"_types": {},
+							"_statements": [
+							],
+							"_return_type": "<int>"
+						}
+					}
+				]
+			}
+		}
+	)"
+));
+
+	return k_test.first;
+}
+
+
+
+QUARK_UNIT_TESTQ("pass_c__scope_def()", ""){
+	const auto test = make_test_pass_c();
+	QUARK_TRACE(json_to_pretty_string(test));
+
+	const auto c = pass_c__scope_def(make_parser_path(test));
+
+	QUARK_UT_VERIFY(c.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(c));
+}
+
 
 
 
@@ -1068,7 +1219,9 @@ floyd_parser::ast_t run_pass2(const json_value_t& parse_tree){
 	const ast_t dummy;
 	const auto pass_a = pass_a__scope_def(make_parser_path(parse_tree), 1000);
 	const auto pass_b = pass_b__scope_def(make_parser_path(pass_a.first));
-	const auto global = json_to_ast(pass_b);
+	const auto pass_c = pass_c__scope_def(make_parser_path(pass_b));
+
+	const auto global = json_to_ast(pass_c);
 	const ast_t ast2(global);
 	trace(ast2);
 

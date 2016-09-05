@@ -13,16 +13,16 @@
 
 
 /*
-	- Inject automatic functions, like default constructors.
-*/
+	Pass XXX
 
-/*
+	- Inject automatic functions, like default constructors.
+
 	Optimizes expressions, lossy.
 	- Perform basic evaluation simplifications / optimizations.
 
 	Remove all symbols, convert struct members to vectors and use index.
+floyd_parser::ast_t run_passXXX(const floyd_parser::ast_t& ast1);
 */
-floyd_parser::ast_t run_pass3(const floyd_parser::ast_t& ast1);
 
 
 #endif /* pass3_hpp */
