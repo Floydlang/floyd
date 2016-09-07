@@ -61,7 +61,7 @@
 
 
 		a = my_global_int;
-		["bind", "a", ["@", "my_global_int"]]
+		["bind", "<int>", "a", ["@", "my_global_int"]]
 
 		"my_global.next"
 		["->", ["@", "my_global"], "next"]

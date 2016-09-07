@@ -135,6 +135,7 @@ namespace floyd_parser {
 		);
 	}
 
+#if false
 	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
 		const auto r = parse_struct_definition("struct pixel { int red; int green; int blue;};");
 
@@ -154,6 +155,7 @@ namespace floyd_parser {
 
 		QUARK_TEST_VERIFY(*r.first == *b);
 */	}
+#endif
 
 #if false
 	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){

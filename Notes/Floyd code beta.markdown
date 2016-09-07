@@ -112,7 +112,7 @@ condition ? a : b		When condition is true, this entire expression has the value 
 # STRUCTs
 Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view).
 
-	struct pixel { 
+	struct pixel {
 		int red;
 		int green;
 		int blue;
@@ -124,10 +124,10 @@ Structs are the central building blocks for composing data in Floyd. They are us
 ## Struct Signature
 This is the properties exposed by a struct in the order they are listed in the struct.
 
+
 ## Member Data
 All members have default value. This makes simple value classes extremely simple to create.
 Clients can directly access all member variables.
-You can take control over reading / writing members by replacing its default getter / setter with your own functions. 
 
 	struct test {
 		float f;
@@ -141,6 +141,25 @@ Simple but fully functional struct. "f" will be initialized to 0.0f, g will be i
 These are member functions that are named the same as the struct that sets up the initial state of a struct value. All member variables are first automatically initialized to default values: either explicitly or using that type's default. A constructor overrides these defaults. The value does not exist to the rest of the program until the constructor finishes.
 
 
+??? have a single constructor - the default constructor, that make a new, default value based on member default values. You cannot make your own constructors. Instead you created member make-functions that have access to the private state. This mean the value is always constructed, then mutated.
+		struct pixel {
+			pixel make_white(){
+			}
+		}
+
+		struct pixel {
+			int red = 255; int green = 255; int blue = 255;
+			pixel make_red(){
+				temp = pixel();
+				temp
+			}
+		}
+		//	New constructor. Non-member.
+		pixel pixel(float float_gray){
+		}
+
+
+
 ## Using default contructors:
 
 	struct test {
@@ -152,10 +171,6 @@ These are member functions that are named the same as the struct that sets up th
 	assert(a.f == 0.0f);
 	assert(a.g == 3.1415f);
 
-	b = test(1.1f, 2.2f);
-	assert(b.f == 1.1f);
-	assert(b.g == 2.2f);
-
 
 ## Built in Features of Structs
 Destruction: destruction is automatic when there are no references to a struct. Copying is done automatically, no need to write code for this. All copies behave as true-deep copies.
@@ -163,11 +178,8 @@ All structs automatically support the built in features of every data type like 
 
 Notice about optimizations: many accellerations are made behind the scenes:
 
-- causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
+- Causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
 - You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
-- There is no way for client code to see if the struct instances are _the same_ - that is access the same memory via two separate pointers.
-
-
 
 # RESERVED KEYWORDS
 assert

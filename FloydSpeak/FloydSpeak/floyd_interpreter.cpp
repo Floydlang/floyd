@@ -990,6 +990,7 @@ std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, c
 	return { vm, r };
 }
 
+#if false
 QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	const auto result = run_main(
 		"string main(string args){\n"
@@ -999,7 +1000,6 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	);
 	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("123456"));
 }
-
 
 
 //////////////////////////		TEST conditional expression
@@ -1250,6 +1250,7 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 	);
 	QUARK_TEST_VERIFY(a.second == value_t("three"));
 }
+#endif
 
 
 

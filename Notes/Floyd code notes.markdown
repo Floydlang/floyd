@@ -89,6 +89,18 @@ All data types with the same signature are can automatically be assign between.
 		}
 
 
+
+	??? Idea: allow unnamed helper functions, hidden from clients. With separate tests.
+
+
+# schematic tables
+a	->		1	0	0	0
+b	->			1		0
+c	->				1	0
+x	<-		1	2	2	3
+
+
+
 	
 # STRUCTs
 
@@ -108,16 +120,6 @@ All member functions works like C++ static members and takes *this* as their fir
 
 
 ??? invent way to separate member variable names, locals and arguments and globals so they don't collide. Use ".red = red"?
-
-
-######################################
-### separate clients from how struct members & data is implementeed. Allow refactoring.
-
-
-### Separate needs into clearer parts:
-	1) private / public is access control for clients and for struct implementation.
-	
-	2) Clients should not be affected with if a struct value is data or calculated.
 
 
 
@@ -356,6 +358,7 @@ You can make a path through nested data structures. The path is a built-in opaqu
 	### operations.
 	### show as a string / file path.
 
+See "JSON pointers" spec.
 
 
 # PROTOCOLS

@@ -96,25 +96,27 @@ while(expression){
 }
 
 
-
 # STRUCTs
+
+## Unnamed Struct Members
 You can chose to name members or not. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0". Named members are also numbered - a parallell name.
+
 
 ??? How to block mutation of member variable? Some members makes no sense to write in isolation.
 
+
 ## Struct Signature
 
-* Users of the struct are not affected if you introduce a setter or getter to a property. They are also unaffected if you move a function from being a member function to a free function - they call them the same way.
-* There is no implicit _this_.
+## Hiding Client from Code Changes
+-	Clients of the struct are not affected if you introduce a setter or getter to a property.
+-	They are also unaffected if you move a function from being a member function to a free function - they call them the same way.
 
 Clients to a struct should not care if:
 1) A struct property is a data member or a function, ever. Always the same syntax.
 2) a function has private access or not to the struct. Always the same syntax.
 3) a function is part of the struct or provided some other way. Always the same syntax.
 
-This makes it easier to refactor code: you can change a function from non-member to member without affecting any client code!
-
-??? private member data
+???* 	### Automatic conversion of types.
 
 
 ## Constructors
@@ -126,7 +128,9 @@ Two constructors are automatically generated:
 You cannot stop these two contructors, but you can reimplement them if you wish.??? yes you want to be able to block them. Some struct have no meaningful default.
 
 
-
+	b = test(1.1f, 2.2f);
+	assert(b.f == 1.1f);
+	assert(b.g == 2.2f);
 
 
 
@@ -154,27 +158,35 @@ You cannot stop these two contructors, but you can reimplement them if you wish.
 
 
 ## Member Functions
-Member functions have access to all private members, external functions only to public members of the struct.
+Member functions have access to all private members, external functions only to public members of the struct. Since they are inside the struct-scope they are proven to be part of the essence of the struct. Recommendation: fewer members functions are better. If a function can be made non-member, move it outside of struct.
+
 You call a member function just like a normal function, draw(my_struct, 10).
 There is no special implicit "this" argument to functions, you need to add it manually.
-It is not possible to change member variables, instead you return a completely new instance of the struct.
+It is not possible to change member variables of a value, instead you return a completely new instance of the struct.
 
 ??? While a constructor executes, the object does not exist and you can mutate it.
 
 	struct pixel { 
 		/*
-			This is how the implicitly generated getter for member "red" looks.
+			This is how the automatically generated getter for member "red" looks.
 			You can make your own to override it. Any function that takes a single argument of
 			a type can be called as if it's a readable propery of the struct.
+					a = my_pixel.red
+					or
+					a = red(my_pixel)
 		*/
 		int red(pixel p){
 			return red;
 		}
 
 		/*
-			This is how the implicitly generated setter for member "red" looks.
+			This is how the automatically generated setter for member "red" looks.
 			You can make your own to override it. Any function that takes a two
 			arguments (struct type + one more) can be called as if it's a writable propery of the struct.
+				my_pixel.red = 255
+				or
+				my_pixel.red(255)
+				red(my_pixel, 255)
 		*/
 		pixel red(pixel p, int value){
 			return pixel(value, p.green, p.blue);
@@ -264,13 +276,8 @@ This works with nested values too:
 
 
 
-
-
-
-
-
 # TUPLES (unnnamed structs)
-You can access the members using indexes instead of their names, for use as a tuple.
+You can access the members using indexes instead of their names, for use as a tuple. Also, there is no need to name a struct.
 
 	a = struct { int, int, string }( 4, 5, "six");
 	assert(a.0 == 4);
@@ -364,7 +371,6 @@ Map Reference
 	map<K, V> my_map.insert(K key, V value)
 	size_t my_map.count()
 	map<K, V> my_map.erase(K key)
-
 
 
 

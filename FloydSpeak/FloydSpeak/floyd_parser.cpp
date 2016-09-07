@@ -113,7 +113,7 @@ QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
 	OUTPUT
 
 	["return", EXPRESSION ]
-	["bind", "local_name", EXPRESSION ]
+	["bind", "<string>", "local_name", EXPRESSION ]
 	["define_struct", STRUCT_DEF ]
 	["define_function", FUNCTION_DEF ]
 
@@ -156,7 +156,7 @@ statement_result_t read_statement(const string& pos){
 			const auto function = parse_function_definition(pos);
 			{
 				QUARK_SCOPED_TRACE("FUNCTION DEF");
-//				QUARK_TRACE(json_to_compact_string(scope_def_to_json(*function.first)));
+				QUARK_TRACE(json_to_pretty_string(function.first));
 			}
             return { json_value_t::make_array2({ json_value_t("define_function"), function.first }), skip_whitespace(function.second) };
 		}
@@ -330,9 +330,10 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 //			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
 		}
 		else if(statement_type == "bind"){
-			auto local_name = statement.get_array_n(1);
-			auto expr = statement.get_array_n(2);
-			auto loc = make_member_def("", local_name.get_string(), json_value_t());
+			auto bind_type = statement.get_array_n(1);
+			auto local_name = statement.get_array_n(2);
+			auto expr = statement.get_array_n(3);
+			auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
 
 			//	Reserve an entry in _members-vector for our variable.
 			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
