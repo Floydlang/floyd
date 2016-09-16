@@ -44,44 +44,38 @@ namespace {
 	}
 
 	//	Notice that scope_ref_t:members are resolved, "args" are not??? Resolve on the fly?
-	bool check_arg_types(const json_value_t& f, const vector<value_t>& args){
-		return true;
-#if false
-		if(f->_members.size() != args.size()){
+	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
+		if(f->_args.size() != args.size()){
 			return false;
 		}
 
 		for(int i = 0 ; i < args.size() ; i++){
-			const auto farg = *f->_members[i]._type;
+			const auto farg = *f->_args[i]._type;
 			const auto call_arg = args[i].get_type();
 			if(farg.to_string() != call_arg.to_string()){
 				return false;
 			}
 		}
 		return true;
-#endif
 	}
 
-	interpreter_t open_function_scope(const interpreter_t& vm, const json_value_t& f, const vector<value_t>& args){
-#if false
+	interpreter_t open_function_scope(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(f.check_invariant());
-		QUARK_ASSERT(f.get_object_element("_name") == "function_scope" || f.get_object_element("_name") == "subscope");
+		QUARK_ASSERT(f && f->check_invariant());
+		QUARK_ASSERT(f->_type == scope_def_t::etype::k_function_scope);
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-		const auto type = f.get_object_element("_name");
-		if(type == "function_scope" && !check_arg_types(f, args)){
+		if(f->_type == scope_def_t::etype::k_function_scope && !check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
 
 		stack_frame_t new_frame;
 		new_frame._def = f;
 
-		// Copy only input arguments to the function scope. The function's local variables are null until written by a statement.
+		//	Copy only input arguments to the function scope. The function's local variables are null until written by a statement.
 		//	??? Precalculate local variables / constants when possible!
 		for(int i = 0 ; i < args.size() ; i++){
-//			const auto& arg_name = f.get_object_element("_args").get_array_n(i)._name;
-			const auto arg_name = get_in(f, { "_args", json_value_t((double)i) });
+			const auto& arg_name = f->_args[i]._name;
 			const auto& arg_value = args[i];
 			new_frame._values[arg_name] = arg_value;
 		}
@@ -89,8 +83,6 @@ namespace {
 		interpreter_t result = vm;
 		result._call_stack.push_back(make_shared<stack_frame_t>(new_frame));
 		return result;
-#endif
-	return vm;
 	}
 
 	value_t call_host_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
@@ -160,7 +152,6 @@ namespace {
 
 
 	value_t call_interpreted_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
-#if false
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
 		QUARK_ASSERT(!f->_executable._statements.empty());
@@ -168,35 +159,36 @@ namespace {
 		QUARK_ASSERT(!f->_executable._host_function_param);
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
+#if false
 		if(f->_type == scope_def_t::k_function_scope && !check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
+#endif
 
 		auto vm2 = open_function_scope(vm, f, args);
 		const auto& statements = f->_executable._statements;
 		const auto value = execute_statements(vm2, statements);
 		if(value.is_null()){
-		throw std::runtime_error("function missing return statement");
+			throw std::runtime_error("function missing return statement");
 		}
 		else{
 			return value;
 		}
-#endif
-	return {};
 	}
 
 }	//	unnamed
 
 
 value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
-#if false
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f && f->check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
+#if false
 	if(f->_type == scope_def_t::k_function_scope && !check_arg_types(f, args)){
 		throw std::runtime_error("function arguments do not match function");
 	}
+#endif
 
 	if(f->_executable._host_function){
 		return call_host_function(vm, f, args);
@@ -204,25 +196,16 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 	else{
 		return call_interpreted_function(vm, f, args);
 	}
-#endif
-	return {};
 }
 
 scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
-
-/*
-					"lookup": {
-						"$1000": { "base_type": "bool", "path": "global/bool" },
-						"$1001": { "base_type": "int", "path": "global/int" },
-						"$1002": {
-*/
 	for(const auto p: vm._ast._symbols){
 		const auto type_def = p.second;
-		if(type_def->get_type() == k_function && type_def->get_function_def()->_name.to_string() == "name"){
+		if(type_def->get_type() == base_type::k_function && type_def->get_function_def()->_name.to_string() == name){
 			return type_def->get_function_def();
 		}
 	}
-	return {};
+	throw std::runtime_error("Unknown global function");
 }
 
 
@@ -687,7 +670,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 
 #if false
-??? use pass2!
+??? Make separate tests for parsing vs evaluating expressions.
 expression_t test_evaluate_simple(string expression_string){
 	const ast_t ast;
 	const auto e = parse_expression_all(expression_string);
@@ -1028,7 +1011,6 @@ std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, c
 	return { vm, r };
 }
 
-#if false
 QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	const auto result = run_main(
 		"string main(string args){\n"
@@ -1039,6 +1021,7 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("123456"));
 }
 
+#if false
 
 //////////////////////////		TEST conditional expression
 

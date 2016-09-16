@@ -167,22 +167,22 @@ value_t make_default_value(const resolved_path_t& path, const type_def_t& type_d
 	QUARK_ASSERT(type_def.check_invariant());
 
 	const auto type = type_def.get_type();
-	if(type == k_int){
+	if(type == base_type::k_int){
 		return value_t(0);
 	}
-	else if(type == k_bool){
+	else if(type == base_type::k_bool){
 		return value_t(false);
 	}
-	else if(type == k_string){
+	else if(type == base_type::k_string){
 		return value_t("");
 	}
-	else if(type == k_struct){
+	else if(type == base_type::k_struct){
 		return make_default_struct_value(path, type_def.get_struct_def());
 	}
-	else if(type == k_vector){
+	else if(type == base_type::k_vector){
 		QUARK_ASSERT(false);
 	}
-	else if(type == k_function){
+	else if(type == base_type::k_function){
 		QUARK_ASSERT(false);
 	}
 	else{

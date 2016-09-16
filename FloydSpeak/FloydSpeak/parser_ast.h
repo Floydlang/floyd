@@ -40,7 +40,7 @@ namespace floyd_parser {
 	/*
 		This type is tracked by compiler, not stored in the value-type.
 	*/
-	enum base_type {
+	enum class base_type {
 		k_null,
 		k_bool,
 		k_int,
@@ -300,7 +300,7 @@ namespace floyd_parser {
 		}
 	*/
 	struct scope_def_t {
-		public: enum etype {
+		public: enum class etype {
 			k_function_scope,
 			k_struct_scope,
 			k_global_scope,
@@ -313,17 +313,17 @@ namespace floyd_parser {
 			const type_identifier_t& name,
 			const type_identifier_t& return_type,
 			const std::vector<member_t>& args,
-			const executable_t& executable,
-//			const types_collector_t& types_collector,
-			const std::vector<member_t>& local_variables
+			const std::vector<member_t>& local_variables,
+			const executable_t& executable
 		);
 
 		public: static std::shared_ptr<scope_def_t> make2(
 			etype type,
 			const type_identifier_t& name,
+			const std::vector<member_t>& args,
+			const std::vector<member_t>& local_variables,
 			const std::vector<member_t>& members,
 			const executable_t& executable,
-//			const types_collector_t& types_collector,
 			const type_identifier_t& return_type
 		);
 		public: static scope_ref_t make_global_scope();
@@ -335,9 +335,10 @@ namespace floyd_parser {
 			return make2(
 				_type,
 				_name,
+				_args,
+				_local_variables,
 				_members,
 				_executable,
-//				types_collector,
 				_return_type
 			);
 		}
@@ -352,6 +353,8 @@ namespace floyd_parser {
 		private: explicit scope_def_t(
 			etype type,
 			const type_identifier_t& name,
+			const std::vector<member_t>& args,
+			const std::vector<member_t>& local_variables,
 			const std::vector<member_t>& members,
 			const executable_t& executable,
 			const type_identifier_t& return_type
@@ -361,9 +364,10 @@ namespace floyd_parser {
 		/////////////////////////////		STATE
 		public: etype _type;
 		public: type_identifier_t _name;
+		public: std::vector<member_t> _args;
+		public: std::vector<member_t> _local_variables;
 		public: std::vector<member_t> _members;
 		public: executable_t _executable;
-//		public: types_collector_t _types_collector;
 		public: type_identifier_t _return_type;
 	};
 
@@ -381,17 +385,17 @@ namespace floyd_parser {
 	*/
 	struct type_def_t {
 		public: type_def_t() :
-			_base_type(k_null)
+			_base_type(base_type::k_null)
 		{
 		}
 		public: static type_def_t make_bool(){
 			type_def_t a;
-			a._base_type = k_bool;
+			a._base_type = base_type::k_bool;
 			return a;
 		}
 		public: static type_def_t make_int(){
 			type_def_t a;
-			a._base_type = k_int;
+			a._base_type = base_type::k_int;
 			return a;
 		}
 		public: static type_def_t make(base_type type){
@@ -401,13 +405,13 @@ namespace floyd_parser {
 		}
 		public: static type_def_t make_struct_def(const std::shared_ptr<const scope_def_t>& struct_def){
 			type_def_t a;
-			a._base_type = k_struct;
+			a._base_type = base_type::k_struct;
 			a._struct_def = struct_def;
 			return a;
 		}
 		public: static type_def_t make_function_def(const std::shared_ptr<const scope_def_t>& function_def){
 			type_def_t a;
-			a._base_type = k_function;
+			a._base_type = base_type::k_function;
 			a._function_def = function_def;
 			return a;
 		}
@@ -421,15 +425,15 @@ namespace floyd_parser {
 		public: std::string to_string() const;
 
 		public: bool is_subscope() const {
-			return _base_type == k_function || _base_type == k_struct;
+			return _base_type == base_type::k_function || _base_type == base_type::k_struct;
 		}
 
 		public: std::shared_ptr<const scope_def_t> get_subscope() const {
 			QUARK_ASSERT(is_subscope());
-			if(_base_type == k_function){
+			if(_base_type == base_type::k_function){
 				return _function_def;
 			}
-			else if(_base_type == k_struct){
+			else if(_base_type == base_type::k_struct){
 				return _struct_def;
 			}
 			QUARK_ASSERT(false);
@@ -438,15 +442,15 @@ namespace floyd_parser {
 		public: type_def_t replace_subscope(const std::shared_ptr<const scope_def_t>& new_scope) const {
 			QUARK_ASSERT(is_subscope());
 			QUARK_ASSERT(
-				(get_type() == k_struct && new_scope->_type == scope_def_t::k_struct_scope)
-				|| (get_type() == k_function && (new_scope->_type == scope_def_t::k_function_scope || new_scope->_type== scope_def_t::k_subscope))
+				(get_type() == base_type::k_struct && new_scope->_type == scope_def_t::etype::k_struct_scope)
+				|| (get_type() == base_type::k_function && (new_scope->_type == scope_def_t::etype::k_function_scope || new_scope->_type== scope_def_t::etype::k_subscope))
 			);
 			QUARK_ASSERT(new_scope && new_scope->check_invariant());
 
-			if(_base_type == k_struct){
+			if(_base_type == base_type::k_struct){
 				return make_struct_def(new_scope);
 			}
-			else if(_base_type == k_function){
+			else if(_base_type == base_type::k_function){
 				return make_function_def(new_scope);
 			}
 			else{
@@ -456,15 +460,15 @@ namespace floyd_parser {
 
 
 		public: std::shared_ptr<const scope_def_t> get_struct_def() const {
-			QUARK_ASSERT(_base_type == k_struct);
+			QUARK_ASSERT(_base_type == base_type::k_struct);
 			return _struct_def;
 		}
 		public: std::shared_ptr<vector_def_t> get_vector_def() const {
-			QUARK_ASSERT(_base_type == k_vector);
+			QUARK_ASSERT(_base_type == base_type::k_vector);
 			return _vector_def;
 		}
 		public: std::shared_ptr<const scope_def_t> get_function_def() const {
-			QUARK_ASSERT(_base_type == k_function);
+			QUARK_ASSERT(_base_type == base_type::k_function);
 			return _function_def;
 		}
 
