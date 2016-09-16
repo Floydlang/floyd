@@ -1828,16 +1828,14 @@ QUARK_UNIT_TESTQ("run_pass2()", "Minimum program"){
 	const auto pass1 = floyd_parser::program_to_ast(a);
 	const ast_t pass2 = run_pass2(pass1);
 
-#if false
-/*
-	for(const auto& type_id: pass2._tree.get_object()){
-		const auto type_name = type_id.second.get_object_element("name");
-		if(name == "int"){
-		}
-*/
-	const auto int_types = pass2._global_scope->_types_collector.resolve_identifier("int");
-	QUARK_UT_VERIFY(int_types.size() == 1 && int_types[0]->to_string() == "int");
-#endif
+
+
+	const auto found_it = find_if(
+		pass2._symbols.begin(),
+		pass2._symbols.end(),
+		[&] (const std::pair<std::string, std::shared_ptr<type_def_t>>& e) { return e.second->to_string() == "int"; }
+	);
+	QUARK_ASSERT(found_it != pass2._symbols.end());
 }
 
 //	This program uses all features of pass2.???
