@@ -650,7 +650,7 @@ json_value_t assoc_in(const json_value_t& parent, const std::vector<json_value_t
 	for(const auto n: path){ QUARK_ASSERT(n.check_invariant()); QUARK_ASSERT(n.is_string() || n.is_number()); }
 
 	if(parent.is_null()){
-		const auto empty = json_value_t::make_object({});
+		const auto empty = json_value_t::make_object();
 		return assoc_in(empty, path, new_element);
 	}
 	if(parent.is_object()){

@@ -170,7 +170,7 @@ QUARK_UNIT_TESTQ("parse_json()", "primitive"){
 
 
 QUARK_UNIT_TESTQ("parse_json()", "array - empty"){
-	quark::ut_compare(parse_json(seq_t("[] xxx")), { json_value_t::make_array2({}), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("[] xxx")), { json_value_t::make_array(), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "array - two numbers"){
@@ -189,7 +189,7 @@ QUARK_UNIT_TESTQ("parse_json()", "array - nested"){
 
 
 QUARK_UNIT_TESTQ("parse_json()", "object - empty"){
-	quark::ut_compare(parse_json(seq_t("{} xxx")), { json_value_t::make_object({}), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("{} xxx")), { json_value_t::make_object(), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "object - two entries"){

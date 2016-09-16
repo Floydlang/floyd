@@ -39,10 +39,16 @@ std::vector<T> filter(const std::vector<T>& source, bool (const T& entry) predic
 */
 
 struct json_value_t {
+	public: static json_value_t make_object(){
+		return make_object({});
+	}
 	public: static json_value_t make_object(const std::map<std::string, json_value_t>& m){
 		return json_value_t(m);
 	}
 
+	public: static json_value_t make_array(){
+		return make_array2({});
+	}
 	public: static json_value_t make_array2(const std::vector<json_value_t>& elements){
 		return json_value_t(elements);
 	}

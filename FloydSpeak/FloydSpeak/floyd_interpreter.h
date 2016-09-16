@@ -35,6 +35,7 @@ namespace floyd_interpreter {
 	*/
 
 	struct stack_frame_t {
+//		public: floyd_parser::scope_ref_t _def;
 		public: floyd_parser::scope_ref_t _def;
 
 		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
@@ -65,15 +66,6 @@ namespace floyd_interpreter {
 	};
 
 
-	/*
-		Return value:
-			null = statements were all executed through.
-			value = return statement returned a value.
-	*/
-	floyd_parser::value_t execute_statements(
-		const interpreter_t& vm,
-		const std::vector<std::shared_ptr<floyd_parser::statement_t>>& statements
-	);
 
 
 	/*

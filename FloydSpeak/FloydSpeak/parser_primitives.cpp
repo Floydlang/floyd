@@ -265,6 +265,7 @@ json_value_t value_to_json(const value_t& v){
 	}
 }
 
+#if false
 QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
 	struct_fixture_t f;
 	const value_t value = f._struct6_instance0;
@@ -282,6 +283,7 @@ QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
 	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("red").get_number() == 55.0);
 	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("green").get_number() == 66.0);
 }
+#endif
 
 QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
 	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
@@ -336,14 +338,15 @@ json_value_t make_scope_def(){
 	return json_value_t::make_object({
 		{ "_type", "" },
 		{ "_name", "" },
-		{ "_members", json_value_t::make_array2({}) },
-		{ "_types", json_value_t::make_object({}) },
+		{ "_args", json_value_t::make_array() },
+		{ "_members", json_value_t::make_array() },
+		{ "_types", json_value_t::make_object() },
 
 		//??? New in JSON, used to stored as sub-function body.
-		{ "_locals", json_value_t::make_array2({}) },
+		{ "_locals", json_value_t::make_array() },
 
 		//	??? New in JSON version - used to be stored in _executable.
-		{ "_statements", json_value_t::make_array2({}) },
+		{ "_statements", json_value_t::make_array() },
 		{ "_return_type", "" }
 	});
 }

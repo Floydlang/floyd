@@ -111,7 +111,12 @@ namespace floyd_parser {
 
 
 	bool type_def_t::check_invariant() const{
-		if(_base_type == k_int){
+		if(_base_type == k_null){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
+		else if(_base_type == k_int){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
 			QUARK_ASSERT(!_function_def);
@@ -167,6 +172,20 @@ namespace floyd_parser {
 		}
 		return true;
 	}
+
+	void type_def_t::swap(type_def_t& rhs){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(rhs.check_invariant());
+
+		std::swap(_base_type, rhs._base_type);
+		std::swap(_struct_def, rhs._struct_def);
+		std::swap(_vector_def, rhs._vector_def);
+		std::swap(_function_def, rhs._function_def);
+
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(rhs.check_invariant());
+	}
+
 
 	std::string type_def_t::to_string() const {
 		QUARK_ASSERT(check_invariant());
@@ -444,35 +463,34 @@ namespace floyd_parser {
 
 
 	scope_ref_t scope_def_t::make_struct(const type_identifier_t& name, const std::vector<member_t>& members){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(k_struct_scope, name, members, executable_t({}), types_collector_t(), {}));
+		auto r = std::make_shared<scope_def_t>(scope_def_t(k_struct_scope, name, members, executable_t(), {}));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
-	std::shared_ptr<scope_def_t> scope_def_t::make2(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const executable_t& executable, const types_collector_t& types_collector, const type_identifier_t& return_type){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(type, name, members, executable, types_collector, return_type));
+	std::shared_ptr<scope_def_t> scope_def_t::make2(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const executable_t& executable/*, const types_collector_t& types_collector*/, const type_identifier_t& return_type){
+		auto r = std::make_shared<scope_def_t>(scope_def_t(type, name, members, executable, return_type));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
 	scope_ref_t scope_def_t::make_global_scope(){
 		auto r = std::make_shared<scope_def_t>(
-			scope_def_t(k_global_scope, type_identifier_t::make("global"), {}, executable_t({}), {}, {})
+			scope_def_t(k_global_scope, type_identifier_t::make("global"), {}, executable_t(), {})
 		);
 
-		r->_types_collector = add_builtin_types(r->_types_collector);
+//		r->_types_collector = add_builtin_types(r->_types_collector);
 
 
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
-	scope_def_t::scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const executable_t& executable, const types_collector_t& types_collector, const type_identifier_t& return_type) :
+	scope_def_t::scope_def_t(etype type, const type_identifier_t& name, const std::vector<member_t>& members, const executable_t& executable, const type_identifier_t& return_type) :
 		_type(type),
 		_name(name),
 		_members(members),
 		_executable(executable),
-		_types_collector(types_collector),
 		_return_type(return_type)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -483,7 +501,6 @@ namespace floyd_parser {
 		_name(other._name),
 		_members(other._members),
 		_executable(other._executable),
-		_types_collector(other._types_collector),
 		_return_type(other._return_type)
 	{
 		QUARK_ASSERT(other.check_invariant());
@@ -499,7 +516,6 @@ namespace floyd_parser {
 		QUARK_ASSERT(_name.check_invariant());
 
 		QUARK_ASSERT(_executable.check_invariant());
-		QUARK_ASSERT(_types_collector.check_invariant());
 		QUARK_ASSERT(_return_type.check_invariant());
 
 
@@ -539,9 +555,6 @@ namespace floyd_parser {
 			return false;
 		}
 		if(!(_executable == other._executable)){
-			return false;
-		}
-		if(!(_types_collector == other._types_collector)){
 			return false;
 		}
 		if(_return_type != other._return_type){
@@ -627,7 +640,6 @@ namespace floyd_parser {
 			{ "_name", json_value_t(scope_def._name.to_string()) },
 			{ "_members", members.empty() ? json_value_t() :json_value_t(members) },
 			{ "_executable", executable_to_json(scope_def._executable) },
-			{ "_types", types_collector_to_json(scope_def._types_collector) },
 			{ "_return_type", json_value_t(scope_def._return_type.to_string()) }
 		});
 	}
@@ -656,7 +668,6 @@ namespace floyd_parser {
 		const type_identifier_t& return_type,
 		const std::vector<member_t>& args,
 		const executable_t& executable,
-		const types_collector_t& types_collector,
 		const std::vector<member_t>& local_variables
 	)
 	{
@@ -664,22 +675,9 @@ namespace floyd_parser {
 		QUARK_ASSERT(return_type.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		QUARK_ASSERT(executable.check_invariant());
-		QUARK_ASSERT(types_collector.check_invariant());
 		for(const auto i: local_variables){ QUARK_ASSERT(i.check_invariant()); };
 
-		const auto body_identifier = type_identifier_t::make("___body");
-
-		const auto f_statements = std::vector<std::shared_ptr<statement_t> >{
-			make_shared<statement_t>(
-				statement_t{ make__return_statement(expression_t::make_function_call(body_identifier, std::vector<expression_t>{}, return_type)) }
-			)
-		};
-
-		auto function = scope_def_t::make2(scope_def_t::k_function_scope, name, args, executable_t(f_statements), types_collector, return_type);
-		auto body = scope_def_t::make2(scope_def_t::k_subscope, body_identifier, local_variables, executable, {}, return_type);
-		auto body_type_def = make_shared<type_def_t>(type_def_t::make_function_def(body));
-
-		function->_types_collector = function->_types_collector.define_type_xyz(body_identifier.to_string(), body_type_def);
+		auto function = scope_def_t::make2(scope_def_t::k_function_scope, name, local_variables, executable, return_type);
 		return function;
 	}
 
@@ -692,11 +690,10 @@ namespace floyd_parser {
 		const type_identifier_t& return_type,
 		const std::vector<member_t>& args,
 		const executable_t& executable,
-		const types_collector_t& types_collector,
 		const std::vector<member_t>& local_variables
 	)
 	{
-		return scope_def_t::make_function_def(name, return_type, args, executable, types_collector, local_variables);
+		return scope_def_t::make_function_def(name, return_type, args, executable, local_variables);
 	}
 
 
@@ -705,8 +702,7 @@ namespace floyd_parser {
 			type_identifier_t::make("a"),
 			type_identifier_t::make_int(),
 			{},
-			executable_t({}),
-			{},
+			executable_t(),
 			{}
 		);
 		const auto b(a);
@@ -871,26 +867,29 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	ast_t::ast_t(const std::shared_ptr<const scope_def_t>& global_scope) :
-		_global_scope(global_scope)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
 	bool ast_t::check_invariant() const {
-		QUARK_ASSERT(_global_scope);
-		QUARK_ASSERT(_global_scope->check_invariant());
+		QUARK_ASSERT(_global_scope && _global_scope->check_invariant());
 		return true;
 	}
 
 
+	json_value_t symbols_to_json(const std::map<std::string, std::shared_ptr<type_def_t>>& symbols){
+//		std::map<std::string, std::shared_ptr<type_def_t>> _symbols;
+		
+		std::map<string, json_value_t> m;
+		for(const auto i: symbols){
+			m[i.first] = type_def_to_json(*i.second);
+		}
+		
+		return json_value_t::make_object(m);
+	}
 
 
 	void trace(const ast_t& program){
 		QUARK_ASSERT(program.check_invariant());
 		QUARK_SCOPED_TRACE("program");
 
-		const auto s = json_to_compact_string(ast_to_json(program));
+		const auto s = json_to_pretty_string(ast_to_json(program));
 		QUARK_TRACE(s);
 	}
 
@@ -898,15 +897,18 @@ namespace floyd_parser {
 		QUARK_ASSERT(ast.check_invariant());
 
 		return make_object({
+			{ "_symbols", symbols_to_json(ast._symbols) },
 			{ "_global_scope", scope_def_to_json(*ast._global_scope) }
 		});
 	}
 
+/*
 	resolved_path_t make_resolved_root(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
 		return resolved_path_t{ { ast._global_scope } };
 	}
+*/
 
 
 	////////////////////	Helpers for making tests.

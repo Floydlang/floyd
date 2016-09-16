@@ -330,7 +330,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<string>\"xyz\"");
 }
 
-
+#if false
 QUARK_UNIT_TESTQ("value_t()", "struct"){
 	struct_fixture_t f;
 	const auto a = f._struct6_instance0;
@@ -347,7 +347,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 	quark::ut_compare(a.plain_value_to_string(), "{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
 	quark::ut_compare(a.value_and_type_to_string(), "<struct6>{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
 }
-
+#endif
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
 	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
@@ -383,7 +383,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 
-
+#if false
 
 struct_fixture_t::struct_fixture_t() :
 	_struct6_def(make_struct6(_ast._global_scope))
@@ -403,7 +403,7 @@ struct_fixture_t::struct_fixture_t() :
 	_struct6_instance0 = make_struct_instance(make_resolved_root(_ast), _struct6_def);
 	_struct6_instance1 = make_struct_instance(make_resolved_root(_ast), _struct6_def);
 }
-
+#endif
 
 
 }	//	floyd_parser

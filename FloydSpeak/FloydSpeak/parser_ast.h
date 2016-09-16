@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include "parser_types_collector.h"
+#include "json_support.h"
 
 struct TSHA1;
 struct json_value_t;
@@ -181,6 +182,9 @@ namespace floyd_parser {
 	struct executable_t {
 		public: executable_t(hosts_function_t host_function, std::shared_ptr<host_data_i> host_function_param);
 		public: executable_t(const std::vector<std::shared_ptr<statement_t> >& statements);
+		public: executable_t(){
+			QUARK_ASSERT(check_invariant());
+		}
 		public: bool check_invariant() const;
 		public: bool operator==(const executable_t& other) const;
 
@@ -211,7 +215,6 @@ namespace floyd_parser {
 		const type_identifier_t& return_type,
 		const std::vector<member_t>& args,
 		const executable_t& executable,
-		const types_collector_t& types_collector,
 		const std::vector<member_t>& local_variables
 	);
 
@@ -311,7 +314,7 @@ namespace floyd_parser {
 			const type_identifier_t& return_type,
 			const std::vector<member_t>& args,
 			const executable_t& executable,
-			const types_collector_t& types_collector,
+//			const types_collector_t& types_collector,
 			const std::vector<member_t>& local_variables
 		);
 
@@ -320,7 +323,7 @@ namespace floyd_parser {
 			const type_identifier_t& name,
 			const std::vector<member_t>& members,
 			const executable_t& executable,
-			const types_collector_t& types_collector,
+//			const types_collector_t& types_collector,
 			const type_identifier_t& return_type
 		);
 		public: static scope_ref_t make_global_scope();
@@ -334,7 +337,7 @@ namespace floyd_parser {
 				_name,
 				_members,
 				_executable,
-				types_collector,
+//				types_collector,
 				_return_type
 			);
 		}
@@ -351,7 +354,6 @@ namespace floyd_parser {
 			const type_identifier_t& name,
 			const std::vector<member_t>& members,
 			const executable_t& executable,
-			const types_collector_t& types_collector,
 			const type_identifier_t& return_type
 		);
 
@@ -361,7 +363,7 @@ namespace floyd_parser {
 		public: type_identifier_t _name;
 		public: std::vector<member_t> _members;
 		public: executable_t _executable;
-		public: types_collector_t _types_collector;
+//		public: types_collector_t _types_collector;
 		public: type_identifier_t _return_type;
 	};
 
@@ -411,7 +413,7 @@ namespace floyd_parser {
 		}
 		public: bool check_invariant() const;
 		public: bool operator==(const type_def_t& other) const;
-
+		public: void swap(type_def_t& rhs);
 		public: base_type get_type() const {
 			return _base_type;
 		}
@@ -505,18 +507,21 @@ namespace floyd_parser {
 	*/
 	struct ast_t {
 		public: ast_t();
-		public: ast_t(const std::shared_ptr<const scope_def_t>& global_scope);
 		public: bool check_invariant() const;
 
 
 		/////////////////////////////		STATE
 		public: std::shared_ptr<const scope_def_t> _global_scope;
+//		public: json_value_t _tree;
+
+		//	Keyed on "$1000" etc.
+		public: std::map<std::string, std::shared_ptr<type_def_t>> _symbols;
 	};
 
 	void trace(const ast_t& program);
 	json_value_t ast_to_json(const ast_t& ast);
 
-	resolved_path_t make_resolved_root(const ast_t& ast);
+//	resolved_path_t make_resolved_root(const ast_t& ast);
 
 
 	//////////////////////////////////////////////////		trace_vec()

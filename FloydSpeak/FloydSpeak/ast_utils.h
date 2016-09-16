@@ -41,7 +41,7 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 
 
-		public: std::vector<const json_value_t> _scopes;
+		public: std::vector<json_value_t> _scopes;
 	};
 
 	resolved_path_t go_down(const resolved_path_t& path, const scope_ref_t& child);
@@ -55,7 +55,6 @@ namespace floyd_parser {
 		Returns the scope where the symbol can be found, or empty if not found. It tells which member index.
 	*/
 	std::pair<scope_ref_t, int> resolve_scoped_variable(const floyd_parser::resolved_path_t& path, const std::string& s);
-
 
 	/*
 		Resolves the type, starting at scope_def, moving via parents up towards to global space. This is a compile-time operation.

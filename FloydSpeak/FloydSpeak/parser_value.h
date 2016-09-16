@@ -453,7 +453,7 @@ namespace floyd_parser {
 
 
 
-
+#if false
 struct struct_fixture_t {
 	public: ast_t _ast;
 	public: scope_ref_t _struct6_def;
@@ -462,6 +462,7 @@ struct struct_fixture_t {
 
 	public: struct_fixture_t();
 };
+#endif
 
 
 }	//	floyd_parser

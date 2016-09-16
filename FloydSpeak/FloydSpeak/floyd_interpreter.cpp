@@ -21,6 +21,7 @@
 
 #include <cmath>
 
+#if true
 namespace floyd_interpreter {
 
 
@@ -43,7 +44,9 @@ namespace {
 	}
 
 	//	Notice that scope_ref_t:members are resolved, "args" are not??? Resolve on the fly?
-	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
+	bool check_arg_types(const json_value_t& f, const vector<value_t>& args){
+		return true;
+#if false
 		if(f->_members.size() != args.size()){
 			return false;
 		}
@@ -56,15 +59,18 @@ namespace {
 			}
 		}
 		return true;
+#endif
 	}
 
-	interpreter_t open_function_scope(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
+	interpreter_t open_function_scope(const interpreter_t& vm, const json_value_t& f, const vector<value_t>& args){
+#if false
 		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(f && f->check_invariant());
-		QUARK_ASSERT(f->_type == scope_def_t::k_function_scope || f->_type == scope_def_t::k_subscope)
+		QUARK_ASSERT(f.check_invariant());
+		QUARK_ASSERT(f.get_object_element("_name") == "function_scope" || f.get_object_element("_name") == "subscope");
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-		if(f->_type == scope_def_t::k_function_scope && !check_arg_types(f, args)){
+		const auto type = f.get_object_element("_name");
+		if(type == "function_scope" && !check_arg_types(f, args)){
 			throw std::runtime_error("function arguments do not match function");
 		}
 
@@ -74,7 +80,8 @@ namespace {
 		// Copy only input arguments to the function scope. The function's local variables are null until written by a statement.
 		//	??? Precalculate local variables / constants when possible!
 		for(int i = 0 ; i < args.size() ; i++){
-			const auto& arg_name = f->_members[i]._name;
+//			const auto& arg_name = f.get_object_element("_args").get_array_n(i)._name;
+			const auto arg_name = get_in(f, { "_args", json_value_t((double)i) });
 			const auto& arg_value = args[i];
 			new_frame._values[arg_name] = arg_value;
 		}
@@ -82,9 +89,12 @@ namespace {
 		interpreter_t result = vm;
 		result._call_stack.push_back(make_shared<stack_frame_t>(new_frame));
 		return result;
+#endif
+	return vm;
 	}
 
 	value_t call_host_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
+#if false
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
 		QUARK_ASSERT(f->_executable._statements.empty());
@@ -100,52 +110,57 @@ namespace {
 		const auto resolved_path = vm.get_resolved_path();
 		const auto a = f->_executable._host_function(vm._ast, resolved_path, f->_executable._host_function_param, args);
 		return a;
+#endif
+	return {};
 	}
 
-}
+	/*
+		Return value:
+			null = statements were all executed through.
+			value = return statement returned a value.
+	*/
+	value_t execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
+		QUARK_ASSERT(vm.check_invariant());
+		for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
-value_t execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
-	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
+		auto vm2 = vm;
 
-	auto vm2 = vm;
-
-	int statement_index = 0;
-	while(statement_index < statements.size()){
-		const auto statement = statements[statement_index];
-		if(statement->_bind_statement){
-			const auto s = statement->_bind_statement;
-			const auto name = s->_identifier;
-			if(vm2._call_stack.back()->_values.count(name) != 0){
-				throw std::runtime_error("local constant already exists");
+		int statement_index = 0;
+		while(statement_index < statements.size()){
+			const auto statement = statements[statement_index];
+			if(statement->_bind_statement){
+				const auto s = statement->_bind_statement;
+				const auto name = s->_identifier;
+				if(vm2._call_stack.back()->_values.count(name) != 0){
+					throw std::runtime_error("local constant already exists");
+				}
+				const auto result = evalute_expression(vm2, *s->_expression);
+				if(!result._constant){
+					throw std::runtime_error("unknown variables");
+				}
+				vm2._call_stack.back()->_values[name] = *result._constant;
 			}
-			const auto result = evalute_expression(vm2, *s->_expression);
-			if(!result._constant){
-				throw std::runtime_error("unknown variables");
-			}
-			vm2._call_stack.back()->_values[name] = *result._constant;
-		}
-		else if(statement->_return_statement){
-			const auto expr = statement->_return_statement->_expression;
-			const auto result = evalute_expression(vm2, *expr);
+			else if(statement->_return_statement){
+				const auto expr = statement->_return_statement->_expression;
+				const auto result = evalute_expression(vm2, *expr);
 
-			if(!result._constant){
-				throw std::runtime_error("undefined");
-			}
+				if(!result._constant){
+					throw std::runtime_error("undefined");
+				}
 
-			return *result._constant;
+				return *result._constant;
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+			statement_index++;
 		}
-		else{
-			QUARK_ASSERT(false);
-		}
-		statement_index++;
+		return value_t();
 	}
-	return value_t();
-}
 
-namespace {
 
 	value_t call_interpreted_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
+#if false
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
 		QUARK_ASSERT(!f->_executable._statements.empty());
@@ -166,11 +181,15 @@ namespace {
 		else{
 			return value;
 		}
+#endif
+	return {};
 	}
 
-}
+}	//	unnamed
+
 
 value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
+#if false
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f && f->check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
@@ -185,12 +204,25 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 	else{
 		return call_interpreted_function(vm, f, args);
 	}
+#endif
+	return {};
 }
 
-namespace {
-	scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
-		return resolve_function_type(vm._ast._global_scope->_types_collector, name);
+scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
+
+/*
+					"lookup": {
+						"$1000": { "base_type": "bool", "path": "global/bool" },
+						"$1001": { "base_type": "int", "path": "global/int" },
+						"$1002": {
+*/
+	for(const auto p: vm._ast._symbols){
+		const auto type_def = p.second;
+		if(type_def->get_type() == k_function && type_def->get_function_def()->_name.to_string() == "name"){
+			return type_def->get_function_def();
+		}
 	}
+	return {};
 }
 
 
@@ -504,11 +536,13 @@ expression_t evaluate_conditional_operator(const interpreter_t& vm, const expres
 	}
 }
 
+//??? Merge address evaluation into generic evaluation mechanism
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e._call);
 
+#if false
 	const auto& call_function_expression = *e._call;
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
@@ -553,6 +587,8 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	}
 	const value_t result = call_function(vm, function_def, constant_args);
 	return expression_t::make_constant(result);
+#endif
+return e;
 }
 
 
@@ -964,6 +1000,7 @@ bool interpreter_t::check_invariant() const {
 	return true;
 }
 
+#if false
 resolved_path_t interpreter_t::get_resolved_path() const{
 	QUARK_ASSERT(check_invariant());
 
@@ -973,7 +1010,7 @@ resolved_path_t interpreter_t::get_resolved_path() const{
 	}
 	return result;
 }
-
+#endif
 
 
 //////////////////////////		run_main()
@@ -986,6 +1023,7 @@ std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, c
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_function(vm, "main");
+
 	const auto r = call_function(vm, f, args);
 	return { vm, r };
 }
@@ -1258,4 +1296,5 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 
 
 }	//	floyd_interpreter
+#endif
 

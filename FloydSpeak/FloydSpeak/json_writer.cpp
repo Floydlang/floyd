@@ -440,7 +440,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	std::cout <<(
 		json_to_pretty_string(
-			json_value_t::make_object({}),
+			json_value_t::make_object(),
 			quark::get_log_indent(),
 			pretty
 		)

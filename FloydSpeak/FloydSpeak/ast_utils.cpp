@@ -58,7 +58,6 @@ bool parser_path_t::check_invariant() const {
 
 
 
-
 //////////////////////////////////////////////////		free
 
 
@@ -102,6 +101,7 @@ std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const floyd_
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
 
+#if false
 	if(s.is_resolved()){
 		return s.get_resolved();
 	}
@@ -118,6 +118,8 @@ std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const floyd_
 		}
 		return {};
 	}
+#endif
+	return {};
 }
 
 //	Remove this function. Client can use resolve_type_to_def().
