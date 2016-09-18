@@ -614,7 +614,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(type && type->check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 		QUARK_ASSERT(init_value.check_invariant());
-		QUARK_ASSERT(type == init_value.get_type());
+		QUARK_ASSERT(*type == *init_value.get_type());
 
 		QUARK_ASSERT(check_invariant());
 	}

@@ -43,7 +43,6 @@ namespace {
 		return diff < 0.00001;
 	}
 
-	//	Notice that scope_ref_t:members are resolved, "args" are not??? Resolve on the fly?
 	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
 		if(f->_args.size() != args.size()){
 			return false;
@@ -598,7 +597,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	const auto function_name = e._call->_function.to_string();
 
-	//	find function symbol: no proper static scoping
+	//	find function symbol: no proper static scoping ???
 	const auto found_it = find_if(
 		vm._ast._symbols.begin(),
 		vm._ast._symbols.end(),
@@ -617,7 +616,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	const auto& function_def = type->get_function_def();
 	if(function_def->_type == scope_def_t::etype::k_function_scope){
-		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
+		QUARK_ASSERT(function_def->_args.size() == call_function_expression._inputs.size());
 	}
 	else if(function_def->_type == scope_def_t::etype::k_subscope){
 	}
@@ -1225,7 +1224,6 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
 }
 
-#if false
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto ast = program_to_ast2(
@@ -1243,7 +1241,6 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
 
-#endif
 
 
 
@@ -1285,7 +1282,6 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 }
 
 
-#if false
 
 QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	const auto a = run_main(
@@ -1299,6 +1295,7 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
+#if false
 QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 	const auto a = run_main(
 		"struct pixel { string s = \"one\"; }"

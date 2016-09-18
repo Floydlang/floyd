@@ -657,7 +657,7 @@ json_value_t pass_b__members(const parser_path_t& path, const json_value_t& memb
 			auto member2 = member;
 			if(type != ""){
 				const auto type2 = pass_b__type_to_id(path, type, eresolve_types::k_all_but_function);
-				member2 = assoc(member, "type", type2);
+				member2 = assoc(member2, "type", type2);
 			}
 			else{
 			}

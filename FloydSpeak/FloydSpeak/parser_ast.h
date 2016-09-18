@@ -143,6 +143,7 @@ namespace floyd_parser {
 	*/
 
 	struct member_t {
+		//??? init_value should be an expression.
 		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name, const value_t& init_value);
 		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name);
 		bool operator==(const member_t& other) const;

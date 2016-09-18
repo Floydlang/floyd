@@ -200,15 +200,30 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		{ "expr": 1, "name": "g_version", "type": "<int>" },
 		{ "expr": "Welcome!", "name": "message", "type": "<string>" }
 	*/
-std::vector<member_t> conv_members(const json_value_t& members, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+std::vector<member_t> conv_members(const json_value_t& members, const map<string, shared_ptr<type_def_t>>& temp_type_defs, bool convert_expressions){
 	std::vector<member_t> members2;
 	for(const auto i: members.get_array()){
 		const string arg_name = i.get_object_element("name").get_string();
 		const string arg_type = i.get_object_element("type").get_string();
+		const auto init_expr = i.get_optional_object_element("expr");
 		QUARK_ASSERT(arg_type[0] == '$');
 
 		const auto arg_type2 = resolve_type123(arg_type, temp_type_defs);
-		members2.push_back(member_t(arg_type2, arg_name));
+
+		if(init_expr){
+			if(convert_expressions){
+				const auto init_expr2 = conv_expression(init_expr, temp_type_defs);
+
+				QUARK_ASSERT(init_expr2._constant != nullptr);
+				members2.push_back(member_t(arg_type2, arg_name, *init_expr2._constant));
+			}
+			else{
+				members2.push_back(member_t(arg_type2, arg_name));
+			}
+		}
+		else{
+			members2.push_back(member_t(arg_type2, arg_name));
+		}
 	}
 	return members2;
 }
@@ -235,9 +250,9 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 	const auto members = scope_def.get_optional_object_element("_members", json_value_t::make_array()).get_array();
 	const auto statements = scope_def.get_object_element("_statements").get_array();
 
-	std::vector<member_t> args2 = conv_members(args, temp_type_defs);
-	std::vector<member_t> local_variables2 = conv_members(local_variables, temp_type_defs);
-	std::vector<member_t> members2 = conv_members(members, temp_type_defs);
+	std::vector<member_t> args2 = conv_members(args, temp_type_defs, false);
+	std::vector<member_t> local_variables2 = conv_members(local_variables, temp_type_defs, false);
+	std::vector<member_t> members2 = conv_members(members, temp_type_defs, false);
 
 	if(type == "function"){
 		std::vector<std::shared_ptr<statement_t> > statements2;
@@ -303,9 +318,9 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 	const auto members = scope_def.get_optional_object_element("_members", json_value_t::make_array()).get_array();
 	const auto statements = scope_def.get_object_element("_statements").get_array();
 
-	std::vector<member_t> args2 = conv_members(args, temp_type_defs);
-	std::vector<member_t> local_variables2 = conv_members(local_variables, temp_type_defs);
-	std::vector<member_t> members2 = conv_members(members, temp_type_defs);
+	std::vector<member_t> args2 = conv_members(args, temp_type_defs, true);
+	std::vector<member_t> local_variables2 = conv_members(local_variables, temp_type_defs, true);
+	std::vector<member_t> members2 = conv_members(members, temp_type_defs, true);
 
 	if(type == "function"){
 //???		QUARK_ASSERT(statements.size() > 0);
