@@ -1206,7 +1206,6 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 }
 
 
-#if false
 
 QUARK_UNIT_1("run_main()", "", test_prg(
 	"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
@@ -1294,6 +1293,8 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	const auto result2 = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("Hello, world!") });
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("-Hello, world!-"));
 }
+
+#if false
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto ast = program_to_ast2(
