@@ -89,9 +89,9 @@ namespace {
 #if false
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
-		QUARK_ASSERT(f->_executable._statements.empty());
-		QUARK_ASSERT(f->_executable._host_function);
-		QUARK_ASSERT(f->_executable._host_function_param);
+		QUARK_ASSERT(f->_statements.empty());
+		QUARK_ASSERT(f->_host_function);
+		QUARK_ASSERT(f->_host_function_param);
 
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -100,7 +100,7 @@ namespace {
 		}
 
 		const auto resolved_path = vm.get_resolved_path();
-		const auto a = f->_executable._host_function(vm._ast, resolved_path, f->_executable._host_function_param, args);
+		const auto a = f->_host_function(vm._ast, resolved_path, f->_host_function_param, args);
 		return a;
 #endif
 	return {};
@@ -154,9 +154,7 @@ namespace {
 	value_t call_interpreted_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
-		QUARK_ASSERT(!f->_executable._statements.empty());
-		QUARK_ASSERT(!f->_executable._host_function);
-		QUARK_ASSERT(!f->_executable._host_function_param);
+		QUARK_ASSERT(!f->_statements.empty());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
 #if false
@@ -166,7 +164,7 @@ namespace {
 #endif
 
 		auto vm2 = open_function_scope(vm, f, args);
-		const auto& statements = f->_executable._statements;
+		const auto& statements = f->_statements;
 		const auto value = execute_statements(vm2, statements);
 		if(value.is_null()){
 			throw std::runtime_error("function missing return statement");
@@ -190,12 +188,9 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 	}
 #endif
 
-	if(f->_executable._host_function){
-		return call_host_function(vm, f, args);
-	}
-	else{
-		return call_interpreted_function(vm, f, args);
-	}
+//	if(f->_host_function){
+//		return call_host_function(vm, f, args);
+	return call_interpreted_function(vm, f, args);
 }
 
 scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
@@ -519,27 +514,43 @@ expression_t evaluate_conditional_operator(const interpreter_t& vm, const expres
 	}
 }
 
+
+
 //??? Merge address evaluation into generic evaluation mechanism
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e._call);
 
-#if false
 	const auto& call_function_expression = *e._call;
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
-	const auto resolved_path = vm.get_resolved_path();
-	const auto type = resolve_type_to_def(resolved_path, call_function_expression._function);
+
+
+	const auto function_name = e._call->_function.to_string();
+
+	//	find function symbol: no proper static scoping
+	const auto found_it = find_if(
+		vm._ast._symbols.begin(),
+		vm._ast._symbols.end(),
+		[&] (const std::pair<std::string, std::shared_ptr<type_def_t>>& t) {
+			return t.second->get_type() == base_type::k_function && t.second->get_function_def()->_name.to_string() == function_name;
+		}
+	);
+	if(found_it == vm._ast._symbols.end()){
+		throw std::runtime_error("Failed calling function - unresolved function.");
+	}
+	const auto type = found_it->second;
+
 	if(!type || type->get_type() != base_type::k_function){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
 
 	const auto& function_def = type->get_function_def();
-	if(function_def->_type == scope_def_t::k_function_scope){
+	if(function_def->_type == scope_def_t::etype::k_function_scope){
 		QUARK_ASSERT(function_def->_members.size() == call_function_expression._inputs.size());
 	}
-	else if(function_def->_type == scope_def_t::k_subscope){
+	else if(function_def->_type == scope_def_t::etype::k_subscope){
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -570,8 +581,6 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	}
 	const value_t result = call_function(vm, function_def, constant_args);
 	return expression_t::make_constant(result);
-#endif
-return e;
 }
 
 
@@ -983,7 +992,6 @@ bool interpreter_t::check_invariant() const {
 	return true;
 }
 
-#if false
 resolved_path_t interpreter_t::get_resolved_path() const{
 	QUARK_ASSERT(check_invariant());
 
@@ -993,7 +1001,6 @@ resolved_path_t interpreter_t::get_resolved_path() const{
 	}
 	return result;
 }
-#endif
 
 
 //////////////////////////		run_main()
@@ -1021,7 +1028,6 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	QUARK_TEST_VERIFY(result.second == floyd_parser::value_t("123456"));
 }
 
-#if false
 
 //////////////////////////		TEST conditional expression
 
@@ -1068,7 +1074,15 @@ bool test_prg(const std::string& program, const value_t& expected_return){
 QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 4 < 5; }", floyd_parser::value_t(true)));
 QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 5 < 4; }", floyd_parser::value_t(false)));
 QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 4 <= 4; }", floyd_parser::value_t(true)));
-QUARK_UNIT_1("run_main()", "", test_prg("struct t { int a;} bool main(){ t a = t_constructor(); return a == a; }", floyd_parser::value_t(true)));
+
+#if false
+QUARK_UNIT_TESTQ("run_main()", "struct"){
+	QUARK_UT_VERIFY(test_prg("struct t { int a;} bool main(){ t b = t_constructor(); return b == b; }", floyd_parser::value_t(true)));
+}
+#endif
+
+
+#if false
 
 QUARK_UNIT_1("run_main()", "", test_prg(
 	"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",

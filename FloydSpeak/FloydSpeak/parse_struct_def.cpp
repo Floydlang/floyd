@@ -46,11 +46,11 @@ namespace floyd_parser {
 		vector<json_value_t> members;
 		auto pos = trim_ends(body_pos.first);
 		while(!pos.empty()){
-			const auto arg_type = read_type(pos);
-			const auto arg_name = read_required_single_symbol(arg_type.second);
+			const auto member_type = read_type(pos);
+			const auto member_name = read_required_single_symbol(member_type.second);
 
 			string default_value;
-			const auto optional_default_value = read_optional_char(skip_whitespace(arg_name.second), '=');
+			const auto optional_default_value = read_optional_char(skip_whitespace(member_name.second), '=');
 			if(optional_default_value.first){
 				pos = skip_whitespace(optional_default_value.second);
 
@@ -58,22 +58,13 @@ namespace floyd_parser {
 
 				const auto constant_expr_pos = parse_expression_seq(seq_t(constant_expr_pos_s.first));
 				const auto constant_expr = constant_expr_pos.first;
-/*
-				if(!constant_expr._constant){
-					throw std::runtime_error("Struct member defaults must be constants only, not expressions.");
-				}
-				if(constant_expr._constant->get_type() != member_type){
-					throw std::runtime_error("Struct member defaults type mismatch.");
-				}
-*/
 
-//				const auto a = json_value_t::make_array_skip_nulls({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first), constant_expr_pos.first });
-				const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, constant_expr_pos.first);
+				const auto a = make_member_def("<" + member_type.first + ">", member_name.first, constant_expr_pos.first);
 				members.push_back(a);
 				pos = skip_whitespace(constant_expr_pos_s.second);
 			}
 			else{
-				const auto a = json_value_t::make_array_skip_nulls({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first) });
+				const auto a = make_member_def("<" + member_type.first + ">", member_name.first, json_value_t());
 				members.push_back(a);
 				pos = skip_whitespace(optional_default_value.second);
 			}

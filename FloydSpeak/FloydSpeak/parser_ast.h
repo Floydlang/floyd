@@ -170,7 +170,7 @@ namespace floyd_parser {
 
 
 
-	//////////////////////////////////////////////////		executable_t
+
 
 
 	struct host_data_i {
@@ -179,44 +179,9 @@ namespace floyd_parser {
 
 	typedef value_t (*hosts_function_t)(const ast_t& ast, const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
 
-	struct executable_t {
-		public: executable_t(hosts_function_t host_function, std::shared_ptr<host_data_i> host_function_param);
-		public: executable_t(const std::vector<std::shared_ptr<statement_t> >& statements);
-		public: executable_t(){
-			QUARK_ASSERT(check_invariant());
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const executable_t& other) const;
 
-
-		/////////////////////////////		STATE
-
-		//	_host_function != nullptr: this is host code.
-		//	_host_function == nullptr: _statements contains statements to interpret.
-		public: hosts_function_t _host_function = nullptr;
-		public: std::shared_ptr<host_data_i> _host_function_param;
-
-		//	INSTRUCTIONS - either _host_function or _statements is used.
-
-		//	Code, if any.
-		public: std::vector<std::shared_ptr<statement_t> > _statements;
-	};
-
-	json_value_t executable_to_json(const executable_t& e);
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
-
-	/*
-		Returns a scope_def_t of type k_function.
-		NOTICE: This function will/can cause a number of subscopes to be defined recursively!
-	*/
-	scope_ref_t make_function_def(
-		const type_identifier_t& name,
-		const type_identifier_t& return_type,
-		const std::vector<member_t>& args,
-		const executable_t& executable,
-		const std::vector<member_t>& local_variables
-	);
 
 	TSHA1 calc_function_body_hash(const scope_ref_t& f);
 
@@ -254,6 +219,20 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		scope_def_t
 
+
+
+	struct host_func_spec_t {
+		enum class etype {
+			k_default_constructor
+		};
+
+		etype _type;
+	};
+
+
+
+	//////////////////////////////////////////////////		scope_def_t
+
 	/*
 		This is a core piece of the AST. It represents a static, compile-time scope. scope_def_t:s are used to define
 		- The global scope
@@ -263,41 +242,6 @@ namespace floyd_parser {
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 
 		The scope_def_t includes optional code, optional member variables and optional local types.
-
-		Functions are really a tree of scopes like this:
-			global_scope
-				_members: global variables
-				_types: -- global typedefs, struct-defs, function-defs. Owns/tracks all sub-scopes.
-					type_def
-						<scope_def_t> function_def
-							_name = function name ("main")
-							_members = function arguments
-							_return_type = function return type
-							_executable = RUN_FUNCTION_BODY-statement.
-							_types
-								<scope_def_t> function_body
-									_name = function name ("body") --- no need for name!
-									_members = local variables
-									_return_type = null
-									_executable = body statements
-									_types
-										<scope_def_t> if_statement_body
-											_name = function name ("")
-											_members = local variables
-											_return_type = null
-											_executable = body statements
-											_types
-												<scope_def_t> if_statement_body
-													_name = function name ("")
-													_members = local variables
-													_return_type = null
-													_executable = body statements
-										<scope_def_t> if_statement_body
-											_name = function name ("")
-											_members = local variables
-											_return_type = null
-											_executable = body statements
-		}
 	*/
 	struct scope_def_t {
 		public: enum class etype {
@@ -311,37 +255,22 @@ namespace floyd_parser {
 
 		public: static scope_ref_t make_function_def(
 			const type_identifier_t& name,
-			const type_identifier_t& return_type,
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& local_variables,
-			const executable_t& executable
-		);
-
-		public: static std::shared_ptr<scope_def_t> make2(
-			etype type,
-			const type_identifier_t& name,
-			const std::vector<member_t>& args,
-			const std::vector<member_t>& local_variables,
-			const std::vector<member_t>& members,
-			const executable_t& executable,
+			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const type_identifier_t& return_type
 		);
+
+		public: static scope_ref_t make_host_function_def(
+			const type_identifier_t& name,
+			const std::vector<member_t>& args,
+			const host_func_spec_t& host_func,
+			const type_identifier_t& return_type
+		);
+
 		public: static scope_ref_t make_global_scope();
 
-		scope_ref_t set_types(types_collector_t types_collector) const {
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(types_collector.check_invariant());
-
-			return make2(
-				_type,
-				_name,
-				_args,
-				_local_variables,
-				_members,
-				_executable,
-				_return_type
-			);
-		}
+		scope_ref_t set_types(types_collector_t types_collector) const;
 
 		public: scope_def_t(const scope_def_t& other);
 
@@ -356,7 +285,7 @@ namespace floyd_parser {
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& local_variables,
 			const std::vector<member_t>& members,
-			const executable_t& executable,
+			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const type_identifier_t& return_type
 		);
 
@@ -367,7 +296,7 @@ namespace floyd_parser {
 		public: std::vector<member_t> _args;
 		public: std::vector<member_t> _local_variables;
 		public: std::vector<member_t> _members;
-		public: executable_t _executable;
+		public: const std::vector<std::shared_ptr<statement_t> > _statements;
 		public: type_identifier_t _return_type;
 	};
 

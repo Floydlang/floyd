@@ -361,7 +361,7 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		executable_t
 
-
+#if 0
 		executable_t::executable_t(hosts_function_t host_function, std::shared_ptr<host_data_i> host_function_param) :
 			_host_function(host_function),
 			_host_function_param(host_function_param)
@@ -412,7 +412,7 @@ namespace floyd_parser {
 			}
 			return true;
 		}
-
+#endif
 
 
 
@@ -455,28 +455,14 @@ namespace floyd_parser {
 
 
 	scope_ref_t scope_def_t::make_struct(const type_identifier_t& name, const std::vector<member_t>& members){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(etype::k_struct_scope, name, {}, {}, members, executable_t(), {}));
-		QUARK_ASSERT(r->check_invariant());
-		return r;
-	}
-
-	std::shared_ptr<scope_def_t> scope_def_t::make2(
-		etype type,
-		const type_identifier_t& name,
-		const std::vector<member_t>& args,
-		const std::vector<member_t>& local_variables,
-		const std::vector<member_t>& members,
-		const executable_t& executable,
-		const type_identifier_t& return_type)
-	{
-		auto r = std::make_shared<scope_def_t>(scope_def_t(type, name, args, local_variables, members, executable, return_type));
+		auto r = std::make_shared<scope_def_t>(scope_def_t(etype::k_struct_scope, name, {}, {}, members, {}, {}));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
 	scope_ref_t scope_def_t::make_global_scope(){
 		auto r = std::make_shared<scope_def_t>(
-			scope_def_t(etype::k_global_scope, type_identifier_t::make("global"), {}, {}, {}, executable_t(), {})
+			scope_def_t(etype::k_global_scope, type_identifier_t::make("global"), {}, {}, {}, {}, {})
 		);
 
 //		r->_types_collector = add_builtin_types(r->_types_collector);
@@ -486,13 +472,30 @@ namespace floyd_parser {
 		return r;
 	}
 
+
+	scope_ref_t scope_def_t::set_types(types_collector_t types_collector) const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(types_collector.check_invariant());
+
+		return make_shared<scope_def_t>(scope_def_t(
+			_type,
+			_name,
+			_args,
+			_local_variables,
+			_members,
+			_statements,
+			_return_type
+		));
+	}
+
+
 	scope_def_t::scope_def_t(
 		etype type,
 		const type_identifier_t& name,
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& local_variables,
 		const std::vector<member_t>& members,
-		const executable_t& executable,
+		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const type_identifier_t& return_type)
 	:
 		_type(type),
@@ -500,7 +503,7 @@ namespace floyd_parser {
 		_args(args),
 		_local_variables(local_variables),
 		_members(members),
-		_executable(executable),
+		_statements(statements),
 		_return_type(return_type)
 	{
 		QUARK_ASSERT(check_invariant());
@@ -512,7 +515,7 @@ namespace floyd_parser {
 		_args(other._args),
 		_local_variables(other._local_variables),
 		_members(other._members),
-		_executable(other._executable),
+		_statements(other._statements),
 		_return_type(other._return_type)
 	{
 		QUARK_ASSERT(other.check_invariant());
@@ -527,7 +530,6 @@ namespace floyd_parser {
 	bool scope_def_t::check_invariant() const {
 		QUARK_ASSERT(_name.check_invariant());
 
-		QUARK_ASSERT(_executable.check_invariant());
 		QUARK_ASSERT(_return_type.check_invariant());
 
 
@@ -578,7 +580,7 @@ namespace floyd_parser {
 		if(_members != other._members){
 			return false;
 		}
-		if(!(_executable == other._executable)){
+		if(!(_statements == other._statements)){
 			return false;
 		}
 		if(_return_type != other._return_type){
@@ -636,6 +638,7 @@ namespace floyd_parser {
 		});
 	}
 
+/*
 	json_value_t executable_to_json(const executable_t& e){
 		std::vector<json_value_t> statements;
 		for(const auto i: e._statements){
@@ -647,6 +650,7 @@ namespace floyd_parser {
 			{ "_statements", json_value_t(statements) },
 		});
 	}
+*/
 
 	json_value_t scope_def_to_json(const scope_def_t& scope_def){
 		std::vector<json_value_t> members;
@@ -659,11 +663,16 @@ namespace floyd_parser {
 			members.push_back(json_value_t(member));
 		}
 
+		std::vector<json_value_t> statements;
+		for(const auto i: scope_def._statements){
+			statements.push_back(statement_to_json(*i));
+		}
+
 		return make_object({
 			{ "_type", json_value_t(scope_type_to_string(scope_def._type)) },
 			{ "_name", json_value_t(scope_def._name.to_string()) },
 			{ "_members", members.empty() ? json_value_t() :json_value_t(members) },
-			{ "_executable", executable_to_json(scope_def._executable) },
+			{ "_statements", json_value_t(statements) },
 			{ "_return_type", json_value_t(scope_def._return_type.to_string()) }
 		});
 	}
@@ -689,49 +698,30 @@ namespace floyd_parser {
 
 	scope_ref_t scope_def_t::make_function_def(
 		const type_identifier_t& name,
-		const type_identifier_t& return_type,
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& local_variables,
-		const executable_t& executable
+		const std::vector<std::shared_ptr<statement_t> >& statements,
+		const type_identifier_t& return_type
 	)
 	{
 		QUARK_ASSERT(name.check_invariant());
 		QUARK_ASSERT(return_type.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		for(const auto i: local_variables){ QUARK_ASSERT(i.check_invariant()); };
-		QUARK_ASSERT(executable.check_invariant());
 
-		auto function = scope_def_t::make2(scope_def_t::etype::k_function_scope, name, args, local_variables, {}, executable, return_type);
+		auto function = make_shared<scope_def_t>(scope_def_t(
+			scope_def_t::etype::k_function_scope,
+			name,
+			args,
+			local_variables,
+			{},
+			statements,
+			return_type
+		));
 		return function;
 	}
 
 
-
-
-
-	scope_ref_t make_function_def(
-		const type_identifier_t& name,
-		const type_identifier_t& return_type,
-		const std::vector<member_t>& args,
-		const executable_t& executable,
-		const std::vector<member_t>& local_variables
-	)
-	{
-		return scope_def_t::make_function_def(name, return_type, args, local_variables, executable);
-	}
-
-
-	QUARK_UNIT_TESTQ("function_def_t(function_def_t&)", ""){
-		const auto a = make_function_def(
-			type_identifier_t::make("a"),
-			type_identifier_t::make_int(),
-			{},
-			executable_t(),
-			{}
-		);
-		const auto b(a);
-		QUARK_TEST_VERIFY(b->check_invariant());
-	}
 
 
 

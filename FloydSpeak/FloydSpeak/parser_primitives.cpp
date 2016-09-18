@@ -325,11 +325,19 @@ json_value_t make_member_def(const std::string& type, const std::string& name, c
 	QUARK_ASSERT(type.empty() || (type.size() > 2 && type.front() == '<' && type.back() == '>'));
 	QUARK_ASSERT(expression.check_invariant());
 
-	return json_value_t::make_object({
-		{ "type", type },
-		{ "name", name },
-		{ "expr", expression }
-	});
+	if(expression.is_null()){
+		return json_value_t::make_object({
+			{ "type", type },
+			{ "name", name }
+		});
+	}
+	else{
+		return json_value_t::make_object({
+			{ "type", type },
+			{ "name", name },
+			{ "expr", expression }
+		});
+	}
 }
 
 
