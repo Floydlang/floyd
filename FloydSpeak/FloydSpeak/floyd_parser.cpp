@@ -221,56 +221,6 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 //////////////////////////////////////////////////		program_to_ast()
 
 
-//??? move to pass2
-struct alloc_struct_param : public host_data_i {
-	public: virtual ~alloc_struct_param(){};
-
-	alloc_struct_param(const scope_ref_t& struct_def) :
-		_struct_def(struct_def)
-	{
-	}
-
-	scope_ref_t _struct_def;
-};
-
-#if false
-value_t host_function__alloc_struct(const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
-	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
-
-	const auto instance = make_default_struct_value(path, a._struct_def);
-	return instance;
-}
-#endif
-
-/*
-	Take struct definition and creates all types, member variables, constructors, member functions etc.
-	??? add constructors and generated stuff.
-*/
-#if 0
-json_value_t install_struct_support(const json_value_t scope_def, const json_value_t& struct_def){
-	QUARK_ASSERT(scope_def->check_invariant());
-	QUARK_ASSERT(struct_def && struct_def->check_invariant());
-
-	const std::string struct_name = struct_def->_name.to_string();
-	const auto struct_name_ident = type_identifier_t::make(struct_name);
-
-	//	Define struct type in current scope.
-	auto types_collector2 = define_struct_type(scope_def->_types_collector, struct_name, struct_def);
-	scope_ref_t s = resolve_struct_type(types_collector2, struct_name);
-
-	//	Make constructor-function with same name as struct.
-	{
-//		const auto constructor_name = type_identifier_t::make(struct_name + "");
-		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
-		const auto executable = executable_t(host_function__alloc_struct, make_shared<alloc_struct_param>(s));
-		const auto a = make_function_def(constructor_name, struct_name_ident, {}, executable, {}, {});
-		types_collector2 = define_function_type(types_collector2, constructor_name.to_string(), a);
-	}
-
-	return scope_def->set_types(types_collector2);
-//???
-}
-#endif
 
 
 

@@ -359,6 +359,7 @@ pair<json_value_t, int> pass_a5__scope_def(const parser_path_t& path, int type_i
 					constructor_def = store_object_member(constructor_def, "_statements", json_value_t::make_array());
 					constructor_def = store_object_member(constructor_def, "_types", json_value_t::make_object());
 					constructor_def = store_object_member(constructor_def, "_return_type", "<" + struct_name + ">");
+					constructor_def = store_object_member(constructor_def, "_function_type", "def-constructor");
 					const auto constructor_type_def = json_value_t::make_object({
 						{ "id", json_value_t(make_type_id_string(type_id_count2)) },
 						{ "base_type", "function" },
@@ -1857,13 +1858,26 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 		}
 */
 
-		return scope_def_t::make_function_def(
-			type_identifier_t::make(name),
-			args2,
-			local_variables2,
-			statements2,
-			resolve_type123(return_type_id, temp_type_defs)
-		);
+
+//					constructor_def = store_object_member(constructor_def, "_function_type", "def-constructor");
+
+		const auto function_type = scope_def.get_optional_object_element("_function_type");
+		if(function_type && function_type.get_string() == "def-constructor"){
+			return scope_def_t::make_builtin_function_def(
+				type_identifier_t::make(name),
+				scope_def_t::efunc_variant::k_default_constructor,
+				resolve_type123(return_type_id, temp_type_defs)
+			);
+		}
+		else{
+			return scope_def_t::make_function_def(
+				type_identifier_t::make(name),
+				args2,
+				local_variables2,
+				statements2,
+				resolve_type123(return_type_id, temp_type_defs)
+			);
+		}
 	}
 	else if(type == "struct"){
 		return scope_def_t::make_struct(type_identifier_t::make(name), members2);
@@ -1911,13 +1925,23 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 			}
 		}
 
-		return scope_def_t::make_function_def(
-			type_identifier_t::make(name),
-			args2,
-			local_variables2,
-			statements2,
-			resolve_type123(return_type_id, temp_type_defs)
-		);
+		const auto function_type = scope_def.get_optional_object_element("_function_type");
+		if(function_type && function_type.get_string() == "def-constructor"){
+			return scope_def_t::make_builtin_function_def(
+				type_identifier_t::make(name),
+				scope_def_t::efunc_variant::k_default_constructor,
+				resolve_type123(return_type_id, temp_type_defs)
+			);
+		}
+		else{
+			return scope_def_t::make_function_def(
+				type_identifier_t::make(name),
+				args2,
+				local_variables2,
+				statements2,
+				resolve_type123(return_type_id, temp_type_defs)
+			);
+		}
 	}
 	else if(type == "struct"){
 		return scope_def_t::make_struct(type_identifier_t::make(name), members2);

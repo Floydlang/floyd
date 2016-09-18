@@ -146,6 +146,11 @@ struct json_value_t {
 		return _type;
 	}
 
+	explicit operator bool() const {
+		QUARK_ASSERT(check_invariant());
+		return is_null() ? false : true;
+	}
+
 	bool is_object() const {
 		QUARK_ASSERT(check_invariant());
 

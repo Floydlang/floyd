@@ -177,6 +177,123 @@ namespace {
 }	//	unnamed
 
 
+
+#if 0
+#if false
+
+//??? move to pass2
+struct alloc_struct_param : public host_data_i {
+	public: virtual ~alloc_struct_param(){};
+
+	alloc_struct_param(const scope_ref_t& struct_def) :
+		_struct_def(struct_def)
+	{
+	}
+
+	scope_ref_t _struct_def;
+};
+
+value_t host_function__alloc_struct(const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
+	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
+
+	const auto instance = make_default_struct_value(path, a._struct_def);
+	return instance;
+}
+#endif
+
+/*
+	Take struct definition and creates all types, member variables, constructors, member functions etc.
+	??? add constructors and generated stuff.
+*/
+#if 0
+json_value_t install_struct_support(const json_value_t scope_def, const json_value_t& struct_def){
+	QUARK_ASSERT(scope_def->check_invariant());
+	QUARK_ASSERT(struct_def && struct_def->check_invariant());
+
+	const std::string struct_name = struct_def->_name.to_string();
+	const auto struct_name_ident = type_identifier_t::make(struct_name);
+
+	//	Define struct type in current scope.
+	auto types_collector2 = define_struct_type(scope_def->_types_collector, struct_name, struct_def);
+	scope_ref_t s = resolve_struct_type(types_collector2, struct_name);
+
+	//	Make constructor-function with same name as struct.
+	{
+//		const auto constructor_name = type_identifier_t::make(struct_name + "");
+		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
+		const auto executable = executable_t(host_function__alloc_struct, make_shared<alloc_struct_param>(s));
+		const auto a = make_function_def(constructor_name, struct_name_ident, {}, executable, {}, {});
+		types_collector2 = define_function_type(types_collector2, constructor_name.to_string(), a);
+	}
+
+	return scope_def->set_types(types_collector2);
+//???
+}
+#endif
+#endif
+
+
+
+
+	value_t make_struct_instance(const interpreter_t& vm, const scope_ref_t& struct_def);
+
+value_t make_default_value(const interpreter_t& vm, const type_def_t& type_def){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(type_def.check_invariant());
+
+	const auto type = type_def.get_type();
+	if(type == base_type::k_int){
+		return value_t(0);
+	}
+	else if(type == base_type::k_bool){
+		return value_t(false);
+	}
+	else if(type == base_type::k_string){
+		return value_t("");
+	}
+	else if(type == base_type::k_struct){
+		return make_struct_instance(vm, type_def.get_struct_def());
+	}
+	else if(type == base_type::k_vector){
+		QUARK_ASSERT(false);
+	}
+	else if(type == base_type::k_function){
+		QUARK_ASSERT(false);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+	value_t make_struct_instance(const interpreter_t& vm, const scope_ref_t& struct_def){
+		QUARK_ASSERT(vm.check_invariant());
+		QUARK_ASSERT(struct_def && struct_def->check_invariant());
+
+		std::map<std::string, value_t> member_values;
+		for(int i = 0 ; i < struct_def->_members.size() ; i++){
+			const auto& member_def = struct_def->_members[i];
+
+			const auto member_type = member_def._type->get_resolved();
+			if(!member_type){
+				throw std::runtime_error("Undefined struct type!");
+			}
+
+			//	If there is an initial value for this member, use that. Else use default value for this type.
+			value_t value;
+			if(member_def._value){
+				value = *member_def._value;
+			}
+			else{
+				value = make_default_value(vm, *member_def._type->get_resolved());
+			}
+			member_values[member_def._name] = value;
+		}
+		auto instance = make_shared<struct_instance_t>(struct_def, member_values);
+		return value_t(instance);
+	}
+
+
+
 value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f && f->check_invariant());
@@ -188,9 +305,18 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 	}
 #endif
 
-//	if(f->_host_function){
-//		return call_host_function(vm, f, args);
-	return call_interpreted_function(vm, f, args);
+	if(f->_function_variant == scope_def_t::efunc_variant::k_interpreted){
+		return call_interpreted_function(vm, f, args);
+	}
+	else if(f->_function_variant == scope_def_t::efunc_variant::k_default_constructor){
+		const auto struct_type = f->_return_type.get_resolved();
+		const auto struct_def = struct_type->get_struct_def();
+		const auto instance = make_struct_instance(vm, struct_def);
+		return instance;
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
 
 scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
@@ -1075,11 +1201,9 @@ QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 4 < 5; }", floyd_pa
 QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 5 < 4; }", floyd_parser::value_t(false)));
 QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 4 <= 4; }", floyd_parser::value_t(true)));
 
-#if false
 QUARK_UNIT_TESTQ("run_main()", "struct"){
 	QUARK_UT_VERIFY(test_prg("struct t { int a;} bool main(){ t b = t_constructor(); return b == b; }", floyd_parser::value_t(true)));
 }
-#endif
 
 
 #if false

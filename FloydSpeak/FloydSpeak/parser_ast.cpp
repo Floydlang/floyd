@@ -455,14 +455,14 @@ namespace floyd_parser {
 
 
 	scope_ref_t scope_def_t::make_struct(const type_identifier_t& name, const std::vector<member_t>& members){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(etype::k_struct_scope, name, {}, {}, members, {}, {}));
+		auto r = std::make_shared<scope_def_t>(scope_def_t(etype::k_struct_scope, name, {}, {}, members, {}, {}, efunc_variant::k_not_relevant));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
 	scope_ref_t scope_def_t::make_global_scope(){
 		auto r = std::make_shared<scope_def_t>(
-			scope_def_t(etype::k_global_scope, type_identifier_t::make("global"), {}, {}, {}, {}, {})
+			scope_def_t(etype::k_global_scope, type_identifier_t::make("global"), {}, {}, {}, {}, {}, efunc_variant::k_not_relevant)
 		);
 
 //		r->_types_collector = add_builtin_types(r->_types_collector);
@@ -484,7 +484,8 @@ namespace floyd_parser {
 			_local_variables,
 			_members,
 			_statements,
-			_return_type
+			_return_type,
+			_function_variant
 		));
 	}
 
@@ -496,7 +497,9 @@ namespace floyd_parser {
 		const std::vector<member_t>& local_variables,
 		const std::vector<member_t>& members,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const type_identifier_t& return_type)
+		const type_identifier_t& return_type,
+		const efunc_variant& function_variant
+		)
 	:
 		_type(type),
 		_name(name),
@@ -504,7 +507,8 @@ namespace floyd_parser {
 		_local_variables(local_variables),
 		_members(members),
 		_statements(statements),
-		_return_type(return_type)
+		_return_type(return_type),
+		_function_variant(function_variant)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -516,7 +520,8 @@ namespace floyd_parser {
 		_local_variables(other._local_variables),
 		_members(other._members),
 		_statements(other._statements),
-		_return_type(other._return_type)
+		_return_type(other._return_type),
+		_function_variant(other._function_variant)
 	{
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
@@ -546,14 +551,18 @@ namespace floyd_parser {
 
 
 		if(_type == etype::k_function_scope){
+			QUARK_ASSERT(_function_variant != efunc_variant::k_not_relevant);
 		}
 		else if(_type == etype::k_struct_scope){
+			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
 			QUARK_ASSERT(_return_type.is_null());
 		}
 		else if(_type == etype::k_global_scope){
+			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
 			QUARK_ASSERT(_return_type.is_null());
 		}
 		else if(_type == etype::k_subscope){
+			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -584,6 +593,9 @@ namespace floyd_parser {
 			return false;
 		}
 		if(_return_type != other._return_type){
+			return false;
+		}
+		if(_function_variant != other._function_variant){
 			return false;
 		}
 		return true;
@@ -716,7 +728,26 @@ namespace floyd_parser {
 			local_variables,
 			{},
 			statements,
-			return_type
+			return_type,
+			efunc_variant::k_interpreted
+		));
+		return function;
+	}
+
+	scope_ref_t scope_def_t::make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const type_identifier_t& type){
+		QUARK_ASSERT(name.check_invariant());
+		QUARK_UT_VERIFY(function_variant != efunc_variant::k_not_relevant && function_variant != efunc_variant::k_interpreted);
+		QUARK_ASSERT(type.check_invariant());
+
+		auto function = make_shared<scope_def_t>(scope_def_t(
+			scope_def_t::etype::k_function_scope,
+			name,
+			{},
+			{},
+			{},
+			{},
+			type,
+			efunc_variant::k_default_constructor
 		));
 		return function;
 	}

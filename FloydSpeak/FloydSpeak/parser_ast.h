@@ -222,11 +222,6 @@ namespace floyd_parser {
 
 
 	struct host_func_spec_t {
-		enum class etype {
-			k_default_constructor
-		};
-
-		etype _type;
 	};
 
 
@@ -251,6 +246,13 @@ namespace floyd_parser {
 			k_subscope
 		};
 
+		//	??? Merge with etype, but that effects clients.
+		public: enum class efunc_variant {
+			k_not_relevant,
+			k_interpreted,
+			k_default_constructor
+		};
+
 		public: static scope_ref_t make_struct(const type_identifier_t& name, const std::vector<member_t>& members);
 
 		public: static scope_ref_t make_function_def(
@@ -260,6 +262,8 @@ namespace floyd_parser {
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const type_identifier_t& return_type
 		);
+
+		public: static scope_ref_t make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const type_identifier_t& type);
 
 		public: static scope_ref_t make_host_function_def(
 			const type_identifier_t& name,
@@ -286,7 +290,8 @@ namespace floyd_parser {
 			const std::vector<member_t>& local_variables,
 			const std::vector<member_t>& members,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const type_identifier_t& return_type
+			const type_identifier_t& return_type,
+			const efunc_variant& function_variant
 		);
 
 
@@ -298,6 +303,8 @@ namespace floyd_parser {
 		public: std::vector<member_t> _members;
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
 		public: type_identifier_t _return_type;
+
+		public: efunc_variant _function_variant;
 	};
 
 	json_value_t scope_def_to_json(const scope_def_t& scope_def);
