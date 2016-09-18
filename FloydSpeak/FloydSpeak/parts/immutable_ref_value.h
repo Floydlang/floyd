@@ -19,13 +19,16 @@
 
 //??? add operator=, copy-constructor and SWAP().
 /*
-	This is like a smart pointer, but it is immutable and has value semantics.
+	This makes a new *value object*, based on T.
+	Internally a pointer to T is stored, like a smart pointer.
+
+	The new type is is immutable and has value semantics.
 	It cannot be null.
 	It has an operator==() that checks if the two objects have the same value. It does NOT check if it's the same object.
 
 	It can cheaply be copied around, stored in collections etc.
 
-	Use make_immutable_ref() to make instances:
+	Usage:
 
 		struct my_secret_stuff {
 			my_secret_stuff(std::string title, int height){

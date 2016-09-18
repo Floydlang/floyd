@@ -22,7 +22,6 @@
 #include "utils.h"
 #include "json_support.h"
 #include "json_writer.h"
-#include "parser_types_collector.h"
 #include "ast_utils.h"
 
 
@@ -336,40 +335,6 @@ namespace floyd_parser {
 
 
 	//////////////////////////////////////////////////		scope_def_t
-
-
-
-	types_collector_t add_builtin_types(const types_collector_t& types){
-		auto result = types;
-
-		//	bool
-		{
-			auto def = make_shared<type_def_t>(type_def_t::make(base_type::k_bool));
-			result = result.define_type_xyz("bool", def);
-		}
-
-		//	int
-		{
-			result = result.define_type_xyz("int", make_shared<type_def_t>(type_def_t::make_int()));
-		}
-
-		//	string
-		{
-			auto def = make_shared<type_def_t>(type_def_t::make(base_type::k_string));
-			result = result.define_type_xyz("string", def);
-		}
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-
-
-
-	QUARK_UNIT_TESTQ("add_builtin_types()", ""){
-		const auto t = types_collector_t();
-		const auto a = add_builtin_types(t);
-		QUARK_TEST_VERIFY(a.check_invariant());
-	}
 
 
 

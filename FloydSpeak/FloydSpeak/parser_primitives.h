@@ -16,7 +16,6 @@
 #include "quark.h"
 #include "text_parser.h"
 #include "parser_ast.h"
-#include "parser_types_collector.h"
 #include "parser_value.h"
 
 #include <string>

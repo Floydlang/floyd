@@ -36,12 +36,12 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 	QUARK_TEST_VERIFY(align_pos(9, 8) == 16);
 }
 
+#if 0
 	std::vector<byte_range_t> calc_struct_default_memory_layout(const types_collector_t& types, const type_def_t& s){
 		QUARK_ASSERT(types.check_invariant());
 		QUARK_ASSERT(s.check_invariant());
 
 		std::vector<byte_range_t> result;
-#if 0
 		std::size_t pos = 0;
 		const auto struct_def = s.get_struct_def();
 		for(const auto& member : struct_def->_members) {
@@ -84,9 +84,9 @@ QUARK_UNIT_TESTQ("align_pos()", ""){
 		}
 		pos = align_pos(pos, 8);
 		result.insert(result.begin(), byte_range_t(0, pos));
-#endif
 		return result;
 	}
+#endif
 
 
 

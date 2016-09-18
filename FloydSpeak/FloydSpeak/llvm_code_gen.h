@@ -13,7 +13,8 @@
 #include "quark.h"
 #include <vector>
 
-#include "parser_types_collector.h"
+#include "parser_ast.h"
+
 
 //////////////////////////////////////		type_identifier_t
 
