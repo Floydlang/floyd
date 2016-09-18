@@ -8,7 +8,6 @@
 
 #include "floyd_interpreter.h"
 
-
 #include "parse_expression.h"
 #include "parse_statement.h"
 #include "statements.h"
@@ -1281,8 +1280,6 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
 
-
-
 QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	const auto a = run_main(
 		"struct pixel { string s = \"one\"; }"
@@ -1295,10 +1292,9 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
-#if false
 QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 	const auto a = run_main(
-		"struct pixel { string s = \"one\"; }"
+		"struct pixel { string s = \"two\"; }"
 		"struct image { pixel background_color; int width; int height; }"
 		"string main(){\n"
 		"	image i = image_constructor();"
@@ -1306,9 +1302,7 @@ QUARK_UNIT_TESTQ("struct", "Nesting structs"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel").size() > 0);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor").size() > 0);
-	QUARK_TEST_VERIFY(a.second == value_t("one"));
+	QUARK_TEST_VERIFY(a.second == value_t("two"));
 }
 
 QUARK_UNIT_TESTQ("struct", "Can use struct as argument"){
@@ -1336,9 +1330,6 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 	);
 	QUARK_TEST_VERIFY(a.second == value_t("three"));
 }
-#endif
-
-
 
 
 
