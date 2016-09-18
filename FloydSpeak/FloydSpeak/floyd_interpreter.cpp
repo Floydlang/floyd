@@ -21,7 +21,6 @@
 
 #include <cmath>
 
-#if true
 namespace floyd_interpreter {
 
 
@@ -179,8 +178,6 @@ namespace {
 
 
 #if 0
-#if false
-
 //??? move to pass2
 struct alloc_struct_param : public host_data_i {
 	public: virtual ~alloc_struct_param(){};
@@ -199,13 +196,11 @@ value_t host_function__alloc_struct(const resolved_path_t& path, const std::shar
 	const auto instance = make_default_struct_value(path, a._struct_def);
 	return instance;
 }
-#endif
 
 /*
 	Take struct definition and creates all types, member variables, constructors, member functions etc.
 	??? add constructors and generated stuff.
 */
-#if 0
 json_value_t install_struct_support(const json_value_t scope_def, const json_value_t& struct_def){
 	QUARK_ASSERT(scope_def->check_invariant());
 	QUARK_ASSERT(struct_def && struct_def->check_invariant());
@@ -229,7 +224,6 @@ json_value_t install_struct_support(const json_value_t scope_def, const json_val
 	return scope_def->set_types(types_collector2);
 //???
 }
-#endif
 #endif
 
 
@@ -1312,8 +1306,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	QUARK_TEST_VERIFY(result2 == floyd_parser::value_t("--123<123>--"));
 }
 
-
-
+#endif
 
 
 
@@ -1351,10 +1344,9 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel").size() > 0);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor").size() > 0);
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
+#if false
 
 QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 	const auto a = run_main(
@@ -1365,8 +1357,6 @@ QUARK_UNIT_TESTQ("struct", "Struct member default value"){
 		"}\n",
 		{}
 	);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel").size() > 0);
-	QUARK_TEST_VERIFY(a.first._ast._global_scope->_types_collector.resolve_identifier("pixel_constructor").size() > 0);
 	QUARK_TEST_VERIFY(a.second == value_t("one"));
 }
 
@@ -1416,7 +1406,5 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 
 
 
-
 }	//	floyd_interpreter
-#endif
 

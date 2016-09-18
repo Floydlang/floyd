@@ -67,10 +67,11 @@ namespace floyd_parser {
 	floyd_parser::type_identifier_t resolve_type_to_id(const resolved_path_t& path,
 		const floyd_parser::type_identifier_t& type);
 
-
+#if 0
 	floyd_parser::value_t make_default_value(const resolved_path_t& path, const type_identifier_t& type);
 	floyd_parser::value_t make_default_value(const resolved_path_t& path, const floyd_parser::type_def_t& type_def);
 	floyd_parser::value_t make_default_struct_value(const resolved_path_t& path, scope_ref_t struct_def);
+#endif
 
 	member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name);
 	type_identifier_t resolve_type_throw(const resolved_path_t& path, const type_identifier_t& s);

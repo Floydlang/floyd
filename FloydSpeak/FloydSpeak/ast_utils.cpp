@@ -137,7 +137,7 @@ floyd_parser::type_identifier_t resolve_type_to_id(const floyd_parser::resolved_
 }
 
 
-
+#if 0
 //////////////////////////////////////////////////		make_default_value()
 
 
@@ -189,6 +189,7 @@ value_t make_default_value(const resolved_path_t& path, const type_def_t& type_d
 		QUARK_ASSERT(false);
 	}
 }
+#endif
 
 
 member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name){

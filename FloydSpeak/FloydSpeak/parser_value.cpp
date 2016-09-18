@@ -52,7 +52,7 @@ namespace floyd_parser {
 		}
 
 
-
+#if false
 	value_t make_struct_instance(const resolved_path_t& path, const scope_ref_t& struct_def){
 		QUARK_ASSERT(path.check_invariant());
 		QUARK_ASSERT(struct_def && struct_def->check_invariant());
@@ -79,7 +79,7 @@ namespace floyd_parser {
 		auto instance = make_shared<struct_instance_t>(struct_def, member_values);
 		return value_t(instance);
 	}
-
+#endif
 
 
 	//////////////////////////////////////////////////		vector_instance_t

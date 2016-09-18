@@ -285,6 +285,7 @@ QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
 }
 #endif
 
+#if 0
 QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
 	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
 	const auto a = make_vector_instance(vector_def, { 10, 11, 12 });
@@ -299,6 +300,7 @@ QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
 	QUARK_UT_VERIFY(array[1] == 11);
 	QUARK_UT_VERIFY(array[2] == 12);
 }
+#endif
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
 	quark::ut_compare(value_to_json(value_t("hello")), json_value_t("hello"));
