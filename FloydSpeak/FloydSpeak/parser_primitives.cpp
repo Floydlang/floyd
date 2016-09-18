@@ -242,7 +242,7 @@ json_value_t value_to_json(const value_t& v){
 	else if(v.is_struct()){
 		const auto value = v.get_struct();
 		std::map<string, json_value_t> result;
-		for(const auto member: value->__def->_members){
+		for(const auto member: value->_struct_type->get_struct_def()->_members){
 			const auto member_name = member._name;
 			const auto member_value = value->_member_values[member_name];
 			result[member_name] = value_to_json(member_value);

@@ -26,12 +26,9 @@ namespace floyd_parser {
 	using std::shared_ptr;
 
 
-	statement_t make__bind_statement(const bind_statement_t& value){
-		return statement_t(value);
-	}
 
-	statement_t make__bind_statement(const type_identifier_t& type, const std::string& identifier, const expression_t& e){
-		QUARK_ASSERT(type.check_invariant());
+	statement_t make__bind_statement(const std::shared_ptr<const type_def_t>& type, const std::string& identifier, const expression_t& e){
+		QUARK_ASSERT(type && type->check_invariant());
 		QUARK_ASSERT(identifier.size () > 0);
 		QUARK_ASSERT(e.check_invariant());
 
@@ -148,19 +145,27 @@ namespace floyd_parser {
 	QUARK_UNIT_TESTQ("statement_to_json", "bind"){
 		quark::ut_compare(
 			json_to_compact_string(
-				statement_to_json(make__bind_statement(type_identifier_t::make_int(), "a", expression_t::make_constant(400)))
+				statement_to_json(
+					make__bind_statement(
+						make_shared<type_def_t>(type_def_t::make_int()),
+						"a",
+						expression_t::make_constant(400)
+					)
+				)
 			)
 			,
-			R"(["bind", "a", ["k", "<int>", 400]])"
+			R"(["bind", "a", ["k", 400, "<int>"]])"
 		);
 	}
 
+#if false
 	QUARK_UNIT_TESTQ("statement_to_json", "defstruct"){
 		const auto global = scope_def_t::make_global_scope();
 		const auto result = statement_to_json(define_struct_statement_t{ make_struct1(global) });
 
 		quark::ut_compare(result.get_array_n(0).get_string(), "defstruct");
 	}
+#endif
 
 #if false
 	QUARK_UNIT_TESTQ("statement_to_json", "deffunc"){
@@ -177,7 +182,7 @@ namespace floyd_parser {
 				statement_to_json(make__return_statement(expression_t::make_constant("abc")))
 			)
 			,
-			R"(["return", ["k", "<string>", "abc"]])"
+			R"(["return", ["k", "abc", "<string>"]])"
 		);
 	}
 

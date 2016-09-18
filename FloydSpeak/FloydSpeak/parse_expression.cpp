@@ -30,7 +30,7 @@ using std::make_shared;
 
 
 using namespace parser2;
-
+#if 0
 struct parse_helper : public maker<expression_t> {
 	private: static string make_2op(string lhs, string op, string rhs){
 		return make3(quote(op), lhs, rhs);
@@ -175,6 +175,7 @@ expression_t parse_expression(std::string expression){
 	return result.first;
 }
 */
+#endif
 
 
 

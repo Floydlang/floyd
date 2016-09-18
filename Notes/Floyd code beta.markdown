@@ -181,6 +181,55 @@ Notice about optimizations: many accellerations are made behind the scenes:
 - Causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
 - You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
 
+# AST
+The encoding of a Floyd program into a AST (abstrac syntax tree) is fully documented. You can generate, manipulate and run these programs from within your own program.s
+
+The tree is stored as standard JSON data. Each expression is a JSON-array where elements have defined meaning. You can nest expressions to any depth by specifying an expression instead of a constant.
+
+### STATEMENTS
+
+	[ "bind", identifier-string, expr ]
+	[ "defstruct", identifier-string, expr ]
+	[ "deffunc", identifier-string, expr ]
+	[ "return", expr ]
+
+
+### EXPRESSIONS
+This is how all expressions are encoded into JSON format. "expr" is a placehold for another expression array. 
+[ "k", expr, type ]
+
+[ "negate", expr, type ]
+
+[ "+", left_expr, right_expr, type ]
+[ "-", left_expr, right_expr, type ]
+[ "*", left_expr, right_expr, type ]
+[ "/", left_expr, right_expr, type ]
+[ "%", left_expr, right_expr, type ]
+
+[ "<", left_expr, right_expr, type ]
+[ "<=", left_expr, right_expr, type ]
+[ ">", left_expr, right_expr, type ]
+[ ">=", left_expr, right_expr, type ]
+
+[ "||", left_expr, right_expr, type ]
+[ "&&", left_expr, right_expr, type ]
+[ "==", left_expr, right_expr, type ]
+[ "!=", left_expr, right_expr, type ]
+
+[ "?:", conditional_expr, a_expr, b_expr, type ]
+
+[ "call", function_exp, [ arg_expr ], type ]
+
+Resolve free variable using static scope
+[ "@", string_name, type ]
+
+Resolve member
+[ "->", object_id_expr, string_member_name, type ]
+
+Lookup member
+[ "[-]", object_id_expr, key_expr, type ]
+
+
 # RESERVED KEYWORDS
 assert
 bool

@@ -1706,13 +1706,13 @@ bool has_unresolved_types(const json_value_t& obj){
 
 
 
-type_identifier_t resolve_type123(const string& id, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
 	const auto it = temp_type_defs.find(id);
 	if(it == temp_type_defs.end()){
 		QUARK_ASSERT(false);
 	}
 
-	return type_identifier_t::resolve(it->second);
+	return it->second;
 }
 
 
@@ -1740,6 +1740,9 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		else if(base_type == base_type::k_int){
 			return expression_t::make_constant((int)value.get_number());
 		}
+		else if(base_type == base_type::k_float){
+			return expression_t::make_constant((float)value.get_number());
+		}
 		else if(base_type == base_type::k_string){
 			return expression_t::make_constant(value.get_string());
 		}
@@ -1765,8 +1768,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		const auto type = e.get_array_n(2);
 		return expression_t::make_math_operation1(
 			math_operation1_expr_t::negate,
-			conv_expression(expr, temp_type_defs),
-			resolve_type123(type.get_string(), temp_type_defs)
+			conv_expression(expr, temp_type_defs)
 		);
 	}
 	else if(is_math2_op(op)){
@@ -1777,8 +1779,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		return expression_t::make_math_operation2(
 			op2,
 			lhs_expr,
-			rhs_expr,
-			lhs_expr.get_expression_type()
+			rhs_expr
 		);
 	}
 	else if(op == "?:"){
@@ -1787,7 +1788,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		const auto a_expr = conv_expression(e.get_array_n(2), temp_type_defs);
 		const auto b_expr = conv_expression(e.get_array_n(3), temp_type_defs);
 		const auto expr_type = resolve_type123(e.get_array_n(4).get_string(), temp_type_defs);
-		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, expr_type);
+		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr);
 	}
 	else if(op == "call"){
 		QUARK_ASSERT(e.get_array_size() == 4);

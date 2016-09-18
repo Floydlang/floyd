@@ -227,6 +227,8 @@ namespace floyd_parser {
 
 
 	struct expression_t {
+		public: static expression_t make_constant(const value_t& value);
+
 		//	Shortcuts were you don't need to make a value_t first.
 		public: static expression_t make_constant(const bool i);
 		public: static expression_t make_constant(const int i);
@@ -234,59 +236,51 @@ namespace floyd_parser {
 		public: static expression_t make_constant(const char s[]);
 		public: static expression_t make_constant(const std::string& s);
 
-		public: static expression_t make_constant(
-			const value_t& value,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
-		);
 
 		public: static expression_t make_math_operation1(
 			math_operation1_expr_t::operation op,
-			const expression_t& input,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const expression_t& input
 		);
 		public: static expression_t make_math_operation2(
 			math_operation2_expr_t::operation op,
 			const expression_t& left,
-			const expression_t& right,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const expression_t& right
 		);
 
 		public: static expression_t make_conditional_operator(
 			const expression_t& condition,
 			const expression_t& a,
-			const expression_t& b,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const expression_t& b
 		);
 
 		public: static expression_t make_function_call(
 			const type_identifier_t& function,
 			const std::vector<expression_t>& inputs,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
 
 		public: static expression_t make_load(
 			const expression_t& address_expression,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
-		public: static expression_t make_load_variable(const std::string& name);
 
 		public: static expression_t make_resolve_variable(
 			const std::string& variable,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
 		//??? Why shared_ptr?
 		public: static expression_t make_resolve_member(
 			const std::shared_ptr<expression_t>& parent_address,
 			const std::string& member_name,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
-			const type_identifier_t& resolved_expression_type = type_identifier_t()
+			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
 
@@ -296,7 +290,7 @@ namespace floyd_parser {
 			Returns pre-computed result of the expression - the type of value it represents.
 			null if not resolved.
 		*/
-		public: type_identifier_t get_expression_type() const{
+		public: std::shared_ptr<const type_def_t> get_expression_type() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _resolved_expression_type;
@@ -329,7 +323,7 @@ namespace floyd_parser {
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
-		public: type_identifier_t _resolved_expression_type;
+		public: std::shared_ptr<const type_def_t> _resolved_expression_type;
 	};
 
 

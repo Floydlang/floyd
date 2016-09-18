@@ -21,9 +21,9 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		struct_instance_t
 
 		bool struct_instance_t::check_invariant() const{
-			QUARK_ASSERT(__def && __def->check_invariant());
+			QUARK_ASSERT(_struct_type && _struct_type->check_invariant());
 
-			QUARK_ASSERT(__def->_members.size() == _member_values.size());
+			QUARK_ASSERT(_struct_type->get_struct_def()->_members.size() == _member_values.size());
 
 			for(const auto m: _member_values){
 				QUARK_ASSERT(m.second.check_invariant());
@@ -39,14 +39,14 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			return __def == other.__def && _member_values == other._member_values;
+			return _struct_type == other._struct_type && _member_values == other._member_values;
 		}
 
 
 		std::string to_preview(const struct_instance_t& instance){
 			string r;
 			for(const auto m: instance._member_values){
-				r = r + (string("<") + m.second.get_type().to_string() + ">" + m.first + "=" + m.second.plain_value_to_string());
+				r = r + (string("<") + m.second.get_type()->to_string() + ">" + m.first + "=" + m.second.plain_value_to_string());
 			}
 			return string("{") + r + "}";
 		}
@@ -69,7 +69,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			return __def == other.__def && _elements == other._elements;
+			return *_vector_type == *other._vector_type && _elements == other._elements;
 		}
 
 
@@ -78,7 +78,7 @@ namespace floyd_parser {
 			for(const auto m: instance._elements){
 				r = r + m.plain_value_to_string() + " ";
 			}
-			return /*string("<") + instance.__def->_name.to_string() + ">*/ std::string("[") + instance.__def->_element_type.to_string() + "][" + r + "]";
+			return /*string("<") + instance._vector_type->_name.to_string() + ">*/ std::string("[") + instance._vector_type->get_vector_def()->_element_type->to_string() + "][" + r + "]";
 		}
 
 
@@ -87,7 +87,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(def && def->check_invariant());
 
 		auto instance = make_shared<vector_instance_t>();
-		instance->__def = def;
+		instance->_vector_type = make_shared<type_def_t>(type_def_t::make_vector_def(def));
 		instance->_elements = elements;
 		return value_t(instance);
 	}
@@ -145,19 +145,19 @@ int value_t::compare_value_true_deep(const struct_instance_t& left, const struct
 int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
-	QUARK_ASSERT(left.get_type().to_string() == right.get_type().to_string());
+	QUARK_ASSERT(*left.get_type() == *right.get_type());
 
-	const auto type = left._type.to_string();
-	if(type == "null"){
+	const auto type = left.get_base_type();
+	if(type == base_type::k_null){
 		return 0;
 	}
-	else if(type == "bool"){
+	else if(type == base_type::k_bool){
 		return (left.get_bool() ? 1 : 0) - (right.get_bool() ? 1 : 0);
 	}
-	else if(type == "int"){
+	else if(type == base_type::k_int){
 		return limit(left.get_int() - right.get_int(), -1, 1);
 	}
-	else if(type == "float"){
+	else if(type == base_type::k_float){
 		const auto a = left.get_float();
 		const auto b = right.get_float();
 		if(a > b){
@@ -170,25 +170,24 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return 0;
 		}
 	}
-	else if(type == "string"){
+	else if(type == base_type::k_string){
 		return compare_string(left.get_string(), right.get_string());
 	}
-	else {
-		if(left.is_struct()){
-			if(left.get_struct() == right.get_struct()){
-				return 0;
-			}
-			else{
-				return compare_value_true_deep(*left.get_struct(), *right.get_struct());
-			}
-		}
-		if(left.is_vector()){
-			QUARK_ASSERT(false);
+	else if(type == base_type::k_struct){
+		//	Shortcut: same obejct == we know values are same without having to check them.
+		if(left.get_struct() == right.get_struct()){
 			return 0;
 		}
 		else{
-			QUARK_ASSERT(false);
+			return compare_value_true_deep(*left.get_struct(), *right.get_struct());
 		}
+	}
+	else if(type == base_type::k_vector){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else{
+		QUARK_ASSERT(false);
 	}
 }
 
@@ -323,7 +322,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 #endif
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), make_shared<type_def_t>(type_def_t::make_int())));
 	const auto a = make_vector_instance(vector_def, {});
 	const auto b = make_vector_instance(vector_def, {});
 
@@ -343,7 +342,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), make_shared<type_def_t>(type_def_t::make_int())));
 	const auto a = make_vector_instance(vector_def, { 3, 4, 5});
 	const auto b = make_vector_instance(vector_def, { 3, 4 });
 

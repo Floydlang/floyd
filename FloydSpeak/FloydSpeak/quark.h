@@ -579,6 +579,8 @@ template <typename T> void ut_compare(const T& result, const T& expected){
 
 inline void ut_compare(const std::string& result, const std::string& expected){
 	if(result != expected){
+		QUARK_TRACE_SS("result:  " << result);
+		QUARK_TRACE_SS("expected:" << expected);
 		::quark::on_unit_test_failed_hook(
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),

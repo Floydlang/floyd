@@ -27,21 +27,21 @@ namespace floyd_parser {
 
 	//??? Merge into stack_frame_t to make a generic construct.
 	struct struct_instance_t {
-		public: struct_instance_t(const scope_ref_t& def, const std::map<std::string, value_t>& member_values) :
-			__def(def),
+		public: struct_instance_t(const std::shared_ptr<const type_def_t>& struct_type, const std::map<std::string, value_t>& member_values) :
+			_struct_type(struct_type),
 			_member_values(member_values)
 		{
-			QUARK_ASSERT(def && def->check_invariant());
+			QUARK_ASSERT(struct_type && struct_type->check_invariant());
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_instance_t& other);
 
 		//	??? Remove this points at later time, when we statically track the type of structs OK. We alreay know this via __def!
-		scope_ref_t __def;
+		public: std::shared_ptr<const type_def_t> _struct_type;
 
 		//	??? Use ::vector<value_t> _member_values and index of member to find the value.
-		std::map<std::string, value_t> _member_values;
+		public: std::map<std::string, value_t> _member_values;
 	};
 
 	std::string to_preview(const struct_instance_t& instance);
@@ -56,7 +56,7 @@ namespace floyd_parser {
 		public: bool operator==(const vector_instance_t& other);
 
 		//	??? Remove this points at later time, when we statically track the type of structs OK.
-		std::shared_ptr<const vector_def_t> __def;
+		std::shared_ptr<type_def_t> _vector_type;
 
 		std::vector<value_t> _elements;
 	};
@@ -76,65 +76,71 @@ namespace floyd_parser {
 		int
 		float
 		string
+
 		struct
 		vector
 	*/
 
 	struct value_t {
 		public: bool check_invariant() const{
-			if(_type.to_string() == "null"){
+			QUARK_ASSERT(_type_def && _type_def->check_invariant());
+
+			const auto base_type = _type_def->get_type();
+			if(base_type == base_type::k_null){
 			}
-			else if(_type.to_string() == "bool"){
+			else if(base_type == base_type::k_bool){
 			}
-			else if(_type.to_string() == "int"){
+			else if(base_type == base_type::k_int){
 			}
-			else if(_type.to_string() == "float"){
+			else if(base_type == base_type::k_float){
 			}
-			else if(_type.to_string() == "string"){
+			else if(base_type == base_type::k_string){
+			}
+
+			else if(base_type == base_type::k_struct){
+				QUARK_ASSERT(_struct && _struct->check_invariant());
+			}
+			else if(base_type == base_type::k_vector){
+				QUARK_ASSERT(_vector && _vector->check_invariant());
+			}
+			else if(base_type == base_type::k_function){
+				QUARK_ASSERT(false);
 			}
 			else {
-				if(_struct){
-					QUARK_ASSERT(_struct->check_invariant());
-				}
-				else if(_vector){
-					QUARK_ASSERT(_vector->check_invariant());
-				}
-				else{
-					QUARK_ASSERT(false);
-				}
+				QUARK_ASSERT(false);
 			}
 			return true;
 		}
 
 		public: value_t() :
-			_type("null")
+			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_null)))
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(bool value) :
-			_type("bool"),
+			_type_def(std::make_shared<type_def_t>(type_def_t::make_bool())),
 			_bool(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(int value) :
-			_type("int"),
+			_type_def(std::make_shared<type_def_t>(type_def_t::make_int())),
 			_int(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(float value) :
-			_type("float"),
+			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_float))),
 			_float(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(const char s[]) :
-			_type("string"),
+			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_string))),
 			_string(s)
 		{
 			QUARK_ASSERT(s != nullptr);
@@ -143,28 +149,32 @@ namespace floyd_parser {
 		}
 
 		public: explicit value_t(const std::string& s) :
-			_type("string"),
+			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_string))),
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(const std::shared_ptr<struct_instance_t>& instance) :
-			_type(instance->__def->_name),
+			_type_def(instance->_struct_type),
 			_struct(instance)
 		{
+			QUARK_ASSERT(instance && instance->check_invariant());
+
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(const std::shared_ptr<vector_instance_t>& instance) :
-			_type(instance->__def->_name),
+			_type_def(instance->_vector_type),
 			_vector(instance)
 		{
+			QUARK_ASSERT(instance && instance->check_invariant());
+
 			QUARK_ASSERT(check_invariant());
 		}
 
 		value_t(const value_t& other):
-			_type(other._type),
+			_type_def(other._type_def),
 
 			_bool(other._bool),
 			_int(other._int),
@@ -197,34 +207,38 @@ namespace floyd_parser {
 			//??? Use better way to compare types!!!
 			// Use the base_type enum instead of strings for basic types? Use string for basics, hash for composite, functions, typedefs?
 
-			if(_type.to_string() != other._type.to_string()){
+			if(!(*_type_def == *other._type_def)){
 				return false;
 			}
-			if(_type.to_string() == "null"){
+
+			const auto base_type = get_base_type();
+			if(base_type == base_type::k_null){
 				return true;
 			}
-			else if(_type.to_string() == "bool"){
+			else if(base_type == base_type::k_bool){
 				return _bool == other._bool;
 			}
-			else if(_type.to_string() == "int"){
+			else if(base_type == base_type::k_int){
 				return _int == other._int;
 			}
-			else if(_type.to_string() == "float"){
+			else if(base_type == base_type::k_float){
 				return _float == other._float;
 			}
-			else if(_type.to_string() == "string"){
+			else if(base_type == base_type::k_string){
 				return _string == other._string;
 			}
+
+			else if(base_type == base_type::k_struct){
+				return *_struct == *other._struct;
+			}
+			else if(base_type == base_type::k_vector){
+				return *_vector == *other._vector;
+			}
+			else if(base_type == base_type::k_function){
+				QUARK_ASSERT(false);
+			}
 			else {
-				if(_struct){
-					return *_struct == *other._struct;
-				}
-				else if(_vector){
-					return *_vector == *other._vector;
-				}
-				else{
-					QUARK_ASSERT(false);
-				}
+				QUARK_ASSERT(false);
 			}
 		}
 
@@ -247,36 +261,40 @@ namespace floyd_parser {
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			const auto d = _type.to_string();
-			if(d == "null"){
+			const auto base_type = get_base_type();
+			if(base_type == base_type::k_null){
 				return "<null>";
 			}
-			else if(d == "bool"){
+			else if(base_type == base_type::k_bool){
 				return _bool ? "true" : "false";
 			}
-			else if(d == "int"){
+			else if(base_type == base_type::k_int){
 				char temp[200 + 1];//### Use C++ function instead.
 				sprintf(temp, "%d", _int);
 				return std::string(temp);
 			}
-			else if(d == "float"){
+			else if(base_type == base_type::k_float){
 				char temp[200 + 1];//### Use C++ function instead.
 				sprintf(temp, "%f", _float);
 				return std::string(temp);
 			}
-			else if(d == "string"){
+			else if(base_type == base_type::k_string){
 				return std::string("\"") + _string + "\"";
 			}
+
+			else if(base_type == base_type::k_struct){
+				return to_preview(*_struct);
+			}
+			else if(base_type == base_type::k_vector){
+				return to_preview(*_vector);
+			}
+			else if(base_type == base_type::k_function){
+				QUARK_ASSERT(false);
+				return "??";
+			}
+
 			else{
-				if(_struct){
-					return to_preview(*_struct);
-				}
-				else if(_vector){
-					return to_preview(*_vector);
-				}
-				else{
-					return "??";
-				}
+				return "??";
 			}
 		}
 
@@ -287,44 +305,51 @@ namespace floyd_parser {
 				return "<null>";
 			}
 			else{
-				return "<" + _type.to_string() + ">" + plain_value_to_string();
+				std::string type_string = _type_def->to_string();
+				return "<" + type_string + ">" + plain_value_to_string();
 			}
 		}
 
-		public: type_identifier_t get_type() const{
+		public: std::shared_ptr<const type_def_t> get_type() const{
 			QUARK_ASSERT(check_invariant());
 
-			return _type;
+			return _type_def;
+		}
+
+		public: base_type get_base_type() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _type_def->get_type();
 		}
 
 		public: bool is_null() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type.to_string() == "null";
+			return get_base_type() == base_type::k_null;
 		}
 
 		public: bool is_bool() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type.to_string() == "bool";
+			return get_base_type() == base_type::k_bool;
 		}
 
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type.to_string() == "int";
+			return get_base_type() == base_type::k_int;
 		}
 
 		public: bool is_float() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type.to_string() == "float";
+			return get_base_type() == base_type::k_float;
 		}
 
 		public: bool is_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type.to_string() == "string";
+			return get_base_type() == base_type::k_string;
 		}
 
 		public: bool is_struct() const {
@@ -397,7 +422,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
 
-			_type.swap(other._type);
+			_type_def.swap(other._type_def);
 
 			std::swap(_bool, other._bool);
 			std::swap(_int, other._int);
@@ -410,29 +435,12 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t resolve_type(const type_identifier_t& resolved) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(resolved.check_invariant());
-			QUARK_ASSERT(get_type().to_string() == resolved.to_string());
-
-			value_t result = *this;
-			result._type = resolved;
-			QUARK_ASSERT(result.check_invariant());
-			return result;
-		}
-
-		public: bool is_type_resolved() const{
-			QUARK_ASSERT(check_invariant());
-			return _type.is_resolved();
-		}
-
 
 		private: static int compare_value_true_deep(const struct_instance_t& left, const struct_instance_t& right);
 
 
 		////////////////		STATE
-
-		private: type_identifier_t _type;
+		private: std::shared_ptr<const type_def_t> _type_def;
 
 		private: bool _bool = false;
 		private: int _int = 0;

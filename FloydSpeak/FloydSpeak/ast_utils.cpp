@@ -126,59 +126,6 @@ floyd_parser::type_identifier_t resolve_type_to_id(const floyd_parser::resolved_
 
 
 #if 0
-//////////////////////////////////////////////////		make_default_value()
-
-
-
-value_t make_default_value(const floyd_parser::resolved_path_t& path, const floyd_parser::type_identifier_t& type){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto t = resolve_type_to_def(path, type);
-	if(!t){
-		throw std::runtime_error("Undefined type!");
-	}
-	const auto r = make_default_value(path, *t);
-	return r;
-}
-
-//??? Each struct_def should store its path?
-value_t make_default_struct_value(const resolved_path_t& path, scope_ref_t struct_def){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(struct_def && struct_def->check_invariant());
-
-	return make_struct_instance(path, struct_def);
-}
-
-value_t make_default_value(const resolved_path_t& path, const type_def_t& type_def){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(type_def.check_invariant());
-
-	const auto type = type_def.get_type();
-	if(type == base_type::k_int){
-		return value_t(0);
-	}
-	else if(type == base_type::k_bool){
-		return value_t(false);
-	}
-	else if(type == base_type::k_string){
-		return value_t("");
-	}
-	else if(type == base_type::k_struct){
-		return make_default_struct_value(path, type_def.get_struct_def());
-	}
-	else if(type == base_type::k_vector){
-		QUARK_ASSERT(false);
-	}
-	else if(type == base_type::k_function){
-		QUARK_ASSERT(false);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
 member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name){
 	QUARK_ASSERT(struct_ref && struct_ref->check_invariant());
 	QUARK_ASSERT(member_name.size() > 0);

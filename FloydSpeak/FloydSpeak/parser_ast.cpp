@@ -40,11 +40,14 @@ namespace floyd_parser {
 		if(t == base_type::k_null){
 			return "null";
 		}
+		else if(t == base_type::k_bool){
+			return "bool";
+		}
 		else if(t == base_type::k_int){
 			return "int";
 		}
-		else if(t == base_type::k_bool){
-			return "bool";
+		else if(t == base_type::k_float){
+			return "float";
 		}
 		else if(t == base_type::k_string){
 			return "string";
@@ -68,10 +71,13 @@ namespace floyd_parser {
 		QUARK_ASSERT(t.check_invariant());
 
 		const auto type = t.get_type();
-		if(type == base_type::k_int){
+		if(type == base_type::k_bool){
 			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
 		}
-		else if(type == base_type::k_bool){
+		else if(type == base_type::k_int){
+			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
+		}
+		else if(type == base_type::k_float){
 			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
 		}
 		else if(type == base_type::k_string){
@@ -100,8 +106,9 @@ namespace floyd_parser {
 
 
 	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == "int");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == "bool");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == "int");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == "float");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == "string");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == "struct");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
@@ -119,12 +126,17 @@ namespace floyd_parser {
 			QUARK_ASSERT(!_vector_def);
 			QUARK_ASSERT(!_function_def);
 		}
+		else if(_base_type == base_type::k_bool){
+			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_vector_def);
+			QUARK_ASSERT(!_function_def);
+		}
 		else if(_base_type == base_type::k_int){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
 			QUARK_ASSERT(!_function_def);
 		}
-		else if(_base_type == base_type::k_bool){
+		else if(_base_type == base_type::k_float){
 			QUARK_ASSERT(!_struct_def);
 			QUARK_ASSERT(!_vector_def);
 			QUARK_ASSERT(!_function_def);
@@ -197,7 +209,7 @@ namespace floyd_parser {
 			return _struct_def->_name.to_string();
 		}
 		else if(_base_type == base_type::k_vector){
-			return base_type_to_string(_base_type);
+			return _vector_def->_name.to_string();
 		}
 		else if(_base_type == base_type::k_function){
 			return _function_def->_name.to_string();
@@ -206,9 +218,6 @@ namespace floyd_parser {
 			return base_type_to_string(_base_type);
 		}
 	}
-
-
-
 
 	std::string to_signature(const type_def_t& t){
 		QUARK_ASSERT(t.check_invariant());
@@ -233,9 +242,13 @@ namespace floyd_parser {
 	}
 
 
+
+
+
+
 	//////////////////////////////////////////////////		type_identifier_t
 
-
+/*
 	type_identifier_t type_identifier_t::resolve(const std::shared_ptr<const type_def_t>& resolved){
 		QUARK_ASSERT(resolved && resolved->check_invariant());
 
@@ -245,7 +258,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
-
+*/
 
 	type_identifier_t type_identifier_t::make(const std::string& s){
 		QUARK_ASSERT(is_valid_type_identifier(s));
@@ -258,8 +271,8 @@ namespace floyd_parser {
 
 
 	type_identifier_t::type_identifier_t(const type_identifier_t& other) :
-		_type_magic(other._type_magic),
-		_resolved(other._resolved)
+		_type_magic(other._type_magic)//,
+//		_resolved(other._resolved)
 	{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
@@ -280,7 +293,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _type_magic == other._type_magic && compare_shared_values(_resolved, other._resolved);
+		return _type_magic == other._type_magic /*&& compare_shared_values(_resolved, other._resolved)*/;
 	}
 
 	bool type_identifier_t::operator!=(const type_identifier_t& other) const{
@@ -310,34 +323,35 @@ namespace floyd_parser {
 		QUARK_ASSERT(other.check_invariant());
 
 		_type_magic.swap(other._type_magic);
-		_resolved.swap(other._resolved);
+//		_resolved.swap(other._resolved);
 	}
 
 	std::string type_identifier_t::to_string() const {
 		QUARK_ASSERT(check_invariant());
 
-		if(is_resolved()){
-			return _resolved->to_string();
-		}
-		else{
+//		if(is_resolved()){
+//			return _resolved->to_string();
+//		}
+//		else{
 			return _type_magic;
-		}
+//		}
 	}
 
 	bool type_identifier_t::check_invariant() const {
-		if(_resolved){
-			QUARK_ASSERT(_type_magic == "");
-			QUARK_ASSERT(_resolved->check_invariant());
-		}
-		else{
-			QUARK_ASSERT(!_resolved);
+//		if(_resolved){
+//			QUARK_ASSERT(_type_magic == "");
+//			QUARK_ASSERT(_resolved->check_invariant());
+//		}
+//		else{
+//			QUARK_ASSERT(!_resolved);
 			QUARK_ASSERT(_type_magic != "");
 			QUARK_ASSERT(is_valid_type_identifier(_type_magic));
-		}
+//		}
 		return true;
 	}
 
 
+/*
 	std::shared_ptr<const type_def_t> type_identifier_t::get_resolved() const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(is_resolved());
@@ -350,6 +364,7 @@ namespace floyd_parser {
 
 		return _resolved ? true : false;
 	}
+*/
 
 
 
@@ -473,23 +488,6 @@ namespace floyd_parser {
 	}
 
 
-	scope_ref_t scope_def_t::set_types(types_collector_t types_collector) const {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(types_collector.check_invariant());
-
-		return make_shared<scope_def_t>(scope_def_t(
-			_type,
-			_name,
-			_args,
-			_local_variables,
-			_members,
-			_statements,
-			_return_type,
-			_function_variant
-		));
-	}
-
-
 	scope_def_t::scope_def_t(
 		etype type,
 		const type_identifier_t& name,
@@ -497,7 +495,7 @@ namespace floyd_parser {
 		const std::vector<member_t>& local_variables,
 		const std::vector<member_t>& members,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const type_identifier_t& return_type,
+		const std::shared_ptr<const type_def_t>& return_type,
 		const efunc_variant& function_variant
 		)
 	:
@@ -535,8 +533,6 @@ namespace floyd_parser {
 	bool scope_def_t::check_invariant() const {
 		QUARK_ASSERT(_name.check_invariant());
 
-		QUARK_ASSERT(_return_type.check_invariant());
-
 
 		//??? Check for duplicates? Other things?
 		for(const auto& m: _args){
@@ -552,17 +548,19 @@ namespace floyd_parser {
 
 		if(_type == etype::k_function_scope){
 			QUARK_ASSERT(_function_variant != efunc_variant::k_not_relevant);
+			QUARK_ASSERT(_return_type && _return_type->check_invariant());
 		}
 		else if(_type == etype::k_struct_scope){
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
-			QUARK_ASSERT(_return_type.is_null());
+			QUARK_ASSERT(!_return_type);
 		}
 		else if(_type == etype::k_global_scope){
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
-			QUARK_ASSERT(_return_type.is_null());
+			QUARK_ASSERT(!_return_type);
 		}
 		else if(_type == etype::k_subscope){
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
+			QUARK_ASSERT(_return_type && _return_type->check_invariant());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -685,7 +683,7 @@ namespace floyd_parser {
 			{ "_name", json_value_t(scope_def._name.to_string()) },
 			{ "_members", members.empty() ? json_value_t() :json_value_t(members) },
 			{ "_statements", json_value_t(statements) },
-			{ "_return_type", json_value_t(scope_def._return_type.to_string()) }
+			{ "_return_type", scope_def._return_type ? scope_def._return_type->to_string() : json_value_t() }
 		});
 	}
 
@@ -713,11 +711,11 @@ namespace floyd_parser {
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& local_variables,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const type_identifier_t& return_type
+		const std::shared_ptr<const type_def_t>& return_type
 	)
 	{
 		QUARK_ASSERT(name.check_invariant());
-		QUARK_ASSERT(return_type.check_invariant());
+		QUARK_ASSERT(return_type && return_type->check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		for(const auto i: local_variables){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -734,10 +732,10 @@ namespace floyd_parser {
 		return function;
 	}
 
-	scope_ref_t scope_def_t::make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const type_identifier_t& type){
+	scope_ref_t scope_def_t::make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const std::shared_ptr<const type_def_t>& type){
 		QUARK_ASSERT(name.check_invariant());
 		QUARK_UT_VERIFY(function_variant != efunc_variant::k_not_relevant && function_variant != efunc_variant::k_interpreted);
-		QUARK_ASSERT(type.check_invariant());
+		QUARK_ASSERT(type && type->check_invariant());
 
 		auto function = make_shared<scope_def_t>(scope_def_t(
 			scope_def_t::etype::k_function_scope,
@@ -759,12 +757,12 @@ namespace floyd_parser {
 	////////////////////////			member_t
 
 
-	member_t::member_t(const type_identifier_t& type, const std::string& name, const value_t& init_value) :
-		_type(make_shared<type_identifier_t>(type)),
+	member_t::member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name, const value_t& init_value) :
+		_type(type),
 		_name(name),
 		_value(make_shared<value_t>(init_value))
 	{
-		QUARK_ASSERT(type.check_invariant());
+		QUARK_ASSERT(type && type->check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 		QUARK_ASSERT(init_value.check_invariant());
 		QUARK_ASSERT(type == init_value.get_type());
@@ -772,11 +770,11 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	member_t::member_t(const type_identifier_t& type, const std::string& name) :
-		_type(make_shared<type_identifier_t>(type)),
+	member_t::member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name) :
+		_type(type),
 		_name(name)
 	{
-		QUARK_ASSERT(type.check_invariant());
+		QUARK_ASSERT(type && type->check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 
 		QUARK_ASSERT(check_invariant());
@@ -787,7 +785,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(_name.size() > 0);
 		QUARK_ASSERT(!_value || _value->check_invariant());
 		if(_value){
-			QUARK_ASSERT(_type->to_string() == _value->get_type().to_string());
+			QUARK_ASSERT(*_type == *_value->get_type());
 		}
 		return true;
 	}
@@ -816,6 +814,7 @@ namespace floyd_parser {
 		trace_vec("members", e._members);
 */
 	}
+
 	//??? more
 	std::string to_signature(const scope_ref_t& t){
 		QUARK_ASSERT(t && t->check_invariant());
@@ -823,7 +822,7 @@ namespace floyd_parser {
 		string body;
 		for(const auto& member : t->_members) {
 			const auto member_name = member._name;
-			const type_identifier_t typedef_s = *member._type;
+			const auto typedef_s = *member._type;
 			const string member_type = "<" + typedef_s.to_string() + ">";
 
 			//	"<string>first_name"
@@ -849,10 +848,10 @@ namespace floyd_parser {
 
 	vector_def_t vector_def_t::make2(
 		const type_identifier_t& name,
-		const type_identifier_t& element_type)
+		const std::shared_ptr<type_def_t>& element_type)
 	{
 		QUARK_ASSERT(name.check_invariant());
-		QUARK_ASSERT(element_type.check_invariant());
+		QUARK_ASSERT(element_type && element_type->check_invariant());
 
 		vector_def_t result;
 		result._name = name;
@@ -866,8 +865,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(_name.check_invariant());
 		QUARK_ASSERT(_name.to_string().size() > 0 );
 
-		QUARK_ASSERT(_element_type.check_invariant());
-		QUARK_ASSERT(_element_type.to_string().size() > 0 );
+		QUARK_ASSERT(_element_type && _element_type->check_invariant());
 		return true;
 	}
 
@@ -878,7 +876,7 @@ namespace floyd_parser {
 		if(_name != other._name){
 			return false;
 		}
-		if(_element_type != other._element_type){
+		else if(!(*_element_type == *other._element_type)){
 			return false;
 		}
 		return true;
@@ -887,14 +885,14 @@ namespace floyd_parser {
 	void trace(const vector_def_t& e){
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("vector_def_t");
-		QUARK_TRACE_SS("element_type: " << e._element_type.to_string());
+		QUARK_TRACE_SS("element_type: " << e._element_type->to_string());
 	}
 
 
 	std::string to_signature(const vector_def_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
-		return std::string("<vector>") + "[" + t._element_type.to_string() + "]";
+		return std::string("<vector>") + "[" + t._element_type->to_string() + "]";
 	}
 
 
@@ -953,7 +951,7 @@ namespace floyd_parser {
 
 
 
-
+#if false
 	scope_ref_t make_struct0(scope_ref_t scope_def){
 		return scope_def_t::make_struct(type_identifier_t::make("struct0"), {});
 	}
@@ -1026,7 +1024,7 @@ namespace floyd_parser {
 			}
 		);
 	}
-
+#endif
 
 } //	floyd_parser
 

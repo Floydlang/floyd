@@ -241,7 +241,7 @@ using namespace floyd_parser;
 
 //////////////////////////////////////		to_signature()
 
-
+#if false
 QUARK_UNIT_TESTQ("to_signature()", "empty unnamed struct"){
 	auto global = scope_def_t::make_global_scope();
 	quark::ut_compare(to_signature(make_struct0(global)), "<struct>{}");
@@ -290,7 +290,7 @@ QUARK_UNIT_TESTQ("to_signature()", "struct4"){
 //	QUARK_TEST_VERIFY(s2 == "<struct>{<string>x,<string>z}");
 }
 
-
+#endif
 
 
 //////////////////////////////////////		types_collector_t

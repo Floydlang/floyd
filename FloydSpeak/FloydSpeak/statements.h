@@ -30,10 +30,10 @@ namespace floyd_parser {
     
     struct bind_statement_t {
         bool operator==(const bind_statement_t& other) const {
-            return _type == other._type && _identifier == other._identifier && _expression == other._expression;
+            return *_type == *other._type && _identifier == other._identifier && _expression == other._expression;
         }
 
-        type_identifier_t _type;
+        std::shared_ptr<const type_def_t> _type;
         std::string _identifier;
         std::shared_ptr<expression_t> _expression;
     };
@@ -128,8 +128,8 @@ namespace floyd_parser {
 	//////////////////////////////////////		Makers
 
 
-	statement_t make__bind_statement(const bind_statement_t& value);
-	statement_t make__bind_statement(const type_identifier_t& type, const std::string& identifier, const expression_t& e);
+
+	statement_t make__bind_statement(const std::shared_ptr<const type_def_t>& type, const std::string& identifier, const expression_t& e);
 	statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
 

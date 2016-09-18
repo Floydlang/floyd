@@ -49,9 +49,9 @@ namespace {
 		}
 
 		for(int i = 0 ; i < args.size() ; i++){
-			const auto farg = *f->_args[i]._type;
+			const auto farg = f->_args[i]._type;
 			const auto call_arg = args[i].get_type();
-			if(farg.to_string() != call_arg.to_string()){
+			if(!(*farg == *call_arg)){
 				return false;
 			}
 		}
@@ -229,24 +229,27 @@ json_value_t install_struct_support(const json_value_t scope_def, const json_val
 
 
 
-	value_t make_struct_instance(const interpreter_t& vm, const scope_ref_t& struct_def);
+	value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type);
 
-value_t make_default_value(const interpreter_t& vm, const type_def_t& type_def){
+value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_def_t>& type_def){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(type_def.check_invariant());
+	QUARK_ASSERT(type_def && type_def->check_invariant());
 
-	const auto type = type_def.get_type();
-	if(type == base_type::k_int){
+	const auto type = type_def->get_type();
+	if(type == base_type::k_bool){
+		return value_t(false);
+	}
+	else if(type == base_type::k_int){
 		return value_t(0);
 	}
-	else if(type == base_type::k_bool){
-		return value_t(false);
+	else if(type == base_type::k_float){
+		return value_t(0.0f);
 	}
 	else if(type == base_type::k_string){
 		return value_t("");
 	}
 	else if(type == base_type::k_struct){
-		return make_struct_instance(vm, type_def.get_struct_def());
+		return make_struct_instance(vm, type_def);
 	}
 	else if(type == base_type::k_vector){
 		QUARK_ASSERT(false);
@@ -259,15 +262,15 @@ value_t make_default_value(const interpreter_t& vm, const type_def_t& type_def){
 	}
 }
 
-	value_t make_struct_instance(const interpreter_t& vm, const scope_ref_t& struct_def){
+	value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type){
 		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(struct_def && struct_def->check_invariant());
+		QUARK_ASSERT(struct_type && struct_type->check_invariant());
 
 		std::map<std::string, value_t> member_values;
-		for(int i = 0 ; i < struct_def->_members.size() ; i++){
-			const auto& member_def = struct_def->_members[i];
+		for(int i = 0 ; i < struct_type->get_struct_def()->_members.size() ; i++){
+			const auto& member_def = struct_type->get_struct_def()->_members[i];
 
-			const auto member_type = member_def._type->get_resolved();
+			const auto member_type = member_def._type;
 			if(!member_type){
 				throw std::runtime_error("Undefined struct type!");
 			}
@@ -278,11 +281,11 @@ value_t make_default_value(const interpreter_t& vm, const type_def_t& type_def){
 				value = *member_def._value;
 			}
 			else{
-				value = make_default_value(vm, *member_def._type->get_resolved());
+				value = make_default_value(vm, member_def._type);
 			}
 			member_values[member_def._name] = value;
 		}
-		auto instance = make_shared<struct_instance_t>(struct_def, member_values);
+		auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, member_values));
 		return value_t(instance);
 	}
 
@@ -303,9 +306,8 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 		return call_interpreted_function(vm, f, args);
 	}
 	else if(f->_function_variant == scope_def_t::efunc_variant::k_default_constructor){
-		const auto struct_type = f->_return_type.get_resolved();
-		const auto struct_def = struct_type->get_struct_def();
-		const auto instance = make_struct_instance(vm, struct_def);
+		const auto struct_type = f->_return_type;
+		const auto instance = make_struct_instance(vm, struct_type);
 		return instance;
 	}
 	else{
@@ -559,7 +561,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			const auto left = left_expr._constant->get_struct();
 			const auto right = right_expr._constant->get_struct();
 
-			if(!(*left->__def == *right->__def)){
+			if(!(*left->_struct_type == *right->_struct_type)){
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
@@ -687,7 +689,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	for(const auto& i: simplified_args){
 		if(!i._constant){
 			//??? should use simplified_args.
-			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
+			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, e.get_expression_type());
 		}
 	}
 
@@ -695,10 +697,8 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	vector<value_t> constant_args;
 	for(const auto& i: simplified_args){
 		constant_args.push_back(*i._constant);
-		if(!i._constant){
-			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, type_identifier_t());
-		}
 	}
+
 	const value_t result = call_function(vm, function_def, constant_args);
 	return expression_t::make_constant(result);
 }
@@ -723,10 +723,12 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		//	Replace the with a constant!
 		if(input._constant){
 			const auto value = input._constant;
-			if(value->get_type() == type_identifier_t::make_bool()){
+			const auto base_type = value->get_type()->get_type();
+
+			if(base_type == base_type::k_bool){
 				throw std::runtime_error("Arithmetics failed.");
 			}
-			else if(value->get_type() == type_identifier_t::make_int()){
+			else if(base_type == base_type::k_int){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return expression_t::make_constant(-value->get_int());
 				}
@@ -734,7 +736,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value->get_type() == type_identifier_t::make_float()){
+			else if(base_type == base_type::k_float){
 				if(e2._operation == math_operation1_expr_t::negate){
 					return expression_t::make_constant(-value->get_float());
 				}
@@ -742,7 +744,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 					QUARK_ASSERT(false);
 				}
 			}
-			else if(value->get_type() == type_identifier_t::make_string()){
+			else if(base_type == base_type::k_string){
 				throw std::runtime_error("Arithmetics failed.");
 			}
 			else{

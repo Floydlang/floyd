@@ -114,6 +114,7 @@ namespace floyd_parser {
 		return { body_pos.first, pos2 };
 	}
 
+/*
 	scope_ref_t make_test_struct0(scope_ref_t scope_def){
 		return scope_def_t::make_struct(
 			type_identifier_t::make("test_struct0"),
@@ -125,6 +126,7 @@ namespace floyd_parser {
 			}
 		);
 	}
+*/
 
 #if false
 	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){

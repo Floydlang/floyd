@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "parser_types_collector.h"
+//#include "parser_types_collector.h"
 #include "json_support.h"
 
 struct TSHA1;
@@ -43,7 +43,7 @@ namespace floyd_parser {
 		k_null,
 		k_bool,
 		k_int,
-//		k_float,
+		k_float,
 		k_string,
 
 		k_struct,
@@ -76,7 +76,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: static type_identifier_t resolve(const std::shared_ptr<const type_def_t>& resolved);
+//		public: static type_identifier_t resolve(const std::shared_ptr<const type_def_t>& resolved);
 
 		public: static type_identifier_t make(const std::string& s);
 
@@ -108,8 +108,8 @@ namespace floyd_parser {
 		public: std::string to_string() const;
 		public: bool check_invariant() const;
 
-		public: std::shared_ptr<const type_def_t> get_resolved() const;
-		public: bool is_resolved() const;
+//		public: std::shared_ptr<const type_def_t> get_resolved() const;
+//		public: bool is_resolved() const;
 
 		public: bool is_null() const{
 			QUARK_ASSERT(check_invariant());
@@ -137,7 +137,7 @@ namespace floyd_parser {
 		*/
 		private: std::string _type_magic;
 
-		private: std::shared_ptr<const type_def_t> _resolved;
+//		private: std::shared_ptr<const type_def_t> _resolved;
 	};
 
 	void trace(const type_identifier_t& v);
@@ -151,13 +151,13 @@ namespace floyd_parser {
 	*/
 
 	struct member_t {
-		public: member_t(const type_identifier_t& type, const std::string& name, const value_t& init_value);
-		public: member_t(const type_identifier_t& type, const std::string& name);
+		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name, const value_t& init_value);
+		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name);
 		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
 
 		//??? Skip shared_ptr<>
-		public: std::shared_ptr<const type_identifier_t> _type;
+		public: std::shared_ptr<const type_def_t> _type;
 
 		//	Optional -- must have same type as _type.
 		public: std::shared_ptr<const value_t> _value;
@@ -196,7 +196,7 @@ namespace floyd_parser {
 	struct vector_def_t {
 		public: static vector_def_t make2(
 			const type_identifier_t& name,
-			const type_identifier_t& element_type
+			const std::shared_ptr<type_def_t>& element_type
 		);
 
 		public: vector_def_t(){};
@@ -206,7 +206,7 @@ namespace floyd_parser {
 
 		///////////////////		STATE
 		public: type_identifier_t _name;
-		public: type_identifier_t _element_type;
+		public: std::shared_ptr<type_def_t> _element_type;
 	};
 
 	void trace(const vector_def_t& e);
@@ -259,10 +259,14 @@ namespace floyd_parser {
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& local_variables,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const type_identifier_t& return_type
+			const std::shared_ptr<const type_def_t>& return_type
 		);
 
-		public: static scope_ref_t make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const type_identifier_t& type);
+		public: static scope_ref_t make_builtin_function_def(
+			const type_identifier_t& name,
+			efunc_variant function_variant,
+			const std::shared_ptr<const type_def_t>& type
+		);
 
 		public: static scope_ref_t make_host_function_def(
 			const type_identifier_t& name,
@@ -273,7 +277,7 @@ namespace floyd_parser {
 
 		public: static scope_ref_t make_global_scope();
 
-		scope_ref_t set_types(types_collector_t types_collector) const;
+//		scope_ref_t set_types(types_collector_t types_collector) const;
 
 		public: scope_def_t(const scope_def_t& other);
 
@@ -289,7 +293,7 @@ namespace floyd_parser {
 			const std::vector<member_t>& local_variables,
 			const std::vector<member_t>& members,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const type_identifier_t& return_type,
+			const std::shared_ptr<const type_def_t>& return_type,
 			const efunc_variant& function_variant
 		);
 
@@ -301,7 +305,7 @@ namespace floyd_parser {
 		public: std::vector<member_t> _local_variables;
 		public: std::vector<member_t> _members;
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
-		public: type_identifier_t _return_type;
+		public: std::shared_ptr<const type_def_t> _return_type;
 
 		public: efunc_variant _function_variant;
 	};
@@ -324,14 +328,16 @@ namespace floyd_parser {
 		{
 		}
 		public: static type_def_t make_bool(){
-			type_def_t a;
-			a._base_type = base_type::k_bool;
-			return a;
+			return make(base_type::k_bool);
 		}
 		public: static type_def_t make_int(){
-			type_def_t a;
-			a._base_type = base_type::k_int;
-			return a;
+			return make(base_type::k_int);
+		}
+		public: static type_def_t make_float(){
+			return make(base_type::k_float);
+		}
+		public: static type_def_t make_string(){
+			return make(base_type::k_string);
 		}
 		public: static type_def_t make(base_type type){
 			type_def_t a;
@@ -342,6 +348,12 @@ namespace floyd_parser {
 			type_def_t a;
 			a._base_type = base_type::k_struct;
 			a._struct_def = struct_def;
+			return a;
+		}
+		public: static type_def_t make_vector_def(const std::shared_ptr<const vector_def_t>& vector_def){
+			type_def_t a;
+			a._base_type = base_type::k_vector;
+			a._vector_def = vector_def;
 			return a;
 		}
 		public: static type_def_t make_function_def(const std::shared_ptr<const scope_def_t>& function_def){
@@ -398,7 +410,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(_base_type == base_type::k_struct);
 			return _struct_def;
 		}
-		public: std::shared_ptr<vector_def_t> get_vector_def() const {
+		public: std::shared_ptr<const vector_def_t> get_vector_def() const {
 			QUARK_ASSERT(_base_type == base_type::k_vector);
 			return _vector_def;
 		}
@@ -416,7 +428,7 @@ namespace floyd_parser {
 		*/
 		private: base_type _base_type;
 		private: std::shared_ptr<const scope_def_t> _struct_def;
-		private: std::shared_ptr<vector_def_t> _vector_def;
+		private: std::shared_ptr<const vector_def_t> _vector_def;
 		private: std::shared_ptr<const scope_def_t> _function_def;
 	};
 
@@ -472,8 +484,10 @@ namespace floyd_parser {
 		}
 	}
 
+#if false
 	scope_ref_t make_struct0(scope_ref_t scope_def);
 	scope_ref_t make_struct1(scope_ref_t scope_def);
+#endif
 
 	/*
 		struct struct2 {
