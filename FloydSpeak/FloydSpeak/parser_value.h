@@ -21,7 +21,6 @@ namespace floyd_parser {
 	struct statement_t;
 	struct value_t;
 	struct type_identifier_t;
-	struct resolved_path_t;
 
 	//////////////////////////////////////////////////		struct_instance_t
 
@@ -446,11 +445,6 @@ namespace floyd_parser {
 
 
 	void trace(const value_t& e);
-
-
-//	value_t make_struct_instance(const resolved_path_t& path, const scope_ref_t& struct_def);
-//	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def, const std::vector<value_t>& elements);
-
 
 
 #if false

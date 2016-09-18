@@ -21,7 +21,6 @@ namespace floyd_parser {
 	struct value_t;
 	struct statement_t;
 	struct scope_def_t;
-	struct resolved_path_t;
 }
 
 namespace floyd_interpreter {
@@ -54,8 +53,6 @@ namespace floyd_interpreter {
 	struct interpreter_t {
 		public: interpreter_t(const floyd_parser::ast_t& ast);
 		public: bool check_invariant() const;
-
-		public: floyd_parser::resolved_path_t get_resolved_path() const;
 
 
 		////////////////////////		STATE

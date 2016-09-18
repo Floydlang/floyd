@@ -947,13 +947,6 @@ namespace floyd_parser {
 		});
 	}
 
-/*
-	resolved_path_t make_resolved_root(const ast_t& ast){
-		QUARK_ASSERT(ast.check_invariant());
-
-		return resolved_path_t{ { ast._global_scope } };
-	}
-*/
 
 
 	////////////////////	Helpers for making tests.

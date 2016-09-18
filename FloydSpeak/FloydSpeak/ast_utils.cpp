@@ -20,6 +20,7 @@ namespace floyd_parser {
 	using std::make_shared;
 
 
+#if 0
 //////////////////////////////////////////////////		resolved_path_t
 
 
@@ -37,23 +38,6 @@ bool resolved_path_t::check_invariant() const {
 	return true;
 };
 
-
-//////////////////////////////////////////////////		parser_path_t
-
-
-json_value_t parser_path_t::get_leaf() const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(!_scopes.empty());
-
-	return _scopes.back();
-}
-
-bool parser_path_t::check_invariant() const {
-	for(const auto i: _scopes){
-		QUARK_ASSERT(i.check_invariant());
-	}
-	return true;
-};
 
 
 
@@ -76,6 +60,7 @@ bool compare_scopes(const scope_ref_t& a, const scope_ref_t& b){
 
 	return a->_name == b->_name && a->_type == b->_type;
 }
+#endif
 
 
 #if 0

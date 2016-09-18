@@ -29,7 +29,6 @@ namespace floyd_parser {
 	struct struct_instance_t;
 	struct vector_def_t;
 	struct ast_t;
-	struct resolved_path_t;
 
 	typedef std::shared_ptr<const scope_def_t> scope_ref_t;
 
@@ -177,7 +176,7 @@ namespace floyd_parser {
 		public: virtual ~host_data_i(){};
 	};
 
-	typedef value_t (*hosts_function_t)(const ast_t& ast, const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
+	typedef value_t (*hosts_function_t)(const ast_t& ast, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
 
 
 
@@ -460,8 +459,6 @@ namespace floyd_parser {
 
 	void trace(const ast_t& program);
 	json_value_t ast_to_json(const ast_t& ast);
-
-//	resolved_path_t make_resolved_root(const ast_t& ast);
 
 
 	//////////////////////////////////////////////////		trace_vec()

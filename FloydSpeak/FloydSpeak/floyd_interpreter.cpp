@@ -190,7 +190,7 @@ struct alloc_struct_param : public host_data_i {
 	scope_ref_t _struct_def;
 };
 
-value_t host_function__alloc_struct(const resolved_path_t& path, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
+value_t host_function__alloc_struct(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
 	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
 
 	const auto instance = make_default_struct_value(path, a._struct_def);
@@ -1112,15 +1112,6 @@ bool interpreter_t::check_invariant() const {
 	return true;
 }
 
-resolved_path_t interpreter_t::get_resolved_path() const{
-	QUARK_ASSERT(check_invariant());
-
-	resolved_path_t result;
-	for(const auto& frame: _call_stack){
-		result._scopes.push_back(frame->_def);
-	}
-	return result;
-}
 
 
 //////////////////////////		run_main()

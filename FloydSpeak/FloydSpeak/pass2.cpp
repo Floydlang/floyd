@@ -124,6 +124,44 @@ using namespace floyd_parser;
 using namespace std;
 
 
+
+
+
+	//////////////////////		Traversal of parse tree
+
+	struct parser_path_t {
+		//	Returns a scope_def in json format.
+		public: json_value_t get_leaf() const;
+
+		public: bool check_invariant() const;
+
+
+		public: std::vector<json_value_t> _scopes;
+	};
+
+
+
+//////////////////////////////////////////////////		parser_path_t
+
+
+json_value_t parser_path_t::get_leaf() const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(!_scopes.empty());
+
+	return _scopes.back();
+}
+
+bool parser_path_t::check_invariant() const {
+	for(const auto i: _scopes){
+		QUARK_ASSERT(i.check_invariant());
+	}
+	return true;
+};
+
+
+
+
+
 parser_path_t make_parser_path(const json_value_t& scope){
 	parser_path_t path;
 	path._scopes.push_back(scope);

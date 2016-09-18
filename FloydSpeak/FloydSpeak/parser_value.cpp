@@ -52,34 +52,6 @@ namespace floyd_parser {
 		}
 
 
-#if false
-	value_t make_struct_instance(const resolved_path_t& path, const scope_ref_t& struct_def){
-		QUARK_ASSERT(path.check_invariant());
-		QUARK_ASSERT(struct_def && struct_def->check_invariant());
-
-		std::map<std::string, value_t> member_values;
-		for(int i = 0 ; i < struct_def->_members.size() ; i++){
-			const auto& member_def = struct_def->_members[i];
-
-			const auto member_type = resolve_type_to_def(path, *member_def._type);
-			if(!member_type){
-				throw std::runtime_error("Undefined struct type!");
-			}
-
-			//	If there is an initial value for this member, use that. Else use default value for this type.
-			value_t value;
-			if(member_def._value){
-				value = *member_def._value;
-			}
-			else{
-				value = make_default_value(path, *member_def._type);
-			}
-			member_values[member_def._name] = value;
-		}
-		auto instance = make_shared<struct_instance_t>(struct_def, member_values);
-		return value_t(instance);
-	}
-#endif
 
 
 	//////////////////////////////////////////////////		vector_instance_t
