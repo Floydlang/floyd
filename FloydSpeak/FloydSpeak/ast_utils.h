@@ -54,28 +54,7 @@ namespace floyd_parser {
 		Searches for a symbol in the scope, traversing to parent scopes if needed.
 		Returns the scope where the symbol can be found, or empty if not found. It tells which member index.
 	*/
-	std::pair<scope_ref_t, int> resolve_scoped_variable(const floyd_parser::resolved_path_t& path, const std::string& s);
-
-	/*
-		Resolves the type, starting at scope_def, moving via parents up towards to global space. This is a compile-time operation.
-		Returns the scope where the type is found + the type_def for the type.
-		If the type is already resolved, it's simply returned.
-	*/
-	std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const resolved_path_t& path, const type_identifier_t& type);
-
-	//	Attempts to resolve type (if not already resolved). If it fails, the input type is returned unresolved.
-	floyd_parser::type_identifier_t resolve_type_to_id(const resolved_path_t& path,
-		const floyd_parser::type_identifier_t& type);
-
-#if 0
-	floyd_parser::value_t make_default_value(const resolved_path_t& path, const type_identifier_t& type);
-	floyd_parser::value_t make_default_value(const resolved_path_t& path, const floyd_parser::type_def_t& type_def);
-	floyd_parser::value_t make_default_struct_value(const resolved_path_t& path, scope_ref_t struct_def);
-#endif
-
-	member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name);
-	type_identifier_t resolve_type_throw(const resolved_path_t& path, const type_identifier_t& s);
-
+//	std::pair<scope_ref_t, int> resolve_scoped_variable(const floyd_parser::resolved_path_t& path, const std::string& s);
 
 
 }	//	floyd_parser

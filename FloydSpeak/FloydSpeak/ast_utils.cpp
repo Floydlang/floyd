@@ -78,7 +78,7 @@ bool compare_scopes(const scope_ref_t& a, const scope_ref_t& b){
 }
 
 
-
+#if 0
 std::pair<scope_ref_t, int> resolve_scoped_variable(const floyd_parser::resolved_path_t& path2, const std::string& s){
 	QUARK_ASSERT(path2.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
@@ -96,7 +96,9 @@ std::pair<scope_ref_t, int> resolve_scoped_variable(const floyd_parser::resolved
 	}
 	return {{}, -1};
 }
+#endif
 
+#if 0
 std::shared_ptr<const floyd_parser::type_def_t> resolve_type_to_def(const floyd_parser::resolved_path_t& path, const type_identifier_t& s){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(s.check_invariant());
@@ -135,6 +137,7 @@ floyd_parser::type_identifier_t resolve_type_to_id(const floyd_parser::resolved_
 		return s;
 	}
 }
+#endif
 
 
 #if 0
@@ -189,7 +192,6 @@ value_t make_default_value(const resolved_path_t& path, const type_def_t& type_d
 		QUARK_ASSERT(false);
 	}
 }
-#endif
 
 
 member_t find_struct_member_throw(const scope_ref_t& struct_ref, const std::string& member_name){
@@ -223,6 +225,7 @@ type_identifier_t resolve_type_throw(const resolved_path_t& path, const floyd_pa
 		return a;
 	}
 }
+#endif
 
 
 }	//	floyd_parser

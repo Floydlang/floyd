@@ -28,9 +28,9 @@ namespace floyd_parser {
 			for(const auto m: _member_values){
 				QUARK_ASSERT(m.second.check_invariant());
 
-				const member_t& def_member = find_struct_member_throw(__def, m.first);
+//				const member_t& def_member = find_struct_member_throw(__def, m.first);
 
-				QUARK_ASSERT(m.second.get_type().to_string() == def_member._type->to_string());
+//				QUARK_ASSERT(m.second.get_type().to_string() == def_member._type->to_string());
 			}
 			return true;
 		}
