@@ -24,7 +24,6 @@ using namespace std;
 
 namespace parser2 {
 
-//	???Encode constants more compactly, like this:		R"([">=", ["<int>", 3], ["<int>", 4]])"
 
 QUARK_UNIT_TESTQ("C++ operators", ""){
 	const int a = 2-+-2;

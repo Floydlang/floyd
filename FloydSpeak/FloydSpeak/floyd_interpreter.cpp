@@ -177,58 +177,6 @@ namespace {
 
 
 
-#if 0
-//??? move to pass2
-struct alloc_struct_param : public host_data_i {
-	public: virtual ~alloc_struct_param(){};
-
-	alloc_struct_param(const scope_ref_t& struct_def) :
-		_struct_def(struct_def)
-	{
-	}
-
-	scope_ref_t _struct_def;
-};
-
-value_t host_function__alloc_struct(const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args){
-	const alloc_struct_param& a = dynamic_cast<const alloc_struct_param&>(*param.get());
-
-	const auto instance = make_default_struct_value(path, a._struct_def);
-	return instance;
-}
-
-/*
-	Take struct definition and creates all types, member variables, constructors, member functions etc.
-	??? add constructors and generated stuff.
-*/
-json_value_t install_struct_support(const json_value_t scope_def, const json_value_t& struct_def){
-	QUARK_ASSERT(scope_def->check_invariant());
-	QUARK_ASSERT(struct_def && struct_def->check_invariant());
-
-	const std::string struct_name = struct_def->_name.to_string();
-	const auto struct_name_ident = type_identifier_t::make(struct_name);
-
-	//	Define struct type in current scope.
-	auto types_collector2 = define_struct_type(scope_def->_types_collector, struct_name, struct_def);
-	scope_ref_t s = resolve_struct_type(types_collector2, struct_name);
-
-	//	Make constructor-function with same name as struct.
-	{
-//		const auto constructor_name = type_identifier_t::make(struct_name + "");
-		const auto constructor_name = type_identifier_t::make(struct_name + "_constructor");
-		const auto executable = executable_t(host_function__alloc_struct, make_shared<alloc_struct_param>(s));
-		const auto a = make_function_def(constructor_name, struct_name_ident, {}, executable, {}, {});
-		types_collector2 = define_function_type(types_collector2, constructor_name.to_string(), a);
-	}
-
-	return scope_def->set_types(types_collector2);
-//???
-}
-#endif
-
-
-
-
 	value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type);
 
 value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_def_t>& type_def){
@@ -262,33 +210,32 @@ value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_
 	}
 }
 
-	value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type){
-		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(struct_type && struct_type->check_invariant());
+value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(struct_type && struct_type->check_invariant());
 
-		std::map<std::string, value_t> member_values;
-		for(int i = 0 ; i < struct_type->get_struct_def()->_members.size() ; i++){
-			const auto& member_def = struct_type->get_struct_def()->_members[i];
+	std::map<std::string, value_t> member_values;
+	for(int i = 0 ; i < struct_type->get_struct_def()->_members.size() ; i++){
+		const auto& member_def = struct_type->get_struct_def()->_members[i];
 
-			const auto member_type = member_def._type;
-			if(!member_type){
-				throw std::runtime_error("Undefined struct type!");
-			}
-
-			//	If there is an initial value for this member, use that. Else use default value for this type.
-			value_t value;
-			if(member_def._value){
-				value = *member_def._value;
-			}
-			else{
-				value = make_default_value(vm, member_def._type);
-			}
-			member_values[member_def._name] = value;
+		const auto member_type = member_def._type;
+		if(!member_type){
+			throw std::runtime_error("Undefined struct type!");
 		}
-		auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, member_values));
-		return value_t(instance);
-	}
 
+		//	If there is an initial value for this member, use that. Else use default value for this type.
+		value_t value;
+		if(member_def._value){
+			value = *member_def._value;
+		}
+		else{
+			value = make_default_value(vm, member_def._type);
+		}
+		member_values[member_def._name] = value;
+	}
+	auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, member_values));
+	return value_t(instance);
+}
 
 
 value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
@@ -391,11 +338,8 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 		//	Perform math operation on the two constants => new constant.
 		//??? check this in pass2 at compile time!
 
-
-
 		//	Is operation supported by all types?
 		{
-
 			if(op == math_operation2_expr_t::k_smaller_or_equal){
 				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
 				return expression_t::make_constant(diff <= 0);
@@ -635,7 +579,6 @@ expression_t evaluate_conditional_operator(const interpreter_t& vm, const expres
 		throw std::runtime_error("Could not evaluate contion in conditional expression.");
 	}
 }
-
 
 
 //??? Merge address evaluation into generic evaluation mechanism
@@ -1225,9 +1168,6 @@ QUARK_UNIT_TESTQ("run_main()", ""){
 
 
 
-
-
-
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	auto ast = program_to_ast2(
 		"int main(string args){\n"
@@ -1339,6 +1279,8 @@ QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member da
 	);
 	QUARK_TEST_VERIFY(a.second == value_t(""));
 }
+
+
 #if false
 
 QUARK_UNIT_TESTQ("struct", "Struct member default value"){

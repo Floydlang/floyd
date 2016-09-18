@@ -22,7 +22,6 @@ int main(int argc, const char * argv[]) {
 #if QUARK_UNIT_TESTS_ON
 		quark::run_tests({
 			//	UNDER DEVELOPMENT - RUN FIRST!
-			"pass2.cpp",
 
 			//	Core libs
 			"quark.cpp",
@@ -35,6 +34,7 @@ int main(int argc, const char * argv[]) {
 			"json_support.cpp",
 			"json_writer.cpp",
 
+			"pass2.cpp",
 
 			"parser_ast.cpp",
 			"ast_utils.cpp",

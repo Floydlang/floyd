@@ -314,15 +314,6 @@ json_value_t program_to_ast(const string& program){
 
 	const auto statements_pos = read_statements_into_scope_def(a, program);
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
-
-//	ast_t ast2(statements_pos.first);
-//	string stage2 = json_to_compact_string(ast_to_json(ast2));
-
-//	QUARK_ASSERT(stage0 == stage1);
-//	QUARK_ASSERT(stage1 != stage2);
-//	trace(ast2);
-
-//	QUARK_ASSERT(ast2.check_invariant());
 	return statements_pos.first;
 }
 

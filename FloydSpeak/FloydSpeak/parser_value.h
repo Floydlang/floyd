@@ -69,16 +69,7 @@ namespace floyd_parser {
 
 	/*
 		Hold a value with an explicit type.
-		Used only for parsing. Encoding is very inefficient.
-
-		null
-		bool
-		int
-		float
-		string
-
-		struct
-		vector
+		Used only for parsing. Encoding is very inefficient at the moment.
 	*/
 
 	struct value_t {

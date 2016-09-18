@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 #include <map>
-//#include "parser_types_collector.h"
 #include "json_support.h"
 
 struct TSHA1;
@@ -76,8 +75,6 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 
-//		public: static type_identifier_t resolve(const std::shared_ptr<const type_def_t>& resolved);
-
 		public: static type_identifier_t make(const std::string& s);
 
 		public: static type_identifier_t make_bool(){
@@ -108,9 +105,6 @@ namespace floyd_parser {
 		public: std::string to_string() const;
 		public: bool check_invariant() const;
 
-//		public: std::shared_ptr<const type_def_t> get_resolved() const;
-//		public: bool is_resolved() const;
-
 		public: bool is_null() const{
 			QUARK_ASSERT(check_invariant());
 			return _type_magic == "null";
@@ -136,8 +130,6 @@ namespace floyd_parser {
 			"int (string, vector<game_engine:sprite>)"
 		*/
 		private: std::string _type_magic;
-
-//		private: std::shared_ptr<const type_def_t> _resolved;
 	};
 
 	void trace(const type_identifier_t& v);

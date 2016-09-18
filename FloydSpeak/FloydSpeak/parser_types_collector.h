@@ -17,6 +17,7 @@
 #include <string>
 #include <map>
 
+#if 0
 
 struct json_value_t;
 
@@ -140,6 +141,7 @@ namespace floyd_parser {
 
 
 }	//	floyd_parser
+#endif
 
 
 #endif /* parser_types_collector_hpp */

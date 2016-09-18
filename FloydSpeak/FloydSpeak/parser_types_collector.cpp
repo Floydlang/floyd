@@ -8,6 +8,7 @@
 
 #include "parser_types_collector.h"
 
+#if 0
 #include "quark.h"
 #include <vector>
 #include <string>
@@ -28,7 +29,6 @@ using std::make_shared;
 using std::string;
 using std::shared_ptr;
 using std::vector;
-
 
 namespace floyd_parser {
 
@@ -323,5 +323,5 @@ QUARK_UNIT_TESTQ("types_collector_t::resolve_identifier()", "not found"){
 	QUARK_TEST_VERIFY(b.empty());
 }
 
-
+#endif
 

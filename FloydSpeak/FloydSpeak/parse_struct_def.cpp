@@ -12,7 +12,6 @@
 #include "parse_function_def.h"
 #include "parse_struct_def.h"
 #include "parser_primitives.h"
-//#include "parser_ast.h"
 #include "json_support.h"
 #include "json_writer.h"
 
