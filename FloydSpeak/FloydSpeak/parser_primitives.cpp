@@ -221,6 +221,27 @@ pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 //////////////////////////////////////		FLOYD JSON BASICS
 
 
+bool is_math1_op(const string& op){
+	return op == "neg";
+}
+
+bool is_math2_op(const string& op){
+	//???	HOw to handle lookup?
+	QUARK_ASSERT(op != "[-]");
+
+	return
+		op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
+		|| op == "<=" || op == "<" || op == ">=" || op == ">"
+		|| op == "==" || op == "!=" || op == "&&" || op == "||";
+}
+
+
+
+
+
+//////////////////////////////////////		FLOYD JSON BASICS
+
+
 
 
 json_value_t value_to_json(const value_t& v){

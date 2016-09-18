@@ -170,6 +170,11 @@ namespace floyd_parser {
 
 
 
+
+	bool is_math1_op(const std::string& op);
+	bool is_math2_op(const std::string& op);
+
+
 	//////////////////////////////////////		FLOYD JSON BASICS
 
 	json_value_t value_to_json(const value_t& v);

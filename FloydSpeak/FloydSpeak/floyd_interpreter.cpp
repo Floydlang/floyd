@@ -18,6 +18,7 @@
 #include "pass2.h"
 #include "pass3.h"
 #include "json_support.h"
+#include "json_to_ast.h"
 
 #include <cmath>
 
@@ -275,8 +276,11 @@ scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
 
 ast_t program_to_ast2(const string& program){
 	const auto pass1 = program_to_ast(program);
-	const ast_t pass2 = run_pass2(pass1);
-	return pass2;
+	const auto pass2 = run_pass2(pass1);
+
+	const ast_t ast = json_to_ast(pass2);
+	trace(ast);
+	return ast;
 }
 
 floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<stack_frame_t>>& stack_frames, const std::string& s, size_t depth){
