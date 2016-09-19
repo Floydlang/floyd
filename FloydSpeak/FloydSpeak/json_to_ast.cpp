@@ -20,53 +20,6 @@ using namespace std;
 
 
 
-math_operation2_expr_t::operation string_to_math2_op(const string& op){
-	if(op == "+"){
-		return math_operation2_expr_t::operation::k_add;
-	}
-	else if(op == "-"){
-		return math_operation2_expr_t::operation::k_subtract;
-	}
-	else if(op == "*"){
-		return math_operation2_expr_t::operation::k_multiply;
-	}
-	else if(op == "/"){
-		return math_operation2_expr_t::operation::k_divide;
-	}
-	else if(op == "%"){
-		return math_operation2_expr_t::operation::k_remainder;
-	}
-
-	else if(op == "<="){
-		return math_operation2_expr_t::operation::k_smaller_or_equal;
-	}
-	else if(op == "<"){
-		return math_operation2_expr_t::operation::k_smaller;
-	}
-	else if(op == ">="){
-		return math_operation2_expr_t::operation::k_larger_or_equal;
-	}
-	else if(op == ">"){
-		return math_operation2_expr_t::operation::k_larger;
-	}
-
-	else if(op == "=="){
-		return math_operation2_expr_t::operation::k_logical_equal;
-	}
-	else if(op == "!="){
-		return math_operation2_expr_t::operation::k_logical_nonequal;
-	}
-	else if(op == "&&"){
-		return math_operation2_expr_t::operation::k_logical_and;
-	}
-	else if(op == "||"){
-		return math_operation2_expr_t::operation::k_logical_or;
-	}
-
-	else{
-		QUARK_ASSERT(false);
-	}
-}
 
 
 
@@ -153,7 +106,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		const auto expr = e.get_array_n(1);
 		const auto type = e.get_array_n(2);
 		return expression_t::make_math_operation1(
-			math_operation1_expr_t::negate,
+			expression_t::math1_operation::negate,
 			conv_expression(expr, temp_type_defs)
 		);
 	}
@@ -201,7 +154,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		const auto base_expr = conv_expression(e.get_array_n(1), temp_type_defs);
 		const auto member_name = e.get_array_n(2).get_string();
 		const auto expr_type = resolve_type123(e.get_array_n(3).get_string(), temp_type_defs);
-		return expression_t::make_resolve_member(make_shared<expression_t>(base_expr), member_name, expr_type);
+		return expression_t::make_resolve_member(base_expr, member_name, expr_type);
 	}
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 3);

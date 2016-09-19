@@ -74,35 +74,40 @@ namespace floyd_parser {
 	struct type_identifier_t;
 
 
-	//////////////////////////////////////////////////		constant expression
-	
-	//	Has no type, uses value_t.
-	
+	struct math_operation1_expr_t;
+	struct math_operation2_expr_t;
+	struct conditional_operator_expr_t;
+	struct function_call_expr_t;
+	struct resolve_variable_expr_t;
 
-	//////////////////////////////////////////////////		math_operation1_expr_t
+	struct resolve_member_expr_t;
+	struct resolve_member_expr_t;
+	struct lookup_element_expr_t;
 
 
-	struct math_operation1_expr_t {
-		bool operator==(const math_operation1_expr_t& other) const;
+	//////////////////////////////////////////////////		expression_t
 
 
-		enum operation {
+	struct expression_t {
+		public: static expression_t make_constant(const value_t& value);
+
+		//	Shortcuts were you don't need to make a value_t first.
+		public: static expression_t make_constant(const bool i);
+		public: static expression_t make_constant(const int i);
+		public: static expression_t make_constant(const float f);
+		public: static expression_t make_constant(const char s[]);
+		public: static expression_t make_constant(const std::string& s);
+
+		public: enum class math1_operation {
 			negate = 20
 		};
 
-		const operation _operation;
-		const std::shared_ptr<expression_t> _input;
-	};
+		public: static expression_t make_math_operation1(
+			math1_operation op,
+			const expression_t& input
+		);
 
-
-	//////////////////////////////////////////////////		math_operation2_expr_t
-
-
-	struct math_operation2_expr_t {
-		bool operator==(const math_operation2_expr_t& other) const;
-
-
-		enum operation {
+		public: enum class math2_operation {
 			k_add = 10,
 			k_subtract,
 			k_multiply,
@@ -120,113 +125,12 @@ namespace floyd_parser {
 			k_logical_or
 		};
 
-		const operation _operation;
-		const std::shared_ptr<expression_t> _left;
-		const std::shared_ptr<expression_t> _right;
-	};
-
-
-	//////////////////////////////////////////////////		conditional_operator_expr_t
-
-
-	struct conditional_operator_expr_t {
-		bool operator==(const conditional_operator_expr_t& other) const;
-
-
-		const std::shared_ptr<expression_t> _condition;
-		const std::shared_ptr<expression_t> _a;
-		const std::shared_ptr<expression_t> _b;
-	};
-
-
-
-	//////////////////////////////////////////////////		function_call_expr_t
-
-
-	struct function_call_expr_t {
-		bool operator==(const function_call_expr_t& other) const{
-			return _function == other._function && _inputs == other._inputs;
-		}
-
-		public: function_call_expr_t(const type_identifier_t& function, const std::vector<expression_t>& inputs) :
-			_function(function),
-			_inputs(inputs)
-		{
-		}
-
-		const type_identifier_t _function;
-		const std::vector<expression_t> _inputs;
-	};
-
-
-	//////////////////////////////////////////////////		resolve_variable_expr_t
-
-
-
-	/*
-		Specify free variables.
-		It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
-
-		When compiler resolves this expression it may replace it with a resolve_
-	*/
-	struct resolve_variable_expr_t {
-		bool operator==(const resolve_variable_expr_t& other) const;
-
-		const std::string _variable_name;
-	};
-
-	//////////////////////////////////////////////////		resolve_member_expr_t
-
-
-
-	/*
-		Specifies a member variable of a struct.
-	*/
-	struct resolve_member_expr_t {
-		bool operator==(const resolve_member_expr_t& other) const;
-
-		std::shared_ptr<expression_t> _parent_address;
-		const std::string _member_name;
-	};
-
-
-	//////////////////////////////////////////////////		lookup_element_expr_t
-
-	/*
-		Looks up using a key. They key can be a sub-expression. Can be any type: index, string etc.
-	*/
-	struct lookup_element_expr_t {
-		bool operator==(const lookup_element_expr_t& other) const;
-
-		std::shared_ptr<expression_t> _parent_address;
-		std::shared_ptr<expression_t> _lookup_key;
-	};
-
-
-
-	//////////////////////////////////////////////////		expression_t
-
-
-	struct expression_t {
-		public: static expression_t make_constant(const value_t& value);
-
-		//	Shortcuts were you don't need to make a value_t first.
-		public: static expression_t make_constant(const bool i);
-		public: static expression_t make_constant(const int i);
-		public: static expression_t make_constant(const float f);
-		public: static expression_t make_constant(const char s[]);
-		public: static expression_t make_constant(const std::string& s);
-
-
-		public: static expression_t make_math_operation1(
-			math_operation1_expr_t::operation op,
-			const expression_t& input
-		);
 		public: static expression_t make_math_operation2(
-			math_operation2_expr_t::operation op,
+			math2_operation op,
 			const expression_t& left,
 			const expression_t& right
 		);
+
 
 		public: static expression_t make_conditional_operator(
 			const expression_t& condition,
@@ -240,19 +144,29 @@ namespace floyd_parser {
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
+		/*
+			Specify free variables.
+			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 
+			When compiler resolves this expression it may replace it with a resolve_
+		*/
 		public: static expression_t make_resolve_variable(
 			const std::string& variable,
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
-		//??? Why shared_ptr?
+		/*
+			Specifies a member variable of a struct.
+		*/
 		public: static expression_t make_resolve_member(
-			const std::shared_ptr<expression_t>& parent_address,
+			const expression_t& parent_address,
 			const std::string& member_name,
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
+		/*
+			Looks up using a key. They key can be a sub-expression. Can be any type: index, string etc.
+		*/
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
@@ -300,33 +214,107 @@ namespace floyd_parser {
 		//	Tell what type of value this expression represents. Null if not yet defined.
 		public: std::shared_ptr<const type_def_t> _resolved_expression_type;
 	};
+	
 
 
-	//////////////////////////////////////////////////		visit()
+	//////////////////////////////////////////////////		math_operation1_expr_t
 
 
-/*
-	struct visit_expression_i {
-		public: virtual ~visit_expression_i(){};
+	struct math_operation1_expr_t {
+		bool operator==(const math_operation1_expr_t& other) const;
 
-		public: virtual expression_t visit_expression_i__on_constant(const value_t& value) const = 0;
-		public: virtual expression_t visit_expression_i__on_math1(const math_operation1_expr_t& e) const = 0;
-		public: virtual expression_t visit_expression_i__on_math2(const math_operation2_expr_t& e) const = 0;
-		public: virtual expression_t visit_expression_i__on_call(const function_call_expr_t& e) const = 0;
-
-		public: virtual expression_t visit_expression_i__on_resolve_variable(const resolve_variable_expr_t& e) const = 0;
-		public: virtual expression_t visit_expression_i__on_resolve_member(const resolve_member_expr_t& e) const = 0;
-		public: virtual expression_t visit_expression_i__on_lookup_element(const lookup_element_expr_t& e) const = 0;
+		const expression_t::math1_operation _operation;
+		const std::shared_ptr<expression_t> _input;
 	};
 
-	expression_t visit(const visit_expression_i& visitor, const expression_t& e);
-*/
+
+	//////////////////////////////////////////////////		math_operation2_expr_t
+
+
+	struct math_operation2_expr_t {
+		bool operator==(const math_operation2_expr_t& other) const;
+
+		const expression_t::math2_operation _operation;
+		const std::shared_ptr<expression_t> _left;
+		const std::shared_ptr<expression_t> _right;
+	};
+
+
+	//////////////////////////////////////////////////		conditional_operator_expr_t
+
+
+	struct conditional_operator_expr_t {
+		bool operator==(const conditional_operator_expr_t& other) const;
+
+		const std::shared_ptr<expression_t> _condition;
+		const std::shared_ptr<expression_t> _a;
+		const std::shared_ptr<expression_t> _b;
+	};
+
+
+	//////////////////////////////////////////////////		function_call_expr_t
+
+
+	struct function_call_expr_t {
+		bool operator==(const function_call_expr_t& other) const{
+			return _function == other._function && _inputs == other._inputs;
+		}
+
+		public: function_call_expr_t(const type_identifier_t& function, const std::vector<expression_t>& inputs) :
+			_function(function),
+			_inputs(inputs)
+		{
+		}
+
+		const type_identifier_t _function;
+		const std::vector<expression_t> _inputs;
+	};
+
+
+	//////////////////////////////////////////////////		resolve_variable_expr_t
+
+
+	struct resolve_variable_expr_t {
+		bool operator==(const resolve_variable_expr_t& other) const;
+
+		const std::string _variable_name;
+	};
+
+
+	//////////////////////////////////////////////////		resolve_member_expr_t
+
+
+	struct resolve_member_expr_t {
+		bool operator==(const resolve_member_expr_t& other) const;
+
+		expression_t _parent_address;
+		const std::string _member_name;
+	};
+
+
+	//////////////////////////////////////////////////		lookup_element_expr_t
+
+
+	struct lookup_element_expr_t {
+		bool operator==(const lookup_element_expr_t& other) const;
+
+		expression_t _parent_address;
+		expression_t _lookup_key;
+	};
+
+
+
 	//////////////////////////////////////////////////		trace()
 
 
 	void trace(const expression_t& e);
 
 	json_value_t expression_to_json(const expression_t& e);
+
+	expression_t::math2_operation string_to_math2_op(const std::string& op);
+
+	bool is_math1_op(const std::string& op);
+	bool is_math2_op(const std::string& op);
 
 }	//	floyd_parser
 

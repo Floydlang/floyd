@@ -246,9 +246,6 @@ namespace floyd_parser {
 
 
 
-	bool is_math1_op(const std::string& op);
-	bool is_math2_op(const std::string& op);
-
 
 	/*
 		Used for:
