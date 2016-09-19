@@ -124,7 +124,7 @@ namespace {
 				if(vm2._call_stack.back()->_values.count(name) != 0){
 					throw std::runtime_error("local constant already exists");
 				}
-				const auto result = evalute_expression(vm2, *s->_expression);
+				const auto result = evalute_expression(vm2, s->_expression);
 				if(!result._constant){
 					throw std::runtime_error("unknown variables");
 				}
@@ -132,7 +132,7 @@ namespace {
 			}
 			else if(statement->_return_statement){
 				const auto expr = statement->_return_statement->_expression;
-				const auto result = evalute_expression(vm2, *expr);
+				const auto result = evalute_expression(vm2, expr);
 
 				if(!result._constant){
 					throw std::runtime_error("undefined");

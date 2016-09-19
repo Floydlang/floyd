@@ -32,7 +32,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(identifier.size () > 0);
 		QUARK_ASSERT(e.check_invariant());
 
-		return statement_t(bind_statement_t{ type, identifier, std::make_shared<expression_t>(e) });
+		return statement_t(bind_statement_t{ type, identifier, e });
 	}
 
 	statement_t make__return_statement(const return_statement_t& value){
@@ -41,14 +41,14 @@ namespace floyd_parser {
 
 
 	statement_t make__return_statement(const expression_t& expression){
-		return statement_t(return_statement_t{make_shared<expression_t>(expression)});
+		return statement_t(return_statement_t{ expression });
 	}
 
 	void trace(const statement_t& s){
 		if(s._bind_statement){
 			std::string t = "bind_statement_t: \"" + s._bind_statement->_identifier + "\"";
 			QUARK_SCOPED_TRACE(t);
-			trace(*s._bind_statement->_expression);
+			trace(s._bind_statement->_expression);
 		}
 
 		else if(s._define_struct){
@@ -62,7 +62,7 @@ namespace floyd_parser {
 
 		else if(s._return_statement){
 			QUARK_SCOPED_TRACE("return_statement_t");
-			trace(*s._return_statement->_expression);
+			trace(s._return_statement->_expression);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -115,7 +115,7 @@ namespace floyd_parser {
 			return json_value_t::make_array2({
 				json_value_t("bind"),
 				json_value_t(e._bind_statement->_identifier),
-				expression_to_json(*e._bind_statement->_expression)
+				expression_to_json(e._bind_statement->_expression)
 			});
 		}
 		else if(e._define_struct){
@@ -133,7 +133,7 @@ namespace floyd_parser {
 		else if(e._return_statement){
 			return json_value_t::make_array2({
 				json_value_t("return"),
-				expression_to_json(*e._return_statement->_expression)
+				expression_to_json(e._return_statement->_expression)
 			});
 		}
 		else{

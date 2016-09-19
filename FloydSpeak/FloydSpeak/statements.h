@@ -35,7 +35,7 @@ namespace floyd_parser {
 
         std::shared_ptr<const type_def_t> _type;
         std::string _identifier;
-        std::shared_ptr<expression_t> _expression;
+        expression_t _expression;
     };
     
     
@@ -68,10 +68,10 @@ namespace floyd_parser {
 
 	struct return_statement_t {
 		bool operator==(const return_statement_t& other) const {
-			return *_expression == *other._expression;
+			return _expression == other._expression;
 		}
 
-		std::shared_ptr<expression_t> _expression;
+		expression_t _expression;
 	};
 
 
