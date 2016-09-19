@@ -72,7 +72,7 @@ namespace floyd_parser {
 		QUARK_SCOPED_TRACE("parse_assignment_statement()");
 
 		const auto token_pos = read_until(s, whitespace_chars);
-		const auto type = type_identifier_t::make(token_pos.first);
+		const auto type = token_pos.first;
 
 		const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
 		const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
@@ -82,7 +82,7 @@ namespace floyd_parser {
 
 //		const auto statement = make__bind_statement(type, variable_pos.first, expression);
 //		trace(statement);
-		const auto statement = json_value_t::make_array2({ "bind", "<" + type.to_string() + ">", variable_pos.first, expression });
+		const auto statement = json_value_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
 
 		//	Skip trailing ";".
 		return { statement, expression_pos.second.substr(1) };

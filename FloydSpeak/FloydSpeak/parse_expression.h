@@ -10,7 +10,6 @@
 #define parse_expression_hpp
 
 #include "quark.h"
-#include "expressions.h"
 
 struct seq_t;
 struct json_value_t;

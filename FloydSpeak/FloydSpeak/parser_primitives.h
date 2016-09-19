@@ -15,8 +15,6 @@
 
 #include "quark.h"
 #include "text_parser.h"
-#include "parser_ast.h"
-#include "parser_value.h"
 
 #include <string>
 #include <vector>
@@ -27,9 +25,7 @@ struct json_value_t;
 
 namespace floyd_parser {
 	struct statement_t;
-	struct type_identifier_t;
 
-	
 	
 	const std::vector<std::string> basic_types {
 		"bool",
@@ -153,6 +149,86 @@ namespace floyd_parser {
 	//////////////////////////////////////		TYPE IDENTIFIERS
 
 
+
+	//////////////////////////////////////		type_identifier_t
+
+	/*
+		A string naming a type. "int", "string", "my_struct" etc.
+		It is guaranteed to contain correct characters.
+		It is NOT guaranteed to map to an actual type in the language or program.
+
+		There are two modes:
+			A) _type_magic !="" && !_resolved
+			B) _type_magic =="" && _resolved
+	*/
+
+	struct type_identifier_t {
+		public: type_identifier_t() :
+			_type_magic("null")
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: static type_identifier_t make(const std::string& s);
+
+		public: static type_identifier_t make_bool(){
+			return make("bool");
+		}
+
+		public: static type_identifier_t make_int(){
+			return make("int");
+		}
+
+		public: static type_identifier_t make_float(){
+			return make("float");
+		}
+
+		public: static type_identifier_t make_string(){
+			return make("string");
+		}
+
+		public: type_identifier_t(const type_identifier_t& other);
+//		public: type_identifier_t operator=(const type_identifier_t& other);
+
+		public: bool operator==(const type_identifier_t& other) const;
+		public: bool operator!=(const type_identifier_t& other) const;
+
+		public: explicit type_identifier_t(const char s[]);
+		public: explicit type_identifier_t(const std::string& s);
+		public: void swap(type_identifier_t& other);
+		public: std::string to_string() const;
+		public: bool check_invariant() const;
+
+		public: bool is_null() const{
+			QUARK_ASSERT(check_invariant());
+			return _type_magic == "null";
+		}
+
+		///////////////////		STATE
+		/*
+			The name of the type, including its path using :
+			"null"
+
+			"bool"
+			"int"
+			"float"
+			"function"
+
+			//	Specifies a data type.
+			"value_type"
+
+			"metronome"
+			"map<string, metronome>"
+			"game_engine:sprite"
+			"vector<game_engine:sprite>"
+			"int (string, vector<game_engine:sprite>)"
+		*/
+		private: std::string _type_magic;
+	};
+
+	void trace(const type_identifier_t& v);
+
+
 	/*
 		Skip leading whitespace, get string while type-char.
 	*/
@@ -170,16 +246,8 @@ namespace floyd_parser {
 
 
 
-
 	bool is_math1_op(const std::string& op);
 	bool is_math2_op(const std::string& op);
-
-
-	//////////////////////////////////////		FLOYD JSON BASICS
-
-	json_value_t value_to_json(const value_t& v);
-
-
 
 
 	/*
@@ -209,7 +277,6 @@ namespace floyd_parser {
 
 
 }	//	floyd_parser
-
 
 
 #endif /* parser_primitives_hpp */

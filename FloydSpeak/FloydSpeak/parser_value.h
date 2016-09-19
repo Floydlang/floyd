@@ -445,6 +445,7 @@ namespace floyd_parser {
 
 	void trace(const value_t& e);
 
+	json_value_t value_to_json(const value_t& v);
 
 #if false
 struct struct_fixture_t {

@@ -45,18 +45,18 @@ https://en.wikipedia.org/wiki/Parsing
 
 
 
-struct test_value_class_a {
+struct test_cpp_value_class_a {
 	int _a = 10;
 	int _b = 10;
 
-	bool operator==(const test_value_class_a& other){
+	bool operator==(const test_cpp_value_class_a& other){
 		return _a == other._a && _b == other._b;
 	}
 };
 
-QUARK_UNIT_TESTQ("test_value_class_a", "what is needed for basic operations"){
-	test_value_class_a a;
-	test_value_class_a b = a;
+QUARK_UNIT_TESTQ("test_cpp_value_class_a", "what is needed for basic operations"){
+	test_cpp_value_class_a a;
+	test_cpp_value_class_a b = a;
 
 	QUARK_TEST_VERIFY(b._a == 10);
 	QUARK_TEST_VERIFY(a == b);
@@ -178,12 +178,8 @@ statement_result_t read_statement(const string& pos){
 	}
 }
 
-#if false
-??? check json
-#endif
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	try{
-		auto ast = ast_t();
 		const auto result = read_statement("int f()");
 		QUARK_TEST_VERIFY(false);
 	}
@@ -192,27 +188,28 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto ast = ast_t();
 	const auto result = read_statement("float test = testx(1234);\n\treturn 3;\n");
+	QUARK_TEST_VERIFY(json_to_compact_string(result._statement)
+		== R"(["bind", "<float>", "test", ["call", ["@", "testx"], [["k", 1234, "<int>"]]]])");
+	QUARK_TEST_VERIFY(result._rest == "return 3;\n");
 }
 
-#if false
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto ast = ast_t();
 	const auto result = read_statement(test_function1);
-	QUARK_TEST_VERIFY(result._statement._define_function);
-//	QUARK_TEST_VERIFY(*result._statement._define_function->_function_def == *make_test_function1(global));
-	QUARK_TEST_VERIFY(result._statement._define_function->_function_def);
+	QUARK_TEST_VERIFY(json_to_compact_string(result._statement)
+		== R"(["define_function", { "_args": [], "_locals": [], "_members": [], "_name": "test_function1", "_return_type": "<int>", "_statements": [["return", ["k", 100, "<int>"]]], "_type": "function", "_types": {} }])");
 	QUARK_TEST_VERIFY(result._rest == "");
 }
 
 QUARK_UNIT_TESTQ("read_statement()", ""){
-	auto ast = ast_t();
-	const auto result = read_statement(ast, ast._global_scope, "struct test_struct0 " + k_test_struct0_body + ";");
-	QUARK_TEST_VERIFY(result._statement._define_struct);
-	QUARK_TEST_VERIFY(*result._statement._define_struct->_struct_def == *make_test_struct0(ast._global_scope));
+	const auto result = read_statement("struct test_struct0 {int x; string y; float z;};");
+
+	quark::ut_compare(
+		json_to_compact_string(result._statement),
+		R"(["define_struct", { "_args": [], "_locals": [], "_members": [{ "name": "x", "type": "<int>" }, { "name": "y", "type": "<string>" }, { "name": "z", "type": "<float>" }], "_name": "test_struct0", "_return_type": "", "_statements": [], "_type": "struct", "_types": {} }])"
+	);
+	QUARK_TEST_VERIFY(result._rest == ";");
 }
-#endif
 
 
 
