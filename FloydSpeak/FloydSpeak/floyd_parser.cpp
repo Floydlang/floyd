@@ -313,7 +313,9 @@ json_value_t program_to_ast(const string& program){
 	return statements_pos.first;
 }
 
+
 #if false
+
 QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	const string kProgram1 =
 		"int main(string args){\n"
@@ -340,6 +342,7 @@ QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "main"));
 //	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "main") == *f));
 }
+
 
 QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	const string kProgram =

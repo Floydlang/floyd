@@ -75,8 +75,6 @@ namespace floyd_parser {
 	struct scope_def_t;
 	struct type_identifier_t;
 
-	std::string expression_to_json_string(const expression_t& e);
-
 
 	//////////////////////////////////////////////////		constant expression
 	

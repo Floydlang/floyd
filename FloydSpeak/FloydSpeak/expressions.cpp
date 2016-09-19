@@ -29,9 +29,10 @@ using std::make_shared;
 
 
 
+string expression_to_json_string(const expression_t& e);
 
 
-#if false
+
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_math_operation2(
 		math_operation2_expr_t::k_add,
@@ -43,7 +44,6 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 		expression_t::make_constant(4));
 	QUARK_TEST_VERIFY(a == b);
 }
-#endif
 
 
 bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
@@ -355,6 +355,52 @@ string operation_to_string(const math_operation2_expr_t::operation& op){
 	}
 }
 
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_add), "+");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_subtract), "-");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_multiply), "*");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_divide), "/");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_remainder), "%");
+}
+
+
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_smaller_or_equal), "<=");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_smaller), "<");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_larger_or_equal), ">=");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_larger), ">");
+}
+
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_logical_equal), "==");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_logical_nonequal), "!=");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_logical_and), "&&");
+}
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation2_expr_t::k_logical_or), "||");
+}
+
+
+
+
 string operation_to_string(const math_operation1_expr_t::operation& op){
 	if(op == math_operation1_expr_t::negate){
 		return "negate";
@@ -363,6 +409,11 @@ string operation_to_string(const math_operation1_expr_t::operation& op){
 		QUARK_ASSERT(false);
 	}
 }
+
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(math_operation1_expr_t::negate), "negate");
+}
+
 
 void trace(const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());

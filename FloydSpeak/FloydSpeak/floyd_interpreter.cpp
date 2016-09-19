@@ -84,7 +84,7 @@ namespace {
 	}
 
 	value_t call_host_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
-#if false
+#if 0
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
 		QUARK_ASSERT(f->_statements.empty());
