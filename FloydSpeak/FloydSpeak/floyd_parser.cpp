@@ -305,7 +305,8 @@ json_value_t program_to_ast(const string& program){
 	a = store_object_member(a, "_name", "global");
 	a = store_object_member(a, "_type", "global");
 
-	a = store_object_member(a, "_types", make_builtin_types());
+	//	#Basic-types
+	//	a = store_object_member(a, "_types", make_builtin_types());
 
 	const auto statements_pos = read_statements_into_scope_def(a, program);
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));

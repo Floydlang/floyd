@@ -486,7 +486,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 					expression_t::make_constant("xyz"),
 					expression_t::make_constant(123)
 				},
-				make_shared<type_def_t>(type_def_t::make_string())
+				type_def_t::make_string_typedef()
 			)
 		),
 		R"(["call", "my_func", [["k", "xyz", "<string>"], ["k", 123, "<int>"]], "<string>"])"
@@ -497,9 +497,9 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_resolve_variable("hello", make_shared<type_def_t>(type_def_t::make_string())),
+				expression_t::make_resolve_variable("hello", type_def_t::make_string_typedef()),
 				expression_t::make_constant("xyz"),
-				make_shared<type_def_t>(type_def_t::make_string())
+				type_def_t::make_string_typedef()
 			)
 		),
 		R"(["[-]", ["@", "hello", "<string>"], ["k", "xyz", "<string>"], "<string>"])"

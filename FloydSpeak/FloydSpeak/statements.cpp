@@ -147,7 +147,7 @@ namespace floyd_parser {
 			json_to_compact_string(
 				statement_to_json(
 					make__bind_statement(
-						make_shared<type_def_t>(type_def_t::make_int()),
+						type_def_t::make_int_typedef(),
 						"a",
 						expression_t::make_constant(400)
 					)

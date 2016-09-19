@@ -104,34 +104,34 @@ namespace floyd_parser {
 		}
 
 		public: value_t() :
-			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_null)))
+			_type_def(type_def_t::make_null_typedef())
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(bool value) :
-			_type_def(std::make_shared<type_def_t>(type_def_t::make_bool())),
+			_type_def(type_def_t::make_bool_typedef()),
 			_bool(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(int value) :
-			_type_def(std::make_shared<type_def_t>(type_def_t::make_int())),
+			_type_def(type_def_t::make_int_typedef()),
 			_int(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(float value) :
-			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_float))),
+			_type_def(type_def_t::make_float_typedef()),
 			_float(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(const char s[]) :
-			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_string))),
+			_type_def(type_def_t::make_string_typedef()),
 			_string(s)
 		{
 			QUARK_ASSERT(s != nullptr);
@@ -140,7 +140,7 @@ namespace floyd_parser {
 		}
 
 		public: explicit value_t(const std::string& s) :
-			_type_def(std::make_shared<type_def_t>(type_def_t::make(base_type::k_string))),
+			_type_def(type_def_t::make_string_typedef()),
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());

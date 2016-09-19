@@ -72,12 +72,30 @@ math_operation2_expr_t::operation string_to_math2_op(const string& op){
 
 
 shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
-	const auto it = temp_type_defs.find(id);
-	if(it == temp_type_defs.end()){
-		QUARK_ASSERT(false);
+	//	#Basic-types
+	if(id == "$null"){
+		return type_def_t::make_null_typedef();
 	}
+	else if(id == "$bool"){
+		return type_def_t::make_bool_typedef();
+	}
+	else if(id == "$int"){
+		return type_def_t::make_int_typedef();
+	}
+	else if(id == "$float"){
+		return type_def_t::make_float_typedef();
+	}
+	else if(id == "$string"){
+		return type_def_t::make_string_typedef();
+	}
+	else{
+		const auto it = temp_type_defs.find(id);
+		if(it == temp_type_defs.end()){
+			QUARK_ASSERT(false);
+		}
 
-	return it->second;
+		return it->second;
+	}
 }
 
 
@@ -91,40 +109,43 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		const auto value = e.get_array_n(1);
 		const auto type = e.get_array_n(2);
 
-		const auto it = temp_type_defs.find(type.get_string());
-		if(it == temp_type_defs.end()){
-			QUARK_ASSERT(false);
-		}
-		const auto base_type = it->second->get_type();
-		if(base_type == base_type::k_null){
+		//	#Basic-types
+		if(type == "$null"){
 			return expression_t::make_constant(value_t());
 		}
-		else if(base_type == base_type::k_bool){
+		else if(type == "$bool"){
 			return expression_t::make_constant(value.is_true());
 		}
-		else if(base_type == base_type::k_int){
-			return expression_t::make_constant((int)value.get_number());
+		else if(type == "$int"){
+				return expression_t::make_constant((int)value.get_number());
 		}
-		else if(base_type == base_type::k_float){
-			return expression_t::make_constant((float)value.get_number());
+		else if(type == "$float"){
+				return expression_t::make_constant((float)value.get_number());
 		}
-		else if(base_type == base_type::k_string){
-			return expression_t::make_constant(value.get_string());
-		}
-		else if(base_type == base_type::k_struct){
-			QUARK_ASSERT(false);
-		}
-		else if(base_type == base_type::k_vector){
-			QUARK_ASSERT(false);
-		}
-		else if(base_type == base_type::k_function){
-			QUARK_ASSERT(false);
-		}
-		else if(base_type == base_type::k_subscope){
-			QUARK_ASSERT(false);
+		else if(type == "$string"){
+				return expression_t::make_constant(value.get_string());
 		}
 		else{
-			QUARK_ASSERT(false);
+			const auto it = temp_type_defs.find(type.get_string());
+			if(it == temp_type_defs.end()){
+				QUARK_ASSERT(false);
+			}
+			const auto base_type = it->second->get_type();
+			if(base_type == base_type::k_struct){
+				QUARK_ASSERT(false);
+			}
+			else if(base_type == base_type::k_vector){
+				QUARK_ASSERT(false);
+			}
+			else if(base_type == base_type::k_function){
+				QUARK_ASSERT(false);
+			}
+			else if(base_type == base_type::k_subscope){
+				QUARK_ASSERT(false);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
 		}
 	}
 	else if(is_math1_op(op)){
@@ -159,7 +180,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		QUARK_ASSERT(e.get_array_size() == 4);
 		const auto f_address = conv_expression(e.get_array_n(1), temp_type_defs);
 
-		//??? Hack - we should have real experssions for function names.
+		//??? Hack - we should have real expressions for function names.
 		//??? Also: we should resolve all names 100% at this point.
 		QUARK_ASSERT(f_address._resolve_variable);
 		const string func_name = f_address._resolve_variable->_variable_name;
@@ -382,25 +403,29 @@ std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& de
 	const auto path = def.get_object_element("path");
 
 	if(base_type == "null"){
-		return make_shared<type_def_t>(type_def_t::make(base_type::k_null));
+		return type_def_t::make_null_typedef();
 	}
 	else if(base_type == "bool"){
-		return make_shared<type_def_t>(type_def_t::make_bool());
+		return type_def_t::make_bool_typedef();
 	}
 	else if(base_type == "int"){
-		return make_shared<type_def_t>(type_def_t::make_int());
+		return type_def_t::make_int_typedef();
+	}
+	else if(base_type == "float"){
+		return type_def_t::make_float_typedef();
 	}
 	else if(base_type == "string"){
-		return make_shared<type_def_t>(type_def_t::make(base_type::k_string));
+		return type_def_t::make_string_typedef();
 	}
+
 	else if(base_type == "struct"){
-		return make_shared<type_def_t>(type_def_t::make_struct_def(conv_scope_def__no_expressions(scope_def, temp_type_defs)));
+		return type_def_t::make_struct_type_def(conv_scope_def__no_expressions(scope_def, temp_type_defs));
 	}
 	else if(base_type == "vector"){
 		QUARK_ASSERT(false);
 	}
 	else if(base_type == "function"){
-		return make_shared<type_def_t>(type_def_t::make_function_def(conv_scope_def__no_expressions(scope_def, temp_type_defs)));
+		return type_def_t::make_function_type_def(conv_scope_def__no_expressions(scope_def, temp_type_defs));
 	}
 	else if(base_type == "subscope"){
 		QUARK_ASSERT(false);
@@ -418,10 +443,10 @@ std::shared_ptr<type_def_t> conv_expressions_and_statements(const json_value_t& 
 	const auto path = def.get_object_element("path");
 
 	if(base_type == "struct"){
-		return make_shared<type_def_t>(type_def_t::make_struct_def(conv_scope_def__expressions(scope_def, temp_type_defs)));
+		return type_def_t::make_struct_type_def(conv_scope_def__expressions(scope_def, temp_type_defs));
 	}
 	else if(base_type == "function"){
-		return make_shared<type_def_t>(type_def_t::make_function_def(conv_scope_def__expressions(scope_def, temp_type_defs)));
+		return type_def_t::make_function_type_def(conv_scope_def__expressions(scope_def, temp_type_defs));
 	}
 	else if(base_type == "subscope"){
 		QUARK_ASSERT(false);
@@ -450,7 +475,7 @@ ast_t json_to_ast(const json_value_t& program){
 	//	Make placeholder type-defs for each symbol. We use pointer to type_def as its identity.
 	map<string, shared_ptr<type_def_t>> temp_type_defs;
 	for(const auto& s: program.get_object_element("lookup").get_object()){
-		temp_type_defs[s.first] = make_shared<type_def_t>(type_def_t());
+		temp_type_defs[s.first] = type_def_t::make_null_typedef();
 	}
 
 	//	Make a shallow pass through all types -- no expressions.

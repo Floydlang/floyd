@@ -87,7 +87,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(def && def->check_invariant());
 
 		auto instance = make_shared<vector_instance_t>();
-		instance->_vector_type = make_shared<type_def_t>(type_def_t::make_vector_def(def));
+		instance->_vector_type = type_def_t::make_vector_type_def(def);
 		instance->_elements = elements;
 		return value_t(instance);
 	}
@@ -322,7 +322,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 #endif
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), make_shared<type_def_t>(type_def_t::make_int())));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_def_t::make_int_typedef()));
 	const auto a = make_vector_instance(vector_def, {});
 	const auto b = make_vector_instance(vector_def, {});
 
@@ -342,7 +342,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), make_shared<type_def_t>(type_def_t::make_int())));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_def_t::make_int_typedef()));
 	const auto a = make_vector_instance(vector_def, { 3, 4, 5});
 	const auto b = make_vector_instance(vector_def, { 3, 4 });
 

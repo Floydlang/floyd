@@ -270,8 +270,6 @@ namespace floyd_parser {
 
 		public: static scope_ref_t make_global_scope();
 
-//		scope_ref_t set_types(types_collector_t types_collector) const;
-
 		public: scope_def_t(const scope_def_t& other);
 
 		public: bool check_invariant() const;
@@ -316,50 +314,48 @@ namespace floyd_parser {
 		Describes a frontend type. All sub-types may or may not be known yet.
 	*/
 	struct type_def_t {
-		public: type_def_t() :
-			_base_type(base_type::k_null)
+		private: type_def_t(base_type type) :
+			_base_type(type)
 		{
-		}
-		public: static type_def_t make_bool(){
-			return make(base_type::k_bool);
-		}
-		public: static type_def_t make_int(){
-			return make(base_type::k_int);
-		}
-		public: static type_def_t make_float(){
-			return make(base_type::k_float);
-		}
-		public: static type_def_t make_string(){
-			return make(base_type::k_string);
-		}
-		public: static type_def_t make(base_type type){
-			type_def_t a;
-			a._base_type = type;
-			return a;
-		}
-		public: static type_def_t make_struct_def(const std::shared_ptr<const scope_def_t>& struct_def){
-			type_def_t a;
-			a._base_type = base_type::k_struct;
-			a._struct_def = struct_def;
-			return a;
-		}
-		public: static type_def_t make_vector_def(const std::shared_ptr<const vector_def_t>& vector_def){
-			type_def_t a;
-			a._base_type = base_type::k_vector;
-			a._vector_def = vector_def;
-			return a;
-		}
-		public: static type_def_t make_function_def(const std::shared_ptr<const scope_def_t>& function_def){
-			type_def_t a;
-			a._base_type = base_type::k_function;
-			a._function_def = function_def;
-			return a;
 		}
 		public: bool check_invariant() const;
 		public: bool operator==(const type_def_t& other) const;
 		public: void swap(type_def_t& rhs);
 		public: base_type get_type() const {
 			return _base_type;
+		}
+
+
+		public: static std::shared_ptr<type_def_t> make_null_typedef(){
+			return std::make_shared<type_def_t>(type_def_t(base_type::k_null));
+		}
+		public: static std::shared_ptr<type_def_t> make_bool_typedef(){
+			return std::make_shared<type_def_t>(type_def_t(base_type::k_bool));
+		}
+		public: static std::shared_ptr<type_def_t> make_int_typedef(){
+			return std::make_shared<type_def_t>(type_def_t(base_type::k_int));
+		}
+		public: static std::shared_ptr<type_def_t> make_float_typedef(){
+			return std::make_shared<type_def_t>(type_def_t(base_type::k_float));
+		}
+		public: static std::shared_ptr<type_def_t> make_string_typedef(){
+			return std::make_shared<type_def_t>(type_def_t(base_type::k_string));
+		}
+
+		public: static std::shared_ptr<type_def_t> make_struct_type_def(const std::shared_ptr<const scope_def_t>& struct_def){
+			type_def_t a(base_type::k_struct);
+			a._struct_def = struct_def;
+			return std::make_shared<type_def_t>(a);
+		}
+		public: static std::shared_ptr<type_def_t> make_vector_type_def(const std::shared_ptr<const vector_def_t>& vector_def){
+			type_def_t a(base_type::k_vector);
+			a._vector_def = vector_def;
+			return std::make_shared<type_def_t>(a);
+		}
+		public: static std::shared_ptr<type_def_t> make_function_type_def(const std::shared_ptr<const scope_def_t>& function_def){
+			type_def_t a(base_type::k_function);
+			a._function_def = function_def;
+			return std::make_shared<type_def_t>(a);
 		}
 
 		public: std::string to_string() const;
@@ -379,6 +375,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(false);
 		}
 
+/*
 		public: type_def_t replace_subscope(const std::shared_ptr<const scope_def_t>& new_scope) const {
 			QUARK_ASSERT(is_subscope());
 			QUARK_ASSERT(
@@ -397,7 +394,7 @@ namespace floyd_parser {
 				QUARK_ASSERT(false);
 			}
 		}
-
+*/
 
 		public: std::shared_ptr<const scope_def_t> get_struct_def() const {
 			QUARK_ASSERT(_base_type == base_type::k_struct);
@@ -443,6 +440,13 @@ namespace floyd_parser {
 
 
 
+
+
+
+
+
+
+
 	//////////////////////////////////////////////////		ast_t
 
 
@@ -456,7 +460,6 @@ namespace floyd_parser {
 
 		/////////////////////////////		STATE
 		public: std::shared_ptr<const scope_def_t> _global_scope;
-//		public: json_value_t _tree;
 
 		//	Keyed on "$1000" etc.
 		public: std::map<std::string, std::shared_ptr<type_def_t>> _symbols;
