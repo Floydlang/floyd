@@ -711,9 +711,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	else if(e._call){
 		return evaluate_call(vm, e);
 	}
-	else if(e._load){
-		QUARK_ASSERT(false);
-	}
 	else if(e._resolve_variable){
 		const auto variable_name = e._resolve_variable->_variable_name;
 		const value_t value = resolve_variable_name(vm, variable_name);

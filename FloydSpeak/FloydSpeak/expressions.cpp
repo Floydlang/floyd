@@ -62,12 +62,6 @@ bool conditional_operator_expr_t::operator==(const conditional_operator_expr_t& 
 
 
 
-
-
-bool load_expr_t::operator==(const load_expr_t& other) const{
-	return *_address == *other._address ;
-}
-
 bool resolve_variable_expr_t::operator==(const resolve_variable_expr_t& other) const{
 	return _variable_name == other._variable_name;
 }
@@ -104,7 +98,6 @@ bool expression_t::check_invariant() const{
 		+ (_math2 ? 1 : 0)
 		+ (_conditional_operator ? 1 : 0)
 		+ (_call ? 1 : 0)
-		+ (_load ? 1 : 0)
 		+ (_resolve_variable ? 1 : 0)
 		+ (_resolve_member ? 1 : 0)
 		+ (_lookup_element ? 1 : 0)
@@ -132,9 +125,6 @@ bool expression_t::operator==(const expression_t& other) const {
 	}
 	else if(_call){
 		return compare_shared_values(_call, other._call);
-	}
-	else if(_load){
-		return compare_shared_values(_load, other._load);
 	}
 	else if(_resolve_variable){
 		return compare_shared_values(_resolve_variable, other._resolve_variable);
@@ -249,19 +239,6 @@ expression_t expression_t::make_function_call(const type_identifier_t& function,
 }
 
 
-
-expression_t expression_t::make_load(const expression_t& address_expression, const shared_ptr<const type_def_t>& resolved_expression_type){
-	QUARK_ASSERT(address_expression.check_invariant());
-	QUARK_ASSERT(resolved_expression_type && resolved_expression_type->check_invariant());
-
-	auto result = expression_t();
-	auto address = make_shared<expression_t>(address_expression);
-	result._load = std::make_shared<load_expr_t>(load_expr_t{ address });
-	result._resolved_expression_type = resolved_expression_type;
-	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
 
 expression_t expression_t::make_resolve_variable(const std::string& variable, const shared_ptr<const type_def_t>& resolved_expression_type){
 	QUARK_ASSERT(variable.size() > 0);
@@ -475,11 +452,6 @@ json_value_t expression_to_json(const expression_t& e){
 		}
 		return json_value_t::make_array_skip_nulls({ json_value_t("call"), json_value_t(call_function._function.to_string()), args_json, type });
 	}
-	else if(e._load){
-		const auto e2 = *e._load;
-		const auto address = expression_to_json(*e2._address);
-		return json_value_t::make_array_skip_nulls({ json_value_t("load"), address, type });
-	}
 	else if(e._resolve_variable){
 		const auto e2 = *e._resolve_variable;
 		return json_value_t::make_array_skip_nulls({ json_value_t("@"), json_value_t(e2._variable_name), type });
@@ -576,10 +548,6 @@ expression_t visit(const visit_expression_i& v, const expression_t& e){
 	else if(e._call){
 		return v.visit_expression_i__on_call(*e._call);
 	}
-	else if(e._load){
-		return v.visit_expression_i__on_load(*e._load);
-	}
-
 	else if(e._resolve_variable){
 		return v.visit_expression_i__on_resolve_variable(*e._resolve_variable);
 	}

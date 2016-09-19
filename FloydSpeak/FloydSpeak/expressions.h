@@ -32,8 +32,6 @@
 	- point to a struct + which member.
 
 
-	LOAD is performed via an address.
-	STORE is performed via an addres
 	CALL is made on a function_scope
 
 
@@ -161,21 +159,6 @@ namespace floyd_parser {
 	};
 
 
-	//////////////////////////////////////////////////		load_expr_t
-
-	/*
-		Supports reading a named variable, like "int a = 10; print(a);"
-
-		The address must resolve to a resolve_member_expr_t to be able to execute LOAD.
-	*/
-	struct load_expr_t {
-		bool operator==(const load_expr_t& other) const;
-
-
-		std::shared_ptr<expression_t> _address;
-	};
-
-
 	//////////////////////////////////////////////////		resolve_variable_expr_t
 
 
@@ -258,11 +241,6 @@ namespace floyd_parser {
 		);
 
 
-		public: static expression_t make_load(
-			const expression_t& address_expression,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
-		);
-
 		public: static expression_t make_resolve_variable(
 			const std::string& variable,
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
@@ -314,7 +292,6 @@ namespace floyd_parser {
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 		public: std::shared_ptr<conditional_operator_expr_t> _conditional_operator;
 		public: std::shared_ptr<function_call_expr_t> _call;
-		public: std::shared_ptr<load_expr_t> _load;
 
 		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
 		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
@@ -336,7 +313,6 @@ namespace floyd_parser {
 		public: virtual expression_t visit_expression_i__on_math1(const math_operation1_expr_t& e) const = 0;
 		public: virtual expression_t visit_expression_i__on_math2(const math_operation2_expr_t& e) const = 0;
 		public: virtual expression_t visit_expression_i__on_call(const function_call_expr_t& e) const = 0;
-		public: virtual expression_t visit_expression_i__on_load(const load_expr_t& e) const = 0;
 
 		public: virtual expression_t visit_expression_i__on_resolve_variable(const resolve_variable_expr_t& e) const = 0;
 		public: virtual expression_t visit_expression_i__on_resolve_member(const resolve_member_expr_t& e) const = 0;
