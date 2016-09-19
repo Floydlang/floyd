@@ -78,24 +78,73 @@ namespace floyd_parser {
 
 			const auto base_type = _type_def->get_type();
 			if(base_type == base_type::k_null){
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
 			}
 			else if(base_type == base_type::k_bool){
+//				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
 			}
 			else if(base_type == base_type::k_int){
+				QUARK_ASSERT(_bool == false);
+//				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
 			}
 			else if(base_type == base_type::k_float){
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+//				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
 			}
 			else if(base_type == base_type::k_string){
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+//				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
 			}
 
 			else if(base_type == base_type::k_struct){
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+//				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
+
 				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
 			else if(base_type == base_type::k_vector){
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+//				QUARK_ASSERT(_vector == nullptr);
+
 				QUARK_ASSERT(_vector && _vector->check_invariant());
 			}
 			else if(base_type == base_type::k_function){
-				QUARK_ASSERT(false);
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -163,6 +212,14 @@ namespace floyd_parser {
 
 			QUARK_ASSERT(check_invariant());
 		}
+		public: value_t(const std::shared_ptr<type_def_t>& function_type_def) :
+			_type_def(function_type_def)
+		{
+			QUARK_ASSERT(function_type_def && function_type_def->check_invariant());
+			QUARK_ASSERT(function_type_def->get_type() == base_type::k_function);
+
+			QUARK_ASSERT(check_invariant());
+		}
 
 		value_t(const value_t& other):
 			_type_def(other._type_def),
@@ -226,7 +283,7 @@ namespace floyd_parser {
 				return *_vector == *other._vector;
 			}
 			else if(base_type == base_type::k_function){
-				QUARK_ASSERT(false);
+				return true;
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -280,8 +337,7 @@ namespace floyd_parser {
 				return to_preview(*_vector);
 			}
 			else if(base_type == base_type::k_function){
-				QUARK_ASSERT(false);
-				return "??";
+				return json_to_compact_string(type_def_to_json(*_type_def));
 			}
 
 			else{
@@ -346,13 +402,19 @@ namespace floyd_parser {
 		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _struct ? true : false;
+			return get_base_type() == base_type::k_struct;
 		}
 
 		public: bool is_vector() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _vector ? true : false;
+			return get_base_type() == base_type::k_vector;
+		}
+
+		public: bool is_function() const {
+			QUARK_ASSERT(check_invariant());
+
+			return get_base_type() == base_type::k_function;
 		}
 
 		public: bool get_bool() const{
@@ -409,6 +471,15 @@ namespace floyd_parser {
 			return _vector;
 		}
 
+		public: std::shared_ptr<const type_def_t> get_function() const{
+			QUARK_ASSERT(check_invariant());
+			if(!is_function()){
+				throw std::runtime_error("Type mismatch!");
+			}
+
+			return _type_def;
+		}
+
 		public: void swap(value_t& other){
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
@@ -439,7 +510,7 @@ namespace floyd_parser {
 		private: std::string _string = "";
 		private: std::shared_ptr<struct_instance_t> _struct;
 		private: std::shared_ptr<vector_instance_t> _vector;
-
+		//	!!! Notice that function-values only use the type_def_t -- there is no per-value state.
 	};
 
 

@@ -215,6 +215,7 @@ QUARK_UNIT_TESTQ("value_t()", "null"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t());
 	QUARK_TEST_VERIFY(a != value_t("test"));
@@ -231,6 +232,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(true));
 	QUARK_TEST_VERIFY(a != value_t(false));
@@ -247,6 +249,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(false));
 	QUARK_TEST_VERIFY(a != value_t(true));
@@ -263,6 +266,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(13));
 	QUARK_TEST_VERIFY(a != value_t(14));
@@ -279,6 +283,7 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
 	QUARK_TEST_VERIFY(a != value_t(14.0f));
@@ -295,6 +300,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
@@ -302,10 +308,19 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<string>\"xyz\"");
 }
 
-#if false
 QUARK_UNIT_TESTQ("value_t()", "struct"){
-	struct_fixture_t f;
-	const auto a = f._struct6_instance0;
+	const auto struct_scope_ref = scope_def_t::make_struct(
+		type_identifier_t::make("test_xyz_saft"),
+		std::vector<member_t>{
+			{ type_def_t::make_string_typedef(), "x" }
+		}
+	);
+	const auto struct_type = type_def_t::make_struct_type_def(struct_scope_ref);
+	const auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, std::map<std::string, value_t>{
+		{ "x", value_t("skalman")}
+	}));
+	const auto a = value_t(instance);
+
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -313,13 +328,13 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == f._struct6_instance1);
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	quark::ut_compare(a.plain_value_to_string(), "{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
-	quark::ut_compare(a.value_and_type_to_string(), "<struct6>{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
+//	quark::ut_compare(a.plain_value_to_string(), "{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
+//	quark::ut_compare(a.value_and_type_to_string(), "<struct6>{<bool>_bool_false=false<bool>_bool_true=true<int>_int=111<pixel>_pixel={<int>blue=77<int>green=66<int>red=55}<string>_string=\"test 123\"}");
 }
-#endif
+
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
 	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_def_t::make_int_typedef()));
@@ -333,6 +348,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == b);
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
@@ -353,6 +369,32 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	QUARK_TEST_VERIFY(a.get_vector()->_elements[2] == 5);
 }
 
+QUARK_UNIT_TESTQ("value_t()", "function"){
+	const auto function_scope_ref = scope_def_t::make_function_def(
+		type_identifier_t::make("my_func_skutt"),
+		std::vector<member_t>{
+			{ type_def_t::make_int_typedef(), "a" },
+			{ type_def_t::make_string_typedef(), "b" }
+		},
+		{},
+		{},
+		type_def_t::make_bool_typedef()
+	);
+
+	const auto function_type = type_def_t::make_function_type_def(function_scope_ref);
+	const auto a = value_t(function_type);
+
+	QUARK_TEST_VERIFY(!a.is_null());
+	QUARK_TEST_VERIFY(!a.is_bool());
+	QUARK_TEST_VERIFY(!a.is_int());
+	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_string());
+	QUARK_TEST_VERIFY(!a.is_struct());
+	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(a.is_function());
+
+	QUARK_TEST_VERIFY(a != value_t("xyza"));
+}
 
 
 #if false
