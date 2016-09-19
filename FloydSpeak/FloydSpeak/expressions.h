@@ -131,7 +131,6 @@ namespace floyd_parser {
 			const expression_t& right
 		);
 
-
 		public: static expression_t make_conditional_operator(
 			const expression_t& condition,
 			const expression_t& a,
@@ -174,6 +173,8 @@ namespace floyd_parser {
 		);
 
 
+
+
 		public: bool check_invariant() const;
 
 		/*
@@ -187,19 +188,16 @@ namespace floyd_parser {
 		}
 
 		public: bool operator==(const expression_t& other) const;
-
-
 		private: expression_t(){
 			// Invariant is broken here - expression type is setup.
 		}
-
 
 
 		//////////////////////////		STATE
 		public: std::string _debug_aaaaaaaaaaaaaaaaaaaaaaa;
 
 		/*
-			Only one of there are used at any time.
+			Only ONE of there are used at any time.
 		*/
 		public: std::shared_ptr<value_t> _constant;
 		public: std::shared_ptr<math_operation1_expr_t> _math1;
@@ -224,7 +222,7 @@ namespace floyd_parser {
 		bool operator==(const math_operation1_expr_t& other) const;
 
 		const expression_t::math1_operation _operation;
-		const std::shared_ptr<expression_t> _input;
+		const expression_t _input;
 	};
 
 
@@ -235,8 +233,8 @@ namespace floyd_parser {
 		bool operator==(const math_operation2_expr_t& other) const;
 
 		const expression_t::math2_operation _operation;
-		const std::shared_ptr<expression_t> _left;
-		const std::shared_ptr<expression_t> _right;
+		const expression_t _left;
+		const expression_t _right;
 	};
 
 
@@ -246,9 +244,9 @@ namespace floyd_parser {
 	struct conditional_operator_expr_t {
 		bool operator==(const conditional_operator_expr_t& other) const;
 
-		const std::shared_ptr<expression_t> _condition;
-		const std::shared_ptr<expression_t> _a;
-		const std::shared_ptr<expression_t> _b;
+		const expression_t _condition;
+		const expression_t _a;
+		const expression_t _b;
 	};
 
 

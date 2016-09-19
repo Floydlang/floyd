@@ -47,15 +47,15 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 }
 
 bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
-	return _operation == other._operation && *_left == *other._left && *_right == *other._right;
+	return _operation == other._operation && _left == other._left && _right == other._right;
 }
 
 bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
-	return _operation == other._operation && *_input == *other._input;
+	return _operation == other._operation && _input == other._input;
 }
 
 bool conditional_operator_expr_t::operator==(const conditional_operator_expr_t& other) const {
-	return *_condition == *other._condition && *_a == *other._a && *_b == *other._b;
+	return _condition == other._condition && _a == other._a && _b == other._b;
 }
 
 bool resolve_variable_expr_t::operator==(const resolve_variable_expr_t& other) const{
@@ -166,10 +166,8 @@ expression_t expression_t::make_constant(const float f){
 expression_t expression_t::make_math_operation1(math1_operation op, const expression_t& input){
 	QUARK_ASSERT(input.check_invariant());
 
-	auto input2 = make_shared<expression_t>(input);
-
 	auto result = expression_t();
-	result._math1 = std::make_shared<math_operation1_expr_t>(math_operation1_expr_t{ op, input2 });
+	result._math1 = std::make_shared<math_operation1_expr_t>(math_operation1_expr_t{ op, input });
 	result._resolved_expression_type = input.get_expression_type();
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
@@ -180,11 +178,8 @@ expression_t expression_t::make_math_operation2(math2_operation op, const expres
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
-	auto left2 = make_shared<expression_t>(left);
-	auto right2 = make_shared<expression_t>(right);
-
 	auto result = expression_t();
-	result._math2 = std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ op, left2, right2 });
+	result._math2 = std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ op, left, right });
 	result._resolved_expression_type = left.get_expression_type();
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
@@ -196,12 +191,8 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(b.check_invariant());
 
-	auto condition2 = make_shared<expression_t>(condition);
-	auto a2 = make_shared<expression_t>(a);
-	auto b2 = make_shared<expression_t>(b);
-
 	auto result = expression_t();
-	result._conditional_operator = std::make_shared<conditional_operator_expr_t>(conditional_operator_expr_t{ condition2, a2,b2 });
+	result._conditional_operator = std::make_shared<conditional_operator_expr_t>(conditional_operator_expr_t{ condition, a,b });
 	result._resolved_expression_type = a.get_expression_type();
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
@@ -406,20 +397,20 @@ json_value_t expression_to_json(const expression_t& e){
 	}
 	else if(e._math2){
 		const auto e2 = *e._math2;
-		const auto left = expression_to_json(*e2._left);
-		const auto right = expression_to_json(*e2._right);
+		const auto left = expression_to_json(e2._left);
+		const auto right = expression_to_json(e2._right);
 		return json_value_t::make_array_skip_nulls({ json_value_t(operation_to_string(e2._operation)), left, right, type });
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
-		const auto input = expression_to_json(*e2._input);
+		const auto input = expression_to_json(e2._input);
 		return json_value_t::make_array_skip_nulls({ json_value_t(operation_to_string(e2._operation)), input, type });
 	}
 	else if(e._conditional_operator){
 		const auto e2 = *e._conditional_operator;
-		const auto condition = expression_to_json(*e2._condition);
-		const auto a = expression_to_json(*e2._a);
-		const auto b = expression_to_json(*e2._b);
+		const auto condition = expression_to_json(e2._condition);
+		const auto a = expression_to_json(e2._a);
+		const auto b = expression_to_json(e2._b);
 		return json_value_t::make_array_skip_nulls({ json_value_t("?:"), condition, a, b, type });
 	}
 	else if(e._call){

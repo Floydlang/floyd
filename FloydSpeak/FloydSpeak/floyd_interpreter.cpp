@@ -331,8 +331,8 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 
 	const auto e2 = *e._math2;
 	const auto op = e2._operation;
-	const auto left_expr = evalute_expression(vm, *e2._left);
-	const auto right_expr = evalute_expression(vm, *e2._right);
+	const auto left_expr = evalute_expression(vm, e2._left);
+	const auto right_expr = evalute_expression(vm, e2._right);
 
 	//	Both left and right are constant, replace the math_operation with a constant!
 	if(left_expr._constant && right_expr._constant){
@@ -565,16 +565,16 @@ expression_t evaluate_conditional_operator(const interpreter_t& vm, const expres
 
 	const auto& ce = *e._conditional_operator;
 
-	const auto cond_result = evalute_expression(vm, *ce._condition);
+	const auto cond_result = evalute_expression(vm, ce._condition);
 	if(cond_result._constant&& cond_result._constant->is_bool()){
 		const bool cond_flag = cond_result._constant->get_bool();
 
 		//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 		if(cond_flag){
-			return evalute_expression(vm, *ce._a);
+			return evalute_expression(vm, ce._a);
 		}
 		else{
-			return evalute_expression(vm, *ce._b);
+			return evalute_expression(vm, ce._b);
 		}
 	}
 	else{
@@ -661,7 +661,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
-		const auto input = evalute_expression(vm, *e2._input);
+		const auto input = evalute_expression(vm, e2._input);
 
 		//	Replace the with a constant!
 		if(input._constant){
