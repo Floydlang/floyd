@@ -273,7 +273,7 @@ scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
 
 
 ast_t program_to_ast2(const string& program){
-	const auto pass1 = program_to_ast(program);
+	const auto pass1 = parse_program(program);
 	const auto pass2 = run_pass2(pass1);
 
 	const ast_t ast = json_to_ast(pass2);

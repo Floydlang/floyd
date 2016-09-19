@@ -27,12 +27,7 @@
 namespace floyd_parser {
 
 
-using std::vector;
-using std::string;
-using std::pair;
-using std::shared_ptr;
-using std::unique_ptr;
-using std::make_shared;
+using namespace std;
 
 /*
 	AST ABSTRACT SYNTAX TREE
@@ -214,13 +209,6 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 
 
-
-//////////////////////////////////////////////////		program_to_ast()
-
-
-
-
-
 json_value_t define_scope_type(const json_value_t& result_scope, const json_value_t& new_scope){
 	QUARK_ASSERT(result_scope.check_invariant());
 	QUARK_ASSERT(new_scope.check_invariant());
@@ -245,8 +233,6 @@ json_value_t define_scope_type(const json_value_t& result_scope, const json_valu
 }
 
 //??? Track when / order of definitions and binds so statements can't access them before they're in scope.
-
-
 
 
 std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& scope_def2, const string& s){
@@ -297,7 +283,7 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 
 
 
-json_value_t program_to_ast(const string& program){
+json_value_t parse_program(const string& program){
 	json_value_t a = make_scope_def();
 	a = store_object_member(a, "_name", "global");
 	a = store_object_member(a, "_type", "global");
@@ -311,45 +297,27 @@ json_value_t program_to_ast(const string& program){
 }
 
 
-#if false
-
-QUARK_UNIT_TEST("", "program_to_ast()", "kProgram1", ""){
+QUARK_UNIT_TEST("", "parse_program()", "kProgram1", ""){
 	const string kProgram1 =
 		"int main(string args){\n"
 		"	return 3;\n"
 		"}\n";
 
-	auto result = program_to_ast(kProgram1);
-	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
-
-	const auto f = make_function_def(
-		type_identifier_t::make("main"),
-		type_identifier_t::make_int(),
-		{
-			{ type_identifier_t::make_string(), "args" }
-		},
-		executable_t({
-			make_shared<statement_t>(make__return_statement(expression_t::make_constant(3)))
-		}),
-		{},
-		{}
-	);
-
-//	result._global_scope = result._global_scope->set_types(define_function_type(result._global_scope->_types_collector, "main", f));
-	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "main"));
-//	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "main") == *f));
+	auto result = parse_program(kProgram1);
+	QUARK_UT_VERIFY(get_in(result, { "_types", "main", 0.0, "base_type" }) == "function");
+	QUARK_UT_VERIFY(get_in(result, { "_types", "main", 0.0, "scope_def", "_args", 0.0 }) == json_value_t::make_object({ { "name", "args"}, {"type", "<string>"}}));
+	QUARK_UT_VERIFY(get_in(result, { "_types", "main", 0.0, "scope_def", "_return_type" }) == "<int>");
 }
 
-
-QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
+QUARK_UNIT_TEST("", "parse_program()", "three arguments", ""){
 	const string kProgram =
 		"int f(int x, int y, string z){\n"
 		"	return 3;\n"
 		"}\n";
 
-	const auto result = program_to_ast(kProgram);
-	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
-
+	const auto result = parse_program(kProgram);
+	QUARK_UT_VERIFY(result);
+#if false
 	const auto f = make_function_def(
 		type_identifier_t::make("f"),
 		type_identifier_t::make_int(),
@@ -374,17 +342,20 @@ QUARK_UNIT_TEST("", "program_to_ast()", "three arguments", ""){
 	const auto body = resolve_function_type(f2->_types_collector, "___body");
 	QUARK_UT_VERIFY(body->_type == scope_def_t::k_subscope);
 	QUARK_UT_VERIFY(body->_executable._statements.size() == 1);
+#endif
 }
 
 
-QUARK_UNIT_TEST("", "program_to_ast()", "Local variables", ""){
+QUARK_UNIT_TEST("", "parse_program()", "Local variables", ""){
 	const string kProgram1 =
 		"int main(string args){\n"
 		"	int a = 4;\n"
 		"	return 3;\n"
 		"}\n";
 
-	auto result = program_to_ast(kProgram1);
+	auto result = parse_program(kProgram1);
+	QUARK_UT_VERIFY(result);
+#if false
 	const auto f2 = resolve_function_type(result._global_scope->_types_collector, "main");
 	QUARK_UT_VERIFY(f2);
 	QUARK_UT_VERIFY(f2->_type == scope_def_t::k_function_scope);
@@ -395,13 +366,12 @@ QUARK_UNIT_TEST("", "program_to_ast()", "Local variables", ""){
 	QUARK_UT_VERIFY(body->_members.size() == 1);
 	QUARK_UT_VERIFY(body->_members[0]._name == "a");
 	QUARK_UT_VERIFY(body->_executable._statements.size() == 2);
-
+#endif
 }
 
 
 
-#if false
-QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
+QUARK_UNIT_TEST("", "parse_program()", "two functions", ""){
 	const string kProgram =
 		"string hello(int x, int y, string z){\n"
 		"	return \"test abc\";\n"
@@ -410,9 +380,10 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 		"	return 3;\n"
 		"}\n";
 
-	QUARK_TRACE(kProgram);
+	const auto result = parse_program(kProgram);
+	QUARK_UT_VERIFY(result);
 
-	const auto result = program_to_ast(kProgram);
+#if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
 
 	const auto f = make_function_def(
@@ -444,12 +415,10 @@ QUARK_UNIT_TEST("", "program_to_ast()", "two functions", ""){
 	);
 //	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "main") == *f2));
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "main"));
-}
 #endif
+}
 
-
-#if false
-QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
+QUARK_UNIT_TESTQ("parse_program()", "Call function a from function b"){
 	const string kProgram2 =
 	"float testx(float v){\n"
 	"	return 13.4;\n"
@@ -458,7 +427,9 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 	"	float test = testx(1234);\n"
 	"	return 3;\n"
 	"}\n";
-	auto result = program_to_ast(kProgram2);
+	auto result = parse_program(kProgram2);
+	QUARK_UT_VERIFY(result);
+#if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
 
 	const auto f = make_function_def(
@@ -489,8 +460,8 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 		)
 	));
 */
-}
 #endif
+}
 
 
 
@@ -499,16 +470,17 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Call function a from function b"){
 
 
 
-QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can instantiate a struct"){
-	const auto result = program_to_ast(
+QUARK_UNIT_TESTQ("parse_program()", "Proves we can instantiate a struct"){
+	const auto result = parse_program(
 		"struct pixel { string s; }"
 		"string main(){\n"
 		"	return \"\";"
 		"}\n"
 	);
 
-
+#if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
+#endif
 
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
@@ -523,13 +495,15 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can instantiate a struct"){
 */
 }
 
-QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member variable"){
-	const auto result = program_to_ast(
+QUARK_UNIT_TESTQ("parse_program()", "Proves we can address a struct member variable"){
+	const auto result = parse_program(
 		"string main(){\n"
 		"	return p.s + a;"
 		"}\n"
 	);
+#if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
+#endif
 
 /*
 	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
@@ -543,7 +517,6 @@ QUARK_UNIT_TESTQ("program_to_ast()", "Proves we can address a struct member vari
 	));
 */
 }
-#endif
 
 
 }	//	floyd_parser

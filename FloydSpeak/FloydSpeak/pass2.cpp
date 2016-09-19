@@ -1698,7 +1698,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "Minimum program"){
 			return 3;
 		}
 		)";
-	const auto pass1 = program_to_ast(a);
+	const auto pass1 = parse_program(a);
 	const auto pass2 = run_pass2(pass1);
 	const auto ast = json_to_ast(pass2);
 
@@ -1722,14 +1722,14 @@ QUARK_UNIT_TESTQ("run_pass2()", "Maxium program"){
 			return get_s(p);
 		}
 		)";
-	const auto pass1 = program_to_ast(a);
+	const auto pass1 = parse_program(a);
 	const auto pass2 = run_pass2(pass1);
 }
 
 
 
 void test_error(const string& program, const string& error_string){
-	const auto pass1 = program_to_ast(program);
+	const auto pass1 = parse_program(program);
 	try{
 		const auto pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);
