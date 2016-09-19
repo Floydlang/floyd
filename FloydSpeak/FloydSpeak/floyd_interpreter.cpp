@@ -743,27 +743,35 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 
 //??? Make separate tests for parsing vs evaluating expressions.
-expression_t test_evaluate_simple(string expression_string){
+void test_evaluate_simple(const expression_t& e, const expression_t& expected){
 	const ast_t ast;
 	const interpreter_t interpreter(ast);
-	const auto e = parse_expression_all(expression_string);
-	const auto e2 = conv_expression(e, std::map<std::string, std::shared_ptr<floyd_parser::type_def_t>>());
-	const auto e3 = evalute_expression(interpreter, e2);
-	return e3;
+	const auto e3 = evalute_expression(interpreter, e);
+	QUARK_TEST_VERIFY(e3 == expected);
 }
 
 //??? Change so built-in types don't have to be registered to be used -- only custom types needs that.
 //??? Add tests for strings and floats.
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+	test_evaluate_simple(
+		expression_t::make_constant(1234),
+		expression_t::make_constant(1234)
+	);
+}
+
+QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+	test_evaluate_simple(
+		expression_t::make_math_operation2(
+			math_operation2_expr_t::operation::k_add,
+			expression_t::make_constant(1),
+			expression_t::make_constant(2)
+		),
+		expression_t::make_constant(3)
+	);
+}
+
 #if false
-
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
-	QUARK_TEST_VERIFY(test_evaluate_simple("1234") == expression_t::make_constant(1234));
-}
-
-
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
-	QUARK_TEST_VERIFY(test_evaluate_simple("1+2") == expression_t::make_constant(3));
-}
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2+3") == expression_t::make_constant(6));
