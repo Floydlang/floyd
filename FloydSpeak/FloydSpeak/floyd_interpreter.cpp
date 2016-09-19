@@ -582,8 +582,6 @@ expression_t evaluate_conditional_operator(const interpreter_t& vm, const expres
 	}
 }
 
-
-//??? Merge address evaluation into generic evaluation mechanism
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -709,7 +707,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 	/*
 		If inputs are constant, replace function call with a constant!
-		??? Have different expression-classes to tell if they are resolved / unresolved. Makes it possible to execute both types of expression but not check at runtime.
 	*/
 	else if(e._call){
 		return evaluate_call(vm, e);
@@ -745,20 +742,24 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 
 
-#if false
-??? Make separate tests for parsing vs evaluating expressions.
+//??? Make separate tests for parsing vs evaluating expressions.
 expression_t test_evaluate_simple(string expression_string){
 	const ast_t ast;
+	const interpreter_t interpreter(ast);
 	const auto e = parse_expression_all(expression_string);
-	const auto e2 = evalute_expression(ast, e);
-	return e2;
+	const auto e2 = conv_expression(e, std::map<std::string, std::shared_ptr<floyd_parser::type_def_t>>());
+	const auto e3 = evalute_expression(interpreter, e2);
+	return e3;
 }
 
+//??? Change so built-in types don't have to be registered to be used -- only custom types needs that.
 //??? Add tests for strings and floats.
+#if false
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1234") == expression_t::make_constant(1234));
 }
+
 
 QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2") == expression_t::make_constant(3));

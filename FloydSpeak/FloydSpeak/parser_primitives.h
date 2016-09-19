@@ -202,6 +202,11 @@ namespace floyd_parser {
 	json_value_t make_scope_def();
 
 
+	/*
+		This is a JSON object with all types for global scope.
+	*/
+	json_value_t make_builtin_types();
+
 
 }	//	floyd_parser
 

@@ -381,8 +381,16 @@ json_value_t make_scope_def(){
 		{ "_return_type", "" }
 	});
 }
-
-
+json_value_t make_builtin_types(){
+	const auto builtin_types = parse_json(seq_t(R"(
+		{
+			"int": [ { "base_type": "int" } ],
+			"bool": [ { "base_type": "bool" } ],
+			"string": [ { "base_type": "string" } ]
+		}
+	)"));
+	return builtin_types.first;
+}
 
 
 

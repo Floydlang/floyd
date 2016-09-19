@@ -298,19 +298,14 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 	return { result_scope, pos };
 }
 
+
+
 json_value_t program_to_ast(const string& program){
 	json_value_t a = make_scope_def();
 	a = store_object_member(a, "_name", "global");
 	a = store_object_member(a, "_type", "global");
 
-	const auto builtin_types = parse_json(seq_t(R"(
-		{
-			"int": [ { "base_type": "int" } ],
-			"bool": [ { "base_type": "bool" } ],
-			"string": [ { "base_type": "string" } ]
-		}
-	)"));
-	a = store_object_member(a, "_types", builtin_types.first);
+	a = store_object_member(a, "_types", make_builtin_types());
 
 	const auto statements_pos = read_statements_into_scope_def(a, program);
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
