@@ -83,6 +83,26 @@ namespace floyd_parser {
 
 
 
+
+	//////////////////////////////////////////////////		function_instance_t
+
+
+
+	bool function_instance_t::check_invariant() const {
+		return true;
+	}
+
+	bool function_instance_t::operator==(const function_instance_t& other){
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return *_function_type == *other._function_type && *_function_implementation == *other._function_implementation;
+	}
+
+
+
+
+
 	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def, const std::vector<value_t>& elements){
 		QUARK_ASSERT(def && def->check_invariant());
 
@@ -183,6 +203,10 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		}
 	}
 	else if(type == base_type::k_vector){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else if(type == base_type::k_function){
 		QUARK_ASSERT(false);
 		return 0;
 	}
@@ -369,7 +393,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	QUARK_TEST_VERIFY(a.get_vector()->_elements[2] == 5);
 }
 
-
+#if false
 value_t make_test_func(){
 	const auto function_scope_ref = scope_def_t::make_function_def(
 		type_identifier_t::make("my_func"),
@@ -401,7 +425,7 @@ QUARK_UNIT_TESTQ("value_t()", "function"){
 
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 }
-
+#endif
 
 #if false
 

@@ -47,7 +47,6 @@ namespace floyd_parser {
 	std::string to_preview(const struct_instance_t& instance);
 
 
-
 	//////////////////////////////////////////////////		vector_instance_t
 
 
@@ -62,6 +61,20 @@ namespace floyd_parser {
 	};
 
 	std::string to_preview(const vector_instance_t& instance);
+
+
+	//////////////////////////////////////////////////		function_instance_t
+
+
+	struct function_instance_t {
+		public: bool check_invariant() const;
+		public: bool operator==(const function_instance_t& other);
+
+
+		public: std::shared_ptr<const type_def_t> _function_type;
+		public: scope_ref_t _function_implementation;
+	};
+
 
 
 
@@ -84,6 +97,7 @@ namespace floyd_parser {
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
 			}
 			else if(base_type == base_type::k_bool){
 //				QUARK_ASSERT(_bool == false);
@@ -92,6 +106,7 @@ namespace floyd_parser {
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
 			}
 			else if(base_type == base_type::k_int){
 				QUARK_ASSERT(_bool == false);
@@ -100,6 +115,7 @@ namespace floyd_parser {
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
 			}
 			else if(base_type == base_type::k_float){
 				QUARK_ASSERT(_bool == false);
@@ -108,6 +124,7 @@ namespace floyd_parser {
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
 			}
 			else if(base_type == base_type::k_string){
 				QUARK_ASSERT(_bool == false);
@@ -116,6 +133,7 @@ namespace floyd_parser {
 //				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
 			}
 
 			else if(base_type == base_type::k_struct){
@@ -123,8 +141,9 @@ namespace floyd_parser {
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
-//				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
 
 				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
@@ -134,7 +153,8 @@ namespace floyd_parser {
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-//				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_vector != nullptr);
+				QUARK_ASSERT(_function == nullptr);
 
 				QUARK_ASSERT(_vector && _vector->check_invariant());
 			}
@@ -145,6 +165,9 @@ namespace floyd_parser {
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function != nullptr);
+
+				QUARK_ASSERT(_function && _function->check_invariant());
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -212,11 +235,12 @@ namespace floyd_parser {
 
 			QUARK_ASSERT(check_invariant());
 		}
-		public: value_t(const std::shared_ptr<type_def_t>& function_type_def) :
-			_type_def(function_type_def)
+		public: value_t(const std::shared_ptr<function_instance_t>& function_instance) :
+			_type_def(function_instance->_function_type),
+			_function(function_instance)
 		{
-			QUARK_ASSERT(function_type_def && function_type_def->check_invariant());
-			QUARK_ASSERT(function_type_def->get_type() == base_type::k_function);
+			QUARK_ASSERT(function_instance && function_instance->check_invariant());
+			QUARK_ASSERT(function_instance->_function_type && function_instance->_function_type->get_type() == base_type::k_function);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -229,7 +253,8 @@ namespace floyd_parser {
 			_float(other._float),
 			_string(other._string),
 			_struct(other._struct),
-			_vector(other._vector)
+			_vector(other._vector),
+			_function(other._function)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
@@ -283,7 +308,7 @@ namespace floyd_parser {
 				return *_vector == *other._vector;
 			}
 			else if(base_type == base_type::k_function){
-				return true;
+				return *_function == *other._function;
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -471,13 +496,13 @@ namespace floyd_parser {
 			return _vector;
 		}
 
-		public: std::shared_ptr<const type_def_t> get_function() const{
+		public: std::shared_ptr<const function_instance_t> get_function() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _type_def;
+			return _function;
 		}
 
 		public: void swap(value_t& other){
@@ -492,6 +517,7 @@ namespace floyd_parser {
 			std::swap(_string, other._string);
 			std::swap(_struct, other._struct);
 			std::swap(_vector, other._vector);
+			std::swap(_function, other._function);
 
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
@@ -510,7 +536,7 @@ namespace floyd_parser {
 		private: std::string _string = "";
 		private: std::shared_ptr<struct_instance_t> _struct;
 		private: std::shared_ptr<vector_instance_t> _vector;
-		//	!!! Notice that function-values only use the type_def_t -- there is no per-value state.
+		private: std::shared_ptr<function_instance_t> _function;
 	};
 
 
