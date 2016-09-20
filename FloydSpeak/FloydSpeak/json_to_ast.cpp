@@ -138,6 +138,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		QUARK_ASSERT(f_address._resolve_variable);
 		const string func_name = f_address._resolve_variable->_variable_name;
 
+		const auto function_expr = conv_expression(e.get_array_n(1), temp_type_defs);
 
 		const auto args = e.get_array_n(2);
 		vector<expression_t> args2;
@@ -148,6 +149,7 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 
 		const auto return_type = resolve_type123(e.get_array_n(3).get_string(), temp_type_defs);
 		return expression_t::make_function_call(type_identifier_t::make(func_name), args2, return_type);
+		return expression_t::make_function_call(function_expr, args2, return_type);
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 4);

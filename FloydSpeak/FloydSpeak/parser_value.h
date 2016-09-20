@@ -529,6 +529,8 @@ struct struct_fixture_t {
 };
 #endif
 
+	value_t make_test_func();
+
 
 }	//	floyd_parser
 

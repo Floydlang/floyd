@@ -587,11 +587,12 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e._call);
 
-	const auto& call_function_expression = *e._call;
+	const auto& call = *e._call;
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
 
-
+??? function prototype == the TYPE. VALUE refers to WHICH implementation of the TYPE.
+#if 0
 	const auto function_name = e._call->_function.to_string();
 
 	//	find function symbol: no proper static scoping ???
@@ -610,10 +611,15 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	if(!type || type->get_type() != base_type::k_function){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
+#else
+	const auto function_address = evalute_expression(vm, call._function);
+	QUARK_ASSERT(function_address._constant && function_address._constant->get_base_type() == base_type::k_function);
+	const auto type = function_address._constant->get_function();
+#endif
 
 	const auto& function_def = type->get_function_def();
 	if(function_def->_type == scope_def_t::etype::k_function_scope){
-		QUARK_ASSERT(function_def->_args.size() == call_function_expression._inputs.size());
+		QUARK_ASSERT(function_def->_args.size() == call._inputs.size());
 	}
 	else if(function_def->_type == scope_def_t::etype::k_subscope){
 	}
@@ -623,7 +629,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	//	Simplify each argument.
 	vector<expression_t> simplified_args;
-	for(const auto& i: call_function_expression._inputs){
+	for(const auto& i: call._inputs){
 		const auto arg_expr = evalute_expression(vm, i);
 		simplified_args.push_back(arg_expr);
 	}
@@ -632,7 +638,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	for(const auto& i: simplified_args){
 		if(!i._constant){
 			//??? should use simplified_args.
-			return expression_t::make_function_call(call_function_expression._function, call_function_expression._inputs, e.get_expression_type());
+			return expression_t::make_function_call(call._function, call._inputs, e.get_expression_type());
 		}
 	}
 

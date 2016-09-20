@@ -369,9 +369,10 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	QUARK_TEST_VERIFY(a.get_vector()->_elements[2] == 5);
 }
 
-QUARK_UNIT_TESTQ("value_t()", "function"){
+
+value_t make_test_func(){
 	const auto function_scope_ref = scope_def_t::make_function_def(
-		type_identifier_t::make("my_func_skutt"),
+		type_identifier_t::make("my_func"),
 		std::vector<member_t>{
 			{ type_def_t::make_int_typedef(), "a" },
 			{ type_def_t::make_string_typedef(), "b" }
@@ -383,6 +384,11 @@ QUARK_UNIT_TESTQ("value_t()", "function"){
 
 	const auto function_type = type_def_t::make_function_type_def(function_scope_ref);
 	const auto a = value_t(function_type);
+	return a;
+}
+
+QUARK_UNIT_TESTQ("value_t()", "function"){
+	const auto a = make_test_func();
 
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(!a.is_bool());
@@ -418,6 +424,110 @@ struct_fixture_t::struct_fixture_t() :
 	_struct6_instance1 = make_struct_instance(make_resolved_root(_ast), _struct6_def);
 }
 #endif
+
+
+
+json_value_t value_to_json(const value_t& v){
+	if(v.is_null()){
+		return json_value_t();
+	}
+	else if(v.is_bool()){
+		return json_value_t(v.get_bool());
+	}
+	else if(v.is_int()){
+		return json_value_t(static_cast<double>(v.get_int()));
+	}
+	else if(v.is_float()){
+		return json_value_t(static_cast<double>(v.get_float()));
+	}
+	else if(v.is_string()){
+		return json_value_t(v.get_string());
+	}
+	else if(v.is_struct()){
+		const auto value = v.get_struct();
+		std::map<string, json_value_t> result;
+		for(const auto member: value->_struct_type->get_struct_def()->_members){
+			const auto member_name = member._name;
+			const auto member_value = value->_member_values[member_name];
+			result[member_name] = value_to_json(member_value);
+		}
+
+		return result;
+	}
+	else if(v.is_vector()){
+		const auto value = v.get_vector();
+		std::vector<json_value_t> result;
+		for(int i = 0 ; i < value->_elements.size() ; i++){
+			const auto element_value = value->_elements[i];
+			result.push_back(value_to_json(element_value));
+		}
+
+		return result;
+	}
+	else if(v.is_function()){
+		return json_value_t();
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+#if false
+QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
+	struct_fixture_t f;
+	const value_t value = f._struct6_instance0;
+
+	const auto result = value_to_json(value);
+
+	QUARK_UT_VERIFY(result.is_object());
+	const auto obj = result.get_object();
+
+	QUARK_UT_VERIFY(obj.at("_bool_true").is_true());
+	QUARK_UT_VERIFY(obj.at("_bool_false").is_false());
+	QUARK_UT_VERIFY(obj.at("_int").get_number() == 111.0);
+	QUARK_UT_VERIFY(obj.at("_string").get_string() == "test 123");
+	QUARK_UT_VERIFY(obj.at("_pixel").is_object());
+	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("red").get_number() == 55.0);
+	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("green").get_number() == 66.0);
+}
+#endif
+
+#if 0
+QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
+	const auto a = make_vector_instance(vector_def, { 10, 11, 12 });
+	const auto b = make_vector_instance(vector_def, { 10, 4 });
+
+	const auto result = value_to_json(a);
+
+	QUARK_UT_VERIFY(result.is_array());
+	const auto array = result.get_array();
+
+	QUARK_UT_VERIFY(array[0] == 10);
+	QUARK_UT_VERIFY(array[1] == 11);
+	QUARK_UT_VERIFY(array[2] == 12);
+}
+#endif
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t("hello")), json_value_t("hello"));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t(123)), json_value_t(123.0));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t(true)), json_value_t(true));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t(false)), json_value_t(false));
+}
+
+QUARK_UNIT_TESTQ("value_to_json()", ""){
+	quark::ut_compare(value_to_json(value_t()), json_value_t());
+}
 
 
 }	//	floyd_parser
