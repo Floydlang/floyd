@@ -591,8 +591,8 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
 
-??? function prototype == the TYPE. VALUE refers to WHICH implementation of the TYPE.
-#if 0
+//??? function prototype == the TYPE. VALUE refers to WHICH implementation of the TYPE.
+#if 1
 	const auto function_name = e._call->_function.to_string();
 
 	//	find function symbol: no proper static scoping ???

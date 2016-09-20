@@ -420,7 +420,8 @@ json_value_t expression_to_json(const expression_t& e){
 			const auto arg_expr = expression_to_json(i);
 			args_json.push_back(arg_expr);
 		}
-		return json_value_t::make_array2({ "call", expression_to_json(call_function._function), args_json, type });
+//???		return json_value_t::make_array2({ "call", expression_to_json(call_function._function), args_json, type });
+		return json_value_t::make_array2({ "call", call_function._function.to_string(), args_json, type });
 	}
 	else if(e._resolve_variable){
 		const auto e2 = *e._resolve_variable;
@@ -474,7 +475,8 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_function_call(
-				expression_t::make_constant(make_test_func()),
+				type_identifier_t::make("my_func"),
+//???				expression_t::make_constant(make_test_func()),
 				{
 					expression_t::make_constant("xyz"),
 					expression_t::make_constant(123)

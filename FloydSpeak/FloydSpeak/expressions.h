@@ -143,7 +143,7 @@ namespace floyd_parser {
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
-		/*
+		/*_
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 
