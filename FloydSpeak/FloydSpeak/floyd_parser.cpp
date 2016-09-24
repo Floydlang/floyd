@@ -234,6 +234,25 @@ json_value_t define_scope_type(const json_value_t& result_scope, const json_valu
 
 //??? Track when / order of definitions and binds so statements can't access them before they're in scope.
 
+json_value_t make_function_prototype(const json_value_t& return_type, const json_value_t& args){
+	const auto args2 = args.get_array();
+	vector<json_value_t> proto;
+	proto.push_back(return_type);
+	proto.insert(proto.end(), args2.begin(), args2.end());
+	const auto function_prototype = json_value_t::make_array2(proto);
+	return function_prototype;
+}
+
+QUARK_UNIT_TESTQ("make_function_prototype()", ""){
+	const auto r = make_function_prototype(
+		json_value_t("int"),
+		json_value_t::make_array2({})
+	);
+	QUARK_UT_VERIFY(json_to_compact_string(r) == "[");
+}
+
+
+
 
 std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& scope_def2, const string& s){
 	QUARK_ASSERT(scope_def2.check_invariant());
@@ -258,15 +277,29 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 		else if(statement_type == "define_function"){
 			result_scope = define_scope_type(result_scope, statement.get_array_n(1));
 
+			const auto function_name = statement.get_array_n(1).get_object_element("_name");
+			const auto return_type = statement.get_array_n(1).get_object_element("_return_type");
+			const auto args_array = statement.get_array_n(1).get_object_element("_args").get_array();
+			vector<json_value_t> proto;
+			proto.push_back(return_type);
+			proto.insert(proto.back(), args.begin(), arg.end());
+			const auto function_prototype = json_value_t::make_array2(proto);
+
+
+
+			auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
+			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
+
+
 			//	Add a local variable pointing to our function.??? This removes need for scoped type_defs?
 //			auto loc = make_member_def("", local_name.get_string(), expr);
 //			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
 		}
 		else if(statement_type == "bind"){
-			auto bind_type = statement.get_array_n(1);
-			auto local_name = statement.get_array_n(2);
-			auto expr = statement.get_array_n(3);
-			auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
+			const auto bind_type = statement.get_array_n(1);
+			const auto local_name = statement.get_array_n(2);
+			const auto expr = statement.get_array_n(3);
+			const auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
 
 			//	Reserve an entry in _members-vector for our variable.
 			result_scope = store_object_member(result_scope, "_locals", push_back(result_scope.get_object_element("_locals"), loc));
