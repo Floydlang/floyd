@@ -180,6 +180,7 @@ Clojure
 	(assoc {:a 1, :b 2} :b 3)
 	reference: https://adambard.com/blog/clojure-in-15-minutes/
 
+Map can contain null values
 
 
 # SEQ
@@ -402,6 +403,11 @@ struct my_window {
 	}
 }
 
+
+# sha1 type
+# uuid type
+# Uri type
+# Date type
 
 # TEMPLATES
 
@@ -670,3 +676,11 @@ c = json(
 		],
 		"cat"
 	]
+
+
+??? nest JSON? Expand or store as string constants?
+??? Can JSON be used to store and edit Floyd script?
+"Floyd speak"
+??? Can JSON be used to serialize all floyd data structures? De-duplication?
+??? Call stack and local variables and heap are also just state, just like all other values.
+

@@ -104,22 +104,6 @@ F) _RETURN-OBJECT-DESCRIBING-UNPURE-OPERATIONS_.
 }
 
 
-### Define assumption
-
-- 
-
-??? nest JSON? Expand or store as string constants?
-??? Can JSON be used to store and edit Floyd script?
-"Floyd speak"
-??? Can JSON be used to serialize all floyd data structures? De-duplication?
-??? Call stack and local variables and heap are also just state, just like all other values.
-
-# Implementation
-
-	struct stack_frame {
-		vector<value_t> _locals;
-	}
-
 # Floyd Runtimes
 
 - PRINCIPLE: Define "side effect": layers of illusions of side-effect free: malloc, using CPU resources, consuming COW time to execute, recording stats / profiling etc. Side effects? No: there are mutable mechanisms hidden in the runtime that the simulation cannot observe = OK and considered side-effect free. Reading from internet server is a pure operation, even if server records log files.
@@ -146,13 +130,6 @@ Without these observers, Floyd could optimize-away a lot of the
 observer {
 	dir_spec = "/Volumes/Macintosh HD/Users/Marcus/Pictures/";
 }
-
-# Map
-
-A map _can_ contain null values.
-
-
-
 
 
 
@@ -353,7 +330,9 @@ GOAL: One well-defined and composable method of async. No DSL like nested comple
 A) Use futures and promises, completions.
 B) Block clock thread, hide time from program. This makes run_clock() a continuation!!!
 C) clock
-D) '
+D) Clock result will contain list of pending operations, as completions. Now client decides what to do with them. This means do_clock() only makes one tick.
+
+Can pure function create a socket? Token socket is OK. Or create socket with clock at top level?! This allows simple asynchronous programming: blocking-style-only.
 
 
 
