@@ -1,6 +1,6 @@
 # INSIGHTS
 
-- PRINCIPLE: Each top-level function introduces an implicit transactions. All pure and unpure functions runs inside this transaction. Top-level function needs to commit or rollback the transaction. A single top-level function always represents exactly _one_ transaction. Use two different top-level functions if you need two simultaneous transactions.
+- **PRINCIPLE**: Each top-level function introduces an implicit transactions. All pure and unpure functions runs inside this transaction. Top-level function needs to commit or rollback the transaction. A single top-level function always represents exactly _one_ transaction. Use two different top-level functions if you need two simultaneous transactions.
 - PRINCIPLE: All parallell transactions are run as if they were run by separate hardware processor. It doesn't matter if they are called from different GUI event handlers (and only one actually runs at a time) or from different threads or async callbacks or other mechanisms.
 
 
