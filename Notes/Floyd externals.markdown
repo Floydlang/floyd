@@ -284,3 +284,87 @@ OUTPUT
 		}
 	}
 
+#insert
+
+Do we pass around the runtime as a value, that can be replaced / mutated? If it represents file system:
+
+a) No changes clients perform updates the runtime at current clock tick.Those changes happens next tick.
+
+B) Changes happend synchronously from client’s perspective - reading back from runtime is possible. Return new runtime state.
+
+Clients CANNOT create runtimes, they are stacked together on motherboard.
+
+
+
+
+
+A token is a value object that is immutable. It can represents a lifetime in one runtime. You can resolve it and it gives you a value. This value is the same all the time.
+
+Similar to reference counted file handles.
+
+Clients that observer tokens cannot see them change.
+
+But next clock, tokens can resolve to new values.
+
+Tokens can represent physical side effects, like files, data in sockets, concurrency, hardware.
+
+Tokens own their runtime, cannot exists without their runtime.
+
+
+
+# Clock input
+
+Clock is advanced for each main-level clock tick.
+
+During one clock tick, the runtime shows a predictable, pure interface. In the background it can affect the world, as long as client can’t see that.
+
+RUNTIME LAYER: IMAGE PREVIEW RUNTIME, API
+ImageToken
+
+
+
+
+# Filesystem Runtime
+
+JIT freeze the world while reading?
+All changes goes to RAM first
+
+All times is hidden from program.
+
+ReadFile()
+Futures resolved between clock ticks.
+Modifications create uncommitted generations of the file system.
+
+Support completion-lambdas? No?
+No completion chains — do this automatically instead!
+
+Result of run_clocktick() = a future. It cannot return a value since clock needs to advance (mutate) in several generations first.
+
+
+
+
+
+
+# Problem 1 - Async, future, completions
+
+Scenario: communicate with a read-only server using REST. No side effects, just time.
+GOAL: One well-defined and composable method of async. No DSL like nested completions.
+
+A) Use futures and promises, completions.
+B) Block clock thread, hide time from program. This makes run_clock() a continuation!!!
+C) clock
+D) '
+
+
+
+
+# Problem 2 - Side-effects in the world, while reading back
+
+Scenario: reading and writing to local file system, no races with other processes.
+
+A) Mutate directly, propagate to world
+B) Work in stable copy then top-level code merges with world. Possible 
+C) Top-level code use normal mutation.
+D) Top-level mutatation happens usng HW-metaphore
+E) 
+
