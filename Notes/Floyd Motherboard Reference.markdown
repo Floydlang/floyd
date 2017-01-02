@@ -37,14 +37,36 @@ A clock has one or more inputs and ONE output. The motherboard defines when the 
 
 
 "clock": {
-	"name": "command_line_clock",
+	"name": "ui_clock",
 	"inputs": [
 	]
-	"clock-function": "my_clock_function"
+	"clock-function": "ui_clock_function"
 	"layout": {		"x": 48, "y": 16 }
 }
 
 ??? add info about blocking on external event (blocking on reply from socket?).
+
+
+Your motherboard uses a list of expressions to trigger a clock advancement, like
+	ui_clock_function:
+		menu_selection_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+		mouse_input_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+		timeout(60.0) : ui_clock_function.log += ui_clock_function(prev_clock)
+
+??? Replace this with a my_ui_process() that can contain a sequence of stuff and several blockings. No need to have clock.
+
+	var my_socket = socket()
+	void my_ui_process(){
+		wait:
+			my_socket: ui_clock_function.log += ui_clock_function(prev_clock)
+			menu_selection_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+			mouse_input_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+			timeout(60.0) : ui_clock_function.log += ui_clock_function(prev_clock)
+
+		do something else..
+		wait:
+			sdfsd
+	}
 
 
 # OPTOCOUPLERS
