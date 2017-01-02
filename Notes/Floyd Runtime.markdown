@@ -13,6 +13,7 @@ The Floyd runtime has more responsibilities than most language runtimes.
 - Optimizations: lazy, precalc, read-cache, write-cache, alternative deep-struct layout etc.
 
 
+??? Always do de-duplication aka "interning".
 
 
 # FLOYD RUNTIME

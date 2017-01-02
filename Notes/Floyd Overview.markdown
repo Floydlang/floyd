@@ -4,6 +4,21 @@
 
 
 
+
+Floyd has an opinon how to make great software and takes a stand.
+
+Limit programmer’s freedom where it’s not needed. Little freedom of expression about bread and butter stuff.
+
+95% of the general-purpose features you need are already built-into the language and you don’t have to think about it more.
+
+Collections, optimisation strategy, serialisation, exceptions, unicode. No need to invent basics.
+
+
+
+
+
+
+
 # FLOYD PARTS
 - Floyd Script langugage. Pure, typesafe, compiled+interpreted, no refs. JS-like syntax, single assignment SSA
 - Persistent DS
