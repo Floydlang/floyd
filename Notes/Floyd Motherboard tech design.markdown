@@ -1,3 +1,16 @@
+
+
+# TIME
+
+Time-spot can say some objects, files etc are immutable. If this turns out to be false, the entire function (or some) will be re-executed automatically.
+
+Concepts: Clean room vs airlock vs real-world.
+
+Spurious changes to externals
+
+Time capsule illusion. XTimeCapsuleBroken
+
+
 - Insight: synchronization points between systems (state or concurrent) always breaks composition. Move to top of product. ONE super-mediator per complete server-spanning solution.
 
 

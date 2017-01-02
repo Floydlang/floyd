@@ -1,3 +1,32 @@
+# Version 1
+All scripts are pure, cannot do file handling or communication at all. They need to return data so script in motherboard has enough info to perform mutations / communicaation. Return queues with commands / work on snapshots of the world, then let motherboard code diff / merge snapshot into world.
+
+# Version 2
+Let pure code do more work directly = easier to code.
+- FSRuntime - a value object that let's pure core work directly on file system snapshot. In motherboard, the FSRuntimer will be merged into real world.
+- Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
+
+
+# Examples of external clients
+
+- Send REST command and handle it's response.
+- Read and write files, rename directory, swap temp files.
+- Call OS function that takes a lot of time.
+- Timeout
+- Draw to screen
+- Pipe to another process and wait
+- Perform background work using another thread / clock / process
+- Local file system, files observable by other software on computer
+	Write / modify / read a file in a path.
+	Update entire trees of files = how to do persistent?
+- Local GUI - windows etc.
+- Audio output buffers
+- Running simulation at later time
+- OS Clipboard
+
+
+
+
 
 # MOTHERBOARD
 
@@ -87,3 +116,6 @@ Also
 Notice that the value can be a huge struct with all app state or just a message or a UI event etc.
 
 Notice: pure functions cannot access optocouplers themselves. They would not be referential transparent.
+
+
+

@@ -6,6 +6,14 @@ Floyd is a nextgen programming language that gets rid of many problematic tradit
 MANIFEST: To Create a small general purpose languages that promotes great software engineering- for small and gigantic programs, embedded and distributed scripting and optimized engines - that has one simple way to do all basics. It raises the level of abstraction to let human, compilers, runtimes and hardware to do what they do best. Based on best practices, take a set of most important bits of modern languages and abandons most. Support visual programming / composition / architecture
 
 
+
+Correctness first - program A - theoretical: Imagine all functions executing on an infinitely fast computer and design the program to *work* correctly.
+Optimize second - Program B: Next optimise the program by using the Optimizer to do caching, lazy evaluation and other optimisations *on top* of the correct design. Other types of time: communication latency, screen refresh rate etc must be part of program A - theoretical design.
+
+
+
+
+
 # OPINIONS
 
 - Programming is not math
@@ -16,6 +24,8 @@ MANIFEST: To Create a small general purpose languages that promotes great softwa
 - Do not confuse optimization and correctness. Correctness is done locally, optimizations are done globally.
 - Side effects are evil
 - The language is the languge, libraries are libraries.
+- Observers, callbacks and similar are EVIl. They inject unknown code directly and syncrhonously into caller's flow. Do not use. Instead use DIFF and MERGE when complete operation is done. This is very efficient in Floyd. ??? Add diff-hints into vector and map?
+
 
 
 # GOALS

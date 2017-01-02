@@ -679,3 +679,92 @@ c = json(
 ??? Can JSON be used to serialize all floyd data structures? De-duplication?
 ??? Call stack and local variables and heap are also just state, just like all other values.
 
+
+
+
+
+
+
+
+#EXCEPTIONS
+
+All runtime errors are handled using exceptions. There is a fixed set of exception types that can be thrown. Nothing else can be thrown or caught. You also tell which “subject” = type of target object. The available subject types can be extended by clients.
+
+
+int CalcStuffy(int a, int b){
+	if(abc){
+		throw out_of_memory(x_ram)
+	}
+}
+
+int DoStuff(int x, int y){
+	try {
+		z = CalcStuff(1 + x, 2 + x);
+	}
+	catch{
+		z = CalcStuff(1 - x, 2 + x);
+	}
+}
+
+int OnButton(uri path){
+	try {
+		f = OpenFile(“asdsd”);
+		s = ParseFile(f);
+		SaveFile(path, s);
+	}
+	catch(runtime_out_of_memory e){
+		if(e._type == x_persistent_storage){
+			ShowAlert_HarddiskFull();
+		}
+		else{
+			rethrow;
+		}
+	}
+}
+
+
+# Built in runtime errors
+runtime_out_of_memory
+runtime_read_error
+runtime_write_error
+runtime_illegal_format_error
+runtime_unsupported_version_error
+
+//	Built in logic errors
+logic_bounds_error
+logic_argument_error
+logic_assert_error
+logic_test_failure
+
+//	Subjects. Extendable.
+x_file
+x_ram
+x_socket
+x_persistent_storage
+
+#ddf
+EXCEPTIONS vs normal program flow
+Where to draw the line?
+
+""Exceptions are for handling the following situation: you can not find out in advance whether an operation will succeed without trying it." - First I note that this criteria applies equally well to returning an error code. That aside..."
+
+1) Main flow: this is the plan A - the work that should be done. It must not trigger exceptions to perform its work. Example: check if you are read the entire file before reading more - do not rely on exceptions for the main flow.
+
+2) Function contract describes different alternative behaviors on runtime errors.
+
+3) Function contract defines what inputs are illegal and defects.
+
+If an error CAN potentially happen in function (= almost all functions) it can OPTIONALLY define explicit exceptions that will be thrown for those cases. The function must guarantee these exceptions are thrown for these cases. It is also given that other, unknown exceptions may be thrown too.
+
+There are be special no-throw functions that are guaranteed to never fail / throw exceptions. These are rare.
+
+often changing the normal flow of program execution.
+
+- If there is no practical / meaningful way to handle the problem as the normal flow of the program.
+
+- Opening a file can fail if file has been deleted. You can preflight that by checking if file exists first.
+
+Example
+- While your program reads a large file from disk into RAM and the disks USB-cable is unplugged.
+	- It is not
+	- 
