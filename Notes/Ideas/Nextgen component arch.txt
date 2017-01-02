@@ -1,0 +1,87 @@
+
+Nextgen component architecture
+=======================================
+GameObject vs Component somewhat broken. Need hiearchical components on a GO! Else it's now composable. GO = world coodinates, component = behaviour.
+
+Enforces explicit ordering using dependency graph
+
+Like "React" for Unity
+
+Uses shadow-DOM for scene and game objects
+
+Markdown for text
+Text / diffable.
+ASCII-art for dependencies, time.
+
+GAME MUTATOR
+Scenegraph, physics, GOs etc are all immutable. All mutation happens via GameMutator.
+This is the main control panel for the entire game.
+
+Allows several active scenes at the same time.
+No global scene object.
+
+
+/*
+	Define game using text files. Floyd GO sits in scene and generates / controlls scene graph.
+
+	Mutation is controlled carefully.
+	Expressions sets
+	PlayMaker-style.
+*/
+
+
+var MyClocks {
+}
+
+var MyPrefabs = {
+	"Player" = {
+		transform = {}
+		components = [
+			rb = RigidBody {
+				mass = 10.0
+			}
+
+			script1 = Script {
+				on_collision2d(){
+				}
+			}
+		];
+	}	
+}
+
+var graph = Scene{
+	root = GameObject {
+		children = [
+			Camera {
+				name = "My Camera",
+				transform = MakeDefTransform(),
+				enable
+			},
+			GameObject {
+				name = "Player Prefab",
+
+				components = [ ]
+			}
+
+			GameObject {
+				name = "Game Controller",
+				modes = {
+					mainMenu = {
+					},
+					pauseMenu = {
+					}
+				}
+			}
+		]
+	}
+}
+
+
+var mutator = SceneMutator {
+}
+
+unityWrapper.SceneMutator = mutator;
+
+
+
+
