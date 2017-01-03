@@ -1,97 +1,132 @@
+"Motherboard" - better names: app, solution, finalizer, wrapper, product, application, top-level
+
+"WORLD" - Better name needed for tech concept: "Snapshot", "Checkout", Git term: "staging area".
 
 
-# TIME
+# Goroutines
+A goroutine is a lightweight thread managed by the Go runtime.
 
-Time-spot can say some objects, files etc are immutable. If this turns out to be false, the entire function (or some) will be re-executed automatically.
+go f(x, y, z)
+starts a new goroutine running
 
-Concepts: Clean room vs airlock vs real-world.
+f(x, y, z)
+The evaluation of f, x, y, and z happens in the current goroutine and the execution of f happens in the new goroutine.
 
-Spurious changes to externals
+Goroutines run in the same address space, so access to shared memory must be synchronized. The sync package provides useful primitives, although you won't need them much in Go as there are other primitives. (See the next slide.)
 
-Time capsule illusion. XTimeCapsuleBroken
+< 1/11 > goroutines.go Syntax
 
+select {
+	case v: <-ch1
+}
 
-- Insight: synchronization points between systems (state or concurrent) always breaks composition. Move to top of product. ONE super-mediator per complete server-spanning solution.
+??? seq vs channels? Is there a way to make pure code that reads from channels? Iterator / generator vs channel? Use for
 
-
-
-
-# RUNTIME
-Passed into every function.
-Can be deducted from *this* ###
-
-# WORLD
- better name needed for tech concept###
- Snapshot
- Checkout
- Git term: staging area
- 
-The exposition between client code and the outside world. This includes sockets, file systems, messages, screens, UI.
-
-This is the ONLY way client code can connect to the outside and read / manipulate the outside world.
-
-
-
-# TOP-LEVEL
-The motherboard where all the bits are connected together into a real EXE / application / solution.
-- Define runtimes
-- Define clocks
-- Define optocouplers between clocks
-- Define memories
-- Define the world
-
-Non-composable.
-Has side effects
-Real-world performance decisions, profiling, optimizations, caching etc.
-Names: motherboard, app, solution, finalizer, wrapper
-
-######################
-
+Find good Coroutine library!!!
 
 - Copy Go channels for our optocoupler? Clojure Core.Async? Allocate "channel" live?
 
 
-
 # INSIGHTS
+- Insight: synchronization points between systems (state or concurrent) always breaks composition. Move to top of product. ONE super-mediator per complete server-spanning solution.
 
-- **PRINCIPLE**: Each top-level function introduces an implicit transactions. All pure and unpure functions runs inside this transaction. Top-level function needs to commit or rollback the transaction. A single top-level function always represents exactly _one_ transaction. Use two different top-level functions if you need two simultaneous transactions.
-- PRINCIPLE: All parallell transactions are run as if they were run by separate hardware processor. It doesn't matter if they are called from different GUI event handlers (and only one actually runs at a time) or from different threads or async callbacks or other mechanisms.
+
+# CLOCK
+A clock represents a series of discrete time increments / transformations. The output is always an immutable value. If you want concurrency you need to have several clocks, each running at their own rate.
+
+Clocks is how mutatation / memory is handled in the motherboard.
+
+A clock has one or more inputs and ONE output. The motherboard defines when the clock is advanced. At this moment, all its inputs are frozen and it's clock-function is called. This function is referenctial transparent. When the clock function is done it returns the result, which is stored in a log of all outputs. The previous output of a clock-function is always passed in as first argument to the clock-function the next time.
+
+		"clock": {
+			"name": "ui_clock",
+			"inputs": [
+			]
+			"clock-function": "ui_clock_function"
+			"layout": {		"x": 48, "y": 16 }
+		}
+
+??? add info about blocking on external event (blocking on reply from socket?).
+
+
+Your motherboard uses a list of expressions to trigger a clock advancement, like
+
+		ui_clock_function:
+			menu_selection_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+			mouse_input_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+			timeout(60.0) : ui_clock_function.log += ui_clock_function(prev_clock)
+
+??? Replace this with a my_ui_process() that can contain a sequence of stuff and several blockings. No need to have clock.
+
+		var my_socket = socket()
+		void my_ui_process(){
+			wait:
+				my_socket: ui_clock_function.log += ui_clock_function(prev_clock)
+				menu_selection_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+				mouse_input_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
+				timeout(60.0) : ui_clock_function.log += ui_clock_function(prev_clock)
+	
+			do something else..
+			wait:
+				sdfsd
+		}
+
+
+# OPTOCOUPLERS
+
+"optocoupler": {
+	"writer": "socket_clock",
+	"reader": "command_line_clock"
+}
+There is no way for a clock to access that from another clock-function - they run in their own sandbox.
+
+Optocouplers lets you send a value between two clocks, even though they run in different speed.
+An optocoupler is similar to a Golang channel. You can make your clock block / wait on a new value appearing.
+
+Also
+- Block until next time writer store value.
+- Sample the latest value in the optocoupler, don't block.
+- Sample queue of all values since last read.
+Notice that the value can be a huge struct with all app state or just a message or a UI event etc.
+
+Notice: pure functions cannot access optocouplers themselves. They would not be referential transparent.
+
+
 
 
 
 
 # PROBLEM 2 - DIFF AND MERGE EFFICIENTLY
+Solve externals support by calculating a new snapshot of its state, then diff. Diffing becomes central.
 
+??? todo
 - diff - merge
 
 
-# PROBLEM 3 - - mutation, clocks, threads, externals. Top level, no statements allowed
-
-# PROBLEM 4 -- Do externals by calculating a new snapshot of its state, then diff. Diffing becomes central.
-
+# PROBLEM 3 - mutation, clocks, externals
+Top level, no statements allowed
 
 
-??? World, ref trans, externals, runtimes, diff
-??? Hide blocking, async, futures, completions
+# PROBLEM 4 - Monad problem
+Practical Pure code vs top-level. The bulk of the code should be pure. How to make it simple to write pure code that in the end affects the world. No monads. Let pure code do more work directly = easier to code.
 
 
+# PROBLEM 4 - SOLUTION Z - MONADS
 
-# MUTATION STRATEGIES
+Sucks.
 
-Here I try to catalogue different approaches to allowing you to write functions that are pure but allow affecting the world in some respect. The idea is to make a toolbox of well-known strategies either for A) use in client programs or (B) building into the language so client programs don't need to use them.
-
-A) __LOCAL AND MERGE__. Perform mutating changes in local copy, then merge to external when committing. The commit needs to be done by top-level inside a transaction. Like React. Like Git. If commit fails, rollback top-level function simulation.
+# PROBLEM 4 - SOLUTION A - RUNTIME AND MERGE
+Perform mutating changes in local copy, then merge to external when committing. The commit needs to be done by top-level inside a transaction. Like React. Like Git. If commit comflicts, top-level can chose to merge, rollback or ignore error, overwrite etc.
 	PRO: Composable.
 	PRO: Main work cannot fail.
 	PRO: Testable.
 	PRO: No motion blur.
 	PRO: No intermediate results ever observable by any client.
+
 	CON: Must be able to simulate all results - won't work for talking to server for example.
 	CON: Must have a copy of the state to start with.
 	CON: Cannot load additional data.
 	CON: Can cause merge conflicts if other code changes the same data.
-
-Needs to be composed with functions higher up in callstack if part of grander transaction.
 
 		dom_copy make_lots_of_changes(dom_copy d){
 			a = d.insert_div(0);
@@ -104,7 +139,16 @@ Needs to be composed with functions higher up in callstack if part of grander tr
 			_system_dom = merge(_system_dom, a);
 		}
 
-B) __MUTATE AND ROLLBACK__. Perform mutatation directly, like it cannot fail and roll back if something went wrong. Needs to detect if something went wrong.
+
+# PROBLEM 4 - SOLUTION A2 - RUNTIME AND MERGE, MOTION BLUR
+Pulls in data from the world on-demand. This makes huge potential worlds possible but makes start non-atomic.
+
+
+# PROBLEM 4 - SOLUTION B - REAL MUTATE AND ROLLBACK
+We perform mutatation directly in the wrold, assuming it cannot fail. In case this illusions blows up, we rollback it all and try again..
+Concepts: Clean room vs airlock vs real-world.
+Spurious changes to externals.
+Time capsule illusion. XTimeCapsuleBroken
 
 	PRO: Simple to implement and understand for programmer.
 	CON: Motion blur problem: either you need to start top-level transaction by opening/locking all external assets for the transaction, or client code will open/lock them one by one (causing motion blur).
@@ -119,7 +163,12 @@ B) __MUTATE AND ROLLBACK__. Perform mutatation directly, like it cannot fail and
 			store_preferences@(_prefs, "~/Application Support/Preferences/My App");
 		}
 
-C) __DEFER MUTATION TO TOP-LEVEL__. Return future that performs mutation later, by the top-level function. Monads.
+	**CON: NOT REFERENTIAL TRANSPARENT!!**
+
+
+# PROBLEM 4 - SOLUTION C - DEFER MUTATION TO TOP-LEVEL
+Return future that performs mutation later, by the top-level function. Monads.
+
 	1) You want to perform as much work as possible outside the functor.
 	2) The function can contain complexity and moving parts but to client appear as pure + rollback. Asynk.
 
@@ -148,7 +197,6 @@ E) _REFACTOR-CODE-TO-RETURN-ABSOLUTE-STATE_ Return the contents of the file you 
 
 F) _RETURN-OBJECT-DESCRIBING-UNPURE-OPERATIONS_.
 
-
 		RESTGetRequest download_image(uri a, text image_name){
 			return RESTGetRequest{
 				uri = a + "?=23" + image_name,
@@ -159,7 +207,6 @@ F) _RETURN-OBJECT-DESCRIBING-UNPURE-OPERATIONS_.
 # Examples
 
 - Using REST GET can be pure.
-
 
 
 {my_document} demo_local_and_merge@[#transaction](my_document d){
@@ -204,27 +251,9 @@ observer {
 }
 
 
-
 # Floyd Externals - how to affect the world outside the simulation
 
-Make high-level replacements for externals. Examples:
-	socket,
-	file,
-	file tree,
-	database,
-	window system output,
-	window system user input,
-	system events etc.
-
-Custom widget in window system:
-HIView
-	Mouse input
-	OnDraw()
-
-Terminal tool:
-main()
-	fread
-	write
+Make high-level replacements for externals, on a per case bases. File system, REST etc.
 
 - PRINCIPLE: Only top-level functions can commit transactions / advance time. Top level functions cannot be nestable and you write them explicitly.
 Top level function has one clock.
@@ -347,6 +376,123 @@ Clients CANNOT create runtimes, they are stacked together on motherboard.
 
 
 
+
+# PURE FILE SYSTEM RUNTIME
+
+struct info {
+	bool is_dir;
+	string name
+	int file_size
+	bytes meta_data
+}
+
+
+/*
+	No changes performed to file system.
+	All reads will be performed on exteran FS just-in-time: this means we get motion-blur on read.
+
+	??? If order is important *between* different runtimes, we may need to perform a system-wide submit where different external-writes are interleaved.
+*/
+runtime fs_runtime {
+	uri get_parent(uri item)
+	string get_node_name(uri path)
+	uri get_file_path(uri path, string filename)
+
+	info get_info(uri path)
+
+	/*
+		Reads entire file into memory.
+	*/
+	seq<byte> read_file(uri path)
+
+	/*
+		Stores a file to file system, replacing any previous version of it.
+
+	*/
+	fs_runtime store_file(uri path, seq<byte> data)
+
+
+	fs_runtime delete_file(uri path)
+	fs_runtime delete_dir(uri path)
+	fs_runtime make_dir(uri parent, string dirname)
+
+
+	///////////////////////////		STATE
+	//	Describe changes to file system, compared to current world state.
+	map<uri, >
+}
+
+/*
+	Merges the fs_runtime into the real world, applying changes to file system.
+*/
+commit_to_world(fs_runtime r)
+
+
+
+==============================================
+
+
+defworld mainworld {
+	//	We need to access the file system.
+	fs_runtime fs;
+	logentru log;
+
+	/*
+		Describes where the virtual program counter is when _tick() returns.
+		It is ususally nil.
+			nil: function executed completely and returned a new world-state.
+			blocking: execution paused because it needs to communicate with outside world = unpure.
+			blocking {
+				continuate* current_pc;
+				waiting for file to load / waiting for REST response / waiting for several things.
+			}
+	*/
+	pc pc;
+}
+
+clock mailbox
+
+defclock main {
+
+	/*
+		Called to by runtime to advance the world ONE clock tick.
+		_tick() is a pure function.
+	*/
+	mainworld _tick(log log, mainworld world0){
+		world1 = world.counter++;
+		return world1;
+	}
+}
+
+
+
+
+/*
+
+ A: --- read --- read --- write --- read --- write ---
+B does:
+
+ B: ---- write --- write --- read --- read --- write ---
+read() ->
+    receive
+        Pattern1 -> 	
+           ...
+        Pattern2 -> 
+           ...
+    end.
+*/
+
+
+process mailbox
+
+
+
+
+
+
+# FLOYD TOKENS AND RUNTIMES
+
+
 A token is a value object that is immutable. It can represents a lifetime in one runtime. You can resolve it and it gives you a value. This value is the same all the time.
 
 Similar to reference counted file handles.
@@ -361,19 +507,7 @@ Tokens own their runtime, cannot exists without their runtime.
 
 
 
-# Clock input
-
-Clock is advanced for each main-level clock tick.
-
-During one clock tick, the runtime shows a predictable, pure interface. In the background it can affect the world, as long as client can’t see that.
-
-RUNTIME LAYER: IMAGE PREVIEW RUNTIME, API
-ImageToken
-
-
-
-
-# Filesystem Runtime
+### Filesystem Runtime
 
 JIT freeze the world while reading?
 All changes goes to RAM first
@@ -391,9 +525,6 @@ Result of run_clocktick() = a future. It cannot return a value since clock needs
 
 
 
-
-
-
 # Problem 1 - Async, future, completions
 
 Scenario: communicate with a read-only server using REST. No side effects, just time.
@@ -405,6 +536,8 @@ C) clock
 D) Clock result will contain list of pending operations, as completions. Now client decides what to do with them. This means do_clock() only makes one tick.
 
 Can pure function create a socket? Token socket is OK. Or create socket with clock at top level?! This allows simple asynchronous programming: blocking-style-only.
+
+		### Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
 
 
 

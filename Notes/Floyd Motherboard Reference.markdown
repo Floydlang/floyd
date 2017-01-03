@@ -1,121 +1,96 @@
-# Version 1
-All scripts are pure, cannot do file handling or communication at all. They need to return data so script in motherboard has enough info to perform mutations / communicaation. Return queues with commands / work on snapshots of the world, then let motherboard code diff / merge snapshot into world.
-
-# Version 2
-Let pure code do more work directly = easier to code.
-- FSRuntime - a value object that let's pure core work directly on file system snapshot. In motherboard, the FSRuntimer will be merged into real world.
-- Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
-
-
-# Examples of external clients
-
-- Send REST command and handle it's response.
-- Read and write files, rename directory, swap temp files.
-- Call OS function that takes a lot of time.
-- Timeout
-- Draw to screen
-- Pipe to another process and wait
-- Perform background work using another thread / clock / process
-- Local file system, files observable by other software on computer
-	Write / modify / read a file in a path.
-	Update entire trees of files = how to do persistent?
-- Local GUI - windows etc.
-- Audio output buffers
-- Running simulation at later time
-- OS Clipboard
-
-
-
 
 
 # MOTHERBOARD
+The motherboard is the top-level design that connects all code together into a product / app / executable.
 
-The motherboard defines:
-- Input / outputs
-- Clocks
-- Optocouplers bewteen clock dimensions
-- WHich pure functions to call and when
-- Glue expressions
-- Memories
-- Connections to servers, local storage, preferences
-- Attaches to user interface
+WORLD: The exposition between client code and the outside world. This includes sockets, file systems, messages, screens, UI.
+
+
+### Responsibilities:
+- Instantiate all parts of the final product and connect them together.
+- Introduce time and mutation into the system.
+- Use Floyd-script modules
+- Call C functions
+- Connect to the outside world, communicating with sockets, reading / writing files etc.
+- Profile control and optimize performance of system.
+
+### Non-goal
+- Be reusable.
+- To be composable
+- Pure / free of side effects
+
+The motherboard is a declarative system, based on JSON. Real-world performance decisions, profiling, optimizations, caching etc.
+
+Most logic is done using Floyd Script, which is a pure, referential transparent language.
+
+# VALUES AND SIGNALS
+All signals and values use Floyd's immutable types, provided by the Floyd runtime. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge nested structs or collections.
+
+# MOTHERBOARD PARTS
+- Clock
+- Channel
+- Glue expressions, calling FLoyd functions
+- File system access: Read and write files, rename directory, swap temp files
+- Socket access: Send REST command and handle it's response.
+- UI access
+- Non-pure OS features
 - Interfaces with command line arguments / returns.
-- Profiling and tweaks
+- Tweaks
+- Performance probes
+- Log probes
+- Timeout
+- Perform background work using another thread / clock / process
+- Audio output buffers
+
+		my first design.mboard
+
+		{
+			"major_version": 1,
+			"minior_version": 0,
+
+			"nodes": {
+			}
+		}
+
+# CLOCKS AND CHANNELS-parts
+A motherboard has one to many **clock**-parts. A clock-part is a little virtual process that perform a sequence of operations, call FloydScript, read and write to channels and other i/o. The clock-part introduces *time* and *mutation* to an otherwise pure and timeless program.
+
+Clocks are modelled after Golang's Goroutines, complete with the **select**-statement. A clock-value is a first-class type but can only be used from the motherboard, never in Floyd Script.
+
+Simple apps, like a basic command line apps, have only one clock-part that gathers input from the command line arguments, maybe calls some pure FloydScript functions on the arguments, reads and writes to the world, then finally return an integer result.
+
+A video game may have several clocks:
+
+- UI event loop clock
+- Prefetch assets clock
+- World-simulation / physics clock
+- Rendering pass 1 clock
+- Commit to OpenGL clock
+- Audio streaming clock
+
+The clocks cannot share any non-const data, only const data. They can be connected together using channels.
+
+A **channel** is a first-class type that channels a specific value. It is modelled after Golang's channels. Channels can only be used from the motherboard, not from FloydScript, since they have sideeffects. This is the only way to communicate between clocks.
+
+Clocks and channels can be created dynamically in the Motherboard scripts too.
 
 
-my first desgin.mboard
+# FILE SYSTEM-part
+??? Simple file API or use channels?
+
+# REST-part
+Channels?
 
 
-{
-	"major_version": 1,
-	"minior_version": 0,
-
-	"nodes": {
-	}
-}
+# Floyd Script
+All scripts are pure, cannot do file handling or communication at all. They need to return data so script in motherboard has enough info to perform mutations / communication. Return queues with commands / work on snapshots of the world, then let motherboard code diff / merge snapshot into world.
 
 
+# ISSUES
 
-# CLOCK
-
-A clock represents a series of discrete time increments / transformations. The output is always an immutable value. If you want concurrency you need to have several clocks, each running at their own rate.
-
-Clocks is how mutatation / memory is handled in the motherboard.
-
-A clock has one or more inputs and ONE output. The motherboard defines when the clock is advanced. At this moment, all its inputs are frozen and it's clock-function is called. This function is referenctial transparent. When the clock function is done it returns the result, which is stored in a log of all outputs. The previous output of a clock-function is always passed in as first argument to the clock-function the next time.
+1. Floyd script is referential transparent. Cannot access the world -- read files, write files, do socket communication etc.
+2. Floys script is composable: cannot support completion callbacks, futures (as composition solution) or blocking. Instead the scripts works on big, composite snapshots.
 
 
-"clock": {
-	"name": "ui_clock",
-	"inputs": [
-	]
-	"clock-function": "ui_clock_function"
-	"layout": {		"x": 48, "y": 16 }
-}
-
-??? add info about blocking on external event (blocking on reply from socket?).
-
-
-Your motherboard uses a list of expressions to trigger a clock advancement, like
-	ui_clock_function:
-		menu_selection_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
-		mouse_input_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
-		timeout(60.0) : ui_clock_function.log += ui_clock_function(prev_clock)
-
-??? Replace this with a my_ui_process() that can contain a sequence of stuff and several blockings. No need to have clock.
-
-	var my_socket = socket()
-	void my_ui_process(){
-		wait:
-			my_socket: ui_clock_function.log += ui_clock_function(prev_clock)
-			menu_selection_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
-			mouse_input_optocoupler: ui_clock_function.log += ui_clock_function(prev_clock)
-			timeout(60.0) : ui_clock_function.log += ui_clock_function(prev_clock)
-
-		do something else..
-		wait:
-			sdfsd
-	}
-
-
-# OPTOCOUPLERS
-
-"optocoupler": {
-	"writer": "socket_clock",
-	"reader": "command_line_clock"
-}
-There is no way for a clock to access that from another clock-function - they run in their own sandbox.
-
-Optocouplers lets you send a value between two clocks, even though they run in different speed.
-An optocoupler is similar to a Golang channel. You can make your clock block / wait on a new value appearing.
-
-Also
-- Block until next time writer store value.
-- Sample the latest value in the optocoupler, don't block.
-- Sample queue of all values since last read.
-Notice that the value can be a huge struct with all app state or just a message or a UI event etc.
-
-Notice: pure functions cannot access optocouplers themselves. They would not be referential transparent.
-
-
-
+# DIFF AND MERGE
+Diff and merge are important to Motherboard code to detect what changes needs to be performed in the world.
