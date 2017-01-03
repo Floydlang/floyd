@@ -27,7 +27,6 @@ Ascii art coding
 	
 
 
-	### IDEA: Use JSON as outer wrapper for source file. Entries can be code, markdown or whatever. Roundtrip. Hmm. 
 
 
 	###
