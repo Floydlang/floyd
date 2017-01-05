@@ -3,6 +3,101 @@
 "WORLD" - Better name needed for tech concept: "Snapshot", "Checkout", Git term: "staging area".
 
 
+
+??? It's possible to have a pure function that "sends" a REST-request, then has a separate function that is called with response. Open loop. Bad idea? Think about these as separate go-channels.
+		on_rest_reply(reply)
+
+
+
+
+
+
+
+
+# COMPACT MOTHERBOARD DEF
+		
+		defstruct uievent
+			time: timestamp
+			variant: type
+				click
+				int: x
+				int: y
+				int: mouse_button
+				uint32: mods
+		
+				key
+				int keycode
+				int: x
+				int: y
+				uint32: mods
+		
+				draw
+				rect: dirty
+				channel<obuf> reply
+		
+				activate
+		
+				deactivate
+		
+		defstruct ibuf
+			time timestamp
+			vector<float>: left_input
+			vector<float>: right_input
+			channel<obuf>: reply
+		
+		defstruct obuf
+			vector<float>: left_output
+			vector<float>: right_output
+		
+		defstruct param
+			int: param_id
+			float: time
+			float: value
+		
+		
+		
+		[Screen frame switch]
+		
+		[Audio Streamer]
+			[= control =>]
+				[Audio Controller]
+					[= world state =>]
+		
+		[Pre-renderer]
+			[= world state =>]
+		
+		[Asset Prefetcher]
+			[= world state =>]
+		
+		[= world state =>]
+			[World Simulation]
+				[= control =>]
+					[Player Input Reactor]
+						[= events<uievent> =>]
+							[OS GUI]
+				[= clock =>]
+					[OS Clock]
+		
+## ALT 2
+
+		[OS GUI]
+		[= events<uievent> =>]
+		[Player Input Reactor]
+		[= control =>]
+		World Simulation]
+		
+		
+		
+		
+		
+
+
+
+
+
+
+
+
 # Goroutines
 A goroutine is a lightweight thread managed by the Go runtime.
 
@@ -29,6 +124,10 @@ Find good Coroutine library!!!
 
 # INSIGHTS
 - Insight: synchronization points between systems (state or concurrent) always breaks composition. Move to top of product. ONE super-mediator per complete server-spanning solution.
+
+- Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code.
+
+
 
 
 # CLOCK
@@ -80,18 +179,15 @@ Your motherboard uses a list of expressions to trigger a clock advancement, like
 }
 There is no way for a clock to access that from another clock-function - they run in their own sandbox.
 
-Optocouplers lets you send a value between two clocks, even though they run in different speed.
-An optocoupler is similar to a Golang channel. You can make your clock block / wait on a new value appearing.
+Optocouplers lets you send a value between two clocks, even though they run in different speed. An optocoupler is similar to a Golang channel.
 
-Also
-- Block until next time writer store value.
+READER modes:
+- Default: reader blocks until new value is written be writer.
 - Sample the latest value in the optocoupler, don't block.
 - Sample queue of all values since last read.
 Notice that the value can be a huge struct with all app state or just a message or a UI event etc.
 
-Notice: pure functions cannot access optocouplers themselves. They would not be referential transparent.
-
-
+Notice: pure functions cannot access optocouplers. They would not be referential transparent.
 
 
 
