@@ -49,6 +49,96 @@
 	<key>GraphicsList</key>
 	<array>
 		<dict>
+			<key>Bounds</key>
+			<string>{{693, 423}, {171, 85}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Font</key>
+				<string>Helvetica</string>
+				<key>NSKern</key>
+				<string>0</string>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>103378</integer>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.50196099999999999</real>
+						<key>r</key>
+						<real>1</real>
+					</dict>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf760
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+??? How are we sure process() never blocks + context switches becasue control.pop() is running?}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{36, 36}, {144, 85}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Font</key>
+				<string>Helvetica</string>
+				<key>NSKern</key>
+				<string>0</string>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>103377</integer>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.50196081400000003</real>
+						<key>r</key>
+						<real>1</real>
+					</dict>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf760
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+### Make ONE part that provides VST basics. It has ports for channels}</string>
+			</dict>
+		</dict>
+		<dict>
 			<key>AllowLabelDrop</key>
 			<false/>
 			<key>Class</key>
@@ -248,7 +338,7 @@ OS audio output}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 216}, {144, 18}}</string>
+			<string>{{207, 747}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -267,11 +357,11 @@ OS audio output}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -292,7 +382,7 @@ keycode}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 216}, {144, 18}}</string>
+			<string>{{63, 747}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -311,11 +401,11 @@ keycode}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -336,7 +426,7 @@ int}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 153}, {144, 18}}</string>
+			<string>{{207, 675}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -355,11 +445,11 @@ int}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -380,7 +470,7 @@ mouse_button}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 153}, {144, 18}}</string>
+			<string>{{63, 675}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -399,11 +489,11 @@ mouse_button}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -424,7 +514,7 @@ int}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{819, 117}, {171, 126}}</string>
+			<string>{{1035, 117}, {171, 126}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -473,7 +563,7 @@ Usually driven by audio card buffer switches, via call to VST process() function
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 666}, {144, 18}}</string>
+			<string>{{1179, 603}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -492,11 +582,11 @@ Usually driven by audio card buffer switches, via call to VST process() function
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -517,7 +607,7 @@ value}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 666}, {144, 18}}</string>
+			<string>{{1035, 603}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -536,11 +626,11 @@ value}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -561,7 +651,7 @@ float}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 648}, {144, 18}}</string>
+			<string>{{1179, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -580,11 +670,11 @@ float}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -605,7 +695,7 @@ time}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 648}, {144, 18}}</string>
+			<string>{{1035, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -624,11 +714,11 @@ time}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -649,7 +739,7 @@ float}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 630}, {144, 18}}</string>
+			<string>{{1179, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -668,11 +758,11 @@ float}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -693,7 +783,7 @@ param_id}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 630}, {144, 18}}</string>
+			<string>{{1035, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -712,11 +802,11 @@ param_id}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -737,7 +827,7 @@ int}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 612}, {288, 18}}</string>
+			<string>{{1035, 540}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -756,11 +846,11 @@ int}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -779,7 +869,7 @@ param}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 72}, {144, 18}}</string>
+			<string>{{180, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -798,11 +888,11 @@ param}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -823,7 +913,7 @@ type}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 72}, {144, 18}}</string>
+			<string>{{36, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -844,11 +934,11 @@ type}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -2985,7 +3075,7 @@ state}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{720, 126}, {72, 36}}</string>
+			<string>{{936, 126}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -3662,7 +3752,7 @@ Asset Prefetcher}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{18, 441}, {153, 72}}</string>
+			<string>{{207, 387}, {144, 72}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>ID</key>
@@ -3702,7 +3792,7 @@ Also call from other threads while host renders to disk etc.}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{9, 279}, {144, 108}}</string>
+			<string>{{207, 288}, {144, 90}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>ID</key>
@@ -3745,7 +3835,7 @@ Also call from other threads while host renders to disk etc.}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 333}, {144, 18}}</string>
+			<string>{{207, 873}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -3764,11 +3854,11 @@ Also call from other threads while host renders to disk etc.}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -3789,7 +3879,7 @@ reply}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 333}, {144, 18}}</string>
+			<string>{{63, 873}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -3808,11 +3898,11 @@ reply}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -3833,7 +3923,7 @@ channel&lt;obuf&gt;}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 504}, {144, 18}}</string>
+			<string>{{531, 621}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -3852,11 +3942,11 @@ channel&lt;obuf&gt;}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -3877,7 +3967,7 @@ reply}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 504}, {144, 18}}</string>
+			<string>{{387, 621}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -3896,11 +3986,11 @@ reply}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -3921,7 +4011,7 @@ channel&lt;obuf&gt;}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 576}, {144, 18}}</string>
+			<string>{{855, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -3940,11 +4030,11 @@ channel&lt;obuf&gt;}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -3965,7 +4055,7 @@ right_input}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 576}, {144, 18}}</string>
+			<string>{{711, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -3984,11 +4074,11 @@ right_input}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4009,7 +4099,7 @@ vector&lt;float&gt;}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 558}, {144, 18}}</string>
+			<string>{{855, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4028,11 +4118,11 @@ vector&lt;float&gt;}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4053,7 +4143,7 @@ left_input}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 558}, {144, 18}}</string>
+			<string>{{711, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4072,11 +4162,11 @@ left_input}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4097,7 +4187,7 @@ vector&lt;float&gt;}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 540}, {288, 18}}</string>
+			<string>{{711, 540}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4116,11 +4206,11 @@ vector&lt;float&gt;}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4139,7 +4229,7 @@ obuf}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 486}, {144, 18}}</string>
+			<string>{{531, 603}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4158,11 +4248,11 @@ obuf}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4183,7 +4273,7 @@ right_input}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 486}, {144, 18}}</string>
+			<string>{{387, 603}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4202,11 +4292,11 @@ right_input}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4227,7 +4317,7 @@ vector&lt;float&gt;}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 468}, {144, 18}}</string>
+			<string>{{531, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4246,11 +4336,11 @@ vector&lt;float&gt;}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4271,7 +4361,7 @@ left_input}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 468}, {144, 18}}</string>
+			<string>{{387, 585}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4290,11 +4380,11 @@ left_input}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4315,7 +4405,7 @@ vector&lt;float&gt;}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 450}, {144, 18}}</string>
+			<string>{{531, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4334,11 +4424,11 @@ vector&lt;float&gt;}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4359,7 +4449,7 @@ timestamp}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 450}, {144, 18}}</string>
+			<string>{{387, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4378,11 +4468,11 @@ timestamp}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4403,7 +4493,7 @@ time}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 432}, {288, 18}}</string>
+			<string>{{387, 540}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4422,11 +4512,11 @@ time}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4445,7 +4535,7 @@ ibuf}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 387}, {288, 18}}</string>
+			<string>{{63, 936}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4464,11 +4554,11 @@ ibuf}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4487,7 +4577,7 @@ deactivate }</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 360}, {288, 18}}</string>
+			<string>{{63, 900}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4506,11 +4596,11 @@ deactivate }</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4529,7 +4619,7 @@ activate }</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 315}, {144, 18}}</string>
+			<string>{{207, 855}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4548,11 +4638,11 @@ activate }</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4573,7 +4663,7 @@ dirty}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 315}, {144, 18}}</string>
+			<string>{{63, 855}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4592,11 +4682,11 @@ dirty}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4617,7 +4707,7 @@ rect}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 297}, {288, 18}}</string>
+			<string>{{63, 828}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4636,11 +4726,11 @@ rect}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4659,7 +4749,7 @@ draw }</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 252}, {144, 18}}</string>
+			<string>{{207, 783}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4678,11 +4768,11 @@ draw }</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4703,7 +4793,7 @@ y}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 252}, {144, 18}}</string>
+			<string>{{63, 783}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4722,11 +4812,11 @@ y}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4747,7 +4837,7 @@ int}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 270}, {144, 18}}</string>
+			<string>{{207, 801}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4766,11 +4856,11 @@ int}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4791,7 +4881,7 @@ mods}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 234}, {144, 18}}</string>
+			<string>{{207, 765}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4810,11 +4900,11 @@ mods}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4835,7 +4925,7 @@ x}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 270}, {144, 18}}</string>
+			<string>{{63, 801}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4854,11 +4944,11 @@ x}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4879,7 +4969,7 @@ uint32}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 234}, {144, 18}}</string>
+			<string>{{63, 765}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4898,11 +4988,11 @@ uint32}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4923,7 +5013,7 @@ int}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 198}, {288, 18}}</string>
+			<string>{{63, 720}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4942,11 +5032,11 @@ int}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -4965,7 +5055,7 @@ key }</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 135}, {144, 18}}</string>
+			<string>{{207, 657}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -4984,11 +5074,11 @@ key }</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5009,7 +5099,7 @@ y}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 135}, {144, 18}}</string>
+			<string>{{63, 657}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5028,11 +5118,11 @@ y}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5053,7 +5143,7 @@ int}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 171}, {144, 18}}</string>
+			<string>{{207, 693}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5072,11 +5162,11 @@ int}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5097,7 +5187,7 @@ mods}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1251, 117}, {144, 18}}</string>
+			<string>{{207, 639}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5116,11 +5206,11 @@ mods}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5141,7 +5231,7 @@ x}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1224, 54}, {144, 18}}</string>
+			<string>{{180, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5160,11 +5250,11 @@ x}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5185,7 +5275,7 @@ timestamp}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 54}, {144, 18}}</string>
+			<string>{{36, 567}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5204,11 +5294,11 @@ timestamp}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5229,7 +5319,7 @@ time}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 171}, {144, 18}}</string>
+			<string>{{63, 693}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5248,11 +5338,11 @@ time}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5273,7 +5363,7 @@ uint32}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 117}, {144, 18}}</string>
+			<string>{{63, 639}, {144, 18}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5292,11 +5382,11 @@ uint32}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5317,7 +5407,7 @@ int}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1107, 99}, {288, 18}}</string>
+			<string>{{63, 612}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5336,11 +5426,11 @@ int}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5359,7 +5449,7 @@ click}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1080, 36}, {288, 18}}</string>
+			<string>{{36, 540}, {288, 27}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5378,11 +5468,11 @@ click}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<real>0.40000000000000002</real>
+						<real>0.40000000600000002</real>
 						<key>g</key>
-						<real>1</real>
+						<real>0.80000001190000003</real>
 						<key>r</key>
-						<real>0.40000000000000002</real>
+						<real>1</real>
 					</dict>
 				</dict>
 			</dict>
@@ -5401,7 +5491,7 @@ uievent}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{18, 140}, {117, 85}}</string>
+			<string>{{207, 140}, {144, 85}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>ID</key>
@@ -5440,7 +5530,7 @@ uievent}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{432, 126}, {72, 36}}</string>
+			<string>{{648, 126}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5484,7 +5574,7 @@ state}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{288, 162}, {72, 36}}</string>
+			<string>{{504, 162}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5494,7 +5584,7 @@ state}</string>
 				<key>NSKern</key>
 				<string>0</string>
 				<key>Size</key>
-				<real>8</real>
+				<real>10</real>
 			</dict>
 			<key>ID</key>
 			<integer>103182</integer>
@@ -5541,7 +5631,7 @@ state}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{576, 387}, {72, 36}}</string>
+			<string>{{792, 387}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5599,7 +5689,7 @@ state}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{720, 162}, {72, 36}}</string>
+			<string>{{936, 162}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5662,8 +5752,8 @@ Audio Stream Part}</string>
 			<integer>103200</integer>
 			<key>Points</key>
 			<array>
-				<string>{504.5, 180}</string>
-				<string>{576, 180}</string>
+				<string>{720.5, 180}</string>
+				<string>{791.99999999999989, 180}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -5709,9 +5799,9 @@ Audio Stream Part}</string>
 			<integer>103199</integer>
 			<key>Points</key>
 			<array>
-				<string>{216.5, 90}</string>
-				<string>{504, 90}</string>
-				<string>{576, 180}</string>
+				<string>{432.5, 90}</string>
+				<string>{720, 90}</string>
+				<string>{791.99999999999989, 180}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -5757,9 +5847,9 @@ Audio Stream Part}</string>
 			<integer>103198</integer>
 			<key>Points</key>
 			<array>
-				<string>{216.5, 342}</string>
-				<string>{504, 342}</string>
-				<string>{576, 180}</string>
+				<string>{432.5, 342}</string>
+				<string>{720, 342}</string>
+				<string>{791.99999999999989, 180}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -5805,8 +5895,8 @@ Audio Stream Part}</string>
 			<integer>103196</integer>
 			<key>Points</key>
 			<array>
-				<string>{648.16095136661932, 404.52661362759005}</string>
-				<string>{719.83904863338068, 193.70868049005693}</string>
+				<string>{864.16095136661932, 404.52661362759011}</string>
+				<string>{935.83904863338068, 193.70868049005679}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -5856,8 +5946,8 @@ Audio Stream Part}</string>
 			<integer>103195</integer>
 			<key>Points</key>
 			<array>
-				<string>{648, 180}</string>
-				<string>{719.5, 180}</string>
+				<string>{864, 180}</string>
+				<string>{935.5, 180}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -5903,8 +5993,8 @@ Audio Stream Part}</string>
 			<integer>103192</integer>
 			<key>Points</key>
 			<array>
-				<string>{360.50000399707397, 179.99999682099448}</string>
-				<string>{431.5, 179.99999682099448}</string>
+				<string>{576.50000399707403, 179.99999682099448}</string>
+				<string>{647.5, 179.99999682099448}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -5935,7 +6025,7 @@ Audio Stream Part}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{675, 342}, {171, 126}}</string>
+			<string>{{909, 315}, {171, 126}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -5984,12 +6074,12 @@ For i/o and timing\
 SYNC - blocks for response.\
 \
 \'95 audio: input buffers and timestamps.\
-\'95 reply: output buffers}</string>
+\'95 reply: queue of ibuf output buffers}</string>
 			</dict>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{279, 203}, {126, 121}}</string>
+			<string>{{495, 203}, {126, 121}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>ID</key>
@@ -6053,8 +6143,8 @@ SYNC - blocks for response.}</string>
 			<integer>103187</integer>
 			<key>Points</key>
 			<array>
-				<string>{216.5, 180}</string>
-				<string>{288, 180}</string>
+				<string>{432.5, 180}</string>
+				<string>{504, 180}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -6081,7 +6171,7 @@ SYNC - blocks for response.}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{432, 198}, {72, 36}}</string>
+			<string>{{648, 198}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6125,7 +6215,7 @@ Pure Code}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{720, 198}, {72, 36}}</string>
+			<string>{{936, 198}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6188,8 +6278,8 @@ Pure Code}</string>
 			<integer>103183</integer>
 			<key>Points</key>
 			<array>
-				<string>{216.49999999999787, 405.00010647675936}</string>
-				<string>{575.50000133112087, 405.00115374132764}</string>
+				<string>{432.5, 405}</string>
+				<string>{791.99999999999989, 405}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -6216,7 +6306,7 @@ Pure Code}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{144, 324}, {72, 36}}</string>
+			<string>{{360, 324}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6260,7 +6350,7 @@ VST set_param()}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{144, 72}, {72, 36}}</string>
+			<string>{{360, 72}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6304,7 +6394,7 @@ VST midi()}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{144, 387}, {72, 36}}</string>
+			<string>{{360, 387}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6348,7 +6438,7 @@ VST process()}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{432, 162}, {72, 36}}</string>
+			<string>{{648, 162}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6392,7 +6482,7 @@ UI Part}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{144, 162}, {72, 36}}</string>
+			<string>{{360, 162}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6466,7 +6556,7 @@ OS GUI}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{720, 162}, {9, 36}}</string>
+			<string>{{936, 162}, {9, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6496,7 +6586,7 @@ OS GUI}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{567, 198}, {108, 36}}</string>
+			<string>{{783, 198}, {108, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>ID</key>
@@ -6535,7 +6625,7 @@ OS GUI}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{576, 162}, {72, 36}}</string>
+			<string>{{792, 162}, {72, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6592,7 +6682,7 @@ OS GUI}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{432, 162}, {9, 36}}</string>
+			<string>{{648, 162}, {9, 36}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -6707,7 +6797,7 @@ OS GUI}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2017-01-05 00:50:41 +0000</string>
+	<string>2017-01-06 01:29:38 +0000</string>
 	<key>Modifier</key>
 	<string>Marcus Zetterquist</string>
 	<key>NotesVisible</key>
@@ -6743,7 +6833,7 @@ OS GUI}</string>
 		<key>NSPaperName</key>
 		<array>
 			<string>string</string>
-			<string>7A3E7808-1518-4D2E-BFAE-06EB710E3F78</string>
+			<string>21C2BA14-30B7-4465-BAB9-EE906D8E23EC</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>
@@ -6798,7 +6888,7 @@ OS GUI}</string>
 		<key>Expanded_Canvases</key>
 		<array/>
 		<key>Frame</key>
-		<string>{{35, -0}, {1960, 1777}}</string>
+		<string>{{274, 75}, {2279, 1686}}</string>
 		<key>ShowInfo</key>
 		<true/>
 		<key>Sidebar</key>
@@ -6808,7 +6898,7 @@ OS GUI}</string>
 		<key>TopSlabHeight</key>
 		<real>250</real>
 		<key>VisibleRegion</key>
-		<string>{{52.083332557231202, 0}, {1385.8333126828077, 1387.4999793246391}}</string>
+		<string>{{-103, 36.666666120290763}, {1651.6666420549159, 1313.3333137631419}}</string>
 		<key>Zoom</key>
 		<real>1.5</real>
 		<key>ZoomValues</key>
@@ -6816,7 +6906,7 @@ OS GUI}</string>
 			<array>
 				<string>Canvas 1</string>
 				<real>1.5</real>
-				<real>3</real>
+				<real>0.75</real>
 			</array>
 		</array>
 	</dict>

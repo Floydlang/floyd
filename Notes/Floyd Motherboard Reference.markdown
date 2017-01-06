@@ -12,6 +12,7 @@ WORLD: The exposition between client code and the outside world. This includes s
 - Call C functions
 - Connect to the outside world, communicating with sockets, reading / writing files etc.
 - Profile control and optimize performance of system.
+- Limits to what you can do in motherboard -- force programmer to do advanced coding in Floyd Script.
 
 ### Non-goal
 - Be reusable.
@@ -96,7 +97,6 @@ These are settings you apply on wires.
 - Rearrange nested composite (turn vec<pixel> to struct{ vec<red>, vec<green>, vec<blue> }
 - Batching: make 64 value each time?
 - Speculative batching with rewind.
-
 
 # Floyd Script
 All scripts are pure, cannot do file handling or communication at all. They need to return data so script in motherboard has enough info to perform mutations / communication. Return queues with commands / work on snapshots of the world, then let motherboard code diff / merge snapshot into world.
