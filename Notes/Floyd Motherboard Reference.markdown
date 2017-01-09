@@ -23,6 +23,15 @@ The motherboard is a declarative system, based on JSON. Real-world performance d
 
 Most logic is done using Floyd Script, which is a pure, referential transparent language.
 
+- **pin** (alt port)	-- where you can attach a wire
+- **wire** -- a connection between to pins
+- **channel** -- an object where producers can store elements and consumer can read them. Optionally non-blocking, 1...many elements big
+- **part** -- a node in the diagram. There are channel-parts, custom-parts etc.
+- **pure-function**
+- **unpure-function**
+- **value** -- an immutable value, either a primitive like a float or a collection or a struct. Can be big data.
+
+
 # VALUES AND SIGNALS
 All signals and values use Floyd's immutable types, provided by the Floyd runtime. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge nested structs or collections.
 
@@ -51,6 +60,8 @@ All signals and values use Floyd's immutable types, provided by the Floyd runtim
 			"nodes": {
 			}
 		}
+
+
 
 # CLOCKS AND CHANNELS-parts
 A motherboard has one to many **clock**-parts. A clock-part is a little virtual process that perform a sequence of operations, call FloydScript, read and write to channels and other i/o. The clock-part introduces *time* and *mutation* to an otherwise pure and timeless program.
@@ -147,3 +158,183 @@ A video game may have several clocks:
 - server comm clock
 
 
+
+
+# File API
+
+		file_handle open_fileread(string path) unpure
+		file_handle make_file(string path) unpure
+		void close_file(file_handle h) unpure
+
+		vec<ubyte> v = readfile(file_handle h, int start = 0, int size = 100) unpure
+		delete_fsnode(string path) unpure
+
+		make_dir(string path, string name) unpure
+		make_file(string path, string name) unpure
+
+# Command line
+
+		int on_commandline_input(string args) unpure
+		void print(string text) unpure
+		string readline() unpure
+
+
+# helloworld.board
+This is a declarative file that describes the top-level structure of an app.
+
+
+# VST Plug -- my_vst_plug.board
+
+		//	IMPORTED FROM GUI
+		struct uievent {
+			time timestamp;
+			variant<>
+				struct {
+					int x;
+					int y;
+					int mouse_button
+					uint32 mods
+				} click;
+				struct {
+					int keycode;
+					int x;
+					int y;
+					uint32 mods;
+				} key;
+				struct {
+					rect dirty
+					channel<obuf> reply
+				} draw;
+				struct {} activate;
+				struct {} deactivate;
+			} type;
+		}
+
+
+
+
+		struct ibuf {
+			time timestamp;
+			[float] left_input;
+			[float] right_input;
+			channel<obuf> reply;
+		}
+
+		struct obuf {
+			[float] left_output;
+			[float] right_output;
+		}
+
+		struct param {
+			int param_id;
+			float time;
+			float value;
+		}
+
+		int ui_process(){
+			m = ui_state()
+			while(){
+				select {
+					case events.pop() {
+						r = on_uievent(m, _)
+						if(_.data.type == draw){
+							_.reply.push(r._paint_image)
+							m = r.m
+						}
+						else{
+							control.push_vec(r.control_params)
+							m = r.m
+						}
+					}
+					case close {
+						return nil
+					}
+				}
+			}
+		}
+	
+		int audio_stream_part(){
+			m = audio_stream_ds(2, 44100)
+			while(){
+				select {
+					case audiostream.pop() {
+						m = process(m, _)
+					}
+					case control.pop {
+						return nil
+					}
+					case close {
+						return nil
+					}
+				}
+			}
+		}
+
+		board = JSON
+			[
+				{
+					"doc": "you need to import pins.",
+					"label": "vsthost",
+					"type": "vsthost",
+					"def_pins" : [
+						[ "outpin", "request_param", "request_parameter()" ],
+						[ "inpin", "midi_in", "on_midi_input()" ],
+						[ "inpin", "set_param", "on_set_parameter()" ],
+						[ "inpin", "process", "process()" ]
+					]
+				},
+			
+				{
+					"doc": "A channel always have an input pin called *in* and an output port called *out*",
+					"label": "events",
+					"type": "channel", 
+					"element": "uievent",
+					"mode": "block"
+				},
+				{
+					"label": "control", "type": "channel", "element": "param", "mode": "block"
+				},
+				{
+					"label": "audiostream", "type": "channel", "element": "ibuf", "mode": "block"
+				},
+			
+				{
+					"type": "ui_part", "process": "ui_process"
+				},
+			
+				{
+					"type": "audio_stream_part", "process": "ui_process"
+				},
+			
+				{
+					"type": "wires",
+					"wires": [
+						[ "vsthost.midi", "control.in" ],
+						[ "vsthost.gui", "events.in" ],
+						[ "events.out", "ui_part.uievent" ],
+						[ "ui_part.control", "control.in" ],
+						[ "vsthost.set_param", "control.in" ],
+						[ "vsthost.process", "audiostream.in" ],
+						[ "control.out", "audio_stream_part.control" ],
+						[ "audiostream.out", "audio_stream_part.audio" ]
+					]
+				}
+			
+			]
+
+??? make select() expression based, no statements.
+??? make ALL code in motherboard expressions-only.
+??? How are we sure process() never blocks + context switches becasue control.pop() is running?
+??? Are pin function calls, callback?
+
+midi_in could be
+A) a callback - you put code there that reacts vs queues into a channel.
+B) an output pin that wants to write to an input pin.
+
+Can you connect an input pin directory to an output pin, no channel involved?
+
+
+??? Split channel into several concepts:
+	A: block-both1,
+	B: sampleN -- Channel supports 1 or other fixed number of elements. Read when empty = nil. 
+	C: blockN -- Like B but blocks reader.
