@@ -31,6 +31,21 @@
 ??? Ptr, ref, uuid
 
 
+
+# NO CLASSES?
+Floyd replaces the class and inheritance thinking with other primitives. What are traditional OOP classes used for?
+
+- Interface
+- Bundle values
+- Keep data invariant
+- Represent external gadget
+- Layer APIs
+- Represent start / end = lifetime
+- Share state between several clients.
+
+Floyd uses struct to make new composites.
+
+
 # PROBLEM 1 - POINTERS
 Use path-objects Instead of ref in Floyd. Specifies location of a value, not the value.
 

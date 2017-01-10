@@ -14,7 +14,7 @@
 	<key>BackgroundGraphic</key>
 	<dict>
 		<key>Bounds</key>
-		<string>{{0, 0}, {1443.1889128209812, 1957.2243804153147}}</string>
+		<string>{{0, 0}, {1443.7499784864488, 1957.4999708309774}}</string>
 		<key>Class</key>
 		<string>SolidGraphic</string>
 		<key>ID</key>
@@ -195,6 +195,101 @@
 	<integer>12</integer>
 	<key>GraphicsList</key>
 	<array>
+		<dict>
+			<key>Bounds</key>
+			<string>{{1026, 297}, {180, 99}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Font</key>
+				<string>Helvetica</string>
+				<key>NSKern</key>
+				<string>0</string>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>103702</integer>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>1</real>
+					</dict>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf760
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+Split channel concept into several more specific concepts:\
+A) inter-process transformers\
+B) queue async operations (HTTP)\
+C) ???}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{981, 180}, {180, 99}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>FontInfo</key>
+			<dict>
+				<key>Font</key>
+				<string>Helvetica</string>
+				<key>NSKern</key>
+				<string>0</string>
+				<key>Size</key>
+				<real>12</real>
+			</dict>
+			<key>ID</key>
+			<integer>103701</integer>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>1</real>
+					</dict>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Align</key>
+				<integer>0</integer>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf760
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+Dynamic instansing. Create more HW-sockets and custom parts on demand. (*)-setting.}</string>
+			</dict>
+		</dict>
 		<dict>
 			<key>Bounds</key>
 			<string>{{1089, 810}, {180, 72}}</string>
@@ -4954,6 +5049,11 @@ UI Part}</string>
 						<real>0.40000000000000002</real>
 					</dict>
 				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>CornerRadius</key>
+					<real>12</real>
+				</dict>
 			</dict>
 			<key>Text</key>
 			<dict>
@@ -4999,6 +5099,11 @@ GUI}</string>
 						<key>r</key>
 						<real>0.40000000000000002</real>
 					</dict>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>CornerRadius</key>
+					<real>12</real>
 				</dict>
 			</dict>
 			<key>Text</key>
@@ -12187,7 +12292,7 @@ Pure Code}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2017-01-09 14:08:36 +0000</string>
+	<string>2017-01-10 00:34:12 +0000</string>
 	<key>Modifier</key>
 	<string>Marcus Zetterquist</string>
 	<key>NotesVisible</key>
@@ -12223,12 +12328,12 @@ Pure Code}</string>
 		<key>NSPaperName</key>
 		<array>
 			<string>string</string>
-			<string>B68E42EA-6BA1-4609-A41A-180B8069A293</string>
+			<string>iso-a3</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>
 			<string>size</string>
-			<string>{1190.5511474609375, 841.88976383209229}</string>
+			<string>{1191, 842}</string>
 		</array>
 		<key>NSPrintReverseOrientation</key>
 		<array>
@@ -12278,9 +12383,9 @@ Pure Code}</string>
 		<key>Expanded_Canvases</key>
 		<array/>
 		<key>Frame</key>
-		<string>{{46, -0}, {2869, 1777}}</string>
+		<string>{{0, 0}, {1323, 745}}</string>
 		<key>ShowInfo</key>
-		<true/>
+		<false/>
 		<key>Sidebar</key>
 		<false/>
 		<key>SidebarWidth</key>
@@ -12288,15 +12393,15 @@ Pure Code}</string>
 		<key>TopSlabHeight</key>
 		<real>250</real>
 		<key>VisibleRegion</key>
-		<string>{{-81, 0}, {1607.4999760463836, 1041.8749844748529}}</string>
+		<string>{{560.79543403403761, 114.77272307484861}, {751.7045179605185, 368.1818047153559}}</string>
 		<key>Zoom</key>
-		<real>2</real>
+		<real>2.2000000476837158</real>
 		<key>ZoomValues</key>
 		<array>
 			<array>
 				<string>Canvas 1</string>
-				<real>2</real>
-				<real>4</real>
+				<real>2.2000000476837158</real>
+				<real>1.1000000238418579</real>
 			</array>
 		</array>
 	</dict>

@@ -13,20 +13,6 @@ This makes those risk. Have as little nonpure code as possible. Try to not have 
 Mutable data can exist locally inside a function, but never leak out. 
 
 
-# NO CLASSES?
-Floyd replaces the class and inheritance thinking with other primitives. What are traditional OOP classes used for?
-
-- Interface
-- Bundle values
-- Keep data invariant
-- Represent external gadget
-- Layer APIs
-- Represent start / end = lifetime
-- Share state between several clients.
-
-Floyd uses struct to make new composites.
-
-
 # BASIC TYPES
 These are the privitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
