@@ -2,6 +2,19 @@
 
 "WORLD" - Better name needed for tech concept: "Snapshot", "Checkout", Git term: "staging area".
 
+# IDEA
+Split concept of go routine and channel into several more specific concepts.
+- move data between clocks
+- do blocking call, like REST request
+- do async lambda operations - referential transparent. Or unpure (auto save doc)
+- start lengthy operation, non-blocking using passive future
+- run process concurrently, like analyze game world to prefetch assets
+- handle requests from OS quickly, like audio buffer switch
+- implement a generator / seq
+- enable parallelization 
+- 
+!!! Make chips with common patterns: fan-in etc.
+- prefetch chunks from channel
 
 
 ??? It's possible to have a pure function that "sends" a REST-request, then has a separate function that is called with response. Open loop. Bad idea? Think about these as separate go-channels.
@@ -35,7 +48,7 @@ Find good Coroutine library!!!
 # INSIGHTS
 - Insight: synchronization points between systems (state or concurrent) always breaks composition. Move to top of product. ONE super-mediator per complete server-spanning solution.
 
-- Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code.
+- Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code. Not true!! This introduces cow time.
 
 
 
