@@ -1,27 +1,74 @@
 This design solves how Floyd handles time, mutation, concurrency on the boards. Pure functions cannot do this stuff.
 
 
+# GOALS
 
-# IDEA - Split concept of go routine and channel into several more specific concepts.
+- One well-defined and composable method of async.
+- No DSL like nested completions.
+- No threads
+- No callback hell or inversion of control
 
-# IDEA: Use golang for motherboards. Visual editor/debugger. Use FloydScript for logic. Use vec/map/seq/struct for data.
 
-# Use cases for GO routines & channels
-- move data between clocks
-- do blocking call, like REST request
-- do async lambda operations - referential transparent. Or unpure (auto save doc)
+# INSIGHTS
+
+- Synchronization points between systems (state or concurrent) always breaks composition. Move to top of product. ONE super-mediator per complete server-spanning solution.
+
+- Differentiate between _parts_ (node instances of channels and coroutines that you position and wire together) with values of channels and corutines, that are created programatially and dynamically.
+
+- You can package a board into a *chip*. This is a first class value that can be instantiate using code or using part nodes.
+- 
+
+
+# IDEAS
+- Split concept of go routine and channel into several more specific concepts.
+
+- Use golang for motherboards. Visual editor/debugger. Use FloydScript for logic. Use vec/map/seq/struct for data.
+
+
+
+# Use-cases for GO routines & channels
+- move data between clocks (instead of atomic operation / queue / mutex)
+- do blocking call, like REST request.
+- start non-blocking lambda operations - referential transparent - like calculating high-quality image in the background.
+- start non-blocking unpure background calculation (auto save doc)
 - start lengthy operation, non-blocking using passive future
 - run process concurrently, like analyze game world to prefetch assets
-- handle requests from OS quickly, like audio buffer switch
-- implement a generator / seq
-- enable parallelization 
-
+- handle requests from OS quickly, like call to audio buffer switch process()
+- implement a generator / seq / iterator for lazy calculation during foreach
+- enable parallelization by hiding function behind channel (allows it to be parallellized)
 - Coroutines let you time slice heavy computation so that it runs a little bit in each frame.
+- Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code. Not true!! This introduces cow time.
+- Model a process, like Erlang. UI process, realtime audio process etc.
+- Supply a service that runs all the time, like GO netpoller. Hmm. Maybe and audio thread works like this too?
+
+
+
+-- Parallellize-tweak
+
+
+- Ex: communicate with a read-only server using REST. No side effects, just time.
+
+A) Use futures and promises, completions.
+B) Block clock thread, hide time from program. This makes run_clock() a continuation!!!
+C) clock
+D) Clock result will contain list of pending operations, as completions. Now client decides what to do with them. This means do_clock() only makes one tick.
+
+
+Can pure function create a socket? Token socket is OK. Or create socket with clock at top level?! This allows simple asynchronous programming: blocking-style-only.
+
+		### Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
+
+
+
+
+
+You can have modules / chips that you instantiate and that internally has channels and processes.
+
+
 
 •• NOTICE: Floyd coroutines ARE using real threads = needs to be thread safe. Call them vthreads to goroutines ("coroutines" means cooperative multitasking)
 
-Each process is-a vthread
-You can spawn vthreads -- owned by calling context
+Each process is-a vthread. You can spawn vthreads values -- owned by calling context
 
 Composable.
 Make chip and dynamically instantiate chips with internal processes, channels and vthreads
@@ -34,6 +81,7 @@ Make chip and dynamically instantiate chips with internal processes, channels an
 
 ??? It's possible to have a pure function that "sends" a REST-request, then has a separate function that is called with response. Open loop. Bad idea? Think about these as separate go-channels.
 		on_rest_reply(reply)
+
 
 
 # Goroutines
@@ -125,28 +173,5 @@ Notice: pure functions cannot access optocouplers. They would not be referential
 
 
 
-
-# INSIGHTS
-
-- Insight: synchronization points between systems (state or concurrent) always breaks composition. Move to top of product. ONE super-mediator per complete server-spanning solution.
-
-
-
-
-
-
-# Problem 1 - Async, future, completions
-
-Scenario: communicate with a read-only server using REST. No side effects, just time.
-GOAL: One well-defined and composable method of async. No DSL like nested completions.
-
-A) Use futures and promises, completions.
-B) Block clock thread, hide time from program. This makes run_clock() a continuation!!!
-C) clock
-D) Clock result will contain list of pending operations, as completions. Now client decides what to do with them. This means do_clock() only makes one tick.
-
-Can pure function create a socket? Token socket is OK. Or create socket with clock at top level?! This allows simple asynchronous programming: blocking-style-only.
-
-		### Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
 
 

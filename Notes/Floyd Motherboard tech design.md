@@ -5,7 +5,6 @@
 
 # INSIGHTS
 
-- Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code. Not true!! This introduces cow time.
 
 
 

@@ -88,12 +88,15 @@ Clocks and channels can be created dynamically in the Motherboard scripts too.
 Channels?
 
 # LOG-probe
+- Pulse everytime a function is called
+- Pulse everytime a clock ticks
+- Record value of all clocks at all time, including process PC. Oscilloscope & log
 
 # Profiler-probe
 
 # Command-line-part
 
-# Optimizations
+# Tweaks - Optimizations
 These are settings you apply on wires.
 
 - Insert read cache
