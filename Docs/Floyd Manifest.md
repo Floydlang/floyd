@@ -21,11 +21,10 @@ Optimize second - Program B: Next optimise the program by using the Optimizer to
 - Reduce dependencies: modules should in best case only depend on language, libraries and interfaces it exposes - no other modules.
 - Only way to do every day things, but it's great
 - Functions are no place to be creative.
-- Do not confuse optimization and correctness. Correctness is done locally, optimizations are done globally.
+- Do not confuse optimization and correctness. Optimizations are done globally.
 - Side effects are evil
 - The language is the languge, libraries are libraries.
-- Observers, callbacks and similar are EVIl. They inject unknown code directly and syncrhonously into caller's flow. Do not use. Instead use DIFF and MERGE when complete operation is done. This is very efficient in Floyd. ??? Add diff-hints into vector and map?
-
+- Observers, callbacks and similar are EVIl.
 
 
 # GOALS
