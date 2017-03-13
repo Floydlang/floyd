@@ -21,7 +21,7 @@
 /*
 	ABOUT ADDRESSING AND CHAINS
 
-	Each value are refered to via an address which is a construct like this: { scope + member }.
+	Each value is refered to via an address which is a construct like this: { scope + member }.
 	Encoded as { value_t scope, string member_name } or { value_t scope int _member_offset }.
 
 	This address can specifify any value in the system:

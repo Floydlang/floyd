@@ -137,7 +137,8 @@ Clients can directly access all member variables.
 	};
 
 Simple but fully functional struct. "f" will be initialized to 0.0f, g will be initialized to 3.1415f.
-
+	??? also init(f, g) like Swift
+	??? No default constructor
 
 ## Constructors
 These are member functions that are named the same as the struct that sets up the initial state of a struct value. All member variables are first automatically initialized to default values: either explicitly or using that type's default. A constructor overrides these defaults. The value does not exist to the rest of the program until the constructor finishes.

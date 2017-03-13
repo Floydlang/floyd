@@ -323,7 +323,7 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 
 
 
-//	??? Return constant insread o expression? We use this both for interpretation but also for compile-time optimizations.
+//	??? Return constant instead o expression? We use this both for interpretation but also for compile-time optimizations.
 expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
