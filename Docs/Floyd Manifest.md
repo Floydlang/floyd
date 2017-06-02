@@ -1,11 +1,13 @@
 # FLOYD (NAME TBD)
 
-Floyd is a nextgen programming language that has an opinion how you create great software. It simplifes and guides by gets rid of many traditional programming concepts that were wrong and attempts to have one builtin solution for each important concept. It steals shamelessly from both the functional and imperative school of programming. Goals are: easy of programming, correctness, composability, concurrency, performance. Floyd is both a better scripting language _and_ a better high-performance language.
+Floyd is a nextgen programming language that has an opinion how you create great software. It simplifes and guides by getting rid of many traditional programming concepts that were wrong and it attempts to have one built-in solution for each important concept. It steals shamelessly from both the functional and imperative school of programming.
+
+Goals are: easy of programming, correctness, composability, concurrency, performance. Floyd is both a better scripting language _and_ a better high-performance language.
 
 Floyd programs have distinct layers of different capabilites:
 
-- the top level is the motherboard, where you connect stuff together into a product. Here you design concurrency, communcated with the rest of the world. You also control all optimizations on this level. This is normally quite few lines of code, even for huge projects.
-- FloydScript is used for the bulk of the logic. It looks and feels like Javascript, but is typesafe, can be compiled or interpreted and uses persitent data structures. It's not OOP - there are no classes or inheritance but there are objects and types and encapsulation, its not functional - you have local variables, loops etc - but it uses pure functions.
+- the top level is the motherboard, where you connect stuff together into a product. Here you design concurrency, communicate with the rest of the world. You also control all optimizations on this level. This is normally quite few lines of code, even for huge projects.
+- FloydScript is used for the bulk of the logic. It looks and feels like Javascript, but is typesafe, can be compiled or interpreted and uses persistent data structures. It's simplified OOP - there are no classes or inheritance but there are objects and types and encapsulation. It's not functional - you have local variables, loops etc - but functions are all pure.
 
 
 # OPINIONS
