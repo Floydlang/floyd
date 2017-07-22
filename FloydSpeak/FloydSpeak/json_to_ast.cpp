@@ -395,7 +395,7 @@ std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& de
 	}
 }
 
-std::shared_ptr<type_def_t> conv_expressions_and_statements(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& types){
+std::shared_ptr<type_def_t> conv_type_def__expressions_and_statements(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(def.check_invariant());
 
 	const auto base_type = def.get_object_element("base_type");
@@ -438,22 +438,23 @@ ast_t json_to_ast(const json_value_t& program){
 		temp_type_defs[s.first] = type_def_t::make_null_typedef();
 	}
 
-	//	Make a shallow pass through all types -- no expressions.
+	//	Make a shallow pass through all types. Convert JSON based types to type_def_t:s.
+	//	Only definitions of the types, not yet expressions or statements that USE these types.
 	for(const auto& s: program.get_object_element("lookup").get_object()){
 		const auto id = s.first;
 		const json_value_t& def = s.second;
 		std::shared_ptr<type_def_t> type_def = conv_type_def__no_expressions(def, temp_type_defs);
 		shared_ptr<type_def_t> identity_type_def = temp_type_defs.at(id);
 
-		//	Update our identify type defs.
+		//	Update our identity type defs.
 		identity_type_def->swap(*type_def.get());
 	}
 
-	//	Second pass - do expressions.
+	//	Second pass - do expressions & statements -- make them USE the new type_def_t.
 	for(const auto& s: program.get_object_element("lookup").get_object()){
 		const auto id = s.first;
 		const json_value_t& def = s.second;
-		std::shared_ptr<type_def_t> type_def = conv_expressions_and_statements(def, temp_type_defs);
+		std::shared_ptr<type_def_t> type_def = conv_type_def__expressions_and_statements(def, temp_type_defs);
 		if(type_def){
 			shared_ptr<type_def_t> identity_type_def = temp_type_defs.at(id);
 
