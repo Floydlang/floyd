@@ -359,7 +359,7 @@ namespace floyd_parser {
 
 		//	Keyed on "$1000" etc.
 		//	??? Should be const!
-		public: std::map<std::string, std::shared_ptr<type_def_t>> _symbols;
+		public: std::map<std::string, std::shared_ptr<const type_def_t>> _symbols;
 	};
 
 	void trace(const ast_t& program);

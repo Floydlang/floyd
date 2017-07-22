@@ -599,7 +599,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	const auto found_it = find_if(
 		vm._ast._symbols.begin(),
 		vm._ast._symbols.end(),
-		[&] (const std::pair<std::string, std::shared_ptr<type_def_t>>& t) {
+		[&] (const std::pair<std::string, std::shared_ptr<const type_def_t>>& t) {
 			return t.second->get_base_type() == base_type::k_function && t.second->get_function_def()->_name.to_string() == function_name;
 		}
 	);

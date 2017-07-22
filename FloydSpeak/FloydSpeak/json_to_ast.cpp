@@ -427,19 +427,18 @@ ast_t json_to_ast(const json_value_t& program){
 		if(type_def){
 			shared_ptr<type_def_t> identity_type_def = temp_type_defs.at(id);
 
-			//	Update our identify type defs.
+			//	Update our identity type defs.
 			identity_type_def->swap(*type_def.get());
 		}
 	}
 
-
 	const auto global_scope = conv_scope_def__no_expressions(program.get_object_element("global"), temp_type_defs);
-
-	const auto global_scope2 = scope_def_t::make_global_scope();
+//	const auto global_scope2 = scope_def_t::make_global_scope();
 
 	ast_t result;
-	result._symbols = temp_type_defs;
-	result._global_scope = global_scope2;
+	result._symbols = std::map<std::string, std::shared_ptr<const type_def_t>>(temp_type_defs.begin(), temp_type_defs.end());
+
+	result._global_scope = global_scope;
 	QUARK_ASSERT(result.check_invariant());
 	return result;
 }

@@ -678,7 +678,7 @@ namespace floyd_parser {
 	}
 
 
-	json_value_t symbols_to_json(const std::map<std::string, std::shared_ptr<type_def_t>>& symbols){
+	json_value_t symbols_to_json(const std::map<std::string, std::shared_ptr<const type_def_t>>& symbols){
 		std::map<string, json_value_t> m;
 		for(const auto i: symbols){
 			m[i.first] = type_def_to_json(*i.second);
