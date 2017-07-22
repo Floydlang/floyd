@@ -58,6 +58,8 @@ All data types with the same signature are can automatically be assign between.
 ??? Examples
 
 
+# FOLD, FILTER, MAP, REDUCE
+
 # FUNCTIONS
 
 
@@ -163,8 +165,7 @@ When defining a data type (composite) you need to list 4 example instances. Can 
 
 
 
-# MAP
-??? Rename "dict"?
+# DECTIONARY
 C++11
 	map<int, char> m = {{1, 'a'}, {3, 'b'}, {5, 'c'}, {7, 'd'}};
 	std::map<int, std::string> m{{1, "Hello"}, {2, "world"}, {4, "!!!"}};
@@ -175,7 +176,7 @@ Clojure
 	(assoc {:a 1, :b 2} :b 3)
 	reference: https://adambard.com/blog/clojure-in-15-minutes/
 
-Map can contain null values
+Dictionaries can contain null values
 
 
 # SEQ
@@ -196,7 +197,7 @@ Lazy
 into == adds stuff to a collection (empty or not) from a seq (or collection)
 
 concat
-map
+dict
 filter
 reduce
 take, take-white
@@ -261,19 +262,15 @@ Special proof-construct (not a function but built in like "struct":
 		Better: make all tests lists of expression vs expected results as a JSON.
 
 
+# EQUIVALENCE: FUNCTIONS - DICTS - VECTORS
+??? Explore functions vs vectors vs dicts. Integer keys vs float keys. sin(float a)?
 
-
-
-
-# EQUIVALENCE: FUNCTIONS - MAPS - VECTORS
-??? Explore functions vs vectors vs maps. Integer keys vs float keys. sin(float a)?
-
-You can use maps, vector and functions the same way. Since maps and vectors are immutable and functions are pure, they are equivalen when they have the same signature.
+You can use dicts, vector and functions the same way. Since dicts and vectors are immutable and functions are pure, they are equivalen when they have the same signature.
 
 	string my_function(int a){
 		return a == 1 ? "one", a == 2 ? "two", a == 3 ? "three";
 	}
-	my_map = [string, int]( 1: "one", 2: "two", 3: "three");
+	my_dict = [string, int]( 1: "one", 2: "two", 3: "three");
 	my_vector = [string]( "one", "two", "three" );
 
 
@@ -502,7 +499,7 @@ switch(a){
 	}
 }
 
-map<int, @>{
+dict<int, @>{
 	1, {
 		log("ONE")
 	},
@@ -603,7 +600,7 @@ There are built in features to pack and unpack the JSON data:
 	assert(my_obj[0] == "+");
 	assert(my_obj[2][0] == "load");
 
-The returned value from unpack_json() is of type *dyn<string, number, vec<dyn>, map<string,dyn>,bool>* and can hold any value returned.
+The returned value from unpack_json() is of type *dyn<string, number, vec<dyn>, dict<string,dyn>,bool>* and can hold any value returned.
 
 If you are reading data you can do this:
 

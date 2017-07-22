@@ -11,7 +11,7 @@
 
 ### MORE TYPES
 
-- **map**			look up values from a key. Localizable.
+- **dict**			look up values from a key. Localizable.
 - **vector**		look up values from a 0-based continous range of integer indexes.
 - **enum**		same as struct with only static constant data members
 
@@ -307,14 +307,14 @@ enum preset_color_ex : preset color {
 # ABOUT COLLECTIONS
 A fixed set of collections are built right into Floyd. They can store any Floyd value, including structs, tuples, string, integers and even other collections. They are all immutable / persistent.
 
-A unique feature in Floyd is that you cannot specify the exact implementation of the collection, only its basic type: vector or map. The precise data structure is selected by the runtime according to your recommendations and the optimiser / profiler.
+A unique feature in Floyd is that you cannot specify the exact implementation of the collection, only its basic type: vector or dictionary. The precise data structure is selected by the runtime according to your recommendations and the optimiser / profiler.
 
 The collections are typesafe - a string-vector can only hold strings etc.
 
 Every collection automatically support the core-type-features, like comparisons, serialization and hashing.
 
 
-# VECTOR
+# VECTOR COLLECTION
 A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. If you read many continous elements it's faster to use a SEQ with the vector - it allows the runtime to keep an pointer to the current position in the vector.
 
 	a = [int]();		//	Create empty vector of ints.
@@ -347,30 +347,30 @@ Vector Reference:
 	a = b + c;
 
 
-# MAP
-A collection that maps a key to a value.Unsorted. Like a dictionary. 
-	//	Create a string -> int map with three entries.
+# DICTIONARY COLLECTION
+A collection that maps a key to a value. Unsorted. Like a c++ map. 
+	//	Create a string -> int dictionary with three entries.
 	a = [string: int]["red": 0, "blue": 100,"green": 255];
 
-	//	Make map where key is a string and value is an int. Initialize it.
+	//	Make dictionary where key is a string and value is an int. Initialize it.
 	a = [string: int]("one": 1, "two": 2, "three": 3);
 
-	//	Make a string->int map where collection type is deducted from the initialization values.
+	//	Make a string->int dictionary where collection type is deducted from the initialization values.
 	b = ["one": 1, "two": 2, "three", 3];
 
-	c = [string: int]; //	Empty map of string,int.
+	c = [string: int]; //	Empty dictionary of string,int.
 	
 
-Map Reference
+Dictionary Reference
 
-	V my_map.at(K key)
-	V my_map[K key]
-	my_map[K key] = value
-	bool my_map.empty()
-	size_t my_map.size()
-	map<K, V> my_map.insert(K key, V value)
-	size_t my_map.count()
-	map<K, V> my_map.erase(K key)
+	V my_dict.at(K key)
+	V my_dict[K key]
+	my_dict[K key] = value
+	bool my_dict.empty()
+	size_t my_dict.size()
+	dict<K, V> my_dict.insert(K key, V value)
+	size_t my_dict.count()
+	dict<K, V> my_dict.erase(K key)
 
 
 

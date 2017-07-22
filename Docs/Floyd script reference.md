@@ -10,7 +10,7 @@ Functions and classes are pure. A pure function can only call pure functions. Th
 
 This makes those risk. Have as little nonpure code as possible. Try to not have any conditional code inside nonpure code - this makes testing easier.
 
-Mutable data can exist locally inside a function, but never leak out. 
+Mutable data can exist locally inside a function, but never leak out of the function. 
 
 
 # BASIC TYPES
@@ -84,19 +84,23 @@ Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep - they consider all members and also member structs and collections.
 
 ###	Arithmetic Operators
-	+		Addition - adds two operands.														"a = b + c", "a = b + c + d"
-	−		Subtracts second operand from the first.									"a = b - c", "a = b - c - d"
-	*		Multiplies both operands.															"a = b * c", "a = b * c * d"
-	/		Divides numerator by de-numerator.											"a = b / c", "a = b / c / d"
-	%		Modulus Operator and remainder of after an integer division		"a = b / c", "a = b / c / d"
+```
++	Addition - adds two operands: "a = b + c", "a = b + c + d"
+−	Subtracts second operand from the first. "a = b - c", "a = b - c - d"
+*	Multiplies both operands: "a = b * c", "a = b * c * d"
+/	Divides numerator by de-numerator: "a = b / c", "a = b / c / d"
+%	Modulus Operator and remainder of after an integer division: "a = b / c", "a = b / c / d"
+```
 
 ### Relational Operators
+```
 	a == b				true if a and b have the same value
 	a != b				true if a and b have different values
 	a > b				true if the value of a is greater than the value of b
 	a < b				true if the value of a is smaller than the value of b
 	a >= b
 	a <= b
+```
 
 ### Logical Operators
 	a && b
@@ -112,7 +116,13 @@ condition ? a : b		When condition is true, this entire expression has the value 
 	assert(is_polity("hello") == true);
 
 # STRUCTs
-Structs are the central building blocks for composing data in Floyd. They are used for structs, classes, tuples. They are always value classes and immutable. Internally, value instances are often shared to conserve memory and performance. They are true-deep - there is no concept of pointers or references or shared structs (from the programmer's point of view).
+Structs are the central building blocks for composing data in Floyd. They are used in place of structs, classes, tuples in other languages. Structs are always values and immutable.
+
+They are **true-deep**. True-deep is a Floyd term that means that all values and sub-values are always considered, in equality checks or assignment, for example. The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
+
+There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects because of several clients modifying the same struct.
+
+Note: Internally, value instances are often shared to conserve memory and performance.
 
 	struct pixel {
 		int red;
@@ -120,7 +130,6 @@ Structs are the central building blocks for composing data in Floyd. They are us
 		int blue;
 	};
 
-**True-deep** is a Floyd term that means that all values and sub-values are considered, for example in equally checks. The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
 
 
 ## Struct Signature
@@ -136,7 +145,7 @@ Clients can directly access all member variables.
 		float g = 3.1415f;
 	};
 
-Simple but fully functional struct. "f" will be initialized to 0.0f, g will be initialized to 3.1415f.
+Above is "test", a simple but fully functional struct. "f" will be initialized to 0.0f, g will be initialized to 3.1415f.
 	??? also init(f, g) like Swift
 	??? No default constructor
 
