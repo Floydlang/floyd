@@ -1,0 +1,60 @@
+
+/*
+	"%1" = type_definition_t of the coord struct. Two floats, x and y etc. Static scope inside parent scope.
+	"coord_t": a type_identifier_t-string.
+	Type-name-lookup map binds type identifier string "coord_t" to type definition "%1". (Many type identifiers can bind to same type definition)
+
+	"a": variable of type %1
+	"pixel_coord_t": type identifiers that ALSO looks up to %1.
+*/
+struct coord_t {
+	float x;
+	float y;
+}
+
+let a = z(10.0, 20.0)
+
+typedef coord_t pixel_coord_t
+
+/*
+	New function type %2: int (int a, int b)
+	New function constant "=10" of type %2, - store instructions
+	New constant variable "f" of type %2 holding function value =10
+*/
+int f(int a, int b){
+	return a + b;
+}
+
+
+
+//////////////////////		AST
+
+
+//	Defines the type: is it an int? A vector of strings? A function with prototype int (float, float)?
+
+struct type_definition_t {
+	base_type_t basetype
+
+	type_definition_t function_return 
+	vector<type_definition_t> function_args 
+
+	type_definition_t vector_element_type 
+
+	vector<type_definition_t> struct_members 
+}
+
+struct function_value_constant_t {
+	type_definiton_t function_signature
+	scope_def function_code
+}
+
+struct ast_t {
+	scope_def globals
+
+	//	Many symbols can link to the same type definition...
+	map<type_identifier_t, string> symbols
+
+	map<string, type_definition_t> type_definitions
+
+	map<string, function_value_constant_t> function_value_constants
+}

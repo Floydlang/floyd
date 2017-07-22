@@ -406,6 +406,9 @@ std::shared_ptr<type_def_t> conv_type_def__expressions_and_statements(const json
 /*
 	Input tree has all types and variables resolved.
 	Returns immutable AST.
+
+
+	IMPORTANT: Updates the shared_ptr<type_def_t> member data in-place. Clients keep shared_ptr<typedef_t>s that are affected.
 */
 ast_t json_to_ast(const json_value_t& program){
 	//	Make placeholder type-defs for each symbol. We use pointer to type_def as its identity.
