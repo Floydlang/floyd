@@ -51,8 +51,8 @@ struct function_value_constant_t {
 struct ast_t {
 	scope_def globals
 
-	//	Many symbols can link to the same type definition...
-	map<type_identifier_t, string> symbols
+	//	Many typenames can link to the same type definition...
+	map<type_identifier_t, string> typenames
 
 	map<string, type_definition_t> type_definitions
 

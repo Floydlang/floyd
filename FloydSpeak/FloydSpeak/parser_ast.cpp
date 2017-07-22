@@ -69,7 +69,7 @@ namespace floyd_parser {
 	void trace(const type_def_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
-		const auto type = t.get_type();
+		const auto type = t.get_base_type();
 		if(type == base_type::k_bool){
 			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
 		}
@@ -221,7 +221,7 @@ namespace floyd_parser {
 	std::string to_signature(const type_def_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
-		const auto btype = t.get_type();
+		const auto btype = t.get_base_type();
 		const auto base_type = base_type_to_string(btype);
 
 		const string label = "";
@@ -420,9 +420,9 @@ namespace floyd_parser {
 	json_value_t type_def_to_json(const type_def_t& type_def){
 		return make_object({
 			{ "_base_type", json_value_t(type_def.to_string()) },
-			{ "_struct_def", type_def.get_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_value_t() },
-			{ "_vector_def", type_def.get_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_value_t() },
-			{ "_function_def", type_def.get_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_value_t() }
+			{ "_struct_def", type_def.get_base_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_value_t() },
+			{ "_vector_def", type_def.get_base_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_value_t() },
+			{ "_function_def", type_def.get_base_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_value_t() }
 		});
 	}
 

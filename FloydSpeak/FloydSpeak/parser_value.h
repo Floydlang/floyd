@@ -100,7 +100,7 @@ namespace floyd_parser {
 		public: bool check_invariant() const{
 			QUARK_ASSERT(_type_def && _type_def->check_invariant());
 
-			const auto base_type = _type_def->get_type();
+			const auto base_type = _type_def->get_base_type();
 			if(base_type == base_type::k_null){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
@@ -251,7 +251,7 @@ namespace floyd_parser {
 			_function(function_instance)
 		{
 			QUARK_ASSERT(function_instance && function_instance->check_invariant());
-			QUARK_ASSERT(function_instance->_function_type && function_instance->_function_type->get_type() == base_type::k_function);
+			QUARK_ASSERT(function_instance->_function_type && function_instance->_function_type->get_base_type() == base_type::k_function);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -402,7 +402,7 @@ namespace floyd_parser {
 		public: base_type get_base_type() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_def->get_type();
+			return _type_def->get_base_type();
 		}
 
 		public: bool is_null() const {

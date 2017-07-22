@@ -382,7 +382,7 @@ void trace(const expression_t& e){
 	["+", ["+", 1, 2], ["k", 10]]
 */
 json_value_t expression_to_json(const expression_t& e){
-	const auto expression_base_type = e._resolved_expression_type->get_type();
+	const auto expression_base_type = e._resolved_expression_type->get_base_type();
 	json_value_t type;
 	if(expression_base_type == base_type::k_null){
 		type = json_value_t();

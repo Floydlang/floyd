@@ -182,7 +182,7 @@ value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(type_def && type_def->check_invariant());
 
-	const auto type = type_def->get_type();
+	const auto type = type_def->get_base_type();
 	if(type == base_type::k_bool){
 		return value_t(false);
 	}
@@ -264,7 +264,7 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
 	for(const auto p: vm._ast._symbols){
 		const auto type_def = p.second;
-		if(type_def->get_type() == base_type::k_function && type_def->get_function_def()->_name.to_string() == name){
+		if(type_def->get_base_type() == base_type::k_function && type_def->get_function_def()->_name.to_string() == name){
 			return type_def->get_function_def();
 		}
 	}
@@ -600,7 +600,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 		vm._ast._symbols.begin(),
 		vm._ast._symbols.end(),
 		[&] (const std::pair<std::string, std::shared_ptr<type_def_t>>& t) {
-			return t.second->get_type() == base_type::k_function && t.second->get_function_def()->_name.to_string() == function_name;
+			return t.second->get_base_type() == base_type::k_function && t.second->get_function_def()->_name.to_string() == function_name;
 		}
 	);
 	if(found_it == vm._ast._symbols.end()){
@@ -608,7 +608,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	}
 	const auto type = found_it->second;
 
-	if(!type || type->get_type() != base_type::k_function){
+	if(!type || type->get_base_type() != base_type::k_function){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
 #else
@@ -672,7 +672,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		//	Replace the with a constant!
 		if(input._constant){
 			const auto value = input._constant;
-			const auto base_type = value->get_type()->get_type();
+			const auto base_type = value->get_base_type();
 
 			if(base_type == base_type::k_bool){
 				throw std::runtime_error("Arithmetics failed.");

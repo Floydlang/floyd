@@ -238,7 +238,7 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 		public: bool operator==(const type_def_t& other) const;
 		public: void swap(type_def_t& rhs);
-		public: base_type get_type() const {
+		public: base_type get_base_type() const {
 			return _base_type;
 		}
 
