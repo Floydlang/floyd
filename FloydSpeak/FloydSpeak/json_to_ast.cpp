@@ -237,30 +237,6 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 
 	if(type == "function"){
 		std::vector<std::shared_ptr<statement_t> > statements2;
-/*
-		for(const auto s: statements){
-			const string op = s.get_array_n(0).get_string();
-			if(op == "return"){
-				QUARK_ASSERT(s.get_array_size() == 2);
-				const auto expr = conv_expression(s.get_array_n(1), types);
-				statements2.push_back(make_shared<statement_t>(make__return_statement(expr)));
-			}
-			else if(op == "bind"){
-				QUARK_ASSERT(s.get_array_size() == 4);
-				const auto bind_type = resolve_type123(s.get_array_n(1).get_string(), types);
-				const auto identifier = s.get_array_n(2).get_string();
-				const auto expr = conv_expression(s.get_array_n(3), types);
-				statements2.push_back(make_shared<statement_t>(make__bind_statement(bind_type, identifier, expr)));
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
-		}
-*/
-
-
-//					constructor_def = store_object_member(constructor_def, "_function_type", "def-constructor");
-
 		const auto function_type = scope_def.get_optional_object_element("_function_type");
 		if(function_type && function_type.get_string() == "def-constructor"){
 			return scope_def_t::make_builtin_function_def(

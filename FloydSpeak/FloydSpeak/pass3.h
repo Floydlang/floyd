@@ -13,9 +13,12 @@
 
 
 /*
-	Pass XXX
+	Pass 3
 
 	- Inject automatic functions, like default constructors.
+
+
+
 
 	Optimizes expressions, lossy.
 	- Perform basic evaluation simplifications / optimizations.

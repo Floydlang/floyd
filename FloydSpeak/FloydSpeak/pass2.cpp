@@ -528,7 +528,7 @@ pair<std::string, json_value_t> pass_b__type_to_id_xxx(const parser_path_t& path
 	QUARK_ASSERT(type_name0.front() == '<' && type_name0.back() == '>');
 	QUARK_TRACE(json_to_pretty_string(path._scopes.front()));
 
-	const string type_name = type_name0.substr(1, type_name0.size() - 2);
+	const string type_name = trim_ends(type_name0);
 	for(auto i = path._scopes.size() ; i > 0 ; i--){
 		const auto& scope = path._scopes[i - 1];
 		const auto type = scope.get_object_element("_types").get_optional_object_element(type_name);
@@ -1340,7 +1340,7 @@ std::string pass_d__resolve_type(const parser_path_t& path, const string& type_n
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(type_name0.size() > 2);
 
-	const string type_name = type_name0.substr(1, type_name0.size() - 2);
+	const string type_name = trim_ends(type_name0);
 	for(auto i = path._scopes.size() ; i > 0 ; i--){
 		const auto& scope = path._scopes[i - 1];
 		const auto type = scope.get_object_element("_types").get_optional_object_element(type_name);

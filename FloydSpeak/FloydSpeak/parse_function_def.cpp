@@ -28,7 +28,7 @@ namespace floyd_parser {
 		(int x, int y)
 	*/
 vector<json_value_t> parse_functiondef_arguments(const string& s2){
-	const auto s(s2.substr(1, s2.length() - 2));
+	const auto s = trim_ends(s2);
 	vector<json_value_t> args;
 	auto str = s;
 	while(!str.empty()){
@@ -89,7 +89,7 @@ std::pair<json_value_t, std::string> parse_function_definition(const string& pos
 		json_value_t function_body_def = make_scope_def();
 
 		//	temp will get all statements.
-		const auto temp = read_statements_into_scope_def(function_body_def, body_pos.first.substr(1, body_pos.first.size() - 2));
+		const auto temp = read_statements_into_scope_def(function_body_def, trim_ends(body_pos.first));
 
 		const auto locals = temp.first.get_object_element("_locals");
 		const auto statements = temp.first.get_object_element("_statements");
