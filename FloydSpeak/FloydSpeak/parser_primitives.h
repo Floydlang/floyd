@@ -157,9 +157,21 @@ namespace floyd_parser {
 		It is guaranteed to contain correct characters.
 		It is NOT guaranteed to map to an actual type in the language or program.
 
-		There are two modes:
-			A) _type_magic !="" && !_resolved
-			B) _type_magic =="" && _resolved
+		The name of the type:
+			"null"
+
+			"bool"
+			"int"
+			"float"
+			"function"
+
+			"value_type"
+
+			"metronome"
+			"map<string, metronome>"
+			"game_engine:sprite"
+			"vector<game_engine:sprite>"
+			"int (string, vector<game_engine:sprite>)"
 	*/
 
 	struct type_identifier_t {
@@ -205,24 +217,6 @@ namespace floyd_parser {
 		}
 
 		///////////////////		STATE
-		/*
-			The name of the type, including its path using :
-			"null"
-
-			"bool"
-			"int"
-			"float"
-			"function"
-
-			//	Specifies a data type.
-			"value_type"
-
-			"metronome"
-			"map<string, metronome>"
-			"game_engine:sprite"
-			"vector<game_engine:sprite>"
-			"int (string, vector<game_engine:sprite>)"
-		*/
 		private: std::string _type_magic;
 	};
 

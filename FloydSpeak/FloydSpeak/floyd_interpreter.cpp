@@ -83,8 +83,8 @@ namespace {
 		return result;
 	}
 
-	value_t call_host_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 #if 0
+	value_t call_host_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(f && f->check_invariant());
 		QUARK_ASSERT(f->_statements.empty());
@@ -100,9 +100,9 @@ namespace {
 		const auto resolved_path = vm.get_resolved_path();
 		const auto a = f->_host_function(vm._ast, resolved_path, f->_host_function_param, args);
 		return a;
-#endif
-	return {};
+		return {};
 	}
+#endif
 
 	/*
 		Return value:
@@ -743,9 +743,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 }
 
 
-
-
-//??? Make separate tests for parsing vs evaluating expressions.
 void test_evaluate_simple(const expression_t& e, const expression_t& expected){
 	const ast_t ast;
 	const interpreter_t interpreter(ast);

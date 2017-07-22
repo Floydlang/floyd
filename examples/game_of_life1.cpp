@@ -6,7 +6,7 @@
 
 namespace {
 //const int gridsize = 75; //Making this a global constant to avoid array issues.
-const int gridsize = 32;
+const int gridsize = 12;
 
 void Display(bool grid[gridsize+1][gridsize+1]){
     for(int a = 1; a < gridsize; a++){

@@ -20,7 +20,12 @@ struct json_value_t;
 
 floyd_parser::ast_t json_to_ast(const json_value_t& program);
 
-floyd_parser::expression_t conv_expression(const json_value_t& e, const std::map<std::string, std::shared_ptr<floyd_parser::type_def_t>>& temp_type_defs);
+/*
+	Recursive function
+	Pure
+	Converts input program in JSON format into an expression_t, using
+*/
+floyd_parser::expression_t conv_expression(const json_value_t& e, const std::map<std::string, std::shared_ptr<floyd_parser::type_def_t>>& types);
 
 
 #endif /* json_to_ast_hpp */

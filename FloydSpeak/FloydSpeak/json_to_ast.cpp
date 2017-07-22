@@ -24,7 +24,7 @@ using namespace std;
 
 
 
-shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string, shared_ptr<type_def_t>>& types){
 	//	#Basic-types
 	if(id == "$null"){
 		return type_def_t::make_null_typedef();
@@ -42,8 +42,8 @@ shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string,
 		return type_def_t::make_string_typedef();
 	}
 	else{
-		const auto it = temp_type_defs.find(id);
-		if(it == temp_type_defs.end()){
+		const auto it = types.find(id);
+		if(it == types.end()){
 			QUARK_ASSERT(false);
 		}
 
@@ -52,7 +52,7 @@ shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string,
 }
 
 
-expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(e.is_array() && e.get_array_size() >= 1);
 
 	const string op = e.get_array_n(0).get_string();
@@ -70,17 +70,17 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 			return expression_t::make_constant(value.is_true());
 		}
 		else if(type == "$int"){
-				return expression_t::make_constant((int)value.get_number());
+			return expression_t::make_constant((int)value.get_number());
 		}
 		else if(type == "$float"){
-				return expression_t::make_constant((float)value.get_number());
+			return expression_t::make_constant((float)value.get_number());
 		}
 		else if(type == "$string"){
-				return expression_t::make_constant(value.get_string());
+			return expression_t::make_constant(value.get_string());
 		}
 		else{
-			const auto it = temp_type_defs.find(type.get_string());
-			if(it == temp_type_defs.end()){
+			const auto it = types.find(type.get_string());
+			if(it == types.end()){
 				QUARK_ASSERT(false);
 			}
 			const auto base_type = it->second->get_type();
@@ -107,13 +107,13 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		const auto type = e.get_array_n(2);
 		return expression_t::make_math_operation1(
 			expression_t::math1_operation::negate,
-			conv_expression(expr, temp_type_defs)
+			conv_expression(expr, types)
 		);
 	}
 	else if(is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 4);
-		const auto lhs_expr = conv_expression(e.get_array_n(1), temp_type_defs);
-		const auto rhs_expr = conv_expression(e.get_array_n(2), temp_type_defs);
+		const auto lhs_expr = conv_expression(e.get_array_n(1), types);
+		const auto rhs_expr = conv_expression(e.get_array_n(2), types);
 		const auto op2 = string_to_math2_op(op);
 		return expression_t::make_math_operation2(
 			op2,
@@ -123,16 +123,16 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 	}
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 5);
-		const auto condition_expr = conv_expression(e.get_array_n(1), temp_type_defs);
-		const auto a_expr = conv_expression(e.get_array_n(2), temp_type_defs);
-		const auto b_expr = conv_expression(e.get_array_n(3), temp_type_defs);
-		const auto expr_type = resolve_type123(e.get_array_n(4).get_string(), temp_type_defs);
+		const auto condition_expr = conv_expression(e.get_array_n(1), types);
+		const auto a_expr = conv_expression(e.get_array_n(2), types);
+		const auto b_expr = conv_expression(e.get_array_n(3), types);
+		const auto expr_type = resolve_type123(e.get_array_n(4).get_string(), types);
 		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr);
 	}
 	else if(op == "call"){
 		QUARK_ASSERT(e.get_array_size() == 4);
 
-		const auto f_address = conv_expression(e.get_array_n(1), temp_type_defs);
+		const auto f_address = conv_expression(e.get_array_n(1), types);
 
 		//??? Hack - we should have real expressions for function names.
 		//??? Also: we should resolve all names 100% at this point.
@@ -140,30 +140,30 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 		const string func_name = f_address._resolve_variable->_variable_name;
 
 
-//		const auto function_expr = conv_expression(e.get_array_n(1), temp_type_defs);
+//		const auto function_expr = conv_expression(e.get_array_n(1), types);
 
 		const auto args = e.get_array_n(2);
 		vector<expression_t> args2;
 		for(const auto& arg: args.get_array()){
-			const auto arg2 = conv_expression(arg, temp_type_defs);
+			const auto arg2 = conv_expression(arg, types);
 			args2.push_back(arg2);
 		}
 
-		const auto return_type = resolve_type123(e.get_array_n(3).get_string(), temp_type_defs);
+		const auto return_type = resolve_type123(e.get_array_n(3).get_string(), types);
 		return expression_t::make_function_call(type_identifier_t::make(func_name), args2, return_type);
 //		return expression_t::make_function_call(function_expr, args2, return_type);
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 4);
-		const auto base_expr = conv_expression(e.get_array_n(1), temp_type_defs);
+		const auto base_expr = conv_expression(e.get_array_n(1), types);
 		const auto member_name = e.get_array_n(2).get_string();
-		const auto expr_type = resolve_type123(e.get_array_n(3).get_string(), temp_type_defs);
+		const auto expr_type = resolve_type123(e.get_array_n(3).get_string(), types);
 		return expression_t::make_resolve_member(base_expr, member_name, expr_type);
 	}
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto variable_name = e.get_array_n(1).get_string();
-		const auto expr_type = resolve_type123(e.get_array_n(2).get_string(), temp_type_defs);
+		const auto expr_type = resolve_type123(e.get_array_n(2).get_string(), types);
 
 //??? Bound to variable?
 		return expression_t::make_resolve_variable(variable_name, expr_type);
@@ -174,11 +174,14 @@ expression_t conv_expression(const json_value_t& e, const map<string, shared_ptr
 }
 
 
-	/*
-		{ "expr": 1, "name": "g_version", "type": "<int>" },
-		{ "expr": "Welcome!", "name": "message", "type": "<string>" }
-	*/
-std::vector<member_t> conv_members(const json_value_t& members, const map<string, shared_ptr<type_def_t>>& temp_type_defs, bool convert_expressions){
+/*
+	Example:
+		[
+			{ "expr": 1, "name": "g_version", "type": "<int>" },
+			{ "expr": "Welcome!", "name": "message", "type": "<string>" }
+		]
+*/
+std::vector<member_t> conv_members(const json_value_t& members, const map<string, shared_ptr<type_def_t>>& types, bool convert_expressions){
 	std::vector<member_t> members2;
 	for(const auto i: members.get_array()){
 		const string arg_name = i.get_object_element("name").get_string();
@@ -186,11 +189,11 @@ std::vector<member_t> conv_members(const json_value_t& members, const map<string
 		const auto init_expr = i.get_optional_object_element("expr");
 		QUARK_ASSERT(arg_type[0] == '$');
 
-		const auto arg_type2 = resolve_type123(arg_type, temp_type_defs);
+		const auto arg_type2 = resolve_type123(arg_type, types);
 
 		if(init_expr){
 			if(convert_expressions){
-				const auto init_expr2 = conv_expression(init_expr, temp_type_defs);
+				const auto init_expr2 = conv_expression(init_expr, types);
 
 				QUARK_ASSERT(init_expr2._constant != nullptr);
 				members2.push_back(member_t(arg_type2, arg_name, *init_expr2._constant));
@@ -219,7 +222,7 @@ std::vector<member_t> conv_members(const json_value_t& members, const map<string
 		"_types": {}
 	}
 */
-std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
 	const string type = scope_def.get_object_element("_type").get_string();
 	const string name = scope_def.get_object_element("_name").get_string();
 	const string return_type_id = scope_def.get_object_element("_return_type").get_string();
@@ -228,9 +231,9 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 	const auto members = scope_def.get_optional_object_element("_members", json_value_t::make_array()).get_array();
 	const auto statements = scope_def.get_object_element("_statements").get_array();
 
-	std::vector<member_t> args2 = conv_members(args, temp_type_defs, false);
-	std::vector<member_t> local_variables2 = conv_members(local_variables, temp_type_defs, false);
-	std::vector<member_t> members2 = conv_members(members, temp_type_defs, false);
+	std::vector<member_t> args2 = conv_members(args, types, false);
+	std::vector<member_t> local_variables2 = conv_members(local_variables, types, false);
+	std::vector<member_t> members2 = conv_members(members, types, false);
 
 	if(type == "function"){
 		std::vector<std::shared_ptr<statement_t> > statements2;
@@ -239,14 +242,14 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 			const string op = s.get_array_n(0).get_string();
 			if(op == "return"){
 				QUARK_ASSERT(s.get_array_size() == 2);
-				const auto expr = conv_expression(s.get_array_n(1), temp_type_defs);
+				const auto expr = conv_expression(s.get_array_n(1), types);
 				statements2.push_back(make_shared<statement_t>(make__return_statement(expr)));
 			}
 			else if(op == "bind"){
 				QUARK_ASSERT(s.get_array_size() == 4);
-				const auto bind_type = resolve_type123(s.get_array_n(1).get_string(), temp_type_defs);
+				const auto bind_type = resolve_type123(s.get_array_n(1).get_string(), types);
 				const auto identifier = s.get_array_n(2).get_string();
-				const auto expr = conv_expression(s.get_array_n(3), temp_type_defs);
+				const auto expr = conv_expression(s.get_array_n(3), types);
 				statements2.push_back(make_shared<statement_t>(make__bind_statement(bind_type, identifier, expr)));
 			}
 			else{
@@ -263,7 +266,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 			return scope_def_t::make_builtin_function_def(
 				type_identifier_t::make(name),
 				scope_def_t::efunc_variant::k_default_constructor,
-				resolve_type123(return_type_id, temp_type_defs)
+				resolve_type123(return_type_id, types)
 			);
 		}
 		else{
@@ -272,7 +275,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 				args2,
 				local_variables2,
 				statements2,
-				resolve_type123(return_type_id, temp_type_defs)
+				resolve_type123(return_type_id, types)
 			);
 		}
 	}
@@ -287,7 +290,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 	}
 	return {};
 }
-std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
 	const string type = scope_def.get_object_element("_type").get_string();
 	const string name = scope_def.get_object_element("_name").get_string();
 	const string return_type_id = scope_def.get_object_element("_return_type").get_string();
@@ -296,9 +299,9 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 	const auto members = scope_def.get_optional_object_element("_members", json_value_t::make_array()).get_array();
 	const auto statements = scope_def.get_object_element("_statements").get_array();
 
-	std::vector<member_t> args2 = conv_members(args, temp_type_defs, true);
-	std::vector<member_t> local_variables2 = conv_members(local_variables, temp_type_defs, true);
-	std::vector<member_t> members2 = conv_members(members, temp_type_defs, true);
+	std::vector<member_t> args2 = conv_members(args, types, true);
+	std::vector<member_t> local_variables2 = conv_members(local_variables, types, true);
+	std::vector<member_t> members2 = conv_members(members, types, true);
 
 	if(type == "function"){
 //???		QUARK_ASSERT(statements.size() > 0);
@@ -307,14 +310,14 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 			const string op = s.get_array_n(0).get_string();
 			if(op == "return"){
 				QUARK_ASSERT(s.get_array_size() == 2);
-				const auto expr = conv_expression(s.get_array_n(1), temp_type_defs);
+				const auto expr = conv_expression(s.get_array_n(1), types);
 				statements2.push_back(make_shared<statement_t>(make__return_statement(expr)));
 			}
 			else if(op == "bind"){
 				QUARK_ASSERT(s.get_array_size() == 4);
-				const auto bind_type = resolve_type123(s.get_array_n(1).get_string(), temp_type_defs);
+				const auto bind_type = resolve_type123(s.get_array_n(1).get_string(), types);
 				const auto identifier = s.get_array_n(2).get_string();
-				const auto expr = conv_expression(s.get_array_n(3), temp_type_defs);
+				const auto expr = conv_expression(s.get_array_n(3), types);
 				statements2.push_back(make_shared<statement_t>(make__bind_statement(bind_type, identifier, expr)));
 			}
 			else{
@@ -327,7 +330,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 			return scope_def_t::make_builtin_function_def(
 				type_identifier_t::make(name),
 				scope_def_t::efunc_variant::k_default_constructor,
-				resolve_type123(return_type_id, temp_type_defs)
+				resolve_type123(return_type_id, types)
 			);
 		}
 		else{
@@ -336,7 +339,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 				args2,
 				local_variables2,
 				statements2,
-				resolve_type123(return_type_id, temp_type_defs)
+				resolve_type123(return_type_id, types)
 			);
 		}
 	}
@@ -352,7 +355,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 	return {};
 }
 
-std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(def.check_invariant());
 
 	const auto base_type = def.get_object_element("base_type");
@@ -376,13 +379,13 @@ std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& de
 	}
 
 	else if(base_type == "struct"){
-		return type_def_t::make_struct_type_def(conv_scope_def__no_expressions(scope_def, temp_type_defs));
+		return type_def_t::make_struct_type_def(conv_scope_def__no_expressions(scope_def, types));
 	}
 	else if(base_type == "vector"){
 		QUARK_ASSERT(false);
 	}
 	else if(base_type == "function"){
-		return type_def_t::make_function_type_def(conv_scope_def__no_expressions(scope_def, temp_type_defs));
+		return type_def_t::make_function_type_def(conv_scope_def__no_expressions(scope_def, types));
 	}
 	else if(base_type == "subscope"){
 		QUARK_ASSERT(false);
@@ -392,7 +395,7 @@ std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& de
 	}
 }
 
-std::shared_ptr<type_def_t> conv_expressions_and_statements(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& temp_type_defs){
+std::shared_ptr<type_def_t> conv_expressions_and_statements(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(def.check_invariant());
 
 	const auto base_type = def.get_object_element("base_type");
@@ -400,10 +403,10 @@ std::shared_ptr<type_def_t> conv_expressions_and_statements(const json_value_t& 
 	const auto path = def.get_object_element("path");
 
 	if(base_type == "struct"){
-		return type_def_t::make_struct_type_def(conv_scope_def__expressions(scope_def, temp_type_defs));
+		return type_def_t::make_struct_type_def(conv_scope_def__expressions(scope_def, types));
 	}
 	else if(base_type == "function"){
-		return type_def_t::make_function_type_def(conv_scope_def__expressions(scope_def, temp_type_defs));
+		return type_def_t::make_function_type_def(conv_scope_def__expressions(scope_def, types));
 	}
 	else if(base_type == "subscope"){
 		QUARK_ASSERT(false);

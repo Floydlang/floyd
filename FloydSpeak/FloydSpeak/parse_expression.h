@@ -21,6 +21,8 @@ namespace floyd_parser {
 		Requires all characters to be part of expression - does not stop until all characters have been evaluated.
 		Checks syntax
 
+		Returns abstraxt syntax tree, in JSON-format.
+
 		FALSE: Validates that called functions exists and has correct type.
 		FALSE: Validates that accessed variables exists and has correct types.
 

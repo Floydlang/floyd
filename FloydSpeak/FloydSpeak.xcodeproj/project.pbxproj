@@ -79,6 +79,7 @@
 		2C4F35601D4795C20061CA93 /* parse_statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parse_statement.cpp; sourceTree = "<group>"; };
 		2C4F35611D4795C20061CA93 /* parse_statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parse_statement.h; sourceTree = "<group>"; };
 		2C5F60CC1D5E3345006E0A89 /* json_for_modern_cpp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_for_modern_cpp.h; sourceTree = "<group>"; };
+		2C61FC651F226BE300DE7B59 /* game_of_life.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = game_of_life.floyd; sourceTree = "<group>"; };
 		2C71179C1D6E48AE004B8F69 /* parser2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser2.cpp; sourceTree = "<group>"; };
 		2C789ED71CBA54C400DDBD3C /* floyd_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_parser.h; sourceTree = "<group>"; };
 		2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_interpreter.cpp; sourceTree = "<group>"; };
@@ -235,6 +236,7 @@
 			isa = PBXGroup;
 			children = (
 				2CC50E291CE49F09008D78C7 /* game_of_life_ut.cpp */,
+				2C61FC651F226BE300DE7B59 /* game_of_life.floyd */,
 				2CC50E201CE485AF008D78C7 /* game_of_life1.cpp */,
 				2CC50E221CE48665008D78C7 /* game_of_life1.h */,
 				2CC50E231CE48748008D78C7 /* game_of_life2.cpp */,

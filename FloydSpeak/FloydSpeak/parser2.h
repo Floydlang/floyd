@@ -28,9 +28,9 @@ const std::string k_c99_whitespace_chars = " \n\t\r";
 
 /*
 	White-space policy:
-	All function inputs SUPPORTS whitespace.
+	All function inputs SUPPORT whitespace.
 	Filter at function input. No need to filter when you return for next function.
-	Why: ony one function entry, often many function exists.
+	Why: only one function entry, often many function exists.
 */
 
 

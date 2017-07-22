@@ -58,7 +58,7 @@ namespace floyd_interpreter {
 		////////////////////////		STATE
 		public: const floyd_parser::ast_t _ast;
 
-		//	Last scope if the current one. First scope is the root.
+		//	Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<stack_frame_t>> _call_stack;
 	};
 

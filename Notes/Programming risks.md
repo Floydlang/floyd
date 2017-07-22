@@ -15,3 +15,5 @@
 - Keep two parallell systems in sync: data model graph, server database, view hiearchy. Store each in a variable. Use diff and merge.
 
 - Pointers and backlinks. Weak and strong.
+
+- Many mediators making independant decisions.

@@ -91,13 +91,13 @@ namespace floyd_parser {
 
 
 
-
+/*
 	struct host_data_i {
 		public: virtual ~host_data_i(){};
 	};
 
 	typedef value_t (*hosts_function_t)(const ast_t& ast, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
-
+*/
 
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
@@ -135,24 +135,15 @@ namespace floyd_parser {
 
 
 
-
-	//////////////////////////////////////////////////		scope_def_t
-
-
-
-	struct host_func_spec_t {
-	};
-
-
-
 	//////////////////////////////////////////////////		scope_def_t
 
 	/*
-		This is a core piece of the AST. It represents a static, compile-time scope. scope_def_t:s are used to define
+		This is a core internal building block of the AST. It represents a static, compile-time scope.
+		scope_def_t:s are used to define
+
 		- The global scope
 		- struct definition, with member data and functions
 		- function definition, with arguments
-		- function body
 		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 
 		The scope_def_t includes optional code, optional member variables and optional local types.
@@ -186,13 +177,6 @@ namespace floyd_parser {
 			const type_identifier_t& name,
 			efunc_variant function_variant,
 			const std::shared_ptr<const type_def_t>& type
-		);
-
-		public: static scope_ref_t make_host_function_def(
-			const type_identifier_t& name,
-			const std::vector<member_t>& args,
-			const host_func_spec_t& host_func,
-			const type_identifier_t& return_type
 		);
 
 		public: static scope_ref_t make_global_scope();
@@ -239,6 +223,12 @@ namespace floyd_parser {
 
 	/*
 		Describes a frontend type. All sub-types may or may not be known yet.
+		Immutable
+
+		- Basic types, like ints and strings.
+		- Functions
+		- Vector type
+		- Structs
 	*/
 	struct type_def_t {
 		private: type_def_t(base_type type) :
@@ -301,27 +291,6 @@ namespace floyd_parser {
 			}
 			QUARK_ASSERT(false);
 		}
-
-/*
-		public: type_def_t replace_subscope(const std::shared_ptr<const scope_def_t>& new_scope) const {
-			QUARK_ASSERT(is_subscope());
-			QUARK_ASSERT(
-				(get_type() == base_type::k_struct && new_scope->_type == scope_def_t::etype::k_struct_scope)
-				|| (get_type() == base_type::k_function && (new_scope->_type == scope_def_t::etype::k_function_scope || new_scope->_type== scope_def_t::etype::k_subscope))
-			);
-			QUARK_ASSERT(new_scope && new_scope->check_invariant());
-
-			if(_base_type == base_type::k_struct){
-				return make_struct_def(new_scope);
-			}
-			else if(_base_type == base_type::k_function){
-				return make_function_def(new_scope);
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
-		}
-*/
 
 		public: std::shared_ptr<const scope_def_t> get_struct_def() const {
 			QUARK_ASSERT(_base_type == base_type::k_struct);
@@ -389,6 +358,7 @@ namespace floyd_parser {
 		public: std::shared_ptr<const scope_def_t> _global_scope;
 
 		//	Keyed on "$1000" etc.
+		//	??? Should be const!
 		public: std::map<std::string, std::shared_ptr<type_def_t>> _symbols;
 	};
 

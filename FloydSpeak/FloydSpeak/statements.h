@@ -79,7 +79,14 @@ namespace floyd_parser {
     
 	//////////////////////////////////////		statement_t
 
+	/*
+		Defines a statement, like "return" including any needed expression trees for the statement.
 
+		- bind
+		- define_struct
+		- define function
+		- return
+	*/
 	struct statement_t {
 		public: statement_t(const statement_t& other) = default;
 		public: statement_t& operator=(const statement_t& other) = default;

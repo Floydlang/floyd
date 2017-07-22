@@ -39,9 +39,14 @@
 		We don't have any value we can return from each expression in tree.
 		Alternatives:
 
-		A) Have dedicated expression types:
+		A) [CHOSEN SOLUTION]
+			Have dedicated expression types:
 			struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
 			collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
+
+			resolve-variable "xyz"
+			resolve-member "xyz"
+			lookup x
 
 		B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
 		C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.

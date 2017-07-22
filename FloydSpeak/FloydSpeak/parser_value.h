@@ -20,12 +20,16 @@
 namespace floyd_parser {
 	struct statement_t;
 	struct value_t;
-	struct type_identifier_t;
 
 	//////////////////////////////////////////////////		struct_instance_t
 
+	/*
+		An instance of a struct-type = a value of this struct.
+		Each memeber is initialized.
 
-	//??? Merge into stack_frame_t to make a generic construct.
+
+		### Merge into stack_frame_t to make a generic construct.
+	*/
 	struct struct_instance_t {
 		public: struct_instance_t(const std::shared_ptr<const type_def_t>& struct_type, const std::map<std::string, value_t>& member_values) :
 			_struct_type(struct_type),
@@ -54,7 +58,7 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 		public: bool operator==(const vector_instance_t& other);
 
-		//	??? Remove this points at later time, when we statically track the type of structs OK.
+		//	??? Remove this pointer at later time, when we statically track the type of structs OK.
 		std::shared_ptr<type_def_t> _vector_type;
 
 		std::vector<value_t> _elements;
@@ -82,7 +86,14 @@ namespace floyd_parser {
 
 	/*
 		Hold a value with an explicit type.
-		Used only for parsing. Encoding is very inefficient at the moment.
+		Immutable
+
+		- Values of basic types like ints and strings
+		- Struct instances
+		- Function "pointers"
+		- Vectors instances
+		
+		NOTICE: Encoding is very inefficient at the moment.
 	*/
 
 	struct value_t {
