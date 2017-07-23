@@ -419,7 +419,7 @@ namespace floyd_parser {
 
 	json_value_t type_def_to_json(const type_def_t& type_def){
 		return make_object({
-			{ "_base_type", json_value_t(type_def.to_string()) },
+			{ "_base_type", json_value_t(base_type_to_string(type_def.get_base_type())) },
 			{ "_struct_def", type_def.get_base_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_value_t() },
 			{ "_vector_def", type_def.get_base_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_value_t() },
 			{ "_function_def", type_def.get_base_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_value_t() }
@@ -672,6 +672,13 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 	}
 
+	ast_t::ast_t(std::shared_ptr<const scope_def_t> global_scope, std::map<std::string, std::shared_ptr<const type_def_t>> typenames) :
+		_global_scope(global_scope),
+		_typenames(typenames)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
+
 	bool ast_t::check_invariant() const {
 		QUARK_ASSERT(_global_scope && _global_scope->check_invariant());
 		return true;
@@ -700,8 +707,8 @@ namespace floyd_parser {
 		QUARK_ASSERT(ast.check_invariant());
 
 		return make_object({
-			{ "_symbols", symbols_to_json(ast._symbols) },
-			{ "_global_scope", scope_def_to_json(*ast._global_scope) }
+			{ "typenames", symbols_to_json(ast.get_typenames()) },
+			{ "global_scope", scope_def_to_json(*ast.get_global_scope()) }
 		});
 	}
 

@@ -262,7 +262,7 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 }
 
 scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
-	for(const auto p: vm._ast._symbols){
+	for(const auto p: vm._ast.get_typenames()){
 		const auto type_def = p.second;
 		if(type_def->get_base_type() == base_type::k_function && type_def->get_function_def()->_name.to_string() == name){
 			return type_def->get_function_def();
@@ -597,13 +597,13 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	//	find function symbol: no proper static scoping ???
 	const auto found_it = find_if(
-		vm._ast._symbols.begin(),
-		vm._ast._symbols.end(),
+		vm._ast.get_typenames().begin(),
+		vm._ast.get_typenames().end(),
 		[&] (const std::pair<std::string, std::shared_ptr<const type_def_t>>& t) {
 			return t.second->get_base_type() == base_type::k_function && t.second->get_function_def()->_name.to_string() == function_name;
 		}
 	);
-	if(found_it == vm._ast._symbols.end()){
+	if(found_it == vm._ast.get_typenames().end()){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
 	const auto type = found_it->second;
@@ -1053,7 +1053,7 @@ interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
 	QUARK_ASSERT(ast.check_invariant());
 
 	auto global_stack_frame = stack_frame_t();
-	global_stack_frame._def = ast._global_scope;
+	global_stack_frame._def = ast.get_global_scope();
 	_call_stack.push_back(make_shared<stack_frame_t>(global_stack_frame));
 
 	//	Run static intialization (basically run global statements before calling main()).

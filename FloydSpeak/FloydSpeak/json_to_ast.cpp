@@ -12,6 +12,8 @@
 #include "parser_value.h"
 #include "utils.h"
 #include "json_support.h"
+#include "json_parser.h"
+#include "json_writer.h"
 #include "parser_primitives.h"
 
 using namespace floyd_parser;
@@ -256,6 +258,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 	}
 	return {};
 }
+
 std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
 	const string type = scope_def.get_object_element("_type").get_string();
 	const string name = scope_def.get_object_element("_name").get_string();
@@ -401,15 +404,17 @@ std::shared_ptr<type_def_t> conv_type_def__expressions_and_statements(const json
 	IMPORTANT: Updates the shared_ptr<type_def_t> member data in-place. Clients keep shared_ptr<typedef_t>s that are affected.
 */
 ast_t json_to_ast(const json_value_t& program){
+	const auto lookup = program.get_object_element("lookup").get_object();
+
 	//	Make placeholder type-defs for each symbol. We use pointer to type_def as its identity.
 	map<string, shared_ptr<type_def_t>> temp_type_defs;
-	for(const auto& s: program.get_object_element("lookup").get_object()){
+	for(const auto& s: lookup){
 		temp_type_defs[s.first] = type_def_t::make_null_typedef();
 	}
 
 	//	Make a shallow pass through all types. Convert JSON based types to type_def_t:s.
 	//	Only definitions of the types, not yet expressions or statements that USE these types.
-	for(const auto& s: program.get_object_element("lookup").get_object()){
+	for(const auto& s: lookup){
 		const auto id = s.first;
 		const json_value_t& def = s.second;
 		std::shared_ptr<type_def_t> type_def = conv_type_def__no_expressions(def, temp_type_defs);
@@ -420,7 +425,7 @@ ast_t json_to_ast(const json_value_t& program){
 	}
 
 	//	Second pass - do expressions & statements -- make them USE the new type_def_t.
-	for(const auto& s: program.get_object_element("lookup").get_object()){
+	for(const auto& s: lookup){
 		const auto id = s.first;
 		const json_value_t& def = s.second;
 		std::shared_ptr<type_def_t> type_def = conv_type_def__expressions_and_statements(def, temp_type_defs);
@@ -435,10 +440,61 @@ ast_t json_to_ast(const json_value_t& program){
 	const auto global_scope = conv_scope_def__no_expressions(program.get_object_element("global"), temp_type_defs);
 //	const auto global_scope2 = scope_def_t::make_global_scope();
 
-	ast_t result;
-	result._symbols = std::map<std::string, std::shared_ptr<const type_def_t>>(temp_type_defs.begin(), temp_type_defs.end());
-
-	result._global_scope = global_scope;
-	QUARK_ASSERT(result.check_invariant());
+	ast_t result(
+		global_scope,
+		std::map<std::string, std::shared_ptr<const type_def_t>>(temp_type_defs.begin(), temp_type_defs.end())
+	);
 	return result;
 }
+
+
+
+
+
+QUARK_UNIT_TESTQ("json_to_ast()", "Minimum program"){
+	const auto a = parse_json(seq_t(R"(
+			{
+				"global": {
+					"_args": [],
+					"_locals": [],
+					"_members": [],
+					"_name": "global",
+					"_return_type": "",
+					"_statements": [],
+					"_type": "global"
+				},
+				"lookup": {
+					"$1000": {
+						"base_type": "function",
+						"path": "global/main",
+						"scope_def": {
+							"_args": [],
+							"_locals": [],
+							"_members": [],
+							"_name": "main",
+							"_return_type": "$int",
+							"_statements": [["return", ["k", 3, "$int"]]],
+							"_type": "function",
+							"_types": {}
+						}
+					}
+				}
+			}
+	)"));
+
+
+	QUARK_TRACE(json_to_pretty_string(a.first));
+
+	const auto r = json_to_ast(a.first);
+
+	const auto b = ast_to_json(r);
+	QUARK_TRACE(json_to_pretty_string(b));
+
+
+	QUARK_ASSERT(a.first.is_null() == false);
+}
+
+
+
+
+

@@ -348,18 +348,25 @@ namespace floyd_parser {
 
 	/*
 		Represents the root of the parse tree - the Abstract Syntax Tree
+		Immutable
 	*/
 	struct ast_t {
 		public: ast_t();
+		public: ast_t(std::shared_ptr<const scope_def_t> global_scope, std::map<std::string, std::shared_ptr<const type_def_t>> typenames);
 		public: bool check_invariant() const;
 
+		public: const std::shared_ptr<const scope_def_t>& get_global_scope() const {
+			return _global_scope;
+		}
+		public: const std::map<std::string, std::shared_ptr<const type_def_t>>& get_typenames() const {
+			return _typenames;
+		}
 
 		/////////////////////////////		STATE
-		public: std::shared_ptr<const scope_def_t> _global_scope;
+		private: std::shared_ptr<const scope_def_t> _global_scope;
 
 		//	Keyed on "$1000" etc.
-		//	??? Should be const!
-		public: std::map<std::string, std::shared_ptr<const type_def_t>> _symbols;
+		private: std::map<std::string, std::shared_ptr<const type_def_t>> _typenames;
 	};
 
 	void trace(const ast_t& program);
