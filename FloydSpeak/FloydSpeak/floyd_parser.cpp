@@ -174,7 +174,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 QUARK_UNIT_TESTQ("read_statement()", ""){
 	const auto result = read_statement(test_function1);
 	QUARK_TEST_VERIFY(json_to_compact_string(result._statement)
-		== R"(["define_function", { "_args": [], "_locals": [], "_members": [], "_name": "test_function1", "_return_type": "<int>", "_statements": [["return", ["k", 100, "<int>"]]], "_type": "function", "_types": {} }])");
+		== R"(["define_function", { "args": [], "locals": [], "members": [], "name": "test_function1", "return_type": "<int>", "statements": [["return", ["k", 100, "<int>"]]], "type": "function", "types": {} }])");
 	QUARK_TEST_VERIFY(result._rest == "");
 }
 
@@ -183,7 +183,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 	quark::ut_compare(
 		json_to_compact_string(result._statement),
-		R"(["define_struct", { "_args": [], "_locals": [], "_members": [{ "name": "x", "type": "<int>" }, { "name": "y", "type": "<string>" }, { "name": "z", "type": "<float>" }], "_name": "test_struct0", "_return_type": "", "_statements": [], "_type": "struct", "_types": {} }])"
+		R"(["define_struct", { "args": [], "locals": [], "members": [{ "name": "x", "type": "<int>" }, { "name": "y", "type": "<string>" }, { "name": "z", "type": "<float>" }], "name": "test_struct0", "return_type": "", "statements": [], "type": "struct", "types": {} }])"
 	);
 	QUARK_TEST_VERIFY(result._rest == ";");
 }
@@ -195,20 +195,20 @@ json_value_t add_subscope(const json_value_t& scope, const json_value_t& subscop
 	QUARK_ASSERT(scope.check_invariant());
 	QUARK_ASSERT(subscope.check_invariant());
 
-	const auto name = subscope.get_object_element("_name").get_string();
-	const auto type = subscope.get_object_element("_type").get_string();
+	const auto name = subscope.get_object_element("name").get_string();
+	const auto type = subscope.get_object_element("type").get_string();
 	const auto type_entry = json_value_t::make_object({
 		{ "base_type", type },
 		{ "scope_def", subscope }
 	});
-	if(exists_in(scope, make_vec({ "_types", name }))){
-		const auto index = get_in(scope, make_vec({ "_types", name })).get_array_size();
-		return assoc_in(scope, make_vec({"_types", name, index }), type_entry);
+	if(exists_in(scope, make_vec({ "types", name }))){
+		const auto index = get_in(scope, make_vec({ "types", name })).get_array_size();
+		return assoc_in(scope, make_vec({"types", name, index }), type_entry);
 	}
 	else{
 		return assoc_in(
 			scope,
-			make_vec({"_types", name }),
+			make_vec({"types", name }),
 			json_value_t::make_array2({ type_entry })
 		);
 	}
@@ -241,9 +241,9 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 			scope2 = add_subscope(scope2, statement.get_array_n(1));
 
 #if 0
-			const auto function_name = statement.get_array_n(1).get_object_element("_name");
-			const auto return_type = statement.get_array_n(1).get_object_element("_return_type");
-			const auto args_array = statement.get_array_n(1).get_object_element("_args").get_array();
+			const auto function_name = statement.get_array_n(1).get_object_element("name");
+			const auto return_type = statement.get_array_n(1).get_object_element("return_type");
+			const auto args_array = statement.get_array_n(1).get_object_element("args").get_array();
 			vector<json_value_t> proto;
 			proto.push_back(return_type);
 			proto.insert(proto.back(), args.begin(), arg.end());
@@ -252,12 +252,12 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 
 
 			auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
-			scope2 = store_object_member(scope2, "_locals", push_back(scope2.get_object_element("_locals"), loc));
+			scope2 = store_object_member(scope2, "locals", push_back(scope2.get_object_element("locals"), loc));
 #endif
 
 			//	Add a local variable pointing to our function.??? This removes need for scoped type_defs?
 //			auto loc = make_member_def("", local_name.get_string(), expr);
-//			scope2 = store_object_member(scope2, "_locals", push_back(scope2.get_object_element("_locals"), loc));
+//			scope2 = store_object_member(scope2, "locals", push_back(scope2.get_object_element("locals"), loc));
 		}
 		else if(statement_type == "bind"){
 			const auto bind_type = statement.get_array_n(1);
@@ -266,11 +266,11 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 			const auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
 
 			//	Reserve an entry in _members-vector for our variable.
-			scope2 = store_object_member(scope2, "_locals", push_back(scope2.get_object_element("_locals"), loc));
-			scope2 = store_object_member(scope2, "_statements", push_back(scope2.get_object_element("_statements"), statement));
+			scope2 = store_object_member(scope2, "locals", push_back(scope2.get_object_element("locals"), loc));
+			scope2 = store_object_member(scope2, "statements", push_back(scope2.get_object_element("statements"), statement));
 		}
 		else{
-			scope2 = store_object_member(scope2, "_statements", push_back(scope2.get_object_element("_statements"), statement));
+			scope2 = store_object_member(scope2, "statements", push_back(scope2.get_object_element("statements"), statement));
 		}
 		pos = skip_whitespace(statement_pos._rest);
 	}
@@ -282,8 +282,8 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 
 json_value_t parse_program(const string& program){
 	json_value_t a = make_scope_def();
-	a = store_object_member(a, "_name", "global");
-	a = store_object_member(a, "_type", "global");
+	a = store_object_member(a, "name", "global");
+	a = store_object_member(a, "type", "global");
 
 	const auto statements_pos = read_statements_into_scope_def(a, program);
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
@@ -298,9 +298,9 @@ QUARK_UNIT_TEST("", "parse_program()", "kProgram1", ""){
 		"}\n";
 
 	auto result = parse_program(kProgram1);
-	QUARK_UT_VERIFY(get_in(result, { "_types", "main", 0.0, "base_type" }) == "function");
-	QUARK_UT_VERIFY(get_in(result, { "_types", "main", 0.0, "scope_def", "_args", 0.0 }) == json_value_t::make_object({ { "name", "args"}, {"type", "<string>"}}));
-	QUARK_UT_VERIFY(get_in(result, { "_types", "main", 0.0, "scope_def", "_return_type" }) == "<int>");
+	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "base_type" }) == "function");
+	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "scope_def", "args", 0.0 }) == json_value_t::make_object({ { "name", "args"}, {"type", "<string>"}}));
+	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "scope_def", "return_type" }) == "<int>");
 }
 
 QUARK_UNIT_TEST("", "parse_program()", "three arguments", ""){

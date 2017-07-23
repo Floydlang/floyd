@@ -547,18 +547,18 @@ return R"(
 		{
 			"base_type": "function",
 			"scope_def": {
-				"_args": [
+				"args": [
 					
 				],
-				"_locals": [
+				"locals": [
 					
 				],
-				"_members": [
+				"members": [
 					
 				],
-				"_name": "main",
-				"_return_type": "int",
-				"_statements": [
+				"name": "main",
+				"return_type": "int",
+				"statements": [
 					[
 						"return",
 						[
@@ -568,8 +568,8 @@ return R"(
 						]
 					]
 				],
-				"_type": "function",
-				"_types": [
+				"type": "function",
+				"types": [
 					[
 						"return",
 						[
@@ -595,14 +595,14 @@ return R"(
 			"base_type": "function",
 			"scope_def":
 			{
-				"_args": [],
-				"_locals": [],
-				"_members": [],
-				"_name": "main",
-				"_return_type": "int",
-				"_statements": [ [ "return", [ "k", "<int>", 3 ] ] ],
-				"_type": "function",
-				"_types": [ [ "return", [ "k", "<int>", 3 ] ] ]
+				"args": [],
+				"locals": [],
+				"members": [],
+				"name": "main",
+				"return_type": "int",
+				"statements": [ [ "return", [ "k", "<int>", 3 ] ] ],
+				"type": "function",
+				"types": [ [ "return", [ "k", "<int>", 3 ] ] ]
 			}
 		}
 	]

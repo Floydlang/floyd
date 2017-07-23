@@ -429,9 +429,9 @@ namespace floyd_parser {
 		std::vector<json_value_t> members;
 		for(const auto i: scope_def._members){
 			const auto member = make_object({
-				{ "_type", json_value_t(i._type->to_string()) },
+				{ "type", json_value_t(i._type->to_string()) },
 				{ "_value", i._value ? value_to_json(*i._value) : json_value_t() },
-				{ "_name", json_value_t(i._name) }
+				{ "name", json_value_t(i._name) }
 		});
 			members.push_back(json_value_t(member));
 		}
@@ -442,11 +442,11 @@ namespace floyd_parser {
 		}
 
 		return make_object({
-			{ "_type", json_value_t(scope_type_to_string(scope_def._type)) },
-			{ "_name", json_value_t(scope_def._name.to_string()) },
-			{ "_members", members.empty() ? json_value_t() :json_value_t(members) },
-			{ "_statements", json_value_t(statements) },
-			{ "_return_type", scope_def._return_type ? scope_def._return_type->to_string() : json_value_t() }
+			{ "type", json_value_t(scope_type_to_string(scope_def._type)) },
+			{ "name", json_value_t(scope_def._name.to_string()) },
+			{ "members", members.empty() ? json_value_t() :json_value_t(members) },
+			{ "statements", json_value_t(statements) },
+			{ "return_type", scope_def._return_type ? scope_def._return_type->to_string() : json_value_t() }
 		});
 	}
 

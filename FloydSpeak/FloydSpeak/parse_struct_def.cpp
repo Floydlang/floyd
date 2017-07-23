@@ -71,9 +71,9 @@ namespace floyd_parser {
 		}
 
 		json_value_t obj = make_scope_def();
-		obj = store_object_member(obj, "_type", "struct");
-		obj = store_object_member(obj, "_name", json_value_t(struct_name));
-		obj = store_object_member(obj, "_members", members);
+		obj = store_object_member(obj, "type", "struct");
+		obj = store_object_member(obj, "name", json_value_t(struct_name));
+		obj = store_object_member(obj, "members", members);
 		return { obj, body_pos.second };
 	}
 

@@ -91,18 +91,18 @@ std::pair<json_value_t, std::string> parse_function_definition(const string& pos
 		//	temp will get all statements.
 		const auto temp = read_statements_into_scope_def(function_body_def, trim_ends(body_pos.first));
 
-		const auto locals = temp.first.get_object_element("_locals");
-		const auto statements = temp.first.get_object_element("_statements");
-		const auto types_collector = temp.first.get_object_element("_types");
+		const auto locals = temp.first.get_object_element("locals");
+		const auto statements = temp.first.get_object_element("statements");
+		const auto types_collector = temp.first.get_object_element("types");
 
 		json_value_t function_def = make_scope_def();
-		function_def = store_object_member(function_def, "_type", "function");
-		function_def = store_object_member(function_def, "_name", function_name);
-		function_def = store_object_member(function_def, "_args", args);
-		function_def = store_object_member(function_def, "_locals", locals);
-		function_def = store_object_member(function_def, "_statements", statements);
-		function_def = store_object_member(function_def, "_types", types_collector);
-		function_def = store_object_member(function_def, "_return_type", "<" + return_type_pos.first.to_string() + ">");
+		function_def = store_object_member(function_def, "type", "function");
+		function_def = store_object_member(function_def, "name", function_name);
+		function_def = store_object_member(function_def, "args", args);
+		function_def = store_object_member(function_def, "locals", locals);
+		function_def = store_object_member(function_def, "statements", statements);
+		function_def = store_object_member(function_def, "types", types_collector);
+		function_def = store_object_member(function_def, "return_type", "<" + return_type_pos.first.to_string() + ">");
 		return { function_def, body_pos.second };
 	}
 }

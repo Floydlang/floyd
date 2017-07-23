@@ -340,18 +340,18 @@ json_value_t make_member_def(const std::string& type, const std::string& name, c
 
 json_value_t make_scope_def(){
 	return json_value_t::make_object({
-		{ "_type", "" },
-		{ "_name", "" },
-		{ "_args", json_value_t::make_array() },
-		{ "_members", json_value_t::make_array() },
-		{ "_types", json_value_t::make_object() },
+		{ "type", "" },
+		{ "name", "" },
+		{ "args", json_value_t::make_array() },
+		{ "members", json_value_t::make_array() },
+		{ "types", json_value_t::make_object() },
 
 		//??? New in JSON, used to stored as sub-function body.
-		{ "_locals", json_value_t::make_array() },
+		{ "locals", json_value_t::make_array() },
 
 		//	??? New in JSON version - used to be stored in _executable.
-		{ "_statements", json_value_t::make_array() },
-		{ "_return_type", "" }
+		{ "statements", json_value_t::make_array() },
+		{ "return_type", "" }
 	});
 }
 json_value_t make_builtin_types(){

@@ -201,24 +201,24 @@ std::vector<member_t> conv_members(const json_value_t& members, const map<string
 
 /*
 	{
-		"_args": [],
-		"_locals": [],
-		"_members": [],
-		"_name": "main",
-		"_return_type": "$1001",
-		"_statements": [["return", ["k", 3, "$1001"]]],
-		"_type": "function",
-		"_types": {}
+		"args": [],
+		"locals": [],
+		"members": [],
+		"name": "main",
+		"return_type": "$1001",
+		"statements": [["return", ["k", 3, "$1001"]]],
+		"type": "function",
+		"types": {}
 	}
 */
 std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
-	const string type = scope_def.get_object_element("_type").get_string();
-	const string name = scope_def.get_object_element("_name").get_string();
-	const string return_type_id = scope_def.get_object_element("_return_type").get_string();
-	const auto args = scope_def.get_optional_object_element("_args", json_value_t::make_array()).get_array();
-	const auto local_variables = scope_def.get_optional_object_element("_locals", json_value_t::make_array()).get_array();
-	const auto members = scope_def.get_optional_object_element("_members", json_value_t::make_array()).get_array();
-	const auto statements = scope_def.get_object_element("_statements").get_array();
+	const string type = scope_def.get_object_element("type").get_string();
+	const string name = scope_def.get_object_element("name").get_string();
+	const string return_type_id = scope_def.get_object_element("return_type").get_string();
+	const auto args = scope_def.get_optional_object_element("args", json_value_t::make_array()).get_array();
+	const auto local_variables = scope_def.get_optional_object_element("locals", json_value_t::make_array()).get_array();
+	const auto members = scope_def.get_optional_object_element("members", json_value_t::make_array()).get_array();
+	const auto statements = scope_def.get_object_element("statements").get_array();
 
 	std::vector<member_t> args2 = conv_members(args, types, false);
 	std::vector<member_t> local_variables2 = conv_members(local_variables, types, false);
@@ -226,7 +226,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 
 	if(type == "function"){
 		std::vector<std::shared_ptr<statement_t> > statements2;
-		const auto function_type = scope_def.get_optional_object_element("_function_type");
+		const auto function_type = scope_def.get_optional_object_element("function_type");
 		if(function_type && function_type.get_string() == "def-constructor"){
 			return scope_def_t::make_builtin_function_def(
 				type_identifier_t::make(name),
@@ -257,13 +257,13 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 }
 
 std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
-	const string type = scope_def.get_object_element("_type").get_string();
-	const string name = scope_def.get_object_element("_name").get_string();
-	const string return_type_id = scope_def.get_object_element("_return_type").get_string();
-	const auto args = scope_def.get_optional_object_element("_args", json_value_t::make_array()).get_array();
-	const auto local_variables = scope_def.get_optional_object_element("_locals", json_value_t::make_array()).get_array();
-	const auto members = scope_def.get_optional_object_element("_members", json_value_t::make_array()).get_array();
-	const auto statements = scope_def.get_object_element("_statements").get_array();
+	const string type = scope_def.get_object_element("type").get_string();
+	const string name = scope_def.get_object_element("name").get_string();
+	const string return_type_id = scope_def.get_object_element("return_type").get_string();
+	const auto args = scope_def.get_optional_object_element("args", json_value_t::make_array()).get_array();
+	const auto local_variables = scope_def.get_optional_object_element("locals", json_value_t::make_array()).get_array();
+	const auto members = scope_def.get_optional_object_element("members", json_value_t::make_array()).get_array();
+	const auto statements = scope_def.get_object_element("statements").get_array();
 
 	std::vector<member_t> args2 = conv_members(args, types, true);
 	std::vector<member_t> local_variables2 = conv_members(local_variables, types, true);
@@ -291,7 +291,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 			}
 		}
 
-		const auto function_type = scope_def.get_optional_object_element("_function_type");
+		const auto function_type = scope_def.get_optional_object_element("function_type");
 		if(function_type && function_type.get_string() == "def-constructor"){
 			return scope_def_t::make_builtin_function_def(
 				type_identifier_t::make(name),
@@ -389,8 +389,8 @@ std::shared_ptr<type_def_t> conv_type_def__expressions_and_statements(const json
 			"parent_scope": "$5",		//	Parent scope.
 			"base_type": "function",
 			"scope_def": {
-				"_name": "pixel_t_constructor",
-				"_type": "function",
+				"name": "pixel_t_constructor",
+				"type": "function",
 */
 
 /*
@@ -452,27 +452,27 @@ QUARK_UNIT_TESTQ("json_to_ast()", "Minimum program"){
 	const auto a = parse_json(seq_t(R"(
 			{
 				"global": {
-					"_args": [],
-					"_locals": [],
-					"_members": [],
-					"_name": "global",
-					"_return_type": "",
-					"_statements": [],
-					"_type": "global"
+					"args": [],
+					"locals": [],
+					"members": [],
+					"name": "global",
+					"return_type": "",
+					"statements": [],
+					"type": "global"
 				},
 				"lookup": {
 					"$1000": {
 						"base_type": "function",
 						"path": "global/main",
 						"scope_def": {
-							"_args": [],
-							"_locals": [],
-							"_members": [],
-							"_name": "main",
-							"_return_type": "$int",
-							"_statements": [["return", ["k", 3, "$int"]]],
-							"_type": "function",
-							"_types": {}
+							"args": [],
+							"locals": [],
+							"members": [],
+							"name": "main",
+							"return_type": "$int",
+							"statements": [["return", ["k", 3, "$int"]]],
+							"type": "function",
+							"types": {}
 						}
 					}
 				}

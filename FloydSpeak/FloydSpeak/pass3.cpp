@@ -300,7 +300,7 @@ json_value_t resolve_type_def(const parser_path_t& path, const json_value_t& typ
 
 	//??? We peek into scope_def to find type. What about typedefs of ints?
 	//	If this type-def holds it's own scope, resolve that scope too.
-	const auto type = get_in(type_def, {"_type"}).get_string();
+	const auto type = get_in(type_def, {"type"}).get_string();
 	if(type == "function"){
 		const parser_path_t path2 = go_down(path, type_def);
 		const auto function_scope = resolve_scope_def(path2);
@@ -348,7 +348,7 @@ json_value_t resolve_scope_def(const parser_path_t& path){
 	//	Make sure all types can resolve their symbols.
 	//	??? this makes it impossible for types to refer to eachother depending on in which order we process them!?
 	{
-		const auto types = get_in(scope1, { "_types" }).get_object();
+		const auto types = get_in(scope1, { "types" }).get_object();
 		QUARK_TRACE(json_to_compact_string(types));
 		for(const auto type_entry_pair: types){
 			const string name = type_entry_pair.first;
@@ -366,7 +366,7 @@ json_value_t resolve_scope_def(const parser_path_t& path){
 		}
 	}
 
-	const auto scope3 = assoc(scope1, "_types", types_collector2);
+	const auto scope3 = assoc(scope1, "types", types_collector2);
 
 
 	//??? Should use a new dest_path where our half-baked scope_def is included!!
@@ -432,25 +432,25 @@ json_value_t resolve_scope_def(const parser_path_t& path){
 	/*
 		make_scope_def()
 
-		{ "_type", "" },
-		{ "_name", "" },
-		{ "_members", json_value_t::make_array() },
-		{ "_types", json_value_t::make_object() },
+		{ "type", "" },
+		{ "name", "" },
+		{ "members", json_value_t::make_array() },
+		{ "types", json_value_t::make_object() },
 
 		//??? New in JSON, used to stored as sub-function body.
-		{ "_locals", json_value_t::make_array() },
+		{ "locals", json_value_t::make_array() },
 
 		//	??? New in JSON version - used to be stored in _executable.
-		{ "_statements", json_value_t::make_array() },
-		{ "_return_type", "" }
+		{ "statements", json_value_t::make_array() },
+		{ "return_type", "" }
 	*/
-	const auto scope_type = scope1.get_object_element("_type").get_string();
-	const auto scope_name = scope1.get_object_element("_name").get_string();
-	const auto scope_members = scope1.get_object_element("_members");
-	const auto scope_types_collector = scope1.get_object_element("_types");
-	const auto scope_locals = scope1.get_object_element("_locals");
-	const auto scope_statements = scope1.get_object_element("_statements");
-	const auto scope__return_type = scope1.get_object_element("_return_type").get_string();
+	const auto scope_type = scope1.get_object_element("type").get_string();
+	const auto scope_name = scope1.get_object_element("name").get_string();
+	const auto scope_members = scope1.get_object_element("members");
+	const auto scope_types_collector = scope1.get_object_element("types");
+	const auto scope_locals = scope1.get_object_element("locals");
+	const auto scope_statements = scope1.get_object_element("statements");
+	const auto scope__return_type = scope1.get_object_element("return_type").get_string();
 
 	scope_def_t::etype scope_type2 = string_to_scope_type(scope_type);
 
