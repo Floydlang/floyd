@@ -21,9 +21,6 @@ struct json_value_t;
 
 
 
-//?? AST is not part of floyd_parser!
-
-
 namespace floyd_parser {
 	struct type_def_t;
 	struct statement_t;
@@ -51,8 +48,7 @@ namespace floyd_parser {
 
 		k_struct,
 		k_vector,
-		k_function,
-		k_subscope
+		k_function
 	};
 
 	std::string base_type_to_string(const base_type t);

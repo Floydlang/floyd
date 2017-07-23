@@ -92,9 +92,6 @@ expression_t expression_from_json(const json_value_t& e, const map<string, share
 			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(false);
 			}
-			else if(base_type == base_type::k_subscope){
-				QUARK_ASSERT(false);
-			}
 			else{
 				QUARK_ASSERT(false);
 			}
