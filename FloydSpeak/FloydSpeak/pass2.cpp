@@ -9,14 +9,10 @@
 
 
 /*
-
-??? Turn function_defs "int f(){ return 42; }" into a variable "f" referencing the function. Then all @ are the same - function name or other variable.
-
-
-
 PROBLEM: How to store links to resolved to types or variables?
 
-Augument existing data, don't replace typename / variable name.
+TODO: Augument existing data, don't replace typename / variable name.
+TODO: Generate type IDs like this: "$global/pixel_t"
 
 - Need to be able to insert new types, function, variables without breaking links.
 
@@ -24,7 +20,6 @@ A) { int scope_up_count, int item_index }. Problem - item_index breaks if we ins
 B) Resolve by checking types exist, but do not store new info.
 C) Generate IDs for types. Use type-lookup from ID to correct entry. Store ID in each resolved place. Put all
 CHOSEN ==>>>> D) Create global type-lookup table. Use original static-scope-path as ID. Use these paths to refer from client to type.
-
 
 Solution D algo steps:
 Pass A) Scan tree, give each found type a unique ID. (Tag each scope and assign parent-scope ID.)
@@ -190,50 +185,46 @@ string make_type_id_string(int id){
 
 
 pair<json_value_t, int> assign_unique_type_ids(const parser_path_t& path, int type_id_count){
+	QUARK_SCOPED_TRACE("assign_unique_type_ids()");
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_SCOPED_TRACE("PASS A");
 	QUARK_TRACE(json_to_pretty_string(path._scopes.back()));
 
 	auto type_id_count2 = type_id_count;
 	const auto scope1 = path._scopes.back();
 
 	auto types_collector2 = json_value_t::make_object();
-	{
-		const auto types = get_in(scope1, { "types" }).get_object();
-		QUARK_TRACE(json_to_pretty_string(types));
 
-		for(const auto type_entry_pair: types){
-			const string type_name = type_entry_pair.first;
-			const auto type_defs_js = type_entry_pair.second;
-			const auto type_defs_vec = type_defs_js.get_array();
+	const auto types = get_in(scope1, { "types" }).get_object();
+	QUARK_TRACE(json_to_pretty_string(types));
 
-			std::vector<json_value_t> type_defs2;
-			for(const auto& type_def: type_defs_vec){
-				QUARK_TRACE(json_to_pretty_string(type_def));
+	for(const auto t: types){
+		const string type_name = t.first;
+		const auto type_defs_vec = t.second.get_array();
 
-				if(!exists_in(type_def, make_vec({ "base_type"}))){
-					throw std::runtime_error("No base type.");
-				}
-
-				const auto type_def2 = assoc(type_def, "id", json_value_t(make_type_id_string(type_id_count2)));
-				type_id_count2++;
-
-				const auto type_def3 = [&](){
-					const json_value_t subscope = type_def2.get_optional_object_element("scope_def");
-					if(!subscope.is_null()){
-						const auto r = assign_unique_type_ids(go_down(path, subscope), type_id_count2);
-						type_id_count2 = r.second;
-						auto temp = assoc(type_def2, "scope_def", r.first);
-						return temp;
-					}
-					else{
-						return type_def2;
-					}
-				}();
-				type_defs2.push_back(type_def3);
+		std::vector<json_value_t> type_defs2;
+		for(const auto& type_def: type_defs_vec){
+			if(!exists_in(type_def, make_vec({ "base_type"}))){
+				throw std::runtime_error("No base type.");
 			}
-			types_collector2 = assoc(types_collector2, type_name, json_value_t(type_defs2));
+
+			const auto type_def2 = assoc(type_def, "id", json_value_t(make_type_id_string(type_id_count2)));
+			type_id_count2++;
+
+			const auto type_def3 = [&](){
+				const json_value_t subscope = type_def2.get_optional_object_element("scope_def");
+				if(!subscope.is_null()){
+					const auto r = assign_unique_type_ids(go_down(path, subscope), type_id_count2);
+					type_id_count2 = r.second;
+					auto temp = assoc(type_def2, "scope_def", r.first);
+					return temp;
+				}
+				else{
+					return type_def2;
+				}
+			}();
+			type_defs2.push_back(type_def3);
 		}
+		types_collector2 = assoc(types_collector2, type_name, json_value_t(type_defs2));
 	}
 
 	const auto scope2 = assoc(scope1, "types", types_collector2);

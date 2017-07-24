@@ -13,17 +13,21 @@
 
 
 /*
-??? update docs!
-
 	Pass2: Semantic pass - resolve types, resolve variables, generate compiler error.
 
-	Non-lossy.
-	- Resolves types: replace type_indentifier_t with a shared_ptr<type_def_t>.
+	- Generate compiler errors.
+	- Verifies all expression and statement semantics
+	- Resolves types and track them explicitly.
+	- Checks that all types are compatible.
 	- Resolves variable accesses (when possible).
 	- Assign a result-type to each expression.
-	- Verifies all expression and statement semantics
-	- Checks that all types are compatible.
-	- Generate compiler errors.
+
+
+	OUTPUT FORMAT GOALS
+	- Easy to read for humans
+	- Easy to transform
+	- Lose no information -- keep all original names and comments.
+	- Not simplified or optimized in any way.
 
 
 	TODO
