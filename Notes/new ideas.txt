@@ -48,8 +48,13 @@ struct function_value_constant_t {
 	scope_def function_code
 }
 
+struct static_scope_def {
+	type: global, function, struct, statement_subscope
+	vector<member_t> _members
+}
+
 struct ast_t {
-	scope_def globals
+	static_scope_def globals
 
 	//	Many typenames can link to the same type definition...
 	map<type_identifier_t, string> typenames

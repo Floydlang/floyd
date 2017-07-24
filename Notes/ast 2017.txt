@@ -1,0 +1,138 @@
+string get_s(pixel p){ return p.s; }
+struct pixel { string s = "two"; }
+string main(){
+	pixel p = pixel_constructor();
+	return get_s(p);
+}
+
+# AST 2016
+{
+	"args": [],
+	"locals": [],
+	"members": [],
+	"name": "global",
+	"return_type": "",
+	"statements": [],
+	"type": "global",
+	"types": {
+		"get_s": [
+			{
+				"base_type": "function",
+				"scope_def": {
+					"args": [{ "name": "p", "type": "<pixel>" }],
+					"locals": [],
+					"members": [],
+					"name": "get_s",
+					"return_type": "<string>",
+					"statements": [["return", ["->", ["@", "p"], "s"]]],
+					"type": "function",
+					"types": {}
+				}
+			}
+		],
+		"main": [
+			{
+				"base_type": "function",
+				"scope_def": {
+					"args": [],
+					"locals": [{ "name": "p", "type": "<pixel>" }],
+					"members": [],
+					"name": "main",
+					"return_type": "<string>",
+					"statements": [
+						["bind", "<pixel>", "p", ["call", ["@", "pixel_constructor"], []]],
+						["return", ["call", ["@", "get_s"], [["@", "p"]]]]
+					],
+					"type": "function",
+					"types": {}
+				}
+			}
+		],
+		"pixel": [
+			{
+				"base_type": "struct",
+				"scope_def": {
+					"args": [],
+					"locals": [],
+					"members": [{ "expr": ["k", "two", "<string>"], "name": "s", "type": "<string>" }],
+					"name": "pixel",
+					"return_type": "",
+					"statements": [],
+					"type": "struct",
+					"types": {}
+				}
+			}
+		]
+	}
+}
+
+# AST 2017
+
+
+??? paths make ast fragile.
+??? We want to track static scope hiearchy.
+??? Make a few uniform objects, so it's easy to traverse.
+??? Keep program in a tree, keeping static scopes nested.
+
+	expression
+	member/arg/local
+	static_scope: function, globals, struct, statement_scope
+	statement
+	type
+{
+	"name": "global",
+	"type": "global",
+
+	"args": [],
+	"locals": [],
+	"members": [
+
+		//	These are scoped constants
+		{ "name": "get_s", "type": { "base_type": "function", "args": [ "<struct:pixel>" ], "return_type": "<string>" }, "value": "func_v:get_s" },
+		{ "name": "main", "type": { "base_type": "function", "args": [], "return_type": "<string>" }, "value": "func_v:main" }
+	],
+	"return_type": "",
+
+	"statements": [],
+	"subscopes": {
+		"func_v:get_s": {
+			"args": [{ "name": "p", "type": "<pixel>" }],
+			"locals": [],
+			"members": [],
+			"name": "get_s",
+			"return_type": "<string>",
+
+			//??? Can hold subscopes for statements like while(true) { subscope }.
+			//??? How to easily traverse AST when subscopes can hide inside statements?
+			"statements": [["return", ["->", ["@", "p"], "s"]]],
+			"type": "function",
+			"types": {}
+		},
+
+		"func_v:main": {
+			"args": [],
+			"locals": [{ "name": "p", "type": "<pixel>" }],
+			"members": [],
+			"name": "main",
+			"return_type": "<string>",
+			"statements": [
+				["bind", "<pixel>", "p", ["call", ["@", "pixel_constructor"], []]],
+				["return", ["call", ["@", "get_s"], [["@", "p"]]]]
+			],
+			"type": "function",
+			"types": {}
+		},
+
+		"struct:pixel": {
+			"args": [],
+			"locals": [],
+			"members": [{ "expr": ["k", "two", "<string>"], "name": "s", "type": "<string>" }],
+			"name": "pixel",
+			"return_type": "",
+			"statements": [],
+			"type": "struct",
+			"types": {}
+		]
+
+	}
+}
