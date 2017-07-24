@@ -1,5 +1,4 @@
 # BASIC TYPES
-- **float**					Same as float32
 - **float32**				32 bit floating point
 - **float80**				80 bit floating point
 - **int8**					8 bit integer
@@ -15,20 +14,14 @@
 - **vector**		look up values from a 0-based continous range of integer indexes.
 - **enum**		same as struct with only static constant data members
 
-	### json_value	built-in type that models the JSON format. You can initialize it from a bit of json, like this:
-			json_value default_preferences = { "window_title": "unnamed", "warnings_on": false }
-
 # CORE TYPE FEATURES
 These are features built into every type: integer, string, struct, collections etc.
 
-* string **serialize**(T a)					converts value T to json
-* T **T.deserialize**(string s)			makes a value T from a json string
 - **hash hash(v)**							computes a true-deep hash of the value
 
- Auto conversion: You can directly and silently convert structs between different types. It works if the destination type has a contructor that exactly matches the struct signature of the source struct.
 
 
-# PROOF
+# PROOF & ASSERT
 Floyd has serveral built in features to check code correctness. One of the core features is assert() which is a function that makes sure an expression is true or the program will be stopped. If the expression is false, the program is defect.
 
 This is used through out this document to demonstrate language features.
@@ -49,13 +42,8 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 	}
 
 
-# FUNCTIONS
-Function always have the same syntax, no matter if they are member functions of a struct, a constructor or a free function.
 
-NOTE: A function is a thing that takes a structas an argument and returns another struct/or basic type.
-
-
-# IF - THEN -ELSE
+# IF - THEN -ELSE -- STATEMENT & EXPRESSION
 This is a normal if-else-if-else construct, like in most languages.
 
 		if(s == "one"){
@@ -70,8 +58,22 @@ This is a normal if-else-if-else construct, like in most languages.
 
 In each body you can write any statements. There is no "break" keyword. { and } are required.
 
+??? Replace with expression:
 
-# EXPRESSIONS
+		int val = if(s == "one"){
+			return 1;
+		}
+		else if(s == "two"){
+			return 2;
+		}
+		else{
+			return -1;
+		}
+
+
+
+
+# MORE EXPRESSIONS
 	!a
 
 ### Bitwise Operators
@@ -96,198 +98,6 @@ while(expression){
 }
 
 
-# STRUCTs
-
-## Unnamed Struct Members
-You can chose to name members or not. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0". Named members are also numbered - a parallell name.
-
-
-??? How to block mutation of member variable? Some members makes no sense to write in isolation.
-
-
-## Struct Signature
-
-## Hiding Client from Code Changes
--	Clients of the struct are not affected if you introduce a setter or getter to a property.
--	They are also unaffected if you move a function from being a member function to a free function - they call them the same way.
-
-Clients to a struct should not care if:
-1) A struct property is a data member or a function, ever. Always the same syntax.
-2) a function has private access or not to the struct. Always the same syntax.
-3) a function is part of the struct or provided some other way. Always the same syntax.
-
-???* 	### Automatic conversion of types.
-
-
-## Constructors
-
-Two constructors are automatically generated:
-	The first one takes no argument and initializes all members to their defaults
-	The second one has one argument for each member, in the order they appear in the struct.
-
-You cannot stop these two contructors, but you can reimplement them if you wish.??? yes you want to be able to block them. Some struct have no meaningful default.
-
-
-	b = test(1.1f, 2.2f);
-	assert(b.f == 1.1f);
-	assert(b.g == 2.2f);
-
-
-
-## Explicit constructors
-
-	struct pixel { 
-		pixel pixel(int gray){
-			//	Use built in constructor 2.
-			return pixel.make(gray, gray, gray);
-		}
-
-		int red;
-		int green;
-		int blue;
-	};
-
-	//	Construct a new gray pixel, called a. Check its values. 
-	a = pixel(100);
-	assert(a.red == 100 && a.green == 100 && a.blue == 100);
-
-	//	Make a pixel from red-green-blue values and read it back. Compare it to another pixel with same values.	
-	b = pixel(10, 20, 30);
-	assert(b.red == 10 && b.green == 20 && b.blue == 30);
-	assert(b == pixel(10, 20, 30);
-
-
-## Member Functions
-Member functions have access to all private members, external functions only to public members of the struct. Since they are inside the struct-scope they are proven to be part of the essence of the struct. Recommendation: fewer members functions are better. If a function can be made non-member, move it outside of struct.
-
-You call a member function just like a normal function, draw(my_struct, 10).
-There is no special implicit "this" argument to functions, you need to add it manually.
-It is not possible to change member variables of a value, instead you return a completely new instance of the struct.
-
-??? While a constructor executes, the object does not exist and you can mutate it.
-
-	struct pixel { 
-		/*
-			This is how the automatically generated getter for member "red" looks.
-			You can make your own to override it. Any function that takes a single argument of
-			a type can be called as if it's a readable propery of the struct.
-					a = my_pixel.red
-					or
-					a = red(my_pixel)
-		*/
-		int red(pixel p){
-			return red;
-		}
-
-		/*
-			This is how the automatically generated setter for member "red" looks.
-			You can make your own to override it. Any function that takes a two
-			arguments (struct type + one more) can be called as if it's a writable propery of the struct.
-				my_pixel.red = 255
-				or
-				my_pixel.red(255)
-				red(my_pixel, 255)
-		*/
-		pixel red(pixel p, int value){
-			return pixel(value, p.green, p.blue);
-		}
-
-		int magneta(pixel p){
-			return (p.red + p.green) * 0.3;
-		}
-
-		//	Member functions.
-		int intensity(pixel this){ return (red + green + blue) / 3; };
-
-		//	Member values.
-		int red;
-		int green;
-		int blue;
-
-		//	Constant pixels.
-		black = pixel(0, 0, 0);
-		white = pixel(255, 255, 255);
-	};
-
-	//	External function.
-	int get_sum(pixel p){ return p.red + p.green + p.blue; };
-
-	my_pixel = pixel(100, 200, 50);
-	int red = my_pixel.red;
-
-	sum1 = get_sum(my_pixel);
-	intensity1 = get_intensity(my_pixel);
-
-
-## Alternative function call style
-??? Bad to have several ways to call functions...
-Any function with a pixel as first argument (member functions and non-member functions) can all be called like this.
-
-	sum1 = get_sum(my_pixel);
-	sum2 = my_pixel.get_sum();
-
-	intensity1 = get_intensity(my_pixel);
-	intensity2 = my_pixel.get_intensity();
-
-	int green1 = my_pixel.green;
-	int green2 = green(my_pixel);
-	int green3 = my_pixel.green(my_pixel);
-
-	pixel2 = my_pixel.green = 60;
-	pixel3 = green(my_pixel, 60);
-	pixel4 = my_pixel.green(my_pixel, 60);
-
-
-## Persistence - mutating / changing an immutable struct
-* When client attempts to write to a member variable of a struct it gets a new copy of the struct, with the change applied. This is the default behaviour.
-* If a struct wants to control the mutation, you can add your own setter function or other mutating function. Either as a member function or an external function.
-
-Changing member variable of a struct:
-
-	a = pixel(255, 255, 255);
-
-	//	Storing into a member variable is an expression that returns a new value,
-	//	not a statement that modifies the existing value.
-	a.red = 10;
-	assert(a == pixel(255, 255, 255));	//	a is unmodified!
-
-	//	Capture the new, updated pixel value	in a new variable called b.
-	b = a.red <- 10;
-
-	//	Now we have the original, unmodified a and the new, updated b.
-	assert(a == pixel(255, 255, 255));
-	assert(b == pixel(10, 255, 255));
-
-This works with nested values too:
-
-	//	Define an image-struct that holds some stuff, including a pixel struct.
-	struct image { pixel background; int width; int height; };
-
-	//	Make an image-value.
-	i = image(pixel(1, 2, 3, 255), 512, 256);
-
-	int a = i.image.red;
-	assert(a == 1);
-
-	//	Update the red member inside the image's pixel. The result is a brand new image!
-	b = i.image.red <- 4;
-	assert(a.image.red == 1);
-	assert(b.image.red == 4);
-
-
-
-# TUPLES (unnnamed structs)
-You can access the members using indexes instead of their names, for use as a tuple. Also, there is no need to name a struct.
-
-	a = struct { int, int, string }( 4, 5, "six");
-	assert(a.0 == 4);
-	assert(a.1 == 5);
-	assert(a.2 == "six");
-	
-	b = struct { 4, 5, "six" };
-	assert(a.0 == 4);
-	assert(a.1 == 5);
-	assert(a.2 == "six");
 
 
 # ENUM
@@ -315,7 +125,9 @@ Every collection automatically support the core-type-features, like comparisons,
 
 
 # VECTOR COLLECTION
-A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time. If you read many continous elements it's faster to use a SEQ with the vector - it allows the runtime to keep an pointer to the current position in the vector.
+A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time.
+
+If you read many continous elements it's faster to use a SEQ with the vector - it allows the runtime to keep an pointer to the current position in the vector.
 
 	a = [int]();		//	Create empty vector of ints.
 	b = [int](1, 2, 3);		//	Create a vector with three ints.
@@ -329,10 +141,8 @@ The vector is persistent so you can write elements to it, but you always get a n
 	a = ["one", "two", "three" ];
 	b = a[1] = "zwei";
 	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
-
-	c = [string];	//	Empty vector of strings.
 	
-There are many potential backends for a vector - the runtime choses for each vector instances (not each type!):
+There are many potential backends for a vector - the runtime choses for each vector *instances* - not each type:
 
 1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
 2. A HAMT-based persistent vector. Medium-fast to make, read an write. Uses more memory.
@@ -345,6 +155,7 @@ Vector Reference:
 	vector<T> make(vector<T> other, int start, int end);
 	vector<T> subset(vector<T> in, int start, int end);
 	a = b + c;
+
 
 
 # DICTIONARY COLLECTION
@@ -374,25 +185,114 @@ Dictionary Reference
 
 
 
-# SERIALIZATION
-Serializing a value is a built in mechanism. It is based on the seq-type.
-It is always deep. ### Always shallow with interning when values are shared.
+# AST
+The encoding of a Floyd program into a AST (abstrac syntax tree) is fully documented. You can generate, manipulate and run these programs from within your own program.s
 
-The result is always a normalized JSON stream. ???
+The tree is stored as standard JSON data. Each expression is a JSON-array where elements have defined meaning. You can nest expressions to any depth by specifying an expression instead of a constant.
 
-??? De-duplication vs references vs equality vs diffing.
-	### Make reading and writing Floyd code simple, especially data definitions.
-//	Define serialised format of a type, usable as constant.
+### STATEMENTS
 
-An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream.
-
-
-# IMPORT / DEFINE LIBRARIES
-
-# RUNTIME ERRORS / EXCEPTIONS
-Principles and policies.
-Functions.
-	??? Only support this in mutating parts and externals?
+	[ "bind", identifier-string, expr ]
+	[ "defstruct", identifier-string, expr ]
+	[ "deffunc", identifier-string, expr ]
+	[ "return", expr ]
 
 
-# C GLUE
+### EXPRESSIONS
+This is how all expressions are encoded into JSON format. "expr" is a placehold for another expression array. 
+[ "k", expr, type ]
+
+[ "negate", expr, type ]
+
+[ "+", left_expr, right_expr, type ]
+[ "-", left_expr, right_expr, type ]
+[ "*", left_expr, right_expr, type ]
+[ "/", left_expr, right_expr, type ]
+[ "%", left_expr, right_expr, type ]
+
+[ "<", left_expr, right_expr, type ]
+[ "<=", left_expr, right_expr, type ]
+[ ">", left_expr, right_expr, type ]
+[ ">=", left_expr, right_expr, type ]
+
+[ "||", left_expr, right_expr, type ]
+[ "&&", left_expr, right_expr, type ]
+[ "==", left_expr, right_expr, type ]
+[ "!=", left_expr, right_expr, type ]
+
+[ "?:", conditional_expr, a_expr, b_expr, type ]
+
+[ "call", function_exp, [ arg_expr ], type ]
+
+Resolve free variable using static scope
+[ "@", string_name, type ]
+
+Resolve member
+[ "->", object_id_expr, string_member_name, type ]
+
+Lookup member
+[ "[-]", object_id_expr, key_expr, type ]
+
+
+# RESERVED KEYWORDS
+assert
+bool
+catch
+char???
+clock
+code_point
+defect_exception
+deserialize()
+diff()
+double
+dyn
+dyn**<>
+else
+ensure
+enum
+exception
+false
+float
+float32
+float80
+foreach
+hash
+hash()
+if
+int
+int16
+int32
+int64
+int8
+invariant
+log
+map
+mutable
+namespace???
+null
+path
+private
+property
+protocol
+prove
+require
+return
+rights
+runtime_exception
+seq
+serialize()
+string
+struct
+swap
+switch
+tag
+test
+text
+this
+true
+try
+typecast
+typedef
+typeof
+vector
+while

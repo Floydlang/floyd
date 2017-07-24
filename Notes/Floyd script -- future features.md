@@ -63,7 +63,6 @@ All data types with the same signature are can automatically be assign between.
 # FUNCTIONS
 
 
-	### The arguments for a function is a struct. Function internally only take one argument. The args-struct is called "args" and can be accessed like any value.
 	### log()
 	### assert()
 	### Closures
@@ -98,64 +97,8 @@ x	<-		1	2	2	3
 
 
 
-	
-# STRUCTs
-
-## Invariant
-_invariant_ is required for structs that have dependencies between members (that have setters or mutating members) and is an expression that must always be true - or the song-struct is defect. The invariant function will automatically be called before a new value is exposed to client code: when returning a value from a constructor, from a mutating member function etc.
-
-	### Allow adding invariant to _any_ type and getting a new, safer type. Cool for collections (they are sorted!) or integers (range is 0 to 7). Combine this with typedef feature.
-
-	### define invariant will block default constructors 
-
----Notice: a struct can expose a set of read properties but have a different set of arguments to its constructor(s). This in affect makes the constructor / property getters _refine_ the input arguments -- the struct is not a passive container of values but a function too. **??? Good or bad?
-
-- **Data member** = memory slot.
-- **Property** = member exposed to outside - either a memory slot or a get/set.
-- **Private member data** = memory slot hidden from clients.
-All member functions works like C++ static members and takes *this* as their first, explict argument. There is nothing special about _this_ - it's only a convention.
 
 
-??? invent way to separate member variable names, locals and arguments and globals so they don't collide. Use ".red = red"?
-
-
-
-
-# STRUCT EXAMPLES
-When defining a data type (composite) you need to list 4 example instances. Can use functions to build them or just fill-in manually or a mix. These are used in example docs, example code and for unit testing this data types and *other* data types. You cannot change examples without breaking client tests higher up physical dependncy graph.
-
-
-
-??? split / join cables from visual language
-
-# Struct Examples
-
-	struct song {
-		float length = 0;
-		float? last_pos = null;
-		dyn<int, string> nav_info = "off";
-
-		song scale_song(song original){
-			mut temp = original;
-			temp.length = temp.length / 2.0f;
-			temp.last_pos = temp.last_pos / 2.0f;
-			temp.internal_play_pos = internal_play_pos / 2.0f;
-		}
-
-		invariant(song a) {
-			a.length > 0
-			a.last_pos == null || a.last_pos <= length;
-		}
-
-		song(){
-			return song();
-		}
-		song(float bars (_ >=0 && _ <= 128.0f) ){
-			mut temp = song();
-			temp.length = bars * 192;
-			return temp;
-		}
-	}
 
 
 
@@ -165,7 +108,7 @@ When defining a data type (composite) you need to list 4 example instances. Can 
 
 
 
-# DECTIONARY
+# DICTIONARY refs
 C++11
 	map<int, char> m = {{1, 'a'}, {3, 'b'}, {5, 'c'}, {7, 'd'}};
 	std::map<int, std::string> m{{1, "Hello"}, {2, "world"}, {4, "!!!"}};
@@ -575,6 +518,29 @@ Comments & docs is one concept, disabling code is another concept. All code is a
 # Embedded JSON
 Embedd json inside source code file. Simple / no escaping needed. Use to paste data, test values etc. Round trip.
 
+# SERIALIZATION
+
+- **json**		built-in type that models the JSON format. You can initialize it from a JSON literals -- pasted json files, like this:
+```
+			json_value default_preferences = { "wtitle": "hello", "warnings_on": false }
+```
+
+
+* string **serialize**(T a)					converts value T to json
+* T **T.deserialize**(string s)			makes a value T from a json string
+
+Serializing a value is a built in mechanism. It is based on the seq-type.
+It is always deep. ### Always shallow with interning when values are shared.
+
+The result is always a normalized JSON stream. ???
+
+??? De-duplication vs references vs equality vs diffing.
+	### Make reading and writing Floyd code simple, especially data definitions.
+//	Define serialised format of a type, usable as constant.
+
+An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream.
+
+
 ## json keyword
 This keyword lets you put plain JSON scripts directly into your source code without any need to escape the string. The result is a string value, not any special data type. The json format is validated.
 ??? how to generate json data / inject variables etc? Maybe better to just have raw-string support?
@@ -680,6 +646,20 @@ c = json(
 
 
 
+# IMPORT / DEFINE LIBRARIES
+
+# RUNTIME ERRORS / EXCEPTIONS
+Principles and policies.
+Functions.
+	??? Only support this in mutating parts and externals?
+
+
+# C GLUE
+
+
+# MISC FEATURE IDEAS
+- Allow adding invariant to _any_ type and getting a new, safer type. Cool for collections (they are sorted!) or integers (range is 0 to 7). Combine this with typedef feature.
+
 
 
 
@@ -764,4 +744,13 @@ often changing the normal flow of program execution.
 Example
 - While your program reads a large file from disk into RAM and the disks USB-cable is unplugged.
 	- It is not
-	- 
+
+	
+	
+## Auto conversion --- SOMEDAY MAYBE
+You can directly and silently convert structs between different types. It works if the destination type has a contructor that exactly matches the struct signature of the source struct.
+
+
+
+??? invent way to separate member variable names, locals and arguments and globals so they don't collide. Use ".red = red"?
+We 
