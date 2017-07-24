@@ -1,3 +1,11 @@
+INVENtIONS
+
+1) Take best part of imperativr and functional languages and make it extremely fast and simple.
+2) Easy to learn for new programmers, easy to like for imperative programmers.
+
+??? Why do you make quick scripts in python or shell script, not in C++? Fix this with Floyd
+
+
 # Floyd Script Reference
 
 Floyd Script is a fast and modern C-like program language that tries to make writing correct programs simpler and faster.
@@ -124,6 +132,8 @@ Structs are the central building blocks for composing data in Floyd. They are us
 
 **??? make explicit list of all functions available.**
 
+**??? Unify adressing nested dictionaries with structs and vectors. Functions too. Equivalent dict.member like dict["member"].**
+
 Built-in features of every struct:
 
 - You can create it using all its members, in order inside the strcuct definition
@@ -215,11 +225,13 @@ Notice about optimizations, many accellerations are made behind the scenes:
 
 
 # Advanced STRUCTs --- TODO NEXT
-There is a second, more advanced flavor of struct where the struct has an invariant that needs protecting. It is simple to upgrade a simple struct to the advanced variant and no clients needs to be affected.
+**??? Maybe this isn't a struct but a class? **
+
+There is a second, more advanced flavor of struct where the struct has an invariant that needs protecting. It is quick to upgrade a simple struct to the advanced variant and no clients needs to be affected.
 
 An invariant is a dependency between the member variables that must always be correct. Every function that modifies or creates this struct must make sure the invariant is always correct.
 
-With an advanced struct all automatic behavior is by default turned off and you need to enable / code each explicitly:
+With an advanced struct all automatic behavior is by default turned off and you need to enable / code each explicitly.
 
 GOAL:
 
@@ -228,7 +240,9 @@ GOAL:
 - clients should not need changing if we make a member variable part of the invariant
 - clients should not need changing if a function is a altered to have access / not access to privates.
 
-Advice: Encapsule invariant into the smallest struct possible: big structs may want to nest many structs instead of having complex invariant. ### only allow one invariant per struct?
+Advice: Encapsule invariant into the smallest struct possible: big structs may want to nest many structs instead of having complex invariant.
+
+**??? idea: only allow one invariant per struct? **
 
 
 All you need to do upgrade a simple struct to an advance struct is to wrap its data in a state {}. Now all member access is blocked by clients, but you can still:
@@ -238,23 +252,23 @@ All you need to do upgrade a simple struct to an advance struct is to wrap its d
 
 	struct rect {
 
-		//	Internal data members, using unnamed simple-struct.
+		//	Internal data is wrapped in "state", which is a simple-struct.
 		//	The state-struct has a init(float width, float height) and
-		//	all other features of a basic struct but
-		//	clients to rect cannot access.
+		//	all other features of a basic struct but clients to rect cannot
+		//	access.
+		//	Member functions of rect can access state directly as a struct
+		//	member called "state".
 		state {
 			float width;
 			float height;
 		}
 	}
 
+**??? improve state-syntax to make state a normal simple-struct that you can adress both type and member.**
+
 The **state** is a built-in keyword and you can only have **one** state in a struct, which kicks it over into being an advanced struct. Advanced structs cannot have other member data besides its state.
 
 It is possible to use any types inside the state, which lets just put other advanced structs inside rect.
-
-- There is no special implicit "this" argument to functions, you need to add it manually.
-- It is not possible to change member variables of a value, instead you return a completely new instance of the struct.
-
 
 To restore all previous functionality to make clients work as before:
 
@@ -356,8 +370,11 @@ You can add member functions. They can access the state directly:
 		}
 	}
 
+- There is no special implicit "this" argument to functions, you need to add it manually.
+- It is not possible to change member variables of a value, instead you return a completely new instance of the struct.
 
-# Member and non-member access, syntactic sugar
+
+### Member and non-member access, syntactic sugar
 
 
 Here are some non-member functions:
