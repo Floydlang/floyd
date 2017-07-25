@@ -519,6 +519,29 @@ You can access the members using indexes instead of their names, for use as a tu
 
 
 
+# Functions -- alternative design:
+
+(Int, Int) -> (Int)
+
+??? idea: functions have ONE input and one output:
+
+	bool f(string a, string b) --- this is a function that has (string a, string b) tuple as input, bool as output.
+	(string a, string b) f(bool v)
+	(string, string) f(bool v)
+
+
+??? Idea: all functions can be implemented by an expression. Only use {} if you want to do local variables:
+
+	//	Fully specified function definition.
+	bool (string a, string b) f = bool(string a, string b){ return a < b; }
+
+	//	Only need to specify function type once:
+	f = bool(string a, string b){ return a < b; }
+	bool (string a, string b) f = { return $0 < $1; 
+	//	Special shorthand for C and Java and Javasript users.
+	bool f(string a, string b){ return a < b; }
+
+	bool f(string a, string b) = return $0 < $1;
 
 
 
@@ -562,20 +585,6 @@ s4: All functions can always access their argument using $0, $1 etc. We use this
 
 - No trailing closure syntax
 - No implicit returns from single-expression closures
-
-
-??? Idea: all functions can be implemented by an expression. Only use {} if you want to do local variables:
-
-	//	Fully specified function definition.
-	bool (string a, string b) f = bool(string a, string b){ return a < b; }
-
-	//	Only need to specify function type once:
-	f = bool(string a, string b){ return a < b; }
-	bool (string a, string b) f = { return $0 < $1; 
-	//	Special shorthand for C and Java and Javasript users.
-	bool f(string a, string b){ return a < b; }
-
-	bool f(string a, string b) = return $0 < $1;
 
 You can use a lambda to do directly assign a value from an if-then-else:
 
