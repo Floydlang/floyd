@@ -130,19 +130,18 @@ condition ? a : b		When condition is true, this entire expression has the value 
 Structs are the central building blocks for composing data in Floyd. They are used in place of C-structs, classes and tuples in other languages. Structs are always values and immutable. Behind the curtains they share state between copies so they are fast and compact.
 
 
-**??? make explicit list of all functions available.**
+**??? operator overloading of + is meaningful for simple structs, maybe string class. Maybe ONLY PLUS?. Example GeometricVector Do this as free functions, not member functions!? **
 
 **??? Unify adressing nested dictionaries with structs and vectors. Functions too. Equivalent dict.member like dict["member"].**
 
 Built-in features of every struct:
 
-- You can create it using all its members, in order inside the strcuct definition
-- You can destruct it
-- You can copy it
-- You can compare using ==, !=, < etc.
-- You can sorts collections of your structs
-- You can read all members
-- You can modify any member (this keeps original struct and gives you a new, updated struct)
+- init(...) by supplying EVERY member in order
+- destructor
+- copy
+- Comparison operators: == != < > <= >= (this allows sorting too)
+- read members
+- modify member (this keeps original struct and gives you a new, updated struct)
 
 There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects because of several clients modifying the same struct.
 
@@ -224,8 +223,10 @@ Notice about optimizations, many accellerations are made behind the scenes:
 
 
 
+
+
 # Advanced STRUCTs --- TODO NEXT
-**??? Maybe this isn't a struct but a class? **
+**??? Maybe this isn't a struct but a class? Or something else? **
 
 There is a second, more advanced flavor of struct where the struct has an invariant that needs protecting. It is quick to upgrade a simple struct to the advanced variant and no clients needs to be affected.
 
@@ -273,28 +274,60 @@ It is possible to use any types inside the state, which lets just put other adva
 To restore all previous functionality to make clients work as before:
 
 	struct rect {
-		//	Allow read & write of width & height.
-		//	You can define a getter and setter or leave them out or use "default" which accesses the state.* with the same name.
-		//	Allow init.
+		//	Allow read & write of width & height. "default" is a
+		//	convenience function for mapping to the state-member
+		//	of the same name.
+
+
 		float width: get = default, set = default
 		float height: get = default, set = default
 		init: default
+
+
+
+		float width(rect this) = default
+		rect width(rect this, float) = default
+
+		float height(rect this) = default
+		rect height(rect this, float) = default
+
+		//	Expose default init-function.
+		rect init() = default
+
+
+
+		float width: 
+
+
 
 		state {
 			float width;
 			float height;
 		}
 	}
+**??? what about comparisons and hashes?**
 
 This is what's really going on - the gets and sets use lambdas to add code to getters and setters.
 
+**??? looks neater with get = {} than just having member functions...**
 	struct rect {
+
+
 		float width:
 			get = { return $0.state.width; },
 			set = { return $0.state.width = $1; }
 		float height:
 			get = { return $0.state.height },
 			set = { return $0.state.height = $1; }
+
+
+
+		float width(rect this){ return $0.state.width }
+		width(rect this, float v){ return $0.state.width = $1 }
+
+		float height(rect this){ return $0.state.height }
+		width(rect this, float v){ return $0.state.height = $1 }
+
 		init(float width, float height){
 			return state(width, height)
 		}
@@ -304,6 +337,7 @@ This is what's really going on - the gets and sets use lambdas to add code to ge
 			float height;
 		}
 	}
+**??? remove need for this.state.width. Better with this..width or this->width or this._.width**
 
 Adding an invariant to the struct - area must always be width * height:
 
@@ -438,7 +472,8 @@ window_mgr_t m2 = window_mgr.window[3].root_view.child[0].title = "Welcome"
 # STRUCTs: read-modify-write
 
 **??? Add feature to read-modify-write value without listing path twice?**
-window_mgr_t m2 = window_mgr.window[3].root_view.child[0].title = "Welcome: " + $0
+
+		window_mgr_t m2 = window_mgr.window[3].root_view.child[0].title = "Welcome: " + $0
 
 Use <- to read & modify? A generic version of C's "a += 3".
 		a <= $0 + 3
@@ -480,3 +515,76 @@ You can access the members using indexes instead of their names, for use as a tu
 	assert(a.0 == 4);
 	assert(a.1 == 5);
 	assert(a.2 == "six");
+
+
+
+
+
+
+
+# LAMBDAS -- FUTURE
+
+Lambdas aka closures are unnamed function-expressions. You make a little function that can be called later, without going through the trouble of making a full blown function. Lambdas also supports accessing variables outside its definition which is very useful when you.
+
+**??? Lambdas are pure?!**
+
+Lambdas are often short snippets of code passed to a functions, like a compare function passed to a sort function.
+
+Function type X:
+
+	bool (string a, string b)
+
+Function implementation f1 of type X
+
+	bool f1(string a, string b){ return a < b ; }
+
+Variable of type X
+
+	bool (string a, string b) f2 = f1
+
+Example sort function that takes function as argument #2.
+
+	[string] sort([string] values, bool (string a, string b) equal)
+
+Equivalent calls to sort function:
+
+	s1 = sort([ "one", "two", "three" ], f1)
+	s2 = sort([ "one", "two", "three" ], bool (string a, string b){ return a < b; })
+	s3 = sort([ "one", "two", "three" ], (a, b){ return a < b; })
+
+	s4 = sort([ "one", "two", "three" ], { return $0 < $1; })
+
+
+s3 and s4 - the type of the function is inferred.
+
+s4: All functions can always access their argument using $0, $1 etc. We use this here since we didn't name the function arguments.
+
+
+- No trailing closure syntax
+- No implicit returns from single-expression closures
+
+
+??? Idea: all functions can be implemented by an expression. Only use {} if you want to do local variables:
+
+	//	Fully specified function definition.
+	bool (string a, string b) f = bool(string a, string b){ return a < b; }
+
+	//	Only need to specify function type once:
+	f = bool(string a, string b){ return a < b; }
+	bool (string a, string b) f = { return $0 < $1; 
+	//	Special shorthand for C and Java and Javasript users.
+	bool f(string a, string b){ return a < b; }
+
+	bool f(string a, string b) = return $0 < $1;
+
+You can use a lambda to do directly assign a value from an if-then-else:
+
+	string m = (int id){
+		float temp = 0
+		if (a == 1){
+			return "FIRST!";
+		}
+		else{
+			return "...more";
+		}
+	}(1)

@@ -217,11 +217,6 @@ You can use dicts, vector and functions the same way. Since dicts and vectors ar
 	my_vector = [string]( "one", "two", "three" );
 
 
-# LAMBDAS
-foreach(stuff, a => return a + 1)
-foreach(stuff, () => {})
-foreach(stuff, (a, b) => { return a + 1; })
-They are closures.
 
 
 # RIGHTS
