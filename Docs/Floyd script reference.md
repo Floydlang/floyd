@@ -89,6 +89,32 @@ Example function definitions:
 		return "<" + x + ">";
 	}
 
+Function types:
+
+	bool (string, float)
+
+
+Details:
+
+	bool f(string a, string b){
+		return a == b;
+	}
+
+This creates:
+
+1. a new type, bool (string, string)
+2. a new function value (containing the code) with type: bool (string, string).
+3. a new variable "f" assigned to the new function value.
+
+This is a function that takes a function value as argument:
+
+	int f5(bool (string, string))
+
+This is a function that returns a function value:
+
+	bool (string, string) f5(int x)
+
+
 # EXPRESSIONS
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep - they consider all members and also member structs and collections.
@@ -217,7 +243,6 @@ Notice about optimizations, many accellerations are made behind the scenes:
 
 **??? Unify adressing nested dictionaries with structs and vectors. Functions too. Equivalent dict.member like dict["member"].**
 
-**??? Idea - use special operator for assigning to struct member: "b = a.red <- 10;"**
 
 
 # STRUCTs - Operator overloading --- TODO NEXT
@@ -448,9 +473,21 @@ Syntactic sugar for free functions:
 # STRUCTs: paths
 **??? Add paths to change deeply nested members?**
 window_mgr_t m2 = window_mgr.window[3].root_view.child[0].title = "Welcome"
+Add: assoc, assoc_inc, deassoc, deassoc_in. Works with path-objects.
+Path object = vector of keys / indexes?
+
+Path = is resolved everytime it is used -- it does NOT keep reference to target objects.
+
+b = assoc_in(a, [ "window_mgr", "root_view", "child", "title"], "Welcome)
+
+p = path(window_mgr.window[3].root_view.child[0].title)
+p = &window_mgr.window[3].root_view.child[0].title
+b = *p = "Welcome"
+
 
 # STRUCTs: read-modify-write
 
+**??? Idea - use special operator for assigning to struct member: "b = a.red <- 10;"**
 **??? Add feature to read-modify-write value without listing path twice?**
 
 		window_mgr_t m2 = window_mgr.window[3].root_view.child[0].title = "Welcome: " + $0
