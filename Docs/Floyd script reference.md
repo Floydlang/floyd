@@ -22,7 +22,7 @@ Mutable data can exist locally inside a function, but never leak out of the func
 
 
 # BASIC TYPES
-These are the privitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
+These are the primitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
 - **int**					Same as int64
 - **bool**				**true** or **false**
@@ -129,11 +129,6 @@ condition ? a : b		When condition is true, this entire expression has the value 
 # STRUCTs - Simple structs
 Structs are the central building blocks for composing data in Floyd. They are used in place of C-structs, classes and tuples in other languages. Structs are always values and immutable. Behind the curtains they share state between copies so they are fast and compact.
 
-
-**??? operator overloading of + is meaningful for simple structs, maybe string class. Maybe ONLY PLUS?. Example GeometricVector Do this as free functions, not member functions!? **
-
-**??? Unify adressing nested dictionaries with structs and vectors. Functions too. Equivalent dict.member like dict["member"].**
-
 Built-in features of every struct:
 
 - init(...) by supplying EVERY member in order
@@ -195,9 +190,6 @@ Changing member variable of a struct:
 	assert(a.width == 0)
 	assert(b.width == 100)
 
-**??? Idea - use special operator for assigning to struct member: "b = a.red <- 10;"**
-
-
 This works with nested values too:
 
 	//	Define an image-struct that holds some stuff, including a pixel struct.
@@ -211,7 +203,6 @@ This works with nested values too:
 	b = a.size.width = 100;
 	assert(a.size.width == 512);
 	assert(b.size.width == 100);
-**??? Do some examples to prove this makes sense!**
 
 
 ### Struct runtime
@@ -222,10 +213,35 @@ Notice about optimizations, many accellerations are made behind the scenes:
 - You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
 
 
+# More STRUCT features --- TODO NEXT
 
+**??? Unify adressing nested dictionaries with structs and vectors. Functions too. Equivalent dict.member like dict["member"].**
+
+**??? Idea - use special operator for assigning to struct member: "b = a.red <- 10;"**
+
+
+# STRUCTs - Operator overloading --- TODO NEXT
+This is useful for vector2d, mystring etc. You may need operator overloading for simple structs too -- feature not tied to advance structs.
+
+- rect operator+(rect a, rect b) = default
+- rect operator-(rect a, rect b) = default
+- rect operator*(rect a, rect b) = default
+- rect operator/(rect a, rect b) = default
+- rect operator%(rect a, rect b) = default
+
+- bool operator<(rect a, rect b) = default
+
+- bool operator<=(rect a, rect b) -- if not implemented, Floyd uses: !operator<(b, c)
+- bool operator==(rect a, rect b) -- if not implemented, Floyd uses: !(operator<(a, b) || operator(b, a))
+
+#### Not overloadable, automatically use core equality functions
+- bool operator>(rect a, rect b) --- compiler replaces this with !operator<=()
+- bool operator>=(rect a, rect b) --- compiler replaces this with !operator<()
+- bool operator!=(rect a, rect b) --- compiler replaces this with !operator==()
 
 
 # Advanced STRUCTs --- TODO NEXT
+
 **??? Maybe this isn't a struct but a class? Or something else? **
 
 There is a second, more advanced flavor of struct where the struct has an invariant that needs protecting. It is quick to upgrade a simple struct to the advanced variant and no clients needs to be affected.
@@ -242,9 +258,6 @@ GOAL:
 - clients should not need changing if a function is a altered to have access / not access to privates.
 
 Advice: Encapsule invariant into the smallest struct possible: big structs may want to nest many structs instead of having complex invariant.
-
-**??? idea: only allow one invariant per struct? **
-
 
 All you need to do upgrade a simple struct to an advance struct is to wrap its data in a state {}. Now all member access is blocked by clients, but you can still:
 - copy
@@ -277,56 +290,25 @@ To restore all previous functionality to make clients work as before:
 		//	Allow read & write of width & height. "default" is a
 		//	convenience function for mapping to the state-member
 		//	of the same name.
-
-
 		float width: get = default, set = default
 		float height: get = default, set = default
 		init: default
-
-
-
-		float width(rect this) = default
-		rect width(rect this, float) = default
-
-		float height(rect this) = default
-		rect height(rect this, float) = default
-
-		//	Expose default init-function.
-		rect init() = default
-
-
-
-		float width: 
-
-
 
 		state {
 			float width;
 			float height;
 		}
 	}
-**??? what about comparisons and hashes?**
 
 This is what's really going on - the gets and sets use lambdas to add code to getters and setters.
 
-**??? looks neater with get = {} than just having member functions...**
 	struct rect {
-
-
 		float width:
 			get = { return $0.state.width; },
 			set = { return $0.state.width = $1; }
 		float height:
 			get = { return $0.state.height },
 			set = { return $0.state.height = $1; }
-
-
-
-		float width(rect this){ return $0.state.width }
-		width(rect this, float v){ return $0.state.width = $1 }
-
-		float height(rect this){ return $0.state.height }
-		width(rect this, float v){ return $0.state.height = $1 }
 
 		init(float width, float height){
 			return state(width, height)
@@ -408,8 +390,7 @@ You can add member functions. They can access the state directly:
 - It is not possible to change member variables of a value, instead you return a completely new instance of the struct.
 
 
-### Member and non-member access, syntactic sugar
-
+### Unified access for member and non-members
 
 Here are some non-member functions:
 
@@ -438,20 +419,21 @@ Accessing member variable (simple struct or advances struct):
 	a = rect(4, 5)
 	assert(a.width == 4)
 
-Syntactic sugar for member variables:
+>IDEA: Syntactic sugar for member variables:
+>
+>	width(a) a.width
+>
+>This makes it possible to implement struct getter/setter like this:**
+>
+>		rect {
+>			float width(rect this){ return this.state.width; }
+>			rect width(rect this, float width){ return this.state.width = width; }
+>			...
+>		}
+>...and lets us remove set/get special syntax.
 
-	width(a) a.width
-
-**??? This makes it possible to implement struct getter/setter like this:**
-
-		rect {
-			float width(rect this){ return this.state.width; }
-			rect width(rect this, float width){ return this.state.width = width; }
-			...
-		}
 
 Syntactic sugar for member functions:
-**??? why needed? Let's be minimal.**
 
 	is_empty(a) == a.is_empty()
 
@@ -460,8 +442,6 @@ Syntactic sugar for free functions:
 	a = rect(6, 6);
 	assert(is_square(a) == true)
 	assert(a.is_square() == true)
-
-
 
 
 
@@ -518,7 +498,6 @@ You can access the members using indexes instead of their names, for use as a tu
 
 
 
-
 # Functions -- alternative design:
 
 (Int, Int) -> (Int)
@@ -542,7 +521,6 @@ You can access the members using indexes instead of their names, for use as a tu
 	bool f(string a, string b){ return a < b; }
 
 	bool f(string a, string b) = return $0 < $1;
-
 
 
 # LAMBDAS -- FUTURE
