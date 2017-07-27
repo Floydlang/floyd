@@ -125,37 +125,38 @@ Every collection automatically support the core-type-features, like comparisons,
 
 
 # VECTOR COLLECTION
-A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The items are ordered. Finding the correct value is constant-time.
+A vector is a collection where you lookup your values using an index between 0 and (vector_size - 1). The elements are ordered. Finding the correct element is constant-time.
 
 If you read many continous elements it's faster to use a SEQ with the vector - it allows the runtime to keep an pointer to the current position in the vector.
 
-	a = [int]();		//	Create empty vector of ints.
-	b = [int](1, 2, 3);		//	Create a vector with three ints.
-	b = [1, 2, 3];				//	Shortcut to create a vector with three ints. Int-type is deducted from value.
+	a = [int]();					//	Create empty vector of ints.
+	b = [int](1, 2, 3);				//	Create a vector with three ints.
+	b = [1, 2, 3];					//	Shortcut to create a vector with three ints. Int-type is deducted from value.
 	a = [string]();					//	Empty vector of strings
-	b = [string] ( "one", "two", "three");		//	Vector initialized to 3 strings.
-	b = ["one", "two", "three"];		//	Shortcut to create a vector with 3 strings. String-type is dedu
+	b = [string] ( "a", "b", "c");	//	Vector initialized to 3 strings.
+	b = ["one", "two", "three"];	//	Shortcut to create a vector with 3 strings.
 
-The vector is persistent so you can write elements to it, but you always get a new vector back - the original is unmodified:
+The vector is persistent so you can write elements to it, but you always get a new vector back - the original vector is unmodified:
 
 	a = ["one", "two", "three" ];
 	b = a[1] = "zwei";
 	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
-	
-There are many potential backends for a vector - the runtime choses for each vector *instances* - not each type:
+
+The runtime has several types of backends for a vector and choses for each vector *instances* - not each type:
 
 1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
-2. A HAMT-based persistent vector. Medium-fast to make, read an write. Uses more memory.
-3. A function. Compact, potentially very fast / very slow. No read/write.
+2. A HAMT-based persistent vector. Medium-fast to make, read and write. Uses more memory.
+3. A function. Compact, potentially very fast / very slow. No write.
 
 Vector Reference:
 
-	vector(seq<t> in);
-	vector [T][ 1, 2, 3, ... };
-	vector<T> make(vector<T> other, int start, int end);
+	a = [T][ 1, 2, 3, ... ];
+	a = [T](seq<T> in);
+	int a.count()
+	a = b + c;	//	append
 	vector<T> subset(vector<T> in, int start, int end);
-	a = b + c;
 
+Future: find, filter, map, fold, sort
 
 
 # DICTIONARY COLLECTION
