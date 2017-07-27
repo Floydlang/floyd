@@ -126,7 +126,6 @@ namespace floyd_parser {
 	};
 
 	void trace(const vector_def_t& e);
-	std::string to_signature(const vector_def_t& t);
 	json_value_t vector_def_to_json(const vector_def_t& s);
 
 
@@ -210,7 +209,6 @@ namespace floyd_parser {
 
 	json_value_t scope_def_to_json(const scope_def_t& scope_def);
 	void trace(const scope_ref_t& e);
-	std::string to_signature(const scope_ref_t& t);
 
 
 
@@ -314,19 +312,6 @@ namespace floyd_parser {
 		private: std::shared_ptr<const scope_def_t> _function_def;
 	};
 
-
-	/*
-		Returns a normalized signature string unique for this data type.
-		Use to compare types.
-
-		"<float>"									float
-		"<string>"									string
-		"<vector>[<float>]"							vector containing floats
-		"<float>(<string>,<float>)"				function returning float, with string and float arguments
-		"<struct>{<string>a,<string>b,<float>c}”			composite with three named members.
-		"<struct>{<string>,<string>,<float>}”			composite with UNNAMED members.
-	*/
-	std::string to_signature(const type_def_t& t);
 
 	json_value_t type_def_to_json(const type_def_t& type_def);
 

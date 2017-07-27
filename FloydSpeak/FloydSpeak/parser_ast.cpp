@@ -217,28 +217,6 @@ namespace floyd_parser {
 		}
 	}
 
-	std::string to_signature(const type_def_t& t){
-		QUARK_ASSERT(t.check_invariant());
-
-		const auto btype = t.get_base_type();
-		const auto base_type = base_type_to_string(btype);
-
-		const string label = "";
-		if(btype == base_type::k_struct){
-			return to_signature(t.get_struct_def());
-		}
-		else if(btype == base_type::k_vector){
-			const auto vector_value_s = "";
-			return label + "<vector>" + "[" + vector_value_s + "]";
-		}
-		else if(btype == base_type::k_function){
-			return to_signature(t.get_function_def());
-		}
-		else{
-			return label + "<" + base_type + ">";
-		}
-	}
-
 
 
 
@@ -576,31 +554,6 @@ namespace floyd_parser {
 */
 	}
 
-	//??? more
-	std::string to_signature(const scope_ref_t& t){
-		QUARK_ASSERT(t && t->check_invariant());
-
-		string body;
-		for(const auto& member : t->_members) {
-			const auto member_name = member._name;
-			const auto typedef_s = *member._type;
-			const string member_type = "<" + typedef_s.to_string() + ">";
-
-			//	"<string>first_name"
-			const string member_result = member_type + member_name;
-
-			body = body + member_result + ",";
-		}
-		body = remove_trailing_comma(body);
-
-		if(t->_type== scope_def_t::etype::k_function_scope || t->_type== scope_def_t::etype::k_subscope){
-			const auto body_hash = calc_function_body_hash(t);
-			body = body + std::string("<body_hash>") + SHA1ToStringPlain(body_hash);
-		}
-		else{
-		}
-		return "<" + scope_type_to_string(t->_type) + ">" + "{" + body + "}";
-	}
 
 
 	//////////////////////////////////////		vector_def_t
@@ -650,11 +603,6 @@ namespace floyd_parser {
 	}
 
 
-	std::string to_signature(const vector_def_t& t){
-		QUARK_ASSERT(t.check_invariant());
-
-		return std::string("<vector>") + "[" + t._element_type->to_string() + "]";
-	}
 
 
 

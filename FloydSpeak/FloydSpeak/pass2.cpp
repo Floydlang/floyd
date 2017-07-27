@@ -329,7 +329,8 @@ QUARK_UNIT_TESTQ("assign_unique_type_ids()", ""){
 /*
 	Insert dummy-hook for constructors. Implementation needs to be provided by later pass.
 
-	??? Calling all constructor function "pixel_t" requires us to select function from its signature. Alternative use one function with var-args.
+	??? Calling all constructor function "pixel_t" requires us to select function from its signature.
+		Alternative use one function with var-args.
 
 	??? How to call host code. Is host code represented by a scope_def? I does need args/return value.
 */
