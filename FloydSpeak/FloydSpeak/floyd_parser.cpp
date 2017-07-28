@@ -117,7 +117,7 @@ static statement_result_t read_statement(const string& pos){
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition2(pos);
+		const auto a = parse_struct_definition(pos);
 		return { a.first, skip_whitespace(a.second) };
 	}
 

@@ -23,7 +23,7 @@ namespace floyd_parser {
 	using std::shared_ptr;
 
 
-	std::pair<json_value_t, std::string>  parse_struct_definition1(const string& pos0){
+	std::pair<json_value_t, std::string>  parse_struct_definition(const string& pos0){
 		QUARK_ASSERT(pos0.size() > 0);
 
 		const auto token_pos = read_until(pos0, whitespace_chars);
@@ -63,53 +63,21 @@ namespace floyd_parser {
 			pos = skip_whitespace(read_required_char(pos, ';'));
 		}
 
-		json_value_t obj = make_scope_def();
-		obj = store_object_member(obj, "type", "struct");
-		obj = store_object_member(obj, "name", json_value_t(struct_name_pos.first));
-		obj = store_object_member(obj, "members", members);
-		return { obj, skip_whitespace(body_pos.second) };
+		const auto r = json_value_t::make_array2({
+			"def-struct",
+			json_value_t::make_object({
+				{ "name", json_value_t(struct_name_pos.first) },
+				{ "members", members }
+			})
+		});
+		return { r, skip_whitespace(body_pos.second) };
 	}
 
 	const std::string k_test_struct0 = "struct a {int x; string y; float z;}";
 
-	QUARK_UNIT_TESTQ("parse_struct_definition1", ""){
-		const auto r = parse_struct_definition1(k_test_struct0);
 
-		const auto expected = json_value_t::make_object({
-			{ "name", "a" },
-			{ "members", json_value_t::make_array2({
-				json_value_t::make_object({ { "name", "x"}, { "type", "<int>"} }),
-				json_value_t::make_object({ { "name", "y"}, { "type", "<string>"} }),
-				json_value_t::make_object({ { "name", "z"}, { "type", "<float>"} })
-			}) },
-
-			{ "args", json_value_t::make_array() },
-			{ "locals", json_value_t::make_array() },
-			{ "return_type", "" },
-			{ "statements", json_value_t::make_array() },
-			{ "type", "struct" },
-			{ "types", json_value_t::make_object() }
-		});
-
-		QUARK_TEST_VERIFY(r == (std::pair<json_value_t, std::string>(expected, "")));
-	}
-
-
-	std::pair<json_value_t, std::string>  parse_struct_definition2(const string& s){
-		const auto a = parse_struct_definition1(s);
-
-		const auto r = json_value_t::make_array2({
-			"def-struct",
-			json_value_t::make_object({
-				{ "name", a.first.get_object_element("name") },
-				{ "members", a.first.get_object_element("members") }
-			})
-		});
-		return { r, a.second };
-	}
-
-	QUARK_UNIT_TESTQ("parse_struct_definition2", ""){
-		const auto r = parse_struct_definition2(k_test_struct0);
+	QUARK_UNIT_TESTQ("parse_struct_definition", ""){
+		const auto r = parse_struct_definition(k_test_struct0);
 
 		const auto expected =
 		json_value_t::make_array2({
@@ -128,7 +96,5 @@ namespace floyd_parser {
 	}
 
 
-
 }	//	floyd_parser
-
 
