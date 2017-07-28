@@ -489,68 +489,7 @@ QUARK_UNIT_TESTQ("parse_program1()", "Call function a from function b"){
 	);
 //	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "testx") == *f));
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "testx"));
-
-/*
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
-		make_function_def(
-			type_identifier_t::make_int(),
-			vector<member_t>{
-				member_t{ type_identifier_t::make_string(), "arg" }
-			},
-			{
-				make__return_statement(bind_statement_t{"test", function_call_expr_t{"testx", }})
-				make__return_statement(make_constant(value_t(13.4f)))
-			}
-		)
-	));
-*/
 #endif
-}
-
-
-
-////////////////////////////		STRUCT SUPPORT
-
-
-
-QUARK_UNIT_TESTQ("parse_program1()", "Proves we can instantiate a struct"){
-	const auto result = parse_program1(kProgram6);
-
-#if false
-	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
-#endif
-
-/*
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
-		make_function_def(
-			type_identifier_t::make_string(),
-			vector<member_t>{},
-			{
-				make__return_statement(make_constant(value_t(3)))
-			}
-		)
-	));
-*/
-}
-
-
-QUARK_UNIT_TESTQ("parse_program1()", "Proves we can address a struct member variable"){
-	const auto result = parse_program1(kProgram7);
-#if false
-	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
-#endif
-
-/*
-	QUARK_TEST_VERIFY((*result._types_collector.resolve_function_type("main") ==
-		make_function_def(
-			type_identifier_t::make_string(),
-			vector<member_t>{},
-			{
-				make__return_statement(make_constant(value_t(3)))
-			}
-		)
-	));
-*/
 }
 
 
