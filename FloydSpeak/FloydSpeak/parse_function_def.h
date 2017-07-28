@@ -23,15 +23,34 @@ namespace floyd_parser {
 			return b + 1;
 		}
 
-		Creates its own function sub-scope at the bottom of the ast.
+		OUTPUT
 
-		LATER:
-		Lambda:
-
-		int myfunc(string a){
-			() => {
-			}
+		{
+			"args": [],
+			"locals": [],
+			"members": [],
+			"name": "main",
+			"return_type": "<int>",
+			"statements": [
+				[ "return", [ "k", 3, "<int>" ]]
+			],
+			"type": "function",
+			"types": {}
 		}
+
+		[
+			"func-def",
+			{
+				"name": "main",
+				"args": [],
+				"locals": [],
+				"return_type": "<int>",
+				"statements": [
+					[ "return", [ "k", 3, "<int>" ]]
+				],
+				"types": {}
+			}
+		]
 	*/
 	std::pair<json_value_t, std::string> parse_function_definition(const std::string& pos);
 

@@ -40,10 +40,6 @@ https://en.wikipedia.org/wiki/Parsing
 
 
 
-
-
-
-
 //////////////////////////////////////////////////		read_statement()
 
 
@@ -69,7 +65,6 @@ https://en.wikipedia.org/wiki/Parsing
 			trailing ";" will be consumed.
 
 
-
 	Example return statement:
 		#1	"return 3;..."
 		#2	"return f(3, 4) + 2;..."
@@ -91,7 +86,7 @@ https://en.wikipedia.org/wiki/Parsing
 
 	["return", EXPRESSION ]
 	["bind", "<string>", "local_name", EXPRESSION ]
-	["define_struct", STRUCT_DEF ]
+	["def_struct", STRUCT_DEF ]
 	["define_function", FUNCTION_DEF ]
 
 
@@ -135,7 +130,10 @@ static statement_result_t read_statement(const string& pos){
 				QUARK_SCOPED_TRACE("FUNCTION DEF");
 				QUARK_TRACE(json_to_pretty_string(function.first));
 			}
-            return { json_value_t::make_array2({ json_value_t("define_function"), function.first }), skip_whitespace(function.second) };
+            return {
+				json_value_t::make_array2({ json_value_t("define_function"), function.first }),
+				skip_whitespace(function.second)
+			};
 		}
 
 		//	Define variable?
@@ -213,10 +211,6 @@ static json_value_t add_subscope(const json_value_t& scope, const json_value_t& 
 		);
 	}
 }
-
-
-
-
 
 std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& scope, const string& s){
 	QUARK_ASSERT(scope.check_invariant());

@@ -15,7 +15,11 @@
 struct json_value_t;
 
 namespace floyd_parser {
-	std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& scope_def2, const std::string& s);
+
+	/*
+		types: object with key = typename, value = { "base_type": "int", "scope_def: {} }
+	*/
+	std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& types, const std::string& s);
 
 	json_value_t parse_program(const std::string& program);
 

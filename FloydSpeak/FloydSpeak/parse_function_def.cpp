@@ -27,7 +27,7 @@ namespace floyd_parser {
 		(int a)
 		(int x, int y)
 	*/
-vector<json_value_t> parse_functiondef_arguments(const string& s2){
+static vector<json_value_t> parse_functiondef_arguments(const string& s2){
 	const auto s = trim_ends(s2);
 	vector<json_value_t> args;
 	auto str = s;
@@ -62,7 +62,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 	));
 }
 #endif
-
 
 std::pair<json_value_t, std::string> parse_function_definition(const string& pos){
 	const auto return_type_pos = read_required_type_identifier(pos);
