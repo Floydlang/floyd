@@ -29,17 +29,6 @@ namespace floyd_parser {
 
 		OUTPUT
 
-		[
-			"def-struct",
-			{
-				"name": "pixel",
-				"members": [
-					{ "expr": [ "k", "two", "<string>" ], "name": "s", "type": "<string>" }
-				],
-			}
-		]
-
-
 		{
 			"name": "pixel",
 			"members": [
@@ -56,6 +45,21 @@ namespace floyd_parser {
 	*/
 
 	std::pair<json_value_t, std::string> parse_struct_definition1(const std::string& pos);
+
+
+	/*
+		OUTPUT
+
+		[
+			"def-struct",
+			{
+				"name": "pixel",
+				"members": [
+					{ "expr": [ "k", "two", "<string>" ], "name": "s", "type": "<string>" }
+				],
+			}
+		]
+	*/
 	std::pair<json_value_t, std::string> parse_struct_definition2(const std::string& pos);
 
 	json_value_t make_test_struct0();

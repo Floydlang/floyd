@@ -106,7 +106,7 @@ struct statement_result_t {
 	std::string _rest;
 };
 
-statement_result_t read_statement(const string& pos){
+static statement_result_t read_statement(const string& pos){
 	const auto token_pos = read_until(pos, whitespace_chars);
 
 	//	return statement?
@@ -117,8 +117,8 @@ statement_result_t read_statement(const string& pos){
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition1(pos);
-		return { json_value_t::make_array2({ json_value_t("define_struct"), a.first }), skip_whitespace(a.second) };
+		const auto a = parse_struct_definition2(pos);
+		return { a.first, skip_whitespace(a.second) };
 	}
 
 	else {
@@ -183,7 +183,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 	quark::ut_compare(
 		json_to_compact_string(result._statement),
-		R"(["define_struct", { "args": [], "locals": [], "members": [{ "name": "x", "type": "<int>" }, { "name": "y", "type": "<string>" }, { "name": "z", "type": "<float>" }], "name": "test_struct0", "return_type": "", "statements": [], "type": "struct", "types": {} }])"
+		R"(["def-struct", { "members": [{ "name": "x", "type": "<int>" }, { "name": "y", "type": "<string>" }, { "name": "z", "type": "<float>" }], "name": "test_struct0" }])"
 	);
 	QUARK_TEST_VERIFY(result._rest == ";");
 }
@@ -234,8 +234,13 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 		const auto statement_type = statement.get_array_n(0).get_string();
 
 		//	Definition statements are immediately removed from AST and the types are defined instead.
-		if(statement_type == "define_struct"){
-			scope2 = add_subscope(scope2, statement.get_array_n(1));
+		if(statement_type == "def-struct"){
+			const auto def = statement.get_array_n(1);
+			json_value_t scope_def = make_scope_def();
+			scope_def = store_object_member(scope_def, "type", "struct");
+			scope_def = store_object_member(scope_def, "name", def.get_object_element("name"));
+			scope_def = store_object_member(scope_def, "members", def.get_object_element("members"));
+			scope2 = add_subscope(scope2, scope_def);
 		}
 		else if(statement_type == "define_function"){
 			scope2 = add_subscope(scope2, statement.get_array_n(1));

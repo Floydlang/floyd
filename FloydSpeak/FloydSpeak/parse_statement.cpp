@@ -20,9 +20,6 @@ namespace floyd_parser {
 	using std::shared_ptr;
 
 
-	/*
-		["return", EXPRESSION ]
-	*/
 	pair<json_value_t, string> parse_return_statement(const string& s){
 		QUARK_SCOPED_TRACE("parse_return_statement()");
 		QUARK_ASSERT(s.size() >= string("return").size());
@@ -38,15 +35,13 @@ namespace floyd_parser {
 		return pair<json_value_t, string>(statement, pos);
 	}
 
-#if false
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
-		const auto t = make_shared<expression_t>(expression_t::make_constant(0));
-		
-		QUARK_TEST_VERIFY((
-			parse_return_statement("return 0;") == pair<return_statement_t, string>(return_statement_t{t}, "")
-		));
+		const auto result = parse_return_statement("return 0;");
+		QUARK_TEST_VERIFY(json_to_compact_string(result.first) == R"(["return", ["k", 0, "<int>"]])");
+		QUARK_TEST_VERIFY(result.second == "");
 	}
 
+#if false
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 		const auto t = make_shared<expression_t>(expression_t::make_constant(123));
 		
@@ -57,15 +52,6 @@ namespace floyd_parser {
 #endif
 
 
-	/*
-		"int a = 13";
-		"int b = f("hello");"
-		"bool a = is_hello("hello")";
-
-		Returns
-			[bind_statement_t]
-				[expression_t]
-	*/
 
 	pair<json_value_t, string> parse_assignment_statement(const string& s){
 		QUARK_SCOPED_TRACE("parse_assignment_statement()");
@@ -79,8 +65,6 @@ namespace floyd_parser {
 
 		const auto expression = parse_expression_all(expression_pos.first);
 
-//		const auto statement = make__bind_statement(type, variable_pos.first, expression);
-//		trace(statement);
 		const auto statement = json_value_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
 
 		//	Skip trailing ";".

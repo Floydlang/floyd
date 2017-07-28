@@ -17,13 +17,15 @@ struct json_value_t;
 
 namespace floyd_parser {
 	/*
-		s:
-			Must start with "return".
+		INPUT:
+		Must start with "return".
 
-			Examples:
-				return 0;
-				return x + y;
+		Examples:
+			"return 0;"
+			"return x + y;"
 
+		OUTPUT:
+			["return", EXPRESSION ]
 	*/
 	std::pair<json_value_t, std::string> parse_return_statement(const std::string& s);
 
@@ -36,6 +38,13 @@ namespace floyd_parser {
 		"string hello = f(a) + \"_suffix\";";
 
 		...can contain trailing whitespace.
+
+
+		"int b = f("hello");"
+		"bool a = is_hello("hello")";
+
+		OUTPUT:
+			[ "bind", "<float>", "x", EXPRESSION ]
 	*/
 	std::pair<json_value_t, std::string> parse_assignment_statement(const std::string& s);
 
