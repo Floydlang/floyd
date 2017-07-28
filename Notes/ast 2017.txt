@@ -79,6 +79,14 @@ string main(){
 	static_scope: function, globals, struct, statement_scope
 	statement
 	type
+	function_value_constant = the instructions making up a function.
+
+
+??? Reverse scope_def thinking and use a scopeed symbol table instead. Makes it easier to process scopes:
+
+??? Separate type (function prototype) from function_value_constant (its implemenation). 
+
+
 {
 	"name": "global",
 	"type": "global",
@@ -135,4 +143,134 @@ string main(){
 		]
 
 	}
+}
+
+
+
+INSIGHT: Only keep symbol table for collecting and resolving names, then lose it! Keep original symbols embedded in IDs for humans.
+
+
+INSIGHT about passes
+Pass 1: convert text to AST using syntax
+Pass 2: Semantic analysis of AST, collect types, connect dots, find errors, figure out types of expressions, collect member variables, local variables. Bind things together (using temporary symbol table). Insert generated functions and code.
+
+Now program works and is "complete" and compiles. AST is in an easy-to-manipulate form. JSON version is used by people.
+
+- Nested scopes and symbol tables instead of big flat symbol table => easier to nest and compose code.
+
+Futher passes are about executing or optimizing or code generation.
+
+
+	struct pixel { float red; float green; float blue; }
+	pixel pixel(float red, float green, float blue)
+	float get_grey(pixel p){ (return p.red + p.green + p.blue()) / 3; }
+
+	float main(){
+		pixel p = pixel(1, 0, 0);
+		return get_grey(p);
+	}
+
+
+- Simplest to have two formats for types: "pixel" and "pixel/8000" -- this requires no extra fields to store resolved type id and we don't lose original name. We pack typename / typeid into same string. Notice: only use typeid 8000 to find stuff.
+
+symbol name = "pixel"
+typename = "$pixel"
+typeid = 8000
+typetag = "$pixel" or "$pixel/8000"
+
+
+
+
+
+
+
+global static_scope
+{
+	"name": "global",
+	"type": "global",
+
+	//	Each introduces its own static_scope within parent scope.
+
+	"struct_defs": {
+		//	"pixel"
+		"9000", {
+			"state": [
+				{ "name": "red", "typetag": "$float" },
+				{ "name": "green", "typetag": "$float" },
+				{ "name": "blue", "typetag": "$float" }
+			]
+		},
+	},
+
+	//??? Can hold subscopes for statements like while(true) { subscope }.
+	//??? How to easily traverse AST when subscopes can hide inside statements?
+
+	"function_constant_values": {
+		//	"pixel pixel(float, float, float)"
+		"7999", {
+			"args": [
+				{ "name": "red", "typetag": "$float" }, { "name": "green", "typetag": "$float" }, { "name": "blue", "typetag": "$float" }
+			],
+			"state": [],
+			"return_typetag": "$float",
+			"statements": [
+				["bind", "$pixel", "p",
+					["call", ["@", "pixel"], [ [ "k", 1 ], [ "k", 0 ], [ "k", 0 ]]]
+				],
+				["while",
+					[ "k", "false" ],
+					[ "statements"
+						["bind", "$pixel", "test", ["call", ["@", "pixel"], []]],
+					]
+				]
+				["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
+			],
+		}
+
+		//	"get_grey()"
+		"8000", {
+			"args": [{ "name": "p", "typentag": "$pixel" }],
+			"return_typetag": "$float",
+			"state": []
+			"statements": [
+				["return",
+					["/",
+						[ "+"
+							["->", ["@", "p"], "red"],
+							[ "+"
+								["->", ["@", "p"], "green"], 
+								["->", ["@", "p"], "blue"]
+							],
+						],
+						3
+					]
+				]
+			]
+		},
+
+		//	"main()"
+		"8001", {
+			"args": [],
+			"state": [{ "name": "p", "typetag": "$pixel" }],
+			"return_typetag": "$float",
+			"statements": [
+				["bind", "$pixel", "p", ["call", ["@", "pixel"], []]],
+				["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
+			],
+			"type": "function",
+			"types": {}
+		}
+	}
+
+	"state": [
+		{ "name": "main", "value": "function_constant_values/main/8001" }
+	],
+	"symbols": {
+		"get_grey": { "value": "function_constant_values/8000" },
+		"pixel": { "struct_def": "struct_defs/9000" },
+		"pixel": { "value": "function_constant_values/7999" },
+		"main": { "value": "function_constant_values/main/8001" }
+	}
+
+	"statements": [],
 }

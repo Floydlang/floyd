@@ -191,7 +191,7 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 
 
-json_value_t add_subscope(const json_value_t& scope, const json_value_t& subscope){
+static json_value_t add_subscope(const json_value_t& scope, const json_value_t& subscope){
 	QUARK_ASSERT(scope.check_invariant());
 	QUARK_ASSERT(subscope.check_invariant());
 
@@ -239,26 +239,9 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 		}
 		else if(statement_type == "define_function"){
 			scope2 = add_subscope(scope2, statement.get_array_n(1));
-
-#if 0
-			const auto function_name = statement.get_array_n(1).get_object_element("name");
-			const auto return_type = statement.get_array_n(1).get_object_element("return_type");
-			const auto args_array = statement.get_array_n(1).get_object_element("args").get_array();
-			vector<json_value_t> proto;
-			proto.push_back(return_type);
-			proto.insert(proto.back(), args.begin(), arg.end());
-			const auto function_prototype = json_value_t::make_array2(proto);
-
-
-
-			auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
-			scope2 = store_object_member(scope2, "locals", push_back(scope2.get_object_element("locals"), loc));
-#endif
-
-			//	Add a local variable pointing to our function.??? This removes need for scoped type_defs?
-//			auto loc = make_member_def("", local_name.get_string(), expr);
-//			scope2 = store_object_member(scope2, "locals", push_back(scope2.get_object_element("locals"), loc));
 		}
+//??? Move this logic to pass 2!! Same thing with
+
 		else if(statement_type == "bind"){
 			const auto bind_type = statement.get_array_n(1);
 			const auto local_name = statement.get_array_n(2);
