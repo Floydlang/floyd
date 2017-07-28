@@ -21,7 +21,6 @@ namespace floyd_parser {
 
 
 	pair<json_value_t, string> parse_return_statement(const string& s){
-		QUARK_SCOPED_TRACE("parse_return_statement()");
 		QUARK_ASSERT(s.size() >= string("return").size());
 
 		QUARK_ASSERT(peek_string(s, "return"));

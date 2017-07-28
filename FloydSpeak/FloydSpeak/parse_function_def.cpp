@@ -65,7 +65,6 @@ const string kTestFunctionArguments1JSON = R"(
 	]
 )";
 
-//??? Replace this with template function or something. These functions are just duplication.
 QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- three arguments", "Correct output JSON"){
 	ut_compare_jsons(
 		json_value_t::make_array2(parse_functiondef_arguments(kTestFunctionArguments1)),
@@ -109,67 +108,87 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	return { function_def, body_pos.second };
 }
 
-const auto kTestFunctionDefinition0 = "int f(){ return 3; }";
-const string kTestFunctionDefinition0JSON = R"(
-	[
-		"def-func",
-		{ "args": [], "name": "f", "return_type": "<int>", "statements": [["return", ["k", 3, "<int>"]]] }
-	]
-)";
+struct test {
+	std::string desc;
+	std::string input;
+	std::string output;
+};
 
-const auto kTestFunctionDefinition1 = "int printf(string a, float barry, int c){ return 3; }";
-const string kTestFunctionDefinition1JSON = R"(
-	[
-		"def-func",
-		{
-			"args": [
-				{ "name": "a", "type": "<string>" },
-				{ "name": "barry", "type": "<float>" },
-				{ "name": "c", "type": "<int>" },
-			],
-			"name": "printf",
-			"return_type": "<int>",
-			"statements": [["return", ["k", 3, "<int>"]]]
-		}
-	]
-)";
+const std::vector<test> testsxyz = {
+	{
+		"Minimal function",
+		"int f(){ return 3; }",
 
-const auto kTestFunctionDefinition2 = " \t int \t printf( \t string \t a \t , \t float \t b \t ){ \t return \t 3 \t ; \t } \t ";
-const string kTestFunctionDefinition2JSON = R"(
-	[
-		"def-func",
-		{
-			"args": [
-				{ "name": "a", "type": "<string>" },
-				{ "name": "b", "type": "<float>" }
-			],
-			"name": "printf",
-			"return_type": "<int>",
-			"statements": [["return", ["k", 3, "<int>"]]]
-		}
-	]
-)";
+		R"(
+			[
+				"def-func",
+				{ "args": [], "name": "f", "return_type": "<int>", "statements": [["return", ["k", 3, "<int>"]]] }
+			]
+		)"
+	},
+	{
+		"3 args of different types",
+		"int printf(string a, float barry, int c){ return 3; }",
+		R"(
+			[
+				"def-func",
+				{
+					"args": [
+						{ "name": "a", "type": "<string>" },
+						{ "name": "barry", "type": "<float>" },
+						{ "name": "c", "type": "<int>" },
+					],
+					"name": "printf",
+					"return_type": "<int>",
+					"statements": [["return", ["k", 3, "<int>"]]]
+				}
+			]
+		)"
+	},
+	{
+		"Max whitespace",
+		" \t int \t printf( \t string \t a \t , \t float \t b \t ){ \t return \t 3 \t ; \t } \t ",
+		R"(
+			[
+				"def-func",
+				{
+					"args": [
+						{ "name": "a", "type": "<string>" },
+						{ "name": "b", "type": "<float>" }
+					],
+					"name": "printf",
+					"return_type": "<int>",
+					"statements": [["return", ["k", 3, "<int>"]]]
+				}
+			]
+		)"
+	},
+	{
+		"Min whitespace",
+		"int printf(string a,float b){return 3;}",
+		R"(
+			[
+				"def-func",
+				{
+					"args": [
+						{ "name": "a", "type": "<string>" },
+						{ "name": "b", "type": "<float>" }
+					],
+					"name": "printf",
+					"return_type": "<int>",
+					"statements": [["return", ["k", 3, "<int>"]]]
+				}
+			]
+		)"
+	}
+};
 
 
-QUARK_UNIT_TEST("", "parse_function_definition2()", "Function definition 0 -- mininal function", "Correct output JSON"){
-	ut_compare_jsons(
-		parse_function_definition2(kTestFunctionDefinition0).first,
-		parse_json(seq_t(kTestFunctionDefinition0JSON)).first
-	);
-}
-
-QUARK_UNIT_TEST("", "parse_function_definition2()", "Function definition 1 -- 3 args of different types", "Correct output JSON"){
-	ut_compare_jsons(
-		parse_function_definition2(kTestFunctionDefinition1).first,
-		parse_json(seq_t(kTestFunctionDefinition1JSON)).first
-	);
-}
-
-QUARK_UNIT_TEST("", "parse_function_definition2()", "Function definition 2 -- Max whitespace", "Correct output JSON"){
-	ut_compare_jsons(
-		parse_function_definition2(kTestFunctionDefinition2).first,
-		parse_json(seq_t(kTestFunctionDefinition2JSON)).first
-	);
+QUARK_UNIT_TEST("", "parse_function_definition2()", "BATCH", "Correct output JSON"){
+	for(const auto e: testsxyz){
+		QUARK_SCOPED_TRACE(e.desc);
+		ut_compare_jsons(parse_function_definition2(e.input).first,parse_json(seq_t(e.output)).first);
+	}
 }
 
 }	//	floyd_parser
