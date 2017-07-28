@@ -9,18 +9,14 @@
 #include "parse_struct_def.h"
 
 #include "parse_expression.h"
-#include "parse_function_def.h"
-#include "parse_struct_def.h"
 #include "parser_primitives.h"
 #include "json_support.h"
-#include "json_writer.h"
+
 
 namespace floyd_parser {
 	using std::string;
 	using std::vector;
 	using std::pair;
-	using std::make_shared;
-	using std::shared_ptr;
 
 
 	std::pair<json_value_t, std::string>  parse_struct_definition(const string& pos0){
@@ -47,7 +43,6 @@ namespace floyd_parser {
 				pos = skip_whitespace(optional_default_value.second);
 
 				const auto constant_expr_pos_s = read_until(pos, ";");
-
 				const auto constant_expr_pos = parse_expression_seq(seq_t(constant_expr_pos_s.first));
 				const auto constant_expr = constant_expr_pos.first;
 
