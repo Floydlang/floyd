@@ -88,7 +88,7 @@ std::pair<json_value_t, std::string> parse_function_definition(const string& pos
 		json_value_t function_body_def = make_scope_def();
 
 		//	temp will get all statements.
-		const auto temp = read_statements_into_scope_def(function_body_def, trim_ends(body_pos.first));
+		const auto temp = read_statements_into_scope_def1(function_body_def, trim_ends(body_pos.first));
 
 		const auto locals = temp.first.get_object_element("locals");
 		const auto statements = temp.first.get_object_element("statements");

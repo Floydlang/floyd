@@ -212,7 +212,8 @@ static json_value_t add_subscope(const json_value_t& scope, const json_value_t& 
 	}
 }
 
-std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& scope, const string& s){
+
+std::pair<json_value_t, std::string> read_statements_into_scope_def1(const json_value_t& scope, const string& s){
 	QUARK_ASSERT(scope.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
@@ -262,36 +263,127 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_v
 
 
 
-json_value_t parse_program(const string& program){
+json_value_t parse_program1(const string& program){
 	json_value_t a = make_scope_def();
 	a = store_object_member(a, "name", "global");
 	a = store_object_member(a, "type", "global");
 
-	const auto statements_pos = read_statements_into_scope_def(a, program);
+	const auto statements_pos = read_statements_into_scope_def1(a, program);
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
 	return statements_pos.first;
 }
 
 
-QUARK_UNIT_TEST("", "parse_program()", "kProgram1", ""){
-	const string kProgram1 =
-		"int main(string args){\n"
-		"	return 3;\n"
-		"}\n";
 
-	auto result = parse_program(kProgram1);
+//////////////////////////////////////////////////		Test programs
+
+
+
+const string kProgram1 =
+	"int main(string args){\n"
+	"	return 3;\n"
+	"}\n";
+
+const string kProgram1JSON = R"(
+	{
+		"args": [],
+		"locals": [],
+		"members": [],
+		"name": "global",
+		"return_type": "",
+		"statements": [],
+		"type": "global",
+		"types": {
+			"main": [
+				{
+					"base_type": "function",
+					"scope_def": {
+						"args": [
+							{
+								"name": "args",
+								"type": "<string>"
+							}
+						],
+						"locals": [],
+						"members": [],
+						"name": "main",
+						"return_type": "<int>",
+						"statements": [
+							[
+								"return",
+								[
+									"k",
+									3,
+									"<int>"
+								]
+							]
+						],
+						"type": "function",
+						"types": {}
+					}
+				}
+			]
+		}
+	}
+)";
+
+
+const string kProgram2 =
+	"int f(int x, int y, string z){\n"
+	"	return 3;\n"
+	"}\n";
+
+const string kProgram3 =
+	"int main(string args){\n"
+	"	int a = 4;\n"
+	"	return 3;\n"
+	"}\n";
+
+const string kProgram4 =
+	"string hello(int x, int y, string z){\n"
+	"	return \"test abc\";\n"
+	"}\n"
+	"int main(string args){\n"
+	"	return 3;\n"
+	"}\n";
+
+const string kProgram5 =
+	"float testx(float v){\n"
+	"	return 13.4;\n"
+	"}\n"
+	"int main(string args){\n"
+	"	float test = testx(1234);\n"
+	"	return 3;\n"
+	"}\n";
+
+const auto kProgram6 =
+	"struct pixel { string s; }"
+	"string main(){\n"
+	"	return \"\";"
+	"}\n";
+
+const auto kProgram7 =
+	"string main(){\n"
+	"	return p.s + a;"
+	"}\n";
+
+
+QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
+	const auto r = parse_program1(kProgram1);
+	const auto expected = parse_json(seq_t(kProgram1JSON));
+	QUARK_TEST_VERIFY(r == expected.first);
+}
+
+QUARK_UNIT_TEST("", "parse_program1()", "kProgram1", ""){
+	auto result = parse_program1(kProgram1);
 	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "base_type" }) == "function");
 	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "scope_def", "args", 0.0 }) == json_value_t::make_object({ { "name", "args"}, {"type", "<string>"}}));
 	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "scope_def", "return_type" }) == "<int>");
 }
 
-QUARK_UNIT_TEST("", "parse_program()", "three arguments", ""){
-	const string kProgram =
-		"int f(int x, int y, string z){\n"
-		"	return 3;\n"
-		"}\n";
+QUARK_UNIT_TEST("", "parse_program1()", "three arguments", ""){
 
-	const auto result = parse_program(kProgram);
+	const auto result = parse_program1(kProgram2);
 	QUARK_UT_VERIFY(result);
 #if false
 	const auto f = make_function_def(
@@ -321,15 +413,8 @@ QUARK_UNIT_TEST("", "parse_program()", "three arguments", ""){
 #endif
 }
 
-
-QUARK_UNIT_TEST("", "parse_program()", "Local variables", ""){
-	const string kProgram1 =
-		"int main(string args){\n"
-		"	int a = 4;\n"
-		"	return 3;\n"
-		"}\n";
-
-	auto result = parse_program(kProgram1);
+QUARK_UNIT_TEST("", "parse_program1()", "Local variables", ""){
+	auto result = parse_program1(kProgram3);
 	QUARK_UT_VERIFY(result);
 #if false
 	const auto f2 = resolve_function_type(result._global_scope->_types_collector, "main");
@@ -345,18 +430,8 @@ QUARK_UNIT_TEST("", "parse_program()", "Local variables", ""){
 #endif
 }
 
-
-
-QUARK_UNIT_TEST("", "parse_program()", "two functions", ""){
-	const string kProgram =
-		"string hello(int x, int y, string z){\n"
-		"	return \"test abc\";\n"
-		"}\n"
-		"int main(string args){\n"
-		"	return 3;\n"
-		"}\n";
-
-	const auto result = parse_program(kProgram);
+QUARK_UNIT_TEST("", "parse_program1()", "two functions", ""){
+	const auto result = parse_program1(kProgram4);
 	QUARK_UT_VERIFY(result);
 
 #if false
@@ -394,16 +469,9 @@ QUARK_UNIT_TEST("", "parse_program()", "two functions", ""){
 #endif
 }
 
-QUARK_UNIT_TESTQ("parse_program()", "Call function a from function b"){
-	const string kProgram2 =
-	"float testx(float v){\n"
-	"	return 13.4;\n"
-	"}\n"
-	"int main(string args){\n"
-	"	float test = testx(1234);\n"
-	"	return 3;\n"
-	"}\n";
-	auto result = parse_program(kProgram2);
+
+QUARK_UNIT_TESTQ("parse_program1()", "Call function a from function b"){
+	auto result = parse_program1(kProgram5);
 	QUARK_UT_VERIFY(result);
 #if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
@@ -445,14 +513,8 @@ QUARK_UNIT_TESTQ("parse_program()", "Call function a from function b"){
 
 
 
-
-QUARK_UNIT_TESTQ("parse_program()", "Proves we can instantiate a struct"){
-	const auto result = parse_program(
-		"struct pixel { string s; }"
-		"string main(){\n"
-		"	return \"\";"
-		"}\n"
-	);
+QUARK_UNIT_TESTQ("parse_program1()", "Proves we can instantiate a struct"){
+	const auto result = parse_program1(kProgram6);
 
 #if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
@@ -471,12 +533,9 @@ QUARK_UNIT_TESTQ("parse_program()", "Proves we can instantiate a struct"){
 */
 }
 
-QUARK_UNIT_TESTQ("parse_program()", "Proves we can address a struct member variable"){
-	const auto result = parse_program(
-		"string main(){\n"
-		"	return p.s + a;"
-		"}\n"
-	);
+
+QUARK_UNIT_TESTQ("parse_program1()", "Proves we can address a struct member variable"){
+	const auto result = parse_program1(kProgram7);
 #if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
 #endif

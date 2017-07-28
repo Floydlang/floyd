@@ -16,12 +16,52 @@ struct json_value_t;
 
 namespace floyd_parser {
 
-	/*
-		types: object with key = typename, value = { "base_type": "int", "scope_def: {} }
-	*/
-	std::pair<json_value_t, std::string> read_statements_into_scope_def(const json_value_t& types, const std::string& s);
 
-	json_value_t parse_program(const std::string& program);
+	std::pair<json_value_t, std::string> read_statements_into_scope_def1(const json_value_t& scope, const std::string& s);
+
+
+	/*
+		Returns nested scope_defs.
+		{
+		}
+	*/
+	json_value_t parse_program1(const std::string& program);
+
+
+	/*
+	{
+		"name": "global", "type": "global",
+		"statements": [
+			["return", EXPRESSION ],
+			[ "bind", "<float>", "x", EXPRESSION ],
+			[
+				"def-struct",
+				{
+					"name": "pixel",
+					"members": [
+						{ "expr": [ "k", "two", "<string>" ], "name": "s", "type": "<string>" }
+					],
+				}
+			],
+			[
+				"def_func",
+				{
+					"args": [],
+					"locals": [],
+					"members": [],
+					"name": "main",
+					"return_type": "<int>",
+					"statements": [
+						[ "return", [ "k", 3, "<int>" ]]
+					],
+					"type": "function",
+					"types": {}
+				}
+			]
+		]
+	}
+	*/
+	json_value_t parse_program2(const std::string& program);
 
 }	//	floyd_parser
 

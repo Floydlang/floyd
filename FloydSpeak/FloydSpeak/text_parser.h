@@ -19,6 +19,9 @@ const std::string test_whitespace_chars = " \n\t\r";
 
 ///////////////////////////////		seq_t
 
+/*
+	Copies the string into the seq_t but stores it as a shared_ptr<>, which means all resulting seq_t:s SHARE the same string = no more copies.
+*/
 
 struct seq_t {
 	public: explicit seq_t(const std::string& s);

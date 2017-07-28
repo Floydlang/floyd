@@ -38,7 +38,7 @@ namespace floyd_parser {
 			"types": {}
 		}
 
-		[
+		FUTURE: [
 			"func-def",
 			{
 				"name": "main",
