@@ -241,6 +241,26 @@ QUARK_UNIT_TESTQ("json_value_t()", ""){
 ////////////////////////////////////////		HELPERS
 
 
+
+void ut_compare_jsons(const json_value_t& result, const json_value_t& expected){
+	const auto result2 = json_to_pretty_string(result);
+	const auto expected2 = json_to_pretty_string(expected);
+
+	if(result2 != expected2){
+		{
+			QUARK_SCOPED_TRACE("RESULT");
+			QUARK_TRACE(result2);
+		}
+		{
+			QUARK_SCOPED_TRACE("EXPECTED");
+			QUARK_TRACE(expected2);
+		}
+		QUARK_TEST_VERIFY(false)
+	}
+}
+
+
+
 long long double_to_int(const double value){
 	return std::llround(value);
 }

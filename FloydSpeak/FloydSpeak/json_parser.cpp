@@ -23,33 +23,6 @@ seq_t skip_whitespace(const seq_t& s){
 	return read_while(s, whitespace_chars).second;
 }
 
-/*
-	"{}"
-	"{ "one": 10.0, "two": "2" }"
-*/
-
-std::pair<json_value_t, std::string> parse_json_object(const seq_t&& s2){
-/*
-	const auto s = skip_whitespace(s2);
-
-	seq body = get_balanced_pair(s, '{', '}');
-
-	const auto a = skip_whitespace(s);
-	if(a.empty()){
-		return { json_value_t(std::map<string, json_value_t>()), body.second };
-	}
-	else {
-		std::pair<json_value_t, std::string> key0 = parse_json(a);
-
-
-
-		return {};
-	}
-*/
-		return {};
-}
-
-
 
 std::pair<json_value_t, seq_t> parse_json(const seq_t& s){
 	const auto a = skip_whitespace(s);

@@ -603,27 +603,28 @@ const string kProgram100JSONv2 = R"(
 
 
 QUARK_UNIT_TEST("", "parse_program1()", "Program 100", ""){
-	const auto r = parse_program1(kProgram100);
-	const auto expected = parse_json(seq_t(kProgram100JSON));
-
-	QUARK_TRACE(json_to_pretty_string(r));
-	QUARK_TRACE(json_to_pretty_string(expected.first));
-
-	QUARK_TEST_VERIFY(r == expected.first);
+	ut_compare_jsons(
+		parse_program1(kProgram100),
+		parse_json(seq_t(kProgram100JSON)).first
+	);
 }
+
+
+
+
 QUARK_UNIT_TEST("", "parse_program2()", "Program 100", ""){
-	const auto r = parse_program2(kProgram100);
-	const auto expected = parse_json(seq_t(kProgram100JSONv2));
-	QUARK_TRACE(json_to_pretty_string(r));
-	QUARK_TRACE(json_to_pretty_string(expected.first));
-	QUARK_TEST_VERIFY(r == expected.first);
+	ut_compare_jsons(
+		parse_program2(kProgram100),
+		parse_json(seq_t(kProgram100JSONv2)).first
+	);
 }
 
 
 QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
-	const auto r = parse_program1(kProgram1);
-	const auto expected = parse_json(seq_t(kProgram1JSON));
-	QUARK_TEST_VERIFY(r == expected.first);
+	ut_compare_jsons(
+		parse_program1(kProgram1),
+		parse_json(seq_t(kProgram1JSON)).first
+	);
 }
 
 QUARK_UNIT_TEST("", "parse_program1()", "kProgram1", ""){
