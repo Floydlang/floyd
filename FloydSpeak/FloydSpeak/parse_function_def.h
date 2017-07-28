@@ -16,31 +16,6 @@ struct json_value_t;
 
 namespace floyd_parser {
 	/*
-		Named function definition:
-
-		int myfunc(string a, int b){
-			...
-			return b + 1;
-		}
-
-		OUTPUT
-
-		{
-			"args": [],
-			"locals": [],
-			"members": [],
-			"name": "main",
-			"return_type": "<int>",
-			"statements": [
-				[ "return", [ "k", 3, "<int>" ]]
-			],
-			"type": "function",
-			"types": {}
-		}
-	*/
-//	std::pair<json_value_t, std::string> parse_function_definition1(const std::string& pos);
-
-	/*
 		OUTPUT:
 			[
 				"def-func",

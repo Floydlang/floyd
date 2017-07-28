@@ -20,94 +20,58 @@ namespace floyd_parser {
 	using std::pair;
 	using std::string;
 	using std::vector;
-	using std::shared_ptr;
-	using std::make_shared;
 
-	/*
-		()
-		(int a)
-		(int x, int y)
-	*/
+/*
+	()
+	(int a)
+	(int x, int y)
+*/
 static vector<json_value_t> parse_functiondef_arguments(const string& s2){
 	const auto s = trim_ends(s2);
 	vector<json_value_t> args;
-	auto str = s;
+	auto str = skip_whitespace(s);
 	while(!str.empty()){
 		const auto arg_type = read_type(str);
 		const auto arg_name = read_required_single_symbol(arg_type.second);
-		const auto optional_comma = read_optional_char(arg_name.second, ',');
-
+		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 
 		const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, json_value_t());
-//		const auto a = json_value_t::make_array2({ json_value_t("<" + arg_type.first + ">"), json_value_t(arg_name.first) });
 		args.push_back(a);
 		str = skip_whitespace(optional_comma.second);
 	}
-
-//	trace_vec("parsed arguments:", args);
 	return args;
 }
 
-QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_TEST_VERIFY((parse_functiondef_arguments("()") == vector<json_value_t>{}));
+
+const auto kTestFunctionArguments0 = "()";
+const string kTestFunctionArguments0JSON = R"(
+	[]
+)";
+
+QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 0 -- zero arguments", "Correct output JSON"){
+	ut_compare_jsons(
+		json_value_t::make_array2(parse_functiondef_arguments(kTestFunctionArguments0)),
+		parse_json(seq_t(kTestFunctionArguments0JSON)).first
+	);
 }
 
-#if false
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto r = parse_functiondef_arguments("(int x, string y, float z)");
-	QUARK_TEST_VERIFY((r == vector<member_t>{
-		{ type_identifier_t::make_int(), "x" },
-		{ type_identifier_t::make_string(), "y" },
-		{ type_identifier_t::make_float(), "z" }
-	}
-	));
+
+const auto kTestFunctionArguments1 = "(int x, string y, float z)";
+const string kTestFunctionArguments1JSON = R"(
+	[
+		{ "name": "x", "type": "<int>" },
+		{ "name": "y", "type": "<string>" },
+		{ "name": "z", "type": "<float>" },
+	]
+)";
+
+//??? Replace this with template function or something. These functions are just duplication.
+QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- three arguments", "Correct output JSON"){
+	ut_compare_jsons(
+		json_value_t::make_array2(parse_functiondef_arguments(kTestFunctionArguments1)),
+		parse_json(seq_t(kTestFunctionArguments1JSON)).first
+	);
 }
-#endif
-
-#if false
-std::pair<json_value_t, std::string> parse_function_definition1(const string& pos){
-	const auto return_type_pos = read_required_type_identifier(pos);
-	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
-
-	//	Skip whitespace.
-	const auto rest = skip_whitespace(function_name_pos.second);
-
-	if(!peek_compare_char(rest, '(')){
-		throw std::runtime_error("expected function argument list enclosed by (),");
-	}
-
-	const auto arg_list_pos = get_balanced(rest);
-	const auto args = parse_functiondef_arguments(arg_list_pos.first);
-	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
-
-	if(!peek_compare_char(body_rest_pos, '{')){
-		throw std::runtime_error("expected function body enclosed by {}.");
-	}
-	const auto body_pos = get_balanced(body_rest_pos);
-	const auto function_name = function_name_pos.first;
-
-	{
-		json_value_t function_body_def = make_scope_def();
-
-		//	temp will get all statements.
-		const auto temp = read_statements_into_scope_def1(function_body_def, trim_ends(body_pos.first));
-
-		const auto locals = temp.first.get_object_element("locals");
-		const auto statements = temp.first.get_object_element("statements");
-		const auto types_collector = temp.first.get_object_element("types");
-
-		json_value_t function_def = make_scope_def();
-		function_def = store_object_member(function_def, "type", "function");
-		function_def = store_object_member(function_def, "name", function_name);
-		function_def = store_object_member(function_def, "args", args);
-		function_def = store_object_member(function_def, "locals", locals);
-		function_def = store_object_member(function_def, "statements", statements);
-		function_def = store_object_member(function_def, "types", types_collector);
-		function_def = store_object_member(function_def, "return_type", "<" + return_type_pos.first.to_string() + ">");
-		return { function_def, body_pos.second };
-	}
-}
-#endif
 
 
 std::pair<json_value_t, std::string> parse_function_definition2(const string& pos){
@@ -145,175 +109,68 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	return { function_def, body_pos.second };
 }
 
-
-
-const auto kTestFunctionDefinition0 =
-	"int f(){ return 3; }";
-
+const auto kTestFunctionDefinition0 = "int f(){ return 3; }";
 const string kTestFunctionDefinition0JSON = R"(
-	{
-		"args": [],
-		"locals": [],
-		"members": [],
-		"name": "f",
-		"return_type": "<int>",
-		"statements": [["return", ["k", 3, "<int>"]]],
-		"type": "function",
-		"types": {}
-	}
+	[
+		"def-func",
+		{ "args": [], "name": "f", "return_type": "<int>", "statements": [["return", ["k", 3, "<int>"]]] }
+	]
 )";
 
-#if false
-QUARK_UNIT_TESTQ("parse_function_definition1()", ""){
-	const auto r = parse_function_definition1(kTestFunctionDefinition0);
-	const auto expected = parse_json(seq_t(kTestFunctionDefinition0JSON));
-	QUARK_TRACE(json_to_pretty_string(r.first));
-	QUARK_TRACE(json_to_pretty_string(expected.first));
-	QUARK_TEST_VERIFY(r.first == expected.first);
-}
-#endif
-
-
-
-
-#if false
-//??? Check that all function paths return a value.
-
-QUARK_UNIT_TESTQ("parse_function_definition1()", ""){
-	const auto ast = ast_t();
-	const auto result = parse_function_definition1(ast, "int f(){ return 3; }");
-	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("f"));
-	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
-	QUARK_TEST_VERIFY(result.first->_members.empty());
-	QUARK_TEST_VERIFY(result.first->_executable._statements.size() == 1);
-	QUARK_TEST_VERIFY(result.second == "");
-
-	const auto body_f = resolve_function_type(result.first->_types_collector, "___body");
-	QUARK_UT_VERIFY(body_f && body_f->check_invariant());
-	QUARK_UT_VERIFY(body_f->_type == scope_def_t::k_subscope);
-	QUARK_UT_VERIFY(body_f->_return_type.to_string() == "int");
-	QUARK_UT_VERIFY(body_f->_executable._statements.size() == 1);
-	QUARK_UT_VERIFY(body_f->_return_type == type_identifier_t::make_int());
-}
-
-QUARK_UNIT_TESTQ("parse_function_definition1()", "Test many arguments of different types"){
-	const auto ast = ast_t();
-	const auto result = parse_function_definition1(ast, "int printf(string a, float barry, int c){}");
-	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("printf"));
-	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
-	QUARK_TEST_VERIFY((result.first->_members == vector<member_t>{
-		{ type_identifier_t::make_string(), "a" },
-		{ type_identifier_t::make_float(), "barry" },
-		{ type_identifier_t::make_int(), "c" },
-	}));
-//	QUARK_TEST_VERIFY(result.first->_executable._statements.empty());
-	QUARK_TEST_VERIFY(result.second == "");
-}
-
-/*
-QUARK_UNIT_TEST("", "parse_function_definition1()", "Test exteme whitespaces", ""){
-	const auto result = parse_function_definition1("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
-	QUARK_TEST_VERIFY(result.first.first == "printf");
-	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_int());
-	QUARK_TEST_VERIFY((result.first.second._args == vector<member_t>{
-		{ type_identifier_t::make_string(), "a" },
-		{ type_identifier_t::make_float(), "barry" },
-		{ type_identifier_t::make_int(), "c" },
-	}));
-	QUARK_TEST_VERIFY(result.first.second._body._statements.empty());
-	QUARK_TEST_VERIFY(result.second == "");
-}
-*/
-
-scope_ref_t make_test_function1(){
-	return make_function_def(
-		type_identifier_t::make("test_function1"),
-		type_identifier_t::make_int(),
-		{},
-		executable_t({
-			make_shared<statement_t>(make__return_statement(expression_t::make_constant(100)))
-		}),
-		{},
-		{}
-	);
-}
-
-scope_ref_t make_test_function2(){
-	return make_function_def(
-		type_identifier_t::make("test_function2"),
-		type_identifier_t::make_string(),
+const auto kTestFunctionDefinition1 = "int printf(string a, float barry, int c){ return 3; }";
+const string kTestFunctionDefinition1JSON = R"(
+	[
+		"def-func",
 		{
-			{ type_identifier_t::make_int(), "a" },
-			{ type_identifier_t::make_float(), "b" }
-		},
-		executable_t({
-			make_shared<statement_t>(make__return_statement(expression_t::make_constant("sdf")))
-		}),
-		{},
-		{}
-	);
-}
+			"args": [
+				{ "name": "a", "type": "<string>" },
+				{ "name": "barry", "type": "<float>" },
+				{ "name": "c", "type": "<int>" },
+			],
+			"name": "printf",
+			"return_type": "<int>",
+			"statements": [["return", ["k", 3, "<int>"]]]
+		}
+	]
+)";
 
-scope_ref_t make_log_function(){
-	return make_function_def(
-		type_identifier_t::make("test_log_function"),
-		type_identifier_t::make_float(),
+const auto kTestFunctionDefinition2 = " \t int \t printf( \t string \t a \t , \t float \t b \t ){ \t return \t 3 \t ; \t } \t ";
+const string kTestFunctionDefinition2JSON = R"(
+	[
+		"def-func",
 		{
-			{type_identifier_t::make_float(), "value"}
-		},
-		executable_t({
-			make_shared<statement_t>(make__return_statement(expression_t::make_constant(123.f)))
-		}),
-		{},
-		{}
+			"args": [
+				{ "name": "a", "type": "<string>" },
+				{ "name": "b", "type": "<float>" }
+			],
+			"name": "printf",
+			"return_type": "<int>",
+			"statements": [["return", ["k", 3, "<int>"]]]
+		}
+	]
+)";
+
+
+QUARK_UNIT_TEST("", "parse_function_definition2()", "Function definition 0 -- mininal function", "Correct output JSON"){
+	ut_compare_jsons(
+		parse_function_definition2(kTestFunctionDefinition0).first,
+		parse_json(seq_t(kTestFunctionDefinition0JSON)).first
 	);
 }
 
-scope_ref_t make_log2_function(){
-	return make_function_def(
-		type_identifier_t::make("test_log2_function"),
-		type_identifier_t::make_float(),
-		{
-			{ type_identifier_t::make_string(), "s" },
-			{ type_identifier_t::make_float(), "v" }
-		},
-		executable_t({
-			make_shared<statement_t>(make__return_statement(expression_t::make_constant(456.7f)))
-		}),
-		{},
-		{}
+QUARK_UNIT_TEST("", "parse_function_definition2()", "Function definition 1 -- 3 args of different types", "Correct output JSON"){
+	ut_compare_jsons(
+		parse_function_definition2(kTestFunctionDefinition1).first,
+		parse_json(seq_t(kTestFunctionDefinition1JSON)).first
 	);
 }
 
-scope_ref_t make_return5(){
-	return make_function_def(
-		type_identifier_t::make("return5"),
-		type_identifier_t::make_float(),
-		{
-		},
-		executable_t({
-			make_shared<statement_t>(make__return_statement(expression_t::make_constant(5)))
-		}),
-		{},
-		{}
+QUARK_UNIT_TEST("", "parse_function_definition2()", "Function definition 2 -- Max whitespace", "Correct output JSON"){
+	ut_compare_jsons(
+		parse_function_definition2(kTestFunctionDefinition2).first,
+		parse_json(seq_t(kTestFunctionDefinition2JSON)).first
 	);
 }
-
-scope_ref_t make_return_hello(){
-	return make_function_def(
-		type_identifier_t::make("hello"),
-		type_identifier_t::make_int(),
-		{
-		},
-		executable_t({
-			make_shared<statement_t>(make__return_statement(expression_t::make_constant("hello")))
-		}),
-		{},
-		{}
-	);
-}
-#endif
-
 
 }	//	floyd_parser
 
