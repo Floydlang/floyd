@@ -64,6 +64,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 #endif
 
+#if false
 std::pair<json_value_t, std::string> parse_function_definition1(const string& pos){
 	const auto return_type_pos = read_required_type_identifier(pos);
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
@@ -106,7 +107,7 @@ std::pair<json_value_t, std::string> parse_function_definition1(const string& po
 		return { function_def, body_pos.second };
 	}
 }
-
+#endif
 
 
 std::pair<json_value_t, std::string> parse_function_definition2(const string& pos){
@@ -162,7 +163,7 @@ const string kTestFunctionDefinition0JSON = R"(
 	}
 )";
 
-
+#if false
 QUARK_UNIT_TESTQ("parse_function_definition1()", ""){
 	const auto r = parse_function_definition1(kTestFunctionDefinition0);
 	const auto expected = parse_json(seq_t(kTestFunctionDefinition0JSON));
@@ -170,7 +171,7 @@ QUARK_UNIT_TESTQ("parse_function_definition1()", ""){
 	QUARK_TRACE(json_to_pretty_string(expected.first));
 	QUARK_TEST_VERIFY(r.first == expected.first);
 }
-
+#endif
 
 
 

@@ -659,10 +659,6 @@ QUARK_UNIT_TESTQ("dissoc()", "erase array entry"){
 
 
 
-/*
-	Entries in path are strings for specifying object-members or integer number for array indexes.
-	If node is missing, an object is created for it.
-*/
 json_value_t assoc_in(const json_value_t& parent, const std::vector<json_value_t>& path, const json_value_t& new_element){
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(new_element.check_invariant());

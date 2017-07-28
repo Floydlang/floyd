@@ -381,6 +381,9 @@ json_value_t assoc(const json_value_t& parent, const json_value_t& member, const
 	Will walk a path of maps and arrays and add/replace the new element to the last object.
 	Path nodes are string for object-member, number for array-index.
 	Arrays entries can be overwritten or appended precisely at end of array.
+
+	Entries in path are strings for specifying object-members or integer number for array indexes.
+	If node is missing, an object is created for it.
 */
 json_value_t assoc_in(const json_value_t& parent, const std::vector<json_value_t>& path, const json_value_t& new_element);
 

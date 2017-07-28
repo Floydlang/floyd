@@ -96,6 +96,8 @@ https://en.wikipedia.org/wiki/Parsing
 	- Add mutable variables
 */
 
+
+#if false
 struct statement_result_t {
 	json_value_t _statement;
 	std::string _rest;
@@ -188,7 +190,6 @@ QUARK_UNIT_TESTQ("read_statement()", ""){
 
 
 
-
 static json_value_t add_subscope(const json_value_t& scope, const json_value_t& subscope){
 	QUARK_ASSERT(scope.check_invariant());
 	QUARK_ASSERT(subscope.check_invariant());
@@ -269,7 +270,7 @@ json_value_t parse_program1(const string& program){
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
 	return statements_pos.first;
 }
-
+#endif
 
 static std::pair<json_value_t, std::string> read_statement2(const string& pos){
 	const auto token_pos = read_until(pos, whitespace_chars);
@@ -588,14 +589,14 @@ const string kProgram100JSONv2 = R"(
 	]
 )";
 
-
+#if false
 QUARK_UNIT_TEST("", "parse_program1()", "Program 100", ""){
 	ut_compare_jsons(
 		parse_program1(kProgram100),
 		parse_json(seq_t(kProgram100JSON)).first
 	);
 }
-
+#endif
 
 
 
@@ -606,6 +607,7 @@ QUARK_UNIT_TEST("", "parse_program2()", "Program 100", ""){
 	);
 }
 
+#if false
 
 QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
 	ut_compare_jsons(
@@ -613,6 +615,7 @@ QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
 		parse_json(seq_t(kProgram1JSON)).first
 	);
 }
+
 
 QUARK_UNIT_TEST("", "parse_program1()", "kProgram1", ""){
 	auto result = parse_program1(kProgram1);
@@ -731,6 +734,7 @@ QUARK_UNIT_TESTQ("parse_program1()", "Call function a from function b"){
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "testx"));
 #endif
 }
+#endif
 
 
 }	//	floyd_parser

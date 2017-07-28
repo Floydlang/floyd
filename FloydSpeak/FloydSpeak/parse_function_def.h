@@ -38,7 +38,7 @@ namespace floyd_parser {
 			"types": {}
 		}
 	*/
-	std::pair<json_value_t, std::string> parse_function_definition1(const std::string& pos);
+//	std::pair<json_value_t, std::string> parse_function_definition1(const std::string& pos);
 
 	/*
 		OUTPUT:

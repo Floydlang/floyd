@@ -175,15 +175,193 @@ string make_type_id_string(int id){
 
 
 
+///////////////////////////////////////////		statements_to_scope()
+
+
+/*
+	WARNING! Stores an ARRAY of types that is called "name"!
+
+	scope_def: this is a scope_def. It's name and type will be used in type_entry.
+*/
+static json_value_t add_scope_type(const json_value_t& scope, const json_value_t& subscope){
+	QUARK_ASSERT(scope.check_invariant());
+	QUARK_ASSERT(subscope.check_invariant());
+
+	const auto name = subscope.get_object_element("name").get_string();
+	const auto type = subscope.get_object_element("type").get_string();
+	const auto type_entry = json_value_t::make_object({
+		{ "base_type", type },
+		{ "scope_def", subscope }
+	});
+	if(exists_in(scope, make_vec({ "types", name }))){
+		const auto index = get_in(scope, make_vec({ "types", name })).get_array_size();
+		return assoc_in(scope, make_vec({"types", name, index }), type_entry);
+	}
+	else{
+		return assoc_in(
+			scope,
+			make_vec({"types", name }),
+			json_value_t::make_array2({ type_entry })
+		);
+	}
+}
+
+
+/*
+	Input is an array of statements from parser. A function has its own list of statements.
+	There are no scope_defs, types, members, base_type etc.
+
+	Returns a scope_def.
+*/
+json_value_t statements_to_scope(const json_value_t& p){
+	QUARK_SCOPED_TRACE("statements_to_scope()");
+	QUARK_ASSERT(p.check_invariant());
+
+	auto scope2 = make_scope_def();
+	for(const auto statement: p.get_array()){
+		const auto statement_type = statement.get_array_n(0);
+
+		if(statement_type == "return"){
+			scope2 = store_object_member(scope2, "statements", push_back(scope2.get_object_element("statements"), statement));
+		}
+		else if(statement_type == "bind"){
+			const auto bind_type = statement.get_array_n(1);
+			const auto local_name = statement.get_array_n(2);
+			const auto expr = statement.get_array_n(3);
+			const auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_value_t());
+
+			//	Reserve an entry in _members-vector for our variable.
+			scope2 = store_object_member(scope2, "locals", push_back(scope2.get_object_element("locals"), loc));
+			scope2 = store_object_member(scope2, "statements", push_back(scope2.get_object_element("statements"), statement));
+		}
+
+		/*
+			INPUT:
+				[
+					"def-func",
+					{
+						"args": [
+							
+						],
+						"name": "main",
+						"return_type": "<int>",
+						"statements": [
+							[
+								"return",
+								[
+									"k",
+									3,
+									"<int>"
+								]
+							]
+						]
+					}
+				]
+
+			OUTPUT:
+				"main": [
+					{
+						"base_type": "function",
+						"scope_def": {
+							"args": [],
+							"locals": [],
+							"members": [],
+							"name": "main",
+							"return_type": "<int>",
+							"statements": [???],
+							"type": "function",
+							"types": {}
+						}
+					}
+				]
+		*/
+		else if(statement_type == "def-func"){
+			const auto function_def = statement.get_array_n(1);
+			const auto name = function_def.get_object_element("name");
+			const auto args = function_def.get_object_element("args");
+			const auto statements = function_def.get_object_element("statements");
+			const auto return_type = function_def.get_object_element("return_type");
+
+			const auto function_body_scope = statements_to_scope(statements);
+			const auto locals = function_body_scope.get_object_element("locals");
+			const auto types = function_body_scope.get_object_element("types");
+
+			auto function_scope = make_scope_def();
+			function_scope = store_object_member(function_scope, "type", "function");
+			function_scope = store_object_member(function_scope, "name", name);
+			function_scope = store_object_member(function_scope, "args", args);
+			function_scope = store_object_member(function_scope, "locals", locals);
+			function_scope = store_object_member(function_scope, "statements", statements);
+			function_scope = store_object_member(function_scope, "types", types);
+			function_scope = store_object_member(function_scope, "return_type", return_type);
+			scope2 = add_scope_type(scope2, function_scope);
+		}
+
+
+		/*
+			INPUT:
+				[
+					"def-struct",
+					{
+						"members": [
+							{ "name": "red", "type": "<float>" },
+							{ "name": "green", "type": "<float>" },
+							{ "name": "blue", "type": "<float>" }
+						],
+						"name": "pixel"
+					}
+				],
+
+			OUTPUT:
+				"pixel": [
+					{
+						"base_type": "struct",
+						"scope_def": {
+							"args": [],
+							"locals": [],
+							"members": [
+								{ "name": "red", "type": "<float>" },
+								{ "name": "green", "type": "<float>" },
+								{ "name": "blue", "type": "<float>" }
+							],
+							"name": "pixel",
+							"return_type": "",
+							"statements": [],
+							"type": "struct",
+							"types": {}
+						}
+					}
+				]
+		*/
+		else if(statement_type == "def-struct"){
+			const auto struct_def = statement.get_array_n(1);
+			const auto name = struct_def.get_object_element("name");
+			const auto members = struct_def.get_object_element("members");
+
+			json_value_t struct_scope = make_scope_def();
+			struct_scope = store_object_member(struct_scope, "type", "struct");
+			struct_scope = store_object_member(struct_scope, "name", name);
+			struct_scope = store_object_member(struct_scope, "members", members);
+			scope2 = add_scope_type(scope2, struct_scope);
+		}
+		else{
+			throw std::runtime_error("Illegal statement.");
+		}
+	}
+
+	QUARK_TRACE(json_to_pretty_string(scope2));
+	return scope2;
+}
+
+
+
+
 ///////////////////////////////////////////		assign_unique_type_ids()
 
 
 /*
 	Scan tree, give each found type a unique ID.
 */
-
-
-
 pair<json_value_t, int> assign_unique_type_ids(const parser_path_t& path, int type_id_count){
 	QUARK_SCOPED_TRACE("assign_unique_type_ids()");
 	QUARK_ASSERT(path.check_invariant());
@@ -1346,11 +1524,15 @@ bool has_unresolved_types(const json_value_t& obj){
 
 
 
+
 json_value_t run_pass2(const json_value_t& parse_tree){
 	QUARK_TRACE(json_to_pretty_string(parse_tree));
 
-	const ast_t dummy;
-	const auto pass_a = assign_unique_type_ids(make_parser_path(parse_tree), 1000);
+	const auto pass_m1 = statements_to_scope(parse_tree);
+	auto pass_0 = store_object_member(pass_m1, "type", "global");
+	pass_0 = store_object_member(pass_0, "name", "global");
+
+	const auto pass_a = assign_unique_type_ids(make_parser_path(pass_0), 1000);
 	const auto pass_a5 = insert_generated_functions(make_parser_path(pass_a.first), pass_a.second);
 	const auto pass_b = replace_type_name_references_with_type_ids(make_parser_path(pass_a5.first));
 	QUARK_ASSERT(!has_unresolved_types(pass_b));
@@ -1375,6 +1557,15 @@ json_value_t run_pass2(const json_value_t& parse_tree){
 
 ///////////////////////////////////////			TESTS
 
+
+
+	const auto kMinimalProgram200 = R"(
+		int main(){
+			return 3;
+		}
+		)";
+
+
 /*
 	These tests verify that:
 	- the transform of the AST worked as expected
@@ -1383,12 +1574,7 @@ json_value_t run_pass2(const json_value_t& parse_tree){
 
 
 QUARK_UNIT_TESTQ("run_pass2()", "Minimum program"){
-	const auto a = R"(
-		int main(){
-			return 3;
-		}
-		)";
-	const auto pass1 = parse_program1(a);
+	const auto pass1 = parse_program2(kMinimalProgram200);
 	const auto pass2 = run_pass2(pass1);
 	const auto ast = json_to_ast(pass2);
 
@@ -1412,14 +1598,14 @@ QUARK_UNIT_TESTQ("run_pass2()", "Maxium program"){
 			return get_s(p);
 		}
 		)";
-	const auto pass1 = parse_program1(a);
+	const auto pass1 = parse_program2(a);
 	const auto pass2 = run_pass2(pass1);
 }
 
 
 
 void test_error(const string& program, const string& error_string){
-	const auto pass1 = parse_program1(program);
+	const auto pass1 = parse_program2(program);
 	try{
 		const auto pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);
