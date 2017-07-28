@@ -296,22 +296,15 @@ static std::pair<json_value_t, std::string> read_statement2(const string& pos){
 		*/
 		if(peek_string(skip_whitespace(identifier_pos.second), "(")){
 			const auto function = parse_function_definition2(pos);
-			{
-				QUARK_SCOPED_TRACE("FUNCTION DEF");
-				QUARK_TRACE(json_to_pretty_string(function.first));
-			}
-            return {
-				json_value_t::make_array2({ json_value_t("define_function"), function.first }),
-				skip_whitespace(function.second)
-			};
+            return { function.first, skip_whitespace(function.second)};
 		}
 
-		//	Define variable?
 		/*
+			Define variable?
+
 			"int a = 10;"
 			"string hello = f(a) + \"_suffix\";";
 		*/
-
 		else if(peek_string(skip_whitespace(identifier_pos.second), "=")){
 			const auto assignment_statement = parse_assignment_statement(pos);
 			return { assignment_statement.first, skip_whitespace(assignment_statement.second) };
@@ -554,49 +547,43 @@ const string kProgram100JSONv2 = R"(
 			}
 		],
 		[
-			"define_function",
-			[
-				"def-func",
-				{
-					"args": [{ "name": "p", "type": "<pixel>" }],
-					"name": "get_grey",
-					"return_type": "<float>",
-					"statements": [
+			"def-func",
+			{
+				"args": [{ "name": "p", "type": "<pixel>" }],
+				"name": "get_grey",
+				"return_type": "<float>",
+				"statements": [
+					[
+						"return",
 						[
-							"return",
+							"/",
 							[
-								"/",
-								[
-									"+",
-									["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
-									["->", ["@", "p"], "blue"]
-								],
-								["k", 3, "<int>"]
-							]
+								"+",
+								["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
+								["->", ["@", "p"], "blue"]
+							],
+							["k", 3, "<int>"]
 						]
 					]
-				}
-			]
+				]
+			}
 		],
 		[
-			"define_function",
-			[
-				"def-func",
-				{
-					"args": [],
-					"name": "main",
-					"return_type": "<float>",
-					"statements": [
-						[
-							"bind",
-							"<pixel>",
-							"p",
-							["call", ["@", "pixel"], [["k", 1, "<int>"], ["k", 0, "<int>"], ["k", 0, "<int>"]]]
-						],
-						["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
-					]
-				}
-			]
+			"def-func",
+			{
+				"args": [],
+				"name": "main",
+				"return_type": "<float>",
+				"statements": [
+					[
+						"bind",
+						"<pixel>",
+						"p",
+						["call", ["@", "pixel"], [["k", 1, "<int>"], ["k", 0, "<int>"], ["k", 0, "<int>"]]]
+					],
+					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
+				]
+			}
 		]
 	]
 )";
