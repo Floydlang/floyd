@@ -16,20 +16,48 @@
 struct json_value_t;
 
 namespace floyd_parser {
-//	struct scope_def_t;
 
 
 	/*
-		"struct pixel { int red; int green; int blue; }"
-		"struct pixel { int red = 255; int green = 255; int blue = 255; }"
-		
+		INPUT
+			"struct a {}"
+			"struct b { int a; }"
+			"struct c { int a = 13; }"
+			"struct pixel { int red; int green; int blue; }"
+			"struct pixel { int red = 255; int green = 255; int blue = 255; }"
+
+
+		OUTPUT
+
+		[
+			"def-struct",
+			{
+				"name": "pixel",
+				"members": [
+					{ "expr": [ "k", "two", "<string>" ], "name": "s", "type": "<string>" }
+				],
+			}
+		]
+
+
+		{
+			"name": "pixel",
+			"members": [
+				{ "expr": [ "k", "two", "<string>" ], "name": "s", "type": "<string>" }
+			],
+
+			"args": [],
+			"locals": [],
+			"return_type": "",
+			"statements": [],
+			"type": "struct",
+			"types": {}
+		}
 	*/
+
 	std::pair<json_value_t, std::string> parse_struct_definition(const std::string& pos);
 
-
-	const std::string k_test_struct0_body = "{int x; string y; float z;}";
 	json_value_t make_test_struct0();
-
 }
 
 #endif /* parser_struct_hpp */

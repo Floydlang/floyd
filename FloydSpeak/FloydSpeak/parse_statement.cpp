@@ -32,7 +32,6 @@ namespace floyd_parser {
 		const auto token_pos = read_until(s, whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 		const auto expression1 = parse_expression_all(expression_pos.first);
-//		const auto statement = return_statement_t{ make_shared<expression_t>(expression1) };
 		const auto statement = json_value_t::make_array2({ json_value_t("return"), expression1 });
 		//	Skip trailing ";".
 		const auto pos = skip_whitespace(expression_pos.second.substr(1));

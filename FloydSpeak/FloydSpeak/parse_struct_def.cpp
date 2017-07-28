@@ -22,19 +22,7 @@ namespace floyd_parser {
 	using std::make_shared;
 	using std::shared_ptr;
 
-	/*
-		{}
-		{int a;}
-		{int a = 13;}
 
-
-		["def_struct", "my_name",
-			[
-				[ "<int>", "_x", 0 ],
-				[ "<int>", "_y", 10 ]
-			]
-		]
-	*/
 	std::pair<json_value_t, std::string> parse_struct_body(const std::string& struct_name, const string& s){
 		QUARK_ASSERT(peek_string(skip_whitespace(s), "{"));
 
@@ -77,24 +65,6 @@ namespace floyd_parser {
 		return { obj, body_pos.second };
 	}
 
-	QUARK_UNIT_TESTQ("parse_struct_body", ""){
-//???		QUARK_TEST_VERIFY((parse_struct_body(type_identifier_t::"{}") == pair<vector<member_t>, string>({}, "")));
-	}
-
-	QUARK_UNIT_TESTQ("parse_struct_body", ""){
-//???		QUARK_TEST_VERIFY((parse_struct_body(" {} x") == pair<vector<member_t>, string>({}, " x")));
-	}
-
-
-	QUARK_UNIT_TESTQ("parse_struct_body", ""){
-		const auto r = parse_struct_body("test_struct0", k_test_struct0_body);
-/*???
-		QUARK_TEST_VERIFY((
-			r == pair<vector<member_t>, string>(make_test_struct0(global)->_members, "" )
-		));
-*/
-	}
-
 
 	std::pair<json_value_t, std::string>  parse_struct_definition(const string& pos){
 		QUARK_ASSERT(pos.size() > 0);
@@ -108,10 +78,21 @@ namespace floyd_parser {
 		pair<json_value_t, string> body_pos = parse_struct_body(name, skip_whitespace(struct_name.second));
 		auto pos2 = skip_whitespace(body_pos.second);
 
-//		pos2 = read_required_char(pos2, ';');
-
 		return { body_pos.first, pos2 };
 	}
+
+	const std::string k_test_struct0 = "struct a {int x; string y; float z;}";
+
+	QUARK_UNIT_TESTQ("parse_struct_definition", ""){
+		const auto r = parse_struct_definition(k_test_struct0);
+/*???
+		QUARK_TEST_VERIFY((
+			r == pair<vector<member_t>, string>(make_test_struct0(global)->_members, "" )
+		));
+*/
+		QUARK_TEST_VERIFY(r.first.is_null() == false);
+	}
+
 
 /*
 	scope_ref_t make_test_struct0(scope_ref_t scope_def){
