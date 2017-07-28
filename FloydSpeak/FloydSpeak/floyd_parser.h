@@ -28,6 +28,14 @@ namespace floyd_parser {
 	json_value_t parse_program1(const std::string& program);
 
 
+
+	/*
+		OUTPUT
+			json_value_t statement_array;
+			std::string _rest;
+	*/
+	std::pair<json_value_t, std::string> read_statements2(const std::string& s);
+
 	/*
 	{
 		"name": "global", "type": "global",

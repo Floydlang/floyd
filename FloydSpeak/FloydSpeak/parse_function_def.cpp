@@ -12,6 +12,7 @@
 #include "floyd_parser.h"
 #include "parser_primitives.h"
 #include "json_support.h"
+#include "json_parser.h"
 
 #include <cmath>
 
@@ -63,7 +64,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 #endif
 
-std::pair<json_value_t, std::string> parse_function_definition(const string& pos){
+std::pair<json_value_t, std::string> parse_function_definition1(const string& pos){
 	const auto return_type_pos = read_required_type_identifier(pos);
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
 
@@ -106,21 +107,80 @@ std::pair<json_value_t, std::string> parse_function_definition(const string& pos
 	}
 }
 
-QUARK_UNIT_TESTQ("parse_function_definition()", ""){
-	try{
-		const auto result = parse_function_definition("int f()");
-		QUARK_TEST_VERIFY(false);
+
+
+std::pair<json_value_t, std::string> parse_function_definition2(const string& pos){
+	const auto return_type_pos = read_required_type_identifier(pos);
+	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
+
+	//	Skip whitespace.
+	const auto rest = skip_whitespace(function_name_pos.second);
+
+	if(!peek_compare_char(rest, '(')){
+		throw std::runtime_error("expected function argument list enclosed by (),");
 	}
-	catch(...){
+
+	const auto arg_list_pos = get_balanced(rest);
+	const auto args = parse_functiondef_arguments(arg_list_pos.first);
+	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
+
+	if(!peek_compare_char(body_rest_pos, '{')){
+		throw std::runtime_error("expected function body enclosed by {}.");
 	}
+	const auto body_pos = get_balanced(body_rest_pos);
+	const auto function_name = function_name_pos.first;
+
+	const auto statements = read_statements2(trim_ends(body_pos.first));
+
+	json_value_t function_def = json_value_t::make_array2({
+		"def-func",
+		json_value_t::make_object({
+			{ "name", function_name },
+			{ "args", json_value_t::make_array2(args) },
+			{ "statements", statements.first },
+			{ "return_type", "<" + return_type_pos.first.to_string() + ">" }
+		})
+	});
+	return { function_def, body_pos.second };
 }
+
+
+
+const auto kTestFunctionDefinition0 =
+	"int f(){ return 3; }";
+
+const string kTestFunctionDefinition0JSON = R"(
+	{
+		"args": [],
+		"locals": [],
+		"members": [],
+		"name": "f",
+		"return_type": "<int>",
+		"statements": [["return", ["k", 3, "<int>"]]],
+		"type": "function",
+		"types": {}
+	}
+)";
+
+
+QUARK_UNIT_TESTQ("parse_function_definition1()", ""){
+	const auto r = parse_function_definition1(kTestFunctionDefinition0);
+	const auto expected = parse_json(seq_t(kTestFunctionDefinition0JSON));
+	QUARK_TRACE(json_to_pretty_string(r.first));
+	QUARK_TRACE(json_to_pretty_string(expected.first));
+	QUARK_TEST_VERIFY(r.first == expected.first);
+}
+
+
+
+
 
 #if false
 //??? Check that all function paths return a value.
 
-QUARK_UNIT_TESTQ("parse_function_definition()", ""){
+QUARK_UNIT_TESTQ("parse_function_definition1()", ""){
 	const auto ast = ast_t();
-	const auto result = parse_function_definition(ast, "int f(){ return 3; }");
+	const auto result = parse_function_definition1(ast, "int f(){ return 3; }");
 	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("f"));
 	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY(result.first->_members.empty());
@@ -135,9 +195,9 @@ QUARK_UNIT_TESTQ("parse_function_definition()", ""){
 	QUARK_UT_VERIFY(body_f->_return_type == type_identifier_t::make_int());
 }
 
-QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of different types"){
+QUARK_UNIT_TESTQ("parse_function_definition1()", "Test many arguments of different types"){
 	const auto ast = ast_t();
-	const auto result = parse_function_definition(ast, "int printf(string a, float barry, int c){}");
+	const auto result = parse_function_definition1(ast, "int printf(string a, float barry, int c){}");
 	QUARK_TEST_VERIFY(result.first->_name == type_identifier_t::make("printf"));
 	QUARK_TEST_VERIFY(result.first->_return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY((result.first->_members == vector<member_t>{
@@ -150,8 +210,8 @@ QUARK_UNIT_TESTQ("parse_function_definition()", "Test many arguments of differen
 }
 
 /*
-QUARK_UNIT_TEST("", "parse_function_definition()", "Test exteme whitespaces", ""){
-	const auto result = parse_function_definition("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
+QUARK_UNIT_TEST("", "parse_function_definition1()", "Test exteme whitespaces", ""){
+	const auto result = parse_function_definition1("    int    printf   (   string    a   ,   float   barry  ,   int   c  )  {  }  ");
 	QUARK_TEST_VERIFY(result.first.first == "printf");
 	QUARK_TEST_VERIFY(result.first.second._return_type == type_identifier_t::make_int());
 	QUARK_TEST_VERIFY((result.first.second._args == vector<member_t>{

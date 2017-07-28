@@ -337,6 +337,19 @@ struct json_value_t {
 };
 
 
+/*???
+xxx
+
+QUARK_UNIT_TESTQ("parse_function_definition1()", ""){
+	const auto r = parse_function_definition1(kTestFunctionDefinition0);
+	const auto expected = parse_json(seq_t(kTestFunctionDefinition0JSON));
+	QUARK_TRACE(json_to_pretty_string(r.first));
+	QUARK_TRACE(json_to_pretty_string(expected.first));
+	QUARK_TEST_VERIFY(r.first == expected.first);
+}
+*/
+
+
 
 
 

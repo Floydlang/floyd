@@ -37,22 +37,24 @@ namespace floyd_parser {
 			"type": "function",
 			"types": {}
 		}
-
-		FUTURE: [
-			"func-def",
-			{
-				"name": "main",
-				"args": [],
-				"locals": [],
-				"return_type": "<int>",
-				"statements": [
-					[ "return", [ "k", 3, "<int>" ]]
-				],
-				"types": {}
-			}
-		]
 	*/
-	std::pair<json_value_t, std::string> parse_function_definition(const std::string& pos);
+	std::pair<json_value_t, std::string> parse_function_definition1(const std::string& pos);
+
+	/*
+		OUTPUT:
+			[
+				"def-func",
+				{
+					"name": "main",
+					"args": [],
+					"return_type": "<int>",
+					"statements": [
+						[ "return", [ "k", 3, "<int>" ]]
+					]
+				}
+			]
+	*/
+	std::pair<json_value_t, std::string> parse_function_definition2(const std::string& pos);
 
 
 

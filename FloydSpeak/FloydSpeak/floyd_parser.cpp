@@ -125,7 +125,7 @@ static statement_result_t read_statement(const string& pos){
 			"int xyz(string a, string b){ ... }
 		*/
 		if(peek_string(skip_whitespace(identifier_pos.second), "(")){
-			const auto function = parse_function_definition(pos);
+			const auto function = parse_function_definition1(pos);
 			{
 				QUARK_SCOPED_TRACE("FUNCTION DEF");
 				QUARK_TRACE(json_to_pretty_string(function.first));
@@ -212,7 +212,6 @@ static json_value_t add_subscope(const json_value_t& scope, const json_value_t& 
 	}
 }
 
-
 std::pair<json_value_t, std::string> read_statements_into_scope_def1(const json_value_t& scope, const string& s){
 	QUARK_ASSERT(scope.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
@@ -261,14 +260,86 @@ std::pair<json_value_t, std::string> read_statements_into_scope_def1(const json_
 	return { scope2, pos };
 }
 
-
-
 json_value_t parse_program1(const string& program){
 	json_value_t a = make_scope_def();
 	a = store_object_member(a, "name", "global");
 	a = store_object_member(a, "type", "global");
 
 	const auto statements_pos = read_statements_into_scope_def1(a, program);
+	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
+	return statements_pos.first;
+}
+
+
+static std::pair<json_value_t, std::string> read_statement2(const string& pos){
+	const auto token_pos = read_until(pos, whitespace_chars);
+
+	//	return statement?
+	if(token_pos.first == "return"){
+		const auto return_statement_pos = parse_return_statement(pos);
+		return { return_statement_pos.first, skip_whitespace(return_statement_pos.second) };
+	}
+
+	//	struct definition?
+	else if(token_pos.first == "struct"){
+		const auto a = parse_struct_definition(pos);
+		return { a.first, skip_whitespace(a.second) };
+	}
+
+	else {
+		const auto type_pos = read_required_type_identifier(pos);
+		const auto identifier_pos = read_required_single_symbol(type_pos.second);
+
+		/*
+			Function definition?
+			"int xyz(string a, string b){ ... }
+		*/
+		if(peek_string(skip_whitespace(identifier_pos.second), "(")){
+			const auto function = parse_function_definition2(pos);
+			{
+				QUARK_SCOPED_TRACE("FUNCTION DEF");
+				QUARK_TRACE(json_to_pretty_string(function.first));
+			}
+            return {
+				json_value_t::make_array2({ json_value_t("define_function"), function.first }),
+				skip_whitespace(function.second)
+			};
+		}
+
+		//	Define variable?
+		/*
+			"int a = 10;"
+			"string hello = f(a) + \"_suffix\";";
+		*/
+
+		else if(peek_string(skip_whitespace(identifier_pos.second), "=")){
+			const auto assignment_statement = parse_assignment_statement(pos);
+			return { assignment_statement.first, skip_whitespace(assignment_statement.second) };
+		}
+
+		else{
+			throw std::runtime_error("syntax error");
+		}
+	}
+}
+
+std::pair<json_value_t, std::string> read_statements2(const string& s){
+	QUARK_ASSERT(s.size() > 0);
+
+	vector<json_value_t> statements;
+	auto pos = skip_whitespace(s);
+	while(!pos.empty()){
+		const auto statement_pos = read_statement2(pos);
+		const auto statement = statement_pos.first;
+		statements.push_back(statement);
+		pos = skip_whitespace(statement_pos.second);
+	}
+
+	return { json_value_t::make_array2(statements), pos };
+}
+
+json_value_t parse_program2(const string& program){
+	const auto statements_pos = read_statements2(program);
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
 	return statements_pos.first;
 }
@@ -366,6 +437,187 @@ const auto kProgram7 =
 	"string main(){\n"
 	"	return p.s + a;"
 	"}\n";
+
+
+
+const string kProgram100 = R"(
+	struct pixel { float red; float green; float blue; }
+	float get_grey(pixel p){ return (p.red + p.green + p.blue) / 3; }
+
+	float main(){
+		pixel p = pixel(1, 0, 0);
+		return get_grey(p);
+	}
+)";
+
+const string kProgram100JSON = R"(
+	{
+		"args": [],
+		"locals": [],
+		"members": [],
+		"name": "global",
+		"return_type": "",
+		"statements": [],
+		"type": "global",
+		"types": {
+			"get_grey": [
+				{
+					"base_type": "function",
+					"scope_def": {
+						"args": [{ "name": "p", "type": "<pixel>" }],
+						"locals": [],
+						"members": [],
+						"name": "get_grey",
+						"return_type": "<float>",
+						"statements": [
+							[
+								"return",
+								[
+									"/",
+									[
+										"+",
+										["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
+										["->", ["@", "p"], "blue"]
+									],
+									["k", 3, "<int>"]
+								]
+							]
+						],
+						"type": "function",
+						"types": {}
+					}
+				}
+			],
+			"main": [
+				{
+					"base_type": "function",
+					"scope_def": {
+						"args": [],
+						"locals": [{ "name": "p", "type": "<pixel>" }],
+						"members": [],
+						"name": "main",
+						"return_type": "<float>",
+						"statements": [
+							[
+								"bind",
+								"<pixel>",
+								"p",
+								[
+									"call",
+									["@", "pixel"],
+									[["k", 1, "<int>"], ["k", 0, "<int>"], ["k", 0, "<int>"]]
+								]
+							],
+							["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
+						],
+						"type": "function",
+						"types": {}
+					}
+				}
+			],
+			"pixel": [
+				{
+					"base_type": "struct",
+					"scope_def": {
+						"args": [],
+						"locals": [],
+						"members": [
+							{ "name": "red", "type": "<float>" },
+							{ "name": "green", "type": "<float>" },
+							{ "name": "blue", "type": "<float>" }
+						],
+						"name": "pixel",
+						"return_type": "",
+						"statements": [],
+						"type": "struct",
+						"types": {}
+					}
+				}
+			]
+		}
+	}
+)";
+
+
+
+const string kProgram100JSONv2 = R"(
+	[
+		[
+			"def-struct",
+			{
+				"members": [
+					{ "name": "red", "type": "<float>" },
+					{ "name": "green", "type": "<float>" },
+					{ "name": "blue", "type": "<float>" }
+				],
+				"name": "pixel"
+			}
+		],
+		[
+			"define_function",
+			[
+				"def-func",
+				{
+					"args": [{ "name": "p", "type": "<pixel>" }],
+					"name": "get_grey",
+					"return_type": "<float>",
+					"statements": [
+						[
+							"return",
+							[
+								"/",
+								[
+									"+",
+									["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
+									["->", ["@", "p"], "blue"]
+								],
+								["k", 3, "<int>"]
+							]
+						]
+					]
+				}
+			]
+		],
+		[
+			"define_function",
+			[
+				"def-func",
+				{
+					"args": [],
+					"name": "main",
+					"return_type": "<float>",
+					"statements": [
+						[
+							"bind",
+							"<pixel>",
+							"p",
+							["call", ["@", "pixel"], [["k", 1, "<int>"], ["k", 0, "<int>"], ["k", 0, "<int>"]]]
+						],
+						["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
+					]
+				}
+			]
+		]
+	]
+)";
+
+
+QUARK_UNIT_TEST("", "parse_program1()", "Program 100", ""){
+	const auto r = parse_program1(kProgram100);
+	const auto expected = parse_json(seq_t(kProgram100JSON));
+
+	QUARK_TRACE(json_to_pretty_string(r));
+	QUARK_TRACE(json_to_pretty_string(expected.first));
+
+	QUARK_TEST_VERIFY(r == expected.first);
+}
+QUARK_UNIT_TEST("", "parse_program2()", "Program 100", ""){
+	const auto r = parse_program2(kProgram100);
+	const auto expected = parse_json(seq_t(kProgram100JSONv2));
+	QUARK_TRACE(json_to_pretty_string(r));
+	QUARK_TRACE(json_to_pretty_string(expected.first));
+	QUARK_TEST_VERIFY(r == expected.first);
+}
 
 
 QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
