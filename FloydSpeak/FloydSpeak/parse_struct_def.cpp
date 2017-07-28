@@ -23,10 +23,15 @@ namespace floyd_parser {
 	using std::shared_ptr;
 
 
-	std::pair<json_value_t, std::string> parse_struct_body(const std::string& struct_name, const string& s){
-		QUARK_ASSERT(peek_string(skip_whitespace(s), "{"));
+	std::pair<json_value_t, std::string>  parse_struct_definition1(const string& pos0){
+		QUARK_ASSERT(pos0.size() > 0);
 
-		const auto s2 = skip_whitespace(s);
+		const auto token_pos = read_until(pos0, whitespace_chars);
+		QUARK_ASSERT(token_pos.first == "struct");
+
+		const auto struct_name_pos = read_required_single_symbol(token_pos.second);
+
+		const auto s2 = skip_whitespace(struct_name_pos.second);
 		read_required_char(s2, '{');
 		const auto body_pos = get_balanced(s2);
 
@@ -60,105 +65,69 @@ namespace floyd_parser {
 
 		json_value_t obj = make_scope_def();
 		obj = store_object_member(obj, "type", "struct");
-		obj = store_object_member(obj, "name", json_value_t(struct_name));
+		obj = store_object_member(obj, "name", json_value_t(struct_name_pos.first));
 		obj = store_object_member(obj, "members", members);
-		return { obj, body_pos.second };
-	}
-
-
-	std::pair<json_value_t, std::string>  parse_struct_definition(const string& pos){
-		QUARK_ASSERT(pos.size() > 0);
-
-		const auto token_pos = read_until(pos, whitespace_chars);
-		QUARK_ASSERT(token_pos.first == "struct");
-
-		const auto struct_name = read_required_single_symbol(token_pos.second);
-		const auto name = struct_name.first;
-
-		pair<json_value_t, string> body_pos = parse_struct_body(name, skip_whitespace(struct_name.second));
-		auto pos2 = skip_whitespace(body_pos.second);
-
-		return { body_pos.first, pos2 };
+		return { obj, skip_whitespace(body_pos.second) };
 	}
 
 	const std::string k_test_struct0 = "struct a {int x; string y; float z;}";
 
-	QUARK_UNIT_TESTQ("parse_struct_definition", ""){
-		const auto r = parse_struct_definition(k_test_struct0);
-/*???
-		QUARK_TEST_VERIFY((
-			r == pair<vector<member_t>, string>(make_test_struct0(global)->_members, "" )
-		));
-*/
-		QUARK_TEST_VERIFY(r.first.is_null() == false);
+	QUARK_UNIT_TESTQ("parse_struct_definition1", ""){
+		const auto r = parse_struct_definition1(k_test_struct0);
+
+		const auto expected = json_value_t::make_object({
+			{ "name", "a" },
+			{ "members", json_value_t::make_array2({
+				json_value_t::make_object({ { "name", "x"}, { "type", "<int>"} }),
+				json_value_t::make_object({ { "name", "y"}, { "type", "<string>"} }),
+				json_value_t::make_object({ { "name", "z"}, { "type", "<float>"} })
+			}) },
+
+			{ "args", json_value_t::make_array() },
+			{ "locals", json_value_t::make_array() },
+			{ "return_type", "" },
+			{ "statements", json_value_t::make_array() },
+			{ "type", "struct" },
+			{ "types", json_value_t::make_object() }
+		});
+
+		QUARK_TEST_VERIFY(r == (std::pair<json_value_t, std::string>(expected, "")));
 	}
 
 
-/*
-	scope_ref_t make_test_struct0(scope_ref_t scope_def){
-		return scope_def_t::make_struct(
-			type_identifier_t::make("test_struct0"),
-			vector<member_t>
-			{
-				{ type_identifier_t::make_int(), "x" },
-				{ type_identifier_t::make_string(), "y" },
-				{ type_identifier_t::make_float(), "z" }
-			}
-		);
-	}
-*/
+	std::pair<json_value_t, std::string>  parse_struct_definition2(const string& s){
+		const auto a = parse_struct_definition1(s);
 
-#if false
-	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
-		const auto r = parse_struct_definition("struct pixel { int red; int green; int blue;};");
-
-		quark::ut_compare(
-			json_to_compact_string(r.first),
-			"sdjfklsdjflsdf"
-		);
-
-/*		const auto b = scope_def_t::make_struct(
-			type_identifier_t::make("pixel"),
-			vector<member_t>{
-				member_t(type_identifier_t::make_int(), "red"),
-				member_t(type_identifier_t::make_int(), "green"),
-				member_t(type_identifier_t::make_int(), "blue")
-			}
-		);
-
-		QUARK_TEST_VERIFY(*r.first == *b);
-*/	}
-#endif
-
-#if false
-	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
-		const auto r = parse_struct_definition("struct pixel { int red = 255; int green = 255; int blue = 255; }");
-		QUARK_TEST_VERIFY(*r.first == *scope_def_t::make_struct
-			(
-				type_identifier_t::make("pixel"),
-				vector<member_t>{
-					member_t(type_identifier_t::make_int(), "red", value_t(255)),
-					member_t(type_identifier_t::make_int(), "green", value_t(255)),
-					member_t(type_identifier_t::make_int(), "blue", value_t(255))
-				}
-			)
-		);
+		const auto r = json_value_t::make_array2({
+			"def-struct",
+			json_value_t::make_object({
+				{ "name", a.first.get_object_element("name") },
+				{ "members", a.first.get_object_element("members") }
+			})
+		});
+		return { r, a.second };
 	}
 
-	QUARK_UNIT_TESTQ("parse_struct_definition()", ""){
-		const auto global = scope_def_t::make_global_scope();
-		const auto r = parse_struct_definition(global, "struct pixel { string name = \"lisa\"; float height = 12.3f; }xxx");
-		QUARK_TEST_VERIFY(*r.first == *scope_def_t::make_struct
-			(
-				type_identifier_t::make("pixel"),
-				vector<member_t>{
-					member_t(type_identifier_t::make_string(), "name", value_t("lisa")),
-					member_t(type_identifier_t::make_float(), "height", value_t(12.3f))
-				}
-			)
-		);
+	QUARK_UNIT_TESTQ("parse_struct_definition2", ""){
+		const auto r = parse_struct_definition2(k_test_struct0);
+
+		const auto expected =
+		json_value_t::make_array2({
+			"def-struct",
+			json_value_t::make_object({
+				{ "name", "a" },
+				{ "members", json_value_t::make_array2({
+					json_value_t::make_object({ { "name", "x"}, { "type", "<int>"} }),
+					json_value_t::make_object({ { "name", "y"}, { "type", "<string>"} }),
+					json_value_t::make_object({ { "name", "z"}, { "type", "<float>"} })
+				}) },
+			})
+		});
+
+		QUARK_TEST_VERIFY(r == (std::pair<json_value_t, std::string>(expected, "")));
 	}
-#endif
+
+
 
 }	//	floyd_parser
 

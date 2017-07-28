@@ -117,7 +117,7 @@ statement_result_t read_statement(const string& pos){
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition(pos);
+		const auto a = parse_struct_definition1(pos);
 		return { json_value_t::make_array2({ json_value_t("define_struct"), a.first }), skip_whitespace(a.second) };
 	}
 

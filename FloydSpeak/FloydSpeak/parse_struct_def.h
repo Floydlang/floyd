@@ -55,7 +55,8 @@ namespace floyd_parser {
 		}
 	*/
 
-	std::pair<json_value_t, std::string> parse_struct_definition(const std::string& pos);
+	std::pair<json_value_t, std::string> parse_struct_definition1(const std::string& pos);
+	std::pair<json_value_t, std::string> parse_struct_definition2(const std::string& pos);
 
 	json_value_t make_test_struct0();
 }
