@@ -118,7 +118,7 @@ std::pair<json_t, seq_t> read_statements2(const seq_t& s){
 		pos = skip_whitespace(statement_pos.second);
 	}
 
-	return { json_t::make_array2(statements), pos };
+	return { json_t::make_array(statements), pos };
 }
 
 json_t parse_program2(const string& program){

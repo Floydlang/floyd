@@ -39,9 +39,9 @@ struct json_t {
 	}
 
 	public: static json_t make_array(){
-		return make_array2({});
+		return make_array({});
 	}
-	public: static json_t make_array2(const std::vector<json_t>& elements){
+	public: static json_t make_array(const std::vector<json_t>& elements){
 		return json_t(elements);
 	}
 

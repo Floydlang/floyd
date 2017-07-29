@@ -79,7 +79,7 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 			}
 			p2 = post_p;
 		}
-		return { json_t::make_array2(array), p2.rest1() };
+		return { json_t::make_array(array), p2.rest1() };
 	}
 	else if(ch == "\""){
 		const auto b = read_until(a.rest1(), "\"");
@@ -147,14 +147,14 @@ QUARK_UNIT_TESTQ("parse_json()", "array - empty"){
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "array - two numbers"){
-	quark::ut_compare(parse_json(seq_t("[10, 11] xxx")), { json_t::make_array2({json_t(10.0), json_t(11.0)}), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("[10, 11] xxx")), { json_t::make_array({json_t(10.0), json_t(11.0)}), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "array - nested"){
 	quark::ut_compare(
 		parse_json(seq_t("[10, 11, [ 12, 13]] xxx")),
 		{
-			json_t::make_array2({json_t(10.0), json_t(11.0), json_t::make_array2({json_t(12.0), json_t(13.0)}) }),
+			json_t::make_array({json_t(10.0), json_t(11.0), json_t::make_array({json_t(12.0), json_t(13.0)}) }),
 			seq_t(" xxx")
 		}
 	);

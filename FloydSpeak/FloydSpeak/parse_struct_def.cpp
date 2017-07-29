@@ -58,7 +58,7 @@ namespace floyd_parser {
 			pos = skip_whitespace(read_required_char(pos, ';'));
 		}
 
-		const auto r = json_t::make_array2({
+		const auto r = json_t::make_array({
 			"def-struct",
 			json_t::make_object({
 				{ "name", json_t(struct_name_pos.first) },
@@ -75,11 +75,11 @@ namespace floyd_parser {
 		const auto r = parse_struct_definition(seq_t(k_test_struct0));
 
 		const auto expected =
-		json_t::make_array2({
+		json_t::make_array({
 			"def-struct",
 			json_t::make_object({
 				{ "name", "a" },
-				{ "members", json_t::make_array2({
+				{ "members", json_t::make_array({
 					json_t::make_object({ { "name", "x"}, { "type", "<int>"} }),
 					json_t::make_object({ { "name", "y"}, { "type", "<string>"} }),
 					json_t::make_object({ { "name", "z"}, { "type", "<float>"} })

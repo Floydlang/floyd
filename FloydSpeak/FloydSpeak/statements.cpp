@@ -112,26 +112,26 @@ namespace floyd_parser {
 		QUARK_ASSERT(e.check_invariant());
 
 		if(e._bind_statement){
-			return json_t::make_array2({
+			return json_t::make_array({
 				json_t("bind"),
 				json_t(e._bind_statement->_identifier),
 				expression_to_json(e._bind_statement->_expression)
 			});
 		}
 		else if(e._define_struct){
-			return json_t::make_array2({
+			return json_t::make_array({
 				json_t("defstruct"),
 				scope_def_to_json(*e._define_struct->_struct_def)
 			});
 		}
 		else if(e._define_function){
-			return json_t::make_array2({
+			return json_t::make_array({
 				json_t("deffunc"),
 				scope_def_to_json(*e._define_function->_function_def)
 			});
 		}
 		else if(e._return_statement){
-			return json_t::make_array2({
+			return json_t::make_array({
 				json_t("return"),
 				expression_to_json(e._return_statement->_expression)
 			});

@@ -50,7 +50,7 @@ const string kTestFunctionArguments0JSON = R"(
 
 QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 0 -- zero arguments", "Correct output JSON"){
 	ut_compare_jsons(
-		json_t::make_array2(parse_functiondef_arguments(seq_t(kTestFunctionArguments0))),
+		json_t::make_array(parse_functiondef_arguments(seq_t(kTestFunctionArguments0))),
 		parse_json(seq_t(kTestFunctionArguments0JSON)).first
 	);
 }
@@ -67,7 +67,7 @@ const string kTestFunctionArguments1JSON = R"(
 
 QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- three arguments", "Correct output JSON"){
 	ut_compare_jsons(
-		json_t::make_array2(parse_functiondef_arguments(seq_t(kTestFunctionArguments1))),
+		json_t::make_array(parse_functiondef_arguments(seq_t(kTestFunctionArguments1))),
 		parse_json(seq_t(kTestFunctionArguments1JSON)).first
 	);
 }
@@ -96,11 +96,11 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 
 	const auto statements = read_statements2(seq_t(trim_ends(body_pos.first)));
 
-	json_t function_def = json_t::make_array2({
+	json_t function_def = json_t::make_array({
 		"def-func",
 		json_t::make_object({
 			{ "name", function_name },
-			{ "args", json_t::make_array2(args) },
+			{ "args", json_t::make_array(args) },
 			{ "statements", statements.first },
 			{ "return_type", "<" + return_type_pos.first.to_string() + ">" }
 		})

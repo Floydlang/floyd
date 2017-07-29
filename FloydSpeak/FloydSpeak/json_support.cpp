@@ -348,13 +348,13 @@ json_t make_mixed_test_tree(){
 	const auto obj1 = json_t::make_object({
 		{ "name", json_t("James Bond") },
 		{ "height", json_t(178.0) },
-		{ "movies", json_t::make_array2({ "No one lives forever", "Moonraker", "Live and let die" }) }
+		{ "movies", json_t::make_array({ "No one lives forever", "Moonraker", "Live and let die" }) }
 	});
 	const auto obj2 = json_t::make_object({
 		{ "name", json_t("Ernst Stavro Blofeld") },
 		{ "height", json_t(160.0) }
 	});
-	const auto obj3 = json_t::make_array2({ obj1, obj2 });
+	const auto obj3 = json_t::make_array({ obj1, obj2 });
 	return obj3;
 }
 
@@ -584,7 +584,7 @@ QUARK_UNIT_TESTQ("assoc()", "add obj member value -- no object causes new to be 
 }
 
 QUARK_UNIT_TESTQ("assoc()", "replace array element"){
-	const auto obj1 = json_t::make_array2({ json_t("zero"), json_t("one"), json_t("two") });
+	const auto obj1 = json_t::make_array({ json_t("zero"), json_t("one"), json_t("two") });
 	QUARK_UT_VERIFY((obj1.get_array() == vector<json_t>{ json_t("zero"), json_t("one"), json_t("two") }));
 	const auto obj2 = assoc(obj1, json_t(1.0), json_t("UNO"));
 	QUARK_UT_VERIFY((obj2.get_array() == vector<json_t>{ json_t("zero"), json_t("UNO"), json_t("two") }));
@@ -650,9 +650,9 @@ QUARK_UNIT_TESTQ("dissoc()", "erase non-existing object member"){
 }
 
 QUARK_UNIT_TESTQ("dissoc()", "erase array entry"){
-	const auto obj1 = json_t::make_array2({ "one", "two", "three" });
+	const auto obj1 = json_t::make_array({ "one", "two", "three" });
 	const auto obj2 = dissoc(obj1, json_t(1.0));
-	QUARK_UT_VERIFY(obj2 == json_t::make_array2({ "one", "three" }));
+	QUARK_UT_VERIFY(obj2 == json_t::make_array({ "one", "three" }));
 }
 
 
@@ -753,14 +753,14 @@ QUARK_UNIT_TESTQ("assoc_in()", "force create deep tree"){
 }
 
 QUARK_UNIT_TESTQ("assoc_in()", "array"){
-	const auto obj1 = json_t::make_array2({ "one", "two", "three" });
+	const auto obj1 = json_t::make_array({ "one", "two", "three" });
 	const auto obj2 = assoc_in(obj1, make_vec({ json_t(0.0) }), "ONE");
-	QUARK_ASSERT(obj2 == json_t::make_array2({ "ONE", "two", "three" }));
+	QUARK_ASSERT(obj2 == json_t::make_array({ "ONE", "two", "three" }));
 }
 QUARK_UNIT_TESTQ("assoc_in()", "array"){
-	const auto obj1 = json_t::make_array2({ "one", "two", "three" });
+	const auto obj1 = json_t::make_array({ "one", "two", "three" });
 	const auto obj2 = assoc_in(obj1, make_vec({ json_t(3.0) }), "four");
-	QUARK_ASSERT(obj2 == json_t::make_array2({ "one", "two", "three","four" }));
+	QUARK_ASSERT(obj2 == json_t::make_array({ "one", "two", "three","four" }));
 }
 
 QUARK_UNIT_TESTQ("assoc_in()", "mixed arrays and trees"){

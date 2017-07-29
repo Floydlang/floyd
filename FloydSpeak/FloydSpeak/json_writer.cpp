@@ -499,7 +499,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested object"){
 
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "array"){
-	const auto value = json_t::make_array2({ "one", "two", "three" });
+	const auto value = json_t::make_array({ "one", "two", "three" });
 
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	const string result = json_to_pretty_string(
@@ -511,8 +511,8 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "array"){
 }
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested arrays"){
-	const auto italian = json_t::make_array2({ "uno", "duo", "tres", "quattro" });
-	const auto value = json_t::make_array2({ "one", "two", italian, "three" });
+	const auto italian = json_t::make_array({ "uno", "duo", "tres", "quattro" });
+	const auto value = json_t::make_array({ "one", "two", italian, "three" });
 
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	const string result = json_to_pretty_string(

@@ -76,11 +76,11 @@ struct json_helper : public maker<EXPRESSION> {
 
 	public: virtual const EXPRESSION maker__make2(const eoperation op, const EXPRESSION& lhs, const EXPRESSION& rhs) const{
 		const auto op_str = k_2_operator_to_string.at(op);
-		return json_t::make_array2({ json_t(op_str), lhs, rhs });
+		return json_t::make_array({ json_t(op_str), lhs, rhs });
 	}
 	public: virtual const EXPRESSION maker__make3(const eoperation op, const EXPRESSION& e1, const EXPRESSION& e2, const EXPRESSION& e3) const{
 		if(op == eoperation::k_3_conditional_operator){
-			return json_t::make_array2({ json_t("?:"), e1, e2, e3 });
+			return json_t::make_array({ json_t("?:"), e1, e2, e3 });
 		}
 		else{
 			QUARK_ASSERT(false);

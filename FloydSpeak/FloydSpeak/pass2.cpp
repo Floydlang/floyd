@@ -201,7 +201,7 @@ static json_t add_scope_type(const json_t& scope, const json_t& subscope){
 		return assoc_in(
 			scope,
 			make_vec({"types", name }),
-			json_t::make_array2({ type_entry })
+			json_t::make_array({ type_entry })
 		);
 	}
 }
@@ -567,7 +567,7 @@ pair<json_t, int> insert_generated_functions(const parser_path_t& path, int type
 
 					//	### Add call to insert_generated_functions() on new constructor function!
 
-					types_collector2 = assoc(types_collector2, constructor_name, json_t::make_array2({ constructor_type_def }));
+					types_collector2 = assoc(types_collector2, constructor_name, json_t::make_array({ constructor_type_def }));
 				}
 
 				//	Propage down to all nodes -> leaves in tree.
@@ -895,7 +895,7 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 		const auto type = e.get_array_n(2);
 		const auto type2 = pass_b__type_to_id(path, type.get_string(), eresolve_types::k_all_but_function);
 
-		return json_t::make_array2({
+		return json_t::make_array({
 			op,
 			value,
 			type2,
@@ -905,7 +905,7 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto expr = pass_b__expression(path, e.get_array_n(1));
 		const auto type = expr.get_array_n(3);
-		return json_t::make_array2({ op, expr, type });
+		return json_t::make_array({ op, expr, type });
 	}
 	else if(is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
@@ -917,7 +917,7 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 		if(lhs_type != rhs_type){
 			throw std::runtime_error("1001 - Left & right side of math2 must have same type.");
 		}
-		return json_t::make_array2({ op, lhs_expr, rhs_expr, lhs_type });
+		return json_t::make_array({ op, lhs_expr, rhs_expr, lhs_type });
 	}
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 4);
@@ -941,7 +941,7 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 		if(a_type != b_type){
 			throw std::runtime_error("1001 - Left & right side of (?:) must have same type.");
 		}
-		return json_t::make_array2({ op, condition_expr, a_expr, b_expr, a_type });
+		return json_t::make_array({ op, condition_expr, a_expr, b_expr, a_type });
 	}
 	else if(op == "call"){
 		QUARK_ASSERT(e.get_array_size() == 3);
@@ -1006,14 +1006,14 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 	}
 */
 
-		return json_t::make_array2({ op, function_expr, args_expr, return_type });
+		return json_t::make_array({ op, function_expr, args_expr, return_type });
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto base_expr = pass_b__expression(path, e.get_array_n(1));
 		const auto type = get_array_back(base_expr).get_string();
 		QUARK_ASSERT(type.front() == '$');
-		return json_t::make_array2({ op, base_expr, e.get_array_n(2), type });
+		return json_t::make_array({ op, base_expr, e.get_array_n(2), type });
 	}
 	else if(op == "@"){
 		//	###: Idea: Functions are found via a variable called the function name, pointing to the function_def.
@@ -1025,7 +1025,7 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 			json_t member = found_variable.first.get_array_n(found_variable.second);
 			const auto type = member.get_object_element("type").get_string();
 			const auto type_id = pass_b__type_to_id(path, type, eresolve_types::k_all);
-			return json_t::make_array2({ op, variable_name, type_id });
+			return json_t::make_array({ op, variable_name, type_id });
 		}
 		else{
 			auto found_function = pass_b__type_to_id_xxx(path, "<" + variable_name + ">", eresolve_types::k_only_function);
@@ -1034,7 +1034,7 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 			const auto return_type = found_function.second.get_object_element("scope_def").get_object_element("return_type").get_string();
 			QUARK_ASSERT(return_type.back() == '>');
 			const auto return_type_id = pass_b__type_to_id(path, return_type, eresolve_types::k_all);
-			return json_t::make_array2({ op, variable_name, return_type_id });
+			return json_t::make_array({ op, variable_name, return_type_id });
 		}
 	}
 	else{
@@ -1116,7 +1116,7 @@ json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
 
 				const auto expr = s.get_array_n(3);
 				const auto expr2 = pass_b__expression(path1, expr);
-				statements2.push_back(json_t::make_array2({ op, type2, identifier, expr2 }));
+				statements2.push_back(json_t::make_array({ op, type2, identifier, expr2 }));
 			}
 			else if(op == "define_struct"){
 				QUARK_ASSERT(false);
@@ -1126,7 +1126,7 @@ json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
 			}
 			else if(op == "return"){
 				const auto expr = pass_b__expression(path1, s.get_array_n(1));
-				statements2.push_back(json_t::make_array2({ op, expr }));
+				statements2.push_back(json_t::make_array({ op, expr }));
 			}
 			else{
 				throw std::runtime_error("Unknown statement operation");
