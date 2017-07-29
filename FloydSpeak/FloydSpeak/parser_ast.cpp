@@ -219,11 +219,6 @@ namespace floyd_parser {
 
 
 
-
-
-
-
-
 	//////////////////////////////////////////////////		scope_def_t
 
 
@@ -665,7 +660,7 @@ namespace floyd_parser {
 
 
 
-#if false
+/*
 	scope_ref_t make_struct0(scope_ref_t scope_def){
 		return scope_def_t::make_struct(type_identifier_t::make("struct0"), {});
 	}
@@ -738,18 +733,14 @@ namespace floyd_parser {
 			}
 		);
 	}
-#endif
+*/
 
 } //	floyd_parser
 
 
 
 
-
-
-
-#if 0
-
+/*
 class visitor_i {
 	public: virtual ~visitor_i(){};
 	public: virtual void visitor_i_on_scope(const scope_ref_t& scope_def){};
@@ -787,7 +778,6 @@ scope_ref_t visit_scope(const scope_ref_t& scope_def){
 		}
 	}
 }
-#endif
-
+*/
 
 

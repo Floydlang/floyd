@@ -16,60 +16,7 @@
 #include "parser_ast.h"
 #include "parser_value.h"
 
-	struct json_t;
-
-/*
-	ABOUT ADDRESSING AND CHAINS
-
-	Each value is refered to via an address which is a construct like this: { scope + member }.
-	Encoded as { value_t scope, string member_name } or { value_t scope int _member_offset }.
-
-	This address can specifify any value in the system:
-
-	- To a local variable in the function-body-scope
-	- a function argument in the function-scope
-	- a global variable as a value in the global scope
-	- point to a struct + which member.
-
-
-	CALL is made on a function_scope
-
-
-		PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
-		We don't have any value we can return from each expression in tree.
-		Alternatives:
-
-		A) [CHOSEN SOLUTION]
-			Have dedicated expression types:
-			struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
-			collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
-
-			resolve-variable "xyz"
-			resolve-member "xyz"
-			lookup x
-
-		B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
-		C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
-
-
-	CHAINS
-	"hello.test.a[10 + x].next.last.get_ptr().title"
-
-	call						"call"
-	resolve_variable			"@"
-	resolve_member				"->"
-	lookup						"[-]"
-
-	!!! AST DOES NOT GENERATE LOADs, ONLY IDENTIFIER, FOR EXAMPLE.
-
-		a = my_global_int;
-		["bind", "<int>", "a", ["@", "my_global_int"]]
-
-		"my_global.next"
-		["->", ["@", "my_global"], "next"]
-
-		c = my_global_obj.all[3].f(10).prev;
-*/
+struct json_t;
 
 namespace floyd_parser {
 	struct expression_t;
@@ -175,8 +122,6 @@ namespace floyd_parser {
 			const expression_t& lookup_key,
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
-
-
 
 
 		public: bool check_invariant() const;

@@ -27,7 +27,6 @@ namespace floyd_parser {
 		An instance of a struct-type = a value of this struct.
 		Each memeber is initialized.
 
-
 		### Merge into stack_frame_t to make a generic construct.
 	*/
 	struct struct_instance_t {

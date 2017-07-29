@@ -85,8 +85,6 @@ namespace floyd_parser {
 
 
 
-
-
 /*
 	struct host_data_i {
 		public: virtual ~host_data_i(){};
@@ -318,12 +316,6 @@ namespace floyd_parser {
 
 
 
-
-
-
-
-
-
 	//////////////////////////////////////////////////		ast_t
 
 
@@ -364,40 +356,6 @@ namespace floyd_parser {
 			trace(i);
 		}
 	}
-
-#if false
-	scope_ref_t make_struct0(scope_ref_t scope_def);
-	scope_ref_t make_struct1(scope_ref_t scope_def);
-#endif
-
-	/*
-		struct struct2 {
-		}
-	*/
-	scope_ref_t make_struct2(scope_ref_t scope_def);
-
-	/*
-		struct struct3 {
-			int a
-			string b
-		}
-	*/
-	scope_ref_t make_struct3(scope_ref_t scope_def);
-
-	/*
-		struct struct4 {
-			string x
-			<struct_1> y
-			string z
-		}
-	*/
-	scope_ref_t make_struct4(scope_ref_t scope_def);
-
-	scope_ref_t make_struct5(scope_ref_t scope_def);
-
-	//	Test all types of members.
-	scope_ref_t make_struct6(scope_ref_t scope_def);
-
 
 }	//	floyd_parser
 

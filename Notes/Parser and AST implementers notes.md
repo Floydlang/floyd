@@ -1,3 +1,75 @@
+
+/*
+	"%1" = type_definition_t of the coord struct. Two floats, x and y etc. Static scope inside parent scope.
+	"coord_t": a type_identifier_t-string.
+	Type-name-lookup map binds type identifier string "coord_t" to type definition "%1". (Many type identifiers can bind to same type definition)
+
+	"a": variable of type %1
+	"pixel_coord_t": type identifiers that ALSO looks up to %1.
+*/
+struct coord_t {
+	float x;
+	float y;
+}
+
+let a = z(10.0, 20.0)
+
+typedef coord_t pixel_coord_t
+
+/*
+	New function type %2: int (int a, int b)
+	New function constant "=10" of type %2, - store instructions
+	New constant variable "f" of type %2 holding function value =10
+*/
+int f(int a, int b){
+	return a + b;
+}
+
+
+
+//////////////////////		AST
+
+
+//	Defines the type: is it an int? A vector of strings? A function with prototype int (float, float)?
+
+struct type_definition_t {
+	base_type_t basetype
+
+	type_definition_t function_return 
+	vector<type_definition_t> function_args 
+
+	type_definition_t vector_element_type 
+
+	vector<type_definition_t> struct_members 
+}
+
+struct function_value_constant_t {
+	type_definiton_t function_signature
+	scope_def function_code
+}
+
+struct static_scope_def {
+	type: global, function, struct, statement_subscope
+	vector<member_t> _members
+}
+
+struct ast_t {
+	static_scope_def globals
+
+	//	Many typenames can link to the same type definition...
+	map<type_identifier_t, string> typenames
+
+	map<string, type_definition_t> type_definitions
+
+	map<string, function_value_constant_t> function_value_constants
+}
+
+
+
+
+
+
+
 string get_s(pixel p){ return p.s; }
 struct pixel { string s = "two"; }
 string main(){
@@ -154,3 +226,61 @@ global static_scope
 
 	"statements": [],
 }
+
+
+
+-------------------------
+
+
+/*
+	ABOUT ADDRESSING AND CHAINS
+
+	Each value is refered to via an address which is a construct like this: { scope + member }.
+	Encoded as { value_t scope, string member_name } or { value_t scope int _member_offset }.
+
+	This address can specifify any value in the system:
+
+	- To a local variable in the function-body-scope
+	- a function argument in the function-scope
+	- a global variable as a value in the global scope
+	- point to a struct + which member.
+
+
+	CALL is made on a function_scope
+
+
+		PROBLEM: How to resolve a complex address expression tree into something you can read a value from (or store a value to or call as a function etc.
+		We don't have any value we can return from each expression in tree.
+		Alternatives:
+
+		A) [CHOSEN SOLUTION]
+			Have dedicated expression types:
+			struct_member_address_t { expression_t _parent_address, struct_def* _def, shared_ptr<struct_instance_t> _instance, string _member_name; }
+			collection_lookup { vector_def* _def, shared_ptr<vector_instance_t> _instance, value_t _key };
+
+			resolve-variable "xyz"
+			resolve-member "xyz"
+			lookup x
+
+		B)	Have value_t of type struct_member_spec_t { string member_name, value_t} so a value_t can point to a specific member variable.
+		C)	parse address in special function that resolves the expression and keeps the actual address on the side. Address can be raw C++ pointer.
+
+
+	CHAINS
+	"hello.test.a[10 + x].next.last.get_ptr().title"
+
+	call						"call"
+	resolve_variable			"@"
+	resolve_member				"->"
+	lookup						"[-]"
+
+	!!! AST DOES NOT GENERATE LOADs, ONLY IDENTIFIER, FOR EXAMPLE.
+
+		a = my_global_int;
+		["bind", "<int>", "a", ["@", "my_global_int"]]
+
+		"my_global.next"
+		["->", ["@", "my_global"], "next"]
+
+		c = my_global_obj.all[3].f(10).prev;
+*/
