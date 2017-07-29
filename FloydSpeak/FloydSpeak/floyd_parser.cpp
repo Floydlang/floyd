@@ -133,39 +133,6 @@ json_t parse_program2(const string& program){
 
 
 
-const string kProgram1 =
-	"int main(string args){\n"
-	"	return 3;\n"
-	"}\n";
-
-const string kProgram1JSON = R"(
-	[
-		[
-			"def-func",
-			{
-				"args": [
-					{
-						"name": "args",
-						"type": "<string>"
-					}
-				],
-				"name": "main",
-				"return_type": "<int>",
-				"statements": [
-					[
-						"return",
-						[
-							"k",
-							3,
-							"<int>"
-						]
-					]
-				]
-			}
-		]
-	]
-)";
-
 
 const string kProgram2 =
 	"int f(int x, int y, string z){\n"
@@ -208,86 +175,21 @@ const auto kProgram7 =
 
 
 
-const string kProgram100 = R"(
-	struct pixel { float red; float green; float blue; }
-	float get_grey(pixel p){ return (p.red + p.green + p.blue) / 3; }
-
-	float main(){
-		pixel p = pixel(1, 0, 0);
-		return get_grey(p);
-	}
-)";
-
-const string kProgram100JSONv2 = R"(
-	[
-		[
-			"def-struct",
-			{
-				"members": [
-					{ "name": "red", "type": "<float>" },
-					{ "name": "green", "type": "<float>" },
-					{ "name": "blue", "type": "<float>" }
-				],
-				"name": "pixel"
-			}
-		],
-		[
-			"def-func",
-			{
-				"args": [{ "name": "p", "type": "<pixel>" }],
-				"name": "get_grey",
-				"return_type": "<float>",
-				"statements": [
-					[
-						"return",
-						[
-							"/",
-							[
-								"+",
-								["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
-								["->", ["@", "p"], "blue"]
-							],
-							["k", 3, "<int>"]
-						]
-					]
-				]
-			}
-		],
-		[
-			"def-func",
-			{
-				"args": [],
-				"name": "main",
-				"return_type": "<float>",
-				"statements": [
-					[
-						"bind",
-						"<pixel>",
-						"p",
-						["call", ["@", "pixel"], [["k", 1, "<int>"], ["k", 0, "<int>"], ["k", 0, "<int>"]]]
-					],
-					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
-				]
-			}
-		]
-	]
-)";
-
 
 
 
 QUARK_UNIT_TEST("", "parse_program2()", "Program 100", ""){
 	ut_compare_jsons(
-		parse_program2(kProgram100),
-		parse_json(seq_t(kProgram100JSONv2)).first
+		parse_program2(k_test_program_100_source),
+		parse_json(seq_t(k_test_program_100_parserout)).first
 	);
 }
 
 
 QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
 	ut_compare_jsons(
-		parse_program2(kProgram1),
-		parse_json(seq_t(kProgram1JSON)).first
+		parse_program2(k_test_program_1_source),
+		parse_json(seq_t(k_test_program_1_parserout)).first
 	);
 }
 
