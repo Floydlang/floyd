@@ -94,7 +94,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	const auto body_pos = get_balanced(body_rest_pos);
 	const auto function_name = function_name_pos.first;
 
-	const auto statements = read_statements2(trim_ends(body_pos.first));
+	const auto statements = read_statements2(seq_t(trim_ends(body_pos.first)));
 
 	json_value_t function_def = json_value_t::make_array2({
 		"def-func",

@@ -13,6 +13,7 @@
 #include <string>
 
 struct json_value_t;
+struct seq_t;
 
 namespace floyd_parser {
 
@@ -34,7 +35,7 @@ namespace floyd_parser {
 			json_value_t statement_array;
 			std::string _rest;
 	*/
-	std::pair<json_value_t, std::string> read_statements2(const std::string& s);
+	std::pair<json_value_t, seq_t> read_statements2(const seq_t& s);
 
 	/*
 	{
