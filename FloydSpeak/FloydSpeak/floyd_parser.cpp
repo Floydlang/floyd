@@ -139,46 +139,31 @@ const string kProgram1 =
 	"}\n";
 
 const string kProgram1JSON = R"(
-	{
-		"args": [],
-		"locals": [],
-		"members": [],
-		"name": "global",
-		"return_type": "",
-		"statements": [],
-		"type": "global",
-		"types": {
-			"main": [
-				{
-					"base_type": "function",
-					"scope_def": {
-						"args": [
-							{
-								"name": "args",
-								"type": "<string>"
-							}
-						],
-						"locals": [],
-						"members": [],
-						"name": "main",
-						"return_type": "<int>",
-						"statements": [
-							[
-								"return",
-								[
-									"k",
-									3,
-									"<int>"
-								]
-							]
-						],
-						"type": "function",
-						"types": {}
+	[
+		[
+			"def-func",
+			{
+				"args": [
+					{
+						"name": "args",
+						"type": "<string>"
 					}
-				}
-			]
-		}
-	}
+				],
+				"name": "main",
+				"return_type": "<int>",
+				"statements": [
+					[
+						"return",
+						[
+							"k",
+							3,
+							"<int>"
+						]
+					]
+				]
+			}
+		]
+	]
 )";
 
 
@@ -232,96 +217,6 @@ const string kProgram100 = R"(
 		return get_grey(p);
 	}
 )";
-
-const string kProgram100JSON = R"(
-	{
-		"args": [],
-		"locals": [],
-		"members": [],
-		"name": "global",
-		"return_type": "",
-		"statements": [],
-		"type": "global",
-		"types": {
-			"get_grey": [
-				{
-					"base_type": "function",
-					"scope_def": {
-						"args": [{ "name": "p", "type": "<pixel>" }],
-						"locals": [],
-						"members": [],
-						"name": "get_grey",
-						"return_type": "<float>",
-						"statements": [
-							[
-								"return",
-								[
-									"/",
-									[
-										"+",
-										["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
-										["->", ["@", "p"], "blue"]
-									],
-									["k", 3, "<int>"]
-								]
-							]
-						],
-						"type": "function",
-						"types": {}
-					}
-				}
-			],
-			"main": [
-				{
-					"base_type": "function",
-					"scope_def": {
-						"args": [],
-						"locals": [{ "name": "p", "type": "<pixel>" }],
-						"members": [],
-						"name": "main",
-						"return_type": "<float>",
-						"statements": [
-							[
-								"bind",
-								"<pixel>",
-								"p",
-								[
-									"call",
-									["@", "pixel"],
-									[["k", 1, "<int>"], ["k", 0, "<int>"], ["k", 0, "<int>"]]
-								]
-							],
-							["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
-						],
-						"type": "function",
-						"types": {}
-					}
-				}
-			],
-			"pixel": [
-				{
-					"base_type": "struct",
-					"scope_def": {
-						"args": [],
-						"locals": [],
-						"members": [
-							{ "name": "red", "type": "<float>" },
-							{ "name": "green", "type": "<float>" },
-							{ "name": "blue", "type": "<float>" }
-						],
-						"name": "pixel",
-						"return_type": "",
-						"statements": [],
-						"type": "struct",
-						"types": {}
-					}
-				}
-			]
-		}
-	}
-)";
-
-
 
 const string kProgram100JSONv2 = R"(
 	[
@@ -378,14 +273,6 @@ const string kProgram100JSONv2 = R"(
 	]
 )";
 
-#if false
-QUARK_UNIT_TEST("", "parse_program1()", "Program 100", ""){
-	ut_compare_jsons(
-		parse_program1(kProgram100),
-		parse_json(seq_t(kProgram100JSON)).first
-	);
-}
-#endif
 
 
 
@@ -396,23 +283,15 @@ QUARK_UNIT_TEST("", "parse_program2()", "Program 100", ""){
 	);
 }
 
-#if false
 
 QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
 	ut_compare_jsons(
-		parse_program1(kProgram1),
+		parse_program2(kProgram1),
 		parse_json(seq_t(kProgram1JSON)).first
 	);
 }
 
-
-QUARK_UNIT_TEST("", "parse_program1()", "kProgram1", ""){
-	auto result = parse_program1(kProgram1);
-	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "base_type" }) == "function");
-	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "scope_def", "args", 0.0 }) == json_value_t::make_object({ { "name", "args"}, {"type", "<string>"}}));
-	QUARK_UT_VERIFY(get_in(result, { "types", "main", 0.0, "scope_def", "return_type" }) == "<int>");
-}
-
+#if false
 QUARK_UNIT_TEST("", "parse_program1()", "three arguments", ""){
 
 	const auto result = parse_program1(kProgram2);
