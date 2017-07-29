@@ -17,19 +17,6 @@ struct seq_t;
 
 namespace floyd_parser {
 
-
-//	std::pair<json_value_t, std::string> read_statements_into_scope_def1(const json_value_t& scope, const std::string& s);
-
-
-	/*
-		Returns nested scope_defs.
-		{
-		}
-	*/
-//	json_value_t parse_program1(const std::string& program);
-
-
-
 	/*
 		OUTPUT
 			json_value_t statement_array;
