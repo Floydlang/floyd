@@ -17,28 +17,49 @@ It's important that the parser do not optimize of change code, we support round 
 
 
 # PASS 2
+
 Pass 2: Semantic analysis of AST, collect types, connect dots, find errors, figure out types of expressions, collect member variables, local variables. Bind things together (using temporary symbol table). Insert generated functions and code.
+
+	- Generate compiler errors.
+	- Verifies all expression and statement semantics
+	- Resolves types and track them explicitly.
+	- Checks that all types are compatible.
+	- Resolves variable accesses (when possible).
+	- Assign a result-type to each expression.
+
+
+	OUTPUT FORMAT GOALS
+	- Easy to read for humans
+	- Easy to transform
+	- Lose no information -- keep all original names and comments.
+	- Not simplified or optimized in any way.
+
+
+	TODO
+	- Use *index* of member, not the name.
+	- Check input as if user input -- allows pass2 to be run on external JSON of AST.
+
 
 ??? type- always use a string. Structs are unique, even if they have the same type signatures.
 
-/*
-	"%1" = type_definition_t of the coord struct. Two floats, x and y etc. Static scope inside parent scope.
-	"coord_t": a type_identifier_t-string.
-	Type-name-lookup map binds type identifier string "coord_t" to type definition "%1". (Many type identifiers can bind to same type definition)
 
-	"a": variable of type %1
-	"pixel_coord_t": type identifiers that ALSO looks up to %1.
-*/
-struct coord_t {
-	float x;
-	float y;
-}
+"%1" = type_definition_t of the coord struct. Two floats, x and y etc. This is a static scope inside parent scope.
+"coord_t": a type_identifier_t-string.
+Type-name-lookup map binds type identifier string "coord_t" to type definition "%1". (Many type identifiers can bind to same type definition)
 
-let a = z(10.0, 20.0)
+"a": variable of type %1
+"pixel_coord_t": type identifiers that ALSO looks up to %1.
 
-typedef coord_t pixel_coord_t
+	struct coord_t {
+		float x;
+		float y;
+	}
+	
+	let a = z(10.0, 20.0)
+	
+	typedef coord_t pixel_coord_t
 
-### Functions
+# Functions - analysis
 
 This example function:
 
@@ -53,6 +74,99 @@ The result is
 
 Important: the function still needs to stay in the static scope it was defined in, for runtime symbol resolving.
 
+
+
+# TEmp
+
+PROBLEM: How to store links to resolved to types or variables?
+
+TODO: Augument existing data, don't replace typename / variable name.
+TODO: Generate type IDs like this: "global/pixel_t"
+
+- Need to be able to insert new types, function, variables without breaking links.
+
+A) { int scope_up_count, int item_index }. Problem - item_index breaks if we insert / reorder parent scope members.
+B) Resolve by checking types exist, but do not store new info.
+C) Generate IDs for types. Use type-lookup from ID to correct entry. Store ID in each resolved place. Put all
+CHOSEN ==>>>> D) Create global type-lookup table. Use original static-scope-path as ID. Use these paths to refer from client to type.
+
+Solution D algo steps:
+Pass A) Scan tree, give each found type a unique ID. (Tag each scope and assign parent-scope ID.)
+Pass A5) Insert constructors for each struct.
+Pass B) Scan tree: resolve type references by storing the type-ID. Tag expressions with their output-type. Do this will we can see the scope of each type.
+Pass C) Scan tree: move all types to global list for fast finding from ID.
+Pass D) Scan tree: bind variables to type-ID + offset.
+
+Now we can convert to a typesafe AST!
+
+Result after transform C:
+
+	"lookup": {
+		"$1": { "name": "bool", "base_type": "bool" },
+		"$2": { "name": "int", "base_type": "int" },
+		"$3": { "name": "string", "base_type": "string" },
+		"$4": { "name": "pixel_t", "base_type": "function", "scope_def":
+			{
+				"parent_scope": "$5",		//	Parent scope.
+				"name": "pixel_t_constructor",
+				"type": "function",
+				"args": [],
+				"locals": [
+					["$5", "it"],
+					["$4", "x2"]
+				],
+				"statements": [
+					["call", "___body"],
+					["return", ["k", "$5", 100]]
+				],
+				"return_type": "$4"
+			}
+		},
+		"$5": { "name": "pixel_t", "base_type": "struct", "scope_def":
+			{
+				"name": "pixel_t",
+				"type": "struct",
+				"members": [
+					{ "type": "$4", "name": "red"},
+					{ "type": "$4", "name": "green"},
+					{ "type": "$4", "name": "blue"}
+				],
+				"types": {},
+				"statements": [],
+				"return_type": null
+			}
+		},
+		"$6": { "name": "main", "base_type": "function", "scope_def":
+			{
+				"name": "main",
+				"type": "function",
+				"args": [
+					["$3", "args"]
+				],
+				"locals": [
+					["$5", "p1"],
+					["$5", "p2"]
+				],
+				"types": {},
+				"statements": [
+					["bind", "<pixel_t>", "p1", ["call", "pixel_t_constructor"]],
+					["return", ["+", ["@", "p1"], ["@", "g_version"]]]
+				],
+				"return_type": "$4"
+			}
+		}
+	},
+	"global_scope": {
+		"name": "global",
+		"type": "global",
+		"members": [
+			{ "type": "$4", "name": "g_version", "expr": "1.0" },
+			{ "type": "$3", "name": "message", "expr": "Welcome!"}
+		],
+	}
+
+
+# Types
 
 
 //	Defines the type: is it an int? A vector of strings? A function with prototype int (float, float)?
@@ -228,9 +342,6 @@ global static_scope
 
 	"statements": [],
 }
-
-
-
 
 
 #	ABOUT ADDRESSING AND CHAINS

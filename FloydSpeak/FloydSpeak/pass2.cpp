@@ -6,98 +6,6 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-
-
-/*
-PROBLEM: How to store links to resolved to types or variables?
-
-TODO: Augument existing data, don't replace typename / variable name.
-TODO: Generate type IDs like this: "$global/pixel_t"
-
-- Need to be able to insert new types, function, variables without breaking links.
-
-A) { int scope_up_count, int item_index }. Problem - item_index breaks if we insert / reorder parent scope members.
-B) Resolve by checking types exist, but do not store new info.
-C) Generate IDs for types. Use type-lookup from ID to correct entry. Store ID in each resolved place. Put all
-CHOSEN ==>>>> D) Create global type-lookup table. Use original static-scope-path as ID. Use these paths to refer from client to type.
-
-Solution D algo steps:
-Pass A) Scan tree, give each found type a unique ID. (Tag each scope and assign parent-scope ID.)
-Pass A5) Insert constructors for each struct.
-Pass B) Scan tree: resolve type references by storing the type-ID. Tag expressions with their output-type. Do this will we can see the scope of each type.
-Pass C) Scan tree: move all types to global list for fast finding from ID.
-Pass D) Scan tree: bind variables to type-ID + offset.
-
-Now we can convert to a typesafe AST!
-
-
-Result after transform C.
-======================================
-"lookup": {
-	"$1": { "name": "bool", "base_type": "bool" },
-	"$2": { "name": "int", "base_type": "int" },
-	"$3": { "name": "string", "base_type": "string" },
-	"$4": { "name": "pixel_t", "base_type": "function", "scope_def":
-		{
-			"parent_scope": "$5",		//	Parent scope.
-			"name": "pixel_t_constructor",
-			"type": "function",
-			"args": [],
-			"locals": [
-				["$5", "it"],
-				["$4", "x2"]
-			],
-			"statements": [
-				["call", "___body"],
-				["return", ["k", "$5", 100]]
-			],
-			"return_type": "$4"
-		}
-	},
-	"$5": { "name": "pixel_t", "base_type": "struct", "scope_def":
-		{
-			"name": "pixel_t",
-			"type": "struct",
-			"members": [
-				{ "type": "$4", "name": "red"},
-				{ "type": "$4", "name": "green"},
-				{ "type": "$4", "name": "blue"}
-			],
-			"types": {},
-			"statements": [],
-			"return_type": null
-		}
-	},
-	"$6": { "name": "main", "base_type": "function", "scope_def":
-		{
-			"name": "main",
-			"type": "function",
-			"args": [
-				["$3", "args"]
-			],
-			"locals": [
-				["$5", "p1"],
-				["$5", "p2"]
-			],
-			"types": {},
-			"statements": [
-				["bind", "<pixel_t>", "p1", ["call", "pixel_t_constructor"]],
-				["return", ["+", ["@", "p1"], ["@", "g_version"]]]
-			],
-			"return_type": "$4"
-		}
-	}
-},
-"global_scope": {
-	"name": "global",
-	"type": "global",
-	"members": [
-		{ "type": "$4", "name": "g_version", "expr": "1.0" },
-		{ "type": "$3", "name": "message", "expr": "Welcome!"}
-	],
-}
-*/
-
 #include "pass2.h"
 
 #include "statements.h"
@@ -114,9 +22,7 @@ using namespace std;
 
 
 
-
-
-	//////////////////////		Traversal of parse tree
+	//////////////////////		Traversal of parse tree, one level of static scope at a time.
 
 	struct parser_path_t {
 		//	Returns a scope_def in json format.
@@ -146,7 +52,6 @@ bool parser_path_t::check_invariant() const {
 	}
 	return true;
 };
-
 
 
 
@@ -198,11 +103,7 @@ static json_t add_scope_type(const json_t& scope, const json_t& subscope){
 		return assoc_in(scope, make_vec({"types", name, index }), type_entry);
 	}
 	else{
-		return assoc_in(
-			scope,
-			make_vec({"types", name }),
-			json_t::make_array({ type_entry })
-		);
+		return assoc_in(scope, make_vec({"types", name }), json_t::make_array({ type_entry }));
 	}
 }
 
@@ -246,14 +147,7 @@ json_t statements_to_scope(const json_t& p){
 						"name": "main",
 						"return_type": "<int>",
 						"statements": [
-							[
-								"return",
-								[
-									"k",
-									3,
-									"<int>"
-								]
-							]
+							[ "return", [ "k", 3, "<int>" ] ]
 						]
 					}
 				]
@@ -296,7 +190,6 @@ json_t statements_to_scope(const json_t& p){
 			function_scope = store_object_member(function_scope, "return_type", return_type);
 			scope2 = add_scope_type(scope2, function_scope);
 		}
-
 
 		/*
 			INPUT:
@@ -495,9 +388,6 @@ QUARK_UNIT_TESTQ("assign_unique_type_ids()", ""){
 
 
 
-
-
-
 ///////////////////////////////////////////		insert_generated_functions()
 
 
@@ -512,7 +402,6 @@ QUARK_UNIT_TESTQ("assign_unique_type_ids()", ""){
 
 	??? How to call host code. Is host code represented by a scope_def? I does need args/return value.
 */
-
 
 pair<json_t, int> insert_generated_functions(const parser_path_t& path, int type_id_count){
 	QUARK_SCOPED_TRACE("PASS A5");
@@ -653,8 +542,6 @@ QUARK_UNIT_TESTQ("insert_generated_functions()", ""){
 	QUARK_UT_VERIFY(result.first.check_invariant());
 	QUARK_TRACE(json_to_pretty_string(result.first));
 }
-
-
 
 
 
@@ -1559,11 +1446,6 @@ json_t run_pass2(const json_t& parse_tree){
 
 
 
-	const auto kMinimalProgram200 = R"(
-		int main(){
-			return 3;
-		}
-		)";
 
 
 /*
@@ -1574,7 +1456,7 @@ json_t run_pass2(const json_t& parse_tree){
 
 
 QUARK_UNIT_TESTQ("run_pass2()", "Minimum program"){
-	const auto pass1 = parse_program2(kMinimalProgram200);
+	const auto pass1 = parse_program2(k_test_program_0_source);
 	const auto pass2 = run_pass2(pass1);
 	const auto ast = json_to_ast(pass2);
 

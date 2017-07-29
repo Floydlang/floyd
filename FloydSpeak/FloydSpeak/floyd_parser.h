@@ -18,6 +18,23 @@ struct seq_t;
 namespace floyd_parser {
 
 
+const std::string k_test_program_0_source = "int main(){ return 3; }";
+const std::string k_test_program_0_parserout = R"(
+	[
+		[
+			"def-func",
+			{
+				"args": [],
+				"name": "main",
+				"return_type": "<int>",
+				"statements": [
+					[ "return", [ "k", 3, "<int>" ] ]
+				]
+			}
+		]
+	]
+)";
+
 const std::string k_test_program_1_source =
 	"int main(string args){\n"
 	"	return 3;\n"
@@ -28,22 +45,12 @@ const std::string k_test_program_1_parserout = R"(
 			"def-func",
 			{
 				"args": [
-					{
-						"name": "args",
-						"type": "<string>"
-					}
+					{ "name": "args", "type": "<string>" }
 				],
 				"name": "main",
 				"return_type": "<int>",
 				"statements": [
-					[
-						"return",
-						[
-							"k",
-							3,
-							"<int>"
-						]
-					]
+					[ "return", [ "k", 3, "<int>" ] ]
 				]
 			}
 		]

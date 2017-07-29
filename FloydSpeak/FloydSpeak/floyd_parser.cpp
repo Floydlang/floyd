@@ -178,7 +178,21 @@ const auto kProgram7 =
 
 
 
-QUARK_UNIT_TEST("", "parse_program2()", "Program 100", ""){
+QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_0_source", ""){
+	ut_compare_jsons(
+		parse_program2(k_test_program_0_source),
+		parse_json(seq_t(k_test_program_0_parserout)).first
+	);
+}
+
+QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
+	ut_compare_jsons(
+		parse_program2(k_test_program_1_source),
+		parse_json(seq_t(k_test_program_1_parserout)).first
+	);
+}
+
+QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 	ut_compare_jsons(
 		parse_program2(k_test_program_100_source),
 		parse_json(seq_t(k_test_program_100_parserout)).first
@@ -186,12 +200,6 @@ QUARK_UNIT_TEST("", "parse_program2()", "Program 100", ""){
 }
 
 
-QUARK_UNIT_TEST("", "parse_program1()", "Program 1", ""){
-	ut_compare_jsons(
-		parse_program2(k_test_program_1_source),
-		parse_json(seq_t(k_test_program_1_parserout)).first
-	);
-}
 
 #if false
 QUARK_UNIT_TEST("", "parse_program1()", "three arguments", ""){
