@@ -20,24 +20,24 @@ namespace floyd_parser {
 	using std::shared_ptr;
 
 
-	pair<json_value_t, string> parse_return_statement(const string& s){
+	pair<json_value_t, seq_t> parse_return_statement(const seq_t& s){
 		QUARK_ASSERT(s.size() >= string("return").size());
 
-		QUARK_ASSERT(if_first(seq_t(s), "return").first);
+		QUARK_ASSERT(if_first(s, "return").first);
 
-		const auto token_pos = read_until(seq_t(s), whitespace_chars);
+		const auto token_pos = read_until(s, whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 		const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
 		const auto statement = json_value_t::make_array2({ json_value_t("return"), expression1 });
 		//	Skip trailing ";".
 		const auto pos = skip_whitespace(expression_pos.second.rest1());
-		return pair<json_value_t, string>(statement, pos.get_s());
+		return { statement, pos };
 	}
 
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
-		const auto result = parse_return_statement("return 0;");
+		const auto result = parse_return_statement(seq_t("return 0;"));
 		QUARK_TEST_VERIFY(json_to_compact_string(result.first) == R"(["return", ["k", 0, "<int>"]])");
-		QUARK_TEST_VERIFY(result.second == "");
+		QUARK_TEST_VERIFY(result.second.get_s() == "");
 	}
 
 #if false
@@ -52,10 +52,10 @@ namespace floyd_parser {
 
 
 
-	pair<json_value_t, string> parse_assignment_statement(const string& s){
+	pair<json_value_t, seq_t> parse_assignment_statement(const seq_t& s){
 		QUARK_SCOPED_TRACE("parse_assignment_statement()");
 
-		const auto token_pos = read_until(seq_t(s), whitespace_chars);
+		const auto token_pos = read_until(s, whitespace_chars);
 		const auto type = token_pos.first;
 
 		const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
@@ -67,7 +67,7 @@ namespace floyd_parser {
 		const auto statement = json_value_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
 
 		//	Skip trailing ";".
-		return { statement, expression_pos.second.rest1().get_s() };
+		return { statement, expression_pos.second.rest1() };
 	}
 
 #if false

@@ -66,8 +66,8 @@ static std::pair<json_value_t, seq_t> read_statement2(const seq_t& pos){
 
 	//	return statement?
 	if(token_pos.first == "return"){
-		const auto return_statement_pos = parse_return_statement(pos.get_s());
-		return { return_statement_pos.first, skip_whitespace(seq_t(return_statement_pos.second)) };
+		const auto return_statement_pos = parse_return_statement(pos);
+		return { return_statement_pos.first, skip_whitespace(return_statement_pos.second) };
 	}
 
 	//	struct definition?
@@ -96,8 +96,8 @@ static std::pair<json_value_t, seq_t> read_statement2(const seq_t& pos){
 			"string hello = f(a) + \"_suffix\";";
 		*/
 		else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
-			const auto assignment_statement = parse_assignment_statement(pos.get_s());
-			return { assignment_statement.first, skip_whitespace(seq_t(assignment_statement.second)) };
+			const auto assignment_statement = parse_assignment_statement(pos);
+			return { assignment_statement.first, skip_whitespace(assignment_statement.second) };
 		}
 
 		else{
