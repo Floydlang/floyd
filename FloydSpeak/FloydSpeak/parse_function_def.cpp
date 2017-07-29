@@ -37,7 +37,7 @@ static vector<json_value_t> parse_functiondef_arguments(const string& s2){
 
 		const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, json_value_t());
 		args.push_back(a);
-		str = skip_whitespace(optional_comma.second).get_all();
+		str = skip_whitespace(optional_comma.second).get_s();
 	}
 	return args;
 }
@@ -80,7 +80,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	//	Skip whitespace.
 	const auto rest = skip_whitespace(function_name_pos.second);
 
-	if(!peek_string(rest, "(")){
+	if(!peek(rest, "(").first){
 		throw std::runtime_error("expected function argument list enclosed by (),");
 	}
 
@@ -88,7 +88,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	const auto args = parse_functiondef_arguments(arg_list_pos.first);
 	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
 
-	if(!peek_string(body_rest_pos, "{")){
+	if(!peek(body_rest_pos, "{").first){
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
@@ -105,7 +105,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 			{ "return_type", "<" + return_type_pos.first.to_string() + ">" }
 		})
 	});
-	return { function_def, body_pos.second.get_all() };
+	return { function_def, body_pos.second.get_s() };
 }
 
 struct test {

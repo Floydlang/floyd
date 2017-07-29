@@ -23,7 +23,7 @@ namespace floyd_parser {
 	pair<json_value_t, string> parse_return_statement(const string& s){
 		QUARK_ASSERT(s.size() >= string("return").size());
 
-		QUARK_ASSERT(peek_string(seq_t(s), "return"));
+		QUARK_ASSERT(peek(seq_t(s), "return").first);
 
 		const auto token_pos = read_until(seq_t(s), whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
@@ -31,7 +31,7 @@ namespace floyd_parser {
 		const auto statement = json_value_t::make_array2({ json_value_t("return"), expression1 });
 		//	Skip trailing ";".
 		const auto pos = skip_whitespace(expression_pos.second.rest1());
-		return pair<json_value_t, string>(statement, pos.get_all());
+		return pair<json_value_t, string>(statement, pos.get_s());
 	}
 
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
@@ -67,7 +67,7 @@ namespace floyd_parser {
 		const auto statement = json_value_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
 
 		//	Skip trailing ";".
-		return { statement, expression_pos.second.rest1().get_all() };
+		return { statement, expression_pos.second.rest1().get_s() };
 	}
 
 #if false

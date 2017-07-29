@@ -111,19 +111,19 @@ std::pair<constant_value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	const auto a = parse_numeric_constant(seq_t("0 xxx"));
 	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_int && a.first._int == 0);
-	QUARK_UT_VERIFY(a.second.get_all() == " xxx");
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	const auto a = parse_numeric_constant(seq_t("1234 xxx"));
 	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_int && a.first._int == 1234);
-	QUARK_UT_VERIFY(a.second.get_all() == " xxx");
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
 QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	const auto a = parse_numeric_constant(seq_t("0.5 xxx"));
 	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_float && a.first._float == 0.5f);
-	QUARK_UT_VERIFY(a.second.get_all() == " xxx");
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
 
@@ -253,7 +253,7 @@ bool test__parse_single(const std::string& expression, const std::string& expect
 	if(json_s != expected_value){
 		return false;
 	}
-	else if(result.second.get_all() != expected_seq){
+	else if(result.second.get_s() != expected_seq){
 		return false;
 	}
 	return true;
@@ -320,7 +320,7 @@ bool test__parse_expression(const std::string& expression, string expected_value
 	if(result.first != expected_value){
 		return false;
 	}
-	else if(result.second.get_all() != expected_seq){
+	else if(result.second.get_s() != expected_seq){
 		return false;
 	}
 	return true;

@@ -600,7 +600,7 @@ std::pair<EXPRESSION, seq_t> parse_expression_int(const maker<EXPRESSION>& helpe
 
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> parse_expression_template(const maker<EXPRESSION>& helper, const seq_t& p){
-	if(!is_valid_chars(p.get_all())){
+	if(!is_valid_chars(p.get_s())){
 		throw std::runtime_error("Illegal characters.");
 	}
 	return parse_expression_int<EXPRESSION>(helper, p, eoperator_precedence::k_super_weak);

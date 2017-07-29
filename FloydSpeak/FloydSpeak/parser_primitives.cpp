@@ -30,8 +30,6 @@ namespace floyd_parser {
 using std::vector;
 using std::string;
 using std::pair;
-using std::make_shared;
-using std::shared_ptr;
 
 
 //////////////////////////////////////////////////		Text parsing primitives
@@ -39,7 +37,7 @@ using std::shared_ptr;
 
 
 std::string skip_whitespace(const string& s){
-	return read_while(seq_t(s), whitespace_chars).second.get_all();
+	return read_while(seq_t(s), whitespace_chars).second.get_s();
 }
 
 QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){

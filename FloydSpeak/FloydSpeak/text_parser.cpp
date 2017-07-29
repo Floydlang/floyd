@@ -58,7 +58,7 @@ bool seq_t::operator==(const seq_t& other) const {
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(other.check_invariant());
 
-	return first(1) == other.first(1) && get_all() == other.get_all();
+	return first(1) == other.first(1) && get_s() == other.get_s();
 }
 
 bool seq_t::check_invariant() const {
@@ -101,17 +101,10 @@ seq_t seq_t::rest(size_t skip) const{
 	return seq_t(_str, p);
 }
 
-std::string seq_t::get_all() const{
+std::string seq_t::get_s() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _str->substr(_pos);
-}
-
-
-std::size_t seq_t::rest1_size() const{
-	QUARK_ASSERT(check_invariant());
-
-	return empty() ? 0 : size() - 1;
 }
 
 std::size_t seq_t::size() const{
@@ -198,15 +191,6 @@ QUARK_UNIT_TESTQ("rest(n)", ""){
 }
 
 
-QUARK_UNIT_TESTQ("rest1_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest1_size() == 2);
-}
-QUARK_UNIT_TESTQ("rest1_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest1().rest1_size() == 1);
-}
-QUARK_UNIT_TESTQ("rest1_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest(100).rest1_size() == 0);
-}
 
 
 
@@ -361,24 +345,6 @@ pair<bool, seq_t> read_optional_char(const seq_t& s, char ch){
 	}
 }
 
-
-bool peek_compare_char(const std::string& s, char ch){
-	return s.size() > 0 && s[0] == ch;
-}
-
-bool peek_string(const seq_t& s, const std::string& peek){
-	return s.size() >= peek.size() && s.first(peek.size()) == peek;
-}
-
-QUARK_UNIT_TEST("", "peek_string()", "", ""){
-	QUARK_TEST_VERIFY(peek_string(seq_t(""), "") == true);
-	QUARK_TEST_VERIFY(peek_string(seq_t("a"), "a") == true);
-	QUARK_TEST_VERIFY(peek_string(seq_t("a"), "b") == false);
-	QUARK_TEST_VERIFY(peek_string(seq_t(""), "b") == false);
-	QUARK_TEST_VERIFY(peek_string(seq_t("abc"), "abc") == true);
-	QUARK_TEST_VERIFY(peek_string(seq_t("abc"), "abx") == false);
-	QUARK_TEST_VERIFY(peek_string(seq_t("abc"), "ab") == true);
-}
 
 std::string read_required_string(const std::string& s, const std::string& wanted){
 	if(s.size() >= wanted.size() && s.substr(0, wanted.size()) == wanted){

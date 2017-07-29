@@ -12,10 +12,9 @@
 #include <string>
 
 
-//typedef std::pair<std::string, std::string> seq;
-
 
 const std::string test_whitespace_chars = " \n\t\r";
+
 
 ///////////////////////////////		seq_t
 
@@ -34,12 +33,9 @@ struct seq_t {
 	//	Peek at first char (as C-character). Throws exception if empty().
 	public: char first1_char() const;
 
-	//	Peels at first char (you get a string). Throws if there is no more char to read.
+	//	Peeks at first char (you get a string). Throws if there is no more char to read.
 	public: std::string first1() const;
 	public: std::string first() const { return first1(); }
-
-	//	Skips first char.
-	public: std::size_t rest1_size() const;
 
 	//	Skips 1 char.
 	//	You get empty if rest_size() == 0.
@@ -58,7 +54,7 @@ struct seq_t {
 
 
 	//	Returns entire string. Equivalent to x.rest(x.size()).
-	public: std::string get_all() const;
+	public: std::string get_s() const;
 	public: std::size_t size() const;
 
 	//	If true, there are no more characters.
@@ -83,7 +79,7 @@ struct seq_t {
 std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& match);
 std::pair<std::string, seq_t> read_until(const seq_t& p1, const std::string& match);
 
-//	If p starts with wanted_string, return true and consume those chars. Else return false and thesame seq_t.
+//	If p starts with wanted_string, return true and consume those chars. Else return false and the same seq_t.
 std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string);
 
 
@@ -101,9 +97,6 @@ seq_t read_required_char(const seq_t& s, char ch);
 std::pair<bool, seq_t> read_optional_char(const seq_t& s, char ch);
 
 
-bool peek_compare_char(const std::string& s, char ch);
-
-bool peek_string(const seq_t& s, const std::string& peek);
 std::string read_required_string(const std::string& s, const std::string& wanted);
 
 
