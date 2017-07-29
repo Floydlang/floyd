@@ -266,13 +266,13 @@ std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const
 		return { result, value_p.second };
 	}
 
-	else if(peek(p, "true").first){
+	else if(if_first(p, "true").first){
 		const auto result = helper.maker__make_constant(constant_value_t(true));
-		return { result, peek(p, "true").second };
+		return { result, if_first(p, "true").second };
 	}
-	else if(peek(p, "false").first){
+	else if(if_first(p, "false").first){
 		const auto result = helper.maker__make_constant(constant_value_t(false));
-		return { result, peek(p, "false").second };
+		return { result, if_first(p, "false").second };
 	}
 
 	//	Identifier?

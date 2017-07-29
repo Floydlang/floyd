@@ -24,6 +24,77 @@ using std::make_shared;
 
 
 
+///////////////////////////////		String utils
+
+
+
+string trim_ends(const string& s){
+	QUARK_ASSERT(s.size() >= 2);
+
+	return s.substr(1, s.size() - 2);
+}
+
+std::string quote(const std::string& s){
+	return std::string("\"") + s + "\"";
+}
+
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("") == "\"\"");
+}
+
+QUARK_UNIT_TESTQ("quote()", ""){
+	QUARK_UT_VERIFY(quote("abc") == "\"abc\"");
+}
+
+
+
+float parse_float(const std::string& pos){
+	size_t end = -1;
+	auto res = std::stof(pos, &end);
+	if(isnan(res) || end == 0){
+		throw std::runtime_error("EEE_WRONG_CHAR");
+	}
+	return res;
+}
+
+std::string float_to_string(float value){
+	std::stringstream s;
+	s << value;
+	const auto result = s.str();
+	return result;
+}
+
+QUARK_UNIT_TESTQ("float_to_string()", ""){
+	quark::ut_compare(float_to_string(0.0f), "0");
+}
+QUARK_UNIT_TESTQ("float_to_string()", ""){
+	quark::ut_compare(float_to_string(13.0f), "13");
+}
+QUARK_UNIT_TESTQ("float_to_string()", ""){
+	quark::ut_compare(float_to_string(13.5f), "13.5");
+}
+
+
+
+std::string double_to_string(double value){
+	std::stringstream s;
+	s << value;
+	const auto result = s.str();
+	return result;
+}
+
+QUARK_UNIT_TESTQ("double_to_string()", ""){
+	quark::ut_compare(float_to_string(0.0), "0");
+}
+QUARK_UNIT_TESTQ("double_to_string()", ""){
+	quark::ut_compare(float_to_string(13.0), "13");
+}
+QUARK_UNIT_TESTQ("double_to_string()", ""){
+	quark::ut_compare(float_to_string(13.5), "13.5");
+}
+
+
+
 
 
 ///////////////////////////////		seq_t
@@ -196,11 +267,11 @@ QUARK_UNIT_TESTQ("rest(n)", ""){
 
 
 
-pair<string, seq_t> read_while(const seq_t& p1, const string& match){
+pair<string, seq_t> read_while(const seq_t& p1, const string& chars){
 	string a;
 	seq_t p2 = p1;
 
-	while(!p2.empty() && match.find(p2.first1_char()) != string::npos){
+	while(!p2.empty() && chars.find(p2.first1_char()) != string::npos){
 		a = a + p2.first1_char();
 		p2 = p2.rest1();
 	}
@@ -232,11 +303,11 @@ QUARK_UNIT_TEST("", "read_while()", "", ""){
 
 
 
-pair<string, seq_t> read_until(const seq_t& p1, const string& match){
+pair<string, seq_t> read_until(const seq_t& p1, const string& chars){
 	string a;
 	seq_t p2 = p1;
 
-	while(!p2.empty() && match.find(p2.first1_char()) == string::npos){
+	while(!p2.empty() && chars.find(p2.first1_char()) == string::npos){
 		a = a + p2.first1_char();
 		p2 = p2.rest1();
 	}
@@ -246,7 +317,7 @@ pair<string, seq_t> read_until(const seq_t& p1, const string& match){
 
 
 
-std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string){
+std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string){
 	const auto size = wanted_string.size();
 	if(p.first(size) == wanted_string){
 		return { true, p.rest(size) };
@@ -256,64 +327,13 @@ std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string){
 	}
 }
 
-QUARK_UNIT_TESTQ("peek()", ""){
-	const auto result = peek(seq_t("hello, world!"), "hell");
+QUARK_UNIT_TESTQ("if_first()", ""){
+	const auto result = if_first(seq_t("hello, world!"), "hell");
 	const auto expected = std::pair<bool, seq_t>(true, seq_t("o, world!"));
 
 	QUARK_TEST_VERIFY(result == expected);
 }
 
-
-
-
-	std::string remove_trailing_comma(const std::string& a){
-		auto s = a;
-		if(s.size() > 1 && s.back() == ','){
-			s.pop_back();
-		}
-		return s;
-	}
-
-
-/*
-seq read_while(const string& s, const string& match){
-	size_t pos = 0;
-	while(pos < s.size() && match.find(s[pos]) != string::npos){
-		pos++;
-	}
-
-	return seq(
-		s.substr(0, pos),
-		s.substr(pos)
-	);
-}
-
-QUARK_UNIT_TEST("", "read_while()", "", ""){
-	QUARK_TEST_VERIFY(read_while("", test_whitespace_chars) == seq("", ""));
-	QUARK_TEST_VERIFY(read_while(" ", test_whitespace_chars) == seq(" ", ""));
-	QUARK_TEST_VERIFY(read_while("    ", test_whitespace_chars) == seq("    ", ""));
-
-	QUARK_TEST_VERIFY(read_while("while", test_whitespace_chars) == seq("", "while"));
-	QUARK_TEST_VERIFY(read_while(" while", test_whitespace_chars) == seq(" ", "while"));
-	QUARK_TEST_VERIFY(read_while("    while", test_whitespace_chars) == seq("    ", "while"));
-}
-
-seq read_until(const string& s, const string& match){
-	size_t pos = 0;
-	while(pos < s.size() && match.find(s[pos]) == string::npos){
-		pos++;
-	}
-
-	return { s.substr(0, pos), s.substr(pos) };
-}
-
-QUARK_UNIT_TEST("", "read_until()", "", ""){
-	QUARK_TEST_VERIFY(read_until("", ",.") == seq("", ""));
-	QUARK_TEST_VERIFY(read_until("ab", ",.") == seq("ab", ""));
-	QUARK_TEST_VERIFY(read_until("ab,cd", ",.") == seq("ab", ",cd"));
-	QUARK_TEST_VERIFY(read_until("ab.cd", ",.") == seq("ab", ".cd"));
-}
-*/
 
 
 
@@ -328,12 +348,11 @@ pair<char, seq_t> read_char(const seq_t& s){
 }
 
 seq_t read_required_char(const seq_t& s, char ch){
-	if(s.size() > 0 && s.first1_char() == ch){
-		return s.rest(1);
-	}
-	else{
+	const auto r = read_optional_char(s, ch);
+	if(r.first == false){
 		throw std::runtime_error("expected character '" + string(1, ch)  + "'.");
 	}
+	return r.second;
 }
 
 pair<bool, seq_t> read_optional_char(const seq_t& s, char ch){
@@ -344,132 +363,4 @@ pair<bool, seq_t> read_optional_char(const seq_t& s, char ch){
 		return { false, s };
 	}
 }
-
-
-std::string read_required_string(const std::string& s, const std::string& wanted){
-	if(s.size() >= wanted.size() && s.substr(0, wanted.size()) == wanted){
-		return s.substr(wanted.size());
-	}
-	else{
-		throw std::runtime_error("Expected string");
-	}
-}
-
-QUARK_UNIT_TESTQ("read_required_string", ""){
-	QUARK_TEST_VERIFY(read_required_string("abcdef", "ab") == "cdef");
-	QUARK_TEST_VERIFY(read_required_string("abcdef", "abcdef") == "");
-}
-
-
-string trim_ends(const string& s){
-	QUARK_ASSERT(s.size() >= 2);
-
-	return s.substr(1, s.size() - 2);
-}
-
-
-float parse_float(const std::string& pos){
-	size_t end = -1;
-	auto res = std::stof(pos, &end);
-	if(isnan(res) || end == 0){
-		throw std::runtime_error("EEE_WRONG_CHAR");
-	}
-	return res;
-}
-
-
-/*
-seq get_balanced_pair(const string& s, char start_char, char end_char){
-	QUARK_ASSERT(s[0] == start_char);
-	QUARK_ASSERT(s.size() >= 2);
-
-	int depth = 0;
-	size_t pos = 0;
-	while(pos < s.size() && !(depth == 1 && s[pos] == end_char)){
-		const char c = s[pos];
-		if(c == start_char) {
-			depth++;
-		}
-		else if(c == end_char){
-			if(depth == 0){
-				throw std::runtime_error("unbalanced ([{< >}])");
-			}
-			depth--;
-		}
-		pos++;
-	}
-
-	return { s.substr(1, pos - 1), s.substr(pos + 1) };
-}
-*/
-
-
-//	{ "{ hello }xxx", '{', '}' } => { " hello ", "xxx" }
-
-
-/*
-QUARK_UNIT_TEST("", "get_balanced_pair()", "", ""){
-	QUARK_TEST_VERIFY(get_balanced_pair("()", '(', ')') == seq("", ""));
-	QUARK_TEST_VERIFY(get_balanced_pair("(abc)", '(', ')') == seq("abc", ""));
-	QUARK_TEST_VERIFY(get_balanced_pair("(abc)def", '(', ')') == seq("abc", "def"));
-	QUARK_TEST_VERIFY(get_balanced_pair("((abc))def", '(', ')') == seq("(abc)", "def"));
-	QUARK_TEST_VERIFY(get_balanced_pair("((abc)[])def", '(', ')') == seq("(abc)[]", "def"));
-}
-*/
-
-
-
-
-
-std::string quote(const std::string& s){
-	return std::string("\"") + s + "\"";
-}
-
-QUARK_UNIT_TESTQ("quote()", ""){
-	QUARK_UT_VERIFY(quote("") == "\"\"");
-}
-
-QUARK_UNIT_TESTQ("quote()", ""){
-	QUARK_UT_VERIFY(quote("abc") == "\"abc\"");
-}
-
-
-
-std::string float_to_string(float value){
-	std::stringstream s;
-	s << value;
-	const auto result = s.str();
-	return result;
-}
-
-QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare(float_to_string(0.0f), "0");
-}
-QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare(float_to_string(13.0f), "13");
-}
-QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare(float_to_string(13.5f), "13.5");
-}
-
-
-
-std::string double_to_string(double value){
-	std::stringstream s;
-	s << value;
-	const auto result = s.str();
-	return result;
-}
-
-QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare(float_to_string(0.0), "0");
-}
-QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare(float_to_string(13.0), "13");
-}
-QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare(float_to_string(13.5), "13.5");
-}
-
-
 

@@ -295,7 +295,7 @@ static std::pair<json_value_t, std::string> read_statement2(const string& pos){
 			Function definition?
 			"int xyz(string a, string b){ ... }
 		*/
-		if(peek(skip_whitespace(identifier_pos.second), "(").first){
+		if(if_first(skip_whitespace(identifier_pos.second), "(").first){
 			const auto function = parse_function_definition2(pos);
             return { function.first, skip_whitespace(function.second)};
 		}
@@ -306,7 +306,7 @@ static std::pair<json_value_t, std::string> read_statement2(const string& pos){
 			"int a = 10;"
 			"string hello = f(a) + \"_suffix\";";
 		*/
-		else if(peek(skip_whitespace(identifier_pos.second), "=").first){
+		else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
 			const auto assignment_statement = parse_assignment_statement(pos);
 			return { assignment_statement.first, skip_whitespace(assignment_statement.second) };
 		}

@@ -23,7 +23,7 @@ namespace floyd_parser {
 	pair<json_value_t, string> parse_return_statement(const string& s){
 		QUARK_ASSERT(s.size() >= string("return").size());
 
-		QUARK_ASSERT(peek(seq_t(s), "return").first);
+		QUARK_ASSERT(if_first(seq_t(s), "return").first);
 
 		const auto token_pos = read_until(seq_t(s), whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");

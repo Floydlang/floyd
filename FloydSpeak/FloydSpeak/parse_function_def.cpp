@@ -80,7 +80,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	//	Skip whitespace.
 	const auto rest = skip_whitespace(function_name_pos.second);
 
-	if(!peek(rest, "(").first){
+	if(!if_first(rest, "(").first){
 		throw std::runtime_error("expected function argument list enclosed by (),");
 	}
 
@@ -88,7 +88,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	const auto args = parse_functiondef_arguments(arg_list_pos.first);
 	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
 
-	if(!peek(body_rest_pos, "{").first){
+	if(!if_first(body_rest_pos, "{").first){
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
 	const auto body_pos = get_balanced(body_rest_pos);

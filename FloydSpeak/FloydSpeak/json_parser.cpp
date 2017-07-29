@@ -85,14 +85,14 @@ std::pair<json_value_t, seq_t> parse_json(const seq_t& s){
 		const auto b = read_until(a.rest1(), "\"");
 		return { json_value_t(b.first), b.second.rest1() };
 	}
-	else if(peek(a, "true").first){
-		return { json_value_t(true), peek(a, "true").second };
+	else if(if_first(a, "true").first){
+		return { json_value_t(true), if_first(a, "true").second };
 	}
-	else if(peek(a, "false").first){
-		return { json_value_t(false), peek(a, "false").second };
+	else if(if_first(a, "false").first){
+		return { json_value_t(false), if_first(a, "false").second };
 	}
-	else if(peek(a, "null").first){
-		return { json_value_t(), peek(a, "null").second };
+	else if(if_first(a, "null").first){
+		return { json_value_t(), if_first(a, "null").second };
 	}
 	else{
 		const auto number_pos = read_while(a, "-0123456789.+");

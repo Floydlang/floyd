@@ -16,7 +16,22 @@
 const std::string test_whitespace_chars = " \n\t\r";
 
 
+
+///////////////////////////////		String utils
+
+
+std::string trim_ends(const std::string& s);
+std::string quote(const std::string& s);
+
+float parse_float(const std::string& pos);
+
+std::string float_to_string(float value);
+std::string double_to_string(double value);
+
+
+
 ///////////////////////////////		seq_t
+
 
 /*
 	This is a magic string were you can easily peek into the beginning and
@@ -76,41 +91,22 @@ struct seq_t {
 };
 
 
-std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& match);
-std::pair<std::string, seq_t> read_until(const seq_t& p1, const std::string& match);
+std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& chars);
+std::pair<std::string, seq_t> read_until(const seq_t& p1, const std::string& chars);
 
 //	If p starts with wanted_string, return true and consume those chars. Else return false and the same seq_t.
-std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string);
+std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string);
 
 
 
-//	Remove trailing comma, if any.
-std::string remove_trailing_comma(const std::string& a);
-
-
-std::pair<char, std::string> read_char(const std::string& s);
+std::pair<char, seq_t> read_char(const seq_t& s);
 
 /*
-	Returns "rest" if ch is found, else throws exceptions.
+	Returns "rest" if s is found, else throws exceptions.
 */
 seq_t read_required_char(const seq_t& s, char ch);
+
 std::pair<bool, seq_t> read_optional_char(const seq_t& s, char ch);
-
-
-std::string read_required_string(const std::string& s, const std::string& wanted);
-
-
-std::string trim_ends(const std::string& s);
-
-float parse_float(const std::string& pos);
-
-
-
-
-std::string quote(const std::string& s);
-
-std::string float_to_string(float value);
-std::string double_to_string(double value);
 
 
 #endif /* text_parser_hpp */
