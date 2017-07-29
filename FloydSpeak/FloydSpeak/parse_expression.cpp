@@ -32,6 +32,14 @@ using std::make_shared;
 using namespace parser2;
 
 
+json_t make_array_skip_nulls(const std::vector<json_t>& elements){
+	for(const auto& i: elements){ QUARK_ASSERT(i.check_invariant()); }
+
+	std::vector<json_t> elements2;
+	std::copy_if(elements.begin(), elements.end(), std::back_inserter(elements2), [&] (const json_t& v) { return !v.is_null(); });
+	return json_t(elements2);
+}
+
 /////////////////////////////////		TO JSON
 
 
@@ -60,14 +68,14 @@ const std::map<eoperation, string> k_2_operator_to_string{
 template<typename EXPRESSION>
 struct json_helper : public maker<EXPRESSION> {
 	public: virtual const EXPRESSION maker__make_identifier(const std::string& s) const{
-		return json_t::make_array_skip_nulls({ json_t("@"), json_t(), json_t(s) });
+		return make_array_skip_nulls({ json_t("@"), json_t(), json_t(s) });
 	}
 	public: virtual const EXPRESSION maker__make1(const eoperation op, const EXPRESSION& expr) const{
 		if(op == eoperation::k_1_logical_not){
-			return json_t::make_array_skip_nulls({ json_t("neg"), json_t(), expr });
+			return make_array_skip_nulls({ json_t("neg"), json_t(), expr });
 		}
 		else if(op == eoperation::k_1_load){
-			return json_t::make_array_skip_nulls({ json_t("load"), json_t(), expr });
+			return make_array_skip_nulls({ json_t("load"), json_t(), expr });
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -88,25 +96,25 @@ struct json_helper : public maker<EXPRESSION> {
 	}
 
 	public: virtual const EXPRESSION maker__call(const EXPRESSION& f, const std::vector<EXPRESSION>& args) const{
-		return json_t::make_array_skip_nulls({ json_t("call"), json_t(f), json_t(), args });
+		return make_array_skip_nulls({ json_t("call"), json_t(f), json_t(), args });
 	}
 
 	public: virtual const EXPRESSION maker__member_access(const EXPRESSION& address, const std::string& member_name) const{
-		return json_t::make_array_skip_nulls({ json_t("->"), json_t(), address, json_t(member_name) });
+		return make_array_skip_nulls({ json_t("->"), json_t(), address, json_t(member_name) });
 	}
 
 	public: virtual const EXPRESSION maker__make_constant(const constant_value_t& value) const{
 		if(value._type == constant_value_t::etype::k_bool){
-			return json_t::make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t("<bool>") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t("<bool>") });
 		}
 		else if(value._type == constant_value_t::etype::k_int){
-			return json_t::make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t("<int>") });
+			return make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t("<int>") });
 		}
 		else if(value._type == constant_value_t::etype::k_float){
-			return json_t::make_array_skip_nulls({ json_t("k"), json_t(value._float), json_t("<float>") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._float), json_t("<float>") });
 		}
 		else if(value._type == constant_value_t::etype::k_string){
-			return json_t::make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t("<string>") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t("<string>") });
 		}
 		else{
 			QUARK_ASSERT(false);

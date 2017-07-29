@@ -85,7 +85,7 @@ struct seq_t {
 
 	/////////////		STATE
 	private: const char* FIRST_debug = nullptr;
-	private: const char* REST_debug = nullptr;
+//	private: const char* REST_debug = nullptr;
 	private: std::shared_ptr<const std::string> _str;
 	private: std::size_t _pos;
 };
