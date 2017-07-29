@@ -16,7 +16,7 @@
 #include "parser_ast.h"
 #include "parser_value.h"
 
-	struct json_value_t;
+	struct json_t;
 
 /*
 	ABOUT ADDRESSING AND CHAINS
@@ -312,7 +312,7 @@ namespace floyd_parser {
 
 	void trace(const expression_t& e);
 
-	json_value_t expression_to_json(const expression_t& e);
+	json_t expression_to_json(const expression_t& e);
 
 	expression_t::math2_operation string_to_math2_op(const std::string& op);
 

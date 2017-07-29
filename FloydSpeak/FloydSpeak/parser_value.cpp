@@ -450,25 +450,25 @@ struct_fixture_t::struct_fixture_t() :
 
 
 
-json_value_t value_to_json(const value_t& v){
+json_t value_to_json(const value_t& v){
 	if(v.is_null()){
-		return json_value_t();
+		return json_t();
 	}
 	else if(v.is_bool()){
-		return json_value_t(v.get_bool());
+		return json_t(v.get_bool());
 	}
 	else if(v.is_int()){
-		return json_value_t(static_cast<double>(v.get_int()));
+		return json_t(static_cast<double>(v.get_int()));
 	}
 	else if(v.is_float()){
-		return json_value_t(static_cast<double>(v.get_float()));
+		return json_t(static_cast<double>(v.get_float()));
 	}
 	else if(v.is_string()){
-		return json_value_t(v.get_string());
+		return json_t(v.get_string());
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct();
-		std::map<string, json_value_t> result;
+		std::map<string, json_t> result;
 		for(const auto member: value->_struct_type->get_struct_def()->_members){
 			const auto member_name = member._name;
 			const auto member_value = value->_member_values[member_name];
@@ -479,7 +479,7 @@ json_value_t value_to_json(const value_t& v){
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector();
-		std::vector<json_value_t> result;
+		std::vector<json_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
 			const auto element_value = value->_elements[i];
 			result.push_back(value_to_json(element_value));
@@ -488,7 +488,7 @@ json_value_t value_to_json(const value_t& v){
 		return result;
 	}
 	else if(v.is_function()){
-		return json_value_t();
+		return json_t();
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -533,23 +533,23 @@ QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
 #endif
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t("hello")), json_value_t("hello"));
+	quark::ut_compare(value_to_json(value_t("hello")), json_t("hello"));
 }
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t(123)), json_value_t(123.0));
+	quark::ut_compare(value_to_json(value_t(123)), json_t(123.0));
 }
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t(true)), json_value_t(true));
+	quark::ut_compare(value_to_json(value_t(true)), json_t(true));
 }
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t(false)), json_value_t(false));
+	quark::ut_compare(value_to_json(value_t(false)), json_t(false));
 }
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t()), json_value_t());
+	quark::ut_compare(value_to_json(value_t()), json_t());
 }
 
 

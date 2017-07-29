@@ -12,7 +12,7 @@
 
 #include "quark.h"
 
-struct json_value_t;
+struct json_t;
 struct seq_t;
 
 namespace floyd_parser {
@@ -27,7 +27,7 @@ namespace floyd_parser {
 		OUTPUT:
 			["return", EXPRESSION ]
 	*/
-	std::pair<json_value_t, seq_t> parse_return_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_return_statement(const seq_t& s);
 
 
 	/*
@@ -46,7 +46,7 @@ namespace floyd_parser {
 		OUTPUT:
 			[ "bind", "<float>", "x", EXPRESSION ]
 	*/
-	std::pair<json_value_t, seq_t> parse_assignment_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_assignment_statement(const seq_t& s);
 
 }	//	floyd_parser
 

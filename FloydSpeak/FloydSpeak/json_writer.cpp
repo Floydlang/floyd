@@ -128,7 +128,7 @@ QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
 
 
 
-std::string object_to_compact_string(const std::map<std::string, json_value_t>& object){
+std::string object_to_compact_string(const std::map<std::string, json_t>& object){
 	if(object.empty()){
 		return "{}";
 	}
@@ -148,14 +148,14 @@ std::string object_to_compact_string(const std::map<std::string, json_value_t>& 
 }
 
 QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
-	quark::ut_compare(object_to_compact_string(std::map<string, json_value_t>{}), "{}");
+	quark::ut_compare(object_to_compact_string(std::map<string, json_t>{}), "{}");
 }
 
 QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
 	quark::ut_compare(
-		object_to_compact_string(std::map<string, json_value_t>{
-			{ "one", json_value_t("1") },
-			{ "two", json_value_t("2") }
+		object_to_compact_string(std::map<string, json_t>{
+			{ "one", json_t("1") },
+			{ "two", json_t("2") }
 		}
 		),
 		"{ \"one\": \"1\", \"two\": \"2\" }"
@@ -163,7 +163,7 @@ QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
 }
 
 
-std::string array_to_compact_string(const std::vector<json_value_t>& array){
+std::string array_to_compact_string(const std::vector<json_t>& array){
 	if(array.empty()){
 		return "[]";
 	}
@@ -185,25 +185,25 @@ std::string array_to_compact_string(const std::vector<json_value_t>& array){
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
-	quark::ut_compare(array_to_compact_string(std::vector<json_value_t>{}), "[]");
+	quark::ut_compare(array_to_compact_string(std::vector<json_t>{}), "[]");
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
-	quark::ut_compare(array_to_compact_string(std::vector<json_value_t>{ json_value_t(13.4) }), "[13.4]");
+	quark::ut_compare(array_to_compact_string(std::vector<json_t>{ json_t(13.4) }), "[13.4]");
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
 	quark::ut_compare(
-		array_to_compact_string(vector<json_value_t>{
-			json_value_t("a"),
-			json_value_t("b")
+		array_to_compact_string(vector<json_t>{
+			json_t("a"),
+			json_t("b")
 		}),
 		"[\"a\", \"b\"]"
 	);
 }
 
 
-std::string json_to_compact_string(const json_value_t& v){
+std::string json_to_compact_string(const json_t& v){
 	if(v.is_object()){
 		return object_to_compact_string(v.get_object());
 	}
@@ -231,20 +231,20 @@ std::string json_to_compact_string(const json_value_t& v){
 }
 
 QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
-	const auto a = std::map<string, json_value_t>{
-		{ "firstName", json_value_t("John") },
-		{ "lastName", json_value_t("Doe") }
+	const auto a = std::map<string, json_t>{
+		{ "firstName", json_t("John") },
+		{ "lastName", json_t("Doe") }
 	};
-	quark::ut_compare(json_to_compact_string(json_value_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
-	quark::ut_compare(json_to_compact_string(json_value_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
+	quark::ut_compare(json_to_compact_string(json_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	quark::ut_compare(json_to_compact_string(json_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
 	quark::ut_compare(
-		json_to_compact_string(json_value_t(
-			vector<json_value_t>{
-				json_value_t("a"),
-				json_value_t("b")
+		json_to_compact_string(json_t(
+			vector<json_t>{
+				json_t("a"),
+				json_t("b")
 			}
 		)),
 		"[\"a\", \"b\"]"
@@ -252,41 +252,41 @@ QUARK_UNIT_TESTQ("to_string()", ""){
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_value_t("")) == "\"\"");
+	QUARK_UT_VERIFY(json_to_compact_string(json_t("")) == "\"\"");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_value_t("xyz")) == "\"xyz\"");
+	QUARK_UT_VERIFY(json_to_compact_string(json_t("xyz")) == "\"xyz\"");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_value_t(12.3)) == "12.3");
+	QUARK_UT_VERIFY(json_to_compact_string(json_t(12.3)) == "12.3");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_value_t(true)) == "true");
+	QUARK_UT_VERIFY(json_to_compact_string(json_t(true)) == "true");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_value_t(false)) == "false");
+	QUARK_UT_VERIFY(json_to_compact_string(json_t(false)) == "false");
 }
 
 QUARK_UNIT_TESTQ("to_string()", ""){
-	QUARK_UT_VERIFY(json_to_compact_string(json_value_t()) == "null");
+	QUARK_UT_VERIFY(json_to_compact_string(json_t()) == "null");
 }
 
 
 
-std::string json_to_pretty_string(const json_value_t& v){
+std::string json_to_pretty_string(const json_t& v){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	return json_to_pretty_string(v, quark::get_log_indent(), pretty);
 }
 
 
-bool is_collection(const json_value_t& type){
+bool is_collection(const json_t& type){
 	return type.is_object() || type.is_array();
 }
-bool is_subtree(const json_value_t& type){
+bool is_subtree(const json_t& type){
 	return (type.is_object() && type.get_object_size() > 0) || (type.is_array() && type.get_array_size() > 0);
 }
 
@@ -336,7 +336,7 @@ QUARK_UNIT_TESTQ("count_char_positions()", ""){
 /*
 	key == name of this value inside a parent object if any. If this is an entry in an array, key == "". Else key == "".
 */
-std::string json_to_pretty_string_internal(const string& key, const json_value_t& value, int pos, const pretty_t& pretty){
+std::string json_to_pretty_string_internal(const string& key, const json_t& value, int pos, const pretty_t& pretty){
 	const auto key_str = make_key_str(key);
 	if(value.is_object()){
 		const auto& object = value.get_object();
@@ -431,7 +431,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_value_t
 	}
 }
 
-std::string json_to_pretty_string(const json_value_t& value, int pos, const pretty_t& pretty){
+std::string json_to_pretty_string(const json_t& value, int pos, const pretty_t& pretty){
 	return json_to_pretty_string_internal("", value, pos, pretty);
 }
 
@@ -440,7 +440,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	std::cout <<(
 		json_to_pretty_string(
-			json_value_t::make_object(),
+			json_t::make_object(),
 			quark::get_log_indent(),
 			pretty
 		)
@@ -459,9 +459,9 @@ QUARK_UNIT_TESTQ("cout()", ""){
 }
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "object"){
-	const auto value = json_value_t::make_object({
-		{ "one", json_value_t(111.0) },
-		{ "two", json_value_t(222.0) }
+	const auto value = json_t::make_object({
+		{ "one", json_t(111.0) },
+		{ "two", json_t(222.0) }
 	});
 
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
@@ -475,16 +475,16 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "object"){
 
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested object"){
-	const auto italian = json_value_t::make_object({
-		{ "uno", json_value_t(1.0) },
-		{ "duo", json_value_t(2.0) },
-		{ "tres", json_value_t(3.0) },
-		{ "quattro", json_value_t(3.0) }
+	const auto italian = json_t::make_object({
+		{ "uno", json_t(1.0) },
+		{ "duo", json_t(2.0) },
+		{ "tres", json_t(3.0) },
+		{ "quattro", json_t(3.0) }
 	});
 
-	const auto value = json_value_t::make_object({
-		{ "one", json_value_t(111.0) },
-		{ "two", json_value_t(222.0) },
+	const auto value = json_t::make_object({
+		{ "one", json_t(111.0) },
+		{ "two", json_t(222.0) },
 		{ "italian", italian }
 	});
 
@@ -499,7 +499,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested object"){
 
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "array"){
-	const auto value = json_value_t::make_array2({ "one", "two", "three" });
+	const auto value = json_t::make_array2({ "one", "two", "three" });
 
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	const string result = json_to_pretty_string(
@@ -511,8 +511,8 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "array"){
 }
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested arrays"){
-	const auto italian = json_value_t::make_array2({ "uno", "duo", "tres", "quattro" });
-	const auto value = json_value_t::make_array2({ "one", "two", italian, "three" });
+	const auto italian = json_t::make_array2({ "uno", "duo", "tres", "quattro" });
+	const auto value = json_t::make_array2({ "one", "two", italian, "three" });
 
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	const string result = json_to_pretty_string(

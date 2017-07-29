@@ -11,10 +11,10 @@
 
 #include <string>
 
-struct json_value_t;
+struct json_t;
 struct seq_t;
 
-std::pair<json_value_t, seq_t> parse_json(const seq_t& s);
+std::pair<json_t, seq_t> parse_json(const seq_t& s);
 
 
 

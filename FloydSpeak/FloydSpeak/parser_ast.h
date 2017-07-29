@@ -17,7 +17,7 @@
 #include "parser_primitives.h"
 
 struct TSHA1;
-struct json_value_t;
+struct json_t;
 
 
 
@@ -126,7 +126,7 @@ namespace floyd_parser {
 	};
 
 	void trace(const vector_def_t& e);
-	json_value_t vector_def_to_json(const vector_def_t& s);
+	json_t vector_def_to_json(const vector_def_t& s);
 
 
 
@@ -207,7 +207,7 @@ namespace floyd_parser {
 		public: efunc_variant _function_variant;
 	};
 
-	json_value_t scope_def_to_json(const scope_def_t& scope_def);
+	json_t scope_def_to_json(const scope_def_t& scope_def);
 	void trace(const scope_ref_t& e);
 
 
@@ -313,7 +313,7 @@ namespace floyd_parser {
 	};
 
 
-	json_value_t type_def_to_json(const type_def_t& type_def);
+	json_t type_def_to_json(const type_def_t& type_def);
 
 
 
@@ -351,7 +351,7 @@ namespace floyd_parser {
 	};
 
 	void trace(const ast_t& program);
-	json_value_t ast_to_json(const ast_t& ast);
+	json_t ast_to_json(const ast_t& ast);
 
 
 	//////////////////////////////////////////////////		trace_vec()

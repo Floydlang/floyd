@@ -26,7 +26,7 @@
 
 #if false
 
-json_value_t resolve_scope_def(const parser_path_t& path);
+json_t resolve_scope_def(const parser_path_t& path);
 expression_t pass2_expression_internal(const resolved_path_t& path, const expression_t& e);
 
 
@@ -292,7 +292,7 @@ statement_t resolve_types__statement(const resolved_path_t& path, const statemen
 
 
 #if 0
-json_value_t resolve_type_def(const parser_path_t& path, const json_value_t& type_def){
+json_t resolve_type_def(const parser_path_t& path, const json_t& type_def){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(type_def.check_invariant());
 
@@ -338,12 +338,12 @@ json_value_t resolve_type_def(const parser_path_t& path, const json_value_t& typ
 
 	Creates the scope_def_t ON THE WAY UP from callstack. This means all actual resolving must be done on JSON-structures.
 */
-json_value_t resolve_scope_def(const parser_path_t& path){
+json_t resolve_scope_def(const parser_path_t& path){
 	QUARK_ASSERT(path.check_invariant());
 
 	const auto scope1 = path._scopes.back();
 
-	auto types_collector2 = json_value_t::make_object();
+	auto types_collector2 = json_t::make_object();
 
 	//	Make sure all types can resolve their symbols.
 	//	??? this makes it impossible for types to refer to eachother depending on in which order we process them!?
@@ -354,15 +354,15 @@ json_value_t resolve_scope_def(const parser_path_t& path){
 			const string name = type_entry_pair.first;
 			const auto& type_defs = type_entry_pair.second.get_array();
 
-			std::vector<json_value_t> type_defs2;
+			std::vector<json_t> type_defs2;
 			for(const auto& type_def: type_defs){
 				QUARK_TRACE(json_to_compact_string(type_def));
 
-				json_value_t resolved_type_def = resolve_type_def(path, type_def);
+				json_t resolved_type_def = resolve_type_def(path, type_def);
 				type_defs2.push_back(resolved_type_def);
 			}
 
-			types_collector2 = assoc(types_collector2, name, json_value_t(type_defs2));
+			types_collector2 = assoc(types_collector2, name, json_t(type_defs2));
 		}
 	}
 
@@ -434,14 +434,14 @@ json_value_t resolve_scope_def(const parser_path_t& path){
 
 		{ "type", "" },
 		{ "name", "" },
-		{ "members", json_value_t::make_array() },
-		{ "types", json_value_t::make_object() },
+		{ "members", json_t::make_array() },
+		{ "types", json_t::make_object() },
 
 		//??? New in JSON, used to stored as sub-function body.
-		{ "locals", json_value_t::make_array() },
+		{ "locals", json_t::make_array() },
 
 		//	??? New in JSON version - used to be stored in _executable.
-		{ "statements", json_value_t::make_array() },
+		{ "statements", json_t::make_array() },
 		{ "return_type", "" }
 	*/
 	const auto scope_type = scope1.get_object_element("type").get_string();

@@ -389,42 +389,42 @@ namespace floyd_parser {
 
 
 
-	json_value_t vector_def_to_json(const vector_def_t& s){
+	json_t vector_def_to_json(const vector_def_t& s){
 		return {
 		};
 	}
 
-	json_value_t type_def_to_json(const type_def_t& type_def){
+	json_t type_def_to_json(const type_def_t& type_def){
 		return make_object({
-			{ "_base_type", json_value_t(base_type_to_string(type_def.get_base_type())) },
-			{ "_struct_def", type_def.get_base_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_value_t() },
-			{ "_vector_def", type_def.get_base_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_value_t() },
-			{ "_function_def", type_def.get_base_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_value_t() }
+			{ "_base_type", json_t(base_type_to_string(type_def.get_base_type())) },
+			{ "_struct_def", type_def.get_base_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_t() },
+			{ "_vector_def", type_def.get_base_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_t() },
+			{ "_function_def", type_def.get_base_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_t() }
 		});
 	}
 
-	json_value_t scope_def_to_json(const scope_def_t& scope_def){
-		std::vector<json_value_t> members;
+	json_t scope_def_to_json(const scope_def_t& scope_def){
+		std::vector<json_t> members;
 		for(const auto i: scope_def._members){
 			const auto member = make_object({
-				{ "type", json_value_t(i._type->to_string()) },
-				{ "_value", i._value ? value_to_json(*i._value) : json_value_t() },
-				{ "name", json_value_t(i._name) }
+				{ "type", json_t(i._type->to_string()) },
+				{ "_value", i._value ? value_to_json(*i._value) : json_t() },
+				{ "name", json_t(i._name) }
 		});
-			members.push_back(json_value_t(member));
+			members.push_back(json_t(member));
 		}
 
-		std::vector<json_value_t> statements;
+		std::vector<json_t> statements;
 		for(const auto i: scope_def._statements){
 			statements.push_back(statement_to_json(*i));
 		}
 
 		return make_object({
-			{ "type", json_value_t(scope_type_to_string(scope_def._type)) },
-			{ "name", json_value_t(scope_def._name.to_string()) },
-			{ "members", members.empty() ? json_value_t() :json_value_t(members) },
-			{ "statements", json_value_t(statements) },
-			{ "return_type", scope_def._return_type ? scope_def._return_type->to_string() : json_value_t() }
+			{ "type", json_t(scope_type_to_string(scope_def._type)) },
+			{ "name", json_t(scope_def._name.to_string()) },
+			{ "members", members.empty() ? json_t() :json_t(members) },
+			{ "statements", json_t(statements) },
+			{ "return_type", scope_def._return_type ? scope_def._return_type->to_string() : json_t() }
 		});
 	}
 
@@ -632,13 +632,13 @@ namespace floyd_parser {
 	}
 
 
-	json_value_t symbols_to_json(const std::map<std::string, std::shared_ptr<const type_def_t>>& symbols){
-		std::map<string, json_value_t> m;
+	json_t symbols_to_json(const std::map<std::string, std::shared_ptr<const type_def_t>>& symbols){
+		std::map<string, json_t> m;
 		for(const auto i: symbols){
 			m[i.first] = type_def_to_json(*i.second);
 		}
 		
-		return json_value_t::make_object(m);
+		return json_t::make_object(m);
 	}
 
 
@@ -650,7 +650,7 @@ namespace floyd_parser {
 		QUARK_TRACE(s);
 	}
 
-	json_value_t ast_to_json(const ast_t& ast){
+	json_t ast_to_json(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
 		return make_object({

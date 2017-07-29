@@ -19,7 +19,7 @@ namespace floyd_parser {
 	using std::pair;
 
 
-	std::pair<json_value_t, seq_t>  parse_struct_definition(const seq_t& pos0){
+	std::pair<json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
 		QUARK_ASSERT(pos0.size() > 0);
 
 		const auto token_pos = read_until(pos0, whitespace_chars);
@@ -31,7 +31,7 @@ namespace floyd_parser {
 		read_required_char(s2, '{');
 		const auto body_pos = get_balanced(s2);
 
-		vector<json_value_t> members;
+		vector<json_t> members;
 		auto pos = seq_t(trim_ends(body_pos.first));
 		while(!pos.empty()){
 			const auto member_type = read_type(pos);
@@ -51,17 +51,17 @@ namespace floyd_parser {
 				pos = skip_whitespace(constant_expr_pos_s.second);
 			}
 			else{
-				const auto a = make_member_def("<" + member_type.first + ">", member_name.first, json_value_t());
+				const auto a = make_member_def("<" + member_type.first + ">", member_name.first, json_t());
 				members.push_back(a);
 				pos = skip_whitespace(optional_default_value.second);
 			}
 			pos = skip_whitespace(read_required_char(pos, ';'));
 		}
 
-		const auto r = json_value_t::make_array2({
+		const auto r = json_t::make_array2({
 			"def-struct",
-			json_value_t::make_object({
-				{ "name", json_value_t(struct_name_pos.first) },
+			json_t::make_object({
+				{ "name", json_t(struct_name_pos.first) },
 				{ "members", members }
 			})
 		});
@@ -75,19 +75,19 @@ namespace floyd_parser {
 		const auto r = parse_struct_definition(seq_t(k_test_struct0));
 
 		const auto expected =
-		json_value_t::make_array2({
+		json_t::make_array2({
 			"def-struct",
-			json_value_t::make_object({
+			json_t::make_object({
 				{ "name", "a" },
-				{ "members", json_value_t::make_array2({
-					json_value_t::make_object({ { "name", "x"}, { "type", "<int>"} }),
-					json_value_t::make_object({ { "name", "y"}, { "type", "<string>"} }),
-					json_value_t::make_object({ { "name", "z"}, { "type", "<float>"} })
+				{ "members", json_t::make_array2({
+					json_t::make_object({ { "name", "x"}, { "type", "<int>"} }),
+					json_t::make_object({ { "name", "y"}, { "type", "<string>"} }),
+					json_t::make_object({ { "name", "z"}, { "type", "<float>"} })
 				}) },
 			})
 		});
 
-		QUARK_TEST_VERIFY(r == (std::pair<json_value_t, seq_t>(expected, seq_t(""))));
+		QUARK_TEST_VERIFY(r == (std::pair<json_t, seq_t>(expected, seq_t(""))));
 	}
 
 

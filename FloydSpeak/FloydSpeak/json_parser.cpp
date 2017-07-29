@@ -24,11 +24,11 @@ seq_t skip_whitespace(const seq_t& s){
 }
 
 
-std::pair<json_value_t, seq_t> parse_json(const seq_t& s){
+std::pair<json_t, seq_t> parse_json(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto ch = a.first1();
 	if(ch == "{"){
-		std::map<string, json_value_t> obj;
+		std::map<string, json_t> obj;
 		auto p2 = skip_whitespace(a.rest1());
 		while(p2.first1() != "}"){
 
@@ -60,10 +60,10 @@ std::pair<json_value_t, seq_t> parse_json(const seq_t& s){
 			}
 			p2 = post_p;
 		}
-		return { json_value_t::make_object(obj), p2.rest1() };
+		return { json_t::make_object(obj), p2.rest1() };
 	}
 	else if(ch == "["){
-		vector<json_value_t> array;
+		vector<json_t> array;
 		auto p2 = skip_whitespace(a.rest1());
 		while(p2.first1() != "]"){
 			const auto expression_p = parse_json(p2);
@@ -79,82 +79,82 @@ std::pair<json_value_t, seq_t> parse_json(const seq_t& s){
 			}
 			p2 = post_p;
 		}
-		return { json_value_t::make_array2(array), p2.rest1() };
+		return { json_t::make_array2(array), p2.rest1() };
 	}
 	else if(ch == "\""){
 		const auto b = read_until(a.rest1(), "\"");
-		return { json_value_t(b.first), b.second.rest1() };
+		return { json_t(b.first), b.second.rest1() };
 	}
 	else if(if_first(a, "true").first){
-		return { json_value_t(true), if_first(a, "true").second };
+		return { json_t(true), if_first(a, "true").second };
 	}
 	else if(if_first(a, "false").first){
-		return { json_value_t(false), if_first(a, "false").second };
+		return { json_t(false), if_first(a, "false").second };
 	}
 	else if(if_first(a, "null").first){
-		return { json_value_t(), if_first(a, "null").second };
+		return { json_t(), if_first(a, "null").second };
 	}
 	else{
 		const auto number_pos = read_while(a, "-0123456789.+");
 		if(number_pos.first.empty()){
-			return { json_value_t(), a };
+			return { json_t(), a };
 		}
 		else{
 			double number = parse_float(number_pos.first);
-			return { json_value_t(number), number_pos.second };
+			return { json_t(number), number_pos.second };
 		}
 	}
 }
 
 
 QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("\"xyz\"xxx")), { json_value_t("xyz"), seq_t("xxx") });
+	quark::ut_compare(parse_json(seq_t("\"xyz\"xxx")), { json_t("xyz"), seq_t("xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("\"\"xxx")), { json_value_t(""), seq_t("xxx") });
-}
-
-
-QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("13.0 xxx")), { json_value_t(13.0), seq_t(" xxx") });
-}
-
-QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("-13.0 xxx")), { json_value_t(-13.0), seq_t(" xxx") });
-}
-
-QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("4 xxx")), { json_value_t(4.0), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("\"\"xxx")), { json_t(""), seq_t("xxx") });
 }
 
 
 QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("true xxx")), { json_value_t(true), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("13.0 xxx")), { json_t(13.0), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("false xxx")), { json_value_t(false), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("-13.0 xxx")), { json_t(-13.0), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "primitive"){
-	quark::ut_compare(parse_json(seq_t("null xxx")), { json_value_t(), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("4 xxx")), { json_t(4.0), seq_t(" xxx") });
+}
+
+
+QUARK_UNIT_TESTQ("parse_json()", "primitive"){
+	quark::ut_compare(parse_json(seq_t("true xxx")), { json_t(true), seq_t(" xxx") });
+}
+
+QUARK_UNIT_TESTQ("parse_json()", "primitive"){
+	quark::ut_compare(parse_json(seq_t("false xxx")), { json_t(false), seq_t(" xxx") });
+}
+
+QUARK_UNIT_TESTQ("parse_json()", "primitive"){
+	quark::ut_compare(parse_json(seq_t("null xxx")), { json_t(), seq_t(" xxx") });
 }
 
 
 QUARK_UNIT_TESTQ("parse_json()", "array - empty"){
-	quark::ut_compare(parse_json(seq_t("[] xxx")), { json_value_t::make_array(), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("[] xxx")), { json_t::make_array(), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "array - two numbers"){
-	quark::ut_compare(parse_json(seq_t("[10, 11] xxx")), { json_value_t::make_array2({json_value_t(10.0), json_value_t(11.0)}), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("[10, 11] xxx")), { json_t::make_array2({json_t(10.0), json_t(11.0)}), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "array - nested"){
 	quark::ut_compare(
 		parse_json(seq_t("[10, 11, [ 12, 13]] xxx")),
 		{
-			json_value_t::make_array2({json_value_t(10.0), json_value_t(11.0), json_value_t::make_array2({json_value_t(12.0), json_value_t(13.0)}) }),
+			json_t::make_array2({json_t(10.0), json_t(11.0), json_t::make_array2({json_t(12.0), json_t(13.0)}) }),
 			seq_t(" xxx")
 		}
 	);
@@ -162,14 +162,14 @@ QUARK_UNIT_TESTQ("parse_json()", "array - nested"){
 
 
 QUARK_UNIT_TESTQ("parse_json()", "object - empty"){
-	quark::ut_compare(parse_json(seq_t("{} xxx")), { json_value_t::make_object(), seq_t(" xxx") });
+	quark::ut_compare(parse_json(seq_t("{} xxx")), { json_t::make_object(), seq_t(" xxx") });
 }
 
 QUARK_UNIT_TESTQ("parse_json()", "object - two entries"){
 	const auto result = parse_json(seq_t("{\"one\": 1, \"two\": 2} xxx"));
 	QUARK_TRACE(json_to_compact_string(result.first));
 
-	quark::ut_compare(result, { json_value_t::make_object({{"one", json_value_t(1.0)}, {"two", json_value_t(2.0)}}), seq_t(" xxx") });
+	quark::ut_compare(result, { json_t::make_object({{"one", json_t(1.0)}, {"two", json_t(2.0)}}), seq_t(" xxx") });
 }
 
 

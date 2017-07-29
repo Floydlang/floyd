@@ -381,11 +381,11 @@ void trace(const expression_t& e){
 	An expression is a json array where entries may be other json arrays.
 	["+", ["+", 1, 2], ["k", 10]]
 */
-json_value_t expression_to_json(const expression_t& e){
+json_t expression_to_json(const expression_t& e){
 	const auto expression_base_type = e._resolved_expression_type->get_base_type();
-	json_value_t type;
+	json_t type;
 	if(expression_base_type == base_type::k_null){
-		type = json_value_t();
+		type = json_t();
 	}
 	else{
 		const auto type_string = e._resolved_expression_type->to_string();
@@ -393,49 +393,49 @@ json_value_t expression_to_json(const expression_t& e){
 	}
 
 	if(e._constant){
-		return json_value_t::make_array2({ "k", value_to_json(*e._constant), type });
+		return json_t::make_array2({ "k", value_to_json(*e._constant), type });
 	}
 	else if(e._math2){
 		const auto e2 = *e._math2;
 		const auto left = expression_to_json(e2._left);
 		const auto right = expression_to_json(e2._right);
-		return json_value_t::make_array2({ operation_to_string(e2._operation), left, right, type });
+		return json_t::make_array2({ operation_to_string(e2._operation), left, right, type });
 	}
 	else if(e._math1){
 		const auto e2 = *e._math1;
 		const auto input = expression_to_json(e2._input);
-		return json_value_t::make_array2({ operation_to_string(e2._operation), input, type });
+		return json_t::make_array2({ operation_to_string(e2._operation), input, type });
 	}
 	else if(e._conditional_operator){
 		const auto e2 = *e._conditional_operator;
 		const auto condition = expression_to_json(e2._condition);
 		const auto a = expression_to_json(e2._a);
 		const auto b = expression_to_json(e2._b);
-		return json_value_t::make_array2({ json_value_t("?:"), condition, a, b, type });
+		return json_t::make_array2({ json_t("?:"), condition, a, b, type });
 	}
 	else if(e._call){
 		const auto& call_function = *e._call;
-		vector<json_value_t>  args_json;
+		vector<json_t>  args_json;
 		for(const auto& i: call_function._inputs){
 			const auto arg_expr = expression_to_json(i);
 			args_json.push_back(arg_expr);
 		}
-//???		return json_value_t::make_array2({ "call", expression_to_json(call_function._function), args_json, type });
-		return json_value_t::make_array2({ "call", call_function._function.to_string(), args_json, type });
+//???		return json_t::make_array2({ "call", expression_to_json(call_function._function), args_json, type });
+		return json_t::make_array2({ "call", call_function._function.to_string(), args_json, type });
 	}
 	else if(e._resolve_variable){
 		const auto e2 = *e._resolve_variable;
-		return json_value_t::make_array2({ "@", json_value_t(e2._variable_name), type });
+		return json_t::make_array2({ "@", json_t(e2._variable_name), type });
 	}
 	else if(e._resolve_member){
 		const auto e2 = *e._resolve_member;
-		return json_value_t::make_array2({ "->", expression_to_json(e2._parent_address), json_value_t(e2._member_name), type });
+		return json_t::make_array2({ "->", expression_to_json(e2._parent_address), json_t(e2._member_name), type });
 	}
 	else if(e._lookup_element){
 		const auto e2 = *e._lookup_element;
 		const auto lookup_key = expression_to_json(e2._lookup_key);
 		const auto parent_address = expression_to_json(e2._parent_address);
-		return json_value_t::make_array2({ "[-]", parent_address, lookup_key, type });
+		return json_t::make_array2({ "[-]", parent_address, lookup_key, type });
 	}
 	else{
 		QUARK_ASSERT(false);

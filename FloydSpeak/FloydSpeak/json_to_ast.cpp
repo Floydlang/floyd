@@ -51,7 +51,7 @@ shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string,
 }
 
 
-expression_t expression_from_json(const json_value_t& e, const map<string, shared_ptr<type_def_t>>& types){
+expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(e.is_array() && e.get_array_size() >= 1);
 
 	const string op = e.get_array_n(0).get_string();
@@ -170,7 +170,7 @@ expression_t expression_from_json(const json_value_t& e, const map<string, share
 			{ "expr": "Welcome!", "name": "message", "type": "<string>" }
 		]
 */
-std::vector<member_t> conv_members(const json_value_t& members, const map<string, shared_ptr<type_def_t>>& types, bool convert_expressions){
+std::vector<member_t> conv_members(const json_t& members, const map<string, shared_ptr<type_def_t>>& types, bool convert_expressions){
 	std::vector<member_t> members2;
 	for(const auto i: members.get_array()){
 		const string arg_name = i.get_object_element("name").get_string();
@@ -211,13 +211,13 @@ std::vector<member_t> conv_members(const json_value_t& members, const map<string
 		"types": {}
 	}
 */
-std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
+std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
 	const string type = scope_def.get_object_element("type").get_string();
 	const string name = scope_def.get_object_element("name").get_string();
 	const string return_type_id = scope_def.get_object_element("return_type").get_string();
-	const auto args = scope_def.get_optional_object_element("args", json_value_t::make_array()).get_array();
-	const auto local_variables = scope_def.get_optional_object_element("locals", json_value_t::make_array()).get_array();
-	const auto members = scope_def.get_optional_object_element("members", json_value_t::make_array()).get_array();
+	const auto args = scope_def.get_optional_object_element("args", json_t::make_array()).get_array();
+	const auto local_variables = scope_def.get_optional_object_element("locals", json_t::make_array()).get_array();
+	const auto members = scope_def.get_optional_object_element("members", json_t::make_array()).get_array();
 	const auto statements = scope_def.get_object_element("statements").get_array();
 
 	std::vector<member_t> args2 = conv_members(args, types, false);
@@ -256,13 +256,13 @@ std::shared_ptr<const scope_def_t> conv_scope_def__no_expressions(const json_val
 	return {};
 }
 
-std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
+std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_t& scope_def, const map<string, shared_ptr<type_def_t>>& types){
 	const string type = scope_def.get_object_element("type").get_string();
 	const string name = scope_def.get_object_element("name").get_string();
 	const string return_type_id = scope_def.get_object_element("return_type").get_string();
-	const auto args = scope_def.get_optional_object_element("args", json_value_t::make_array()).get_array();
-	const auto local_variables = scope_def.get_optional_object_element("locals", json_value_t::make_array()).get_array();
-	const auto members = scope_def.get_optional_object_element("members", json_value_t::make_array()).get_array();
+	const auto args = scope_def.get_optional_object_element("args", json_t::make_array()).get_array();
+	const auto local_variables = scope_def.get_optional_object_element("locals", json_t::make_array()).get_array();
+	const auto members = scope_def.get_optional_object_element("members", json_t::make_array()).get_array();
 	const auto statements = scope_def.get_object_element("statements").get_array();
 
 	std::vector<member_t> args2 = conv_members(args, types, true);
@@ -321,7 +321,7 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_value_
 	return {};
 }
 
-std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& types){
+std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_t& def, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(def.check_invariant());
 
 	const auto base_type = def.get_object_element("base_type");
@@ -361,7 +361,7 @@ std::shared_ptr<type_def_t> conv_type_def__no_expressions(const json_value_t& de
 	}
 }
 
-std::shared_ptr<type_def_t> conv_type_def__expressions_and_statements(const json_value_t& def, const map<string, shared_ptr<type_def_t>>& types){
+std::shared_ptr<type_def_t> conv_type_def__expressions_and_statements(const json_t& def, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(def.check_invariant());
 
 	const auto base_type = def.get_object_element("base_type");
@@ -400,7 +400,7 @@ std::shared_ptr<type_def_t> conv_type_def__expressions_and_statements(const json
 
 	IMPORTANT: Updates the shared_ptr<type_def_t> member data in-place. Clients keep shared_ptr<typedef_t>s that are affected.
 */
-ast_t json_to_ast(const json_value_t& program){
+ast_t json_to_ast(const json_t& program){
 	const auto lookup = program.get_object_element("lookup").get_object();
 
 	//	Make placeholder type-defs for each symbol. We use pointer to type_def as its identity.
@@ -413,7 +413,7 @@ ast_t json_to_ast(const json_value_t& program){
 	//	Only definitions of the types, not yet expressions or statements that USE these types.
 	for(const auto& s: lookup){
 		const auto id = s.first;
-		const json_value_t& def = s.second;
+		const json_t& def = s.second;
 		std::shared_ptr<type_def_t> type_def = conv_type_def__no_expressions(def, temp_type_defs);
 		shared_ptr<type_def_t> identity_type_def = temp_type_defs.at(id);
 
@@ -424,7 +424,7 @@ ast_t json_to_ast(const json_value_t& program){
 	//	Second pass - do expressions & statements -- make them USE the new type_def_t.
 	for(const auto& s: lookup){
 		const auto id = s.first;
-		const json_value_t& def = s.second;
+		const json_t& def = s.second;
 		std::shared_ptr<type_def_t> type_def = conv_type_def__expressions_and_statements(def, temp_type_defs);
 		if(type_def){
 			shared_ptr<type_def_t> identity_type_def = temp_type_defs.at(id);

@@ -324,18 +324,18 @@ pair<type_identifier_t, seq_t> read_required_type_identifier(const seq_t& s){
 
 
 
-json_value_t make_member_def(const std::string& type, const std::string& name, const json_value_t& expression){
+json_t make_member_def(const std::string& type, const std::string& name, const json_t& expression){
 	QUARK_ASSERT(type.empty() || (type.size() > 2 && type.front() == '<' && type.back() == '>'));
 	QUARK_ASSERT(expression.check_invariant());
 
 	if(expression.is_null()){
-		return json_value_t::make_object({
+		return json_t::make_object({
 			{ "type", type },
 			{ "name", name }
 		});
 	}
 	else{
-		return json_value_t::make_object({
+		return json_t::make_object({
 			{ "type", type },
 			{ "name", name },
 			{ "expr", expression }
@@ -345,23 +345,23 @@ json_value_t make_member_def(const std::string& type, const std::string& name, c
 
 
 
-json_value_t make_scope_def(){
-	return json_value_t::make_object({
+json_t make_scope_def(){
+	return json_t::make_object({
 		{ "type", "" },
 		{ "name", "" },
-		{ "args", json_value_t::make_array() },
-		{ "members", json_value_t::make_array() },
-		{ "types", json_value_t::make_object() },
+		{ "args", json_t::make_array() },
+		{ "members", json_t::make_array() },
+		{ "types", json_t::make_object() },
 
 		//??? New in JSON, used to stored as sub-function body.
-		{ "locals", json_value_t::make_array() },
+		{ "locals", json_t::make_array() },
 
 		//	??? New in JSON version - used to be stored in _executable.
-		{ "statements", json_value_t::make_array() },
+		{ "statements", json_t::make_array() },
 		{ "return_type", "" }
 	});
 }
-json_value_t make_builtin_types(){
+json_t make_builtin_types(){
 	const auto builtin_types = parse_json(seq_t(R"(
 		{
 			"int": [ { "base_type": "int" } ],

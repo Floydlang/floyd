@@ -34,7 +34,7 @@
 	- Use *index* of member, not the name.
 	- Check input as if user input -- allows pass2 to be run on external JSON of AST.
 */
-json_value_t run_pass2(const json_value_t& parse_tree);
+json_t run_pass2(const json_t& parse_tree);
 
 
 #endif /* pass2_hpp */

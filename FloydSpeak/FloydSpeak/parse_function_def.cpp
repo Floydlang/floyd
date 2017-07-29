@@ -26,16 +26,16 @@ namespace floyd_parser {
 	(int a)
 	(int x, int y)
 */
-static vector<json_value_t> parse_functiondef_arguments(const seq_t& s2){
+static vector<json_t> parse_functiondef_arguments(const seq_t& s2){
 	const auto s = seq_t(trim_ends(s2.get_s()));
-	vector<json_value_t> args;
+	vector<json_t> args;
 	auto str = skip_whitespace(s);
 	while(!str.empty()){
 		const auto arg_type = read_type(str);
 		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 
-		const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, json_value_t());
+		const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, json_t());
 		args.push_back(a);
 		str = skip_whitespace(optional_comma.second);
 	}
@@ -50,7 +50,7 @@ const string kTestFunctionArguments0JSON = R"(
 
 QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 0 -- zero arguments", "Correct output JSON"){
 	ut_compare_jsons(
-		json_value_t::make_array2(parse_functiondef_arguments(seq_t(kTestFunctionArguments0))),
+		json_t::make_array2(parse_functiondef_arguments(seq_t(kTestFunctionArguments0))),
 		parse_json(seq_t(kTestFunctionArguments0JSON)).first
 	);
 }
@@ -67,13 +67,13 @@ const string kTestFunctionArguments1JSON = R"(
 
 QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- three arguments", "Correct output JSON"){
 	ut_compare_jsons(
-		json_value_t::make_array2(parse_functiondef_arguments(seq_t(kTestFunctionArguments1))),
+		json_t::make_array2(parse_functiondef_arguments(seq_t(kTestFunctionArguments1))),
 		parse_json(seq_t(kTestFunctionArguments1JSON)).first
 	);
 }
 
 
-std::pair<json_value_t, seq_t> parse_function_definition2(const seq_t& pos){
+std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto return_type_pos = read_required_type_identifier(pos);
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
 
@@ -96,11 +96,11 @@ std::pair<json_value_t, seq_t> parse_function_definition2(const seq_t& pos){
 
 	const auto statements = read_statements2(seq_t(trim_ends(body_pos.first)));
 
-	json_value_t function_def = json_value_t::make_array2({
+	json_t function_def = json_t::make_array2({
 		"def-func",
-		json_value_t::make_object({
+		json_t::make_object({
 			{ "name", function_name },
-			{ "args", json_value_t::make_array2(args) },
+			{ "args", json_t::make_array2(args) },
 			{ "statements", statements.first },
 			{ "return_type", "<" + return_type_pos.first.to_string() + ">" }
 		})

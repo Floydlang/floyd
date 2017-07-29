@@ -20,7 +20,7 @@ namespace floyd_parser {
 	using std::shared_ptr;
 
 
-	pair<json_value_t, seq_t> parse_return_statement(const seq_t& s){
+	pair<json_t, seq_t> parse_return_statement(const seq_t& s){
 		QUARK_ASSERT(s.size() >= string("return").size());
 
 		QUARK_ASSERT(if_first(s, "return").first);
@@ -28,7 +28,7 @@ namespace floyd_parser {
 		const auto token_pos = read_until(s, whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 		const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
-		const auto statement = json_value_t::make_array2({ json_value_t("return"), expression1 });
+		const auto statement = json_t::make_array2({ json_t("return"), expression1 });
 		//	Skip trailing ";".
 		const auto pos = skip_whitespace(expression_pos.second.rest1());
 		return { statement, pos };
@@ -52,7 +52,7 @@ namespace floyd_parser {
 
 
 
-	pair<json_value_t, seq_t> parse_assignment_statement(const seq_t& s){
+	pair<json_t, seq_t> parse_assignment_statement(const seq_t& s){
 		QUARK_SCOPED_TRACE("parse_assignment_statement()");
 
 		const auto token_pos = read_until(s, whitespace_chars);
@@ -64,7 +64,7 @@ namespace floyd_parser {
 
 		const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-		const auto statement = json_value_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
+		const auto statement = json_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
 
 		//	Skip trailing ";".
 		return { statement, expression_pos.second.rest1() };

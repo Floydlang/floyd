@@ -61,7 +61,7 @@ https://en.wikipedia.org/wiki/Parsing
 	["define_function", FUNCTION_DEF ]
 */
 
-static std::pair<json_value_t, seq_t> read_statement2(const seq_t& pos){
+static std::pair<json_t, seq_t> read_statement2(const seq_t& pos){
 	const auto token_pos = read_until(pos, whitespace_chars);
 
 	//	return statement?
@@ -106,10 +106,10 @@ static std::pair<json_value_t, seq_t> read_statement2(const seq_t& pos){
 	}
 }
 
-std::pair<json_value_t, seq_t> read_statements2(const seq_t& s){
+std::pair<json_t, seq_t> read_statements2(const seq_t& s){
 	QUARK_ASSERT(s.size() > 0);
 
-	vector<json_value_t> statements;
+	vector<json_t> statements;
 	auto pos = skip_whitespace(s);
 	while(!pos.empty()){
 		const auto statement_pos = read_statement2(pos);
@@ -118,10 +118,10 @@ std::pair<json_value_t, seq_t> read_statements2(const seq_t& s){
 		pos = skip_whitespace(statement_pos.second);
 	}
 
-	return { json_value_t::make_array2(statements), pos };
+	return { json_t::make_array2(statements), pos };
 }
 
-json_value_t parse_program2(const string& program){
+json_t parse_program2(const string& program){
 	const auto statements_pos = read_statements2(seq_t(program));
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
 	return statements_pos.first;

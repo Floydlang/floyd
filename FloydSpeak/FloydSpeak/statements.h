@@ -18,7 +18,7 @@
 #include "parser_ast.h"
 #include "expressions.h"
 
-struct json_value_t;
+struct json_t;
 
 namespace floyd_parser {
 	struct statement_t;
@@ -141,7 +141,7 @@ namespace floyd_parser {
 	statement_t make__return_statement(const expression_t& expression);
 
 	void trace(const statement_t& s);
-	json_value_t statement_to_json(const statement_t& e);
+	json_t statement_to_json(const statement_t& e);
 
 }	//	floyd_parser
 

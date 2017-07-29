@@ -108,31 +108,31 @@ namespace floyd_parser {
 
 
 
-	json_value_t statement_to_json(const statement_t& e){
+	json_t statement_to_json(const statement_t& e){
 		QUARK_ASSERT(e.check_invariant());
 
 		if(e._bind_statement){
-			return json_value_t::make_array2({
-				json_value_t("bind"),
-				json_value_t(e._bind_statement->_identifier),
+			return json_t::make_array2({
+				json_t("bind"),
+				json_t(e._bind_statement->_identifier),
 				expression_to_json(e._bind_statement->_expression)
 			});
 		}
 		else if(e._define_struct){
-			return json_value_t::make_array2({
-				json_value_t("defstruct"),
+			return json_t::make_array2({
+				json_t("defstruct"),
 				scope_def_to_json(*e._define_struct->_struct_def)
 			});
 		}
 		else if(e._define_function){
-			return json_value_t::make_array2({
-				json_value_t("deffunc"),
+			return json_t::make_array2({
+				json_t("deffunc"),
 				scope_def_to_json(*e._define_function->_function_def)
 			});
 		}
 		else if(e._return_statement){
-			return json_value_t::make_array2({
-				json_value_t("return"),
+			return json_t::make_array2({
+				json_t("return"),
 				expression_to_json(e._return_statement->_expression)
 			});
 		}

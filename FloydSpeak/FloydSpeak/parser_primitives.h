@@ -21,7 +21,7 @@
 #include <map>
 
 
-struct json_value_t;
+struct json_t;
 
 namespace floyd_parser {
 	struct statement_t;
@@ -257,15 +257,15 @@ namespace floyd_parser {
 			"expr": "[\"k\", 1000]
 		}
 	*/
-	json_value_t make_member_def(const std::string& type, const std::string& name, const json_value_t& expression);
+	json_t make_member_def(const std::string& type, const std::string& name, const json_t& expression);
 
-	json_value_t make_scope_def();
+	json_t make_scope_def();
 
 
 	/*
 		This is a JSON object with all types for global scope.
 	*/
-	json_value_t make_builtin_types();
+	json_t make_builtin_types();
 
 
 }	//	floyd_parser
