@@ -67,10 +67,10 @@ seq_t skip_whitespace(const seq_t& p) {
 
 pair<std::string, seq_t> parse_string_literal(const seq_t& p){
 	QUARK_ASSERT(!p.empty());
-	QUARK_ASSERT(p.first_char() == '\"');
+	QUARK_ASSERT(p.first1_char() == '\"');
 
 	const auto pos = p.rest();
-	const auto s = read_while_not(pos, "\"");
+	const auto s = read_until(pos, "\"");
 	return { s.first, s.second.rest() };
 }
 

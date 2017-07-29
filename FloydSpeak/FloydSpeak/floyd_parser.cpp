@@ -273,7 +273,7 @@ json_value_t parse_program1(const string& program){
 #endif
 
 static std::pair<json_value_t, std::string> read_statement2(const string& pos){
-	const auto token_pos = read_until(pos, whitespace_chars);
+	const auto token_pos = read_until(seq_t(pos), whitespace_chars);
 
 	//	return statement?
 	if(token_pos.first == "return"){
@@ -283,12 +283,12 @@ static std::pair<json_value_t, std::string> read_statement2(const string& pos){
 
 	//	struct definition?
 	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition(pos);
-		return { a.first, skip_whitespace(a.second) };
+		const auto a = parse_struct_definition(seq_t(pos));
+		return { a.first, skip_whitespace(a.second).get_all() };
 	}
 
 	else {
-		const auto type_pos = read_required_type_identifier(pos);
+		const auto type_pos = read_required_type_identifier(seq_t(pos));
 		const auto identifier_pos = read_required_single_symbol(type_pos.second);
 
 		/*

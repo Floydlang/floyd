@@ -31,13 +31,13 @@ static vector<json_value_t> parse_functiondef_arguments(const string& s2){
 	vector<json_value_t> args;
 	auto str = skip_whitespace(s);
 	while(!str.empty()){
-		const auto arg_type = read_type(str);
+		const auto arg_type = read_type(seq_t(str));
 		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 
 		const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, json_value_t());
 		args.push_back(a);
-		str = skip_whitespace(optional_comma.second);
+		str = skip_whitespace(optional_comma.second).get_all();
 	}
 	return args;
 }
@@ -74,13 +74,13 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- t
 
 
 std::pair<json_value_t, std::string> parse_function_definition2(const string& pos){
-	const auto return_type_pos = read_required_type_identifier(pos);
+	const auto return_type_pos = read_required_type_identifier(seq_t(pos));
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
 
 	//	Skip whitespace.
 	const auto rest = skip_whitespace(function_name_pos.second);
 
-	if(!peek_compare_char(rest, '(')){
+	if(!peek_string(rest, "(")){
 		throw std::runtime_error("expected function argument list enclosed by (),");
 	}
 
@@ -88,7 +88,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 	const auto args = parse_functiondef_arguments(arg_list_pos.first);
 	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
 
-	if(!peek_compare_char(body_rest_pos, '{')){
+	if(!peek_string(body_rest_pos, "{")){
 		throw std::runtime_error("expected function body enclosed by {}.");
 	}
 	const auto body_pos = get_balanced(body_rest_pos);
@@ -105,7 +105,7 @@ std::pair<json_value_t, std::string> parse_function_definition2(const string& po
 			{ "return_type", "<" + return_type_pos.first.to_string() + ">" }
 		})
 	});
-	return { function_def, body_pos.second };
+	return { function_def, body_pos.second.get_all() };
 }
 
 struct test {

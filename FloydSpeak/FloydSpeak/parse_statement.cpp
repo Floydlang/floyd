@@ -23,15 +23,15 @@ namespace floyd_parser {
 	pair<json_value_t, string> parse_return_statement(const string& s){
 		QUARK_ASSERT(s.size() >= string("return").size());
 
-		QUARK_ASSERT(peek_string(s, "return"));
+		QUARK_ASSERT(peek_string(seq_t(s), "return"));
 
-		const auto token_pos = read_until(s, whitespace_chars);
+		const auto token_pos = read_until(seq_t(s), whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 		const auto expression1 = parse_expression_all(expression_pos.first);
 		const auto statement = json_value_t::make_array2({ json_value_t("return"), expression1 });
 		//	Skip trailing ";".
-		const auto pos = skip_whitespace(expression_pos.second.substr(1));
-		return pair<json_value_t, string>(statement, pos);
+		const auto pos = skip_whitespace(expression_pos.second.rest1());
+		return pair<json_value_t, string>(statement, pos.get_all());
 	}
 
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
@@ -55,7 +55,7 @@ namespace floyd_parser {
 	pair<json_value_t, string> parse_assignment_statement(const string& s){
 		QUARK_SCOPED_TRACE("parse_assignment_statement()");
 
-		const auto token_pos = read_until(s, whitespace_chars);
+		const auto token_pos = read_until(seq_t(s), whitespace_chars);
 		const auto type = token_pos.first;
 
 		const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
@@ -67,7 +67,7 @@ namespace floyd_parser {
 		const auto statement = json_value_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
 
 		//	Skip trailing ";".
-		return { statement, expression_pos.second.substr(1) };
+		return { statement, expression_pos.second.rest1().get_all() };
 	}
 
 #if false

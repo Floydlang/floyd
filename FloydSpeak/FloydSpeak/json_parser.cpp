@@ -26,11 +26,11 @@ seq_t skip_whitespace(const seq_t& s){
 
 std::pair<json_value_t, seq_t> parse_json(const seq_t& s){
 	const auto a = skip_whitespace(s);
-	const auto ch = a.first();
+	const auto ch = a.first1();
 	if(ch == "{"){
 		std::map<string, json_value_t> obj;
-		auto p2 = skip_whitespace(a.rest());
-		while(p2.first() != "}"){
+		auto p2 = skip_whitespace(a.rest1());
+		while(p2.first1() != "}"){
 
 			//	"my_key": EXPRESSION,
 
@@ -41,49 +41,49 @@ std::pair<json_value_t, seq_t> parse_json(const seq_t& s){
 			const string key = key_p.first.get_string();
 
 			auto p3 = skip_whitespace(key_p.second);
-			if(p3.first() != ":"){
+			if(p3.first1() != ":"){
 				throw std::runtime_error("");
 			}
 
-			p3 = skip_whitespace(p3.rest());
+			p3 = skip_whitespace(p3.rest1());
 
 			const auto expression_p = parse_json(p3);
 			obj.insert(std::make_pair(key, expression_p.first));
 
 			auto post_p = skip_whitespace(expression_p.second);
-			if(post_p.first() != "," && post_p.first() != "}"){
+			if(post_p.first1() != "," && post_p.first1() != "}"){
 				throw std::runtime_error("");
 			}
 
-			if(post_p.first() == ","){
-				post_p = skip_whitespace(post_p.rest());
+			if(post_p.first1() == ","){
+				post_p = skip_whitespace(post_p.rest1());
 			}
 			p2 = post_p;
 		}
-		return { json_value_t::make_object(obj), p2.rest() };
+		return { json_value_t::make_object(obj), p2.rest1() };
 	}
 	else if(ch == "["){
 		vector<json_value_t> array;
-		auto p2 = skip_whitespace(a.rest());
-		while(p2.first() != "]"){
+		auto p2 = skip_whitespace(a.rest1());
+		while(p2.first1() != "]"){
 			const auto expression_p = parse_json(p2);
 			array.push_back(expression_p.first);
 
 			auto post_p = skip_whitespace(expression_p.second);
-			if(post_p.first() != "," && post_p.first() != "]"){
+			if(post_p.first1() != "," && post_p.first1() != "]"){
 				throw std::runtime_error("");
 			}
 
-			if(post_p.first() == ","){
-				post_p = skip_whitespace(post_p.rest());
+			if(post_p.first1() == ","){
+				post_p = skip_whitespace(post_p.rest1());
 			}
 			p2 = post_p;
 		}
-		return { json_value_t::make_array2(array), p2.rest() };
+		return { json_value_t::make_array2(array), p2.rest1() };
 	}
 	else if(ch == "\""){
-		const auto b = read_while_not(a.rest(), "\"");
-		return { json_value_t(b.first), b.second.rest() };
+		const auto b = read_until(a.rest1(), "\"");
+		return { json_value_t(b.first), b.second.rest1() };
 	}
 	else if(peek(a, "true").first){
 		return { json_value_t(true), peek(a, "true").second };

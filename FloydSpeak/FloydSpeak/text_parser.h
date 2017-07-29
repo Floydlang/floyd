@@ -12,7 +12,7 @@
 #include <string>
 
 
-typedef std::pair<std::string, std::string> seq;
+//typedef std::pair<std::string, std::string> seq;
 
 
 const std::string test_whitespace_chars = " \n\t\r";
@@ -20,42 +20,57 @@ const std::string test_whitespace_chars = " \n\t\r";
 ///////////////////////////////		seq_t
 
 /*
-	Copies the string into the seq_t but stores it as a shared_ptr<>, which means all resulting seq_t:s SHARE the same string = no more copies.
+	This is a magic string were you can easily peek into the beginning and
+	also get a new string without the first character(s).
+
+	It shares the actual string data behind the curtains so is efficent.
 */
 
 struct seq_t {
 	public: explicit seq_t(const std::string& s);
 	public: bool check_invariant() const;
 
-	public: char first_char() const;
 
-	//	Throws if there is no more char to read.
-	public: std::string first() const;
+	//	Peek at first char (as C-character). Throws exception if empty().
+	public: char first1_char() const;
+
+	//	Peels at first char (you get a string). Throws if there is no more char to read.
+	public: std::string first1() const;
+	public: std::string first() const { return first1(); }
+
+	//	Skips first char.
+	public: std::size_t rest1_size() const;
+
+	//	Skips 1 char.
+	//	You get empty if rest_size() == 0.
+	public: seq_t rest1() const;
+	public: seq_t rest() const { return rest1(); }
+
+
 
 	//	Returned string can be "" or shorter than chars if there aren't enough chars.
+	//	Won't throw.
 	public: std::string first(size_t chars) const;
 
-	//	Nothing happens if rest_size() == 0.
-	public: seq_t rest() const;
-
+	//	Skips n characters.
 	//	Limited to rest_size().
 	public: seq_t rest(size_t skip) const;
 
-	//	Returns first + rest as one string.
+
+	//	Returns entire string. Equivalent to x.rest(x.size()).
 	public: std::string get_all() const;
+	public: std::size_t size() const;
 
-	//	Skips first char.
-	public: std::size_t rest_size() const;
-
-	//	If true, there is no first-char and rest is empty.
+	//	If true, there are no more characters.
 	public: bool empty() const;
 
 	private: seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos);
 
 	public: bool operator==(const seq_t& other) const;
 
-	//	Returns point to first char and rest.
+	//	Returns point to entire string.
 	const char* c_str() const;
+
 
 	/////////////		STATE
 	private: const char* FIRST_debug = nullptr;
@@ -66,7 +81,7 @@ struct seq_t {
 
 
 std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& match);
-std::pair<std::string, seq_t> read_while_not(const seq_t& p1, const std::string& match);
+std::pair<std::string, seq_t> read_until(const seq_t& p1, const std::string& match);
 
 //	If p starts with wanted_string, return true and consume those chars. Else return false and thesame seq_t.
 std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string);
@@ -76,41 +91,25 @@ std::pair<bool, seq_t> peek(const seq_t& p, const std::string& wanted_string);
 //	Remove trailing comma, if any.
 std::string remove_trailing_comma(const std::string& a);
 
-seq read_while(const std::string& s, const std::string& match);
-seq read_until(const std::string& s, const std::string& match);
-
 
 std::pair<char, std::string> read_char(const std::string& s);
 
 /*
 	Returns "rest" if ch is found, else throws exceptions.
 */
-std::string read_required_char(const std::string& s, char ch);
-std::pair<bool, std::string> read_optional_char(const std::string& s, char ch);
+seq_t read_required_char(const seq_t& s, char ch);
+std::pair<bool, seq_t> read_optional_char(const seq_t& s, char ch);
 
 
 bool peek_compare_char(const std::string& s, char ch);
 
-bool peek_string(const std::string& s, const std::string& peek);
+bool peek_string(const seq_t& s, const std::string& peek);
 std::string read_required_string(const std::string& s, const std::string& wanted);
 
 
 std::string trim_ends(const std::string& s);
 
 float parse_float(const std::string& pos);
-
-
-/*
-	s[0] == start_char
-
-	Supports nesting.
-	Removes outer start_char and end_char
-
-	{ "{ hello }xxx", '{', '}' } => { " hello ", "xxx" }
-*/
-
-seq get_balanced_pair(const std::string& s, char start_char, char end_char);
-
 
 
 

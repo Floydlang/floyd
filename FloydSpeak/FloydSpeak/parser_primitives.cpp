@@ -34,13 +34,12 @@ using std::make_shared;
 using std::shared_ptr;
 
 
-
 //////////////////////////////////////////////////		Text parsing primitives
 
 
 
 std::string skip_whitespace(const string& s){
-	return read_while(s, whitespace_chars).second;
+	return read_while(seq_t(s), whitespace_chars).second.get_all();
 }
 
 QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
@@ -49,6 +48,11 @@ QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace("\t") == "");
 	QUARK_TEST_VERIFY(skip_whitespace("int blob()") == "int blob()");
 	QUARK_TEST_VERIFY(skip_whitespace("\t\t\t int blob()") == "int blob()");
+}
+
+
+seq_t skip_whitespace(const seq_t& s){
+	return read_while(s, whitespace_chars).second;
 }
 
 
@@ -129,19 +133,21 @@ QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
 	First char is the start char, like '(' or '{'.
 
 	Checks *all* balancing-chars
+	??? Should be recursive and not just count intermediate chars, also pair match them.
 */
-seq get_balanced(const string& s){
+std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 	QUARK_ASSERT(s.size() > 0);
 
-	const char start_char = s[0];
+	const char start_char = s.first1_char();
 	QUARK_ASSERT(is_start_char(start_char));
 
 	const char end_char = start_char_to_end_char(start_char);
 
 	int depth = 0;
-	size_t pos = 0;
-	while(pos < s.size() && !(depth == 1 && s[pos] == end_char)){
-		const char ch = s[pos];
+	auto pos = s;
+	string result;
+	while(pos.empty() == false && !(depth == 1 && pos.first1_char() == end_char)){
+		const char ch = pos.first1_char();
 		if(is_start_char(ch)) {
 			depth++;
 		}
@@ -151,33 +157,36 @@ seq get_balanced(const string& s){
 			}
 			depth--;
 		}
-		pos++;
+		result = result + pos.first1();
+		pos = pos.rest1();
 	}
 
-	return { s.substr(0, pos + 1), s.substr(pos + 1) };
+	return { result + pos.first1(), pos.rest1() };
 }
 
 QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 //	QUARK_TEST_VERIFY(get_balanced("") == seq("", ""));
-	QUARK_TEST_VERIFY(get_balanced("()") == seq("()", ""));
-	QUARK_TEST_VERIFY(get_balanced("(abc)") == seq("(abc)", ""));
-	QUARK_TEST_VERIFY(get_balanced("(abc)def") == seq("(abc)", "def"));
-	QUARK_TEST_VERIFY(get_balanced("((abc))def") == seq("((abc))", "def"));
-	QUARK_TEST_VERIFY(get_balanced("((abc)[])def") == seq("((abc)[])", "def"));
-	QUARK_TEST_VERIFY(get_balanced("(return 4 < 5;)xxx") == seq("(return 4 < 5;)", "xxx"));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("()")) == (std::pair<std::string, seq_t>("()", seq_t(""))));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)")) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)def")) == (std::pair<std::string, seq_t>("(abc)", seq_t("def"))));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc))def")) == (std::pair<std::string, seq_t>("((abc))", seq_t("def"))));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc)[])def")) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("def"))));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("(return 4 < 5;)xxx")) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
 
-	QUARK_TEST_VERIFY(get_balanced("{}") == seq("{}", ""));
-	QUARK_TEST_VERIFY(get_balanced("{aaa}bbb") == seq("{aaa}", "bbb"));
-	QUARK_TEST_VERIFY(get_balanced("{return 4 < 5;}xxx") == seq("{return 4 < 5;}", "xxx"));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("{}")) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("{aaa}bbb")) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
+	QUARK_TEST_VERIFY(get_balanced(seq_t("{return 4 < 5;}xxx")) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 
 //	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "def"));
 }
+
+
 
 //////////////////////////////////////		SYMBOLS
 
 
 
-seq read_required_single_symbol(const string& s){
+std::pair<std::string, seq_t> read_required_single_symbol(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, identifier_chars);
 
@@ -188,7 +197,7 @@ seq read_required_single_symbol(const string& s){
 }
 
 QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
-	QUARK_TEST_VERIFY(read_required_single_symbol("\thello\txxx") == seq("hello", "\txxx"));
+	QUARK_TEST_VERIFY(read_required_single_symbol(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
 }
 
 
@@ -287,14 +296,14 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 
 
 
-seq read_type(const string& s){
+std::pair<std::string, seq_t> read_type(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, type_chars);
 	return b;
 }
 
-pair<type_identifier_t, string> read_required_type_identifier(const string& s){
-	const seq type_pos = read_type(s);
+pair<type_identifier_t, seq_t> read_required_type_identifier(const seq_t& s){
+	const auto type_pos = read_type(s);
 	if(type_pos.first.empty()){
 		throw std::runtime_error("illegal character in type identifier");
 	}
@@ -303,7 +312,7 @@ pair<type_identifier_t, string> read_required_type_identifier(const string& s){
 }
 
 	bool is_valid_type_identifier(const std::string& s){
-		const auto a = read_while(s, floyd_parser::type_chars);
+		const auto a = read_while(seq_t(s), floyd_parser::type_chars);
 		return a.first == s;
 	}
 
@@ -364,7 +373,6 @@ json_value_t make_builtin_types(){
 	)"));
 	return builtin_types.first;
 }
-
 
 
 }	//	floyd_parser

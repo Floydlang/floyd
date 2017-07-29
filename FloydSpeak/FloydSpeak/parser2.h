@@ -249,18 +249,18 @@ std::pair<EXPRESSION, seq_t> parse_single(const maker<EXPRESSION>& helper, const
 	QUARK_ASSERT(p.check_invariant());
 
 	// ???
-	QUARK_ASSERT(p.first() != " ");
+	QUARK_ASSERT(p.first1() != " ");
 
 	//	String literal?
-	if(p.first() == "\""){
-		const auto s = read_while_not(p.rest(), "\"");
+	if(p.first1() == "\""){
+		const auto s = read_until(p.rest1(), "\"");
 		const auto result = helper.maker__make_constant(constant_value_t(s.first));
-		return { result, s.second.rest() };
+		return { result, s.second.rest1() };
 	}
 
 	//	Number constant?
 	// [0-9] and "."  => numeric constant.
-	else if(k_c99_number_chars.find(p.first()) != std::string::npos){
+	else if(k_c99_number_chars.find(p.first1()) != std::string::npos){
 		const auto value_p = parse_numeric_constant(p);
 		const auto result = helper.maker__make_constant(value_p.first);
 		return { result, value_p.second };
@@ -313,21 +313,21 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 		throw std::runtime_error("Unexpected end of string");
 	}
 
-	const char ch1 = p2.first_char();
+	const char ch1 = p2.first1_char();
 
 	//	Negate? "-xxx"
 	if(ch1 == '-'){
-		const auto a = parse_expression_int(helper, p2.rest(), eoperator_precedence::k_super_strong);
+		const auto a = parse_expression_int(helper, p2.rest1(), eoperator_precedence::k_super_strong);
 		const auto value2 = helper.maker__make1(eoperation::k_1_logical_not, a.first);
 		return { value2, a.second };
 	}
 	else if(ch1 == '+'){
-		const auto a = parse_expression_int(helper, p2.rest(), eoperator_precedence::k_super_strong);
+		const auto a = parse_expression_int(helper, p2.rest1(), eoperator_precedence::k_super_strong);
 		return a;
 	}
 	//	Expression within paranthesis? "(yyy)xxx"
 	else if(ch1 == '('){
-		const auto a = parse_expression_int(helper, p2.rest(), eoperator_precedence::k_super_weak);
+		const auto a = parse_expression_int(helper, p2.rest1(), eoperator_precedence::k_super_weak);
 		const auto p3 = skip_whitespace(a.second);
 		if (p3.first() != ")"){
 			throw std::runtime_error("Expected ')'");

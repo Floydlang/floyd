@@ -14,6 +14,7 @@
 #include <string>
 
 struct json_value_t;
+struct seq_t;
 
 namespace floyd_parser {
 
@@ -38,9 +39,7 @@ namespace floyd_parser {
 			}
 		]
 	*/
-	std::pair<json_value_t, std::string> parse_struct_definition(const std::string& pos);
-
-	json_value_t make_test_struct0();
+	std::pair<json_value_t, seq_t> parse_struct_definition(const seq_t& pos);
 }
 
 #endif /* parser_struct_hpp */

@@ -15,19 +15,12 @@
 #include <iostream>
 #include <cmath>
 
-
 using std::vector;
 using std::string;
 using std::pair;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
-
-
-
-
-
-
 
 
 
@@ -75,7 +68,7 @@ bool seq_t::check_invariant() const {
 }
 
 
-char seq_t::first_char() const{
+char seq_t::first1_char() const{
 	QUARK_ASSERT(check_invariant());
 
 	if(_pos >= _str->size()){
@@ -85,7 +78,7 @@ char seq_t::first_char() const{
 	return (*_str)[_pos];
 }
 
-std::string seq_t::first() const{
+std::string seq_t::first1() const{
 	return first(1);
 }
 
@@ -95,7 +88,7 @@ std::string seq_t::first(size_t chars) const{
 	return _pos < _str->size() ? _str->substr(_pos, chars) : string();
 }
 
-seq_t seq_t::rest() const{
+seq_t seq_t::rest1() const{
 	QUARK_ASSERT(check_invariant());
 
 	return rest(1);
@@ -115,10 +108,16 @@ std::string seq_t::get_all() const{
 }
 
 
-std::size_t seq_t::rest_size() const{
+std::size_t seq_t::rest1_size() const{
 	QUARK_ASSERT(check_invariant());
 
-	return empty() ? 0 : _str->size() - _pos - 1;
+	return empty() ? 0 : size() - 1;
+}
+
+std::size_t seq_t::size() const{
+	QUARK_ASSERT(check_invariant());
+
+	return empty() ? 0 : _str->size() - _pos;
 }
 
 
@@ -145,21 +144,21 @@ QUARK_UNIT_TESTQ("seq_t()", ""){
 
 
 QUARK_UNIT_TESTQ("first_char()", ""){
-	QUARK_TEST_VERIFY(seq_t("a").first_char() == 'a');
+	QUARK_TEST_VERIFY(seq_t("a").first1_char() == 'a');
 }
 QUARK_UNIT_TESTQ("first_char()", ""){
-	QUARK_TEST_VERIFY(seq_t("abcd").first_char() == 'a');
+	QUARK_TEST_VERIFY(seq_t("abcd").first1_char() == 'a');
 }
 
 
 QUARK_UNIT_TESTQ("first()", ""){
-	QUARK_TEST_VERIFY(seq_t("").first() == "");
+	QUARK_TEST_VERIFY(seq_t("").first1() == "");
 }
 QUARK_UNIT_TESTQ("first()", ""){
-	QUARK_TEST_VERIFY(seq_t("a").first() == "a");
+	QUARK_TEST_VERIFY(seq_t("a").first1() == "a");
 }
 QUARK_UNIT_TESTQ("first()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").first() == "a");
+	QUARK_TEST_VERIFY(seq_t("abc").first1() == "a");
 }
 
 
@@ -181,32 +180,32 @@ QUARK_UNIT_TESTQ("first(n)", ""){
 
 
 QUARK_UNIT_TESTQ("rest()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest().first() == "b");
+	QUARK_TEST_VERIFY(seq_t("abc").rest1().first1() == "b");
 }
 QUARK_UNIT_TESTQ("rest()", ""){
-	QUARK_TEST_VERIFY(seq_t("").rest().first() == "");
+	QUARK_TEST_VERIFY(seq_t("").rest1().first1() == "");
 }
 
 
 QUARK_UNIT_TESTQ("rest(n)", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest(2).first() == "c");
+	QUARK_TEST_VERIFY(seq_t("abc").rest(2).first1() == "c");
 }
 QUARK_UNIT_TESTQ("rest(n)", ""){
-	QUARK_TEST_VERIFY(seq_t("").rest().first() == "");
+	QUARK_TEST_VERIFY(seq_t("").rest1().first1() == "");
 }
 QUARK_UNIT_TESTQ("rest(n)", ""){
 	QUARK_TEST_VERIFY(seq_t("abc").rest(100).first(100) == "");
 }
 
 
-QUARK_UNIT_TESTQ("rest_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest_size() == 2);
+QUARK_UNIT_TESTQ("rest1_size()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest1_size() == 2);
 }
-QUARK_UNIT_TESTQ("rest_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest().rest_size() == 1);
+QUARK_UNIT_TESTQ("rest1_size()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest1().rest1_size() == 1);
 }
-QUARK_UNIT_TESTQ("rest_size()", ""){
-	QUARK_TEST_VERIFY(seq_t("abc").rest(100).rest_size() == 0);
+QUARK_UNIT_TESTQ("rest1_size()", ""){
+	QUARK_TEST_VERIFY(seq_t("abc").rest(100).rest1_size() == 0);
 }
 
 
@@ -217,9 +216,9 @@ pair<string, seq_t> read_while(const seq_t& p1, const string& match){
 	string a;
 	seq_t p2 = p1;
 
-	while(!p2.empty() && match.find(p2.first_char()) != string::npos){
-		a = a + p2.first_char();
-		p2 = p2.rest();
+	while(!p2.empty() && match.find(p2.first1_char()) != string::npos){
+		a = a + p2.first1_char();
+		p2 = p2.rest1();
 	}
 
 	return { a, p2 };
@@ -249,13 +248,13 @@ QUARK_UNIT_TEST("", "read_while()", "", ""){
 
 
 
-pair<string, seq_t> read_while_not(const seq_t& p1, const string& match){
+pair<string, seq_t> read_until(const seq_t& p1, const string& match){
 	string a;
 	seq_t p2 = p1;
 
-	while(!p2.empty() && match.find(p2.first_char()) == string::npos){
-		a = a + p2.first_char();
-		p2 = p2.rest();
+	while(!p2.empty() && match.find(p2.first1_char()) == string::npos){
+		a = a + p2.first1_char();
+		p2 = p2.rest1();
 	}
 
 	return { a, p2 };
@@ -292,7 +291,7 @@ QUARK_UNIT_TESTQ("peek()", ""){
 	}
 
 
-
+/*
 seq read_while(const string& s, const string& match){
 	size_t pos = 0;
 	while(pos < s.size() && match.find(s[pos]) != string::npos){
@@ -330,32 +329,32 @@ QUARK_UNIT_TEST("", "read_until()", "", ""){
 	QUARK_TEST_VERIFY(read_until("ab,cd", ",.") == seq("ab", ",cd"));
 	QUARK_TEST_VERIFY(read_until("ab.cd", ",.") == seq("ab", ".cd"));
 }
+*/
 
 
 
 
-
-pair<char, string> read_char(const std::string& s){
+pair<char, seq_t> read_char(const seq_t& s){
 	if(!s.empty()){
-		return { s[0], s.substr(1) };
+		return { s.first1_char(), s.rest1() };
 	}
 	else{
 		throw std::runtime_error("expected character.");
 	}
 }
 
-std::string read_required_char(const std::string& s, char ch){
-	if(s.size() > 0 && s[0] == ch){
-		return s.substr(1);
+seq_t read_required_char(const seq_t& s, char ch){
+	if(s.size() > 0 && s.first1_char() == ch){
+		return s.rest(1);
 	}
 	else{
 		throw std::runtime_error("expected character '" + string(1, ch)  + "'.");
 	}
 }
 
-pair<bool, std::string> read_optional_char(const std::string& s, char ch){
-	if(s.size() > 0 && s[0] == ch){
-		return { true, s.substr(1) };
+pair<bool, seq_t> read_optional_char(const seq_t& s, char ch){
+	if(s.size() > 0 && s.first1_char() == ch){
+		return { true, s.rest1() };
 	}
 	else{
 		return { false, s };
@@ -367,18 +366,18 @@ bool peek_compare_char(const std::string& s, char ch){
 	return s.size() > 0 && s[0] == ch;
 }
 
-bool peek_string(const std::string& s, const std::string& peek){
-	return s.size() >= peek.size() && s.substr(0, peek.size()) == peek;
+bool peek_string(const seq_t& s, const std::string& peek){
+	return s.size() >= peek.size() && s.first(peek.size()) == peek;
 }
 
 QUARK_UNIT_TEST("", "peek_string()", "", ""){
-	QUARK_TEST_VERIFY(peek_string("", "") == true);
-	QUARK_TEST_VERIFY(peek_string("a", "a") == true);
-	QUARK_TEST_VERIFY(peek_string("a", "b") == false);
-	QUARK_TEST_VERIFY(peek_string("", "b") == false);
-	QUARK_TEST_VERIFY(peek_string("abc", "abc") == true);
-	QUARK_TEST_VERIFY(peek_string("abc", "abx") == false);
-	QUARK_TEST_VERIFY(peek_string("abc", "ab") == true);
+	QUARK_TEST_VERIFY(peek_string(seq_t(""), "") == true);
+	QUARK_TEST_VERIFY(peek_string(seq_t("a"), "a") == true);
+	QUARK_TEST_VERIFY(peek_string(seq_t("a"), "b") == false);
+	QUARK_TEST_VERIFY(peek_string(seq_t(""), "b") == false);
+	QUARK_TEST_VERIFY(peek_string(seq_t("abc"), "abc") == true);
+	QUARK_TEST_VERIFY(peek_string(seq_t("abc"), "abx") == false);
+	QUARK_TEST_VERIFY(peek_string(seq_t("abc"), "ab") == true);
 }
 
 std::string read_required_string(const std::string& s, const std::string& wanted){
@@ -413,7 +412,7 @@ float parse_float(const std::string& pos){
 }
 
 
-
+/*
 seq get_balanced_pair(const string& s, char start_char, char end_char){
 	QUARK_ASSERT(s[0] == start_char);
 	QUARK_ASSERT(s.size() >= 2);
@@ -436,12 +435,13 @@ seq get_balanced_pair(const string& s, char start_char, char end_char){
 
 	return { s.substr(1, pos - 1), s.substr(pos + 1) };
 }
+*/
 
 
 //	{ "{ hello }xxx", '{', '}' } => { " hello ", "xxx" }
 
 
-
+/*
 QUARK_UNIT_TEST("", "get_balanced_pair()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced_pair("()", '(', ')') == seq("", ""));
 	QUARK_TEST_VERIFY(get_balanced_pair("(abc)", '(', ')') == seq("abc", ""));
@@ -449,7 +449,7 @@ QUARK_UNIT_TEST("", "get_balanced_pair()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced_pair("((abc))def", '(', ')') == seq("(abc)", "def"));
 	QUARK_TEST_VERIFY(get_balanced_pair("((abc)[])def", '(', ')') == seq("(abc)[]", "def"));
 }
-
+*/
 
 
 

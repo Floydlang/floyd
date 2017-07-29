@@ -115,6 +115,7 @@ namespace floyd_parser {
 		second: all / any text after whitespace.
 	*/
 	std::string skip_whitespace(const std::string& s);
+	seq_t skip_whitespace(const seq_t& s);
 
 
 	bool is_whitespace(char ch);
@@ -127,7 +128,7 @@ namespace floyd_parser {
 		First char is the start char, like '(' or '{'.
 	*/
 
-	seq get_balanced(const std::string& s);
+	std::pair<std::string, seq_t> get_balanced(const seq_t& s);
 
 
 
@@ -143,7 +144,7 @@ namespace floyd_parser {
 		Does not skip whitespace on the rest of the string.
 			"\thello\txxx" => "hello" + "\txxx"
 	*/
-	seq read_required_single_symbol(const std::string& s);
+	std::pair<std::string, seq_t> read_required_single_symbol(const seq_t& s);
 
 
 	//////////////////////////////////////		TYPE IDENTIFIERS
@@ -226,7 +227,7 @@ namespace floyd_parser {
 	/*
 		Skip leading whitespace, get string while type-char.
 	*/
-	seq read_type(const std::string& s);
+	std::pair<std::string, seq_t> read_type(const seq_t& s);
 
 
 	/*
@@ -234,7 +235,7 @@ namespace floyd_parser {
 		Does NOT make sure this a known type-identifier.
 		String must not be empty.
 	*/
-	std::pair<type_identifier_t, std::string> read_required_type_identifier(const std::string& s);
+	std::pair<type_identifier_t, seq_t> read_required_type_identifier(const seq_t& s);
 
 	bool is_valid_type_identifier(const std::string& s);
 
