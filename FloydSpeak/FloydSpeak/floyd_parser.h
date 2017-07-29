@@ -28,7 +28,7 @@ namespace floyd_parser {
 	{
 		"name": "global", "type": "global",
 		"statements": [
-			["return", EXPRESSION ],
+			[ "return", EXPRESSION ],
 			[ "bind", "<float>", "x", EXPRESSION ],
 			[
 				"def-struct",
@@ -40,11 +40,10 @@ namespace floyd_parser {
 				}
 			],
 			[
-				"def_func",
+				"def-func",
 				{
 					"args": [],
 					"locals": [],
-					"members": [],
 					"name": "main",
 					"return_type": "<int>",
 					"statements": [
@@ -60,7 +59,6 @@ namespace floyd_parser {
 	json_t parse_program2(const std::string& program);
 
 }	//	floyd_parser
-
 
 
 #endif /* floyd_parser_h */

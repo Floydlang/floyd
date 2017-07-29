@@ -62,7 +62,6 @@
 
 	!!! AST DOES NOT GENERATE LOADs, ONLY IDENTIFIER, FOR EXAMPLE.
 
-
 		a = my_global_int;
 		["bind", "<int>", "a", ["@", "my_global_int"]]
 

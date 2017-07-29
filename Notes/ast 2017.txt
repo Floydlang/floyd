@@ -5,74 +5,17 @@ string main(){
 	return get_s(p);
 }
 
-# AST 2016
-{
-	"args": [],
-	"locals": [],
-	"members": [],
-	"name": "global",
-	"return_type": "",
-	"statements": [],
-	"type": "global",
-	"types": {
-		"get_s": [
-			{
-				"base_type": "function",
-				"scope_def": {
-					"args": [{ "name": "p", "type": "<pixel>" }],
-					"locals": [],
-					"members": [],
-					"name": "get_s",
-					"return_type": "<string>",
-					"statements": [["return", ["->", ["@", "p"], "s"]]],
-					"type": "function",
-					"types": {}
-				}
-			}
-		],
-		"main": [
-			{
-				"base_type": "function",
-				"scope_def": {
-					"args": [],
-					"locals": [{ "name": "p", "type": "<pixel>" }],
-					"members": [],
-					"name": "main",
-					"return_type": "<string>",
-					"statements": [
-						["bind", "<pixel>", "p", ["call", ["@", "pixel_constructor"], []]],
-						["return", ["call", ["@", "get_s"], [["@", "p"]]]]
-					],
-					"type": "function",
-					"types": {}
-				}
-			}
-		],
-		"pixel": [
-			{
-				"base_type": "struct",
-				"scope_def": {
-					"args": [],
-					"locals": [],
-					"members": [{ "expr": ["k", "two", "<string>"], "name": "s", "type": "<string>" }],
-					"name": "pixel",
-					"return_type": "",
-					"statements": [],
-					"type": "struct",
-					"types": {}
-				}
-			}
-		]
-	}
-}
+
+
 
 # AST 2017
 
+INSIGHT: Paths make ast fragile, better to store data in their hiearchy.
+INSIGHT: We want to track static scope hiearchy.
+INSIGHT: Make a few uniform objects, so it's easy to traverse using compact logic.
 
-??? paths make ast fragile.
-??? We want to track static scope hiearchy.
-??? Make a few uniform objects, so it's easy to traverse.
-??? Keep program in a tree, keeping static scopes nested.
+TODO: Keep program in a tree, keeping static scopes nested.
+
 
 	expression
 	member/arg/local
@@ -81,73 +24,12 @@ string main(){
 	type
 	function_value_constant = the instructions making up a function.
 
-
 ??? Reverse scope_def thinking and use a scopeed symbol table instead. Makes it easier to process scopes:
 
-??? Separate type (function prototype) from function_value_constant (its implemenation). 
+TODO: Separate type (function prototype) from function_value_constant (its implemenation). 
 
 
-{
-	"name": "global",
-	"type": "global",
-
-	"args": [],
-	"locals": [],
-	"members": [
-
-		//	These are scoped constants
-		{ "name": "get_s", "type": { "base_type": "function", "args": [ "<struct:pixel>" ], "return_type": "<string>" }, "value": "func_v:get_s" },
-		{ "name": "main", "type": { "base_type": "function", "args": [], "return_type": "<string>" }, "value": "func_v:main" }
-	],
-	"return_type": "",
-
-	"statements": [],
-	"subscopes": {
-		"func_v:get_s": {
-			"args": [{ "name": "p", "type": "<pixel>" }],
-			"locals": [],
-			"members": [],
-			"name": "get_s",
-			"return_type": "<string>",
-
-			//??? Can hold subscopes for statements like while(true) { subscope }.
-			//??? How to easily traverse AST when subscopes can hide inside statements?
-			"statements": [["return", ["->", ["@", "p"], "s"]]],
-			"type": "function",
-			"types": {}
-		},
-
-		"func_v:main": {
-			"args": [],
-			"locals": [{ "name": "p", "type": "<pixel>" }],
-			"members": [],
-			"name": "main",
-			"return_type": "<string>",
-			"statements": [
-				["bind", "<pixel>", "p", ["call", ["@", "pixel_constructor"], []]],
-				["return", ["call", ["@", "get_s"], [["@", "p"]]]]
-			],
-			"type": "function",
-			"types": {}
-		},
-
-		"struct:pixel": {
-			"args": [],
-			"locals": [],
-			"members": [{ "expr": ["k", "two", "<string>"], "name": "s", "type": "<string>" }],
-			"name": "pixel",
-			"return_type": "",
-			"statements": [],
-			"type": "struct",
-			"types": {}
-		]
-
-	}
-}
-
-
-
-INSIGHT: Only keep symbol table for collecting and resolving names, then lose it! Keep original symbols embedded in IDs for humans.
+IDEA: Only keep symbol table for collecting and resolving names, then lose it! Keep original symbols embedded in IDs for humans.
 
 
 INSIGHT about passes
@@ -180,9 +62,7 @@ typetag = "$pixel" or "$pixel/8000"
 
 
 
-
-
-
+??? Functions and structs must track in which static scope they were defined in order to resolve symbols correctly.
 
 global static_scope
 {
