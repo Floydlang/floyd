@@ -85,7 +85,7 @@ static std::pair<json_value_t, seq_t> read_statement2(const seq_t& pos){
 			"int xyz(string a, string b){ ... }
 		*/
 		if(if_first(skip_whitespace(identifier_pos.second), "(").first){
-			const auto function = parse_function_definition2(pos.get_s());
+			const auto function = parse_function_definition2(pos);
             return { function.first, skip_whitespace(seq_t(function.second)) };
 		}
 

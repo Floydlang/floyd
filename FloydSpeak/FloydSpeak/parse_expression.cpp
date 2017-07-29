@@ -114,8 +114,8 @@ struct json_helper : public maker<EXPRESSION> {
 	}
 };
 
-json_value_t parse_expression_all(std::string expression){
-	const auto result = parse_expression_seq(seq_t(expression));
+json_value_t parse_expression_all(const seq_t& expression){
+	const auto result = parse_expression_seq(expression);
 	if(!parser2::skip_whitespace(result.second).empty()){
 		throw std::runtime_error("All of expression not used");
 	}

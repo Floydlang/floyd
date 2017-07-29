@@ -52,7 +52,7 @@ namespace floyd_parser {
 			"condition_expr ? result_true_expr : result_false_expr"
 			"a == 1 ? "one" : ”some other number""
 	*/
-	json_value_t parse_expression_all(std::string expression);
+	json_value_t parse_expression_all(const seq_t& expression);
 
 	std::pair<json_value_t, seq_t> parse_expression_seq(const seq_t& expression);
 

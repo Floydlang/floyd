@@ -27,7 +27,7 @@ namespace floyd_parser {
 
 		const auto token_pos = read_until(seq_t(s), whitespace_chars);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-		const auto expression1 = parse_expression_all(expression_pos.first);
+		const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
 		const auto statement = json_value_t::make_array2({ json_value_t("return"), expression1 });
 		//	Skip trailing ";".
 		const auto pos = skip_whitespace(expression_pos.second.rest1());
@@ -62,7 +62,7 @@ namespace floyd_parser {
 		const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
 		const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
 
-		const auto expression = parse_expression_all(expression_pos.first);
+		const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
 		const auto statement = json_value_t::make_array2({ "bind", "<" + type + ">", variable_pos.first, expression });
 

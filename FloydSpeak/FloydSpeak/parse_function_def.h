@@ -13,6 +13,7 @@
 #include <string>
 
 struct json_value_t;
+struct seq_t;
 
 namespace floyd_parser {
 	/*
@@ -29,7 +30,7 @@ namespace floyd_parser {
 				}
 			]
 	*/
-	std::pair<json_value_t, std::string> parse_function_definition2(const std::string& pos);
+	std::pair<json_value_t, seq_t> parse_function_definition2(const seq_t& pos);
 
 
 
