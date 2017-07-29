@@ -22,7 +22,7 @@ namespace floyd_parser {
 	std::pair<json_value_t, seq_t>  parse_struct_definition(const seq_t& pos0){
 		QUARK_ASSERT(pos0.size() > 0);
 
-		const auto token_pos = read_until(seq_t(pos0), whitespace_chars);
+		const auto token_pos = read_until(pos0, whitespace_chars);
 		QUARK_ASSERT(token_pos.first == "struct");
 
 		const auto struct_name_pos = read_required_single_symbol(token_pos.second);
@@ -34,7 +34,7 @@ namespace floyd_parser {
 		vector<json_value_t> members;
 		auto pos = seq_t(trim_ends(body_pos.first));
 		while(!pos.empty()){
-			const auto member_type = read_type(seq_t(pos));
+			const auto member_type = read_type(pos);
 			const auto member_name = read_required_single_symbol(member_type.second);
 
 			string default_value;
