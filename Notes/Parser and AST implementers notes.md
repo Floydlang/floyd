@@ -1,3 +1,25 @@
+
+
+
+
+# Building blocks
+
+expression
+member/arg/local
+static_scope: function, globals, struct, statement_scope
+statement
+type
+function_value_constant = the instructions making up a function.
+
+
+- symbol name = "pixel"
+- typename = "$pixel"
+- typeid = 8000
+- typetag = "$pixel" (unresolved) or "$pixel/8000" (resolved)
+
+
+
+
 # PASS 1
 Pass 1: convert text to AST using syntax
 
@@ -216,14 +238,6 @@ Example program 100:
 
 
 
-Building blocks
-
-	expression
-	member/arg/local
-	static_scope: function, globals, struct, statement_scope
-	statement
-	type
-	function_value_constant = the instructions making up a function.
 
 Insights
 - Paths make ast fragile, better to store data in their hiearchy.
@@ -249,10 +263,7 @@ Futher passes are about executing or optimizing or code generation.
 
 TODO: Simplest to have two formats for type tags: "pixel" and "pixel/8000" -- this requires no extra fields to store resolved type id and we don't lose original name. We pack typename / typeid into same string. Notice: only use typeid 8000 to find stuff.
 
-symbol name = "pixel"
-typename = "$pixel"
-typeid = 8000
-typetag = "$pixel" or "$pixel/8000"
+
 
 
 global static_scope

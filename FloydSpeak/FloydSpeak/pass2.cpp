@@ -65,6 +65,15 @@ parser_path_t go_down(const parser_path_t& path, const json_t& child){
 	return result;
 }
 
+parser_path_t replace_leaf(const parser_path_t& path, const json_t& leaf){
+	vector<json_t> temp(path._scopes.begin(), path._scopes.end() - 1);
+	temp.push_back(leaf);
+
+	parser_path_t temp2;
+	temp2._scopes.swap(temp);
+	return temp2;
+}
+
 
 
 
@@ -72,10 +81,28 @@ string make_type_id_string(int id){
 	return std::string("$" + std::to_string(id));
 }
 
+//	#Basic-types
+bool is_basic_type(const std::string& s){
+	return s == "<null>" || s == "<bool>" || s == "<int>" || s == "<float>" || s == "<string>";
+}
+
+json_t get_array_back(const json_t& array){
+	if(!array.is_array()){
+		throw;
+	}
+	else if(array.get_array_size() == 0){
+		throw;
+	}
+	return array.get_array_n(array.get_array_size() - 1);
+}
+
 
 
 ///////////////////////////////////////////		statements_to_scope()
 
+/*
+	Converts output from parser - which is used lots of nested statements - into scope_defs.
+*/
 
 /*
 	WARNING! Stores an **ARRAY** of types that is called "name"!
@@ -247,7 +274,8 @@ json_t statements_to_scope(const json_t& p){
 
 
 /*
-	Scan tree, give each found type a unique ID.
+	Scan tree, give each found type a unique ID, like "$1000" and "$1001". ID is unique
+	in entire tree, not just in its own scope.
 */
 pair<json_t, int> assign_unique_type_ids(const parser_path_t& path, int type_id_count){
 	QUARK_SCOPED_TRACE("assign_unique_type_ids()");
@@ -385,16 +413,10 @@ QUARK_UNIT_TESTQ("assign_unique_type_ids()", ""){
 ///////////////////////////////////////////		insert_generated_functions()
 
 
-//	Pass A5) Insert constructors for each struct.
-
-
 /*
 	Insert dummy-hook for constructors. Implementation needs to be provided by later pass.
-
-	??? Calling all constructor function "pixel_t" requires us to select function from its signature.
-		Alternative use one function with var-args.
-
 	??? How to call host code. Is host code represented by a scope_def? I does need args/return value.
+	??? Add function body here too!
 */
 
 pair<json_t, int> insert_generated_functions(const parser_path_t& path, int type_id_count){
@@ -539,16 +561,16 @@ QUARK_UNIT_TESTQ("insert_generated_functions()", ""){
 
 
 
-
-
-///////////////////////////////////////////		PASS B
+///////////////////////////////////////////		resolve_scope_typenames()
 
 
 /*
-	Pass B) Scan tree: resolve type references by storing the type-ID.
+	Scan tree: resolve type references by storing the type-ID.
 	Turns "<int>" to "$1041" etc.
 
-	Also tags each expression with its output type. It is appended to back of each expression.
+	- Replaces "pixel" with "$1008" -- the ID of the type.
+	- Stamps each expression with its output type.
+	- Checks for type mismatches. ??? Better to do this inseparate pass!
 */
 
 enum class eresolve_types {
@@ -561,7 +583,7 @@ enum class eresolve_types {
 	returns "$1003"-style ID-string.
 	Throws if not found.
 */
-pair<std::string, json_t> pass_b__type_to_id_xxx(const parser_path_t& path, const string& type_name0, eresolve_types types){
+pair<std::string, json_t> resolve_custom_typename(const parser_path_t& path, const string& type_name0, eresolve_types types){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(type_name0.size() > 2);
 	QUARK_ASSERT(type_name0.front() == '<' && type_name0.back() == '>');
@@ -616,36 +638,30 @@ pair<std::string, json_t> pass_b__type_to_id_xxx(const parser_path_t& path, cons
 	throw std::runtime_error("Undefined type \"" + type_name + "\"");
 }
 
-//	#Basic-types
-bool is_basic_type(const std::string& s){
-	return s == "<null>" || s == "<bool>" || s == "<int>" || s == "<float>" || s == "<string>";
-}
-
-
-std::string pass_b__type_to_id(const parser_path_t& path, const string& type_name0, eresolve_types types){
+std::string resolve_typename(const parser_path_t& path, const string& type_name0, eresolve_types types){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(type_name0.size() > 2);
 
+	//	Already resolved?
 	if(type_name0.front() == '$'){
 		return type_name0;
 	}
 	else{
-		//	#Basic-types
+		//	Basic-type?
 		if(is_basic_type(type_name0)){
 			return "$" + trim_ends(type_name0);
 		}
 		else{
-			return pass_b__type_to_id_xxx(path, type_name0, types).first;
+
+			//	Custom type -- look it up.
+			return resolve_custom_typename(path, type_name0, types).first;
 		}
 	}
 }
 
-
-//??? Should already have separated functions into outer + body-scopes before doing this!
-
 //	Resolve a variable is done by scanning the compile-time scopes upwards towards globals.
 //	Returns the member-list/arg_list etc. that holds the variable AND the index inside _members where it is found.
-pair<json_t, int> pass_b__resolve_scoped_variable(const parser_path_t& path, const string& variable_name){
+pair<json_t, int> resolve_variable(const parser_path_t& path, const string& variable_name){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(variable_name.size() > 0);
 
@@ -689,10 +705,9 @@ pair<json_t, int> pass_b__resolve_scoped_variable(const parser_path_t& path, con
 	return { {}, -1 };
 }
 
-json_t pass_b__expression(const parser_path_t& path, const json_t& e);
+json_t resolve_expression_typenames(const parser_path_t& path, const json_t& expression);
 
-
-json_t pass_b__members(const parser_path_t& path, const json_t& members){
+json_t resolve_members_typenames(const parser_path_t& path, const json_t& members){
 	if(members.is_null()){
 		return members;
 	}
@@ -708,7 +723,7 @@ json_t pass_b__members(const parser_path_t& path, const json_t& members){
 
 			auto member2 = member;
 			if(type != ""){
-				const auto type2 = pass_b__type_to_id(path, type, eresolve_types::k_all_but_function);
+				const auto type2 = resolve_typename(path, type, eresolve_types::k_all_but_function);
 				member2 = assoc(member2, "type", type2);
 			}
 			else{
@@ -716,7 +731,7 @@ json_t pass_b__members(const parser_path_t& path, const json_t& members){
 
 			const auto expression = member.get_optional_object_element("expr");
 			if(!expression.is_null()){
-				const auto expression2 = pass_b__expression(path, expression);
+				const auto expression2 = resolve_expression_typenames(path, expression);
 				member2 = assoc(member2, "expr", expression2);
 			}
 
@@ -726,48 +741,34 @@ json_t pass_b__members(const parser_path_t& path, const json_t& members){
 	}
 }
 
-
-
 //	Array of arguments, part of function call.
-json_t pass_b__arguments(const parser_path_t& path, const json_t& args1){
+json_t resolve_arguments_typenames(const parser_path_t& path, const json_t& args1){
 	QUARK_ASSERT(path.check_invariant());
 	QUARK_ASSERT(args1.check_invariant());
 
 	vector<json_t> args2;
 	for(const auto& arg: args1.get_array()){
-		args2.push_back(pass_b__expression(path, arg));
+		args2.push_back(resolve_expression_typenames(path, arg));
 	}
 	return args2;
 }
 
-json_t get_array_back(const json_t& array){
-	if(!array.is_array()){
-		throw;
-	}
-	else if(array.get_array_size() == 0){
-		throw;
-	}
-	return array.get_array_n(array.get_array_size() - 1);
-}
-
-
-//??? Just search tree for "<...>" and replace - no need to understand semantics of tree!
-
 /*
 	Resolves all uses types into "$1234" syntax, deeply. Also puts the expression's type at end of each expression.
 */
-json_t pass_b__expression(const parser_path_t& path, const json_t& e){
+json_t resolve_expression_typenames(const parser_path_t& path, const json_t& expression){
 	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-	QUARK_TRACE(json_to_pretty_string(e));
+	QUARK_ASSERT(expression.check_invariant());
+	QUARK_TRACE(json_to_pretty_string(expression));
 
+	const auto e = expression;
 	const auto op = e.get_array_n(0).get_string();
 	if(op == "k"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 
 		const auto value = e.get_array_n(1);
 		const auto type = e.get_array_n(2);
-		const auto type2 = pass_b__type_to_id(path, type.get_string(), eresolve_types::k_all_but_function);
+		const auto type2 = resolve_typename(path, type.get_string(), eresolve_types::k_all_but_function);
 
 		return json_t::make_array({
 			op,
@@ -777,14 +778,14 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 	}
 	else if(is_math1_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto expr = pass_b__expression(path, e.get_array_n(1));
+		const auto expr = resolve_expression_typenames(path, e.get_array_n(1));
 		const auto type = expr.get_array_n(3);
 		return json_t::make_array({ op, expr, type });
 	}
 	else if(is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto lhs_expr = pass_b__expression(path, e.get_array_n(1));
-		const auto rhs_expr = pass_b__expression(path, e.get_array_n(2));
+		const auto lhs_expr = resolve_expression_typenames(path, e.get_array_n(1));
+		const auto rhs_expr = resolve_expression_typenames(path, e.get_array_n(2));
 
 		const auto lhs_type = get_array_back(lhs_expr);
 		const auto rhs_type = get_array_back(rhs_expr);
@@ -796,9 +797,9 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 4);
 
-		const auto condition_expr = pass_b__expression(path, e.get_array_n(1));
-		const auto a_expr = pass_b__expression(path, e.get_array_n(2));
-		const auto b_expr = pass_b__expression(path, e.get_array_n(3));
+		const auto condition_expr = resolve_expression_typenames(path, e.get_array_n(1));
+		const auto a_expr = resolve_expression_typenames(path, e.get_array_n(2));
+		const auto b_expr = resolve_expression_typenames(path, e.get_array_n(3));
 
 		const auto condition_type = get_array_back(condition_expr);
 
@@ -812,20 +813,19 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 	else if(op == "call"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 
-		const json_t function_expr = pass_b__expression(path, e.get_array_n(1));
-		const json_t args_expr = pass_b__arguments(path, e.get_array_n(2));
+		const json_t function_expr = resolve_expression_typenames(path, e.get_array_n(1));
+		const json_t args_expr = resolve_arguments_typenames(path, e.get_array_n(2));
 
 		//	The call-expression's output type will be the same as the return-type of the function-def.
-		const auto return_type = pass_b__type_to_id(path, get_array_back(function_expr).get_string(), eresolve_types::k_only_function);
+		const auto return_type = resolve_typename(path, get_array_back(function_expr).get_string(), eresolve_types::k_only_function);
 //			throw std::runtime_error("1002 - Undefined function \"" + call._function.to_string() + "\".");
-
 
 		//??? Check arguments too.
 		return json_t::make_array({ op, function_expr, args_expr, return_type });
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto base_expr = pass_b__expression(path, e.get_array_n(1));
+		const auto base_expr = resolve_expression_typenames(path, e.get_array_n(1));
 		const auto type = get_array_back(base_expr).get_string();
 		QUARK_ASSERT(type.front() == '$');
 		return json_t::make_array({ op, base_expr, e.get_array_n(2), type });
@@ -835,20 +835,20 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 		QUARK_ASSERT(e.get_array_size() == 2);
 
 		const auto variable_name = e.get_array_n(1).get_string();
-		pair<json_t, int> found_variable = pass_b__resolve_scoped_variable(path, variable_name);
+		pair<json_t, int> found_variable = resolve_variable(path, variable_name);
 		if(!found_variable.first.is_null()){
 			json_t member = found_variable.first.get_array_n(found_variable.second);
 			const auto type = member.get_object_element("type").get_string();
-			const auto type_id = pass_b__type_to_id(path, type, eresolve_types::k_all);
+			const auto type_id = resolve_typename(path, type, eresolve_types::k_all);
 			return json_t::make_array({ op, variable_name, type_id });
 		}
 		else{
-			auto found_function = pass_b__type_to_id_xxx(path, "<" + variable_name + ">", eresolve_types::k_only_function);
+			auto found_function = resolve_custom_typename(path, "<" + variable_name + ">", eresolve_types::k_only_function);
 
 			//	OK, we're resolving a function, not a variable. ### Code this differently?
 			const auto return_type = found_function.second.get_object_element("scope_def").get_object_element("return_type").get_string();
 			QUARK_ASSERT(return_type.back() == '>');
-			const auto return_type_id = pass_b__type_to_id(path, return_type, eresolve_types::k_all);
+			const auto return_type_id = resolve_typename(path, return_type, eresolve_types::k_all);
 			return json_t::make_array({ op, variable_name, return_type_id });
 		}
 	}
@@ -857,22 +857,14 @@ json_t pass_b__expression(const parser_path_t& path, const json_t& e){
 	}
 }
 
-parser_path_t update_leaf(const parser_path_t& path, const json_t& leaf){
-	vector<json_t> temp(path._scopes.begin(), path._scopes.end() - 1);
-	temp.push_back(leaf);
-
-	parser_path_t temp2;
-	temp2._scopes.swap(temp);
-	return temp2;
-}
-
-json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
+json_t resolve_scope_typenames(const parser_path_t& path0){
 	QUARK_SCOPED_TRACE("PASS B");
 	QUARK_ASSERT(path0.check_invariant());
 	QUARK_TRACE(json_to_pretty_string(path0._scopes.back()));
 
 	const auto scope1 = path0._scopes.back();
 
+	//	Update all nested types.
 	auto types_collector2 = json_t::make_object();
 	{
 		const auto types = get_in(scope1, { "types" }).get_object();
@@ -889,7 +881,7 @@ json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
 				const auto type_def3 = [&](){
 					const json_t subscope = type_def.get_optional_object_element("scope_def");
 					if(!subscope.is_null()){
-						const auto subscope2 = replace_type_name_references_with_type_ids(go_down(update_leaf(path0, scope1), subscope));
+						const auto subscope2 = resolve_scope_typenames(go_down(replace_leaf(path0, scope1), subscope));
 						return assoc(type_def, "scope_def", subscope2);
 					}
 					else{
@@ -903,20 +895,22 @@ json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
 	}
 	auto scope2 = assoc(scope1, "types", types_collector2);
 
-	auto path1 = update_leaf(path0, scope2);
-	scope2 = assoc(scope2, {"members"}, pass_b__members(path1, scope2.get_optional_object_element("members")));
-	scope2 = assoc(scope2, {"args"}, pass_b__members(path1, scope2.get_optional_object_element("args")));
-	scope2 = assoc(scope2, {"locals"}, pass_b__members(path1, scope2.get_optional_object_element("locals")));
+	//	Update members, args and locals.
+	auto path1 = replace_leaf(path0, scope2);
+	scope2 = assoc(scope2, {"members"}, resolve_members_typenames(path1, scope2.get_optional_object_element("members")));
+	scope2 = assoc(scope2, {"args"}, resolve_members_typenames(path1, scope2.get_optional_object_element("args")));
+	scope2 = assoc(scope2, {"locals"}, resolve_members_typenames(path1, scope2.get_optional_object_element("locals")));
 
-
+	//	Update return type.
 	if(scope2.does_object_element_exist("return_type") && scope2.get_object_element("return_type").get_string() != ""){
 		scope2 = assoc(
 			scope2,
 			{"return_type"},
-			pass_b__type_to_id(path1, scope2.get_optional_object_element("return_type", "<null>").get_string(), eresolve_types::k_all)
+			resolve_typename(path1, scope2.get_optional_object_element("return_type", "<null>").get_string(), eresolve_types::k_all)
 		);
 	}
 
+	//	Update statements.
 	const auto statements = scope2.get_optional_object_element("statements");
 	if(!statements.is_null()){
 		vector<json_t> statements2;
@@ -925,12 +919,12 @@ json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
 			json_t op = s.get_array_n(0);
 			if(op == "bind"){
 				const auto type = s.get_array_n(1);
-				const auto type2 = pass_b__type_to_id(path1, type.get_string(), eresolve_types::k_all);
+				const auto type2 = resolve_typename(path1, type.get_string(), eresolve_types::k_all);
 
 				const auto identifier = s.get_array_n(2);
 
 				const auto expr = s.get_array_n(3);
-				const auto expr2 = pass_b__expression(path1, expr);
+				const auto expr2 = resolve_expression_typenames(path1, expr);
 				statements2.push_back(json_t::make_array({ op, type2, identifier, expr2 }));
 			}
 			else if(op == "define_struct"){
@@ -940,7 +934,7 @@ json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
 				QUARK_ASSERT(false);
 			}
 			else if(op == "return"){
-				const auto expr = pass_b__expression(path1, s.get_array_n(1));
+				const auto expr = resolve_expression_typenames(path1, s.get_array_n(1));
 				statements2.push_back(json_t::make_array({ op, expr }));
 			}
 			else{
@@ -954,7 +948,7 @@ json_t replace_type_name_references_with_type_ids(const parser_path_t& path0){
 	return scope2;
 }
 
-QUARK_UNIT_TESTQ("replace_type_name_references_with_type_ids()", "Test minimal program -- are all references to types resolved?"){
+QUARK_UNIT_TESTQ("resolve_scope_typenames()", "Test minimal program -- are all references to types resolved?"){
 	const auto test = parse_json(seq_t(
 		R"(
 		{
@@ -987,12 +981,12 @@ QUARK_UNIT_TESTQ("replace_type_name_references_with_type_ids()", "Test minimal p
 
 	QUARK_TRACE(json_to_pretty_string(test));
 
-	const auto result = replace_type_name_references_with_type_ids(make_parser_path(test));
+	const auto result = resolve_scope_typenames(make_parser_path(test));
 	QUARK_UT_VERIFY(result.check_invariant());
 	QUARK_TRACE(json_to_pretty_string(result));
 }
 
-QUARK_UNIT_TESTQ("replace_type_name_references_with_type_ids()", "Are types of locals resolved?"){
+QUARK_UNIT_TESTQ("resolve_scope_typenames()", "Are types of locals resolved?"){
 	const auto test = parse_json(seq_t(
 		R"(
 		{
@@ -1029,13 +1023,12 @@ QUARK_UNIT_TESTQ("replace_type_name_references_with_type_ids()", "Are types of l
 
 	QUARK_TRACE(json_to_pretty_string(test));
 
-	const auto result = replace_type_name_references_with_type_ids(make_parser_path(test));
+	const auto result = resolve_scope_typenames(make_parser_path(test));
 	QUARK_UT_VERIFY(result.check_invariant());
 	QUARK_TRACE(json_to_pretty_string(result));
 }
 
-
-QUARK_UNIT_TESTQ("replace_type_name_references_with_type_ids()", ""){
+QUARK_UNIT_TESTQ("resolve_scope_typenames()", ""){
 	const auto test = parse_json(seq_t(
 		R"(
 		{
@@ -1113,7 +1106,7 @@ QUARK_UNIT_TESTQ("replace_type_name_references_with_type_ids()", ""){
 
 	QUARK_TRACE(json_to_pretty_string(test));
 
-	const auto result = replace_type_name_references_with_type_ids(make_parser_path(test));
+	const auto result = resolve_scope_typenames(make_parser_path(test));
 	QUARK_UT_VERIFY(result.check_invariant());
 
 
@@ -1125,13 +1118,12 @@ QUARK_UNIT_TESTQ("replace_type_name_references_with_type_ids()", ""){
 
 
 
+///////////////////////////////////////////		make_central_type_lookup()
 
-///////////////////////////////////////////		PASS C
+
+//	Collects all "types" tables and merge them.
 
 
-//	Pass C) Make central type lookup.
-
-//??? Store full path for each type.
 
 string make_path_string(const parser_path_t& path, const string& node_name){
 	QUARK_ASSERT(path.check_invariant());
@@ -1184,7 +1176,7 @@ pair<json_t, json_t> make_central_type_lookup(const json_t& lookup, const parser
 	return { scope1, lookup1 };
 }
 
-json_t pass_c__scope_def(const parser_path_t& path){
+json_t make_central_type_lookup(const parser_path_t& path){
 	QUARK_SCOPED_TRACE("PASS C");
 	QUARK_TRACE(json_to_pretty_string(path._scopes.front()));
 
@@ -1288,11 +1280,11 @@ std::pair<json_t, seq_t> k_test = parse_json(seq_t(
 	return k_test.first;
 }
 
-QUARK_UNIT_TESTQ("pass_c__scope_def()", ""){
+QUARK_UNIT_TESTQ("make_central_type_lookup()", ""){
 	const auto test = make_test_pass_c();
 	QUARK_TRACE(json_to_pretty_string(test));
 
-	const auto c = pass_c__scope_def(make_parser_path(test));
+	const auto c = make_central_type_lookup(make_parser_path(test));
 
 	QUARK_UT_VERIFY(c.check_invariant());
 	QUARK_TRACE(json_to_pretty_string(c));
@@ -1337,11 +1329,10 @@ json_t run_pass2(const json_t& parse_tree){
 
 	const auto pass_a = assign_unique_type_ids(make_parser_path(pass_0), 1000);
 	const auto pass_a5 = insert_generated_functions(make_parser_path(pass_a.first), pass_a.second);
-	const auto pass_b = replace_type_name_references_with_type_ids(make_parser_path(pass_a5.first));
+	const auto pass_b = resolve_scope_typenames(make_parser_path(pass_a5.first));
 	QUARK_ASSERT(!has_unresolved_types(pass_b));
 
-	const auto pass_c = pass_c__scope_def(make_parser_path(pass_b));
-	const auto pass_d = pass_c;//pass_d__scope_def(make_parser_path(pass_c));
+	const auto pass_c = make_central_type_lookup(make_parser_path(pass_b));
 
 	QUARK_ASSERT(get_in(pass_c, {"global", "args"}) == json_t::make_array());
 	QUARK_ASSERT(get_in(pass_c, {"global", "locals"}) == json_t::make_array());
@@ -1349,9 +1340,9 @@ json_t run_pass2(const json_t& parse_tree){
 	QUARK_ASSERT(get_in(pass_c, {"global", "statements"}) == json_t::make_array());
 
 	//	Make sure there are no unresolved types left in program.
-	QUARK_ASSERT(!has_unresolved_types(pass_d));
+	QUARK_ASSERT(!has_unresolved_types(pass_c));
 
-	return pass_d;
+	return pass_c;
 }
 
 
@@ -1379,6 +1370,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_100"){
 	ut_compare_jsons(pass2, pass2_output);
 }
 */
+
 void test_error(const string& program, const string& error_string){
 	const auto pass1 = parse_program2(program);
 	try{
