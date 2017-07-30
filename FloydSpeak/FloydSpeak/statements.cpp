@@ -51,15 +51,6 @@ namespace floyd_parser {
 			trace(s._bind_statement->_expression);
 		}
 
-		else if(s._define_struct){
-			QUARK_SCOPED_TRACE("define_struct_statement_t: \"" + s._define_struct->_struct_def->_name.to_string());
-			trace(s._define_struct->_struct_def);
-		}
-		else if(s._define_function){
-			QUARK_SCOPED_TRACE("define_function_statement_t: \"" + s._define_function->_function_def->_name.to_string());
-			trace(s._define_function->_function_def);
-		}
-
 		else if(s._return_statement){
 			QUARK_SCOPED_TRACE("return_statement_t");
 			trace(s._return_statement->_expression);
@@ -78,26 +69,10 @@ namespace floyd_parser {
 	bool statement_t::check_invariant() const {
 		if(_bind_statement){
 			QUARK_ASSERT(_bind_statement);
-			QUARK_ASSERT(!_define_struct);
-			QUARK_ASSERT(!_define_function);
-			QUARK_ASSERT(!_return_statement);
-		}
-		else if(_define_struct){
-			QUARK_ASSERT(!_bind_statement);
-			QUARK_ASSERT(_define_struct);
-			QUARK_ASSERT(!_define_function);
-			QUARK_ASSERT(!_return_statement);
-		}
-		else if(_define_function){
-			QUARK_ASSERT(!_bind_statement);
-			QUARK_ASSERT(!_define_struct);
-			QUARK_ASSERT(_define_function);
 			QUARK_ASSERT(!_return_statement);
 		}
 		else if(_return_statement){
 			QUARK_ASSERT(!_bind_statement);
-			QUARK_ASSERT(!_define_struct);
-			QUARK_ASSERT(!_define_function);
 			QUARK_ASSERT(_return_statement);
 		}
 		else{
@@ -116,18 +91,6 @@ namespace floyd_parser {
 				json_t("bind"),
 				json_t(e._bind_statement->_identifier),
 				expression_to_json(e._bind_statement->_expression)
-			});
-		}
-		else if(e._define_struct){
-			return json_t::make_array({
-				json_t("defstruct"),
-				scope_def_to_json(*e._define_struct->_struct_def)
-			});
-		}
-		else if(e._define_function){
-			return json_t::make_array({
-				json_t("deffunc"),
-				scope_def_to_json(*e._define_function->_function_def)
 			});
 		}
 		else if(e._return_statement){
@@ -157,24 +120,6 @@ namespace floyd_parser {
 			R"(["bind", "a", ["k", 400, "<int>"]])"
 		);
 	}
-
-#if false
-	QUARK_UNIT_TESTQ("statement_to_json", "defstruct"){
-		const auto global = scope_def_t::make_global_scope();
-		const auto result = statement_to_json(define_struct_statement_t{ make_struct1(global) });
-
-		quark::ut_compare(result.get_array_n(0).get_string(), "defstruct");
-	}
-#endif
-
-#if false
-	QUARK_UNIT_TESTQ("statement_to_json", "deffunc"){
-		const auto global = scope_def_t::make_global_scope();
-		const auto result = statement_to_json(define_function_statement_t{ make_test_function2() });
-
-		quark::ut_compare(result.get_array_n(0).get_string(), "deffunc");
-	}
-#endif
 
 	QUARK_UNIT_TESTQ("statement_to_json", "return"){
 		quark::ut_compare(

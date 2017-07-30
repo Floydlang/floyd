@@ -39,30 +39,6 @@ namespace floyd_parser {
     };
     
     
-    //////////////////////////////////////		define_struct_statement_t
-    
-    
-    struct define_struct_statement_t {
-        bool operator==(const define_struct_statement_t& other) const {
-            return _struct_def == other._struct_def;
-        }
-        
-        scope_ref_t _struct_def;
-    };
-    
-    
-    //////////////////////////////////////		define_function_statement_t
-    
-    
-    struct define_function_statement_t {
-        bool operator==(const define_function_statement_t& other) const {
-            return _function_def == other._function_def;
-        }
-        
-        scope_ref_t _function_def;
-    };
-    
-    
 	//////////////////////////////////////		return_statement_t
 
 
@@ -97,16 +73,6 @@ namespace floyd_parser {
 		{
 		}
 
-        public: statement_t(const define_struct_statement_t& value) :
-            _define_struct(std::make_shared<define_struct_statement_t>(value))
-        {
-        }
-
-        public: statement_t(const define_function_statement_t& value) :
-            _define_function(std::make_shared<define_function_statement_t>(value))
-        {
-        }
-
         public: statement_t(const return_statement_t& value) :
 			_return_statement(std::make_shared<return_statement_t>(value))
 		{
@@ -126,8 +92,6 @@ namespace floyd_parser {
 		}
 
         public: std::shared_ptr<bind_statement_t> _bind_statement;
-        public: std::shared_ptr<define_struct_statement_t> _define_struct;
-        public: std::shared_ptr<define_function_statement_t> _define_function;
 		public: std::shared_ptr<return_statement_t> _return_statement;
 	};
 
