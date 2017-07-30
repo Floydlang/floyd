@@ -59,8 +59,6 @@ namespace floyd_parser {
 		Defines a statement, like "return" including any needed expression trees for the statement.
 
 		- bind
-		- define_struct
-		- define function
 		- return
 	*/
 	struct statement_t {

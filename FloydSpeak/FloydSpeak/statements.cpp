@@ -22,7 +22,6 @@ namespace floyd_parser {
 	using std::string;
 	using std::vector;
 	using std::pair;
-	using std::make_shared;
 	using std::shared_ptr;
 
 

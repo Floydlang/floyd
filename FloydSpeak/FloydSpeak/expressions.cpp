@@ -32,8 +32,6 @@ string expression_to_json_string(const expression_t& e);
 
 
 
-
-
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_math_operation2(
 		expression_t::math2_operation::k_add,
@@ -69,7 +67,6 @@ bool resolve_member_expr_t::operator==(const resolve_member_expr_t& other) const
 bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
 	return _parent_address == other._parent_address && _lookup_key == other._lookup_key ;
 }
-
 
 
 
@@ -566,41 +563,4 @@ bool is_math2_op(const string& op){
 }
 
 
-
-	//////////////////////////////////////////////////		visit()
-
-
-/*
-expression_t visit(const visit_expression_i& v, const expression_t& e){
-	if(e._constant){
-		return v.visit_expression_i__on_constant(*e._constant);
-	}
-	else if(e._math1){
-		return v.visit_expression_i__on_math1(*e._math1);
-	}
-	else if(e._math2){
-		return v.visit_expression_i__on_math2(*e._math2);
-	}
-	else if(e._call){
-		return v.visit_expression_i__on_call(*e._call);
-	}
-	else if(e._resolve_variable){
-		return v.visit_expression_i__on_resolve_variable(*e._resolve_variable);
-	}
-	else if(e._resolve_member){
-		return v.visit_expression_i__on_resolve_member(*e._resolve_member);
-	}
-	else if(e._lookup_element){
-		return v.visit_expression_i__on_lookup_element(*e._lookup_element);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-*/
-
-
-
-
 }	//	floyd_parser
-
