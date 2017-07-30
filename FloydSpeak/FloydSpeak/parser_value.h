@@ -40,7 +40,7 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_instance_t& other);
 
-		//	??? Remove this points at later time, when we statically track the type of structs OK. We alreay know this via __def!
+		//	??? Remove this pointer at later time, when we statically track the type of structs OK. We alreay know this via __def!
 		public: std::shared_ptr<const type_def_t> _struct_type;
 
 		//	??? Use ::vector<value_t> _member_values and index of member to find the value.

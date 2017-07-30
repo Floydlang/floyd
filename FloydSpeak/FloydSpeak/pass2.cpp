@@ -1379,7 +1379,6 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_100"){
 	ut_compare_jsons(pass2, pass2_output);
 }
 */
-
 void test_error(const string& program, const string& error_string){
 	const auto pass1 = parse_program2(program);
 	try{

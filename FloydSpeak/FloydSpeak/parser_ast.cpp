@@ -432,15 +432,6 @@ namespace floyd_parser {
 		}
 	}
 
-	TSHA1 calc_function_body_hash(const scope_ref_t& f){
-		QUARK_ASSERT(f && f->check_invariant());
-
-		static int s_counter = 1000;
-		s_counter++;
-		return CalcSHA1(std::to_string(s_counter));
-	}
-
-
 
 	scope_ref_t scope_def_t::make_function_def(
 		const type_identifier_t& name,
@@ -600,10 +591,7 @@ namespace floyd_parser {
 
 
 
-
-
 	////////////////////////			ast_t
-
 
 
 
@@ -659,125 +647,4 @@ namespace floyd_parser {
 	////////////////////	Helpers for making tests.
 
 
-
-/*
-	scope_ref_t make_struct0(scope_ref_t scope_def){
-		return scope_def_t::make_struct(type_identifier_t::make("struct0"), {});
-	}
-
-	scope_ref_t make_struct1(scope_ref_t scope_def){
-		return scope_def_t::make_struct(
-			type_identifier_t::make("struct1"),
-			{
-				{ type_identifier_t::make_float(), "x" },
-				{ type_identifier_t::make_float(), "y" },
-				{ type_identifier_t::make_string(), "name" }
-			}
-		);
-	}
-
-	scope_ref_t make_struct2(scope_ref_t scope_def){
-		return make_struct0(scope_def);
-	}
-
-	scope_ref_t make_struct3(scope_ref_t scope_def){
-		return scope_def_t::make_struct(
-			type_identifier_t::make("struct3"),
-			{
-				{ type_identifier_t::make_int(), "a" },
-				{ type_identifier_t::make_string(), "b" }
-			}
-		);
-	}
-
-	scope_ref_t make_struct4(scope_ref_t scope_def){
-		return scope_def_t::make_struct(
-			type_identifier_t::make("struct4"),
-			{
-				{ type_identifier_t::make_string(), "x" },
-//				{ type_identifier_t::make("struct3"), "y" },
-				{ type_identifier_t::make_string(), "z" }
-			}
-		);
-	}
-
-	scope_ref_t make_struct5(scope_ref_t scope_def){
-		return scope_def_t::make_struct(
-			type_identifier_t::make("struct5"),
-			{
-				{ type_identifier_t::make_bool(), "a" },
-				// pad
-				// pad
-				// pad
-				{ type_identifier_t::make_int(), "b" },
-				{ type_identifier_t::make_bool(), "c" },
-				{ type_identifier_t::make_bool(), "d" },
-				{ type_identifier_t::make_bool(), "e" },
-				{ type_identifier_t::make_bool(), "f" },
-				{ type_identifier_t::make_string(), "g" },
-				{ type_identifier_t::make_bool(), "h" }
-			}
-		);
-	}
-
-	scope_ref_t make_struct6(scope_ref_t scope_def){
-		return scope_def_t::make_struct(
-			type_identifier_t::make("struct6"),
-			{
-				{ type_identifier_t::make_bool(), "_bool_true", value_t(true) },
-				{ type_identifier_t::make_bool(), "_bool_false", value_t(false) },
-				{ type_identifier_t::make_int(), "_int", value_t(111) },
-//				{ type_identifier_t::make_float(), "_float" },
-				{ type_identifier_t::make_string(), "_string", value_t("test 123") },
-				{ type_identifier_t::make("pixel"), "_pixel" }
-			}
-		);
-	}
-*/
-
 } //	floyd_parser
-
-
-
-
-/*
-class visitor_i {
-	public: virtual ~visitor_i(){};
-	public: virtual void visitor_i_on_scope(const scope_ref_t& scope_def){};
-	public: virtual void visitor_i_on_function_def(const scope_ref_t& scope_def){};
-	public: virtual void visitor_i_on_struct_def(const scope_ref_t& scope_def){};
-	public: virtual void visitor_i_on_global_scope(const scope_ref_t& scope_def){};
-
-	public: virtual void visitor_i_on_expression(const scope_ref_t& scope_def){};
-};
-
-scope_ref_t visit_scope(const scope_ref_t& scope_def){
-	QUARK_ASSERT(scope_def && scope_def->check_invariant());
-
-	if(scope_def->_type == scope_def_t::base_type::k_function){
-		check_type(scope_def->_parent_scope.lock(), scope_def->_return_type.to_string());
-	}
-
-	//	Make sure all statements can resolve their symbols.
-	for(const auto t: scope_def->_executable._statements){
-		are_symbols_resolvable(scope_def, *t);
-	}
-
-	//	Make sure all types can resolve their symbols.
-	for(const auto t: scope_def->_types_collector._type_definitions){
-		const auto type_def = t.second;
-
-		if(type_def->get_type() == base_type::k_struct){
-			are_symbols_resolvable(type_def->get_struct_def());
-		}
-		else if(type_def->get_type() == base_type::k_vector){
-//			type_def->_struct_def
-		}
-		else if(type_def->get_type() == base_type::k_function){
-			are_symbols_resolvable(type_def->get_function_def());
-		}
-	}
-}
-*/
-
-

@@ -35,6 +35,8 @@ bool trace_on = QUARK_TRACE_ON;
 bool unit_tests_on = QUARK_UNIT_TESTS_ON;
 
 
+void on_problem___put_breakpoint_here(){
+}
 
 
 
@@ -72,6 +74,8 @@ void set_runtime(runtime_i* iRuntime){
 //	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
 
 void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
+	on_problem___put_breakpoint_here();
+
 	assert(runtime != nullptr);
 	assert(expression != nullptr);
 
@@ -127,23 +131,14 @@ void on_trace_hook(runtime_i* runtime, const std::stringstream& s){
 //	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
 
 void on_unit_test_failed_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
+	on_problem___put_breakpoint_here();
+
 	assert(runtime != nullptr);
 	assert(expression != nullptr);
 
 	runtime->runtime_i__on_unit_test_failed(location, expression);
 }
 
-/*
-std::string OnGetPrivateTestDataPath(runtime_i* iRuntime, const char iModuleUnderTest[], const char iSourceFilePath[]){
-	ASSERT(iRuntime != nullptr);
-	ASSERT(iModuleUnderTest != nullptr);
-	ASSERT(iSourceFilePath != nullptr);
-
-	const TAbsolutePath absPath(iSourceFilePath);
-	const TAbsolutePath parent = GetParent(absPath);
-	return parent.GetStringPath();
-}
-*/
 
 
 std::string path_to_name(const std::string& path){
@@ -183,6 +178,7 @@ int run_test_list(const std::string& source_file, const std::vector<unit_test_de
 			test._test_f();
 		}
 		catch(...){
+			on_problem___put_breakpoint_here();
 			QUARK_TRACE("FAILURE: " + testInfo.str());
 			fail_count++;
 		}
@@ -190,13 +186,6 @@ int run_test_list(const std::string& source_file, const std::vector<unit_test_de
 	return fail_count;
 }
 
-/*
-sort(mMyClassVector.begin(), mMyClassVector.end(), 
-    [](const MyClass & a, const MyClass & b) -> bool
-{ 
-    return a.mProperty > b.mProperty; 
-});
-*/
 void run_tests(const unit_test_registry& registry, const std::vector<std::string>& source_file_order){
 	QUARK_TRACE_FUNCTION();
 
@@ -272,6 +261,7 @@ void run_tests(){
 			test._test_f();
 		}
 		catch(...){
+			on_problem___put_breakpoint_here();
 			QUARK_TRACE("FAILURE: " + testInfo.str());
 			fail_count++;
 		}
@@ -363,6 +353,4 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_TEST_VERIFY(true);
 }
 
-
 }
-

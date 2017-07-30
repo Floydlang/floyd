@@ -96,8 +96,6 @@ namespace floyd_parser {
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
 
-	TSHA1 calc_function_body_hash(const scope_ref_t& f);
-
 
 
 
