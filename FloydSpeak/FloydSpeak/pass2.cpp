@@ -1,4 +1,4 @@
-//
+	//
 //  pass2.cpp
 //  FloydSpeak
 //
@@ -1376,10 +1376,6 @@ QUARK_UNIT_TESTQ("pass_c__scope_def()", ""){
 
 
 
-
-
-
-
 bool has_unresolved_types(const json_t& obj){
 	if(obj.is_string()){
 		const auto s = obj.get_string();
@@ -1410,8 +1406,6 @@ bool has_unresolved_types(const json_t& obj){
 }
 
 
-
-
 json_t run_pass2(const json_t& parse_tree){
 	QUARK_TRACE(json_to_pretty_string(parse_tree));
 
@@ -1440,10 +1434,7 @@ json_t run_pass2(const json_t& parse_tree){
 
 
 
-
-
 ///////////////////////////////////////			TESTS
-
 
 
 
@@ -1453,38 +1444,21 @@ json_t run_pass2(const json_t& parse_tree){
 	- the transform of the AST worked as expected
 	- Correct errors are emitted.
 */
-
-
-QUARK_UNIT_TESTQ("run_pass2()", "Minimum program"){
-	const auto pass1 = parse_program2(k_test_program_0_source);
+QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
+	const auto pass1 = parse_json(seq_t(k_test_program_0_parserout)).first;
 	const auto pass2 = run_pass2(pass1);
-	const auto ast = json_to_ast(pass2);
+	const auto pass2_output = parse_json(seq_t(k_test_program_0_pass2output)).first;
+	ut_compare_jsons(pass2, pass2_output);
+}
 
 /*
-	const auto found_it = find_if(
-		ast._symbols.begin(),
-		ast._symbols.end(),
-		[&] (const std::pair<std::string, std::shared_ptr<type_def_t>>& e) { return e.second->to_string() == "int"; }
-	);
-	QUARK_ASSERT(found_it != ast._symbols.end());
-*/
-}
-
-//	This program uses all features of pass2.???
-QUARK_UNIT_TESTQ("run_pass2()", "Maxium program"){
-	const auto a = R"(
-		string get_s(pixel p){ return p.s; }
-		struct pixel { string s = "two"; }
-		string main(){
-			pixel p = pixel_constructor();
-			return get_s(p);
-		}
-		)";
-	const auto pass1 = parse_program2(a);
+QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_100"){
+	const auto pass1 = parse_json(seq_t(k_test_program_100_parserout)).first;
 	const auto pass2 = run_pass2(pass1);
+	const auto pass2_output = parse_json(seq_t("[12344]")).first;
+	ut_compare_jsons(pass2, pass2_output);
 }
-
-
+*/
 
 void test_error(const string& program, const string& error_string){
 	const auto pass1 = parse_program2(program);
@@ -1635,22 +1609,3 @@ QUARK_UNIT_TESTQ("run_pass2()", "1010"){
 	);
 }
 #endif
-
-/*
-Can't get this test past the parser...
-Make a json_to_ast() so we can try arbitrary asts with run_pass2().
-
-QUARK_UNIT_TESTQ("run_pass2()", "1011"){
-	test_error(
-		R"(
-			struct pixel { rgb s = "two"; }
-			string main(){
-				pixel p = pixel_constructor();
-				int a = p.s;
-				return 1;
-			}
-		)",
-		"Unresolved member \"xyz\""
-	);
-}
-*/

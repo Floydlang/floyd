@@ -53,8 +53,6 @@ namespace floyd_parser {
 
 
 	pair<json_t, seq_t> parse_assignment_statement(const seq_t& s){
-		QUARK_SCOPED_TRACE("parse_assignment_statement()");
-
 		const auto token_pos = read_until(s, whitespace_chars);
 		const auto type = token_pos.first;
 

@@ -34,6 +34,40 @@ const std::string k_test_program_0_parserout = R"(
 		]
 	]
 )";
+const std::string k_test_program_0_pass2output = R"(
+	{
+		"global": {
+			"args": [],
+			"locals": [],
+			"members": [],
+			"name": "global",
+			"return_type": "",
+			"statements": [],
+			"type": "global"
+		},
+		"lookup": {
+			"$1000": {
+				"base_type": "function",
+				"path": "global/main",
+				"scope_def": {
+					"args": [],
+					"locals": [],
+					"members": [],
+					"name": "main",
+					"return_type": "$int",
+					"statements": [
+						[ "return", [ "k", 3, "$int" ] ]
+					],
+					"type": "function",
+					"types": {}
+				}
+			}
+		}
+	}
+)";
+
+
+
 
 const std::string k_test_program_1_source =
 	"int main(string args){\n"
@@ -60,7 +94,7 @@ const std::string k_test_program_1_parserout = R"(
 
 const char k_test_program_100_source[] = R"(
 	struct pixel { float red; float green; float blue; }
-	float get_grey(pixel p){ return (p.red + p.green + p.blue) / 3; }
+	float get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }
 
 	float main(){
 		pixel p = pixel(1, 0, 0);
@@ -96,7 +130,7 @@ const char k_test_program_100_parserout[] = R"(
 								["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
 								["->", ["@", "p"], "blue"]
 							],
-							["k", 3, "<int>"]
+							["k", 3.0, "<float>"]
 						]
 					]
 				]
