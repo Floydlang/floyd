@@ -21,8 +21,6 @@ using namespace std;
 
 
 
-
-
 shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string, shared_ptr<type_def_t>>& types){
 	//	#Basic-types
 	if(id == "$null"){
@@ -49,7 +47,6 @@ shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string,
 		return it->second;
 	}
 }
-
 
 expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(e.is_array() && e.get_array_size() >= 1);
@@ -161,7 +158,6 @@ expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<
 		QUARK_ASSERT(false);
 	}
 }
-
 
 /*
 	Example:
@@ -445,9 +441,6 @@ ast_t json_to_ast(const json_t& program){
 }
 
 
-
-
-
 QUARK_UNIT_TESTQ("json_to_ast()", "Minimum program"){
 	const auto a = parse_json(seq_t(R"(
 			{
@@ -490,8 +483,4 @@ QUARK_UNIT_TESTQ("json_to_ast()", "Minimum program"){
 
 	QUARK_ASSERT(a.first.is_null() == false);
 }
-
-
-
-
 
