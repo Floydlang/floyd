@@ -124,20 +124,20 @@ namespace {
 					throw std::runtime_error("local constant already exists");
 				}
 				const auto result = evalute_expression(vm2, s->_expression);
-				if(!result._constant){
+				if(!result.is_constant()){
 					throw std::runtime_error("unknown variables");
 				}
-				vm2._call_stack.back()->_values[name] = *result._constant;
+				vm2._call_stack.back()->_values[name] = result.get_constant();
 			}
 			else if(statement->_return_statement){
 				const auto expr = statement->_return_statement->_expression;
 				const auto result = evalute_expression(vm2, expr);
 
-				if(!result._constant){
+				if(!result.is_constant()){
 					throw std::runtime_error("undefined");
 				}
 
-				return *result._constant;
+				return result.get_constant();
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -331,45 +331,46 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	const auto right_expr = evalute_expression(vm, e2._right);
 
 	//	Both left and right are constant, replace the math_operation with a constant!
-	if(left_expr._constant && right_expr._constant){
-
+	if(left_expr.is_constant() && right_expr.is_constant()){
 		//	Perform math operation on the two constants => new constant.
 		//??? check this in pass2 at compile time!
+		const auto left_constant = left_expr.get_constant();
+		const auto right_constant = right_expr.get_constant();
 
 		//	Is operation supported by all types?
 		{
 			if(op == expression_t::math2_operation::k_math2_smaller_or_equal){
-				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
+				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant(diff <= 0);
 			}
 			else if(op == expression_t::math2_operation::k_math2_smaller){
-				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
+				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant(diff < 0);
 			}
 			else if(op == expression_t::math2_operation::k_math2_larger_or_equal){
-				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
+				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant(diff >= 0);
 			}
 			else if(op == expression_t::math2_operation::k_math2_larger){
-				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
+				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant(diff > 0);
 			}
 
 
 			else if(op == expression_t::math2_operation::k_logical_equal){
-				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
+				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant(diff == 0);
 			}
 			else if(op == expression_t::math2_operation::k_logical_nonequal){
-				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
+				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant(diff != 0);
 			}
 		}
 
 		//	bool
-		if(left_expr._constant->is_bool() && right_expr._constant->is_bool()){
-			const bool left = left_expr._constant->get_bool();
-			const bool right = right_expr._constant->get_bool();
+		if(left_constant.is_bool() && right_constant.is_bool()){
+			const bool left = left_constant.get_bool();
+			const bool right = right_constant.get_bool();
 
 			if(op == expression_t::math2_operation::k_math2_add
 			|| op == expression_t::math2_operation::k_math2_subtract
@@ -395,9 +396,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 		}
 
 		//	int
-		else if(left_expr._constant->is_int() && right_expr._constant->is_int()){
-			const int left = left_expr._constant->get_int();
-			const int right = right_expr._constant->get_int();
+		else if(left_constant.is_int() && right_constant.is_int()){
+			const int left = left_constant.get_int();
+			const int right = right_constant.get_int();
 
 			if(op == expression_t::math2_operation::k_math2_add){
 				return expression_t::make_constant(left + right);
@@ -436,9 +437,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 		}
 
 		//	float
-		else if(left_expr._constant->is_float() && right_expr._constant->is_float()){
-			const float left = left_expr._constant->get_float();
-			const float right = right_expr._constant->get_float();
+		else if(left_constant.is_float() && right_constant.is_float()){
+			const float left = left_constant.get_float();
+			const float right = right_constant.get_float();
 
 			if(op == expression_t::math2_operation::k_math2_add){
 				return expression_t::make_constant(left + right);
@@ -475,9 +476,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 		}
 
 		//	string
-		else if(left_expr._constant->is_string() && right_expr._constant->is_string()){
-			const string left = left_expr._constant->get_string();
-			const string right = right_expr._constant->get_string();
+		else if(left_constant.is_string() && right_constant.is_string()){
+			const string left = left_constant.get_string();
+			const string right = right_constant.get_string();
 
 			if(op == expression_t::math2_operation::k_math2_add){
 				return expression_t::make_constant(left + right);
@@ -511,9 +512,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			}
 		}
 		//	struct
-		else if(left_expr._constant->is_struct() && right_expr._constant->is_struct()){
-			const auto left = left_expr._constant->get_struct();
-			const auto right = right_expr._constant->get_struct();
+		else if(left_constant.is_struct() && right_constant.is_struct()){
+			const auto left = left_constant.get_struct();
+			const auto right = right_constant.get_struct();
 
 			if(!(*left->_struct_type == *right->_struct_type)){
 				throw std::runtime_error("Struct type mismatch.");
@@ -550,7 +551,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			}
 		}
 
-		else if(left_expr._constant->is_vector() && right_expr._constant->is_vector()){
+		else if(left_constant.is_vector() && right_constant.is_vector()){
 			QUARK_ASSERT(false);
 		}
 		else{
@@ -577,8 +578,8 @@ expression_t evaluate_conditional_operator(const interpreter_t& vm, const expres
 	const auto& ce = *e._conditional_operator;
 
 	const auto cond_result = evalute_expression(vm, ce._condition);
-	if(cond_result._constant&& cond_result._constant->is_bool()){
-		const bool cond_flag = cond_result._constant->get_bool();
+	if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
+		const bool cond_flag = cond_result.get_constant().get_bool();
 
 		//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 		if(cond_flag){
@@ -647,7 +648,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	//	All arguments to functions are constants? Else return new call_function, but with simplified arguments.
 	for(const auto& i: simplified_args){
-		if(!i._constant){
+		if(!i.is_constant()){
 			//??? should use simplified_args.
 			return expression_t::make_function_call(call._function, call._inputs, e.get_expression_type());
 		}
@@ -656,7 +657,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	//	Woha: all arguments are constants - replace this expression with the final output of the function call instead!
 	vector<value_t> constant_args;
 	for(const auto& i: simplified_args){
-		constant_args.push_back(*i._constant);
+		constant_args.push_back(i.get_constant());
 	}
 
 	const value_t result = call_function(vm, function_def, constant_args);
@@ -670,7 +671,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	if(e._constant){
+	if(e.is_constant()){
 		return e;
 	}
 	else if(e._math2){
@@ -693,8 +694,8 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	}
 	else if(e._resolve_member){
 		const auto parent_expr = evalute_expression(vm, e._resolve_member->_parent_address);
-		if(parent_expr._constant && parent_expr._constant->is_struct()){
-			const auto struct_instance = parent_expr._constant->get_struct();
+		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){
+			const auto struct_instance = parent_expr.get_constant().get_struct();
 			const value_t value = struct_instance->_member_values[e._resolve_member->_member_name];
 			return expression_t::make_constant(value);
 		}

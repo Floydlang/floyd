@@ -174,8 +174,8 @@ std::vector<member_t> conv_members(const json_t& members, const map<string, shar
 			if(convert_expressions){
 				const auto init_expr2 = expression_from_json(init_expr, types);
 
-				QUARK_ASSERT(init_expr2._constant != nullptr);
-				members2.push_back(member_t(arg_type2, arg_name, *init_expr2._constant));
+				QUARK_ASSERT(init_expr2.is_constant());
+				members2.push_back(member_t(arg_type2, arg_name, init_expr2.get_constant()));
 			}
 			else{
 				members2.push_back(member_t(arg_type2, arg_name));

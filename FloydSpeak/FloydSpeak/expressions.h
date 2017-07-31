@@ -40,6 +40,7 @@ namespace floyd_parser {
 
 	struct expression_t {
 		public: static expression_t make_nop();
+		public: bool is_nop() const;
 
 		public: static expression_t make_constant(const value_t& value);
 
@@ -50,6 +51,8 @@ namespace floyd_parser {
 		public: static expression_t make_constant(const char s[]);
 		public: static expression_t make_constant(const std::string& s);
 
+		public: bool is_constant() const;
+		public: value_t get_constant() const;
 
 		public: enum class math2_operation {
 			k_math2_add = 10,
@@ -67,15 +70,23 @@ namespace floyd_parser {
 			k_logical_nonequal,
 			k_logical_and,
 			k_logical_or,
-			k_logical_negate//,
+			k_logical_negate,
 
-//			k_constant
+			k_constant
 		};
 
 		public: static expression_t make_math_operation2(
 			math2_operation op,
 			const expression_t& left,
 			const expression_t& right
+		){
+			return make_math_operation2(op, left, right, {});
+		}
+		public: static expression_t make_math_operation2(
+			math2_operation op,
+			const expression_t& left,
+			const expression_t& right,
+			const std::shared_ptr<value_t>& constant
 		);
 
 		public: static expression_t make_conditional_operator(
@@ -144,7 +155,6 @@ namespace floyd_parser {
 		/*
 			Only ONE of there are used at any time.
 		*/
-		public: std::shared_ptr<value_t> _constant;
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 		public: std::shared_ptr<conditional_operator_expr_t> _conditional_operator;
 		public: std::shared_ptr<function_call_expr_t> _call;
@@ -152,6 +162,7 @@ namespace floyd_parser {
 		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
 		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
+
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
 		public: std::shared_ptr<const type_def_t> _resolved_expression_type;
@@ -169,6 +180,7 @@ namespace floyd_parser {
 		const expression_t::math2_operation _operation;
 		const expression_t _left;
 		const expression_t _right;
+		const std::shared_ptr<value_t> _constant;
 	};
 
 
