@@ -26,7 +26,6 @@ namespace floyd_parser {
 
 
 	struct math_operation2_expr_t;
-	struct conditional_operator_expr_t;
 	struct function_call_expr_t;
 	struct resolve_variable_expr_t;
 
@@ -72,7 +71,9 @@ namespace floyd_parser {
 			k_logical_or,
 			k_logical_negate,
 
-			k_constant
+			k_constant,
+
+			k_conditional_operator3
 		};
 
 		public: static expression_t make_math_operation2(
@@ -80,12 +81,13 @@ namespace floyd_parser {
 			const expression_t& left,
 			const expression_t& right
 		){
-			return make_math_operation2(op, left, right, {});
+			return make_math_operation2(op, left, right, make_nop(), {});
 		}
 		public: static expression_t make_math_operation2(
 			math2_operation op,
 			const expression_t& left,
 			const expression_t& right,
+			const expression_t& expression3,
 			const std::shared_ptr<value_t>& constant
 		);
 
@@ -156,7 +158,6 @@ namespace floyd_parser {
 			Only ONE of there are used at any time.
 		*/
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
-		public: std::shared_ptr<conditional_operator_expr_t> _conditional_operator;
 		public: std::shared_ptr<function_call_expr_t> _call;
 
 		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
@@ -180,20 +181,11 @@ namespace floyd_parser {
 		const expression_t::math2_operation _operation;
 		const expression_t _left;
 		const expression_t _right;
+		const expression_t _expression3;
 		const std::shared_ptr<value_t> _constant;
 	};
 
 
-	//////////////////////////////////////////////////		conditional_operator_expr_t
-
-
-	struct conditional_operator_expr_t {
-		bool operator==(const conditional_operator_expr_t& other) const;
-
-		const expression_t _condition;
-		const expression_t _a;
-		const expression_t _b;
-	};
 
 
 	//////////////////////////////////////////////////		function_call_expr_t

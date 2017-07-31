@@ -322,6 +322,8 @@ json_t store_object_member(const json_t& obj, const std::string& key, const json
 */
 json_t push_back(const json_t& obj, const json_t& element);
 
+json_t make_array_skip_nulls(const std::vector<json_t>& elements);
+
 
 bool exists_in(const json_t& parent, const std::vector<json_t>& path);
 

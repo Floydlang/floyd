@@ -32,13 +32,6 @@ using std::make_shared;
 using namespace parser2;
 
 
-json_t make_array_skip_nulls(const std::vector<json_t>& elements){
-	for(const auto& i: elements){ QUARK_ASSERT(i.check_invariant()); }
-
-	std::vector<json_t> elements2;
-	std::copy_if(elements.begin(), elements.end(), std::back_inserter(elements2), [&] (const json_t& v) { return !v.is_null(); });
-	return json_t(elements2);
-}
 
 /////////////////////////////////		TO JSON
 

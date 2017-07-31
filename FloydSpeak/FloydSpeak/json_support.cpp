@@ -308,6 +308,13 @@ json_t push_back(const json_t& obj, const json_t& element){
 }
 
 
+json_t make_array_skip_nulls(const std::vector<json_t>& elements){
+	for(const auto& i: elements){ QUARK_ASSERT(i.check_invariant()); }
+
+	std::vector<json_t> elements2;
+	std::copy_if(elements.begin(), elements.end(), std::back_inserter(elements2), [&] (const json_t& v) { return !v.is_null(); });
+	return json_t(elements2);
+}
 
 
 json_t make_test_tree(){
@@ -773,8 +780,5 @@ QUARK_UNIT_TESTQ("assoc_in()", "mixed arrays and trees"){
 	QUARK_UT_VERIFY(get_in(obj2, make_vec({ json_t(1.0) })) != json_t());
 	QUARK_UT_VERIFY(get_in(obj2, make_vec({ json_t(1.0), "name" })) == "Ernst Stavro Blofeld");
 }
-
-
-
 
 

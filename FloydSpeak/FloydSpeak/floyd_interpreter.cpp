@@ -327,13 +327,34 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 
 	const auto e2 = *e._math2;
 	const auto op = e2._operation;
+
+	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
+	if(op == expression_t::math2_operation::k_conditional_operator3){
+		const auto cond_result = evalute_expression(vm, e2._expression3);
+		if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
+			const bool cond_flag = cond_result.get_constant().get_bool();
+
+			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
+			if(cond_flag){
+				return evalute_expression(vm, e2._left);
+			}
+			else{
+				return evalute_expression(vm, e2._right);
+			}
+		}
+		else{
+			throw std::runtime_error("Could not evaluate contion in conditional expression.");
+		}
+	}
+
+
+	//	First evaluate all inputs to our operation.
 	const auto left_expr = evalute_expression(vm, e2._left);
 	const auto right_expr = evalute_expression(vm, e2._right);
 
 	//	Both left and right are constant, replace the math_operation with a constant!
 	if(left_expr.is_constant() && right_expr.is_constant()){
 		//	Perform math operation on the two constants => new constant.
-		//??? check this in pass2 at compile time!
 		const auto left_constant = left_expr.get_constant();
 		const auto right_constant = right_expr.get_constant();
 
@@ -566,34 +587,6 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	}
 }
 
-/*
-	If inputs are constant, replace function call with a constant!
-	??? Have different expression-classes to tell if they are resolved / unresolved. Makes it possible to execute both types of expression but not check at runtime.
-*/
-expression_t evaluate_conditional_operator(const interpreter_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e._conditional_operator);
-
-	const auto& ce = *e._conditional_operator;
-
-	const auto cond_result = evalute_expression(vm, ce._condition);
-	if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
-		const bool cond_flag = cond_result.get_constant().get_bool();
-
-		//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
-		if(cond_flag){
-			return evalute_expression(vm, ce._a);
-		}
-		else{
-			return evalute_expression(vm, ce._b);
-		}
-	}
-	else{
-		throw std::runtime_error("Could not evaluate contion in conditional expression.");
-	}
-}
-
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -676,9 +669,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	}
 	else if(e._math2){
 		return evaluate_math2(vm, e);
-	}
-	else if(e._conditional_operator){
-		return evaluate_conditional_operator(vm, e);
 	}
 
 	/*
