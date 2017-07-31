@@ -26,7 +26,6 @@ namespace floyd_parser {
 
 
 	struct math_operation2_expr_t;
-	struct function_call_expr_t;
 	struct resolve_variable_expr_t;
 
 	struct resolve_member_expr_t;
@@ -73,7 +72,8 @@ namespace floyd_parser {
 
 			k_constant,
 
-			k_conditional_operator3
+			k_conditional_operator3,
+			k_call
 		};
 
 		public: static expression_t make_math_operation2(
@@ -81,14 +81,13 @@ namespace floyd_parser {
 			const expression_t& left,
 			const expression_t& right
 		){
-			return make_math_operation2(op, left, right, make_nop(), {});
+			return make_math_operation2(op, { left, right }, {}, {});
 		}
 		public: static expression_t make_math_operation2(
 			math2_operation op,
-			const expression_t& left,
-			const expression_t& right,
-			const expression_t& expression3,
-			const std::shared_ptr<value_t>& constant
+			const std::vector<expression_t>& expressions,
+			const std::shared_ptr<value_t>& constant,
+			const type_identifier_t& function_name
 		);
 
 		public: static expression_t make_conditional_operator(
@@ -98,7 +97,7 @@ namespace floyd_parser {
 		);
 
 		public: static expression_t make_function_call(
-			const type_identifier_t& function,
+			const type_identifier_t& function_name,
 			const std::vector<expression_t>& inputs,
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
@@ -158,7 +157,6 @@ namespace floyd_parser {
 			Only ONE of there are used at any time.
 		*/
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
-		public: std::shared_ptr<function_call_expr_t> _call;
 
 		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
 		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
@@ -179,32 +177,12 @@ namespace floyd_parser {
 		bool operator==(const math_operation2_expr_t& other) const;
 
 		const expression_t::math2_operation _operation;
-		const expression_t _left;
-		const expression_t _right;
-		const expression_t _expression3;
+		const std::vector<expression_t> _expressions;
 		const std::shared_ptr<value_t> _constant;
+		const type_identifier_t _function_name;
 	};
 
 
-
-
-	//////////////////////////////////////////////////		function_call_expr_t
-
-
-	struct function_call_expr_t {
-		bool operator==(const function_call_expr_t& other) const{
-			return _function == other._function && _inputs == other._inputs;
-		}
-
-		public: function_call_expr_t(const type_identifier_t& function, const std::vector<expression_t>& inputs) :
-			_function(function),
-			_inputs(inputs)
-		{
-		}
-
-		const type_identifier_t _function;
-		const std::vector<expression_t> _inputs;
-	};
 
 
 	//////////////////////////////////////////////////		resolve_variable_expr_t

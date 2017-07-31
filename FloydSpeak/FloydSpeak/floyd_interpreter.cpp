@@ -318,6 +318,8 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 	QUARK_UT_VERIFY(y == false);
 }
 
+expression_t evaluate_call(const interpreter_t& vm, const expression_t& e);
+
 
 //	??? Return constant instead o expression? We use this both for interpretation but also for compile-time optimizations.
 expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
@@ -328,18 +330,22 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	const auto e2 = *e._math2;
 	const auto op = e2._operation;
 
+	if(op == expression_t::math2_operation::k_call){
+		return evaluate_call(vm, e);
+	}
+
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	if(op == expression_t::math2_operation::k_conditional_operator3){
-		const auto cond_result = evalute_expression(vm, e2._expression3);
+	else if(op == expression_t::math2_operation::k_conditional_operator3){
+		const auto cond_result = evalute_expression(vm, e2._expressions[0]);
 		if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
 			const bool cond_flag = cond_result.get_constant().get_bool();
 
 			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 			if(cond_flag){
-				return evalute_expression(vm, e2._left);
+				return evalute_expression(vm, e2._expressions[1]);
 			}
 			else{
-				return evalute_expression(vm, e2._right);
+				return evalute_expression(vm, e2._expressions[2]);
 			}
 		}
 		else{
@@ -349,8 +355,8 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 
 
 	//	First evaluate all inputs to our operation.
-	const auto left_expr = evalute_expression(vm, e2._left);
-	const auto right_expr = evalute_expression(vm, e2._right);
+	const auto left_expr = evalute_expression(vm, e2._expressions[0]);
+	const auto right_expr = evalute_expression(vm, e2._expressions[1]);
 
 	//	Both left and right are constant, replace the math_operation with a constant!
 	if(left_expr.is_constant() && right_expr.is_constant()){
@@ -590,15 +596,13 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e._call);
+	QUARK_ASSERT(e._math2->_operation == expression_t::math2_operation::k_call);
 
-	const auto& call = *e._call;
+	const auto& call = *e._math2;
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
 
-//??? function prototype == the TYPE. VALUE refers to WHICH implementation of the TYPE.
-#if 1
-	const auto function_name = e._call->_function.to_string();
+	const auto function_name = call._function_name.to_string();
 
 	//	find function symbol: no proper static scoping ???
 	const auto found_it = find_if(
@@ -616,15 +620,10 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	if(!type || type->get_base_type() != base_type::k_function){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
-#else
-	const auto function_address = evalute_expression(vm, call._function);
-	QUARK_ASSERT(function_address._constant && function_address._constant->get_base_type() == base_type::k_function);
-	const auto type = function_address._constant->get_function();
-#endif
 
 	const auto& function_def = type->get_function_def();
 	if(function_def->_type == scope_def_t::etype::k_function_scope){
-		QUARK_ASSERT(function_def->_args.size() == call._inputs.size());
+		QUARK_ASSERT(function_def->_args.size() == call._expressions.size());
 	}
 	else if(function_def->_type == scope_def_t::etype::k_subscope){
 	}
@@ -634,7 +633,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	//	Simplify each argument.
 	vector<expression_t> simplified_args;
-	for(const auto& i: call._inputs){
+	for(const auto& i: call._expressions){
 		const auto arg_expr = evalute_expression(vm, i);
 		simplified_args.push_back(arg_expr);
 	}
@@ -643,7 +642,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	for(const auto& i: simplified_args){
 		if(!i.is_constant()){
 			//??? should use simplified_args.
-			return expression_t::make_function_call(call._function, call._inputs, e.get_expression_type());
+			return expression_t::make_function_call(call._function_name, call._expressions, e.get_expression_type());
 		}
 	}
 
@@ -671,12 +670,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		return evaluate_math2(vm, e);
 	}
 
-	/*
-		If inputs are constant, replace function call with a constant!
-	*/
-	else if(e._call){
-		return evaluate_call(vm, e);
-	}
 	else if(e._resolve_variable){
 		const auto variable_name = e._resolve_variable->_variable_name;
 		const value_t value = resolve_variable_name(vm, variable_name);

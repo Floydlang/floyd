@@ -47,9 +47,9 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
 	return
 		(_operation == other._operation)
-		&& (_left == other._left)
-		&& (_right == other._right)
-		&& compare_shared_values(_constant, other._constant);
+		&& (_expressions == other._expressions)
+		&& (compare_shared_values(_constant, other._constant))
+		&& (_function_name == other._function_name);
 }
 
 bool resolve_variable_expr_t::operator==(const resolve_variable_expr_t& other) const{
@@ -76,7 +76,6 @@ bool expression_t::check_invariant() const{
 	//	Make sure exactly ONE or ZERO pointers are set.
 	const auto count =
 		+ (_math2 ? 1 : 0)
-		+ (_call ? 1 : 0)
 		+ (_resolve_variable ? 1 : 0)
 		+ (_resolve_member ? 1 : 0)
 		+ (_lookup_element ? 1 : 0);
@@ -97,9 +96,6 @@ bool expression_t::operator==(const expression_t& other) const {
 
 	if(_math2){
 		return compare_shared_values(_math2, other._math2);
-	}
-	else if(_call){
-		return compare_shared_values(_call, other._call);
 	}
 	else if(_resolve_variable){
 		return compare_shared_values(_resolve_variable, other._resolve_variable);
@@ -130,7 +126,6 @@ bool expression_t::is_nop() const{
 
 	const auto count =
 		(_math2 ? 1 : 0)
-		+ (_call ? 1 : 0)
 		+ (_resolve_variable ? 1 : 0)
 		+ (_resolve_member ? 1 : 0)
 		+ (_lookup_element ? 1 : 0);
@@ -147,7 +142,7 @@ expression_t expression_t::make_constant(const value_t& value){
 	const auto resolved_expression_type = value.get_type();
 	auto result = expression_t();
 	result._math2 = std::make_shared<math_operation2_expr_t>(
-		math_operation2_expr_t{ math2_operation::k_constant, make_nop(), make_nop(), make_nop(), make_shared<value_t>(value) }
+		math_operation2_expr_t{ math2_operation::k_constant, {}, make_shared<value_t>(value), {} }
 	);
 	result._resolved_expression_type = value.get_type();
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
@@ -185,15 +180,18 @@ value_t expression_t::get_constant() const{
 	return *_math2->_constant;
 }
 
-expression_t expression_t::make_math_operation2(math2_operation op, const expression_t& left, const expression_t& right, const expression_t& expression3, const std::shared_ptr<value_t>& constant){
-	QUARK_ASSERT(left.check_invariant());
-	QUARK_ASSERT(right.check_invariant());
-	QUARK_ASSERT(expression3.check_invariant());
+expression_t expression_t::make_math_operation2(
+	math2_operation op,
+	const std::vector<expression_t>& expressions,
+	const std::shared_ptr<value_t>& constant,
+	const type_identifier_t& function_name
+)
+{
 	QUARK_ASSERT(!constant || constant->check_invariant());
 
 	auto result = expression_t();
-	result._math2 = std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ op, left, right, expression3, constant });
-	result._resolved_expression_type = left.get_expression_type();
+	result._math2 = std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ op, expressions, constant, function_name });
+	result._resolved_expression_type = expressions[0].get_expression_type();
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
 	return result;
@@ -205,18 +203,18 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(b.check_invariant());
 
-	return make_math_operation2(math2_operation::k_conditional_operator3, a, b, condition, {});
+	return make_math_operation2(math2_operation::k_conditional_operator3, { condition, a, b }, {}, {});
 }
 
-expression_t expression_t::make_function_call(const type_identifier_t& function, const std::vector<expression_t>& inputs, const shared_ptr<const type_def_t>& resolved_expression_type){
-	QUARK_ASSERT(function.check_invariant());
+expression_t expression_t::make_function_call(const type_identifier_t& function_name, const std::vector<expression_t>& inputs, const shared_ptr<const type_def_t>& resolved_expression_type){
+	QUARK_ASSERT(function_name.check_invariant());
 	for(const auto arg: inputs){
 		QUARK_ASSERT(arg.check_invariant());
 	}
 	QUARK_ASSERT(resolved_expression_type && resolved_expression_type->check_invariant());
 
 	auto result = expression_t();
-	result._call = std::make_shared<function_call_expr_t>(function_call_expr_t{ function, inputs });
+	result._math2 = std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ math2_operation::k_call, inputs, {}, function_name });
 	result._resolved_expression_type = resolved_expression_type;
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
@@ -318,6 +316,9 @@ string operation_to_string(const expression_t::math2_operation& op){
 	else if(op == expression_t::math2_operation::k_conditional_operator3){
 		return "?:";
 	}
+	else if(op == expression_t::math2_operation::k_call){
+		return "call";
+	}
 
 	else{
 		QUARK_ASSERT(false);
@@ -410,21 +411,35 @@ json_t expression_to_json(const expression_t& e){
 		}
 		else if(e._math2){
 			const auto e2 = *e._math2;
-			const auto left = expression_to_json(e2._left);
-			const auto right = expression_to_json(e2._right);
-			const auto expression3 = expression_to_json(e2._expression3);
-			const auto constant = e2._constant ? value_to_json(*e2._constant) : json_t();
-			return make_array_skip_nulls({ operation_to_string(e2._operation), left, right, expression3, constant, type });
-		}
-		else if(e._call){
-			const auto& call_function = *e._call;
-			vector<json_t>  args_json;
-			for(const auto& i: call_function._inputs){
-				const auto arg_expr = expression_to_json(i);
-				args_json.push_back(arg_expr);
+
+			vector<json_t>  expressions;
+			for(const auto& i: e._math2->_expressions){
+				const auto a = expression_to_json(i);
+				expressions.push_back(a);
 			}
-	//???		return json_t::make_array({ "call", expression_to_json(call_function._function), args_json, type });
-			return json_t::make_array({ "call", call_function._function.to_string(), args_json, type });
+
+			const auto constant = e2._constant ? value_to_json(*e2._constant) : json_t();
+			const auto function_name = e2._function_name.is_null() == false ? e2._function_name.to_string() : json_t();
+
+			auto result = json_t::make_array();
+			result = push_back(result, operation_to_string(e2._operation));
+			if(function_name.is_null() == false){
+				result = push_back(result, function_name);
+			}
+			if(e2._operation == expression_t::math2_operation::k_call){
+				result = push_back(result, expressions);
+			}
+			else{
+				for(const auto e: expressions){
+					result = push_back(result, e);
+				}
+			}
+
+			if(constant.is_null() == false){
+				result = push_back(result, constant);
+			}
+			result = push_back(result, type);
+			return result;
 		}
 		else if(e._resolve_variable){
 			const auto e2 = *e._resolve_variable;
