@@ -26,8 +26,6 @@ namespace floyd_parser {
 
 	struct math_operation2_expr_t;
 
-	struct lookup_element_expr_t;
-
 
 	//////////////////////////////////////////////////		expression_t
 
@@ -72,7 +70,9 @@ namespace floyd_parser {
 			k_call,
 
 			k_resolve_variable,
-			k_resolve_member
+			k_resolve_member,
+
+			k_lookup_element
 		};
 
 		public: static expression_t make_math_operation2(
@@ -157,8 +157,6 @@ namespace floyd_parser {
 		*/
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 
-		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
-
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
 		public: std::shared_ptr<const type_def_t> _resolved_expression_type;
@@ -177,18 +175,6 @@ namespace floyd_parser {
 		const std::vector<expression_t> _expressions;
 		const std::shared_ptr<value_t> _constant;
 		const std::string _symbol;
-	};
-
-
-
-	//////////////////////////////////////////////////		lookup_element_expr_t
-
-
-	struct lookup_element_expr_t {
-		bool operator==(const lookup_element_expr_t& other) const;
-
-		expression_t _parent_address;
-		expression_t _lookup_key;
 	};
 
 

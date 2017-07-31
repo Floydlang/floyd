@@ -53,10 +53,6 @@ bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) con
 		&& (_symbol == other._symbol);
 }
 
-bool lookup_element_expr_t::operator==(const lookup_element_expr_t& other) const{
-	return _parent_address == other._parent_address && _lookup_key == other._lookup_key ;
-}
-
 
 
 //////////////////////////////////////////////////		expression_t
@@ -67,9 +63,7 @@ bool expression_t::check_invariant() const{
 	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
 
 	//	Make sure exactly ONE or ZERO pointers are set.
-	const auto count =
-		+ (_math2 ? 1 : 0)
-		+ (_lookup_element ? 1 : 0);
+	const auto count = (_math2 ? 1 : 0);
 
 	QUARK_ASSERT(count == 0 || count == 1);
 
@@ -87,9 +81,6 @@ bool expression_t::operator==(const expression_t& other) const {
 
 	if(_math2){
 		return compare_shared_values(_math2, other._math2);
-	}
-	else if(_lookup_element){
-		return compare_shared_values(_lookup_element, other._lookup_element);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -109,10 +100,7 @@ expression_t expression_t::make_nop(){
 bool expression_t::is_nop() const{
 //	QUARK_ASSERT(check_invariant());
 
-	const auto count =
-		(_math2 ? 1 : 0)
-		+ (_lookup_element ? 1 : 0);
-
+	const auto count = (_math2 ? 1 : 0);
 	return count == 0;
 }
 
@@ -236,7 +224,7 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 	QUARK_ASSERT(resolved_expression_type && resolved_expression_type->check_invariant());
 
 	auto result = expression_t();
-	result._lookup_element = std::make_shared<lookup_element_expr_t>(lookup_element_expr_t{ parent_address, lookup_key });
+	result._math2 = std::make_shared<math_operation2_expr_t>(math_operation2_expr_t{ math2_operation::k_lookup_element, { parent_address, lookup_key }, {}, {} });
 	result._resolved_expression_type = resolved_expression_type;
 	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
 	QUARK_ASSERT(result.check_invariant());
@@ -310,6 +298,10 @@ string operation_to_string(const expression_t::math2_operation& op){
 		return "->";
 	}
 
+	else if(op == expression_t::math2_operation::k_lookup_element){
+		return "[-]";
+	}
+
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -377,6 +369,10 @@ QUARK_UNIT_TESTQ("operation_to_string()", ""){
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
 	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_resolve_member), "->");
+}
+
+QUARK_UNIT_TESTQ("operation_to_string()", ""){
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_lookup_element), "[-]");
 }
 
 void trace(const expression_t& e){
@@ -447,12 +443,14 @@ json_t expression_to_json(const expression_t& e){
 			result = push_back(result, type);
 			return result;
 		}
+/*
 		else if(e._lookup_element){
 			const auto e2 = *e._lookup_element;
 			const auto lookup_key = expression_to_json(e2._lookup_key);
 			const auto parent_address = expression_to_json(e2._parent_address);
 			return json_t::make_array({ "[-]", parent_address, lookup_key, type });
 		}
+*/
 		else{
 			QUARK_ASSERT(false);
 		}
@@ -573,12 +571,16 @@ expression_t::math2_operation string_to_math2_op(const string& op){
 		return expression_t::math2_operation::k_resolve_member;
 	}
 
+	else if(op == "[-]"){
+		return expression_t::math2_operation::k_lookup_element;
+	}
+
 	else{
 		QUARK_ASSERT(false);
 	}
 }
 
-
+//??? add all. Use map<>
 bool is_math2_op(const string& op){
 	//???	HOw to handle lookup?
 	QUARK_ASSERT(op != "[-]");
