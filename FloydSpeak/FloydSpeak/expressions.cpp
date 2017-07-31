@@ -34,11 +34,11 @@ string expression_to_json_string(const expression_t& e);
 
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_math_operation2(
-		expression_t::math2_operation::k_add,
+		expression_t::math2_operation::k_math2_add,
 		expression_t::make_constant(3),
 		expression_t::make_constant(4));
 	const auto b = expression_t::make_math_operation2(
-		expression_t::math2_operation::k_add,
+		expression_t::math2_operation::k_math2_add,
 		expression_t::make_constant(3),
 		expression_t::make_constant(4));
 	QUARK_TEST_VERIFY(a == b);
@@ -239,32 +239,32 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 
 string operation_to_string(const expression_t::math2_operation& op){
 
-	if(op == expression_t::math2_operation::k_add){
+	if(op == expression_t::math2_operation::k_math2_add){
 		return "+";
 	}
-	else if(op == expression_t::math2_operation::k_subtract){
+	else if(op == expression_t::math2_operation::k_math2_subtract){
 		return "-";
 	}
-	else if(op == expression_t::math2_operation::k_multiply){
+	else if(op == expression_t::math2_operation::k_math2_multiply){
 		return "*";
 	}
-	else if(op == expression_t::math2_operation::k_divide){
+	else if(op == expression_t::math2_operation::k_math2_divide){
 		return "/";
 	}
-	else if(op == expression_t::math2_operation::k_remainder){
+	else if(op == expression_t::math2_operation::k_math2_remainder){
 		return "%";
 	}
 
-	else if(op == expression_t::math2_operation::k_smaller_or_equal){
+	else if(op == expression_t::math2_operation::k_math2_smaller_or_equal){
 		return "<=";
 	}
-	else if(op == expression_t::math2_operation::k_smaller){
+	else if(op == expression_t::math2_operation::k_math2_smaller){
 		return "<";
 	}
-	else if(op == expression_t::math2_operation::k_larger_or_equal){
+	else if(op == expression_t::math2_operation::k_math2_larger_or_equal){
 		return ">=";
 	}
-	else if(op == expression_t::math2_operation::k_larger){
+	else if(op == expression_t::math2_operation::k_math2_larger){
 		return ">";
 	}
 
@@ -281,7 +281,7 @@ string operation_to_string(const expression_t::math2_operation& op){
 		return "||";
 	}
 
-	else if(op == expression_t::math2_operation::k_math1_negate){
+	else if(op == expression_t::math2_operation::k_logical_negate){
 		return "negate";
 	}
 
@@ -291,33 +291,33 @@ string operation_to_string(const expression_t::math2_operation& op){
 }
 
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_add), "+");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_add), "+");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_subtract), "-");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_subtract), "-");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_multiply), "*");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_multiply), "*");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_divide), "/");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_divide), "/");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_remainder), "%");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_remainder), "%");
 }
 
 
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_smaller_or_equal), "<=");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_smaller_or_equal), "<=");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_smaller), "<");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_smaller), "<");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_larger_or_equal), ">=");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_larger_or_equal), ">=");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_larger), ">");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_larger), ">");
 }
 
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
@@ -333,7 +333,7 @@ QUARK_UNIT_TESTQ("operation_to_string()", ""){
 	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_or), "||");
 }
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math1_negate), "negate");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_negate), "negate");
 }
 
 
@@ -428,7 +428,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
 QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
-			expression_t::make_math_operation2(expression_t::math2_operation::k_add, expression_t::make_constant(2), expression_t::make_constant(3))),
+			expression_t::make_math_operation2(expression_t::math2_operation::k_math2_add, expression_t::make_constant(2), expression_t::make_constant(3))),
 		R"(["+", ["k", 2, "<int>"], ["k", 3, "<int>"], "<int>"])"
 	);
 }
@@ -466,32 +466,32 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 
 expression_t::math2_operation string_to_math2_op(const string& op){
 	if(op == "+"){
-		return expression_t::math2_operation::k_add;
+		return expression_t::math2_operation::k_math2_add;
 	}
 	else if(op == "-"){
-		return expression_t::math2_operation::k_subtract;
+		return expression_t::math2_operation::k_math2_subtract;
 	}
 	else if(op == "*"){
-		return expression_t::math2_operation::k_multiply;
+		return expression_t::math2_operation::k_math2_multiply;
 	}
 	else if(op == "/"){
-		return expression_t::math2_operation::k_divide;
+		return expression_t::math2_operation::k_math2_divide;
 	}
 	else if(op == "%"){
-		return expression_t::math2_operation::k_remainder;
+		return expression_t::math2_operation::k_math2_remainder;
 	}
 
 	else if(op == "<="){
-		return expression_t::math2_operation::k_smaller_or_equal;
+		return expression_t::math2_operation::k_math2_smaller_or_equal;
 	}
 	else if(op == "<"){
-		return expression_t::math2_operation::k_smaller;
+		return expression_t::math2_operation::k_math2_smaller;
 	}
 	else if(op == ">="){
-		return expression_t::math2_operation::k_larger_or_equal;
+		return expression_t::math2_operation::k_math2_larger_or_equal;
 	}
 	else if(op == ">"){
-		return expression_t::math2_operation::k_larger;
+		return expression_t::math2_operation::k_math2_larger;
 	}
 
 	else if(op == "=="){
@@ -507,7 +507,7 @@ expression_t::math2_operation string_to_math2_op(const string& op){
 		return expression_t::math2_operation::k_logical_or;
 	}
 	else if(op == "negate"){
-		return expression_t::math2_operation::k_math1_negate;
+		return expression_t::math2_operation::k_logical_negate;
 	}
 
 	else{

@@ -52,23 +52,24 @@ namespace floyd_parser {
 
 
 		public: enum class math2_operation {
-			k_add = 10,
-			k_subtract,
-			k_multiply,
-			k_divide,
-			k_remainder,
+			k_math2_add = 10,
+			k_math2_subtract,
+			k_math2_multiply,
+			k_math2_divide,
+			k_math2_remainder,
 
-			k_smaller_or_equal,
-			k_smaller,
-			k_larger_or_equal,
-			k_larger,
+			k_math2_smaller_or_equal,
+			k_math2_smaller,
+			k_math2_larger_or_equal,
+			k_math2_larger,
 
 			k_logical_equal,
 			k_logical_nonequal,
 			k_logical_and,
 			k_logical_or,
+			k_logical_negate//,
 
-			k_math1_negate
+//			k_constant
 		};
 
 		public: static expression_t make_math_operation2(

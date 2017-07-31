@@ -338,19 +338,19 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 
 		//	Is operation supported by all types?
 		{
-			if(op == expression_t::math2_operation::k_smaller_or_equal){
+			if(op == expression_t::math2_operation::k_math2_smaller_or_equal){
 				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
 				return expression_t::make_constant(diff <= 0);
 			}
-			else if(op == expression_t::expression_t::math2_operation::k_smaller){
+			else if(op == expression_t::math2_operation::k_math2_smaller){
 				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
 				return expression_t::make_constant(diff < 0);
 			}
-			else if(op == expression_t::math2_operation::k_larger_or_equal){
+			else if(op == expression_t::math2_operation::k_math2_larger_or_equal){
 				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
 				return expression_t::make_constant(diff >= 0);
 			}
-			else if(op == expression_t::math2_operation::k_larger){
+			else if(op == expression_t::math2_operation::k_math2_larger){
 				long diff = value_t::compare_value_true_deep(*left_expr._constant, *right_expr._constant);
 				return expression_t::make_constant(diff > 0);
 			}
@@ -371,11 +371,11 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			const bool left = left_expr._constant->get_bool();
 			const bool right = right_expr._constant->get_bool();
 
-			if(op == expression_t::math2_operation::k_add
-			|| op == expression_t::math2_operation::k_subtract
-			|| op == expression_t::math2_operation::k_multiply
-			|| op == expression_t::math2_operation::k_divide
-			|| op == expression_t::math2_operation::k_remainder
+			if(op == expression_t::math2_operation::k_math2_add
+			|| op == expression_t::math2_operation::k_math2_subtract
+			|| op == expression_t::math2_operation::k_math2_multiply
+			|| op == expression_t::math2_operation::k_math2_divide
+			|| op == expression_t::math2_operation::k_math2_remainder
 			){
 				throw std::runtime_error("Arithmetics on bool not allowed.");
 			}
@@ -386,7 +386,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				return expression_t::make_constant(left || right);
 			}
-			else if(op == expression_t::math2_operation::k_math1_negate){
+			else if(op == expression_t::math2_operation::k_logical_negate){
 				return expression_t::make_constant(!left);
 			}
 			else{
@@ -399,22 +399,22 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			const int left = left_expr._constant->get_int();
 			const int right = right_expr._constant->get_int();
 
-			if(op == expression_t::math2_operation::k_add){
+			if(op == expression_t::math2_operation::k_math2_add){
 				return expression_t::make_constant(left + right);
 			}
-			else if(op == expression_t::math2_operation::k_subtract){
+			else if(op == expression_t::math2_operation::k_math2_subtract){
 				return expression_t::make_constant(left - right);
 			}
-			else if(op == expression_t::math2_operation::k_multiply){
+			else if(op == expression_t::math2_operation::k_math2_multiply){
 				return expression_t::make_constant(left * right);
 			}
-			else if(op == expression_t::math2_operation::k_divide){
+			else if(op == expression_t::math2_operation::k_math2_divide){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return expression_t::make_constant(left / right);
 			}
-			else if(op == expression_t::math2_operation::k_remainder){
+			else if(op == expression_t::math2_operation::k_math2_remainder){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
@@ -427,7 +427,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				return expression_t::make_constant((left != 0) || (right != 0));
 			}
-			else if(op == expression_t::math2_operation::k_math1_negate){
+			else if(op == expression_t::math2_operation::k_logical_negate){
 				return expression_t::make_constant(left ? false : true);
 			}
 			else{
@@ -440,22 +440,22 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			const float left = left_expr._constant->get_float();
 			const float right = right_expr._constant->get_float();
 
-			if(op == expression_t::math2_operation::k_add){
+			if(op == expression_t::math2_operation::k_math2_add){
 				return expression_t::make_constant(left + right);
 			}
-			else if(op == expression_t::math2_operation::k_subtract){
+			else if(op == expression_t::math2_operation::k_math2_subtract){
 				return expression_t::make_constant(left - right);
 			}
-			else if(op == expression_t::math2_operation::k_multiply){
+			else if(op == expression_t::math2_operation::k_math2_multiply){
 				return expression_t::make_constant(left * right);
 			}
-			else if(op == expression_t::math2_operation::k_divide){
+			else if(op == expression_t::math2_operation::k_math2_divide){
 				if(right == 0.0f){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return expression_t::make_constant(left / right);
 			}
-			else if(op == expression_t::math2_operation::k_remainder){
+			else if(op == expression_t::math2_operation::k_math2_remainder){
 				throw std::runtime_error("Modulo operation on float not allowed.");
 			}
 
@@ -466,7 +466,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				return expression_t::make_constant((left != 0.0f) || (right != 0.0f));
 			}
-			else if(op == expression_t::math2_operation::k_math1_negate){
+			else if(op == expression_t::math2_operation::k_logical_negate){
 				return expression_t::make_constant(left ? false : true);
 			}
 			else{
@@ -479,20 +479,20 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			const string left = left_expr._constant->get_string();
 			const string right = right_expr._constant->get_string();
 
-			if(op == expression_t::math2_operation::k_add){
+			if(op == expression_t::math2_operation::k_math2_add){
 				return expression_t::make_constant(left + right);
 			}
 
-			else if(op == expression_t::math2_operation::k_subtract){
+			else if(op == expression_t::math2_operation::k_math2_subtract){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == expression_t::math2_operation::k_multiply){
+			else if(op == expression_t::math2_operation::k_math2_multiply){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == expression_t::math2_operation::k_divide){
+			else if(op == expression_t::math2_operation::k_math2_divide){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == expression_t::math2_operation::k_remainder){
+			else if(op == expression_t::math2_operation::k_math2_remainder){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 
@@ -503,7 +503,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == expression_t::math2_operation::k_math1_negate){
+			else if(op == expression_t::math2_operation::k_logical_negate){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else{
@@ -519,20 +519,20 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
-			if(op == expression_t::math2_operation::k_add){
+			if(op == expression_t::math2_operation::k_math2_add){
 				//??? allow
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == expression_t::math2_operation::k_subtract){
+			else if(op == expression_t::math2_operation::k_math2_subtract){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == expression_t::math2_operation::k_multiply){
+			else if(op == expression_t::math2_operation::k_math2_multiply){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == expression_t::math2_operation::k_divide){
+			else if(op == expression_t::math2_operation::k_math2_divide){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == expression_t::math2_operation::k_remainder){
+			else if(op == expression_t::math2_operation::k_math2_remainder){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 
@@ -542,7 +542,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == expression_t::math2_operation::k_math1_negate){
+			else if(op == expression_t::math2_operation::k_logical_negate){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else{
@@ -732,7 +732,7 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 	test_evaluate_simple(
 		expression_t::make_math_operation2(
-			expression_t::math2_operation::k_add,
+			expression_t::math2_operation::k_math2_add,
 			expression_t::make_constant(1),
 			expression_t::make_constant(2)
 		),
