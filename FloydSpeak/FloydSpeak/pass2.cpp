@@ -776,12 +776,6 @@ json_t resolve_expression_typenames(const parser_path_t& path, const json_t& exp
 			type2,
 		});
 	}
-	else if(is_math1_op(op)){
-		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto expr = resolve_expression_typenames(path, e.get_array_n(1));
-		const auto type = expr.get_array_n(3);
-		return json_t::make_array({ op, expr, type });
-	}
 	else if(is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto lhs_expr = resolve_expression_typenames(path, e.get_array_n(1));

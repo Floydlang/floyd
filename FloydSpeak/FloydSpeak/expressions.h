@@ -25,7 +25,6 @@ namespace floyd_parser {
 	struct type_identifier_t;
 
 
-	struct math_operation1_expr_t;
 	struct math_operation2_expr_t;
 	struct conditional_operator_expr_t;
 	struct function_call_expr_t;
@@ -40,6 +39,8 @@ namespace floyd_parser {
 
 
 	struct expression_t {
+		public: static expression_t make_nop();
+
 		public: static expression_t make_constant(const value_t& value);
 
 		//	Shortcuts were you don't need to make a value_t first.
@@ -49,14 +50,6 @@ namespace floyd_parser {
 		public: static expression_t make_constant(const char s[]);
 		public: static expression_t make_constant(const std::string& s);
 
-		public: enum class math1_operation {
-			negate = 20
-		};
-
-		public: static expression_t make_math_operation1(
-			math1_operation op,
-			const expression_t& input
-		);
 
 		public: enum class math2_operation {
 			k_add = 10,
@@ -73,7 +66,9 @@ namespace floyd_parser {
 			k_logical_equal,
 			k_logical_nonequal,
 			k_logical_and,
-			k_logical_or
+			k_logical_or,
+
+			k_math1_negate
 		};
 
 		public: static expression_t make_math_operation2(
@@ -149,7 +144,6 @@ namespace floyd_parser {
 			Only ONE of there are used at any time.
 		*/
 		public: std::shared_ptr<value_t> _constant;
-		public: std::shared_ptr<math_operation1_expr_t> _math1;
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 		public: std::shared_ptr<conditional_operator_expr_t> _conditional_operator;
 		public: std::shared_ptr<function_call_expr_t> _call;
@@ -163,16 +157,6 @@ namespace floyd_parser {
 	};
 	
 
-
-	//////////////////////////////////////////////////		math_operation1_expr_t
-
-
-	struct math_operation1_expr_t {
-		bool operator==(const math_operation1_expr_t& other) const;
-
-		const expression_t::math1_operation _operation;
-		const expression_t _input;
-	};
 
 
 	//////////////////////////////////////////////////		math_operation2_expr_t
@@ -260,7 +244,6 @@ namespace floyd_parser {
 
 	expression_t::math2_operation string_to_math2_op(const std::string& op);
 
-	bool is_math1_op(const std::string& op);
 	bool is_math2_op(const std::string& op);
 
 }	//	floyd_parser

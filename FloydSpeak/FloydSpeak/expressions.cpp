@@ -48,10 +48,6 @@ bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) con
 	return _operation == other._operation && _left == other._left && _right == other._right;
 }
 
-bool math_operation1_expr_t::operator==(const math_operation1_expr_t& other) const {
-	return _operation == other._operation && _input == other._input;
-}
-
 bool conditional_operator_expr_t::operator==(const conditional_operator_expr_t& other) const {
 	return _condition == other._condition && _a == other._a && _b == other._b;
 }
@@ -80,7 +76,6 @@ bool expression_t::check_invariant() const{
 	//	Make sure exactly ONE pointer is set.
 	QUARK_ASSERT(
 		(_constant ? 1 : 0)
-		+ (_math1 ? 1 : 0)
 		+ (_math2 ? 1 : 0)
 		+ (_conditional_operator ? 1 : 0)
 		+ (_call ? 1 : 0)
@@ -99,9 +94,6 @@ bool expression_t::operator==(const expression_t& other) const {
 
 	if(_constant){
 		return compare_shared_values(_constant, other._constant);
-	}
-	else if(_math1){
-		return compare_shared_values(_math1, other._math1);
 	}
 	else if(_math2){
 		return compare_shared_values(_math2, other._math2);
@@ -127,6 +119,10 @@ bool expression_t::operator==(const expression_t& other) const {
 	}
 }
 
+
+expression_t expression_t::make_nop(){
+	return make_constant(value_t(0));
+}
 
 expression_t expression_t::make_constant(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
@@ -159,17 +155,6 @@ expression_t expression_t::make_constant(const float f){
 	return make_constant(value_t(f));
 }
 
-
-expression_t expression_t::make_math_operation1(math1_operation op, const expression_t& input){
-	QUARK_ASSERT(input.check_invariant());
-
-	auto result = expression_t();
-	result._math1 = std::make_shared<math_operation1_expr_t>(math_operation1_expr_t{ op, input });
-	result._resolved_expression_type = input.get_expression_type();
-	result._debug_aaaaaaaaaaaaaaaaaaaaaaa = expression_to_json_string(result);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
 
 expression_t expression_t::make_math_operation2(math2_operation op, const expression_t& left, const expression_t& right){
 	QUARK_ASSERT(left.check_invariant());
@@ -296,6 +281,10 @@ string operation_to_string(const expression_t::math2_operation& op){
 		return "||";
 	}
 
+	else if(op == expression_t::math2_operation::k_math1_negate){
+		return "negate";
+	}
+
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -343,21 +332,10 @@ QUARK_UNIT_TESTQ("operation_to_string()", ""){
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
 	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_or), "||");
 }
-
-
-
-string operation_to_string(const expression_t::math1_operation& op){
-	if(op == expression_t::math1_operation::negate){
-		return "negate";
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
 QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math1_operation::negate), "negate");
+	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math1_negate), "negate");
 }
+
 
 
 void trace(const expression_t& e){
@@ -397,11 +375,6 @@ json_t expression_to_json(const expression_t& e){
 		const auto left = expression_to_json(e2._left);
 		const auto right = expression_to_json(e2._right);
 		return json_t::make_array({ operation_to_string(e2._operation), left, right, type });
-	}
-	else if(e._math1){
-		const auto e2 = *e._math1;
-		const auto input = expression_to_json(e2._input);
-		return json_t::make_array({ operation_to_string(e2._operation), input, type });
 	}
 	else if(e._conditional_operator){
 		const auto e2 = *e._conditional_operator;
@@ -450,14 +423,6 @@ QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant(14.0f)), R"(["k", 14, "<float>"])");
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant(true)), R"(["k", true, "<bool>"])");
 	quark::ut_compare(expression_to_json_string(expression_t::make_constant(false)), R"(["k", false, "<bool>"])");
-}
-
-QUARK_UNIT_TESTQ("expression_to_json()", "math1"){
-	quark::ut_compare(
-		expression_to_json_string(
-			expression_t::make_math_operation1(expression_t::math1_operation::negate, expression_t::make_constant(2))),
-		R"(["negate", ["k", 2, "<int>"], "<int>"])"
-	);
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
@@ -541,16 +506,15 @@ expression_t::math2_operation string_to_math2_op(const string& op){
 	else if(op == "||"){
 		return expression_t::math2_operation::k_logical_or;
 	}
+	else if(op == "negate"){
+		return expression_t::math2_operation::k_math1_negate;
+	}
 
 	else{
 		QUARK_ASSERT(false);
 	}
 }
 
-
-bool is_math1_op(const string& op){
-	return op == "neg";
-}
 
 bool is_math2_op(const string& op){
 	//???	HOw to handle lookup?
@@ -559,7 +523,8 @@ bool is_math2_op(const string& op){
 	return
 		op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
 		|| op == "<=" || op == "<" || op == ">=" || op == ">"
-		|| op == "==" || op == "!=" || op == "&&" || op == "||";
+		|| op == "==" || op == "!=" || op == "&&" || op == "||"
+		|| op == "neg";
 }
 
 

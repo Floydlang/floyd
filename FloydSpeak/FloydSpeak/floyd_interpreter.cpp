@@ -319,9 +319,6 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 }
 
 
-
-
-
 //	??? Return constant instead o expression? We use this both for interpretation but also for compile-time optimizations.
 expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
@@ -389,6 +386,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				return expression_t::make_constant(left || right);
 			}
+			else if(op == expression_t::math2_operation::k_math1_negate){
+				return expression_t::make_constant(!left);
+			}
 			else{
 				QUARK_ASSERT(false);
 			}
@@ -427,6 +427,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				return expression_t::make_constant((left != 0) || (right != 0));
 			}
+			else if(op == expression_t::math2_operation::k_math1_negate){
+				return expression_t::make_constant(left ? false : true);
+			}
 			else{
 				QUARK_ASSERT(false);
 			}
@@ -463,6 +466,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			else if(op == expression_t::math2_operation::k_logical_or){
 				return expression_t::make_constant((left != 0.0f) || (right != 0.0f));
 			}
+			else if(op == expression_t::math2_operation::k_math1_negate){
+				return expression_t::make_constant(left ? false : true);
+			}
 			else{
 				QUARK_ASSERT(false);
 			}
@@ -495,6 +501,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else if(op == expression_t::math2_operation::k_logical_or){
+				throw std::runtime_error("Operation not allowed on string.");
+			}
+			else if(op == expression_t::math2_operation::k_math1_negate){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else{
@@ -531,6 +540,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else if(op == expression_t::math2_operation::k_logical_or){
+				throw std::runtime_error("Operation not allowed on struct.");
+			}
+			else if(op == expression_t::math2_operation::k_math1_negate){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else{
@@ -664,48 +676,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	else if(e._math2){
 		return evaluate_math2(vm, e);
 	}
-	else if(e._math1){
-		const auto e2 = *e._math1;
-		const auto input = evalute_expression(vm, e2._input);
-
-		//	Replace the with a constant!
-		if(input._constant){
-			const auto value = input._constant;
-			const auto base_type = value->get_base_type();
-
-			if(base_type == base_type::k_bool){
-				throw std::runtime_error("Arithmetics failed.");
-			}
-			else if(base_type == base_type::k_int){
-				if(e2._operation == expression_t::math1_operation::negate){
-					return expression_t::make_constant(-value->get_int());
-				}
-				else{
-					QUARK_ASSERT(false);
-				}
-			}
-			else if(base_type == base_type::k_float){
-				if(e2._operation == expression_t::math1_operation::negate){
-					return expression_t::make_constant(-value->get_float());
-				}
-				else{
-					QUARK_ASSERT(false);
-				}
-			}
-			else if(base_type == base_type::k_string){
-				throw std::runtime_error("Arithmetics failed.");
-			}
-			else{
-				throw std::runtime_error("Arithmetics failed.");
-			}
-		}
-
-		//	Else use a math_operation to make the calculation later. We make a NEW math_operation since sub-nodes may have been evaluated.
-		else{
-			return expression_t::make_math_operation1(e2._operation, input);
-		}
-	}
-
 	else if(e._conditional_operator){
 		return evaluate_conditional_operator(vm, e);
 	}

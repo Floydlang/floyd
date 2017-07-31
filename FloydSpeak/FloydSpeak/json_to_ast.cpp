@@ -94,12 +94,6 @@ expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<
 			}
 		}
 	}
-	else if(is_math1_op(op)){
-		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto expr = e.get_array_n(1);
-		const auto type = e.get_array_n(2);
-		return expression_t::make_math_operation1(expression_t::math1_operation::negate, expression_from_json(expr, types));
-	}
 	else if(is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 4);
 		const auto lhs_expr = expression_from_json(e.get_array_n(1), types);
