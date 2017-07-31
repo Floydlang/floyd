@@ -27,7 +27,6 @@ namespace floyd_parser {
 
 	struct math_operation2_expr_t;
 
-	struct resolve_member_expr_t;
 	struct lookup_element_expr_t;
 
 
@@ -73,7 +72,8 @@ namespace floyd_parser {
 			k_conditional_operator3,
 			k_call,
 
-			k_resolve_variable
+			k_resolve_variable,
+			k_resolve_member
 		};
 
 		public: static expression_t make_math_operation2(
@@ -158,7 +158,6 @@ namespace floyd_parser {
 		*/
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 
-		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
 
 
@@ -187,12 +186,14 @@ namespace floyd_parser {
 	//////////////////////////////////////////////////		resolve_member_expr_t
 
 
+/*
 	struct resolve_member_expr_t {
 		bool operator==(const resolve_member_expr_t& other) const;
 
 		expression_t _parent_address;
 		const std::string _member_name;
 	};
+*/
 
 
 	//////////////////////////////////////////////////		lookup_element_expr_t

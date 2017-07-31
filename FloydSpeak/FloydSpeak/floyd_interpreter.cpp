@@ -330,8 +330,18 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	const auto e2 = *e._math2;
 	const auto op = e2._operation;
 
-
-	if(op == expression_t::math2_operation::k_resolve_variable){
+	if(op == expression_t::math2_operation::k_resolve_member){
+		const auto parent_expr = evalute_expression(vm, e._math2->_expressions[0]);
+		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){
+			const auto struct_instance = parent_expr.get_constant().get_struct();
+			const value_t value = struct_instance->_member_values[e._math2->_symbol];
+			return expression_t::make_constant(value);
+		}
+		else{
+			throw std::runtime_error("Resolve member failed.");
+		}
+	}
+	else if(op == expression_t::math2_operation::k_resolve_variable){
 		const auto variable_name = e._math2->_symbol;
 		const value_t value = resolve_variable_name(vm, variable_name);
 		return expression_t::make_constant(value);
@@ -359,7 +369,6 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			throw std::runtime_error("Could not evaluate contion in conditional expression.");
 		}
 	}
-
 
 	//	First evaluate all inputs to our operation.
 	const auto left_expr = evalute_expression(vm, e2._expressions[0]);
@@ -675,18 +684,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	}
 	else if(e._math2){
 		return evaluate_math2(vm, e);
-	}
-
-	else if(e._resolve_member){
-		const auto parent_expr = evalute_expression(vm, e._resolve_member->_parent_address);
-		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){
-			const auto struct_instance = parent_expr.get_constant().get_struct();
-			const value_t value = struct_instance->_member_values[e._resolve_member->_member_name];
-			return expression_t::make_constant(value);
-		}
-		else{
-			throw std::runtime_error("Resolve member failed.");
-		}
 	}
 	else if(e._lookup_element){
 		QUARK_ASSERT(false);
