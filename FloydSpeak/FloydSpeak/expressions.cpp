@@ -8,14 +8,12 @@
 
 #include "expressions.h"
 
-#include "text_parser.h"
 #include "statements.h"
 #include "parser_value.h"
 #include "json_writer.h"
 #include "utils.h"
 #include "json_support.h"
 #include <cmath>
-#include "parser_primitives.h"
 
 
 namespace floyd_parser {
@@ -27,9 +25,12 @@ using std::shared_ptr;
 using std::make_shared;
 
 
+//??? Cleanup "neg" and "negate". Use "!" maybe?
+//??? Use "f()" for functions.
+//??? Use "[n]" for lookups.
+
 
 string expression_to_json_string(const expression_t& e);
-
 
 
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
@@ -244,6 +245,7 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 
 
 //??? replace with map<string, expression_t::math2_operation> and map <expression_t::math2_operation, string>
+
 string operation_to_string(const expression_t::math2_operation& op){
 
 	if(op == expression_t::math2_operation::k_math2_add){

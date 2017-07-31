@@ -685,10 +685,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	else if(e._math2){
 		return evaluate_math2(vm, e);
 	}
-	else if(e._lookup_element){
-		QUARK_ASSERT(false);
-		return e;
-	}
 	else{
 		QUARK_ASSERT(false);
 	}

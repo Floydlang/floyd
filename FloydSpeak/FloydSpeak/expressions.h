@@ -13,7 +13,6 @@
 #include <vector>
 #include <string>
 
-#include "parser_ast.h"
 #include "parser_value.h"
 
 struct json_t;
@@ -180,20 +179,6 @@ namespace floyd_parser {
 		const std::string _symbol;
 	};
 
-
-
-
-	//////////////////////////////////////////////////		resolve_member_expr_t
-
-
-/*
-	struct resolve_member_expr_t {
-		bool operator==(const resolve_member_expr_t& other) const;
-
-		expression_t _parent_address;
-		const std::string _member_name;
-	};
-*/
 
 
 	//////////////////////////////////////////////////		lookup_element_expr_t
