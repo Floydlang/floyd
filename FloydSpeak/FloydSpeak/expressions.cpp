@@ -30,6 +30,50 @@ using std::make_shared;
 //??? Use "[n]" for lookups.
 
 
+
+static std::map<expression_t::math2_operation, string> operation_to_string_lookup = {
+	{ expression_t::math2_operation::k_math2_add, "+" },
+	{ expression_t::math2_operation::k_math2_subtract, "-" },
+	{ expression_t::math2_operation::k_math2_multiply, "*" },
+	{ expression_t::math2_operation::k_math2_divide, "/" },
+	{ expression_t::math2_operation::k_math2_remainder, "%" },
+
+	{ expression_t::math2_operation::k_math2_smaller_or_equal, "<=" },
+	{ expression_t::math2_operation::k_math2_smaller, "<" },
+	{ expression_t::math2_operation::k_math2_larger_or_equal, ">=" },
+	{ expression_t::math2_operation::k_math2_larger, ">" },
+
+	{ expression_t::math2_operation::k_logical_equal, "==" },
+	{ expression_t::math2_operation::k_logical_nonequal, "!=" },
+	{ expression_t::math2_operation::k_logical_and, "&&" },
+	{ expression_t::math2_operation::k_logical_or, "||" },
+	{ expression_t::math2_operation::k_logical_negate, "negate" },
+
+	{ expression_t::math2_operation::k_constant, "k" },
+
+	{ expression_t::math2_operation::k_conditional_operator3, "?:" },
+	{ expression_t::math2_operation::k_call, "call" },
+
+	{ expression_t::math2_operation::k_resolve_variable, "@" },
+	{ expression_t::math2_operation::k_resolve_member, "->" },
+
+	{ expression_t::math2_operation::k_lookup_element, "[-]" }
+};
+
+std::map<string, expression_t::math2_operation> make_reverse(const std::map<expression_t::math2_operation, string>& m){
+	std::map<string, expression_t::math2_operation> temp;
+	for(const auto e: m){
+		temp[e.second] = e.first;
+	}
+	return temp;
+}
+
+static std::map<string, expression_t::math2_operation> string_to_operation_lookip = make_reverse(operation_to_string_lookup);
+
+
+
+
+
 string expression_to_json_string(const expression_t& e);
 
 
@@ -44,6 +88,7 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 		expression_t::make_constant(4));
 	QUARK_TEST_VERIFY(a == b);
 }
+
 
 bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) const {
 	return
@@ -246,149 +291,18 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 	return result;
 }
 
-
-//??? replace with map<string, expression_t::math2_operation> and map <expression_t::math2_operation, string>
-
 string operation_to_string(const expression_t::math2_operation& op){
-
-	if(op == expression_t::math2_operation::k_math2_add){
-		return "+";
-	}
-	else if(op == expression_t::math2_operation::k_math2_subtract){
-		return "-";
-	}
-	else if(op == expression_t::math2_operation::k_math2_multiply){
-		return "*";
-	}
-	else if(op == expression_t::math2_operation::k_math2_divide){
-		return "/";
-	}
-	else if(op == expression_t::math2_operation::k_math2_remainder){
-		return "%";
-	}
-
-	else if(op == expression_t::math2_operation::k_math2_smaller_or_equal){
-		return "<=";
-	}
-	else if(op == expression_t::math2_operation::k_math2_smaller){
-		return "<";
-	}
-	else if(op == expression_t::math2_operation::k_math2_larger_or_equal){
-		return ">=";
-	}
-	else if(op == expression_t::math2_operation::k_math2_larger){
-		return ">";
-	}
-
-	else if(op == expression_t::math2_operation::k_logical_equal){
-		return "==";
-	}
-	else if(op == expression_t::math2_operation::k_logical_nonequal){
-		return "!=";
-	}
-	else if(op == expression_t::math2_operation::k_logical_and){
-		return "&&";
-	}
-	else if(op == expression_t::math2_operation::k_logical_or){
-		return "||";
-	}
-	else if(op == expression_t::math2_operation::k_logical_negate){
-		return "negate";
-	}
-
-
-	else if(op == expression_t::math2_operation::k_constant){
-		return "k";
-	}
-	else if(op == expression_t::math2_operation::k_conditional_operator3){
-		return "?:";
-	}
-	else if(op == expression_t::math2_operation::k_call){
-		return "call";
-	}
-	else if(op == expression_t::math2_operation::k_resolve_variable){
-		return "@";
-	}
-	else if(op == expression_t::math2_operation::k_resolve_member){
-		return "->";
-	}
-
-	else if(op == expression_t::math2_operation::k_lookup_element){
-		return "[-]";
-	}
-
-	else{
-		QUARK_ASSERT(false);
-	}
+	const auto r = operation_to_string_lookup.find(op);
+	QUARK_ASSERT(r != operation_to_string_lookup.end());
+	return r->second;
 }
 
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_add), "+");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_subtract), "-");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_multiply), "*");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_divide), "/");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_remainder), "%");
+expression_t::math2_operation string_to_math2_op(const string& op){
+	const auto r = string_to_operation_lookip.find(op);
+	QUARK_ASSERT(r != string_to_operation_lookip.end());
+	return r->second;
 }
 
-
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_smaller_or_equal), "<=");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_smaller), "<");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_larger_or_equal), ">=");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_math2_larger), ">");
-}
-
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_equal), "==");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_nonequal), "!=");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_and), "&&");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_or), "||");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_logical_negate), "negate");
-}
-
-
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_constant), "k");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_conditional_operator3), "?:");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_call), "call");
-}
-
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_resolve_variable), "@");
-}
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_resolve_member), "->");
-}
-
-QUARK_UNIT_TESTQ("operation_to_string()", ""){
-	quark::ut_compare(operation_to_string(expression_t::math2_operation::k_lookup_element), "[-]");
-}
 
 void trace(const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
@@ -423,10 +337,7 @@ json_t expression_to_json(const expression_t& e){
 			type = std::string("<") + type_string + ">";
 		}
 
-		if(e.is_constant()){
-			return json_t::make_array({ "k", value_to_json(e.get_constant()), type });
-		}
-		else if(e.get_math2()){
+		if(e.get_math2()){
 			const auto e2 = *e.get_math2();
 
 			vector<json_t>  expressions;
@@ -513,78 +424,6 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 		),
 		R"(["[-]", ["@", "hello", "<string>"], ["k", "xyz", "<string>"], "<string>"])"
 	);
-}
-
-
-expression_t::math2_operation string_to_math2_op(const string& op){
-	if(op == "+"){
-		return expression_t::math2_operation::k_math2_add;
-	}
-	else if(op == "-"){
-		return expression_t::math2_operation::k_math2_subtract;
-	}
-	else if(op == "*"){
-		return expression_t::math2_operation::k_math2_multiply;
-	}
-	else if(op == "/"){
-		return expression_t::math2_operation::k_math2_divide;
-	}
-	else if(op == "%"){
-		return expression_t::math2_operation::k_math2_remainder;
-	}
-
-	else if(op == "<="){
-		return expression_t::math2_operation::k_math2_smaller_or_equal;
-	}
-	else if(op == "<"){
-		return expression_t::math2_operation::k_math2_smaller;
-	}
-	else if(op == ">="){
-		return expression_t::math2_operation::k_math2_larger_or_equal;
-	}
-	else if(op == ">"){
-		return expression_t::math2_operation::k_math2_larger;
-	}
-
-	else if(op == "=="){
-		return expression_t::math2_operation::k_logical_equal;
-	}
-	else if(op == "!="){
-		return expression_t::math2_operation::k_logical_nonequal;
-	}
-	else if(op == "&&"){
-		return expression_t::math2_operation::k_logical_and;
-	}
-	else if(op == "||"){
-		return expression_t::math2_operation::k_logical_or;
-	}
-	else if(op == "negate"){
-		return expression_t::math2_operation::k_logical_negate;
-	}
-
-	else if(op == "k"){
-		return expression_t::math2_operation::k_constant;
-	}
-	else if(op == "?:"){
-		return expression_t::math2_operation::k_conditional_operator3;
-	}
-	else if(op == "call"){
-		return expression_t::math2_operation::k_call;
-	}
-	else if(op == "@"){
-		return expression_t::math2_operation::k_resolve_variable;
-	}
-	else if(op == "->"){
-		return expression_t::math2_operation::k_resolve_member;
-	}
-
-	else if(op == "[-]"){
-		return expression_t::math2_operation::k_lookup_element;
-	}
-
-	else{
-		QUARK_ASSERT(false);
-	}
 }
 
 
