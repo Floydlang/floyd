@@ -443,14 +443,6 @@ json_t expression_to_json(const expression_t& e){
 			result = push_back(result, type);
 			return result;
 		}
-/*
-		else if(e._lookup_element){
-			const auto e2 = *e._lookup_element;
-			const auto lookup_key = expression_to_json(e2._lookup_key);
-			const auto parent_address = expression_to_json(e2._parent_address);
-			return json_t::make_array({ "[-]", parent_address, lookup_key, type });
-		}
-*/
 		else{
 			QUARK_ASSERT(false);
 		}
@@ -578,18 +570,6 @@ expression_t::math2_operation string_to_math2_op(const string& op){
 	else{
 		QUARK_ASSERT(false);
 	}
-}
-
-//??? add all. Use map<>
-bool is_math2_op(const string& op){
-	//???	HOw to handle lookup?
-	QUARK_ASSERT(op != "[-]");
-
-	return
-		op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
-		|| op == "<=" || op == "<" || op == ">=" || op == ">"
-		|| op == "==" || op == "!=" || op == "&&" || op == "||"
-		|| op == "neg";
 }
 
 

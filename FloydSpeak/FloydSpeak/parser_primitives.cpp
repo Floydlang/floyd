@@ -315,6 +315,13 @@ pair<type_identifier_t, seq_t> read_required_type_identifier(const seq_t& s){
 	}
 
 
+//??? add all. Use map<>
+bool is_math2_op(const std::string& op){
+	return
+		op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
+		|| op == "<=" || op == "<" || op == ">=" || op == ">"
+		|| op == "==" || op == "!=" || op == "&&" || op == "||" || op == "neg";
+}
 
 
 
