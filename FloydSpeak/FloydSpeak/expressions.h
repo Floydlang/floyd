@@ -29,7 +29,9 @@ namespace floyd_parser {
 
 	//////////////////////////////////////////////////		expression_t
 
-
+	/*
+		Immutable.
+	*/
 	struct expression_t {
 		public: static expression_t make_nop();
 		public: bool is_nop() const;
@@ -144,25 +146,28 @@ namespace floyd_parser {
 		}
 
 		public: bool operator==(const expression_t& other) const;
+
 		private: expression_t(){
 			// Invariant is broken here - expression type is setup.
 		}
 
+		public: std::shared_ptr<const math_operation2_expr_t> get_math2() const;
+		public: std::shared_ptr<const type_def_t> get_resolved_expression_type() const;
+
 
 		//////////////////////////		STATE
-		public: std::string _debug_aaaaaaaaaaaaaaaaaaaaaaa;
+		private: std::string _debug_aaaaaaaaaaaaaaaaaaaaaaa;
 
 		/*
 			Only ONE of there are used at any time.
 		*/
-		public: std::shared_ptr<math_operation2_expr_t> _math2;
+		private: std::shared_ptr<const math_operation2_expr_t> _math2;
 
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
-		public: std::shared_ptr<const type_def_t> _resolved_expression_type;
+		private: std::shared_ptr<const type_def_t> _resolved_expression_type;
 	};
 	
-
 
 
 	//////////////////////////////////////////////////		math_operation2_expr_t

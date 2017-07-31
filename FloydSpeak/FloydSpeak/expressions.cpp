@@ -55,12 +55,13 @@ bool math_operation2_expr_t::operator==(const math_operation2_expr_t& other) con
 
 
 
+
 //////////////////////////////////////////////////		expression_t
 
 
 
 bool expression_t::check_invariant() const{
-	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
+//	QUARK_ASSERT(_debug_aaaaaaaaaaaaaaaaaaaaaaa.size() > 0);
 
 	//	Make sure exactly ONE or ZERO pointers are set.
 	const auto count = (_math2 ? 1 : 0);
@@ -87,6 +88,20 @@ bool expression_t::operator==(const expression_t& other) const {
 		return false;
 	}
 }
+
+
+std::shared_ptr<const math_operation2_expr_t> expression_t::get_math2() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _math2;
+}
+
+std::shared_ptr<const type_def_t> expression_t::get_resolved_expression_type() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _resolved_expression_type;
+}
+
 
 
 
@@ -398,24 +413,24 @@ json_t expression_to_json(const expression_t& e){
 		return json_t();
 	}
 	else{
-		const auto expression_base_type = e._resolved_expression_type->get_base_type();
+		const auto expression_base_type = e.get_resolved_expression_type()->get_base_type();
 		json_t type;
 		if(expression_base_type == base_type::k_null){
 			type = json_t();
 		}
 		else{
-			const auto type_string = e._resolved_expression_type->to_string();
+			const auto type_string = e.get_resolved_expression_type()->to_string();
 			type = std::string("<") + type_string + ">";
 		}
 
 		if(e.is_constant()){
 			return json_t::make_array({ "k", value_to_json(e.get_constant()), type });
 		}
-		else if(e._math2){
-			const auto e2 = *e._math2;
+		else if(e.get_math2()){
+			const auto e2 = *e.get_math2();
 
 			vector<json_t>  expressions;
-			for(const auto& i: e._math2->_expressions){
+			for(const auto& i: e.get_math2()->_expressions){
 				const auto a = expression_to_json(i);
 				expressions.push_back(a);
 			}

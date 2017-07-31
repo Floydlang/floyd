@@ -325,16 +325,16 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e);
 expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e._math2);
+	QUARK_ASSERT(e.get_math2());
 
-	const auto e2 = *e._math2;
+	const auto e2 = *e.get_math2();
 	const auto op = e2._operation;
 
 	if(op == expression_t::math2_operation::k_resolve_member){
-		const auto parent_expr = evalute_expression(vm, e._math2->_expressions[0]);
+		const auto parent_expr = evalute_expression(vm, e.get_math2()->_expressions[0]);
 		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){
 			const auto struct_instance = parent_expr.get_constant().get_struct();
-			const value_t value = struct_instance->_member_values[e._math2->_symbol];
+			const value_t value = struct_instance->_member_values[e.get_math2()->_symbol];
 			return expression_t::make_constant(value);
 		}
 		else{
@@ -342,7 +342,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 		}
 	}
 	else if(op == expression_t::math2_operation::k_resolve_variable){
-		const auto variable_name = e._math2->_symbol;
+		const auto variable_name = e.get_math2()->_symbol;
 		const value_t value = resolve_variable_name(vm, variable_name);
 		return expression_t::make_constant(value);
 	}
@@ -612,9 +612,9 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e._math2->_operation == expression_t::math2_operation::k_call);
+	QUARK_ASSERT(e.get_math2()->_operation == expression_t::math2_operation::k_call);
 
-	const auto& call = *e._math2;
+	const auto& call = *e.get_math2();
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
 
@@ -682,7 +682,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	if(e.is_constant()){
 		return e;
 	}
-	else if(e._math2){
+	else if(e.get_math2()){
 		return evaluate_math2(vm, e);
 	}
 	else{
