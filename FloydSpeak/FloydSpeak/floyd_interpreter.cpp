@@ -330,7 +330,14 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	const auto e2 = *e._math2;
 	const auto op = e2._operation;
 
-	if(op == expression_t::math2_operation::k_call){
+
+	if(op == expression_t::math2_operation::k_resolve_variable){
+		const auto variable_name = e._math2->_symbol;
+		const value_t value = resolve_variable_name(vm, variable_name);
+		return expression_t::make_constant(value);
+	}
+
+	else if(op == expression_t::math2_operation::k_call){
 		return evaluate_call(vm, e);
 	}
 
@@ -602,7 +609,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 
 	scope_ref_t scope_def = vm._call_stack.back()->_def;
 
-	const auto function_name = call._function_name.to_string();
+	const auto function_name = call._symbol;
 
 	//	find function symbol: no proper static scoping ???
 	const auto found_it = find_if(
@@ -642,7 +649,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	for(const auto& i: simplified_args){
 		if(!i.is_constant()){
 			//??? should use simplified_args.
-			return expression_t::make_function_call(call._function_name, call._expressions, e.get_expression_type());
+			return expression_t::make_function_call(type_identifier_t(call._symbol), call._expressions, e.get_expression_type());
 		}
 	}
 
@@ -670,11 +677,6 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 		return evaluate_math2(vm, e);
 	}
 
-	else if(e._resolve_variable){
-		const auto variable_name = e._resolve_variable->_variable_name;
-		const value_t value = resolve_variable_name(vm, variable_name);
-		return expression_t::make_constant(value);
-	}
 	else if(e._resolve_member){
 		const auto parent_expr = evalute_expression(vm, e._resolve_member->_parent_address);
 		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){

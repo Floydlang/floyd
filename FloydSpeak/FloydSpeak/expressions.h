@@ -26,9 +26,7 @@ namespace floyd_parser {
 
 
 	struct math_operation2_expr_t;
-	struct resolve_variable_expr_t;
 
-	struct resolve_member_expr_t;
 	struct resolve_member_expr_t;
 	struct lookup_element_expr_t;
 
@@ -73,7 +71,9 @@ namespace floyd_parser {
 			k_constant,
 
 			k_conditional_operator3,
-			k_call
+			k_call,
+
+			k_resolve_variable
 		};
 
 		public: static expression_t make_math_operation2(
@@ -87,7 +87,7 @@ namespace floyd_parser {
 			math2_operation op,
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
-			const type_identifier_t& function_name
+			const std::string& symbol
 		);
 
 		public: static expression_t make_conditional_operator(
@@ -102,7 +102,7 @@ namespace floyd_parser {
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
-		/*_
+		/*
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 
@@ -114,7 +114,7 @@ namespace floyd_parser {
 		);
 
 		/*
-			Specifies a member variable of a struct.
+			Specifies a member of a struct.
 		*/
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
@@ -158,7 +158,6 @@ namespace floyd_parser {
 		*/
 		public: std::shared_ptr<math_operation2_expr_t> _math2;
 
-		public: std::shared_ptr<resolve_variable_expr_t> _resolve_variable;
 		public: std::shared_ptr<resolve_member_expr_t> _resolve_member;
 		public: std::shared_ptr<lookup_element_expr_t> _lookup_element;
 
@@ -179,20 +178,10 @@ namespace floyd_parser {
 		const expression_t::math2_operation _operation;
 		const std::vector<expression_t> _expressions;
 		const std::shared_ptr<value_t> _constant;
-		const type_identifier_t _function_name;
+		const std::string _symbol;
 	};
 
 
-
-
-	//////////////////////////////////////////////////		resolve_variable_expr_t
-
-
-	struct resolve_variable_expr_t {
-		bool operator==(const resolve_variable_expr_t& other) const;
-
-		const std::string _variable_name;
-	};
 
 
 	//////////////////////////////////////////////////		resolve_member_expr_t

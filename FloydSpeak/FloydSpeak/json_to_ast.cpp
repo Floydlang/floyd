@@ -48,6 +48,7 @@ shared_ptr<const type_def_t> resolve_type123(const string& id, const map<string,
 	}
 }
 
+//??? Simplify now that expression_t doesn't have classes for each expression type.
 expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<type_def_t>>& types){
 	QUARK_ASSERT(e.is_array() && e.get_array_size() >= 1);
 
@@ -116,8 +117,8 @@ expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<
 
 		//??? Hack - we should have real expressions for function names.
 		//??? Also: we should resolve all names 100% at this point.
-		QUARK_ASSERT(f_address._resolve_variable);
-		const string func_name = f_address._resolve_variable->_variable_name;
+		QUARK_ASSERT(f_address._math2->_operation == expression_t::math2_operation::k_resolve_variable);
+		const string func_name = f_address._math2->_symbol;
 
 
 //		const auto function_expr = expression_from_json(e.get_array_n(1), types);
