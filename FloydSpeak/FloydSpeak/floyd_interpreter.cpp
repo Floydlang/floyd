@@ -82,26 +82,6 @@ namespace {
 		return result;
 	}
 
-#if 0
-	value_t call_host_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
-		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(f && f->check_invariant());
-		QUARK_ASSERT(f->_statements.empty());
-		QUARK_ASSERT(f->_host_function);
-		QUARK_ASSERT(f->_host_function_param);
-
-		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-
-		if(!check_arg_types(f, args)){
-			throw std::runtime_error("function arguments do not match function");
-		}
-
-		const auto resolved_path = vm.get_resolved_path();
-		const auto a = f->_host_function(vm._ast, resolved_path, f->_host_function_param, args);
-		return a;
-		return {};
-	}
-#endif
 
 	/*
 		Return value:
@@ -175,7 +155,7 @@ namespace {
 
 
 
-	value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type);
+value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type);
 
 value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_def_t>& type_def){
 	QUARK_ASSERT(vm.check_invariant());
@@ -274,7 +254,6 @@ scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
 ast_t program_to_ast2(const string& program){
 	const auto pass1 = parse_program2(program);
 	const auto pass2 = run_pass2(pass1);
-
 	const ast_t ast = json_to_ast(pass2);
 	trace(ast);
 	return ast;
@@ -321,7 +300,6 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e);
 
 
-//	??? Return constant instead o expression? We use this both for interpretation but also for compile-time optimizations.
 expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
