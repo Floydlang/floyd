@@ -76,16 +76,7 @@ namespace floyd_parser {
 			operation op,
 			const expression_t& left,
 			const expression_t& right
-		){
-			return make_math2_operation(op, { left, right }, {}, {});
-		}
-		public: static expression_t make_math2_operation(
-			operation op,
-			const std::vector<expression_t>& expressions,
-			const std::shared_ptr<value_t>& constant,
-			const std::string& symbol
 		);
-
 		public: static expression_t make_conditional_operator(
 			const expression_t& condition,
 			const expression_t& a,
@@ -129,6 +120,16 @@ namespace floyd_parser {
 
 		public: bool check_invariant() const;
 
+		public: bool operator==(const expression_t& other) const;
+
+		private: expression_t(
+			operation operation,
+			const std::vector<expression_t>& expressions,
+			const std::shared_ptr<value_t>& constant,
+			const std::string& symbol,
+			const std::shared_ptr<const type_def_t>& resolved_expression_type
+		);
+
 		/*
 			Returns pre-computed result of the expression - the type of value it represents.
 			null if not resolved.
@@ -137,12 +138,6 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 
 			return _resolved_expression_type;
-		}
-
-		public: bool operator==(const expression_t& other) const;
-
-		private: expression_t(){
-			// Invariant is broken here - expression type is setup.
 		}
 
 		public: operation get_operation() const;
