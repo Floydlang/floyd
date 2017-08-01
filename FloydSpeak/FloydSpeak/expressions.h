@@ -24,8 +24,6 @@ namespace floyd_parser {
 	struct type_identifier_t;
 
 
-	struct math_operation2_expr_t;
-
 
 	//////////////////////////////////////////////////		expression_t
 
@@ -33,9 +31,6 @@ namespace floyd_parser {
 		Immutable.
 	*/
 	struct expression_t {
-		public: static expression_t make_nop();
-		public: bool is_nop() const;
-
 		public: static expression_t make_constant(const value_t& value);
 
 		//	Shortcuts were you don't need to make a value_t first.
@@ -46,7 +41,7 @@ namespace floyd_parser {
 		public: static expression_t make_constant(const std::string& s);
 
 		public: bool is_constant() const;
-		public: value_t get_constant() const;
+		public: const value_t& get_constant() const;
 
 		public: enum class math2_operation {
 			k_math2_add = 10,
@@ -77,14 +72,14 @@ namespace floyd_parser {
 			k_lookup_element
 		};
 
-		public: static expression_t make_math_operation2(
+		public: static expression_t make_math2_operation(
 			math2_operation op,
 			const expression_t& left,
 			const expression_t& right
 		){
-			return make_math_operation2(op, { left, right }, {}, {});
+			return make_math2_operation(op, { left, right }, {}, {});
 		}
-		public: static expression_t make_math_operation2(
+		public: static expression_t make_math2_operation(
 			math2_operation op,
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
@@ -132,7 +127,6 @@ namespace floyd_parser {
 			const std::shared_ptr<const type_def_t>& resolved_expression_type
 		);
 
-
 		public: bool check_invariant() const;
 
 		/*
@@ -151,44 +145,30 @@ namespace floyd_parser {
 			// Invariant is broken here - expression type is setup.
 		}
 
-		public: std::shared_ptr<const math_operation2_expr_t> get_math2() const;
+		public: math2_operation get_operation() const;
+		public: const std::vector<expression_t>& get_expressions() const;
+		public: const std::string& get_symbol() const;
 		public: std::shared_ptr<const type_def_t> get_resolved_expression_type() const;
 
 
 		//////////////////////////		STATE
-		private: std::string _debug_aaaaaaaaaaaaaaaaaaaaaaa;
-
-		/*
-			Only ONE of there are used at any time.
-		*/
-		private: std::shared_ptr<const math_operation2_expr_t> _math2;
-
+		private: std::string _debug;
+		private: math2_operation _operation;
+		private: std::vector<expression_t> _expressions;
+		private: std::shared_ptr<value_t> _constant;
+		private: std::string _symbol;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
 		private: std::shared_ptr<const type_def_t> _resolved_expression_type;
 	};
 	
 
-
-	//////////////////////////////////////////////////		math_operation2_expr_t
-
-
-	struct math_operation2_expr_t {
-		bool operator==(const math_operation2_expr_t& other) const;
-
-		const expression_t::math2_operation _operation;
-		const std::vector<expression_t> _expressions;
-		const std::shared_ptr<value_t> _constant;
-		const std::string _symbol;
-	};
-
-
-
-	//////////////////////////////////////////////////		trace()
-
-
 	void trace(const expression_t& e);
 
+	/*
+		An expression is a json array where entries may be other json arrays.
+		["+", ["+", 1, 2], ["k", 10]]
+	*/
 	json_t expression_to_json(const expression_t& e);
 
 	expression_t::math2_operation string_to_math2_op(const std::string& op);

@@ -100,7 +100,7 @@ expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<
 		const auto lhs_expr = expression_from_json(e.get_array_n(1), types);
 		const auto rhs_expr = expression_from_json(e.get_array_n(2), types);
 		const auto op2 = string_to_math2_op(op);
-		return expression_t::make_math_operation2(op2, lhs_expr, rhs_expr);
+		return expression_t::make_math2_operation(op2, lhs_expr, rhs_expr);
 	}
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 5);
@@ -117,8 +117,8 @@ expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<
 
 		//??? Hack - we should have real expressions for function names.
 		//??? Also: we should resolve all names 100% at this point.
-		QUARK_ASSERT(f_address.get_math2()->_operation == expression_t::math2_operation::k_resolve_variable);
-		const string func_name = f_address.get_math2()->_symbol;
+		QUARK_ASSERT(f_address.get_operation() == expression_t::math2_operation::k_resolve_variable);
+		const string func_name = f_address.get_symbol();
 
 
 //		const auto function_expr = expression_from_json(e.get_array_n(1), types);
