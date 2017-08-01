@@ -117,7 +117,7 @@ expression_t expression_from_json(const json_t& e, const map<string, shared_ptr<
 
 		//??? Hack - we should have real expressions for function names.
 		//??? Also: we should resolve all names 100% at this point.
-		QUARK_ASSERT(f_address.get_operation() == expression_t::math2_operation::k_resolve_variable);
+		QUARK_ASSERT(f_address.get_operation() == expression_t::operation::k_resolve_variable);
 		const string func_name = f_address.get_symbol();
 
 

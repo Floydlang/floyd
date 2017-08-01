@@ -43,7 +43,7 @@ namespace floyd_parser {
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;
 
-		public: enum class math2_operation {
+		public: enum class operation {
 			k_math2_add = 10,
 			k_math2_subtract,
 			k_math2_multiply,
@@ -73,14 +73,14 @@ namespace floyd_parser {
 		};
 
 		public: static expression_t make_math2_operation(
-			math2_operation op,
+			operation op,
 			const expression_t& left,
 			const expression_t& right
 		){
 			return make_math2_operation(op, { left, right }, {}, {});
 		}
 		public: static expression_t make_math2_operation(
-			math2_operation op,
+			operation op,
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
 			const std::string& symbol
@@ -145,7 +145,7 @@ namespace floyd_parser {
 			// Invariant is broken here - expression type is setup.
 		}
 
-		public: math2_operation get_operation() const;
+		public: operation get_operation() const;
 		public: const std::vector<expression_t>& get_expressions() const;
 		public: const std::string& get_symbol() const;
 		public: std::shared_ptr<const type_def_t> get_resolved_expression_type() const;
@@ -153,7 +153,7 @@ namespace floyd_parser {
 
 		//////////////////////////		STATE
 		private: std::string _debug;
-		private: math2_operation _operation;
+		private: operation _operation;
 		private: std::vector<expression_t> _expressions;
 		private: std::shared_ptr<value_t> _constant;
 		private: std::string _symbol;
@@ -171,7 +171,7 @@ namespace floyd_parser {
 	*/
 	json_t expression_to_json(const expression_t& e);
 
-	expression_t::math2_operation string_to_math2_op(const std::string& op);
+	expression_t::operation string_to_math2_op(const std::string& op);
 
 	bool is_math2_op(const std::string& op);
 
