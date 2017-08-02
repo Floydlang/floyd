@@ -65,7 +65,7 @@ namespace floyd_parser {
 	}
 
 	//??? use json
-	void trace(const type_def_t& t, const std::string& label){
+	void trace(const typeid_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
 		const auto type = t.get_base_type();
@@ -83,7 +83,7 @@ namespace floyd_parser {
 		}
 		else if(type == base_type::k_struct){
 			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
-			trace(t.get_struct_def());
+//			trace(t.get_struct_def());
 		}
 		else if(type == base_type::k_vector){
 			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
@@ -91,7 +91,7 @@ namespace floyd_parser {
 		}
 		else if(type == base_type::k_function){
 			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
-			trace(t.get_function_def());
+//			trace(t.get_function_def());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -115,51 +115,41 @@ namespace floyd_parser {
 
 
 
-	////////////////////////			type_def_t
+	////////////////////////			typeid_t
 
 
-	bool type_def_t::check_invariant() const{
+	bool typeid_t::check_invariant() const{
 		if(_base_type == base_type::k_null){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
 		}
 		else if(_base_type == base_type::k_bool){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
 		}
 		else if(_base_type == base_type::k_int){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
 		}
 		else if(_base_type == base_type::k_float){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
 		}
 		else if(_base_type == base_type::k_string){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
 		}
 		else if(_base_type == base_type::k_struct){
-			QUARK_ASSERT(_struct_def);
-			QUARK_ASSERT(_struct_def->check_invariant());
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(!_function_def);
+			QUARK_ASSERT(_parts.empty() == true);
+			QUARK_ASSERT(_struct_def_id.empty() == false);
 		}
 		else if(_base_type == base_type::k_vector){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(_vector_def);
-			QUARK_ASSERT(!_function_def);
+			QUARK_ASSERT(_parts.empty() == false);
+			QUARK_ASSERT(_struct_def_id.empty() == true);
 		}
 		else if(_base_type == base_type::k_function){
-			QUARK_ASSERT(!_struct_def);
-			QUARK_ASSERT(!_vector_def);
-			QUARK_ASSERT(_function_def);
-			QUARK_ASSERT(_function_def->check_invariant());
+			QUARK_ASSERT(_parts.empty() == false);
+			QUARK_ASSERT(_struct_def_id.empty() == true);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -167,55 +157,49 @@ namespace floyd_parser {
 		return true;
 	}
 
-	bool type_def_t::operator==(const type_def_t& other) const {
-		QUARK_ASSERT(check_invariant());
+
+	void typeid_t::swap(typeid_t& other){
 		QUARK_ASSERT(other.check_invariant());
-
-		if(_base_type != other._base_type){
-			return false;
-		}
-		if(!compare_shared_values(_struct_def, other._struct_def)){
-			return false;
-		}
-		if(!compare_shared_values(_vector_def, other._vector_def)){
-			return false;
-		}
-		if(!compare_shared_values(_function_def, other._function_def)){
-			return false;
-		}
-		return true;
-	}
-
-	void type_def_t::swap(type_def_t& rhs){
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(rhs.check_invariant());
 
-		std::swap(_base_type, rhs._base_type);
-		std::swap(_struct_def, rhs._struct_def);
-		std::swap(_vector_def, rhs._vector_def);
-		std::swap(_function_def, rhs._function_def);
+		std::swap(_base_type, other._base_type);
+		_parts.swap(other._parts);
+		_struct_def_id.swap(other._struct_def_id);
 
+		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(rhs.check_invariant());
 	}
 
 
-	std::string type_def_t::to_string() const {
+	std::string typeid_t::to_string() const {
 		QUARK_ASSERT(check_invariant());
 
 		if(_base_type == base_type::k_struct){
-			return _struct_def->_name.to_string();
+			return "[" + _parts[0].to_string() + "]";
 		}
 		else if(_base_type == base_type::k_vector){
-			return _vector_def->_name.to_string();
+			return "[" + _parts[0].to_string() + "]";
 		}
 		else if(_base_type == base_type::k_function){
-			return _function_def->_name.to_string();
+			auto s = _parts[0].to_string() + " (";
+			if(_parts.size() > 2){
+				for(int i = 1 ; i < _parts.size() - 1 ; i++){
+					s = s + _parts[i].to_string() + ",";
+				}
+				s = s + _parts[_parts.size() - 1].to_string();
+			}
+			s = s + ")";
+			return s;
 		}
 		else{
 			return base_type_to_string(_base_type);
 		}
+//		return json_to_compact_string(typeid_to_json(*this));
 	}
+
+	QUARK_UNIT_TESTQ("typeid_t{}", ""){
+	}
+
 
 
 
@@ -246,7 +230,7 @@ namespace floyd_parser {
 		const std::vector<member_t>& local_variables,
 		const std::vector<member_t>& members,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const std::shared_ptr<const type_def_t>& return_type,
+		const typeid_t& return_type,
 		const efunc_variant& function_variant
 		)
 	:
@@ -298,19 +282,19 @@ namespace floyd_parser {
 
 		if(_type == etype::k_function_scope){
 			QUARK_ASSERT(_function_variant != efunc_variant::k_not_relevant);
-			QUARK_ASSERT(_return_type && _return_type->check_invariant());
+			QUARK_ASSERT(_return_type._base_type != base_type::k_null && _return_type.check_invariant());
 		}
 		else if(_type == etype::k_struct_scope){
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
-			QUARK_ASSERT(!_return_type);
+			QUARK_ASSERT(_return_type._base_type == base_type::k_null);
 		}
 		else if(_type == etype::k_global_scope){
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
-			QUARK_ASSERT(!_return_type);
+			QUARK_ASSERT(_return_type._base_type == base_type::k_null);
 		}
 		else if(_type == etype::k_subscope){
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
-			QUARK_ASSERT(_return_type && _return_type->check_invariant());
+			QUARK_ASSERT(_return_type._base_type != base_type::k_null && _return_type.check_invariant());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -340,7 +324,7 @@ namespace floyd_parser {
 		if(!(_statements == other._statements)){
 			return false;
 		}
-		if(_return_type != other._return_type){
+		if(!(_return_type == other._return_type)){
 			return false;
 		}
 		if(_function_variant != other._function_variant){
@@ -389,20 +373,30 @@ namespace floyd_parser {
 		};
 	}
 
-	json_t type_def_to_json(const type_def_t& type_def){
-		return make_object({
-			{ "_base_type", json_t(base_type_to_string(type_def.get_base_type())) },
-			{ "_struct_def", type_def.get_base_type() == base_type::k_struct ? scope_def_to_json(*type_def.get_struct_def()) : json_t() },
-			{ "_vector_def", type_def.get_base_type() == base_type::k_vector ? vector_def_to_json(*type_def.get_vector_def()) : json_t() },
-			{ "_function_def", type_def.get_base_type() == base_type::k_function ? scope_def_to_json(*type_def.get_function_def()) : json_t() }
-		});
+	json_t typeid_to_json(const typeid_t& t){
+		if(t._parts.empty() && t._struct_def_id.empty()){
+			return make_object({
+				{ "base_type", json_t(base_type_to_string(t.get_base_type())) }
+			});
+		}
+		else{
+			auto parts = json_t::make_array();
+			for(const auto e: t._parts){
+				parts = push_back(parts, typeid_to_json(e));
+			}
+			return make_object({
+				{ "base_type", json_t(base_type_to_string(t.get_base_type())) },
+				{ "parts", parts },
+				{ "struct_def_id", t._struct_def_id.empty() == false ? t._struct_def_id : json_t() }
+			});
+		}
 	}
 
 	json_t scope_def_to_json(const scope_def_t& scope_def){
 		std::vector<json_t> members;
 		for(const auto i: scope_def._members){
 			const auto member = make_object({
-				{ "type", json_t(i._type->to_string()) },
+				{ "type", json_t(i._type.to_string()) },
 				{ "_value", i._value ? value_to_json(*i._value) : json_t() },
 				{ "name", json_t(i._name) }
 		});
@@ -419,11 +413,9 @@ namespace floyd_parser {
 			{ "name", json_t(scope_def._name.to_string()) },
 			{ "members", members.empty() ? json_t() :json_t(members) },
 			{ "statements", json_t(statements) },
-			{ "return_type", scope_def._return_type ? scope_def._return_type->to_string() : json_t() }
+			{ "return_type", scope_def._return_type.to_string() }
 		});
 	}
-
-
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
 		QUARK_SCOPED_TRACE("statements");
@@ -432,17 +424,16 @@ namespace floyd_parser {
 		}
 	}
 
-
 	scope_ref_t scope_def_t::make_function_def(
 		const type_identifier_t& name,
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& local_variables,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const std::shared_ptr<const type_def_t>& return_type
+		const typeid_t& return_type
 	)
 	{
 		QUARK_ASSERT(name.check_invariant());
-		QUARK_ASSERT(return_type && return_type->check_invariant());
+		QUARK_ASSERT(return_type._base_type != base_type::k_null && return_type.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		for(const auto i: local_variables){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -459,10 +450,10 @@ namespace floyd_parser {
 		return function;
 	}
 
-	scope_ref_t scope_def_t::make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const std::shared_ptr<const type_def_t>& type){
+	scope_ref_t scope_def_t::make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const typeid_t& type){
 		QUARK_ASSERT(name.check_invariant());
 		QUARK_UT_VERIFY(function_variant != efunc_variant::k_not_relevant && function_variant != efunc_variant::k_interpreted);
-		QUARK_ASSERT(type && type->check_invariant());
+		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
 
 		auto function = make_shared<scope_def_t>(scope_def_t(
 			scope_def_t::etype::k_function_scope,
@@ -482,35 +473,35 @@ namespace floyd_parser {
 	////////////////////////			member_t
 
 
-	member_t::member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name, const value_t& init_value) :
+	member_t::member_t(const typeid_t& type, const std::string& name, const value_t& init_value) :
 		_type(type),
 		_name(name),
 		_value(make_shared<value_t>(init_value))
 	{
-		QUARK_ASSERT(type && type->check_invariant());
+		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 		QUARK_ASSERT(init_value.check_invariant());
-		QUARK_ASSERT(*type == *init_value.get_type());
+		QUARK_ASSERT(type == init_value.get_type());
 
 		QUARK_ASSERT(check_invariant());
 	}
 
-	member_t::member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name) :
+	member_t::member_t(const typeid_t& type, const std::string& name) :
 		_type(type),
 		_name(name)
 	{
-		QUARK_ASSERT(type && type->check_invariant());
+		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool member_t::check_invariant() const{
-		QUARK_ASSERT(_type && _type->check_invariant());
+		QUARK_ASSERT(_type._base_type != base_type::k_null && _type.check_invariant());
 		QUARK_ASSERT(_name.size() > 0);
 		QUARK_ASSERT(!_value || _value->check_invariant());
 		if(_value){
-			QUARK_ASSERT(*_type == *_value->get_type());
+			QUARK_ASSERT(_type == _value->get_type());
 		}
 		return true;
 	}
@@ -519,14 +510,14 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return (*_type == *other._type)
+		return (_type == other._type)
 			&& (_name == other._name)
 			&& compare_shared_values(_value, other._value);
 	}
 
 
 	void trace(const member_t& member){
-		QUARK_TRACE("<member> type: <" + member._type->to_string() + "> name: \"" + member._name + "\"");
+		QUARK_TRACE("<member> type: <" + member._type.to_string() + "> name: \"" + member._name + "\"");
 	}
 
 
@@ -548,10 +539,10 @@ namespace floyd_parser {
 
 	vector_def_t vector_def_t::make2(
 		const type_identifier_t& name,
-		const std::shared_ptr<type_def_t>& element_type)
+		const typeid_t& element_type)
 	{
 		QUARK_ASSERT(name.check_invariant());
-		QUARK_ASSERT(element_type && element_type->check_invariant());
+		QUARK_ASSERT(element_type._base_type != base_type::k_null && element_type.check_invariant());
 
 		vector_def_t result;
 		result._name = name;
@@ -565,7 +556,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(_name.check_invariant());
 		QUARK_ASSERT(_name.to_string().size() > 0 );
 
-		QUARK_ASSERT(_element_type && _element_type->check_invariant());
+		QUARK_ASSERT(_element_type._base_type != base_type::k_null && _element_type.check_invariant());
 		return true;
 	}
 
@@ -576,7 +567,7 @@ namespace floyd_parser {
 		if(_name != other._name){
 			return false;
 		}
-		else if(!(*_element_type == *other._element_type)){
+		else if(!(_element_type == other._element_type)){
 			return false;
 		}
 		return true;
@@ -585,7 +576,7 @@ namespace floyd_parser {
 	void trace(const vector_def_t& e){
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("vector_def_t");
-		QUARK_TRACE_SS("element_type: " << e._element_type->to_string());
+		QUARK_TRACE_SS("element_type: " << e._element_type.to_string());
 	}
 
 
@@ -594,17 +585,20 @@ namespace floyd_parser {
 	////////////////////////			ast_t
 
 
-
-
 	ast_t::ast_t() :
 		_global_scope(scope_def_t::make_global_scope())
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
-	ast_t::ast_t(std::shared_ptr<const scope_def_t> global_scope, std::map<std::string, std::shared_ptr<const type_def_t>> typenames) :
+	ast_t::ast_t(
+		std::shared_ptr<const scope_def_t> global_scope,
+		const std::map<std::string, symbol_t>& symbols,
+		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+	) :
 		_global_scope(global_scope),
-		_typenames(typenames)
+		_symbols(symbols),
+		_objects(objects)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -615,10 +609,18 @@ namespace floyd_parser {
 	}
 
 
-	json_t symbols_to_json(const std::map<std::string, std::shared_ptr<const type_def_t>>& symbols){
+	json_t symbols_to_json(const std::map<std::string, symbol_t>& symbols){
 		std::map<string, json_t> m;
 		for(const auto i: symbols){
-			m[i.first] = type_def_to_json(*i.second);
+			m[i.first] = json_t(i.second._object_id);//??? more state to pack
+		}
+		
+		return json_t::make_object(m);
+	}
+	json_t objects_to_json(const std::map<std::string, std::shared_ptr<const scope_def_t> >& objects){
+		std::map<string, json_t> m;
+		for(const auto i: objects){
+			m[i.first] = scope_def_to_json(*i.second);
 		}
 		
 		return json_t::make_object(m);
@@ -637,7 +639,8 @@ namespace floyd_parser {
 		QUARK_ASSERT(ast.check_invariant());
 
 		return make_object({
-			{ "typenames", symbols_to_json(ast.get_typenames()) },
+			{ "_symbols", symbols_to_json(ast.get_symbols()) },
+			{ "_objects", objects_to_json(ast.get_objects()) },
 			{ "global_scope", scope_def_to_json(*ast.get_global_scope()) }
 		});
 	}

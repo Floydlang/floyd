@@ -86,7 +86,7 @@ namespace floyd_parser {
 		public: static expression_t make_function_call(
 			const type_identifier_t& function_name,
 			const std::vector<expression_t>& inputs,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& resolved_expression_type
 		);
 
 		/*
@@ -97,7 +97,7 @@ namespace floyd_parser {
 		*/
 		public: static expression_t make_resolve_variable(
 			const std::string& variable,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& resolved_expression_type
 		);
 
 		/*
@@ -106,7 +106,7 @@ namespace floyd_parser {
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
 			const std::string& member_name,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& resolved_expression_type
 		);
 
 		/*
@@ -115,7 +115,7 @@ namespace floyd_parser {
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& resolved_expression_type
 		);
 
 		public: bool check_invariant() const;
@@ -127,14 +127,14 @@ namespace floyd_parser {
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
 			const std::string& symbol,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& resolved_expression_type
 		);
 
 		/*
 			Returns pre-computed result of the expression - the type of value it represents.
 			null if not resolved.
 		*/
-		public: std::shared_ptr<const type_def_t> get_expression_type() const{
+		public: typeid_t get_expression_type() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _resolved_expression_type;
@@ -143,7 +143,7 @@ namespace floyd_parser {
 		public: operation get_operation() const;
 		public: const std::vector<expression_t>& get_expressions() const;
 		public: const std::string& get_symbol() const;
-		public: std::shared_ptr<const type_def_t> get_resolved_expression_type() const;
+		public: typeid_t get_resolved_expression_type() const;
 
 
 		//////////////////////////		STATE
@@ -154,7 +154,7 @@ namespace floyd_parser {
 		private: std::string _symbol;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
-		private: std::shared_ptr<const type_def_t> _resolved_expression_type;
+		private: typeid_t _resolved_expression_type;
 	};
 	
 

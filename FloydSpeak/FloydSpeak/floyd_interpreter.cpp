@@ -49,7 +49,7 @@ namespace {
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto farg = f->_args[i]._type;
 			const auto call_arg = args[i].get_type();
-			if(!(*farg == *call_arg)){
+			if(!(farg == call_arg)){
 				return false;
 			}
 		}
@@ -155,13 +155,13 @@ namespace {
 
 
 
-value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type);
+value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
 
-value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_def_t>& type_def){
+value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(type_def && type_def->check_invariant());
+	QUARK_ASSERT(t.check_invariant());
 
-	const auto type = type_def->get_base_type();
+	const auto type = t.get_base_type();
 	if(type == base_type::k_bool){
 		return value_t(false);
 	}
@@ -175,7 +175,7 @@ value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_
 		return value_t("");
 	}
 	else if(type == base_type::k_struct){
-		return make_struct_instance(vm, type_def);
+		return make_struct_instance(vm, t);
 	}
 	else if(type == base_type::k_vector){
 		QUARK_ASSERT(false);
@@ -188,16 +188,35 @@ value_t make_default_value(const interpreter_t& vm, const shared_ptr<const type_
 	}
 }
 
-value_t make_struct_instance(const interpreter_t& vm, const shared_ptr<const type_def_t>& struct_type){
+const std::shared_ptr<const scope_def_t> lookup_struct_def(const interpreter_t& vm, const std::string& struct_type){
+	const auto objects = vm._ast.get_objects();
+	const auto struct_def_it = objects.find(struct_type);
+	if(struct_def_it == objects.end()){
+		throw std::runtime_error("Undefined struct type!");
+	}
+	return struct_def_it->second;
+}
+
+
+value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(struct_type && struct_type->check_invariant());
+	QUARK_ASSERT(!struct_type.is_null() && struct_type.check_invariant());
+
+	const auto k = struct_type.to_string();
+	const auto objects = vm._ast.get_objects();
+	const auto struct_def_it = objects.find(k);
+	if(struct_def_it == objects.end()){
+		throw std::runtime_error("Undefined struct type!");
+	}
+
+	const auto struct_def = struct_def_it->second;
 
 	std::map<std::string, value_t> member_values;
-	for(int i = 0 ; i < struct_type->get_struct_def()->_members.size() ; i++){
-		const auto& member_def = struct_type->get_struct_def()->_members[i];
+	for(int i = 0 ; i < struct_def->_members.size() ; i++){
+		const auto& member_def = struct_def->_members[i];
 
 		const auto member_type = member_def._type;
-		if(!member_type){
+		if(!member_type.is_null()){
 			throw std::runtime_error("Undefined struct type!");
 		}
 
@@ -240,11 +259,22 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 	}
 }
 
-scope_ref_t find_global_function(const interpreter_t& vm, const string& name){
-	for(const auto p: vm._ast.get_typenames()){
-		const auto type_def = p.second;
-		if(type_def->get_base_type() == base_type::k_function && type_def->get_function_def()->_name.to_string() == name){
-			return type_def->get_function_def();
+const std::shared_ptr<const scope_def_t> lookup_function_def(const interpreter_t& vm, const std::string& function_id){
+	const auto objects = vm._ast.get_objects();
+	const auto it = objects.find(function_id);
+	if(it == objects.end()){
+		throw std::runtime_error("Undefined function!");
+	}
+	return it->second;
+}
+
+
+scope_ref_t find_global_function(const interpreter_t& vm, const string& function_name){
+	for(const auto p: vm._ast.get_symbols()){
+		const auto symbol_data = p.second;
+		if(p.first == function_name){
+			const auto function_def = lookup_function_def(vm, p.second._object_id);
+			return function_def;
 		}
 	}
 	throw std::runtime_error("Unknown global function");
@@ -536,7 +566,7 @@ expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
 			const auto left = left_constant.get_struct();
 			const auto right = right_constant.get_struct();
 
-			if(!(*left->_struct_type == *right->_struct_type)){
+			if(!(left->_struct_type == right->_struct_type)){
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
@@ -598,23 +628,12 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	const auto function_name = call.get_symbol();
 
 	//	find function symbol: no proper static scoping ???
-	const auto found_it = find_if(
-		vm._ast.get_typenames().begin(),
-		vm._ast.get_typenames().end(),
-		[&] (const std::pair<std::string, std::shared_ptr<const type_def_t>>& t) {
-			return t.second->get_base_type() == base_type::k_function && t.second->get_function_def()->_name.to_string() == function_name;
-		}
-	);
-	if(found_it == vm._ast.get_typenames().end()){
-		throw std::runtime_error("Failed calling function - unresolved function.");
-	}
-	const auto type = found_it->second;
 
-	if(!type || type->get_base_type() != base_type::k_function){
+	const auto function_def = find_global_function(vm, function_name);
+	if(function_def->_type != scope_def_t::etype::k_function_scope){
 		throw std::runtime_error("Failed calling function - unresolved function.");
 	}
 
-	const auto& function_def = type->get_function_def();
 	if(function_def->_type == scope_def_t::etype::k_function_scope){
 		QUARK_ASSERT(function_def->_args.size() == call.get_expressions().size());
 	}

@@ -28,7 +28,7 @@ using std::make_shared;
 //??? Cleanup "neg" and "negate". Use "!" maybe?
 //??? Use "f()" for functions.
 //??? Use "[n]" for lookups.
-
+//??? Move these to floyd basic constants.
 static std::map<expression_t::operation, string> operation_to_string_lookup = {
 	{ expression_t::operation::k_math2_add, "+" },
 	{ expression_t::operation::k_math2_subtract, "-" },
@@ -96,7 +96,7 @@ expression_t::expression_t(
 	const std::vector<expression_t>& expressions,
 	const std::shared_ptr<value_t>& constant,
 	const std::string& symbol,
-	const std::shared_ptr<const type_def_t>& resolved_expression_type
+	const typeid_t& resolved_expression_type
 )
 :
 	_debug(""),
@@ -114,7 +114,7 @@ expression_t::expression_t(
 bool expression_t::check_invariant() const{
 //	QUARK_ASSERT(_debug.size() > 0);
 
-	QUARK_ASSERT(_resolved_expression_type && _resolved_expression_type->check_invariant());
+	QUARK_ASSERT(_resolved_expression_type._base_type != base_type::k_null && _resolved_expression_type.check_invariant());
 	return true;
 }
 
@@ -148,7 +148,7 @@ const std::string& expression_t::get_symbol() const{
 }
 
 	
-std::shared_ptr<const type_def_t> expression_t::get_resolved_expression_type() const{
+typeid_t expression_t::get_resolved_expression_type() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _resolved_expression_type;
@@ -227,12 +227,12 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	return result;
 }
 
-expression_t expression_t::make_function_call(const type_identifier_t& function_name, const std::vector<expression_t>& inputs, const shared_ptr<const type_def_t>& resolved_expression_type){
+expression_t expression_t::make_function_call(const type_identifier_t& function_name, const std::vector<expression_t>& inputs, const typeid_t& resolved_expression_type){
 	QUARK_ASSERT(function_name.check_invariant());
 	for(const auto arg: inputs){
 		QUARK_ASSERT(arg.check_invariant());
 	}
-	QUARK_ASSERT(resolved_expression_type && resolved_expression_type->check_invariant());
+	QUARK_ASSERT(resolved_expression_type._base_type != base_type::k_null && resolved_expression_type.check_invariant());
 
 	auto result = expression_t(
 		operation::k_call,
@@ -246,9 +246,9 @@ expression_t expression_t::make_function_call(const type_identifier_t& function_
 }
 
 
-expression_t expression_t::make_resolve_variable(const std::string& variable, const shared_ptr<const type_def_t>& resolved_expression_type){
+expression_t expression_t::make_resolve_variable(const std::string& variable, const typeid_t& resolved_expression_type){
 	QUARK_ASSERT(variable.size() > 0);
-	QUARK_ASSERT(resolved_expression_type && resolved_expression_type->check_invariant());
+	QUARK_ASSERT(resolved_expression_type._base_type != base_type::k_null && resolved_expression_type.check_invariant());
 
 	auto result = expression_t(
 		operation::k_resolve_variable,
@@ -261,10 +261,10 @@ expression_t expression_t::make_resolve_variable(const std::string& variable, co
 	return result;
 }
 
-expression_t expression_t::make_resolve_member(const expression_t& parent_address, const std::string& member_name, const shared_ptr<const type_def_t>& resolved_expression_type){
+expression_t expression_t::make_resolve_member(const expression_t& parent_address, const std::string& member_name, const typeid_t& resolved_expression_type){
 	QUARK_ASSERT(parent_address.check_invariant());
 	QUARK_ASSERT(member_name.size() > 0);
-	QUARK_ASSERT(resolved_expression_type && resolved_expression_type->check_invariant());
+	QUARK_ASSERT(resolved_expression_type._base_type != base_type::k_null && resolved_expression_type.check_invariant());
 
 	auto result = expression_t(
 		operation::k_resolve_member,
@@ -277,10 +277,10 @@ expression_t expression_t::make_resolve_member(const expression_t& parent_addres
 	return result;
 }
 
-expression_t expression_t::make_lookup(const expression_t& parent_address, const expression_t& lookup_key, const shared_ptr<const type_def_t>& resolved_expression_type){
+expression_t expression_t::make_lookup(const expression_t& parent_address, const expression_t& lookup_key, const typeid_t& resolved_expression_type){
 	QUARK_ASSERT(parent_address.check_invariant());
 	QUARK_ASSERT(lookup_key.check_invariant());
-	QUARK_ASSERT(resolved_expression_type && resolved_expression_type->check_invariant());
+	QUARK_ASSERT(resolved_expression_type._base_type != base_type::k_null && resolved_expression_type.check_invariant());
 
 	auto result = expression_t(
 		operation::k_lookup_element,
@@ -319,13 +319,13 @@ void trace(const expression_t& e){
 
 
 json_t expression_to_json(const expression_t& e){
-	const auto expression_base_type = e.get_resolved_expression_type()->get_base_type();
+	const auto expression_base_type = e.get_resolved_expression_type().get_base_type();
 	json_t type;
 	if(expression_base_type == base_type::k_null){
 		type = json_t();
 	}
 	else{
-		const auto type_string = e.get_resolved_expression_type()->to_string();
+		const auto type_string = e.get_resolved_expression_type().to_string();
 		type = std::string("<") + type_string + ">";
 	}
 
@@ -392,7 +392,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 					expression_t::make_constant("xyz"),
 					expression_t::make_constant(123)
 				},
-				type_def_t::make_string_typedef()
+				typeid_t::make_string()
 			)
 		),
 		R"(["call", "my_func", [["k", "xyz", "<string>"], ["k", 123, "<int>"]], "<string>"])"
@@ -403,9 +403,9 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_resolve_variable("hello", type_def_t::make_string_typedef()),
+				expression_t::make_resolve_variable("hello", typeid_t::make_string()),
 				expression_t::make_constant("xyz"),
-				type_def_t::make_string_typedef()
+				typeid_t::make_string()
 			)
 		),
 		R"(["[-]", ["@", "hello", "<string>"], ["k", "xyz", "<string>"], "<string>"])"

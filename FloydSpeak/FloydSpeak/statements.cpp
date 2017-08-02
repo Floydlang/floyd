@@ -26,8 +26,8 @@ namespace floyd_parser {
 
 
 
-	statement_t make__bind_statement(const std::shared_ptr<const type_def_t>& type, const std::string& identifier, const expression_t& e){
-		QUARK_ASSERT(type && type->check_invariant());
+	statement_t make__bind_statement(const typeid_t& type, const std::string& identifier, const expression_t& e){
+		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
 		QUARK_ASSERT(identifier.size () > 0);
 		QUARK_ASSERT(e.check_invariant());
 
@@ -109,7 +109,7 @@ namespace floyd_parser {
 			json_to_compact_string(
 				statement_to_json(
 					make__bind_statement(
-						type_def_t::make_int_typedef(),
+						typeid_t::make_int(),
 						"a",
 						expression_t::make_constant(400)
 					)

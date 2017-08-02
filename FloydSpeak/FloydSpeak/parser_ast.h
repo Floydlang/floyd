@@ -15,6 +15,7 @@
 #include <map>
 #include "json_support.h"
 #include "parser_primitives.h"
+//#include "parser_value.h"
 
 struct TSHA1;
 struct json_t;
@@ -55,9 +56,95 @@ namespace floyd_parser {
 	void trace2(const type_def_t& t, const std::string& label);
 
 
+	//////////////////////////////////////		typeid_t
 
 
+	struct typeid_t;
+	json_t typeid_to_json(const typeid_t& t);
 
+	struct typeid_t {
+
+		public: static typeid_t make_null(){
+			return { base_type::k_null, {}, {} };
+		}
+
+		public: static typeid_t make_bool(){
+			return { base_type::k_bool, {}, {} };
+		}
+
+		public: static typeid_t make_int(){
+			return { base_type::k_int, {}, {} };
+		}
+
+		public: static typeid_t make_float(){
+			return { base_type::k_float, {}, {} };
+		}
+
+		public: static typeid_t make_string(){
+			return { base_type::k_string, {}, {} };
+		}
+
+		public: bool is_null() const {
+			return _base_type == base_type::k_null;
+		}
+
+		public: static typeid_t make_struct(const std::string& struct_def_id){
+			return { base_type::k_struct, {}, struct_def_id };
+		}
+
+		public: static typeid_t make_vector(const typeid_t& element_type){
+			return { base_type::k_vector, { element_type }, {} };
+		}
+
+		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
+			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
+			std::vector<typeid_t> parts = { ret };
+			parts.insert(parts.end(), args.begin(), args.end());
+			return { base_type::k_function, parts, {} };
+		}
+
+
+		public: bool operator==(const typeid_t& other) const{
+			return _base_type == other._base_type && _parts == other._parts && _struct_def_id == other._struct_def_id;
+		}
+
+		public: bool check_invariant() const;
+
+		public: void swap(typeid_t& other);
+
+		/*
+			"int"
+			"[int]"
+			"int (float, [int])"
+			"coord_t/8000"
+		*/
+		public: std::string to_string() const;
+
+		public: base_type get_base_type() const{
+			return _base_type;
+		}
+
+
+		/////////////////////////////		STATE
+
+
+		/*
+			"coord_t/8000"
+			"int (float a, float b)"
+			"[string]"
+			"[coord_t/8000]"
+			"pixel_coord_t = coord_t/8000"
+		*/
+
+		base_type _base_type;
+		std::vector<typeid_t> _parts;
+		std::string _struct_def_id;
+	};
+
+	json_t typeid_to_json(const typeid_t& t);
+
+	
+	
 
 	//////////////////////////////////////		member_t
 
@@ -67,13 +154,14 @@ namespace floyd_parser {
 
 	struct member_t {
 		//??? init_value should be an expression.
-		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name, const value_t& init_value);
-		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name);
+		public: member_t(const typeid_t& type, const std::string& name, const value_t& init_value);
+		public: member_t(const typeid_t& type, const std::string& name);
 		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
 
-		//??? Skip shared_ptr<>
-		public: std::shared_ptr<const type_def_t> _type;
+
+		/////////////////////////////		STATE
+		public: typeid_t _type;
 
 		//	Optional -- must have same type as _type.
 		public: std::shared_ptr<const value_t> _value;
@@ -108,7 +196,7 @@ namespace floyd_parser {
 	struct vector_def_t {
 		public: static vector_def_t make2(
 			const type_identifier_t& name,
-			const std::shared_ptr<type_def_t>& element_type
+			const typeid_t& element_type
 		);
 
 		public: vector_def_t(){};
@@ -116,9 +204,9 @@ namespace floyd_parser {
 		public: bool operator==(const vector_def_t& other) const;
 
 
-		///////////////////		STATE
+		/////////////////////////////		STATE
 		public: type_identifier_t _name;
-		public: std::shared_ptr<type_def_t> _element_type;
+		public: typeid_t _element_type;
 	};
 
 	void trace(const vector_def_t& e);
@@ -161,13 +249,13 @@ namespace floyd_parser {
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& local_variables,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const std::shared_ptr<const type_def_t>& return_type
+			const typeid_t& return_type
 		);
 
 		public: static scope_ref_t make_builtin_function_def(
 			const type_identifier_t& name,
 			efunc_variant function_variant,
-			const std::shared_ptr<const type_def_t>& type
+			const typeid_t& type
 		);
 
 		public: static scope_ref_t make_global_scope();
@@ -186,7 +274,7 @@ namespace floyd_parser {
 			const std::vector<member_t>& local_variables,
 			const std::vector<member_t>& members,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const std::shared_ptr<const type_def_t>& return_type,
+			const typeid_t& return_type,
 			const efunc_variant& function_variant
 		);
 
@@ -198,7 +286,7 @@ namespace floyd_parser {
 		public: std::vector<member_t> _local_variables;
 		public: std::vector<member_t> _members;
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
-		public: std::shared_ptr<const type_def_t> _return_type;
+		public: typeid_t _return_type;
 
 		public: efunc_variant _function_variant;
 	};
@@ -208,110 +296,25 @@ namespace floyd_parser {
 
 
 
+	//////////////////////////////////////////////////		ast_t
 
-	//////////////////////////////////////		type_def_t
 
 	/*
-		Describes a frontend type. All sub-types may or may not be known yet.
-		Immutable
-
-		- Basic types, like ints and strings.
-		- Functions
-		- Vector type
-		- Structs
+		"get_grey": { "value": "function_constant_values/8000" },
 	*/
-	struct type_def_t {
-		private: type_def_t(base_type type) :
-			_base_type(type)
-		{
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const type_def_t& other) const;
-		public: void swap(type_def_t& rhs);
-		public: base_type get_base_type() const {
-			return _base_type;
-		}
+	struct symbol_t {
+		enum symbol_type {
+			k_null,
+			k_function_def_object,
+			k_struct_def_object,
+			k_constant
+		};
 
-
-		public: static std::shared_ptr<type_def_t> make_null_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_null));
-		}
-		public: static std::shared_ptr<type_def_t> make_bool_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_bool));
-		}
-		public: static std::shared_ptr<type_def_t> make_int_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_int));
-		}
-		public: static std::shared_ptr<type_def_t> make_float_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_float));
-		}
-		public: static std::shared_ptr<type_def_t> make_string_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_string));
-		}
-
-		public: static std::shared_ptr<type_def_t> make_struct_type_def(const std::shared_ptr<const scope_def_t>& struct_def){
-			type_def_t a(base_type::k_struct);
-			a._struct_def = struct_def;
-			return std::make_shared<type_def_t>(a);
-		}
-		public: static std::shared_ptr<type_def_t> make_vector_type_def(const std::shared_ptr<const vector_def_t>& vector_def){
-			type_def_t a(base_type::k_vector);
-			a._vector_def = vector_def;
-			return std::make_shared<type_def_t>(a);
-		}
-		public: static std::shared_ptr<type_def_t> make_function_type_def(const std::shared_ptr<const scope_def_t>& function_def){
-			type_def_t a(base_type::k_function);
-			a._function_def = function_def;
-			return std::make_shared<type_def_t>(a);
-		}
-
-		public: std::string to_string() const;
-
-		public: bool is_subscope() const {
-			return _base_type == base_type::k_function || _base_type == base_type::k_struct;
-		}
-
-		public: std::shared_ptr<const scope_def_t> get_subscope() const {
-			QUARK_ASSERT(is_subscope());
-			if(_base_type == base_type::k_function){
-				return _function_def;
-			}
-			else if(_base_type == base_type::k_struct){
-				return _struct_def;
-			}
-			QUARK_ASSERT(false);
-		}
-
-		public: std::shared_ptr<const scope_def_t> get_struct_def() const {
-			QUARK_ASSERT(_base_type == base_type::k_struct);
-			return _struct_def;
-		}
-		public: std::shared_ptr<const vector_def_t> get_vector_def() const {
-			QUARK_ASSERT(_base_type == base_type::k_vector);
-			return _vector_def;
-		}
-		public: std::shared_ptr<const scope_def_t> get_function_def() const {
-			QUARK_ASSERT(_base_type == base_type::k_function);
-			return _function_def;
-		}
-
-
-		///////////////////		STATE
-
-		/*
-			Plain types only use the _base_type.
-			### Add support for int-ranges etc.
-		*/
-		private: base_type _base_type;
-		private: std::shared_ptr<const scope_def_t> _struct_def;
-		private: std::shared_ptr<const vector_def_t> _vector_def;
-		private: std::shared_ptr<const scope_def_t> _function_def;
+		symbol_type _type;
+		std::string _object_id;
+		std::shared_ptr<value_t> _constant;
+		typeid_t _typeid;
 	};
-
-
-	json_t type_def_to_json(const type_def_t& type_def);
-
-
 
 
 	//////////////////////////////////////////////////		ast_t
@@ -323,21 +326,29 @@ namespace floyd_parser {
 	*/
 	struct ast_t {
 		public: ast_t();
-		public: ast_t(std::shared_ptr<const scope_def_t> global_scope, std::map<std::string, std::shared_ptr<const type_def_t>> typenames);
+		public: ast_t(
+			std::shared_ptr<const scope_def_t> global_scope,
+			const std::map<std::string, symbol_t>& symbols,
+			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+		);
 		public: bool check_invariant() const;
 
 		public: const std::shared_ptr<const scope_def_t>& get_global_scope() const {
 			return _global_scope;
 		}
-		public: const std::map<std::string, std::shared_ptr<const type_def_t>>& get_typenames() const {
-			return _typenames;
+
+		public: const std::map<std::string, symbol_t>& get_symbols() const {
+			return _symbols;
+		}
+		public: const std::map<std::string, std::shared_ptr<const scope_def_t> >& get_objects() const {
+			return _objects;
 		}
 
 		/////////////////////////////		STATE
 		private: std::shared_ptr<const scope_def_t> _global_scope;
 
-		//	Keyed on "$1000" etc.
-		private: std::map<std::string, std::shared_ptr<const type_def_t>> _typenames;
+		private: std::map<std::string, symbol_t> _symbols;
+		private: std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;
 	};
 
 	void trace(const ast_t& program);
