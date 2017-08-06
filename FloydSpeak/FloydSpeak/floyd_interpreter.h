@@ -31,6 +31,7 @@ namespace floyd_interpreter {
 
 	/*
 		Runtime scope, similair to a stack frame.
+		??? rename to "context".
 	*/
 
 	struct stack_frame_t {

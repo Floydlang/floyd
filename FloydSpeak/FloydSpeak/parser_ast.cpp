@@ -207,15 +207,40 @@ namespace floyd_parser {
 
 
 
-	scope_ref_t scope_def_t::make_struct(const type_identifier_t& name, const std::vector<member_t>& members){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(etype::k_struct_scope, name, {}, {}, members, {}, {}, efunc_variant::k_not_relevant));
+	scope_ref_t scope_def_t::make_struct_object(const std::vector<member_t>& members){
+		auto r = std::make_shared<scope_def_t>(scope_def_t(
+			etype::k_struct_scope,
+			{},
+			{},
+			members,
+			{},
+			{},
+			efunc_variant::k_not_relevant,
+			{},
+			{}
+		));
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
-	scope_ref_t scope_def_t::make_global_scope(){
+	scope_ref_t scope_def_t::make_global_scope(
+		const std::vector<std::shared_ptr<statement_t> >& statements,
+		const std::map<std::string, symbol_t>& symbols,
+		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+	)
+	{
 		auto r = std::make_shared<scope_def_t>(
-			scope_def_t(etype::k_global_scope, type_identifier_t::make("global"), {}, {}, {}, {}, {}, efunc_variant::k_not_relevant)
+			scope_def_t(
+				etype::k_global_scope,
+				{},
+				{},
+				{},
+				statements,
+				{},
+				efunc_variant::k_not_relevant,
+				symbols,
+				objects
+			)
 		);
 
 		QUARK_ASSERT(r->check_invariant());
@@ -225,36 +250,40 @@ namespace floyd_parser {
 
 	scope_def_t::scope_def_t(
 		etype type,
-		const type_identifier_t& name,
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& local_variables,
 		const std::vector<member_t>& members,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const typeid_t& return_type,
-		const efunc_variant& function_variant
+		const efunc_variant& function_variant,
+		const std::map<std::string, symbol_t>& symbols,
+		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
 		)
 	:
 		_type(type),
-		_name(name),
 		_args(args),
 		_local_variables(local_variables),
 		_members(members),
 		_statements(statements),
 		_return_type(return_type),
-		_function_variant(function_variant)
+		_function_variant(function_variant),
+		_symbols(symbols),
+		_objects(objects)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
+
 	scope_def_t::scope_def_t(const scope_def_t& other) :
 		_type(other._type),
-		_name(other._name),
 		_args(other._args),
 		_local_variables(other._local_variables),
 		_members(other._members),
 		_statements(other._statements),
 		_return_type(other._return_type),
-		_function_variant(other._function_variant)
+		_function_variant(other._function_variant),
+		_symbols(other._symbols),
+		_objects(other._objects)
 	{
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
@@ -266,8 +295,6 @@ namespace floyd_parser {
 	}
 
 	bool scope_def_t::check_invariant() const {
-		QUARK_ASSERT(_name.check_invariant());
-
 		//??? Check for duplicates? Other things?
 		for(const auto& m: _args){
 			QUARK_ASSERT(m.check_invariant());
@@ -292,7 +319,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
 			QUARK_ASSERT(_return_type._base_type == base_type::k_null);
 		}
-		else if(_type == etype::k_subscope){
+		else if(_type == etype::k_block){
 			QUARK_ASSERT(_function_variant == efunc_variant::k_not_relevant);
 			QUARK_ASSERT(_return_type._base_type != base_type::k_null && _return_type.check_invariant());
 		}
@@ -307,9 +334,6 @@ namespace floyd_parser {
 		QUARK_ASSERT(other.check_invariant());
 
 		if(_type != other._type){
-			return false;
-		}
-		if(_name != other._name){
 			return false;
 		}
 		if(_args != other._args){
@@ -330,12 +354,18 @@ namespace floyd_parser {
 		if(_function_variant != other._function_variant){
 			return false;
 		}
+		if(!(_symbols == other._symbols)){
+			return false;
+		}
+		if(_objects != other._objects){
+			return false;
+		}
 		return true;
 	}
 
 	QUARK_UNIT_TESTQ("scope_def_t::operator==", ""){
-		const auto a = scope_def_t::make_global_scope();
-		const auto b = scope_def_t::make_global_scope();
+		const auto a = scope_def_t::make_global_scope({}, {}, {});
+		const auto b = scope_def_t::make_global_scope({}, {}, {});
 		QUARK_TEST_VERIFY(*a == *b);
 	}
 
@@ -353,7 +383,7 @@ namespace floyd_parser {
 		else if(type == scope_def_t::etype::k_global_scope){
 			return "global";
 		}
-		else if(type == scope_def_t::etype::k_subscope){
+		else if(type == scope_def_t::etype::k_block){
 			return "subscope";
 		}
 		else{
@@ -392,28 +422,80 @@ namespace floyd_parser {
 		}
 	}
 
-	json_t scope_def_to_json(const scope_def_t& scope_def){
-		std::vector<json_t> members;
-		for(const auto i: scope_def._members){
+
+	json_t member_to_json(const std::vector<member_t>& members){
+		std::vector<json_t> r;
+		for(const auto i: members){
 			const auto member = make_object({
 				{ "type", json_t(i._type.to_string()) },
 				{ "_value", i._value ? value_to_json(*i._value) : json_t() },
 				{ "name", json_t(i._name) }
-		});
-			members.push_back(json_t(member));
+			});
+			r.push_back(json_t(member));
 		}
+		return r;
+	}
+
+
+	json_t symbols_to_json(const std::map<std::string, symbol_t>& s){
+		std::map<string, json_t> r;
+		for(const auto i: s){
+			const auto t = i.second._type;
+			std::string symbol_type = "";
+			if (t == symbol_t::symbol_type::k_null){
+				symbol_type = "null";
+			}
+			else if (t == symbol_t::symbol_type::k_struct_def_object){
+				symbol_type = "struct_def_object";
+			}
+			else if (t == symbol_t::symbol_type::k_constant){
+				symbol_type = "constant";
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+			const auto e = make_object({
+				{ "type", symbol_type },
+				{ "object_id", i.second._object_id },
+				{ "constant", i.second._constant ? expression_to_json(*i.second._constant) : json_t() },
+				{ "typeid", typeid_to_json(i.second._typeid) }
+			});
+			r[i.first] = e;
+		}
+		return r;
+	}
+
+	json_t objects_to_json(const std::map<std::string, std::shared_ptr<const scope_def_t> >& s){
+		std::map<string, json_t> r;
+		for(const auto i: s){
+			r[i.first] = scope_def_to_json(*i.second);
+		}
+		return r;
+	}
+
+	json_t scope_def_to_json(const scope_def_t& scope_def){
+		const auto args = member_to_json(scope_def._args);
+		const auto locals = member_to_json(scope_def._local_variables);
+		const auto members = member_to_json(scope_def._members);
 
 		std::vector<json_t> statements;
 		for(const auto i: scope_def._statements){
 			statements.push_back(statement_to_json(*i));
 		}
+		json_t statements2(statements);
+
+		const auto symbols = symbols_to_json(scope_def.get_symbols());
+		const auto objects = objects_to_json(scope_def.get_objects());
 
 		return make_object({
 			{ "type", json_t(scope_type_to_string(scope_def._type)) },
-			{ "name", json_t(scope_def._name.to_string()) },
-			{ "members", members.empty() ? json_t() :json_t(members) },
-			{ "statements", json_t(statements) },
-			{ "return_type", scope_def._return_type.to_string() }
+			{ "args", args.get_array_size() == 0 ? json_t() : json_t(args) },
+			{ "locals", locals.get_array_size() == 0 ? json_t() : json_t(locals) },
+			{ "members", members.get_array_size() == 0 ? json_t() : json_t(members) },
+			{ "statements", statements2.get_array_size() == 0 ? json_t() : json_t(statements2) },
+			{ "return_type", scope_def._return_type.is_null() ? json_t() : scope_def._return_type.to_string() },
+			{ "symbols", symbols.get_object_size() == 0 ? json_t() : symbols },
+			{ "objects", objects.get_object_size() == 0 ? json_t() : objects }
 		});
 	}
 
@@ -424,67 +506,64 @@ namespace floyd_parser {
 		}
 	}
 
-	scope_ref_t scope_def_t::make_function_def(
-		const type_identifier_t& name,
+	scope_ref_t scope_def_t::make_function_object(
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& local_variables,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const typeid_t& return_type
+		const typeid_t& return_type,
+		const std::map<std::string, symbol_t>& symbols,
+		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
 	)
 	{
-		QUARK_ASSERT(name.check_invariant());
 		QUARK_ASSERT(return_type._base_type != base_type::k_null && return_type.check_invariant());
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		for(const auto i: local_variables){ QUARK_ASSERT(i.check_invariant()); };
 
 		auto function = make_shared<scope_def_t>(scope_def_t(
 			scope_def_t::etype::k_function_scope,
-			name,
 			args,
 			local_variables,
 			{},
 			statements,
 			return_type,
-			efunc_variant::k_interpreted
+			efunc_variant::k_interpreted,
+			symbols,
+			objects
 		));
 		return function;
 	}
 
-	scope_ref_t scope_def_t::make_builtin_function_def(const type_identifier_t& name, efunc_variant function_variant, const typeid_t& type){
-		QUARK_ASSERT(name.check_invariant());
+	scope_ref_t scope_def_t::make_builtin_function_object(efunc_variant function_variant, const typeid_t& type){
 		QUARK_UT_VERIFY(function_variant != efunc_variant::k_not_relevant && function_variant != efunc_variant::k_interpreted);
 		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
 
 		auto function = make_shared<scope_def_t>(scope_def_t(
 			scope_def_t::etype::k_function_scope,
-			name,
 			{},
 			{},
 			{},
 			{},
 			type,
-			efunc_variant::k_default_constructor
+			efunc_variant::k_default_constructor,
+			{},
+			{}
 		));
 		return function;
 	}
 
 
+	////////////////////////			symbol_t
+
+
+		bool symbol_t::operator==(const symbol_t& other) const{
+			return _type == other._type
+				&& _object_id == other._object_id
+				&& compare_shared_values(_constant, other._constant)
+				&& _typeid == other._typeid;
+		}
 
 	////////////////////////			member_t
 
-
-	member_t::member_t(const typeid_t& type, const std::string& name, const value_t& init_value) :
-		_type(type),
-		_name(name),
-		_value(make_shared<value_t>(init_value))
-	{
-		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
-		QUARK_ASSERT(name.size() > 0);
-		QUARK_ASSERT(init_value.check_invariant());
-		QUARK_ASSERT(type == init_value.get_type());
-
-		QUARK_ASSERT(check_invariant());
-	}
 
 	member_t::member_t(const typeid_t& type, const std::string& name) :
 		_type(type),
@@ -586,19 +665,15 @@ namespace floyd_parser {
 
 
 	ast_t::ast_t() :
-		_global_scope(scope_def_t::make_global_scope())
+		_global_scope(scope_def_t::make_global_scope({}, {}, {}))
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
 	ast_t::ast_t(
-		std::shared_ptr<const scope_def_t> global_scope,
-		const std::map<std::string, symbol_t>& symbols,
-		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+		std::shared_ptr<const scope_def_t> global_scope
 	) :
-		_global_scope(global_scope),
-		_symbols(symbols),
-		_objects(objects)
+		_global_scope(global_scope)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -608,23 +683,6 @@ namespace floyd_parser {
 		return true;
 	}
 
-
-	json_t symbols_to_json(const std::map<std::string, symbol_t>& symbols){
-		std::map<string, json_t> m;
-		for(const auto i: symbols){
-			m[i.first] = json_t(i.second._object_id);//??? more state to pack
-		}
-		
-		return json_t::make_object(m);
-	}
-	json_t objects_to_json(const std::map<std::string, std::shared_ptr<const scope_def_t> >& objects){
-		std::map<string, json_t> m;
-		for(const auto i: objects){
-			m[i.first] = scope_def_to_json(*i.second);
-		}
-		
-		return json_t::make_object(m);
-	}
 
 
 	void trace(const ast_t& program){
@@ -638,11 +696,7 @@ namespace floyd_parser {
 	json_t ast_to_json(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
-		return make_object({
-			{ "_symbols", symbols_to_json(ast.get_symbols()) },
-			{ "_objects", objects_to_json(ast.get_objects()) },
-			{ "global_scope", scope_def_to_json(*ast.get_global_scope()) }
-		});
+		return scope_def_to_json(*ast.get_global_scope());
 	}
 
 

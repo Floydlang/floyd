@@ -25,20 +25,6 @@ namespace floyd_parser {
 	struct expression_t;
 
 
-    //////////////////////////////////////		bind_statement_t
-    
-    
-    struct bind_statement_t {
-        bool operator==(const bind_statement_t& other) const {
-            return _type == other._type && _identifier == other._identifier && _expression == other._expression;
-        }
-
-        typeid_t _type;
-        std::string _identifier;
-        expression_t _expression;
-    };
-    
-    
 	//////////////////////////////////////		return_statement_t
 
 
@@ -66,21 +52,13 @@ namespace floyd_parser {
 		public: statement_t& operator=(const statement_t& other) = default;
 		public: bool check_invariant() const;
 
-		public: statement_t(const bind_statement_t& value) :
-			_bind_statement(std::make_shared<bind_statement_t>(value))
-		{
-		}
-
         public: statement_t(const return_statement_t& value) :
 			_return_statement(std::make_shared<return_statement_t>(value))
 		{
 		}
 
 		public: bool operator==(const statement_t& other) const {
-			if(_bind_statement){
-				return other._bind_statement && *_bind_statement == *other._bind_statement;
-			}
-			else if(_return_statement){
+			if(_return_statement){
 				return other._return_statement && *_return_statement == *other._return_statement;
 			}
 			else{
@@ -89,7 +67,7 @@ namespace floyd_parser {
 			}
 		}
 
-        public: std::shared_ptr<bind_statement_t> _bind_statement;
+ //       public: std::shared_ptr<bind_statement_t> _bind_statement;
 		public: std::shared_ptr<return_statement_t> _return_statement;
 	};
 
@@ -98,7 +76,6 @@ namespace floyd_parser {
 
 
 
-	statement_t make__bind_statement(const typeid_t& type, const std::string& identifier, const expression_t& e);
 	statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
 

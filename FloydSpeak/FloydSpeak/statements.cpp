@@ -26,14 +26,6 @@ namespace floyd_parser {
 
 
 
-	statement_t make__bind_statement(const typeid_t& type, const std::string& identifier, const expression_t& e){
-		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
-		QUARK_ASSERT(identifier.size () > 0);
-		QUARK_ASSERT(e.check_invariant());
-
-		return statement_t(bind_statement_t{ type, identifier, e });
-	}
-
 	statement_t make__return_statement(const return_statement_t& value){
 		return statement_t(value);
 	}
@@ -44,13 +36,7 @@ namespace floyd_parser {
 	}
 
 	void trace(const statement_t& s){
-		if(s._bind_statement){
-			std::string t = "bind_statement_t: \"" + s._bind_statement->_identifier + "\"";
-			QUARK_SCOPED_TRACE(t);
-			trace(s._bind_statement->_expression);
-		}
-
-		else if(s._return_statement){
+		if(s._return_statement){
 			QUARK_SCOPED_TRACE("return_statement_t");
 			trace(s._return_statement->_expression);
 		}
@@ -66,12 +52,7 @@ namespace floyd_parser {
 
 
 	bool statement_t::check_invariant() const {
-		if(_bind_statement){
-			QUARK_ASSERT(_bind_statement);
-			QUARK_ASSERT(!_return_statement);
-		}
-		else if(_return_statement){
-			QUARK_ASSERT(!_bind_statement);
+		if(_return_statement){
 			QUARK_ASSERT(_return_statement);
 		}
 		else{
@@ -85,14 +66,7 @@ namespace floyd_parser {
 	json_t statement_to_json(const statement_t& e){
 		QUARK_ASSERT(e.check_invariant());
 
-		if(e._bind_statement){
-			return json_t::make_array({
-				json_t("bind"),
-				json_t(e._bind_statement->_identifier),
-				expression_to_json(e._bind_statement->_expression)
-			});
-		}
-		else if(e._return_statement){
+		if(e._return_statement){
 			return json_t::make_array({
 				json_t("return"),
 				expression_to_json(e._return_statement->_expression)
@@ -103,22 +77,6 @@ namespace floyd_parser {
 		}
 	}
 
-
-	QUARK_UNIT_TESTQ("statement_to_json", "bind"){
-		quark::ut_compare(
-			json_to_compact_string(
-				statement_to_json(
-					make__bind_statement(
-						typeid_t::make_int(),
-						"a",
-						expression_t::make_constant(400)
-					)
-				)
-			)
-			,
-			R"(["bind", "a", ["k", 400, "<int>"]])"
-		);
-	}
 
 	QUARK_UNIT_TESTQ("statement_to_json", "return"){
 		quark::ut_compare(

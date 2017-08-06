@@ -14,8 +14,8 @@
 #include <vector>
 #include <map>
 #include "json_support.h"
+#include "utils.h"
 #include "parser_primitives.h"
-//#include "parser_value.h"
 
 struct TSHA1;
 struct json_t;
@@ -24,6 +24,7 @@ struct json_t;
 
 namespace floyd_parser {
 	struct type_def_t;
+	struct expression_t;
 	struct statement_t;
 	struct value_t;
 	struct scope_def_t;
@@ -145,6 +146,28 @@ namespace floyd_parser {
 
 	
 	
+	//////////////////////////////////////////////////		symbol_t
+
+
+	/*
+		"get_grey": { "value": "function_constant_values/8000" },
+	*/
+	struct symbol_t {
+		enum symbol_type {
+			k_null,
+			k_struct_def_object,
+			k_constant
+		};
+		public: bool operator==(const symbol_t& other) const;
+
+
+		symbol_type _type;
+		std::string _object_id;
+		std::shared_ptr<expression_t> _constant;
+		typeid_t _typeid;
+	};
+
+
 
 	//////////////////////////////////////		member_t
 
@@ -153,8 +176,6 @@ namespace floyd_parser {
 	*/
 
 	struct member_t {
-		//??? init_value should be an expression.
-		public: member_t(const typeid_t& type, const std::string& name, const value_t& init_value);
 		public: member_t(const typeid_t& type, const std::string& name);
 		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
@@ -170,16 +191,6 @@ namespace floyd_parser {
 	};
 
 	void trace(const member_t& member);
-
-
-
-/*
-	struct host_data_i {
-		public: virtual ~host_data_i(){};
-	};
-
-	typedef value_t (*hosts_function_t)(const ast_t& ast, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
-*/
 
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
@@ -223,7 +234,7 @@ namespace floyd_parser {
 		- The global scope
 		- struct definition, with member data and functions
 		- function definition, with arguments
-		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
+		- block = function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 
 		The scope_def_t includes optional code, optional member variables and optional local types.
 	*/
@@ -232,33 +243,36 @@ namespace floyd_parser {
 			k_function_scope,
 			k_struct_scope,
 			k_global_scope,
-			k_subscope
+			k_block
 		};
 
-		//	??? Merge with etype, but that effects clients.
 		public: enum class efunc_variant {
 			k_not_relevant,
 			k_interpreted,
 			k_default_constructor
 		};
 
-		public: static scope_ref_t make_struct(const type_identifier_t& name, const std::vector<member_t>& members);
+		public: static scope_ref_t make_struct_object(const std::vector<member_t>& members);
 
-		public: static scope_ref_t make_function_def(
-			const type_identifier_t& name,
+		public: static scope_ref_t make_function_object(
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& local_variables,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const typeid_t& return_type
+			const typeid_t& return_type,
+			const std::map<std::string, symbol_t>& symbols,
+			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
 		);
 
-		public: static scope_ref_t make_builtin_function_def(
-			const type_identifier_t& name,
+		public: static scope_ref_t make_builtin_function_object(
 			efunc_variant function_variant,
 			const typeid_t& type
 		);
 
-		public: static scope_ref_t make_global_scope();
+		public: static scope_ref_t make_global_scope(
+			const std::vector<std::shared_ptr<statement_t> >& statements,
+			const std::map<std::string, symbol_t>& symbols,
+			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+		);
 
 		public: scope_def_t(const scope_def_t& other);
 
@@ -269,19 +283,25 @@ namespace floyd_parser {
 
 		private: explicit scope_def_t(
 			etype type,
-			const type_identifier_t& name,
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& local_variables,
 			const std::vector<member_t>& members,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
-			const efunc_variant& function_variant
+			const efunc_variant& function_variant,
+			const std::map<std::string, symbol_t>& symbols,
+			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
 		);
 
+		public: const std::map<std::string, symbol_t>& get_symbols() const {
+			return _symbols;
+		}
+		public: const std::map<std::string, std::shared_ptr<const scope_def_t> >& get_objects() const {
+			return _objects;
+		}
 
 		/////////////////////////////		STATE
 		public: etype _type;
-		public: type_identifier_t _name;
 		public: std::vector<member_t> _args;
 		public: std::vector<member_t> _local_variables;
 		public: std::vector<member_t> _members;
@@ -289,32 +309,14 @@ namespace floyd_parser {
 		public: typeid_t _return_type;
 
 		public: efunc_variant _function_variant;
+
+		private: std::map<std::string, symbol_t> _symbols;
+		private: std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;
 	};
 
 	json_t scope_def_to_json(const scope_def_t& scope_def);
 	void trace(const scope_ref_t& e);
 
-
-
-	//////////////////////////////////////////////////		ast_t
-
-
-	/*
-		"get_grey": { "value": "function_constant_values/8000" },
-	*/
-	struct symbol_t {
-		enum symbol_type {
-			k_null,
-			k_function_def_object,
-			k_struct_def_object,
-			k_constant
-		};
-
-		symbol_type _type;
-		std::string _object_id;
-		std::shared_ptr<value_t> _constant;
-		typeid_t _typeid;
-	};
 
 
 	//////////////////////////////////////////////////		ast_t
@@ -327,9 +329,7 @@ namespace floyd_parser {
 	struct ast_t {
 		public: ast_t();
 		public: ast_t(
-			std::shared_ptr<const scope_def_t> global_scope,
-			const std::map<std::string, symbol_t>& symbols,
-			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+			std::shared_ptr<const scope_def_t> global_scope
 		);
 		public: bool check_invariant() const;
 
@@ -337,18 +337,9 @@ namespace floyd_parser {
 			return _global_scope;
 		}
 
-		public: const std::map<std::string, symbol_t>& get_symbols() const {
-			return _symbols;
-		}
-		public: const std::map<std::string, std::shared_ptr<const scope_def_t> >& get_objects() const {
-			return _objects;
-		}
 
 		/////////////////////////////		STATE
 		private: std::shared_ptr<const scope_def_t> _global_scope;
-
-		private: std::map<std::string, symbol_t> _symbols;
-		private: std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;
 	};
 
 	void trace(const ast_t& program);

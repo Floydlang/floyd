@@ -95,7 +95,7 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _function_type == other._function_type && *_function_implementation == *other._function_implementation;
+		return _function_type == other._function_type && _function_id == other._function_id;
 	}
 
 
@@ -332,8 +332,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 }
 
 QUARK_UNIT_TESTQ("value_t()", "struct"){
-	const auto struct_scope_ref = scope_def_t::make_struct(
-		type_identifier_t::make("test_xyz_saft"),
+	const auto struct_scope_ref = scope_def_t::make_struct_object(
 		std::vector<member_t>{
 			{ typeid_t::make_string(), "x" }
 		}
@@ -392,7 +391,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 #if false
 value_t make_test_func(){
-	const auto function_scope_ref = scope_def_t::make_function_def(
+	const auto function_scope_ref = scope_def_t::make_function_object(
 		type_identifier_t::make("my_func"),
 		std::vector<member_t>{
 			{ typeid_t::make_int(), "a" },
@@ -489,7 +488,13 @@ json_t value_to_json(const value_t& v){
 		return result;
 	}
 	else if(v.is_function()){
-		return json_t();
+		const auto value = v.get_function();
+		return json_t::make_object(
+			{
+				{ "function_type", typeid_to_json(value->_function_type) },
+				{ "function_id", value->_function_id }
+			}
+		);
 	}
 	else{
 		QUARK_ASSERT(false);

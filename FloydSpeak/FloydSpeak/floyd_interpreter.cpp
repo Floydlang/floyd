@@ -32,7 +32,7 @@ using std::make_shared;
 
 using namespace floyd_parser;
 
-//??? The order of stuff is confusing in this file!
+
 
 namespace {
 
@@ -97,6 +97,7 @@ namespace {
 		int statement_index = 0;
 		while(statement_index < statements.size()){
 			const auto statement = statements[statement_index];
+/*
 			if(statement->_bind_statement){
 				const auto s = statement->_bind_statement;
 				const auto name = s->_identifier;
@@ -109,7 +110,9 @@ namespace {
 				}
 				vm2._call_stack.back()->_values[name] = result.get_constant();
 			}
-			else if(statement->_return_statement){
+			else
+*/
+			if(statement->_return_statement){
 				const auto expr = statement->_return_statement->_expression;
 				const auto result = evalute_expression(vm2, expr);
 
@@ -188,22 +191,14 @@ value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	}
 }
 
-const std::shared_ptr<const scope_def_t> lookup_struct_def(const interpreter_t& vm, const std::string& struct_type){
-	const auto objects = vm._ast.get_objects();
-	const auto struct_def_it = objects.find(struct_type);
-	if(struct_def_it == objects.end()){
-		throw std::runtime_error("Undefined struct type!");
-	}
-	return struct_def_it->second;
-}
-
-
 value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(!struct_type.is_null() && struct_type.check_invariant());
 
+	return value_t();
+/*
 	const auto k = struct_type.to_string();
-	const auto objects = vm._ast.get_objects();
+	const auto& objects = vm._ast.get_objects();
 	const auto struct_def_it = objects.find(k);
 	if(struct_def_it == objects.end()){
 		throw std::runtime_error("Undefined struct type!");
@@ -232,8 +227,8 @@ value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_typ
 	}
 	auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, member_values));
 	return value_t(instance);
+*/
 }
-
 
 value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -259,34 +254,31 @@ value_t call_function(const interpreter_t& vm, const scope_ref_t& f, const vecto
 	}
 }
 
-const std::shared_ptr<const scope_def_t> lookup_function_def(const interpreter_t& vm, const std::string& function_id){
-	const auto objects = vm._ast.get_objects();
-	const auto it = objects.find(function_id);
-	if(it == objects.end()){
+scope_ref_t find_global_function(const interpreter_t& vm, const string& function_name){
+	const auto s = vm._ast.get_global_scope();
+
+	const auto& symbols = s->get_symbols();
+	const auto it = symbols.find(function_name);
+	if(it == symbols.end()){
 		throw std::runtime_error("Undefined function!");
 	}
-	return it->second;
-}
 
-
-scope_ref_t find_global_function(const interpreter_t& vm, const string& function_name){
-	for(const auto p: vm._ast.get_symbols()){
-		const auto symbol_data = p.second;
-		if(p.first == function_name){
-			const auto function_def = lookup_function_def(vm, p.second._object_id);
-			return function_def;
-		}
+	const auto& symbol = it->second;
+	const auto& objects = s->get_objects();
+	const auto objectIt = objects.find(symbol._object_id);
+	if(objectIt == objects.end()){
+		throw std::runtime_error("Function object not found!");
 	}
-	throw std::runtime_error("Unknown global function");
+
+	return objectIt->second;
 }
 
 
 ast_t program_to_ast2(const string& program){
 	const auto pass1 = parse_program2(program);
 	const auto pass2 = run_pass2(pass1);
-	const ast_t ast = json_to_ast(pass2);
-	trace(ast);
-	return ast;
+	trace(pass2);
+	return pass2;
 }
 
 floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<stack_frame_t>>& stack_frames, const std::string& s, size_t depth){
@@ -330,9 +322,13 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 expression_t evaluate_call(const interpreter_t& vm, const expression_t& e);
 
 
-expression_t evaluate_math2(const interpreter_t& vm, const expression_t& e){
+expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+
+	if(e.is_constant()){
+		return e;
+	}
 
 	const auto e2 = e;
 	const auto op = e2.get_operation();
@@ -637,7 +633,7 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	if(function_def->_type == scope_def_t::etype::k_function_scope){
 		QUARK_ASSERT(function_def->_args.size() == call.get_expressions().size());
 	}
-	else if(function_def->_type == scope_def_t::etype::k_subscope){
+	else if(function_def->_type == scope_def_t::etype::k_block){
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -668,17 +664,6 @@ expression_t evaluate_call(const interpreter_t& vm, const expression_t& e){
 	return expression_t::make_constant(result);
 }
 
-expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	if(e.is_constant()){
-		return e;
-	}
-	else{
-		return evaluate_math2(vm, e);
-	}
-}
 
 
 void test_evaluate_simple(const expression_t& e, const expression_t& expected){
@@ -1017,7 +1002,7 @@ std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, c
 	QUARK_ASSERT(source.size() > 0);
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
+	const auto f = find_global_function(vm, "$1000");
 
 	const auto r = call_function(vm, f, args);
 	return { vm, r };

@@ -76,7 +76,7 @@ namespace floyd_parser {
 
 
 		public: typeid_t _function_type;
-		public: scope_ref_t _function_implementation;
+		public: std::string _function_id;
 	};
 
 

@@ -207,7 +207,7 @@ QUARK_UNIT_TEST("", "parse_program1()", "three arguments", ""){
 	const auto result = parse_program1(kProgram2);
 	QUARK_UT_VERIFY(result);
 #if false
-	const auto f = make_function_def(
+	const auto f = make_function_object(
 		type_identifier_t::make("f"),
 		type_identifier_t::make_int(),
 		{
@@ -258,7 +258,7 @@ QUARK_UNIT_TEST("", "parse_program1()", "two functions", ""){
 #if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
 
-	const auto f = make_function_def(
+	const auto f = make_function_object(
 		type_identifier_t::make("hello"),
 		type_identifier_t::make_string(),
 		{
@@ -274,7 +274,7 @@ QUARK_UNIT_TEST("", "parse_program1()", "two functions", ""){
 //	QUARK_TEST_VERIFY((*resolve_function_type(result._global_scope->_types_collector, "hello") == *f));
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "hello"));
 
-	const auto f2 = make_function_def(
+	const auto f2 = make_function_object(
 		type_identifier_t::make("main"),
 		type_identifier_t::make_int(),
 		{
@@ -297,7 +297,7 @@ QUARK_UNIT_TESTQ("parse_program1()", "Call function a from function b"){
 #if false
 	QUARK_TEST_VERIFY(result._global_scope->_executable._statements.size() == 0);
 
-	const auto f = make_function_def(
+	const auto f = make_function_object(
 		type_identifier_t::make("testx"),
 		type_identifier_t::make_float(),
 		{
