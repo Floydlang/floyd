@@ -395,8 +395,8 @@ namespace floyd_parser {
 				return "<null>";
 			}
 			else{
-				std::string type_string = _typeid.to_string();
-				return "<" + type_string + ">" + plain_value_to_string();
+				std::string type_string = json_to_compact_string(typeid_to_json(_typeid));
+				return type_string + ": " + plain_value_to_string();
 			}
 		}
 

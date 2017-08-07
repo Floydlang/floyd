@@ -66,23 +66,27 @@ namespace floyd_parser {
 	struct typeid_t {
 
 		public: static typeid_t make_null(){
-			return { base_type::k_null, {}, {} };
+			return { base_type::k_null, {}, {}, {} };
 		}
 
 		public: static typeid_t make_bool(){
-			return { base_type::k_bool, {}, {} };
+			return { base_type::k_bool, {}, {}, {} };
 		}
 
 		public: static typeid_t make_int(){
-			return { base_type::k_int, {}, {} };
+			return { base_type::k_int, {}, {}, {} };
 		}
 
 		public: static typeid_t make_float(){
-			return { base_type::k_float, {}, {} };
+			return { base_type::k_float, {}, {}, {} };
 		}
 
 		public: static typeid_t make_string(){
-			return { base_type::k_string, {}, {} };
+			return { base_type::k_string, {}, {}, {} };
+		}
+
+		public: static typeid_t make_unresolved_symbol(const std::string& s){
+			return { base_type::k_null, {}, {}, s };
 		}
 
 		public: bool is_null() const {
@@ -90,18 +94,18 @@ namespace floyd_parser {
 		}
 
 		public: static typeid_t make_struct(const std::string& struct_def_id){
-			return { base_type::k_struct, {}, struct_def_id };
+			return { base_type::k_struct, {}, struct_def_id, {} };
 		}
 
 		public: static typeid_t make_vector(const typeid_t& element_type){
-			return { base_type::k_vector, { element_type }, {} };
+			return { base_type::k_vector, { element_type }, {}, {} };
 		}
 
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
 			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 			std::vector<typeid_t> parts = { ret };
 			parts.insert(parts.end(), args.begin(), args.end());
-			return { base_type::k_function, parts, {} };
+			return { base_type::k_function, parts, {}, {} };
 		}
 
 
@@ -130,9 +134,11 @@ namespace floyd_parser {
 
 
 		/*
+			"coord_t"
 			"coord_t/8000"
 			"int (float a, float b)"
 			"[string]"
+			"[string([bool(float,string),pixel)])"
 			"[coord_t/8000]"
 			"pixel_coord_t = coord_t/8000"
 		*/
@@ -140,6 +146,9 @@ namespace floyd_parser {
 		base_type _base_type;
 		std::vector<typeid_t> _parts;
 		std::string _struct_def_id;
+
+		//	This is used it overrides _base_type (which will be null).
+		std::string _unresolved_type_symbol;
 	};
 
 	json_t typeid_to_json(const typeid_t& t);
@@ -246,12 +255,6 @@ namespace floyd_parser {
 			k_block
 		};
 
-		public: enum class efunc_variant {
-			k_not_relevant,
-			k_interpreted,
-			k_default_constructor
-		};
-
 		public: static scope_ref_t make_struct_object(const std::vector<member_t>& members);
 
 		public: static scope_ref_t make_function_object(
@@ -261,11 +264,6 @@ namespace floyd_parser {
 			const typeid_t& return_type,
 			const std::map<std::string, symbol_t>& symbols,
 			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
-		);
-
-		public: static scope_ref_t make_builtin_function_object(
-			efunc_variant function_variant,
-			const typeid_t& type
 		);
 
 		public: static scope_ref_t make_global_scope(
@@ -288,7 +286,6 @@ namespace floyd_parser {
 			const std::vector<member_t>& members,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
-			const efunc_variant& function_variant,
 			const std::map<std::string, symbol_t>& symbols,
 			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
 		);
@@ -307,8 +304,6 @@ namespace floyd_parser {
 		public: std::vector<member_t> _members;
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
 		public: typeid_t _return_type;
-
-		public: efunc_variant _function_variant;
 
 		private: std::map<std::string, symbol_t> _symbols;
 		private: std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;

@@ -260,7 +260,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(a == value_t(true));
 	QUARK_TEST_VERIFY(a != value_t(false));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "true");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>true");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"bool\": true");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "bool - false"){
@@ -277,7 +277,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(a == value_t(false));
 	QUARK_TEST_VERIFY(a != value_t(true));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "false");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<bool>false");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"bool\": false");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "int"){
@@ -294,7 +294,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(a == value_t(13));
 	QUARK_TEST_VERIFY(a != value_t(14));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<int>13");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"int\": 13");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "float"){
@@ -311,7 +311,7 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
 	QUARK_TEST_VERIFY(a != value_t(14.0f));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13.500000");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<float>13.500000");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"float\": 13.500000");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "string"){
@@ -328,7 +328,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 	QUARK_TEST_VERIFY(a.plain_value_to_string() == "\"xyz\"");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<string>\"xyz\"");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"string\": \"xyz\"");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "struct"){
@@ -373,7 +373,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	QUARK_TEST_VERIFY(a == b);
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 	quark::ut_compare(a.plain_value_to_string(), "[]");
-	quark::ut_compare(a.value_and_type_to_string(), "<[int]>[]");
+	quark::ut_compare(a.value_and_type_to_string(), "{ \"base_type\": \"vector\", \"parts\": [\"int\"] }: []");
 }
 
 

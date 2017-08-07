@@ -31,19 +31,19 @@ namespace floyd_parser {
 		Immutable.
 	*/
 	struct expression_t {
-		public: static expression_t make_constant(const value_t& value);
+		public: static expression_t make_constant_value(const value_t& value);
 
-		//	Shortcuts were you don't need to make a value_t first.
-		public: static expression_t make_constant(const bool i);
-		public: static expression_t make_constant(const int i);
-		public: static expression_t make_constant(const float f);
-		public: static expression_t make_constant(const char s[]);
-		public: static expression_t make_constant(const std::string& s);
+		public: static expression_t make_constant_null();
+		public: static expression_t make_constant_int(const int i);
+		public: static expression_t make_constant_bool(const bool i);
+		public: static expression_t make_constant_float(const float i);
+		public: static expression_t make_constant_string(const std::string& s);
 		public: static expression_t make_function_value_constant(const typeid_t& function_type, const std::string& function_id);
 
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;
 
+//??? Split and categories better. Logic vs equality vs math. Only have ONE way to create each operation.
 		public: enum class operation {
 			k_math2_add = 10,
 			k_math2_subtract,
@@ -85,9 +85,9 @@ namespace floyd_parser {
 		);
 
 		public: static expression_t make_function_call(
-			const type_identifier_t& function_name,
+			const expression_t& function,
 			const std::vector<expression_t>& inputs,
-			const typeid_t& resolved_expression_type
+			const typeid_t& result
 		);
 
 		/*
@@ -98,7 +98,7 @@ namespace floyd_parser {
 		*/
 		public: static expression_t make_resolve_variable(
 			const std::string& variable,
-			const typeid_t& resolved_expression_type
+			const typeid_t& result
 		);
 
 		/*
@@ -107,7 +107,7 @@ namespace floyd_parser {
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
 			const std::string& member_name,
-			const typeid_t& resolved_expression_type
+			const typeid_t& result
 		);
 
 		/*
@@ -116,7 +116,7 @@ namespace floyd_parser {
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
-			const typeid_t& resolved_expression_type
+			const typeid_t& result
 		);
 
 		public: bool check_invariant() const;
@@ -128,7 +128,7 @@ namespace floyd_parser {
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
 			const std::string& symbol,
-			const typeid_t& resolved_expression_type
+			const typeid_t& result_type
 		);
 
 		/*
@@ -138,13 +138,13 @@ namespace floyd_parser {
 		public: typeid_t get_expression_type() const{
 			QUARK_ASSERT(check_invariant());
 
-			return _resolved_expression_type;
+			return _result_type;
 		}
 
 		public: operation get_operation() const;
 		public: const std::vector<expression_t>& get_expressions() const;
 		public: const std::string& get_symbol() const;
-		public: typeid_t get_resolved_expression_type() const;
+		public: typeid_t get_result_type() const;
 
 
 		//////////////////////////		STATE
@@ -155,7 +155,7 @@ namespace floyd_parser {
 		private: std::string _symbol;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
-		private: typeid_t _resolved_expression_type;
+		private: typeid_t _result_type;
 	};
 	
 
