@@ -43,7 +43,7 @@ namespace floyd_parser {
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;
 
-//??? Split and categories better. Logic vs equality vs math. Only have ONE way to create each operation.
+		//??? Split and categories better. Logic vs equality vs math. Only have ONE way to create each operation.
 		public: enum class operation {
 			k_math2_add = 10,
 			k_math2_subtract,
@@ -67,7 +67,7 @@ namespace floyd_parser {
 			k_conditional_operator3,
 			k_call,
 
-			k_resolve_variable,
+			k_variable,
 			k_resolve_member,
 
 			k_lookup_element
@@ -93,10 +93,8 @@ namespace floyd_parser {
 		/*
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
-
-			When compiler resolves this expression it may replace it with a resolve_
 		*/
-		public: static expression_t make_resolve_variable(
+		public: static expression_t make_variable_expression(
 			const std::string& variable,
 			const typeid_t& result
 		);

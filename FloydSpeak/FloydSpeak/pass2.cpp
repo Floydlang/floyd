@@ -233,7 +233,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 		QUARK_ASSERT(e.get_array_size() == 2);
 //		const auto variable = parser_expression_to_ast(e.get_array_n(1));
 		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_resolve_variable(variable_symbol, typeid_t::make_null());
+		return expression_t::make_variable_expression(variable_symbol, typeid_t::make_null());
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -312,7 +312,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto bind_type2 = resolve_type_name(bind_type.get_string());
 			const auto local_name2 = local_name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
-			symbols[local_name2] = symbol_t{ symbol_t::k_constant, {}, make_shared<expression_t>(expr2), bind_type2 };
+			symbols[local_name2] = symbol_t{ symbol_t::k_constant, make_shared<expression_t>(expr2), bind_type2 };
 		}
 
 		/*
@@ -379,7 +379,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			id_generator +=1;
 
 			const auto function_constant = expression_t::make_function_value_constant(function_typeid, function_id);
-			const auto symbol_data = symbol_t{ symbol_t::k_constant, {}, make_shared<expression_t>(function_constant), {} };
+			const auto symbol_data = symbol_t{ symbol_t::k_constant, make_shared<expression_t>(function_constant), {} };
 
 			symbols[name.get_string()] = symbol_data;
 			objects[function_id] = s2;

@@ -270,7 +270,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 			throw std::runtime_error("Resolve member failed.");
 		}
 	}
-	else if(op == expression_t::operation::k_resolve_variable){
+	else if(op == expression_t::operation::k_variable){
 		const auto variable_name = e.get_symbol();
 		const value_t value = resolve_variable_name(vm, variable_name);
 		return expression_t::make_constant_value(value);

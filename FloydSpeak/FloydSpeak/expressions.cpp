@@ -52,7 +52,7 @@ static std::map<expression_t::operation, string> operation_to_string_lookup = {
 	{ expression_t::operation::k_conditional_operator3, "?:" },
 	{ expression_t::operation::k_call, "call" },
 
-	{ expression_t::operation::k_resolve_variable, "@" },
+	{ expression_t::operation::k_variable, "@" },
 	{ expression_t::operation::k_resolve_member, "->" },
 
 	{ expression_t::operation::k_lookup_element, "[-]" }
@@ -232,7 +232,7 @@ expression_t expression_t::make_math2_operation(operation op, const expression_t
 		op == operation::k_constant
 		|| op == operation::k_conditional_operator3
 		|| op == operation::k_call
-		|| op == operation::k_resolve_variable
+		|| op == operation::k_variable
 		|| op == operation::k_resolve_member
 		|| op == operation::k_lookup_element)
 	{
@@ -281,12 +281,12 @@ expression_t expression_t::make_function_call(const expression_t& function, cons
 }
 
 
-expression_t expression_t::make_resolve_variable(const std::string& variable, const typeid_t& result_type){
+expression_t expression_t::make_variable_expression(const std::string& variable, const typeid_t& result_type){
 	QUARK_ASSERT(variable.size() > 0);
 //	QUARK_ASSERT(result_type._base_type != base_type::k_null && result_type.check_invariant());
 
 	auto result = expression_t(
-		operation::k_resolve_variable,
+		operation::k_variable,
 		{},
 		{},
 		variable,
@@ -415,7 +415,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_function_call(
-				expression_t::make_resolve_variable("my_func", typeid_t::make_null()),
+				expression_t::make_variable_expression("my_func", typeid_t::make_null()),
 				{
 					expression_t::make_constant_string("xyz"),
 					expression_t::make_constant_int(123)
@@ -431,7 +431,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_resolve_variable("hello", typeid_t::make_string()),
+				expression_t::make_variable_expression("hello", typeid_t::make_string()),
 				expression_t::make_constant_string("xyz"),
 				typeid_t::make_string()
 			)

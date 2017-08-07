@@ -171,7 +171,6 @@ namespace floyd_parser {
 
 
 		symbol_type _type;
-		std::string _object_id;
 		std::shared_ptr<expression_t> _constant;
 		typeid_t _typeid;
 	};

@@ -453,7 +453,6 @@ namespace floyd_parser {
 			}
 			const auto e = make_object({
 				{ "symtype", symbol_type },
-				{ "object_id", i.second._object_id },
 				{ "constant", i.second._constant ? expression_to_json(*i.second._constant) : json_t() },
 				{ "typeid", typeid_to_json(i.second._typeid) }
 			});
@@ -534,7 +533,6 @@ namespace floyd_parser {
 
 		bool symbol_t::operator==(const symbol_t& other) const{
 			return _type == other._type
-				&& _object_id == other._object_id
 				&& compare_shared_values(_constant, other._constant)
 				&& _typeid == other._typeid;
 		}
