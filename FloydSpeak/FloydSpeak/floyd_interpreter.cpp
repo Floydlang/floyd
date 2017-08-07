@@ -70,10 +70,10 @@ namespace {
 		int statement_index = 0;
 		while(statement_index < statements.size()){
 			const auto statement = statements[statement_index];
-/*
-			if(statement->_bind_statement){
-				const auto s = statement->_bind_statement;
-				const auto name = s->_identifier;
+
+			if(statement->_bind){
+				const auto& s = statement->_bind;
+				const auto name = s->_new_variable_name;
 				if(vm2._call_stack.back()->_values.count(name) != 0){
 					throw std::runtime_error("local constant already exists");
 				}
@@ -83,10 +83,9 @@ namespace {
 				}
 				vm2._call_stack.back()->_values[name] = result.get_constant();
 			}
-			else
-*/
-			if(statement->_return_statement){
-				const auto expr = statement->_return_statement->_expression;
+			else if(statement->_return){
+				const auto& s = statement->_return;
+				const auto expr = s->_expression;
 				const auto result = evalute_expression(vm2, expr);
 
 				if(!result.is_constant()){
@@ -181,15 +180,28 @@ value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_typ
 }
 
 
-value_t find_global_function(const interpreter_t& vm, const string& function_name){
+int find_variable_index(const scope_def_t& s, const string& name){
+//	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
+
+	for(int i = 0 ; i < s._state.size() ; i++){
+		if(s._state[i]._name == name){
+			return i;
+		}
+	}
+	return -1;
+}
+
+//??? Should look in lexical scopes, not environments!
+value_t find_global_symbol(const interpreter_t& vm, const string& function_name){
 	const auto s = vm._ast.get_global_scope();
 
-	const auto& symbols = s->get_symbols();
-	const auto it = symbols.find(function_name);
-	if(it == symbols.end()){
+	const auto variable_index = find_variable_index(*s, function_name);
+	if(variable_index == -1){
 		throw std::runtime_error("Undefined function!");
 	}
-	const auto& symbol = it->second;
+
+	return *s->_state[variable_index]._value;
+/*
 	const auto& f = evalute_expression(vm, *symbol._constant);
 	if(f.is_constant() && f.get_constant().is_function()){
 		return f.get_constant();
@@ -197,6 +209,7 @@ value_t find_global_function(const interpreter_t& vm, const string& function_nam
 	else{
 		throw std::runtime_error("Function object not found!");
 	}
+*/
 }
 
 
@@ -545,43 +558,44 @@ value_t call_function(const interpreter_t& vm, const floyd_parser::value_t& f, c
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
+
 	///??? COMPARE arg count and types.
 
 	if(f.is_function() == false){
 		throw std::runtime_error("Cannot call non-function.");
 	}
 
-	scope_ref_t s;
+	const auto& current_environment = vm._call_stack.back()->_def;
+
+	scope_ref_t function_object;
 	{
 		const auto& obj = f.get_function();
 		const auto& function_id = obj->_function_id;
 
-		const auto& current = vm._call_stack.back()->_def;
-
-		//??? Needs to look in correct scope to find function object.
-
-		const auto& objects = current->get_objects();
+		//??? Needs to look in correct scope to find function object. It can exist in *any* scope_def, even siblings or children.
+		const auto& objects = current_environment->get_objects();
 		const auto objectIt = objects.find(function_id);
 		if(objectIt == objects.end()){
 			throw std::runtime_error("Function object not found!");
 		}
-		s = objectIt->second;
+		function_object = objectIt->second;
 	}
 
-	stack_frame_t new_frame;
-	new_frame._def = s;
+	auto new_frame = stack_frame_t::make_stack_frame(function_object);
 
-	//	Copy only input arguments to the function scope.
-	//	The function's local variables are null until written by a statement.
-	for(int i = 0 ; i < s->_args.size() ; i++){
-		const auto& arg_name = s->_args[i]._name;
+	//	Copy input arguments to the function scope.
+	for(int i = 0 ; i < function_object->_args.size() ; i++){
+		const auto& arg_name = function_object->_args[i]._name;
 		const auto& arg_value = args[i];
-		new_frame._values[arg_name] = arg_value;
+		new_frame->_values[arg_name] = arg_value;
 	}
 
 	interpreter_t vm2 = vm;
-	vm2._call_stack.push_back(make_shared<stack_frame_t>(new_frame));
-	const auto value = execute_statements(vm2, s->_statements);
+	vm2._call_stack.push_back(new_frame);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+
+	const auto value = execute_statements(vm2, function_object->_statements);
 	if(value.is_null()){
 		throw std::runtime_error("function missing return statement");
 	}
@@ -636,6 +650,26 @@ expression_t evaluate_call_expression(const interpreter_t& vm, const expression_
 
 
 
+json_t interpreter_to_json(const interpreter_t& vm){
+	vector<json_t> callstack;
+	for(const auto& e: vm._call_stack){
+		std::map<string, json_t> values;
+		for(const auto&v: e->_values){
+			values[v.first] = value_to_json(v.second);
+		}
+
+		const auto& a = json_t::make_object({
+			{ "def", scope_def_to_json(*e->_def) },
+			{ "values", values }
+		});
+		callstack.push_back(a);
+	}
+
+	return json_t::make_object({
+		{ "ast", ast_to_json(vm._ast) },
+		{ "callstack", json_t::make_array(callstack) }
+	});
+}
 
 
 
@@ -942,17 +976,24 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Multiply errors") {
 //////////////////////////		interpreter_t
 
 
+std::shared_ptr<stack_frame_t> stack_frame_t::make_stack_frame(const floyd_parser::scope_ref_t def){
+	std::map<std::string, floyd_parser::value_t> values;
+	for(const auto& e: def->_state){
+		values[e._name] = *e._value;
+	}
+	auto f = stack_frame_t{ def, values };
+	return make_shared<stack_frame_t>(f);
+}
+
 
 interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
 	_ast(ast)
 {
 	QUARK_ASSERT(ast.check_invariant());
 
-	auto global_stack_frame = stack_frame_t();
-	global_stack_frame._def = ast.get_global_scope();
-	_call_stack.push_back(make_shared<stack_frame_t>(global_stack_frame));
+	_call_stack.push_back(stack_frame_t::make_stack_frame(ast.get_global_scope()));
 
-	//	Run static intialization (basically run global statements before calling main()).
+	//	### Run static intialization (basically run global statements before calling main()).
 	{
 	}
 
@@ -975,8 +1016,7 @@ std::pair<interpreter_t, floyd_parser::value_t> run_main(const string& source, c
 	QUARK_ASSERT(source.size() > 0);
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
-
+	const auto f = find_global_symbol(vm, "main");
 	const auto r = call_function(vm, f, args);
 	return { vm, r };
 }
@@ -1081,7 +1121,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 		"}\n"
 	);
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
+	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t(7));
 }
@@ -1094,7 +1134,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 		"}\n"
 	);
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
+	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("123456"));
 }
@@ -1107,7 +1147,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 		"}\n"
 	);
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
+	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t(15));
 }
@@ -1119,7 +1159,7 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 		"}\n"
 	);
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
+	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("-xyz-"));
 
@@ -1136,7 +1176,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 		"}\n"
 	);
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_function(vm, "main");
+	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<floyd_parser::value_t>{ floyd_parser::value_t("xyz") });
 	QUARK_TEST_VERIFY(result == floyd_parser::value_t("--xyz<xyz>--"));
 

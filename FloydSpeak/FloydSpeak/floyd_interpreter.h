@@ -35,12 +35,14 @@ namespace floyd_interpreter {
 	*/
 
 	struct stack_frame_t {
-//		public: floyd_parser::scope_ref_t _def;
 		public: floyd_parser::scope_ref_t _def;
 
 		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
 		//	key string is name of variable.
 		public: std::map<std::string, floyd_parser::value_t> _values;
+
+
+		public: static std::shared_ptr<stack_frame_t> make_stack_frame(const floyd_parser::scope_ref_t def);
 	};
 
 
@@ -49,6 +51,7 @@ namespace floyd_interpreter {
 
 	/*
 		Complete runtime state of the interpreter.
+		MUTABLE
 	*/
 
 	struct interpreter_t {
@@ -64,6 +67,7 @@ namespace floyd_interpreter {
 	};
 
 
+	json_t interpreter_to_json(const interpreter_t& vm);
 
 
 	/*

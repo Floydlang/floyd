@@ -187,11 +187,6 @@ expression_t expression_t::make_constant_string(const std::string& s){
 
 
 
-expression_t expression_t::make_function_value_constant(const typeid_t& function_type, const std::string& function_id){
-	auto f = shared_ptr<function_instance_t>(new function_instance_t{function_type, function_id});
-	return make_constant_value(value_t(f));
-}
-
 bool expression_t::is_constant() const{
 	return _operation == operation::k_constant;
 }

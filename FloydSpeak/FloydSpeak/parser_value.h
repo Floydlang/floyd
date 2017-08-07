@@ -558,6 +558,14 @@ namespace floyd_parser {
 	};
 
 
+
+	inline value_t make_function_value(const typeid_t& function_type, const std::string& function_id){
+		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{function_type, function_id});
+		return value_t(f);
+	}
+
+
+
 	void trace(const value_t& e);
 
 	json_t value_to_json(const value_t& v);

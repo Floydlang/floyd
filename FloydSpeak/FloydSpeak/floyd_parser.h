@@ -44,21 +44,16 @@ const std::string k_test_program_0_pass2output = R"(
 			}
 		},
 		"objtype": "global",
-		"symbols": {
-			"main": {
-				"constant": [
-					"k",
-					{
-						"function_id": "1000",
-						"function_type": { "base_type": "function", "parts": ["int"] }
-					},
-					{ "base_type": "function", "parts": ["int"] }
-				],
-				"object_id": "",
-				"symtype": "constant",
-				"typeid": "null"
+		"state": [
+			{
+				"name": "main",
+				"type": { "base_type": "function", "parts": ["int"] },
+				"value": {
+					"function_id": "1000",
+					"function_type": { "base_type": "function", "parts": ["int"] }
+				}
 			}
-		}
+		]
 	}
 )";
 

@@ -35,10 +35,14 @@ namespace floyd_parser {
 		return statement_t(return_statement_t{ expression });
 	}
 
+	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression){
+		return statement_t(bind_statement_t{ new_variable_name, bindtype, expression });
+	}
+
 	void trace(const statement_t& s){
-		if(s._return_statement){
+		if(s._return){
 			QUARK_SCOPED_TRACE("return_statement_t");
-			trace(s._return_statement->_expression);
+			trace(s._return->_expression);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -52,8 +56,8 @@ namespace floyd_parser {
 
 
 	bool statement_t::check_invariant() const {
-		if(_return_statement){
-			QUARK_ASSERT(_return_statement);
+		if(_return){
+			QUARK_ASSERT(_return);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -66,10 +70,10 @@ namespace floyd_parser {
 	json_t statement_to_json(const statement_t& e){
 		QUARK_ASSERT(e.check_invariant());
 
-		if(e._return_statement){
+		if(e._return){
 			return json_t::make_array({
 				json_t("return"),
-				expression_to_json(e._return_statement->_expression)
+				expression_to_json(e._return->_expression)
 			});
 		}
 		else{

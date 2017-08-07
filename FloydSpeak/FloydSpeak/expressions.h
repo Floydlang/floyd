@@ -38,7 +38,6 @@ namespace floyd_parser {
 		public: static expression_t make_constant_bool(const bool i);
 		public: static expression_t make_constant_float(const float i);
 		public: static expression_t make_constant_string(const std::string& s);
-		public: static expression_t make_function_value_constant(const typeid_t& function_type, const std::string& function_id);
 
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;

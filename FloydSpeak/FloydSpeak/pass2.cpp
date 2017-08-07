@@ -258,7 +258,7 @@ std::vector<member_t> conv_members(const json_t& members){
 //		QUARK_ASSERT(arg_type[0] == '$');
 
 		const auto arg_type2 = resolve_type_name(arg_type);
-		members2.push_back(member_t(arg_type2, arg_name));
+		members2.push_back(member_t{arg_type2, nullptr, arg_name });
 	}
 	return members2;
 }
@@ -275,22 +275,20 @@ std::vector<typeid_t> get_member_types(const vector<member_t>& m){
 
 struct body_t {
 	public: const std::vector<std::shared_ptr<statement_t> > _statements;
-	public: std::map<std::string, symbol_t> _symbols;
-	public: std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;
+	public: const std::vector<member_t> _locals;
+	public: const std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;
 };
 
 /*
-	Input is an array of statements from parser. A function has its own list of statements.
-	There are no scope_defs, types, members, base_type etc.
-
-	Returns a scope_def.
+	Input is an array of statements from parser.
+	A function has its own list of statements.
 */
 pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 	QUARK_SCOPED_TRACE("parser_statements_to_ast()");
 	QUARK_ASSERT(p.check_invariant());
 
 	vector<shared_ptr<statement_t>> statements2;
-	std::map<std::string, symbol_t> symbols;
+	std::vector<member_t> locals;
 	std::map<std::string, std::shared_ptr<const scope_def_t> > objects;
 
 	for(const auto statement: p.get_array()){
@@ -312,7 +310,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto bind_type2 = resolve_type_name(bind_type.get_string());
 			const auto local_name2 = local_name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
-			symbols[local_name2] = symbol_t{ symbol_t::k_constant, make_shared<expression_t>(expr2), bind_type2 };
+			statements2.push_back(make_shared<statement_t>(make__bind_statement(local_name2, bind_type2, expr2)));
 		}
 
 		/*
@@ -370,7 +368,6 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 				{},
 				r.first._statements,
 				return_type2,
-				r.first._symbols,
 				r.first._objects
 			);
 
@@ -378,10 +375,13 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto function_id = to_string(id_generator);
 			id_generator +=1;
 
-			const auto function_constant = expression_t::make_function_value_constant(function_typeid, function_id);
-			const auto symbol_data = symbol_t{ symbol_t::k_constant, make_shared<expression_t>(function_constant), {} };
+			value_t f = make_function_value(function_typeid, function_id);
+			const auto function_constant = expression_t::make_constant_value(f);
+//			const auto symbol_data = symbol_t{ symbol_t::k_constant, make_shared<expression_t>(function_constant), {} };
+//			symbols[name.get_string()] = symbol_data;
 
-			symbols[name.get_string()] = symbol_data;
+			//	### Support overloading the same symbol name with different types.
+			locals.push_back(member_t{ function_typeid, make_shared<value_t>(f), name.get_string() });
 			objects[function_id] = s2;
 
 			//### Key symbols with their type too. Support function overloading & struct named as function.
@@ -440,7 +440,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 		}
 	}
 
-	return { body_t{ statements2,symbols, objects }, id_generator };
+	return { body_t{ statements2, locals, objects }, id_generator };
 }
 
 
@@ -1496,7 +1496,7 @@ ast_t run_pass2(const json_t& parse_tree){
 	const auto program_body = parser_statements_to_ast(parse_tree, 1000);
 	const auto a = scope_def_t::make_global_scope(
 		program_body.first._statements,
-		program_body.first._symbols,
+		program_body.first._locals,
 		program_body.first._objects
 	);
 	return ast_t(a);
