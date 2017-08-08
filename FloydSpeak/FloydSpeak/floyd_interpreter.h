@@ -20,11 +20,15 @@ namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
 	struct statement_t;
-	struct scope_def_t;
 }
 
 namespace floyd_interpreter {
 
+	//	global IS included, as ID 0.
+	//	0/1000/1009 = two levels of nesting.
+	struct lexical_path_t {
+		std::vector<int> _nodes;
+	};
 
 
 	//////////////////////////////////////		type_identifier_t
@@ -35,14 +39,16 @@ namespace floyd_interpreter {
 	*/
 
 	struct environment_t {
-		public: floyd_parser::scope_ref_t _def;
+		public: floyd_parser::ast_t _ast;
 
-		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
-		//	key string is name of variable.
+		//	Last ID is the object ID of *this* environment.
+		public: lexical_path_t _path;
 		public: std::map<std::string, floyd_parser::value_t> _values;
 
 
-		public: static std::shared_ptr<environment_t> make_environment(const floyd_parser::scope_ref_t def);
+		public: bool check_invariant() const;
+
+		public: static std::shared_ptr<environment_t> make_environment(const floyd_parser::ast_t& ast, const lexical_path_t& path);
 	};
 
 

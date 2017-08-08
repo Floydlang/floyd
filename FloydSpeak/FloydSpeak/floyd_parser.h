@@ -49,7 +49,7 @@ const std::string k_test_program_0_pass2output = R"(
 				"name": "main",
 				"type": { "base_type": "function", "parts": ["int"] },
 				"value": {
-					"function_id": "1000",
+					"function_id": 1000,
 					"function_type": { "base_type": "function", "parts": ["int"] }
 				}
 			}

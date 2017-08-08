@@ -492,7 +492,7 @@ json_t value_to_json(const value_t& v){
 		return json_t::make_object(
 			{
 				{ "function_type", typeid_to_json(value->_function_type) },
-				{ "function_id", value->_function_id }
+				{ "function_id", json_t((float)value->_function_id) }
 			}
 		);
 	}

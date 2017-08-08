@@ -20,7 +20,6 @@ struct json_t;
 namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
-	struct scope_def_t;
 	struct type_identifier_t;
 
 

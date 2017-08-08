@@ -180,59 +180,58 @@ value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_typ
 }
 
 
+
+std::shared_ptr<const lexical_scope_t> get_scope(const floyd_parser::ast_t& _ast, const lexical_path_t& path){
+	auto a = _ast.get_global_scope();
+	for(int i = 1 ; i < path._nodes.size() ; i++){
+		const auto id = path._nodes[i];
+		const auto& objects = a->get_objects();
+		const auto& it = objects.find(id);
+		QUARK_ASSERT(it != objects.end());
+
+		a = it->second;
+	}
+	return a;
+}
+
 //	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
 
-int find_lexical_variable_index(const lexical_scope_t& s, const string& name){
-	for(int i = 0 ; i < s._state.size() ; i++){
-		if(s._state[i]._name == name){
-			return i;
-		}
-	}
-	return -1;
-}
+floyd_parser::value_t resolve_lexical_variable_deep(const floyd_parser::ast_t& ast, const lexical_path_t& path, const std::string& s){
+	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
 
-value_t find_global_symbol(const interpreter_t& vm, const string& function_name){
-	const auto s = vm._ast.get_global_scope();
-
-	const auto variable_index = find_lexical_variable_index(*s, function_name);
-	if(variable_index == -1){
-		throw std::runtime_error("Undefined function!");
+	const auto l = get_scope(ast, path);
+	const auto it = find_if(l->_state.begin(), l->_state.end(), [&] (const member_t& e) { return e._name == s; } );
+	if(it != l->_state.end()){
+		return *it->_value;
 	}
-
-	return *s->_state[variable_index]._value;
-/*
-	const auto& f = evaluate_expression(vm, *symbol._constant);
-	if(f.is_constant() && f.get_constant().is_function()){
-		return f.get_constant();
-	}
-	else{
-		throw std::runtime_error("Function object not found!");
-	}
-*/
-}
-
-floyd_parser::value_t resolve_lexical_variable_name_deep(const std::vector<shared_ptr<environment_t>>& callstack, const std::string& s, size_t depth){
-	QUARK_ASSERT(depth < callstack.size());
-	QUARK_ASSERT(depth >= 0);
-
-	const auto it = callstack[depth]->_values.find(s);
-	if(it != callstack[depth]->_values.end()){
-		return it->second;
-	}
-	else if(depth > 0){
-		return resolve_lexical_variable_name_deep(callstack, s, depth - 1);
+	else if(path._nodes.size() > 1){
+		auto parent_path = path;
+		parent_path._nodes.pop_back();
+		return resolve_lexical_variable_deep(ast, parent_path, s);
 	}
 	else{
 		return {};
 	}
 }
 
-floyd_parser::value_t resolve_lexical_variable_name(const interpreter_t& vm, const std::string& s){
-	QUARK_ASSERT(vm.check_invariant());
+floyd_parser::value_t resolve_lexical_variable(const environment_t& env, const std::string& s){
+	QUARK_ASSERT(env.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_lexical_variable_name_deep(vm._call_stack, s, vm._call_stack.size() - 1);
+	return resolve_lexical_variable_deep(env._ast, env._path, s);
 }
+
+value_t find_global_symbol(const interpreter_t& vm, const string& s){
+	const auto v = resolve_lexical_variable(*vm._call_stack[0], s);
+	if(v.is_null()){
+		throw std::runtime_error("Undefined function!");
+	}
+	return v;
+}
+
+
+
 
 
 ast_t program_to_ast2(const string& program){
@@ -282,7 +281,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 	else if(op == expression_t::operation::k_variable){
 		const auto variable_name = e.get_symbol();
-		const value_t value = resolve_lexical_variable_name(vm, variable_name);
+		const value_t value = resolve_lexical_variable(*vm._call_stack.back(), variable_name);
 		return expression_t::make_constant_value(value);
 	}
 
@@ -548,6 +547,35 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 }
 
+std::map<int, scope_ref_t> get_all_objects(const scope_ref_t scope){
+	std::map<int, scope_ref_t> result;
+	for(const auto& e: scope->get_objects()){
+		result[e.first] = e.second;
+		const auto t = get_all_objects(e.second);
+		for(const auto& b: t){
+			result[b.first] = b.second;
+		}
+	}
+	return result;
+}
+
+std::map<int, scope_ref_t> make_object_lookup(const interpreter_t& vm){
+	return get_all_objects(vm._ast.get_global_scope());
+}
+
+//??? Needs to look in correct scope to find function object. It can exist in *any* scope_def, even siblings or children.
+scope_ref_t lookup_object_id(const interpreter_t& vm, const floyd_parser::value_t& f){
+	const auto& obj = f.get_function();
+	const auto& function_id = obj->_function_id;
+
+	const auto& objects = make_object_lookup(vm);
+	const auto objectIt = objects.find(function_id);
+	if(objectIt == objects.end()){
+		throw std::runtime_error("Function object not found!");
+	}
+
+	return objectIt->second;
+}
 
 
 value_t call_function(const interpreter_t& vm, const floyd_parser::value_t& f, const vector<value_t>& args){
@@ -555,30 +583,16 @@ value_t call_function(const interpreter_t& vm, const floyd_parser::value_t& f, c
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-
 	///??? COMPARE arg count and types.
 
 	if(f.is_function() == false){
 		throw std::runtime_error("Cannot call non-function.");
 	}
 
-	const auto& current_environment = vm._call_stack.back()->_def;
-
-	scope_ref_t function_object;
-	{
-		const auto& obj = f.get_function();
-		const auto& function_id = obj->_function_id;
-
-		//??? Needs to look in correct scope to find function object. It can exist in *any* scope_def, even siblings or children.
-		const auto& objects = current_environment->get_objects();
-		const auto objectIt = objects.find(function_id);
-		if(objectIt == objects.end()){
-			throw std::runtime_error("Function object not found!");
-		}
-		function_object = objectIt->second;
-	}
-
-	auto new_environment = environment_t::make_environment(function_object);
+	scope_ref_t function_object = lookup_object_id(vm, f);
+	auto path2 = vm._call_stack.back()->_path;
+	path2._nodes.push_back(f.get_function()->_function_id);
+	auto new_environment = environment_t::make_environment(vm._ast, path2);
 
 	//	Copy input arguments to the function scope.
 	for(int i = 0 ; i < function_object->_args.size() ; i++){
@@ -655,8 +669,12 @@ json_t interpreter_to_json(const interpreter_t& vm){
 			values[v.first] = value_to_json(v.second);
 		}
 
+		vector<json_t> path;
+		for(const auto& b: e->_path._nodes){
+			path.push_back(json_t((float)b));
+		}
 		const auto& a = json_t::make_object({
-			{ "def", lexical_scope_to_json(*e->_def) },
+			{ "path",  path },
 			{ "values", values }
 		});
 		callstack.push_back(a);
@@ -973,13 +991,21 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Multiply errors") {
 //////////////////////////		interpreter_t
 
 
-std::shared_ptr<environment_t> environment_t::make_environment(const floyd_parser::scope_ref_t def){
+
+
+std::shared_ptr<environment_t> environment_t::make_environment(const floyd_parser::ast_t& ast, const lexical_path_t& path){
+	const auto s = get_scope(ast, path);
 	std::map<std::string, floyd_parser::value_t> values;
-	for(const auto& e: def->_state){
+	for(const auto& e: s->_state){
 		values[e._name] = *e._value;
 	}
-	auto f = environment_t{ def, values };
+	auto f = environment_t{ ast, path, values };
 	return make_shared<environment_t>(f);
+}
+
+bool environment_t::check_invariant() const {
+	QUARK_ASSERT(_ast.check_invariant());
+	return true;
 }
 
 
@@ -988,7 +1014,7 @@ interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
 {
 	QUARK_ASSERT(ast.check_invariant());
 
-	_call_stack.push_back(environment_t::make_environment(ast.get_global_scope()));
+	_call_stack.push_back(environment_t::make_environment(ast, lexical_path_t{{ 0 }}));
 
 	//	### Run static intialization (basically run global statements before calling main()).
 	{

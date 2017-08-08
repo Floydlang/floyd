@@ -234,7 +234,7 @@ namespace floyd_parser {
 	scope_ref_t lexical_scope_t::make_global_scope(
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const std::vector<member_t>& globals,
-		const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
+		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 	)
 	{
 		auto r = std::make_shared<lexical_scope_t>(
@@ -259,7 +259,7 @@ namespace floyd_parser {
 		const std::vector<member_t>& state,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const typeid_t& return_type,
-		const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
+		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		)
 	:
 		_type(type),
@@ -443,10 +443,10 @@ namespace floyd_parser {
 	}
 */
 
-	json_t objects_to_json(const std::map<std::string, std::shared_ptr<const lexical_scope_t> >& s){
+	json_t objects_to_json(const std::map<int, std::shared_ptr<const lexical_scope_t> >& s){
 		std::map<string, json_t> r;
 		for(const auto i: s){
-			r[i.first] = lexical_scope_to_json(*i.second);
+			r[std::to_string(i.first)] = lexical_scope_to_json(*i.second);
 		}
 		return r;
 	}
@@ -487,7 +487,7 @@ namespace floyd_parser {
 		const std::vector<member_t>& locals,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const typeid_t& return_type,
-		const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
+		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 	)
 	{
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };

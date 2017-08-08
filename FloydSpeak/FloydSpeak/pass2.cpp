@@ -276,7 +276,7 @@ std::vector<typeid_t> get_member_types(const vector<member_t>& m){
 struct body_t {
 	public: const std::vector<std::shared_ptr<statement_t> > _statements;
 	public: const std::vector<member_t> _locals;
-	public: const std::map<std::string, std::shared_ptr<const lexical_scope_t> > _objects;
+	public: const std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
 };
 
 /*
@@ -289,7 +289,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 
 	vector<shared_ptr<statement_t>> statements2;
 	std::vector<member_t> locals;
-	std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects;
+	std::map<int, std::shared_ptr<const lexical_scope_t> > objects;
 
 	for(const auto statement: p.get_array()){
 
@@ -372,7 +372,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			);
 
 			//	Make symbol refering to function object.
-			const auto function_id = to_string(id_generator);
+			const auto function_id = id_generator;
 			id_generator +=1;
 
 			value_t f = make_function_value(function_typeid, function_id);

@@ -230,9 +230,9 @@ expression_t expression_from_json(const json_t& e, const map<string, typeid_t>& 
 	};
 */
 
-pair< map<string, symbol_t>, map<string, shared_ptr<const scope_def_t> > > make_symbols_and_objects(const json_t& program, const std::map<string, typeid_t>& typeids){
+pair< map<string, symbol_t>, map<string, shared_ptr<const lexical_scope_t> > > make_symbols_and_objects(const json_t& program, const std::map<string, typeid_t>& typeids){
 	map<string, symbol_t> symbols;
-	std::map<string, std::shared_ptr<const scope_def_t>> objects;
+	std::map<string, std::shared_ptr<const lexical_scope_t>> objects;
 	const auto lookup = program.get_object_element("lookup").get_object();
 	for(const auto& e: lookup){
 		const auto base_type = e.second.get_object_element("base_type");
@@ -280,7 +280,7 @@ pair< map<string, symbol_t>, map<string, shared_ptr<const scope_def_t> > > make_
 			for(const auto arg_e: args2){
 				arg_types.push_back(arg_e._type);
 			}
-			const auto function_def = scope_def_t::make_function_object(
+			const auto function_def = lexical_scope_t::make_function_object(
 				type_identifier_t::make(name),
 				args2,
 				local_variables2,
@@ -385,7 +385,7 @@ map<string, typeid_t> lookup_to_typeids(const json_t& program){
 
 
 
-std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_t& scope_def){
+std::shared_ptr<const lexical_scope_t> conv_scope_def__expressions(const json_t& scope_def){
 	const string type = scope_def.get_object_element("type").get_string();
 	const string name = scope_def.get_object_element("name").get_string();
 	const string return_type_id = scope_def.get_object_element("return_type").get_string();
@@ -422,14 +422,14 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_t& sco
 
 		const auto function_type = scope_def.get_optional_object_element("function_type");
 		if(function_type && function_type.get_string() == "def-constructor"){
-			return scope_def_t::make_builtin_function_object(
+			return lexical_scope_t::make_builtin_function_object(
 				type_identifier_t::make(name),
-				scope_def_t::efunc_variant::k_default_constructor,
+				lexical_scope_t::efunc_variant::k_default_constructor,
 				resolve_type123(return_type_id)
 			);
 		}
 		else{
-			return scope_def_t::make_function_object(
+			return lexical_scope_t::make_function_object(
 				type_identifier_t::make(name),
 				args2,
 				local_variables2,
@@ -439,10 +439,10 @@ std::shared_ptr<const scope_def_t> conv_scope_def__expressions(const json_t& sco
 		}
 	}
 	else if(type == "struct"){
-		return scope_def_t::make_struct(type_identifier_t::make(name), members2);
+		return lexical_scope_t::make_struct(type_identifier_t::make(name), members2);
 	}
 	else if(type == "global"){
-		return scope_def_t::make_global_scope();
+		return lexical_scope_t::make_global_scope();
 	}
 	else{
 		QUARK_ASSERT(false);

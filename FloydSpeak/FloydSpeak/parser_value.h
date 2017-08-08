@@ -76,7 +76,7 @@ namespace floyd_parser {
 
 
 		public: typeid_t _function_type;
-		public: std::string _function_id;
+		public: int _function_id;
 	};
 
 
@@ -559,7 +559,7 @@ namespace floyd_parser {
 
 
 
-	inline value_t make_function_value(const typeid_t& function_type, const std::string& function_id){
+	inline value_t make_function_value(const typeid_t& function_type, int function_id){
 		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{function_type, function_id});
 		return value_t(f);
 	}

@@ -108,7 +108,6 @@ namespace floyd_parser {
 			return { base_type::k_function, parts, {}, {} };
 		}
 
-
 		public: bool operator==(const typeid_t& other) const{
 			return _base_type == other._base_type && _parts == other._parts && _struct_def_id == other._struct_def_id;
 		}
@@ -142,7 +141,6 @@ namespace floyd_parser {
 			"[coord_t/8000]"
 			"pixel_coord_t = coord_t/8000"
 		*/
-
 		base_type _base_type;
 		std::vector<typeid_t> _parts;
 		std::string _struct_def_id;
@@ -240,13 +238,13 @@ namespace floyd_parser {
 			const std::vector<member_t>& locals,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
-			const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
 		public: static scope_ref_t make_global_scope(
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const std::vector<member_t>& globals,
-			const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
 		public: lexical_scope_t(const lexical_scope_t& other);
@@ -262,10 +260,10 @@ namespace floyd_parser {
 			const std::vector<member_t>& state,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
-			const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-		public: const std::map<std::string, std::shared_ptr<const lexical_scope_t> >& get_objects() const {
+		public: const std::map<int, std::shared_ptr<const lexical_scope_t> >& get_objects() const {
 			return _objects;
 		}
 
@@ -276,7 +274,7 @@ namespace floyd_parser {
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
 		public: typeid_t _return_type;
 
-		private: std::map<std::string, std::shared_ptr<const lexical_scope_t> > _objects;
+		private: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
 	};
 
 	json_t lexical_scope_to_json(const lexical_scope_t& scope_def);

@@ -226,10 +226,10 @@ QUARK_UNIT_TEST("", "parse_program1()", "three arguments", ""){
 	QUARK_TEST_VERIFY(resolve_function_type(result._global_scope->_types_collector, "f"));
 
 	const auto f2 = resolve_function_type(result._global_scope->_types_collector, "f");
-	QUARK_UT_VERIFY(f2->_type == scope_def_t::k_function_scope);
+	QUARK_UT_VERIFY(f2->_type == lexical_scope_t::k_function_scope);
 
 	const auto body = resolve_function_type(f2->_types_collector, "___body");
-	QUARK_UT_VERIFY(body->_type == scope_def_t::k_subscope);
+	QUARK_UT_VERIFY(body->_type == lexical_scope_t::k_subscope);
 	QUARK_UT_VERIFY(body->_executable._statements.size() == 1);
 #endif
 }
@@ -240,11 +240,11 @@ QUARK_UNIT_TEST("", "parse_program1()", "Local variables", ""){
 #if false
 	const auto f2 = resolve_function_type(result._global_scope->_types_collector, "main");
 	QUARK_UT_VERIFY(f2);
-	QUARK_UT_VERIFY(f2->_type == scope_def_t::k_function_scope);
+	QUARK_UT_VERIFY(f2->_type == lexical_scope_t::k_function_scope);
 
 	const auto body = resolve_function_type(f2->_types_collector, "___body");
 	QUARK_UT_VERIFY(body);
-	QUARK_UT_VERIFY(body->_type == scope_def_t::k_subscope);
+	QUARK_UT_VERIFY(body->_type == lexical_scope_t::k_subscope);
 	QUARK_UT_VERIFY(body->_members.size() == 1);
 	QUARK_UT_VERIFY(body->_members[0]._name == "a");
 	QUARK_UT_VERIFY(body->_executable._statements.size() == 2);
