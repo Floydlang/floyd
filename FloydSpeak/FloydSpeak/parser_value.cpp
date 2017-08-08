@@ -332,7 +332,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 }
 
 QUARK_UNIT_TESTQ("value_t()", "struct"){
-	const auto struct_scope_ref = scope_def_t::make_struct_object(
+	const auto struct_scope_ref = lexical_scope_t::make_struct_object(
 		std::vector<member_t>{
 			{ typeid_t::make_string(), "x" }
 		}
@@ -391,7 +391,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 #if false
 value_t make_test_func(){
-	const auto function_scope_ref = scope_def_t::make_function_object(
+	const auto function_scope_ref = lexical_scope_t::make_function_object(
 		type_identifier_t::make("my_func"),
 		std::vector<member_t>{
 			{ typeid_t::make_int(), "a" },
@@ -428,7 +428,7 @@ QUARK_UNIT_TESTQ("value_t()", "function"){
 struct_fixture_t::struct_fixture_t() :
 	_struct6_def(make_struct6(_ast._global_scope))
 {
-	auto pixel_def = scope_def_t::make_struct(
+	auto pixel_def = lexical_scope_t::make_struct(
 		type_identifier_t::make("pixel"),
 		std::vector<member_t>(
 			{

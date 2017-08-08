@@ -27,12 +27,12 @@ namespace floyd_parser {
 	struct expression_t;
 	struct statement_t;
 	struct value_t;
-	struct scope_def_t;
+	struct lexical_scope_t;
 	struct struct_instance_t;
 	struct vector_def_t;
 	struct ast_t;
 
-	typedef std::shared_ptr<const scope_def_t> scope_ref_t;
+	typedef std::shared_ptr<const lexical_scope_t> scope_ref_t;
 
 
 
@@ -212,20 +212,20 @@ namespace floyd_parser {
 
 
 
-	//////////////////////////////////////////////////		scope_def_t
+	//////////////////////////////////////////////////		lexical_scope_t
 
 	/*
 		This is a core internal building block of the AST. It represents a static, compile-time scope.
-		scope_def_t:s are used to define
+		lexical_scope_t:s are used to define
 
 		- The global scope
 		- struct definition, with member data and functions
 		- function definition, with arguments
 		- block = function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 
-		The scope_def_t includes optional code, optional member variables and optional local types.
+		The lexical_scope_t includes optional code, optional member variables and optional local types.
 	*/
-	struct scope_def_t {
+	struct lexical_scope_t {
 		public: enum class etype {
 			k_function_scope,
 			k_struct_scope,
@@ -240,32 +240,32 @@ namespace floyd_parser {
 			const std::vector<member_t>& locals,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
-			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+			const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
 		public: static scope_ref_t make_global_scope(
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const std::vector<member_t>& globals,
-			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+			const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-		public: scope_def_t(const scope_def_t& other);
+		public: lexical_scope_t(const lexical_scope_t& other);
 
 		public: bool check_invariant() const;
 		public: bool shallow_check_invariant() const;
 
-		public: bool operator==(const scope_def_t& other) const;
+		public: bool operator==(const lexical_scope_t& other) const;
 
-		private: explicit scope_def_t(
+		private: explicit lexical_scope_t(
 			etype type,
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& state,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
-			const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+			const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-		public: const std::map<std::string, std::shared_ptr<const scope_def_t> >& get_objects() const {
+		public: const std::map<std::string, std::shared_ptr<const lexical_scope_t> >& get_objects() const {
 			return _objects;
 		}
 
@@ -276,10 +276,10 @@ namespace floyd_parser {
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
 		public: typeid_t _return_type;
 
-		private: std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;
+		private: std::map<std::string, std::shared_ptr<const lexical_scope_t> > _objects;
 	};
 
-	json_t scope_def_to_json(const scope_def_t& scope_def);
+	json_t lexical_scope_to_json(const lexical_scope_t& scope_def);
 	void trace(const scope_ref_t& e);
 
 
@@ -294,17 +294,17 @@ namespace floyd_parser {
 	struct ast_t {
 		public: ast_t();
 		public: ast_t(
-			std::shared_ptr<const scope_def_t> global_scope
+			std::shared_ptr<const lexical_scope_t> global_scope
 		);
 		public: bool check_invariant() const;
 
-		public: const std::shared_ptr<const scope_def_t>& get_global_scope() const {
+		public: const std::shared_ptr<const lexical_scope_t>& get_global_scope() const {
 			return _global_scope;
 		}
 
 
 		/////////////////////////////		STATE
-		private: std::shared_ptr<const scope_def_t> _global_scope;
+		private: std::shared_ptr<const lexical_scope_t> _global_scope;
 	};
 
 	void trace(const ast_t& program);

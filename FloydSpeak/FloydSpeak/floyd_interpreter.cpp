@@ -77,7 +77,7 @@ namespace {
 				if(vm2._call_stack.back()->_values.count(name) != 0){
 					throw std::runtime_error("local constant already exists");
 				}
-				const auto result = evalute_expression(vm2, s->_expression);
+				const auto result = evaluate_expression(vm2, s->_expression);
 				if(!result.is_constant()){
 					throw std::runtime_error("unknown variables");
 				}
@@ -86,7 +86,7 @@ namespace {
 			else if(statement->_return){
 				const auto& s = statement->_return;
 				const auto expr = s->_expression;
-				const auto result = evalute_expression(vm2, expr);
+				const auto result = evaluate_expression(vm2, expr);
 
 				if(!result.is_constant()){
 					throw std::runtime_error("undefined");
@@ -180,9 +180,9 @@ value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_typ
 }
 
 
-int find_variable_index(const scope_def_t& s, const string& name){
 //	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
 
+int find_lexical_variable_index(const lexical_scope_t& s, const string& name){
 	for(int i = 0 ; i < s._state.size() ; i++){
 		if(s._state[i]._name == name){
 			return i;
@@ -191,18 +191,17 @@ int find_variable_index(const scope_def_t& s, const string& name){
 	return -1;
 }
 
-//??? Should look in lexical scopes, not environments!
 value_t find_global_symbol(const interpreter_t& vm, const string& function_name){
 	const auto s = vm._ast.get_global_scope();
 
-	const auto variable_index = find_variable_index(*s, function_name);
+	const auto variable_index = find_lexical_variable_index(*s, function_name);
 	if(variable_index == -1){
 		throw std::runtime_error("Undefined function!");
 	}
 
 	return *s->_state[variable_index]._value;
 /*
-	const auto& f = evalute_expression(vm, *symbol._constant);
+	const auto& f = evaluate_expression(vm, *symbol._constant);
 	if(f.is_constant() && f.get_constant().is_function()){
 		return f.get_constant();
 	}
@@ -212,6 +211,29 @@ value_t find_global_symbol(const interpreter_t& vm, const string& function_name)
 */
 }
 
+floyd_parser::value_t resolve_lexical_variable_name_deep(const std::vector<shared_ptr<environment_t>>& callstack, const std::string& s, size_t depth){
+	QUARK_ASSERT(depth < callstack.size());
+	QUARK_ASSERT(depth >= 0);
+
+	const auto it = callstack[depth]->_values.find(s);
+	if(it != callstack[depth]->_values.end()){
+		return it->second;
+	}
+	else if(depth > 0){
+		return resolve_lexical_variable_name_deep(callstack, s, depth - 1);
+	}
+	else{
+		return {};
+	}
+}
+
+floyd_parser::value_t resolve_lexical_variable_name(const interpreter_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	return resolve_lexical_variable_name_deep(vm._call_stack, s, vm._call_stack.size() - 1);
+}
+
 
 ast_t program_to_ast2(const string& program){
 	const auto pass1 = parse_program2(program);
@@ -219,31 +241,6 @@ ast_t program_to_ast2(const string& program){
 	trace(pass2);
 	return pass2;
 }
-
-floyd_parser::value_t resolve_variable_name_deep(const std::vector<shared_ptr<stack_frame_t>>& stack_frames, const std::string& s, size_t depth){
-	QUARK_ASSERT(depth < stack_frames.size());
-	QUARK_ASSERT(depth >= 0);
-
-	const auto it = stack_frames[depth]->_values.find(s);
-	if(it != stack_frames[depth]->_values.end()){
-		return it->second;
-	}
-	else if(depth > 0){
-		return resolve_variable_name_deep(stack_frames, s, depth - 1);
-	}
-	else{
-		return {};
-	}
-}
-
-floyd_parser::value_t resolve_variable_name(const interpreter_t& vm, const std::string& s){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(s.size() > 0);
-
-	return resolve_variable_name_deep(vm._call_stack, s, vm._call_stack.size() - 1);
-}
-
-
 
 QUARK_UNIT_TESTQ("C++ bool", ""){
 	quark::ut_compare(true, true);
@@ -261,7 +258,7 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 expression_t evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 
 
-expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
+expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -273,7 +270,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	const auto op = e2.get_operation();
 
 	if(op == expression_t::operation::k_resolve_member){
-		const auto parent_expr = evalute_expression(vm, e.get_expressions()[0]);
+		const auto parent_expr = evaluate_expression(vm, e.get_expressions()[0]);
 		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){
 			const auto struct_instance = parent_expr.get_constant().get_struct();
 			const value_t value = struct_instance->_member_values[e.get_symbol()];
@@ -285,7 +282,7 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	}
 	else if(op == expression_t::operation::k_variable){
 		const auto variable_name = e.get_symbol();
-		const value_t value = resolve_variable_name(vm, variable_name);
+		const value_t value = resolve_lexical_variable_name(vm, variable_name);
 		return expression_t::make_constant_value(value);
 	}
 
@@ -295,16 +292,16 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == expression_t::operation::k_conditional_operator3){
-		const auto cond_result = evalute_expression(vm, e2.get_expressions()[0]);
+		const auto cond_result = evaluate_expression(vm, e2.get_expressions()[0]);
 		if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
 			const bool cond_flag = cond_result.get_constant().get_bool();
 
 			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 			if(cond_flag){
-				return evalute_expression(vm, e2.get_expressions()[1]);
+				return evaluate_expression(vm, e2.get_expressions()[1]);
 			}
 			else{
-				return evalute_expression(vm, e2.get_expressions()[2]);
+				return evaluate_expression(vm, e2.get_expressions()[2]);
 			}
 		}
 		else{
@@ -313,8 +310,8 @@ expression_t evalute_expression(const interpreter_t& vm, const expression_t& e){
 	}
 
 	//	First evaluate all inputs to our operation.
-	const auto left_expr = evalute_expression(vm, e2.get_expressions()[0]);
-	const auto right_expr = evalute_expression(vm, e2.get_expressions()[1]);
+	const auto left_expr = evaluate_expression(vm, e2.get_expressions()[0]);
+	const auto right_expr = evaluate_expression(vm, e2.get_expressions()[1]);
 
 	//	Both left and right are constant, replace the math_operation with a constant!
 	if(left_expr.is_constant() && right_expr.is_constant()){
@@ -581,17 +578,17 @@ value_t call_function(const interpreter_t& vm, const floyd_parser::value_t& f, c
 		function_object = objectIt->second;
 	}
 
-	auto new_frame = stack_frame_t::make_stack_frame(function_object);
+	auto new_environment = environment_t::make_environment(function_object);
 
 	//	Copy input arguments to the function scope.
 	for(int i = 0 ; i < function_object->_args.size() ; i++){
 		const auto& arg_name = function_object->_args[i]._name;
 		const auto& arg_value = args[i];
-		new_frame->_values[arg_name] = arg_value;
+		new_environment->_values[arg_name] = arg_value;
 	}
 
 	interpreter_t vm2 = vm;
-	vm2._call_stack.push_back(new_frame);
+	vm2._call_stack.push_back(new_environment);
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
 
@@ -620,10 +617,10 @@ expression_t evaluate_call_expression(const interpreter_t& vm, const expression_
 
 	//	Simplify each input expression: expression[0]: which function to call, expression[1]: first argument if any.
 	const auto& expressions = e.get_expressions();
-	expression_t function = evalute_expression(vm, expressions[0]);
+	expression_t function = evaluate_expression(vm, expressions[0]);
 	vector<expression_t> args2;
 	for(int i = 1 ; i < expressions.size() ; i++){
-		const auto t = evalute_expression(vm, expressions[i]);
+		const auto t = evaluate_expression(vm, expressions[i]);
 		args2.push_back(t);
 	}
 
@@ -659,7 +656,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		}
 
 		const auto& a = json_t::make_object({
-			{ "def", scope_def_to_json(*e->_def) },
+			{ "def", lexical_scope_to_json(*e->_def) },
 			{ "values", values }
 		});
 		callstack.push_back(a);
@@ -676,21 +673,21 @@ json_t interpreter_to_json(const interpreter_t& vm){
 void test_evaluate_simple(const expression_t& e, const expression_t& expected){
 	const ast_t ast;
 	const interpreter_t interpreter(ast);
-	const auto e3 = evalute_expression(interpreter, e);
+	const auto e3 = evaluate_expression(interpreter, e);
 	QUARK_TEST_VERIFY(e3 == expected);
 }
 
 //??? Change so built-in types don't have to be registered to be used -- only custom types needs that.
 //??? Add tests for strings and floats.
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Simple expressions") {
 	test_evaluate_simple(
 		expression_t::make_constant_int(1234),
 		expression_t::make_constant_int(1234)
 	);
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Simple expressions") {
 	test_evaluate_simple(
 		expression_t::make_math2_operation(
 			expression_t::operation::k_math2_add,
@@ -703,228 +700,228 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
 
 #if false
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2+3") == expression_t::make_constant(6));
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3*4") == expression_t::make_constant(12));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3*4*5") == expression_t::make_constant(60));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Simple expressions") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Simple expressions") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+2*3") == expression_t::make_constant(7));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*(4+4+1)") == expression_t::make_constant(45));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*(2*(1+3)+1)") == expression_t::make_constant(45));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5*((1+3)*2+1)") == expression_t::make_constant(45));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 * ((1 + 3) * 2 + 1) ") == expression_t::make_constant(45));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( 3 ) ") == expression_t::make_constant(-1));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Spaces") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(" 5 - 2 * ( ( 4 )  - 1 ) ") == expression_t::make_constant(-1));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Sign before parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("-(2+1)*4") == expression_t::make_constant(-12));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Sign before parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("-4*(2+1)") == expression_t::make_constant(-12));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("5.5/5.0")._constant->get_float(), 1.1f));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 //	QUARK_TEST_VERIFY(test_evaluate_simple("1/5e10") == 2e-11);
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(compare_float_approx(test_evaluate_simple("(4.0-3.0)/(4.0*4.0)")._constant->get_float(), 0.0625f));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1.0/2.0/2.0") == expression_t::make_constant(0.25f));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("0.25 * .5 * 0.5") == expression_t::make_constant(0.0625f));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	QUARK_TEST_VERIFY(test_evaluate_simple(".25 / 2.0 * .5") == expression_t::make_constant(0.0625f));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1+-2") == expression_t::make_constant(-1));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("--2") == expression_t::make_constant(2));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("2---2") == expression_t::make_constant(0));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("2-+-2") == expression_t::make_constant(4));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Bool") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "Bool") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false") == expression_t::make_constant(false));
 }
 
 
 //??? add tests  for pass2()
-QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true ? 4 : 6") == expression_t::make_constant(4));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false ? 4 : 6") == expression_t::make_constant(6));
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1==3 ? 4 : 6") == expression_t::make_constant(6));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3==3 ? 4 : 6") == expression_t::make_constant(4));
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3==3 ? 2 + 2 : 2 * 3") == expression_t::make_constant(4));
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "?:") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("3==1+2 ? 2 + 2 : 2 * 3") == expression_t::make_constant(4));
 }
 
 
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1 == 1") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1 == 2") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1.3 == 1.3") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("\"hello\" == \"hello\"") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "==") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("\"hello\" == \"bye\"") == expression_t::make_constant(false));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1 < 2") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("5 < 2") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("0.3 < 0.4") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("1.5 < 0.4") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("\"adwark\" < \"boat\"") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "<") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("\"boat\" < \"adwark\"") == expression_t::make_constant(false));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false && false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false && true") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true && false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true && true") == expression_t::make_constant(true));
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false && false && false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false && false && true") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false && true && false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false && true && true") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true && false && false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true && true && false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "&&") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true && true && true") == expression_t::make_constant(true));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false || false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false || true") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true || false") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true || true") == expression_t::make_constant(true));
 }
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false || false || false") == expression_t::make_constant(false));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false || false || true") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false || true || false") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("false || true || true") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true || false || false") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true || false || true") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true || true || false") == expression_t::make_constant(true));
 }
-QUARK_UNIT_TESTQ("evalute_expression()", "||") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	QUARK_TEST_VERIFY(test_evaluate_simple("true || true || true") == expression_t::make_constant(true));
 }
 
@@ -933,7 +930,7 @@ QUARK_UNIT_TESTQ("evalute_expression()", "||") {
 
 
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Division by zero") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
 	try{
 		test_evaluate_simple("2/0");
 		QUARK_TEST_VERIFY(false);
@@ -953,7 +950,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero"){
 	}
 }
 
-QUARK_UNIT_TESTQ("evalute_expression()", "Multiply errors") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Multiply errors") {
 		//	Multiple errors not possible/relevant now that we use exceptions for errors.
 /*
 	//////////////////////////		Only one error will be detected (in this case, the last one)
@@ -976,13 +973,13 @@ QUARK_UNIT_TESTQ("evalute_expression()", "Multiply errors") {
 //////////////////////////		interpreter_t
 
 
-std::shared_ptr<stack_frame_t> stack_frame_t::make_stack_frame(const floyd_parser::scope_ref_t def){
+std::shared_ptr<environment_t> environment_t::make_environment(const floyd_parser::scope_ref_t def){
 	std::map<std::string, floyd_parser::value_t> values;
 	for(const auto& e: def->_state){
 		values[e._name] = *e._value;
 	}
-	auto f = stack_frame_t{ def, values };
-	return make_shared<stack_frame_t>(f);
+	auto f = environment_t{ def, values };
+	return make_shared<environment_t>(f);
 }
 
 
@@ -991,7 +988,7 @@ interpreter_t::interpreter_t(const floyd_parser::ast_t& ast) :
 {
 	QUARK_ASSERT(ast.check_invariant());
 
-	_call_stack.push_back(stack_frame_t::make_stack_frame(ast.get_global_scope()));
+	_call_stack.push_back(environment_t::make_environment(ast.get_global_scope()));
 
 	//	### Run static intialization (basically run global statements before calling main()).
 	{

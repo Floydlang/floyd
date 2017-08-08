@@ -276,7 +276,7 @@ std::vector<typeid_t> get_member_types(const vector<member_t>& m){
 struct body_t {
 	public: const std::vector<std::shared_ptr<statement_t> > _statements;
 	public: const std::vector<member_t> _locals;
-	public: const std::map<std::string, std::shared_ptr<const scope_def_t> > _objects;
+	public: const std::map<std::string, std::shared_ptr<const lexical_scope_t> > _objects;
 };
 
 /*
@@ -289,7 +289,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 
 	vector<shared_ptr<statement_t>> statements2;
 	std::vector<member_t> locals;
-	std::map<std::string, std::shared_ptr<const scope_def_t> > objects;
+	std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects;
 
 	for(const auto statement: p.get_array()){
 
@@ -363,7 +363,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 
 			//	Build function object.
-			const auto s2 = scope_def_t::make_function_object(
+			const auto s2 = lexical_scope_t::make_function_object(
 				args2,
 				{},
 				r.first._statements,
@@ -1494,7 +1494,7 @@ ast_t run_pass2(const json_t& parse_tree){
 	QUARK_TRACE(json_to_pretty_string(parse_tree));
 
 	const auto program_body = parser_statements_to_ast(parse_tree, 1000);
-	const auto a = scope_def_t::make_global_scope(
+	const auto a = lexical_scope_t::make_global_scope(
 		program_body.first._statements,
 		program_body.first._locals,
 		program_body.first._objects

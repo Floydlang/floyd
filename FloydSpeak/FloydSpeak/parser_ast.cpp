@@ -214,12 +214,12 @@ namespace floyd_parser {
 
 
 
-	//////////////////////////////////////////////////		scope_def_t
+	//////////////////////////////////////////////////		lexical_scope_t
 
 
 
-	scope_ref_t scope_def_t::make_struct_object(const std::vector<member_t>& members){
-		auto r = std::make_shared<scope_def_t>(scope_def_t(
+	scope_ref_t lexical_scope_t::make_struct_object(const std::vector<member_t>& members){
+		auto r = std::make_shared<lexical_scope_t>(lexical_scope_t(
 			etype::k_struct_scope,
 			{},
 			members,
@@ -231,14 +231,14 @@ namespace floyd_parser {
 		return r;
 	}
 
-	scope_ref_t scope_def_t::make_global_scope(
+	scope_ref_t lexical_scope_t::make_global_scope(
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const std::vector<member_t>& globals,
-		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+		const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
 	)
 	{
-		auto r = std::make_shared<scope_def_t>(
-			scope_def_t(
+		auto r = std::make_shared<lexical_scope_t>(
+			lexical_scope_t(
 				etype::k_global_scope,
 				{},
 				globals,
@@ -253,13 +253,13 @@ namespace floyd_parser {
 	}
 
 
-	scope_def_t::scope_def_t(
+	lexical_scope_t::lexical_scope_t(
 		etype type,
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& state,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const typeid_t& return_type,
-		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+		const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
 		)
 	:
 		_type(type),
@@ -273,7 +273,7 @@ namespace floyd_parser {
 	}
 
 
-	scope_def_t::scope_def_t(const scope_def_t& other) :
+	lexical_scope_t::lexical_scope_t(const lexical_scope_t& other) :
 		_type(other._type),
 		_args(other._args),
 		_state(other._state),
@@ -285,12 +285,12 @@ namespace floyd_parser {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	bool scope_def_t::shallow_check_invariant() const {
+	bool lexical_scope_t::shallow_check_invariant() const {
 //		QUARK_ASSERT(_types_collector.check_invariant());
 		return true;
 	}
 
-	bool scope_def_t::check_invariant() const {
+	bool lexical_scope_t::check_invariant() const {
 		//??? Check for duplicates? Other things?
 		for(const auto& m: _args){
 			QUARK_ASSERT(m.check_invariant());
@@ -318,7 +318,7 @@ namespace floyd_parser {
 		return true;
 	}
 
-	bool scope_def_t::operator==(const scope_def_t& other) const{
+	bool lexical_scope_t::operator==(const lexical_scope_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
@@ -343,9 +343,9 @@ namespace floyd_parser {
 		return true;
 	}
 
-	QUARK_UNIT_TESTQ("scope_def_t::operator==", ""){
-		const auto a = scope_def_t::make_global_scope({}, {}, {});
-		const auto b = scope_def_t::make_global_scope({}, {}, {});
+	QUARK_UNIT_TESTQ("lexical_scope_t::operator==", ""){
+		const auto a = lexical_scope_t::make_global_scope({}, {}, {});
+		const auto b = lexical_scope_t::make_global_scope({}, {}, {});
 		QUARK_TEST_VERIFY(*a == *b);
 	}
 
@@ -353,17 +353,17 @@ namespace floyd_parser {
 
 
 
-	string scope_type_to_string(scope_def_t::etype type){
-		if(type == scope_def_t::etype::k_function_scope){
+	string scope_type_to_string(lexical_scope_t::etype type){
+		if(type == lexical_scope_t::etype::k_function_scope){
 			return "function";
 		}
-		else if(type == scope_def_t::etype::k_struct_scope){
+		else if(type == lexical_scope_t::etype::k_struct_scope){
 			return "struct";
 		}
-		else if(type == scope_def_t::etype::k_global_scope){
+		else if(type == lexical_scope_t::etype::k_global_scope){
 			return "global";
 		}
-		else if(type == scope_def_t::etype::k_block){
+		else if(type == lexical_scope_t::etype::k_block){
 			return "subscope";
 		}
 		else{
@@ -443,15 +443,15 @@ namespace floyd_parser {
 	}
 */
 
-	json_t objects_to_json(const std::map<std::string, std::shared_ptr<const scope_def_t> >& s){
+	json_t objects_to_json(const std::map<std::string, std::shared_ptr<const lexical_scope_t> >& s){
 		std::map<string, json_t> r;
 		for(const auto i: s){
-			r[i.first] = scope_def_to_json(*i.second);
+			r[i.first] = lexical_scope_to_json(*i.second);
 		}
 		return r;
 	}
 
-	json_t scope_def_to_json(const scope_def_t& scope_def){
+	json_t lexical_scope_to_json(const lexical_scope_t& scope_def){
 		const auto args = member_to_json(scope_def._args);
 		const auto state = member_to_json(scope_def._state);
 
@@ -482,19 +482,19 @@ namespace floyd_parser {
 		}
 	}
 
-	scope_ref_t scope_def_t::make_function_object(
+	scope_ref_t lexical_scope_t::make_function_object(
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& locals,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const typeid_t& return_type,
-		const std::map<std::string, std::shared_ptr<const scope_def_t> > objects
+		const std::map<std::string, std::shared_ptr<const lexical_scope_t> > objects
 	)
 	{
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		for(const auto i: locals){ QUARK_ASSERT(i.check_invariant()); };
 
-		auto function = make_shared<scope_def_t>(scope_def_t(
-			scope_def_t::etype::k_function_scope,
+		auto function = make_shared<lexical_scope_t>(lexical_scope_t(
+			lexical_scope_t::etype::k_function_scope,
 			args,
 			locals,
 			statements,
@@ -631,13 +631,13 @@ namespace floyd_parser {
 
 
 	ast_t::ast_t() :
-		_global_scope(scope_def_t::make_global_scope({}, {}, {}))
+		_global_scope(lexical_scope_t::make_global_scope({}, {}, {}))
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
 	ast_t::ast_t(
-		std::shared_ptr<const scope_def_t> global_scope
+		std::shared_ptr<const lexical_scope_t> global_scope
 	) :
 		_global_scope(global_scope)
 	{
@@ -662,7 +662,7 @@ namespace floyd_parser {
 	json_t ast_to_json(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
-		return scope_def_to_json(*ast.get_global_scope());
+		return lexical_scope_to_json(*ast.get_global_scope());
 	}
 
 

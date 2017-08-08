@@ -34,7 +34,7 @@ namespace floyd_interpreter {
 		??? rename to "context".
 	*/
 
-	struct stack_frame_t {
+	struct environment_t {
 		public: floyd_parser::scope_ref_t _def;
 
 		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
@@ -42,7 +42,7 @@ namespace floyd_interpreter {
 		public: std::map<std::string, floyd_parser::value_t> _values;
 
 
-		public: static std::shared_ptr<stack_frame_t> make_stack_frame(const floyd_parser::scope_ref_t def);
+		public: static std::shared_ptr<environment_t> make_environment(const floyd_parser::scope_ref_t def);
 	};
 
 
@@ -63,7 +63,7 @@ namespace floyd_interpreter {
 		public: const floyd_parser::ast_t _ast;
 
 		//	Last scope is the current one. First scope is the root.
-		public: std::vector<std::shared_ptr<stack_frame_t>> _call_stack;
+		public: std::vector<std::shared_ptr<environment_t>> _call_stack;
 	};
 
 
@@ -75,7 +75,7 @@ namespace floyd_interpreter {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	floyd_parser::expression_t evalute_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
+	floyd_parser::expression_t evaluate_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
 
 	floyd_parser::value_t call_function(
 		const interpreter_t& vm,
