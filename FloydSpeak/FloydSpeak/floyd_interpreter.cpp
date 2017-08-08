@@ -41,7 +41,7 @@ namespace {
 		return diff < 0.00001;
 	}
 
-	bool check_arg_types(const scope_ref_t& f, const vector<value_t>& args){
+	bool check_arg_types(const std::shared_ptr<const lexical_scope_t>& f, const vector<value_t>& args){
 		if(f->_args.size() != args.size()){
 			return false;
 		}
@@ -547,8 +547,8 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 }
 
-std::map<int, scope_ref_t> get_all_objects(const scope_ref_t scope){
-	std::map<int, scope_ref_t> result;
+std::map<int, std::shared_ptr<const lexical_scope_t>> get_all_objects(const std::shared_ptr<const lexical_scope_t> scope){
+	std::map<int, std::shared_ptr<const lexical_scope_t>> result;
 	for(const auto& e: scope->get_objects()){
 		result[e.first] = e.second;
 		const auto t = get_all_objects(e.second);
@@ -559,12 +559,12 @@ std::map<int, scope_ref_t> get_all_objects(const scope_ref_t scope){
 	return result;
 }
 
-std::map<int, scope_ref_t> make_object_lookup(const interpreter_t& vm){
+std::map<int, std::shared_ptr<const lexical_scope_t>> make_object_lookup(const interpreter_t& vm){
 	return get_all_objects(vm._ast.get_global_scope());
 }
 
 //??? Needs to look in correct scope to find function object. It can exist in *any* scope_def, even siblings or children.
-scope_ref_t lookup_object_id(const interpreter_t& vm, const floyd_parser::value_t& f){
+std::shared_ptr<const lexical_scope_t> lookup_object_id(const interpreter_t& vm, const floyd_parser::value_t& f){
 	const auto& obj = f.get_function();
 	const auto& function_id = obj->_function_id;
 
@@ -589,7 +589,7 @@ value_t call_function(const interpreter_t& vm, const floyd_parser::value_t& f, c
 		throw std::runtime_error("Cannot call non-function.");
 	}
 
-	scope_ref_t function_object = lookup_object_id(vm, f);
+	std::shared_ptr<const lexical_scope_t> function_object = lookup_object_id(vm, f);
 	auto path2 = vm._call_stack.back()->_path;
 	path2._nodes.push_back(f.get_function()->_function_id);
 	auto new_environment = environment_t::make_environment(vm._ast, path2);

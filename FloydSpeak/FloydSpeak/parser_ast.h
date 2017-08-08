@@ -32,8 +32,6 @@ namespace floyd_parser {
 	struct vector_def_t;
 	struct ast_t;
 
-	typedef std::shared_ptr<const lexical_scope_t> scope_ref_t;
-
 
 
 	//////////////////////////////////////		base_type
@@ -231,9 +229,9 @@ namespace floyd_parser {
 			k_block
 		};
 
-		public: static scope_ref_t make_struct_object(const std::vector<member_t>& members);
+		public: static std::shared_ptr<const lexical_scope_t> make_struct_object(const std::vector<member_t>& members);
 
-		public: static scope_ref_t make_function_object(
+		public: static std::shared_ptr<const lexical_scope_t> make_function_object(
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& locals,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
@@ -241,7 +239,7 @@ namespace floyd_parser {
 			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-		public: static scope_ref_t make_global_scope(
+		public: static std::shared_ptr<const lexical_scope_t> make_global_scope(
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const std::vector<member_t>& globals,
 			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
@@ -278,7 +276,7 @@ namespace floyd_parser {
 	};
 
 	json_t lexical_scope_to_json(const lexical_scope_t& scope_def);
-	void trace(const scope_ref_t& e);
+	void trace(const std::shared_ptr<const lexical_scope_t>& e);
 
 
 

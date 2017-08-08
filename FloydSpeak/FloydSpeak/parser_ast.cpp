@@ -218,7 +218,7 @@ namespace floyd_parser {
 
 
 
-	scope_ref_t lexical_scope_t::make_struct_object(const std::vector<member_t>& members){
+	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_struct_object(const std::vector<member_t>& members){
 		auto r = std::make_shared<lexical_scope_t>(lexical_scope_t(
 			etype::k_struct_scope,
 			{},
@@ -231,7 +231,7 @@ namespace floyd_parser {
 		return r;
 	}
 
-	scope_ref_t lexical_scope_t::make_global_scope(
+	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_global_scope(
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const std::vector<member_t>& globals,
 		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
@@ -482,7 +482,7 @@ namespace floyd_parser {
 		}
 	}
 
-	scope_ref_t lexical_scope_t::make_function_object(
+	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_function_object(
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& locals,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
@@ -567,7 +567,7 @@ namespace floyd_parser {
 
 
 	//??? more. Use to_json().
-	void trace(const scope_ref_t& e){
+	void trace(const std::shared_ptr<const lexical_scope_t>& e){
 		QUARK_ASSERT(e && e->check_invariant());
 /*
 		QUARK_ASSERT(e.check_invariant());
