@@ -308,7 +308,7 @@ expression_t expression_t::make_resolve_member(const expression_t& parent_addres
 expression_t expression_t::make_lookup(const expression_t& parent_address, const expression_t& lookup_key, const typeid_t& result_type){
 	QUARK_ASSERT(parent_address.check_invariant());
 	QUARK_ASSERT(lookup_key.check_invariant());
-	QUARK_ASSERT(result_type._base_type != base_type::k_null && result_type.check_invariant());
+	QUARK_ASSERT(result_type._base_type != floyd_basics::base_type::k_null && result_type.check_invariant());
 
 	auto result = expression_t(
 		operation::k_lookup_element,

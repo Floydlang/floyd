@@ -24,7 +24,7 @@ namespace floyd_ast {
 	//////////////////////////////////////////////////		struct_instance_t
 
 		bool struct_instance_t::check_invariant() const{
-			QUARK_ASSERT(_struct_type._base_type != base_type::k_null && _struct_type.check_invariant());
+			QUARK_ASSERT(_struct_type._base_type != floyd_basics::base_type::k_null && _struct_type.check_invariant());
 
 //			QUARK_ASSERT(_struct_type.get_struct_def()->_members.size() == _member_values.size());
 
@@ -171,16 +171,16 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(left.get_type() == right.get_type());
 
 	const auto type = left._typeid.get_base_type();
-	if(type == base_type::k_null){
+	if(type == floyd_basics::base_type::k_null){
 		return 0;
 	}
-	else if(type == base_type::k_bool){
+	else if(type == floyd_basics::base_type::k_bool){
 		return (left.get_bool() ? 1 : 0) - (right.get_bool() ? 1 : 0);
 	}
-	else if(type == base_type::k_int){
+	else if(type == floyd_basics::base_type::k_int){
 		return limit(left.get_int() - right.get_int(), -1, 1);
 	}
-	else if(type == base_type::k_float){
+	else if(type == floyd_basics::base_type::k_float){
 		const auto a = left.get_float();
 		const auto b = right.get_float();
 		if(a > b){
@@ -193,10 +193,10 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return 0;
 		}
 	}
-	else if(type == base_type::k_string){
+	else if(type == floyd_basics::base_type::k_string){
 		return compare_string(left.get_string(), right.get_string());
 	}
-	else if(type == base_type::k_struct){
+	else if(type == floyd_basics::base_type::k_struct){
 		//	Shortcut: same obejct == we know values are same without having to check them.
 		if(left.get_struct() == right.get_struct()){
 			return 0;
@@ -205,11 +205,11 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return compare_value_true_deep(*left.get_struct(), *right.get_struct());
 		}
 	}
-	else if(type == base_type::k_vector){
+	else if(type == floyd_basics::base_type::k_vector){
 		QUARK_ASSERT(false);
 		return 0;
 	}
-	else if(type == base_type::k_function){
+	else if(type == floyd_basics::base_type::k_function){
 		QUARK_ASSERT(false);
 		return 0;
 	}

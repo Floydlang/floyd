@@ -31,65 +31,34 @@ namespace floyd_ast {
 	using std::make_shared;
 
 
-	//////////////////////////////////////////////////		base_type
 
-
-	string base_type_to_string(const base_type t){
-		if(t == base_type::k_null){
-			return "null";
-		}
-		else if(t == base_type::k_bool){
-			return "bool";
-		}
-		else if(t == base_type::k_int){
-			return "int";
-		}
-		else if(t == base_type::k_float){
-			return "float";
-		}
-		else if(t == base_type::k_string){
-			return "string";
-		}
-		else if(t == base_type::k_struct){
-			return "struct";
-		}
-		else if(t == base_type::k_vector){
-			return "vector";
-		}
-		else if(t == base_type::k_function){
-			return "function";
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
 
 	//??? use json
 	void trace(const typeid_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
 
 		const auto type = t.get_base_type();
-		if(type == base_type::k_bool){
+		if(type == floyd_basics::base_type::k_bool){
 			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
 		}
-		else if(type == base_type::k_int){
+		else if(type == floyd_basics::base_type::k_int){
 			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
 		}
-		else if(type == base_type::k_float){
+		else if(type == floyd_basics::base_type::k_float){
 			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
 		}
-		else if(type == base_type::k_string){
+		else if(type == floyd_basics::base_type::k_string){
 			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
 		}
-		else if(type == base_type::k_struct){
+		else if(type == floyd_basics::base_type::k_struct){
 			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
 //			trace(t.get_struct_def());
 		}
-		else if(type == base_type::k_vector){
+		else if(type == floyd_basics::base_type::k_vector){
 			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
 //			trace(*t._vector_def->_value_type, "");
 		}
-		else if(type == base_type::k_function){
+		else if(type == floyd_basics::base_type::k_function){
 			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
 //			trace(t.get_function_def());
 		}
@@ -100,60 +69,45 @@ namespace floyd_ast {
 
 
 
-	//////////////////////////////////////		base_type_to_string(base_type)
-
-
-	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == "bool");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == "int");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == "float");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == "string");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == "struct");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "function");
-	}
-
-
-
 	////////////////////////			typeid_t
 
 
 	bool typeid_t::check_invariant() const{
 		if (_unresolved_type_symbol.empty() == false){
-				QUARK_ASSERT(_base_type == base_type::k_null);
+				QUARK_ASSERT(_base_type == floyd_basics::base_type::k_null);
 				QUARK_ASSERT(_parts.empty());
 				QUARK_ASSERT(_struct_def_id == "");
 		}
 		else{
-			if(_base_type == base_type::k_null){
+			if(_base_type == floyd_basics::base_type::k_null){
 				QUARK_ASSERT(_parts.empty());
 				QUARK_ASSERT(_struct_def_id.empty());
 			}
-			else if(_base_type == base_type::k_bool){
+			else if(_base_type == floyd_basics::base_type::k_bool){
 				QUARK_ASSERT(_parts.empty());
 				QUARK_ASSERT(_struct_def_id.empty());
 			}
-			else if(_base_type == base_type::k_int){
+			else if(_base_type == floyd_basics::base_type::k_int){
 				QUARK_ASSERT(_parts.empty());
 				QUARK_ASSERT(_struct_def_id.empty());
 			}
-			else if(_base_type == base_type::k_float){
+			else if(_base_type == floyd_basics::base_type::k_float){
 				QUARK_ASSERT(_parts.empty());
 				QUARK_ASSERT(_struct_def_id.empty());
 			}
-			else if(_base_type == base_type::k_string){
+			else if(_base_type == floyd_basics::base_type::k_string){
 				QUARK_ASSERT(_parts.empty());
 				QUARK_ASSERT(_struct_def_id.empty());
 			}
-			else if(_base_type == base_type::k_struct){
+			else if(_base_type == floyd_basics::base_type::k_struct){
 				QUARK_ASSERT(_parts.empty() == true);
 				QUARK_ASSERT(_struct_def_id.empty() == false);
 			}
-			else if(_base_type == base_type::k_vector){
+			else if(_base_type == floyd_basics::base_type::k_vector){
 				QUARK_ASSERT(_parts.empty() == false);
 				QUARK_ASSERT(_struct_def_id.empty() == true);
 			}
-			else if(_base_type == base_type::k_function){
+			else if(_base_type == floyd_basics::base_type::k_function){
 				QUARK_ASSERT(_parts.empty() == false);
 				QUARK_ASSERT(_struct_def_id.empty() == true);
 			}
@@ -185,13 +139,13 @@ namespace floyd_ast {
 		if(_unresolved_type_symbol != ""){
 			return "unresolved:" + _unresolved_type_symbol;
 		}
-		else if(_base_type == base_type::k_struct){
+		else if(_base_type == floyd_basics::base_type::k_struct){
 			return "[" + _parts[0].to_string() + "]";
 		}
-		else if(_base_type == base_type::k_vector){
+		else if(_base_type == floyd_basics::base_type::k_vector){
 			return "[" + _parts[0].to_string() + "]";
 		}
-		else if(_base_type == base_type::k_function){
+		else if(_base_type == floyd_basics::base_type::k_function){
 			auto s = _parts[0].to_string() + " (";
 			if(_parts.size() > 2){
 				for(int i = 1 ; i < _parts.size() - 1 ; i++){
@@ -304,13 +258,13 @@ namespace floyd_ast {
 //			QUARK_ASSERT(_return_type._base_type != base_type::k_null && _return_type.check_invariant());
 		}
 		else if(_type == etype::k_struct_scope){
-			QUARK_ASSERT(_return_type._base_type == base_type::k_null);
+			QUARK_ASSERT(_return_type._base_type == floyd_basics::base_type::k_null);
 		}
 		else if(_type == etype::k_global_scope){
-			QUARK_ASSERT(_return_type._base_type == base_type::k_null);
+			QUARK_ASSERT(_return_type._base_type == floyd_basics::base_type::k_null);
 		}
 		else if(_type == etype::k_block){
-			QUARK_ASSERT(_return_type._base_type != base_type::k_null && _return_type.check_invariant());
+			QUARK_ASSERT(_return_type._base_type != floyd_basics::base_type::k_null && _return_type.check_invariant());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -495,7 +449,7 @@ namespace floyd_ast {
 		_type(type),
 		_name(name)
 	{
-		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
+		QUARK_ASSERT(type._base_type != floyd_basics::base_type::k_null && type.check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 
 		QUARK_ASSERT(check_invariant());
@@ -506,14 +460,14 @@ namespace floyd_ast {
 		_value(value),
 		_name(name)
 	{
-		QUARK_ASSERT(type._base_type != base_type::k_null && type.check_invariant());
+		QUARK_ASSERT(type._base_type != floyd_basics::base_type::k_null && type.check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool member_t::check_invariant() const{
-		QUARK_ASSERT(_type._base_type != base_type::k_null && _type.check_invariant());
+		QUARK_ASSERT(_type._base_type != floyd_basics::base_type::k_null && _type.check_invariant());
 		QUARK_ASSERT(_name.size() > 0);
 		QUARK_ASSERT(!_value || _value->check_invariant());
 		if(_value){
@@ -556,7 +510,7 @@ namespace floyd_ast {
 	vector_def_t vector_def_t::make2(
 		const typeid_t& element_type)
 	{
-		QUARK_ASSERT(element_type._base_type != base_type::k_null && element_type.check_invariant());
+		QUARK_ASSERT(element_type._base_type != floyd_basics::base_type::k_null && element_type.check_invariant());
 
 		vector_def_t result;
 		result._element_type = element_type;
@@ -566,7 +520,7 @@ namespace floyd_ast {
 	}
 
 	bool vector_def_t::check_invariant() const{
-		QUARK_ASSERT(_element_type._base_type != base_type::k_null && _element_type.check_invariant());
+		QUARK_ASSERT(_element_type._base_type != floyd_basics::base_type::k_null && _element_type.check_invariant());
 		return true;
 	}
 

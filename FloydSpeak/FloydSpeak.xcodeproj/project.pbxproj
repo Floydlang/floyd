@@ -14,6 +14,7 @@
 		2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0AC17A1CADB26B00979C49 /* runtime.cpp */; };
 		2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
+		2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C384AD21F3B604E0028C742 /* floyd_basics.cpp */; };
 		2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
 		2C4F355C1D4792C60061CA93 /* parse_expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355A1D4792C60061CA93 /* parse_expression.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* parser_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* parser_value.cpp */; };
@@ -68,6 +69,8 @@
 		2C1D84E91CA766470042F0A8 /* quark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = quark.h; path = ../quark.h; sourceTree = "<group>"; };
 		2C1D84EA1CA766470042F0A8 /* steady_vector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = steady_vector.cpp; path = ../steady_vector.cpp; sourceTree = "<group>"; };
 		2C1D84EB1CA766470042F0A8 /* steady_vector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = steady_vector.h; path = ../steady_vector.h; sourceTree = "<group>"; };
+		2C384AD21F3B604E0028C742 /* floyd_basics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_basics.cpp; sourceTree = "<group>"; };
+		2C384AD31F3B604E0028C742 /* floyd_basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_basics.h; sourceTree = "<group>"; };
 		2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = immutable_ref_value.cpp; sourceTree = "<group>"; };
 		2C40A71E1D76E179003245E3 /* immutable_ref_value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = immutable_ref_value.h; sourceTree = "<group>"; };
 		2C4F355A1D4792C60061CA93 /* parse_expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parse_expression.cpp; sourceTree = "<group>"; };
@@ -172,20 +175,22 @@
 			isa = PBXGroup;
 			children = (
 				2C38FB0F1F2D0702006C3A4B /* ast */,
+				2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */,
+				2C384AD21F3B604E0028C742 /* floyd_basics.cpp */,
+				2C384AD31F3B604E0028C742 /* floyd_basics.h */,
 				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
 				2C81894C1D47B62400030C96 /* floyd_interpreter.h */,
 				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
 				2C95E6D01D5AA47200186D5A /* llvm_code_gen.cpp */,
 				2C95E6D11D5AA47200186D5A /* llvm_code_gen.h */,
-				2C00BC401F2427510087B8BB /* pass1 */,
 				2CBCA7D81D569C6D000FAE81 /* parts */,
+				2C00BC401F2427510087B8BB /* pass1 */,
 				2CD68C5F1D5A71610070892A /* pass2.cpp */,
 				2CD68C601D5A71610070892A /* pass2.h */,
 				2CA0F8951D6910D000068871 /* pass3.cpp */,
 				2CA0F8961D6910D000068871 /* pass3.h */,
 				2C0AC17A1CADB26B00979C49 /* runtime.cpp */,
 				2C0AC17B1CADB26B00979C49 /* runtime.h */,
-				2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */,
 			);
 			path = FloydSpeak;
 			sourceTree = "<group>";
@@ -332,6 +337,7 @@
 				2CC50E2A1CE49F09008D78C7 /* game_of_life_ut.cpp in Sources */,
 				2CD9283F1D515AF100243F0A /* expressions.cpp in Sources */,
 				2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */,
+				2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */,
 				2C8270041D46D9A300E697ED /* parser_primitives.cpp in Sources */,
 				2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */,
 				2C71179E1D6E48AE004B8F69 /* parser2.cpp in Sources */,

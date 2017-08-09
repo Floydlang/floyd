@@ -113,25 +113,25 @@ value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	QUARK_ASSERT(t.check_invariant());
 
 	const auto type = t.get_base_type();
-	if(type == base_type::k_bool){
+	if(type == floyd_basics::base_type::k_bool){
 		return value_t(false);
 	}
-	else if(type == base_type::k_int){
+	else if(type == floyd_basics::base_type::k_int){
 		return value_t(0);
 	}
-	else if(type == base_type::k_float){
+	else if(type == floyd_basics::base_type::k_float){
 		return value_t(0.0f);
 	}
-	else if(type == base_type::k_string){
+	else if(type == floyd_basics::base_type::k_string){
 		return value_t("");
 	}
-	else if(type == base_type::k_struct){
+	else if(type == floyd_basics::base_type::k_struct){
 		return make_struct_instance(vm, t);
 	}
-	else if(type == base_type::k_vector){
+	else if(type == floyd_basics::base_type::k_vector){
 		QUARK_ASSERT(false);
 	}
-	else if(type == base_type::k_function){
+	else if(type == floyd_basics::base_type::k_function){
 		QUARK_ASSERT(false);
 	}
 	else{
@@ -435,7 +435,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 				return expression_t::make_constant_bool((left != 0.0f) || (right != 0.0f));
 			}
 			else if(op == expression_t::operation::k_logical_negate){
-				return expression_t::make_constant_bool(left ? false : true);
+				return expression_t::make_constant_bool(static_cast<int>(left) ? false : true);
 			}
 			else{
 				QUARK_ASSERT(false);

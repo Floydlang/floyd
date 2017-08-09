@@ -16,13 +16,13 @@
 #include "json_support.h"
 #include "utils.h"
 #include "parser_primitives.h"
+#include "floyd_basics.h"
 
 struct json_t;
 
 
 
 namespace floyd_ast {
-	struct type_def_t;
 	struct expression_t;
 	struct statement_t;
 	struct value_t;
@@ -33,27 +33,8 @@ namespace floyd_ast {
 
 
 
-	//////////////////////////////////////		base_type
 
-	/*
-		This type is tracked by compiler, not stored in the value-type.
-	*/
-	enum class base_type {
-		k_null,
-		k_bool,
-		k_int,
-		k_float,
-		k_string,
-
-		k_struct,
-		k_vector,
-		k_function
-	};
-
-	std::string base_type_to_string(const base_type t);
-	void trace2(const type_def_t& t, const std::string& label);
-
-
+	//??? Moce to floyd_basics?
 	//////////////////////////////////////		typeid_t
 
 
@@ -63,46 +44,46 @@ namespace floyd_ast {
 	struct typeid_t {
 
 		public: static typeid_t make_null(){
-			return { base_type::k_null, {}, {}, {} };
+			return { floyd_basics::base_type::k_null, {}, {}, {} };
 		}
 
 		public: static typeid_t make_bool(){
-			return { base_type::k_bool, {}, {}, {} };
+			return { floyd_basics::base_type::k_bool, {}, {}, {} };
 		}
 
 		public: static typeid_t make_int(){
-			return { base_type::k_int, {}, {}, {} };
+			return { floyd_basics::base_type::k_int, {}, {}, {} };
 		}
 
 		public: static typeid_t make_float(){
-			return { base_type::k_float, {}, {}, {} };
+			return { floyd_basics::base_type::k_float, {}, {}, {} };
 		}
 
 		public: static typeid_t make_string(){
-			return { base_type::k_string, {}, {}, {} };
+			return { floyd_basics::base_type::k_string, {}, {}, {} };
 		}
 
 		public: static typeid_t make_unresolved_symbol(const std::string& s){
-			return { base_type::k_null, {}, {}, s };
+			return { floyd_basics::base_type::k_null, {}, {}, s };
 		}
 
 		public: bool is_null() const {
-			return _base_type == base_type::k_null;
+			return _base_type == floyd_basics::base_type::k_null;
 		}
 
 		public: static typeid_t make_struct(const std::string& struct_def_id){
-			return { base_type::k_struct, {}, struct_def_id, {} };
+			return { floyd_basics::base_type::k_struct, {}, struct_def_id, {} };
 		}
 
 		public: static typeid_t make_vector(const typeid_t& element_type){
-			return { base_type::k_vector, { element_type }, {}, {} };
+			return { floyd_basics::base_type::k_vector, { element_type }, {}, {} };
 		}
 
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
 			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 			std::vector<typeid_t> parts = { ret };
 			parts.insert(parts.end(), args.begin(), args.end());
-			return { base_type::k_function, parts, {}, {} };
+			return { floyd_basics::base_type::k_function, parts, {}, {} };
 		}
 
 		public: bool operator==(const typeid_t& other) const{
@@ -122,7 +103,7 @@ namespace floyd_ast {
 		*/
 		public: std::string to_string() const;
 
-		public: base_type get_base_type() const{
+		public: floyd_basics::base_type get_base_type() const{
 			return _base_type;
 		}
 
@@ -139,7 +120,7 @@ namespace floyd_ast {
 			"[coord_t/8000]"
 			"pixel_coord_t = coord_t/8000"
 		*/
-		base_type _base_type;
+		floyd_basics::base_type _base_type;
 		std::vector<typeid_t> _parts;
 		std::string _struct_def_id;
 
