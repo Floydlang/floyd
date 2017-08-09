@@ -501,7 +501,11 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 }
 
-std::map<int, object_id_info_t> get_all_objects(const std::shared_ptr<const lexical_scope_t>& scope, int id, int parent_id){
+std::map<int, object_id_info_t> get_all_objects(
+	const std::shared_ptr<const lexical_scope_t>& scope,
+	int id,
+	int parent_id
+){
 	std::map<int, object_id_info_t> result;
 
 	result[id] = object_id_info_t{ scope, parent_id };
@@ -640,9 +644,6 @@ json_t interpreter_to_json(const interpreter_t& vm){
 
 
 
-
-
-
 void test__evaluate_expression(const expression_t& e, const expression_t& expected){
 	const ast_t ast;
 	const interpreter_t interpreter(ast);
@@ -697,18 +698,225 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 	);
 }
 
+
+
+
+//////////////////////////		environment_t
+
+
+
+std::shared_ptr<environment_t> environment_t::make_environment(
+	const interpreter_t& vm,
+	const std::shared_ptr<const lexical_scope_t>& object,
+	int object_id,
+	std::shared_ptr<floyd_interpreter::environment_t>& parent_env
+)
+{
+	QUARK_ASSERT(vm.check_invariant());
+
+	//	Copy global scope's functions into new env.
+	std::map<std::string, floyd_ast::value_t> values;
+	for(const auto& e: object->_state){
+		values[e._name] = *e._value;
+	}
+
+	auto f = environment_t{ vm._ast, parent_env, object_id, values };
+	return make_shared<environment_t>(f);
+}
+
+bool environment_t::check_invariant() const {
+	QUARK_ASSERT(_ast.check_invariant());
+	return true;
+}
+
+
+//////////////////////////		interpreter_t
+
+
+interpreter_t::interpreter_t(const ast_t& ast) :
+	_ast(ast),
+	_object_lookup(make_lexical_lookup(_ast.get_global_scope()))
+{
+	QUARK_ASSERT(ast.check_invariant());
+
+	shared_ptr<environment_t> parent_env;
+	_call_stack.push_back(environment_t::make_environment(*this, _ast.get_global_scope(), 0, parent_env));
+
+	//	Run static intialization (basically run global statements before calling main()).
+	const auto r = execute_statements(*this, _ast.get_global_scope()->_statements);
+	assert(!r.second);
+
+
+	_call_stack[0]->_values = r.first._call_stack[0]->_values;
+	QUARK_ASSERT(check_invariant());
+}
+
+bool interpreter_t::check_invariant() const {
+	QUARK_ASSERT(_ast.check_invariant());
+	return true;
+}
+
+
+
+
+
+//////////////////////////		run_main()
+
+
+ast_t program_to_ast2(const string& program){
+	const auto pass1 = floyd_parser::parse_program2(program);
+	const auto pass2 = run_pass2(pass1);
+	trace(pass2);
+	return pass2;
+}
+
+
+interpreter_t run_global(const string& source){
+	auto ast = program_to_ast2(source);
+	auto vm = interpreter_t(ast);
+	return vm;
+}
+
+std::pair<interpreter_t, floyd_ast::value_t> run_main(const string& source, const vector<floyd_ast::value_t>& args){
+	auto ast = program_to_ast2(source);
+	auto vm = interpreter_t(ast);
+	const auto f = find_global_symbol(vm, "main");
+	const auto r = call_function(vm, f, args);
+	return { vm, r };
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//	FLOYD LANGUAGE TEST SUITE
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+void test__run_init(const std::string& program, const value_t& expected_result){
+	const auto result = run_global(program);
+	const auto result_value = result._call_stack[0]->_values["result"];
+	ut_compare_jsons(
+		expression_to_json(expression_t::make_constant_value(result_value)),
+		expression_to_json(expression_t::make_constant_value(expected_result))
+	);
+}
+
+
+void test__run_main(const std::string& program, const vector<floyd_ast::value_t>& args, const value_t& expected_return){
+	const auto result = run_main(program, args);
+	ut_compare_jsons(
+		expression_to_json(expression_t::make_constant_value(result.second)),
+		expression_to_json(expression_t::make_constant_value(expected_return))
+	);
+}
+
+
+//??? test all errors too!
+
+//////////////////////////		TEST GLOBAL CONSTANTS
+
+
+QUARK_UNIT_TESTQ("Floyd test suite", "Global int variable"){
+	test__run_init("int result = 123;", value_t(123));
+}
+
+
+//////////////////////////		TEST CONSTANT EXPRESSIONS
+
+/*
+QUARK_UNIT_TESTQ("Floyd test suite", "null constant expression"){
+	test__run_init("int result = null;", value_t());
+}
+*/
+
+//??? why OK? result is int!
+QUARK_UNIT_TESTQ("Floyd test suite", "bool constant expression"){
+	test__run_init("int result = true;", value_t(true));
+}
+QUARK_UNIT_TESTQ("Floyd test suite", "bool constant expression"){
+	test__run_init("int result = false;", value_t(false));
+}
+
+QUARK_UNIT_TESTQ("Floyd test suite", "int constant expression"){
+	test__run_init("int result = 123;", value_t(123));
+}
+
+QUARK_UNIT_TESTQ("Floyd test suite", "float constant expression"){
+	test__run_init("int result = 3.5;", value_t(float(3.5)));
+}
+
+QUARK_UNIT_TESTQ("Floyd test suite", "string constant expression"){
+	test__run_init("int result = \"xyz\";", value_t("xyz"));
+}
+
+//??? struct
+//??? vector
+//??? function
+
+
+
+
+
+
+
+//////////////////////////		TEST EXPRESSIONS
+
+
+QUARK_UNIT_TESTQ("Floyd test suite", "+") {
+	test__run_init("int result = 1 + 2;", value_t(3));
+}
+QUARK_UNIT_TESTQ("Floyd test suite", "+") {
+	test__run_init("int result = 1 + 2 + 3;", value_t(6));
+}
+QUARK_UNIT_TESTQ("Floyd test suite", "*") {
+	test__run_init("int result = 3 * 4;", value_t(12));
+}
+
+QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
+	test__run_init("int result = (3 * 4) * 5;", value_t(60));
+}
+
+
+
+
+
+//////////////////////////		TEST conditional expression
+
+
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	test__run_init("int result = true ? 1 : 2;", value_t(1));
+}
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	test__run_init("int result = false ? 1 : 2;", value_t(2));
+}
+
+//??? Test truthness off all variable types: strings, floats
+
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	test__run_init("string result = true ? \"yes\" : \"no\";", value_t("yes"));
+}
+QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+	test__run_init("string result = false ? \"yes\" : \"no\";", value_t("no"));
+}
+
+
+
+
+
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
+	test__run_init("int result = 5*(4+4+1)", value_t(45));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
+	test__run_init("int result = 5*(2*(1+3)+1)", value_t(45));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
+	test__run_init("int result = 5*((1+3)*2+1)", value_t(45));
+}
+
 #if false
-
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
-	QUARK_TEST_VERIFY(test__evaluate_expression("5*(4+4+1)") == expression_t::make_constant(45));
-}
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
-	QUARK_TEST_VERIFY(test__evaluate_expression("5*(2*(1+3)+1)") == expression_t::make_constant(45));
-}
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
-	QUARK_TEST_VERIFY(test__evaluate_expression("5*((1+3)*2+1)") == expression_t::make_constant(45));
-}
-
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 	QUARK_TEST_VERIFY(test__evaluate_expression(" 5 * ((1 + 3) * 2 + 1) ") == expression_t::make_constant(45));
@@ -950,148 +1158,45 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Multiply errors") {
 
 
 
-//////////////////////////		environment_t
 
 
 
-std::shared_ptr<environment_t> environment_t::make_environment(
-	const interpreter_t& vm,
-	const std::shared_ptr<const lexical_scope_t>& object,
-	int object_id,
-	std::shared_ptr<floyd_interpreter::environment_t>& parent_env
-)
-{
-	QUARK_ASSERT(vm.check_invariant());
 
-	//	Copy global scope's functions into new env.
-	std::map<std::string, floyd_ast::value_t> values;
-	for(const auto& e: object->_state){
-		values[e._name] = *e._value;
-	}
+//////////////////////////		TEST FUNCTIONS
 
-	auto f = environment_t{ vm._ast, parent_env, object_id, values };
-	return make_shared<environment_t>(f);
+
+
+QUARK_UNIT_TESTQ("run_main", "Can make and read global int"){
+	test__run_main(
+		"int test = 123;"
+		"string main(){\n"
+		"	return test;"
+		"}\n",
+		{},
+		value_t(123)
+	);
 }
-
-bool environment_t::check_invariant() const {
-	QUARK_ASSERT(_ast.check_invariant());
-	return true;
-}
-
-
-//////////////////////////		interpreter_t
-
-
-interpreter_t::interpreter_t(const ast_t& ast) :
-	_ast(ast),
-	_object_lookup(make_lexical_lookup(_ast.get_global_scope()))
-{
-	QUARK_ASSERT(ast.check_invariant());
-
-	shared_ptr<environment_t> parent_env;
-	_call_stack.push_back(environment_t::make_environment(*this, _ast.get_global_scope(), 0, parent_env));
-
-	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _ast.get_global_scope()->_statements);
-	assert(!r.second);
-
-
-	_call_stack[0]->_values = r.first._call_stack[0]->_values;
-	QUARK_ASSERT(check_invariant());
-}
-
-bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_ast.check_invariant());
-	return true;
-}
-
-
-
-
-
-//////////////////////////		run_main()
-
-
-ast_t program_to_ast2(const string& program){
-	const auto pass1 = floyd_parser::parse_program2(program);
-	const auto pass2 = run_pass2(pass1);
-	trace(pass2);
-	return pass2;
-}
-
-
-std::pair<interpreter_t, floyd_ast::value_t> run_main(const string& source, const vector<floyd_ast::value_t>& args){
-	QUARK_ASSERT(source.size() > 0);
-	auto ast = program_to_ast2(source);
-	auto vm = interpreter_t(ast);
-	const auto f = find_global_symbol(vm, "main");
-	const auto r = call_function(vm, f, args);
-	return { vm, r };
-}
-
 
 
 QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
-	const auto result = run_main(
+	test__run_main(
 		"string main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n",
-		vector<floyd_ast::value_t>{floyd_ast::value_t("program_name 1 2 3 4")}
+		vector<floyd_ast::value_t>{floyd_ast::value_t("program_name 1 2 3 4")},
+		floyd_ast::value_t("123456")
 	);
-	QUARK_TEST_VERIFY(result.second == floyd_ast::value_t("123456"));
 }
 
-
-//////////////////////////		TEST conditional expression
-
-
-QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
-	const auto result = run_main(
-		R"(
-			string main(bool input_flag){
-				return input_flag ? "123" : "456";
-			}
-		)",
-		vector<floyd_ast::value_t>{floyd_ast::value_t(true)}
-	);
-	QUARK_TEST_VERIFY(result.second == floyd_ast::value_t("123"));
+QUARK_UNIT_TESTQ("run_main()", ""){
+	test__run_main("bool main(){ return 4 < 5; }", {}, floyd_ast::value_t(true));
 }
-
-QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
-	const auto result = run_main(
-		R"(
-			string main(bool input_flag){
-				return input_flag ? "123" : "456";
-			}
-		)",
-		vector<floyd_ast::value_t>{floyd_ast::value_t(false)}
-	);
-	QUARK_TEST_VERIFY(result.second == floyd_ast::value_t("456"));
+QUARK_UNIT_TESTQ("run_main()", ""){
+	test__run_main("bool main(){ return 5 < 4; }", {}, floyd_ast::value_t(false));
 }
-
-
-
-
-
-bool test__run_main(const std::string& program, const value_t& expected_return){
-	QUARK_TRACE_SS("program:" << program);
-	const auto result = run_main(program,
-		vector<floyd_ast::value_t>{}
-	);
-	QUARK_TRACE_SS("expect:" << expected_return.value_and_type_to_string());
-	QUARK_TRACE_SS("result:" << result.second.value_and_type_to_string());
-	return result.second == expected_return;
+QUARK_UNIT_TESTQ("run_main()", ""){
+	test__run_main("bool main(){ return 4 <= 4; }", {}, floyd_ast::value_t(true));
 }
-
-
-QUARK_UNIT_1("run_main()", "", test__run_main("bool main(){ return 4 < 5; }", floyd_ast::value_t(true)));
-QUARK_UNIT_1("run_main()", "", test__run_main("bool main(){ return 5 < 4; }", floyd_ast::value_t(false)));
-QUARK_UNIT_1("run_main()", "", test__run_main("bool main(){ return 4 <= 4; }", floyd_ast::value_t(true)));
-
-
-
-
-
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	auto ast = program_to_ast2(
@@ -1163,25 +1268,6 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	QUARK_TEST_VERIFY(result2 == floyd_ast::value_t("--123<123>--"));
 }
 
-
-
-
-
-//////////////////////////		TEST GLOBAL CONSTANTS
-
-
-
-
-QUARK_UNIT_TESTQ("struct", "Can make and read global int"){
-	const auto a = run_main(
-		"int test = 123;"
-		"string main(){\n"
-		"	return test;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t(123));
-}
 
 
 
