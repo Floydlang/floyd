@@ -20,6 +20,7 @@
 namespace floyd_parser {
 	struct statement_t;
 	struct value_t;
+	struct typeid_t;
 
 	//////////////////////////////////////////////////		struct_instance_t
 
@@ -27,21 +28,21 @@ namespace floyd_parser {
 		An instance of a struct-type = a value of this struct.
 		Each memeber is initialized.
 
-		### Merge into stack_frame_t to make a generic construct.
+		### Merge into environment_t to make a generic construct.
 	*/
 	struct struct_instance_t {
-		public: struct_instance_t(const std::shared_ptr<const type_def_t>& struct_type, const std::map<std::string, value_t>& member_values) :
+		public: struct_instance_t(const typeid_t& struct_type, const std::map<std::string, value_t>& member_values) :
 			_struct_type(struct_type),
 			_member_values(member_values)
 		{
-			QUARK_ASSERT(struct_type && struct_type->check_invariant());
+			QUARK_ASSERT(struct_type.check_invariant());
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_instance_t& other);
 
 		//	??? Remove this pointer at later time, when we statically track the type of structs OK. We alreay know this via __def!
-		public: std::shared_ptr<const type_def_t> _struct_type;
+		public: typeid_t _struct_type;
 
 		//	??? Use ::vector<value_t> _member_values and index of member to find the value.
 		public: std::map<std::string, value_t> _member_values;
@@ -57,8 +58,8 @@ namespace floyd_parser {
 		public: bool check_invariant() const;
 		public: bool operator==(const vector_instance_t& other);
 
-		//	??? Remove this pointer at later time, when we statically track the type of structs OK.
-		std::shared_ptr<type_def_t> _vector_type;
+		//	??? Remove this at later time, when we statically track the type of structs OK.
+		typeid_t _vector_type;
 
 		std::vector<value_t> _elements;
 	};
@@ -74,8 +75,8 @@ namespace floyd_parser {
 		public: bool operator==(const function_instance_t& other);
 
 
-		public: std::shared_ptr<const type_def_t> _function_type;
-		public: scope_ref_t _function_implementation;
+		public: typeid_t _function_type;
+		public: int _function_id;
 	};
 
 
@@ -97,9 +98,9 @@ namespace floyd_parser {
 
 	struct value_t {
 		public: bool check_invariant() const{
-			QUARK_ASSERT(_type_def && _type_def->check_invariant());
+			QUARK_ASSERT(_typeid.check_invariant());
 
-			const auto base_type = _type_def->get_base_type();
+			const auto base_type = _typeid.get_base_type();
 			if(base_type == base_type::k_null){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
@@ -186,34 +187,34 @@ namespace floyd_parser {
 		}
 
 		public: value_t() :
-			_type_def(type_def_t::make_null_typedef())
+			_typeid(typeid_t::make_null())
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(bool value) :
-			_type_def(type_def_t::make_bool_typedef()),
+			_typeid(typeid_t::make_bool()),
 			_bool(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(int value) :
-			_type_def(type_def_t::make_int_typedef()),
+			_typeid(typeid_t::make_int()),
 			_int(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(float value) :
-			_type_def(type_def_t::make_float_typedef()),
+			_typeid(typeid_t::make_float()),
 			_float(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(const char s[]) :
-			_type_def(type_def_t::make_string_typedef()),
+			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(s != nullptr);
@@ -222,14 +223,14 @@ namespace floyd_parser {
 		}
 
 		public: explicit value_t(const std::string& s) :
-			_type_def(type_def_t::make_string_typedef()),
+			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(const std::shared_ptr<struct_instance_t>& instance) :
-			_type_def(instance->_struct_type),
+			_typeid(instance->_struct_type),
 			_struct(instance)
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
@@ -238,7 +239,7 @@ namespace floyd_parser {
 		}
 
 		public: value_t(const std::shared_ptr<vector_instance_t>& instance) :
-			_type_def(instance->_vector_type),
+			_typeid(instance->_vector_type),
 			_vector(instance)
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
@@ -246,17 +247,17 @@ namespace floyd_parser {
 			QUARK_ASSERT(check_invariant());
 		}
 		public: value_t(const std::shared_ptr<function_instance_t>& function_instance) :
-			_type_def(function_instance->_function_type),
+			_typeid(function_instance->_function_type),
 			_function(function_instance)
 		{
 			QUARK_ASSERT(function_instance && function_instance->check_invariant());
-			QUARK_ASSERT(function_instance->_function_type && function_instance->_function_type->get_base_type() == base_type::k_function);
+			QUARK_ASSERT(function_instance->_function_type.get_base_type() == base_type::k_function);
 
 			QUARK_ASSERT(check_invariant());
 		}
 
 		value_t(const value_t& other):
-			_type_def(other._type_def),
+			_typeid(other._typeid),
 
 			_bool(other._bool),
 			_int(other._int),
@@ -290,7 +291,7 @@ namespace floyd_parser {
 			//??? Use better way to compare types!!!
 			// Use the base_type enum instead of strings for basic types? Use string for basics, hash for composite, functions, typedefs?
 
-			if(!(*_type_def == *other._type_def)){
+			if(!(_typeid == other._typeid)){
 				return false;
 			}
 
@@ -341,6 +342,13 @@ namespace floyd_parser {
 			return !(*this == other);
 		}
 
+		/*
+			"true"
+			"false"
+			"0"
+			"1003"
+			"Hello, world",
+		*/
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -372,7 +380,7 @@ namespace floyd_parser {
 				return to_preview(*_vector);
 			}
 			else if(base_type == base_type::k_function){
-				return json_to_compact_string(type_def_to_json(*_type_def));
+				return json_to_compact_string(typeid_to_json(_typeid));
 			}
 
 			else{
@@ -387,21 +395,21 @@ namespace floyd_parser {
 				return "<null>";
 			}
 			else{
-				std::string type_string = _type_def->to_string();
-				return "<" + type_string + ">" + plain_value_to_string();
+				std::string type_string = json_to_compact_string(typeid_to_json(_typeid));
+				return type_string + ": " + plain_value_to_string();
 			}
 		}
 
-		public: std::shared_ptr<const type_def_t> get_type() const{
+		public: typeid_t get_type() const{
 			QUARK_ASSERT(check_invariant());
 
-			return _type_def;
+			return _typeid;
 		}
 
 		public: base_type get_base_type() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_def->get_base_type();
+			return _typeid.get_base_type();
 		}
 
 		public: bool is_null() const {
@@ -519,7 +527,7 @@ namespace floyd_parser {
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
 
-			_type_def.swap(other._type_def);
+			_typeid.swap(other._typeid);
 
 			std::swap(_bool, other._bool);
 			std::swap(_int, other._int);
@@ -538,7 +546,7 @@ namespace floyd_parser {
 
 
 		////////////////		STATE
-		private: std::shared_ptr<const type_def_t> _type_def;
+		private: typeid_t _typeid;
 
 		private: bool _bool = false;
 		private: int _int = 0;
@@ -548,6 +556,14 @@ namespace floyd_parser {
 		private: std::shared_ptr<vector_instance_t> _vector;
 		private: std::shared_ptr<function_instance_t> _function;
 	};
+
+
+
+	inline value_t make_function_value(const typeid_t& function_type, int function_id){
+		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{function_type, function_id});
+		return value_t(f);
+	}
+
 
 
 	void trace(const value_t& e);

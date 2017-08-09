@@ -20,11 +20,16 @@ namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
 	struct statement_t;
-	struct scope_def_t;
 }
 
 namespace floyd_interpreter {
+	struct interpreter_t;
 
+	//	global IS included, as ID 0.
+	//	0/1000/1009 = two levels of nesting.
+	struct lexical_path_t {
+		std::vector<int> _nodes;
+	};
 
 
 	//////////////////////////////////////		type_identifier_t
@@ -33,21 +38,40 @@ namespace floyd_interpreter {
 		Runtime scope, similair to a stack frame.
 	*/
 
-	struct stack_frame_t {
-//		public: floyd_parser::scope_ref_t _def;
-		public: floyd_parser::scope_ref_t _def;
+	struct environment_t {
+		public: floyd_parser::ast_t _ast;
 
-		//	### idea: Values are indexes same as scope_def_t::_runtime_value_spec.
-		//	key string is name of variable.
+		public: int _object_id;
+
+		//	Last ID is the object ID of *this* environment.
+//		public: lexical_path_t _path;
+
 		public: std::map<std::string, floyd_parser::value_t> _values;
+
+
+		public: bool check_invariant() const;
+
+		public: static std::shared_ptr<environment_t> make_environment(
+			const interpreter_t& vm,
+			const std::shared_ptr<const floyd_parser::lexical_scope_t> object,
+			int object_id
+			/*, const lexical_path_t& path*/
+		);
 	};
 
+
+
+	struct object_id_info_t {
+		std::shared_ptr<const floyd_parser::lexical_scope_t> _object;
+		int _lexical_parent_id;
+	};
 
 
 	//////////////////////////////////////		type_identifier_t
 
 	/*
 		Complete runtime state of the interpreter.
+		MUTABLE
 	*/
 
 	struct interpreter_t {
@@ -58,11 +82,15 @@ namespace floyd_interpreter {
 		////////////////////////		STATE
 		public: const floyd_parser::ast_t _ast;
 
+		public: std::map<int, object_id_info_t> _object_lookup;
+
+
 		//	Last scope is the current one. First scope is the root.
-		public: std::vector<std::shared_ptr<stack_frame_t>> _call_stack;
+		public: std::vector<std::shared_ptr<environment_t>> _call_stack;
 	};
 
 
+	json_t interpreter_to_json(const interpreter_t& vm);
 
 
 	/*
@@ -70,11 +98,11 @@ namespace floyd_interpreter {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	floyd_parser::expression_t evalute_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
+	floyd_parser::expression_t evaluate_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
 
 	floyd_parser::value_t call_function(
 		const interpreter_t& vm,
-		const floyd_parser::scope_ref_t& f,
+		const floyd_parser::value_t& f,
 		const std::vector<floyd_parser::value_t>& args
 	);
 

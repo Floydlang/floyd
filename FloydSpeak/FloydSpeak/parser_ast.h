@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include "json_support.h"
+#include "utils.h"
 #include "parser_primitives.h"
 
 struct TSHA1;
@@ -23,14 +24,13 @@ struct json_t;
 
 namespace floyd_parser {
 	struct type_def_t;
+	struct expression_t;
 	struct statement_t;
 	struct value_t;
-	struct scope_def_t;
+	struct lexical_scope_t;
 	struct struct_instance_t;
 	struct vector_def_t;
 	struct ast_t;
-
-	typedef std::shared_ptr<const scope_def_t> scope_ref_t;
 
 
 
@@ -55,7 +55,99 @@ namespace floyd_parser {
 	void trace2(const type_def_t& t, const std::string& label);
 
 
+	//////////////////////////////////////		typeid_t
 
+
+	struct typeid_t;
+	json_t typeid_to_json(const typeid_t& t);
+
+	struct typeid_t {
+
+		public: static typeid_t make_null(){
+			return { base_type::k_null, {}, {}, {} };
+		}
+
+		public: static typeid_t make_bool(){
+			return { base_type::k_bool, {}, {}, {} };
+		}
+
+		public: static typeid_t make_int(){
+			return { base_type::k_int, {}, {}, {} };
+		}
+
+		public: static typeid_t make_float(){
+			return { base_type::k_float, {}, {}, {} };
+		}
+
+		public: static typeid_t make_string(){
+			return { base_type::k_string, {}, {}, {} };
+		}
+
+		public: static typeid_t make_unresolved_symbol(const std::string& s){
+			return { base_type::k_null, {}, {}, s };
+		}
+
+		public: bool is_null() const {
+			return _base_type == base_type::k_null;
+		}
+
+		public: static typeid_t make_struct(const std::string& struct_def_id){
+			return { base_type::k_struct, {}, struct_def_id, {} };
+		}
+
+		public: static typeid_t make_vector(const typeid_t& element_type){
+			return { base_type::k_vector, { element_type }, {}, {} };
+		}
+
+		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
+			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
+			std::vector<typeid_t> parts = { ret };
+			parts.insert(parts.end(), args.begin(), args.end());
+			return { base_type::k_function, parts, {}, {} };
+		}
+
+		public: bool operator==(const typeid_t& other) const{
+			return _base_type == other._base_type && _parts == other._parts && _struct_def_id == other._struct_def_id;
+		}
+
+		public: bool check_invariant() const;
+
+		public: void swap(typeid_t& other);
+
+		/*
+			"int"
+			"[int]"
+			"int (float, [int])"
+			"coord_t/8000"
+		*/
+		public: std::string to_string() const;
+
+		public: base_type get_base_type() const{
+			return _base_type;
+		}
+
+
+		/////////////////////////////		STATE
+
+
+		/*
+			"coord_t"
+			"coord_t/8000"
+			"int (float a, float b)"
+			"[string]"
+			"[string([bool(float,string),pixel)])"
+			"[coord_t/8000]"
+			"pixel_coord_t = coord_t/8000"
+		*/
+		base_type _base_type;
+		std::vector<typeid_t> _parts;
+		std::string _struct_def_id;
+
+		//	This is used it overrides _base_type (which will be null).
+		std::string _unresolved_type_symbol;
+	};
+
+	json_t typeid_to_json(const typeid_t& t);
 
 
 
@@ -66,14 +158,14 @@ namespace floyd_parser {
 	*/
 
 	struct member_t {
-		//??? init_value should be an expression.
-		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name, const value_t& init_value);
-		public: member_t(const std::shared_ptr<const type_def_t>& type, const std::string& name);
+		public: member_t(const typeid_t& type, const std::string& name);
+		public: member_t(const typeid_t& type, const std::shared_ptr<value_t>& value, const std::string& name);
 		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
 
-		//??? Skip shared_ptr<>
-		public: std::shared_ptr<const type_def_t> _type;
+
+		/////////////////////////////		STATE
+		public: typeid_t _type;
 
 		//	Optional -- must have same type as _type.
 		public: std::shared_ptr<const value_t> _value;
@@ -82,16 +174,6 @@ namespace floyd_parser {
 	};
 
 	void trace(const member_t& member);
-
-
-
-/*
-	struct host_data_i {
-		public: virtual ~host_data_i(){};
-	};
-
-	typedef value_t (*hosts_function_t)(const ast_t& ast, const std::shared_ptr<host_data_i>& param, const std::vector<value_t>& args);
-*/
 
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
@@ -108,7 +190,7 @@ namespace floyd_parser {
 	struct vector_def_t {
 		public: static vector_def_t make2(
 			const type_identifier_t& name,
-			const std::shared_ptr<type_def_t>& element_type
+			const typeid_t& element_type
 		);
 
 		public: vector_def_t(){};
@@ -116,9 +198,9 @@ namespace floyd_parser {
 		public: bool operator==(const vector_def_t& other) const;
 
 
-		///////////////////		STATE
+		/////////////////////////////		STATE
 		public: type_identifier_t _name;
-		public: std::shared_ptr<type_def_t> _element_type;
+		public: typeid_t _element_type;
 	};
 
 	void trace(const vector_def_t& e);
@@ -126,191 +208,75 @@ namespace floyd_parser {
 
 
 
-	//////////////////////////////////////////////////		scope_def_t
+	//////////////////////////////////////////////////		lexical_scope_t
 
 	/*
 		This is a core internal building block of the AST. It represents a static, compile-time scope.
-		scope_def_t:s are used to define
+		lexical_scope_t:s are used to define
 
 		- The global scope
 		- struct definition, with member data and functions
 		- function definition, with arguments
-		- function sub-scope - {}, for(){}, while{}, if(){}, else{}.
+		- block = function sub-scope - {}, for(){}, while{}, if(){}, else{}.
 
-		The scope_def_t includes optional code, optional member variables and optional local types.
+		The lexical_scope_t includes optional code, optional member variables and optional local types.
 	*/
-	struct scope_def_t {
+	struct lexical_scope_t {
 		public: enum class etype {
 			k_function_scope,
 			k_struct_scope,
 			k_global_scope,
-			k_subscope
+			k_block
 		};
 
-		//	??? Merge with etype, but that effects clients.
-		public: enum class efunc_variant {
-			k_not_relevant,
-			k_interpreted,
-			k_default_constructor
-		};
+		public: static std::shared_ptr<const lexical_scope_t> make_struct_object(const std::vector<member_t>& members);
 
-		public: static scope_ref_t make_struct(const type_identifier_t& name, const std::vector<member_t>& members);
-
-		public: static scope_ref_t make_function_def(
-			const type_identifier_t& name,
+		public: static std::shared_ptr<const lexical_scope_t> make_function_object(
 			const std::vector<member_t>& args,
-			const std::vector<member_t>& local_variables,
+			const std::vector<member_t>& locals,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const std::shared_ptr<const type_def_t>& return_type
+			const typeid_t& return_type,
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-		public: static scope_ref_t make_builtin_function_def(
-			const type_identifier_t& name,
-			efunc_variant function_variant,
-			const std::shared_ptr<const type_def_t>& type
+		public: static std::shared_ptr<const lexical_scope_t> make_global_scope(
+			const std::vector<std::shared_ptr<statement_t> >& statements,
+			const std::vector<member_t>& globals,
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-		public: static scope_ref_t make_global_scope();
-
-		public: scope_def_t(const scope_def_t& other);
+		public: lexical_scope_t(const lexical_scope_t& other);
 
 		public: bool check_invariant() const;
 		public: bool shallow_check_invariant() const;
 
-		public: bool operator==(const scope_def_t& other) const;
+		public: bool operator==(const lexical_scope_t& other) const;
 
-		private: explicit scope_def_t(
+		private: explicit lexical_scope_t(
 			etype type,
-			const type_identifier_t& name,
 			const std::vector<member_t>& args,
-			const std::vector<member_t>& local_variables,
-			const std::vector<member_t>& members,
+			const std::vector<member_t>& state,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const std::shared_ptr<const type_def_t>& return_type,
-			const efunc_variant& function_variant
+			const typeid_t& return_type,
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
+		public: const std::map<int, std::shared_ptr<const lexical_scope_t> >& get_objects() const {
+			return _objects;
+		}
 
 		/////////////////////////////		STATE
 		public: etype _type;
-		public: type_identifier_t _name;
 		public: std::vector<member_t> _args;
-		public: std::vector<member_t> _local_variables;
-		public: std::vector<member_t> _members;
+		public: std::vector<member_t> _state;
 		public: const std::vector<std::shared_ptr<statement_t> > _statements;
-		public: std::shared_ptr<const type_def_t> _return_type;
+		public: typeid_t _return_type;
 
-		public: efunc_variant _function_variant;
+		private: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
 	};
 
-	json_t scope_def_to_json(const scope_def_t& scope_def);
-	void trace(const scope_ref_t& e);
-
-
-
-
-	//////////////////////////////////////		type_def_t
-
-	/*
-		Describes a frontend type. All sub-types may or may not be known yet.
-		Immutable
-
-		- Basic types, like ints and strings.
-		- Functions
-		- Vector type
-		- Structs
-	*/
-	struct type_def_t {
-		private: type_def_t(base_type type) :
-			_base_type(type)
-		{
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const type_def_t& other) const;
-		public: void swap(type_def_t& rhs);
-		public: base_type get_base_type() const {
-			return _base_type;
-		}
-
-
-		public: static std::shared_ptr<type_def_t> make_null_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_null));
-		}
-		public: static std::shared_ptr<type_def_t> make_bool_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_bool));
-		}
-		public: static std::shared_ptr<type_def_t> make_int_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_int));
-		}
-		public: static std::shared_ptr<type_def_t> make_float_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_float));
-		}
-		public: static std::shared_ptr<type_def_t> make_string_typedef(){
-			return std::make_shared<type_def_t>(type_def_t(base_type::k_string));
-		}
-
-		public: static std::shared_ptr<type_def_t> make_struct_type_def(const std::shared_ptr<const scope_def_t>& struct_def){
-			type_def_t a(base_type::k_struct);
-			a._struct_def = struct_def;
-			return std::make_shared<type_def_t>(a);
-		}
-		public: static std::shared_ptr<type_def_t> make_vector_type_def(const std::shared_ptr<const vector_def_t>& vector_def){
-			type_def_t a(base_type::k_vector);
-			a._vector_def = vector_def;
-			return std::make_shared<type_def_t>(a);
-		}
-		public: static std::shared_ptr<type_def_t> make_function_type_def(const std::shared_ptr<const scope_def_t>& function_def){
-			type_def_t a(base_type::k_function);
-			a._function_def = function_def;
-			return std::make_shared<type_def_t>(a);
-		}
-
-		public: std::string to_string() const;
-
-		public: bool is_subscope() const {
-			return _base_type == base_type::k_function || _base_type == base_type::k_struct;
-		}
-
-		public: std::shared_ptr<const scope_def_t> get_subscope() const {
-			QUARK_ASSERT(is_subscope());
-			if(_base_type == base_type::k_function){
-				return _function_def;
-			}
-			else if(_base_type == base_type::k_struct){
-				return _struct_def;
-			}
-			QUARK_ASSERT(false);
-		}
-
-		public: std::shared_ptr<const scope_def_t> get_struct_def() const {
-			QUARK_ASSERT(_base_type == base_type::k_struct);
-			return _struct_def;
-		}
-		public: std::shared_ptr<const vector_def_t> get_vector_def() const {
-			QUARK_ASSERT(_base_type == base_type::k_vector);
-			return _vector_def;
-		}
-		public: std::shared_ptr<const scope_def_t> get_function_def() const {
-			QUARK_ASSERT(_base_type == base_type::k_function);
-			return _function_def;
-		}
-
-
-		///////////////////		STATE
-
-		/*
-			Plain types only use the _base_type.
-			### Add support for int-ranges etc.
-		*/
-		private: base_type _base_type;
-		private: std::shared_ptr<const scope_def_t> _struct_def;
-		private: std::shared_ptr<const vector_def_t> _vector_def;
-		private: std::shared_ptr<const scope_def_t> _function_def;
-	};
-
-
-	json_t type_def_to_json(const type_def_t& type_def);
-
+	json_t lexical_scope_to_json(const lexical_scope_t& scope_def);
+	void trace(const std::shared_ptr<const lexical_scope_t>& e);
 
 
 
@@ -323,21 +289,18 @@ namespace floyd_parser {
 	*/
 	struct ast_t {
 		public: ast_t();
-		public: ast_t(std::shared_ptr<const scope_def_t> global_scope, std::map<std::string, std::shared_ptr<const type_def_t>> typenames);
+		public: explicit ast_t(
+			std::shared_ptr<const lexical_scope_t> global_scope
+		);
 		public: bool check_invariant() const;
 
-		public: const std::shared_ptr<const scope_def_t>& get_global_scope() const {
+		public: const std::shared_ptr<const lexical_scope_t>& get_global_scope() const {
 			return _global_scope;
 		}
-		public: const std::map<std::string, std::shared_ptr<const type_def_t>>& get_typenames() const {
-			return _typenames;
-		}
+
 
 		/////////////////////////////		STATE
-		private: std::shared_ptr<const scope_def_t> _global_scope;
-
-		//	Keyed on "$1000" etc.
-		private: std::map<std::string, std::shared_ptr<const type_def_t>> _typenames;
+		private: std::shared_ptr<const lexical_scope_t> _global_scope;
 	};
 
 	void trace(const ast_t& program);

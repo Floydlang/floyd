@@ -20,7 +20,6 @@ struct json_t;
 namespace floyd_parser {
 	struct expression_t;
 	struct value_t;
-	struct scope_def_t;
 	struct type_identifier_t;
 
 
@@ -31,18 +30,18 @@ namespace floyd_parser {
 		Immutable.
 	*/
 	struct expression_t {
-		public: static expression_t make_constant(const value_t& value);
+		public: static expression_t make_constant_value(const value_t& value);
 
-		//	Shortcuts were you don't need to make a value_t first.
-		public: static expression_t make_constant(const bool i);
-		public: static expression_t make_constant(const int i);
-		public: static expression_t make_constant(const float f);
-		public: static expression_t make_constant(const char s[]);
-		public: static expression_t make_constant(const std::string& s);
+		public: static expression_t make_constant_null();
+		public: static expression_t make_constant_int(const int i);
+		public: static expression_t make_constant_bool(const bool i);
+		public: static expression_t make_constant_float(const float i);
+		public: static expression_t make_constant_string(const std::string& s);
 
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;
 
+		//??? Split and categories better. Logic vs equality vs math. Only have ONE way to create each operation.
 		public: enum class operation {
 			k_math2_add = 10,
 			k_math2_subtract,
@@ -66,7 +65,7 @@ namespace floyd_parser {
 			k_conditional_operator3,
 			k_call,
 
-			k_resolve_variable,
+			k_variable,
 			k_resolve_member,
 
 			k_lookup_element
@@ -84,20 +83,18 @@ namespace floyd_parser {
 		);
 
 		public: static expression_t make_function_call(
-			const type_identifier_t& function_name,
+			const expression_t& function,
 			const std::vector<expression_t>& inputs,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& result
 		);
 
 		/*
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
-
-			When compiler resolves this expression it may replace it with a resolve_
 		*/
-		public: static expression_t make_resolve_variable(
+		public: static expression_t make_variable_expression(
 			const std::string& variable,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& result
 		);
 
 		/*
@@ -106,7 +103,7 @@ namespace floyd_parser {
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
 			const std::string& member_name,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& result
 		);
 
 		/*
@@ -115,7 +112,7 @@ namespace floyd_parser {
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& result
 		);
 
 		public: bool check_invariant() const;
@@ -127,23 +124,23 @@ namespace floyd_parser {
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
 			const std::string& symbol,
-			const std::shared_ptr<const type_def_t>& resolved_expression_type
+			const typeid_t& result_type
 		);
 
 		/*
 			Returns pre-computed result of the expression - the type of value it represents.
 			null if not resolved.
 		*/
-		public: std::shared_ptr<const type_def_t> get_expression_type() const{
+		public: typeid_t get_expression_type() const{
 			QUARK_ASSERT(check_invariant());
 
-			return _resolved_expression_type;
+			return _result_type;
 		}
 
 		public: operation get_operation() const;
 		public: const std::vector<expression_t>& get_expressions() const;
 		public: const std::string& get_symbol() const;
-		public: std::shared_ptr<const type_def_t> get_resolved_expression_type() const;
+		public: typeid_t get_result_type() const;
 
 
 		//////////////////////////		STATE
@@ -154,7 +151,7 @@ namespace floyd_parser {
 		private: std::string _symbol;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
-		private: std::shared_ptr<const type_def_t> _resolved_expression_type;
+		private: typeid_t _result_type;
 	};
 	
 

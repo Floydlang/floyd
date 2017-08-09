@@ -92,6 +92,39 @@ RESULT
 
 
 
+"bool"	-	Built in bool type id
+"int"	-	Built in integer type id
+"float"	-	Built in integer type id
+"string"	-	Built in integer type id
+
+"struct/coord_t/8000"		-	this is a struct with definition object 8000. The struct definition was called "coord_t".
+
+"[int]"		-	Vector of integers
+"[function/int(float,float)]"	--	Vector of funtions of type int(float,float)
+"function/bool()"		-- function with bool return and no arguments.
+"function/int(float,float)"		-- function with int return and two float arguments.
+
+		[ "int" ]
+		[ "struct", "coord_t", "$8000" ]
+		[ "function", "int (float, float)" ]
+		[ "vector", "[string]" ]
+
+		[ "<int>" ]
+
+		//	"coord_t/8000" is the unique ID for this struct definition
+		[ "struct", "<coord_t/8000>" ]
+		[ "function", "<int> (<float>, <float>)" ]
+		[ "function", "<int> (<coord_t/8000>, <[<coord_t/8000>]>)" ]
+
+		[ "function", "[ "int", [(<coord_t/8000>, <[<coord_t/8000>]>]" ]
+
+		[ "vector", "<[<string>]>" ]
+		[ "vector", "<[<coord_t/8000>]>" ]
+
+	??? Use recurisve JSON to describe nested signatures?
+		[ "vector", "[string]" ]
+
+
 RULES:
 
 - Several different functions with different implementations can have the same type-definition.

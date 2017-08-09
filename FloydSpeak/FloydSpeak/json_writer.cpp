@@ -22,7 +22,7 @@ using std::vector;
 using namespace std;
 
 
-static const size_t k_default_pretty_columns = 120;
+static const size_t k_default_pretty_columns = 160;
 
 
 

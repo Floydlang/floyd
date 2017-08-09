@@ -86,44 +86,6 @@ bool is_basic_type(const std::string& s){
 	return s == "<null>" || s == "<bool>" || s == "<int>" || s == "<float>" || s == "<string>";
 }
 
-pair<typeid_t, bool> resolve_type_name_int(const string& t){
-	QUARK_ASSERT(t.size() > 2);
-
-	if(t == "<null>"){
-		return { typeid_t::make_null(), true };
-	}
-	else if(t == "<bool>"){
-		return { typeid_t::make_bool(), true };
-	}
-	else if(t == "<int>"){
-		return { typeid_t::make_int(), true };
-	}
-	else if(t == "<float>"){
-		return { typeid_t::make_float(), true };
-	}
-	else if(t == "<string>"){
-		return { typeid_t::make_string(), true };
-	}
-	else {
-		return { typeid_t::make_string(), false };
-	}
-	QUARK_ASSERT(false);
-}
-
-typeid_t resolve_type_name(const string& t){
-	QUARK_ASSERT(t.size() > 2);
-
-	const auto a = resolve_type_name_int(t);
-	if(a.second){
-		return a.first;
-	}
-	else {
-		return typeid_t::make_unresolved_symbol(trim_ends(t));
-	}
-}
-
-
-
 json_t get_array_back(const json_t& array){
 	if(!array.is_array()){
 		throw;
@@ -134,6 +96,9 @@ json_t get_array_back(const json_t& array){
 	return array.get_array_n(array.get_array_size() - 1);
 }
 
+
+
+///////////////////////////////////////////		statements_to_scope()
 
 /*
 	Converts output from parser - which is used lots of nested statements - into scope_defs.
@@ -164,153 +129,32 @@ static json_t add_scope_type(const json_t& scope, const json_t& subscope){
 }
 
 
-
-
 /*
-	Resolves all uses types into "$1234" syntax, deeply. Also puts the expression's type at end of each expression.
+	Input is an array of statements from parser. A function has its own list of statements.
+	There are no scope_defs, types, members, base_type etc.
+
+	Returns a scope_def.
 */
-expression_t parser_expression_to_ast(const json_t& e){
-	QUARK_ASSERT(e.check_invariant());
-	QUARK_TRACE(json_to_pretty_string(e));
-
-	const auto op = e.get_array_n(0).get_string();
-	if(op == "k"){
-		QUARK_ASSERT(e.get_array_size() == 3);
-
-		const auto value = e.get_array_n(1);
-		const auto type = e.get_array_n(2);
-		const auto type2 = type.get_string();
-		if(type2 == "<null>"){
-			return expression_t::make_constant_null();
-		}
-		else if(type2 == "<bool>"){
-			return expression_t::make_constant_bool(value.is_false() ? false : true);
-		}
-		else if(type2 == "<int>"){
-			return expression_t::make_constant_int((int)value.get_number());
-		}
-		else if(type2 == "<float>"){
-			return expression_t::make_constant_float((float)value.get_number());
-		}
-		else if(type2 == "<string>"){
-			return expression_t::make_constant_string(value.get_string());
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-	else if(is_math2_op(op)){
-		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto op2 = string_to_math2_op(op);
-		const auto lhs_expr = parser_expression_to_ast(e.get_array_n(1));
-		const auto rhs_expr = parser_expression_to_ast(e.get_array_n(2));
-		return expression_t::make_math2_operation(op2, lhs_expr, rhs_expr);
-	}
-	else if(op == "?:"){
-		QUARK_ASSERT(e.get_array_size() == 4);
-		const auto condition_expr = parser_expression_to_ast(e.get_array_n(1));
-		const auto a_expr = parser_expression_to_ast(e.get_array_n(2));
-		const auto b_expr = parser_expression_to_ast(e.get_array_n(3));
-		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr);
-	}
-	else if(op == "call"){
-		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto function_expr = parser_expression_to_ast(e.get_array_n(1));
-		const auto args = e.get_array_n(2);
-		vector<expression_t> args2;
-		for(const auto& arg: args.get_array()){
-			args2.push_back(parser_expression_to_ast(arg));
-		}
-		return expression_t::make_function_call(function_expr, args2, typeid_t::make_null());
-	}
-	else if(op == "->"){
-		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto base_expr = parser_expression_to_ast(e.get_array_n(1));
-		const auto member = e.get_array_n(2).get_string();
-		return expression_t::make_resolve_member(base_expr, member, typeid_t::make_null());
-	}
-	else if(op == "@"){
-		QUARK_ASSERT(e.get_array_size() == 2);
-//		const auto variable = parser_expression_to_ast(e.get_array_n(1));
-		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_variable_expression(variable_symbol, typeid_t::make_null());
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
-/*
-	Example:
-		[
-			{ "name": "g_version", "type": "<int>" },
-			{ "name": "message", "type": "<string>" },
-			{ "name": "pos", "type": "pixel" },
-			{ "name": "pos", "type": "image_lib.image.pixel_t" }
-		]
-*/
-std::vector<member_t> conv_members(const json_t& members){
-	std::vector<member_t> members2;
-	for(const auto i: members.get_array()){
-		const string arg_name = i.get_object_element("name").get_string();
-		const string arg_type = i.get_object_element("type").get_string();
-//		QUARK_ASSERT(arg_type[0] == '$');
-
-		const auto arg_type2 = resolve_type_name(arg_type);
-		members2.push_back(member_t{arg_type2, nullptr, arg_name });
-	}
-	return members2;
-}
-
-std::vector<typeid_t> get_member_types(const vector<member_t>& m){
-	vector<typeid_t> r;
-	for(const auto a: m){
-		r.push_back(a._type);
-	}
-	return r;
-}
-
-
-
-struct body_t {
-	public: const std::vector<std::shared_ptr<statement_t> > _statements;
-	public: const std::vector<member_t> _locals;
-	public: const std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
-};
-
-/*
-	Input is an array of statements from parser.
-	A function has its own list of statements.
-*/
-pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
-	QUARK_SCOPED_TRACE("parser_statements_to_ast()");
+json_t statements_to_scope(const json_t& p){
+	QUARK_SCOPED_TRACE("statements_to_scope()");
 	QUARK_ASSERT(p.check_invariant());
 
-	vector<shared_ptr<statement_t>> statements2;
-	std::vector<member_t> locals;
-	std::map<int, std::shared_ptr<const lexical_scope_t> > objects;
-
+	auto scope2 = make_scope_def();
 	for(const auto statement: p.get_array()){
+		const auto statement_type = statement.get_array_n(0);
 
-		//	[ "return", [ "k", 3, "<int>" ] ]
-		if(statement.get_array_n(0) == "return"){
-			QUARK_ASSERT(statement.get_array_size() == 2);
-			const auto expr = parser_expression_to_ast(statement.get_array_n(1));
-			statements2.push_back(make_shared<statement_t>(make__return_statement(expr)));
+		if(statement_type == "return"){
+			scope2 = store_object_member(scope2, "statements", push_back(scope2.get_object_element("statements"), statement));
 		}
-
-		//	[ "bind", "<float>", "x", EXPRESSION ],
-		else if(statement.get_array_n(0) == "bind"){
-			QUARK_ASSERT(statement.get_array_size() == 4);
+		else if(statement_type == "bind"){
 			const auto bind_type = statement.get_array_n(1);
 			const auto local_name = statement.get_array_n(2);
 			const auto expr = statement.get_array_n(3);
+			const auto loc = make_member_def(bind_type.get_string(), local_name.get_string(), json_t());
 
-			const auto bind_type2 = resolve_type_name(bind_type.get_string());
-			const auto local_name2 = local_name.get_string();
-			const auto expr2 = parser_expression_to_ast(expr);
-			statements2.push_back(make_shared<statement_t>(make__bind_statement(local_name2, bind_type2, expr2)));
+			//	Reserve an entry in _members-vector for our variable.
+			scope2 = store_object_member(scope2, "locals", push_back(scope2.get_object_element("locals"), loc));
+			scope2 = store_object_member(scope2, "statements", push_back(scope2.get_object_element("statements"), statement));
 		}
 
 		/*
@@ -346,45 +190,26 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 					}
 				]
 		*/
-		else if(statement.get_array_n(0) == "def-func"){
-			QUARK_ASSERT(statement.get_array_size() == 2);
+		else if(statement_type == "def-func"){
+			const auto function_def = statement.get_array_n(1);
+			const auto name = function_def.get_object_element("name");
+			const auto args = function_def.get_object_element("args");
+			const auto statements = function_def.get_object_element("statements");
+			const auto return_type = function_def.get_object_element("return_type");
 
-			const auto def = statement.get_array_n(1);
-			const auto name = def.get_object_element("name");
-			const auto args = def.get_object_element("args");
-			const auto statements = def.get_object_element("statements");
-			const auto return_type = def.get_object_element("return_type");
-			const auto r = parser_statements_to_ast(statements, id_generator);
-			id_generator = r.second;
+			const auto function_body_scope = statements_to_scope(statements);
+			const auto locals = function_body_scope.get_object_element("locals");
+			const auto types = function_body_scope.get_object_element("types");
 
-			const auto args2 = conv_members(args);
-			const auto return_type2 = resolve_type_name(return_type.get_string());
-
-			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
-
-			//	Build function object.
-			const auto s2 = lexical_scope_t::make_function_object(
-				args2,
-				{},
-				r.first._statements,
-				return_type2,
-				r.first._objects
-			);
-
-			//	Make symbol refering to function object.
-			const auto function_id = id_generator;
-			id_generator +=1;
-
-			value_t f = make_function_value(function_typeid, function_id);
-			const auto function_constant = expression_t::make_constant_value(f);
-//			const auto symbol_data = symbol_t{ symbol_t::k_constant, make_shared<expression_t>(function_constant), {} };
-//			symbols[name.get_string()] = symbol_data;
-
-			//	### Support overloading the same symbol name with different types.
-			locals.push_back(member_t{ function_typeid, make_shared<value_t>(f), name.get_string() });
-			objects[function_id] = s2;
-
-			//### Key symbols with their type too. Support function overloading & struct named as function.
+			auto function_scope = make_scope_def();
+			function_scope = store_object_member(function_scope, "type", "function");
+			function_scope = store_object_member(function_scope, "name", name);
+			function_scope = store_object_member(function_scope, "args", args);
+			function_scope = store_object_member(function_scope, "locals", locals);
+			function_scope = store_object_member(function_scope, "statements", statements);
+			function_scope = store_object_member(function_scope, "types", types);
+			function_scope = store_object_member(function_scope, "return_type", return_type);
+			scope2 = add_scope_type(scope2, function_scope);
 		}
 
 		/*
@@ -422,8 +247,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 					}
 				]
 		*/
-		else if(statement.get_array_n(0) == "def-struct"){
-/*
+		else if(statement_type == "def-struct"){
 			const auto struct_def = statement.get_array_n(1);
 			const auto name = struct_def.get_object_element("name");
 			const auto members = struct_def.get_object_element("members");
@@ -433,14 +257,14 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			struct_scope = store_object_member(struct_scope, "name", name);
 			struct_scope = store_object_member(struct_scope, "members", members);
 			scope2 = add_scope_type(scope2, struct_scope);
-*/
 		}
 		else{
 			throw std::runtime_error("Illegal statement.");
 		}
 	}
 
-	return { body_t{ statements2, locals, objects }, id_generator };
+	QUARK_TRACE(json_to_pretty_string(scope2));
+	return scope2;
 }
 
 
@@ -1490,16 +1314,29 @@ bool has_unresolved_types(const json_t& obj){
 }
 
 
-ast_t run_pass2(const json_t& parse_tree){
+json_t run_pass2(const json_t& parse_tree){
 	QUARK_TRACE(json_to_pretty_string(parse_tree));
 
-	const auto program_body = parser_statements_to_ast(parse_tree, 1000);
-	const auto a = lexical_scope_t::make_global_scope(
-		program_body.first._statements,
-		program_body.first._locals,
-		program_body.first._objects
-	);
-	return ast_t(a);
+	const auto pass_m1 = statements_to_scope(parse_tree);
+	auto pass_0 = store_object_member(pass_m1, "type", "global");
+	pass_0 = store_object_member(pass_0, "name", "global");
+
+	const auto pass_a = assign_unique_type_ids(make_parser_path(pass_0), 1000);
+	const auto pass_a5 = insert_generated_functions(make_parser_path(pass_a.first), pass_a.second);
+	const auto pass_b = resolve_scope_typenames(make_parser_path(pass_a5.first));
+	QUARK_ASSERT(!has_unresolved_types(pass_b));
+
+	const auto pass_c = make_central_type_lookup(make_parser_path(pass_b));
+
+	QUARK_ASSERT(get_in(pass_c, {"global", "args"}) == json_t::make_array());
+	QUARK_ASSERT(get_in(pass_c, {"global", "locals"}) == json_t::make_array());
+	QUARK_ASSERT(get_in(pass_c, {"global", "members"}) == json_t::make_array());
+	QUARK_ASSERT(get_in(pass_c, {"global", "statements"}) == json_t::make_array());
+
+	//	Make sure there are no unresolved types left in program.
+	QUARK_ASSERT(!has_unresolved_types(pass_c));
+
+	return pass_c;
 }
 
 
@@ -1516,7 +1353,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
 	const auto pass1 = parse_json(seq_t(k_test_program_0_parserout)).first;
 	const auto pass2 = run_pass2(pass1);
 	const auto pass2_output = parse_json(seq_t(k_test_program_0_pass2output)).first;
-	ut_compare_jsons(ast_to_json(pass2), pass2_output);
+	ut_compare_jsons(pass2, pass2_output);
 }
 
 /*
@@ -1543,7 +1380,6 @@ void test_error(const string& program, const string& error_string){
 }
 
 
-#if false
 
 QUARK_UNIT_TESTQ("run_pass2()", "1001"){
 	test_error(
@@ -1567,7 +1403,6 @@ QUARK_UNIT_TESTQ("run_pass2()", "1002"){
 		""//"1002 - Undefined function \"f\"."
 	);
 }
-#endif
 
 #if false
 QUARK_UNIT_TESTQ("run_pass2()", "1003"){
@@ -1598,6 +1433,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1004"){
 		""//"1004 - Argument 0 to function \"a\" mismatch."
 	);
 }
+#endif
 
 QUARK_UNIT_TESTQ("run_pass2()", "1005"){
 	test_error(
@@ -1609,9 +1445,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1005"){
 		""//"1005 - Undefined variable \"p\"."
 	);
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "Return undefine type"){
 	test_error(
 		R"(
@@ -1622,7 +1456,6 @@ QUARK_UNIT_TESTQ("run_pass2()", "Return undefine type"){
 		"Undefined type \"xyz\""
 	);
 }
-#endif
 
 #if false
 QUARK_UNIT_TESTQ("run_pass2()", "1006"){

@@ -26,14 +26,6 @@ namespace floyd_parser {
 
 
 
-	statement_t make__bind_statement(const std::shared_ptr<const type_def_t>& type, const std::string& identifier, const expression_t& e){
-		QUARK_ASSERT(type && type->check_invariant());
-		QUARK_ASSERT(identifier.size () > 0);
-		QUARK_ASSERT(e.check_invariant());
-
-		return statement_t(bind_statement_t{ type, identifier, e });
-	}
-
 	statement_t make__return_statement(const return_statement_t& value){
 		return statement_t(value);
 	}
@@ -43,16 +35,14 @@ namespace floyd_parser {
 		return statement_t(return_statement_t{ expression });
 	}
 
-	void trace(const statement_t& s){
-		if(s._bind_statement){
-			std::string t = "bind_statement_t: \"" + s._bind_statement->_identifier + "\"";
-			QUARK_SCOPED_TRACE(t);
-			trace(s._bind_statement->_expression);
-		}
+	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression){
+		return statement_t(bind_statement_t{ new_variable_name, bindtype, expression });
+	}
 
-		else if(s._return_statement){
+	void trace(const statement_t& s){
+		if(s._return){
 			QUARK_SCOPED_TRACE("return_statement_t");
-			trace(s._return_statement->_expression);
+			trace(s._return->_expression);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -66,13 +56,11 @@ namespace floyd_parser {
 
 
 	bool statement_t::check_invariant() const {
-		if(_bind_statement){
-			QUARK_ASSERT(_bind_statement);
-			QUARK_ASSERT(!_return_statement);
+		if(_return){
+			QUARK_ASSERT(true);
 		}
-		else if(_return_statement){
-			QUARK_ASSERT(!_bind_statement);
-			QUARK_ASSERT(_return_statement);
+		else if(_bind){
+			QUARK_ASSERT(true);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -85,17 +73,18 @@ namespace floyd_parser {
 	json_t statement_to_json(const statement_t& e){
 		QUARK_ASSERT(e.check_invariant());
 
-		if(e._bind_statement){
-			return json_t::make_array({
-				json_t("bind"),
-				json_t(e._bind_statement->_identifier),
-				expression_to_json(e._bind_statement->_expression)
-			});
-		}
-		else if(e._return_statement){
+		if(e._return){
 			return json_t::make_array({
 				json_t("return"),
-				expression_to_json(e._return_statement->_expression)
+				expression_to_json(e._return->_expression)
+			});
+		}
+		else if(e._bind){
+			return json_t::make_array({
+				json_t("bind"),
+				e._bind->_new_variable_name,
+				typeid_to_json(e._bind->_bindtype),
+				expression_to_json(e._bind->_expression)
 			});
 		}
 		else{
@@ -104,29 +93,13 @@ namespace floyd_parser {
 	}
 
 
-	QUARK_UNIT_TESTQ("statement_to_json", "bind"){
-		quark::ut_compare(
-			json_to_compact_string(
-				statement_to_json(
-					make__bind_statement(
-						type_def_t::make_int_typedef(),
-						"a",
-						expression_t::make_constant(400)
-					)
-				)
-			)
-			,
-			R"(["bind", "a", ["k", 400, "<int>"]])"
-		);
-	}
-
 	QUARK_UNIT_TESTQ("statement_to_json", "return"){
 		quark::ut_compare(
 			json_to_compact_string(
-				statement_to_json(make__return_statement(expression_t::make_constant("abc")))
+				statement_to_json(make__return_statement(expression_t::make_constant_string("abc")))
 			)
 			,
-			R"(["return", ["k", "abc", "<string>"]])"
+			R"(["return", ["k", "abc", "string"]])"
 		);
 	}
 

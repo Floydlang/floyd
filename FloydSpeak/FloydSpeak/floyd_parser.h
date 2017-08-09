@@ -36,33 +36,24 @@ const std::string k_test_program_0_parserout = R"(
 )";
 const std::string k_test_program_0_pass2output = R"(
 	{
-		"global": {
-			"args": [],
-			"locals": [],
-			"members": [],
-			"name": "global",
-			"return_type": "",
-			"statements": [],
-			"type": "global"
+		"objects": {
+			"1000": {
+				"objtype": "function",
+				"return_type": "int",
+				"statements": [["return", ["k", 3, "int" ]]]
+			}
 		},
-		"lookup": {
-			"$1000": {
-				"base_type": "function",
-				"path": "global/main",
-				"scope_def": {
-					"args": [],
-					"locals": [],
-					"members": [],
-					"name": "main",
-					"return_type": "$int",
-					"statements": [
-						[ "return", [ "k", 3, "$int" ] ]
-					],
-					"type": "function",
-					"types": {}
+		"objtype": "global",
+		"state": [
+			{
+				"name": "main",
+				"type": { "base_type": "function", "parts": ["int"] },
+				"value": {
+					"function_id": 1000,
+					"function_type": { "base_type": "function", "parts": ["int"] }
 				}
 			}
-		}
+		]
 	}
 )";
 
