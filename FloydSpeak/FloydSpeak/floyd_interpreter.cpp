@@ -60,7 +60,7 @@ namespace {
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	value_t execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
+	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
 		QUARK_ASSERT(vm.check_invariant());
 		for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
@@ -91,16 +91,15 @@ namespace {
 					throw std::runtime_error("undefined");
 				}
 
-				return result.get_constant();
+				return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, make_shared<value_t>(result.get_constant()) };
 			}
 			else{
 				QUARK_ASSERT(false);
 			}
 			statement_index++;
 		}
-		return value_t();
+		return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {}};
 	}
-
 
 }	//	unnamed
 
@@ -194,7 +193,7 @@ floyd_ast::value_t resolve_env_variable_deep(const interpreter_t& vm, const shar
 		return resolve_env_variable_deep(vm, env->_parent_env, s);
 	}
 	else{
-		return {};
+		throw std::runtime_error("Undefined variable \"" + s + "\"!");
 	}
 }
 
@@ -579,12 +578,12 @@ value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, cons
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
 
-	const auto value = execute_statements(vm2, function_object->_statements);
-	if(value.is_null()){
+	const auto r = execute_statements(vm2, function_object->_statements);
+	if(!r.second){
 		throw std::runtime_error("function missing return statement");
 	}
 	else{
-		return value;
+		return *r.second;
 	}
 }
 
@@ -642,10 +641,12 @@ json_t interpreter_to_json(const interpreter_t& vm){
 			values[v.first] = value_to_json(v.second);
 		}
 
-		const auto& a = json_t::make_object({
+		const auto& env = json_t::make_object({
+			{ "parent_env", e->_parent_env ? e->_parent_env->_object_id : json_t() },
+			{ "object_id", json_t(double(e->_object_id)) },
 			{ "values", values }
 		});
-		callstack.push_back(a);
+		callstack.push_back(env);
 	}
 
 	return json_t::make_object({
@@ -926,10 +927,6 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 }
 
 
-//??? more
-
-
-
 QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
 	try{
 		test__evaluate_expression("2/0");
@@ -970,8 +967,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Multiply errors") {
 
 
 
-//////////////////////////		interpreter_t
-
+//////////////////////////		environment_t
 
 
 
@@ -1000,6 +996,7 @@ bool environment_t::check_invariant() const {
 }
 
 
+//////////////////////////		interpreter_t
 
 
 interpreter_t::interpreter_t(const ast_t& ast) :
@@ -1011,10 +1008,12 @@ interpreter_t::interpreter_t(const ast_t& ast) :
 	shared_ptr<environment_t> parent_env;
 	_call_stack.push_back(environment_t::make_environment(*this, _ast.get_global_scope(), 0, parent_env));
 
-	//	### Run static intialization (basically run global statements before calling main()).
-	{
-	}
+	//	Run static intialization (basically run global statements before calling main()).
+	const auto r = execute_statements(*this, _ast.get_global_scope()->_statements);
+	assert(!r.second);
 
+
+	_call_stack[0]->_values = r.first._call_stack[0]->_values;
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1022,6 +1021,8 @@ bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_ast.check_invariant());
 	return true;
 }
+
+
 
 
 
@@ -1039,8 +1040,6 @@ std::pair<interpreter_t, floyd_ast::value_t> run_main(const string& source, cons
 	return { vm, r };
 }
 
-#if false
-??? Requires constructor
 QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	const auto result = run_main(
 		"string main(string args){\n"
@@ -1050,7 +1049,6 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	);
 	QUARK_TEST_VERIFY(result.second == floyd_ast::value_t("123456"));
 }
-#endif
 
 
 //////////////////////////		TEST conditional expression
@@ -1214,7 +1212,6 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-#if false
 QUARK_UNIT_TESTQ("struct", "Can make and read global int"){
 	const auto a = run_main(
 		"int test = 123;"
@@ -1225,7 +1222,7 @@ QUARK_UNIT_TESTQ("struct", "Can make and read global int"){
 	);
 	QUARK_TEST_VERIFY(a.second == value_t(123));
 }
-#endif
+
 
 
 //////////////////////////		TEST STRUCT SUPPORT
