@@ -226,8 +226,8 @@ expression_t parser_expression_to_ast(const json_t& e){
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto base_expr = parser_expression_to_ast(e.get_array_n(1));
-		const auto member = parser_expression_to_ast(e.get_array_n(2));
-		return expression_t::make_resolve_member(base_expr, member.get_symbol(), typeid_t::make_null());
+		const auto member = e.get_array_n(2).get_string();
+		return expression_t::make_resolve_member(base_expr, member, typeid_t::make_null());
 	}
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 2);

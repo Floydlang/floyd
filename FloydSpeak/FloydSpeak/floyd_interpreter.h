@@ -23,6 +23,7 @@ namespace floyd_parser {
 }
 
 namespace floyd_interpreter {
+	struct interpreter_t;
 
 	//	global IS included, as ID 0.
 	//	0/1000/1009 = two levels of nesting.
@@ -35,22 +36,35 @@ namespace floyd_interpreter {
 
 	/*
 		Runtime scope, similair to a stack frame.
-		??? rename to "context".
 	*/
 
 	struct environment_t {
 		public: floyd_parser::ast_t _ast;
 
+		public: int _object_id;
+
 		//	Last ID is the object ID of *this* environment.
-		public: lexical_path_t _path;
+//		public: lexical_path_t _path;
+
 		public: std::map<std::string, floyd_parser::value_t> _values;
 
 
 		public: bool check_invariant() const;
 
-		public: static std::shared_ptr<environment_t> make_environment(const floyd_parser::ast_t& ast, const lexical_path_t& path);
+		public: static std::shared_ptr<environment_t> make_environment(
+			const interpreter_t& vm,
+			const std::shared_ptr<const floyd_parser::lexical_scope_t> object,
+			int object_id
+			/*, const lexical_path_t& path*/
+		);
 	};
 
+
+
+	struct object_id_info_t {
+		std::shared_ptr<const floyd_parser::lexical_scope_t> _object;
+		int _lexical_parent_id;
+	};
 
 
 	//////////////////////////////////////		type_identifier_t
@@ -67,6 +81,9 @@ namespace floyd_interpreter {
 
 		////////////////////////		STATE
 		public: const floyd_parser::ast_t _ast;
+
+		public: std::map<int, object_id_info_t> _object_lookup;
+
 
 		//	Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<environment_t>> _call_stack;

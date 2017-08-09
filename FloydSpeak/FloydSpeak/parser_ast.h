@@ -289,7 +289,7 @@ namespace floyd_parser {
 	*/
 	struct ast_t {
 		public: ast_t();
-		public: ast_t(
+		public: explicit ast_t(
 			std::shared_ptr<const lexical_scope_t> global_scope
 		);
 		public: bool check_invariant() const;

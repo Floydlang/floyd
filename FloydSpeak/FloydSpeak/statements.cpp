@@ -57,7 +57,10 @@ namespace floyd_parser {
 
 	bool statement_t::check_invariant() const {
 		if(_return){
-			QUARK_ASSERT(_return);
+			QUARK_ASSERT(true);
+		}
+		else if(_bind){
+			QUARK_ASSERT(true);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -76,6 +79,14 @@ namespace floyd_parser {
 				expression_to_json(e._return->_expression)
 			});
 		}
+		else if(e._bind){
+			return json_t::make_array({
+				json_t("bind"),
+				e._bind->_new_variable_name,
+				typeid_to_json(e._bind->_bindtype),
+				expression_to_json(e._bind->_expression)
+			});
+		}
 		else{
 			QUARK_ASSERT(false);
 		}
@@ -88,7 +99,7 @@ namespace floyd_parser {
 				statement_to_json(make__return_statement(expression_t::make_constant_string("abc")))
 			)
 			,
-			R"(["return", ["k", "abc", "<string>"]])"
+			R"(["return", ["k", "abc", "string"]])"
 		);
 	}
 

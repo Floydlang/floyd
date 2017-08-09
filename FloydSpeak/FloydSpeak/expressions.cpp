@@ -294,7 +294,7 @@ expression_t expression_t::make_variable_expression(const std::string& variable,
 expression_t expression_t::make_resolve_member(const expression_t& parent_address, const std::string& member_name, const typeid_t& result_type){
 	QUARK_ASSERT(parent_address.check_invariant());
 	QUARK_ASSERT(member_name.size() > 0);
-	QUARK_ASSERT(result_type._base_type != base_type::k_null && result_type.check_invariant());
+//	QUARK_ASSERT(result_type._base_type != base_type::k_null && result_type.check_invariant());
 
 	auto result = expression_t(
 		operation::k_resolve_member,
