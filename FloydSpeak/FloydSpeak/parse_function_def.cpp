@@ -102,7 +102,7 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 			{ "name", function_name },
 			{ "args", json_t::make_array(args) },
 			{ "statements", statements.first },
-			{ "return_type", "<" + return_type_pos.first.to_string() + ">" }
+			{ "return_type", "<" + return_type_pos.first + ">" }
 		})
 	});
 	return { function_def, body_pos.second };

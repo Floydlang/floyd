@@ -199,87 +199,6 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 }
 
 
-//////////////////////////////////////		TYPE IDENTIFIERS
-
-
-
-
-
-	//////////////////////////////////////////////////		type_identifier_t
-
-
-
-	type_identifier_t type_identifier_t::make(const std::string& s){
-		QUARK_ASSERT(is_valid_type_identifier(s));
-
-		const type_identifier_t result(s);
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
-
-
-	type_identifier_t::type_identifier_t(const type_identifier_t& other) :
-		_type_magic(other._type_magic)
-	{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-	}
-
-	bool type_identifier_t::operator==(const type_identifier_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		return _type_magic == other._type_magic /*&& compare_shared_values(_resolved, other._resolved)*/;
-	}
-
-	bool type_identifier_t::operator!=(const type_identifier_t& other) const{
-		return !(*this == other);
-	}
-
-
-	type_identifier_t::type_identifier_t(const char s[]) :
-		_type_magic(s)
-	{
-		QUARK_ASSERT(s != nullptr);
-		QUARK_ASSERT(is_valid_type_identifier(std::string(s)));
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	type_identifier_t::type_identifier_t(const std::string& s) :
-		_type_magic(s)
-	{
-		QUARK_ASSERT(is_valid_type_identifier(s));
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	void type_identifier_t::swap(type_identifier_t& other){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		_type_magic.swap(other._type_magic);
-	}
-
-	std::string type_identifier_t::to_string() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _type_magic;
-	}
-
-	bool type_identifier_t::check_invariant() const {
-		QUARK_ASSERT(_type_magic != "");
-		QUARK_ASSERT(is_valid_type_identifier(_type_magic));
-		return true;
-	}
-
-
-	void trace(const type_identifier_t& v){
-		QUARK_TRACE("type_identifier_t <" + v.to_string() + ">");
-	}
-
-
 
 
 
@@ -289,12 +208,12 @@ std::pair<std::string, seq_t> read_type(const seq_t& s){
 	return b;
 }
 
-pair<type_identifier_t, seq_t> read_required_type_identifier(const seq_t& s){
+pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
 	const auto type_pos = read_type(s);
 	if(type_pos.first.empty()){
 		throw std::runtime_error("illegal character in type identifier");
 	}
-	const auto type = type_identifier_t::make(type_pos.first);
+	const auto type = type_pos.first;
 	return { type, skip_whitespace(type_pos.second) };
 }
 

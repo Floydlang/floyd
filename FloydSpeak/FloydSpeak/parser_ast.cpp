@@ -554,14 +554,11 @@ namespace floyd_ast {
 
 
 	vector_def_t vector_def_t::make2(
-		const floyd_parser::type_identifier_t& name,
 		const typeid_t& element_type)
 	{
-		QUARK_ASSERT(name.check_invariant());
 		QUARK_ASSERT(element_type._base_type != base_type::k_null && element_type.check_invariant());
 
 		vector_def_t result;
-		result._name = name;
 		result._element_type = element_type;
 
 		QUARK_ASSERT(result.check_invariant());
@@ -569,9 +566,6 @@ namespace floyd_ast {
 	}
 
 	bool vector_def_t::check_invariant() const{
-		QUARK_ASSERT(_name.check_invariant());
-		QUARK_ASSERT(_name.to_string().size() > 0 );
-
 		QUARK_ASSERT(_element_type._base_type != base_type::k_null && _element_type.check_invariant());
 		return true;
 	}
@@ -580,10 +574,7 @@ namespace floyd_ast {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		if(_name != other._name){
-			return false;
-		}
-		else if(!(_element_type == other._element_type)){
+		if(!(_element_type == other._element_type)){
 			return false;
 		}
 		return true;

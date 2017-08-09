@@ -188,10 +188,7 @@ namespace floyd_ast {
 		Notice that vector has no scope of its own.
 	*/
 	struct vector_def_t {
-		public: static vector_def_t make2(
-			const floyd_parser::type_identifier_t& name,
-			const typeid_t& element_type
-		);
+		public: static vector_def_t make2(const typeid_t& element_type);
 
 		public: vector_def_t(){};
 		public: bool check_invariant() const;
@@ -199,7 +196,6 @@ namespace floyd_ast {
 
 
 		/////////////////////////////		STATE
-		public: floyd_parser::type_identifier_t _name;
 		public: typeid_t _element_type;
 	};
 

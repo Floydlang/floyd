@@ -144,80 +144,6 @@ namespace floyd_parser {
 	std::pair<std::string, seq_t> read_required_single_symbol(const seq_t& s);
 
 
-	//////////////////////////////////////		TYPE IDENTIFIERS
-
-
-
-	//////////////////////////////////////		type_identifier_t
-
-	/*
-		A string naming a type. "int", "string", "my_struct" etc.
-		It is guaranteed to contain correct characters.
-		It is NOT guaranteed to map to an actual type in the language or program.
-
-		The name of the type:
-			"null"
-
-			"bool"
-			"int"
-			"float"
-			"function"
-
-			"value_type"
-
-			"metronome"
-			"map<string, metronome>"
-			"game_engine:sprite"
-			"vector<game_engine:sprite>"
-			"int (string, vector<game_engine:sprite>)"
-	*/
-
-	struct type_identifier_t {
-		public: type_identifier_t() :
-			_type_magic("null")
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-		public: static type_identifier_t make(const std::string& s);
-
-		public: static type_identifier_t make_bool(){
-			return make("bool");
-		}
-
-		public: static type_identifier_t make_int(){
-			return make("int");
-		}
-
-		public: static type_identifier_t make_float(){
-			return make("float");
-		}
-
-		public: static type_identifier_t make_string(){
-			return make("string");
-		}
-
-		public: type_identifier_t(const type_identifier_t& other);
-
-		public: bool operator==(const type_identifier_t& other) const;
-		public: bool operator!=(const type_identifier_t& other) const;
-
-		public: explicit type_identifier_t(const char s[]);
-		public: explicit type_identifier_t(const std::string& s);
-		public: void swap(type_identifier_t& other);
-		public: std::string to_string() const;
-		public: bool check_invariant() const;
-
-		public: bool is_null() const{
-			QUARK_ASSERT(check_invariant());
-			return _type_magic == "null";
-		}
-
-		///////////////////		STATE
-		private: std::string _type_magic;
-	};
-
-	void trace(const type_identifier_t& v);
 
 
 	/*
@@ -231,7 +157,7 @@ namespace floyd_parser {
 		Does NOT make sure this a known type-identifier.
 		String must not be empty.
 	*/
-	std::pair<type_identifier_t, seq_t> read_required_type_identifier(const seq_t& s);
+	std::pair<std::string, seq_t> read_required_type_identifier(const seq_t& s);
 
 	bool is_valid_type_identifier(const std::string& s);
 

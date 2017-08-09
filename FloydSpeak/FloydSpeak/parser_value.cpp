@@ -11,7 +11,6 @@
 #include "statements.h"
 #include "parser_primitives.h"
 
-using floyd_parser::type_identifier_t;
 using std::string;
 using std::make_shared;
 
@@ -362,7 +361,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), typeid_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
 	const auto a = make_vector_instance(vector_def, {});
 	const auto b = make_vector_instance(vector_def, {});
 
@@ -383,7 +382,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), typeid_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
 	const auto a = make_vector_instance(vector_def, { 3, 4, 5});
 	const auto b = make_vector_instance(vector_def, { 3, 4 });
 
