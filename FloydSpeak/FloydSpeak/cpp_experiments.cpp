@@ -29,3 +29,18 @@ QUARK_UNIT_TESTQ("test_cpp_value_class_a", "what is needed for basic operations"
 	QUARK_TEST_VERIFY(a == b);
 }
 
+
+
+QUARK_UNIT_TESTQ("C++ bool", ""){
+	quark::ut_compare(true, true);
+	quark::ut_compare(true, !false);
+	quark::ut_compare(false, false);
+	quark::ut_compare(!false, true);
+
+	const auto x = false + false;
+	const auto y = false - false;
+
+	QUARK_UT_VERIFY(x == false);
+	QUARK_UT_VERIFY(y == false);
+}
+
