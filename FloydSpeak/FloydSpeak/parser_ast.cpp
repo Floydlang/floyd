@@ -24,7 +24,7 @@
 #include "json_writer.h"
 
 
-namespace floyd_parser {
+namespace floyd_ast {
 	using std::vector;
 	using std::string;
 	using std::pair;
@@ -414,35 +414,6 @@ namespace floyd_parser {
 		return r;
 	}
 
-/*
-	json_t symbols_to_json(const std::map<std::string, symbol_t>& s){
-		std::map<string, json_t> r;
-		for(const auto i: s){
-			const auto t = i.second._type;
-			std::string symbol_type = "";
-			if (t == symbol_t::symbol_type::k_null){
-				symbol_type = "null";
-			}
-			else if (t == symbol_t::symbol_type::k_struct_def_object){
-				symbol_type = "struct_def_object";
-			}
-			else if (t == symbol_t::symbol_type::k_constant){
-				symbol_type = "constant";
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
-			const auto e = make_object({
-				{ "symtype", symbol_type },
-				{ "constant", i.second._constant ? expression_to_json(*i.second._constant) : json_t() },
-				{ "typeid", typeid_to_json(i.second._typeid) }
-			});
-			r[i.first] = e;
-		}
-		return r;
-	}
-*/
-
 	json_t objects_to_json(const std::map<int, std::shared_ptr<const lexical_scope_t> >& s){
 		std::map<string, json_t> r;
 		for(const auto i: s){
@@ -583,7 +554,7 @@ namespace floyd_parser {
 
 
 	vector_def_t vector_def_t::make2(
-		const type_identifier_t& name,
+		const floyd_parser::type_identifier_t& name,
 		const typeid_t& element_type)
 	{
 		QUARK_ASSERT(name.check_invariant());
@@ -670,4 +641,4 @@ namespace floyd_parser {
 	////////////////////	Helpers for making tests.
 
 
-} //	floyd_parser
+} //	floyd_ast

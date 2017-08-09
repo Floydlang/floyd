@@ -12,7 +12,7 @@
 #include "parser_ast.h"
 
 
-floyd_parser::ast_t run_pass2(const json_t& parse_tree);
+floyd_ast::ast_t run_pass2(const json_t& parse_tree);
 
 
 #endif /* pass2_hpp */

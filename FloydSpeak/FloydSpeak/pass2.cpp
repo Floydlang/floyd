@@ -15,9 +15,8 @@
 #include "json_support.h"
 #include "json_parser.h"
 #include "parser_primitives.h"
-#include "json_to_ast.h"
 
-using namespace floyd_parser;
+using namespace floyd_ast;
 using namespace std;
 
 
@@ -136,37 +135,6 @@ json_t get_array_back(const json_t& array){
 
 
 /*
-	Converts output from parser - which is used lots of nested statements - into scope_defs.
-*/
-
-/*
-	WARNING! Stores an **ARRAY** of types that is called "name"!
-
-	scope_def: this is a scope_def. It's name and type will be used in type_entry.
-*/
-static json_t add_scope_type(const json_t& scope, const json_t& subscope){
-	QUARK_ASSERT(scope.check_invariant());
-	QUARK_ASSERT(subscope.check_invariant());
-
-	const auto name = subscope.get_object_element("name").get_string();
-	const auto type = subscope.get_object_element("type").get_string();
-	const auto type_entry = json_t::make_object({
-		{ "base_type", type },
-		{ "scope_def", subscope }
-	});
-	if(exists_in(scope, make_vec({ "types", name }))){
-		const auto index = get_in(scope, make_vec({ "types", name })).get_array_size();
-		return assoc_in(scope, make_vec({"types", name, index }), type_entry);
-	}
-	else{
-		return assoc_in(scope, make_vec({"types", name }), json_t::make_array({ type_entry }));
-	}
-}
-
-
-
-
-/*
 	Resolves all uses types into "$1234" syntax, deeply. Also puts the expression's type at end of each expression.
 */
 expression_t parser_expression_to_ast(const json_t& e){
@@ -199,7 +167,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 			QUARK_ASSERT(false);
 		}
 	}
-	else if(is_math2_op(op)){
+	else if(floyd_parser::is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto op2 = string_to_math2_op(op);
 		const auto lhs_expr = parser_expression_to_ast(e.get_array_n(1));
@@ -584,6 +552,22 @@ QUARK_UNIT_TESTQ("assign_unique_type_ids()", ""){
 }
 
 
+json_t make_scope_def(){
+	return json_t::make_object({
+		{ "type", "" },
+		{ "name", "" },
+		{ "args", json_t::make_array() },
+		{ "members", json_t::make_array() },
+		{ "types", json_t::make_object() },
+
+		//??? New in JSON, used to stored as sub-function body.
+		{ "locals", json_t::make_array() },
+
+		//	??? New in JSON version - used to be stored in _executable.
+		{ "statements", json_t::make_array() },
+		{ "return_type", "" }
+	});
+}
 
 
 ///////////////////////////////////////////		insert_generated_functions()
@@ -952,7 +936,7 @@ json_t resolve_expression_typenames(const parser_path_t& path, const json_t& exp
 			type2,
 		});
 	}
-	else if(is_math2_op(op)){
+	else if(floyd_parser::is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto lhs_expr = resolve_expression_typenames(path, e.get_array_n(1));
 		const auto rhs_expr = resolve_expression_typenames(path, e.get_array_n(2));
@@ -1513,9 +1497,9 @@ ast_t run_pass2(const json_t& parse_tree){
 	- Correct errors are emitted.
 */
 QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
-	const auto pass1 = parse_json(seq_t(k_test_program_0_parserout)).first;
+	const auto pass1 = parse_json(seq_t(floyd_parser::k_test_program_0_parserout)).first;
 	const auto pass2 = run_pass2(pass1);
-	const auto pass2_output = parse_json(seq_t(k_test_program_0_pass2output)).first;
+	const auto pass2_output = parse_json(seq_t(floyd_parser::k_test_program_0_pass2output)).first;
 	ut_compare_jsons(ast_to_json(pass2), pass2_output);
 }
 
@@ -1529,7 +1513,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_100"){
 */
 
 void test_error(const string& program, const string& error_string){
-	const auto pass1 = parse_program2(program);
+	const auto pass1 = floyd_parser::parse_program2(program);
 	try{
 		const auto pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);

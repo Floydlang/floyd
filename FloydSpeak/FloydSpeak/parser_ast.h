@@ -17,12 +17,11 @@
 #include "utils.h"
 #include "parser_primitives.h"
 
-struct TSHA1;
 struct json_t;
 
 
 
-namespace floyd_parser {
+namespace floyd_ast {
 	struct type_def_t;
 	struct expression_t;
 	struct statement_t;
@@ -119,6 +118,7 @@ namespace floyd_parser {
 			"[int]"
 			"int (float, [int])"
 			"coord_t/8000"
+			??? use json instead.
 		*/
 		public: std::string to_string() const;
 
@@ -189,7 +189,7 @@ namespace floyd_parser {
 	*/
 	struct vector_def_t {
 		public: static vector_def_t make2(
-			const type_identifier_t& name,
+			const floyd_parser::type_identifier_t& name,
 			const typeid_t& element_type
 		);
 
@@ -199,7 +199,7 @@ namespace floyd_parser {
 
 
 		/////////////////////////////		STATE
-		public: type_identifier_t _name;
+		public: floyd_parser::type_identifier_t _name;
 		public: typeid_t _element_type;
 	};
 
@@ -318,6 +318,6 @@ namespace floyd_parser {
 		}
 	}
 
-}	//	floyd_parser
+}	//	floyd_ast
 
 #endif /* parser_ast_hpp */

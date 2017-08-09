@@ -16,7 +16,7 @@
 #include <map>
 #include "parser_ast.h"
 
-namespace floyd_parser {
+namespace floyd_ast {
 	struct expression_t;
 	struct value_t;
 	struct statement_t;
@@ -25,49 +25,36 @@ namespace floyd_parser {
 namespace floyd_interpreter {
 	struct interpreter_t;
 
-	//	global IS included, as ID 0.
-	//	0/1000/1009 = two levels of nesting.
-	struct lexical_path_t {
-		std::vector<int> _nodes;
-	};
 
-
-	//////////////////////////////////////		type_identifier_t
+	//////////////////////////////////////		environment_t
 
 	/*
 		Runtime scope, similair to a stack frame.
 	*/
 
 	struct environment_t {
-		public: floyd_parser::ast_t _ast;
-
+		public: floyd_ast::ast_t _ast;
 		public: int _object_id;
-
-		//	Last ID is the object ID of *this* environment.
-//		public: lexical_path_t _path;
-
-		public: std::map<std::string, floyd_parser::value_t> _values;
+		public: std::map<std::string, floyd_ast::value_t> _values;
 
 
 		public: bool check_invariant() const;
 
 		public: static std::shared_ptr<environment_t> make_environment(
 			const interpreter_t& vm,
-			const std::shared_ptr<const floyd_parser::lexical_scope_t> object,
+			const std::shared_ptr<const floyd_ast::lexical_scope_t> object,
 			int object_id
-			/*, const lexical_path_t& path*/
 		);
 	};
 
 
-
 	struct object_id_info_t {
-		std::shared_ptr<const floyd_parser::lexical_scope_t> _object;
+		std::shared_ptr<const floyd_ast::lexical_scope_t> _object;
 		int _lexical_parent_id;
 	};
 
 
-	//////////////////////////////////////		type_identifier_t
+	//////////////////////////////////////		interpreter_t
 
 	/*
 		Complete runtime state of the interpreter.
@@ -75,12 +62,12 @@ namespace floyd_interpreter {
 	*/
 
 	struct interpreter_t {
-		public: interpreter_t(const floyd_parser::ast_t& ast);
+		public: interpreter_t(const floyd_ast::ast_t& ast);
 		public: bool check_invariant() const;
 
 
 		////////////////////////		STATE
-		public: const floyd_parser::ast_t _ast;
+		public: const floyd_ast::ast_t _ast;
 
 		public: std::map<int, object_id_info_t> _object_lookup;
 
@@ -98,12 +85,12 @@ namespace floyd_interpreter {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	floyd_parser::expression_t evaluate_expression(const interpreter_t& vm, const floyd_parser::expression_t& e);
+	floyd_ast::expression_t evaluate_expression(const interpreter_t& vm, const floyd_ast::expression_t& e);
 
-	floyd_parser::value_t call_function(
+	floyd_ast::value_t call_function(
 		const interpreter_t& vm,
-		const floyd_parser::value_t& f,
-		const std::vector<floyd_parser::value_t>& args
+		const floyd_ast::value_t& f,
+		const std::vector<floyd_ast::value_t>& args
 	);
 
 
@@ -115,9 +102,9 @@ namespace floyd_interpreter {
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
-	std::pair<interpreter_t, floyd_parser::value_t> run_main(
+	std::pair<interpreter_t, floyd_ast::value_t> run_main(
 		const std::string& source,
-		const std::vector<floyd_parser::value_t>& args
+		const std::vector<floyd_ast::value_t>& args
 	);
 
 } //	floyd_interpreter

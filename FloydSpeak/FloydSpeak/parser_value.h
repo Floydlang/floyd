@@ -17,7 +17,7 @@
 
 #include "parser_ast.h"
 
-namespace floyd_parser {
+namespace floyd_ast {
 	struct statement_t;
 	struct value_t;
 	struct typeid_t;
@@ -295,7 +295,7 @@ namespace floyd_parser {
 				return false;
 			}
 
-			const auto base_type = get_base_type();
+			const auto base_type = _typeid.get_base_type();
 			if(base_type == base_type::k_null){
 				return true;
 			}
@@ -344,15 +344,14 @@ namespace floyd_parser {
 
 		/*
 			"true"
-			"false"
 			"0"
 			"1003"
-			"Hello, world",
+			"Hello, world"
 		*/
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			const auto base_type = get_base_type();
+			const auto base_type = _typeid.get_base_type();
 			if(base_type == base_type::k_null){
 				return "<null>";
 			}
@@ -388,6 +387,12 @@ namespace floyd_parser {
 			}
 		}
 
+		/*
+			bool: "true"
+			int: "0"
+			string: "1003"
+			string: "Hello, world"
+		*/
 		std::string value_and_type_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -406,58 +411,52 @@ namespace floyd_parser {
 			return _typeid;
 		}
 
-		public: base_type get_base_type() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type();
-		}
-
 		public: bool is_null() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_null;
+			return _typeid.get_base_type() == base_type::k_null;
 		}
 
 		public: bool is_bool() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_bool;
+			return _typeid.get_base_type() == base_type::k_bool;
 		}
 
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_int;
+			return _typeid.get_base_type() == base_type::k_int;
 		}
 
 		public: bool is_float() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_float;
+			return _typeid.get_base_type() == base_type::k_float;
 		}
 
 		public: bool is_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_string;
+			return _typeid.get_base_type() == base_type::k_string;
 		}
 
 		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_struct;
+			return _typeid.get_base_type() == base_type::k_struct;
 		}
 
 		public: bool is_vector() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_vector;
+			return _typeid.get_base_type() == base_type::k_vector;
 		}
 
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
-			return get_base_type() == base_type::k_function;
+			return _typeid.get_base_type() == base_type::k_function;
 		}
 
 		public: bool get_bool() const{
@@ -570,20 +569,9 @@ namespace floyd_parser {
 
 	json_t value_to_json(const value_t& v);
 
-#if false
-struct struct_fixture_t {
-	public: ast_t _ast;
-	public: scope_ref_t _struct6_def;
-	public: value_t _struct6_instance0;
-	public: value_t _struct6_instance1;
-
-	public: struct_fixture_t();
-};
-#endif
-
 	value_t make_test_func();
 
 
-}	//	floyd_parser
+}	//	floyd_ast
 
 #endif /* parser_value_hpp */

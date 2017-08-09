@@ -17,10 +17,8 @@
 
 struct json_t;
 
-namespace floyd_parser {
-	struct expression_t;
+namespace floyd_ast {
 	struct value_t;
-	struct type_identifier_t;
 
 
 
@@ -165,9 +163,8 @@ namespace floyd_parser {
 
 	expression_t::operation string_to_math2_op(const std::string& op);
 
-	bool is_math2_op(const std::string& op);
 
-}	//	floyd_parser
+}	//	floyd_ast
 
 
 #endif /* expressions_hpp */

@@ -24,9 +24,6 @@
 struct json_t;
 
 namespace floyd_parser {
-	struct statement_t;
-
-	
 	const std::vector<std::string> basic_types {
 		"bool",
 		"char",
@@ -201,7 +198,6 @@ namespace floyd_parser {
 		}
 
 		public: type_identifier_t(const type_identifier_t& other);
-//		public: type_identifier_t operator=(const type_identifier_t& other);
 
 		public: bool operator==(const type_identifier_t& other) const;
 		public: bool operator!=(const type_identifier_t& other) const;
@@ -242,7 +238,6 @@ namespace floyd_parser {
 	bool is_math2_op(const std::string& op);
 
 
-
 	/*
 		Used for:
 			struct member variable
@@ -259,14 +254,6 @@ namespace floyd_parser {
 		}
 	*/
 	json_t make_member_def(const std::string& type, const std::string& name, const json_t& expression);
-
-	json_t make_scope_def();
-
-
-	/*
-		This is a JSON object with all types for global scope.
-	*/
-	json_t make_builtin_types();
 
 
 }	//	floyd_parser

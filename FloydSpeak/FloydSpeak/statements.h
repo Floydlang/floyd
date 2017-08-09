@@ -20,7 +20,7 @@
 
 struct json_t;
 
-namespace floyd_parser {
+namespace floyd_ast {
 	struct statement_t;
 	struct expression_t;
 
@@ -104,7 +104,7 @@ namespace floyd_parser {
 	void trace(const statement_t& s);
 	json_t statement_to_json(const statement_t& e);
 
-}	//	floyd_parser
+}	//	floyd_ast
 
 
 #endif /* parser_statement_hpp */

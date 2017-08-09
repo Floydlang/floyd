@@ -17,7 +17,7 @@
 #include "json_writer.h"
 
 
-namespace floyd_parser {
+namespace floyd_ast {
 
 	using std::string;
 	using std::vector;
@@ -103,4 +103,4 @@ namespace floyd_parser {
 		);
 	}
 
-}	//	floyd_parser
+}	//	floyd_ast

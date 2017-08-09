@@ -21,8 +21,6 @@ int main(int argc, const char * argv[]) {
 	try {
 #if QUARK_UNIT_TESTS_ON
 		quark::run_tests({
-			//	UNDER DEVELOPMENT - RUN FIRST!
-
 			//	Core libs
 			"quark.cpp",
 			"steady_vector.cpp",

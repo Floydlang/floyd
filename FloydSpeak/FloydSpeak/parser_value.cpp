@@ -9,12 +9,17 @@
 #include "parser_value.h"
 
 #include "statements.h"
+#include "parser_primitives.h"
+
+using floyd_parser::type_identifier_t;
+using std::string;
+using std::make_shared;
 
 
-namespace floyd_parser {
-	using std::string;
-	using std::make_shared;
+//??? rename to ast_value.cpp
 
+
+namespace floyd_ast {
 
 
 	//////////////////////////////////////////////////		struct_instance_t
@@ -166,7 +171,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(right.check_invariant());
 	QUARK_ASSERT(left.get_type() == right.get_type());
 
-	const auto type = left.get_base_type();
+	const auto type = left._typeid.get_base_type();
 	if(type == base_type::k_null){
 		return 0;
 	}
@@ -559,4 +564,4 @@ QUARK_UNIT_TESTQ("value_to_json()", ""){
 }
 
 
-}	//	floyd_parser
+}	//	floyd_ast

@@ -226,17 +226,6 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 		QUARK_ASSERT(other.check_invariant());
 	}
 
-/*
-	type_identifier_t type_identifier_t::operator=(const type_identifier_t& other){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		type_identifier_t temp(other);
-		temp.swap(*this);
-		return *this;
-	}
-*/
-
 	bool type_identifier_t::operator==(const type_identifier_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
@@ -348,35 +337,6 @@ json_t make_member_def(const std::string& type, const std::string& name, const j
 			{ "expr", expression }
 		});
 	}
-}
-
-
-
-json_t make_scope_def(){
-	return json_t::make_object({
-		{ "type", "" },
-		{ "name", "" },
-		{ "args", json_t::make_array() },
-		{ "members", json_t::make_array() },
-		{ "types", json_t::make_object() },
-
-		//??? New in JSON, used to stored as sub-function body.
-		{ "locals", json_t::make_array() },
-
-		//	??? New in JSON version - used to be stored in _executable.
-		{ "statements", json_t::make_array() },
-		{ "return_type", "" }
-	});
-}
-json_t make_builtin_types(){
-	const auto builtin_types = parse_json(seq_t(R"(
-		{
-			"int": [ { "base_type": "int" } ],
-			"bool": [ { "base_type": "bool" } ],
-			"string": [ { "base_type": "string" } ]
-		}
-	)"));
-	return builtin_types.first;
 }
 
 
