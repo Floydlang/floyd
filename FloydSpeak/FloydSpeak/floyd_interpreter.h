@@ -29,11 +29,12 @@ namespace floyd_interpreter {
 	//////////////////////////////////////		environment_t
 
 	/*
-		Runtime scope, similair to a stack frame.
+		Runtime scope, similar to a stack frame.
 	*/
 
 	struct environment_t {
 		public: floyd_ast::ast_t _ast;
+		public: std::shared_ptr<environment_t> _parent_env;
 		public: int _object_id;
 		public: std::map<std::string, floyd_ast::value_t> _values;
 
@@ -42,8 +43,9 @@ namespace floyd_interpreter {
 
 		public: static std::shared_ptr<environment_t> make_environment(
 			const interpreter_t& vm,
-			const std::shared_ptr<const floyd_ast::lexical_scope_t> object,
-			int object_id
+			const std::shared_ptr<const floyd_ast::lexical_scope_t>& object,
+			int object_id,
+			std::shared_ptr<environment_t>& parent_env
 		);
 	};
 

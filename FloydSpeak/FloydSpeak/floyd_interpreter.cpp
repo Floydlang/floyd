@@ -181,20 +181,17 @@ value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_typ
 
 //	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
 
-floyd_ast::value_t resolve_env_variable_deep(const interpreter_t& vm, int stack_index, const std::string& s){
+floyd_ast::value_t resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(stack_index >= 0);
-	QUARK_ASSERT(stack_index < vm._call_stack.size());
+	QUARK_ASSERT(env && env->check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto& env = *vm._call_stack[stack_index];
-
-	const auto it = env._values.find(s);
-	if(it != env._values.end()){
+	const auto it = env->_values.find(s);
+	if(it != env->_values.end()){
 		return it->second;
 	}
-	else if(stack_index > 0){
-		return resolve_env_variable_deep(vm, stack_index - 1, s);
+	else if(env->_parent_env){
+		return resolve_env_variable_deep(vm, env->_parent_env, s);
 	}
 	else{
 		return {};
@@ -205,7 +202,7 @@ floyd_ast::value_t resolve_env_variable(const interpreter_t& vm, const std::stri
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_env_variable_deep(vm, (int)(vm._call_stack.size() - 1), s);
+	return resolve_env_variable_deep(vm, vm._call_stack.back(), s);
 }
 
 value_t find_global_symbol(const interpreter_t& vm, const string& s){
@@ -578,9 +575,10 @@ value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, cons
 	const auto function_object = function_object_info._object;
 	const auto function_object_id = f.get_function()->_function_id;
 
-//	auto path2 = vm._call_stack.back()->_path;
-//	path2._nodes.push_back(function_object_id);
-	auto new_environment = environment_t::make_environment(vm, function_object, function_object_id);
+	//	Always use global scope. Future: support closures by linking to function env where function is defined.
+	auto parent_env = vm._call_stack[0];
+
+	auto new_environment = environment_t::make_environment(vm, function_object, function_object_id, parent_env);
 
 	//	Copy input arguments to the function scope.
 	for(int i = 0 ; i < function_object->_args.size() ; i++){
@@ -657,14 +655,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 			values[v.first] = value_to_json(v.second);
 		}
 
-/*
-		vector<json_t> path;
-		for(const auto& b: e->_path._nodes){
-			path.push_back(json_t((float)b));
-		}
-*/
 		const auto& a = json_t::make_object({
-//			{ "path",  path },
 			{ "values", values }
 		});
 		callstack.push_back(a);
@@ -985,18 +976,20 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Multiply errors") {
 
 std::shared_ptr<environment_t> environment_t::make_environment(
 	const interpreter_t& vm,
-	const std::shared_ptr<const lexical_scope_t> object,
-	int object_id
+	const std::shared_ptr<const lexical_scope_t>& object,
+	int object_id,
+	std::shared_ptr<floyd_interpreter::environment_t>& parent_env
 )
 {
 	QUARK_ASSERT(vm.check_invariant());
 
+	//	Copy global scope's functions into new env.
 	std::map<std::string, floyd_ast::value_t> values;
 	for(const auto& e: object->_state){
 		values[e._name] = *e._value;
 	}
 
-	auto f = environment_t{ vm._ast, object_id, /*path,*/ values };
+	auto f = environment_t{ vm._ast, parent_env, object_id, values };
 	return make_shared<environment_t>(f);
 }
 
@@ -1012,7 +1005,8 @@ interpreter_t::interpreter_t(const ast_t& ast) :
 {
 	QUARK_ASSERT(ast.check_invariant());
 
-	_call_stack.push_back(environment_t::make_environment(*this, _ast.get_global_scope(), 0));
+	shared_ptr<environment_t> parent_env;
+	_call_stack.push_back(environment_t::make_environment(*this, _ast.get_global_scope(), 0, parent_env));
 
 	//	### Run static intialization (basically run global statements before calling main()).
 	{
