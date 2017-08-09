@@ -32,8 +32,11 @@ using std::make_shared;
 using namespace floyd_ast;
 
 
+expression_t evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
+value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
 
 namespace {
+
 
 	bool compare_float_approx(float value, float expected){
 		float diff = static_cast<float>(fabs(value - expected));
@@ -103,9 +106,6 @@ namespace {
 
 }	//	unnamed
 
-
-
-value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
 
 value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	QUARK_ASSERT(vm.check_invariant());
@@ -177,7 +177,6 @@ value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_typ
 */
 }
 
-
 //	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
 
 floyd_ast::value_t resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
@@ -211,20 +210,6 @@ value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	}
 	return v;
 }
-
-
-
-
-
-ast_t program_to_ast2(const string& program){
-	const auto pass1 = floyd_parser::parse_program2(program);
-	const auto pass2 = run_pass2(pass1);
-	trace(pass2);
-	return pass2;
-}
-
-expression_t evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
-
 
 expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
@@ -516,7 +501,6 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 }
 
-
 std::map<int, object_id_info_t> get_all_objects(const std::shared_ptr<const lexical_scope_t>& scope, int id, int parent_id){
 	std::map<int, object_id_info_t> result;
 
@@ -629,7 +613,6 @@ expression_t evaluate_call_expression(const interpreter_t& vm, const expression_
 	const auto& result = call_function(vm, function_value, args3);
 	return expression_t::make_constant_value(result);
 }
-
 
 
 
@@ -1029,6 +1012,12 @@ bool interpreter_t::check_invariant() const {
 //////////////////////////		run_main()
 
 
+ast_t program_to_ast2(const string& program){
+	const auto pass1 = floyd_parser::parse_program2(program);
+	const auto pass2 = run_pass2(pass1);
+	trace(pass2);
+	return pass2;
+}
 
 
 std::pair<interpreter_t, floyd_ast::value_t> run_main(const string& source, const vector<floyd_ast::value_t>& args){
@@ -1039,6 +1028,8 @@ std::pair<interpreter_t, floyd_ast::value_t> run_main(const string& source, cons
 	const auto r = call_function(vm, f, args);
 	return { vm, r };
 }
+
+
 
 QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	const auto result = run_main(
@@ -1082,7 +1073,7 @@ QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 
 
 
-bool test_prg(const std::string& program, const value_t& expected_return){
+bool test__run_main(const std::string& program, const value_t& expected_return){
 	QUARK_TRACE_SS("program:" << program);
 	const auto result = run_main(program,
 		vector<floyd_ast::value_t>{}
@@ -1093,41 +1084,10 @@ bool test_prg(const std::string& program, const value_t& expected_return){
 }
 
 
-QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 4 < 5; }", floyd_ast::value_t(true)));
-QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 5 < 4; }", floyd_ast::value_t(false)));
-QUARK_UNIT_1("run_main()", "", test_prg("bool main(){ return 4 <= 4; }", floyd_ast::value_t(true)));
+QUARK_UNIT_1("run_main()", "", test__run_main("bool main(){ return 4 < 5; }", floyd_ast::value_t(true)));
+QUARK_UNIT_1("run_main()", "", test__run_main("bool main(){ return 5 < 4; }", floyd_ast::value_t(false)));
+QUARK_UNIT_1("run_main()", "", test__run_main("bool main(){ return 4 <= 4; }", floyd_ast::value_t(true)));
 
-#if false
-QUARK_UNIT_TESTQ("run_main()", "struct"){
-	QUARK_UT_VERIFY(test_prg("struct t { int a;} bool main(){ t b = t_constructor(); return b == b; }", floyd_ast::value_t(true)));
-}
-
-QUARK_UNIT_1("run_main()", "", test_prg(
-	"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
-	floyd_ast::value_t(true)
-));
-
-
-QUARK_UNIT_TESTQ("run_main()", ""){
-	QUARK_TEST_VERIFY(test_prg(
-		"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
-		floyd_ast::value_t(true)
-	));
-}
-
-QUARK_UNIT_TESTQ("run_main()", ""){
-	try {
-		test_prg(
-			"struct t { int a;} bool main(){ t a = t_constructor(); int b = 1055; return a == b; }",
-			floyd_ast::value_t(true)
-		);
-		QUARK_UT_VERIFY(false);
-	}
-	catch(...){
-	}
-}
-
-#endif
 
 
 
@@ -1229,6 +1189,37 @@ QUARK_UNIT_TESTQ("struct", "Can make and read global int"){
 
 
 
+#if false
+QUARK_UNIT_TESTQ("run_main()", "struct"){
+	QUARK_UT_VERIFY(test__run_main("struct t { int a;} bool main(){ t b = t_constructor(); return b == b; }", floyd_ast::value_t(true)));
+}
+
+QUARK_UNIT_1("run_main()", "", test__run_main(
+	"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
+	floyd_ast::value_t(true)
+));
+
+
+QUARK_UNIT_TESTQ("run_main()", ""){
+	QUARK_TEST_VERIFY(test__run_main(
+		"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
+		floyd_ast::value_t(true)
+	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", ""){
+	try {
+		test__run_main(
+			"struct t { int a;} bool main(){ t a = t_constructor(); int b = 1055; return a == b; }",
+			floyd_ast::value_t(true)
+		);
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+#endif
 #if false
 QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member data"){
 	const auto a = run_main(
