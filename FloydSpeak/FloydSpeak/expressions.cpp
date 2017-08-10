@@ -45,7 +45,7 @@ static std::map<floyd_basics::expression_type, string> operation_to_string_looku
 	{ floyd_basics::expression_type::k_logical_and__2, "&&" },
 	{ floyd_basics::expression_type::k_logical_or__2, "||" },
 //	{ floyd_basics::expression_type::k_logical_not, "!" },
-	{ floyd_basics::expression_type::k_unary_minus, "unary_minus" },
+	{ floyd_basics::expression_type::k_arithmetic_unary_minus__1, "unary_minus" },
 
 	{ floyd_basics::expression_type::k_constant, "k" },
 
@@ -225,7 +225,7 @@ expression_t expression_t::make_math2_operation(floyd_basics::expression_type op
 	}
 	else if(
 		op == floyd_basics::expression_type::k_constant
-		|| op == floyd_basics::expression_type::k_unary_minus
+		|| op == floyd_basics::expression_type::k_arithmetic_unary_minus__1
 		|| op == floyd_basics::expression_type::k_conditional_operator3
 		|| op == floyd_basics::expression_type::k_call
 		|| op == floyd_basics::expression_type::k_variable
@@ -244,7 +244,7 @@ expression_t expression_t::make_unary_minus(const expression_t& expr){
 	QUARK_ASSERT(expr.check_invariant());
 
 	auto result = expression_t(
-		floyd_basics::expression_type::k_unary_minus,
+		floyd_basics::expression_type::k_arithmetic_unary_minus__1,
 		{ expr },
 		{},
 		{},

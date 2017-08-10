@@ -144,7 +144,7 @@ namespace floyd_basics {
 		k_constant,
 
 		//	-a
-		k_unary_minus,
+		k_arithmetic_unary_minus__1,
 
 		//	cond ? a : b
 		k_conditional_operator3,

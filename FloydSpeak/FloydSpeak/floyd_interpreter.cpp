@@ -242,7 +242,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 		return evaluate_call_expression(vm, e);
 	}
 
-	else if(op == floyd_basics::expression_type::k_unary_minus){
+	else if(op == floyd_basics::expression_type::k_arithmetic_unary_minus__1){
 		const auto& expr = evaluate_expression(vm, e.get_expressions()[0]);
 		if(expr.is_constant()){
 			const auto& c = expr.get_constant();
