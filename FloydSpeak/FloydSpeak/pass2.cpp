@@ -161,12 +161,12 @@ expression_t parser_expression_to_ast(const json_t& e){
 		const auto expr = parser_expression_to_ast(e.get_array_n(1));
 		return expression_t::make_unary_minus(expr);
 	}
-	else if(floyd_parser::is_math2_op(op)){
+	else if(floyd_ast::is_simple_expression__2(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto op2 = string_to_math2_op(op);
+		const auto op2 = floyd_basics::token_to_expression_type(op);
 		const auto lhs_expr = parser_expression_to_ast(e.get_array_n(1));
 		const auto rhs_expr = parser_expression_to_ast(e.get_array_n(2));
-		return expression_t::make_math2_operation(op2, lhs_expr, rhs_expr);
+		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr);
 	}
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 4);

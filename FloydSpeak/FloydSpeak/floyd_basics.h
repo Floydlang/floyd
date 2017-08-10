@@ -96,68 +96,75 @@ namespace floyd_basics {
 	//	Number at end of name tells number of input expressions operation has.
 	enum class expression_type {
 
-		//	a + b
+		//	c99: a + b			token: "+"
 		k_arithmetic_add__2 = 10,
 
-		//	a - b
+		//	c99: a - b			token: "-"
 		k_arithmetic_subtract__2,
 
-		//	a * b
+		//	c99: a * b			token: "*"
 		k_arithmetic_multiply__2,
 
-		//	a / b
+		//	c99: a / b			token: "/"
 		k_arithmetic_divide__2,
 
-		//	a % b
+		//	c99: a % b			token: "%"
 		k_arithmetic_remainder__2,
 
 
-		//	a <= b
+		//	c99: a <= b			token: "<="
 		k_comparison_smaller_or_equal__2,
 
-		//	a < b
+		//	c99: a < b			token: "<"
 		k_comparison_smaller__2,
 
-		//	a >= b
+		//	c99: a >= b			token: ">="
 		k_comparison_larger_or_equal__2,
 
-		//	a > b
+		//	c99: a > b			token: ">"
 		k_comparison_larger__2,
 
 
-		//	a == b
+		//	c99: a == b			token: "=="
 		k_logical_equal__2,
 
-		//	a != b
+		//	c99: a != b			token: "!="
 		k_logical_nonequal__2,
 
 
-		//	a && b
+		//	c99: a && b			token: "&&"
 		k_logical_and__2,
 
-		//	a || b
+		//	c99: a || b			token: "||"
 		k_logical_or__2,
 
-		//	!a
+		//	c99: !a				token: "!"
 //			k_logical_not,
 
+		//	c99: 13				token: "k"
 		k_constant,
 
-		//	-a
+		//	c99: -a				token: "unary_minus"
 		k_arithmetic_unary_minus__1,
 
-		//	cond ? a : b
+		//	c99: cond ? a : b	token: "?:"
 		k_conditional_operator3,
 
+		//	c99: a(b, c)		token: "call"
 		k_call,
 
+		//	c99: a				token: "@"
 		k_variable,
 
+		//	c99: a.b			token: "->"
 		k_resolve_member,
 
+		//	c99: a[b]			token: "[-]"
 		k_lookup_element
 	};
 
+	expression_type token_to_expression_type(const std::string& op);
+	std::string expression_type_to_token(const expression_type& op);
 
 
 
@@ -179,8 +186,6 @@ namespace floyd_basics {
 	};
 
 	std::string base_type_to_string(const base_type t);
-
-
 }
 
 

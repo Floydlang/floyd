@@ -249,13 +249,13 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			if(c.is_int()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_math2_operation(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_int(0), expr)
+					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_int(0), expr)
 				);
 			}
 			else if(c.is_float()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_math2_operation(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_float(0.0f), expr)
+					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_float(0.0f), expr)
 				);
 			}
 			else{
@@ -506,7 +506,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	//	Else use a math_operation expression to perform the calculation later.
 	//	We make a NEW math_operation since sub-nodes may have been evaluated.
 	else{
-		return expression_t::make_math2_operation(op, left_expr, right_expr);
+		return expression_t::make_simple_expression__2(op, left_expr, right_expr);
 	}
 }
 
@@ -671,7 +671,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "constant 1234 == 1234") {
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 	test__evaluate_expression(
-		expression_t::make_math2_operation(
+		expression_t::make_simple_expression__2(
 			floyd_basics::expression_type::k_arithmetic_add__2,
 			expression_t::make_constant_int(1),
 			expression_t::make_constant_int(2)
@@ -683,7 +683,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 	test__evaluate_expression(
-		expression_t::make_math2_operation(
+		expression_t::make_simple_expression__2(
 			floyd_basics::expression_type::k_arithmetic_multiply__2,
 			expression_t::make_constant_int(3),
 			expression_t::make_constant_int(4)
@@ -694,9 +694,9 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 	test__evaluate_expression(
-		expression_t::make_math2_operation(
+		expression_t::make_simple_expression__2(
 			floyd_basics::expression_type::k_arithmetic_multiply__2,
-			expression_t::make_math2_operation(
+			expression_t::make_simple_expression__2(
 				floyd_basics::expression_type::k_arithmetic_multiply__2,
 				expression_t::make_constant_int(3),
 				expression_t::make_constant_int(4)

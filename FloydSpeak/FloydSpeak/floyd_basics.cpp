@@ -46,7 +46,6 @@ namespace floyd_basics {
 		}
 	}
 
-}
 
 
 
@@ -54,12 +53,76 @@ namespace floyd_basics {
 
 
 	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
-		QUARK_TEST_VERIFY(base_type_to_string(floyd_basics::base_type::k_bool) == "bool");
-		QUARK_TEST_VERIFY(base_type_to_string(floyd_basics::base_type::k_int) == "int");
-		QUARK_TEST_VERIFY(base_type_to_string(floyd_basics::base_type::k_float) == "float");
-		QUARK_TEST_VERIFY(base_type_to_string(floyd_basics::base_type::k_string) == "string");
-		QUARK_TEST_VERIFY(base_type_to_string(floyd_basics::base_type::k_struct) == "struct");
-		QUARK_TEST_VERIFY(base_type_to_string(floyd_basics::base_type::k_vector) == "vector");
-		QUARK_TEST_VERIFY(base_type_to_string(floyd_basics::base_type::k_function) == "function");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == "bool");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == "int");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == "float");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == "string");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == "struct");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "function");
 	}
 
+
+
+
+
+//??? Use "f()" for functions.
+//??? Use "[n]" for lookups.
+//??? Move these to floyd basic constants.
+static std::map<expression_type, string> operation_to_string_lookup = {
+	{ expression_type::k_arithmetic_add__2, "+" },
+	{ expression_type::k_arithmetic_subtract__2, "-" },
+	{ expression_type::k_arithmetic_multiply__2, "*" },
+	{ expression_type::k_arithmetic_divide__2, "/" },
+	{ expression_type::k_arithmetic_remainder__2, "%" },
+
+	{ expression_type::k_comparison_smaller_or_equal__2, "<=" },
+	{ expression_type::k_comparison_smaller__2, "<" },
+	{ expression_type::k_comparison_larger_or_equal__2, ">=" },
+	{ expression_type::k_comparison_larger__2, ">" },
+
+	{ expression_type::k_logical_equal__2, "==" },
+	{ expression_type::k_logical_nonequal__2, "!=" },
+	{ expression_type::k_logical_and__2, "&&" },
+	{ expression_type::k_logical_or__2, "||" },
+//	{ expression_type::k_logical_not, "!" },
+	{ expression_type::k_arithmetic_unary_minus__1, "unary_minus" },
+
+	{ expression_type::k_constant, "k" },
+
+	{ expression_type::k_conditional_operator3, "?:" },
+	{ expression_type::k_call, "call" },
+
+	{ expression_type::k_variable, "@" },
+	{ expression_type::k_resolve_member, "->" },
+
+	{ expression_type::k_lookup_element, "[-]" }
+};
+
+std::map<string, expression_type> make_reverse(const std::map<expression_type, string>& m){
+	std::map<string, expression_type> temp;
+	for(const auto e: m){
+		temp[e.second] = e.first;
+	}
+	return temp;
+}
+
+static std::map<string, expression_type> string_to_operation_lookip = make_reverse(operation_to_string_lookup);
+
+
+
+
+string expression_type_to_token(const expression_type& op){
+	const auto r = operation_to_string_lookup.find(op);
+	QUARK_ASSERT(r != operation_to_string_lookup.end());
+	return r->second;
+}
+
+expression_type token_to_expression_type(const string& op){
+	const auto r = string_to_operation_lookip.find(op);
+	QUARK_ASSERT(r != string_to_operation_lookip.end());
+	return r->second;
+}
+
+
+}

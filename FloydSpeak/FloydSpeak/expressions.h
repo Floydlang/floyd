@@ -22,6 +22,9 @@ namespace floyd_ast {
 
 
 
+	bool is_simple_expression__2(const std::string& op);
+
+
 	//////////////////////////////////////////////////		expression_t
 
 	/*
@@ -39,7 +42,7 @@ namespace floyd_ast {
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;
 
-		public: static expression_t make_math2_operation(
+		public: static expression_t make_simple_expression__2(
 			floyd_basics::expression_type op,
 			const expression_t& left,
 			const expression_t& right
@@ -53,7 +56,7 @@ namespace floyd_ast {
 
 		public: static expression_t make_function_call(
 			const expression_t& function,
-			const std::vector<expression_t>& inputs,
+			const std::vector<expression_t>& args,
 			const typeid_t& result
 		);
 
@@ -88,14 +91,6 @@ namespace floyd_ast {
 
 		public: bool operator==(const expression_t& other) const;
 
-		private: expression_t(
-			floyd_basics::expression_type operation,
-			const std::vector<expression_t>& expressions,
-			const std::shared_ptr<value_t>& constant,
-			const std::string& symbol,
-			const typeid_t& result_type
-		);
-
 		/*
 			Returns pre-computed result of the expression - the type of value it represents.
 			null if not resolved.
@@ -110,6 +105,18 @@ namespace floyd_ast {
 		public: const std::vector<expression_t>& get_expressions() const;
 		public: const std::string& get_symbol() const;
 		public: typeid_t get_result_type() const;
+
+
+		//////////////////////////		INTERNALS
+
+
+		private: expression_t(
+			floyd_basics::expression_type operation,
+			const std::vector<expression_t>& expressions,
+			const std::shared_ptr<value_t>& constant,
+			const std::string& symbol,
+			const typeid_t& result_type
+		);
 
 
 		//////////////////////////		STATE
@@ -131,9 +138,6 @@ namespace floyd_ast {
 		["+", ["+", 1, 2], ["k", 10]]
 	*/
 	json_t expression_to_json(const expression_t& e);
-
-	floyd_basics::expression_type string_to_math2_op(const std::string& op);
-
 
 }	//	floyd_ast
 

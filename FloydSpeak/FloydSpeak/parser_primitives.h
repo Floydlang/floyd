@@ -91,8 +91,6 @@ namespace floyd_parser {
 
 	bool is_valid_type_identifier(const std::string& s);
 
-	bool is_math2_op(const std::string& op);
-
 
 	/*
 		Used for:

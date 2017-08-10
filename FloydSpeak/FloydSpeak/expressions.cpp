@@ -25,62 +25,15 @@ using std::shared_ptr;
 using std::make_shared;
 
 
-//??? Use "f()" for functions.
-//??? Use "[n]" for lookups.
-//??? Move these to floyd basic constants.
-static std::map<floyd_basics::expression_type, string> operation_to_string_lookup = {
-	{ floyd_basics::expression_type::k_arithmetic_add__2, "+" },
-	{ floyd_basics::expression_type::k_arithmetic_subtract__2, "-" },
-	{ floyd_basics::expression_type::k_arithmetic_multiply__2, "*" },
-	{ floyd_basics::expression_type::k_arithmetic_divide__2, "/" },
-	{ floyd_basics::expression_type::k_arithmetic_remainder__2, "%" },
-
-	{ floyd_basics::expression_type::k_comparison_smaller_or_equal__2, "<=" },
-	{ floyd_basics::expression_type::k_comparison_smaller__2, "<" },
-	{ floyd_basics::expression_type::k_comparison_larger_or_equal__2, ">=" },
-	{ floyd_basics::expression_type::k_comparison_larger__2, ">" },
-
-	{ floyd_basics::expression_type::k_logical_equal__2, "==" },
-	{ floyd_basics::expression_type::k_logical_nonequal__2, "!=" },
-	{ floyd_basics::expression_type::k_logical_and__2, "&&" },
-	{ floyd_basics::expression_type::k_logical_or__2, "||" },
-//	{ floyd_basics::expression_type::k_logical_not, "!" },
-	{ floyd_basics::expression_type::k_arithmetic_unary_minus__1, "unary_minus" },
-
-	{ floyd_basics::expression_type::k_constant, "k" },
-
-	{ floyd_basics::expression_type::k_conditional_operator3, "?:" },
-	{ floyd_basics::expression_type::k_call, "call" },
-
-	{ floyd_basics::expression_type::k_variable, "@" },
-	{ floyd_basics::expression_type::k_resolve_member, "->" },
-
-	{ floyd_basics::expression_type::k_lookup_element, "[-]" }
-};
-
-std::map<string, floyd_basics::expression_type> make_reverse(const std::map<floyd_basics::expression_type, string>& m){
-	std::map<string, floyd_basics::expression_type> temp;
-	for(const auto e: m){
-		temp[e.second] = e.first;
-	}
-	return temp;
-}
-
-static std::map<string, floyd_basics::expression_type> string_to_operation_lookip = make_reverse(operation_to_string_lookup);
-
-
-
-
-
 string expression_to_json_string(const expression_t& e);
 
 
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
-	const auto a = expression_t::make_math2_operation(
+	const auto a = expression_t::make_simple_expression__2(
 		floyd_basics::expression_type::k_arithmetic_add__2,
 		expression_t::make_constant_int(3),
 		expression_t::make_constant_int(4));
-	const auto b = expression_t::make_math2_operation(
+	const auto b = expression_t::make_simple_expression__2(
 		floyd_basics::expression_type::k_arithmetic_add__2,
 		expression_t::make_constant_int(3),
 		expression_t::make_constant_int(4));
@@ -197,7 +150,14 @@ const value_t& expression_t::get_constant() const{
 	return *_constant;
 }
 
-expression_t expression_t::make_math2_operation(floyd_basics::expression_type op, const expression_t& left, const expression_t& right){
+bool is_simple_expression__2(const std::string& op){
+	return
+		op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
+		|| op == "<=" || op == "<" || op == ">=" || op == ">"
+		|| op == "==" || op == "!=" || op == "&&" || op == "||";
+}
+
+expression_t expression_t::make_simple_expression__2(floyd_basics::expression_type op, const expression_t& left, const expression_t& right){
 	if(
 		op == floyd_basics::expression_type::k_arithmetic_add__2
 		|| op == floyd_basics::expression_type::k_arithmetic_subtract__2
@@ -270,15 +230,15 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	return result;
 }
 
-expression_t expression_t::make_function_call(const expression_t& function, const std::vector<expression_t>& inputs, const typeid_t& result_type){
+expression_t expression_t::make_function_call(const expression_t& function, const std::vector<expression_t>& args, const typeid_t& result_type){
 	QUARK_ASSERT(function.check_invariant());
-	for(const auto arg: inputs){
+	for(const auto arg: args){
 		QUARK_ASSERT(arg.check_invariant());
 	}
 //	QUARK_ASSERT(result_type._base_type != base_type::k_null && result_type.check_invariant());
 
 	vector<expression_t> expressions = { function };
-	expressions.insert(expressions.end(), inputs.begin(), inputs.end());
+	expressions.insert(expressions.end(), args.begin(), args.end());
 	auto result = expression_t(
 		floyd_basics::expression_type::k_call,
 		expressions,
@@ -336,17 +296,6 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 	return result;
 }
 
-string operation_to_string(const floyd_basics::expression_type& op){
-	const auto r = operation_to_string_lookup.find(op);
-	QUARK_ASSERT(r != operation_to_string_lookup.end());
-	return r->second;
-}
-
-floyd_basics::expression_type string_to_math2_op(const string& op){
-	const auto r = string_to_operation_lookip.find(op);
-	QUARK_ASSERT(r != string_to_operation_lookip.end());
-	return r->second;
-}
 
 void trace(const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
@@ -372,7 +321,7 @@ json_t expression_to_json(const expression_t& e){
 	const auto symbol = e.get_symbol().empty() == false ? e.get_symbol() : json_t();
 
 	auto result = json_t::make_array();
-	result = push_back(result, operation_to_string(e.get_operation()));
+	result = push_back(result, floyd_basics::expression_type_to_token(e.get_operation()));
 	if(symbol.is_null() == false){
 		result = push_back(result, symbol);
 	}
@@ -412,7 +361,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
 QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
-			expression_t::make_math2_operation(
+			expression_t::make_simple_expression__2(
 				floyd_basics::expression_type::k_arithmetic_add__2, expression_t::make_constant_int(2), expression_t::make_constant_int(3))
 			),
 		R"(["+", ["k", 2, "int"], ["k", 3, "int"], "int"])"
