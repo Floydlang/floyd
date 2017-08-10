@@ -87,6 +87,74 @@ namespace floyd_basics {
 	};
 
 
+	//////////////////////////////////////		base_type
+
+
+
+	//??? Split and categories better. Logic vs equality vs math.
+
+	enum class expression_type {
+
+		//	a + b
+		k_math2_add = 10,
+
+		//	a - b
+		k_math2_subtract,
+
+		//	a * b
+		k_math2_multiply,
+
+		//	a / b
+		k_math2_divide,
+
+		//	a % b
+		k_math2_remainder,
+
+
+		//	a <= b
+		k_math2_smaller_or_equal,
+
+		//	a < b
+		k_math2_smaller,
+
+		//	a >= b
+		k_math2_larger_or_equal,
+
+		//	a > b
+		k_math2_larger,
+
+		//	a == b
+		k_logical_equal,
+
+		//	a != b
+		k_logical_nonequal,
+
+
+		//	a && b
+		k_logical_and,
+
+		//	a || b
+		k_logical_or,
+
+		//	!a
+//			k_logical_not,
+
+		k_constant,
+
+		//	-a
+		k_unary_minus,
+
+		//	cond ? a : b
+		k_conditional_operator3,
+		k_call,
+
+		k_variable,
+		k_resolve_member,
+
+		k_lookup_element
+	};
+
+
 
 
 	//////////////////////////////////////		base_type

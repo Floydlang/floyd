@@ -39,58 +39,8 @@ namespace floyd_ast {
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;
 
-		//??? Split and categories better. Logic vs equality vs math. Only have ONE way to create each operation.
-		public: enum class operation {
-			k_math2_add = 10,
-			k_math2_subtract,
-			k_math2_multiply,
-			k_math2_divide,
-			k_math2_remainder,
-
-			//	a <= b
-			k_math2_smaller_or_equal,
-
-			//	a < b
-			k_math2_smaller,
-
-			//	a >= b
-			k_math2_larger_or_equal,
-
-			//	a > b
-			k_math2_larger,
-
-			//	a == b
-			k_logical_equal,
-
-			//	a != b
-			k_logical_nonequal,
-
-			//	a && b
-			k_logical_and,
-
-			//	a || b
-			k_logical_or,
-
-			//	!a
-//			k_logical_not,
-
-			k_constant,
-
-			//	-a
-			k_unary_minus,
-
-			//	cond ? a : b
-			k_conditional_operator3,
-			k_call,
-
-			k_variable,
-			k_resolve_member,
-
-			k_lookup_element
-		};
-
 		public: static expression_t make_math2_operation(
-			operation op,
+			floyd_basics::expression_type op,
 			const expression_t& left,
 			const expression_t& right
 		);
@@ -139,7 +89,7 @@ namespace floyd_ast {
 		public: bool operator==(const expression_t& other) const;
 
 		private: expression_t(
-			operation operation,
+			floyd_basics::expression_type operation,
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
 			const std::string& symbol,
@@ -156,7 +106,7 @@ namespace floyd_ast {
 			return _result_type;
 		}
 
-		public: operation get_operation() const;
+		public: floyd_basics::expression_type get_operation() const;
 		public: const std::vector<expression_t>& get_expressions() const;
 		public: const std::string& get_symbol() const;
 		public: typeid_t get_result_type() const;
@@ -164,7 +114,7 @@ namespace floyd_ast {
 
 		//////////////////////////		STATE
 		private: std::string _debug;
-		private: operation _operation;
+		private: floyd_basics::expression_type _operation;
 		private: std::vector<expression_t> _expressions;
 		private: std::shared_ptr<value_t> _constant;
 		private: std::string _symbol;
@@ -182,7 +132,7 @@ namespace floyd_ast {
 	*/
 	json_t expression_to_json(const expression_t& e);
 
-	expression_t::operation string_to_math2_op(const std::string& op);
+	floyd_basics::expression_type string_to_math2_op(const std::string& op);
 
 
 }	//	floyd_ast

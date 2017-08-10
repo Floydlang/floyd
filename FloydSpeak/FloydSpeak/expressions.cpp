@@ -28,45 +28,45 @@ using std::make_shared;
 //??? Use "f()" for functions.
 //??? Use "[n]" for lookups.
 //??? Move these to floyd basic constants.
-static std::map<expression_t::operation, string> operation_to_string_lookup = {
-	{ expression_t::operation::k_math2_add, "+" },
-	{ expression_t::operation::k_math2_subtract, "-" },
-	{ expression_t::operation::k_math2_multiply, "*" },
-	{ expression_t::operation::k_math2_divide, "/" },
-	{ expression_t::operation::k_math2_remainder, "%" },
+static std::map<floyd_basics::expression_type, string> operation_to_string_lookup = {
+	{ floyd_basics::expression_type::k_math2_add, "+" },
+	{ floyd_basics::expression_type::k_math2_subtract, "-" },
+	{ floyd_basics::expression_type::k_math2_multiply, "*" },
+	{ floyd_basics::expression_type::k_math2_divide, "/" },
+	{ floyd_basics::expression_type::k_math2_remainder, "%" },
 
-	{ expression_t::operation::k_math2_smaller_or_equal, "<=" },
-	{ expression_t::operation::k_math2_smaller, "<" },
-	{ expression_t::operation::k_math2_larger_or_equal, ">=" },
-	{ expression_t::operation::k_math2_larger, ">" },
+	{ floyd_basics::expression_type::k_math2_smaller_or_equal, "<=" },
+	{ floyd_basics::expression_type::k_math2_smaller, "<" },
+	{ floyd_basics::expression_type::k_math2_larger_or_equal, ">=" },
+	{ floyd_basics::expression_type::k_math2_larger, ">" },
 
-	{ expression_t::operation::k_logical_equal, "==" },
-	{ expression_t::operation::k_logical_nonequal, "!=" },
-	{ expression_t::operation::k_logical_and, "&&" },
-	{ expression_t::operation::k_logical_or, "||" },
-//	{ expression_t::operation::k_logical_not, "!" },
-	{ expression_t::operation::k_unary_minus, "unary_minus" },
+	{ floyd_basics::expression_type::k_logical_equal, "==" },
+	{ floyd_basics::expression_type::k_logical_nonequal, "!=" },
+	{ floyd_basics::expression_type::k_logical_and, "&&" },
+	{ floyd_basics::expression_type::k_logical_or, "||" },
+//	{ floyd_basics::expression_type::k_logical_not, "!" },
+	{ floyd_basics::expression_type::k_unary_minus, "unary_minus" },
 
-	{ expression_t::operation::k_constant, "k" },
+	{ floyd_basics::expression_type::k_constant, "k" },
 
-	{ expression_t::operation::k_conditional_operator3, "?:" },
-	{ expression_t::operation::k_call, "call" },
+	{ floyd_basics::expression_type::k_conditional_operator3, "?:" },
+	{ floyd_basics::expression_type::k_call, "call" },
 
-	{ expression_t::operation::k_variable, "@" },
-	{ expression_t::operation::k_resolve_member, "->" },
+	{ floyd_basics::expression_type::k_variable, "@" },
+	{ floyd_basics::expression_type::k_resolve_member, "->" },
 
-	{ expression_t::operation::k_lookup_element, "[-]" }
+	{ floyd_basics::expression_type::k_lookup_element, "[-]" }
 };
 
-std::map<string, expression_t::operation> make_reverse(const std::map<expression_t::operation, string>& m){
-	std::map<string, expression_t::operation> temp;
+std::map<string, floyd_basics::expression_type> make_reverse(const std::map<floyd_basics::expression_type, string>& m){
+	std::map<string, floyd_basics::expression_type> temp;
 	for(const auto e: m){
 		temp[e.second] = e.first;
 	}
 	return temp;
 }
 
-static std::map<string, expression_t::operation> string_to_operation_lookip = make_reverse(operation_to_string_lookup);
+static std::map<string, floyd_basics::expression_type> string_to_operation_lookip = make_reverse(operation_to_string_lookup);
 
 
 
@@ -77,11 +77,11 @@ string expression_to_json_string(const expression_t& e);
 
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_math2_operation(
-		expression_t::operation::k_math2_add,
+		floyd_basics::expression_type::k_math2_add,
 		expression_t::make_constant_int(3),
 		expression_t::make_constant_int(4));
 	const auto b = expression_t::make_math2_operation(
-		expression_t::operation::k_math2_add,
+		floyd_basics::expression_type::k_math2_add,
 		expression_t::make_constant_int(3),
 		expression_t::make_constant_int(4));
 	QUARK_TEST_VERIFY(a == b);
@@ -92,7 +92,7 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 
 
 expression_t::expression_t(
-	operation operation,
+	floyd_basics::expression_type operation,
 	const std::vector<expression_t>& expressions,
 	const std::shared_ptr<value_t>& constant,
 	const std::string& symbol,
@@ -129,7 +129,7 @@ bool expression_t::operator==(const expression_t& other) const {
 		&& (_symbol == other._symbol);
 }
 
-expression_t::operation expression_t::get_operation() const{
+floyd_basics::expression_type expression_t::get_operation() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _operation;
@@ -158,7 +158,7 @@ expression_t expression_t::make_constant_value(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	auto result = expression_t(
-		operation::k_constant,
+		floyd_basics::expression_type::k_constant,
 		{},
 		make_shared<value_t>(value),
 		{},
@@ -188,7 +188,7 @@ expression_t expression_t::make_constant_string(const std::string& s){
 
 
 bool expression_t::is_constant() const{
-	return _operation == operation::k_constant;
+	return _operation == floyd_basics::expression_type::k_constant;
 }
 
 const value_t& expression_t::get_constant() const{
@@ -197,40 +197,40 @@ const value_t& expression_t::get_constant() const{
 	return *_constant;
 }
 
-expression_t expression_t::make_math2_operation(operation op, const expression_t& left, const expression_t& right){
+expression_t expression_t::make_math2_operation(floyd_basics::expression_type op, const expression_t& left, const expression_t& right){
 	if(
-		op == operation::k_math2_add
-		|| op == operation::k_math2_subtract
-		|| op == operation::k_math2_multiply
-		|| op == operation::k_math2_divide
-		|| op == operation::k_math2_remainder
+		op == floyd_basics::expression_type::k_math2_add
+		|| op == floyd_basics::expression_type::k_math2_subtract
+		|| op == floyd_basics::expression_type::k_math2_multiply
+		|| op == floyd_basics::expression_type::k_math2_divide
+		|| op == floyd_basics::expression_type::k_math2_remainder
 	)
 	{
 		return expression_t(op, { left, right }, {}, {}, left.get_expression_type());
 	}
 	else if(
-		op == operation::k_math2_smaller_or_equal
-		|| op == operation::k_math2_smaller
-		|| op == operation::k_math2_larger_or_equal
-		|| op == operation::k_math2_larger
+		op == floyd_basics::expression_type::k_math2_smaller_or_equal
+		|| op == floyd_basics::expression_type::k_math2_smaller
+		|| op == floyd_basics::expression_type::k_math2_larger_or_equal
+		|| op == floyd_basics::expression_type::k_math2_larger
 
-		|| op == operation::k_logical_equal
-		|| op == operation::k_logical_nonequal
-		|| op == operation::k_logical_and
-		|| op == operation::k_logical_or
-//		|| op == operation::k_logical_negate
+		|| op == floyd_basics::expression_type::k_logical_equal
+		|| op == floyd_basics::expression_type::k_logical_nonequal
+		|| op == floyd_basics::expression_type::k_logical_and
+		|| op == floyd_basics::expression_type::k_logical_or
+//		|| op == floyd_basics::expression_type::k_logical_negate
 	)
 	{
 		return expression_t(op, { left, right }, {}, {}, typeid_t::make_bool());
 	}
 	else if(
-		op == operation::k_constant
-		|| op == operation::k_unary_minus
-		|| op == operation::k_conditional_operator3
-		|| op == operation::k_call
-		|| op == operation::k_variable
-		|| op == operation::k_resolve_member
-		|| op == operation::k_lookup_element)
+		op == floyd_basics::expression_type::k_constant
+		|| op == floyd_basics::expression_type::k_unary_minus
+		|| op == floyd_basics::expression_type::k_conditional_operator3
+		|| op == floyd_basics::expression_type::k_call
+		|| op == floyd_basics::expression_type::k_variable
+		|| op == floyd_basics::expression_type::k_resolve_member
+		|| op == floyd_basics::expression_type::k_lookup_element)
 	{
 		QUARK_ASSERT(false);
 	}
@@ -244,7 +244,7 @@ expression_t expression_t::make_unary_minus(const expression_t& expr){
 	QUARK_ASSERT(expr.check_invariant());
 
 	auto result = expression_t(
-		operation::k_unary_minus,
+		floyd_basics::expression_type::k_unary_minus,
 		{ expr },
 		{},
 		{},
@@ -260,7 +260,7 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	QUARK_ASSERT(b.check_invariant());
 
 	auto result = expression_t(
-		operation::k_conditional_operator3,
+		floyd_basics::expression_type::k_conditional_operator3,
 		{ condition, a, b },
 		{},
 		{},
@@ -280,7 +280,7 @@ expression_t expression_t::make_function_call(const expression_t& function, cons
 	vector<expression_t> expressions = { function };
 	expressions.insert(expressions.end(), inputs.begin(), inputs.end());
 	auto result = expression_t(
-		operation::k_call,
+		floyd_basics::expression_type::k_call,
 		expressions,
 		{},
 		{},
@@ -295,7 +295,7 @@ expression_t expression_t::make_variable_expression(const std::string& variable,
 	QUARK_ASSERT(variable.size() > 0);
 
 	auto result = expression_t(
-		operation::k_variable,
+		floyd_basics::expression_type::k_variable,
 		{},
 		{},
 		variable,
@@ -310,7 +310,7 @@ expression_t expression_t::make_resolve_member(const expression_t& parent_addres
 	QUARK_ASSERT(member_name.size() > 0);
 
 	auto result = expression_t(
-		operation::k_resolve_member,
+		floyd_basics::expression_type::k_resolve_member,
 		{ parent_address },
 		{},
 		member_name,
@@ -326,7 +326,7 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 	QUARK_ASSERT(result_type._base_type != floyd_basics::base_type::k_null && result_type.check_invariant());
 
 	auto result = expression_t(
-		operation::k_lookup_element,
+		floyd_basics::expression_type::k_lookup_element,
 		{ parent_address, lookup_key },
 		{},
 		{},
@@ -336,13 +336,13 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 	return result;
 }
 
-string operation_to_string(const expression_t::operation& op){
+string operation_to_string(const floyd_basics::expression_type& op){
 	const auto r = operation_to_string_lookup.find(op);
 	QUARK_ASSERT(r != operation_to_string_lookup.end());
 	return r->second;
 }
 
-expression_t::operation string_to_math2_op(const string& op){
+floyd_basics::expression_type string_to_math2_op(const string& op){
 	const auto r = string_to_operation_lookip.find(op);
 	QUARK_ASSERT(r != string_to_operation_lookip.end());
 	return r->second;
@@ -377,7 +377,7 @@ json_t expression_to_json(const expression_t& e){
 		result = push_back(result, symbol);
 	}
 
-	if(e.get_operation() == expression_t::operation::k_call){
+	if(e.get_operation() == floyd_basics::expression_type::k_call){
 		//	Add ONE element that is an array of expressions.
 		result = push_back(result, expressions);
 	}
@@ -413,7 +413,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_math2_operation(
-				expression_t::operation::k_math2_add, expression_t::make_constant_int(2), expression_t::make_constant_int(3))
+				floyd_basics::expression_type::k_math2_add, expression_t::make_constant_int(2), expression_t::make_constant_int(3))
 			),
 		R"(["+", ["k", 2, "int"], ["k", 3, "int"], "int"])"
 	);
