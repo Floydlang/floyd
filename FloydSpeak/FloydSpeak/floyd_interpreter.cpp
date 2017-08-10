@@ -249,13 +249,13 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			if(c.is_int()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_math2_operation(floyd_basics::expression_type::k_math2_subtract, expression_t::make_constant_int(0), expr)
+					expression_t::make_math2_operation(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_int(0), expr)
 				);
 			}
 			else if(c.is_float()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_math2_operation(floyd_basics::expression_type::k_math2_subtract, expression_t::make_constant_float(0.0f), expr)
+					expression_t::make_math2_operation(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_float(0.0f), expr)
 				);
 			}
 			else{
@@ -298,29 +298,29 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 
 		//	Is operation supported by all types?
 		{
-			if(op == floyd_basics::expression_type::k_math2_smaller_or_equal){
+			if(op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant_bool(diff <= 0);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_smaller){
+			else if(op == floyd_basics::expression_type::k_comparison_smaller__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant_bool(diff < 0);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_larger_or_equal){
+			else if(op == floyd_basics::expression_type::k_comparison_larger_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant_bool(diff >= 0);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_larger){
+			else if(op == floyd_basics::expression_type::k_comparison_larger__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant_bool(diff > 0);
 			}
 
 
-			else if(op == floyd_basics::expression_type::k_logical_equal){
+			else if(op == floyd_basics::expression_type::k_logical_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant_bool(diff == 0);
 			}
-			else if(op == floyd_basics::expression_type::k_logical_nonequal){
+			else if(op == floyd_basics::expression_type::k_logical_nonequal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return expression_t::make_constant_bool(diff != 0);
 			}
@@ -331,19 +331,19 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			const bool left = left_constant.get_bool();
 			const bool right = right_constant.get_bool();
 
-			if(op == floyd_basics::expression_type::k_math2_add
-			|| op == floyd_basics::expression_type::k_math2_subtract
-			|| op == floyd_basics::expression_type::k_math2_multiply
-			|| op == floyd_basics::expression_type::k_math2_divide
-			|| op == floyd_basics::expression_type::k_math2_remainder
+			if(op == floyd_basics::expression_type::k_arithmetic_add__2
+			|| op == floyd_basics::expression_type::k_arithmetic_subtract__2
+			|| op == floyd_basics::expression_type::k_arithmetic_multiply__2
+			|| op == floyd_basics::expression_type::k_arithmetic_divide__2
+			|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
 			){
 				throw std::runtime_error("Arithmetics on bool not allowed.");
 			}
 
-			else if(op == floyd_basics::expression_type::k_logical_and){
+			else if(op == floyd_basics::expression_type::k_logical_and__2){
 				return expression_t::make_constant_bool(left && right);
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or){
+			else if(op == floyd_basics::expression_type::k_logical_or__2){
 				return expression_t::make_constant_bool(left || right);
 			}
 			else{
@@ -356,32 +356,32 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			const int left = left_constant.get_int();
 			const int right = right_constant.get_int();
 
-			if(op == floyd_basics::expression_type::k_math2_add){
+			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
 				return expression_t::make_constant_int(left + right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_subtract){
+			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
 				return expression_t::make_constant_int(left - right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_multiply){
+			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
 				return expression_t::make_constant_int(left * right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_divide){
+			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return expression_t::make_constant_int(left / right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_remainder){
+			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return expression_t::make_constant_int(left % right);
 			}
 
-			else if(op == floyd_basics::expression_type::k_logical_and){
+			else if(op == floyd_basics::expression_type::k_logical_and__2){
 				return expression_t::make_constant_bool((left != 0) && (right != 0));
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or){
+			else if(op == floyd_basics::expression_type::k_logical_or__2){
 				return expression_t::make_constant_bool((left != 0) || (right != 0));
 			}
 			else{
@@ -394,30 +394,30 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			const float left = left_constant.get_float();
 			const float right = right_constant.get_float();
 
-			if(op == floyd_basics::expression_type::k_math2_add){
+			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
 				return expression_t::make_constant_float(left + right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_subtract){
+			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
 				return expression_t::make_constant_float(left - right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_multiply){
+			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
 				return expression_t::make_constant_float(left * right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_divide){
+			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
 				if(right == 0.0f){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return expression_t::make_constant_float(left / right);
 			}
-			else if(op == floyd_basics::expression_type::k_math2_remainder){
+			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Modulo operation on float not allowed.");
 			}
 
 
-			else if(op == floyd_basics::expression_type::k_logical_and){
+			else if(op == floyd_basics::expression_type::k_logical_and__2){
 				return expression_t::make_constant_bool((left != 0.0f) && (right != 0.0f));
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or){
+			else if(op == floyd_basics::expression_type::k_logical_or__2){
 				return expression_t::make_constant_bool((left != 0.0f) || (right != 0.0f));
 			}
 			else{
@@ -430,28 +430,28 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			const string left = left_constant.get_string();
 			const string right = right_constant.get_string();
 
-			if(op == floyd_basics::expression_type::k_math2_add){
+			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
 				return expression_t::make_constant_string(left + right);
 			}
 
-			else if(op == floyd_basics::expression_type::k_math2_subtract){
+			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_math2_multiply){
+			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_math2_divide){
+			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_math2_remainder){
+			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 
 
-			else if(op == floyd_basics::expression_type::k_logical_and){
+			else if(op == floyd_basics::expression_type::k_logical_and__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or){
+			else if(op == floyd_basics::expression_type::k_logical_or__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else{
@@ -467,27 +467,27 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
-			if(op == floyd_basics::expression_type::k_math2_add){
+			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
 				//??? allow
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_math2_subtract){
+			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_math2_multiply){
+			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_math2_divide){
+			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_math2_remainder){
+			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 
-			else if(op == floyd_basics::expression_type::k_logical_and){
+			else if(op == floyd_basics::expression_type::k_logical_and__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or){
+			else if(op == floyd_basics::expression_type::k_logical_or__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else{
@@ -672,7 +672,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "constant 1234 == 1234") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 	test__evaluate_expression(
 		expression_t::make_math2_operation(
-			floyd_basics::expression_type::k_math2_add,
+			floyd_basics::expression_type::k_arithmetic_add__2,
 			expression_t::make_constant_int(1),
 			expression_t::make_constant_int(2)
 		),
@@ -684,7 +684,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 	test__evaluate_expression(
 		expression_t::make_math2_operation(
-			floyd_basics::expression_type::k_math2_multiply,
+			floyd_basics::expression_type::k_arithmetic_multiply__2,
 			expression_t::make_constant_int(3),
 			expression_t::make_constant_int(4)
 		),
@@ -695,9 +695,9 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 	test__evaluate_expression(
 		expression_t::make_math2_operation(
-			floyd_basics::expression_type::k_math2_multiply,
+			floyd_basics::expression_type::k_arithmetic_multiply__2,
 			expression_t::make_math2_operation(
-				floyd_basics::expression_type::k_math2_multiply,
+				floyd_basics::expression_type::k_arithmetic_multiply__2,
 				expression_t::make_constant_int(3),
 				expression_t::make_constant_int(4)
 			),

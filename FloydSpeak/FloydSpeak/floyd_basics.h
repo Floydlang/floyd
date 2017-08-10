@@ -93,48 +93,50 @@ namespace floyd_basics {
 
 	//??? Split and categories better. Logic vs equality vs math.
 
+	//	Number at end of name tells number of input expressions operation has.
 	enum class expression_type {
 
 		//	a + b
-		k_math2_add = 10,
+		k_arithmetic_add__2 = 10,
 
 		//	a - b
-		k_math2_subtract,
+		k_arithmetic_subtract__2,
 
 		//	a * b
-		k_math2_multiply,
+		k_arithmetic_multiply__2,
 
 		//	a / b
-		k_math2_divide,
+		k_arithmetic_divide__2,
 
 		//	a % b
-		k_math2_remainder,
+		k_arithmetic_remainder__2,
 
 
 		//	a <= b
-		k_math2_smaller_or_equal,
+		k_comparison_smaller_or_equal__2,
 
 		//	a < b
-		k_math2_smaller,
+		k_comparison_smaller__2,
 
 		//	a >= b
-		k_math2_larger_or_equal,
+		k_comparison_larger_or_equal__2,
 
 		//	a > b
-		k_math2_larger,
+		k_comparison_larger__2,
+
 
 		//	a == b
-		k_logical_equal,
+		k_logical_equal__2,
 
 		//	a != b
-		k_logical_nonequal,
+		k_logical_nonequal__2,
 
 
 		//	a && b
-		k_logical_and,
+		k_logical_and__2,
 
 		//	a || b
-		k_logical_or,
+		k_logical_or__2,
 
 		//	!a
 //			k_logical_not,
@@ -146,9 +148,11 @@ namespace floyd_basics {
 
 		//	cond ? a : b
 		k_conditional_operator3,
+
 		k_call,
 
 		k_variable,
+
 		k_resolve_member,
 
 		k_lookup_element

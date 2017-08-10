@@ -29,21 +29,21 @@ using std::make_shared;
 //??? Use "[n]" for lookups.
 //??? Move these to floyd basic constants.
 static std::map<floyd_basics::expression_type, string> operation_to_string_lookup = {
-	{ floyd_basics::expression_type::k_math2_add, "+" },
-	{ floyd_basics::expression_type::k_math2_subtract, "-" },
-	{ floyd_basics::expression_type::k_math2_multiply, "*" },
-	{ floyd_basics::expression_type::k_math2_divide, "/" },
-	{ floyd_basics::expression_type::k_math2_remainder, "%" },
+	{ floyd_basics::expression_type::k_arithmetic_add__2, "+" },
+	{ floyd_basics::expression_type::k_arithmetic_subtract__2, "-" },
+	{ floyd_basics::expression_type::k_arithmetic_multiply__2, "*" },
+	{ floyd_basics::expression_type::k_arithmetic_divide__2, "/" },
+	{ floyd_basics::expression_type::k_arithmetic_remainder__2, "%" },
 
-	{ floyd_basics::expression_type::k_math2_smaller_or_equal, "<=" },
-	{ floyd_basics::expression_type::k_math2_smaller, "<" },
-	{ floyd_basics::expression_type::k_math2_larger_or_equal, ">=" },
-	{ floyd_basics::expression_type::k_math2_larger, ">" },
+	{ floyd_basics::expression_type::k_comparison_smaller_or_equal__2, "<=" },
+	{ floyd_basics::expression_type::k_comparison_smaller__2, "<" },
+	{ floyd_basics::expression_type::k_comparison_larger_or_equal__2, ">=" },
+	{ floyd_basics::expression_type::k_comparison_larger__2, ">" },
 
-	{ floyd_basics::expression_type::k_logical_equal, "==" },
-	{ floyd_basics::expression_type::k_logical_nonequal, "!=" },
-	{ floyd_basics::expression_type::k_logical_and, "&&" },
-	{ floyd_basics::expression_type::k_logical_or, "||" },
+	{ floyd_basics::expression_type::k_logical_equal__2, "==" },
+	{ floyd_basics::expression_type::k_logical_nonequal__2, "!=" },
+	{ floyd_basics::expression_type::k_logical_and__2, "&&" },
+	{ floyd_basics::expression_type::k_logical_or__2, "||" },
 //	{ floyd_basics::expression_type::k_logical_not, "!" },
 	{ floyd_basics::expression_type::k_unary_minus, "unary_minus" },
 
@@ -77,11 +77,11 @@ string expression_to_json_string(const expression_t& e);
 
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_math2_operation(
-		floyd_basics::expression_type::k_math2_add,
+		floyd_basics::expression_type::k_arithmetic_add__2,
 		expression_t::make_constant_int(3),
 		expression_t::make_constant_int(4));
 	const auto b = expression_t::make_math2_operation(
-		floyd_basics::expression_type::k_math2_add,
+		floyd_basics::expression_type::k_arithmetic_add__2,
 		expression_t::make_constant_int(3),
 		expression_t::make_constant_int(4));
 	QUARK_TEST_VERIFY(a == b);
@@ -199,25 +199,25 @@ const value_t& expression_t::get_constant() const{
 
 expression_t expression_t::make_math2_operation(floyd_basics::expression_type op, const expression_t& left, const expression_t& right){
 	if(
-		op == floyd_basics::expression_type::k_math2_add
-		|| op == floyd_basics::expression_type::k_math2_subtract
-		|| op == floyd_basics::expression_type::k_math2_multiply
-		|| op == floyd_basics::expression_type::k_math2_divide
-		|| op == floyd_basics::expression_type::k_math2_remainder
+		op == floyd_basics::expression_type::k_arithmetic_add__2
+		|| op == floyd_basics::expression_type::k_arithmetic_subtract__2
+		|| op == floyd_basics::expression_type::k_arithmetic_multiply__2
+		|| op == floyd_basics::expression_type::k_arithmetic_divide__2
+		|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
 	)
 	{
 		return expression_t(op, { left, right }, {}, {}, left.get_expression_type());
 	}
 	else if(
-		op == floyd_basics::expression_type::k_math2_smaller_or_equal
-		|| op == floyd_basics::expression_type::k_math2_smaller
-		|| op == floyd_basics::expression_type::k_math2_larger_or_equal
-		|| op == floyd_basics::expression_type::k_math2_larger
+		op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2
+		|| op == floyd_basics::expression_type::k_comparison_smaller__2
+		|| op == floyd_basics::expression_type::k_comparison_larger_or_equal__2
+		|| op == floyd_basics::expression_type::k_comparison_larger__2
 
-		|| op == floyd_basics::expression_type::k_logical_equal
-		|| op == floyd_basics::expression_type::k_logical_nonequal
-		|| op == floyd_basics::expression_type::k_logical_and
-		|| op == floyd_basics::expression_type::k_logical_or
+		|| op == floyd_basics::expression_type::k_logical_equal__2
+		|| op == floyd_basics::expression_type::k_logical_nonequal__2
+		|| op == floyd_basics::expression_type::k_logical_and__2
+		|| op == floyd_basics::expression_type::k_logical_or__2
 //		|| op == floyd_basics::expression_type::k_logical_negate
 	)
 	{
@@ -413,7 +413,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_math2_operation(
-				floyd_basics::expression_type::k_math2_add, expression_t::make_constant_int(2), expression_t::make_constant_int(3))
+				floyd_basics::expression_type::k_arithmetic_add__2, expression_t::make_constant_int(2), expression_t::make_constant_int(3))
 			),
 		R"(["+", ["k", 2, "int"], ["k", 3, "int"], "int"])"
 	);
