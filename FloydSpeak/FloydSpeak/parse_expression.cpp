@@ -64,11 +64,8 @@ struct json_helper : public maker<EXPRESSION> {
 		return make_array_skip_nulls({ json_t("@"), json_t(), json_t(s) });
 	}
 	public: virtual const EXPRESSION maker__make1(const eoperation op, const EXPRESSION& expr) const{
-		if(op == eoperation::k_1_logical_not){
-			return make_array_skip_nulls({ json_t("neg"), json_t(), expr });
-		}
-		else if(op == eoperation::k_1_load){
-			return make_array_skip_nulls({ json_t("load"), json_t(), expr });
+		if(op == eoperation::k_1_unary_minus){
+			return make_array_skip_nulls({ json_t("unary_minus"), json_t(), expr });
 		}
 		else{
 			QUARK_ASSERT(false);

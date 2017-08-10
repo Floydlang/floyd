@@ -243,11 +243,23 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 		return evaluate_call_expression(vm, e);
 	}
 
-	//### Use sugar to convert int to bool before doing negate. Negate would only work on bool.
-	else if(op == expression_t::operation::k_logical_negate){
-		const auto left_expr = evaluate_expression(vm, e2.get_expressions()[0]);
-		const auto left_constant = left_expr.get_constant().get_bool();
-		return expression_t::make_constant_bool(!left_constant);
+	else if(op == expression_t::operation::k_unary_minus){
+		const auto& expr = evaluate_expression(vm, e.get_expressions()[0]);
+		if(expr.is_constant()){
+			const auto& c = expr.get_constant();
+			if(c.is_int()){
+				return expression_t::make_math2_operation(expression_t::operation::k_math2_subtract, expression_t::make_constant_int(0), expr);
+			}
+			else if(c.is_float()){
+				return expression_t::make_math2_operation(expression_t::operation::k_math2_subtract, expression_t::make_constant_float(0.0f), expr);
+			}
+			else{
+				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_json(c.get_type())) + "\".");
+			}
+		}
+		else{
+			throw std::runtime_error("Could not evaluate condition in conditional expression.");
+		}
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
@@ -265,7 +277,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			}
 		}
 		else{
-			throw std::runtime_error("Could not evaluate contion in conditional expression.");
+			throw std::runtime_error("Could not evaluate condition in conditional expression.");
 		}
 	}
 
@@ -329,9 +341,6 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			else if(op == expression_t::operation::k_logical_or){
 				return expression_t::make_constant_bool(left || right);
 			}
-			else if(op == expression_t::operation::k_logical_negate){
-				return expression_t::make_constant_bool(!left);
-			}
 			else{
 				QUARK_ASSERT(false);
 			}
@@ -370,9 +379,6 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			else if(op == expression_t::operation::k_logical_or){
 				return expression_t::make_constant_bool((left != 0) || (right != 0));
 			}
-			else if(op == expression_t::operation::k_logical_negate){
-				return expression_t::make_constant_bool(left ? false : true);
-			}
 			else{
 				QUARK_ASSERT(false);
 			}
@@ -409,9 +415,6 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			else if(op == expression_t::operation::k_logical_or){
 				return expression_t::make_constant_bool((left != 0.0f) || (right != 0.0f));
 			}
-			else if(op == expression_t::operation::k_logical_negate){
-				return expression_t::make_constant_bool(static_cast<int>(left) ? false : true);
-			}
 			else{
 				QUARK_ASSERT(false);
 			}
@@ -444,9 +447,6 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else if(op == expression_t::operation::k_logical_or){
-				throw std::runtime_error("Operation not allowed on string.");
-			}
-			else if(op == expression_t::operation::k_logical_negate){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else{
@@ -483,9 +483,6 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else if(op == expression_t::operation::k_logical_or){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-			else if(op == expression_t::operation::k_logical_negate){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else{

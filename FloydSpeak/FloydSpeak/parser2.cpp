@@ -155,11 +155,8 @@ struct json_helper : public maker<string> {
 	}
 
 	public: virtual const string maker__make1(const eoperation op, const string& expr) const{
-		if(op == eoperation::k_1_logical_not){
-			return "[\"neg\", " + expr + "]";
-		}
-		else if(op == eoperation::k_1_load){
-			return expr;
+		if(op == eoperation::k_1_unary_minus){
+			return "[\"unary_minus\", " + expr + "]";
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -431,23 +428,23 @@ QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression(
 
 //////////////////////////////////			NEG
 
-QUARK_UNIT_1("parse_expression()", "", test__parse_expression("-2 xxx", "[\"neg\", [\"k\", \"<int>\", 2]]", " xxx"));
+QUARK_UNIT_1("parse_expression()", "", test__parse_expression("-2 xxx", "[\"unary_minus\", [\"k\", \"<int>\", 2]]", " xxx"));
 
 QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
 	"-(3)",
-	R"(["neg", ["k", "<int>", 3]])",
+	R"(["unary_minus", ["k", "<int>", 3]])",
 	""
 ));
 
 QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
 	"2---2 xxx",
-	R"(["-", ["k", "<int>", 2], ["neg", ["neg", ["k", "<int>", 2]]]])",
+	R"(["-", ["k", "<int>", 2], ["unary_minus", ["unary_minus", ["k", "<int>", 2]]]])",
 	" xxx"
 ));
 
 QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
 	"2-+-2 xxx",
-	R"(["-", ["k", "<int>", 2], ["neg", ["k", "<int>", 2]]])",
+	R"(["-", ["k", "<int>", 2], ["unary_minus", ["k", "<int>", 2]]])",
 	" xxx"
 ));
 

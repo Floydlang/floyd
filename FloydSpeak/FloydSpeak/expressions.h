@@ -47,19 +47,39 @@ namespace floyd_ast {
 			k_math2_divide,
 			k_math2_remainder,
 
+			//	a <= b
 			k_math2_smaller_or_equal,
+
+			//	a < b
 			k_math2_smaller,
+
+			//	a >= b
 			k_math2_larger_or_equal,
+
+			//	a > b
 			k_math2_larger,
 
+			//	a == b
 			k_logical_equal,
+
+			//	a != b
 			k_logical_nonequal,
+
+			//	a && b
 			k_logical_and,
+
+			//	a || b
 			k_logical_or,
-			k_logical_negate,
+
+			//	!a
+//			k_logical_not,
 
 			k_constant,
 
+			//	-a
+			k_unary_minus,
+
+			//	cond ? a : b
 			k_conditional_operator3,
 			k_call,
 
@@ -74,7 +94,7 @@ namespace floyd_ast {
 			const expression_t& left,
 			const expression_t& right
 		);
-		public: static expression_t make_logical_negate(const expression_t& expr);
+		public: static expression_t make_unary_minus(const expression_t& expr);
 		public: static expression_t make_conditional_operator(
 			const expression_t& condition,
 			const expression_t& a,

@@ -111,17 +111,28 @@ enum class eoperation {
 	k_2_larger_or_equal,
 	k_2_larger,
 
+	//	a == b
 	k_2_logical_equal,
+
+	//	a != b
 	k_2_logical_nonequal,
+
+	//	a && b
 	k_2_logical_and,
+
+	//	a || b
 	k_2_logical_or,
 
+	//	cond ? a : b
 	k_3_conditional_operator,
 
 	k_n_call,
 
-	k_1_logical_not,
-	k_1_load
+	//	!a
+//	k_1_logical_not
+
+	//	-a
+	k_1_unary_minus
 };
 
 
@@ -318,7 +329,7 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 	//	Negate? "-xxx"
 	if(ch1 == '-'){
 		const auto a = parse_expression_int(helper, p2.rest1(), eoperator_precedence::k_super_strong);
-		const auto value2 = helper.maker__make1(eoperation::k_1_logical_not, a.first);
+		const auto value2 = helper.maker__make1(eoperation::k_1_unary_minus, a.first);
 		return { value2, a.second };
 	}
 	else if(ch1 == '+'){

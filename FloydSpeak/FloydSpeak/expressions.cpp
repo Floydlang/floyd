@@ -44,7 +44,8 @@ static std::map<expression_t::operation, string> operation_to_string_lookup = {
 	{ expression_t::operation::k_logical_nonequal, "!=" },
 	{ expression_t::operation::k_logical_and, "&&" },
 	{ expression_t::operation::k_logical_or, "||" },
-	{ expression_t::operation::k_logical_negate, "negate" },
+//	{ expression_t::operation::k_logical_not, "!" },
+	{ expression_t::operation::k_unary_minus, "unary_minus" },
 
 	{ expression_t::operation::k_constant, "k" },
 
@@ -217,13 +218,14 @@ expression_t expression_t::make_math2_operation(operation op, const expression_t
 		|| op == operation::k_logical_nonequal
 		|| op == operation::k_logical_and
 		|| op == operation::k_logical_or
-		|| op == operation::k_logical_negate
+//		|| op == operation::k_logical_negate
 	)
 	{
 		return expression_t(op, { left, right }, {}, {}, typeid_t::make_bool());
 	}
 	else if(
 		op == operation::k_constant
+		|| op == operation::k_unary_minus
 		|| op == operation::k_conditional_operator3
 		|| op == operation::k_call
 		|| op == operation::k_variable
@@ -238,11 +240,11 @@ expression_t expression_t::make_math2_operation(operation op, const expression_t
 }
 
 
-expression_t expression_t::make_logical_negate(const expression_t& expr){
+expression_t expression_t::make_unary_minus(const expression_t& expr){
 	QUARK_ASSERT(expr.check_invariant());
 
 	auto result = expression_t(
-		operation::k_logical_negate,
+		operation::k_unary_minus,
 		{ expr },
 		{},
 		{},
