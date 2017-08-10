@@ -156,6 +156,11 @@ expression_t parser_expression_to_ast(const json_t& e){
 			QUARK_ASSERT(false);
 		}
 	}
+	else if(op == "neg"){
+		QUARK_ASSERT(e.get_array_size() == 2);
+		const auto expr = parser_expression_to_ast(e.get_array_n(1));
+		return expression_t::make_logical_negate(expr);
+	}
 	else if(floyd_parser::is_math2_op(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto op2 = string_to_math2_op(op);

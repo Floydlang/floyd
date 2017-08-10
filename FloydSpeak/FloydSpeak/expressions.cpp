@@ -25,7 +25,6 @@ using std::shared_ptr;
 using std::make_shared;
 
 
-//??? Cleanup "neg" and "negate". Use "!" maybe?
 //??? Use "f()" for functions.
 //??? Use "[n]" for lookups.
 //??? Move these to floyd basic constants.
@@ -238,6 +237,20 @@ expression_t expression_t::make_math2_operation(operation op, const expression_t
 	}
 }
 
+
+expression_t expression_t::make_logical_negate(const expression_t& expr){
+	QUARK_ASSERT(expr.check_invariant());
+
+	auto result = expression_t(
+		operation::k_logical_negate,
+		{ expr },
+		{},
+		{},
+		expr.get_expression_type()
+	);
+	QUARK_ASSERT(result.check_invariant());
+	return result;
+}
 
 expression_t expression_t::make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b){
 	QUARK_ASSERT(condition.check_invariant());

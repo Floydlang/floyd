@@ -74,6 +74,7 @@ namespace floyd_ast {
 			const expression_t& left,
 			const expression_t& right
 		);
+		public: static expression_t make_logical_negate(const expression_t& expr);
 		public: static expression_t make_conditional_operator(
 			const expression_t& condition,
 			const expression_t& a,
