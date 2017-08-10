@@ -1126,10 +1126,9 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 
 
 
-#if false
 QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
 	try{
-		test__evaluate_expression("2/0");
+		test__run_init("int result = 2/0", value_t());
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1139,13 +1138,15 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero"){
 	try{
-		test__evaluate_expression("3+1/(5-5)+4");
+		test__run_init("int result = 3+1/(5-5)+4", value_t());
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
 		QUARK_TEST_VERIFY(string(e.what()) == "EEE_DIVIDE_BY_ZERO");
 	}
 }
+
+#if false
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Multiply errors") {
 		//	Multiple errors not possible/relevant now that we use exceptions for errors.
