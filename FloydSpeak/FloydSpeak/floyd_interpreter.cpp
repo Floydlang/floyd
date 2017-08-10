@@ -219,8 +219,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 		return e;
 	}
 
-	const auto e2 = e;
-	const auto op = e2.get_operation();
+	const auto op = e.get_operation();
 
 	if(op == expression_t::operation::k_resolve_member){
 		const auto parent_expr = evaluate_expression(vm, e.get_expressions()[0]);
@@ -248,10 +247,16 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 		if(expr.is_constant()){
 			const auto& c = expr.get_constant();
 			if(c.is_int()){
-				return expression_t::make_math2_operation(expression_t::operation::k_math2_subtract, expression_t::make_constant_int(0), expr);
+				return evaluate_expression(
+					vm,
+					expression_t::make_math2_operation(expression_t::operation::k_math2_subtract, expression_t::make_constant_int(0), expr)
+				);
 			}
 			else if(c.is_float()){
-				return expression_t::make_math2_operation(expression_t::operation::k_math2_subtract, expression_t::make_constant_float(0.0f), expr);
+				return evaluate_expression(
+					vm,
+					expression_t::make_math2_operation(expression_t::operation::k_math2_subtract, expression_t::make_constant_float(0.0f), expr)
+				);
 			}
 			else{
 				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_json(c.get_type())) + "\".");
@@ -264,16 +269,16 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == expression_t::operation::k_conditional_operator3){
-		const auto cond_result = evaluate_expression(vm, e2.get_expressions()[0]);
+		const auto cond_result = evaluate_expression(vm, e.get_expressions()[0]);
 		if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
 			const bool cond_flag = cond_result.get_constant().get_bool();
 
 			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 			if(cond_flag){
-				return evaluate_expression(vm, e2.get_expressions()[1]);
+				return evaluate_expression(vm, e.get_expressions()[1]);
 			}
 			else{
-				return evaluate_expression(vm, e2.get_expressions()[2]);
+				return evaluate_expression(vm, e.get_expressions()[2]);
 			}
 		}
 		else{
@@ -282,8 +287,8 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 
 	//	First evaluate all inputs to our operation.
-	const auto left_expr = evaluate_expression(vm, e2.get_expressions()[0]);
-	const auto right_expr = evaluate_expression(vm, e2.get_expressions()[1]);
+	const auto left_expr = evaluate_expression(vm, e.get_expressions()[0]);
+	const auto right_expr = evaluate_expression(vm, e.get_expressions()[1]);
 
 	//	Both left and right are constant, replace the math_operation with a constant!
 	if(left_expr.is_constant() && right_expr.is_constant()){
@@ -932,14 +937,12 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 	test__run_init("int result =  5 - 2 * ( ( 4 )  - 1 ) ", value_t(-1));
 }
 
-/*
 QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
 	test__run_init("int result = -(2+1)*4", value_t(-12));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
 	test__run_init("int result = -4*(2+1)", value_t(-12));
 }
-*/
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
@@ -961,7 +964,6 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	test__run_init("int result = .25 / 2.0 * .5", value_t(0.0625f));
 }
 
-/*
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 	test__run_init("int result = 1+-2", value_t(-1));
 }
@@ -974,7 +976,6 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 	test__run_init("int result = 2-+-2", value_t(4));
 }
-*/
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
