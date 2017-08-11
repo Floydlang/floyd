@@ -29,6 +29,8 @@ namespace floyd_parser {
 
 using namespace std;
 
+static std::pair<json_t, seq_t> read_statement2(const seq_t& pos);
+
 /*
 	AST ABSTRACT SYNTAX TREE
 
@@ -38,6 +40,107 @@ https://en.wikipedia.org/wiki/Parsing_expression_grammar
 https://en.wikipedia.org/wiki/Parsing
 */
 
+
+/*
+	A:
+		if (2 > 1){
+			...
+		}
+
+
+	B:
+		if (2 > 1){
+			...
+		}
+		else{
+			...
+		}
+
+	C:
+		if (2 > 1){
+			...
+		}
+		else if(2 > 3){
+			...
+		}
+		else{
+			...
+		}
+
+
+	OUTPUT
+		??? introduces a block.
+		["if", EXPRESSION, [STATEMENT1, STATEMENT2] ]
+
+		??? ELSE, ELSE IF?
+		["if", EXPRESSION, [STATEMENT1, STATEMENT2] ]
+*/
+
+std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
+	std::pair<bool, seq_t> a = if_first(pos, "if");
+	QUARK_ASSERT(a.first);
+
+	const auto pos2 = skip_whitespace(a.second);
+
+	if(pos2.first1_char() != '('){
+		throw std::runtime_error("syntax error");
+	}
+
+	const auto header = get_balanced(pos2);
+	const auto pos3 = skip_whitespace(header.second);
+	const auto body = get_balanced(pos3);
+
+	const auto condition = parse_expression_all(seq_t(trim_ends(header.first)));
+	const auto statements = read_statement2(seq_t(trim_ends(body.first)));
+
+	return { json_t{}, body.second };
+}
+
+
+QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}", ""){
+	ut_compare_jsons(
+		parse_if_statement(seq_t("if (1 > 2) { return 3; }")).first,
+		parse_json(seq_t("null")).first
+	);
+}
+
+
+/*
+	for ( int x = 0 ; x < 10 ; x++ ){
+		...
+	}
+*/
+std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
+	std::pair<bool, seq_t> a = if_first(pos, "for");
+	QUARK_ASSERT(a.first);
+
+	const auto pos2 = skip_whitespace(a.second);
+
+	if(pos2.first1_char() != '('){
+		throw std::runtime_error("syntax error");
+	}
+
+	const auto header = get_balanced(pos2);
+	const auto pos3 = skip_whitespace(header.second);
+	const auto body = get_balanced(pos3);
+
+	const auto init_statement = read_until(seq_t(trim_ends(header.first)), ";");
+	const auto condition_expression = read_until(init_statement.second.rest1(), ";");
+	const auto post_statement = condition_expression.second.rest1();
+
+	const auto init_statement2 = read_statement2(seq_t(init_statement.first));
+	const auto condition_expression2 = parse_expression_all(seq_t(condition_expression.first));
+	const auto statements = read_statement2(post_statement);
+
+	return { json_t{}, body.second };
+}
+
+QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
+	ut_compare_jsons(
+		parse_for_statement(seq_t("for ( int x = 0 ; x < 10 ; int x = 10 ) { a = 42; }")).first,
+		parse_json(seq_t("null")).first
+	);
+}
 
 
 //////////////////////////////////////////////////		read_statement()
@@ -61,7 +164,8 @@ https://en.wikipedia.org/wiki/Parsing
 	["define_function", FUNCTION_DEF ]
 */
 
-static std::pair<json_t, seq_t> read_statement2(const seq_t& pos){
+static std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
+	const auto pos = skip_whitespace(pos0);
 	const auto token_pos = read_until(pos, whitespace_chars);
 
 	//	return statement?
@@ -76,6 +180,14 @@ static std::pair<json_t, seq_t> read_statement2(const seq_t& pos){
 		return { a.first, skip_whitespace(a.second) };
 	}
 
+	else if(token_pos.first == "if"){
+		const auto a = parse_if_statement(seq_t(pos));
+		return { a.first, skip_whitespace(a.second) };
+	}
+	else if(token_pos.first == "for"){
+		const auto a = parse_for_statement(seq_t(pos));
+		return { a.first, skip_whitespace(a.second) };
+	}
 	else {
 		const auto type_pos = read_required_type_identifier(seq_t(pos));
 		const auto identifier_pos = read_required_single_symbol(type_pos.second);

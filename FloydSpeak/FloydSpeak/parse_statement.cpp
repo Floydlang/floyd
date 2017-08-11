@@ -21,11 +21,8 @@ namespace floyd_parser {
 
 
 	pair<json_t, seq_t> parse_return_statement(const seq_t& s){
-		QUARK_ASSERT(s.size() >= string("return").size());
-
-		QUARK_ASSERT(if_first(s, "return").first);
-
-		const auto token_pos = read_until(s, whitespace_chars);
+		const auto token_pos = if_first(skip_whitespace(s), "return");
+		QUARK_ASSERT(token_pos.first);
 		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 		const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
 		const auto statement = json_t::make_array({ json_t("return"), expression1 });

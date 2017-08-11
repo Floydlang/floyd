@@ -1279,6 +1279,38 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 }
 
 
+//////////////////////////		fibonacci
+
+/*
+	fun fibonacci(n) {
+	  if (n <= 1) return n;
+	  return fibonacci(n - 2) + fibonacci(n - 1);
+	}
+
+	for (var i = 0; i < 20; i = i + 1) {
+	  print fibonacci(i);
+	}
+*/
+
+#if false
+QUARK_UNIT_TESTQ("run_main", "fibonacci"){
+	test__run_init(
+		"int fibonacci(int n) {"
+		"	if (n <= 1){"
+		"		return n;"
+		"	}"
+		"	return fibonacci(n - 2) + fibonacci(n - 1);"
+		"}"
+
+		"for (var i = 0; i < 20; i = i + 1) {"
+		"	print fibonacci(i);"
+		"}",
+		value_t(123)
+	);
+}
+#endif
+
+
 
 
 //////////////////////////		TEST STRUCT SUPPORT
@@ -1315,8 +1347,7 @@ QUARK_UNIT_TESTQ("run_main()", ""){
 	}
 }
 
-#endif
-#if false
+
 QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member data"){
 	const auto a = run_main(
 		"struct pixel { string s; }"
