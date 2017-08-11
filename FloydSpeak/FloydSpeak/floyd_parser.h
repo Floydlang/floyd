@@ -149,6 +149,31 @@ const char k_test_program_100_parserout[] = R"(
 
 
 
+	//////////////////////////////////////////////////		read_statement()
+
+
+	/*
+		Read one statement, including any expressions it uses.
+		Supports all statments:
+			- return statement
+			- struct-definition
+			- function-definition
+			- define constant, with initializating.
+
+		Never simplifes expressions- the parser is non-lossy.
+
+		OUTPUT
+
+		["return", EXPRESSION ]
+		["bind", "<string>", "local_name", EXPRESSION ]
+		["def_struct", STRUCT_DEF ]
+		["define_function", FUNCTION_DEF ]
+	*/
+
+	std::pair<json_t, seq_t> read_statement2(const seq_t& pos0);
+
+
+
 	/*
 		OUTPUT
 			json_t statement_array;
