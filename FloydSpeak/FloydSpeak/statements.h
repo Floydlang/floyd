@@ -17,6 +17,7 @@
 
 #include "parser_ast.h"
 #include "expressions.h"
+#include "utils.h"
 
 struct json_t;
 
@@ -50,15 +51,27 @@ namespace floyd_ast {
 		expression_t _expression;
 	};
 
+	//////////////////////////////////////		for_statement_t
+
+
+	struct for_statement_t {
+		bool operator==(const for_statement_t& other) const {
+			return compare_shared_values(_init, other._init) && _condition == other._condition && _post_expression == other._post_expression && _block_id == other._block_id;
+		}
+
+
+		std::shared_ptr<statement_t> _init;
+		expression_t _condition;
+		expression_t _post_expression;
+		int _block_id;
+	};
+
 
 
 	//////////////////////////////////////		statement_t
 
 	/*
 		Defines a statement, like "return" including any needed expression trees for the statement.
-
-		- bind
-		- return
 	*/
 	struct statement_t {
 		public: statement_t(const statement_t& other) = default;
@@ -73,6 +86,10 @@ namespace floyd_ast {
 			_bind(std::make_shared<bind_statement_t>(value))
 		{
 		}
+        public: statement_t(const for_statement_t& value) :
+			_for(std::make_shared<for_statement_t>(value))
+		{
+		}
 
 		public: bool operator==(const statement_t& other) const {
 			if(_return){
@@ -80,6 +97,9 @@ namespace floyd_ast {
 			}
 			else if(_bind){
 				return other._bind && *_bind == *other._bind;
+			}
+			else if(_for){
+				return other._for && *_for == *other._for;
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -89,6 +109,7 @@ namespace floyd_ast {
 
 		public: std::shared_ptr<return_statement_t> _return;
 		public: std::shared_ptr<bind_statement_t> _bind;
+		public: std::shared_ptr<for_statement_t> _for;
 	};
 
 
@@ -96,10 +117,11 @@ namespace floyd_ast {
 
 
 
-	statement_t make__return_statement(const return_statement_t& value);
+			statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
-
 	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression);
+	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id);
+
 
 	void trace(const statement_t& s);
 	json_t statement_to_json(const statement_t& e);

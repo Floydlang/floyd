@@ -216,6 +216,12 @@ namespace floyd_ast {
 			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
+		public: static std::shared_ptr<const lexical_scope_t> make_block_object(
+			const std::vector<member_t>& locals,
+			const std::vector<std::shared_ptr<statement_t> >& statements,
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
+		);
+
 		public: static std::shared_ptr<const lexical_scope_t> make_global_scope(
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const std::vector<member_t>& globals,
@@ -266,9 +272,7 @@ namespace floyd_ast {
 	*/
 	struct ast_t {
 		public: ast_t();
-		public: explicit ast_t(
-			std::shared_ptr<const lexical_scope_t> global_scope
-		);
+		public: explicit ast_t(std::shared_ptr<const lexical_scope_t> global_scope);
 		public: bool check_invariant() const;
 
 		public: const std::shared_ptr<const lexical_scope_t>& get_global_scope() const {

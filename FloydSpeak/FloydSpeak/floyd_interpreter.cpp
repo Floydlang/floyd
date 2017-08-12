@@ -58,6 +58,46 @@ namespace {
 		return true;
 	}
 
+	std::pair<interpreter_t, shared_ptr<value_t>> execute_statement(const interpreter_t& vm, const statement_t& statement){
+		QUARK_ASSERT(vm.check_invariant());
+		QUARK_ASSERT(statement.check_invariant());
+
+		auto vm2 = vm;
+
+		if(statement._bind){
+			const auto& s = statement._bind;
+			const auto name = s->_new_variable_name;
+			if(vm2._call_stack.back()->_values.count(name) != 0){
+				throw std::runtime_error("local constant already exists");
+			}
+			const auto result = evaluate_expression(vm2, s->_expression);
+			if(!result.is_constant()){
+				throw std::runtime_error("unknown variables");
+			}
+			vm2._call_stack.back()->_values[name] = result.get_constant();
+			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {}};
+		}
+		else if(statement._return){
+			const auto& s = statement._return;
+			const auto expr = s->_expression;
+			const auto result = evaluate_expression(vm2, expr);
+
+			if(!result.is_constant()){
+				throw std::runtime_error("undefined");
+			}
+
+			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, make_shared<value_t>(result.get_constant()) };
+		}
+		else if(statement._for){
+			const auto& s = statement._for;
+			const auto expr = s->_init;
+			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {} };
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
 	/*
 		Return value:
 			null = statements were all executed through.
@@ -72,37 +112,16 @@ namespace {
 		int statement_index = 0;
 		while(statement_index < statements.size()){
 			const auto statement = statements[statement_index];
-
-			if(statement->_bind){
-				const auto& s = statement->_bind;
-				const auto name = s->_new_variable_name;
-				if(vm2._call_stack.back()->_values.count(name) != 0){
-					throw std::runtime_error("local constant already exists");
-				}
-				const auto result = evaluate_expression(vm2, s->_expression);
-				if(!result.is_constant()){
-					throw std::runtime_error("unknown variables");
-				}
-				vm2._call_stack.back()->_values[name] = result.get_constant();
-			}
-			else if(statement->_return){
-				const auto& s = statement->_return;
-				const auto expr = s->_expression;
-				const auto result = evaluate_expression(vm2, expr);
-
-				if(!result.is_constant()){
-					throw std::runtime_error("undefined");
-				}
-
-				return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, make_shared<value_t>(result.get_constant()) };
-			}
-			else{
-				QUARK_ASSERT(false);
+			const auto& r = execute_statement(vm2, *statement);
+			vm2 = r.first;
+			if(r.second){
+				return { vm2, r.second };
 			}
 			statement_index++;
 		}
 		return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {}};
 	}
+
 
 }	//	unnamed
 
@@ -760,6 +779,25 @@ interpreter_t::interpreter_t(const ast_t& ast) :
 	QUARK_ASSERT(check_invariant());
 }
 
+interpreter_t::interpreter_t(const interpreter_t& other) :
+	_ast(other._ast),
+	_object_lookup(other._object_lookup),
+	_call_stack(other._call_stack)
+{
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+
+
+	//??? make proper operator=(). Exception safety etc.
+const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
+	_ast = other._ast;
+	_object_lookup = other._object_lookup;
+	_call_stack = other._call_stack;
+	return *this;
+}
+
+
 bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_ast.check_invariant());
 	return true;
@@ -1279,6 +1317,22 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 }
 
 
+//////////////////////////		for-statement
+
+
+#if false
+QUARK_UNIT_TESTQ("run_init()", "for"){
+	test__run_init(
+		"for (int i = 0; i < 3; i + 1) {"
+		"	int x = 3"
+		"}",
+		value_t(123)
+	);
+}
+#endif
+
+
+
 //////////////////////////		fibonacci
 
 /*
@@ -1293,7 +1347,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 */
 
 #if false
-QUARK_UNIT_TESTQ("run_main", "fibonacci"){
+QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 	test__run_init(
 		"int fibonacci(int n) {"
 		"	if (n <= 1){"

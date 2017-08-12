@@ -65,11 +65,13 @@ namespace floyd_interpreter {
 
 	struct interpreter_t {
 		public: interpreter_t(const floyd_ast::ast_t& ast);
+		public: interpreter_t(const interpreter_t& other);
+		public: const interpreter_t& operator=(const interpreter_t& other);
 		public: bool check_invariant() const;
 
 
 		////////////////////////		STATE
-		public: const floyd_ast::ast_t _ast;
+		public: floyd_ast::ast_t _ast;
 
 		public: std::map<int, object_id_info_t> _object_lookup;
 

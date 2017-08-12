@@ -250,16 +250,17 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 	std::map<int, std::shared_ptr<const lexical_scope_t> > objects;
 
 	for(const auto statement: p.get_array()){
+		const auto type = statement.get_array_n(0);
 
 		//	[ "return", [ "k", 3, "<int>" ] ]
-		if(statement.get_array_n(0) == "return"){
+		if(type == "return"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 			const auto expr = parser_expression_to_ast(statement.get_array_n(1));
 			statements2.push_back(make_shared<statement_t>(make__return_statement(expr)));
 		}
 
 		//	[ "bind", "<float>", "x", EXPRESSION ],
-		else if(statement.get_array_n(0) == "bind"){
+		else if(type == "bind"){
 			QUARK_ASSERT(statement.get_array_size() == 4);
 			const auto bind_type = statement.get_array_n(1);
 			const auto local_name = statement.get_array_n(2);
@@ -304,7 +305,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 					}
 				]
 		*/
-		else if(statement.get_array_n(0) == "def-func"){
+		else if(type == "def-func"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 
 			const auto def = statement.get_array_n(1);
@@ -329,7 +330,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 				r.first._objects
 			);
 
-			//	Make symbol refering to function object.
+			//	Make symbol refering to object.
 			const auto function_id = id_generator;
 			id_generator +=1;
 
@@ -378,7 +379,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 					}
 				]
 		*/
-		else if(statement.get_array_n(0) == "def-struct"){
+		else if(type == "def-struct"){
 /*
 			const auto struct_def = statement.get_array_n(1);
 			const auto name = struct_def.get_object_element("name");
@@ -390,6 +391,42 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			struct_scope = store_object_member(struct_scope, "members", members);
 			scope2 = add_scope_type(scope2, struct_scope);
 */
+		}
+		else if(type == "for"){
+			QUARK_ASSERT(statement.get_array_size() == 5);
+			const auto init_statement = statement.get_array_n(1);
+			const auto condition_expression = statement.get_array_n(2);
+			const auto post_expression = statement.get_array_n(3);
+			const auto body_statements = statement.get_array_n(4);
+
+
+			const auto& init_statement2 = parser_statements_to_ast(json_t::make_array({init_statement}), id_generator);
+			id_generator = init_statement2.second;
+
+			const auto condition_expression2 = parser_expression_to_ast(condition_expression);
+			const auto post_expression2 = parser_expression_to_ast(post_expression);
+
+			const auto& body_statements2 = parser_statements_to_ast(json_t::make_array({init_statement}), id_generator);
+			id_generator = body_statements2.second;
+
+			const auto s2 = lexical_scope_t::make_block_object(
+				body_statements2.first._locals,
+				body_statements2.first._statements,
+				body_statements2.first._objects
+			);
+
+			//	Make symbol refering to object.
+			const auto id = id_generator;
+			id_generator +=1;
+
+			objects[id] = s2;
+
+			statements2.push_back(make_shared<statement_t>(make__for_statement(
+				*init_statement2.first._statements[0],
+				condition_expression2,
+				post_expression2,
+				id
+			)));
 		}
 		else{
 			throw std::runtime_error("Illegal statement.");

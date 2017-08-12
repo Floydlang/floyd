@@ -264,7 +264,6 @@ namespace floyd_ast {
 			QUARK_ASSERT(_return_type._base_type == floyd_basics::base_type::k_null);
 		}
 		else if(_type == etype::k_block){
-			QUARK_ASSERT(_return_type._base_type != floyd_basics::base_type::k_null && _return_type.check_invariant());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -418,7 +417,7 @@ namespace floyd_ast {
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		for(const auto i: locals){ QUARK_ASSERT(i.check_invariant()); };
 
-		auto function = make_shared<lexical_scope_t>(lexical_scope_t(
+		auto obj = make_shared<lexical_scope_t>(lexical_scope_t(
 			lexical_scope_t::etype::k_function_scope,
 			args,
 			locals,
@@ -426,7 +425,26 @@ namespace floyd_ast {
 			return_type,
 			objects
 		));
-		return function;
+		return obj;
+	}
+
+	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_block_object(
+		const std::vector<member_t>& locals,
+		const std::vector<std::shared_ptr<statement_t> >& statements,
+		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
+	)
+	{
+		for(const auto i: locals){ QUARK_ASSERT(i.check_invariant()); };
+
+		auto obj = make_shared<lexical_scope_t>(lexical_scope_t(
+			lexical_scope_t::etype::k_block,
+			{},
+			locals,
+			statements,
+			{},
+			objects
+		));
+		return obj;
 	}
 
 

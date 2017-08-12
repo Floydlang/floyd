@@ -39,6 +39,13 @@ namespace floyd_ast {
 		return statement_t(bind_statement_t{ new_variable_name, bindtype, expression });
 	}
 
+	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id){
+		return statement_t(for_statement_t{ std::make_shared<statement_t>(init), condition, post_expression, block_id });
+	}
+
+
+
+
 	void trace(const statement_t& s){
 		if(s._return){
 			QUARK_SCOPED_TRACE("return_statement_t");
@@ -60,6 +67,9 @@ namespace floyd_ast {
 			QUARK_ASSERT(true);
 		}
 		else if(_bind){
+			QUARK_ASSERT(true);
+		}
+		else if(_for){
 			QUARK_ASSERT(true);
 		}
 		else{
@@ -85,6 +95,15 @@ namespace floyd_ast {
 				e._bind->_new_variable_name,
 				typeid_to_json(e._bind->_bindtype),
 				expression_to_json(e._bind->_expression)
+			});
+		}
+		else if(e._for){
+			return json_t::make_array({
+				json_t("for"),
+				statement_to_json(*e._for->_init),
+				expression_to_json(e._for->_condition),
+				expression_to_json(e._for->_post_expression),
+				json_t(double(e._for->_block_id))
 			});
 		}
 		else{
