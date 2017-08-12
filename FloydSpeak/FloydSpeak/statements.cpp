@@ -30,13 +30,21 @@ namespace floyd_ast {
 		return statement_t(value);
 	}
 
-
 	statement_t make__return_statement(const expression_t& expression){
 		return statement_t(return_statement_t{ expression });
 	}
 
 	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression){
 		return statement_t(bind_statement_t{ new_variable_name, bindtype, expression });
+	}
+	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
+/*
+		vector<shared_ptr<statement_t>> statements2;
+		for(const auto e: statements){
+			statements2.push_back(std::make_shared<statement_t>(e));
+		}
+*/
+		return statement_t(block_statement_t{ statements });
 	}
 
 	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id){
@@ -69,6 +77,9 @@ namespace floyd_ast {
 		else if(_bind){
 			QUARK_ASSERT(true);
 		}
+		else if(_block){
+			QUARK_ASSERT(true);
+		}
 		else if(_for){
 			QUARK_ASSERT(true);
 		}
@@ -95,6 +106,16 @@ namespace floyd_ast {
 				e._bind->_new_variable_name,
 				typeid_to_json(e._bind->_bindtype),
 				expression_to_json(e._bind->_expression)
+			});
+		}
+		else if(e._block){
+			vector<json_t> statements;
+			for(const auto& a: e._block->_statements){
+				statements.push_back(statement_to_json(*a));
+			}
+			return json_t::make_array({
+				json_t("block"),
+				json_t::make_array(statements)
 			});
 		}
 		else if(e._for){

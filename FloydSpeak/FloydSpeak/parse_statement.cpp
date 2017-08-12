@@ -22,6 +22,42 @@ namespace floyd_parser {
 	using std::shared_ptr;
 
 
+
+
+
+	pair<json_t, seq_t> parse_block(const seq_t& s){
+		const auto pos = skip_whitespace(s);
+		QUARK_ASSERT(pos.first1() == "{");
+
+		const auto b_str = get_balanced(pos);
+		const auto body_str = seq_t(trim_ends(b_str.first));
+		const auto body_statements2 = read_statements2(body_str);
+		return { json_t::make_array({ "block", body_statements2.first }), b_str.second };
+	}
+
+QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
+	ut_compare_jsons(
+		parse_block(seq_t(" { int x = 1; int y = 2; } ")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					"block",
+					[
+						["bind","<int>","x",["k",1,"<int>"]],
+						["bind","<int>","y",["k",2,"<int>"]]
+					]
+				]
+			)"
+		)).first
+	);
+}
+
+
+
+
+
+
+
 	pair<json_t, seq_t> parse_return_statement(const seq_t& s){
 		const auto token_pos = if_first(skip_whitespace(s), "return");
 		QUARK_ASSERT(token_pos.first);

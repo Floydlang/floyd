@@ -51,6 +51,19 @@ namespace floyd_ast {
 		expression_t _expression;
 	};
 
+
+	//////////////////////////////////////		block_statement_t
+
+
+	struct block_statement_t {
+		bool operator==(const block_statement_t& other) const {
+			return compare_shared_value_vectors(_statements, other._statements);
+		}
+
+		std::vector<std::shared_ptr<statement_t>> _statements;
+	};
+
+
 	//////////////////////////////////////		for_statement_t
 
 
@@ -86,6 +99,10 @@ namespace floyd_ast {
 			_bind(std::make_shared<bind_statement_t>(value))
 		{
 		}
+        public: statement_t(const block_statement_t& value) :
+			_block(std::make_shared<block_statement_t>(value))
+		{
+		}
         public: statement_t(const for_statement_t& value) :
 			_for(std::make_shared<for_statement_t>(value))
 		{
@@ -98,6 +115,9 @@ namespace floyd_ast {
 			else if(_bind){
 				return other._bind && *_bind == *other._bind;
 			}
+			else if(_block){
+				return other._block && *_block == *other._block;
+			}
 			else if(_for){
 				return other._for && *_for == *other._for;
 			}
@@ -109,6 +129,7 @@ namespace floyd_ast {
 
 		public: std::shared_ptr<return_statement_t> _return;
 		public: std::shared_ptr<bind_statement_t> _bind;
+		public: std::shared_ptr<block_statement_t> _block;
 		public: std::shared_ptr<for_statement_t> _for;
 	};
 
@@ -120,6 +141,7 @@ namespace floyd_ast {
 			statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
 	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression);
+	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);
 	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id);
 
 

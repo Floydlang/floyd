@@ -272,6 +272,17 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(local_name2, bind_type2, expr2)));
 		}
 
+		//	[ "block", [ STATEMENTS ] ],
+		else if(type == "block"){
+			QUARK_ASSERT(statement.get_array_size() == 2);
+
+			const auto statements = statement.get_array_n(1);
+			const auto r = parser_statements_to_ast(statements, id_generator);
+			id_generator = r.second;
+			//??? also include locals & objects
+			statements2.push_back(make_shared<statement_t>(make__block_statement(r.first._statements)));
+		}
+
 		/*
 			INPUT:
 				[

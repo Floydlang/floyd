@@ -24,6 +24,19 @@
 		}
 	}
 
+	template <typename T> bool compare_shared_value_vectors(const std::vector<T>& vec_a, const std::vector<T>& vec_b){
+		if(vec_a.size() != vec_b.size()){
+			return false;
+		}
+		for(size_t i = 0 ; i < vec_a.size() ; i++){
+			if(compare_shared_values(vec_a[i], vec_b[i]) == false){
+				return false;
+			}
+		}
+		return true;
+	}
+
+
 template <typename T> std::vector<T> operator+(const std::vector<T>& lhs, const std::vector<T>& rhs){
 	std::vector<T> temp = lhs;
 	temp.insert(temp.end(), rhs.begin(), rhs.end());

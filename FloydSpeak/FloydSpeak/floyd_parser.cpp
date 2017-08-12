@@ -48,68 +48,64 @@ std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);
 	const auto token_pos = read_until(pos, whitespace_chars);
 
-	//	return statement?
-	if(token_pos.first == "return"){
-		const auto return_statement_pos = parse_return_statement(pos);
-		return { return_statement_pos.first, skip_whitespace(return_statement_pos.second) };
+	if(pos.first1() == "{"){
+		return parse_block(pos);
 	}
-
-	//	struct definition?
-	else if(token_pos.first == "struct"){
-		const auto a = parse_struct_definition(seq_t(pos));
-		return { a.first, skip_whitespace(a.second) };
-	}
-
-	else if(token_pos.first == "if"){
-		const auto a = parse_if_statement(seq_t(pos));
-		return { a.first, skip_whitespace(a.second) };
-	}
-	else if(token_pos.first == "for"){
-		const auto a = parse_for_statement(seq_t(pos));
-		return { a.first, skip_whitespace(a.second) };
-	}
-	else {
-		const auto type_pos = read_required_type_identifier(seq_t(pos));
-		const auto identifier_pos = read_required_single_symbol(type_pos.second);
-
-		/*
-			Function definition?
-			"int xyz(string a, string b){ ... }
-		*/
-		if(if_first(skip_whitespace(identifier_pos.second), "(").first){
-			const auto function = parse_function_definition2(pos);
-            return { function.first, skip_whitespace(seq_t(function.second)) };
+	else{
+		//	return statement?
+		if(token_pos.first == "return"){
+			return parse_return_statement(pos);
 		}
 
-		/*
-			Define variable?
-
-			"int a = 10;"
-			"string hello = f(a) + \"_suffix\";";
-		*/
-		else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
-			const auto assignment_statement = parse_assignment_statement(pos);
-			return { assignment_statement.first, skip_whitespace(assignment_statement.second) };
+		//	struct definition?
+		else if(token_pos.first == "struct"){
+			return parse_struct_definition(seq_t(pos));
 		}
 
-		else{
-			throw std::runtime_error("syntax error");
+		else if(token_pos.first == "if"){
+			return parse_if_statement(seq_t(pos));
+		}
+		else if(token_pos.first == "for"){
+			return parse_for_statement(seq_t(pos));
+		}
+		else {
+			const auto type_pos = read_required_type_identifier(seq_t(pos));
+			const auto identifier_pos = read_required_single_symbol(type_pos.second);
+
+			/*
+				Function definition?
+				"int xyz(string a, string b){ ... }
+			*/
+			if(if_first(skip_whitespace(identifier_pos.second), "(").first){
+				return parse_function_definition2(pos);
+			}
+
+			/*
+				Define variable?
+
+				"int a = 10;"
+				"string hello = f(a) + \"_suffix\";";
+			*/
+			else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
+				return parse_assignment_statement(pos);
+			}
+
+			else{
+				throw std::runtime_error("syntax error");
+			}
 		}
 	}
 }
 
-std::pair<json_t, seq_t> read_statements2(const seq_t& s){
-	QUARK_ASSERT(s.size() > 0);
-
+std::pair<json_t, seq_t> read_statements2(const seq_t& s0){
 	vector<json_t> statements;
-	auto pos = skip_whitespace(s);
+	auto pos = skip_whitespace(s0);
 	while(!pos.empty()){
 		const auto statement_pos = read_statement2(pos);
 		const auto statement = statement_pos.first;
 		statements.push_back(statement);
 		pos = skip_whitespace(statement_pos.second);
 	}
-
 	return { json_t::make_array(statements), pos };
 }
 

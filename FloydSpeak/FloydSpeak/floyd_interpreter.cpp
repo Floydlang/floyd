@@ -32,11 +32,13 @@ using std::make_shared;
 using namespace floyd_ast;
 
 
+
 expression_t evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
 
 namespace {
 
+	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements);
 
 	bool compare_float_approx(float value, float expected){
 		float diff = static_cast<float>(fabs(value - expected));
@@ -76,6 +78,12 @@ namespace {
 			}
 			vm2._call_stack.back()->_values[name] = result.get_constant();
 			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {}};
+		}
+		else if(statement._block){
+			const auto& s = statement._block;
+
+			const auto& r = execute_statements(vm2, s->_statements);
+			return { r.first, r.second };
 		}
 		else if(statement._return){
 			const auto& s = statement._return;
@@ -1315,6 +1323,35 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	const auto result2 = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("123") });
 	QUARK_TEST_VERIFY(result2 == floyd_ast::value_t("--123<123>--"));
 }
+
+
+//////////////////////////		Blocks and scoping
+
+
+QUARK_UNIT_TESTQ("run_init()", "Empty block"){
+	test__run_init(
+		"int result = 3;"
+		"{}",
+		value_t(3)
+	);
+}
+
+QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
+	test__run_init(
+		"int result = 3;"
+		"{ int x = 4; }",
+		value_t(3)
+	);
+}
+
+QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
+	test__run_init(
+		"int result = 3;"
+		"{ int x = 4; }",
+		value_t(3)
+	);
+}
+
 
 
 //////////////////////////		for-statement

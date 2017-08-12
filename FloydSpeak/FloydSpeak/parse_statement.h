@@ -16,6 +16,22 @@ struct json_t;
 struct seq_t;
 
 namespace floyd_parser {
+
+
+
+	/*
+		INPUT:
+			"{}"
+			"{\n}"
+			"{ int x = 1; }"
+			"{ int x = 1; ; int y = 2; }"
+
+		OUTPUT:
+			["block", [ STATEMENTS ] ]
+	*/
+	std::pair<json_t, seq_t> parse_block(const seq_t& s);
+
+
 	/*
 		INPUT:
 		Must start with "return".
