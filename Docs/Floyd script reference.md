@@ -103,7 +103,7 @@ Details:
 This creates:
 
 1. a new type, bool (string, string)
-2. a new function value (containing the code) with type: bool (string, string).
+2. a new function object (containing the code) with type: bool (string, string).
 3. a new variable "f" assigned to the new function value.
 
 This is a function that takes a function value as argument:

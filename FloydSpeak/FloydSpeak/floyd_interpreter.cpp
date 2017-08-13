@@ -83,6 +83,8 @@ namespace {
 		else if(statement._block){
 			const auto& s = statement._block;
 
+//??? Embedd block as a lexical_scope_t inside the block-statement? Use an object?
+
 			const auto& r = execute_statements(vm2, s->_statements);
 			return { r.first, r.second };
 		}
@@ -1521,24 +1523,20 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 
 
 QUARK_UNIT_TESTQ("run_init()", "Empty block"){
-	test__run_init(
-		"int result = 3;"
-		"{}",
-		value_t(3)
+	test__run_init2(
+		"{}"
+	);
+}
+
+QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
+	test__run_init2(
+		"{ int x = 4; }"
 	);
 }
 
 QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	test__run_init(
-		"int result = 3;"
-		"{ int x = 4; }",
-		value_t(3)
-	);
-}
-
-QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
-	test__run_init(
-		"int result = 3;"
+		"int x = 3;"
 		"{ int x = 4; }",
 		value_t(3)
 	);
