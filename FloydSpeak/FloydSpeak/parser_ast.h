@@ -159,6 +159,7 @@ namespace floyd_ast {
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
 
+	std::vector<typeid_t> get_member_types(const std::vector<member_t>& m);
 
 
 
@@ -185,6 +186,10 @@ namespace floyd_ast {
 
 
 
+	typedef floyd_ast::value_t (*HOST_FUNCTION)(const std::vector<value_t>& args);
+
+
+
 	//////////////////////////////////////////////////		lexical_scope_t
 
 	/*
@@ -203,7 +208,8 @@ namespace floyd_ast {
 			k_function_scope,
 			k_struct_scope,
 			k_global_scope,
-			k_block
+			k_block,
+			k_host_function_scope
 		};
 
 		public: static std::shared_ptr<const lexical_scope_t> make_struct_object(const std::vector<member_t>& members);
@@ -214,6 +220,13 @@ namespace floyd_ast {
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
 			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
+		);
+
+
+		public: static std::shared_ptr<const lexical_scope_t> make_host_function_object(
+			const std::vector<member_t>& args,
+			const typeid_t& return_type,
+			HOST_FUNCTION host_function
 		);
 
 		public: static std::shared_ptr<const lexical_scope_t> make_block_object(
@@ -228,35 +241,42 @@ namespace floyd_ast {
 			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-		public: lexical_scope_t(const lexical_scope_t& other);
+//		public: lexical_scope_t(const lexical_scope_t& other);
 
 		public: bool check_invariant() const;
 		public: bool shallow_check_invariant() const;
 
+//		public: const lexical_scope_t& operator=(const lexical_scope_t& other);
 		public: bool operator==(const lexical_scope_t& other) const;
 
+/*
 		private: explicit lexical_scope_t(
 			etype type,
 			const std::vector<member_t>& args,
 			const std::vector<member_t>& state,
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const typeid_t& return_type,
-			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
+			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects,
+			const HOST_FUNCTION host_function
 		);
+*/
 
 		public: const std::map<int, std::shared_ptr<const lexical_scope_t> >& get_objects() const {
 			return _objects;
 		}
 
+
 		/////////////////////////////		STATE
 		public: etype _type;
 		public: std::vector<member_t> _args;
 		public: std::vector<member_t> _state;
-		public: const std::vector<std::shared_ptr<statement_t> > _statements;
+		public: std::vector<std::shared_ptr<statement_t> > _statements;
 		public: typeid_t _return_type;
 
-		private: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
+		public: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
+		public: HOST_FUNCTION _host_function;
 	};
+
 
 	json_t lexical_scope_to_json(const lexical_scope_t& scope_def);
 	void trace(const std::shared_ptr<const lexical_scope_t>& e);
@@ -298,6 +318,24 @@ namespace floyd_ast {
 			trace(i);
 		}
 	}
+
+
+
+
+	struct function_reg_t {
+		typeid_t _function_type;
+		std::shared_ptr<const lexical_scope_t> _function_obj;
+
+		int _function_id;
+
+		std::shared_ptr<floyd_ast::value_t> _function_value;
+	};
+
+	function_reg_t make_host_function_reg(const typeid_t& return_type, const std::vector<member_t>& args, HOST_FUNCTION host_function, int id);
+
+
+
+
 
 }	//	floyd_ast
 

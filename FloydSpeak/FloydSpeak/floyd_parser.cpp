@@ -69,6 +69,14 @@ std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
 			return parse_for_statement(seq_t(pos));
 		}
 		else {
+			/*
+				int x = 10;
+				int f(string name){ return 13; }
+
+				??? Support
+				print ("Hello, World!");
+			*/
+
 			const auto type_pos = read_required_type_identifier(seq_t(pos));
 			const auto identifier_pos = read_required_single_symbol(type_pos.second);
 

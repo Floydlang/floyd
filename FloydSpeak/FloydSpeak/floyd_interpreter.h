@@ -33,7 +33,6 @@ namespace floyd_interpreter {
 	*/
 
 	struct environment_t {
-		public: floyd_ast::ast_t _ast;
 		public: std::shared_ptr<environment_t> _parent_env;
 		public: int _object_id;
 		public: std::map<std::string, floyd_ast::value_t> _values;
@@ -71,6 +70,7 @@ namespace floyd_interpreter {
 
 
 		////////////////////////		STATE
+		public: uint64_t _start_ms;
 		public: floyd_ast::ast_t _ast;
 
 		public: std::map<int, object_id_info_t> _object_lookup;

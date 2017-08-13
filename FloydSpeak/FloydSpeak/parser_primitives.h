@@ -29,7 +29,7 @@ namespace floyd_parser {
 	const std::string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 	const std::string brackets = "(){}[]<>";
 	const std::string open_brackets = "({[<";
-	const std::string type_chars = identifier_chars + brackets;
+	const std::string type_chars = identifier_chars;
 	const std::string number_chars = "0123456789.";
 	const std::string operator_chars = "+-*/.";
 

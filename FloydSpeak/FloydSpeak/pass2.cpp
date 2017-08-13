@@ -223,19 +223,16 @@ std::vector<member_t> conv_members(const json_t& members){
 	return members2;
 }
 
-std::vector<typeid_t> get_member_types(const vector<member_t>& m){
-	vector<typeid_t> r;
-	for(const auto a: m){
-		r.push_back(a._type);
-	}
-	return r;
-}
+
 
 struct body_t {
 	public: const std::vector<std::shared_ptr<statement_t> > _statements;
 	public: const std::vector<member_t> _locals;
 	public: const std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
 };
+
+
+
 
 /*
 	Input is an array of statements from parser.
@@ -343,7 +340,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 
 			//	Make symbol refering to object.
 			const auto function_id = id_generator;
-			id_generator +=1;
+			id_generator += 1;
 
 			value_t f = make_function_value(function_typeid, function_id);
 			const auto function_constant = expression_t::make_constant_value(f);
@@ -428,7 +425,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 
 			//	Make symbol refering to object.
 			const auto id = id_generator;
-			id_generator +=1;
+			id_generator += 1;
 
 			objects[id] = s2;
 
@@ -446,6 +443,11 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 
 	return { body_t{ statements2, locals, objects }, id_generator };
 }
+
+
+
+
+
 
 
 bool has_unresolved_types(const json_t& obj){

@@ -173,14 +173,17 @@ namespace floyd_ast {
 
 
 	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_struct_object(const std::vector<member_t>& members){
-		auto r = std::make_shared<lexical_scope_t>(lexical_scope_t(
-			etype::k_struct_scope,
-			{},
-			members,
-			{},
-			{},
-			{}
-		));
+		auto r = std::make_shared<lexical_scope_t>(
+			lexical_scope_t{
+				etype::k_struct_scope,
+				{},
+				members,
+				{},
+				{},
+				{},
+				nullptr
+			}
+		);
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
@@ -192,52 +195,58 @@ namespace floyd_ast {
 	)
 	{
 		auto r = std::make_shared<lexical_scope_t>(
-			lexical_scope_t(
+			lexical_scope_t{
 				etype::k_global_scope,
 				{},
 				globals,
 				statements,
 				{},
-				objects
-			)
+				objects,
+				nullptr
+			}
 		);
 
 		QUARK_ASSERT(r->check_invariant());
 		return r;
 	}
 
-
+/*
 	lexical_scope_t::lexical_scope_t(
 		etype type,
 		const std::vector<member_t>& args,
 		const std::vector<member_t>& state,
 		const std::vector<std::shared_ptr<statement_t> >& statements,
 		const typeid_t& return_type,
-		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
-		)
+		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects,
+		const HOST_FUNCTION host_function
+	)
 	:
 		_type(type),
 		_args(args),
 		_state(state),
 		_statements(statements),
 		_return_type(return_type),
-		_objects(objects)
+		_objects(objects),
+		_host_function(host_function)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
+*/
 
-
+/*
 	lexical_scope_t::lexical_scope_t(const lexical_scope_t& other) :
 		_type(other._type),
 		_args(other._args),
 		_state(other._state),
 		_statements(other._statements),
 		_return_type(other._return_type),
-		_objects(other._objects)
+		_objects(other._objects),
+		_host_function(other._host_function)
 	{
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
 	}
+*/
 
 	bool lexical_scope_t::shallow_check_invariant() const {
 //		QUARK_ASSERT(_types_collector.check_invariant());
@@ -256,20 +265,33 @@ namespace floyd_ast {
 
 		if(_type == etype::k_function_scope){
 //			QUARK_ASSERT(_return_type._base_type != base_type::k_null && _return_type.check_invariant());
+			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_struct_scope){
 			QUARK_ASSERT(_return_type._base_type == floyd_basics::base_type::k_null);
+			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_global_scope){
 			QUARK_ASSERT(_return_type._base_type == floyd_basics::base_type::k_null);
+			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_block){
+			QUARK_ASSERT(_host_function == nullptr);
+		}
+		else if(_type == etype::k_host_function_scope){
+			QUARK_ASSERT(_host_function != nullptr);
 		}
 		else{
 			QUARK_ASSERT(false);
 		}
 		return true;
 	}
+
+/*
+	public: const lexical_scope_t& operator=(const lexical_scope_t& other){
+	)
+*/
+
 
 	bool lexical_scope_t::operator==(const lexical_scope_t& other) const{
 		QUARK_ASSERT(check_invariant());
@@ -291,6 +313,9 @@ namespace floyd_ast {
 			return false;
 		}
 		if(_objects != other._objects){
+			return false;
+		}
+		if(_host_function != other._host_function){
 			return false;
 		}
 		return true;
@@ -318,6 +343,9 @@ namespace floyd_ast {
 		}
 		else if(type == lexical_scope_t::etype::k_block){
 			return "subscope";
+		}
+		else if(type == lexical_scope_t::etype::k_host_function_scope){
+			return "host_function";
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -395,7 +423,10 @@ namespace floyd_ast {
 			{ "statements", statements2.get_array_size() == 0 ? json_t() : json_t(statements2) },
 			{ "return_type", scope_def._return_type.is_null() ? json_t() : scope_def._return_type.to_string() },
 //			{ "symbols", symbols.get_object_size() == 0 ? json_t() : symbols },
-			{ "objects", objects.get_object_size() == 0 ? json_t() : objects }
+			{ "objects", objects.get_object_size() == 0 ? json_t() : objects },
+			{ "host_function",
+				scope_def._host_function == nullptr ? json_t() : json_t("HOST FUNCTION")
+			}
 		});
 	}
 
@@ -417,14 +448,41 @@ namespace floyd_ast {
 		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 		for(const auto i: locals){ QUARK_ASSERT(i.check_invariant()); };
 
-		auto obj = make_shared<lexical_scope_t>(lexical_scope_t(
-			lexical_scope_t::etype::k_function_scope,
-			args,
-			locals,
-			statements,
-			return_type,
-			objects
-		));
+		auto obj = make_shared<lexical_scope_t>(
+			lexical_scope_t{
+				lexical_scope_t::etype::k_function_scope,
+				args,
+				locals,
+				statements,
+				return_type,
+				objects,
+				nullptr
+			}
+		);
+		return obj;
+	}
+
+	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_host_function_object(
+		const std::vector<member_t>& args,
+		const typeid_t& return_type,
+		HOST_FUNCTION host_function
+	)
+	{
+		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+		QUARK_ASSERT(return_type.check_invariant());
+		QUARK_ASSERT(host_function != nullptr);
+
+		auto obj = make_shared<lexical_scope_t>(
+			lexical_scope_t{
+				lexical_scope_t::etype::k_host_function_scope,
+				args,
+				{},
+				{},
+				return_type,
+				{},
+				host_function
+			}
+		);
 		return obj;
 	}
 
@@ -436,28 +494,20 @@ namespace floyd_ast {
 	{
 		for(const auto i: locals){ QUARK_ASSERT(i.check_invariant()); };
 
-		auto obj = make_shared<lexical_scope_t>(lexical_scope_t(
-			lexical_scope_t::etype::k_block,
-			{},
-			locals,
-			statements,
-			{},
-			objects
-		));
+		auto obj = make_shared<lexical_scope_t>(
+			lexical_scope_t{
+				lexical_scope_t::etype::k_block,
+				{},
+				locals,
+				statements,
+				{},
+				objects,
+				nullptr
+			}
+		);
 		return obj;
 	}
 
-
-/*
-	////////////////////////			symbol_t
-
-
-		bool symbol_t::operator==(const symbol_t& other) const{
-			return _type == other._type
-				&& compare_shared_values(_constant, other._constant)
-				&& _typeid == other._typeid;
-		}
-*/
 
 
 	////////////////////////			member_t
@@ -518,6 +568,17 @@ namespace floyd_ast {
 		trace_vec("members", e._members);
 */
 	}
+
+
+std::vector<typeid_t> get_member_types(const vector<member_t>& m){
+	vector<typeid_t> r;
+	for(const auto a: m){
+		r.push_back(a._type);
+	}
+	return r;
+}
+
+
 
 
 
@@ -601,7 +662,20 @@ namespace floyd_ast {
 
 
 
-	////////////////////	Helpers for making tests.
+
+	function_reg_t make_host_function_reg(const typeid_t& return_type, const std::vector<member_t>& args, HOST_FUNCTION host_function, int id){
+		const auto function_typeid = typeid_t::make_function(return_type, get_member_types(args));
+		const auto s = lexical_scope_t::make_host_function_object(
+			args,
+			return_type,
+			host_function
+		);
+
+		value_t f = make_function_value(function_typeid, id);
+		return { function_typeid, s, id, make_shared<value_t>(f) };
+	}
+
+
 
 
 } //	floyd_ast

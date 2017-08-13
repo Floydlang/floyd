@@ -18,6 +18,7 @@
 #include "json_support.h"
 
 #include <cmath>
+#include <sys/time.h>
 
 namespace floyd_interpreter {
 
@@ -585,29 +586,37 @@ value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, cons
 	const auto function_object = function_object_info._object;
 	const auto function_object_id = f.get_function()->_function_id;
 
-	//	Always use global scope. Future: support closures by linking to function env where function is defined.
-	auto parent_env = vm._call_stack[0];
+	if(function_object->_type == lexical_scope_t::etype::k_function_scope){
+		//	Always use global scope. Future: support closures by linking to function env where function is defined.
+		auto parent_env = vm._call_stack[0];
+		auto new_environment = environment_t::make_environment(vm, function_object, function_object_id, parent_env);
 
-	auto new_environment = environment_t::make_environment(vm, function_object, function_object_id, parent_env);
+		//	Copy input arguments to the function scope.
+		for(int i = 0 ; i < function_object->_args.size() ; i++){
+			const auto& arg_name = function_object->_args[i]._name;
+			const auto& arg_value = args[i];
+			new_environment->_values[arg_name] = arg_value;
+		}
 
-	//	Copy input arguments to the function scope.
-	for(int i = 0 ; i < function_object->_args.size() ; i++){
-		const auto& arg_name = function_object->_args[i]._name;
-		const auto& arg_value = args[i];
-		new_environment->_values[arg_name] = arg_value;
+		interpreter_t vm2 = vm;
+		vm2._call_stack.push_back(new_environment);
+
+		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+
+		const auto r = execute_statements(vm2, function_object->_statements);
+		if(!r.second){
+			throw std::runtime_error("function missing return statement");
+		}
+		else{
+			return *r.second;
+		}
 	}
-
-	interpreter_t vm2 = vm;
-	vm2._call_stack.push_back(new_environment);
-
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
-
-	const auto r = execute_statements(vm2, function_object->_statements);
-	if(!r.second){
-		throw std::runtime_error("function missing return statement");
+	else if(function_object->_type == lexical_scope_t::etype::k_host_function_scope){
+		const auto r = function_object->_host_function(args);
+		return r;
 	}
 	else{
-		return *r.second;
+		QUARK_ASSERT(false);
 	}
 }
 
@@ -750,38 +759,151 @@ std::shared_ptr<environment_t> environment_t::make_environment(
 {
 	QUARK_ASSERT(vm.check_invariant());
 
-	//	Copy global scope's functions into new env.
+	//	Copy scope's functions into new env.??? needed?
 	std::map<std::string, floyd_ast::value_t> values;
 	for(const auto& e: object->_state){
 		values[e._name] = *e._value;
 	}
 
-	auto f = environment_t{ vm._ast, parent_env, object_id, values };
+	auto f = environment_t{ parent_env, object_id, values };
 	return make_shared<environment_t>(f);
 }
 
 bool environment_t::check_invariant() const {
-	QUARK_ASSERT(_ast.check_invariant());
 	return true;
 }
+
+
 
 
 //////////////////////////		interpreter_t
 
 
-interpreter_t::interpreter_t(const ast_t& ast) :
-	_ast(ast),
-	_object_lookup(make_lexical_lookup(_ast.get_global_scope()))
-{
+
+
+value_t host__print(const std::vector<value_t>& args){
+	const auto& s = args[0].get_string();
+
+	printf("%s", s.c_str());
+	return value_t();
+}
+
+uint64_t get_time_of_day_ms(){
+	timeval time;
+	gettimeofday(&time, NULL);
+
+//	QUARK_ASSERT(sizeof(int) == sizeof(int64_t));
+	int64_t ms = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+	return ms;
+}
+
+value_t host__get_time_of_day(const std::vector<value_t>& args){
+	int64_t ms = get_time_of_day_ms();
+//	int64_t delta = ms - vm._start_ms;
+	return value_t(int(ms));
+}
+
+QUARK_UNIT_TESTQ("sizeof(int)", ""){
+	QUARK_TRACE(std::to_string(sizeof(int)));
+	QUARK_TRACE(std::to_string(sizeof(int64_t)));
+}
+
+
+value_t host__int_to_string(const std::vector<value_t>& args){
+	const auto& s = args[0].get_int();
+
+	return value_t(std::to_string(s));
+}
+value_t host__float_to_string(const std::vector<value_t>& args){
+	const auto& s = args[0].get_float();
+
+	return value_t(std::to_string(s));
+}
+
+
+lexical_scope_t add_function(const lexical_scope_t& s, const string& name, const function_reg_t& f){
+	lexical_scope_t temp = s;
+	temp._objects[f._function_id] = f._function_obj;
+	temp._state.push_back({ f._function_type, f._function_value, name });
+	return temp;
+}
+
+
+interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	shared_ptr<environment_t> parent_env;
-	_call_stack.push_back(environment_t::make_environment(*this, _ast.get_global_scope(), 0, parent_env));
+	//	Copy global scope. We will update it.
+	lexical_scope_t temp = *ast.get_global_scope();
+
+
+	//	Insert functions into AST.
+
+	int id_generator = -1000000;
+
+	temp = add_function(
+		temp,
+		"print",
+		make_host_function_reg(
+			typeid_t::make_null(),
+			{ member_t{ typeid_t::make_string(), "s" } },
+			host__print,
+			id_generator
+		)
+	);
+	id_generator++;
+
+	temp = add_function(
+		temp,
+		"get_time_of_day",
+		make_host_function_reg(
+			typeid_t::make_null(),
+			{},
+			host__get_time_of_day,
+			id_generator
+		)
+	);
+	id_generator++;
+
+	temp = add_function(
+		temp,
+		"int_to_string",
+		make_host_function_reg(
+			typeid_t::make_string(),
+			{ member_t{ typeid_t::make_int(), "v" } },
+			host__int_to_string,
+			id_generator
+		)
+	);
+	id_generator++;
+
+	temp = add_function(
+		temp,
+		"float_to_string",
+		make_host_function_reg(
+			typeid_t::make_string(),
+			{ member_t{ typeid_t::make_float(), "v" } },
+			host__float_to_string,
+			id_generator
+		)
+	);
+	id_generator++;
+
+
+	_ast = ast_t(make_shared<const lexical_scope_t>(temp));
+	_object_lookup = make_lexical_lookup(_ast.get_global_scope());
+
+
+	//	Make the top-level environoment = global scope.
+	shared_ptr<environment_t> empty_env;
+	auto global_env = environment_t::make_environment(*this, _ast.get_global_scope(), 0, empty_env);
+
+	_call_stack.push_back(global_env);
+
+	_start_ms = get_time_of_day_ms();
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto r = execute_statements(*this, _ast.get_global_scope()->_statements);
 	assert(!r.second);
-
 
 	_call_stack[0]->_values = r.first._call_stack[0]->_values;
 	QUARK_ASSERT(check_invariant());
@@ -829,6 +951,8 @@ ast_t program_to_ast2(const string& program){
 interpreter_t run_global(const string& source){
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	return vm;
 }
 
@@ -857,6 +981,9 @@ void test__run_init(const std::string& program, const value_t& expected_result){
 		expression_to_json(expression_t::make_constant_value(result_value)),
 		expression_to_json(expression_t::make_constant_value(expected_result))
 	);
+}
+void test__run_init2(const std::string& program){
+	const auto result = run_global(program);
 }
 
 
@@ -1325,7 +1452,72 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 }
 
 
+
+
+
+//////////////////////////		Host: int_to_string()
+
+
+
+QUARK_UNIT_TESTQ("run_init()", ""){
+	test__run_init(
+		R"(
+			int result = int_to_string(145);
+		)"
+		,
+		value_t("145")
+	);
+}
+QUARK_UNIT_TESTQ("run_init()", ""){
+	test__run_init(
+		R"(
+			int result = float_to_string(3.1);
+		)"
+		,
+		value_t("3.100000")
+	);
+}
+
+
+//////////////////////////		Host: Print
+
+
+
+QUARK_UNIT_TESTQ("run_init()", "Print Hello, world!"){
+	test__run_init2(
+		R"(
+			int result = print("Hello, World!");
+		)"
+	);
+}
+/*
+QUARK_UNIT_TESTQ("run_init()", "Print Hello, world!"){
+	test__run_init2(
+		R"(
+			print("Hello, World!");
+		)"
+	);
+}
+*/
+
+//////////////////////////		Host: get_time_of_day()
+
+
+
+QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
+	test__run_init2(
+		R"(
+			int a = get_time_of_day();
+			int b = get_time_of_day();
+			int c = b - a;
+			int result = print("Delta time:" + int_to_string(a));
+		)"
+	);
+}
+
+
 //////////////////////////		Blocks and scoping
+
 
 
 QUARK_UNIT_TESTQ("run_init()", "Empty block"){
