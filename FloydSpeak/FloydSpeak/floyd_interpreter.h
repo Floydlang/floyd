@@ -71,12 +71,16 @@ namespace floyd_interpreter {
 
 		////////////////////////		STATE
 		public: uint64_t _start_ms;
+
+
+		//	Constant!
 		public: floyd_ast::ast_t _ast;
 
+		//	Constant!
 		public: std::map<int, object_id_info_t> _object_lookup;
 
 
-		//	Last scope is the current one. First scope is the root.
+		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<environment_t>> _call_stack;
 	};
 

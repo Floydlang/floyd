@@ -241,25 +241,11 @@ namespace floyd_ast {
 			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
 		);
 
-//		public: lexical_scope_t(const lexical_scope_t& other);
-
 		public: bool check_invariant() const;
 		public: bool shallow_check_invariant() const;
 
-//		public: const lexical_scope_t& operator=(const lexical_scope_t& other);
 		public: bool operator==(const lexical_scope_t& other) const;
 
-/*
-		private: explicit lexical_scope_t(
-			etype type,
-			const std::vector<member_t>& args,
-			const std::vector<member_t>& state,
-			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const typeid_t& return_type,
-			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects,
-			const HOST_FUNCTION host_function
-		);
-*/
 
 		public: const std::map<int, std::shared_ptr<const lexical_scope_t> >& get_objects() const {
 			return _objects;

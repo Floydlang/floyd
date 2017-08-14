@@ -83,6 +83,44 @@ namespace {
 		else if(statement._block){
 			const auto& s = statement._block;
 
+#if 0
+		//	Always use global scope. Future: support closures by linking to function env where function is defined.
+		auto parent_env = vm._call_stack.back()
+		auto new_environment = environment_t::make_environment(vm, function_object, function_object_id, parent_env);
+
+		//	Copy input arguments to the function scope.
+		for(int i = 0 ; i < function_object->_args.size() ; i++){
+			const auto& arg_name = function_object->_args[i]._name;
+			const auto& arg_value = args[i];
+			new_environment->_values[arg_name] = arg_value;
+		}
+
+		interpreter_t vm2 = vm;
+		vm2._call_stack.push_back(new_environment);
+
+		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+
+		const auto r = execute_statements(vm2, function_object->_statements);
+		if(!r.second){
+			throw std::runtime_error("function missing return statement");
+		}
+		else{
+			return *r.second;
+		}
+	}
+	else if(function_object->_type == lexical_scope_t::etype::k_host_function_scope){
+		const auto r = function_object->_host_function(args);
+		return r;
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+
+#endif
+
 //??? Embedd block as a lexical_scope_t inside the block-statement? Use an object?
 
 			const auto& r = execute_statements(vm2, s->_statements);
