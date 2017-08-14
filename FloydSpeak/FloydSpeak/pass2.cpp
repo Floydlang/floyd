@@ -89,9 +89,7 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 
 
 
-pair<typeid_t, bool> resolve_type_name_int(const string& t){
-	QUARK_ASSERT(t.size() > 2);
-
+pair<typeid_t, bool> resolve_base_type_name(const string& t){
 	if(t == "<null>"){
 		return { typeid_t::make_null(), true };
 	}
@@ -108,15 +106,14 @@ pair<typeid_t, bool> resolve_type_name_int(const string& t){
 		return { typeid_t::make_string(), true };
 	}
 	else {
-		return { typeid_t::make_string(), false };
+		return { typeid_t::make_null(), false };
 	}
-	QUARK_ASSERT(false);
 }
 
 typeid_t resolve_type_name(const string& t){
 	QUARK_ASSERT(t.size() > 2);
 
-	const auto a = resolve_type_name_int(t);
+	const auto a = resolve_base_type_name(t);
 	if(a.second){
 		return a.first;
 	}
@@ -124,7 +121,6 @@ typeid_t resolve_type_name(const string& t){
 		return typeid_t::make_unresolved_symbol(trim_ends(t));
 	}
 }
-
 
 expression_t parser_expression_to_ast(const json_t& e){
 	QUARK_ASSERT(e.check_invariant());
@@ -135,21 +131,23 @@ expression_t parser_expression_to_ast(const json_t& e){
 		QUARK_ASSERT(e.get_array_size() == 3);
 
 		const auto value = e.get_array_n(1);
-		const auto type = e.get_array_n(2);
-		const auto type2 = type.get_string();
-		if(type2 == "<null>"){
+		const auto type = e.get_array_n(2).get_string();
+		const auto resolved_type = resolve_base_type_name(type);
+		QUARK_ASSERT(resolved_type.second);
+
+		if(resolved_type.first.is_null()){
 			return expression_t::make_constant_null();
 		}
-		else if(type2 == "<bool>"){
+		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_bool){
 			return expression_t::make_constant_bool(value.is_false() ? false : true);
 		}
-		else if(type2 == "<int>"){
+		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_int){
 			return expression_t::make_constant_int((int)value.get_number());
 		}
-		else if(type2 == "<float>"){
+		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_float){
 			return expression_t::make_constant_float((float)value.get_number());
 		}
-		else if(type2 == "<string>"){
+		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_string){
 			return expression_t::make_constant_string(value.get_string());
 		}
 		else{
@@ -233,10 +231,14 @@ struct body_t {
 
 
 
-
 /*
 	Input is an array of statements from parser.
 	A function has its own list of statements.
+
+	??? Split each statement into separate function.
+
+	### Support overloading the same symbol name with different types.
+	### Key symbols with their type too. Support function overloading & struct named as function.
 */
 pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 	QUARK_SCOPED_TRACE("parser_statements_to_ast()");
@@ -260,13 +262,13 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 		else if(type == "bind"){
 			QUARK_ASSERT(statement.get_array_size() == 4);
 			const auto bind_type = statement.get_array_n(1);
-			const auto local_name = statement.get_array_n(2);
+			const auto name = statement.get_array_n(2);
 			const auto expr = statement.get_array_n(3);
 
 			const auto bind_type2 = resolve_type_name(bind_type.get_string());
-			const auto local_name2 = local_name.get_string();
+			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
-			statements2.push_back(make_shared<statement_t>(make__bind_statement(local_name2, bind_type2, expr2)));
+			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, bind_type2, expr2)));
 		}
 
 		//	[ "block", [ STATEMENTS ] ],
@@ -315,41 +317,35 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 		*/
 		else if(type == "def-func"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
-
 			const auto def = statement.get_array_n(1);
 			const auto name = def.get_object_element("name");
 			const auto args = def.get_object_element("args");
 			const auto statements = def.get_object_element("statements");
 			const auto return_type = def.get_object_element("return_type");
+
+
 			const auto r = parser_statements_to_ast(statements, id_generator);
 			id_generator = r.second;
-
 			const auto args2 = conv_members(args);
 			const auto return_type2 = resolve_type_name(return_type.get_string());
 
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 
 			//	Build function object.
-			const auto s2 = lexical_scope_t::make_function_object(
+			const auto function_obj = lexical_scope_t::make_function_object(
 				args2,
-				{},
+				r.first._locals,
 				r.first._statements,
 				return_type2,
 				r.first._objects
 			);
 
-			//	Make symbol refering to object.
 			const auto function_id = id_generator;
 			id_generator += 1;
 
 			value_t f = make_function_value(function_typeid, function_id);
-			const auto function_constant = expression_t::make_constant_value(f);
-
-			//	### Support overloading the same symbol name with different types.
 			locals.push_back(member_t{ function_typeid, make_shared<value_t>(f), name.get_string() });
-			objects[function_id] = s2;
-
-			//### Key symbols with their type too. Support function overloading & struct named as function.
+			objects[function_id] = function_obj;
 		}
 
 		/*
@@ -406,7 +402,6 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto condition_expression = statement.get_array_n(2);
 			const auto post_expression = statement.get_array_n(3);
 			const auto body_statements = statement.get_array_n(4);
-
 
 			const auto& init_statement2 = parser_statements_to_ast(json_t::make_array({init_statement}), id_generator);
 			id_generator = init_statement2.second;

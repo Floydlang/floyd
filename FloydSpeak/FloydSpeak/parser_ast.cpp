@@ -118,7 +118,6 @@ namespace floyd_ast {
 		return true;
 	}
 
-
 	void typeid_t::swap(typeid_t& other){
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
@@ -131,7 +130,6 @@ namespace floyd_ast {
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
 	}
-
 
 	std::string typeid_t::to_string() const {
 		QUARK_ASSERT(check_invariant());
@@ -161,6 +159,24 @@ namespace floyd_ast {
 		}
 //		return json_to_compact_string(typeid_to_json(*this));
 	}
+
+	json_t typeid_to_json(const typeid_t& t){
+		if(t._parts.empty() && t._struct_def_id.empty()){
+			return base_type_to_string(t.get_base_type());
+		}
+		else{
+			auto parts = json_t::make_array();
+			for(const auto e: t._parts){
+				parts = push_back(parts, typeid_to_json(e));
+			}
+			return make_object({
+				{ "base_type", json_t(base_type_to_string(t.get_base_type())) },
+				{ "parts", parts },
+				{ "struct_def_id", t._struct_def_id.empty() == false ? t._struct_def_id : json_t() }
+			});
+		}
+	}
+
 
 	QUARK_UNIT_TESTQ("typeid_t{}", ""){
 	}
@@ -210,46 +226,7 @@ namespace floyd_ast {
 		return r;
 	}
 
-/*
-	lexical_scope_t::lexical_scope_t(
-		etype type,
-		const std::vector<member_t>& args,
-		const std::vector<member_t>& state,
-		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const typeid_t& return_type,
-		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects,
-		const HOST_FUNCTION host_function
-	)
-	:
-		_type(type),
-		_args(args),
-		_state(state),
-		_statements(statements),
-		_return_type(return_type),
-		_objects(objects),
-		_host_function(host_function)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-*/
-
-/*
-	lexical_scope_t::lexical_scope_t(const lexical_scope_t& other) :
-		_type(other._type),
-		_args(other._args),
-		_state(other._state),
-		_statements(other._statements),
-		_return_type(other._return_type),
-		_objects(other._objects),
-		_host_function(other._host_function)
-	{
-		QUARK_ASSERT(other.check_invariant());
-		QUARK_ASSERT(check_invariant());
-	}
-*/
-
 	bool lexical_scope_t::shallow_check_invariant() const {
-//		QUARK_ASSERT(_types_collector.check_invariant());
 		return true;
 	}
 
@@ -264,7 +241,6 @@ namespace floyd_ast {
 
 
 		if(_type == etype::k_function_scope){
-//			QUARK_ASSERT(_return_type._base_type != base_type::k_null && _return_type.check_invariant());
 			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_struct_scope){
@@ -286,12 +262,6 @@ namespace floyd_ast {
 		}
 		return true;
 	}
-
-/*
-	public: const lexical_scope_t& operator=(const lexical_scope_t& other){
-	)
-*/
-
 
 	bool lexical_scope_t::operator==(const lexical_scope_t& other) const{
 		QUARK_ASSERT(check_invariant());
@@ -321,16 +291,6 @@ namespace floyd_ast {
 		return true;
 	}
 
-	QUARK_UNIT_TESTQ("lexical_scope_t::operator==", ""){
-		const auto a = lexical_scope_t::make_global_scope({}, {}, {});
-		const auto b = lexical_scope_t::make_global_scope({}, {}, {});
-		QUARK_TEST_VERIFY(*a == *b);
-	}
-
-
-
-
-
 	string scope_type_to_string(lexical_scope_t::etype type){
 		if(type == lexical_scope_t::etype::k_function_scope){
 			return "function";
@@ -352,49 +312,6 @@ namespace floyd_ast {
 		}
 	}
 
-
-
-
-	//////		JSON
-
-
-
-	json_t vector_def_to_json(const vector_def_t& s){
-		return {
-		};
-	}
-
-	json_t typeid_to_json(const typeid_t& t){
-		if(t._parts.empty() && t._struct_def_id.empty()){
-			return base_type_to_string(t.get_base_type());
-		}
-		else{
-			auto parts = json_t::make_array();
-			for(const auto e: t._parts){
-				parts = push_back(parts, typeid_to_json(e));
-			}
-			return make_object({
-				{ "base_type", json_t(base_type_to_string(t.get_base_type())) },
-				{ "parts", parts },
-				{ "struct_def_id", t._struct_def_id.empty() == false ? t._struct_def_id : json_t() }
-			});
-		}
-	}
-
-
-	json_t member_to_json(const std::vector<member_t>& members){
-		std::vector<json_t> r;
-		for(const auto i: members){
-			const auto member = make_object({
-				{ "type", typeid_to_json(i._type) },
-				{ "value", i._value ? value_to_json(*i._value) : json_t() },
-				{ "name", json_t(i._name) }
-			});
-			r.push_back(json_t(member));
-		}
-		return r;
-	}
-
 	json_t objects_to_json(const std::map<int, std::shared_ptr<const lexical_scope_t> >& s){
 		std::map<string, json_t> r;
 		for(const auto i: s){
@@ -413,7 +330,6 @@ namespace floyd_ast {
 		}
 		json_t statements2(statements);
 
-//		const auto symbols = symbols_to_json(scope_def.get_symbols());
 		const auto objects = objects_to_json(scope_def.get_objects());
 
 		return make_object({
@@ -428,13 +344,6 @@ namespace floyd_ast {
 				scope_def._host_function == nullptr ? json_t() : json_t("HOST FUNCTION")
 			}
 		});
-	}
-
-	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
-		QUARK_SCOPED_TRACE("statements");
-		for(const auto s: e){
-			trace(*s);
-		}
 	}
 
 	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_function_object(
@@ -509,6 +418,23 @@ namespace floyd_ast {
 	}
 
 
+	QUARK_UNIT_TESTQ("lexical_scope_t::operator==", ""){
+		const auto a = lexical_scope_t::make_global_scope({}, {}, {});
+		const auto b = lexical_scope_t::make_global_scope({}, {}, {});
+		QUARK_TEST_VERIFY(*a == *b);
+	}
+
+
+
+
+	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
+		QUARK_SCOPED_TRACE("statements");
+		for(const auto s: e){
+			trace(*s);
+		}
+	}
+
+
 
 	////////////////////////			member_t
 
@@ -570,14 +496,26 @@ namespace floyd_ast {
 	}
 
 
-std::vector<typeid_t> get_member_types(const vector<member_t>& m){
-	vector<typeid_t> r;
-	for(const auto a: m){
-		r.push_back(a._type);
+	std::vector<typeid_t> get_member_types(const vector<member_t>& m){
+		vector<typeid_t> r;
+		for(const auto a: m){
+			r.push_back(a._type);
+		}
+		return r;
 	}
-	return r;
-}
 
+	json_t member_to_json(const std::vector<member_t>& members){
+		std::vector<json_t> r;
+		for(const auto i: members){
+			const auto member = make_object({
+				{ "type", typeid_to_json(i._type) },
+				{ "value", i._value ? value_to_json(*i._value) : json_t() },
+				{ "name", json_t(i._name) }
+			});
+			r.push_back(json_t(member));
+		}
+		return r;
+	}
 
 
 
@@ -617,6 +555,11 @@ std::vector<typeid_t> get_member_types(const vector<member_t>& m){
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("vector_def_t");
 		QUARK_TRACE_SS("element_type: " << e._element_type.to_string());
+	}
+
+	json_t vector_def_to_json(const vector_def_t& s){
+		return {
+		};
 	}
 
 

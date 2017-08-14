@@ -21,7 +21,6 @@
 struct json_t;
 
 
-
 namespace floyd_ast {
 	struct expression_t;
 	struct statement_t;
@@ -32,9 +31,7 @@ namespace floyd_ast {
 	struct ast_t;
 
 
-
-
-	//??? Moce to floyd_basics?
+	//??? Move to floyd_basics?
 	//////////////////////////////////////		typeid_t
 
 
@@ -160,6 +157,7 @@ namespace floyd_ast {
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
 
 	std::vector<typeid_t> get_member_types(const std::vector<member_t>& m);
+	json_t member_to_json(const std::vector<member_t>& members);
 
 
 
@@ -187,6 +185,18 @@ namespace floyd_ast {
 
 
 	typedef floyd_ast::value_t (*HOST_FUNCTION)(const std::vector<value_t>& args);
+
+
+
+	//////////////////////////////////////////////////		lexical_scope2_t
+
+
+	struct lexical_scope2_t {
+		/////////////////////////////		STATE
+		public: std::vector<member_t> _state;
+		public: std::vector<std::shared_ptr<statement_t> > _statements;
+		public: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
+	};
 
 
 
@@ -263,9 +273,51 @@ namespace floyd_ast {
 		public: HOST_FUNCTION _host_function;
 	};
 
-
-	json_t lexical_scope_to_json(const lexical_scope_t& scope_def);
+	json_t lexical_scope_to_json(const lexical_scope_t& v);
 	void trace(const std::shared_ptr<const lexical_scope_t>& e);
+
+
+
+	//////////////////////////////////////////////////		function_object_t
+
+
+	struct function_object_t {
+		public: static std::shared_ptr<const function_object_t> make_function_object(
+			const std::vector<member_t>& args,
+			const std::vector<member_t>& locals,
+			const std::vector<std::shared_ptr<statement_t> >& statements,
+			const typeid_t& return_type,
+			const std::map<int, std::shared_ptr<const function_object_t> > objects
+		);
+
+		public: static std::shared_ptr<const function_object_t> make_host_function_object(
+			const std::vector<member_t>& args,
+			const typeid_t& return_type,
+			HOST_FUNCTION host_function
+		);
+
+		public: bool check_invariant() const;
+		public: bool shallow_check_invariant() const;
+
+		public: bool operator==(const function_object_t& other) const;
+
+
+		public: const std::map<int, std::shared_ptr<const function_object_t> >& get_objects() const {
+			return _objects;
+		}
+
+		/////////////////////////////		STATE
+		public: std::vector<member_t> _args;
+		public: std::vector<member_t> _state;
+		public: std::vector<std::shared_ptr<statement_t> > _statements;
+		public: typeid_t _return_type;
+
+		public: std::map<int, std::shared_ptr<const function_object_t> > _objects;
+		public: HOST_FUNCTION _host_function;
+	};
+
+	json_t function_object_to_json(const function_object_t& v);
+	void trace(const std::shared_ptr<const function_object_t>& e);
 
 
 
@@ -297,15 +349,12 @@ namespace floyd_ast {
 	//////////////////////////////////////////////////		trace_vec()
 
 
-
 	template<typename T> void trace_vec(const std::string& title, const std::vector<T>& v){
 		QUARK_SCOPED_TRACE(title);
 		for(const auto i: v){
 			trace(i);
 		}
 	}
-
-
 
 
 	struct function_reg_t {
@@ -318,10 +367,6 @@ namespace floyd_ast {
 	};
 
 	function_reg_t make_host_function_reg(const typeid_t& return_type, const std::vector<member_t>& args, HOST_FUNCTION host_function, int id);
-
-
-
-
 
 }	//	floyd_ast
 

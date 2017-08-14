@@ -64,7 +64,7 @@ namespace floyd_basics {
 
 
 
-
+//??? Make separate constant strings for "@" etc and use them all over code instead of "@".
 
 //??? Use "f()" for functions.
 //??? Use "[n]" for lookups.
