@@ -22,6 +22,8 @@ namespace floyd_ast {
 	struct statement_t;
 
 	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
+	json_t expression_to_json(const expression_t& e);
+	json_t expressions_to_json(const std::vector<expression_t> v);
 
 	bool is_simple_expression__2(const std::string& op);
 
@@ -29,12 +31,61 @@ namespace floyd_ast {
 	struct expr_base_t {
 		public: virtual ~expr_base_t(){};
 
+		public: virtual typeid_t get_result_type() const = 0;
 		public: virtual json_t expr_base__to_json() const{ return json_t(); };
 	};
 
 
+
+
+
+
+	struct function_call_expr_t : public expr_base_t {
+		public: virtual ~function_call_expr_t(){};
+
+		public: function_call_expr_t(
+			const expression_t& function,
+			std::vector<expression_t> args,
+			typeid_t result
+		)
+		:
+			_function(std::make_shared<expression_t>(function)),
+			_args(args),
+			_result(result)
+		{
+		}
+
+		public: virtual typeid_t get_result_type() const{
+			return _result;
+		}
+
+		public: virtual json_t expr_base__to_json() const {
+			return json_t::make_array({
+				"call",
+				expression_to_json(*_function),
+				expressions_to_json(_args),
+				typeid_to_json(_result)
+			});
+		}
+
+
+		const std::shared_ptr<expression_t> _function;
+		const std::vector<expression_t> _args;
+		const typeid_t _result;
+	};
+
+	inline bool operator==(const function_call_expr_t& lhs, const function_call_expr_t& rhs){
+		return
+			lhs._function == rhs._function
+			&& lhs._args == rhs._args
+			&& lhs._result == rhs._result;
+	}
+
+
+
+
 	struct function_definition_expr_t : public expr_base_t {
-		public: virtual ~function_definition_expr_t();
+		public: virtual ~function_definition_expr_t(){};
 
 		public: function_definition_expr_t(
 			const typeid_t& function_type,
@@ -50,8 +101,11 @@ namespace floyd_ast {
 		{
 		}
 
-		public: virtual json_t expr_base__to_json() const {
+		public: virtual typeid_t get_result_type() const{
+			return _return_type;
+		}
 
+		public: virtual json_t expr_base__to_json() const {
 			return json_t::make_array({
 				"func-def",
 				typeid_to_json(_function_type),
@@ -68,7 +122,6 @@ namespace floyd_ast {
 		const typeid_t _return_type;
 	};
 
-
 	inline bool operator==(const function_definition_expr_t& lhs, const function_definition_expr_t& rhs){
 		return
 			lhs._function_type == rhs._function_type
@@ -78,13 +131,59 @@ namespace floyd_ast {
 	}
 
 
+
+
+
+	struct literal_expr_t : public expr_base_t {
+		public: virtual ~literal_expr_t(){};
+
+		public: literal_expr_t(const value_t& value) 
+		:
+			_value(value)
+		{
+		}
+
+		public: virtual typeid_t get_result_type() const{
+			return _value.get_type();
+		}
+
+		public: virtual json_t expr_base__to_json() const {
+			return json_t::make_array({ "k", value_to_json(_value), typeid_to_json(_value.get_type()) });
+		}
+
+
+		const value_t _value;
+	};
+
+	inline bool operator==(const literal_expr_t& lhs, const literal_expr_t& rhs){
+		return lhs._value == rhs._value;
+	}
+
+
+
+
+
+
+
 	//////////////////////////////////////////////////		expression_t
 
 	/*
 		Immutable. Value type.
 	*/
 	struct expression_t {
-		public: static expression_t make_constant_value(const value_t& value);
+		public: static expression_t make_constant_value(const value_t& value)
+		{
+			return expression_t{
+				floyd_basics::expression_type::k_constant,
+				{},
+				{},
+				{},
+				{},
+				std::make_shared<literal_expr_t>(
+					literal_expr_t{ value }
+				)
+			};
+		}
 
 		public: static expression_t make_constant_null();
 		public: static expression_t make_constant_int(const int i);
@@ -94,6 +193,8 @@ namespace floyd_ast {
 
 		public: bool is_constant() const;
 		public: const value_t& get_constant() const;
+
+
 
 		public: static expression_t make_simple_expression__2(
 			floyd_basics::expression_type op,
@@ -111,13 +212,25 @@ namespace floyd_ast {
 			const expression_t& function,
 			const std::vector<expression_t>& args,
 			const typeid_t& result
-		);
+		)
+		{
+			return expression_t{
+				floyd_basics::expression_type::k_call,
+				{},
+				{},
+				{},
+				{},
+				std::make_shared<function_call_expr_t>(
+					function_call_expr_t{ function, args, result }
+				)
+			};
+		}
 
 		public: static expression_t make_function_definition(
 			const typeid_t& function_type,
 			const std::vector<member_t>& args,
 			const std::vector<std::shared_ptr<statement_t>> statements,
-			const typeid_t& _return_type
+			const typeid_t& return_type
 		)
 		{
 			return expression_t{
@@ -127,7 +240,7 @@ namespace floyd_ast {
 				{},
 				function_type,
 				std::make_shared<function_definition_expr_t>(
-					function_definition_expr_t{ function_type, args, statements, _return_type }
+					function_definition_expr_t{ function_type, args, statements, return_type }
 				)
 			};
 		}
@@ -170,6 +283,9 @@ namespace floyd_ast {
 		public: typeid_t get_expression_type() const{
 			QUARK_ASSERT(check_invariant());
 
+			if(_expr){
+				return _expr->get_result_type();
+			}
 			return _result_type;
 		}
 
@@ -181,6 +297,9 @@ namespace floyd_ast {
 			return _expr.get();
 		}
 
+		public: const function_call_expr_t* get_function_call() const {
+			return dynamic_cast<const function_call_expr_t*>(_expr.get());
+		}
 
 		//////////////////////////		INTERNALS
 
@@ -199,7 +318,6 @@ namespace floyd_ast {
 		private: std::string _debug;
 		private: floyd_basics::expression_type _operation;
 		private: std::vector<expression_t> _expressions;
-		private: std::shared_ptr<value_t> _constant;
 		private: std::string _symbol;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
@@ -207,7 +325,11 @@ namespace floyd_ast {
 
 		private: std::shared_ptr<const expr_base_t> _expr;
 	};
-	
+
+
+
+
+
 
 	void trace(const expression_t& e);
 
@@ -216,6 +338,8 @@ namespace floyd_ast {
 		["+", ["+", 1, 2], ["k", 10]]
 	*/
 	json_t expression_to_json(const expression_t& e);
+
+	json_t expressions_to_json(const std::vector<expression_t> v);
 
 }	//	floyd_ast
 

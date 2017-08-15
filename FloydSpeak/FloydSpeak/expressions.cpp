@@ -56,7 +56,6 @@ expression_t::expression_t(
 	_debug(""),
 	_operation(operation),
 	_expressions(expressions),
-	_constant(constant),
 	_symbol(symbol),
 	_result_type(result_type),
 	_expr(expr)
@@ -101,7 +100,6 @@ bool expression_t::operator==(const expression_t& other) const {
 		return
 			(_operation == other._operation)
 			&& (_expressions == other._expressions)
-			&& (compare_shared_values(_constant, other._constant))
 			&& (_symbol == other._symbol);
 	}
 }
@@ -131,21 +129,6 @@ typeid_t expression_t::get_result_type() const{
 	return _result_type;
 }
 
-expression_t expression_t::make_constant_value(const value_t& value){
-	QUARK_ASSERT(value.check_invariant());
-
-	auto result = expression_t(
-		floyd_basics::expression_type::k_constant,
-		{},
-		make_shared<value_t>(value),
-		{},
-		value.get_type(),
-		{}
-	);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
-
 
 expression_t expression_t::make_constant_null(){
 	return make_constant_value(value_t());
@@ -166,13 +149,13 @@ expression_t expression_t::make_constant_string(const std::string& s){
 
 
 bool expression_t::is_constant() const{
-	return _operation == floyd_basics::expression_type::k_constant;
+	return dynamic_cast<const literal_expr_t*>(_expr.get()) != nullptr;
 }
 
 const value_t& expression_t::get_constant() const{
 	QUARK_ASSERT(is_constant())
 
-	return *_constant;
+	return dynamic_cast<const literal_expr_t*>(_expr.get())->_value;
 }
 
 bool is_simple_expression__2(const std::string& op){
@@ -256,28 +239,6 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	QUARK_ASSERT(result.check_invariant());
 	return result;
 }
-
-expression_t expression_t::make_function_call(const expression_t& function, const std::vector<expression_t>& args, const typeid_t& result_type){
-	QUARK_ASSERT(function.check_invariant());
-	for(const auto arg: args){
-		QUARK_ASSERT(arg.check_invariant());
-	}
-//	QUARK_ASSERT(result_type._base_type != base_type::k_null && result_type.check_invariant());
-
-	vector<expression_t> expressions = { function };
-	expressions.insert(expressions.end(), args.begin(), args.end());
-	auto result = expression_t(
-		floyd_basics::expression_type::k_call,
-		expressions,
-		{},
-		{},
-		result_type,
-		{}
-	);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
-
 
 expression_t expression_t::make_variable_expression(const std::string& variable, const typeid_t& result_type){
 	QUARK_ASSERT(variable.size() > 0);
@@ -381,6 +342,14 @@ json_t expression_to_json(const expression_t& e){
 	}
 }
 
+json_t expressions_to_json(const std::vector<expression_t> v){
+	vector<json_t> r;
+	for(const auto e: v){
+		r.push_back(expression_to_json(e));
+	}
+	return json_t::make_array(r);
+}
+
 string expression_to_json_string(const expression_t& e){
 	const auto json = expression_to_json(e);
 	return json_to_compact_string(json);
@@ -416,7 +385,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 				typeid_t::make_string()
 			)
 		),
-		R"(["call", [["@", "my_func", "null"], ["k", "xyz", "string"], ["k", 123, "int"]], "string"])"
+		R"(["call", ["@", "my_func", "null"], [["k", "xyz", "string"], ["k", 123, "int"]], "string"])"
 	);
 }
 

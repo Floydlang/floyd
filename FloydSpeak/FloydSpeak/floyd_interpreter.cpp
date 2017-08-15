@@ -674,12 +674,15 @@ expression_t evaluate_call_expression(const interpreter_t& vm, const expression_
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(e.get_operation() == floyd_basics::expression_type::k_call);
 
+	const auto call = e.get_function_call();
+	QUARK_ASSERT(call);
+
+
 	//	Simplify each input expression: expression[0]: which function to call, expression[1]: first argument if any.
-	const auto& expressions = e.get_expressions();
-	expression_t function = evaluate_expression(vm, expressions[0]);
+	expression_t function = evaluate_expression(vm, *call->_function);
 	vector<expression_t> args2;
-	for(int i = 1 ; i < expressions.size() ; i++){
-		const auto t = evaluate_expression(vm, expressions[i]);
+	for(int i = 0 ; i < call->_args.size() ; i++){
+		const auto t = evaluate_expression(vm, call->_args[i]);
 		args2.push_back(t);
 	}
 
