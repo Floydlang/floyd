@@ -312,19 +312,20 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 
 	else if(op == floyd_basics::expression_type::k_arithmetic_unary_minus__1){
-		const auto& expr = evaluate_expression(vm, e.get_expressions()[0]);
-		if(expr.is_constant()){
-			const auto& c = expr.get_constant();
+		const auto expr = e.get_unary_minus();
+		const auto& expr2 = evaluate_expression(vm, *expr->_expr);
+		if(expr2.is_constant()){
+			const auto& c = expr2.get_constant();
 			if(c.is_int()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_int(0), expr)
+					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_int(0), expr2)
 				);
 			}
 			else if(c.is_float()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_float(0.0f), expr)
+					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_float(0.0f), expr2)
 				);
 			}
 			else{

@@ -157,34 +157,8 @@ bool is_simple_expression__2(const std::string& op){
 
 
 
-expression_t expression_t::make_unary_minus(const expression_t& expr){
-	QUARK_ASSERT(expr.check_invariant());
-
-	auto result = expression_t(
-		floyd_basics::expression_type::k_arithmetic_unary_minus__1,
-		{ expr },
-		expr.get_expression_type(),
-		{}
-	);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
 
 
-expression_t expression_t::make_lookup(const expression_t& parent_address, const expression_t& lookup_key, const typeid_t& result_type){
-	QUARK_ASSERT(parent_address.check_invariant());
-	QUARK_ASSERT(lookup_key.check_invariant());
-	QUARK_ASSERT(result_type._base_type != floyd_basics::base_type::k_null && result_type.check_invariant());
-
-	auto result = expression_t(
-		floyd_basics::expression_type::k_lookup_element,
-		{ parent_address, lookup_key },
-		result_type,
-		{}
-	);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
 
 
 void trace(const expression_t& e){

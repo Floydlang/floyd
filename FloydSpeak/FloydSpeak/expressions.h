@@ -196,17 +196,52 @@ namespace floyd_ast {
 		}
 
 
-
-
-
 		////////////////////////////////			make_unary_minus()
 
 
-		public: static expression_t make_unary_minus(const expression_t& expr);
+		public: struct unary_minus_expr_t : public expr_base_t {
+			public: virtual ~unary_minus_expr_t(){};
+
+			public: unary_minus_expr_t(
+				const expression_t& expr
+			)
+			:
+				_expr(std::make_shared<expression_t>(expr))
+			{
+			}
+
+			public: virtual typeid_t get_result_type() const{
+				return _expr->get_result_type();
+			}
+
+			public: virtual json_t expr_base__to_json() const {
+				return json_t::make_array({
+					expression_to_json(*_expr)
+				});
+			}
+
+
+			const std::shared_ptr<expression_t> _expr;
+		};
+
+		public: static expression_t make_unary_minus(const expression_t expr){
+			return expression_t{
+				floyd_basics::expression_type::k_arithmetic_unary_minus__1,
+				{},
+				{},
+				std::make_shared<unary_minus_expr_t>(
+					unary_minus_expr_t{ expr }
+				)
+			};
+		}
+
+		public: const unary_minus_expr_t* get_unary_minus() const {
+			return dynamic_cast<const unary_minus_expr_t*>(_expr.get());
+		}
+
 
 
 		////////////////////////////////			make_conditional_operator()
-
 
 
 		public: struct conditional_expr_t : public expr_base_t {
@@ -489,16 +524,65 @@ namespace floyd_ast {
 		}
 
 
-		////////////////////////////////			make_lookup
+		////////////////////////////////			make_lookup()
 
 		/*
 			Looks up using a key. They key can be a sub-expression. Can be any type: index, string etc.
 		*/
+
+		public: struct lookup_expr_t : public expr_base_t {
+			public: virtual ~lookup_expr_t(){};
+
+			public: lookup_expr_t(
+				const expression_t& parent_address,
+				const expression_t& lookup_key,
+				typeid_t result
+			)
+			:
+				_parent_address(std::make_shared<expression_t>(parent_address)),
+				_lookup_key(std::make_shared<expression_t>(lookup_key)),
+				_result(result)
+			{
+			}
+
+			public: virtual typeid_t get_result_type() const{
+				return _result;
+			}
+
+			public: virtual json_t expr_base__to_json() const {
+				return json_t::make_array({ "[-]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key), typeid_to_json(_result) });
+			}
+
+
+			std::shared_ptr<expression_t> _parent_address;
+			std::shared_ptr<expression_t> _lookup_key;
+			typeid_t _result;
+		};
+
+		/*
+			Specifies a member of a struct.
+		*/
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
-			const typeid_t& result
-		);
+			const typeid_t result
+		)
+		{
+			return expression_t{
+				floyd_basics::expression_type::k_resolve_member,
+				{},
+				{},
+				std::make_shared<lookup_expr_t>(
+					lookup_expr_t{ parent_address, lookup_key, result }
+				)
+			};
+		}
+
+		public: const lookup_expr_t* get_lookup() const {
+			return dynamic_cast<const lookup_expr_t*>(_expr.get());
+		}
+
+
 
 
 
