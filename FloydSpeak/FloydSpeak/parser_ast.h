@@ -157,7 +157,7 @@ namespace floyd_ast {
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
 
 	std::vector<typeid_t> get_member_types(const std::vector<member_t>& m);
-	json_t member_to_json(const std::vector<member_t>& members);
+	json_t members_to_json(const std::vector<member_t>& members);
 
 
 

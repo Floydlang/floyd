@@ -1572,6 +1572,7 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	);
 }
 
+/*
 QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	test__run_init(
 		"int x = 3;"
@@ -1579,7 +1580,7 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 		value_t(3)
 	);
 }
-
+*/
 
 
 //////////////////////////		for-statement

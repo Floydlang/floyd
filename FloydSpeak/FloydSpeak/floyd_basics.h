@@ -160,7 +160,9 @@ namespace floyd_basics {
 		k_resolve_member,
 
 		//	c99: a[b]			token: "[-]"
-		k_lookup_element
+		k_lookup_element,
+
+		k_define_function
 	};
 
 	expression_type token_to_expression_type(const std::string& op);

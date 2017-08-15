@@ -132,6 +132,14 @@ namespace floyd_ast {
 		}
 	}
 
+	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e){
+		std::vector<json_t> statements;
+		for(const auto& i: e){
+			statements.push_back(statement_to_json(*i));
+		}
+		return json_t::make_array(statements);
+	}
+
 
 	QUARK_UNIT_TESTQ("statement_to_json", "return"){
 		quark::ut_compare(

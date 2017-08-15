@@ -323,7 +323,6 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto statements = def.get_object_element("statements");
 			const auto return_type = def.get_object_element("return_type");
 
-
 			const auto r = parser_statements_to_ast(statements, id_generator);
 			id_generator = r.second;
 			const auto args2 = conv_members(args);

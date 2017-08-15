@@ -321,8 +321,8 @@ namespace floyd_ast {
 	}
 
 	json_t lexical_scope_to_json(const lexical_scope_t& scope_def){
-		const auto args = member_to_json(scope_def._args);
-		const auto state = member_to_json(scope_def._state);
+		const auto args = members_to_json(scope_def._args);
+		const auto state = members_to_json(scope_def._state);
 
 		std::vector<json_t> statements;
 		for(const auto i: scope_def._statements){
@@ -548,8 +548,8 @@ namespace floyd_ast {
 	}
 
 	json_t function_object_to_json(const function_object_t& scope_def){
-		const auto args = member_to_json(scope_def._args);
-		const auto state = member_to_json(scope_def._state);
+		const auto args = members_to_json(scope_def._args);
+		const auto state = members_to_json(scope_def._state);
 
 		std::vector<json_t> statements;
 		for(const auto i: scope_def._statements){
@@ -643,7 +643,7 @@ namespace floyd_ast {
 		return r;
 	}
 
-	json_t member_to_json(const std::vector<member_t>& members){
+	json_t members_to_json(const std::vector<member_t>& members){
 		std::vector<json_t> r;
 		for(const auto i: members){
 			const auto member = make_object({
