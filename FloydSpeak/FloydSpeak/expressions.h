@@ -37,9 +37,6 @@ namespace floyd_ast {
 
 
 
-
-
-
 	struct function_call_expr_t : public expr_base_t {
 		public: virtual ~function_call_expr_t(){};
 
@@ -160,6 +157,73 @@ namespace floyd_ast {
 	}
 
 
+	struct variable_expr_t : public expr_base_t {
+		public: virtual ~variable_expr_t(){};
+
+		public: variable_expr_t(
+			std::string variable,
+			typeid_t result
+		)
+		:
+			_variable(variable),
+			_result(result)
+		{
+		}
+
+		public: virtual typeid_t get_result_type() const{
+			return _result;
+		}
+
+		public: virtual json_t expr_base__to_json() const {
+			return json_t::make_array({ "@", json_t(_variable), typeid_to_json(_result) });
+		}
+
+
+		std::string _variable;
+		typeid_t _result;
+	};
+
+	inline bool operator==(const variable_expr_t& lhs, const variable_expr_t& rhs){
+		return lhs._variable == rhs._variable
+			&& lhs._result == rhs._result;
+	}
+
+
+
+	struct resolve_member_expr_t : public expr_base_t {
+		public: virtual ~resolve_member_expr_t(){};
+
+		public: resolve_member_expr_t(
+			const expression_t& parent_address,
+			std::string member_name,
+			typeid_t result
+		)
+		:
+			_parent_address(std::make_shared<expression_t>(parent_address)),
+			_member_name(member_name),
+			_result(result)
+		{
+		}
+
+		public: virtual typeid_t get_result_type() const{
+			return _result;
+		}
+
+		public: virtual json_t expr_base__to_json() const {
+			return json_t::make_array({ "->", expression_to_json(*_parent_address), json_t(_member_name) });
+		}
+
+
+		std::shared_ptr<expression_t> _parent_address;
+		std::string _member_name;
+		typeid_t _result;
+	};
+
+	inline bool operator==(const resolve_member_expr_t& lhs, const resolve_member_expr_t& rhs){
+		return compare_shared_values(lhs._parent_address, rhs._parent_address)
+			&& lhs._member_name == rhs._member_name
+			&& lhs._result == rhs._result;
+	}
 
 
 
@@ -175,7 +239,6 @@ namespace floyd_ast {
 		{
 			return expression_t{
 				floyd_basics::expression_type::k_constant,
-				{},
 				{},
 				{},
 				{},
@@ -219,7 +282,6 @@ namespace floyd_ast {
 				{},
 				{},
 				{},
-				{},
 				std::make_shared<function_call_expr_t>(
 					function_call_expr_t{ function, args, result }
 				)
@@ -237,7 +299,6 @@ namespace floyd_ast {
 				floyd_basics::expression_type::k_define_function,
 				{},
 				{},
-				{},
 				function_type,
 				std::make_shared<function_definition_expr_t>(
 					function_definition_expr_t{ function_type, args, statements, return_type }
@@ -252,7 +313,18 @@ namespace floyd_ast {
 		public: static expression_t make_variable_expression(
 			const std::string& variable,
 			const typeid_t& result
-		);
+		)
+		{
+			return expression_t{
+				floyd_basics::expression_type::k_variable,
+				{},
+				{},
+				result,
+				std::make_shared<variable_expr_t>(
+					variable_expr_t{ variable, result }
+				)
+			};
+		}
 
 		/*
 			Specifies a member of a struct.
@@ -261,7 +333,18 @@ namespace floyd_ast {
 			const expression_t& parent_address,
 			const std::string& member_name,
 			const typeid_t& result
-		);
+		)
+		{
+			return expression_t{
+				floyd_basics::expression_type::k_resolve_member,
+				{},
+				{},
+				{},
+				std::make_shared<resolve_member_expr_t>(
+					resolve_member_expr_t{ parent_address, member_name, result }
+				)
+			};
+		}
 
 		/*
 			Looks up using a key. They key can be a sub-expression. Can be any type: index, string etc.
@@ -291,7 +374,7 @@ namespace floyd_ast {
 
 		public: floyd_basics::expression_type get_operation() const;
 		public: const std::vector<expression_t>& get_expressions() const;
-		public: const std::string& get_symbol() const;
+
 		public: typeid_t get_result_type() const;
 		public: const expr_base_t* get_expr() const{
 			return _expr.get();
@@ -299,6 +382,12 @@ namespace floyd_ast {
 
 		public: const function_call_expr_t* get_function_call() const {
 			return dynamic_cast<const function_call_expr_t*>(_expr.get());
+		}
+		public: const variable_expr_t* get_variable() const {
+			return dynamic_cast<const variable_expr_t*>(_expr.get());
+		}
+		public: const resolve_member_expr_t* get_resolve_member() const {
+			return dynamic_cast<const resolve_member_expr_t*>(_expr.get());
 		}
 
 		//////////////////////////		INTERNALS
@@ -308,7 +397,6 @@ namespace floyd_ast {
 			const floyd_basics::expression_type operation,
 			const std::vector<expression_t>& expressions,
 			const std::shared_ptr<value_t>& constant,
-			const std::string& symbol,
 			const typeid_t& result_type,
 			const std::shared_ptr<const expr_base_t>& expr
 		);
@@ -318,16 +406,12 @@ namespace floyd_ast {
 		private: std::string _debug;
 		private: floyd_basics::expression_type _operation;
 		private: std::vector<expression_t> _expressions;
-		private: std::string _symbol;
 
 		//	Tell what type of value this expression represents. Null if not yet defined.
 		private: typeid_t _result_type;
 
 		private: std::shared_ptr<const expr_base_t> _expr;
 	};
-
-
-
 
 
 

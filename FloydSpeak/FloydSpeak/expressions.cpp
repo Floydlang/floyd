@@ -48,7 +48,6 @@ expression_t::expression_t(
 	const floyd_basics::expression_type operation,
 	const std::vector<expression_t>& expressions,
 	const std::shared_ptr<value_t>& constant,
-	const std::string& symbol,
 	const typeid_t& result_type,
 	const std::shared_ptr<const expr_base_t>& expr
 )
@@ -56,7 +55,6 @@ expression_t::expression_t(
 	_debug(""),
 	_operation(operation),
 	_expressions(expressions),
-	_symbol(symbol),
 	_result_type(result_type),
 	_expr(expr)
 {
@@ -99,8 +97,7 @@ bool expression_t::operator==(const expression_t& other) const {
 	else{
 		return
 			(_operation == other._operation)
-			&& (_expressions == other._expressions)
-			&& (_symbol == other._symbol);
+			&& (_expressions == other._expressions);
 	}
 }
 
@@ -114,12 +111,6 @@ const std::vector<expression_t>& expression_t::get_expressions() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _expressions;
-}
-
-const std::string& expression_t::get_symbol() const{
-	QUARK_ASSERT(check_invariant());
-
-	return _symbol;
 }
 
 	
@@ -174,7 +165,7 @@ expression_t expression_t::make_simple_expression__2(floyd_basics::expression_ty
 		|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
 	)
 	{
-		return expression_t(op, { left, right }, {}, {}, left.get_expression_type(), {});
+		return expression_t(op, { left, right }, {}, left.get_expression_type(), {});
 	}
 	else if(
 		op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2
@@ -189,7 +180,7 @@ expression_t expression_t::make_simple_expression__2(floyd_basics::expression_ty
 //		|| op == floyd_basics::expression_type::k_logical_negate
 	)
 	{
-		return expression_t(op, { left, right }, {}, {}, typeid_t::make_bool(), {});
+		return expression_t(op, { left, right }, {}, typeid_t::make_bool(), {});
 	}
 	else if(
 		op == floyd_basics::expression_type::k_constant
@@ -215,7 +206,6 @@ expression_t expression_t::make_unary_minus(const expression_t& expr){
 		floyd_basics::expression_type::k_arithmetic_unary_minus__1,
 		{ expr },
 		{},
-		{},
 		expr.get_expression_type(),
 		{}
 	);
@@ -232,39 +222,7 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 		floyd_basics::expression_type::k_conditional_operator3,
 		{ condition, a, b },
 		{},
-		{},
 		a.get_expression_type(),
-		{}
-	);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
-
-expression_t expression_t::make_variable_expression(const std::string& variable, const typeid_t& result_type){
-	QUARK_ASSERT(variable.size() > 0);
-
-	auto result = expression_t(
-		floyd_basics::expression_type::k_variable,
-		{},
-		{},
-		variable,
-		result_type,
-		{}
-	);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
-
-expression_t expression_t::make_resolve_member(const expression_t& parent_address, const std::string& member_name, const typeid_t& result_type){
-	QUARK_ASSERT(parent_address.check_invariant());
-	QUARK_ASSERT(member_name.size() > 0);
-
-	auto result = expression_t(
-		floyd_basics::expression_type::k_resolve_member,
-		{ parent_address },
-		{},
-		member_name,
-		result_type,
 		{}
 	);
 	QUARK_ASSERT(result.check_invariant());
@@ -279,7 +237,6 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 	auto result = expression_t(
 		floyd_basics::expression_type::k_lookup_element,
 		{ parent_address, lookup_key },
-		{},
 		{},
 		result_type,
 		{}
@@ -314,13 +271,9 @@ json_t expression_to_json(const expression_t& e){
 		}
 
 		const auto constant = e.is_constant() ? value_to_json(e.get_constant()) : json_t();
-		const auto symbol = e.get_symbol().empty() == false ? e.get_symbol() : json_t();
 
 		auto result = json_t::make_array();
 		result = push_back(result, floyd_basics::expression_type_to_token(e.get_operation()));
-		if(symbol.is_null() == false){
-			result = push_back(result, symbol);
-		}
 
 		if(e.get_operation() == floyd_basics::expression_type::k_call){
 			//	Add ONE element that is an array of expressions.

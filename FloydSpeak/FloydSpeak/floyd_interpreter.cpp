@@ -290,10 +290,11 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	const auto op = e.get_operation();
 
 	if(op == floyd_basics::expression_type::k_resolve_member){
-		const auto parent_expr = evaluate_expression(vm, e.get_expressions()[0]);
+		const auto expr = e.get_resolve_member();
+		const auto parent_expr = evaluate_expression(vm, *expr->_parent_address);
 		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){
 			const auto struct_instance = parent_expr.get_constant().get_struct();
-			const value_t value = struct_instance->_member_values[e.get_symbol()];
+			const value_t value = struct_instance->_member_values[expr->_member_name];
 			return expression_t::make_constant_value(value);
 		}
 		else{
@@ -301,8 +302,8 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 		}
 	}
 	else if(op == floyd_basics::expression_type::k_variable){
-		const auto variable_name = e.get_symbol();
-		const value_t value = resolve_env_variable(vm, variable_name);
+		const auto expr = e.get_variable();
+		const value_t value = resolve_env_variable(vm, expr->_variable);
 		return expression_t::make_constant_value(value);
 	}
 
