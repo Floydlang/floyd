@@ -356,8 +356,9 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 
 	//	First evaluate all inputs to our operation.
-	const auto left_expr = evaluate_expression(vm, e.get_expressions()[0]);
-	const auto right_expr = evaluate_expression(vm, e.get_expressions()[1]);
+	const auto simple2_expr = e.get_simple__2();
+	const auto left_expr = evaluate_expression(vm, *simple2_expr->_left);
+	const auto right_expr = evaluate_expression(vm, *simple2_expr->_right);
 
 	//	Both left and right are constant, replace the math_operation with a constant!
 	if(left_expr.is_constant() && right_expr.is_constant()){

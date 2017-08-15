@@ -155,47 +155,6 @@ bool is_simple_expression__2(const std::string& op){
 		|| op == "==" || op == "!=" || op == "&&" || op == "||";
 }
 
-expression_t expression_t::make_simple_expression__2(floyd_basics::expression_type op, const expression_t& left, const expression_t& right){
-	if(
-		op == floyd_basics::expression_type::k_arithmetic_add__2
-		|| op == floyd_basics::expression_type::k_arithmetic_subtract__2
-		|| op == floyd_basics::expression_type::k_arithmetic_multiply__2
-		|| op == floyd_basics::expression_type::k_arithmetic_divide__2
-		|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
-	)
-	{
-		return expression_t(op, { left, right }, left.get_expression_type(), {});
-	}
-	else if(
-		op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2
-		|| op == floyd_basics::expression_type::k_comparison_smaller__2
-		|| op == floyd_basics::expression_type::k_comparison_larger_or_equal__2
-		|| op == floyd_basics::expression_type::k_comparison_larger__2
-
-		|| op == floyd_basics::expression_type::k_logical_equal__2
-		|| op == floyd_basics::expression_type::k_logical_nonequal__2
-		|| op == floyd_basics::expression_type::k_logical_and__2
-		|| op == floyd_basics::expression_type::k_logical_or__2
-//		|| op == floyd_basics::expression_type::k_logical_negate
-	)
-	{
-		return expression_t(op, { left, right }, typeid_t::make_bool(), {});
-	}
-	else if(
-		op == floyd_basics::expression_type::k_constant
-		|| op == floyd_basics::expression_type::k_arithmetic_unary_minus__1
-		|| op == floyd_basics::expression_type::k_conditional_operator3
-		|| op == floyd_basics::expression_type::k_call
-		|| op == floyd_basics::expression_type::k_variable
-		|| op == floyd_basics::expression_type::k_resolve_member
-		|| op == floyd_basics::expression_type::k_lookup_element)
-	{
-		QUARK_ASSERT(false);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
 
 
 expression_t expression_t::make_unary_minus(const expression_t& expr){

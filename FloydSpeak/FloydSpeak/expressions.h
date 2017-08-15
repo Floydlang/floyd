@@ -93,15 +93,110 @@ namespace floyd_ast {
 		public: const value_t& get_constant() const;
 
 
-
 		////////////////////////////////			make_simple_expression__2()
 
 
-		public: static expression_t make_simple_expression__2(
-			floyd_basics::expression_type op,
-			const expression_t& left,
-			const expression_t& right
-		);
+		public: struct simple_expr__2_t : public expr_base_t {
+			public: virtual ~simple_expr__2_t(){};
+
+			public: simple_expr__2_t(
+				floyd_basics::expression_type op,
+				const expression_t& left,
+				const expression_t& right,
+				const typeid_t result_type
+			)
+			:
+				_op(op),
+				_left(std::make_shared<expression_t>(left)),
+				_right(std::make_shared<expression_t>(right)),
+				_result_type(result_type)
+			{
+			}
+
+			public: virtual typeid_t get_result_type() const{
+				return _result_type;
+			}
+
+			public: virtual json_t expr_base__to_json() const {
+				return json_t::make_array({
+					floyd_basics::expression_type_to_token(_op),
+					expression_to_json(*_left),
+					expression_to_json(*_right),
+					typeid_to_json(get_result_type())
+				});
+			}
+
+
+			const floyd_basics::expression_type _op;
+			const std::shared_ptr<expression_t> _left;
+			const std::shared_ptr<expression_t> _right;
+			const typeid_t _result_type;
+		};
+
+		public: static expression_t make_simple_expression__2(floyd_basics::expression_type op, const expression_t& left, const expression_t& right){
+			if(
+				op == floyd_basics::expression_type::k_arithmetic_add__2
+				|| op == floyd_basics::expression_type::k_arithmetic_subtract__2
+				|| op == floyd_basics::expression_type::k_arithmetic_multiply__2
+				|| op == floyd_basics::expression_type::k_arithmetic_divide__2
+				|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
+			)
+			{
+//				return expression_t(op, { left, right }, left.get_expression_type(), {});
+				return expression_t{
+					op,
+					{},
+					{},
+					std::make_shared<simple_expr__2_t>(
+						simple_expr__2_t{ op, left, right, left.get_expression_type() }
+					)
+				};
+			}
+			else if(
+				op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2
+				|| op == floyd_basics::expression_type::k_comparison_smaller__2
+				|| op == floyd_basics::expression_type::k_comparison_larger_or_equal__2
+				|| op == floyd_basics::expression_type::k_comparison_larger__2
+
+				|| op == floyd_basics::expression_type::k_logical_equal__2
+				|| op == floyd_basics::expression_type::k_logical_nonequal__2
+				|| op == floyd_basics::expression_type::k_logical_and__2
+				|| op == floyd_basics::expression_type::k_logical_or__2
+		//		|| op == floyd_basics::expression_type::k_logical_negate
+			)
+			{
+//				return expression_t(op, { left, right }, typeid_t::make_bool(), {});
+				return expression_t{
+					op,
+					{},
+					{},
+					std::make_shared<simple_expr__2_t>(
+						simple_expr__2_t{ op, left, right, typeid_t::make_bool() }
+					)
+				};
+			}
+			else if(
+				op == floyd_basics::expression_type::k_constant
+				|| op == floyd_basics::expression_type::k_arithmetic_unary_minus__1
+				|| op == floyd_basics::expression_type::k_conditional_operator3
+				|| op == floyd_basics::expression_type::k_call
+				|| op == floyd_basics::expression_type::k_variable
+				|| op == floyd_basics::expression_type::k_resolve_member
+				|| op == floyd_basics::expression_type::k_lookup_element)
+			{
+				QUARK_ASSERT(false);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+
+		public: const simple_expr__2_t* get_simple__2() const {
+			return dynamic_cast<const simple_expr__2_t*>(_expr.get());
+		}
+
+
+
 
 
 		////////////////////////////////			make_unary_minus()
