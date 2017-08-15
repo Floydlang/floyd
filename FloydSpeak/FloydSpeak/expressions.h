@@ -29,8 +29,6 @@ namespace floyd_ast {
 
 
 
-
-
 	//////////////////////////////////////////////////		expression_t
 
 	/*
@@ -75,8 +73,6 @@ namespace floyd_ast {
 		{
 			return expression_t{
 				floyd_basics::expression_type::k_constant,
-				{},
-				{},
 				std::make_shared<literal_expr_t>(
 					literal_expr_t{ value }
 				)
@@ -142,13 +138,10 @@ namespace floyd_ast {
 				|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
 			)
 			{
-//				return expression_t(op, { left, right }, left.get_expression_type(), {});
 				return expression_t{
 					op,
-					{},
-					{},
 					std::make_shared<simple_expr__2_t>(
-						simple_expr__2_t{ op, left, right, left.get_expression_type() }
+						simple_expr__2_t{ op, left, right, left.get_result_type() }
 					)
 				};
 			}
@@ -165,11 +158,8 @@ namespace floyd_ast {
 		//		|| op == floyd_basics::expression_type::k_logical_negate
 			)
 			{
-//				return expression_t(op, { left, right }, typeid_t::make_bool(), {});
 				return expression_t{
 					op,
-					{},
-					{},
 					std::make_shared<simple_expr__2_t>(
 						simple_expr__2_t{ op, left, right, typeid_t::make_bool() }
 					)
@@ -227,8 +217,6 @@ namespace floyd_ast {
 		public: static expression_t make_unary_minus(const expression_t expr){
 			return expression_t{
 				floyd_basics::expression_type::k_arithmetic_unary_minus__1,
-				{},
-				{},
 				std::make_shared<unary_minus_expr_t>(
 					unary_minus_expr_t{ expr }
 				)
@@ -284,10 +272,8 @@ namespace floyd_ast {
 		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b){
 			return expression_t{
 				floyd_basics::expression_type::k_conditional_operator3,
-				{},
-				{},
 				std::make_shared<conditional_expr_t>(
-					conditional_expr_t{ condition, a, b, a.get_expression_type() }
+					conditional_expr_t{ condition, a, b, a.get_result_type() }
 				)
 			};
 		}
@@ -295,7 +281,6 @@ namespace floyd_ast {
 		public: const conditional_expr_t* get_conditional() const {
 			return dynamic_cast<const conditional_expr_t*>(_expr.get());
 		}
-
 
 
 		////////////////////////////////			make_function_call()
@@ -343,8 +328,6 @@ namespace floyd_ast {
 		{
 			return expression_t{
 				floyd_basics::expression_type::k_call,
-				{},
-				{},
 				std::make_shared<function_call_expr_t>(
 					function_call_expr_t{ function, args, result }
 				)
@@ -406,8 +389,6 @@ namespace floyd_ast {
 		{
 			return expression_t{
 				floyd_basics::expression_type::k_define_function,
-				{},
-				function_type,
 				std::make_shared<function_definition_expr_t>(
 					function_definition_expr_t{ function_type, args, statements, return_type }
 				)
@@ -455,8 +436,6 @@ namespace floyd_ast {
 		{
 			return expression_t{
 				floyd_basics::expression_type::k_variable,
-				{},
-				result,
 				std::make_shared<variable_expr_t>(
 					variable_expr_t{ variable, result }
 				)
@@ -511,8 +490,6 @@ namespace floyd_ast {
 		{
 			return expression_t{
 				floyd_basics::expression_type::k_resolve_member,
-				{},
-				{},
 				std::make_shared<resolve_member_expr_t>(
 					resolve_member_expr_t{ parent_address, member_name, result }
 				)
@@ -570,8 +547,6 @@ namespace floyd_ast {
 		{
 			return expression_t{
 				floyd_basics::expression_type::k_resolve_member,
-				{},
-				{},
 				std::make_shared<lookup_expr_t>(
 					lookup_expr_t{ parent_address, lookup_key, result }
 				)
@@ -581,8 +556,6 @@ namespace floyd_ast {
 		public: const lookup_expr_t* get_lookup() const {
 			return dynamic_cast<const lookup_expr_t*>(_expr.get());
 		}
-
-
 
 
 
@@ -597,19 +570,14 @@ namespace floyd_ast {
 			Returns pre-computed result of the expression - the type of value it represents.
 			null if not resolved.
 		*/
-		public: typeid_t get_expression_type() const{
+		public: typeid_t get_result_type() const{
 			QUARK_ASSERT(check_invariant());
 
-			if(_expr){
-				return _expr->get_result_type();
-			}
-			return _result_type;
+			return _expr->get_result_type();
 		}
 
 		public: floyd_basics::expression_type get_operation() const;
-		public: const std::vector<expression_t>& get_expressions() const;
 
-		public: typeid_t get_result_type() const;
 		public: const expr_base_t* get_expr() const{
 			return _expr.get();
 		}
@@ -620,8 +588,6 @@ namespace floyd_ast {
 
 		private: expression_t(
 			const floyd_basics::expression_type operation,
-			const std::vector<expression_t>& expressions,
-			const typeid_t& result_type,
 			const std::shared_ptr<const expr_base_t>& expr
 		);
 
@@ -629,11 +595,6 @@ namespace floyd_ast {
 		//////////////////////////		STATE
 		private: std::string _debug;
 		private: floyd_basics::expression_type _operation;
-		private: std::vector<expression_t> _expressions;
-
-		//	Tell what type of value this expression represents. Null if not yet defined.
-		private: typeid_t _result_type;
-
 		private: std::shared_ptr<const expr_base_t> _expr;
 	};
 
@@ -648,7 +609,6 @@ namespace floyd_ast {
 	json_t expression_to_json(const expression_t& e);
 
 	json_t expressions_to_json(const std::vector<expression_t> v);
-
 
 
 

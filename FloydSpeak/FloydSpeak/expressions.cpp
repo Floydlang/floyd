@@ -46,15 +46,11 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 
 expression_t::expression_t(
 	const floyd_basics::expression_type operation,
-	const std::vector<expression_t>& expressions,
-	const typeid_t& result_type,
 	const std::shared_ptr<const expr_base_t>& expr
 )
 :
 	_debug(""),
 	_operation(operation),
-	_expressions(expressions),
-	_result_type(result_type),
 	_expr(expr)
 {
 	_debug = expression_to_json_string(*this);
@@ -95,8 +91,7 @@ bool expression_t::operator==(const expression_t& other) const {
 	}
 	else{
 		return
-			(_operation == other._operation)
-			&& (_expressions == other._expressions);
+			(_operation == other._operation);
 	}
 }
 
@@ -106,18 +101,6 @@ floyd_basics::expression_type expression_t::get_operation() const{
 	return _operation;
 }
 
-const std::vector<expression_t>& expression_t::get_expressions() const{
-	QUARK_ASSERT(check_invariant());
-
-	return _expressions;
-}
-
-	
-typeid_t expression_t::get_result_type() const{
-	QUARK_ASSERT(check_invariant());
-
-	return _result_type;
-}
 
 
 expression_t expression_t::make_constant_null(){
@@ -175,39 +158,7 @@ void trace(const expression_t& e){
 
 
 json_t expression_to_json(const expression_t& e){
-	if(e.get_expr() != nullptr){
-		return e.get_expr()->expr_base__to_json();
-	}
-	else{
-		vector<json_t>  expressions;
-		for(const auto& i: e.get_expressions()){
-			const auto a = expression_to_json(i);
-			expressions.push_back(a);
-		}
-
-		const auto constant = e.is_constant() ? value_to_json(e.get_constant()) : json_t();
-
-		auto result = json_t::make_array();
-		result = push_back(result, floyd_basics::expression_type_to_token(e.get_operation()));
-
-		if(e.get_operation() == floyd_basics::expression_type::k_call){
-			//	Add ONE element that is an array of expressions.
-			result = push_back(result, expressions);
-		}
-		else{
-			for(const auto f: expressions){
-				result = push_back(result, f);
-			}
-		}
-
-		if(constant.is_null() == false){
-			result = push_back(result, constant);
-		}
-
-		result = push_back(result, typeid_to_json(e.get_result_type()));
-
-		return result;
-	}
+	return e.get_expr()->expr_base__to_json();
 }
 
 json_t expressions_to_json(const std::vector<expression_t> v){

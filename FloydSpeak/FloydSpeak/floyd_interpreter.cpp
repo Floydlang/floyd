@@ -692,7 +692,7 @@ expression_t evaluate_call_expression(const interpreter_t& vm, const expression_
 
 	//	If not all input expressions could be evaluated, return a (maybe simplified) expression.
 	if(function.is_constant() == false || all_constants(args2) == false){
-		return expression_t::make_function_call(function, args2, e.get_expression_type());
+		return expression_t::make_function_call(function, args2, e.get_result_type());
 	}
 
 	//	Get function value and arg values.
