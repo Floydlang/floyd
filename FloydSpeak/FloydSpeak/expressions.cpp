@@ -170,20 +170,6 @@ expression_t expression_t::make_unary_minus(const expression_t& expr){
 	return result;
 }
 
-expression_t expression_t::make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b){
-	QUARK_ASSERT(condition.check_invariant());
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(b.check_invariant());
-
-	auto result = expression_t(
-		floyd_basics::expression_type::k_conditional_operator3,
-		{ condition, a, b },
-		a.get_expression_type(),
-		{}
-	);
-	QUARK_ASSERT(result.check_invariant());
-	return result;
-}
 
 expression_t expression_t::make_lookup(const expression_t& parent_address, const expression_t& lookup_key, const typeid_t& result_type){
 	QUARK_ASSERT(parent_address.check_invariant());

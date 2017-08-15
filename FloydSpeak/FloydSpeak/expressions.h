@@ -46,7 +46,7 @@ namespace floyd_ast {
 		};
 
 
-
+		//	??? Rename "constant" to "literal".
 		////////////////////////////////			make_constant_value()
 
 
@@ -208,11 +208,59 @@ namespace floyd_ast {
 		////////////////////////////////			make_conditional_operator()
 
 
-		public: static expression_t make_conditional_operator(
-			const expression_t& condition,
-			const expression_t& a,
-			const expression_t& b
-		);
+
+		public: struct conditional_expr_t : public expr_base_t {
+			public: virtual ~conditional_expr_t(){};
+
+			public: conditional_expr_t(
+				const expression_t& condition,
+				const expression_t& a,
+				const expression_t& b,
+				const typeid_t result_type
+			)
+			:
+				_condition(std::make_shared<expression_t>(condition)),
+				_a(std::make_shared<expression_t>(a)),
+				_b(std::make_shared<expression_t>(b)),
+				_result_type(result_type)
+			{
+			}
+
+			public: virtual typeid_t get_result_type() const{
+				return _result_type;
+			}
+
+			public: virtual json_t expr_base__to_json() const {
+				return json_t::make_array({
+					expression_to_json(*_condition),
+					expression_to_json(*_a),
+					expression_to_json(*_b),
+					typeid_to_json(get_result_type())
+				});
+			}
+
+
+			const std::shared_ptr<expression_t> _condition;
+			const std::shared_ptr<expression_t> _a;
+			const std::shared_ptr<expression_t> _b;
+			const typeid_t _result_type;
+		};
+
+		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b){
+			return expression_t{
+				floyd_basics::expression_type::k_conditional_operator3,
+				{},
+				{},
+				std::make_shared<conditional_expr_t>(
+					conditional_expr_t{ condition, a, b, a.get_expression_type() }
+				)
+			};
+		}
+
+		public: const conditional_expr_t* get_conditional() const {
+			return dynamic_cast<const conditional_expr_t*>(_expr.get());
+		}
+
 
 
 		////////////////////////////////			make_function_call()

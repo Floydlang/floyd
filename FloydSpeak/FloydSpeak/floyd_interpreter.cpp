@@ -338,16 +338,17 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == floyd_basics::expression_type::k_conditional_operator3){
-		const auto cond_result = evaluate_expression(vm, e.get_expressions()[0]);
+		const auto expr = e.get_conditional();
+		const auto cond_result = evaluate_expression(vm, *expr->_condition);
 		if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
 			const bool cond_flag = cond_result.get_constant().get_bool();
 
 			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 			if(cond_flag){
-				return evaluate_expression(vm, e.get_expressions()[1]);
+				return evaluate_expression(vm, *expr->_a);
 			}
 			else{
-				return evaluate_expression(vm, e.get_expressions()[2]);
+				return evaluate_expression(vm, *expr->_b);
 			}
 		}
 		else{
