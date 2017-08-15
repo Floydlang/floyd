@@ -47,7 +47,6 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 expression_t::expression_t(
 	const floyd_basics::expression_type operation,
 	const std::vector<expression_t>& expressions,
-	const std::shared_ptr<value_t>& constant,
 	const typeid_t& result_type,
 	const std::shared_ptr<const expr_base_t>& expr
 )
@@ -165,7 +164,7 @@ expression_t expression_t::make_simple_expression__2(floyd_basics::expression_ty
 		|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
 	)
 	{
-		return expression_t(op, { left, right }, {}, left.get_expression_type(), {});
+		return expression_t(op, { left, right }, left.get_expression_type(), {});
 	}
 	else if(
 		op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2
@@ -180,7 +179,7 @@ expression_t expression_t::make_simple_expression__2(floyd_basics::expression_ty
 //		|| op == floyd_basics::expression_type::k_logical_negate
 	)
 	{
-		return expression_t(op, { left, right }, {}, typeid_t::make_bool(), {});
+		return expression_t(op, { left, right }, typeid_t::make_bool(), {});
 	}
 	else if(
 		op == floyd_basics::expression_type::k_constant
@@ -205,7 +204,6 @@ expression_t expression_t::make_unary_minus(const expression_t& expr){
 	auto result = expression_t(
 		floyd_basics::expression_type::k_arithmetic_unary_minus__1,
 		{ expr },
-		{},
 		expr.get_expression_type(),
 		{}
 	);
@@ -221,7 +219,6 @@ expression_t expression_t::make_conditional_operator(const expression_t& conditi
 	auto result = expression_t(
 		floyd_basics::expression_type::k_conditional_operator3,
 		{ condition, a, b },
-		{},
 		a.get_expression_type(),
 		{}
 	);
@@ -237,7 +234,6 @@ expression_t expression_t::make_lookup(const expression_t& parent_address, const
 	auto result = expression_t(
 		floyd_basics::expression_type::k_lookup_element,
 		{ parent_address, lookup_key },
-		{},
 		result_type,
 		{}
 	);
