@@ -1,0 +1,73 @@
+
+// allows us to find any objects from its object-id. Also find its parent lexical scope.
+map<int, object_id_info_t> _object_lookup
+	8000: "global"
+--- TO build this, we need to search AST for all lexical scopes,
+
+global env
+	parent_env*
+	map<string, value> values -- runtime variables. Some are created on the fly, some copies from lexical-scope (functions)
+
+	int _object_id; -- used to lookup the static object mapped for this env. Used for functions and structs and globals.
+
+AST
+	8000: <lexical_scope_t> "global"
+		objects
+			0: <lexical_scope_t> print-function -- NATIVE
+			1: <lexical_scope_t> main-function
+				objects
+					5: <lexical_scope_t>temp_f1
+						while(){
+							<lexical_scope_t> ...
+						}
+					6: <lexical_scope_t> temp_f2
+						while(){
+							<lexical_scope_t> ...
+						}
+			2: <lexical_scope_t> fa-function
+				objects
+					6: <lexical_scope_t> temp_f2
+						while(){
+							<lexical_scope_t> ...
+						}
+				statements
+					if(){
+						<lexical_scope_t>...
+					}
+					else{
+						<lexical_scope_t>... LEXICAL SCOPE
+						while()
+						{	<lexical_scope_t>...
+
+
+
+						}
+					}
+			3: <lexical_scope_t>fb-function
+		state	//	global variables, global functions
+			"print": void f(string) = 0
+			"main": int f(string) = 1
+			"fa": bool f() = 2
+			"fb": int f(string) = 3
+
+callstack:
+	global-env: has object
+		function-execution-env: has object
+			block-env: has no object --- store lexical scope data inside statement?
+				block-env
+
+??? Lost lexical-scope object, use separate structs.
+	Make lexical scope contain ONLY: objects, state and statements
+
+
+- NOTICE: When we make ID <-> lexical scope lookup, we need to find all lexical scopes, including those inside function blocks.
+
+	struct lexical_scope2_t {
+		/////////////////////////////		STATE
+		public: std::vector<member_t> _state;
+		public: std::vector<std::shared_ptr<statement_t> > _statements;
+		public: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
+	};
+
+### Flatten objects into global list, keyed on int ID. Also track parent-ID.
+	CON: Makes AST less composable since a function with blocks won't be standalone -- they reference object ID:s outside.
