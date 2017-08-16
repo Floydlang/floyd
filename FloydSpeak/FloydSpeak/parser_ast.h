@@ -356,18 +356,6 @@ namespace floyd_ast {
 		}
 	}
 
-
-	struct function_reg_t {
-		typeid_t _function_type;
-		std::shared_ptr<const lexical_scope_t> _function_obj;
-
-		int _function_id;
-
-		std::shared_ptr<floyd_ast::value_t> _function_value;
-	};
-
-	function_reg_t make_host_function_reg(const typeid_t& return_type, const std::vector<member_t>& args, HOST_FUNCTION host_function, int id);
-
 }	//	floyd_ast
 
 #endif /* parser_ast_hpp */

@@ -17,10 +17,13 @@
 
 #include "parser_ast.h"
 
+
 namespace floyd_ast {
 	struct statement_t;
+	struct expression_t;
 	struct value_t;
 	struct typeid_t;
+
 
 	//////////////////////////////////////////////////		struct_instance_t
 
@@ -67,19 +70,41 @@ namespace floyd_ast {
 	std::string to_preview(const vector_instance_t& instance);
 
 
+	//////////////////////////////////////////////////		function_definition_t
+
+	struct function_definition_t {
+		public: function_definition_t(
+			const std::vector<member_t>& args,
+			const std::vector<std::shared_ptr<statement_t>> statements,
+			const typeid_t& return_type
+		);
+		public: function_definition_t(
+			const std::vector<member_t>& args,
+			const HOST_FUNCTION host_function,
+			const typeid_t& return_type
+		);
+		public: json_t to_json() const;
+
+		const std::vector<member_t> _args;
+		const std::vector<std::shared_ptr<statement_t>> _statements;
+		const HOST_FUNCTION _host_function;
+		const typeid_t _return_type;
+	};
+
+	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
+
+	typeid_t get_function_type(const function_definition_t f);
+
 	//////////////////////////////////////////////////		function_instance_t
 
 
 	struct function_instance_t {
 		public: bool check_invariant() const;
-		public: bool operator==(const function_instance_t& other);
+		public: bool operator==(const function_instance_t& other) const;
 
 
-		public: typeid_t _function_type;
-		public: int _function_id;
+		public: function_definition_t _def;
 	};
-
-
 
 
 	//////////////////////////////////////////////////		value_t
@@ -247,11 +272,10 @@ namespace floyd_ast {
 			QUARK_ASSERT(check_invariant());
 		}
 		public: value_t(const std::shared_ptr<function_instance_t>& function_instance) :
-			_typeid(function_instance->_function_type),
+			_typeid(get_function_type(function_instance->_def)),
 			_function(function_instance)
 		{
 			QUARK_ASSERT(function_instance && function_instance->check_invariant());
-			QUARK_ASSERT(function_instance->_function_type.get_base_type() == floyd_basics::base_type::k_function);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -553,13 +577,13 @@ namespace floyd_ast {
 		private: std::string _string = "";
 		private: std::shared_ptr<struct_instance_t> _struct;
 		private: std::shared_ptr<vector_instance_t> _vector;
-		private: std::shared_ptr<function_instance_t> _function;
+		private: std::shared_ptr<const function_instance_t> _function;
 	};
 
 
 
-	inline value_t make_function_value(const typeid_t& function_type, int function_id){
-		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{function_type, function_id});
+	inline value_t make_function_value(const function_definition_t& def){
+		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});
 		return value_t(f);
 	}
 

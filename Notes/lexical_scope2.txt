@@ -71,3 +71,6 @@ callstack:
 
 ### Flatten objects into global list, keyed on int ID. Also track parent-ID.
 	CON: Makes AST less composable since a function with blocks won't be standalone -- they reference object ID:s outside.
+
+
+??? IDEA: Keep function defintions from parser and store function-defs in AST.

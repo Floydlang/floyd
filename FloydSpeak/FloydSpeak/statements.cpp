@@ -151,4 +151,12 @@ namespace floyd_ast {
 		);
 	}
 
+
+statement_t make_function_statement(const string name, const function_definition_t def){
+	const auto function_typeid = typeid_t::make_function(def._return_type, get_member_types(def._args));
+	const auto function_def_expr = expression_t::make_function_definition(def);
+	return make__bind_statement(name, function_typeid, function_def_expr);
+}
+
+
 }	//	floyd_ast

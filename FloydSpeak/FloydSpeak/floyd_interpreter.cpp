@@ -83,48 +83,15 @@ namespace {
 		else if(statement._block){
 			const auto& s = statement._block;
 
-#if 0
-		//	Always use global scope. Future: support closures by linking to function env where function is defined.
-		auto parent_env = vm._call_stack.back()
-		auto new_environment = environment_t::make_environment(vm, function_object, function_object_id, parent_env);
+			auto parent_env = vm2._call_stack.back();
+			auto new_environment = environment_t::make_environment(vm2, parent_env);
 
-		//	Copy input arguments to the function scope.
-		for(int i = 0 ; i < function_object->_args.size() ; i++){
-			const auto& arg_name = function_object->_args[i]._name;
-			const auto& arg_value = args[i];
-			new_environment->_values[arg_name] = arg_value;
-		}
+			interpreter_t vm3 = vm;
+			vm2._call_stack.push_back(new_environment);
 
-		interpreter_t vm2 = vm;
-		vm2._call_stack.push_back(new_environment);
+			QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
 
-		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
-
-		const auto r = execute_statements(vm2, function_object->_statements);
-		if(!r.second){
-			throw std::runtime_error("function missing return statement");
-		}
-		else{
-			return *r.second;
-		}
-	}
-	else if(function_object->_type == lexical_scope_t::etype::k_host_function_scope){
-		const auto r = function_object->_host_function(args);
-		return r;
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
-
-#endif
-
-//??? Embedd block as a lexical_scope_t inside the block-statement? Use an object?
-
-			const auto& r = execute_statements(vm2, s->_statements);
-			return { r.first, r.second };
+			return execute_statements(vm2, s->_statements);
 		}
 		else if(statement._return){
 			const auto& s = statement._return;
@@ -309,6 +276,10 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 
 	else if(op == floyd_basics::expression_type::k_call){
 		return evaluate_call_expression(vm, e);
+	}
+	else if(op == floyd_basics::expression_type::k_define_function){
+		const auto expr = e.get_function_definition();
+		return expression_t::make_constant_value(make_function_value(expr->_def));
 	}
 
 	else if(op == floyd_basics::expression_type::k_arithmetic_unary_minus__1){
@@ -582,6 +553,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 }
 
+/*
 std::map<int, object_id_info_t> get_all_objects(
 	const std::shared_ptr<const lexical_scope_t>& scope,
 	int id,
@@ -613,7 +585,6 @@ object_id_info_t lookup_object_id(const interpreter_t& vm, const floyd_ast::valu
 
 	return objectIt->second;
 }
-
 
 value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -663,6 +634,51 @@ value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, cons
 		QUARK_ASSERT(false);
 	}
 }
+*/
+
+value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, const vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+
+	///??? COMPARE arg count and types.
+
+	if(f.is_function() == false){
+		throw std::runtime_error("Cannot call non-function.");
+	}
+
+	const auto& function_def = f.get_function()->_def;
+
+	//	Always use global scope. Future: support closures by linking to function env where function is defined.
+	auto parent_env = vm._call_stack[0];
+	auto new_environment = environment_t::make_environment(vm, parent_env);
+
+	//	Copy input arguments to the function scope.
+	for(int i = 0 ; i < function_def._args.size() ; i++){
+		const auto& arg_name = function_def._args[i]._name;
+		const auto& arg_value = args[i];
+		new_environment->_values[arg_name] = arg_value;
+	}
+
+	interpreter_t vm2 = vm;
+	vm2._call_stack.push_back(new_environment);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+
+	if(function_def._host_function != nullptr){
+		const auto r = function_def._host_function(args);
+		return r;
+	}
+	else{
+		const auto r = execute_statements(vm2, function_def._statements);
+		if(!r.second){
+			throw std::runtime_error("function missing return statement");
+		}
+		else{
+			return *r.second;
+		}
+	}
+}
 
 bool all_constants(const vector<expression_t>& e){
 	for(const auto& i: e){
@@ -680,7 +696,6 @@ expression_t evaluate_call_expression(const interpreter_t& vm, const expression_
 
 	const auto call = e.get_function_call();
 	QUARK_ASSERT(call);
-
 
 	//	Simplify each input expression: expression[0]: which function to call, expression[1]: first argument if any.
 	expression_t function = evaluate_expression(vm, *call->_function);
@@ -721,8 +736,8 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		}
 
 		const auto& env = json_t::make_object({
-			{ "parent_env", e->_parent_env ? e->_parent_env->_object_id : json_t() },
-			{ "object_id", json_t(double(e->_object_id)) },
+//			{ "parent_env", e->_parent_env ? e->_parent_env->_object_id : json_t() },
+//			{ "object_id", json_t(double(e->_object_id)) },
 			{ "values", values }
 		});
 		callstack.push_back(env);
@@ -799,20 +814,22 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 std::shared_ptr<environment_t> environment_t::make_environment(
 	const interpreter_t& vm,
-	const std::shared_ptr<const lexical_scope_t>& object,
-	int object_id,
+//	const std::shared_ptr<const lexical_scope_t>& object,
+//	int object_id,
 	std::shared_ptr<floyd_interpreter::environment_t>& parent_env
 )
 {
 	QUARK_ASSERT(vm.check_invariant());
 
+/*
 	//	Copy scope's functions into new env.??? needed?
 	std::map<std::string, floyd_ast::value_t> values;
 	for(const auto& e: object->_state){
 		values[e._name] = *e._value;
 	}
+*/
 
-	auto f = environment_t{ parent_env, object_id, values };
+	auto f = environment_t{ parent_env, {} };
 	return make_shared<environment_t>(f);
 }
 
@@ -868,10 +885,21 @@ value_t host__float_to_string(const std::vector<value_t>& args){
 }
 
 
-lexical_scope_t add_function(const lexical_scope_t& s, const string& name, const function_reg_t& f){
-	lexical_scope_t temp = s;
-	temp._objects[f._function_id] = f._function_obj;
-	temp._state.push_back({ f._function_type, f._function_value, name });
+
+
+
+
+
+
+
+
+
+
+lexical_scope_t add_function(const lexical_scope_t& scope, const string& name, const function_definition_t& def){
+	lexical_scope_t temp = scope;
+
+	const auto s = make_function_statement(name, def);
+	temp._statements.insert(temp._statements.begin(), make_shared<statement_t>(s));
 	return temp;
 }
 
@@ -885,64 +913,55 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	//	Insert functions into AST.
 
-	int id_generator = -1000000;
-
 	temp = add_function(
 		temp,
 		"print",
-		make_host_function_reg(
-			typeid_t::make_null(),
+		function_definition_t(
 			{ member_t{ typeid_t::make_string(), "s" } },
 			host__print,
-			id_generator
+			typeid_t::make_null()
 		)
 	);
-	id_generator++;
 
 	temp = add_function(
 		temp,
 		"get_time_of_day",
-		make_host_function_reg(
-			typeid_t::make_null(),
+		function_definition_t(
 			{},
 			host__get_time_of_day,
-			id_generator
+			typeid_t::make_int()
 		)
 	);
-	id_generator++;
 
 	temp = add_function(
 		temp,
 		"int_to_string",
-		make_host_function_reg(
-			typeid_t::make_string(),
+		function_definition_t(
 			{ member_t{ typeid_t::make_int(), "v" } },
 			host__int_to_string,
-			id_generator
+			typeid_t::make_string()
 		)
 	);
-	id_generator++;
 
 	temp = add_function(
 		temp,
 		"float_to_string",
-		make_host_function_reg(
-			typeid_t::make_string(),
+		function_definition_t(
 			{ member_t{ typeid_t::make_float(), "v" } },
 			host__float_to_string,
-			id_generator
+			typeid_t::make_string()
 		)
 	);
-	id_generator++;
 
 
 	_ast = ast_t(make_shared<const lexical_scope_t>(temp));
-	_object_lookup = make_lexical_lookup(_ast.get_global_scope());
+//	_object_lookup = make_lexical_lookup(_ast.get_global_scope());
 
 
 	//	Make the top-level environoment = global scope.
 	shared_ptr<environment_t> empty_env;
-	auto global_env = environment_t::make_environment(*this, _ast.get_global_scope(), 0, empty_env);
+//	auto global_env = environment_t::make_environment(*this, _ast.get_global_scope(), 0, empty_env);
+	auto global_env = environment_t::make_environment(*this, empty_env);
 
 	_call_stack.push_back(global_env);
 
@@ -958,7 +977,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 interpreter_t::interpreter_t(const interpreter_t& other) :
 	_ast(other._ast),
-	_object_lookup(other._object_lookup),
+//	_object_lookup(other._object_lookup),
 	_call_stack(other._call_stack)
 {
 	QUARK_ASSERT(other.check_invariant());
@@ -969,7 +988,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 	//??? make proper operator=(). Exception safety etc.
 const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 	_ast = other._ast;
-	_object_lookup = other._object_lookup;
+//	_object_lookup = other._object_lookup;
 	_call_stack = other._call_stack;
 	return *this;
 }
@@ -1537,6 +1556,8 @@ QUARK_UNIT_TESTQ("run_init()", "Print Hello, world!"){
 		)"
 	);
 }
+
+//	We don't support call statements, only call expressions! Add this feature as sugar?
 /*
 QUARK_UNIT_TESTQ("run_init()", "Print Hello, world!"){
 	test__run_init2(
@@ -1546,6 +1567,7 @@ QUARK_UNIT_TESTQ("run_init()", "Print Hello, world!"){
 	);
 }
 */
+
 
 //////////////////////////		Host: get_time_of_day()
 

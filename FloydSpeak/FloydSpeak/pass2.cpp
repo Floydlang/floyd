@@ -223,6 +223,7 @@ std::vector<member_t> conv_members(const json_t& members){
 
 
 
+
 struct body_t {
 	public: const std::vector<std::shared_ptr<statement_t> > _statements;
 	public: const std::vector<member_t> _locals;
@@ -320,16 +321,25 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto def = statement.get_array_n(1);
 			const auto name = def.get_object_element("name");
 			const auto args = def.get_object_element("args");
-			const auto statements = def.get_object_element("statements");
+			const auto fstatements = def.get_object_element("statements");
 			const auto return_type = def.get_object_element("return_type");
 
-			const auto r = parser_statements_to_ast(statements, id_generator);
-			id_generator = r.second;
+			const auto name2 = name.get_string();
 			const auto args2 = conv_members(args);
+			const auto fstatements2 = parser_statements_to_ast(fstatements, id_generator);
+			id_generator = fstatements2.second;
 			const auto return_type2 = resolve_type_name(return_type.get_string());
 
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
+			const auto function_def = function_definition_t(				args2,
+				fstatements2.first._statements,
+				return_type2
+			);
+			const auto function_def_expr = expression_t::make_function_definition(function_def);
+			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, function_typeid, function_def_expr)));
 
+
+/*
 			//	Build function object.
 			const auto function_obj = lexical_scope_t::make_function_object(
 				args2,
@@ -339,12 +349,10 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 				r.first._objects
 			);
 
-			const auto function_id = id_generator;
-			id_generator += 1;
-
 			value_t f = make_function_value(function_typeid, function_id);
 			locals.push_back(member_t{ function_typeid, make_shared<value_t>(f), name.get_string() });
 			objects[function_id] = function_obj;
+*/
 		}
 
 		/*

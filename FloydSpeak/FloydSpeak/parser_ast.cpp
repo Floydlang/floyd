@@ -745,19 +745,4 @@ namespace floyd_ast {
 
 
 
-	function_reg_t make_host_function_reg(const typeid_t& return_type, const std::vector<member_t>& args, HOST_FUNCTION host_function, int id){
-		const auto function_typeid = typeid_t::make_function(return_type, get_member_types(args));
-		const auto s = lexical_scope_t::make_host_function_object(
-			args,
-			return_type,
-			host_function
-		);
-
-		value_t f = make_function_value(function_typeid, id);
-		return { function_typeid, s, id, make_shared<value_t>(f) };
-	}
-
-
-
-
 } //	floyd_ast

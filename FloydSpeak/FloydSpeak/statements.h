@@ -170,6 +170,10 @@ namespace floyd_ast {
 	json_t statement_to_json(const statement_t& e);
 	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
 
+
+	statement_t make_function_statement(const std::string name, const function_definition_t def);
+
+
 }	//	floyd_ast
 
 

@@ -86,6 +86,57 @@ namespace floyd_ast {
 
 
 
+	//////////////////////////////////////////////////		function_definition_t
+
+
+	function_definition_t::function_definition_t(
+		const std::vector<member_t>& args,
+		const std::vector<std::shared_ptr<statement_t>> statements,
+		const typeid_t& return_type
+	)
+	:
+		_args(args),
+		_statements(statements),
+		_host_function(nullptr),
+		_return_type(return_type)
+	{
+	}
+
+	function_definition_t::function_definition_t(
+		const std::vector<member_t>& args,
+		const HOST_FUNCTION host_function,
+		const typeid_t& return_type
+	)
+	:
+		_args(args),
+		_host_function(host_function),
+		_return_type(return_type)
+	{
+	}
+
+	json_t function_definition_t::to_json() const {
+		typeid_t function_type = get_function_type(*this);
+		return json_t::make_array({
+			"func-def",
+			typeid_to_json(function_type),
+			members_to_json(_args),
+			statements_to_json(_statements),
+			typeid_to_json(_return_type)
+		});
+	}
+
+	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
+		return
+			lhs._args == rhs._args
+			&& compare_shared_value_vectors(lhs._statements, rhs._statements)
+			&& lhs._host_function == rhs._host_function
+			&& lhs._return_type == rhs._return_type;
+	}
+
+	typeid_t get_function_type(const function_definition_t f){
+		return typeid_t::make_function(f._return_type, get_member_types(f._args));
+	}
+
 
 	//////////////////////////////////////////////////		function_instance_t
 
@@ -95,11 +146,11 @@ namespace floyd_ast {
 		return true;
 	}
 
-	bool function_instance_t::operator==(const function_instance_t& other){
+	bool function_instance_t::operator==(const function_instance_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _function_type == other._function_type && _function_id == other._function_id;
+		return _def == other._def;
 	}
 
 
@@ -495,8 +546,7 @@ json_t value_to_json(const value_t& v){
 		const auto value = v.get_function();
 		return json_t::make_object(
 			{
-				{ "function_type", typeid_to_json(value->_function_type) },
-				{ "function_id", json_t((float)value->_function_id) }
+				{ "function_type", typeid_to_json(get_function_type(value->_def)) }
 			}
 		);
 	}
