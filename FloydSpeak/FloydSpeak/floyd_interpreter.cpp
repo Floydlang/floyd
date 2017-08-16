@@ -1601,15 +1601,23 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	);
 }
 
-/*
+//??? Added assets instead of manual inspection.
 QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
-	test__run_init(
-		"int x = 3;"
-		"{ int x = 4; }",
-		value_t(3)
+//			int dummy_a = print("A:" + int_to_string(x));
+	test__run_init2(
+		R"(
+
+			int x = 3;
+			int dummy_b = print("B:" + int_to_string(x));
+			{
+				int dummy_c = print("C:" + int_to_string(x));
+				int x = 4;
+				int dummy_d = print("D:" + int_to_string(x));
+			}
+			int dummy_e = print("E:" + int_to_string(x));
+		)"
 	);
 }
-*/
 
 
 //////////////////////////		for-statement
