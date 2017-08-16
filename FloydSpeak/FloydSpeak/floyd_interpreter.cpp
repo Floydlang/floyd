@@ -78,7 +78,7 @@ namespace {
 				throw std::runtime_error("unknown variables");
 			}
 			vm2._call_stack.back()->_values[name] = result.get_constant();
-			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {}};
+			return { vm2, {}};
 		}
 		else if(statement._block){
 			const auto& s = statement._block;
@@ -91,7 +91,9 @@ namespace {
 
 			QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
 
-			return execute_statements(vm2, s->_statements);
+			const auto r = execute_statements(vm2, s->_statements);
+			vm2._call_stack.pop_back();
+			return { vm2, r.second };
 		}
 		else if(statement._return){
 			const auto& s = statement._return;
@@ -102,7 +104,7 @@ namespace {
 				throw std::runtime_error("undefined");
 			}
 
-			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, make_shared<value_t>(result.get_constant()) };
+			return { vm2, make_shared<value_t>(result.get_constant()) };
 		}
 		else if(statement._for){
 			const auto& s = statement._for;
