@@ -184,10 +184,6 @@ namespace floyd_ast {
 
 
 
-	typedef floyd_ast::value_t (*HOST_FUNCTION)(const std::vector<value_t>& args);
-
-
-
 	//////////////////////////////////////////////////		lexical_scope2_t
 
 
@@ -233,18 +229,6 @@ namespace floyd_ast {
 		);
 
 
-		public: static std::shared_ptr<const lexical_scope_t> make_host_function_object(
-			const std::vector<member_t>& args,
-			const typeid_t& return_type,
-			HOST_FUNCTION host_function
-		);
-
-		public: static std::shared_ptr<const lexical_scope_t> make_block_object(
-			const std::vector<member_t>& locals,
-			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
-		);
-
 		public: static std::shared_ptr<const lexical_scope_t> make_global_scope(
 			const std::vector<std::shared_ptr<statement_t> >& statements,
 			const std::vector<member_t>& globals,
@@ -270,7 +254,6 @@ namespace floyd_ast {
 		public: typeid_t _return_type;
 
 		public: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
-		public: HOST_FUNCTION _host_function;
 	};
 
 	json_t lexical_scope_to_json(const lexical_scope_t& v);
@@ -280,7 +263,7 @@ namespace floyd_ast {
 
 	//////////////////////////////////////////////////		function_object_t
 
-
+/*
 	struct function_object_t {
 		public: static std::shared_ptr<const function_object_t> make_function_object(
 			const std::vector<member_t>& args,
@@ -318,7 +301,7 @@ namespace floyd_ast {
 
 	json_t function_object_to_json(const function_object_t& v);
 	void trace(const std::shared_ptr<const function_object_t>& e);
-
+*/
 
 
 	//////////////////////////////////////////////////		ast_t

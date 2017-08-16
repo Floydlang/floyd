@@ -23,6 +23,7 @@ namespace floyd_ast {
 	struct expression_t;
 	struct value_t;
 	struct typeid_t;
+	struct interpreter_t;
 
 
 	//////////////////////////////////////////////////		struct_instance_t
@@ -43,6 +44,7 @@ namespace floyd_ast {
 		}
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_instance_t& other);
+
 
 		//	??? Remove this pointer at later time, when we statically track the type of structs OK. We alreay know this via __def!
 		public: typeid_t _struct_type;
@@ -72,6 +74,8 @@ namespace floyd_ast {
 
 	//////////////////////////////////////////////////		function_definition_t
 
+
+
 	struct function_definition_t {
 		public: function_definition_t(
 			const std::vector<member_t>& args,
@@ -80,20 +84,22 @@ namespace floyd_ast {
 		);
 		public: function_definition_t(
 			const std::vector<member_t>& args,
-			const HOST_FUNCTION host_function,
+			int host_function,
 			const typeid_t& return_type
 		);
 		public: json_t to_json() const;
 
+
 		const std::vector<member_t> _args;
 		const std::vector<std::shared_ptr<statement_t>> _statements;
-		const HOST_FUNCTION _host_function;
+		const int _host_function;
 		const typeid_t _return_type;
 	};
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
 	typeid_t get_function_type(const function_definition_t f);
+
 
 	//////////////////////////////////////////////////		function_instance_t
 

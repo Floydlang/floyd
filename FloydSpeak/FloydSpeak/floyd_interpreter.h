@@ -12,6 +12,7 @@
 
 #include "quark.h"
 
+#include <string>
 #include <vector>
 #include <map>
 #include "parser_ast.h"
@@ -70,9 +71,11 @@ namespace floyd_interpreter {
 		public: const interpreter_t& operator=(const interpreter_t& other);
 		public: bool check_invariant() const;
 
+		public: std::pair<interpreter_t, floyd_ast::value_t> call_host_function(int function_id, const std::vector<floyd_ast::value_t> args) const;
+
 
 		////////////////////////		STATE
-		public: uint64_t _start_ms;
+		public: std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 
 
 		//	Constant!
@@ -84,6 +87,8 @@ namespace floyd_interpreter {
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<environment_t>> _call_stack;
+
+		public: std::vector<std::string> _print_output;
 	};
 
 
@@ -95,9 +100,9 @@ namespace floyd_interpreter {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	floyd_ast::expression_t evaluate_expression(const interpreter_t& vm, const floyd_ast::expression_t& e);
+	std::pair<interpreter_t, floyd_ast::expression_t> evaluate_expression(const interpreter_t& vm, const floyd_ast::expression_t& e);
 
-	floyd_ast::value_t call_function(
+	std::pair<interpreter_t, std::shared_ptr<floyd_ast::value_t>> call_function(
 		const interpreter_t& vm,
 		const floyd_ast::value_t& f,
 		const std::vector<floyd_ast::value_t>& args

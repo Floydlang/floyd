@@ -196,8 +196,7 @@ namespace floyd_ast {
 				members,
 				{},
 				{},
-				{},
-				nullptr
+				{}
 			}
 		);
 		QUARK_ASSERT(r->check_invariant());
@@ -217,8 +216,7 @@ namespace floyd_ast {
 				globals,
 				statements,
 				{},
-				objects,
-				nullptr
+				objects
 			}
 		);
 
@@ -241,21 +239,17 @@ namespace floyd_ast {
 
 
 		if(_type == etype::k_function_scope){
-			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_struct_scope){
 			QUARK_ASSERT(_return_type._base_type == floyd_basics::base_type::k_null);
-			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_global_scope){
 			QUARK_ASSERT(_return_type._base_type == floyd_basics::base_type::k_null);
-			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_block){
-			QUARK_ASSERT(_host_function == nullptr);
 		}
 		else if(_type == etype::k_host_function_scope){
-			QUARK_ASSERT(_host_function != nullptr);
+			QUARK_ASSERT(false);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -283,9 +277,6 @@ namespace floyd_ast {
 			return false;
 		}
 		if(_objects != other._objects){
-			return false;
-		}
-		if(_host_function != other._host_function){
 			return false;
 		}
 		return true;
@@ -339,10 +330,11 @@ namespace floyd_ast {
 			{ "statements", statements2.get_array_size() == 0 ? json_t() : json_t(statements2) },
 			{ "return_type", scope_def._return_type.is_null() ? json_t() : scope_def._return_type.to_string() },
 //			{ "symbols", symbols.get_object_size() == 0 ? json_t() : symbols },
-			{ "objects", objects.get_object_size() == 0 ? json_t() : objects },
-			{ "host_function",
-				scope_def._host_function == nullptr ? json_t() : json_t("HOST FUNCTION")
-			}
+			{ "objects", objects.get_object_size() == 0 ? json_t() : objects }
+//			,
+//			{ "host_function",
+//				scope_def._host_function == nullptr ? json_t() : json_t("HOST FUNCTION")
+//			}
 		});
 	}
 
@@ -364,58 +356,13 @@ namespace floyd_ast {
 				locals,
 				statements,
 				return_type,
-				objects,
-				nullptr
+				objects
 			}
 		);
 		return obj;
 	}
 
-	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_host_function_object(
-		const std::vector<member_t>& args,
-		const typeid_t& return_type,
-		HOST_FUNCTION host_function
-	)
-	{
-		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-		QUARK_ASSERT(return_type.check_invariant());
-		QUARK_ASSERT(host_function != nullptr);
 
-		auto obj = make_shared<lexical_scope_t>(
-			lexical_scope_t{
-				lexical_scope_t::etype::k_host_function_scope,
-				args,
-				{},
-				{},
-				return_type,
-				{},
-				host_function
-			}
-		);
-		return obj;
-	}
-
-	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_block_object(
-		const std::vector<member_t>& locals,
-		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
-	)
-	{
-		for(const auto i: locals){ QUARK_ASSERT(i.check_invariant()); };
-
-		auto obj = make_shared<lexical_scope_t>(
-			lexical_scope_t{
-				lexical_scope_t::etype::k_block,
-				{},
-				locals,
-				statements,
-				{},
-				objects,
-				nullptr
-			}
-		);
-		return obj;
-	}
 
 
 	QUARK_UNIT_TESTQ("lexical_scope_t::operator==", ""){
@@ -436,7 +383,7 @@ namespace floyd_ast {
 
 
 
-
+/*
 	//////////////////////////////////////////////////		function_object_t
 
 
@@ -570,7 +517,7 @@ namespace floyd_ast {
 			}
 		});
 	}
-
+*/
 
 
 

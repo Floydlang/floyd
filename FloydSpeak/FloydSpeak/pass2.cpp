@@ -419,6 +419,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto& body_statements2 = parser_statements_to_ast(json_t::make_array({init_statement}), id_generator);
 			id_generator = body_statements2.second;
 
+/*
 			const auto s2 = lexical_scope_t::make_block_object(
 				body_statements2.first._locals,
 				body_statements2.first._statements,
@@ -437,6 +438,7 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 				post_expression2,
 				id
 			)));
+*/
 		}
 		else{
 			throw std::runtime_error("Illegal statement.");

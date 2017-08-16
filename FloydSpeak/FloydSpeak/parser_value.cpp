@@ -86,6 +86,31 @@ namespace floyd_ast {
 
 
 
+
+/*
+
+QUARK_UNIT_TESTQ("host_function_t", "null"){
+
+	struct dummy_t : public host_function_t {
+		public: virtual value_t host_function_call(const std::vector<value_t> args){
+			QUARK_ASSERT(true);
+			return value_t(13);
+		};
+	};
+
+	dummy_t t;
+	host_function_t* t2 = &t;
+
+	host_function_t* const t3 = t2;
+//	t3 = t3;
+
+	QUARK_TEST_VERIFY(t.host_function_call({}) == value_t(13));
+	QUARK_TEST_VERIFY(t2->host_function_call({}) == value_t(13));
+	QUARK_TEST_VERIFY(t3->host_function_call({}) == value_t(13));
+}
+*/
+
+
 	//////////////////////////////////////////////////		function_definition_t
 
 
@@ -97,14 +122,14 @@ namespace floyd_ast {
 	:
 		_args(args),
 		_statements(statements),
-		_host_function(nullptr),
+		_host_function(0),
 		_return_type(return_type)
 	{
 	}
 
 	function_definition_t::function_definition_t(
 		const std::vector<member_t>& args,
-		const HOST_FUNCTION host_function,
+		const int host_function,
 		const typeid_t& return_type
 	)
 	:
