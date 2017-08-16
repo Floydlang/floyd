@@ -68,7 +68,7 @@ namespace floyd_basics {
 
 //??? Use "f()" for functions.
 //??? Use "[n]" for lookups.
-//??? Move these to floyd basic constants.
+
 static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_arithmetic_add__2, "+" },
 	{ expression_type::k_arithmetic_subtract__2, "-" },
@@ -88,7 +88,7 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 //	{ expression_type::k_logical_not, "!" },
 	{ expression_type::k_arithmetic_unary_minus__1, "unary_minus" },
 
-	{ expression_type::k_constant, "k" },
+	{ expression_type::k_literal, "k" },
 
 	{ expression_type::k_conditional_operator3, "?:" },
 	{ expression_type::k_call, "call" },

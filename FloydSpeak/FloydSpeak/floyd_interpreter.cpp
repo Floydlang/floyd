@@ -74,10 +74,10 @@ namespace {
 				throw std::runtime_error("local constant already exists");
 			}
 			const auto result = evaluate_expression(vm2, s->_expression);
-			if(!result.is_constant()){
+			if(!result.is_literal()){
 				throw std::runtime_error("unknown variables");
 			}
-			vm2._call_stack.back()->_values[name] = result.get_constant();
+			vm2._call_stack.back()->_values[name] = result.get_literal();
 			return { vm2, {}};
 		}
 		else if(statement._block){
@@ -100,11 +100,11 @@ namespace {
 			const auto expr = s->_expression;
 			const auto result = evaluate_expression(vm2, expr);
 
-			if(!result.is_constant()){
+			if(!result.is_literal()){
 				throw std::runtime_error("undefined");
 			}
 
-			return { vm2, make_shared<value_t>(result.get_constant()) };
+			return { vm2, make_shared<value_t>(result.get_literal()) };
 		}
 		else if(statement._for){
 			const auto& s = statement._for;
@@ -252,7 +252,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	if(e.is_constant()){
+	if(e.is_literal()){
 		return e;
 	}
 
@@ -261,10 +261,10 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	if(op == floyd_basics::expression_type::k_resolve_member){
 		const auto expr = e.get_resolve_member();
 		const auto parent_expr = evaluate_expression(vm, *expr->_parent_address);
-		if(parent_expr.is_constant() && parent_expr.get_constant().is_struct()){
-			const auto struct_instance = parent_expr.get_constant().get_struct();
+		if(parent_expr.is_literal() && parent_expr.get_literal().is_struct()){
+			const auto struct_instance = parent_expr.get_literal().get_struct();
 			const value_t value = struct_instance->_member_values[expr->_member_name];
-			return expression_t::make_constant_value(value);
+			return expression_t::make_literal(value);
 		}
 		else{
 			throw std::runtime_error("Resolve member failed.");
@@ -273,7 +273,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	else if(op == floyd_basics::expression_type::k_variable){
 		const auto expr = e.get_variable();
 		const value_t value = resolve_env_variable(vm, expr->_variable);
-		return expression_t::make_constant_value(value);
+		return expression_t::make_literal(value);
 	}
 
 	else if(op == floyd_basics::expression_type::k_call){
@@ -281,24 +281,24 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	}
 	else if(op == floyd_basics::expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
-		return expression_t::make_constant_value(make_function_value(expr->_def));
+		return expression_t::make_literal(make_function_value(expr->_def));
 	}
 
 	else if(op == floyd_basics::expression_type::k_arithmetic_unary_minus__1){
 		const auto expr = e.get_unary_minus();
 		const auto& expr2 = evaluate_expression(vm, *expr->_expr);
-		if(expr2.is_constant()){
-			const auto& c = expr2.get_constant();
+		if(expr2.is_literal()){
+			const auto& c = expr2.get_literal();
 			if(c.is_int()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_int(0), expr2)
+					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2)
 				);
 			}
 			else if(c.is_float()){
 				return evaluate_expression(
 					vm,
-					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_constant_float(0.0f), expr2)
+					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2)
 				);
 			}
 			else{
@@ -314,8 +314,8 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	else if(op == floyd_basics::expression_type::k_conditional_operator3){
 		const auto expr = e.get_conditional();
 		const auto cond_result = evaluate_expression(vm, *expr->_condition);
-		if(cond_result.is_constant() && cond_result.get_constant().is_bool()){
-			const bool cond_flag = cond_result.get_constant().get_bool();
+		if(cond_result.is_literal() && cond_result.get_literal().is_bool()){
+			const bool cond_flag = cond_result.get_literal().get_bool();
 
 			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 			if(cond_flag){
@@ -335,39 +335,39 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 	const auto left_expr = evaluate_expression(vm, *simple2_expr->_left);
 	const auto right_expr = evaluate_expression(vm, *simple2_expr->_right);
 
-	//	Both left and right are constant, replace the math_operation with a constant!
-	if(left_expr.is_constant() && right_expr.is_constant()){
+	//	Both left and right are constants, replace the math_operation with a constant!
+	if(left_expr.is_literal() && right_expr.is_literal()){
 		//	Perform math operation on the two constants => new constant.
-		const auto left_constant = left_expr.get_constant();
-		const auto right_constant = right_expr.get_constant();
+		const auto left_constant = left_expr.get_literal();
+		const auto right_constant = right_expr.get_literal();
 
 		//	Is operation supported by all types?
 		{
 			if(op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return expression_t::make_constant_bool(diff <= 0);
+				return expression_t::make_literal_bool(diff <= 0);
 			}
 			else if(op == floyd_basics::expression_type::k_comparison_smaller__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return expression_t::make_constant_bool(diff < 0);
+				return expression_t::make_literal_bool(diff < 0);
 			}
 			else if(op == floyd_basics::expression_type::k_comparison_larger_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return expression_t::make_constant_bool(diff >= 0);
+				return expression_t::make_literal_bool(diff >= 0);
 			}
 			else if(op == floyd_basics::expression_type::k_comparison_larger__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return expression_t::make_constant_bool(diff > 0);
+				return expression_t::make_literal_bool(diff > 0);
 			}
 
 
 			else if(op == floyd_basics::expression_type::k_logical_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return expression_t::make_constant_bool(diff == 0);
+				return expression_t::make_literal_bool(diff == 0);
 			}
 			else if(op == floyd_basics::expression_type::k_logical_nonequal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return expression_t::make_constant_bool(diff != 0);
+				return expression_t::make_literal_bool(diff != 0);
 			}
 		}
 
@@ -386,10 +386,10 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			}
 
 			else if(op == floyd_basics::expression_type::k_logical_and__2){
-				return expression_t::make_constant_bool(left && right);
+				return expression_t::make_literal_bool(left && right);
 			}
 			else if(op == floyd_basics::expression_type::k_logical_or__2){
-				return expression_t::make_constant_bool(left || right);
+				return expression_t::make_literal_bool(left || right);
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -402,32 +402,32 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			const int right = right_constant.get_int();
 
 			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
-				return expression_t::make_constant_int(left + right);
+				return expression_t::make_literal_int(left + right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
-				return expression_t::make_constant_int(left - right);
+				return expression_t::make_literal_int(left - right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
-				return expression_t::make_constant_int(left * right);
+				return expression_t::make_literal_int(left * right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return expression_t::make_constant_int(left / right);
+				return expression_t::make_literal_int(left / right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return expression_t::make_constant_int(left % right);
+				return expression_t::make_literal_int(left % right);
 			}
 
 			else if(op == floyd_basics::expression_type::k_logical_and__2){
-				return expression_t::make_constant_bool((left != 0) && (right != 0));
+				return expression_t::make_literal_bool((left != 0) && (right != 0));
 			}
 			else if(op == floyd_basics::expression_type::k_logical_or__2){
-				return expression_t::make_constant_bool((left != 0) || (right != 0));
+				return expression_t::make_literal_bool((left != 0) || (right != 0));
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -440,19 +440,19 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			const float right = right_constant.get_float();
 
 			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
-				return expression_t::make_constant_float(left + right);
+				return expression_t::make_literal_float(left + right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
-				return expression_t::make_constant_float(left - right);
+				return expression_t::make_literal_float(left - right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
-				return expression_t::make_constant_float(left * right);
+				return expression_t::make_literal_float(left * right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
 				if(right == 0.0f){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return expression_t::make_constant_float(left / right);
+				return expression_t::make_literal_float(left / right);
 			}
 			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Modulo operation on float not allowed.");
@@ -460,10 +460,10 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 
 
 			else if(op == floyd_basics::expression_type::k_logical_and__2){
-				return expression_t::make_constant_bool((left != 0.0f) && (right != 0.0f));
+				return expression_t::make_literal_bool((left != 0.0f) && (right != 0.0f));
 			}
 			else if(op == floyd_basics::expression_type::k_logical_or__2){
-				return expression_t::make_constant_bool((left != 0.0f) || (right != 0.0f));
+				return expression_t::make_literal_bool((left != 0.0f) || (right != 0.0f));
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -476,7 +476,7 @@ expression_t evaluate_expression(const interpreter_t& vm, const expression_t& e)
 			const string right = right_constant.get_string();
 
 			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
-				return expression_t::make_constant_string(left + right);
+				return expression_t::make_literal_string(left + right);
 			}
 
 			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
@@ -682,9 +682,9 @@ value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, cons
 	}
 }
 
-bool all_constants(const vector<expression_t>& e){
+bool all_literals(const vector<expression_t>& e){
 	for(const auto& i: e){
-		if(!i.is_constant()){
+		if(!i.is_literal()){
 			return false;
 		}
 	}
@@ -708,23 +708,23 @@ expression_t evaluate_call_expression(const interpreter_t& vm, const expression_
 	}
 
 	//	If not all input expressions could be evaluated, return a (maybe simplified) expression.
-	if(function.is_constant() == false || all_constants(args2) == false){
+	if(function.is_literal() == false || all_literals(args2) == false){
 		return expression_t::make_function_call(function, args2, e.get_result_type());
 	}
 
 	//	Get function value and arg values.
-	const auto& function_value = function.get_constant();
+	const auto& function_value = function.get_literal();
 	if(function_value.is_function() == false){
 		throw std::runtime_error("Cannot call non-function.");
 	}
 
 	vector<value_t> args3;
 	for(const auto& i: args2){
-		args3.push_back(i.get_constant());
+		args3.push_back(i.get_literal());
 	}
 
 	const auto& result = call_function(vm, function_value, args3);
-	return expression_t::make_constant_value(result);
+	return expression_t::make_literal(result);
 }
 
 
@@ -762,10 +762,10 @@ void test__evaluate_expression(const expression_t& e, const expression_t& expect
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "constant 1234 == 1234") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "literal 1234 == 1234") {
 	test__evaluate_expression(
-		expression_t::make_constant_int(1234),
-		expression_t::make_constant_int(1234)
+		expression_t::make_literal_int(1234),
+		expression_t::make_literal_int(1234)
 	);
 }
 
@@ -773,10 +773,10 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 	test__evaluate_expression(
 		expression_t::make_simple_expression__2(
 			floyd_basics::expression_type::k_arithmetic_add__2,
-			expression_t::make_constant_int(1),
-			expression_t::make_constant_int(2)
+			expression_t::make_literal_int(1),
+			expression_t::make_literal_int(2)
 		),
-		expression_t::make_constant_int(3)
+		expression_t::make_literal_int(3)
 	);
 }
 
@@ -785,10 +785,10 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 	test__evaluate_expression(
 		expression_t::make_simple_expression__2(
 			floyd_basics::expression_type::k_arithmetic_multiply__2,
-			expression_t::make_constant_int(3),
-			expression_t::make_constant_int(4)
+			expression_t::make_literal_int(3),
+			expression_t::make_literal_int(4)
 		),
-		expression_t::make_constant_int(12)
+		expression_t::make_literal_int(12)
 	);
 }
 
@@ -798,12 +798,12 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 			floyd_basics::expression_type::k_arithmetic_multiply__2,
 			expression_t::make_simple_expression__2(
 				floyd_basics::expression_type::k_arithmetic_multiply__2,
-				expression_t::make_constant_int(3),
-				expression_t::make_constant_int(4)
+				expression_t::make_literal_int(3),
+				expression_t::make_literal_int(4)
 			),
-			expression_t::make_constant_int(5)
+			expression_t::make_literal_int(5)
 		),
-		expression_t::make_constant_int(60)
+		expression_t::make_literal_int(60)
 	);
 }
 
@@ -1046,8 +1046,8 @@ void test__run_init(const std::string& program, const value_t& expected_result){
 	const auto result = run_global(program);
 	const auto result_value = result._call_stack[0]->_values["result"];
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_constant_value(result_value)),
-		expression_to_json(expression_t::make_constant_value(expected_result))
+		expression_to_json(expression_t::make_literal(result_value)),
+		expression_to_json(expression_t::make_literal(expected_result))
 	);
 }
 void test__run_init2(const std::string& program){
@@ -1058,8 +1058,8 @@ void test__run_init2(const std::string& program){
 void test__run_main(const std::string& program, const vector<floyd_ast::value_t>& args, const value_t& expected_return){
 	const auto result = run_main(program, args);
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_constant_value(result.second)),
-		expression_to_json(expression_t::make_constant_value(expected_return))
+		expression_to_json(expression_t::make_literal(result.second)),
+		expression_to_json(expression_t::make_literal(expected_return))
 	);
 }
 

@@ -142,7 +142,7 @@ namespace floyd_basics {
 //			k_logical_not,
 
 		//	c99: 13				token: "k"
-		k_constant,
+		k_literal,
 
 		//	c99: -a				token: "unary_minus"
 		k_arithmetic_unary_minus__1,

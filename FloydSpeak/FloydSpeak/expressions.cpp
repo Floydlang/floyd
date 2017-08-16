@@ -31,12 +31,12 @@ string expression_to_json_string(const expression_t& e);
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_simple_expression__2(
 		floyd_basics::expression_type::k_arithmetic_add__2,
-		expression_t::make_constant_int(3),
-		expression_t::make_constant_int(4));
+		expression_t::make_literal_int(3),
+		expression_t::make_literal_int(4));
 	const auto b = expression_t::make_simple_expression__2(
 		floyd_basics::expression_type::k_arithmetic_add__2,
-		expression_t::make_constant_int(3),
-		expression_t::make_constant_int(4));
+		expression_t::make_literal_int(3),
+		expression_t::make_literal_int(4));
 	QUARK_TEST_VERIFY(a == b);
 }
 */
@@ -103,30 +103,30 @@ floyd_basics::expression_type expression_t::get_operation() const{
 
 
 
-expression_t expression_t::make_constant_null(){
-	return make_constant_value(value_t());
+expression_t expression_t::make_literal_null(){
+	return make_literal(value_t());
 }
-expression_t expression_t::make_constant_int(const int i){
-	return make_constant_value(value_t(i));
+expression_t expression_t::make_literal_int(const int i){
+	return make_literal(value_t(i));
 }
-expression_t expression_t::make_constant_bool(const bool i){
-	return make_constant_value(value_t(i));
+expression_t expression_t::make_literal_bool(const bool i){
+	return make_literal(value_t(i));
 }
-expression_t expression_t::make_constant_float(const float i){
-	return make_constant_value(value_t(i));
+expression_t expression_t::make_literal_float(const float i){
+	return make_literal(value_t(i));
 }
-expression_t expression_t::make_constant_string(const std::string& s){
-	return make_constant_value(value_t(s));
+expression_t expression_t::make_literal_string(const std::string& s){
+	return make_literal(value_t(s));
 }
 
 
 
-bool expression_t::is_constant() const{
+bool expression_t::is_literal() const{
 	return dynamic_cast<const literal_expr_t*>(_expr.get()) != nullptr;
 }
 
-const value_t& expression_t::get_constant() const{
-	QUARK_ASSERT(is_constant())
+const value_t& expression_t::get_literal() const{
+	QUARK_ASSERT(is_literal())
 
 	return dynamic_cast<const literal_expr_t*>(_expr.get())->_value;
 }
@@ -174,19 +174,19 @@ string expression_to_json_string(const expression_t& e){
 	return json_to_compact_string(json);
 }
 
-QUARK_UNIT_TESTQ("expression_to_json()", "constants"){
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant_int(13)), R"(["k", 13, "int"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant_string("xyz")), R"(["k", "xyz", "string"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant_float(14.0f)), R"(["k", 14, "float"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant_bool(true)), R"(["k", true, "bool"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_constant_bool(false)), R"(["k", false, "bool"])");
+QUARK_UNIT_TESTQ("expression_to_json()", "literals"){
+	quark::ut_compare(expression_to_json_string(expression_t::make_literal_int(13)), R"(["k", 13, "int"])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_literal_string("xyz")), R"(["k", "xyz", "string"])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_literal_float(14.0f)), R"(["k", 14, "float"])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_literal_bool(true)), R"(["k", true, "bool"])");
+	quark::ut_compare(expression_to_json_string(expression_t::make_literal_bool(false)), R"(["k", false, "bool"])");
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_simple_expression__2(
-				floyd_basics::expression_type::k_arithmetic_add__2, expression_t::make_constant_int(2), expression_t::make_constant_int(3))
+				floyd_basics::expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3))
 			),
 		R"(["+", ["k", 2, "int"], ["k", 3, "int"], "int"])"
 	);
@@ -198,8 +198,8 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 			expression_t::make_function_call(
 				expression_t::make_variable_expression("my_func", typeid_t::make_null()),
 				{
-					expression_t::make_constant_string("xyz"),
-					expression_t::make_constant_int(123)
+					expression_t::make_literal_string("xyz"),
+					expression_t::make_literal_int(123)
 				},
 				typeid_t::make_string()
 			)
@@ -213,7 +213,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 		expression_to_json_string(
 			expression_t::make_lookup(
 				expression_t::make_variable_expression("hello", typeid_t::make_string()),
-				expression_t::make_constant_string("xyz"),
+				expression_t::make_literal_string("xyz"),
 				typeid_t::make_string()
 			)
 		),

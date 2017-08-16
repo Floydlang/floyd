@@ -48,8 +48,7 @@ namespace floyd_ast {
 		};
 
 
-		//	??? Rename "constant" to "literal".
-		////////////////////////////////			make_constant_value()
+		////////////////////////////////			make_literal()
 
 
 		public: struct literal_expr_t : public expr_base_t {
@@ -73,24 +72,24 @@ namespace floyd_ast {
 			const value_t _value;
 		};
 
-		public: static expression_t make_constant_value(const value_t& value)
+		public: static expression_t make_literal(const value_t& value)
 		{
 			return expression_t{
-				floyd_basics::expression_type::k_constant,
+				floyd_basics::expression_type::k_literal,
 				std::make_shared<literal_expr_t>(
 					literal_expr_t{ value }
 				)
 			};
 		}
 
-		public: static expression_t make_constant_null();
-		public: static expression_t make_constant_int(const int i);
-		public: static expression_t make_constant_bool(const bool i);
-		public: static expression_t make_constant_float(const float i);
-		public: static expression_t make_constant_string(const std::string& s);
+		public: static expression_t make_literal_null();
+		public: static expression_t make_literal_int(const int i);
+		public: static expression_t make_literal_bool(const bool i);
+		public: static expression_t make_literal_float(const float i);
+		public: static expression_t make_literal_string(const std::string& s);
 
-		public: bool is_constant() const;
-		public: const value_t& get_constant() const;
+		public: bool is_literal() const;
+		public: const value_t& get_literal() const;
 
 
 		////////////////////////////////			make_simple_expression__2()
@@ -170,7 +169,7 @@ namespace floyd_ast {
 				};
 			}
 			else if(
-				op == floyd_basics::expression_type::k_constant
+				op == floyd_basics::expression_type::k_literal
 				|| op == floyd_basics::expression_type::k_arithmetic_unary_minus__1
 				|| op == floyd_basics::expression_type::k_conditional_operator3
 				|| op == floyd_basics::expression_type::k_call

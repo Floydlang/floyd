@@ -136,19 +136,19 @@ expression_t parser_expression_to_ast(const json_t& e){
 		QUARK_ASSERT(resolved_type.second);
 
 		if(resolved_type.first.is_null()){
-			return expression_t::make_constant_null();
+			return expression_t::make_literal_null();
 		}
 		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_bool){
-			return expression_t::make_constant_bool(value.is_false() ? false : true);
+			return expression_t::make_literal_bool(value.is_false() ? false : true);
 		}
 		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_int){
-			return expression_t::make_constant_int((int)value.get_number());
+			return expression_t::make_literal_int((int)value.get_number());
 		}
 		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_float){
-			return expression_t::make_constant_float((float)value.get_number());
+			return expression_t::make_literal_float((float)value.get_number());
 		}
 		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_string){
-			return expression_t::make_constant_string(value.get_string());
+			return expression_t::make_literal_string(value.get_string());
 		}
 		else{
 			QUARK_ASSERT(false);
