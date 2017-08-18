@@ -1671,6 +1671,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 }
 
 
+
 QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 	const auto r = run_global(
 		R"(
@@ -1684,7 +1685,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!" }));
 }
-QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
+QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 	const auto r = run_global(
 		R"(
 			if(false){
@@ -1698,6 +1699,47 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
 }
 
+
+/*
+QUARK_UNIT_TESTQ("run_init()", ""){
+	const auto r = run_global(
+		R"(
+			if(false){
+				int dummy = print("one");
+			}
+			else if(true){
+				int dummy = print("two");
+			}
+			else if(false){
+				int dummy = print("three");
+			}
+			else{
+				int dummy = print("four");
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "two" }));
+}
+QUARK_UNIT_TESTQ("run_init()", ""){
+	const auto r = run_global(
+		R"(
+			if(false){
+				int dummy = print("one");
+			}
+			else if(false){
+				int dummy = print("two");
+			}
+			else if(true){
+				int dummy = print("three");
+			}
+			else{
+				int dummy = print("four");
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "three" }));
+}
+*/
 
 
 //////////////////////////		for-statement

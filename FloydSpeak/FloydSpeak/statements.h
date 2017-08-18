@@ -106,7 +106,7 @@ namespace floyd_ast {
 		}
 
 
-		# desugared
+		# de-sugared
 		if(a){
 			a
 		}

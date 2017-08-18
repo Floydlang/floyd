@@ -165,12 +165,9 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 	std::pair<bool, seq_t> else_start = if_first(pos4, "else");
 	if(else_start.first){
 		const auto else_statements_paranthesis = get_balanced(skip_whitespace(else_start.second));
-
 		else_statements = trim_ends(else_statements_paranthesis.first);
-
 		posx = else_statements_paranthesis.second;
 	}
-
 
 	const auto condition2 = parse_expression_all(seq_t(condition));
 	const auto then_statements2 = read_statements2(seq_t(then_statements)).first;
@@ -221,6 +218,58 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 	);
 }
 
+QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
+	ut_compare_jsons(
+		parse_if_statement(seq_t("if (1 > 2) { return 3; } else { return 4; }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					"if",
+					[">",["k",1,"<int>"],["k",2,"<int>"]],
+					[
+						["return", ["k", 3, "<int>"]]
+					],
+					[
+						["return", ["k", 4, "<int>"]]
+					]
+				]
+			)"
+		)).first
+	);
+}
+
+/*
+QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
+	ut_compare_jsons(
+		parse_if_statement(seq_t("if (1 == 1) { return 1; } else if(2 == 2) { return 2; } else if(3 == 3) { return 3; } else { return 4; }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					"if", ["==",["k",1,"<int>"],["k",1,"<int>"]],
+					[
+						["return", ["k", 1, "<int>"]]
+					],
+					[
+						"if", ["==",["k",2,"<int>"],["k",2,"<int>"]],
+						[
+							["return", ["k", 2, "<int>"]]
+						],
+						[
+							"if", ["==",["k",3,"<int>"],["k",3,"<int>"]],
+							[
+								["return", ["k", 3, "<int>"]]
+							],
+							[
+								["return", ["k", 4, "<int>"]]
+							]
+						]
+					]
+				]
+			)"
+		)).first
+	);
+}
+*/
 
 /*
 	for ( INIT_STATEMENT ; CONDITION_EXPRESSION ; POST_STATEMENT ) { BODY_STATEMENTS }
