@@ -46,7 +46,7 @@ https://en.wikipedia.org/wiki/Parsing
 
 std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);
-	const auto token_pos = read_until(pos, whitespace_chars);
+	const auto token_pos = read_until(pos, whitespace_chars + "(");
 
 	if(pos.first1() == "{"){
 		return parse_block(pos);

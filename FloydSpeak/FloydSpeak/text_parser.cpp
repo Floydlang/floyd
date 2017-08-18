@@ -346,11 +346,16 @@ pair<char, seq_t> read_char(const seq_t& s){
 }
 
 seq_t read_required_char(const seq_t& s, char ch){
-	const auto r = read_optional_char(s, ch);
-	if(r.first == false){
-		throw std::runtime_error("expected character '" + string(1, ch)  + "'.");
+	return read_required(s, string(1, ch));
+}
+
+seq_t read_required(const seq_t& s, const std::string& req){
+	const auto count = req.size();
+	const auto peek = s.first(count);
+	if(peek != req){
+		throw std::runtime_error("expected '" + req  + "'.");
 	}
-	return r.second;
+	return s.rest(count);
 }
 
 pair<bool, seq_t> read_optional_char(const seq_t& s, char ch){

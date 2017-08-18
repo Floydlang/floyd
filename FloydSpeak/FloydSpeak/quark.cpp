@@ -196,6 +196,7 @@ void run_tests(const unit_test_registry& registry, const std::vector<std::string
 
 	std::vector<unit_test_def> tests = registry._tests;
 
+	//	This is the VIP queue. Run tests for the most VIP file first.
 	for(const auto f: source_file_order){
 
 		//	Make list of all tests for this source file.

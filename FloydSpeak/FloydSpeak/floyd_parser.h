@@ -152,6 +152,38 @@ const char k_test_program_100_parserout[] = R"(
 
 		Never simplifes expressions- the parser is non-lossy.
 
+
+		RETURN
+
+		"return 3;"
+		"return myfunc(myfunc() + 3);"
+
+
+		DEFINE STRUCT
+
+		"struct mytype_t { float a; float b; };
+
+
+		BIND
+
+		"int x = 10;"
+
+
+		FUNCTION DEFINITION
+
+		"int f(string name){ return 13; }"
+
+
+		CALL STATEMENT -- ??? future -- this is a call statement. We only have call expressions right now.
+		"print("hello")"
+
+
+		IF-ELSE
+		Notice: not trailing semicolon
+
+		"if(true){ return 1000; }else { return 1001;}
+
+
 		OUTPUT
 
 		["return", EXPRESSION ]

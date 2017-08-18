@@ -21,8 +21,13 @@ int main(int argc, const char * argv[]) {
 	try {
 #if QUARK_UNIT_TESTS_ON
 		quark::run_tests({
+			"parse_statement.cpp",
+			"floyd_interpreter.cpp",
+
 			//	Core libs
-			"quark.cpp",
+			"quark.cpp"
+			"floyd_parser.cpp",
+/*
 			"steady_vector.cpp",
 			"text_parser.cpp",
 			"unused_bits.cpp",
@@ -49,7 +54,6 @@ int main(int argc, const char * argv[]) {
 			"parser_primitives.cpp",
 			"parser_statement.cpp",
 			"parser_struct.cpp",
-			"parse_statement.cpp",
 
 			"floyd_parser.cpp",
 
@@ -65,6 +69,7 @@ int main(int argc, const char * argv[]) {
 			"floyd_interpreter.cpp",
 
 			"floyd_main.cpp",
+*/
 		});
 #endif
 	}

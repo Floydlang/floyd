@@ -114,6 +114,12 @@ namespace {
 
 			return { vm2, make_shared<value_t>(result.second.get_literal()) };
 		}
+		else if(statement._if){
+???
+			const auto& s = statement._if;
+			const auto expr = s->_init;
+			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {} };
+		}
 		else if(statement._for){
 			const auto& s = statement._for;
 			const auto expr = s->_init;
@@ -1698,7 +1704,6 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 //			int dummy_a = print("A:" + int_to_string(x));
 	const auto r = run_global(
 		R"(
-
 			int x = 3;
 			int dummy_b = print("B:" + int_to_string(x));
 			{
@@ -1711,6 +1716,23 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
 }
+
+
+//////////////////////////		if-statement
+
+
+
+QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
+	const auto r = run_global(
+		R"(
+			if(true){
+				int dummy_c = print("Hello!");
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!" }));
+}
+
 
 
 //////////////////////////		for-statement

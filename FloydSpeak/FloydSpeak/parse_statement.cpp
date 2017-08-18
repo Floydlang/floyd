@@ -143,67 +143,81 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 #endif
 
 
-
-/*
-	A:
-		if (2 > 1){
-			...
-		}
-
-
-	B:
-		if (2 > 1){
-			...
-		}
-		else{
-			...
-		}
-
-	C:
-		if (2 > 1){
-			...
-		}
-		else if(2 > 3){
-			...
-		}
-		else{
-			...
-		}
-
-
-	OUTPUT
-		??? introduces a block.
-		["if", EXPRESSION, [STATEMENT1, STATEMENT2] ]
-
-		??? ELSE, ELSE IF?
-		["if", EXPRESSION, [STATEMENT1, STATEMENT2] ]
-*/
-
+//??? Have explicit whitespaces - fail to parse.
 std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 	std::pair<bool, seq_t> a = if_first(pos, "if");
 	QUARK_ASSERT(a.first);
 
 	const auto pos2 = skip_whitespace(a.second);
+	read_required(pos2, "(");
+	const auto condition_paranthesis = get_balanced(pos2);
+	const auto condition = trim_ends(condition_paranthesis.first);
 
-	if(pos2.first1_char() != '('){
-		throw std::runtime_error("syntax error");
+	const auto pos3 = skip_whitespace(condition_paranthesis.second);
+	read_required(pos3, "{");
+	const auto then_statements_paranthesis = get_balanced(pos3);
+	const auto then_statements = trim_ends(then_statements_paranthesis.first);
+
+	auto posx = then_statements_paranthesis.second;
+	std::string else_statements = "";
+
+	const auto pos4 = skip_whitespace(posx);
+	std::pair<bool, seq_t> else_start = if_first(pos4, "else");
+	if(else_start.first){
+		const auto else_statements_paranthesis = get_balanced(skip_whitespace(else_start.second));
+
+		else_statements = trim_ends(else_statements_paranthesis.first);
+
+		posx = else_statements_paranthesis.second;
 	}
 
-	const auto header = get_balanced(pos2);
-	const auto pos3 = skip_whitespace(header.second);
-	const auto body = get_balanced(pos3);
 
-	const auto condition = parse_expression_all(seq_t(trim_ends(header.first)));
-	const auto statements = read_statement2(seq_t(trim_ends(body.first)));
+	const auto condition2 = parse_expression_all(seq_t(condition));
+	const auto then_statements2 = read_statements2(seq_t(then_statements)).first;
+	const auto else_statements2 = else_statements.empty() == false ? read_statements2(seq_t(else_statements)).first : json_t();
 
-	return { json_t{}, body.second };
+	if(else_statements2.is_null()){
+		return { json_t::make_array({ "if", condition2, then_statements2 }), posx };
+	}
+	else{
+		return { json_t::make_array({ "if", condition2, then_statements2, else_statements2 }), posx };
+	}
 }
-
 
 QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}", ""){
 	ut_compare_jsons(
 		parse_if_statement(seq_t("if (1 > 2) { return 3; }")).first,
-		parse_json(seq_t("null")).first
+		parse_json(seq_t(
+			R"(
+				[
+					"if",
+					[">",["k",1,"<int>"],["k",2,"<int>"]],
+					[
+						["return", ["k", 3, "<int>"]]
+					]
+				]
+			)"
+		)).first
+	);
+}
+
+QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
+	ut_compare_jsons(
+		parse_if_statement(seq_t("if (1 > 2) { return 3; } else { return 4; }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					"if",
+					[">",["k",1,"<int>"],["k",2,"<int>"]],
+					[
+						["return", ["k", 3, "<int>"]]
+					],
+					[
+						["return", ["k", 4, "<int>"]]
+					]
+				]
+			)"
+		)).first
 	);
 }
 

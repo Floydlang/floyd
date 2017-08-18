@@ -47,6 +47,15 @@ namespace floyd_ast {
 		return statement_t(block_statement_t{ statements });
 	}
 
+	statement_t make__ifelse_statement(
+		const expression_t& condition,
+		std::vector<std::shared_ptr<statement_t>> then_statements,
+		std::vector<std::shared_ptr<statement_t>> else_statements
+	){
+		return statement_t(ifelse_statement_t{ condition, then_statements, else_statements });
+	}
+
+
 	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id){
 		return statement_t(for_statement_t{ std::make_shared<statement_t>(init), condition, post_expression, block_id });
 	}
@@ -80,6 +89,9 @@ namespace floyd_ast {
 		else if(_block){
 			QUARK_ASSERT(true);
 		}
+		else if(_if){
+			QUARK_ASSERT(true);
+		}
 		else if(_for){
 			QUARK_ASSERT(true);
 		}
@@ -90,6 +102,13 @@ namespace floyd_ast {
 	}
 
 
+	std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a){
+		vector<json_t> result;
+		for(const auto& e: a){
+			result.push_back(statement_to_json(*e));
+		}
+		return result;
+	}
 
 	json_t statement_to_json(const statement_t& e){
 		QUARK_ASSERT(e.check_invariant());
@@ -109,13 +128,17 @@ namespace floyd_ast {
 			});
 		}
 		else if(e._block){
-			vector<json_t> statements;
-			for(const auto& a: e._block->_statements){
-				statements.push_back(statement_to_json(*a));
-			}
 			return json_t::make_array({
 				json_t("block"),
-				json_t::make_array(statements)
+				json_t::make_array(statements_shared_to_json(e._block->_statements))
+			});
+		}
+		else if(e._if){
+			return json_t::make_array({
+				json_t("if"),
+				expression_to_json(e._if->_condition),
+				json_t::make_array(statements_shared_to_json(e._if->_then_statements)),
+				json_t::make_array(statements_shared_to_json(e._if->_else_statements))
 			});
 		}
 		else if(e._for){

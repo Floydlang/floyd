@@ -403,6 +403,49 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			scope2 = add_scope_type(scope2, struct_scope);
 */
 		}
+
+		//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]
+		//	Else is optional.
+		else if(type == "if"){
+			QUARK_ASSERT(statement.get_array_size() == 3 || statement.get_array_size() == 4);
+			const auto condition_expression = statement.get_array_n(1);
+			const auto then_statements = statement.get_array_n(2);
+			const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
+
+			const auto condition_expression2 = parser_expression_to_ast(condition_expression);
+			const auto& then_statements2 = parser_statements_to_ast(then_statements, id_generator);
+			id_generator = then_statements2.second;
+			const auto& else_statements2 = parser_statements_to_ast(else_statements, id_generator);
+			id_generator = else_statements2.second;
+
+			statements2.push_back(make_shared<statement_t>(
+				make__ifelse_statement(
+					condition_expression2,
+					then_statements2.first._statements,
+					else_statements2.first._statements
+				)
+			));
+/*
+			const auto s2 = lexical_scope_t::make_block_object(
+				body_statements2.first._locals,
+				body_statements2.first._statements,
+				body_statements2.first._objects
+			);
+
+			//	Make symbol refering to object.
+			const auto id = id_generator;
+			id_generator += 1;
+
+			objects[id] = s2;
+
+			statements2.push_back(make_shared<statement_t>(make__for_statement(
+				*init_statement2.first._statements[0],
+				condition_expression2,
+				post_expression2,
+				id
+			)));
+*/
+		}
 		else if(type == "for"){
 			QUARK_ASSERT(statement.get_array_size() == 5);
 			const auto init_statement = statement.get_array_n(1);

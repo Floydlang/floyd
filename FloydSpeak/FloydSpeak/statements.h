@@ -85,6 +85,64 @@ namespace floyd_ast {
 	};
 
 
+
+	//////////////////////////////////////		ifelse_statement_t
+
+
+	/*
+		# sugar: if then else:
+
+		if(a){
+			a
+		}
+		else if(b){
+			b
+		}
+		else if(c){
+			c
+		}
+		else{
+			d
+		}
+
+
+		# desugared
+		if(a){
+			a
+		}
+		else{
+			if(b){
+				b
+			}
+			else{
+				if(c){
+					c
+				}
+				else{
+					d
+				}
+			}
+		}
+	*/
+
+
+	struct ifelse_statement_t {
+		bool operator==(const ifelse_statement_t& other) const {
+			return
+				_condition == other._condition
+				&& _condition == other._condition
+				&& compare_shared_value_vectors(_then_statements, other._then_statements)
+				&& compare_shared_value_vectors(_else_statements, other._else_statements)
+				;
+		}
+
+		expression_t _condition;
+		std::vector<std::shared_ptr<statement_t>> _then_statements;
+		std::vector<std::shared_ptr<statement_t>> _else_statements;
+	};
+
+
+
 	//////////////////////////////////////		for_statement_t
 
 
@@ -112,6 +170,8 @@ namespace floyd_ast {
 		public: statement_t& operator=(const statement_t& other) = default;
 		public: bool check_invariant() const;
 
+		//??? Remove constructor, make static member makers.
+
         public: statement_t(const return_statement_t& value) :
 			_return(std::make_shared<return_statement_t>(value))
 		{
@@ -122,6 +182,10 @@ namespace floyd_ast {
 		}
         public: statement_t(const block_statement_t& value) :
 			_block(std::make_shared<block_statement_t>(value))
+		{
+		}
+        public: statement_t(const ifelse_statement_t& value) :
+			_if(std::make_shared<ifelse_statement_t>(value))
 		{
 		}
         public: statement_t(const for_statement_t& value) :
@@ -151,6 +215,7 @@ namespace floyd_ast {
 		public: std::shared_ptr<return_statement_t> _return;
 		public: std::shared_ptr<bind_statement_t> _bind;
 		public: std::shared_ptr<block_statement_t> _block;
+		public: std::shared_ptr<ifelse_statement_t> _if;
 		public: std::shared_ptr<for_statement_t> _for;
 	};
 
@@ -163,6 +228,11 @@ namespace floyd_ast {
 	statement_t make__return_statement(const expression_t& expression);
 	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression);
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);
+	statement_t make__ifelse_statement(
+		const expression_t& condition,
+		std::vector<std::shared_ptr<statement_t>> then_statements,
+		std::vector<std::shared_ptr<statement_t>> else_statements
+	);
 	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id);
 
 

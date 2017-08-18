@@ -106,6 +106,11 @@ std::pair<char, seq_t> read_char(const seq_t& s);
 */
 seq_t read_required_char(const seq_t& s, char ch);
 
+/*
+	Returns "rest" if s is found, else throws exceptions.
+*/
+seq_t read_required(const seq_t& s, const std::string& req);
+
 std::pair<bool, seq_t> read_optional_char(const seq_t& s, char ch);
 
 

@@ -93,13 +93,9 @@ namespace floyd_parser {
 
 
 		OUTPUT
-			??? introduces a block.
-			["if", EXPRESSION, [STATEMENT1, STATEMENT2] ]
-
-			??? ELSE, ELSE IF?
-			["if", EXPRESSION, [STATEMENT1, STATEMENT2] ]
+			["if", EXPRESSION, THEN_STATEMENTS ]
+			["if", EXPRESSION, THEN_STATEMENTS, ELSE_STATEMENTS ]
 	*/
-
 	std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos);
 
 
