@@ -66,6 +66,24 @@ namespace {
 		return true;
 	}
 
+	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements_in_env(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>> statements){
+		QUARK_ASSERT(vm.check_invariant());
+
+		auto vm2 = vm;
+
+		auto parent_env = vm2._call_stack.back();
+		auto new_environment = environment_t::make_environment(vm2, parent_env);
+		vm2._call_stack.push_back(new_environment);
+
+		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+
+		const auto r = execute_statements(vm2, statements);
+		vm2 = r.first;
+		vm2._call_stack.pop_back();
+		return { vm2, r.second };
+	}
+
+
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statement(const interpreter_t& vm, const statement_t& statement){
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(statement.check_invariant());
@@ -90,18 +108,7 @@ namespace {
 		}
 		else if(statement._block){
 			const auto& s = statement._block;
-
-			auto parent_env = vm2._call_stack.back();
-			auto new_environment = environment_t::make_environment(vm2, parent_env);
-			vm2._call_stack.push_back(new_environment);
-
-			QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
-
-			const auto r = execute_statements(vm2, s->_statements);
-			vm2 = r.first;
-			vm2._call_stack.pop_back();
-//			vm2._print_output = r.first._print_output;
-			return { vm2, r.second };
+			return execute_statements_in_env(vm, s->_statements);
 		}
 		else if(statement._return){
 			const auto& s = statement._return;
@@ -115,10 +122,21 @@ namespace {
 			return { vm2, make_shared<value_t>(result.second.get_literal()) };
 		}
 		else if(statement._if){
-???
 			const auto& s = statement._if;
-			const auto expr = s->_init;
-			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {} };
+
+			const auto condition_result = evaluate_expression(vm2, s->_condition);
+			vm2 = condition_result.first;
+			if(!condition_result.second.is_literal() || !condition_result.second.get_literal().is_bool()){
+				throw std::runtime_error("Boolean condition required.");
+			}
+
+			bool r = condition_result.second.get_literal().get_bool();
+			if(r){
+				return execute_statements_in_env(vm, s->_then_statements);
+			}
+			else{
+				return execute_statements_in_env(vm, s->_else_statements);
+			}
 		}
 		else if(statement._for){
 			const auto& s = statement._for;
@@ -581,88 +599,6 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	}
 }
 
-/*
-std::map<int, object_id_info_t> get_all_objects(
-	const std::shared_ptr<const lexical_scope_t>& scope,
-	int id,
-	int parent_id
-){
-	std::map<int, object_id_info_t> result;
-
-	result[id] = object_id_info_t{ scope, parent_id };
-
-	for(const auto& e: scope->get_objects()){
-		const auto t = get_all_objects(e.second, e.first, id);
-		result.insert(t.begin(), t.end());
-	}
-	return result;
-}
-
-//	Needs to look in correct scope to find function object. It can exist in *any* scope_def, even siblings or children.
-std::map<int, object_id_info_t> make_lexical_lookup(const std::shared_ptr<const lexical_scope_t>& s){
-	return get_all_objects(s, 0, -1);
-}
-
-object_id_info_t lookup_object_id(const interpreter_t& vm, const floyd_ast::value_t& f){
-	const auto& obj = f.get_function();
-	const auto& function_id = obj->_function_id;
-	const auto objectIt = vm._object_lookup.find(function_id);
-	if(objectIt == vm._object_lookup.end()){
-		throw std::runtime_error("Function object not found!");
-	}
-
-	return objectIt->second;
-}
-
-value_t call_function(const interpreter_t& vm, const floyd_ast::value_t& f, const vector<value_t>& args){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
-	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-
-	///??? COMPARE arg count and types.
-
-	if(f.is_function() == false){
-		throw std::runtime_error("Cannot call non-function.");
-	}
-
-	const auto function_object_info = lookup_object_id(vm, f);
-	const auto function_object = function_object_info._object;
-	const auto function_object_id = f.get_function()->_function_id;
-
-	if(function_object->_type == lexical_scope_t::etype::k_function_scope){
-		//	Always use global scope. Future: support closures by linking to function env where function is defined.
-		auto parent_env = vm._call_stack[0];
-		auto new_environment = environment_t::make_environment(vm, function_object, function_object_id, parent_env);
-
-		//	Copy input arguments to the function scope.
-		for(int i = 0 ; i < function_object->_args.size() ; i++){
-			const auto& arg_name = function_object->_args[i]._name;
-			const auto& arg_value = args[i];
-			new_environment->_values[arg_name] = arg_value;
-		}
-
-		interpreter_t vm2 = vm;
-		vm2._call_stack.push_back(new_environment);
-
-		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
-
-		const auto r = execute_statements(vm2, function_object->_statements);
-		if(!r.second){
-			throw std::runtime_error("function missing return statement");
-		}
-		else{
-			return *r.second;
-		}
-	}
-	else if(function_object->_type == lexical_scope_t::etype::k_host_function_scope){
-		const auto r = function_object->_host_function(args);
-		return r;
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-*/
 
 std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpreter_t& vm, const floyd_ast::value_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -680,7 +616,6 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 	const auto& function_def = f.get_function()->_def;
 	if(function_def._host_function != 0){
 		const auto r = vm.call_host_function(function_def._host_function, args);
-//		const auto r = function_def._host_function->host_function_call(args);
 		return { r.first, make_shared<value_t>(r.second) };
 	}
 	else{
@@ -851,20 +786,10 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 std::shared_ptr<environment_t> environment_t::make_environment(
 	const interpreter_t& vm,
-//	const std::shared_ptr<const lexical_scope_t>& object,
-//	int object_id,
 	std::shared_ptr<floyd_interpreter::environment_t>& parent_env
 )
 {
 	QUARK_ASSERT(vm.check_invariant());
-
-/*
-	//	Copy scope's functions into new env.??? needed?
-	std::map<std::string, floyd_ast::value_t> values;
-	for(const auto& e: object->_state){
-		values[e._name] = *e._value;
-	}
-*/
 
 	auto f = environment_t{ parent_env, {} };
 	return make_shared<environment_t>(f);
@@ -1726,11 +1651,51 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
 	const auto r = run_global(
 		R"(
 			if(true){
-				int dummy_c = print("Hello!");
+				int dummy_1 = print("Hello!");
+			}
+			int dummy_2 = print("Goodbye!");
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!", "Goodbye!" }));
+}
+QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
+	const auto r = run_global(
+		R"(
+			if(false){
+				int dummy_1 = print("Hello!");
+			}
+			int dummy_2 = print("Goodbye!");
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
+}
+
+
+QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
+	const auto r = run_global(
+		R"(
+			if(true){
+				int dummy_1 = print("Hello!");
+			}
+			else{
+				int dummy_2 = print("Goodbye!");
 			}
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!" }));
+}
+QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
+	const auto r = run_global(
+		R"(
+			if(false){
+				int dummy_1 = print("Hello!");
+			}
+			else{
+				int dummy_2 = print("Goodbye!");
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
 }
 
 

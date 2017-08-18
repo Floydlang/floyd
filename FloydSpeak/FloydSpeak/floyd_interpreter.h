@@ -35,7 +35,6 @@ namespace floyd_interpreter {
 
 	struct environment_t {
 		public: std::shared_ptr<environment_t> _parent_env;
-//		public: int _object_id;
 		public: std::map<std::string, floyd_ast::value_t> _values;
 
 
@@ -43,19 +42,9 @@ namespace floyd_interpreter {
 
 		public: static std::shared_ptr<environment_t> make_environment(
 			const interpreter_t& vm,
-//			const std::shared_ptr<const floyd_ast::lexical_scope_t>& object,
-//			int object_id,
 			std::shared_ptr<environment_t>& parent_env
 		);
 	};
-
-
-/*
-	struct object_id_info_t {
-		std::shared_ptr<const floyd_ast::lexical_scope_t> _object;
-		int _lexical_parent_id;
-	};
-*/
 
 
 	//////////////////////////////////////		interpreter_t
@@ -81,9 +70,6 @@ namespace floyd_interpreter {
 		//	Constant!
 		public: floyd_ast::ast_t _ast;
 
-		//	Constant!
-//		public: std::map<int, object_id_info_t> _object_lookup;
-
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<environment_t>> _call_stack;
@@ -107,7 +93,6 @@ namespace floyd_interpreter {
 		const floyd_ast::value_t& f,
 		const std::vector<floyd_ast::value_t>& args
 	);
-
 
 
 
