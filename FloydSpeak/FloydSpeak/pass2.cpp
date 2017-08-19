@@ -224,14 +224,6 @@ std::vector<member_t> conv_members(const json_t& members){
 
 
 
-struct body_t {
-	public: const std::vector<std::shared_ptr<statement_t> > _statements;
-	public: const std::vector<member_t> _locals;
-	public: const std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
-};
-
-
-
 /*
 	Input is an array of statements from parser.
 	A function has its own list of statements.
@@ -241,13 +233,11 @@ struct body_t {
 	### Support overloading the same symbol name with different types.
 	### Key symbols with their type too. Support function overloading & struct named as function.
 */
-pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
+const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const json_t& p){
 	QUARK_SCOPED_TRACE("parser_statements_to_ast()");
 	QUARK_ASSERT(p.check_invariant());
 
 	vector<shared_ptr<statement_t>> statements2;
-	std::vector<member_t> locals;
-	std::map<int, std::shared_ptr<const lexical_scope_t> > objects;
 
 	for(const auto statement: p.get_array()){
 		const auto type = statement.get_array_n(0);
@@ -277,10 +267,9 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 
 			const auto statements = statement.get_array_n(1);
-			const auto r = parser_statements_to_ast(statements, id_generator);
-			id_generator = r.second;
+			const auto r = parser_statements_to_ast(statements);
 			//??? also include locals & objects
-			statements2.push_back(make_shared<statement_t>(make__block_statement(r.first._statements)));
+			statements2.push_back(make_shared<statement_t>(make__block_statement(r)));
 		}
 
 		/*
@@ -326,15 +315,11 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 
 			const auto name2 = name.get_string();
 			const auto args2 = conv_members(args);
-			const auto fstatements2 = parser_statements_to_ast(fstatements, id_generator);
-			id_generator = fstatements2.second;
+			const auto fstatements2 = parser_statements_to_ast(fstatements);
 			const auto return_type2 = resolve_type_name(return_type.get_string());
 
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
-			const auto function_def = function_definition_t(				args2,
-				fstatements2.first._statements,
-				return_type2
-			);
+			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, function_typeid, function_def_expr)));
 
@@ -413,16 +398,14 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
 
 			const auto condition_expression2 = parser_expression_to_ast(condition_expression);
-			const auto& then_statements2 = parser_statements_to_ast(then_statements, id_generator);
-			id_generator = then_statements2.second;
-			const auto& else_statements2 = parser_statements_to_ast(else_statements, id_generator);
-			id_generator = else_statements2.second;
+			const auto& then_statements2 = parser_statements_to_ast(then_statements);
+			const auto& else_statements2 = parser_statements_to_ast(else_statements);
 
 			statements2.push_back(make_shared<statement_t>(
 				make__ifelse_statement(
 					condition_expression2,
-					then_statements2.first._statements,
-					else_statements2.first._statements
+					then_statements2,
+					else_statements2
 				)
 			));
 		}
@@ -433,21 +416,19 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto post_expression = statement.get_array_n(3);
 			const auto body_statements = statement.get_array_n(4);
 
-			const auto& init_statement2 = parser_statements_to_ast(json_t::make_array({init_statement}), id_generator);
-			id_generator = init_statement2.second;
+			const auto& init_statement2 = parser_statements_to_ast(json_t::make_array({init_statement}));
 
 			const auto condition_expression2 = parser_expression_to_ast(condition_expression);
 			const auto post_expression2 = parser_expression_to_ast(post_expression);
 
-			const auto& body_statements2 = parser_statements_to_ast(body_statements, id_generator);
-			id_generator = body_statements2.second;
+			const auto& body_statements2 = parser_statements_to_ast(body_statements);
 		}
 		else{
 			throw std::runtime_error("Illegal statement.");
 		}
 	}
 
-	return { body_t{ statements2, locals, objects }, id_generator };
+	return statements2;
 }
 
 
@@ -489,12 +470,8 @@ bool has_unresolved_types(const json_t& obj){
 ast_t run_pass2(const json_t& parse_tree){
 	QUARK_TRACE(json_to_pretty_string(parse_tree));
 
-	const auto program_body = parser_statements_to_ast(parse_tree, 1000);
-	const auto a = lexical_scope_t::make_global_scope(
-		program_body.first._statements,
-		program_body.first._locals,
-		program_body.first._objects
-	);
+	const auto program_body = parser_statements_to_ast(parse_tree);
+	const auto a = lexical_scope_t::make_global_scope(program_body, {}, {});
 	return ast_t(a);
 }
 
