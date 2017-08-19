@@ -878,7 +878,7 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 	const auto b = std::chrono::high_resolution_clock::now();
 
 	std::chrono::duration<double> elapsed_seconds = b - a;
-	const int ms = elapsed_seconds.count() * 1000.0;
+	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
 
 	QUARK_UT_VERIFY(ms >= 7)
 }
@@ -897,13 +897,6 @@ std::pair<interpreter_t, value_t> host__float_to_string(const interpreter_t& vm,
 
 
 
-lexical_scope_t add_function(const lexical_scope_t& scope, const string& name, const function_definition_t& def){
-	lexical_scope_t temp = scope;
-
-	const auto s = make_function_statement(name, def);
-	temp._statements.insert(temp._statements.begin(), make_shared<statement_t>(s));
-	return temp;
-}
 
 std::pair<interpreter_t, floyd_ast::value_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd_ast::value_t> args) const{
 	if(function_id == static_cast<int>(host_functions::k_print)){
@@ -927,60 +920,50 @@ std::pair<interpreter_t, floyd_ast::value_t> interpreter_t::call_host_function(i
 interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	//	Copy global scope. We will update it.
-	lexical_scope_t temp = *ast.get_global_scope();
+	std::vector<std::shared_ptr<statement_t>> init_statements;
 
+	//	Insert built-in functions into AST.
 
-	//	Insert functions into AST.
-
-	temp = add_function(
-		temp,
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
 		"print",
 		function_definition_t(
 			{ member_t{ typeid_t::make_string(), "s" } },
 			host_functions::k_print,
 			typeid_t::make_null()
 		)
-	);
+	)));
 
-	temp = add_function(
-		temp,
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
 		"get_time_of_day",
 		function_definition_t(
 			{},
 			host_functions::k_get_time_of_day_ms,
 			typeid_t::make_int()
 		)
-	);
+	)));
 
-	temp = add_function(
-		temp,
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
 		"int_to_string",
 		function_definition_t(
 			{ member_t{ typeid_t::make_int(), "v" } },
 			host_functions::k_host__int_to_string,
 			typeid_t::make_string()
 		)
-	);
-
-	temp = add_function(
-		temp,
+	)));
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
 		"float_to_string",
 		function_definition_t(
 			{ member_t{ typeid_t::make_float(), "v" } },
 			host_functions::k_host__float_to_string,
 			typeid_t::make_string()
 		)
-	);
+	)));
 
-
-	_ast = ast_t(make_shared<const lexical_scope_t>(temp));
-//	_object_lookup = make_lexical_lookup(_ast.get_global_scope());
+	_ast = ast_t(init_statements + ast._statements);
 
 
 	//	Make the top-level environoment = global scope.
 	shared_ptr<environment_t> empty_env;
-//	auto global_env = environment_t::make_environment(*this, _ast.get_global_scope(), 0, empty_env);
 	auto global_env = environment_t::make_environment(*this, empty_env);
 
 	_call_stack.push_back(global_env);
@@ -988,7 +971,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_start_time = std::chrono::high_resolution_clock::now();
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _ast.get_global_scope()->_statements);
+	const auto r = execute_statements(*this, _ast._statements);
 	if(r.second){
 		throw std::runtime_error("Return statement illegal in global scope.");
 	}

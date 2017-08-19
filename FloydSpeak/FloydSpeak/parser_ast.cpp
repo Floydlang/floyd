@@ -182,95 +182,6 @@ namespace floyd_ast {
 
 
 
-	//////////////////////////////////////////////////		lexical_scope_t
-
-
-
-	std::shared_ptr<const lexical_scope_t> lexical_scope_t::make_global_scope(
-		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const std::vector<member_t>& globals
-	)
-	{
-		auto r = std::make_shared<lexical_scope_t>(
-			lexical_scope_t{
-				globals,
-				statements,
-			}
-		);
-
-		QUARK_ASSERT(r->check_invariant());
-		return r;
-	}
-
-	bool lexical_scope_t::shallow_check_invariant() const {
-		return true;
-	}
-
-	bool lexical_scope_t::check_invariant() const {
-		//??? Check for duplicates? Other things?
-		for(const auto& m: _state){
-			QUARK_ASSERT(m.check_invariant());
-		}
-		return true;
-	}
-
-	bool lexical_scope_t::operator==(const lexical_scope_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(_state != other._state){
-			return false;
-		}
-		if(!(_statements == other._statements)){
-			return false;
-		}
-		return true;
-	}
-
-	string scope_type_to_string(lexical_scope_t::etype type){
-		if(type == lexical_scope_t::etype::k_global_scope){
-			return "global";
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-	json_t objects_to_json(const std::map<int, std::shared_ptr<const lexical_scope_t> >& s){
-		std::map<string, json_t> r;
-		for(const auto i: s){
-			r[std::to_string(i.first)] = lexical_scope_to_json(*i.second);
-		}
-		return r;
-	}
-
-	json_t lexical_scope_to_json(const lexical_scope_t& scope_def){
-		const auto state = members_to_json(scope_def._state);
-
-		std::vector<json_t> statements;
-		for(const auto i: scope_def._statements){
-			statements.push_back(statement_to_json(*i));
-		}
-		json_t statements2(statements);
-
-
-		return make_object({
-			{ "state", state.get_array_size() == 0 ? json_t() : json_t(state) },
-			{ "statements", statements2.get_array_size() == 0 ? json_t() : json_t(statements2) }
-		});
-	}
-
-
-
-
-
-	QUARK_UNIT_TESTQ("lexical_scope_t::operator==", ""){
-		const auto a = lexical_scope_t::make_global_scope({}, {});
-		const auto b = lexical_scope_t::make_global_scope({}, {});
-		QUARK_TEST_VERIFY(*a == *b);
-	}
-
-
 
 
 	void trace(const std::vector<std::shared_ptr<statement_t>>& e){
@@ -332,10 +243,6 @@ namespace floyd_ast {
 	}
 
 
-	//??? more. Use to_json().
-	void trace(const std::shared_ptr<const lexical_scope_t>& e){
-		QUARK_ASSERT(e && e->check_invariant());
-	}
 
 
 	std::vector<typeid_t> get_member_types(const vector<member_t>& m){
@@ -410,22 +317,17 @@ namespace floyd_ast {
 	////////////////////////			ast_t
 
 
-	ast_t::ast_t() :
-		_global_scope(lexical_scope_t::make_global_scope({}, {}))
-	{
+	ast_t::ast_t(){
 		QUARK_ASSERT(check_invariant());
 	}
 
-	ast_t::ast_t(
-		std::shared_ptr<const lexical_scope_t> global_scope
-	) :
-		_global_scope(global_scope)
+	ast_t::ast_t(std::vector<std::shared_ptr<statement_t> > statements) :
+		_statements(statements)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool ast_t::check_invariant() const {
-		QUARK_ASSERT(_global_scope && _global_scope->check_invariant());
 		return true;
 	}
 
@@ -442,7 +344,11 @@ namespace floyd_ast {
 	json_t ast_to_json(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
-		return lexical_scope_to_json(*ast.get_global_scope());
+		return json_t::make_object(
+			{
+				{ "statements", statements_to_json(ast._statements) }
+			}
+		);
 	}
 
 

@@ -184,43 +184,6 @@ namespace floyd_ast {
 
 
 
-	//////////////////////////////////////////////////		lexical_scope_t
-
-	/*
-		This is a core internal building block of the AST. It represents a static, compile-time scope.
-		lexical_scope_t:s are used to define
-
-		- The global scope
-		- struct definition, with member data and functions
-		- function definition, with arguments
-		- block = function sub-scope - {}, for(){}, while{}, if(){}, else{}.
-
-		The lexical_scope_t includes optional code, optional member variables and optional local types.
-	*/
-	struct lexical_scope_t {
-		public: enum class etype {
-			k_global_scope,
-		};
-
-		public: static std::shared_ptr<const lexical_scope_t> make_global_scope(
-			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const std::vector<member_t>& globals
-		);
-
-		public: bool check_invariant() const;
-		public: bool shallow_check_invariant() const;
-
-		public: bool operator==(const lexical_scope_t& other) const;
-
-
-		/////////////////////////////		STATE
-		public: std::vector<member_t> _state;
-		public: std::vector<std::shared_ptr<statement_t> > _statements;
-	};
-
-	json_t lexical_scope_to_json(const lexical_scope_t& v);
-	void trace(const std::shared_ptr<const lexical_scope_t>& e);
-
 
 
 	//////////////////////////////////////////////////		ast_t
@@ -232,16 +195,12 @@ namespace floyd_ast {
 	*/
 	struct ast_t {
 		public: ast_t();
-		public: explicit ast_t(std::shared_ptr<const lexical_scope_t> global_scope);
+		public: explicit ast_t(const std::vector<std::shared_ptr<statement_t> > statements);
 		public: bool check_invariant() const;
-
-		public: const std::shared_ptr<const lexical_scope_t>& get_global_scope() const {
-			return _global_scope;
-		}
 
 
 		/////////////////////////////		STATE
-		private: std::shared_ptr<const lexical_scope_t> _global_scope;
+		std::vector<std::shared_ptr<statement_t> > _statements;
 	};
 
 	void trace(const ast_t& program);

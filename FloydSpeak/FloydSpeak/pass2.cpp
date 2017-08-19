@@ -455,8 +455,7 @@ ast_t run_pass2(const json_t& parse_tree){
 	QUARK_TRACE(json_to_pretty_string(parse_tree));
 
 	const auto program_body = parser_statements_to_ast(parse_tree);
-	const auto a = lexical_scope_t::make_global_scope(program_body, {});
-	return ast_t(a);
+	return ast_t(program_body);
 }
 
 
