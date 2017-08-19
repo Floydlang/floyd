@@ -143,8 +143,17 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 #endif
 
 
-//??? Have explicit whitespaces - fail to parse.
-std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
+//??? Idea: Have explicit whitespaces - fail to parse.
+
+
+/*
+		Parse: if (EXPRESSION) { THEN_STATEMENTS }
+
+		if(a){
+			a
+		}
+*/
+std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	std::pair<bool, seq_t> a = if_first(pos, "if");
 	QUARK_ASSERT(a.first);
 
@@ -158,26 +167,51 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 	const auto then_statements_paranthesis = get_balanced(pos3);
 	const auto then_statements = trim_ends(then_statements_paranthesis.first);
 
-	auto posx = then_statements_paranthesis.second;
-	std::string else_statements = "";
-
-	const auto pos4 = skip_whitespace(posx);
-	std::pair<bool, seq_t> else_start = if_first(pos4, "else");
-	if(else_start.first){
-		const auto else_statements_paranthesis = get_balanced(skip_whitespace(else_start.second));
-		else_statements = trim_ends(else_statements_paranthesis.first);
-		posx = else_statements_paranthesis.second;
-	}
+	auto return_pos = then_statements_paranthesis.second;
 
 	const auto condition2 = parse_expression_all(seq_t(condition));
 	const auto then_statements2 = read_statements2(seq_t(then_statements)).first;
-	const auto else_statements2 = else_statements.empty() == false ? read_statements2(seq_t(else_statements)).first : json_t();
 
-	if(else_statements2.is_null()){
-		return { json_t::make_array({ "if", condition2, then_statements2 }), posx };
+	return { json_t::make_array({ "if", condition2, then_statements2 }), return_pos };
+}
+
+/*
+	Parse optional else { STATEMENTS } or chain of else-if
+	Ex 1: "some other statements"
+	Ex 2: "else { STATEMENTS }"
+	Ex 3: "else if (EXPRESSION) { STATEMENTS }"
+	Ex 4: "else if (EXPRESSION) { STATEMENTS } else { STATEMENTS }"
+	Ex 5: "else if (EXPRESSION) { STATEMENTS } else if (EXPRESSION) { STATEMENTS } else { STATEMENTS }"
+*/
+
+
+std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
+	const auto if_statement2 = parse_if(pos);
+	std::pair<bool, seq_t> else_start = if_first(skip_whitespace(if_statement2.second), "else");
+	if(else_start.first){
+		const auto pos2 = skip_whitespace(else_start.second);
+		std::pair<bool, seq_t> elseif_pos = if_first(pos2, "if");
+		if(elseif_pos.first){
+			const auto elseif_statement2 = parse_if_statement(pos2);
+			return { json_t::make_array(
+				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), json_t::make_array({elseif_statement2.first}) }),
+				elseif_statement2.second
+			};
+		}
+		else{
+			read_required(pos2, "{");
+			const auto else_statements_paranthesis = get_balanced(pos2);
+			const auto else_statements = trim_ends(else_statements_paranthesis.first);
+			const auto else_statements2 = read_statements2(seq_t(else_statements));
+
+			return { json_t::make_array(
+				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_statements2.first }),
+				else_statements_paranthesis.second
+			};
+		}
 	}
 	else{
-		return { json_t::make_array({ "if", condition2, then_statements2, else_statements2 }), posx };
+		return if_statement2;
 	}
 }
 
@@ -238,10 +272,11 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 	);
 }
 
-/*
 QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 	ut_compare_jsons(
-		parse_if_statement(seq_t("if (1 == 1) { return 1; } else if(2 == 2) { return 2; } else if(3 == 3) { return 3; } else { return 4; }")).first,
+		parse_if_statement(
+			seq_t("if (1 == 1) { return 1; } else if(2 == 2) { return 2; } else if(3 == 3) { return 3; } else { return 4; }")
+		).first,
 		parse_json(seq_t(
 			R"(
 				[
@@ -250,17 +285,19 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 						["return", ["k", 1, "<int>"]]
 					],
 					[
-						"if", ["==",["k",2,"<int>"],["k",2,"<int>"]],
-						[
-							["return", ["k", 2, "<int>"]]
-						],
-						[
-							"if", ["==",["k",3,"<int>"],["k",3,"<int>"]],
+						[ "if", ["==",["k",2,"<int>"],["k",2,"<int>"]],
 							[
-								["return", ["k", 3, "<int>"]]
+								["return", ["k", 2, "<int>"]]
 							],
 							[
-								["return", ["k", 4, "<int>"]]
+								[ "if", ["==",["k",3,"<int>"],["k",3,"<int>"]],
+									[
+										["return", ["k", 3, "<int>"]]
+									],
+									[
+										["return", ["k", 4, "<int>"]]
+									]
+								]
 							]
 						]
 					]
@@ -269,7 +306,6 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 		)).first
 	);
 }
-*/
 
 /*
 	for ( INIT_STATEMENT ; CONDITION_EXPRESSION ; POST_STATEMENT ) { BODY_STATEMENTS }

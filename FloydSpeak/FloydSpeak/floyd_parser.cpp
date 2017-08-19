@@ -63,7 +63,9 @@ std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
 		}
 
 		else if(token_pos.first == "if"){
-			return parse_if_statement(seq_t(pos));
+			const auto temp = parse_if_statement(seq_t(pos));
+			QUARK_TRACE(json_to_pretty_string(temp.first));
+			return temp;
 		}
 		else if(token_pos.first == "for"){
 			return parse_for_statement(seq_t(pos));
