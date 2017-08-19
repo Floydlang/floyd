@@ -23,8 +23,6 @@
 #include <thread>
 #include <chrono>
 
-
-
 namespace floyd_interpreter {
 
 
@@ -43,6 +41,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
 
 namespace {
+
 
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements);
 

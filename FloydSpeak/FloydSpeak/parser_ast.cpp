@@ -31,8 +31,6 @@ namespace floyd_ast {
 	using std::make_shared;
 
 
-
-
 	//??? use json
 	void trace(const typeid_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
@@ -329,12 +327,7 @@ namespace floyd_ast {
 			{ "state", state.get_array_size() == 0 ? json_t() : json_t(state) },
 			{ "statements", statements2.get_array_size() == 0 ? json_t() : json_t(statements2) },
 			{ "return_type", scope_def._return_type.is_null() ? json_t() : scope_def._return_type.to_string() },
-//			{ "symbols", symbols.get_object_size() == 0 ? json_t() : symbols },
 			{ "objects", objects.get_object_size() == 0 ? json_t() : objects }
-//			,
-//			{ "host_function",
-//				scope_def._host_function == nullptr ? json_t() : json_t("HOST FUNCTION")
-//			}
 		});
 	}
 
@@ -380,144 +373,6 @@ namespace floyd_ast {
 			trace(*s);
 		}
 	}
-
-
-
-/*
-	//////////////////////////////////////////////////		function_object_t
-
-
-
-
-
-	bool function_object_t::shallow_check_invariant() const {
-		return true;
-	}
-
-	bool function_object_t::check_invariant() const {
-		//??? Check for duplicates? Other things?
-		for(const auto& m: _args){
-			QUARK_ASSERT(m.check_invariant());
-		}
-		for(const auto& m: _state){
-			QUARK_ASSERT(m.check_invariant());
-		}
-		return true;
-	}
-
-	bool function_object_t::operator==(const function_object_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(_args != other._args){
-			return false;
-		}
-		if(_state != other._state){
-			return false;
-		}
-		if(!(_statements == other._statements)){
-			return false;
-		}
-		if(!(_return_type == other._return_type)){
-			return false;
-		}
-		if(_objects != other._objects){
-			return false;
-		}
-		if(_host_function != other._host_function){
-			return false;
-		}
-		return true;
-	}
-
-	std::shared_ptr<const function_object_t> function_object_t::make_function_object(
-		const std::vector<member_t>& args,
-		const std::vector<member_t>& locals,
-		const std::vector<std::shared_ptr<statement_t> >& statements,
-		const typeid_t& return_type,
-		const std::map<int, std::shared_ptr<const function_object_t> > objects
-	)
-	{
-		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-		for(const auto i: locals){ QUARK_ASSERT(i.check_invariant()); };
-
-		auto obj = make_shared<function_object_t>(
-			function_object_t{
-				args,
-				locals,
-				statements,
-				return_type,
-				objects,
-				nullptr
-			}
-		);
-		return obj;
-	}
-
-	std::shared_ptr<const function_object_t> function_object_t::make_host_function_object(
-		const std::vector<member_t>& args,
-		const typeid_t& return_type,
-		HOST_FUNCTION host_function
-	)
-	{
-		for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-		QUARK_ASSERT(return_type.check_invariant());
-		QUARK_ASSERT(host_function != nullptr);
-
-		auto obj = make_shared<function_object_t>(
-			function_object_t{
-				args,
-				{},
-				{},
-				return_type,
-				{},
-				host_function
-			}
-		);
-		return obj;
-	}
-
-
-	QUARK_UNIT_TESTQ("function_object_t::operator==", ""){
-		const auto a = true;
-		const auto b = true;
-		QUARK_TEST_VERIFY(a == b);
-	}
-
-
-
-	json_t objects_to_json(const std::map<int, std::shared_ptr<const function_object_t> >& s){
-		std::map<string, json_t> r;
-		for(const auto i: s){
-			r[std::to_string(i.first)] = function_object_to_json(*i.second);
-		}
-		return r;
-	}
-
-	json_t function_object_to_json(const function_object_t& scope_def){
-		const auto args = members_to_json(scope_def._args);
-		const auto state = members_to_json(scope_def._state);
-
-		std::vector<json_t> statements;
-		for(const auto i: scope_def._statements){
-			statements.push_back(statement_to_json(*i));
-		}
-		json_t statements2(statements);
-
-		const auto objects = objects_to_json(scope_def.get_objects());
-
-		return make_object({
-			{ "args", args.get_array_size() == 0 ? json_t() : json_t(args) },
-			{ "state", state.get_array_size() == 0 ? json_t() : json_t(state) },
-			{ "statements", statements2.get_array_size() == 0 ? json_t() : json_t(statements2) },
-			{ "return_type", scope_def._return_type.is_null() ? json_t() : scope_def._return_type.to_string() },
-			{ "objects", objects.get_object_size() == 0 ? json_t() : objects },
-			{ "host_function",
-				scope_def._host_function == nullptr ? json_t() : json_t("HOST FUNCTION")
-			}
-		});
-	}
-*/
 
 
 
