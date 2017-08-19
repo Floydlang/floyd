@@ -322,22 +322,6 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, function_typeid, function_def_expr)));
-
-
-/*
-			//	Build function object.
-			const auto function_obj = lexical_scope_t::make_function_object(
-				args2,
-				r.first._locals,
-				r.first._statements,
-				return_type2,
-				r.first._objects
-			);
-
-			value_t f = make_function_value(function_typeid, function_id);
-			locals.push_back(member_t{ function_typeid, make_shared<value_t>(f), name.get_string() });
-			objects[function_id] = function_obj;
-*/
 		}
 
 		/*
@@ -471,7 +455,7 @@ ast_t run_pass2(const json_t& parse_tree){
 	QUARK_TRACE(json_to_pretty_string(parse_tree));
 
 	const auto program_body = parser_statements_to_ast(parse_tree);
-	const auto a = lexical_scope_t::make_global_scope(program_body, {}, {});
+	const auto a = lexical_scope_t::make_global_scope(program_body, {});
 	return ast_t(a);
 }
 

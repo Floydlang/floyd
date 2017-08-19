@@ -36,7 +36,6 @@ const std::string k_test_program_0_parserout = R"(
 )";
 const std::string k_test_program_0_pass2output = R"(
 {
-	"objtype": "global",
 	"statements": [
 		[
 			"bind",

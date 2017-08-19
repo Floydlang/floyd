@@ -411,6 +411,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"string\": \"xyz\"");
 }
 
+#if 0
 QUARK_UNIT_TESTQ("value_t()", "struct"){
 	const auto struct_scope_ref = lexical_scope_t::make_struct_object(
 		std::vector<member_t>{
@@ -434,6 +435,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
 }
+#endif
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){

@@ -50,20 +50,6 @@ namespace {
 		return diff < 0.00001;
 	}
 
-	bool check_arg_types(const std::shared_ptr<const floyd_ast::lexical_scope_t>& f, const vector<value_t>& args){
-		if(f->_args.size() != args.size()){
-			return false;
-		}
-
-		for(int i = 0 ; i < args.size() ; i++){
-			const auto farg = f->_args[i]._type;
-			const auto call_arg = args[i].get_type();
-			if(!(farg == call_arg)){
-				return false;
-			}
-		}
-		return true;
-	}
 
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements_in_env(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>> statements){
 		QUARK_ASSERT(vm.check_invariant());

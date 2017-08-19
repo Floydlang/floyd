@@ -199,28 +199,12 @@ namespace floyd_ast {
 	*/
 	struct lexical_scope_t {
 		public: enum class etype {
-			k_function_scope,
-			k_struct_scope,
 			k_global_scope,
-			k_block,
-			k_host_function_scope
 		};
-
-		public: static std::shared_ptr<const lexical_scope_t> make_struct_object(const std::vector<member_t>& members);
-
-		public: static std::shared_ptr<const lexical_scope_t> make_function_object(
-			const std::vector<member_t>& args,
-			const std::vector<member_t>& locals,
-			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const typeid_t& return_type,
-			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
-		);
-
 
 		public: static std::shared_ptr<const lexical_scope_t> make_global_scope(
 			const std::vector<std::shared_ptr<statement_t> >& statements,
-			const std::vector<member_t>& globals,
-			const std::map<int, std::shared_ptr<const lexical_scope_t> > objects
+			const std::vector<member_t>& globals
 		);
 
 		public: bool check_invariant() const;
@@ -229,19 +213,9 @@ namespace floyd_ast {
 		public: bool operator==(const lexical_scope_t& other) const;
 
 
-		public: const std::map<int, std::shared_ptr<const lexical_scope_t> >& get_objects() const {
-			return _objects;
-		}
-
-
 		/////////////////////////////		STATE
-		public: etype _type;
-		public: std::vector<member_t> _args;
 		public: std::vector<member_t> _state;
 		public: std::vector<std::shared_ptr<statement_t> > _statements;
-		public: typeid_t _return_type;
-
-		public: std::map<int, std::shared_ptr<const lexical_scope_t> > _objects;
 	};
 
 	json_t lexical_scope_to_json(const lexical_scope_t& v);
