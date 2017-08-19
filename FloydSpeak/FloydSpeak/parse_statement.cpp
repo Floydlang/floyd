@@ -143,6 +143,7 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 #endif
 
 
+
 //??? Idea: Have explicit whitespaces - fail to parse.
 
 
@@ -315,31 +316,28 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 	}
 
 	OUTPUT
-		INIT_STATEMENT, CONDITION_EXPRESSION and POST_STATEMENT can also be null.
-		[ "for", INIT_STATEMENT, CONDITION_EXPRESSION, POST_STATEMENT, [BODY_STATEMENT1, 2, 3] ]
+		[ "for", INIT_STATEMENT, CONDITION_EXPRESSION, POST_STATEMENT, BODY_STATEMENTS ]
 		[ "for", null, CONDITION_EXPRESSION, null, [] ]
 		[ "for", null, null, null, [] ]
 */
 std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
-	std::pair<bool, seq_t> a = if_first(pos, "for");
-	QUARK_ASSERT(a.first);
-
-	const auto pos2 = skip_whitespace(a.second);
-
-	if(pos2.first1_char() != '('){
-		throw std::runtime_error("syntax error");
-	}
-
-	const auto header = get_balanced(pos2);
-	const auto pos3 = skip_whitespace(header.second);
+	std::pair<bool, seq_t> pos1 = if_first(pos, "for");
+	QUARK_ASSERT(pos1.first);
+	const auto pos2 = skip_whitespace(pos1.second);
+	read_required(pos2, "(");
+	const auto header_in_paranthesis = get_balanced(pos2);
+	const auto pos3 = skip_whitespace(header_in_paranthesis.second);
+	read_required(pos3, "{");
 	const auto body = get_balanced(pos3);
-
-	const auto init_statement_str = read_until(seq_t(trim_ends(header.first)), ";");
-	const auto condition_expression_str = read_until(init_statement_str.second.rest1(), ";");
-	const auto post_expression_str = condition_expression_str.second.rest1();
-
 	const auto body_statements_str = trim_ends(body.first);
 
+	const auto header_str = seq_t(trim_ends(header_in_paranthesis.first));
+	const auto init_statement_str = read_until(header_str, ";");
+	const auto condition_expression_str = read_until(init_statement_str.second.rest1(), ";");
+	const auto post_expression_str = condition_expression_str.second.rest1();
+	if(init_statement_str.first.empty() || condition_expression_str.first.empty() || post_expression_str.empty()){
+		throw std::runtime_error("For loop requires for(;;){} .");
+	}
 
 	const auto init_statement2 = read_statement2(seq_t(init_statement_str.first));
 	const auto condition_expression2 = parse_expression_all(seq_t(condition_expression_str.first));
@@ -347,8 +345,9 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 
 	const auto body_statements2 = read_statements2(seq_t(body_statements_str));
 
-	const auto r = json_t::make_array({ "for", init_statement2.first, condition_expression2, post_expression2, body_statements2.first });
-
+	const auto r = json_t::make_array(
+		{ "for", init_statement2.first, condition_expression2, post_expression2, body_statements2.first }
+	);
 	return { r, body.second };
 }
 

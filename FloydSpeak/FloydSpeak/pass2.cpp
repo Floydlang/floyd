@@ -425,26 +425,6 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 					else_statements2.first._statements
 				)
 			));
-/*
-			const auto s2 = lexical_scope_t::make_block_object(
-				body_statements2.first._locals,
-				body_statements2.first._statements,
-				body_statements2.first._objects
-			);
-
-			//	Make symbol refering to object.
-			const auto id = id_generator;
-			id_generator += 1;
-
-			objects[id] = s2;
-
-			statements2.push_back(make_shared<statement_t>(make__for_statement(
-				*init_statement2.first._statements[0],
-				condition_expression2,
-				post_expression2,
-				id
-			)));
-*/
 		}
 		else if(type == "for"){
 			QUARK_ASSERT(statement.get_array_size() == 5);
@@ -459,29 +439,8 @@ pair<body_t, int> parser_statements_to_ast(const json_t& p, int id_generator){
 			const auto condition_expression2 = parser_expression_to_ast(condition_expression);
 			const auto post_expression2 = parser_expression_to_ast(post_expression);
 
-			const auto& body_statements2 = parser_statements_to_ast(json_t::make_array({init_statement}), id_generator);
+			const auto& body_statements2 = parser_statements_to_ast(body_statements, id_generator);
 			id_generator = body_statements2.second;
-
-/*
-			const auto s2 = lexical_scope_t::make_block_object(
-				body_statements2.first._locals,
-				body_statements2.first._statements,
-				body_statements2.first._objects
-			);
-
-			//	Make symbol refering to object.
-			const auto id = id_generator;
-			id_generator += 1;
-
-			objects[id] = s2;
-
-			statements2.push_back(make_shared<statement_t>(make__for_statement(
-				*init_statement2.first._statements[0],
-				condition_expression2,
-				post_expression2,
-				id
-			)));
-*/
 		}
 		else{
 			throw std::runtime_error("Illegal statement.");
