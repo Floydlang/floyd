@@ -56,8 +56,13 @@ namespace floyd_ast {
 	}
 
 
-	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id){
-		return statement_t(for_statement_t{ std::make_shared<statement_t>(init), condition, post_expression, block_id });
+	statement_t make__for_statement(
+		const std::vector<std::shared_ptr<statement_t>> init,
+		const expression_t& condition,
+		const expression_t& post,
+		const std::vector<std::shared_ptr<statement_t>> body
+	){
+		return statement_t(for_statement_t{ init, condition, post, body });
 	}
 
 
@@ -144,10 +149,10 @@ namespace floyd_ast {
 		else if(e._for){
 			return json_t::make_array({
 				json_t("for"),
-				statement_to_json(*e._for->_init),
+				statements_to_json(e._for->_init),
 				expression_to_json(e._for->_condition),
-				expression_to_json(e._for->_post_expression),
-				json_t(double(e._for->_block_id))
+				expression_to_json(e._for->_post),
+				statements_to_json(e._for->_body)
 			});
 		}
 		else{

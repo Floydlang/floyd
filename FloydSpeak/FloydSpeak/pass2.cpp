@@ -406,6 +406,17 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto post_expression2 = parser_expression_to_ast(post_expression);
 
 			const auto& body_statements2 = parser_statements_to_ast(body_statements);
+
+
+			statements2.push_back(make_shared<statement_t>(
+				make__for_statement(
+					{init_statement2},
+					condition_expression2,
+					post_expression2,
+					body_statements2
+				)
+			));
+
 		}
 		else{
 			throw std::runtime_error("Illegal statement.");

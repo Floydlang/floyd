@@ -148,14 +148,18 @@ namespace floyd_ast {
 
 	struct for_statement_t {
 		bool operator==(const for_statement_t& other) const {
-			return compare_shared_values(_init, other._init) && _condition == other._condition && _post_expression == other._post_expression && _block_id == other._block_id;
+			return
+				compare_shared_value_vectors(_init, other._init)
+				&& _condition == other._condition
+				&& _post == other._post
+				&& compare_shared_value_vectors(_body, other._body);
 		}
 
 
-		std::shared_ptr<statement_t> _init;
-		expression_t _condition;
-		expression_t _post_expression;
-		int _block_id;
+		const std::vector<std::shared_ptr<statement_t>> _init;
+		const expression_t _condition;
+		const expression_t _post;
+		const std::vector<std::shared_ptr<statement_t>> _body;
 	};
 
 
@@ -233,7 +237,12 @@ namespace floyd_ast {
 		std::vector<std::shared_ptr<statement_t>> then_statements,
 		std::vector<std::shared_ptr<statement_t>> else_statements
 	);
-	statement_t make__for_statement(const statement_t& init, const expression_t& condition, const expression_t& post_expression, int block_id);
+	statement_t make__for_statement(
+		const std::vector<std::shared_ptr<statement_t>> init,
+		const expression_t& condition,
+		const expression_t& post,
+		const std::vector<std::shared_ptr<statement_t>> body
+	);
 
 
 	void trace(const statement_t& s);
