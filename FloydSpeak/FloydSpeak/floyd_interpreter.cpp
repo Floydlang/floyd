@@ -1776,7 +1776,6 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 		R"(
 			for (int i = 0 ; i < 3 ; i + 1) {
 				int dummy = print("Body");
-				int x = 3
 			}
 		)"
 	);
