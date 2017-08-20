@@ -43,20 +43,17 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 
 
 
-# IF - THEN -ELSE -- STATEMENT & EXPRESSION
-This is a normal if-else-if-else construct, like in most languages.
 
-		if(s == "one"){
-			return 1;
-		}
-		else if(s == "two"){
-			return 2;
-		}
-		else{
-			return -1;
-		}
+# MORE EXPRESSIONS
+	!a
 
-In each body you can write any statements. There is no "break" keyword. { and }Â are required.
+
+### Bitwise Operators
+!a					inverts a bool: true becomes false, false becomes true.
+~a
+^a
+
+### IF - EXPRESSION
 
 ??? Replace with expression:
 
@@ -73,29 +70,112 @@ In each body you can write any statements. There is no "break" keyword. { and }Â
 
 
 
-# MORE EXPRESSIONS
-	!a
-
-### Bitwise Operators
-!a					inverts a bool: true becomes false, false becomes true.
-~a
-^a
-
-
 # LOOPS AND CONDITIONS
 The foreach uses the seq-protocol to process all items in a seq, one by one.
 
-foreach(a in stuff){
-}
-foreach(thing, [string]{ 1, 2, 3 })
 
-switch() -- has modern update, no default or break. ??? todo
 
-	for(int i = 0 ; i < 100 ; i++){
+Loop over collection or seq:
+
+	foreach(thing, [string]{ 1, 2, 3 })
+	
+	
+	for(const auto& e: my_vec){
+		cout << e;
+	}
+	
+	for(e in my_vec){
 	}
 
-while(expression){
+	for name in names {
+	    print("Hello, \(name)!")
+	}
+
+	for (animalName, legCount) in numberOfLegs {
+	    print("\(animalName)s have \(legCount) legs")
+	}
+
+	for(const auto it = my_vec.begin() ; it != my_vec.end() ; i++){
+	    print("Hello, \(*it)!")
+	}
+
+Loop over index:
+
+	for index in 1...5 {
+	    print("\(index) times 5 is \(index * 5)")
+	}
+
+	for (int index = 1 ; index <= 5 ; i++){
+	    print("\(index) times 5 is \(index * 5)")
+	}
+
+	This is equivalent to [1,2,3,4,5].map(
+		index in {print("\(index) times 5 is \(index * 5)")
+	}
+
+	var index = 1
+	while(index <=5){
+	    print("\(index) times 5 is \(index * 5)")
+	    index = index + 1
+	}
+	
+	for tickMark in 0..<minutes {
+	    // render the tick mark each minute (60 times)
+	}
+
+
+
+
+for tickMark in stride(from: 0, to: minutes, by: minuteInterval) {
+    // render the tick mark every 5 minutes (0, 5, 10, 15 ... 45, 50, 55)
 }
+Closed ranges: stride(from:through:by:)
+
+
+
+Python. Number of iterations is set *before* loop starts.
+for x in range(0, 3):
+    print "We're on time %d" % (x)
+
+
+
+Good syntax + compatible with c / c++ / Javascript
+
+???
+
+
+Related:
+- Seq
+- map(), filter(), reduce(), find()
+- while
+
+
+# filter()
+	
+	let digits = [1,4,10,15]
+	let even = digits.filter { $0 % 2 == 0 }
+	// [4, 10]
+	
+
+# map()
+
+	let values = [2.0,4.0,5.0,7.0]
+	let squares2 = values.map({
+	  (value: Double) -> Double in
+	  return value * value
+	})
+
+# reduce()
+
+	let names = ["alan","brian","charlie"]
+	let csv = names.reduce("===") {text, name in "\(text),\(name)"}
+	// "===,alan,brian,charlie"
+
+# find()
+
+	let names = ["alan","brian","charlie"]
+	let csv = names.find("===") {text, name in "\(text),\(name)"}
+	// "===,alan,brian,charlie"
 
 
 

@@ -1771,16 +1771,17 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 //////////////////////////		for-statement
 
 
-#if false
 QUARK_UNIT_TESTQ("run_init()", "for"){
-	test__run_init__check_result(
-		"for (int i = 0; i < 3; i + 1) {"
-		"	int x = 3"
-		"}",
-		value_t(123)
+	const auto r = run_global(
+		R"(
+			for (int i = 0 ; i < 3 ; i + 1) {
+				int dummy = print("Body");
+				int x = 3
+			}
+		)"
 	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Body" }));
 }
-#endif
 
 
 

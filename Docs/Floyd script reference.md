@@ -152,6 +152,37 @@ condition ? a : b		When condition is true, this entire expression has the value 
 	assert(is_polity("hello") == true);
 
 
+# IF - THEN - ELSE -- STATEMENT
+This is a normal if-else-if-else construct, like in most languages. Bracked are required always.
+
+		if(s == "one"){
+			return 1;
+		}
+
+You can add an else body like this:
+
+		if(s == "one"){
+			return 1;
+		}
+		else{
+			return -1;
+		}
+
+Else-if lets you avoid big nested if-else statements and do this:
+
+		if(s == "one"){
+			return 1;
+		}
+		else if(s == "two"){
+			return 2;
+		}
+		else{
+			return -1;
+		}
+
+In each body you can write any statements. There is no "break" keyword.
+
+
 # STRUCTs - Simple structs
 Structs are the central building blocks for composing data in Floyd. They are used in place of C-structs, classes and tuples in other languages. Structs are always values and immutable. Behind the curtains they share state between copies so they are fast and compact.
 
