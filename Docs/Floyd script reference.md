@@ -30,6 +30,9 @@ These are the primitive data types built into the language itself. The goals is 
 							Use for machine strings, basic UI. Not localizable.
 - **float**				32-bit floating point number
 
+- **function**				A function value. Functions can be Floyd functions or C functions. They are callable.
+
+
 # COMPOSITE TYPES
 These are composites and collections of other types.
 - **struct**		like C struct or class or tuple.

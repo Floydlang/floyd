@@ -371,6 +371,8 @@ code_point
 a = localizeable("Please insert data type into terminal...");
 
 Tool extracts and switches text inside localizeable() automatically.
+Grapehan
+template_variable_injection(TEXT"Hello, \(name), do you want some \(food)?")
 
 
 # BINARY DATA FEATURES

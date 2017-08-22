@@ -5,7 +5,6 @@
 - **int16**
 - **int32**
 - **int64**
-- **function**				function pointer. Functions can be Floyd functions or C functions.
 
 
 ### MORE TYPES
@@ -21,10 +20,54 @@ These are features built into every type: integer, string, struct, collections e
 
 
 
-# PROOF & ASSERT
+# PROOF & DOCS
 Floyd has serveral built in features to check code correctness. One of the core features is assert() which is a function that makes sure an expression is true or the program will be stopped. If the expression is false, the program is defect.
 
 This is used through out this document to demonstrate language features.
+
+
+
+		
+		# DOCS
+				"Short": Calculates area of various basic shapes",
+				"Features": "Squares, circles and dots",
+				"Inputs": [
+					"a": "a key that tells which shape to use."
+						a == "": default shape, a dot
+						a == "square": simple square, only size1 is used.
+					"b": The size of the shape. For squares, this is the side. For circles, this is the radius
+				],
+				"output": Returns the area
+			],
+			"tests": [
+				{
+					"Scenario": "Minimal inputs"
+					"Input": ["", 0]
+					"Output": 0
+				},
+				{
+					"Scenario": "Make sure the special case for PI works"
+					"Input": ["hello", 3.14]
+					"Output": 1
+				}
+			],
+			"examples": [
+				[
+					int r = my_func("circle", 10.0)
+					assert(r == 3.4)
+				],
+				[
+					int r = my_func("square", 30.0)
+					assert(r == 900.0)
+				]
+			]
+		]
+		
+		int my_func(string a, float b){
+		}
+	
+
+
 
 
 # VALUES, VARIABLES AND CONSTANTS
@@ -54,7 +97,7 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 ^a
 
 ### IF - EXPRESSION
-
+??? This is like SWITCH or pattern matching.
 ??? Replace with expression:
 
 		int val = if(s == "one"){
@@ -66,7 +109,6 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 		else{
 			return -1;
 		}
-
 
 
 

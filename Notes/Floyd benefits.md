@@ -40,7 +40,7 @@ Open GLs
 
 # External file system value, like React
 
-? Can the fs was a normal Floyd value and file data stored as [uint8]? Or do we need to have special accessors?
+? Can the fs be a normal Floyd value and file data stored as [uint8]? Or do we need to have special accessors?
 
 Read and write entire fs and every byte in files and meta data is if it was only values.
 
