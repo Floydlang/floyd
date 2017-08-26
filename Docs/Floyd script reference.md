@@ -156,7 +156,7 @@ condition ? a : b		When condition is true, this entire expression has the value 
 
 
 # IF - THEN - ELSE -- STATEMENT
-This is a normal if-else-if-else construct, like in most languages. Bracked are required always.
+This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
 		if(s == "one"){
 			return 1;

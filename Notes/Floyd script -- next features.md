@@ -115,6 +115,13 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 # LOOPS AND CONDITIONS
 The foreach uses the seq-protocol to process all items in a seq, one by one.
 
+r = map -- process sequence of elements one at a time, return new collection with equal number of elements.
+r = filter -- process sequence of elements one at a time, return subset of those elements in new collection
+r = reduce -- process sequence of elements one at a time, aggregate value value E.
+r = find1() returns key of an element in a collection
+r = findall() returns key of each element that matches expression.
+
+r = foreach() process sequence of elements one at a time. ??? Where to store result?
 
 
 Loop over collection or seq:
