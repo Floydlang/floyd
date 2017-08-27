@@ -113,15 +113,34 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 
 
 # LOOPS AND CONDITIONS
-The foreach uses the seq-protocol to process all items in a seq, one by one.
 
-r = map -- process sequence of elements one at a time, return new collection with equal number of elements.
-r = filter -- process sequence of elements one at a time, return subset of those elements in new collection
-r = reduce -- process sequence of elements one at a time, aggregate value value E.
-r = find1() returns key of an element in a collection
-r = findall() returns key of each element that matches expression.
+x = foreach(seq) { statements } process all items in a seq, one by one. Execution order undefined.
+
+collection = map(e2 = expr(e), seq) - process sequence of elements one at a time, return new collection with equal number of elements.
+
+collection = filter(bool expr, seq) -- process sequence of elements one at a time, return subset of those elements in new collection
+
+collection = reduce(expr, v0, seq) -- process sequence of elements one at a time, aggregate value v0.
+
+index = find1(e, vector) returns key of an element in a collection
+index = find1(bool expr, vector) returns key of an element in a collection
+
+key = find1(value, dict) returns key of an element in a collection
+key = find1(bool expr, dict) returns key of an element in a collection
+
+[index] = findall(e, vector) returns key of each element that matches expression.
+[index] = findall(bool expr, vector) returns key of each element that matches expression.
 
 r = foreach() process sequence of elements one at a time. ??? Where to store result?
+
+for(;;){ statements }		--- mutable C-style for loop. Not recommended.
+while(expr){ statements }	--- Not supported, use for loop instead.
+
+
+Q: Can for loop evaluate condition once and convert to a count?
+	Loop over a fixed number (int) of elements, calculated before loop.
+	Loop over a sequence.
+	Loop while expression is true.
 
 
 Loop over collection or seq:
