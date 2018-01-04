@@ -1,6 +1,6 @@
-INVENtIONS
+GOALS
 
-1) Take best part of imperativr and functional languages and make it extremely fast and simple.
+1) Take best part of imperative and functional languages and make it extremely fast and simple.
 2) Easy to learn for new programmers, easy to like for imperative programmers.
 
 ??? Why do you make quick scripts in python or shell script, not in C++? Fix this with Floyd
@@ -8,15 +8,15 @@ INVENtIONS
 
 # Floyd Script Reference
 
-Floyd Script is a fast and modern C-like program language that tries to make writing correct programs simpler and faster.
+Floyd Script is a fast and modern C-like program language that tries to make writing correct programs simpler and faster than any other programming language.
 
-It uses pure functions, immutability and composition.
+It's focus is composability, minimalism and proven programming techniques, like pure functions and immutability.
 
 It as a unique concept to handle mutation of data, control of the outside world (files, network, UI) and controlling time.
 
-Functions and classes are pure. A pure function can only call pure functions. This delegates all mutation / time to the top levels of your program. Here you need to call non-pure functions of the OS. You must tag your functions with "nonpure" to be able to call other nonpure functions.
+Functions and classes are pure. A pure function can only call pure functions. This delegates all mutation / time to the top levels of your program. Here you need to call non-pure functions to affect the world around the program. You must tag your functions with "nonpure" to be able to call other nonpure functions.
 
-This makes those risk. Have as little nonpure code as possible. Try to not have any conditional code inside nonpure code - this makes testing easier.
+This makes those functions a risk. Have as little nonpure code as possible. Try to not have any conditional code inside nonpure code - this makes testing easier. Put all logic into the pure functions.
 
 Mutable data can exist locally inside a function, but never leak out of the function. 
 
@@ -24,13 +24,13 @@ Mutable data can exist locally inside a function, but never leak out of the func
 # BASIC TYPES
 These are the primitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
-- **int**					Same as int64
-- **bool**				**true** or **false**
-- **string**				built-in string type. 8bit pure (supports embedded nulls).
-							Use for machine strings, basic UI. Not localizable.
-- **float**				32-bit floating point number
+- **int**			Same as int64
+- **bool**			**true** or **false**
+- **string**		built-in string type. 8bit pure (supports embedded nulls).
+					Use for machine strings, basic UI. Not localizable.
+- **float**			32-bit floating point number
 
-- **function**				A function value. Functions can be Floyd functions or C functions. They are callable.
+- **function**		A function value. Functions can be Floyd functions or C functions. They are callable.
 
 
 # COMPOSITE TYPES
@@ -42,25 +42,29 @@ These are composites and collections of other types.
 # CORE TYPE FEATURES
 These are features built into every type: integer, string, struct, collections etc.
 
-- **a = b** 	This true-deep copies the value b to the new name a.
+- **a = b** 							This true-deep copies the value b to the new name a.
 - **a != b**										derivated of a = b.
-- **a < b**										tests all member data in the order they appear in the struct.
+- **a < b**								tests all member data in the order they appear in the struct.
 - **a <= b**, **a > b**, **a >= b**	these are derivated of a < b
 
 
 # VALUES, VARIABLES AND CONSTANTS
 All "variables" aka values are by default constants / immutable.
+
 - Function arguments
 - Local function variables
 - Member variables of structs etc.
 
-	assert(floyd_verify(
-		"int hello1(){
-			a = "hello";
-			a = "goodbye";	//	Compilation error - you cannot change variable a.
-			return 3;
-		}"
-	) == -3);
+	assert(
+		floyd_verify(
+			"int hello1(){
+				a = "hello";
+				a = "goodbye";	//	Compilation error - you cannot change variable a.
+				return 3;
+			}"
+		)
+		== -3
+	);
 
 
 # GLOBAL SCOPE
@@ -158,7 +162,7 @@ condition ? a : b		When condition is true, this entire expression has the value 
 # IF - THEN - ELSE -- STATEMENT
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
-		if(s == "one"){
+		if (s == "one"){
 			return 1;
 		}
 
@@ -186,6 +190,44 @@ Else-if lets you avoid big nested if-else statements and do this:
 In each body you can write any statements. There is no "break" keyword.
 
 
+# LOOPS: FOR AND WHILE
+
+There are two loop feature, the for-loop and the while-loop. They are simpler and stricter than in most other languages, like the C programming language.
+
+
+# FOR
+
+For-loops are used to evaluate its body many times, with a range of input values. The entire condition expression is evaluated *before* the first time the body is called.
+
+	b = 3
+	for(int a = 0 ; a < b ; a = a + 1){
+		print(a + b);
+	}
+
+Above snippet simulates the for loop of the C language but it works a little differently. There is always exactly ONE loop variable and it is defined and inited in the first section, checked in the condition section and incremented / updated in the third section. It must be the same symbol.
+The result is the equivalent to
+
+	b = 3
+	{ a = 0; print(a + b); }
+	{ a = 1; print(a + b); }
+	{ a = 2; print(a + b); }
+
+The loop is expanded before the first time the body is called. There is no way to have any other kind of condition expression, that relies on the result of the body etc.
+
+- init: must be an assignment statement for variable X.
+- condition: Must be a bool expression with only variable X. Is executed before each time body is executed. 
+- advance-statement: must be an assignement statement to X.
+- body: this is required and must have brackets. Brackets can be empty, like "{}".
+
+
+# WHILE
+
+	while (my_array[a] != 3){
+	}
+
+- condition: executed before body is executed.
+
+
 # STRUCTs - Simple structs
 Structs are the central building blocks for composing data in Floyd. They are used in place of C-structs, classes and tuples in other languages. Structs are always values and immutable. Behind the curtains they share state between copies so they are fast and compact.
 
@@ -193,22 +235,22 @@ Built-in features of every struct:
 
 - init(...) by supplying EVERY member in order
 - destructor
-- copy
 - Comparison operators: == != < > <= >= (this allows sorting too)
-- read members
+- read member
 - modify member (this keeps original struct and gives you a new, updated struct)
 
-There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects because of several clients modifying the same struct.
+There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects caused by several clients modifying the same struct.
 
 This all makes simple structs extremely simple to create.
 
 Structs are **true-deep**. True-deep is a Floyd term that means that all values and sub-values are always considered so any type of nesting of structs and values and collections. This includes equality checks or assignment, for example. The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
 
+- There is only *one* way to initialize the members, via the constructor - which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
-- There is no "default constructor" with no argument, only a constructor with *all* members. If you want one, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0); }```.
 - There is no way to have several different constructors, instead create explicit functions like make_square().
+- If you want a default constructor, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0); }```.
 
-Insight: there are two different needs for structs: A) we want simple struct to be dead-simple -- not code needed just to collect data together. B) We want to be able to have explicit control over the member data invariant.
+Insight: there are two different needs for structs: A) we want simple struct to be dead-simple -- whenyou just want to collect data together. B) We want to be able to have explicit control over the member data invariant.
 
 	//	Make simple, ready-for use struct.
 	struct rect {

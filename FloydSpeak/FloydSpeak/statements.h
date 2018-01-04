@@ -216,6 +216,8 @@ namespace floyd_ast {
 			}
 		}
 
+
+		//	Only *one* of these are used for each instance.
 		public: std::shared_ptr<return_statement_t> _return;
 		public: std::shared_ptr<bind_statement_t> _bind;
 		public: std::shared_ptr<block_statement_t> _block;
@@ -228,7 +230,7 @@ namespace floyd_ast {
 
 
 
-			statement_t make__return_statement(const return_statement_t& value);
+	statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
 	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression);
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);

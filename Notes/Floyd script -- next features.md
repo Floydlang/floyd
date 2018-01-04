@@ -110,6 +110,7 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 			return -1;
 		}
 
+Use match for pattern matching? This syntax bloat is required since we have immutability.
 
 
 # LOOPS AND CONDITIONS
@@ -284,7 +285,7 @@ If you read many continous elements it's faster to use a SEQ with the vector - i
 	b = [string] ( "a", "b", "c");	//	Vector initialized to 3 strings.
 	b = ["one", "two", "three"];	//	Shortcut to create a vector with 3 strings.
 
-The vector is persistent so you can write elements to it, but you always get a new vector back - the original vector is unmodified:
+The vector is persistent so you *can* write elements to it, but you always get a *new* vector back - the original vector is unmodified:
 
 	a = ["one", "two", "three" ];
 	b = a[1] = "zwei";
@@ -705,6 +706,16 @@ Use <- to read & modify? A generic version of C's "a += 3".
 		a <= $0 + 3
 		a <= { $0 + 3 }
 Works like map() but for any nested variable.
+
+
+Replace multiple members of struct:
+	a = PaintWindow()
+	b = a.update(title = "Hello", size = "medium")
+
+...This makes a new PaintWindow identical to a, but with two members replaced.
+Better syntax:
+
+	b = a <= (title = "Hello", size = "medium")
 
 
 # STRUCTs: Invariant function -- SOMEDAY MAYBE

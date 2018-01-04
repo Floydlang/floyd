@@ -85,20 +85,40 @@ namespace floyd_ast {
 
 
 	bool statement_t::check_invariant() const {
-		if(_return){
-			QUARK_ASSERT(true);
+		if(_return != nullptr){
+			QUARK_ASSERT(_return != nullptr);
+			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_block == nullptr);
+			QUARK_ASSERT(_if == nullptr);
+			QUARK_ASSERT(_for == nullptr);
 		}
 		else if(_bind){
-			QUARK_ASSERT(true);
+			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_bind != nullptr);
+			QUARK_ASSERT(_block == nullptr);
+			QUARK_ASSERT(_if == nullptr);
+			QUARK_ASSERT(_for == nullptr);
 		}
 		else if(_block){
-			QUARK_ASSERT(true);
+			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_block != nullptr);
+			QUARK_ASSERT(_if == nullptr);
+			QUARK_ASSERT(_for == nullptr);
 		}
 		else if(_if){
-			QUARK_ASSERT(true);
+			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_block == nullptr);
+			QUARK_ASSERT(_if != nullptr);
+			QUARK_ASSERT(_for == nullptr);
 		}
 		else if(_for){
-			QUARK_ASSERT(true);
+			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_block == nullptr);
+			QUARK_ASSERT(_if == nullptr);
+			QUARK_ASSERT(_for != nullptr);
 		}
 		else{
 			QUARK_ASSERT(false);
