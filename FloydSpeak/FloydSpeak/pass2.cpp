@@ -394,7 +394,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			));
 		}
 		else if(type == "for"){
-			QUARK_ASSERT(statement.get_array_size() == 5);
+			QUARK_ASSERT(statement.get_array_size() == 6);
 			const auto init_statement = statement.get_array_n(1);
 			const auto condition_expression = statement.get_array_n(2);
 			const auto post_expression = statement.get_array_n(3);

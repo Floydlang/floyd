@@ -199,10 +199,23 @@ There are two loop feature, the for-loop and the while-loop. They are simpler an
 
 For-loops are used to evaluate its body many times, with a range of input values. The entire condition expression is evaluated *before* the first time the body is called.
 
-	b = 3
-	for(int a = 0 ; a < b ; a = a + 1){
-		print(a + b);
+Closed range that starts with 1 and ends with 5.:
+
+	for (index in 1...5) {
+		print(index)
 	}
+
+Open range that starts with 1 and ends with 59:
+
+	for (tickMark in 0..<60) {
+	}
+
+You can use expressions for range:
+
+	for (tickMark in a..<string.size()) {
+	}
+
+
 
 Above snippet simulates the for loop of the C language but it works a little differently. There is always exactly ONE loop variable and it is defined and inited in the first section, checked in the condition section and incremented / updated in the third section. It must be the same symbol.
 The result is the equivalent to

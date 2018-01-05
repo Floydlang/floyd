@@ -115,6 +115,44 @@ Use match for pattern matching? This syntax bloat is required since we have immu
 
 # LOOPS AND CONDITIONS
 
+
+Alt:
+
+	b = 3
+	for(int a = 0 ; a < b ; a = a + 1){
+		print(a + b);
+	}
+
+
+Swift 4:
+
+	for name in names {
+	    print("Hello, \(name)!")
+	}
+	for (animalName, legCount) in numberOfLegs {
+		print("\(animalName)s have \(legCount) legs")
+	}
+
+	for index in 1...5 {
+		print("\(index) times 5 is \(index * 5)")
+	}
+
+	for _ in 1...power {
+		answer *= base
+	}
+	for tickMark in 0..<minutes {
+	}
+
+
+Python:
+	for iterating_var in sequence:
+		statements(s)
+	for index in range(len(fruits)):
+		print 'Current fruit :', fruits[index]
+	for num in range(10,20):     #to iterate between 10 to 20
+
+
+
 x = foreach(seq) { statements } process all items in a seq, one by one. Execution order undefined.
 
 collection = map(e2 = expr(e), seq) - process sequence of elements one at a time, return new collection with equal number of elements.

@@ -117,12 +117,12 @@ namespace floyd_ast {
 			"[coord_t/8000]"
 			"pixel_coord_t = coord_t/8000"
 		*/
-		floyd_basics::base_type _base_type;
-		std::vector<typeid_t> _parts;
-		std::string _struct_def_id;
+		public: floyd_basics::base_type _base_type;
+		public: std::vector<typeid_t> _parts;
+		public: std::string _struct_def_id;
 
 		//	This is used it overrides _base_type (which will be null).
-		std::string _unresolved_type_symbol;
+		public: std::string _unresolved_type_symbol;
 	};
 
 	json_t typeid_to_json(const typeid_t& t);

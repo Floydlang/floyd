@@ -79,7 +79,7 @@ struct seq_t {
 
 	public: bool operator==(const seq_t& other) const;
 
-	//	Returns point to entire string.
+	//	Returns pointer to entire string.
 	const char* c_str() const;
 
 
@@ -93,6 +93,8 @@ struct seq_t {
 
 std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& chars);
 std::pair<std::string, seq_t> read_until(const seq_t& p1, const std::string& chars);
+
+std::pair<std::string, seq_t> split_at(const seq_t& p1, const std::string& str);
 
 //	If p starts with wanted_string, return true and consume those chars. Else return false and the same seq_t.
 std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string);

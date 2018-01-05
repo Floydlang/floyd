@@ -29,6 +29,7 @@ namespace floyd_ast {
 	json_t expression_to_json(const expression_t& e);
 	json_t expressions_to_json(const std::vector<expression_t> v);
 
+	//	"+", "<=", "&&" etc.
 	bool is_simple_expression__2(const std::string& op);
 
 

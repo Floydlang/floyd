@@ -100,10 +100,11 @@ namespace floyd_parser {
 
 
 	/*
-		for ( int x = 0 ; x < 10 ; x++ ){
-			...
+		for (index in 1...5) {
+			print(index)
 		}
-
+		for (tickMark in 0..<minutes) {
+		}
 
 		OUTPUT
 			INIT_STATEMENT, CONDITION_EXPRESSION and POST_STATEMENT can also be null.

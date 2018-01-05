@@ -10,6 +10,7 @@
 
 #include "quark.h"
 #include <string>
+#include <cstring>
 #include <memory>
 #include <map>
 #include <iostream>
@@ -313,6 +314,23 @@ pair<string, seq_t> read_until(const seq_t& p1, const string& chars){
 	return { a, p2 };
 }
 
+pair<string, seq_t> split_at(const seq_t& p1, const string& str){
+	const auto p = std::strstr(p1.c_str(), str.c_str());
+	if(p == nullptr){
+		return { "", p1 };
+	}
+	else{
+		const auto pos = p - p1.c_str();
+		return { p1.first(pos), p1.rest(pos + str.size())};
+	}
+}
+
+QUARK_UNIT_TEST("", "split_at()", "", ""){
+	QUARK_TEST_VERIFY((split_at(seq_t("hello123world"), "123") == pair<string, seq_t>{ "hello", seq_t("world") }));
+}
+QUARK_UNIT_TEST("", "split_at()", "", ""){
+	QUARK_TEST_VERIFY((split_at(seq_t("hello123world"), "456") == pair<string, seq_t>{ "", seq_t("hello123world") }));
+}
 
 
 std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string){

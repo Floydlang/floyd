@@ -308,59 +308,68 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 	);
 }
 
-/*
-	for ( INIT_STATEMENT ; CONDITION_EXPRESSION ; POST_STATEMENT ) { BODY_STATEMENTS }
-
-	for ( int x = 0 ; x < 10 ; x++ ){
-		print(x)
-	}
-
-	OUTPUT
-		[ "for", INIT_STATEMENT, CONDITION_EXPRESSION, POST_STATEMENT, BODY_STATEMENTS ]
-		[ "for", null, CONDITION_EXPRESSION, null, [] ]
-		[ "for", null, null, null, [] ]
-*/
 std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	std::pair<bool, seq_t> pos1 = if_first(pos, "for");
 	QUARK_ASSERT(pos1.first);
 	const auto pos2 = skip_whitespace(pos1.second);
 	read_required(pos2, "(");
 	const auto header_in_paranthesis = get_balanced(pos2);
+
 	const auto pos3 = skip_whitespace(header_in_paranthesis.second);
 	read_required(pos3, "{");
 	const auto body = get_balanced(pos3);
 	const auto body_statements_str = trim_ends(body.first);
 
-	const auto header_str = seq_t(trim_ends(header_in_paranthesis.first));
-	const auto init_statement_str = read_until(header_str, ";");
-	const auto condition_expression_str = read_until(init_statement_str.second.rest1(), ";");
-	const auto post_expression_str = condition_expression_str.second.rest1();
-	if(init_statement_str.first.empty() || condition_expression_str.first.empty() || post_expression_str.empty()){
-		throw std::runtime_error("For loop requires for(;;){} .");
+
+	//	header_in_paranthesis == "( index in 1 ... 5 )"
+	//	header == " index in 1 ... 5 "
+	const auto header = seq_t(trim_ends(header_in_paranthesis.first));
+
+	//	iterator == "index".
+	const auto iterator_name = read_required_single_symbol(header);
+	if(iterator_name.first.empty()){
+		throw std::runtime_error("For loop requires iterator name.");
 	}
 
-	const auto init_statement2 = read_statement2(seq_t(init_statement_str.first));
-	const auto condition_expression2 = parse_expression_all(seq_t(condition_expression_str.first));
-	const auto post_expression2 = parse_expression_all(seq_t(post_expression_str));
+	//	range == "1 ... 5 ".
+	const auto range = skip_whitespace(read_required(skip_whitespace(iterator_name.second), "in"));
+
+	//	left_and_right == "1 ", " 5 ".
+	const auto left_and_right = split_at(range, "...");
+	const auto start = left_and_right.first;
+	const auto end = left_and_right.second;
+
+	const auto start_expr = parse_expression_all(seq_t(start));
+	const auto end_expr = parse_expression_all(end);
+
 
 	const auto body_statements2 = read_statements2(seq_t(body_statements_str));
 
 	const auto r = json_t::make_array(
-		{ "for", init_statement2.first, condition_expression2, post_expression2, body_statements2.first }
+		{
+			"for",
+			"open_range",
+			iterator_name.first,
+			start_expr,
+			end_expr,
+			body_statements2.first
+		
+		}
 	);
 	return { r, body.second };
 }
 
 QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 	ut_compare_jsons(
-		parse_for_statement(seq_t("for ( int x = 0 ; x < 10 ; x + 100 ) { int y = 11; }")).first,
+		parse_for_statement(seq_t("for ( index in 1...5 ) { int y = 11; }")).first,
 		parse_json(seq_t(
 			R"(
 				[
 					"for",
-					["bind","<int>","x",["k",0,"<int>"]],
-					["<",["@","x"],["k",10,"<int>"]],
-					["+",["@","x"],["k",100,"<int>"]],
+					"open_range",
+					"index",
+					["k",1,"<int>"],
+					["k",5,"<int>"],
 					[
 						["bind","<int>","y",["k",11,"<int>"]]
 					]
