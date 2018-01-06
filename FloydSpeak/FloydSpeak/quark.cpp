@@ -178,6 +178,13 @@ int run_test_list(const std::string& source_file, const std::vector<unit_test_de
 			QUARK_SCOPED_TRACE(testInfo.str());
 			test._test_f();
 		}
+		catch(const std::exception& e){
+			on_problem___put_breakpoint_here();
+			QUARK_TRACE(typeid(e).name());
+			QUARK_TRACE(e.what());
+			QUARK_TRACE("FAILURE: " + testInfo.str());
+			fail_count++;
+		}
 		catch(...){
 			on_problem___put_breakpoint_here();
 			QUARK_TRACE("FAILURE: " + testInfo.str());

@@ -1579,6 +1579,25 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
+QUARK_UNIT_TESTQ("call_function()", "return from nested scopes"){
+	auto r = run_global(
+		"string f(int a){"
+		"	if(a == 1){"
+		"		if(true){"
+		"			int dummy = print(\"returning\");"
+		"			return \"A\";"
+		"		}"
+		"		int dummy = print(\"problem 1\");"
+		"	}"
+		"	int dummy = print(\"problem 2\");"
+		"}"
+		"int dummy = print(f(1))"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "returning", "A" }));
+}
+
+
+
 
 
 //////////////////////////		Host: int_to_string()
