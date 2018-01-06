@@ -36,7 +36,6 @@ These are the primitive data types built into the language itself. The goals is 
 # COMPOSITE TYPES
 These are composites and collections of other types.
 - **struct**		like C struct or class or tuple.
-- **vector**		like C struct or class or tuple.
 
 
 # CORE TYPE FEATURES
