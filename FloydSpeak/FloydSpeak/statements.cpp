@@ -57,12 +57,12 @@ namespace floyd_ast {
 
 
 	statement_t make__for_statement(
-		const std::vector<std::shared_ptr<statement_t>> init,
-		const expression_t& condition,
-		const expression_t& post,
+		const std::string iterator_name,
+		const expression_t& start_expression,
+		const expression_t& end_expression,
 		const std::vector<std::shared_ptr<statement_t>> body
 	){
-		return statement_t(for_statement_t{ init, condition, post, body });
+		return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
 	}
 
 
@@ -169,9 +169,9 @@ namespace floyd_ast {
 		else if(e._for){
 			return json_t::make_array({
 				json_t("for"),
-				statements_to_json(e._for->_init),
-				expression_to_json(e._for->_condition),
-				expression_to_json(e._for->_post),
+				json_t("open_range"),
+				expression_to_json(e._for->_start_expression),
+				expression_to_json(e._for->_end_expression),
 				statements_to_json(e._for->_body)
 			});
 		}

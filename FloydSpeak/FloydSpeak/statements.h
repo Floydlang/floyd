@@ -149,16 +149,15 @@ namespace floyd_ast {
 	struct for_statement_t {
 		bool operator==(const for_statement_t& other) const {
 			return
-				compare_shared_value_vectors(_init, other._init)
-				&& _condition == other._condition
-				&& _post == other._post
+				_iterator_name == other._iterator_name
+				&& _start_expression == other._start_expression
+				&& _end_expression == other._end_expression
 				&& compare_shared_value_vectors(_body, other._body);
 		}
 
-
-		const std::vector<std::shared_ptr<statement_t>> _init;
-		const expression_t _condition;
-		const expression_t _post;
+		const std::string _iterator_name;
+		const expression_t _start_expression;
+		const expression_t _end_expression;
 		const std::vector<std::shared_ptr<statement_t>> _body;
 	};
 
@@ -168,6 +167,7 @@ namespace floyd_ast {
 
 	/*
 		Defines a statement, like "return" including any needed expression trees for the statement.
+		??? make immutable
 	*/
 	struct statement_t {
 		public: statement_t(const statement_t& other) = default;
@@ -240,9 +240,9 @@ namespace floyd_ast {
 		std::vector<std::shared_ptr<statement_t>> else_statements
 	);
 	statement_t make__for_statement(
-		const std::vector<std::shared_ptr<statement_t>> init,
-		const expression_t& condition,
-		const expression_t& post,
+		const std::string iterator_name,
+		const expression_t& start_expression,
+		const expression_t& end_expression,
 		const std::vector<std::shared_ptr<statement_t>> body
 	);
 

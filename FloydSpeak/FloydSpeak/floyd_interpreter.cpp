@@ -51,7 +51,7 @@ namespace {
 	}
 
 
-	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements_in_env(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>> statements){
+	interpreter_t begin_subenv(const interpreter_t& vm){
 		QUARK_ASSERT(vm.check_invariant());
 
 		auto vm2 = vm;
@@ -61,6 +61,21 @@ namespace {
 		vm2._call_stack.push_back(new_environment);
 
 		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+		return vm2;
+	}
+
+
+
+	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements_in_env(
+		const interpreter_t& vm,
+		const std::vector<std::shared_ptr<statement_t>>& statements,
+		const std::map<std::string, floyd_ast::value_t>& values
+	){
+		QUARK_ASSERT(vm.check_invariant());
+
+		auto vm2 = begin_subenv(vm);
+
+		vm2._call_stack.back()->_values.insert(values.begin(), values.end());
 
 		const auto r = execute_statements(vm2, statements);
 		vm2 = r.first;
@@ -110,7 +125,7 @@ namespace {
 		}
 		else if(statement._block){
 			const auto& s = statement._block;
-			return execute_statements_in_env(vm, s->_statements);
+			return execute_statements_in_env(vm, s->_statements, {});
 		}
 		else if(statement._return){
 			const auto& s = statement._return;
@@ -134,15 +149,23 @@ namespace {
 
 			bool r = condition_result.second.get_literal().get_bool();
 			if(r){
-				return execute_statements_in_env(vm, s->_then_statements);
+				return execute_statements_in_env(vm, s->_then_statements, {});
 			}
 			else{
-				return execute_statements_in_env(vm, s->_else_statements);
+				return execute_statements_in_env(vm, s->_else_statements, {});
 			}
 		}
 		else if(statement._for){
 			const auto& s = statement._for;
-			const auto expr = s->_init;
+
+			const auto start_value = evaluate_expression(vm2, s->_start_expression).second.get_literal().get_int();
+			const auto end_value = evaluate_expression(vm2, s->_end_expression).second.get_literal().get_int();
+			for(int x = start_value ; x <= end_value ; x++){
+				const std::map<std::string, floyd_ast::value_t> values = { { s->_iterator_name, value_t(x)} };
+				const auto result = execute_statements_in_env(vm2, s->_body, values);
+				vm2 = result.first;
+			}
+
 			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {} };
 		}
 		else{
@@ -809,6 +832,7 @@ bool environment_t::check_invariant() const {
 
 enum host_functions {
 	k_print = 1,
+	k_to_string,
 	k_get_time_of_day_ms,
 	k_host__int_to_string,
 	k_host__float_to_string
@@ -823,6 +847,13 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 
 	vm2._print_output.push_back(s);
 	return {vm2, value_t() };
+}
+
+//	string to_string(value_t)
+std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const std::vector<value_t>& args){
+	const auto& value = args[0];
+	const auto a = value.plain_value_to_string();
+	return {vm, value_t(a) };
 }
 
 
@@ -902,6 +933,9 @@ std::pair<interpreter_t, floyd_ast::value_t> interpreter_t::call_host_function(i
 	if(function_id == static_cast<int>(host_functions::k_print)){
 		return host__print(*this, args);
 	}
+	else if(function_id == static_cast<int>(host_functions::k_to_string)){
+		return host__to_string(*this, args);
+	}
 	else if(function_id == static_cast<int>(host_functions::k_get_time_of_day_ms)){
 		return host__get_time_of_day(*this, args);
 	}
@@ -930,6 +964,16 @@ interpreter_t::interpreter_t(const ast_t& ast){
 			{ member_t{ typeid_t::make_string(), "s" } },
 			host_functions::k_print,
 			typeid_t::make_null()
+		)
+	)));
+
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
+		"to_string",
+		function_definition_t(
+			//??? Supports arg of any type.
+			{ },
+			host_functions::k_to_string,
+			typeid_t::make_string()
 		)
 	)));
 
@@ -1772,16 +1816,14 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 
 
 QUARK_UNIT_TESTQ("run_init()", "for"){
-/*
 	const auto r = run_global(
 		R"(
 			for (i in 0...2) {
-				int dummy = print("Body");
+				int dummy = print("Iteration: " + to_string(i));
 			}
 		)"
 	);
-*/
-//	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Body" }));
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
 }
 
 

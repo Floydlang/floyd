@@ -236,6 +236,7 @@ std::vector<member_t> conv_members(const json_t& members){
 const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const json_t& p){
 	QUARK_SCOPED_TRACE("parser_statements_to_ast()");
 	QUARK_ASSERT(p.check_invariant());
+	QUARK_ASSERT(p.is_array());
 
 	vector<shared_ptr<statement_t>> statements2;
 
@@ -395,24 +396,21 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 		}
 		else if(type == "for"){
 			QUARK_ASSERT(statement.get_array_size() == 6);
-			const auto init_statement = statement.get_array_n(1);
-			const auto condition_expression = statement.get_array_n(2);
-			const auto post_expression = statement.get_array_n(3);
-			const auto body_statements = statement.get_array_n(4);
+			const auto for_mode = statement.get_array_n(1);
+			const auto iterator_name = statement.get_array_n(2);
+			const auto start_expression = statement.get_array_n(3);
+			const auto end_expression = statement.get_array_n(4);
+			const auto body_statements = statement.get_array_n(5);
 
-			const auto& init_statement2 = parser_statements_to_ast(json_t::make_array({init_statement}));
-
-			const auto condition_expression2 = parser_expression_to_ast(condition_expression);
-			const auto post_expression2 = parser_expression_to_ast(post_expression);
-
+			const auto start_expression2 = parser_expression_to_ast(start_expression);
+			const auto end_expression2 = parser_expression_to_ast(end_expression);
 			const auto& body_statements2 = parser_statements_to_ast(body_statements);
-
 
 			statements2.push_back(make_shared<statement_t>(
 				make__for_statement(
-					{init_statement2},
-					condition_expression2,
-					post_expression2,
+					iterator_name.get_string(),
+					start_expression2,
+					end_expression2,
 					body_statements2
 				)
 			));

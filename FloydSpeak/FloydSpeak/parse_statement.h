@@ -107,10 +107,7 @@ namespace floyd_parser {
 		}
 
 		OUTPUT
-			INIT_STATEMENT, CONDITION_EXPRESSION and POST_STATEMENT can also be null.
-			[ "for", INIT_STATEMENT, CONDITION_EXPRESSION, POST_STATEMENT´ ]
-			[ "for", null, CONDITION_EXPRESSION, null´ ]
-			[ "for", null, null, null´ ]
+			[ "for", "open_range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
 	*/
 	std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos);
 
