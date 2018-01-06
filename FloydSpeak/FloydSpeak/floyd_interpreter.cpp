@@ -60,7 +60,7 @@ namespace {
 		auto new_environment = environment_t::make_environment(vm2, parent_env);
 		vm2._call_stack.push_back(new_environment);
 
-		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+//		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
 		return vm2;
 	}
 
@@ -658,7 +658,7 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 		}
 		vm2._call_stack.push_back(new_environment);
 
-		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+//		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
 
 		const auto r = execute_statements(vm2, function_def._statements);
 
@@ -841,8 +841,8 @@ enum host_functions {
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
 	auto vm2 = vm;
-	const auto& s = args[0].get_string();
-
+	const auto& value = args[0];
+	const auto s = value.plain_value_to_string();
 	printf("%s", s.c_str());
 
 	vm2._print_output.push_back(s);
@@ -1841,9 +1841,9 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 	}
 */
 
-#if false
+#if true
 QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
-	test__run_init__check_result(
+	const auto vm = run_global(
 		"int fibonacci(int n) {"
 		"	if (n <= 1){"
 		"		return n;"
@@ -1851,13 +1851,20 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 		"	return fibonacci(n - 2) + fibonacci(n - 1);"
 		"}"
 
-		"for (var i = 0; i < 20; i = i + 1) {"
-		"	print fibonacci(i);"
-		"}",
-		value_t(123)
+		"for (i in 0...19) {"
+		"	int dummy = print(fibonacci(i));"
+		"}"
+	);
+
+	QUARK_UT_VERIFY((
+		vm._print_output == vector<string>{
+			"0", "1", "1", "2", "3", "5", "8", "13", "21", "34",
+			"55", "89", "144", "233", "377", "610", "987", "1597", "2584", "4181"
+		})
 	);
 }
 #endif
+
 
 
 

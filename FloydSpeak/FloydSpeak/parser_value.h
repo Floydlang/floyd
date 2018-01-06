@@ -377,6 +377,7 @@ namespace floyd_ast {
 			"0"
 			"1003"
 			"Hello, world"
+			Notice, strings don't get wrapped in "".
 		*/
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
@@ -399,7 +400,7 @@ namespace floyd_ast {
 				return std::string(temp);
 			}
 			else if(base_type == floyd_basics::base_type::k_string){
-				return std::string("\"") + _string + "\"";
+				return _string;
 			}
 
 			else if(base_type == floyd_basics::base_type::k_struct){
@@ -428,6 +429,10 @@ namespace floyd_ast {
 
 			if(is_null()){
 				return "<null>";
+			}
+			else if(is_string()){
+				std::string type_string = json_to_compact_string(typeid_to_json(_typeid));
+				return type_string + ": " + "\"" + plain_value_to_string() + "\"";
 			}
 			else{
 				std::string type_string = json_to_compact_string(typeid_to_json(_typeid));

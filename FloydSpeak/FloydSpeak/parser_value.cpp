@@ -407,7 +407,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	QUARK_TEST_VERIFY(a.plain_value_to_string() == "\"xyz\"");
+	QUARK_TEST_VERIFY(a.plain_value_to_string() == "xyz");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"string\": \"xyz\"");
 }
 
