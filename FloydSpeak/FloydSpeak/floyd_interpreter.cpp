@@ -843,7 +843,7 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 	auto vm2 = vm;
 	const auto& value = args[0];
 	const auto s = value.plain_value_to_string();
-	printf("%s", s.c_str());
+	printf("%s\n", s.c_str());
 
 	vm2._print_output.push_back(s);
 	return {vm2, value_t() };
