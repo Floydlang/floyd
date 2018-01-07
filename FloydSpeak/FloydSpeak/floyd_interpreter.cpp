@@ -847,9 +847,7 @@ bool environment_t::check_invariant() const {
 enum host_functions {
 	k_print = 1,
 	k_to_string,
-	k_get_time_of_day_ms,
-	k_host__int_to_string,
-	k_host__float_to_string
+	k_get_time_of_day_ms
 };
 
 //	Records all output to interpreter
@@ -929,15 +927,6 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 }
 
 
-std::pair<interpreter_t, value_t> host__int_to_string(const interpreter_t& vm, const std::vector<value_t>& args){
-	const auto& s = args[0].get_int();
-	return {vm, value_t(std::to_string(s)) };
-}
-std::pair<interpreter_t, value_t> host__float_to_string(const interpreter_t& vm, const std::vector<value_t>& args){
-	const auto& s = args[0].get_float();
-	return {vm, value_t(std::to_string(s)) };
-}
-
 
 
 
@@ -952,12 +941,6 @@ std::pair<interpreter_t, floyd_ast::value_t> interpreter_t::call_host_function(i
 	}
 	else if(function_id == static_cast<int>(host_functions::k_get_time_of_day_ms)){
 		return host__get_time_of_day(*this, args);
-	}
-	else if(function_id == static_cast<int>(host_functions::k_host__int_to_string)){
-		return host__int_to_string(*this, args);
-	}
-	else if(function_id == static_cast<int>(host_functions::k_host__float_to_string)){
-		return host__float_to_string(*this, args);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1000,22 +983,6 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		)
 	)));
 
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"int_to_string",
-		function_definition_t(
-			{ member_t{ typeid_t::make_int(), "v" } },
-			host_functions::k_host__int_to_string,
-			typeid_t::make_string()
-		)
-	)));
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"float_to_string",
-		function_definition_t(
-			{ member_t{ typeid_t::make_float(), "v" } },
-			host_functions::k_host__float_to_string,
-			typeid_t::make_string()
-		)
-	)));
 
 	_ast = ast_t(init_statements + ast._statements);
 
@@ -1665,14 +1632,14 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 
 
 
-//////////////////////////		Host: int_to_string()
+//////////////////////////		Host: to_string()
 
 
 
 QUARK_UNIT_TESTQ("run_init()", ""){
 	test__run_init__check_result(
 		R"(
-			string result = int_to_string(145);
+			string result = to_string(145);
 		)"
 		,
 		value_t("145")
@@ -1681,7 +1648,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 QUARK_UNIT_TESTQ("run_init()", ""){
 	test__run_init__check_result(
 		R"(
-			string result = float_to_string(3.1);
+			string result = to_string(3.1);
 		)"
 		,
 		value_t("3.100000")
@@ -1737,7 +1704,7 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 			int a = get_time_of_day();
 			int b = get_time_of_day();
 			int c = b - a;
-			int result = print("Delta time:" + int_to_string(a));
+			int result = print("Delta time:" + to_string(a));
 		)"
 	);
 }
@@ -1760,17 +1727,17 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
-//			int dummy_a = print("A:" + int_to_string(x));
+//			int dummy_a = print("A:" + to_string(x));
 	const auto r = run_global(
 		R"(
 			int x = 3;
-			int dummy_b = print("B:" + int_to_string(x));
+			int dummy_b = print("B:" + to_string(x));
 			{
-				int dummy_c = print("C:" + int_to_string(x));
+				int dummy_c = print("C:" + to_string(x));
 				int x = 4;
-				int dummy_d = print("D:" + int_to_string(x));
+				int dummy_d = print("D:" + to_string(x));
 			}
-			int dummy_e = print("E:" + int_to_string(x));
+			int dummy_e = print("E:" + to_string(x));
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
