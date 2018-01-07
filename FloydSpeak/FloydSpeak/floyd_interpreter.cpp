@@ -83,12 +83,12 @@ namespace {
 		return { vm2, r.second };
 	}
 
-
-	std::pair<interpreter_t, shared_ptr<value_t>> execute_statement(const interpreter_t& vm, const statement_t& statement){
-		QUARK_ASSERT(vm.check_invariant());
+	//	Output is the RETURN VALUE of the executed statement, if any.
+	std::pair<interpreter_t, shared_ptr<value_t>> execute_statement(const interpreter_t& vm0, const statement_t& statement){
+		QUARK_ASSERT(vm0.check_invariant());
 		QUARK_ASSERT(statement.check_invariant());
 
-		auto vm2 = vm;
+		auto vm2 = vm0;
 
 		if(statement._bind){
 			const auto& s = statement._bind;
@@ -98,19 +98,20 @@ namespace {
 			}
 			const auto result = evaluate_expression(vm2, s->_expression);
 			vm2 = result.first;
+			const auto result_value = result.second;
 
 			//??? Should accept function defintion too! Make function definition at type of literal?
-			if(!result.second.is_literal()){
+			if(!result_value.is_literal()){
 				throw std::runtime_error("Cannot evaluate expression.");
 			}
 
 
-			if(result.second.is_literal() == false){
+			if(result_value.is_literal() == false){
 				throw std::runtime_error("Cannot evaluate expression.");
 			}
 
 			const auto dest_type = s->_bindtype;
-			const auto source_type = result.second.get_literal().get_type();
+			const auto source_type = result_value.get_literal().get_type();
 			if((dest_type == source_type) == false){
 				if(source_type.is_null()){
 					//	Workaround to allow calling functions without return value, like print().
@@ -120,53 +121,65 @@ namespace {
 				}
 			}
 
-			vm2._call_stack.back()->_values[name] = result.second.get_literal();
+			vm2._call_stack.back()->_values[name] = result_value.get_literal();
 			return { vm2, {}};
 		}
 		else if(statement._block){
 			const auto& s = statement._block;
-			return execute_statements_in_env(vm, s->_statements, {});
+			return execute_statements_in_env(vm2, s->_statements, {});
 		}
 		else if(statement._return){
 			const auto& s = statement._return;
 			const auto expr = s->_expression;
 			const auto result = evaluate_expression(vm2, expr);
+			vm2 = result.first;
+			const auto result_value = result.second;
 
-			if(!result.second.is_literal()){
+			if(!result_value.is_literal()){
 				throw std::runtime_error("undefined");
 			}
 
-			return { vm2, make_shared<value_t>(result.second.get_literal()) };
+			return { vm2, make_shared<value_t>(result_value.get_literal()) };
 		}
 		else if(statement._if){
 			const auto& s = statement._if;
-
 			const auto condition_result = evaluate_expression(vm2, s->_condition);
 			vm2 = condition_result.first;
-			if(!condition_result.second.is_literal() || !condition_result.second.get_literal().is_bool()){
+			const auto condition_result_value = condition_result.second;
+			if(!condition_result_value.is_literal() || !condition_result_value.get_literal().is_bool()){
 				throw std::runtime_error("Boolean condition required.");
 			}
 
-			bool r = condition_result.second.get_literal().get_bool();
+			bool r = condition_result_value.get_literal().get_bool();
 			if(r){
-				return execute_statements_in_env(vm, s->_then_statements, {});
+				return execute_statements_in_env(vm2, s->_then_statements, {});
 			}
 			else{
-				return execute_statements_in_env(vm, s->_else_statements, {});
+				return execute_statements_in_env(vm2, s->_else_statements, {});
 			}
 		}
 		else if(statement._for){
 			const auto& s = statement._for;
 
-			const auto start_value = evaluate_expression(vm2, s->_start_expression).second.get_literal().get_int();
-			const auto end_value = evaluate_expression(vm2, s->_end_expression).second.get_literal().get_int();
+			const auto start_value0 = evaluate_expression(vm2, s->_start_expression);
+			vm2 = start_value0.first;
+			const auto start_value = start_value0.second.get_literal().get_int();
+
+			const auto end_value0 = evaluate_expression(vm2, s->_end_expression);
+			vm2 = end_value0.first;
+			const auto end_value = end_value0.second.get_literal().get_int();
+
 			for(int x = start_value ; x <= end_value ; x++){
 				const std::map<std::string, floyd_ast::value_t> values = { { s->_iterator_name, value_t(x)} };
 				const auto result = execute_statements_in_env(vm2, s->_body, values);
 				vm2 = result.first;
+				const auto return_value = result.second;
+				if(return_value != nullptr){
+					return { vm2, return_value };
+				}
 			}
 
-			return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {} };
+			return { vm2, {} };
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -194,7 +207,7 @@ namespace {
 			}
 			statement_index++;
 		}
-		return std::pair<interpreter_t, shared_ptr<value_t>>{ vm2, {}};
+		return { vm2, {}};
 	}
 
 
@@ -640,15 +653,15 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 
 	const auto& function_def = f.get_function()->_def;
 	if(function_def._host_function != 0){
-		const auto r = vm.call_host_function(function_def._host_function, args);
+		const auto r = vm2.call_host_function(function_def._host_function, args);
 		return { r.first, make_shared<value_t>(r.second) };
 	}
 	else{
 
 		//	Always use global scope.
 		//	Future: support closures by linking to function env where function is defined.
-		auto parent_env = vm._call_stack[0];
-		auto new_environment = environment_t::make_environment(vm, parent_env);
+		auto parent_env = vm2._call_stack[0];
+		auto new_environment = environment_t::make_environment(vm2, parent_env);
 
 		//	Copy input arguments to the function scope.
 		for(int i = 0 ; i < function_def._args.size() ; i++){
@@ -662,6 +675,7 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 
 		const auto r = execute_statements(vm2, function_def._statements);
 
+		vm2 = r.first;
 		vm2._call_stack.pop_back();
 
 		if(!r.second){
@@ -1006,7 +1020,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_ast = ast_t(init_statements + ast._statements);
 
 
-	//	Make the top-level environoment = global scope.
+	//	Make the top-level environment = global scope.
 	shared_ptr<environment_t> empty_env;
 	auto global_env = environment_t::make_environment(*this, empty_env);
 
@@ -1579,22 +1593,73 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-QUARK_UNIT_TESTQ("call_function()", "return from nested scopes"){
+QUARK_UNIT_TESTQ("call_function()", "return from middle of function"){
 	auto r = run_global(
-		"string f(int a){"
-		"	if(a == 1){"
-		"		if(true){"
-		"			int dummy = print(\"returning\");"
-		"			return \"A\";"
-		"		}"
-		"		int dummy = print(\"problem 1\");"
-		"	}"
-		"	int dummy = print(\"problem 2\");"
+		"string f(){"
+		"	int dummy = print(\"A\");"
+		"	return \"B\";"
+		"	int dummy = print(\"C\");"
+		"	return \"D\";"
 		"}"
-		"int dummy = print(f(1))"
+		"string x = f();"
+		"int dummy = print(x)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "returning", "A" }));
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
+
+QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
+	auto r = run_global(
+		"string f(){"
+		"	if(true){"
+		"		int dummy = print(\"A\");"
+		"		return \"B\";"
+		"		int dummy = print(\"C\");"
+		"	}"
+		"	int dummy = print(\"D\");"
+		"	return \"E\";"
+		"}"
+		"string x = f();"
+		"int dummy = print(x)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
+}
+
+QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
+	auto r = run_global(
+		"string f(){"
+		"	for(e in 0...3){"
+		"		int dummy = print(\"A\");"
+		"		return \"B\";"
+		"		int dummy2 = print(\"C\");"
+		"	}"
+		"	int dummy = print(\"D\");"
+		"	return \"E\";"
+		"}"
+		"string x = f();"
+		"int dummy = print(x)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
+}
+
+// ??? add test for: return from ELSE
+
+QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
+	auto r = run_global(
+		"string f(){"
+		"	{"
+		"		int dummy = print(\"A\");"
+		"		return \"B\";"
+		"		int dummy2 = print(\"C\");"
+		"	}"
+		"	int dummy = print(\"D\");"
+		"	return \"E\";"
+		"}"
+		"string x = f();"
+		"int dummy = print(x)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
+}
+
 
 
 
@@ -1628,10 +1693,33 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 
 
 
-QUARK_UNIT_TESTQ("run_init()", "Print Hello, world!"){
+QUARK_UNIT_TESTQ("run_global()", "Print Hello, world!"){
 	const auto r = run_global(
 		R"(
 			int result = print("Hello, World!");
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
+}
+
+
+QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes block!"){
+	const auto r = run_global(
+		R"(
+			{
+				int result = print("Hello, World!");
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
+}
+
+QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
+	const auto r = run_global(
+		R"(
+			if(true){
+				int result = print("Hello, World!");
+			}
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
@@ -1849,18 +1937,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 
 //////////////////////////		fibonacci
 
-/*
-	fun fibonacci(n) {
-	  if (n <= 1) return n;
-	  return fibonacci(n - 2) + fibonacci(n - 1);
-	}
 
-	for (var i = 0; i < 20; i = i + 1) {
-	  print fibonacci(i);
-	}
-*/
-
-#if true
 QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 	const auto vm = run_global(
 		"int fibonacci(int n) {"
@@ -1882,7 +1959,6 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 		})
 	);
 }
-#endif
 
 
 

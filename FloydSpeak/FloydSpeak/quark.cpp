@@ -179,16 +179,16 @@ int run_test_list(const std::string& source_file, const std::vector<unit_test_de
 			test._test_f();
 		}
 		catch(const std::exception& e){
-			on_problem___put_breakpoint_here();
+			QUARK_TRACE("FAILURE: " + testInfo.str());
 			QUARK_TRACE(typeid(e).name());
 			QUARK_TRACE(e.what());
-			QUARK_TRACE("FAILURE: " + testInfo.str());
 			fail_count++;
+			on_problem___put_breakpoint_here();
 		}
 		catch(...){
-			on_problem___put_breakpoint_here();
 			QUARK_TRACE("FAILURE: " + testInfo.str());
 			fail_count++;
+			on_problem___put_breakpoint_here();
 		}
 	}
 	return fail_count;
