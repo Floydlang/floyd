@@ -192,7 +192,7 @@ const char k_test_program_100_parserout[] = R"(
 		["define_function", FUNCTION_DEF ]
 	*/
 
-	std::pair<json_t, seq_t> read_statement2(const seq_t& pos0);
+	std::pair<json_t, seq_t> parse_statement(const seq_t& pos0);
 
 
 
@@ -201,7 +201,7 @@ const char k_test_program_100_parserout[] = R"(
 			json_t statement_array;
 			std::string _rest;
 	*/
-	std::pair<json_t, seq_t> read_statements2(const seq_t& s);
+	std::pair<json_t, seq_t> parse_statements(const seq_t& s);
 
 	/*
 	{

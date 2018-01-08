@@ -31,7 +31,7 @@ namespace floyd_parser {
 
 		const auto b_str = get_balanced(pos);
 		const auto body_str = seq_t(trim_ends(b_str.first));
-		const auto body_statements2 = read_statements2(body_str);
+		const auto body_statements2 = parse_statements(body_str);
 		return { json_t::make_array({ "block", body_statements2.first }), b_str.second };
 	}
 
@@ -199,7 +199,7 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	auto return_pos = then_statements_paranthesis.second;
 
 	const auto condition2 = parse_expression_all(seq_t(condition));
-	const auto then_statements2 = read_statements2(seq_t(then_statements)).first;
+	const auto then_statements2 = parse_statements(seq_t(then_statements)).first;
 
 	return { json_t::make_array({ "if", condition2, then_statements2 }), return_pos };
 }
@@ -231,7 +231,7 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 			read_required(pos2, "{");
 			const auto else_statements_paranthesis = get_balanced(pos2);
 			const auto else_statements = trim_ends(else_statements_paranthesis.first);
-			const auto else_statements2 = read_statements2(seq_t(else_statements));
+			const auto else_statements2 = parse_statements(seq_t(else_statements));
 
 			return { json_t::make_array(
 				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_statements2.first }),
@@ -371,7 +371,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	const auto end_expr = parse_expression_all(end);
 
 
-	const auto body_statements2 = read_statements2(seq_t(body_statements_str));
+	const auto body_statements2 = parse_statements(seq_t(body_statements_str));
 
 	const auto r = json_t::make_array(
 		{

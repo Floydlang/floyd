@@ -44,7 +44,7 @@ https://en.wikipedia.org/wiki/Parsing
 //////////////////////////////////////////////////		read_statement()
 
 
-std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
+std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);
 	const auto token_pos = read_until(pos, whitespace_chars + "(");
 
@@ -74,16 +74,23 @@ std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
 			/*
 				BIND: int x = 10;
 				BIND: int (string a) x = f(4 == 5);
+					TYPE SYMBOL = EXPRESSION;
+					let TYPE SYMBOL = EXPRESSION;
 
 				DEDUCED-BIND: x = 10
 				DEDUCED-BIND: x = "hello"
-				DEDUCED-BIND: x = f(3) == 2
+				DEDUCED-BIND: x = f(3) == 2;
+					SYMBOL = EXPRESSION
+					let SYMBOL = EXPRESSION;
 
 				FUNCTION-DEFINITION: int f(string name){ return 13; }
 				FUNCTION-DEFINITION: int (string a) f(string name){ return 100 == 101; }
+					TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
+					FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
 
 				EXPRESSION-STATEMENT: print ("Hello, World!");
 				EXPRESSION-STATEMENT: print ("Hello, World!" + f(3) == 2);
+					EXPRESSION;
 			*/
 
 			const auto type_pos = read_type_identifier(seq_t(pos));
@@ -120,15 +127,15 @@ std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
 	}
 }
 
-QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		read_statement2(seq_t("int x = 10;")).first,
+		parse_statement(seq_t("int x = 10;")).first,
 		parse_json(seq_t(R"(["bind", "<int>", "x", ["k", 10, "<int>"] ])")).first
 	);
 }
-QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		read_statement2(seq_t("int f(string name){ return 13; }")).first,
+		parse_statement(seq_t("int f(string name){ return 13; }")).first,
 		parse_json(seq_t(R"(
 			[
 				"def-func",
@@ -145,28 +152,28 @@ QUARK_UNIT_TEST("", "read_statement2()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		read_statement2(seq_t("int x = f(3);")).first,
+		parse_statement(seq_t("int x = f(3);")).first,
 		parse_json(seq_t(R"(["bind", "<int>", "x", ["call", ["@", "f"], [["k", 3, "<int>"]]]])")).first
 	);
 }
 
 /*
-QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		read_statement2(seq_t("f(3);")).first,
+		parse_statement(seq_t("f(3);")).first,
 		parse_json(seq_t(R"(["call", ["@", "f"], [["k", 3, "<int>"]]])")).first
 	);
 }
 */
 
 
-std::pair<json_t, seq_t> read_statements2(const seq_t& s0){
+std::pair<json_t, seq_t> parse_statements(const seq_t& s0){
 	vector<json_t> statements;
 	auto pos = skip_whitespace(s0);
 	while(!pos.empty()){
-		const auto statement_pos = read_statement2(pos);
+		const auto statement_pos = parse_statement(pos);
 		const auto statement = statement_pos.first;
 		statements.push_back(statement);
 		pos = skip_whitespace(statement_pos.second);
@@ -175,7 +182,7 @@ std::pair<json_t, seq_t> read_statements2(const seq_t& s0){
 }
 
 json_t parse_program2(const string& program){
-	const auto statements_pos = read_statements2(seq_t(program));
+	const auto statements_pos = parse_statements(seq_t(program));
 	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
 	return statements_pos.first;
 }
