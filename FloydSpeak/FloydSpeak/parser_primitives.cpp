@@ -42,9 +42,17 @@ std::string skip_whitespace(const string& s){
 
 QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace("") == "");
+}
+QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace(" ") == "");
+}
+QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace("\t") == "");
+}
+QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace("int blob()") == "int blob()");
+}
+QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(skip_whitespace("\t\t\t int blob()") == "int blob()");
 }
 
@@ -60,8 +68,14 @@ bool is_whitespace(char ch){
 
 QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('x') == false);
+}
+QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace(' ') == true);
+}
+QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('\t') == true);
+}
+QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('\n') == true);
 }
 
@@ -72,15 +86,30 @@ bool is_start_char(char c){
 
 QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(is_start_char('('));
+}
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(is_start_char('['));
+}
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(is_start_char('{'));
+}
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_start_char('<'));
+}
 
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_start_char(')'));
+}
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_start_char(']'));
+}
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_start_char('}'));
+}
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_start_char('>'));
-
+}
+QUARK_UNIT_TEST("", "is_start_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_start_char(' '));
 }
 
@@ -91,17 +120,32 @@ bool is_end_char(char c){
 
 QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_end_char('('));
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_end_char('['));
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_end_char('{'));
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_end_char('<'));
-
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(is_end_char(')'));
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(is_end_char(']'));
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(is_end_char('}'));
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_end_char('>'));
-
+}
+QUARK_UNIT_TEST("", "is_end_char()", "", ""){
 	QUARK_TEST_VERIFY(!is_end_char(' '));
 }
+
 
 
 char start_char_to_end_char(char start_char){
@@ -123,7 +167,11 @@ char start_char_to_end_char(char start_char){
 
 QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
 	QUARK_TEST_VERIFY(start_char_to_end_char('(') == ')');
+}
+QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
 	QUARK_TEST_VERIFY(start_char_to_end_char('[') == ']');
+}
+QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
 	QUARK_TEST_VERIFY(start_char_to_end_char('{') == '}');
 }
 
@@ -165,18 +213,33 @@ std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 //	QUARK_TEST_VERIFY(get_balanced("") == seq("", ""));
 	QUARK_TEST_VERIFY(get_balanced(seq_t("()")) == (std::pair<std::string, seq_t>("()", seq_t(""))));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)")) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)def")) == (std::pair<std::string, seq_t>("(abc)", seq_t("def"))));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc))def")) == (std::pair<std::string, seq_t>("((abc))", seq_t("def"))));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc)[])def")) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("def"))));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("(return 4 < 5;)xxx")) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
-
-	QUARK_TEST_VERIFY(get_balanced(seq_t("{}")) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("{aaa}bbb")) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
-	QUARK_TEST_VERIFY(get_balanced(seq_t("{return 4 < 5;}xxx")) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
-
-//	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "def"));
 }
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)")) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
+}
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("(abc)def")) == (std::pair<std::string, seq_t>("(abc)", seq_t("def"))));
+}
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc))def")) == (std::pair<std::string, seq_t>("((abc))", seq_t("def"))));
+}
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("((abc)[])def")) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("def"))));
+}
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("(return 4 < 5;)xxx")) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
+}
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("{}")) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
+}
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("{aaa}bbb")) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
+}
+QUARK_UNIT_TEST("", "get_balanced()", "", ""){
+	QUARK_TEST_VERIFY(get_balanced(seq_t("{return 4 < 5;}xxx")) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
+}
+//	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "def"));
+
 
 
 
@@ -216,8 +279,7 @@ pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
 	if(type_pos.first.empty()){
 		throw std::runtime_error("illegal character in type identifier");
 	}
-	const auto type = type_pos.first;
-	return { type, skip_whitespace(type_pos.second) };
+	return type_pos;
 }
 
 	bool is_valid_type_identifier(const std::string& s){

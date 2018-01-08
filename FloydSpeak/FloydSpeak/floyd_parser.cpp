@@ -92,7 +92,6 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 				EXPRESSION-STATEMENT: print ("Hello, World!" + f(3) == 2);
 					EXPRESSION;
 			*/
-
 			const auto type_pos = read_type_identifier(seq_t(pos));
 			const auto identifier_pos = read_single_symbol(type_pos.second);
 			if(type_pos.second.empty() == false && identifier_pos.second.empty() == false){

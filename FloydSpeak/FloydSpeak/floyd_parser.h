@@ -174,10 +174,6 @@ const char k_test_program_100_parserout[] = R"(
 		"int f(string name){ return 13; }"
 
 
-		CALL STATEMENT -- ??? future -- this is a call statement. We only have call expressions right now.
-		"print("hello")"
-
-
 		IF-ELSE
 		Notice: not trailing semicolon
 
