@@ -267,12 +267,57 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 
 
 
-
+//??? Return type_id here?
 std::pair<std::string, seq_t> read_type_identifier(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, type_chars);
 	return b;
 }
+
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("-3")).first == "");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("null")).first == "null");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("bool")).first == "bool");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int")).first == "int");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("float")).first == "float");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("string")).first == "string");
+}
+/*
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int f()")).first == "int f()");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("my_symbol")).first == "my_symbol)");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("my_symbol ()")).first == "my_symbol)");
+}
+*/
+
+/*
+-	null
+-	bool
+-	int
+-	float
+-	string
+-	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)
+
+#### Custom types
+-	struct_type_x
+-	struct_type_y
+*/
+
+
 
 pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
 	const auto type_pos = read_type_identifier(s);

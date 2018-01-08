@@ -109,6 +109,7 @@ namespace floyd_ast {
 
 
 		/*
+			"int"
 			"coord_t"
 			"coord_t/8000"
 			"int (float a, float b)"

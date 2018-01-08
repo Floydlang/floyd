@@ -327,3 +327,23 @@ Notice about optimizations, many accellerations are made behind the scenes:
 - You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
 
 
+
+
+# SYNTAX REFERENCE
+
+
+### TYPE IDENTIFIERS
+
+#### Basic types
+-	null
+-	bool
+-	int
+-	float
+-	string
+
+#### Composite types
+-	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)
+
+#### Custom types
+-	struct_type_x
+-	struct_type_y
