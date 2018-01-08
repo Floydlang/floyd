@@ -34,7 +34,7 @@ namespace floyd_parser {
 		vector<json_t> members;
 		auto pos = seq_t(trim_ends(body_pos.first));
 		while(!pos.empty()){
-			const auto member_type = read_type(pos);
+			const auto member_type = read_type_identifier(pos);
 			const auto member_name = read_required_single_symbol(member_type.second);
 
 			string default_value;

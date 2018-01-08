@@ -61,6 +61,8 @@ namespace floyd_parser {
 
 	//////////////////////////////////////		SYMBOLS
 
+	std::pair<std::string, seq_t> read_single_symbol(const seq_t& s);
+
 	/*
 		Reads an identifier, like a variable name or function name.
 		DOES NOT struct members.
@@ -79,7 +81,7 @@ namespace floyd_parser {
 	/*
 		Skip leading whitespace, get string while type-char.
 	*/
-	std::pair<std::string, seq_t> read_type(const seq_t& s);
+	std::pair<std::string, seq_t> read_type_identifier(const seq_t& s);
 
 
 	/*

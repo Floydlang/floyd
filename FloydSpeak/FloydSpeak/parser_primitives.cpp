@@ -183,11 +183,14 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 //////////////////////////////////////		SYMBOLS
 
 
-
-std::pair<std::string, seq_t> read_required_single_symbol(const seq_t& s){
+//	Returns "" if no symbol is found.
+std::pair<std::string, seq_t> read_single_symbol(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, identifier_chars);
-
+	return b;
+}
+std::pair<std::string, seq_t> read_required_single_symbol(const seq_t& s){
+	const auto b = read_single_symbol(s);
 	if(b.first.empty()){
 		throw std::runtime_error("missing identifier");
 	}
@@ -202,14 +205,14 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 
 
 
-std::pair<std::string, seq_t> read_type(const seq_t& s){
+std::pair<std::string, seq_t> read_type_identifier(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, type_chars);
 	return b;
 }
 
 pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
-	const auto type_pos = read_type(s);
+	const auto type_pos = read_type_identifier(s);
 	if(type_pos.first.empty()){
 		throw std::runtime_error("illegal character in type identifier");
 	}

@@ -72,40 +72,95 @@ std::pair<json_t, seq_t> read_statement2(const seq_t& pos0){
 		}
 		else {
 			/*
-				int x = 10;
-				int f(string name){ return 13; }
+				BIND: int x = 10;
+				BIND: int (string a) x = f(4 == 5);
 
-				??? Support
-				print ("Hello, World!");
+				DEDUCED-BIND: x = 10
+				DEDUCED-BIND: x = "hello"
+				DEDUCED-BIND: x = f(3) == 2
+
+				FUNCTION-DEFINITION: int f(string name){ return 13; }
+				FUNCTION-DEFINITION: int (string a) f(string name){ return 100 == 101; }
+
+				EXPRESSION-STATEMENT: print ("Hello, World!");
+				EXPRESSION-STATEMENT: print ("Hello, World!" + f(3) == 2);
 			*/
 
-			const auto type_pos = read_required_type_identifier(seq_t(pos));
-			const auto identifier_pos = read_required_single_symbol(type_pos.second);
+			const auto type_pos = read_type_identifier(seq_t(pos));
+			const auto identifier_pos = read_single_symbol(type_pos.second);
+			if(type_pos.second.empty() == false && identifier_pos.second.empty() == false){
 
-			/*
-				Function definition?
-				"int xyz(string a, string b){ ... }
-			*/
-			if(if_first(skip_whitespace(identifier_pos.second), "(").first){
-				return parse_function_definition2(pos);
+				/*
+					Function definition?
+					"int xyz(string a, string b){ ... }
+				*/
+				if(if_first(skip_whitespace(identifier_pos.second), "(").first){
+					return parse_function_definition2(pos);
+				}
+
+				/*
+					Define variable?
+
+					"int a = 10;"
+					"string hello = f(a) + \"_suffix\";";
+				*/
+				else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
+					return parse_assignment_statement(pos);
+				}
+
+				else{
+					throw std::runtime_error("syntax error");
+				}
 			}
-
-			/*
-				Define variable?
-
-				"int a = 10;"
-				"string hello = f(a) + \"_suffix\";";
-			*/
-			else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
-				return parse_assignment_statement(pos);
-			}
-
+			//	Assume this is an expression-statement.
 			else{
-				throw std::runtime_error("syntax error");
+				return parse_expression_statement(pos);
 			}
 		}
 	}
 }
+
+QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+	ut_compare_jsons(
+		read_statement2(seq_t("int x = 10;")).first,
+		parse_json(seq_t(R"(["bind", "<int>", "x", ["k", 10, "<int>"] ])")).first
+	);
+}
+QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+	ut_compare_jsons(
+		read_statement2(seq_t("int f(string name){ return 13; }")).first,
+		parse_json(seq_t(R"(
+			[
+				"def-func",
+				{
+					"args": [{ "name": "name", "type": "<string>" }],
+					"name": "f",
+					"return_type": "<int>",
+					"statements": [
+						["return", ["k", 13, "<int>"]]
+					]
+				}
+			]
+		)")).first
+	);
+}
+
+QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+	ut_compare_jsons(
+		read_statement2(seq_t("int x = f(3);")).first,
+		parse_json(seq_t(R"(["bind", "<int>", "x", ["call", ["@", "f"], [["k", 3, "<int>"]]]])")).first
+	);
+}
+
+/*
+QUARK_UNIT_TEST("", "read_statement2()", "", ""){
+	ut_compare_jsons(
+		read_statement2(seq_t("f(3);")).first,
+		parse_json(seq_t(R"(["call", ["@", "f"], [["k", 3, "<int>"]]])")).first
+	);
+}
+*/
+
 
 std::pair<json_t, seq_t> read_statements2(const seq_t& s0){
 	vector<json_t> statements;

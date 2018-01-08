@@ -143,6 +143,34 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 #endif
 
 
+	pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
+		const auto expression_pos = read_until(skip_whitespace(s), ";");
+		const auto expression = parse_expression_all(seq_t(expression_pos.first));
+
+		const auto statement = json_t::make_array({
+			"expression-statement",
+//			"<" + type + ">",
+			expression
+		});
+
+		//	Skip trailing ";".
+		return { statement, expression_pos.second.rest1() };
+	}
+
+QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
+	ut_compare_jsons(
+		parse_expression_statement(seq_t("print(14);")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					"expression-statement",
+					[ "call", ["@", "print"], [["k", 14, "<int>"]] ],
+				]
+			)"
+		)).first
+	);
+}
+
 
 //??? Idea: Have explicit whitespaces - fail to parse.
 

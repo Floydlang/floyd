@@ -143,6 +143,7 @@ const char k_test_program_100_parserout[] = R"(
 
 	/*
 		Read one statement, including any expressions it uses.
+		Consumes trailing semicolon, where appropriate.
 		Supports all statments:
 			- return statement
 			- struct-definition

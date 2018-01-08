@@ -64,6 +64,10 @@ namespace floyd_parser {
 	*/
 	std::pair<json_t, seq_t> parse_assignment_statement(const seq_t& s);
 
+	/*
+		print(13);
+	*/
+	std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
 
 	/*
 		A:

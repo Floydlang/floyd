@@ -31,7 +31,7 @@ static vector<json_t> parse_functiondef_arguments(const seq_t& s2){
 	vector<json_t> args;
 	auto str = skip_whitespace(s);
 	while(!str.empty()){
-		const auto arg_type = read_type(str);
+		const auto arg_type = read_type_identifier(str);
 		const auto arg_name = read_required_single_symbol(arg_type.second);
 		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 
