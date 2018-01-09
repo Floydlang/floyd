@@ -23,7 +23,7 @@ namespace floyd_ast {
 	struct value_t;
 	struct statement_t;
 	struct expression_t;
-	struct typeid_t;
+
 
 	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
 	json_t expression_to_json(const expression_t& e);
@@ -44,7 +44,7 @@ namespace floyd_ast {
 		private: struct expr_base_t {
 			public: virtual ~expr_base_t(){};
 
-			public: virtual typeid_t get_result_type() const = 0;
+			public: virtual floyd_basics::typeid_t get_result_type() const = 0;
 			public: virtual json_t expr_base__to_json() const{ return json_t(); };
 		};
 
@@ -61,7 +61,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _value.get_type();
 			}
 
@@ -103,7 +103,7 @@ namespace floyd_ast {
 				floyd_basics::expression_type op,
 				const expression_t& left,
 				const expression_t& right,
-				const typeid_t result_type
+				const floyd_basics::typeid_t result_type
 			)
 			:
 				_op(op),
@@ -113,7 +113,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _result_type;
 			}
 
@@ -130,7 +130,7 @@ namespace floyd_ast {
 			const floyd_basics::expression_type _op;
 			const std::shared_ptr<expression_t> _left;
 			const std::shared_ptr<expression_t> _right;
-			const typeid_t _result_type;
+			const floyd_basics::typeid_t _result_type;
 		};
 
 		public: static expression_t make_simple_expression__2(floyd_basics::expression_type op, const expression_t& left, const expression_t& right){
@@ -165,7 +165,7 @@ namespace floyd_ast {
 				return expression_t{
 					op,
 					std::make_shared<simple_expr__2_t>(
-						simple_expr__2_t{ op, left, right, typeid_t::make_bool() }
+						simple_expr__2_t{ op, left, right, floyd_basics::typeid_t::make_bool() }
 					)
 				};
 			}
@@ -204,7 +204,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _expr->get_result_type();
 			}
 
@@ -243,7 +243,7 @@ namespace floyd_ast {
 				const expression_t& condition,
 				const expression_t& a,
 				const expression_t& b,
-				const typeid_t result_type
+				const floyd_basics::typeid_t result_type
 			)
 			:
 				_condition(std::make_shared<expression_t>(condition)),
@@ -253,7 +253,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _result_type;
 			}
 
@@ -270,7 +270,7 @@ namespace floyd_ast {
 			const std::shared_ptr<expression_t> _condition;
 			const std::shared_ptr<expression_t> _a;
 			const std::shared_ptr<expression_t> _b;
-			const typeid_t _result_type;
+			const floyd_basics::typeid_t _result_type;
 		};
 
 		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b){
@@ -296,7 +296,7 @@ namespace floyd_ast {
 			public: function_call_expr_t(
 				const expression_t& function,
 				std::vector<expression_t> args,
-				typeid_t result
+				floyd_basics::typeid_t result
 			)
 			:
 				_function(std::make_shared<expression_t>(function)),
@@ -305,7 +305,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _result;
 			}
 
@@ -321,13 +321,13 @@ namespace floyd_ast {
 
 			const std::shared_ptr<expression_t> _function;
 			const std::vector<expression_t> _args;
-			const typeid_t _result;
+			const floyd_basics::typeid_t _result;
 		};
 
 		public: static expression_t make_function_call(
 			const expression_t& function,
 			const std::vector<expression_t>& args,
-			const typeid_t& result
+			const floyd_basics::typeid_t& result
 		)
 		{
 			return expression_t{
@@ -355,7 +355,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _def._return_type;
 			}
 
@@ -389,7 +389,7 @@ namespace floyd_ast {
 
 			public: variable_expr_t(
 				std::string variable,
-				typeid_t result
+				floyd_basics::typeid_t result
 			)
 			:
 				_variable(variable),
@@ -397,7 +397,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _result;
 			}
 
@@ -407,7 +407,7 @@ namespace floyd_ast {
 
 
 			std::string _variable;
-			typeid_t _result;
+			floyd_basics::typeid_t _result;
 		};
 
 		/*
@@ -416,7 +416,7 @@ namespace floyd_ast {
 		*/
 		public: static expression_t make_variable_expression(
 			const std::string& variable,
-			const typeid_t& result
+			const floyd_basics::typeid_t& result
 		)
 		{
 			return expression_t{
@@ -441,7 +441,7 @@ namespace floyd_ast {
 			public: resolve_member_expr_t(
 				const expression_t& parent_address,
 				std::string member_name,
-				typeid_t result
+				floyd_basics::typeid_t result
 			)
 			:
 				_parent_address(std::make_shared<expression_t>(parent_address)),
@@ -450,7 +450,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _result;
 			}
 
@@ -461,7 +461,7 @@ namespace floyd_ast {
 
 			std::shared_ptr<expression_t> _parent_address;
 			std::string _member_name;
-			typeid_t _result;
+			floyd_basics::typeid_t _result;
 		};
 
 		/*
@@ -470,7 +470,7 @@ namespace floyd_ast {
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
 			const std::string& member_name,
-			const typeid_t& result
+			const floyd_basics::typeid_t& result
 		)
 		{
 			return expression_t{
@@ -498,7 +498,7 @@ namespace floyd_ast {
 			public: lookup_expr_t(
 				const expression_t& parent_address,
 				const expression_t& lookup_key,
-				typeid_t result
+				floyd_basics::typeid_t result
 			)
 			:
 				_parent_address(std::make_shared<expression_t>(parent_address)),
@@ -507,7 +507,7 @@ namespace floyd_ast {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
+			public: virtual floyd_basics::typeid_t get_result_type() const{
 				return _result;
 			}
 
@@ -518,7 +518,7 @@ namespace floyd_ast {
 
 			std::shared_ptr<expression_t> _parent_address;
 			std::shared_ptr<expression_t> _lookup_key;
-			typeid_t _result;
+			floyd_basics::typeid_t _result;
 		};
 
 		/*
@@ -527,7 +527,7 @@ namespace floyd_ast {
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
-			const typeid_t result
+			const floyd_basics::typeid_t result
 		)
 		{
 			return expression_t{
@@ -555,7 +555,7 @@ namespace floyd_ast {
 			Returns pre-computed result of the expression - the type of value it represents.
 			null if not resolved.
 		*/
-		public: typeid_t get_result_type() const{
+		public: floyd_basics::typeid_t get_result_type() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _expr->get_result_type();

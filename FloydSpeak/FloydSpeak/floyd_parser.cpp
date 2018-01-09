@@ -41,6 +41,8 @@ https://en.wikipedia.org/wiki/Parsing
 
 
 
+
+
 //////////////////////////////////////////////////		read_statement()
 
 
@@ -77,12 +79,6 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 					TYPE SYMBOL = EXPRESSION;
 					let TYPE SYMBOL = EXPRESSION;
 
-				DEDUCED-BIND: x = 10
-				DEDUCED-BIND: x = "hello"
-				DEDUCED-BIND: x = f(3) == 2;
-					SYMBOL = EXPRESSION
-					let SYMBOL = EXPRESSION;
-
 				FUNCTION-DEFINITION: int f(string name){ return 13; }
 				FUNCTION-DEFINITION: int (string a) f(string name){ return 100 == 101; }
 					TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
@@ -91,6 +87,19 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 				EXPRESSION-STATEMENT: print ("Hello, World!");
 				EXPRESSION-STATEMENT: print ("Hello, World!" + f(3) == 2);
 					EXPRESSION;
+
+
+				# FUTURE
+
+				DEDUCED-BIND: x = 10
+				DEDUCED-BIND: x = "hello"
+				DEDUCED-BIND: x = f(3) == 2;
+					SYMBOL = EXPRESSION
+					let SYMBOL = EXPRESSION;
+
+
+				MUTATE_LOCAL: x <=== 11
+					SYMBOL <=== EXPRESSION
 			*/
 			const auto type_pos = read_type_identifier(seq_t(pos));
 			const auto identifier_pos = read_single_symbol(type_pos.second);

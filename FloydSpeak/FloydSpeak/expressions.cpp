@@ -196,12 +196,12 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_function_call(
-				expression_t::make_variable_expression("my_func", typeid_t::make_null()),
+				expression_t::make_variable_expression("my_func", floyd_basics::typeid_t::make_null()),
 				{
 					expression_t::make_literal_string("xyz"),
 					expression_t::make_literal_int(123)
 				},
-				typeid_t::make_string()
+				floyd_basics::typeid_t::make_string()
 			)
 		),
 		R"(["call", ["@", "my_func", "null"], [["k", "xyz", "string"], ["k", 123, "int"]], "string"])"
@@ -212,9 +212,9 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_variable_expression("hello", typeid_t::make_string()),
+				expression_t::make_variable_expression("hello", floyd_basics::typeid_t::make_string()),
 				expression_t::make_literal_string("xyz"),
-				typeid_t::make_string()
+				floyd_basics::typeid_t::make_string()
 			)
 		),
 		R"(["[-]", ["@", "hello", "string"], ["k", "xyz", "string"], "string"])"

@@ -188,6 +188,107 @@ namespace floyd_basics {
 	};
 
 	std::string base_type_to_string(const base_type t);
+
+
+
+	//////////////////////////////////////		typeid_t
+
+
+	struct typeid_t;
+	json_t typeid_to_json(const typeid_t& t);
+
+	struct typeid_t {
+
+		public: static typeid_t make_null(){
+			return { floyd_basics::base_type::k_null, {}, {}, {} };
+		}
+
+		public: static typeid_t make_bool(){
+			return { floyd_basics::base_type::k_bool, {}, {}, {} };
+		}
+
+		public: static typeid_t make_int(){
+			return { floyd_basics::base_type::k_int, {}, {}, {} };
+		}
+
+		public: static typeid_t make_float(){
+			return { floyd_basics::base_type::k_float, {}, {}, {} };
+		}
+
+		public: static typeid_t make_string(){
+			return { floyd_basics::base_type::k_string, {}, {}, {} };
+		}
+
+		public: static typeid_t make_unresolved_symbol(const std::string& s){
+			return { floyd_basics::base_type::k_null, {}, {}, s };
+		}
+
+		public: bool is_null() const {
+			return _base_type == floyd_basics::base_type::k_null;
+		}
+
+		public: static typeid_t make_struct(const std::string& struct_def_id){
+			return { floyd_basics::base_type::k_struct, {}, struct_def_id, {} };
+		}
+
+		public: static typeid_t make_vector(const typeid_t& element_type){
+			return { floyd_basics::base_type::k_vector, { element_type }, {}, {} };
+		}
+
+		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
+			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
+			std::vector<typeid_t> parts = { ret };
+			parts.insert(parts.end(), args.begin(), args.end());
+			return { floyd_basics::base_type::k_function, parts, {}, {} };
+		}
+
+		public: bool operator==(const typeid_t& other) const{
+			return _base_type == other._base_type && _parts == other._parts && _struct_def_id == other._struct_def_id;
+		}
+
+		public: bool check_invariant() const;
+
+		public: void swap(typeid_t& other);
+
+		/*
+			"int"
+			"[int]"
+			"int (float, [int])"
+			"coord_t/8000"
+			??? use json instead.
+		*/
+		public: std::string to_string() const;
+
+		public: floyd_basics::base_type get_base_type() const{
+			return _base_type;
+		}
+
+
+		/////////////////////////////		STATE
+
+
+		/*
+			"int"
+			"coord_t"
+			"coord_t/8000"
+			"int (float a, float b)"
+			"[string]"
+			"[string([bool(float,string),pixel)])"
+			"[coord_t/8000]"
+			"pixel_coord_t = coord_t/8000"
+		*/
+		public: floyd_basics::base_type _base_type;
+		public: std::vector<typeid_t> _parts;
+		public: std::string _struct_def_id;
+
+		//	This is used it overrides _base_type (which will be null).
+		public: std::string _unresolved_type_symbol;
+	};
+
+	json_t typeid_to_json(const typeid_t& t);
+
+
+
 }
 
 

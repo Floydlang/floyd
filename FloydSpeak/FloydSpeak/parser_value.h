@@ -16,13 +16,12 @@
 #include <map>
 
 #include "parser_ast.h"
-
+#include "floyd_basics.h"
 
 namespace floyd_ast {
 	struct statement_t;
 	struct expression_t;
 	struct value_t;
-	struct typeid_t;
 	struct interpreter_t;
 
 
@@ -35,7 +34,7 @@ namespace floyd_ast {
 		### Merge into environment_t to make a generic construct.
 	*/
 	struct struct_instance_t {
-		public: struct_instance_t(const typeid_t& struct_type, const std::map<std::string, value_t>& member_values) :
+		public: struct_instance_t(const floyd_basics::typeid_t& struct_type, const std::map<std::string, value_t>& member_values) :
 			_struct_type(struct_type),
 			_member_values(member_values)
 		{
@@ -47,7 +46,7 @@ namespace floyd_ast {
 
 
 		//	??? Remove this pointer at later time, when we statically track the type of structs OK. We alreay know this via __def!
-		public: typeid_t _struct_type;
+		public: floyd_basics::typeid_t _struct_type;
 
 		//	??? Use ::vector<value_t> _member_values and index of member to find the value.
 		public: std::map<std::string, value_t> _member_values;
@@ -64,7 +63,7 @@ namespace floyd_ast {
 		public: bool operator==(const vector_instance_t& other);
 
 		//	??? Remove this at later time, when we statically track the type of structs OK.
-		typeid_t _vector_type;
+		floyd_basics::typeid_t _vector_type;
 
 		std::vector<value_t> _elements;
 	};
@@ -80,12 +79,12 @@ namespace floyd_ast {
 		public: function_definition_t(
 			const std::vector<member_t>& args,
 			const std::vector<std::shared_ptr<statement_t>> statements,
-			const typeid_t& return_type
+			const floyd_basics::typeid_t& return_type
 		);
 		public: function_definition_t(
 			const std::vector<member_t>& args,
 			int host_function,
-			const typeid_t& return_type
+			const floyd_basics::typeid_t& return_type
 		);
 		public: json_t to_json() const;
 
@@ -93,12 +92,12 @@ namespace floyd_ast {
 		const std::vector<member_t> _args;
 		const std::vector<std::shared_ptr<statement_t>> _statements;
 		const int _host_function;
-		const typeid_t _return_type;
+		const floyd_basics::typeid_t _return_type;
 	};
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
-	typeid_t get_function_type(const function_definition_t f);
+	floyd_basics::typeid_t get_function_type(const function_definition_t f);
 
 
 	//////////////////////////////////////////////////		function_instance_t
@@ -218,34 +217,34 @@ namespace floyd_ast {
 		}
 
 		public: value_t() :
-			_typeid(typeid_t::make_null())
+			_typeid(floyd_basics::typeid_t::make_null())
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(bool value) :
-			_typeid(typeid_t::make_bool()),
+			_typeid(floyd_basics::typeid_t::make_bool()),
 			_bool(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(int value) :
-			_typeid(typeid_t::make_int()),
+			_typeid(floyd_basics::typeid_t::make_int()),
 			_int(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(float value) :
-			_typeid(typeid_t::make_float()),
+			_typeid(floyd_basics::typeid_t::make_float()),
 			_float(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(const char s[]) :
-			_typeid(typeid_t::make_string()),
+			_typeid(floyd_basics::typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(s != nullptr);
@@ -254,7 +253,7 @@ namespace floyd_ast {
 		}
 
 		public: explicit value_t(const std::string& s) :
-			_typeid(typeid_t::make_string()),
+			_typeid(floyd_basics::typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -440,7 +439,7 @@ namespace floyd_ast {
 			}
 		}
 
-		public: typeid_t get_type() const{
+		public: floyd_basics::typeid_t get_type() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid;
@@ -580,7 +579,7 @@ namespace floyd_ast {
 
 
 		////////////////		STATE
-		private: typeid_t _typeid;
+		private: floyd_basics::typeid_t _typeid;
 
 		private: bool _bool = false;
 		private: int _int = 0;

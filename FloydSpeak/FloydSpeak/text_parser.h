@@ -69,6 +69,7 @@ struct seq_t {
 
 
 	//	Returns entire string. Equivalent to x.rest(x.size()).
+	//	Notice: these returns what's left to consume of the original string, not the full original string.
 	public: std::string get_s() const;
 	public: std::size_t size() const;
 

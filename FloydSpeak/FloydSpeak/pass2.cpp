@@ -89,28 +89,28 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 
 
 
-pair<typeid_t, bool> resolve_base_type_name(const string& t){
+pair<floyd_basics::typeid_t, bool> resolve_base_type_name(const string& t){
 	if(t == "<null>"){
-		return { typeid_t::make_null(), true };
+		return { floyd_basics::typeid_t::make_null(), true };
 	}
 	else if(t == "<bool>"){
-		return { typeid_t::make_bool(), true };
+		return { floyd_basics::typeid_t::make_bool(), true };
 	}
 	else if(t == "<int>"){
-		return { typeid_t::make_int(), true };
+		return { floyd_basics::typeid_t::make_int(), true };
 	}
 	else if(t == "<float>"){
-		return { typeid_t::make_float(), true };
+		return { floyd_basics::typeid_t::make_float(), true };
 	}
 	else if(t == "<string>"){
-		return { typeid_t::make_string(), true };
+		return { floyd_basics::typeid_t::make_string(), true };
 	}
 	else {
-		return { typeid_t::make_null(), false };
+		return { floyd_basics::typeid_t::make_null(), false };
 	}
 }
 
-typeid_t resolve_type_name(const string& t){
+floyd_basics::typeid_t resolve_type_name(const string& t){
 	QUARK_ASSERT(t.size() > 2);
 
 	const auto a = resolve_base_type_name(t);
@@ -118,7 +118,7 @@ typeid_t resolve_type_name(const string& t){
 		return a.first;
 	}
 	else {
-		return typeid_t::make_unresolved_symbol(trim_ends(t));
+		return floyd_basics::typeid_t::make_unresolved_symbol(trim_ends(t));
 	}
 }
 
@@ -181,18 +181,18 @@ expression_t parser_expression_to_ast(const json_t& e){
 		for(const auto& arg: args.get_array()){
 			args2.push_back(parser_expression_to_ast(arg));
 		}
-		return expression_t::make_function_call(function_expr, args2, typeid_t::make_null());
+		return expression_t::make_function_call(function_expr, args2, floyd_basics::typeid_t::make_null());
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto base_expr = parser_expression_to_ast(e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
-		return expression_t::make_resolve_member(base_expr, member, typeid_t::make_null());
+		return expression_t::make_resolve_member(base_expr, member, floyd_basics::typeid_t::make_null());
 	}
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_variable_expression(variable_symbol, typeid_t::make_null());
+		return expression_t::make_variable_expression(variable_symbol, floyd_basics::typeid_t::make_null());
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -319,7 +319,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto fstatements2 = parser_statements_to_ast(fstatements);
 			const auto return_type2 = resolve_type_name(return_type.get_string());
 
-			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
+			const auto function_typeid = floyd_basics::typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, function_typeid, function_def_expr)));

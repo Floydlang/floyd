@@ -42,7 +42,7 @@ namespace floyd_ast {
 		std::string _name;
 		std::vector<member_t> _args;
 		std::vector<std::shared_ptr<statement_t>> _statements;
-		typeid_t _return_type;
+		floyd_basics::typeid_t _return_type;
 	};
 */
 
@@ -68,7 +68,7 @@ namespace floyd_ast {
 		}
 
 		std::string _new_variable_name;
-		typeid_t _bindtype;
+		floyd_basics::typeid_t _bindtype;
 		expression_t _expression;
 	};
 
@@ -232,7 +232,7 @@ namespace floyd_ast {
 
 	statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
-	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression);
+	statement_t make__bind_statement(const std::string& new_variable_name, const floyd_basics::typeid_t& bindtype, const expression_t& expression);
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);
 	statement_t make__ifelse_statement(
 		const expression_t& condition,

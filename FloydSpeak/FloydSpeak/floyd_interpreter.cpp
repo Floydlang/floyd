@@ -38,7 +38,7 @@ using namespace floyd_ast;
 
 
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
-value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
+value_t make_struct_instance(const interpreter_t& vm, const floyd_basics::typeid_t& struct_type);
 
 namespace {
 
@@ -214,7 +214,7 @@ namespace {
 }	//	unnamed
 
 
-value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
+value_t make_default_value(const interpreter_t& vm, const floyd_basics::typeid_t& t){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
@@ -245,7 +245,7 @@ value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	}
 }
 
-value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type){
+value_t make_struct_instance(const interpreter_t& vm, const floyd_basics::typeid_t& struct_type){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(!struct_type.is_null() && struct_type.check_invariant());
 
@@ -958,9 +958,9 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	init_statements.push_back(make_shared<statement_t>(make_function_statement(
 		"print",
 		function_definition_t(
-			{ member_t{ typeid_t::make_string(), "s" } },
+			{ member_t{ floyd_basics::typeid_t::make_string(), "s" } },
 			host_functions::k_print,
-			typeid_t::make_null()
+			floyd_basics::typeid_t::make_null()
 		)
 	)));
 
@@ -970,7 +970,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 			//??? Supports arg of any type.
 			{ },
 			host_functions::k_to_string,
-			typeid_t::make_string()
+			floyd_basics::typeid_t::make_string()
 		)
 	)));
 
@@ -979,7 +979,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		function_definition_t(
 			{},
 			host_functions::k_get_time_of_day_ms,
-			typeid_t::make_int()
+			floyd_basics::typeid_t::make_int()
 		)
 	)));
 

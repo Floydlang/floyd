@@ -117,7 +117,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	function_definition_t::function_definition_t(
 		const std::vector<member_t>& args,
 		const std::vector<std::shared_ptr<statement_t>> statements,
-		const typeid_t& return_type
+		const floyd_basics::typeid_t& return_type
 	)
 	:
 		_args(args),
@@ -130,7 +130,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	function_definition_t::function_definition_t(
 		const std::vector<member_t>& args,
 		const int host_function,
-		const typeid_t& return_type
+		const floyd_basics::typeid_t& return_type
 	)
 	:
 		_args(args),
@@ -140,7 +140,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	}
 
 	json_t function_definition_t::to_json() const {
-		typeid_t function_type = get_function_type(*this);
+		floyd_basics::typeid_t function_type = get_function_type(*this);
 		return json_t::make_array({
 			"func-def",
 			typeid_to_json(function_type),
@@ -158,8 +158,8 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 			&& lhs._return_type == rhs._return_type;
 	}
 
-	typeid_t get_function_type(const function_definition_t f){
-		return typeid_t::make_function(f._return_type, get_member_types(f._args));
+	floyd_basics::typeid_t get_function_type(const function_definition_t f){
+		return floyd_basics::typeid_t::make_function(f._return_type, get_member_types(f._args));
 	}
 
 
@@ -186,7 +186,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 		QUARK_ASSERT(def && def->check_invariant());
 
 		auto instance = make_shared<vector_instance_t>();
-		instance->_vector_type = typeid_t::make_vector(def->_element_type);
+		instance->_vector_type = floyd_basics::typeid_t::make_vector(def->_element_type);
 		instance->_elements = elements;
 		return value_t(instance);
 	}
@@ -415,10 +415,10 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 QUARK_UNIT_TESTQ("value_t()", "struct"){
 	const auto struct_scope_ref = lexical_scope_t::make_struct_object(
 		std::vector<member_t>{
-			{ typeid_t::make_string(), "x" }
+			{ floyd_basics::typeid_t::make_string(), "x" }
 		}
 	);
-	const auto struct_type = typeid_t::make_struct("xxx"/*struct_scope_ref*/);
+	const auto struct_type = floyd_basics::typeid_t::make_struct("xxx"/*struct_scope_ref*/);
 	const auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, std::map<std::string, value_t>{
 		{ "x", value_t("skalman")}
 	}));
@@ -439,7 +439,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(floyd_basics::typeid_t::make_int()));
 	const auto a = make_vector_instance(vector_def, {});
 	const auto b = make_vector_instance(vector_def, {});
 
@@ -460,7 +460,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(floyd_basics::typeid_t::make_int()));
 	const auto a = make_vector_instance(vector_def, { 3, 4, 5});
 	const auto b = make_vector_instance(vector_def, { 3, 4 });
 
@@ -476,15 +476,15 @@ value_t make_test_func(){
 	const auto function_scope_ref = lexical_scope_t::make_function_object(
 		type_identifier_t::make("my_func"),
 		std::vector<member_t>{
-			{ typeid_t::make_int(), "a" },
-			{ typeid_t::make_string(), "b" }
+			{ floyd_basics::typeid_t::make_int(), "a" },
+			{ floyd_basics::typeid_t::make_string(), "b" }
 		},
 		{},
 		{},
-		typeid_t::make_bool()
+		floyd_basics::typeid_t::make_bool()
 	);
 
-	const auto function_type = typeid_t::make_function_type_def(function_scope_ref);
+	const auto function_type = floyd_basics::typeid_t::make_function_type_def(function_scope_ref);
 	const auto a = value_t(function_type);
 	return a;
 }
