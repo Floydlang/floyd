@@ -265,28 +265,12 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 }
 
 
+
 std::pair<std::string, seq_t> read_type_identifier(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, type_chars);
 	return b;
 }
-
-/*
-std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
-	const auto pos0 = skip_whitespace(s);
-	const auto pos1 = read_while(pos0, identifier_chars);
-	const auto pos2 = skip_whitespace(pos1.second);
-	if(if_first(pos2, "=").first){
-	}
-	else if(if_first(pos2, "(").first){
-	}
-	else if(if_first(pos2, "(").first){
-	}
-
-	const auto b = read_while(a, type_chars);
-	return b;
-}
-*/
 
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 	QUARK_TEST_VERIFY(read_type_identifier(seq_t("-3")).first == "");
@@ -305,6 +289,54 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 }
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 	QUARK_TEST_VERIFY(read_type_identifier(seq_t("string")).first == "string");
+}
+
+
+//??? Fix resolve_base_type_name(). Also make to/from JSON.
+
+std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
+	const auto pos0 = skip_whitespace(s);
+	const auto pos1 = read_while(pos0, identifier_chars);
+	if(pos1.first.empty()){
+		return { floyd_basics::typeid_t::make_null(), pos1.second };
+	}
+	else if(pos1.first == "null"){
+		return { floyd_basics::typeid_t::make_null(), pos1.second };
+	}
+	else if(pos1.first == "bool"){
+		return { floyd_basics::typeid_t::make_bool(), pos1.second };
+	}
+	else if(pos1.first == "int"){
+		return { floyd_basics::typeid_t::make_int(), pos1.second };
+	}
+	else if(pos1.first == "float"){
+		return { floyd_basics::typeid_t::make_float(), pos1.second };
+	}
+	else if(pos1.first == "string"){
+		return { floyd_basics::typeid_t::make_string(), pos1.second };
+	}
+	else{
+		return { floyd_basics::typeid_t::make_null(), pos1.second };
+	}
+}
+
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("-3")).first == floyd_basics::typeid_t::make_null());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("null")).first == floyd_basics::typeid_t::make_null());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("bool")).first == floyd_basics::typeid_t::make_bool());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("int")).first == floyd_basics::typeid_t::make_int());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("float")).first == floyd_basics::typeid_t::make_float());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("string")).first == floyd_basics::typeid_t::make_string());
 }
 
 /*
