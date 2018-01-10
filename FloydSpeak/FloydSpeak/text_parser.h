@@ -66,7 +66,9 @@ struct seq_t {
 
 	//	Skips n characters.
 	//	Limited to rest_size().
-	public: seq_t rest(size_t skip) const;
+	public: seq_t rest(size_t count) const;
+
+	public: seq_t back(size_t count) const;
 
 
 	//	Returns entire string. Equivalent to x.rest(x.size()).

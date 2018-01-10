@@ -186,10 +186,17 @@ seq_t seq_t::rest1() const{
 	return rest(1);
 }
 
-seq_t seq_t::rest(size_t skip) const{
+seq_t seq_t::rest(size_t count) const{
 	QUARK_ASSERT(check_invariant());
 
-	const auto p = std::min(_str->size(), _pos + skip);
+	const auto p = std::min(_str->size(), _pos + count);
+	return seq_t(_str, p);
+}
+
+seq_t seq_t::back(size_t count) const{
+	QUARK_ASSERT(check_invariant());
+
+	const auto p = std::max(string::size_type(0), _pos - count);
 	return seq_t(_str, p);
 }
 

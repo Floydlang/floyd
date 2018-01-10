@@ -89,20 +89,25 @@ std::string get_range(const seq_t& a, const seq_t& b){
 	return result;
 }
 
-std::pair<vector<string>, seq_t> split_other(const seq_t& pos0){
+// Includes trailing ";". Does not include body of a function definition.
+std::pair<string, seq_t> read_complete_statement(const seq_t& pos0){
 	const auto pos1 = skip_whitespace(pos0);
 	auto pos = pos1;
-	while(pos.first() != ";" && pos.first() != "}" && pos.empty() == false){
+	while(pos.first() != ";" && pos.first() != "{" && pos.empty() == false){
 		if(is_start_char(pos.first()[0])){
-			pos = get_balanced(pos).second;
+			const auto end = get_balanced(pos).second;
+			pos = end;
+//			pos = end.back(1);
 		}
 		else{
 			pos = pos.rest1();
 		}
 	}
-	pos = pos.rest1();
+	if(pos.first1() == ";"){
+		pos = pos.rest1();
+	}
 	const auto r = get_range(pos1, pos);
-	return { { r }, pos };
+	return { r, pos };
 }
 
 std::string concat_strings(const vector<string>& v){
@@ -119,7 +124,7 @@ std::string concat_strings(const vector<string>& v){
 }
 
 std::string split_line(const string& title, const seq_t& in){
-	const auto result = split_other(in);
+	const auto result = read_complete_statement(in);
 	vector<string> temp;
 	temp.push_back(title);
 	temp.push_back(in.get_s());
@@ -130,12 +135,6 @@ std::string split_line(const string& title, const seq_t& in){
 }
 
 QUARK_UNIT_TEST("", "split_other()", "", ""){
-	QUARK_TRACE(split_line("BIND", seq_t("int a = 100;xyz")));
-	QUARK_TRACE(split_line("BIND", seq_t("int x = f(3);xyz")));
-
-
-
-
 //	BIND	TYPE	SYMBOL	=	EXPRESSION;
 	QUARK_TRACE((split_line("BIND", seq_t("int x = 10;xyz"))));
 	QUARK_TRACE((split_line("BIND", seq_t("int (string a) x = f(4 == 5);xyz"))));
