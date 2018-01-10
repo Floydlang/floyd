@@ -41,39 +41,124 @@ https://en.wikipedia.org/wiki/Parsing
 
 
 
-
-
 //////////////////////////////////////////////////		parse_statement()
 
-
 /*
-	BIND: int x = 10;
-	BIND: int (string a) x = f(4 == 5);
-		TYPE SYMBOL = EXPRESSION;
-		let TYPE SYMBOL = EXPRESSION;
+	let TYPE SYMBOL = EXPRESSION;
+	FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
+	let SYMBOL = EXPRESSION;
 
-	FUNCTION-DEFINITION: int f(string name){ return 13; }
-	FUNCTION-DEFINITION: int (string a) f(string name){ return 100 == 101; }
-		TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
-		FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
+	BIND					TYPE				SYMBOL		=		EXPRESSION;
+	BIND					int					x			=		10;
+	BIND					int	(string a)		x			=		f(4 == 5);
 
-	EXPRESSION-STATEMENT: print ("Hello, World!");
-	EXPRESSION-STATEMENT: print ("Hello, World!" + f(3) == 2);
-		EXPRESSION;
+	FUNCTION-DEFINITION		TYPE				SYMBOL				( EXPRESSION-LIST )	{ STATEMENTS }
+	FUNCTION-DEFINITION		int					f					(string name)		{ return 13; }
+	FUNCTION-DEFINITION		int (string a)		f					(string name)		{ return 100 == 101; }
 
+	EXPRESSION-STATEMENT						EXPRESSION;
+	EXPRESSION-STATEMENT						print				("Hello, World!");
+	EXPRESSION-STATEMENT						print				("Hello, World!" + f(3) == 2);
 
-	# FUTURE
+	DEDUCED-BIND								SYMBOL		=		EXPRESSION;
+	DEDUCED-BIND								x			=		10;
+	DEDUCED-BIND								x			=		"hello";
+	DEDUCED-BIND								x			=		f(3) == 2;
 
-	DEDUCED-BIND: x = 10
-	DEDUCED-BIND: x = "hello"
-	DEDUCED-BIND: x = f(3) == 2;
-		SYMBOL = EXPRESSION
-		let SYMBOL = EXPRESSION;
+	MUTATE_LOCAL								SYMBOL		<===	EXPRESSION;
+	MUTATE_LOCAL								x			<===	11;
 
+//	read entire statement
+find thislevel "}" or thislevel ";"
 
-	MUTATE_LOCAL: x <=== 11
-		SYMBOL <=== EXPRESSION
+find thislevel "="
+	BIND or DEDUCED_BIND
+else
+	FUNCTION-DEFINITION or EXPRESSION-STATEMENT
 */
+
+std::string get_range(const seq_t& a, const seq_t& b){
+	QUARK_ASSERT(seq_t::related(a, b));
+
+	std::string result;
+	auto t = a;
+	while(t != b){
+		result.append(t.first1());
+		t = t.rest1();
+	}
+	return result;
+}
+
+std::pair<vector<string>, seq_t> split_other(const seq_t& pos0){
+	const auto pos1 = skip_whitespace(pos0);
+	auto pos = pos1;
+	while(pos.first() != ";" && pos.first() != "}" && pos.empty() == false){
+		if(is_start_char(pos.first()[0])){
+			pos = get_balanced(pos).second;
+		}
+		else{
+			pos = pos.rest1();
+		}
+	}
+	pos = pos.rest1();
+	const auto r = get_range(pos1, pos);
+	return { { r }, pos };
+}
+
+std::string concat_strings(const vector<string>& v){
+	if(v.empty()){
+		return "";
+	}
+	else{
+		string result;
+		for(const auto e: v){
+			result += "\t|\t" + e;
+		}
+		return result;
+	}
+}
+
+std::string split_line(const string& title, const seq_t& in){
+	const auto result = split_other(in);
+	vector<string> temp;
+	temp.push_back(title);
+	temp.push_back(in.get_s());
+	temp = temp + result.first;
+	temp = temp + result.second.get_s();
+	const auto out = concat_strings(temp);
+	return out;
+}
+
+QUARK_UNIT_TEST("", "split_other()", "", ""){
+	QUARK_TRACE(split_line("BIND", seq_t("int a = 100;xyz")));
+	QUARK_TRACE(split_line("BIND", seq_t("int x = f(3);xyz")));
+
+
+
+
+//	BIND	TYPE	SYMBOL	=	EXPRESSION;
+	QUARK_TRACE((split_line("BIND", seq_t("int x = 10;xyz"))));
+	QUARK_TRACE((split_line("BIND", seq_t("int (string a) x = f(4 == 5);xyz"))));
+
+//	FUNCTION-DEFINITION	TYPE	SYMBOL	( EXPRESSION-LIST )	{ STATEMENTS }
+	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int f(string name){ return 13; }xyz"))));
+	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int (string a) f(string name){ return 100 == 101; }xyz"))));
+
+//	EXPRESSION-STATEMENT	EXPRESSION;
+	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print (\"Hello, World!\");xyz"))));
+	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print (\"Hello, World!\" + f(3) == 2);xyz"))));
+
+//	DEDUCED-BIND	SYMBOL	=	EXPRESSION;
+	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = 10;xyz"))));
+	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = \"hello\";xyz"))));
+	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = f(3) == 2;xyz"))));
+
+//	MUTATE_LOCAL	SYMBOL	<===	EXPRESSION;
+	QUARK_TRACE((split_line("MUTATE_LOCAL", seq_t("x <=== 11;xyz"))));
+
+}
+
+
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);
 

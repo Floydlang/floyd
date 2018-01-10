@@ -112,6 +112,28 @@ seq_t::seq_t(const std::string& s) :
 	QUARK_ASSERT(check_invariant());
 }
 
+seq_t::seq_t(const seq_t& s) :
+	_str(s._str),
+	_pos(s._pos),
+	FIRST_debug(s.FIRST_debug)
+{
+	QUARK_ASSERT(check_invariant());
+}
+
+seq_t& seq_t::operator=(const seq_t& other){
+	seq_t temp = other;
+	temp.swap(*this);
+	return *this;
+}
+
+void seq_t::swap(seq_t& other) throw(){
+	this->_str.swap(other._str);
+	std::swap(this->_pos, other._pos);
+	std::swap(this->FIRST_debug, other.FIRST_debug);
+}
+
+
+
 seq_t::seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos) :
 	_str(str),
 	_pos(pos)
@@ -188,6 +210,13 @@ bool seq_t::empty() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _str->size() == _pos;
+}
+
+bool seq_t::related(const seq_t& a, const seq_t& b){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(b.check_invariant());
+
+	return a._str == b._str;
 }
 
 const char* seq_t::c_str() const{

@@ -42,6 +42,7 @@ std::string double_to_string(double value);
 
 struct seq_t {
 	public: explicit seq_t(const std::string& s);
+	public: seq_t(const seq_t& other);
 	public: bool check_invariant() const;
 
 
@@ -76,12 +77,19 @@ struct seq_t {
 	//	If true, there are no more characters.
 	public: bool empty() const;
 
+	//	Returns true if both are based on the same internal string.
+	public: static bool related(const seq_t& a, const seq_t& b);
+
 	private: seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos);
+	public: seq_t& operator=(const seq_t& other);
+	public: void swap(seq_t& other) throw();
 
 	public: bool operator==(const seq_t& other) const;
+	public: bool operator!=(const seq_t& other) const { return !(*this == other); }
 
 	//	Returns pointer to entire string.
 	const char* c_str() const;
+
 
 
 	/////////////		STATE
