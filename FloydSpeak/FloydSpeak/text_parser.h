@@ -100,6 +100,8 @@ std::pair<std::string, seq_t> split_at(const seq_t& p1, const std::string& str);
 //	If p starts with wanted_string, return true and consume those chars. Else return false and the same seq_t.
 std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string);
 
+bool is_first(const seq_t& p, const std::string& wanted_string);
+
 
 
 std::pair<char, seq_t> read_char(const seq_t& s);

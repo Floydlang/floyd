@@ -350,6 +350,9 @@ QUARK_UNIT_TESTQ("if_first()", ""){
 	QUARK_TEST_VERIFY(result == expected);
 }
 
+bool is_first(const seq_t& p, const std::string& wanted_string){
+	return if_first(p, wanted_string).first;
+}
 
 
 

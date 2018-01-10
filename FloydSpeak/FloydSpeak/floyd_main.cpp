@@ -21,12 +21,12 @@ int main(int argc, const char * argv[]) {
 	try {
 #if QUARK_UNIT_TESTS_ON
 		quark::run_tests({
+			"floyd_parser.cpp",
 			"parse_statement.cpp",
 			"floyd_interpreter.cpp",
 
 			//	Core libs
 			"quark.cpp"
-			"floyd_parser.cpp",
 /*
 			"steady_vector.cpp",
 			"text_parser.cpp",

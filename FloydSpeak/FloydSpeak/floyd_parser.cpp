@@ -43,95 +43,110 @@ https://en.wikipedia.org/wiki/Parsing
 
 
 
-//////////////////////////////////////////////////		read_statement()
+//////////////////////////////////////////////////		parse_statement()
+
+
+/*
+	BIND: int x = 10;
+	BIND: int (string a) x = f(4 == 5);
+		TYPE SYMBOL = EXPRESSION;
+		let TYPE SYMBOL = EXPRESSION;
+
+	FUNCTION-DEFINITION: int f(string name){ return 13; }
+	FUNCTION-DEFINITION: int (string a) f(string name){ return 100 == 101; }
+		TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
+		FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
+
+	EXPRESSION-STATEMENT: print ("Hello, World!");
+	EXPRESSION-STATEMENT: print ("Hello, World!" + f(3) == 2);
+		EXPRESSION;
+
+
+	# FUTURE
+
+	DEDUCED-BIND: x = 10
+	DEDUCED-BIND: x = "hello"
+	DEDUCED-BIND: x = f(3) == 2;
+		SYMBOL = EXPRESSION
+		let SYMBOL = EXPRESSION;
+
+
+	MUTATE_LOCAL: x <=== 11
+		SYMBOL <=== EXPRESSION
+*/
+std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& pos0){
+	const auto pos = skip_whitespace(pos0);
+
+	const auto type_pos = read_type_identifier(seq_t(pos));
+	const auto identifier_pos = read_single_symbol(type_pos.second);
+	if(type_pos.second.empty() == false && identifier_pos.second.empty() == false){
+
+		/*
+			Function definition?
+			"int xyz(string a, string b){ ... }
+		*/
+		if(if_first(skip_whitespace(identifier_pos.second), "(").first){
+			return parse_function_definition2(pos);
+		}
+
+		/*
+			Define variable?
+
+			"int a = 10;"
+			"string hello = f(a) + \"_suffix\";";
+		*/
+		else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
+			return parse_assignment_statement(pos);
+		}
+
+		else{
+			throw std::runtime_error("syntax error");
+		}
+	}
+	//	Assume this is an expression-statement.
+	else{
+		return parse_expression_statement(pos);
+	}
+}
+
+QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
+	ut_compare_jsons(
+		parse_prefixless_statement(seq_t("int x = f(3);")).first,
+		parse_json(seq_t(R"(["bind", "<int>", "x", ["call", ["@", "f"], [["k", 3, "<int>"]]]])")).first
+	);
+}
+
+#if false
+QUARK_UNIT_TEST("", "parse_statement()", "", ""){
+	ut_compare_jsons(
+		parse_prefixless_statement(seq_t("f(3);")).first,
+		parse_json(seq_t(R"(["call", ["@", "f"], [["k", 3, "<int>"]]])")).first
+	);
+}
+#endif
 
 
 std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);
-	const auto token_pos = read_until(pos, whitespace_chars + "(");
-
-	if(pos.first1() == "{"){
+	if(is_first(pos, "{")){
 		return parse_block(pos);
 	}
-	else{
-		//	return statement?
-		if(token_pos.first == "return"){
-			return parse_return_statement(pos);
-		}
-
-		//	struct definition?
-		else if(token_pos.first == "struct"){
-			return parse_struct_definition(seq_t(pos));
-		}
-
-		else if(token_pos.first == "if"){
-			const auto temp = parse_if_statement(seq_t(pos));
-			QUARK_TRACE(json_to_pretty_string(temp.first));
-			return temp;
-		}
-		else if(token_pos.first == "for"){
-			return parse_for_statement(seq_t(pos));
-		}
-		else {
-			/*
-				BIND: int x = 10;
-				BIND: int (string a) x = f(4 == 5);
-					TYPE SYMBOL = EXPRESSION;
-					let TYPE SYMBOL = EXPRESSION;
-
-				FUNCTION-DEFINITION: int f(string name){ return 13; }
-				FUNCTION-DEFINITION: int (string a) f(string name){ return 100 == 101; }
-					TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
-					FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
-
-				EXPRESSION-STATEMENT: print ("Hello, World!");
-				EXPRESSION-STATEMENT: print ("Hello, World!" + f(3) == 2);
-					EXPRESSION;
-
-
-				# FUTURE
-
-				DEDUCED-BIND: x = 10
-				DEDUCED-BIND: x = "hello"
-				DEDUCED-BIND: x = f(3) == 2;
-					SYMBOL = EXPRESSION
-					let SYMBOL = EXPRESSION;
-
-
-				MUTATE_LOCAL: x <=== 11
-					SYMBOL <=== EXPRESSION
-			*/
-			const auto type_pos = read_type_identifier(seq_t(pos));
-			const auto identifier_pos = read_single_symbol(type_pos.second);
-			if(type_pos.second.empty() == false && identifier_pos.second.empty() == false){
-
-				/*
-					Function definition?
-					"int xyz(string a, string b){ ... }
-				*/
-				if(if_first(skip_whitespace(identifier_pos.second), "(").first){
-					return parse_function_definition2(pos);
-				}
-
-				/*
-					Define variable?
-
-					"int a = 10;"
-					"string hello = f(a) + \"_suffix\";";
-				*/
-				else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
-					return parse_assignment_statement(pos);
-				}
-
-				else{
-					throw std::runtime_error("syntax error");
-				}
-			}
-			//	Assume this is an expression-statement.
-			else{
-				return parse_expression_statement(pos);
-			}
-		}
+	else if(is_first(pos, "return")){
+		return parse_return_statement(pos);
+	}
+	else if(is_first(pos, "struct")){
+		return parse_struct_definition(seq_t(pos));
+	}
+	else if(is_first(pos, "if")){
+		const auto temp = parse_if_statement(seq_t(pos));
+		QUARK_TRACE(json_to_pretty_string(temp.first));
+		return temp;
+	}
+	else if(is_first(pos, "for")){
+		return parse_for_statement(seq_t(pos));
+	}
+	else {
+		return parse_prefixless_statement(pos);
 	}
 }
 
@@ -167,14 +182,6 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	);
 }
 
-/*
-QUARK_UNIT_TEST("", "parse_statement()", "", ""){
-	ut_compare_jsons(
-		parse_statement(seq_t("f(3);")).first,
-		parse_json(seq_t(R"(["call", ["@", "f"], [["k", 3, "<int>"]]])")).first
-	);
-}
-*/
 
 
 std::pair<json_t, seq_t> parse_statements(const seq_t& s0){
