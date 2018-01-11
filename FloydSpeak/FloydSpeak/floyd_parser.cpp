@@ -182,14 +182,17 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 		const auto pre_symbol = skip_whitespace_ends(pre_symbol__symbol.first);
 		const auto symbol = skip_whitespace_ends(pre_symbol__symbol.second);
 
-		auto s3 = skip_whitespace_ends(s2);
-		s3 = s3.back() == ';' ? s3.substr(0, s3.size() - 1) : s3;
-		s3 = skip_whitespace_ends(s3);
 		if(pre_symbol == ""){
+			auto s3 = skip_whitespace_ends(s2);
+			if(s3.back() != ';'){
+				throw std::runtime_error("syntax error");
+			}
+			s3.pop_back();
+			s3 = skip_whitespace_ends(s3);
 			return { { "[EXPRESSION-STATEMENT]", s3 }, s1 };
 		}
 		else{
-			return { { "[FUNCTION-DEFINITION]", s3 }, s1 };
+			return { { "[FUNCTION-DEFINITION]", skip_whitespace_ends(s2) }, s1 };
 		}
 	}
 	else{
@@ -200,7 +203,9 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 		//	DEDUCED-BIND	x = f(3) == 2;
 		//	MUTATE_LOCAL	x <=== 11;
 		auto rhs_expression1 = skip_whitespace(equal_sign_pos.second.rest1().str());
-		QUARK_ASSERT(rhs_expression1.back() == ';')
+		if(rhs_expression1.back() != ';'){
+			throw std::runtime_error("syntax error");
+		}
 
 		if(rhs_expression1.back() == ';'){
 			rhs_expression1.pop_back();
@@ -316,39 +321,24 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 }
 
 
-
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
-
-	const auto type_pos = read_type_identifier2(seq_t(pos));
-	const auto identifier_pos = read_single_symbol(type_pos.second);
-	if(type_pos.second.empty() == false && identifier_pos.second.empty() == false){
-
-		/*
-			Function definition?
-			"int xyz(string a, string b){ ... }
-		*/
-		if(if_first(skip_whitespace(identifier_pos.second), "(").first){
-			return parse_function_definition2(pos);
-		}
-
-		/*
-			Define variable?
-
-			"int a = 10;"
-			"string hello = f(a) + \"_suffix\";";
-		*/
-		else if(if_first(skip_whitespace(identifier_pos.second), "=").first){
-			return parse_assignment_statement(pos);
-		}
-
-		else{
-			throw std::runtime_error("syntax error");
-		}
+	const auto implicit = parse_implicit_statement(pos);
+	const auto statement_type = implicit.first[0];
+	if(statement_type == "[BIND]"){
+		return parse_assignment_statement(pos);
 	}
-	//	Assume this is an expression-statement.
-	else{
+	else if(statement_type == "[FUNCTION-DEFINITION]"){
+		return parse_function_definition2(pos);
+	}
+	else if(statement_type == "[EXPRESSION-STATEMENT]"){
 		return parse_expression_statement(pos);
+	}
+	else if(statement_type == "[DEDUCED-BIND]"){
+		return parse_deduced_bind_statement(pos);
+	}
+	else{
+		QUARK_ASSERT(false);
 	}
 }
 

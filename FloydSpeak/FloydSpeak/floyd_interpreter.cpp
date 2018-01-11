@@ -1187,217 +1187,217 @@ QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
-	test__run_init__check_result("int result = 5*(4+4+1)", value_t(45));
+	test__run_init__check_result("int result = 5*(4+4+1);", value_t(45));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
-	test__run_init__check_result("int result = 5*(2*(1+3)+1)", value_t(45));
+	test__run_init__check_result("int result = 5*(2*(1+3)+1);", value_t(45));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
-	test__run_init__check_result("int result = 5*((1+3)*2+1)", value_t(45));
+	test__run_init__check_result("int result = 5*((1+3)*2+1);", value_t(45));
 }
 
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
-	test__run_init__check_result("int result = 5 * ((1 + 3) * 2 + 1) ", value_t(45));
+	test__run_init__check_result("int result = 5 * ((1 + 3) * 2 + 1) ;", value_t(45));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
-	test__run_init__check_result("int result = 5 - 2 * ( 3 ) ", value_t(-1));
+	test__run_init__check_result("int result = 5 - 2 * ( 3 ) ;", value_t(-1));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
-	test__run_init__check_result("int result =  5 - 2 * ( ( 4 )  - 1 ) ", value_t(-1));
+	test__run_init__check_result("int result =  5 - 2 * ( ( 4 )  - 1 ) ;", value_t(-1));
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
-	test__run_init__check_result("int result = -(2+1)*4", value_t(-12));
+	test__run_init__check_result("int result = -(2+1)*4;", value_t(-12));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
-	test__run_init__check_result("int result = -4*(2+1)", value_t(-12));
+	test__run_init__check_result("int result = -4*(2+1);", value_t(-12));
 }
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = 5.5/5.0", value_t(1.1f));
+	test__run_init__check_result("float result = 5.5/5.0;", value_t(1.1f));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 //	test__run_init__check_result("int result = 1/5e10") == 2e-11);
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = (4.0-3.0)/(4.0*4.0)", value_t(0.0625f));
+	test__run_init__check_result("float result = (4.0-3.0)/(4.0*4.0);", value_t(0.0625f));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = 1.0/2.0/2.0", value_t(0.25f));
+	test__run_init__check_result("float result = 1.0/2.0/2.0;", value_t(0.25f));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = 0.25 * .5 * 0.5", value_t(0.0625f));
+	test__run_init__check_result("float result = 0.25 * .5 * 0.5;", value_t(0.0625f));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = .25 / 2.0 * .5", value_t(0.0625f));
+	test__run_init__check_result("float result = .25 / 2.0 * .5;", value_t(0.0625f));
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
-	test__run_init__check_result("int result = 1+-2", value_t(-1));
+	test__run_init__check_result("int result = 1+-2;", value_t(-1));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
-	test__run_init__check_result("int result = --2", value_t(2));
+	test__run_init__check_result("int result = --2;", value_t(2));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
-	test__run_init__check_result("int result = 2---2", value_t(0));
+	test__run_init__check_result("int result = 2---2;", value_t(0));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
-	test__run_init__check_result("int result = 2-+-2", value_t(4));
+	test__run_init__check_result("int result = 2-+-2;", value_t(4));
 }
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
-	test__run_init__check_result("bool result = true", value_t(true));
+	test__run_init__check_result("bool result = true;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
-	test__run_init__check_result("bool result = false", value_t(false));
+	test__run_init__check_result("bool result = false;", value_t(false));
 }
 
 
 //??? add tests  for pass2()
 QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
-	test__run_init__check_result("int result = true ? 4 : 6", value_t(4));
+	test__run_init__check_result("int result = true ? 4 : 6;", value_t(4));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
-	test__run_init__check_result("int result = false ? 4 : 6", value_t(6));
-}
-
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
-	test__run_init__check_result("int result = 1==3 ? 4 : 6", value_t(6));
-}
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
-	test__run_init__check_result("int result = 3==3 ? 4 : 6", value_t(4));
+	test__run_init__check_result("int result = false ? 4 : 6;", value_t(6));
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
-	test__run_init__check_result("int result = 3==3 ? 2 + 2 : 2 * 3", value_t(4));
+	test__run_init__check_result("int result = 1==3 ? 4 : 6;", value_t(6));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+	test__run_init__check_result("int result = 3==3 ? 4 : 6;", value_t(4));
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
-	test__run_init__check_result("int result = 3==1+2 ? 2 + 2 : 2 * 3", value_t(4));
+	test__run_init__check_result("int result = 3==3 ? 2 + 2 : 2 * 3;", value_t(4));
+}
+
+QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+	test__run_init__check_result("int result = 3==1+2 ? 2 + 2 : 2 * 3;", value_t(4));
 }
 
 
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
-	test__run_init__check_result("bool result = 1 == 1", value_t(true));
+	test__run_init__check_result("bool result = 1 == 1;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
-	test__run_init__check_result("bool result = 1 == 2", value_t(false));
+	test__run_init__check_result("bool result = 1 == 2;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
-	test__run_init__check_result("bool result = 1.3 == 1.3", value_t(true));
+	test__run_init__check_result("bool result = 1.3 == 1.3;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
-	test__run_init__check_result("bool result = \"hello\" == \"hello\"", value_t(true));
+	test__run_init__check_result("bool result = \"hello\" == \"hello\";", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
-	test__run_init__check_result("bool result = \"hello\" == \"bye\"", value_t(false));
+	test__run_init__check_result("bool result = \"hello\" == \"bye\";", value_t(false));
 }
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
-	test__run_init__check_result("bool result = 1 < 2", value_t(true));
+	test__run_init__check_result("bool result = 1 < 2;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
-	test__run_init__check_result("bool result = 5 < 2", value_t(false));
+	test__run_init__check_result("bool result = 5 < 2;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
-	test__run_init__check_result("bool result = 0.3 < 0.4", value_t(true));
+	test__run_init__check_result("bool result = 0.3 < 0.4;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
-	test__run_init__check_result("bool result = 1.5 < 0.4", value_t(false));
+	test__run_init__check_result("bool result = 1.5 < 0.4;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
-	test__run_init__check_result("bool result = \"adwark\" < \"boat\"", value_t(true));
+	test__run_init__check_result("bool result = \"adwark\" < \"boat\";", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
-	test__run_init__check_result("bool result = \"boat\" < \"adwark\"", value_t(false));
+	test__run_init__check_result("bool result = \"boat\" < \"adwark\";", value_t(false));
 }
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = false && false", value_t(false));
+	test__run_init__check_result("bool result = false && false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = false && true", value_t(false));
+	test__run_init__check_result("bool result = false && true;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = true && false", value_t(false));
+	test__run_init__check_result("bool result = true && false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = true && true", value_t(true));
+	test__run_init__check_result("bool result = true && true;", value_t(true));
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = false && false && false", value_t(false));
+	test__run_init__check_result("bool result = false && false && false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = false && false && true", value_t(false));
+	test__run_init__check_result("bool result = false && false && true;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = false && true && false", value_t(false));
+	test__run_init__check_result("bool result = false && true && false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = false && true && true", value_t(false));
+	test__run_init__check_result("bool result = false && true && true;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = true && false && false", value_t(false));
+	test__run_init__check_result("bool result = true && false && false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = true && true && false", value_t(false));
+	test__run_init__check_result("bool result = true && true && false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
-	test__run_init__check_result("bool result = true && true && true", value_t(true));
-}
-
-
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = false || false", value_t(false));
-}
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = false || true", value_t(true));
-}
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = true || false", value_t(true));
-}
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = true || true", value_t(true));
+	test__run_init__check_result("bool result = true && true && true;", value_t(true));
 }
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = false || false || false", value_t(false));
+	test__run_init__check_result("bool result = false || false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = false || false || true", value_t(true));
+	test__run_init__check_result("bool result = false || true;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = false || true || false", value_t(true));
+	test__run_init__check_result("bool result = true || false;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = false || true || true", value_t(true));
+	test__run_init__check_result("bool result = true || true;", value_t(true));
+}
+
+
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+	test__run_init__check_result("bool result = false || false || false;", value_t(false));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = true || false || false", value_t(true));
+	test__run_init__check_result("bool result = false || false || true;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = true || false || true", value_t(true));
+	test__run_init__check_result("bool result = false || true || false;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = true || true || false", value_t(true));
+	test__run_init__check_result("bool result = false || true || true;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
-	test__run_init__check_result("bool result = true || true || true", value_t(true));
+	test__run_init__check_result("bool result = true || false || false;", value_t(true));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+	test__run_init__check_result("bool result = true || false || true;", value_t(true));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+	test__run_init__check_result("bool result = true || true || false;", value_t(true));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+	test__run_init__check_result("bool result = true || true || true;", value_t(true));
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Type mismatch") {
 	try{
-		test__run_init__check_result("int result = true", value_t(1));
+		test__run_init__check_result("int result = true;", value_t(1));
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1408,7 +1408,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Type mismatch") {
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
 	try{
-		test__run_init__check_result("int result = 2/0", value_t());
+		test__run_init__check_result("int result = 2/0;", value_t());
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1418,7 +1418,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero"){
 	try{
-		test__run_init__check_result("int result = 3+1/(5-5)+4", value_t());
+		test__run_init__check_result("int result = 3+1/(5-5)+4;", value_t());
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1569,7 +1569,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from middle of function"){
 		"	return \"D\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x)"
+		"int dummy = print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
@@ -1586,7 +1586,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
 		"	return \"E\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x)"
+		"int dummy = print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
@@ -1603,7 +1603,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
 		"	return \"E\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x)"
+		"int dummy = print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
@@ -1622,7 +1622,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 		"	return \"E\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x)"
+		"int dummy = print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }

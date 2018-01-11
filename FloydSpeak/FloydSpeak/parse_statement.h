@@ -116,6 +116,9 @@ namespace floyd_parser {
 	std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos);
 
 
+	//	x = expression:
+	std::pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s);
+
 }	//	floyd_parser
 
 

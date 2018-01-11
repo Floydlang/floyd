@@ -162,14 +162,40 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 		parse_expression_statement(seq_t("print(14);")).first,
 		parse_json(seq_t(
 			R"(
-				[
-					"expression-statement",
-					[ "call", ["@", "print"], [["k", 14, "<int>"]] ],
-				]
+				[ "expression-statement", [ "call", ["@", "print"], [["k", 14, "<int>"]] ] ]
 			)"
 		)).first
 	);
 }
+
+
+
+	pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s){
+		const auto variable_pos = read_single_symbol(s);
+		const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
+		const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
+
+		const auto expression = parse_expression_all(seq_t(expression_pos.first));
+
+		const auto statement = json_t::make_array({ "deduced-bind", variable_pos.first, expression });
+
+		//	Skip trailing ";".
+		return { statement, expression_pos.second.rest1() };
+	}
+
+QUARK_UNIT_TEST("", "parse_deduced_bind_statement()", "", ""){
+	ut_compare_jsons(
+		parse_deduced_bind_statement(seq_t("x = 10;")).first,
+		parse_json(seq_t(
+			R"(
+				["deduced-bind","x",["k",10,"<int>"]]
+			)"
+		)).first
+	);
+}
+
+
+
 
 
 //??? Idea: Have explicit whitespaces - fail to parse.
