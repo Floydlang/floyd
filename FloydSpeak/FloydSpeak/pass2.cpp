@@ -89,7 +89,7 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 
 
 floyd_basics::typeid_t resolve_type_name(const string& t){
-	QUARK_ASSERT(t.size() > 2);
+	QUARK_ASSERT(t.size() > 0);
 
 	const auto t2 = floyd_basics::typeid_t::from_string(t);
 	return t2;

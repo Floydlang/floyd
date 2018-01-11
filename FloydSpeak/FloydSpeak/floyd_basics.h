@@ -184,7 +184,9 @@ namespace floyd_basics {
 
 		k_struct,
 		k_vector,
-		k_function
+		k_function,
+
+		k_custom_type
 	};
 
 	std::string base_type_to_string(const base_type t);
@@ -219,8 +221,8 @@ namespace floyd_basics {
 			return { floyd_basics::base_type::k_string, {}, {}, {} };
 		}
 
-		public: static typeid_t make_unresolved_symbol(const std::string& s){
-			return { floyd_basics::base_type::k_null, {}, {}, s };
+		public: static typeid_t make_custom_type(const std::string& s){
+			return { floyd_basics::base_type::k_custom_type, {}, {}, s };
 		}
 
 		public: bool is_null() const {
@@ -283,7 +285,7 @@ namespace floyd_basics {
 		public: std::vector<typeid_t> _parts;
 		public: std::string _struct_def_id;
 
-		//	This is used it overrides _base_type (which will be null).
+		//	This is used it overrides _base_type (which will be k_custom_type).
 		public: std::string _unresolved_type_symbol;
 	};
 

@@ -1081,8 +1081,7 @@ ast_t program_to_ast2(const string& program){
 interpreter_t run_global(const string& source){
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
-
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	return vm;
 }
 
@@ -1126,7 +1125,6 @@ void test__run_main(const std::string& program, const vector<floyd_ast::value_t>
 }
 
 
-//??? test all errors too!
 
 //////////////////////////		TEST GLOBAL CONSTANTS
 
@@ -1134,15 +1132,6 @@ void test__run_main(const std::string& program, const vector<floyd_ast::value_t>
 QUARK_UNIT_TESTQ("Floyd test suite", "Global int variable"){
 	test__run_init__check_result("int result = 123;", value_t(123));
 }
-
-
-//////////////////////////		TEST CONSTANT EXPRESSIONS
-
-/*
-QUARK_UNIT_TESTQ("Floyd test suite", "null constant expression"){
-	test__run_init__check_result("int result = null;", value_t());
-}
-*/
 
 QUARK_UNIT_TESTQ("Floyd test suite", "bool constant expression"){
 	test__run_init__check_result("bool result = true;", value_t(true));
@@ -1166,8 +1155,6 @@ QUARK_UNIT_TESTQ("Floyd test suite", "string constant expression"){
 //??? struct
 //??? vector
 //??? function
-
-
 
 
 
@@ -1202,11 +1189,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "10" }));
 }
 
-/*
-QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
-	test__run_init__check_result("result = 4;", value_t(4));
-}
-*/
+
 
 
 
@@ -2003,11 +1986,29 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 
 
 
-#if false
 QUARK_UNIT_TESTQ("run_main()", "struct"){
-	QUARK_UT_VERIFY(test__run_main("struct t { int a;} bool main(){ t b = t_constructor(); return b == b; }", floyd_ast::value_t(true)));
+	const auto vm = run_global(R"(
+		struct t {}
+	)");
 }
 
+QUARK_UNIT_TESTQ("run_main()", "struct"){
+	const auto vm = run_global(R"(
+		struct t { int a;}
+	)");
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct"){
+	const auto vm = run_global(R"(
+		struct t { int a;}
+		print(3);
+	)");
+//	QUARK_UT_VERIFY((vm._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
+}
+
+
+
+#if false
 QUARK_UNIT_1("run_main()", "", test__run_main(
 	"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
 	floyd_ast::value_t(true)

@@ -43,6 +43,9 @@ namespace floyd_basics {
 		else if(t == base_type::k_function){
 			return "function";
 		}
+		else if(t == base_type::k_custom_type){
+			return "custom";
+		}
 		else{
 			QUARK_ASSERT(false);
 		}
@@ -173,47 +176,53 @@ expression_type token_to_expression_type(const string& op){
 
 
 	bool typeid_t::check_invariant() const{
-		if (_unresolved_type_symbol.empty() == false){
-				QUARK_ASSERT(_base_type == floyd_basics::base_type::k_null);
-				QUARK_ASSERT(_parts.empty());
-				QUARK_ASSERT(_struct_def_id == "");
+		if(_base_type == floyd_basics::base_type::k_null){
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_bool){
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_int){
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_float){
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_string){
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id.empty());
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_struct){
+			QUARK_ASSERT(_parts.empty() == true);
+			QUARK_ASSERT(_struct_def_id.empty() == false);
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_vector){
+			QUARK_ASSERT(_parts.empty() == false);
+			QUARK_ASSERT(_struct_def_id.empty() == true);
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_function){
+			QUARK_ASSERT(_parts.empty() == false);
+			QUARK_ASSERT(_struct_def_id.empty() == true);
+			QUARK_ASSERT(_unresolved_type_symbol.empty());
+		}
+		else if(_base_type == floyd_basics::base_type::k_custom_type){
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_struct_def_id == "");
+			QUARK_ASSERT(_unresolved_type_symbol.empty() == false);
 		}
 		else{
-			if(_base_type == floyd_basics::base_type::k_null){
-				QUARK_ASSERT(_parts.empty());
-				QUARK_ASSERT(_struct_def_id.empty());
-			}
-			else if(_base_type == floyd_basics::base_type::k_bool){
-				QUARK_ASSERT(_parts.empty());
-				QUARK_ASSERT(_struct_def_id.empty());
-			}
-			else if(_base_type == floyd_basics::base_type::k_int){
-				QUARK_ASSERT(_parts.empty());
-				QUARK_ASSERT(_struct_def_id.empty());
-			}
-			else if(_base_type == floyd_basics::base_type::k_float){
-				QUARK_ASSERT(_parts.empty());
-				QUARK_ASSERT(_struct_def_id.empty());
-			}
-			else if(_base_type == floyd_basics::base_type::k_string){
-				QUARK_ASSERT(_parts.empty());
-				QUARK_ASSERT(_struct_def_id.empty());
-			}
-			else if(_base_type == floyd_basics::base_type::k_struct){
-				QUARK_ASSERT(_parts.empty() == true);
-				QUARK_ASSERT(_struct_def_id.empty() == false);
-			}
-			else if(_base_type == floyd_basics::base_type::k_vector){
-				QUARK_ASSERT(_parts.empty() == false);
-				QUARK_ASSERT(_struct_def_id.empty() == true);
-			}
-			else if(_base_type == floyd_basics::base_type::k_function){
-				QUARK_ASSERT(_parts.empty() == false);
-				QUARK_ASSERT(_struct_def_id.empty() == true);
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+			QUARK_ASSERT(false);
 		}
 		return true;
 	}
@@ -234,7 +243,8 @@ expression_type token_to_expression_type(const string& op){
 	std::string typeid_t::to_string() const {
 		QUARK_ASSERT(check_invariant());
 
-		if(_unresolved_type_symbol != ""){
+		if(_base_type == floyd_basics::base_type::k_custom_type){
+			QUARK_ASSERT(_unresolved_type_symbol != "");
 			return /*"unresolved:" +*/ _unresolved_type_symbol;
 		}
 		else if(_base_type == floyd_basics::base_type::k_struct){
