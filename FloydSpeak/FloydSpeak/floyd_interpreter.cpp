@@ -1159,7 +1159,13 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 	test__run_init__check_result("int result = (3 * 4) * 5;", value_t(60));
 }
 
+//??? test all types, like [int] etc.
 
+/*
+QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
+	test__run_init__check_result("result = 4;", value_t(4));
+}
+*/
 
 
 

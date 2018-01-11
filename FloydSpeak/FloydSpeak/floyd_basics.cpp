@@ -258,6 +258,12 @@ expression_type token_to_expression_type(const string& op){
 //		return json_to_compact_string(typeid_to_json(*this));
 	}
 
+
+	static typeid_t from_string(const std::string& s){
+		return typeid_t::make_float();
+	}
+
+
 	json_t typeid_to_json(const typeid_t& t){
 		if(t._parts.empty() && t._struct_def_id.empty()){
 			return base_type_to_string(t.get_base_type());
