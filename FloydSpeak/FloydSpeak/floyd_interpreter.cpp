@@ -849,6 +849,7 @@ bool environment_t::check_invariant() const {
 
 enum host_functions {
 	k_print = 1,
+	k_assert,
 	k_to_string,
 	k_get_time_of_day_ms
 };
@@ -861,6 +862,21 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 	printf("%s\n", s.c_str());
 
 	vm2._print_output.push_back(s);
+	return {vm2, value_t() };
+}
+
+std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const std::vector<value_t>& args){
+	auto vm2 = vm;
+	const auto& value = args[0];
+	if(value.is_bool() == false){
+		throw std::runtime_error("First argument to assert() must be of type bool.");
+	}
+	bool ok = value.get_bool();
+	if(!ok){
+		vm2._print_output.push_back("Assertion failed.");
+
+		//??? unwind VM stack here.
+	}
 	return {vm2, value_t() };
 }
 
@@ -939,6 +955,9 @@ std::pair<interpreter_t, floyd_ast::value_t> interpreter_t::call_host_function(i
 	if(function_id == static_cast<int>(host_functions::k_print)){
 		return host__print(*this, args);
 	}
+	else if(function_id == static_cast<int>(host_functions::k_assert)){
+		return host__assert(*this, args);
+	}
 	else if(function_id == static_cast<int>(host_functions::k_to_string)){
 		return host__to_string(*this, args);
 	}
@@ -963,6 +982,15 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		function_definition_t(
 			{ member_t{ floyd_basics::typeid_t::make_string(), "s" } },
 			host_functions::k_print,
+			floyd_basics::typeid_t::make_null()
+		)
+	)));
+
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
+		"assert",
+		function_definition_t(
+			{ member_t{ floyd_basics::typeid_t::make_string(), "success" } },
+			host_functions::k_assert,
 			floyd_basics::typeid_t::make_null()
 		)
 	)));
@@ -1710,6 +1738,29 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
 }
 
+
+//////////////////////////		Host: assert
+
+
+QUARK_UNIT_TESTQ("run_global()", ""){
+	const auto r = run_global(
+		R"(
+			assert(1 == 2);
+			print("A");
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Assertion failed.", "A" }));
+}
+
+QUARK_UNIT_TESTQ("run_global()", ""){
+	const auto r = run_global(
+		R"(
+			assert(1 == 1);
+			print("A");
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A" }));
+}
 
 
 //////////////////////////		Host: get_time_of_day()

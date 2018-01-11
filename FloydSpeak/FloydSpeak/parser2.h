@@ -534,7 +534,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
 			const auto rhs = parse_expression_int(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
 			const auto value2 = helper.maker__make2(eoperation::k_2_logical_equal, lhs, rhs.first);
-			return parse_operation(helper, rhs.second.rest(), value2, precedence);
+			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 		//	EXPRESSION != EXPRESSION
 		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){

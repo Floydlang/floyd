@@ -617,6 +617,15 @@ QUARK_UNIT_1("parse_expression()", "function call with expression-args", test__p
 	""
 ));
 
+QUARK_UNIT_TESTQ("parse_expression()", "function call, expression argument"){
+	QUARK_UT_VERIFY(
+		test__parse_expression(
+			"f(1 == 2)",
+			R"(["call", ["@", "f"], [["==", ["k", "int", 1], ["k", "int", 2]]]])",
+			""
+		)
+	)
+}
 
 //////////////////////////////////			MEMBER ACCESS
 
