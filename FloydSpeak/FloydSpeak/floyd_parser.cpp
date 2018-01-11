@@ -39,6 +39,9 @@ https://en.wikipedia.org/wiki/Parsing_expression_grammar
 https://en.wikipedia.org/wiki/Parsing
 */
 
+const std::string k_backward_brackets = ")(}{][";
+
+
 
 std::string concat_strings(const vector<string>& v){
 	if(v.empty()){
@@ -148,11 +151,9 @@ pair<string, string> split_at_tail_symbol(const std::string& s){
 
 
 
-const std::string k_backward_brackets = ")(}{][";
-
-string parse_implicit_statement(const seq_t& s){
-	const auto equal_sign_pos = read_until_toplevel_char(s, '=');
-
+pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
+	const auto r = seq_t(read_complete_statement(s1).first);
+	const auto equal_sign_pos = read_until_toplevel_char(r, '=');
 	if(equal_sign_pos.first.empty()){
 		//	FUNCTION-DEFINITION:	int f(string name)
 		//	FUNCTION-DEFINITION:	int (string a) f(string name)
@@ -179,14 +180,17 @@ string parse_implicit_statement(const seq_t& s){
 		const auto parantheses = s2.substr(split_pos);
 
 		const auto pre_symbol__symbol = split_at_tail_symbol(pre_parantheses);
-		const auto pre_symbol = pre_symbol__symbol.first;
-		const auto symbol = pre_symbol__symbol.second;
+		const auto pre_symbol = skip_whitespace_ends(pre_symbol__symbol.first);
+		const auto symbol = skip_whitespace_ends(pre_symbol__symbol.second);
 
+		auto s3 = skip_whitespace_ends(s2);
+		s3 = s3.back() == ';' ? s3.substr(0, s3.size() - 1) : s3;
+		s3 = skip_whitespace_ends(s3);
 		if(pre_symbol == ""){
-			return string() + "[EXPRESSION-STATEMENT] EXPRESSION: " + s2;
+			return { { "[EXPRESSION-STATEMENT]", s3 }, s1 };
 		}
 		else{
-			return string() + "[FUNCTION-DEFINITION] DEF: " + s2;
+			return { { "[FUNCTION-DEFINITION]", s3 }, s1 };
 		}
 	}
 	else{
@@ -196,60 +200,112 @@ string parse_implicit_statement(const seq_t& s){
 		//	DEDUCED-BIND	x = "hello";
 		//	DEDUCED-BIND	x = f(3) == 2;
 		//	MUTATE_LOCAL	x <=== 11;
+		auto rhs_expression1 = skip_whitespace(equal_sign_pos.second.rest1().str());
+		QUARK_ASSERT(rhs_expression1.back() == ';')
 
-		const auto rhs_expression = equal_sign_pos.second.rest1().str();
+		if(rhs_expression1.back() == ';'){
+			rhs_expression1.pop_back();
+		}
+		const auto rhs_expression = skip_whitespace_ends(rhs_expression1);
+
 		const auto pre_symbol__symbol = split_at_tail_symbol(equal_sign_pos.first);
-		const auto pre_symbol = pre_symbol__symbol.first;
-		const auto symbol = pre_symbol__symbol.second;
+		const auto pre_symbol = skip_whitespace_ends(pre_symbol__symbol.first);
+		const auto symbol = skip_whitespace_ends(pre_symbol__symbol.second);
 
 		if(pre_symbol == ""){
-			return string() + "[DEDUCED-BIND] SYMBOL: " + symbol + " = EXPRESSION: " + rhs_expression;
+			return { { "[DEDUCED-BIND]", symbol, rhs_expression }, s1 };
 		}
 		else{
-			return string() + "[BIND] TYPE: " + pre_symbol + " SYMBOL: " + symbol + " = EXPRESSION: " + rhs_expression;
+			return { { "[BIND]", pre_symbol, symbol, rhs_expression }, s1 };
 		}
 	}
-	return "";
 }
 
-std::string split_line(const string& title, const seq_t& in){
-	const auto result = read_complete_statement(in);
+std::string test_split_line(const string& title, const seq_t& in){
 	vector<string> temp;
 	temp.push_back(title);
 	temp.push_back(in.str());
-	temp = temp + result.first;
-	temp = temp + result.second.str();
-	temp = temp + parse_implicit_statement(seq_t(result.first));
+	temp = temp + in.first(30);
+
+	const auto split = parse_implicit_statement(in);
+
+	string analysis;
+	if(split.first[0] == "[EXPRESSION-STATEMENT]"){
+		const auto expression = split.first[1];
+		analysis = string() + "[EXPRESSION-STATEMENT] EXPRESSION: " + "\"" + expression + "\"";
+	}
+	else if(split.first[0] == "[FUNCTION-DEFINITION]"){
+		const auto function_def = split.first[1];
+		analysis = string() + "[FUNCTION-DEFINITION] DEF: " + "\"" + function_def + "\"";
+	}
+	else if(split.first[0] == "[DEDUCED-BIND]"){
+		const auto symbol = split.first[1];
+		const auto rhs_expression = split.first[2];
+		analysis = string() + "[DEDUCED-BIND] SYMBOL: " + "\"" + symbol + "\"" + " = EXPRESSION: " + "\"" + rhs_expression + "\"";
+	}
+	else if(split.first[0] == "[BIND]"){
+		const auto pre_symbol = split.first[1];
+		const auto symbol = split.first[2];
+		const auto rhs_expression = split.first[3];
+		analysis = string() + "[BIND] TYPE: " + "\"" + pre_symbol + "\"" + " SYMBOL: " + "\"" + symbol + "\"" + " = EXPRESSION: " + "\"" + rhs_expression + "\"";
+	}
+	temp = temp + analysis;
+
 	const auto out = concat_strings(temp);
 	return out;
 }
 
-QUARK_UNIT_TEST("", "split_other()", "", ""){
-	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print(\"Hello, World!\" + f(3) == 2);xyz"))));
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	//	BIND	TYPE	SYMBOL	=	EXPRESSION;
+	QUARK_TRACE((test_split_line("BIND", seq_t("int x = 10;xyz"))));
+	QUARK_TRACE((test_split_line("BIND", seq_t("int (string a) x = f(4 == 5);xyz"))));
 
+	//	FUNCTION-DEFINITION	TYPE	SYMBOL	( EXPRESSION-LIST )	{ STATEMENTS }
+	QUARK_TRACE((test_split_line("FUNCTION-DEFINITION", seq_t("int f(){ return 0; }xyz"))));
+	QUARK_TRACE((test_split_line("FUNCTION-DEFINITION", seq_t("int f(string name){ return 13; }xyz"))));
+	QUARK_TRACE((test_split_line("FUNCTION-DEFINITION", seq_t("int (string a) f(string name){ return 100 == 101; }xyz"))));
 
-//	BIND	TYPE	SYMBOL	=	EXPRESSION;
-	QUARK_TRACE((split_line("BIND", seq_t("int x = 10;xyz"))));
-	QUARK_TRACE((split_line("BIND", seq_t("int (string a) x = f(4 == 5);xyz"))));
+	//	EXPRESSION-STATEMENT	EXPRESSION;
+	QUARK_TRACE((test_split_line("EXPRESSION-STATEMENT", seq_t("print (\"Hello, World!\");xyz"))));
+	QUARK_TRACE((test_split_line("EXPRESSION-STATEMENT", seq_t("print(\"Hello, World!\" + f(3) == 2);xyz"))));
+	QUARK_TRACE((test_split_line("EXPRESSION-STATEMENT", seq_t("print(3);xyz"))));
 
-//	FUNCTION-DEFINITION	TYPE	SYMBOL	( EXPRESSION-LIST )	{ STATEMENTS }
-	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int f(){ return 0; }xyz"))));
-	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int f(string name){ return 13; }xyz"))));
-	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int (string a) f(string name){ return 100 == 101; }xyz"))));
+	//	DEDUCED-BIND	SYMBOL	=	EXPRESSION;
+	QUARK_TRACE((test_split_line("DEDUCED-BIND", seq_t("x = 10;xyz"))));
+	QUARK_TRACE((test_split_line("DEDUCED-BIND", seq_t("x = \"hello\";xyz"))));
+	QUARK_TRACE((test_split_line("DEDUCED-BIND", seq_t("x = f(3) == 2;xyz"))));
 
-//	EXPRESSION-STATEMENT	EXPRESSION;
-	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print (\"Hello, World!\");xyz"))));
-	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print(\"Hello, World!\" + f(3) == 2);xyz"))));
-	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print(3);xyz"))));
-
-//	DEDUCED-BIND	SYMBOL	=	EXPRESSION;
-	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = 10;xyz"))));
-	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = \"hello\";xyz"))));
-	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = f(3) == 2;xyz"))));
-
-//	MUTATE-LOCAL	SYMBOL	<===	EXPRESSION;
-//	QUARK_TRACE((split_line("MUTATE-LOCAL", seq_t("x <=== 11;xyz"))));
+	//	MUTATE-LOCAL	SYMBOL	<===	EXPRESSION;
+	//	QUARK_TRACE((test_split_line("MUTATE-LOCAL", seq_t("x <=== 11;xyz"))));
 }
+
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int x = 10 ; xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[BIND]", "int", "x", "10" }, seq_t(" int x = 10 ; xyz") }	));
+}
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int ( string a ) x = f ( 4 == 5 ) ; xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[BIND]", "int ( string a )", "x", "f ( 4 == 5 )" }, seq_t(" int ( string a ) x = f ( 4 == 5 ) ; xyz") }	));
+}
+
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int f ( ) { return 0 ; } xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[FUNCTION-DEFINITION]", "int f ( )" }, seq_t(" int f ( ) { return 0 ; } xyz") }	));
+}
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int f ( string name ) { return 13 ; }xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[FUNCTION-DEFINITION]", "int f ( string name )" }, seq_t(" int f ( string name ) { return 13 ; }xyz") }	));
+}
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int ( string a ) f ( string name ) { return 100 == 101 ; }xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[FUNCTION-DEFINITION]", "int ( string a ) f ( string name )" }, seq_t(" int ( string a ) f ( string name ) { return 100 == 101 ; }xyz") }	));
+}
+
+
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" print ( \"Hello, World!\" ) ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print ( \"Hello, World!\" )" }, seq_t(" print ( \"Hello, World!\" ) ;xyz") }	));
+}
+
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" print ( \"Hello, World!\" ) ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print ( \"Hello, World!\" )" }, seq_t(" print ( \"Hello, World!\" ) ;xyz") }	));
+}
+
+
 
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);

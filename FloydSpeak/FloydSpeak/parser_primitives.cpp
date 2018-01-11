@@ -80,6 +80,32 @@ QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 }
 
 
+
+std::string skip_whitespace_ends(const std::string& s){
+	const auto a = skip_whitespace(s);
+
+	string::size_type i = a.size();
+	while(i > 0 && whitespace_chars.find(a[i - 1]) != string::npos){
+		i--;
+	}
+	return a.substr(0, i);
+}
+
+QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace_ends("") == "");
+}
+QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace_ends("  a") == "a");
+}
+QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace_ends("b  ") == "b");
+}
+QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace_ends("  c  ") == "c");
+}
+
+
+
 bool is_start_char(char c){
 	return c == '(' || c == '[' || c == '{';
 }

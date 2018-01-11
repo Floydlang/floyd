@@ -44,6 +44,8 @@ namespace floyd_parser {
 	std::string skip_whitespace(const std::string& s);
 	seq_t skip_whitespace(const seq_t& s);
 
+	//	Removes whitespace before AND AFTER.
+	std::string skip_whitespace_ends(const std::string& s);
 
 	bool is_whitespace(char ch);
 
