@@ -299,13 +299,6 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 	QUARK_TEST_VERIFY((read_type_identifier(seq_t("string")) == std::pair<std::string, seq_t>{ "string", "" }));
 }
 
-pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
-	const auto type_pos = read_type_identifier(s);
-	if(type_pos.first.empty()){
-		throw std::runtime_error("illegal character in type identifier");
-	}
-	return type_pos;
-}
 
 
 
