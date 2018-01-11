@@ -388,6 +388,15 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			));
 
 		}
+
+		//	[ "expression-statement", EXPRESSION ],
+		else if(type == "expression-statement"){
+			QUARK_ASSERT(statement.get_array_size() == 2);
+			const auto expr = statement.get_array_n(1);
+			const auto expr2 = parser_expression_to_ast(expr);
+			statements2.push_back(make_shared<statement_t>(make__expression_statement(expr2)));
+		}
+
 		else{
 			throw std::runtime_error("Illegal statement.");
 		}

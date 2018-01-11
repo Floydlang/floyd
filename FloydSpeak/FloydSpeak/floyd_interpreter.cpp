@@ -181,6 +181,14 @@ namespace {
 
 			return { vm2, {} };
 		}
+		if(statement._expression){
+			const auto& s = statement._expression;
+
+			const auto result = evaluate_expression(vm2, s->_expression);
+			vm2 = result.first;
+			const auto result_value = result.second;
+			return { vm2, {}};
+		}
 		else{
 			QUARK_ASSERT(false);
 		}
@@ -1160,6 +1168,11 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 }
 
 //??? test all types, like [int] etc.
+
+QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
+	const auto r = run_global("print(5);");
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "5" }));
+}
 
 /*
 QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {

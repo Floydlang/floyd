@@ -161,6 +161,16 @@ namespace floyd_ast {
 		const std::vector<std::shared_ptr<statement_t>> _body;
 	};
 
+	//////////////////////////////////////		expression_statement_t
+
+
+	struct expression_statement_t {
+		bool operator==(const expression_statement_t& other) const {
+			return _expression == other._expression;
+		}
+
+		expression_t _expression;
+	};
 
 
 	//////////////////////////////////////		statement_t
@@ -196,6 +206,10 @@ namespace floyd_ast {
 			_for(std::make_shared<for_statement_t>(value))
 		{
 		}
+        public: statement_t(const expression_statement_t& value) :
+			_expression(std::make_shared<expression_statement_t>(value))
+		{
+		}
 
 		public: bool operator==(const statement_t& other) const {
 			if(_return){
@@ -223,6 +237,7 @@ namespace floyd_ast {
 		public: std::shared_ptr<block_statement_t> _block;
 		public: std::shared_ptr<ifelse_statement_t> _if;
 		public: std::shared_ptr<for_statement_t> _for;
+		public: std::shared_ptr<expression_statement_t> _expression;
 	};
 
 
@@ -245,6 +260,8 @@ namespace floyd_ast {
 		const expression_t& end_expression,
 		const std::vector<std::shared_ptr<statement_t>> body
 	);
+
+	statement_t make__expression_statement(const expression_t& expression);
 
 
 	void trace(const statement_t& s);

@@ -65,6 +65,9 @@ namespace floyd_ast {
 		return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
 	}
 
+	statement_t make__expression_statement(const expression_t& expression){
+		return statement_t(expression_statement_t{ expression });
+	}
 
 
 
@@ -91,6 +94,7 @@ namespace floyd_ast {
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
+			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_bind){
 			QUARK_ASSERT(_return == nullptr);
@@ -98,6 +102,7 @@ namespace floyd_ast {
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
+			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_block){
 			QUARK_ASSERT(_return == nullptr);
@@ -105,6 +110,7 @@ namespace floyd_ast {
 			QUARK_ASSERT(_block != nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
+			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_if){
 			QUARK_ASSERT(_return == nullptr);
@@ -112,6 +118,7 @@ namespace floyd_ast {
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if != nullptr);
 			QUARK_ASSERT(_for == nullptr);
+			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_for){
 			QUARK_ASSERT(_return == nullptr);
@@ -119,6 +126,15 @@ namespace floyd_ast {
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for != nullptr);
+			QUARK_ASSERT(_expression == nullptr);
+		}
+		else if(_expression){
+			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_block == nullptr);
+			QUARK_ASSERT(_if == nullptr);
+			QUARK_ASSERT(_for == nullptr);
+			QUARK_ASSERT(_expression != nullptr);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -173,6 +189,12 @@ namespace floyd_ast {
 				expression_to_json(e._for->_start_expression),
 				expression_to_json(e._for->_end_expression),
 				statements_to_json(e._for->_body)
+			});
+		}
+		else if(e._expression){
+			return json_t::make_array({
+				json_t("expression-statement"),
+				expression_to_json(e._expression->_expression)
 			});
 		}
 		else{
