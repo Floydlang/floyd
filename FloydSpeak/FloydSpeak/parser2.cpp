@@ -404,10 +404,10 @@ QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
 
 
 
-//////////////////////////////////			PARANTHESIS
+//////////////////////////////////			parantheses
 
-QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression("(3)", "[\"k\", \"<int>\", 3]", ""));
-QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression("(3 * 8)", R"(["*", ["k", "<int>", 3], ["k", "<int>", 8]])", ""));
+QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression("(3)", "[\"k\", \"<int>\", 3]", ""));
+QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression("(3 * 8)", R"(["*", ["k", "<int>", 3], ["k", "<int>", 8]])", ""));
 
 /*
 	["-",
@@ -419,7 +419,7 @@ QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression("(3 * 8
 	]
 */
 
-QUARK_UNIT_1("parse_expression()", "paranthesis", test__parse_expression(
+QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression(
 	"(3 * 2 + (8 * 2)) - (((1))) * 2",
 	R"(["-", ["+", ["*", ["k", "<int>", 3], ["k", "<int>", 2]], ["*", ["k", "<int>", 8], ["k", "<int>", 2]]], ["*", ["k", "<int>", 1], ["k", "<int>", 2]]])",
 	""

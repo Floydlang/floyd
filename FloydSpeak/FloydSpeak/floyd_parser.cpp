@@ -40,6 +40,18 @@ https://en.wikipedia.org/wiki/Parsing
 */
 
 
+std::string concat_strings(const vector<string>& v){
+	if(v.empty()){
+		return "";
+	}
+	else{
+		string result;
+		for(const auto e: v){
+			result += "\t|\t" + e;
+		}
+		return result;
+	}
+}
 
 //////////////////////////////////////////////////		parse_statement()
 
@@ -65,8 +77,8 @@ https://en.wikipedia.org/wiki/Parsing
 	DEDUCED-BIND								x			=		"hello";
 	DEDUCED-BIND								x			=		f(3) == 2;
 
-	MUTATE_LOCAL								SYMBOL		<===	EXPRESSION;
-	MUTATE_LOCAL								x			<===	11;
+	MUTATE-LOCAL								SYMBOL		<===	EXPRESSION;
+	MUTATE-LOCAL								x			<===	11;
 
 //	read entire statement
 find thislevel "}" or thislevel ";"
@@ -77,17 +89,6 @@ else
 	FUNCTION-DEFINITION or EXPRESSION-STATEMENT
 */
 
-std::string get_range(const seq_t& a, const seq_t& b){
-	QUARK_ASSERT(seq_t::related(a, b));
-
-	std::string result;
-	auto t = a;
-	while(t != b){
-		result.append(t.first1());
-		t = t.rest1();
-	}
-	return result;
-}
 
 // Includes trailing ";". Does not include body of a function definition.
 std::pair<string, seq_t> read_complete_statement(const seq_t& pos0){
@@ -110,53 +111,145 @@ std::pair<string, seq_t> read_complete_statement(const seq_t& pos0){
 	return { r, pos };
 }
 
-std::string concat_strings(const vector<string>& v){
-	if(v.empty()){
-		return "";
+//	If none are found, returns { "", s }
+std::pair<string, seq_t> read_until_toplevel_char(const seq_t& s, const char ch){
+	auto pos = s;
+	while(pos.empty() == false && pos.first1_char() != ch){
+		if(is_start_char(pos.first()[0])){
+			const auto end = get_balanced(pos).second;
+			pos = end;
+		}
+		else{
+			pos = pos.rest1();
+		}
+	}
+	if (pos.empty()){
+		return { "", s };
 	}
 	else{
-		string result;
-		for(const auto e: v){
-			result += "\t|\t" + e;
-		}
-		return result;
+		const auto r = get_range(s, pos);
+		return { r, pos };
 	}
+}
+
+
+pair<string, string> split_at_tail_symbol(const std::string& s){
+	auto i = s.size();
+	while(i > 0 && whitespace_chars.find(s[i - 1]) != string::npos){
+		i--;
+	}
+	while(i > 0 && identifier_chars.find(s[i - 1]) != string::npos){
+		i--;
+	}
+	const auto pre_symbol = skip_whitespace(s.substr(0, i));
+	const auto symbol = s.substr(i);
+	return { pre_symbol, symbol };
+}
+
+
+
+const std::string k_backward_brackets = ")(}{][";
+
+string parse_implicit_statement(const seq_t& s){
+	const auto equal_sign_pos = read_until_toplevel_char(s, '=');
+
+	if(equal_sign_pos.first.empty()){
+		//	FUNCTION-DEFINITION:	int f(string name)
+		//	FUNCTION-DEFINITION:	int (string a) f(string name)
+
+		//	EXPRESSION-STATEMENT:	print ("Hello, World!");
+		//	EXPRESSION-STATEMENT:	print("Hello, World!" + f(3) == 2);
+		//	EXPRESSION-STATEMENT:	print(3);
+		const auto s2 = equal_sign_pos.second.str();
+
+		const seq_t rev(reverse(s2));
+		auto rev2 = skip_whitespace(rev);
+		if(rev2.first1() == ";"){
+			rev2 = rev2.rest1();
+		}
+		rev2 = skip_whitespace(rev2);
+		if(rev2.first1() != ")"){
+			throw std::runtime_error("syntax error");
+		}
+		const auto parantheses_rev = read_balanced2(rev2, k_backward_brackets);
+		const auto parantheses_char_count = parantheses_rev.first.size();
+
+		const auto split_pos = rev2.size() - parantheses_char_count;
+		const auto pre_parantheses = s2.substr(0, split_pos);
+		const auto parantheses = s2.substr(split_pos);
+
+		const auto pre_symbol__symbol = split_at_tail_symbol(pre_parantheses);
+		const auto pre_symbol = pre_symbol__symbol.first;
+		const auto symbol = pre_symbol__symbol.second;
+
+		if(pre_symbol == ""){
+			return string() + "[EXPRESSION-STATEMENT] EXPRESSION: " + s2;
+		}
+		else{
+			return string() + "[FUNCTION-DEFINITION] DEF: " + s2;
+		}
+	}
+	else{
+		//	BIND:			int x = 10;
+		//	BIND:			int (string a) x = f(4 == 5);
+		//	DEDUCED-BIND	x = 10;
+		//	DEDUCED-BIND	x = "hello";
+		//	DEDUCED-BIND	x = f(3) == 2;
+		//	MUTATE_LOCAL	x <=== 11;
+
+		const auto rhs_expression = equal_sign_pos.second.rest1().str();
+		const auto pre_symbol__symbol = split_at_tail_symbol(equal_sign_pos.first);
+		const auto pre_symbol = pre_symbol__symbol.first;
+		const auto symbol = pre_symbol__symbol.second;
+
+		if(pre_symbol == ""){
+			return string() + "[DEDUCED-BIND] SYMBOL: " + symbol + " = EXPRESSION: " + rhs_expression;
+		}
+		else{
+			return string() + "[BIND] TYPE: " + pre_symbol + " SYMBOL: " + symbol + " = EXPRESSION: " + rhs_expression;
+		}
+	}
+	return "";
 }
 
 std::string split_line(const string& title, const seq_t& in){
 	const auto result = read_complete_statement(in);
 	vector<string> temp;
 	temp.push_back(title);
-	temp.push_back(in.get_s());
+	temp.push_back(in.str());
 	temp = temp + result.first;
-	temp = temp + result.second.get_s();
+	temp = temp + result.second.str();
+	temp = temp + parse_implicit_statement(seq_t(result.first));
 	const auto out = concat_strings(temp);
 	return out;
 }
 
 QUARK_UNIT_TEST("", "split_other()", "", ""){
+	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print(\"Hello, World!\" + f(3) == 2);xyz"))));
+
+
 //	BIND	TYPE	SYMBOL	=	EXPRESSION;
 	QUARK_TRACE((split_line("BIND", seq_t("int x = 10;xyz"))));
 	QUARK_TRACE((split_line("BIND", seq_t("int (string a) x = f(4 == 5);xyz"))));
 
 //	FUNCTION-DEFINITION	TYPE	SYMBOL	( EXPRESSION-LIST )	{ STATEMENTS }
+	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int f(){ return 0; }xyz"))));
 	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int f(string name){ return 13; }xyz"))));
 	QUARK_TRACE((split_line("FUNCTION-DEFINITION", seq_t("int (string a) f(string name){ return 100 == 101; }xyz"))));
 
 //	EXPRESSION-STATEMENT	EXPRESSION;
 	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print (\"Hello, World!\");xyz"))));
-	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print (\"Hello, World!\" + f(3) == 2);xyz"))));
+	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print(\"Hello, World!\" + f(3) == 2);xyz"))));
+	QUARK_TRACE((split_line("EXPRESSION-STATEMENT", seq_t("print(3);xyz"))));
 
 //	DEDUCED-BIND	SYMBOL	=	EXPRESSION;
 	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = 10;xyz"))));
 	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = \"hello\";xyz"))));
 	QUARK_TRACE((split_line("DEDUCED-BIND", seq_t("x = f(3) == 2;xyz"))));
 
-//	MUTATE_LOCAL	SYMBOL	<===	EXPRESSION;
-	QUARK_TRACE((split_line("MUTATE_LOCAL", seq_t("x <=== 11;xyz"))));
-
+//	MUTATE-LOCAL	SYMBOL	<===	EXPRESSION;
+//	QUARK_TRACE((split_line("MUTATE-LOCAL", seq_t("x <=== 11;xyz"))));
 }
-
 
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);

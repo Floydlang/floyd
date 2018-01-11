@@ -188,15 +188,15 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 
 	const auto pos2 = skip_whitespace(a.second);
 	read_required(pos2, "(");
-	const auto condition_paranthesis = get_balanced(pos2);
-	const auto condition = trim_ends(condition_paranthesis.first);
+	const auto condition_parantheses = get_balanced(pos2);
+	const auto condition = trim_ends(condition_parantheses.first);
 
-	const auto pos3 = skip_whitespace(condition_paranthesis.second);
+	const auto pos3 = skip_whitespace(condition_parantheses.second);
 	read_required(pos3, "{");
-	const auto then_statements_paranthesis = get_balanced(pos3);
-	const auto then_statements = trim_ends(then_statements_paranthesis.first);
+	const auto then_statements_parantheses = get_balanced(pos3);
+	const auto then_statements = trim_ends(then_statements_parantheses.first);
 
-	auto return_pos = then_statements_paranthesis.second;
+	auto return_pos = then_statements_parantheses.second;
 
 	const auto condition2 = parse_expression_all(seq_t(condition));
 	const auto then_statements2 = parse_statements(seq_t(then_statements)).first;
@@ -229,13 +229,13 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 		}
 		else{
 			read_required(pos2, "{");
-			const auto else_statements_paranthesis = get_balanced(pos2);
-			const auto else_statements = trim_ends(else_statements_paranthesis.first);
+			const auto else_statements_parantheses = get_balanced(pos2);
+			const auto else_statements = trim_ends(else_statements_parantheses.first);
 			const auto else_statements2 = parse_statements(seq_t(else_statements));
 
 			return { json_t::make_array(
 				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_statements2.first }),
-				else_statements_paranthesis.second
+				else_statements_parantheses.second
 			};
 		}
 	}
@@ -341,17 +341,17 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	QUARK_ASSERT(pos1.first);
 	const auto pos2 = skip_whitespace(pos1.second);
 	read_required(pos2, "(");
-	const auto header_in_paranthesis = get_balanced(pos2);
+	const auto header_in_parantheses = get_balanced(pos2);
 
-	const auto pos3 = skip_whitespace(header_in_paranthesis.second);
+	const auto pos3 = skip_whitespace(header_in_parantheses.second);
 	read_required(pos3, "{");
 	const auto body = get_balanced(pos3);
 	const auto body_statements_str = trim_ends(body.first);
 
 
-	//	header_in_paranthesis == "( index in 1 ... 5 )"
+	//	header_in_parantheses == "( index in 1 ... 5 )"
 	//	header == " index in 1 ... 5 "
-	const auto header = seq_t(trim_ends(header_in_paranthesis.first));
+	const auto header = seq_t(trim_ends(header_in_parantheses.first));
 
 	//	iterator == "index".
 	const auto iterator_name = read_required_single_symbol(header);

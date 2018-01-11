@@ -27,8 +27,8 @@ namespace floyd_parser {
 
 	const std::string whitespace_chars = " \n\t";
 	const std::string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-	const std::string brackets = "(){}[]<>";
-	const std::string open_brackets = "({[<";
+	const std::string brackets = "(){}[]";
+	const std::string open_brackets = "({[";
 	const std::string type_chars = identifier_chars;
 	const std::string number_chars = "0123456789.";
 	const std::string operator_chars = "+-*/.";
@@ -51,12 +51,16 @@ namespace floyd_parser {
 	bool is_end_char(char c);
 	char start_char_to_end_char(char start_char);
 
+
 	/*
 		First char is the start char, like '(' or '{'.
+		Checks *all* balancing-chars
+		Is recursive and not just count intermediate chars, also pair match them.
 	*/
-
 	std::pair<std::string, seq_t> get_balanced(const seq_t& s);
 
+
+	std::string reverse(const std::string& s);
 
 
 	//////////////////////////////////////		SYMBOLS

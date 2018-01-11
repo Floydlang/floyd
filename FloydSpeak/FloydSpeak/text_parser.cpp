@@ -200,7 +200,7 @@ seq_t seq_t::back(size_t count) const{
 	return seq_t(_str, p);
 }
 
-std::string seq_t::get_s() const{
+std::string seq_t::str() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _str->substr(_pos);
@@ -300,6 +300,13 @@ QUARK_UNIT_TESTQ("rest(n)", ""){
 
 
 
+seq_t skip(const seq_t& s, const std::string& chars){
+	auto pos = s;
+	while(!pos.empty() && chars.find(pos.first1_char()) != string::npos){
+		pos = pos.rest1();
+	}
+	return pos;
+}
 
 
 pair<string, seq_t> read_while(const seq_t& p1, const string& chars){
@@ -391,6 +398,17 @@ bool is_first(const seq_t& p, const std::string& wanted_string){
 }
 
 
+std::string get_range(const seq_t& a, const seq_t& b){
+	QUARK_ASSERT(seq_t::related(a, b));
+
+	std::string result;
+	auto t = a;
+	while(t != b){
+		result.append(t.first1());
+		t = t.rest1();
+	}
+	return result;
+}
 
 
 pair<char, seq_t> read_char(const seq_t& s){
@@ -423,4 +441,91 @@ pair<bool, seq_t> read_optional_char(const seq_t& s, char ch){
 		return { false, s };
 	}
 }
+
+
+
+
+
+pair<string, string> deinterleave_string(const string& s){
+	QUARK_ASSERT((s.size() % 2) == 0);
+
+	string a;
+	string b;
+	for(string::size_type i = 0 ; i < s.size() ; i += 2){
+		a.push_back(s[i + 0]);
+		b.push_back(s[i + 1]);
+	}
+	return { a, b };
+}
+
+std::pair<std::string, seq_t> read_balanced2(const seq_t& s, const std::string& open_close_pairs){
+	QUARK_ASSERT(s.size() > 0);
+	QUARK_ASSERT((open_close_pairs.size() % 2) == 0);
+	const auto open_close = deinterleave_string(open_close_pairs);
+
+	//	What is the opening character? Search for its matching close-character.
+	const auto f1 = open_close.first.find(s.first1_char());
+	QUARK_ASSERT(f1 != string::npos);
+
+	string result = s.first1();
+	auto pos = s.rest1();
+	while(pos.empty() == false && open_close.second.find(pos.first1_char()) != f1){
+		//	Unexpected close-character?
+		const auto f3 = open_close.second.find(pos.first1_char());
+		if(f3 != string::npos){
+			return { "", s };
+		}
+
+		//	Is this another opening-character?
+		const auto f2 = open_close.first.find(pos.first1_char());
+		if(f2 != string::npos){
+			const auto r2 = read_balanced2(pos, open_close_pairs);
+			result = result + r2.first;
+			pos = r2.second;
+		}
+		else {
+			result = result + pos.first1();
+			pos = pos.rest1();
+		}
+	}
+	if(pos.empty()){
+		return { "", s };
+	}
+	else{
+		result = result + pos.first1();
+		pos = pos.rest1();
+		return { result, pos };
+	}
+}
+
+static const string k_test_brackets = "{}()";
+
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY((read_balanced2(seq_t("()"), k_test_brackets) == pair<string,seq_t>("()", seq_t(""))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("(abc)"), k_test_brackets) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("(abc)def"), k_test_brackets) == (std::pair<std::string, seq_t>("(abc)", seq_t("def"))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc))def"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc))", seq_t("def"))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc)[])def"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("def"))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("(return 4 < 5;)xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("{}"), k_test_brackets) == (std::pair<std::string, seq_t>("{}", seq_t(""))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("{aaa}bbb"), k_test_brackets) == (std::pair<std::string, seq_t>("{aaa}", seq_t("bbb"))));
+}
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("{return 4 < 5;}xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
+}
+//	QUARK_TEST_VERIFY(read_balanced2("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "def"));
 

@@ -336,7 +336,7 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 		const auto a = parse_expression_int(helper, p2.rest1(), eoperator_precedence::k_super_strong);
 		return a;
 	}
-	//	Expression within paranthesis? "(yyy)xxx"
+	//	Expression within parantheses? "(yyy)xxx"
 	else if(ch1 == '('){
 		const auto a = parse_expression_int(helper, p2.rest1(), eoperator_precedence::k_super_weak);
 		const auto p3 = skip_whitespace(a.second);

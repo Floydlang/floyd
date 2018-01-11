@@ -73,7 +73,8 @@ struct seq_t {
 
 	//	Returns entire string. Equivalent to x.rest(x.size()).
 	//	Notice: these returns what's left to consume of the original string, not the full original string.
-	public: std::string get_s() const;
+	public: std::string get_s() const { return str(); }
+	public: std::string str() const;
 	public: std::size_t size() const;
 
 	//	If true, there are no more characters.
@@ -101,6 +102,7 @@ struct seq_t {
 	private: std::size_t _pos;
 };
 
+seq_t skip(const seq_t& p1, const std::string& chars);
 
 std::pair<std::string, seq_t> read_while(const seq_t& p1, const std::string& chars);
 std::pair<std::string, seq_t> read_until(const seq_t& p1, const std::string& chars);
@@ -113,6 +115,7 @@ std::pair<bool, seq_t> if_first(const seq_t& p, const std::string& wanted_string
 bool is_first(const seq_t& p, const std::string& wanted_string);
 
 
+std::string get_range(const seq_t& a, const seq_t& b);
 
 std::pair<char, seq_t> read_char(const seq_t& s);
 
@@ -128,5 +131,9 @@ seq_t read_required(const seq_t& s, const std::string& req);
 
 std::pair<bool, seq_t> read_optional_char(const seq_t& s, char ch);
 
+//	If string is unbalanced, returns: { "", s }
+//	Recursively matches all brackets.
+//	First char must be an opening bracket. Result will include that character its final closing bracket and all chars between.
+std::pair<std::string, seq_t> read_balanced2(const seq_t& s, const std::string& open_close_pairs);
 
 #endif /* text_parser_hpp */

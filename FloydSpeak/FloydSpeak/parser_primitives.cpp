@@ -175,39 +175,15 @@ QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
 	QUARK_TEST_VERIFY(start_char_to_end_char('{') == '}');
 }
 
-/*
-	First char is the start char, like '(' or '{'.
-
-	Checks *all* balancing-chars
-	??? Should be recursive and not just count intermediate chars, also pair match them.
-*/
 std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 	QUARK_ASSERT(s.size() > 0);
 
-	const char start_char = s.first1_char();
-	QUARK_ASSERT(is_start_char(start_char));
-
-	const char end_char = start_char_to_end_char(start_char);
-
-	int depth = 0;
-	auto pos = s;
-	string result;
-	while(pos.empty() == false && !(depth == 1 && pos.first1_char() == end_char)){
-		const char ch = pos.first1_char();
-		if(is_start_char(ch)) {
-			depth++;
-		}
-		else if(is_end_char(ch)){
-			if(depth == 0){
-				throw std::runtime_error("unbalanced ([{< >}])");
-			}
-			depth--;
-		}
-		result = result + pos.first1();
-		pos = pos.rest1();
+	const auto r = read_balanced2(s, brackets);
+	if(r.first == ""){
+		throw std::runtime_error("unbalanced ([{< >}])");
 	}
 
-	return { result + pos.first1(), pos.rest1() };
+	return r;
 }
 
 QUARK_UNIT_TEST("", "get_balanced()", "", ""){
@@ -239,6 +215,12 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 	QUARK_TEST_VERIFY(get_balanced(seq_t("{return 4 < 5;}xxx")) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 }
 //	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "def"));
+
+
+
+std::string reverse(const std::string& s){
+	return std::string(s.rbegin(), s.rend());
+}
 
 
 
