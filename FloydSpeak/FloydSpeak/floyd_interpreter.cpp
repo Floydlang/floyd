@@ -105,11 +105,13 @@ namespace {
 			}
 
 			const auto dest_type = s->_bindtype;
-			const auto source_type = result_value.get_literal().get_type();
-			if((dest_type == source_type) == false){
-				if(source_type.is_null()){
-				}
-				else{
+
+			//	Deduced bind.
+			if(dest_type.is_null()){
+			}
+			else{
+				const auto source_type = result_value.get_literal().get_type();
+				if(!(dest_type == source_type)){
 					throw std::runtime_error("Types not compatible in bind.");
 				}
 			}
@@ -1162,9 +1164,14 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 
 //??? test all types, like [int] etc.
 
-QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
+QUARK_UNIT_TESTQ("Floyd test suite", "Expression statement") {
 	const auto r = run_global("print(5);");
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "5" }));
+}
+
+QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
+	const auto r = run_global("a = 10;print(a);");
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "10" }));
 }
 
 /*
