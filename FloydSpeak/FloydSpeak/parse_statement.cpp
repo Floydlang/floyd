@@ -43,8 +43,8 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 				[
 					"block",
 					[
-						["bind","<int>","x",["k",1,"<int>"]],
-						["bind","<int>","y",["k",2,"<int>"]]
+						["bind","int","x",["k",1,"int"]],
+						["bind","int","y",["k",2,"int"]]
 					]
 				]
 			)"
@@ -71,7 +71,7 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 
 	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 		const auto result = parse_return_statement(seq_t("return 0;"));
-		QUARK_TEST_VERIFY(json_to_compact_string(result.first) == R"(["return", ["k", 0, "<int>"]])");
+		QUARK_TEST_VERIFY(json_to_compact_string(result.first) == R"(["return", ["k", 0, "int"]])");
 		QUARK_TEST_VERIFY(result.second.get_s() == "");
 	}
 
@@ -97,7 +97,7 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 
 		const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-		const auto statement = json_t::make_array({ "bind", "<" + type + ">", variable_pos.first, expression });
+		const auto statement = json_t::make_array({ "bind", type, variable_pos.first, expression });
 
 		//	Skip trailing ";".
 		return { statement, expression_pos.second.rest1() };
@@ -162,7 +162,7 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 		parse_expression_statement(seq_t("print(14);")).first,
 		parse_json(seq_t(
 			R"(
-				[ "expression-statement", [ "call", ["@", "print"], [["k", 14, "<int>"]] ] ]
+				[ "expression-statement", [ "call", ["@", "print"], [["k", 14, "int"]] ] ]
 			)"
 		)).first
 	);
@@ -188,7 +188,7 @@ QUARK_UNIT_TEST("", "parse_deduced_bind_statement()", "", ""){
 		parse_deduced_bind_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
-				["deduced-bind","x",["k",10,"<int>"]]
+				["deduced-bind","x",["k",10,"int"]]
 			)"
 		)).first
 	);
@@ -277,9 +277,9 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}", ""){
 			R"(
 				[
 					"if",
-					[">",["k",1,"<int>"],["k",2,"<int>"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						["return", ["k", 3, "<int>"]]
+						["return", ["k", 3, "int"]]
 					]
 				]
 			)"
@@ -294,12 +294,12 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 			R"(
 				[
 					"if",
-					[">",["k",1,"<int>"],["k",2,"<int>"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						["return", ["k", 3, "<int>"]]
+						["return", ["k", 3, "int"]]
 					],
 					[
-						["return", ["k", 4, "<int>"]]
+						["return", ["k", 4, "int"]]
 					]
 				]
 			)"
@@ -314,12 +314,12 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 			R"(
 				[
 					"if",
-					[">",["k",1,"<int>"],["k",2,"<int>"]],
+					[">",["k",1,"int"],["k",2,"int"]],
 					[
-						["return", ["k", 3, "<int>"]]
+						["return", ["k", 3, "int"]]
 					],
 					[
-						["return", ["k", 4, "<int>"]]
+						["return", ["k", 4, "int"]]
 					]
 				]
 			)"
@@ -335,22 +335,22 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					"if", ["==",["k",1,"<int>"],["k",1,"<int>"]],
+					"if", ["==",["k",1,"int"],["k",1,"int"]],
 					[
-						["return", ["k", 1, "<int>"]]
+						["return", ["k", 1, "int"]]
 					],
 					[
-						[ "if", ["==",["k",2,"<int>"],["k",2,"<int>"]],
+						[ "if", ["==",["k",2,"int"],["k",2,"int"]],
 							[
-								["return", ["k", 2, "<int>"]]
+								["return", ["k", 2, "int"]]
 							],
 							[
-								[ "if", ["==",["k",3,"<int>"],["k",3,"<int>"]],
+								[ "if", ["==",["k",3,"int"],["k",3,"int"]],
 									[
-										["return", ["k", 3, "<int>"]]
+										["return", ["k", 3, "int"]]
 									],
 									[
-										["return", ["k", 4, "<int>"]]
+										["return", ["k", 4, "int"]]
 									]
 								]
 							]
@@ -422,10 +422,10 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 					"for",
 					"open_range",
 					"index",
-					["k",1,"<int>"],
-					["k",5,"<int>"],
+					["k",1,"int"],
+					["k",5,"int"],
 					[
-						["bind","<int>","y",["k",11,"<int>"]]
+						["bind","int","y",["k",11,"int"]]
 					]
 				]
 			)"

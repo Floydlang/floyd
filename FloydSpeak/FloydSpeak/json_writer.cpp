@@ -563,7 +563,7 @@ return R"(
 						"return",
 						[
 							"k",
-							"<int>",
+							"int",
 							3
 						]
 					]
@@ -574,7 +574,7 @@ return R"(
 						"return",
 						[
 							"k",
-							"<int>",
+							"int",
 							3
 						]
 					]
@@ -600,9 +600,9 @@ return R"(
 				"members": [],
 				"name": "main",
 				"return_type": "int",
-				"statements": [ [ "return", [ "k", "<int>", 3 ] ] ],
+				"statements": [ [ "return", [ "k", "int", 3 ] ] ],
 				"type": "function",
-				"types": [ [ "return", [ "k", "<int>", 3 ] ] ]
+				"types": [ [ "return", [ "k", "int", 3 ] ] ]
 			}
 		}
 	]

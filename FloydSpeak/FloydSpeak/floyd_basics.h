@@ -258,8 +258,7 @@ namespace floyd_basics {
 			??? use json instead.
 		*/
 		public: std::string to_string() const;
-
-		public: typeid_t from_string(const std::string& s);
+		public: static typeid_t from_string(const std::string& s);
 
 
 		public: floyd_basics::base_type get_base_type() const{

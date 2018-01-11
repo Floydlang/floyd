@@ -60,7 +60,7 @@ namespace floyd_parser {
 		"bool a = is_hello("hello")";
 
 		OUTPUT:
-			[ "bind", "<float>", "x", EXPRESSION ]
+			[ "bind", "float", "x", EXPRESSION ]
 	*/
 	std::pair<json_t, seq_t> parse_assignment_statement(const seq_t& s);
 

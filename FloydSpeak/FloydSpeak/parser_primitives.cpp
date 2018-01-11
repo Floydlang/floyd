@@ -499,7 +499,7 @@ pair<floyd_basics::typeid_t, seq_t> read_required_type_identifier2(const seq_t& 
 
 
 json_t make_member_def(const std::string& type, const std::string& name, const json_t& expression){
-	QUARK_ASSERT(type.empty() || (type.size() > 2 && type.front() == '<' && type.back() == '>'));
+	QUARK_ASSERT(type.empty() || type.size() > 2);
 	QUARK_ASSERT(expression.check_invariant());
 
 	if(expression.is_null()){

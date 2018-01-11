@@ -46,12 +46,12 @@ namespace floyd_parser {
 				const auto constant_expr_pos = parse_expression_seq(seq_t(constant_expr_pos_s.first));
 				const auto constant_expr = constant_expr_pos.first;
 
-				const auto a = make_member_def("<" + member_type.first.to_string() + ">", member_name.first, constant_expr_pos.first);
+				const auto a = make_member_def(member_type.first.to_string(), member_name.first, constant_expr_pos.first);
 				members.push_back(a);
 				pos = skip_whitespace(constant_expr_pos_s.second);
 			}
 			else{
-				const auto a = make_member_def("<" + member_type.first.to_string() + ">", member_name.first, json_t());
+				const auto a = make_member_def(member_type.first.to_string(), member_name.first, json_t());
 				members.push_back(a);
 				pos = skip_whitespace(optional_default_value.second);
 			}
@@ -80,9 +80,9 @@ namespace floyd_parser {
 			json_t::make_object({
 				{ "name", "a" },
 				{ "members", json_t::make_array({
-					json_t::make_object({ { "name", "x"}, { "type", "<int>"} }),
-					json_t::make_object({ { "name", "y"}, { "type", "<string>"} }),
-					json_t::make_object({ { "name", "z"}, { "type", "<float>"} })
+					json_t::make_object({ { "name", "x"}, { "type", "int"} }),
+					json_t::make_object({ { "name", "y"}, { "type", "string"} }),
+					json_t::make_object({ { "name", "z"}, { "type", "float"} })
 				}) },
 			})
 		});

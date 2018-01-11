@@ -88,38 +88,11 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 */
 
 
-
-pair<floyd_basics::typeid_t, bool> resolve_base_type_name(const string& t){
-	if(t == "<null>"){
-		return { floyd_basics::typeid_t::make_null(), true };
-	}
-	else if(t == "<bool>"){
-		return { floyd_basics::typeid_t::make_bool(), true };
-	}
-	else if(t == "<int>"){
-		return { floyd_basics::typeid_t::make_int(), true };
-	}
-	else if(t == "<float>"){
-		return { floyd_basics::typeid_t::make_float(), true };
-	}
-	else if(t == "<string>"){
-		return { floyd_basics::typeid_t::make_string(), true };
-	}
-	else {
-		return { floyd_basics::typeid_t::make_null(), false };
-	}
-}
-
 floyd_basics::typeid_t resolve_type_name(const string& t){
 	QUARK_ASSERT(t.size() > 2);
 
-	const auto a = resolve_base_type_name(t);
-	if(a.second){
-		return a.first;
-	}
-	else {
-		return floyd_basics::typeid_t::make_unresolved_symbol(trim_ends(t));
-	}
+	const auto t2 = floyd_basics::typeid_t::from_string(t);
+	return t2;
 }
 
 expression_t parser_expression_to_ast(const json_t& e){
@@ -132,22 +105,21 @@ expression_t parser_expression_to_ast(const json_t& e){
 
 		const auto value = e.get_array_n(1);
 		const auto type = e.get_array_n(2).get_string();
-		const auto resolved_type = resolve_base_type_name(type);
-		QUARK_ASSERT(resolved_type.second);
+		const auto type2 = resolve_type_name(type);
 
-		if(resolved_type.first.is_null()){
+		if(type2.is_null()){
 			return expression_t::make_literal_null();
 		}
-		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_bool){
+		else if(type2.get_base_type() == floyd_basics::base_type::k_bool){
 			return expression_t::make_literal_bool(value.is_false() ? false : true);
 		}
-		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_int){
+		else if(type2.get_base_type() == floyd_basics::base_type::k_int){
 			return expression_t::make_literal_int((int)value.get_number());
 		}
-		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_float){
+		else if(type2.get_base_type() == floyd_basics::base_type::k_float){
 			return expression_t::make_literal_float((float)value.get_number());
 		}
-		else if(resolved_type.first.get_base_type() == floyd_basics::base_type::k_string){
+		else if(type2.get_base_type() == floyd_basics::base_type::k_string){
 			return expression_t::make_literal_string(value.get_string());
 		}
 		else{
@@ -203,8 +175,8 @@ expression_t parser_expression_to_ast(const json_t& e){
 /*
 	Example:
 		[
-			{ "name": "g_version", "type": "<int>" },
-			{ "name": "message", "type": "<string>" },
+			{ "name": "g_version", "type": "int" },
+			{ "name": "message", "type": "string" },
 			{ "name": "pos", "type": "pixel" },
 			{ "name": "pos", "type": "image_lib.image.pixel_t" }
 		]
@@ -243,14 +215,14 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 	for(const auto statement: p.get_array()){
 		const auto type = statement.get_array_n(0);
 
-		//	[ "return", [ "k", 3, "<int>" ] ]
+		//	[ "return", [ "k", 3, "int" ] ]
 		if(type == "return"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 			const auto expr = parser_expression_to_ast(statement.get_array_n(1));
 			statements2.push_back(make_shared<statement_t>(make__return_statement(expr)));
 		}
 
-		//	[ "bind", "<float>", "x", EXPRESSION ],
+		//	[ "bind", "float", "x", EXPRESSION ],
 		else if(type == "bind"){
 			QUARK_ASSERT(statement.get_array_size() == 4);
 			const auto bind_type = statement.get_array_n(1);
@@ -282,9 +254,9 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 							
 						],
 						"name": "main",
-						"return_type": "<int>",
+						"return_type": "int",
 						"statements": [
-							[ "return", [ "k", 3, "<int>" ] ]
+							[ "return", [ "k", 3, "int" ] ]
 						]
 					}
 				]
@@ -298,7 +270,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 							"locals": [],
 							"members": [],
 							"name": "main",
-							"return_type": "<int>",
+							"return_type": "int",
 							"statements": [???],
 							"type": "function",
 							"types": {}
@@ -331,9 +303,9 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 					"def-struct",
 					{
 						"members": [
-							{ "name": "red", "type": "<float>" },
-							{ "name": "green", "type": "<float>" },
-							{ "name": "blue", "type": "<float>" }
+							{ "name": "red", "type": "float" },
+							{ "name": "green", "type": "float" },
+							{ "name": "blue", "type": "float" }
 						],
 						"name": "pixel"
 					}
@@ -347,9 +319,9 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 							"args": [],
 							"locals": [],
 							"members": [
-								{ "name": "red", "type": "<float>" },
-								{ "name": "green", "type": "<float>" },
-								{ "name": "blue", "type": "<float>" }
+								{ "name": "red", "type": "float" },
+								{ "name": "green", "type": "float" },
+								{ "name": "blue", "type": "float" }
 							],
 							"name": "pixel",
 							"return_type": "",

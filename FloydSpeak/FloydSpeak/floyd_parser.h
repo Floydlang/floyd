@@ -26,9 +26,9 @@ const std::string k_test_program_0_parserout = R"(
 			{
 				"args": [],
 				"name": "main",
-				"return_type": "<int>",
+				"return_type": "int",
 				"statements": [
-					[ "return", [ "k", 3, "<int>" ] ]
+					[ "return", [ "k", 3, "int" ] ]
 				]
 			}
 		]
@@ -59,12 +59,12 @@ const std::string k_test_program_1_parserout = R"(
 			"def-func",
 			{
 				"args": [
-					{ "name": "args", "type": "<string>" }
+					{ "name": "args", "type": "string" }
 				],
 				"name": "main",
-				"return_type": "<int>",
+				"return_type": "int",
 				"statements": [
-					[ "return", [ "k", 3, "<int>" ] ]
+					[ "return", [ "k", 3, "int" ] ]
 				]
 			}
 		]
@@ -87,9 +87,9 @@ const char k_test_program_100_parserout[] = R"(
 			"def-struct",
 			{
 				"members": [
-					{ "name": "red", "type": "<float>" },
-					{ "name": "green", "type": "<float>" },
-					{ "name": "blue", "type": "<float>" }
+					{ "name": "red", "type": "float" },
+					{ "name": "green", "type": "float" },
+					{ "name": "blue", "type": "float" }
 				],
 				"name": "pixel"
 			}
@@ -97,9 +97,9 @@ const char k_test_program_100_parserout[] = R"(
 		[
 			"def-func",
 			{
-				"args": [{ "name": "p", "type": "<pixel>" }],
+				"args": [{ "name": "p", "type": "pixel" }],
 				"name": "get_grey",
-				"return_type": "<float>",
+				"return_type": "float",
 				"statements": [
 					[
 						"return",
@@ -110,7 +110,7 @@ const char k_test_program_100_parserout[] = R"(
 								["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
 								["->", ["@", "p"], "blue"]
 							],
-							["k", 3.0, "<float>"]
+							["k", 3.0, "float"]
 						]
 					]
 				]
@@ -121,13 +121,13 @@ const char k_test_program_100_parserout[] = R"(
 			{
 				"args": [],
 				"name": "main",
-				"return_type": "<float>",
+				"return_type": "float",
 				"statements": [
 					[
 						"bind",
-						"<pixel>",
+						"pixel",
 						"p",
-						["call", ["@", "pixel"], [["k", 1, "<int>"], ["k", 0, "<int>"], ["k", 0, "<int>"]]]
+						["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]]
 					],
 					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 				]
@@ -183,7 +183,7 @@ const char k_test_program_100_parserout[] = R"(
 		OUTPUT
 
 		["return", EXPRESSION ]
-		["bind", "<string>", "local_name", EXPRESSION ]
+		["bind", "string", "local_name", EXPRESSION ]
 		["def_struct", STRUCT_DEF ]
 		["define_function", FUNCTION_DEF ]
 	*/
@@ -204,13 +204,13 @@ const char k_test_program_100_parserout[] = R"(
 		"name": "global", "type": "global",
 		"statements": [
 			[ "return", EXPRESSION ],
-			[ "bind", "<float>", "x", EXPRESSION ],
+			[ "bind", "float", "x", EXPRESSION ],
 			[
 				"def-struct",
 				{
 					"name": "pixel",
 					"members": [
-						{ "expr": [ "k", "two", "<string>" ], "name": "s", "type": "<string>" }
+						{ "expr": [ "k", "two", "string" ], "name": "s", "type": "string" }
 					],
 				}
 			],
@@ -220,9 +220,9 @@ const char k_test_program_100_parserout[] = R"(
 					"args": [],
 					"locals": [],
 					"name": "main",
-					"return_type": "<int>",
+					"return_type": "int",
 					"statements": [
-						[ "return", [ "k", 3, "<int>" ]]
+						[ "return", [ "k", 3, "int" ]]
 					],
 					"type": "function",
 					"types": {}

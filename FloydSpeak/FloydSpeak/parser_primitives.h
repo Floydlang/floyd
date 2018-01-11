@@ -113,7 +113,7 @@ namespace floyd_parser {
 		expr is optional, can be null.
 		member
 		{
-			"type": "<int>",
+			"type": "int",
 			"name": "my_local",
 			"expr": "[\"k\", 1000]
 		}

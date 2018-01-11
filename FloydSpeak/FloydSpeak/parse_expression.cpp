@@ -95,16 +95,16 @@ struct json_helper : public maker<EXPRESSION> {
 
 	public: virtual const EXPRESSION maker__make_constant(const constant_value_t& value) const{
 		if(value._type == constant_value_t::etype::k_bool){
-			return make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t("<bool>") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t("bool") });
 		}
 		else if(value._type == constant_value_t::etype::k_int){
-			return make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t("<int>") });
+			return make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t("int") });
 		}
 		else if(value._type == constant_value_t::etype::k_float){
-			return make_array_skip_nulls({ json_t("k"), json_t(value._float), json_t("<float>") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._float), json_t("float") });
 		}
 		else if(value._type == constant_value_t::etype::k_string){
-			return make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t("<string>") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t("string") });
 		}
 		else{
 			QUARK_ASSERT(false);

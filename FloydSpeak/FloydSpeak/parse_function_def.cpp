@@ -32,7 +32,7 @@ static vector<json_t> parse_functiondef_arguments(const seq_t& s){
 	for(const auto e: args0){
 		const auto arg_type = e.first;
 		const auto arg_name = e.second;
-		const auto a = make_member_def("<" + arg_type.to_string() + ">", arg_name, json_t());
+		const auto a = make_member_def(arg_type.to_string(), arg_name, json_t());
 		args.push_back(a);
 	}
 	return args;
@@ -55,9 +55,9 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 0 -- z
 const auto kTestFunctionArguments1 = "(int x, string y, float z)";
 const string kTestFunctionArguments1JSON = R"(
 	[
-		{ "name": "x", "type": "<int>" },
-		{ "name": "y", "type": "<string>" },
-		{ "name": "z", "type": "<float>" },
+		{ "name": "x", "type": "int" },
+		{ "name": "y", "type": "string" },
+		{ "name": "z", "type": "float" },
 	]
 )";
 
@@ -98,7 +98,7 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 			{ "name", function_name },
 			{ "args", json_t::make_array(args) },
 			{ "statements", statements.first },
-			{ "return_type", "<" + return_type_pos.first.to_string() + ">" }
+			{ "return_type", return_type_pos.first.to_string() }
 		})
 	});
 	return { function_def, body_pos.second };
@@ -118,7 +118,7 @@ const std::vector<test> testsxyz = {
 		R"(
 			[
 				"def-func",
-				{ "args": [], "name": "f", "return_type": "<int>", "statements": [["return", ["k", 3, "<int>"]]] }
+				{ "args": [], "name": "f", "return_type": "int", "statements": [["return", ["k", 3, "int"]]] }
 			]
 		)"
 	},
@@ -130,13 +130,13 @@ const std::vector<test> testsxyz = {
 				"def-func",
 				{
 					"args": [
-						{ "name": "a", "type": "<string>" },
-						{ "name": "barry", "type": "<float>" },
-						{ "name": "c", "type": "<int>" },
+						{ "name": "a", "type": "string" },
+						{ "name": "barry", "type": "float" },
+						{ "name": "c", "type": "int" },
 					],
 					"name": "printf",
-					"return_type": "<int>",
-					"statements": [["return", ["k", 3, "<int>"]]]
+					"return_type": "int",
+					"statements": [["return", ["k", 3, "int"]]]
 				}
 			]
 		)"
@@ -149,12 +149,12 @@ const std::vector<test> testsxyz = {
 				"def-func",
 				{
 					"args": [
-						{ "name": "a", "type": "<string>" },
-						{ "name": "b", "type": "<float>" }
+						{ "name": "a", "type": "string" },
+						{ "name": "b", "type": "float" }
 					],
 					"name": "printf",
-					"return_type": "<int>",
-					"statements": [["return", ["k", 3, "<int>"]]]
+					"return_type": "int",
+					"statements": [["return", ["k", 3, "int"]]]
 				}
 			]
 		)"
@@ -167,12 +167,12 @@ const std::vector<test> testsxyz = {
 				"def-func",
 				{
 					"args": [
-						{ "name": "a", "type": "<string>" },
-						{ "name": "b", "type": "<float>" }
+						{ "name": "a", "type": "string" },
+						{ "name": "b", "type": "float" }
 					],
 					"name": "printf",
-					"return_type": "<int>",
-					"statements": [["return", ["k", 3, "<int>"]]]
+					"return_type": "int",
+					"statements": [["return", ["k", 3, "int"]]]
 				}
 			]
 		)"

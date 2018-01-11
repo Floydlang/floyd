@@ -9,6 +9,8 @@
 #include "floyd_basics.h"
 
 
+#include "parser_primitives.h"
+
 using std::string;
 
 namespace floyd_basics {
@@ -236,13 +238,15 @@ expression_type token_to_expression_type(const string& op){
 			return /*"unresolved:" +*/ _unresolved_type_symbol;
 		}
 		else if(_base_type == floyd_basics::base_type::k_struct){
-			return "[" + _parts[0].to_string() + "]";
+			return "{[}" + _parts[0].to_string() + "}";
 		}
 		else if(_base_type == floyd_basics::base_type::k_vector){
 			return "[" + _parts[0].to_string() + "]";
 		}
 		else if(_base_type == floyd_basics::base_type::k_function){
 			auto s = _parts[0].to_string() + " (";
+
+			//??? doesn't work when size() == 2, that is ONE argument.
 			if(_parts.size() > 2){
 				for(int i = 1 ; i < _parts.size() - 1 ; i++){
 					s = s + _parts[i].to_string() + ",";
@@ -255,12 +259,12 @@ expression_type token_to_expression_type(const string& op){
 		else{
 			return base_type_to_string(_base_type);
 		}
-//		return json_to_compact_string(typeid_to_json(*this));
 	}
 
+	typeid_t typeid_t::from_string(const std::string& s){
+		const auto a = floyd_parser::read_required_type_identifier2(seq_t(s));
 
-	static typeid_t from_string(const std::string& s){
-		return typeid_t::make_float();
+		return a.first;
 	}
 
 

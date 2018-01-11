@@ -23,9 +23,9 @@ namespace floyd_parser {
 				{
 					"name": "main",
 					"args": [],
-					"return_type": "<int>",
+					"return_type": "int",
 					"statements": [
-						[ "return", [ "k", 3, "<int>" ]]
+						[ "return", [ "k", 3, "int" ]]
 					]
 				}
 			]

@@ -34,7 +34,7 @@ namespace floyd_parser {
 			{
 				"name": "pixel",
 				"members": [
-					{ "expr": [ "k", "two", "<string>" ], "name": "s", "type": "<string>" }
+					{ "expr": [ "k", "two", "string" ], "name": "s", "type": "string" }
 				],
 			}
 		]
