@@ -129,6 +129,19 @@ namespace floyd_parser {
 	json_t make_member_def(const std::string& type, const std::string& name, const json_t& expression);
 
 
+	/*
+		s2: starts and ends with parantheses. Has no other data at end.
+		Argument names are optional.
+
+		()
+		(int a)
+		(int x, int y)
+
+		(int, int)
+	*/
+	std::vector<std::pair<floyd_basics::typeid_t, std::string>> parse_functiondef_arguments2(const std::string& s);
+
+
 }	//	floyd_parser
 
 

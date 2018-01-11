@@ -312,9 +312,81 @@ pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
 
 //??? Fix resolve_base_type_name(). Also make to/from JSON.
 
-std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
+std::pair<floyd_basics::typeid_t, seq_t> read_basic_type(const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 
+	const auto pos1 = read_while(pos0, identifier_chars);
+	if(pos1.first.empty()){
+		return { typeid_t::make_null(), pos1.second };
+	}
+	else if(pos1.first == "null"){
+		return { typeid_t::make_null(), pos1.second };
+	}
+	else if(pos1.first == "bool"){
+		return { typeid_t::make_bool(), pos1.second };
+	}
+	else if(pos1.first == "int"){
+		return { typeid_t::make_int(), pos1.second };
+	}
+	else if(pos1.first == "float"){
+		return { typeid_t::make_float(), pos1.second };
+	}
+	else if(pos1.first == "string"){
+		return { typeid_t::make_string(), pos1.second };
+	}
+	else{
+		return { typeid_t::make_unresolved_symbol(pos1.first), pos1.second };
+	}
+}
+
+
+vector<pair<typeid_t, string>> parse_functiondef_arguments2(const string& s){
+	QUARK_ASSERT(s.size() >= 2);
+	QUARK_ASSERT(s[0] == '(');
+	QUARK_ASSERT(s.back() == ')');
+
+	const auto s2 = seq_t(trim_ends(s));
+	vector<pair<typeid_t, string>> args;
+	auto pos = skip_whitespace(s2);
+	while(!pos.empty()){
+		const auto arg_type = read_type_identifier2(pos);
+		const auto arg_name = read_single_symbol(arg_type.second);
+		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
+		args.push_back({ arg_type.first, arg_name.first });
+		pos = skip_whitespace(optional_comma.second);
+	}
+	return args;
+}
+
+QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("()") == vector<pair<typeid_t, string>>{}		));
+}
+QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int a)") == vector<pair<typeid_t, string>>{ { typeid_t::make_int(), "a" }}		));
+}
+QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int x, string y, float z)") == vector<pair<typeid_t, string>>{
+		{ typeid_t::make_int(), "x" },
+		{ typeid_t::make_string(), "y" },
+		{ typeid_t::make_float(), "z" }
+
+	}		));
+}
+
+
+std::pair<vector<pair<typeid_t, string>>, seq_t> read_function_arg_parantheses(const seq_t& s){
+	QUARK_ASSERT(s.first1() == "(");
+
+	std::pair<std::string, seq_t> args_pos = read_balanced2(s, brackets);
+	if(args_pos.first.empty()){
+		throw std::runtime_error("unbalanced ()");
+	}
+	const auto r = parse_functiondef_arguments2(args_pos.first);
+	return { r, args_pos.second };
+}
+
+std::pair<floyd_basics::typeid_t, seq_t> read_basic_or_vector(const seq_t& s){
+	const auto pos0 = skip_whitespace(s);
 	if(pos0.first1() == "["){
 		const auto pos2 = pos0.rest1();
 		const auto element_type_pos = read_type_identifier2(pos2);
@@ -325,28 +397,37 @@ std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
 		return { typeid_t::make_vector(element_type_pos.first), pos3.rest1() };
 	}
 	else {
-		const auto pos1 = read_while(pos0, identifier_chars);
-		if(pos1.first.empty()){
-			return { typeid_t::make_null(), pos1.second };
+		//	Read basic type.
+		const auto basic = read_basic_type(pos0);
+		return basic;
+	}
+}
+
+std::pair<floyd_basics::typeid_t, seq_t> read_optional_trailing_function_args(const typeid_t& type, const seq_t& s){
+	//	See if there is a () afterward type_pos -- that would be that type_pos is the return value of a function-type.
+	const auto more_pos = skip_whitespace(s);
+	if(more_pos.first1() == "("){
+		const auto function_args_pos = read_function_arg_parantheses(more_pos);
+		vector<typeid_t> nameless_args;
+		for(const auto e: function_args_pos.first){
+			nameless_args.push_back(e.first);
 		}
-		else if(pos1.first == "null"){
-			return { typeid_t::make_null(), pos1.second };
-		}
-		else if(pos1.first == "bool"){
-			return { typeid_t::make_bool(), pos1.second };
-		}
-		else if(pos1.first == "int"){
-			return { typeid_t::make_int(), pos1.second };
-		}
-		else if(pos1.first == "float"){
-			return { typeid_t::make_float(), pos1.second };
-		}
-		else if(pos1.first == "string"){
-			return { typeid_t::make_string(), pos1.second };
-		}
-		else{
-			return { typeid_t::make_unresolved_symbol(pos1.first), pos1.second };
-		}
+		const auto pos = function_args_pos.second;
+		const auto function_type = typeid_t::make_function(type, nameless_args);
+		const auto result = read_optional_trailing_function_args(function_type, pos);
+		return result;
+	}
+	else{
+		return { type, s };
+	}
+}
+std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
+	const auto type_pos = read_basic_or_vector(s);
+	if(type_pos.first.is_null()){
+		return type_pos;
+	}
+	else {
+		return read_optional_trailing_function_args(type_pos.first, type_pos.second);
 	}
 }
 
@@ -381,14 +462,42 @@ QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
 }
 
 
-/*
 QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("int f()")) == pair<typeid_t, seq_t>{typeid_t::make_function(typeid_t::make_int(), {}), seq_t("")}		));
+	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("int ()")) == pair<typeid_t, seq_t>{typeid_t::make_function(typeid_t::make_int(), {}), seq_t("")}		));
 }
 
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int f(float a, float b)")).first == "int f(float a, float b)");
+	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("string (float a, float b)")) == pair<typeid_t, seq_t>{typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_float(), typeid_t::make_float() }), seq_t("")}		));
 }
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY((
+		read_type_identifier2(seq_t("int (float a) ()"))
+		==
+		pair<typeid_t, seq_t>{
+			typeid_t::make_function(
+				typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_float() }),
+				{}
+			),
+			seq_t("")
+		}
+	));
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY((
+		read_type_identifier2(seq_t("bool (int (float a) b)"))
+		==
+		pair<typeid_t, seq_t>{
+			typeid_t::make_function(
+				typeid_t::make_bool(),
+				{
+					typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_float() }),
+				}
+			),
+			seq_t("")
+		}
+	));
+}
+/*
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int (float a) g(int(float b))")).first == "int (float a) g(int(float b))");
 }

@@ -233,7 +233,7 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(check_invariant());
 
 		if(_unresolved_type_symbol != ""){
-			return "unresolved:" + _unresolved_type_symbol;
+			return /*"unresolved:" +*/ _unresolved_type_symbol;
 		}
 		else if(_base_type == floyd_basics::base_type::k_struct){
 			return "[" + _parts[0].to_string() + "]";

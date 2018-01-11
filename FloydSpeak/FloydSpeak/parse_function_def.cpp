@@ -26,18 +26,14 @@ namespace floyd_parser {
 	(int a)
 	(int x, int y)
 */
-static vector<json_t> parse_functiondef_arguments(const seq_t& s2){
-	const auto s = seq_t(trim_ends(s2.get_s()));
+static vector<json_t> parse_functiondef_arguments(const seq_t& s){
+	const auto args0 = parse_functiondef_arguments2(s.str());
 	vector<json_t> args;
-	auto str = skip_whitespace(s);
-	while(!str.empty()){
-		const auto arg_type = read_type_identifier(str);
-		const auto arg_name = read_required_single_symbol(arg_type.second);
-		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
-
-		const auto a = make_member_def("<" + arg_type.first + ">", arg_name.first, json_t());
+	for(const auto e: args0){
+		const auto arg_type = e.first;
+		const auto arg_name = e.second;
+		const auto a = make_member_def("<" + arg_type.to_string() + ">", arg_name, json_t());
 		args.push_back(a);
-		str = skip_whitespace(optional_comma.second);
 	}
 	return args;
 }
