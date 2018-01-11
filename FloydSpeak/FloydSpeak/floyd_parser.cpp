@@ -94,14 +94,13 @@ else
 
 
 // Includes trailing ";". Does not include body of a function definition.
-std::pair<string, seq_t> read_complete_statement(const seq_t& pos0){
+std::pair<string, seq_t> read_until_semicolor_or_seagull(const seq_t& pos0){
 	const auto pos1 = skip_whitespace(pos0);
 	auto pos = pos1;
 	while(pos.first() != ";" && pos.first() != "{" && pos.empty() == false){
 		if(is_start_char(pos.first()[0])){
 			const auto end = get_balanced(pos).second;
 			pos = end;
-//			pos = end.back(1);
 		}
 		else{
 			pos = pos.rest1();
@@ -152,7 +151,7 @@ pair<string, string> split_at_tail_symbol(const std::string& s){
 
 
 pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
-	const auto r = seq_t(read_complete_statement(s1).first);
+	const auto r = seq_t(read_until_semicolor_or_seagull(s1).first);
 	const auto equal_sign_pos = read_until_toplevel_char(r, '=');
 	if(equal_sign_pos.first.empty()){
 		//	FUNCTION-DEFINITION:	int f(string name)
@@ -318,8 +317,8 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 
 
 
-std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& pos0){
-	const auto pos = skip_whitespace(pos0);
+std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
+	const auto pos = skip_whitespace(s);
 
 	const auto type_pos = read_type_identifier(seq_t(pos));
 	const auto identifier_pos = read_single_symbol(type_pos.second);

@@ -30,7 +30,7 @@ namespace floyd_parser {
 using std::vector;
 using std::string;
 using std::pair;
-
+using floyd_basics::typeid_t;
 
 //////////////////////////////////////////////////		Text parsing primitives
 
@@ -299,87 +299,6 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 	QUARK_TEST_VERIFY((read_type_identifier(seq_t("string")) == std::pair<std::string, seq_t>{ "string", "" }));
 }
 
-
-//??? Fix resolve_base_type_name(). Also make to/from JSON.
-
-std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
-	const auto pos0 = skip_whitespace(s);
-	const auto pos1 = read_while(pos0, identifier_chars);
-	if(pos1.first.empty()){
-		return { floyd_basics::typeid_t::make_null(), pos1.second };
-	}
-	else if(pos1.first == "null"){
-		return { floyd_basics::typeid_t::make_null(), pos1.second };
-	}
-	else if(pos1.first == "bool"){
-		return { floyd_basics::typeid_t::make_bool(), pos1.second };
-	}
-	else if(pos1.first == "int"){
-		return { floyd_basics::typeid_t::make_int(), pos1.second };
-	}
-	else if(pos1.first == "float"){
-		return { floyd_basics::typeid_t::make_float(), pos1.second };
-	}
-	else if(pos1.first == "string"){
-		return { floyd_basics::typeid_t::make_string(), pos1.second };
-	}
-	else{
-		return { floyd_basics::typeid_t::make_null(), pos1.second };
-	}
-}
-
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("-3")).first == floyd_basics::typeid_t::make_null());
-}
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("null")).first == floyd_basics::typeid_t::make_null());
-}
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("bool")).first == floyd_basics::typeid_t::make_bool());
-}
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("int")).first == floyd_basics::typeid_t::make_int());
-}
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("float")).first == floyd_basics::typeid_t::make_float());
-}
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("string")).first == floyd_basics::typeid_t::make_string());
-}
-
-/*
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int f()")).first == "int f()");
-}
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int f(float a, float b)")).first == "int f(float a, float b)");
-}
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int (float a) g(int(float b))")).first == "int (float a) g(int(float b))");
-}
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("my_symbol")).first == "my_symbol)");
-}
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("my_symbol ()")).first == "my_symbol)");
-}
-*/
-
-/*
--	null
--	bool
--	int
--	float
--	string
--	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)
-
-#### Custom types
--	struct_type_x
--	struct_type_y
-*/
-
-
-
 pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
 	const auto type_pos = read_type_identifier(s);
 	if(type_pos.first.empty()){
@@ -388,10 +307,108 @@ pair<std::string, seq_t> read_required_type_identifier(const seq_t& s){
 	return type_pos;
 }
 
-	bool is_valid_type_identifier(const std::string& s){
-		const auto a = read_while(seq_t(s), floyd_parser::type_chars);
-		return a.first == s;
+
+
+
+//??? Fix resolve_base_type_name(). Also make to/from JSON.
+
+std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
+	const auto pos0 = skip_whitespace(s);
+
+	if(pos0.first1() == "["){
+		const auto pos2 = pos0.rest1();
+		const auto element_type_pos = read_type_identifier2(pos2);
+		const auto pos3 = skip_whitespace(element_type_pos.second);
+		if(pos3.first1() != "]"){
+			throw std::runtime_error("unbalanced []");
+		}
+		return { typeid_t::make_vector(element_type_pos.first), pos3.rest1() };
 	}
+	else {
+		const auto pos1 = read_while(pos0, identifier_chars);
+		if(pos1.first.empty()){
+			return { typeid_t::make_null(), pos1.second };
+		}
+		else if(pos1.first == "null"){
+			return { typeid_t::make_null(), pos1.second };
+		}
+		else if(pos1.first == "bool"){
+			return { typeid_t::make_bool(), pos1.second };
+		}
+		else if(pos1.first == "int"){
+			return { typeid_t::make_int(), pos1.second };
+		}
+		else if(pos1.first == "float"){
+			return { typeid_t::make_float(), pos1.second };
+		}
+		else if(pos1.first == "string"){
+			return { typeid_t::make_string(), pos1.second };
+		}
+		else{
+			return { typeid_t::make_unresolved_symbol(pos1.first), pos1.second };
+		}
+	}
+}
+
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("-3")).first == typeid_t::make_null());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("null")).first == typeid_t::make_null());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("bool")).first == typeid_t::make_bool());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("int")).first == typeid_t::make_int());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("float")).first == typeid_t::make_float());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("string")).first == typeid_t::make_string());
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("temp")) == pair<typeid_t, seq_t>{typeid_t::make_unresolved_symbol("temp"), seq_t("")}		));
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("[int]")) == pair<typeid_t, seq_t>{typeid_t::make_vector(typeid_t::make_int()), seq_t("")}		));
+}
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("[[int]]")) == pair<typeid_t, seq_t>{
+		typeid_t::make_vector(typeid_t::make_vector(typeid_t::make_int())),
+		seq_t("")}		));
+}
+
+
+/*
+QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
+	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("int f()")) == pair<typeid_t, seq_t>{typeid_t::make_function(typeid_t::make_int(), {}), seq_t("")}		));
+}
+
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int f(float a, float b)")).first == "int f(float a, float b)");
+}
+QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int (float a) g(int(float b))")).first == "int (float a) g(int(float b))");
+}
+
+-	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)
+
+[int]([int] audio)
+*/
+
+
+
+pair<floyd_basics::typeid_t, seq_t> read_required_type_identifier2(const seq_t& s){
+	const auto type_pos = read_type_identifier2(s);
+	if(type_pos.first.is_null()){
+		throw std::runtime_error("illegal character in type identifier");
+	}
+	return type_pos;
+}
+
+
 
 
 

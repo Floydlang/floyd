@@ -15,6 +15,7 @@
 
 #include "quark.h"
 #include "text_parser.h"
+#include "floyd_basics.h"
 
 #include <string>
 #include <vector>
@@ -67,6 +68,7 @@ namespace floyd_parser {
 
 	//////////////////////////////////////		SYMBOLS
 
+
 	std::pair<std::string, seq_t> read_single_symbol(const seq_t& s);
 
 	/*
@@ -83,6 +85,9 @@ namespace floyd_parser {
 
 
 
+	//////////////////////////////////////		TYPES
+
+
 	/*
 		See language reference
 		Skip leading whitespace, get string while type-char.
@@ -97,7 +102,13 @@ namespace floyd_parser {
 	*/
 	std::pair<std::string, seq_t> read_required_type_identifier(const seq_t& s);
 
-	bool is_valid_type_identifier(const std::string& s);
+
+	std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s);
+	std::pair<floyd_basics::typeid_t, seq_t> read_required_type_identifier2(const seq_t& s);
+
+
+
+	//////////////////////////////////////		HIGH LEVEL
 
 
 	/*
