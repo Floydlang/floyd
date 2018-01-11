@@ -34,7 +34,7 @@ namespace floyd_parser {
 		vector<json_t> members;
 		auto pos = seq_t(trim_ends(body_pos.first));
 		while(!pos.empty()){
-			const auto member_type = read_type_identifier(pos);
+			const auto member_type = read_type_identifier2(pos);
 			const auto member_name = read_required_single_symbol(member_type.second);
 
 			string default_value;
@@ -46,12 +46,12 @@ namespace floyd_parser {
 				const auto constant_expr_pos = parse_expression_seq(seq_t(constant_expr_pos_s.first));
 				const auto constant_expr = constant_expr_pos.first;
 
-				const auto a = make_member_def("<" + member_type.first + ">", member_name.first, constant_expr_pos.first);
+				const auto a = make_member_def("<" + member_type.first.to_string() + ">", member_name.first, constant_expr_pos.first);
 				members.push_back(a);
 				pos = skip_whitespace(constant_expr_pos_s.second);
 			}
 			else{
-				const auto a = make_member_def("<" + member_type.first + ">", member_name.first, json_t());
+				const auto a = make_member_def("<" + member_type.first.to_string() + ">", member_name.first, json_t());
 				members.push_back(a);
 				pos = skip_whitespace(optional_default_value.second);
 			}

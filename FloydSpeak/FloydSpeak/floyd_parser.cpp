@@ -320,7 +320,7 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
 
-	const auto type_pos = read_type_identifier(seq_t(pos));
+	const auto type_pos = read_type_identifier2(seq_t(pos));
 	const auto identifier_pos = read_single_symbol(type_pos.second);
 	if(type_pos.second.empty() == false && identifier_pos.second.empty() == false){
 

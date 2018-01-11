@@ -89,14 +89,8 @@ namespace floyd_parser {
 
 
 	/*
-		See language reference
 		Skip leading whitespace, get string while type-char.
-	*/
-	std::pair<std::string, seq_t> read_type_identifier(const seq_t& s);
-
-
-
-	/*
+		See language reference
 		Validates that this is a legal string, with legal characters. Exception.
 		Does NOT make sure this a known type-identifier.
 		String must not be empty.
