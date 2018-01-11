@@ -296,13 +296,24 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int ( string a ) f ( string name ) { return 100 == 101 ; }xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[FUNCTION-DEFINITION]", "int ( string a ) f ( string name )" }, seq_t(" int ( string a ) f ( string name ) { return 100 == 101 ; }xyz") }	));
 }
 
-
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" print ( \"Hello, World!\" ) ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print ( \"Hello, World!\" )" }, seq_t(" print ( \"Hello, World!\" ) ;xyz") }	));
 }
-
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" print ( \"Hello, World!\" ) ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print ( \"Hello, World!\" )" }, seq_t(" print ( \"Hello, World!\" ) ;xyz") }	));
+}
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("print(3);xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print(3)" }, seq_t("print(3);xyz") }	));
+}
+
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" x = 10 ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[DEDUCED-BIND]", "x", "10" }, seq_t(" x = 10 ;xyz") }	));
+}
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" x = \"hello\" ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[DEDUCED-BIND]", "x", "\"hello\"" }, seq_t(" x = \"hello\" ;xyz") }	));
+}
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" x = f ( 3 ) == 2 ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[DEDUCED-BIND]", "x", "f ( 3 ) == 2" }, seq_t(" x = f ( 3 ) == 2 ;xyz") }	));
 }
 
 
