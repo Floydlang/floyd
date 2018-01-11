@@ -100,12 +100,6 @@ namespace {
 			vm2 = result.first;
 			const auto result_value = result.second;
 
-			//??? Should accept function defintion too! Make function definition at type of literal?
-			if(!result_value.is_literal()){
-				throw std::runtime_error("Cannot evaluate expression.");
-			}
-
-
 			if(result_value.is_literal() == false){
 				throw std::runtime_error("Cannot evaluate expression.");
 			}
@@ -114,7 +108,6 @@ namespace {
 			const auto source_type = result_value.get_literal().get_type();
 			if((dest_type == source_type) == false){
 				if(source_type.is_null()){
-					//	Workaround to allow calling functions without return value, like print().
 				}
 				else{
 					throw std::runtime_error("Types not compatible in bind.");
@@ -1578,17 +1571,16 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 }
 
 
-
 QUARK_UNIT_TESTQ("call_function()", "return from middle of function"){
 	auto r = run_global(
 		"string f(){"
-		"	int dummy = print(\"A\");"
+		"	print(\"A\");"
 		"	return \"B\";"
-		"	int dummy = print(\"C\");"
+		"	print(\"C\");"
 		"	return \"D\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x);"
+		"print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
@@ -1597,15 +1589,15 @@ QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
 	auto r = run_global(
 		"string f(){"
 		"	if(true){"
-		"		int dummy = print(\"A\");"
+		"		print(\"A\");"
 		"		return \"B\";"
-		"		int dummy = print(\"C\");"
+		"		print(\"C\");"
 		"	}"
-		"	int dummy = print(\"D\");"
+		"	print(\"D\");"
 		"	return \"E\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x);"
+		"print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
@@ -1614,15 +1606,15 @@ QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
 	auto r = run_global(
 		"string f(){"
 		"	for(e in 0...3){"
-		"		int dummy = print(\"A\");"
+		"		print(\"A\");"
 		"		return \"B\";"
-		"		int dummy2 = print(\"C\");"
+		"		print(\"C\");"
 		"	}"
-		"	int dummy = print(\"D\");"
+		"	print(\"D\");"
 		"	return \"E\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x);"
+		"print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
@@ -1633,15 +1625,15 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 	auto r = run_global(
 		"string f(){"
 		"	{"
-		"		int dummy = print(\"A\");"
+		"		print(\"A\");"
 		"		return \"B\";"
-		"		int dummy2 = print(\"C\");"
+		"		print(\"C\");"
 		"	}"
-		"	int dummy = print(\"D\");"
+		"	print(\"D\");"
 		"	return \"E\";"
 		"}"
 		"string x = f();"
-		"int dummy = print(x);"
+		"print(x);"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
 }
@@ -1682,7 +1674,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 QUARK_UNIT_TESTQ("run_global()", "Print Hello, world!"){
 	const auto r = run_global(
 		R"(
-			int result = print("Hello, World!");
+			print("Hello, World!");
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
@@ -1693,7 +1685,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes block!"
 	const auto r = run_global(
 		R"(
 			{
-				int result = print("Hello, World!");
+				print("Hello, World!");
 			}
 		)"
 	);
@@ -1704,7 +1696,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 	const auto r = run_global(
 		R"(
 			if(true){
-				int result = print("Hello, World!");
+				print("Hello, World!");
 			}
 		)"
 	);
@@ -1723,7 +1715,7 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 			int a = get_time_of_day();
 			int b = get_time_of_day();
 			int c = b - a;
-			int result = print("Delta time:" + to_string(a));
+			print("Delta time:" + to_string(a));
 		)"
 	);
 }
@@ -1746,17 +1738,16 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
-//			int dummy_a = print("A:" + to_string(x));
 	const auto r = run_global(
 		R"(
 			int x = 3;
-			int dummy_b = print("B:" + to_string(x));
+			print("B:" + to_string(x));
 			{
-				int dummy_c = print("C:" + to_string(x));
+				print("C:" + to_string(x));
 				int x = 4;
-				int dummy_d = print("D:" + to_string(x));
+				print("D:" + to_string(x));
 			}
-			int dummy_e = print("E:" + to_string(x));
+			print("E:" + to_string(x));
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
@@ -1771,9 +1762,9 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
 	const auto r = run_global(
 		R"(
 			if(true){
-				int dummy_1 = print("Hello!");
+				print("Hello!");
 			}
-			int dummy_2 = print("Goodbye!");
+			print("Goodbye!");
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!", "Goodbye!" }));
@@ -1782,9 +1773,9 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 	const auto r = run_global(
 		R"(
 			if(false){
-				int dummy_1 = print("Hello!");
+				print("Hello!");
 			}
-			int dummy_2 = print("Goodbye!");
+			print("Goodbye!");
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
@@ -1796,10 +1787,10 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 	const auto r = run_global(
 		R"(
 			if(true){
-				int dummy_1 = print("Hello!");
+				print("Hello!");
 			}
 			else{
-				int dummy_2 = print("Goodbye!");
+				print("Goodbye!");
 			}
 		)"
 	);
@@ -1809,10 +1800,10 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 	const auto r = run_global(
 		R"(
 			if(false){
-				int dummy_1 = print("Hello!");
+				print("Hello!");
 			}
 			else{
-				int dummy_2 = print("Goodbye!");
+				print("Goodbye!");
 			}
 		)"
 	);
@@ -1826,16 +1817,16 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	const auto r = run_global(
 		R"(
 			if(1 == 1){
-				int dummy = print("one");
+				print("one");
 			}
 			else if(2 == 0){
-				int dummy = print("two");
+				print("two");
 			}
 			else if(3 == 0){
-				int dummy = print("three");
+				print("three");
 			}
 			else{
-				int dummy = print("four");
+				print("four");
 			}
 		)"
 	);
@@ -1846,16 +1837,16 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	const auto r = run_global(
 		R"(
 			if(1 == 0){
-				int dummy = print("one");
+				print("one");
 			}
 			else if(2 == 2){
-				int dummy = print("two");
+				print("two");
 			}
 			else if(3 == 0){
-				int dummy = print("three");
+				print("three");
 			}
 			else{
-				int dummy = print("four");
+				print("four");
 			}
 		)"
 	);
@@ -1866,16 +1857,16 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	const auto r = run_global(
 		R"(
 			if(1 == 0){
-				int dummy = print("one");
+				print("one");
 			}
 			else if(2 == 0){
-				int dummy = print("two");
+				print("two");
 			}
 			else if(3 == 3){
-				int dummy = print("three");
+				print("three");
 			}
 			else{
-				int dummy = print("four");
+				print("four");
 			}
 		)"
 	);
@@ -1886,16 +1877,16 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	const auto r = run_global(
 		R"(
 			if(1 == 0){
-				int dummy = print("one");
+				print("one");
 			}
 			else if(2 == 0){
-				int dummy = print("two");
+				print("two");
 			}
 			else if(3 == 0){
-				int dummy = print("three");
+				print("three");
 			}
 			else{
-				int dummy = print("four");
+				print("four");
 			}
 		)"
 	);
@@ -1912,7 +1903,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 	const auto r = run_global(
 		R"(
 			for (i in 0...2) {
-				int dummy = print("Iteration: " + to_string(i));
+				print("Iteration: " + to_string(i));
 			}
 		)"
 	);
@@ -1934,7 +1925,7 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 		"}"
 
 		"for (i in 0...10) {"
-		"	int dummy = print(fibonacci(i));"
+		"	print(fibonacci(i));"
 		"}"
 	);
 
