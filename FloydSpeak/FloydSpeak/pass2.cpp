@@ -344,17 +344,17 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 				]
 		*/
 		else if(type == "def-struct"){
-/*
+			QUARK_ASSERT(statement.get_array_size() == 2);
 			const auto struct_def = statement.get_array_n(1);
-			const auto name = struct_def.get_object_element("name");
-			const auto members = struct_def.get_object_element("members");
+			const auto name = struct_def.get_object_element("name").get_string();
+			const auto members = struct_def.get_object_element("members").get_array();
 
-			json_t struct_scope = make_scope_def();
-			struct_scope = store_object_member(struct_scope, "type", "struct");
-			struct_scope = store_object_member(struct_scope, "name", name);
-			struct_scope = store_object_member(struct_scope, "members", members);
-			scope2 = add_scope_type(scope2, struct_scope);
-*/
+			const auto memebers2 = conv_members(members);
+			const auto struct_type = floyd_basics::typeid_t::make_struct("??? need to generate ids");
+			const auto struct_def2 = struct_definition_t(struct_type, name, memebers2);
+
+			const auto s = define_struct_statement_t{ struct_def2 };
+			statements2.push_back(make_shared<statement_t>(make__define_struct_statement(s)));
 		}
 
 		//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]

@@ -21,38 +21,68 @@ using std::make_shared;
 namespace floyd_ast {
 
 
+
+
+	//////////////////////////////////////////////////		struct_definition_t
+
+	bool struct_definition_t::check_invariant() const{
+		QUARK_ASSERT(_struct_type._base_type != floyd_basics::base_type::k_null && _struct_type.check_invariant());
+
+		for(const auto m: _members){
+			QUARK_ASSERT(m.check_invariant());
+		}
+		return true;
+	}
+
+	bool struct_definition_t::operator==(const struct_definition_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return _struct_type == other._struct_type && _members == other._members;
+	}
+
+	json_t struct_definition_t::to_json() const {
+//		floyd_basics::typeid_t function_type = get_function_type(*this);
+		return json_t::make_array({
+			"struct-def",
+			members_to_json(_members)
+		});
+	}
+
+
+
+
+
+
 	//////////////////////////////////////////////////		struct_instance_t
 
-		bool struct_instance_t::check_invariant() const{
-			QUARK_ASSERT(_struct_type._base_type != floyd_basics::base_type::k_null && _struct_type.check_invariant());
 
-//			QUARK_ASSERT(_struct_type.get_struct_def()->_members.size() == _member_values.size());
+	bool struct_instance_t::check_invariant() const{
+//		QUARK_ASSERT(_struct_type._base_type != floyd_basics::base_type::k_null && _struct_type.check_invariant());
 
-			for(const auto m: _member_values){
-				QUARK_ASSERT(m.second.check_invariant());
+		QUARK_ASSERT(_def.check_invariant());
 
-//				const member_t& def_member = find_struct_member_throw(__def, m.first);
-
-//				QUARK_ASSERT(m.second.get_type().to_string() == def_member._type->to_string());
-			}
-			return true;
+		for(const auto m: _member_values){
+			QUARK_ASSERT(m.check_invariant());
 		}
+		return true;
+	}
 
-		bool struct_instance_t::operator==(const struct_instance_t& other){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(other.check_invariant());
+	bool struct_instance_t::operator==(const struct_instance_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
 
-			return _struct_type == other._struct_type && _member_values == other._member_values;
+		return _def == other._def && _member_values == other._member_values;
+	}
+
+
+	std::string to_preview(const struct_instance_t& instance){
+		string r;
+		for(const auto m: instance._member_values){
+			r = r + m.plain_value_to_string();
 		}
-
-
-		std::string to_preview(const struct_instance_t& instance){
-			string r;
-			for(const auto m: instance._member_values){
-				r = r + (string("<") + m.second.get_type().to_string() + ">" + m.first + "=" + m.second.plain_value_to_string());
-			}
-			return string("{") + r + "}";
-		}
+		return string("{") + r + "}";
+	}
 
 
 
@@ -68,7 +98,7 @@ namespace floyd_ast {
 			return true;
 		}
 
-		bool vector_instance_t::operator==(const vector_instance_t& other){
+		bool vector_instance_t::operator==(const vector_instance_t& other) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
@@ -230,7 +260,7 @@ int value_t::compare_value_true_deep(const struct_instance_t& left, const struct
 	auto b_it = right._member_values.begin();
 
 	while(a_it !=left._member_values.end()){
-		int diff = compare_value_true_deep(a_it->second, b_it->second);
+		int diff = compare_value_true_deep(*a_it, *b_it);
 		if(diff != 0){
 			return diff;
 		}
@@ -550,7 +580,7 @@ json_t value_to_json(const value_t& v){
 		std::map<string, json_t> result;
 /*
 ???
-		for(const auto member: value->_struct_type.get_struct_def()->_members){
+		for(const auto member: value->_struct_type.get_def()->_members){
 			const auto member_name = member._name;
 			const auto member_value = value->_member_values[member_name];
 			result[member_name] = value_to_json(member_value);

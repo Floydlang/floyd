@@ -25,31 +25,59 @@ namespace floyd_ast {
 	struct interpreter_t;
 
 
+
+
+
+
+	//////////////////////////////////////////////////		struct_definition_t
+
+
+	struct struct_definition_t {
+		public: struct_definition_t(const floyd_basics::typeid_t& struct_type, const std::string& name, const std::vector<member_t>& members) :
+			_struct_type(struct_type),
+			_name(name),
+			_members(members)
+		{
+			QUARK_ASSERT(struct_type.check_invariant());
+			QUARK_ASSERT(name.size() > 0);
+
+			QUARK_ASSERT(check_invariant());
+		}
+		public: bool check_invariant() const;
+		public: bool operator==(const struct_definition_t& other) const;
+
+		public: json_t to_json() const;
+
+
+		public: floyd_basics::typeid_t _struct_type;
+		public: std::string _name;
+		public: std::vector<member_t> _members;
+	};
+
+
 	//////////////////////////////////////////////////		struct_instance_t
 
 	/*
 		An instance of a struct-type = a value of this struct.
-		Each memeber is initialized.
-
-		### Merge into environment_t to make a generic construct.
 	*/
 	struct struct_instance_t {
-		public: struct_instance_t(const floyd_basics::typeid_t& struct_type, const std::map<std::string, value_t>& member_values) :
-			_struct_type(struct_type),
+		public: struct_instance_t(const struct_definition_t& def, const std::vector<value_t>& member_values) :
+			_def(def),
 			_member_values(member_values)
 		{
-			QUARK_ASSERT(struct_type.check_invariant());
+			QUARK_ASSERT(_def.check_invariant());
+
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bool check_invariant() const;
-		public: bool operator==(const struct_instance_t& other);
+		public: bool operator==(const struct_instance_t& other) const;
 
 
 		//	??? Remove this pointer at later time, when we statically track the type of structs OK. We alreay know this via __def!
-		public: floyd_basics::typeid_t _struct_type;
+		public: struct_definition_t _def;
 
 		//	??? Use ::vector<value_t> _member_values and index of member to find the value.
-		public: std::map<std::string, value_t> _member_values;
+		public: std::vector<value_t> _member_values;
 	};
 
 	std::string to_preview(const struct_instance_t& instance);
@@ -60,7 +88,7 @@ namespace floyd_ast {
 
 	struct vector_instance_t {
 		public: bool check_invariant() const;
-		public: bool operator==(const vector_instance_t& other);
+		public: bool operator==(const vector_instance_t& other) const;
 
 		//	??? Remove this at later time, when we statically track the type of structs OK.
 		floyd_basics::typeid_t _vector_type;
@@ -260,7 +288,8 @@ namespace floyd_ast {
 		}
 
 		public: value_t(const std::shared_ptr<struct_instance_t>& instance) :
-			_typeid(instance->_struct_type),
+			//??? Use exact type of struct!
+		_typeid(floyd_basics::typeid_t::make_struct("??? Use exact type of struct")),
 			_struct(instance)
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
@@ -592,6 +621,10 @@ namespace floyd_ast {
 
 
 
+	inline value_t make_struct_value(const struct_definition_t& def){
+		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, {}});
+		return value_t(f);
+	}
 	inline value_t make_function_value(const function_definition_t& def){
 		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});
 		return value_t(f);

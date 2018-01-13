@@ -286,6 +286,44 @@ namespace floyd_ast {
 			return dynamic_cast<const conditional_expr_t*>(_expr.get());
 		}
 
+/*
+		////////////////////////////////			make_struct_definition()
+
+
+		public: struct struct_definition_expr_t : public expr_base_t {
+			public: virtual ~struct_definition_expr_t(){};
+
+			public: struct_definition_expr_t(const struct_definition_t & def)
+			:
+				_def(def)
+			{
+			}
+
+			public: virtual floyd_basics::typeid_t get_result_type() const{
+				return _def._struct_type;
+			}
+
+			public: virtual json_t expr_base__to_json() const {
+				return _def.to_json();
+			}
+
+
+			const struct_definition_t _def;
+		};
+
+		public: static expression_t make_struct_definition(const struct_definition_expr_t& def){
+			return expression_t{
+				floyd_basics::expression_type::k_define_struct,
+				std::make_shared<struct_definition_expr_t>(
+					struct_definition_expr_t{ struct_definition_expr_t(def) }
+				)
+			};
+		}
+
+		public: const struct_definition_expr_t* get_struct_definition() const {
+			return dynamic_cast<const struct_definition_expr_t*>(_expr.get());
+		}
+*/
 
 		////////////////////////////////			make_function_call()
 
@@ -613,6 +651,10 @@ namespace floyd_ast {
 			&& lhs._result == rhs._result;
 	}
 
+/*	inline bool operator==(const expression_t::struct_definition_expr_t& lhs, const expression_t::struct_definition_expr_t& rhs){
+		return lhs._def == rhs._def;
+	}
+*/
 	inline bool operator==(const expression_t::function_definition_expr_t& lhs, const expression_t::function_definition_expr_t& rhs){
 		return lhs._def == rhs._def;
 	}

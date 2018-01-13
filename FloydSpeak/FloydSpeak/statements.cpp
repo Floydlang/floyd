@@ -34,6 +34,10 @@ namespace floyd_ast {
 		return statement_t(return_statement_t{ expression });
 	}
 
+	statement_t make__define_struct_statement(const define_struct_statement_t& value){
+		return statement_t(value);
+	}
+
 	statement_t make__bind_statement(const std::string& new_variable_name, const floyd_basics::typeid_t& bindtype, const expression_t& expression){
 		return statement_t(bind_statement_t{ new_variable_name, bindtype, expression });
 	}
@@ -90,6 +94,16 @@ namespace floyd_ast {
 	bool statement_t::check_invariant() const {
 		if(_return != nullptr){
 			QUARK_ASSERT(_return != nullptr);
+			QUARK_ASSERT(_def_struct == nullptr);
+			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_block == nullptr);
+			QUARK_ASSERT(_if == nullptr);
+			QUARK_ASSERT(_for == nullptr);
+			QUARK_ASSERT(_expression == nullptr);
+		}
+		else if(_def_struct != nullptr){
+			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_def_struct != nullptr);
 			QUARK_ASSERT(_bind == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
@@ -98,6 +112,7 @@ namespace floyd_ast {
 		}
 		else if(_bind){
 			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_def_struct == nullptr);
 			QUARK_ASSERT(_bind != nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
@@ -106,6 +121,7 @@ namespace floyd_ast {
 		}
 		else if(_block){
 			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_def_struct == nullptr);
 			QUARK_ASSERT(_bind == nullptr);
 			QUARK_ASSERT(_block != nullptr);
 			QUARK_ASSERT(_if == nullptr);
@@ -114,6 +130,7 @@ namespace floyd_ast {
 		}
 		else if(_if){
 			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_def_struct == nullptr);
 			QUARK_ASSERT(_bind == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if != nullptr);
@@ -122,6 +139,7 @@ namespace floyd_ast {
 		}
 		else if(_for){
 			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_def_struct == nullptr);
 			QUARK_ASSERT(_bind == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
@@ -130,6 +148,7 @@ namespace floyd_ast {
 		}
 		else if(_expression){
 			QUARK_ASSERT(_return == nullptr);
+			QUARK_ASSERT(_def_struct == nullptr);
 			QUARK_ASSERT(_bind == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
@@ -158,6 +177,12 @@ namespace floyd_ast {
 			return json_t::make_array({
 				json_t("return"),
 				expression_to_json(e._return->_expression)
+			});
+		}
+		else if(e._def_struct){
+			return json_t::make_array({
+				json_t("def-struct"),
+//				expression_to_json(e._def_struct)
 			});
 		}
 		else if(e._bind){

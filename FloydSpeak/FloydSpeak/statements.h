@@ -57,6 +57,16 @@ namespace floyd_ast {
 
 		expression_t _expression;
 	};
+	//////////////////////////////////////		define_struct_statement_t
+
+
+	struct define_struct_statement_t {
+		bool operator==(const define_struct_statement_t& other) const {
+			return _def == other._def;
+		}
+
+		struct_definition_t _def;
+	};
 
 
 	//////////////////////////////////////		bind_statement_t
@@ -190,6 +200,10 @@ namespace floyd_ast {
 			_return(std::make_shared<return_statement_t>(value))
 		{
 		}
+        public: statement_t(const define_struct_statement_t& value) :
+			_def_struct(std::make_shared<define_struct_statement_t>(value))
+		{
+		}
         public: statement_t(const bind_statement_t& value) :
 			_bind(std::make_shared<bind_statement_t>(value))
 		{
@@ -233,6 +247,7 @@ namespace floyd_ast {
 
 		//	Only *one* of these are used for each instance.
 		public: std::shared_ptr<return_statement_t> _return;
+		public: std::shared_ptr<define_struct_statement_t> _def_struct;
 		public: std::shared_ptr<bind_statement_t> _bind;
 		public: std::shared_ptr<block_statement_t> _block;
 		public: std::shared_ptr<ifelse_statement_t> _if;
@@ -247,6 +262,7 @@ namespace floyd_ast {
 
 	statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
+	statement_t make__define_struct_statement(const define_struct_statement_t& value);
 	statement_t make__bind_statement(const std::string& new_variable_name, const floyd_basics::typeid_t& bindtype, const expression_t& expression);
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);
 	statement_t make__ifelse_statement(

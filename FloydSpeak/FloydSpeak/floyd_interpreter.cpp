@@ -136,6 +136,31 @@ namespace {
 
 			return { vm2, make_shared<value_t>(result_value.get_literal()) };
 		}
+
+		else if(statement._def_struct){
+			const auto& s = statement._def_struct;
+
+			const auto name = s->_def._name;
+
+//			vm2._call_stack.back()->_values[name] = result_value.get_literal();
+
+
+//??? Make value_t support struct_type, not just struct instance.
+/*
+			if(vm2._call_stack.back()->_values.count(name) != 0){
+				throw std::runtime_error("Local value already exists.");
+			}
+
+			const auto source_type = result_value.get_literal().get_type();
+			if(!(dest_type == source_type)){
+				throw std::runtime_error("Types not compatible in bind.");
+			}
+
+			vm2._call_stack.back()->_values[name] = result_value.get_literal();
+*/
+			return { vm2, {}};
+		}
+
 		else if(statement._if){
 			const auto& s = statement._if;
 			const auto condition_result = evaluate_expression(vm2, s->_condition);
@@ -176,7 +201,7 @@ namespace {
 
 			return { vm2, {} };
 		}
-		if(statement._expression){
+		else if(statement._expression){
 			const auto& s = statement._expression;
 
 			const auto result = evaluate_expression(vm2, s->_expression);
@@ -339,7 +364,15 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
 			vm2 = parent_expr.first;
 			const auto struct_instance = parent_expr.second.get_literal().get_struct();
-			const value_t value = struct_instance->_member_values[expr->_member_name];
+
+			int index = 0;
+			while(index < struct_instance->_def._members.size() && struct_instance->_def._members[index]._name != expr->_member_name){
+				index++;
+			}
+			if(index == struct_instance->_def._members.size()){
+				throw std::runtime_error("Unknown struct member \"" + expr->_member_name + "\".");
+			}
+			const value_t value = struct_instance->_member_values[index];
 			return { vm2, expression_t::make_literal(value)};
 		}
 		else{
@@ -355,6 +388,16 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	else if(op == floyd_basics::expression_type::k_call){
 		return evaluate_call_expression(vm2, e);
 	}
+/*
+??? define struct should be statement, not an expression!
+	else if(op == floyd_basics::expression_type::k_define_struct){
+		const auto expr = e.get_struct_definition();
+
+//	Make a local variable my_struct = constructor function for struct
+
+		return {vm2, expression_t::make_literal(make_struct_value(expr->_def))};
+	}
+*/
 	else if(op == floyd_basics::expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
 		return {vm2, expression_t::make_literal(make_function_value(expr->_def))};
@@ -593,7 +636,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const auto left = left_constant.get_struct();
 			const auto right = right_constant.get_struct();
 
-			if(!(left->_struct_type == right->_struct_type)){
+			if(!(left->_def._struct_type == right->_def._struct_type)){
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
@@ -851,7 +894,8 @@ enum host_functions {
 	k_print = 1,
 	k_assert,
 	k_to_string,
-	k_get_time_of_day_ms
+	k_get_time_of_day_ms,
+	k_struct_constructor
 };
 
 //	Records all output to interpreter
