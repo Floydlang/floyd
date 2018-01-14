@@ -62,9 +62,10 @@ namespace floyd {
 
 	struct define_struct_statement_t {
 		bool operator==(const define_struct_statement_t& other) const {
-			return _def == other._def;
+			return _name == other._name && _def == other._def;
 		}
 
+		std::string _name;
 		struct_definition_t _def;
 	};
 

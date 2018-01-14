@@ -184,12 +184,13 @@ namespace floyd {
 		k_float,
 		k_string,
 
+		k_typeid,
+
 		k_struct,
-		k_struct_type,
 		k_vector,
 		k_function,
 
-		k_custom_type
+		k_unknown_identifier
 	};
 
 	std::string base_type_to_string(const base_type t);
@@ -199,30 +200,35 @@ namespace floyd {
 	//////////////////////////////////////		typeid_t
 
 	/*
-		in-code						base			more		notes
+		in-code						base					more									notes
 		================================================================================================================
 		bool						k_bool
 		int							k_int
 		float						k_float
 		string						k_string
 
-		struct						k_struct		"coord_t/8000"
+									k_typeid
+		struct						k_struct				"coord_t/8000", struct_definition_t
+		struct						k_struct_type			"coord_t/8000"
 
-		[int]						k_vector		typeid_t(k_int)
+		[int]						k_vector				typeid_t(k_int)
 
 		int ()
-		int (float, [string])		k_function		k_int, k_float, k_vector
+		int (float, [string])		k_function				k_int, k_float, k_vector
 
-		randomize_player			k_custom_type	"randomize_player"
+		randomize_player			k_unknown_identifier	"randomize_player"
 
-		- When parsing we find identifiers that we don't know what they mean. Stored as k_custom_type with identifier
-
+		- When parsing we find identifiers that we don't know what they mean. Stored as k_unknown_identifier with identifier
 	*/
 
 
 	struct struct_definition_t;
 
 	struct typeid_t {
+
+		public: bool is_null() const {
+			return _base_type == floyd::base_type::k_null;
+		}
 
 		public: static typeid_t make_null(){
 			return { floyd::base_type::k_null, {}, {}, {}, {} };
@@ -244,20 +250,12 @@ namespace floyd {
 			return { floyd::base_type::k_string, {}, {}, {}, {} };
 		}
 
-		public: static typeid_t make_custom_type(const std::string& s){
-			return { floyd::base_type::k_custom_type, {}, {}, s, {} };
+		public: static typeid_t make_typeid(const typeid_t& type){
+			return { floyd::base_type::k_typeid, { type }, {}, {}, {} };
 		}
 
-		public: bool is_null() const {
-			return _base_type == floyd::base_type::k_null;
-		}
-
-		public: static typeid_t make_struct(const std::string& unique_type_id){
-			return { floyd::base_type::k_struct, {}, unique_type_id, {}, {} };
-		}
-
-		public: static typeid_t make_struct_type(const struct_definition_t& def){
-			return { floyd::base_type::k_struct, {}, {}, {}, std::make_shared<struct_definition_t>(def) };
+		public: static typeid_t make_struct(const std::shared_ptr<struct_definition_t>& def){
+			return { floyd::base_type::k_struct, {}, {}, {}, def };
 		}
 
 		public: static typeid_t make_vector(const typeid_t& element_type){
@@ -271,6 +269,12 @@ namespace floyd {
 			return { floyd::base_type::k_function, parts, {}, {}, {} };
 		}
 
+		public: static typeid_t make_unknown_identifier(const std::string& s){
+			return { floyd::base_type::k_unknown_identifier, {}, {}, s, {} };
+		}
+
+
+
 		public: bool operator==(const typeid_t& other) const{
 			return _base_type == other._base_type && _parts == other._parts && _unique_type_id == other._unique_type_id;
 		}
@@ -279,6 +283,9 @@ namespace floyd {
 
 		public: void swap(typeid_t& other);
 
+
+		//	Supports non-lossy round trip between to_string() and from_string(). ??? make it so and test!
+		//	Compatible with Floyd sources.
 		public: std::string to_string() const;
 		public: static typeid_t from_string(const std::string& s);
 
@@ -295,9 +302,10 @@ namespace floyd {
 		public: std::vector<typeid_t> _parts;
 		public: std::string _unique_type_id;
 
-		//	This is used it overrides _base_type (which will be k_custom_type).
-		public: std::string _unresolved_identifier;
+		//	Used for k_unknown_identifier.
+		public: std::string _unknown_identifier;
 
+		//??? Add path to environment when struct was defined = make it unqiue.
 		public: std::shared_ptr<struct_definition_t> _struct_def;
 	};
 
@@ -343,14 +351,11 @@ namespace floyd {
 
 
 	struct struct_definition_t {
-		public: struct_definition_t(const floyd::typeid_t& struct_type, const std::string& name, const std::vector<member_t>& members) :
-			_struct_type(struct_type),
+		public: struct_definition_t(const std::string& name, const std::vector<member_t>& members) :
 			_name(name),
 			_members(members)
 		{
-			QUARK_ASSERT(struct_type.check_invariant());
 			QUARK_ASSERT(name.size() > 0);
-
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bool check_invariant() const;
@@ -359,7 +364,6 @@ namespace floyd {
 		public: json_t to_json() const;
 
 
-		public: floyd::typeid_t _struct_type;
 		public: std::string _name;
 		public: std::vector<member_t> _members;
 	};

@@ -161,7 +161,6 @@ namespace floyd {
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
@@ -171,7 +170,6 @@ namespace floyd {
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
@@ -181,7 +179,6 @@ namespace floyd {
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
@@ -191,7 +188,6 @@ namespace floyd {
 //				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
@@ -201,34 +197,29 @@ namespace floyd {
 				QUARK_ASSERT(_float == 0.0f);
 //				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
 
+			else if(base_type == base_type::k_typeid){
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
+			}
 			else if(base_type == base_type::k_struct){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct != nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 
 				QUARK_ASSERT(_struct && _struct->check_invariant());
-			}
-			else if(base_type == base_type::k_struct_type){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_struct != nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-
-				QUARK_ASSERT(_struct_type && _struct_type->check_invariant());
 			}
 			else if(base_type == base_type::k_vector){
 				QUARK_ASSERT(_bool == false);
@@ -236,7 +227,6 @@ namespace floyd {
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector != nullptr);
 				QUARK_ASSERT(_function == nullptr);
 
@@ -248,11 +238,14 @@ namespace floyd {
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function != nullptr);
 
 				QUARK_ASSERT(_function && _function->check_invariant());
+			}
+			else if(base_type == base_type::k_unknown_identifier){
+				//	 Cannot have a value of unknown type.
+				QUARK_ASSERT(false);
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -303,21 +296,20 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(const std::shared_ptr<struct_instance_t>& instance) :
-			//??? Use exact type of struct!
-			_typeid(typeid_t::make_struct("??? Use exact type of struct")),
-			_struct(instance)
+		public: value_t(const typeid_t& type) :
+			_typeid(typeid_t::make_typeid(type))
 		{
-			QUARK_ASSERT(instance && instance->check_invariant());
+			QUARK_ASSERT(type.check_invariant());
 
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(const std::shared_ptr<struct_definition_t>& def) :
-			_typeid(typeid_t::make_struct_type(*def)),
-			_struct_type(def)
+		public: value_t(const typeid_t& struct_type, const std::shared_ptr<struct_instance_t>& instance) :
+			_typeid(struct_type),
+			_struct(instance)
 		{
-			QUARK_ASSERT(def && def->check_invariant());
+			QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
+			QUARK_ASSERT(instance && instance->check_invariant());
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -347,7 +339,6 @@ namespace floyd {
 			_float(other._float),
 			_string(other._string),
 			_struct(other._struct),
-			_struct_type(other._struct_type),
 			_vector(other._vector),
 			_function(other._function)
 		{
@@ -396,11 +387,11 @@ namespace floyd {
 				return _string == other._string;
 			}
 
+			else if(base_type == base_type::k_typeid){
+				return true;
+			}
 			else if(base_type == base_type::k_struct){
 				return *_struct == *other._struct;
-			}
-			else if(base_type == base_type::k_struct_type){
-				return *_struct_type == *other._struct_type;
 			}
 			else if(base_type == base_type::k_vector){
 				return *_vector == *other._vector;
@@ -460,18 +451,22 @@ namespace floyd {
 				return _string;
 			}
 
+			else if(base_type == base_type::k_typeid){
+				return "typeid:" + _typeid.to_string();
+//				return to_preview(*_struct_type);
+			}
 			else if(base_type == base_type::k_struct){
 				return to_preview(*_struct);
-			}
-			else if(base_type == base_type::k_struct_type){
-				return "struct-type -- ??? add code here";
-//				return to_preview(*_struct_type);
 			}
 			else if(base_type == base_type::k_vector){
 				return to_preview(*_vector);
 			}
 			else if(base_type == base_type::k_function){
 				return json_to_compact_string(typeid_to_json(_typeid));
+			}
+			else if(base_type == base_type::k_unknown_identifier){
+				QUARK_ASSERT(false);
+				return "";
 			}
 
 			else{
@@ -538,16 +533,16 @@ namespace floyd {
 			return _typeid.get_base_type() == base_type::k_string;
 		}
 
+		public: bool is_typeid() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_typeid;
+		}
+
 		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid.get_base_type() == base_type::k_struct;
-		}
-
-		public: bool is_struct_type() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_struct_type;
 		}
 
 		public: bool is_vector() const {
@@ -598,6 +593,15 @@ namespace floyd {
 			return _string;
 		}
 
+		public: typeid_t get_typeid() const{
+			QUARK_ASSERT(check_invariant());
+			if(!is_typeid()){
+				throw std::runtime_error("Type mismatch!");
+			}
+
+			return _typeid;
+		}
+
 		public: std::shared_ptr<struct_instance_t> get_struct() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_struct()){
@@ -605,15 +609,6 @@ namespace floyd {
 			}
 
 			return _struct;
-		}
-
-		public: std::shared_ptr<struct_definition_t> get_struct_type() const{
-			QUARK_ASSERT(check_invariant());
-			if(!is_struct_type()){
-				throw std::runtime_error("Type mismatch!");
-			}
-
-			return _struct_type;
 		}
 
 		public: std::shared_ptr<vector_instance_t> get_vector() const{
@@ -645,7 +640,6 @@ namespace floyd {
 			std::swap(_float, other._float);
 			std::swap(_string, other._string);
 			std::swap(_struct, other._struct);
-			std::swap(_struct_type, other._struct_type);
 			std::swap(_vector, other._vector);
 			std::swap(_function, other._function);
 
@@ -665,19 +659,17 @@ namespace floyd {
 		private: float _float = 0.0f;
 		private: std::string _string = "";
 		private: std::shared_ptr<struct_instance_t> _struct;
-		private: std::shared_ptr<struct_definition_t> _struct_type;
 		private: std::shared_ptr<vector_instance_t> _vector;
 		private: std::shared_ptr<const function_instance_t> _function;
 	};
 
 
-
-	inline value_t make_struct_value(const struct_definition_t& def){
+	inline value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def){
 		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, {}});
-		return value_t(f);
+		return value_t(struct_type, f);
 	}
-	inline value_t make_struct_type(const struct_definition_t& def){
-		return value_t(std::make_shared<struct_definition_t>(def));
+	inline value_t make_typeid_value(const typeid_t& type_id){
+		return value_t(type_id);
 	}
 	inline value_t make_function_value(const function_definition_t& def){
 		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});

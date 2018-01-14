@@ -275,12 +275,6 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 
 
 
-
-
-
-
-//??? Fix resolve_base_type_name(). Also make to/from JSON.
-
 std::pair<typeid_t, seq_t> read_basic_type(const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 
@@ -304,7 +298,7 @@ std::pair<typeid_t, seq_t> read_basic_type(const seq_t& s){
 		return { typeid_t::make_string(), pos1.second };
 	}
 	else{
-		return { typeid_t::make_custom_type(pos1.first), pos1.second };
+		return { typeid_t::make_unknown_identifier(pos1.first), pos1.second };
 	}
 }
 
@@ -419,7 +413,7 @@ QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
 	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("string")).first == typeid_t::make_string());
 }
 QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("temp")) == pair<typeid_t, seq_t>{typeid_t::make_custom_type("temp"), seq_t("")}		));
+	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("temp")) == pair<typeid_t, seq_t>{typeid_t::make_unknown_identifier("temp"), seq_t("")}		));
 }
 QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
 	QUARK_TEST_VERIFY((		read_type_identifier2(seq_t("[int]")) == pair<typeid_t, seq_t>{typeid_t::make_vector(typeid_t::make_int()), seq_t("")}		));

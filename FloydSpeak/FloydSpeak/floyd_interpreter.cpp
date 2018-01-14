@@ -141,23 +141,8 @@ namespace {
 			const auto& s = statement._def_struct;
 
 			const auto name = s->_def._name;
-
-//			vm2._call_stack.back()->_values[name] = result_value.get_literal();
-
-
-//??? Make value_t support struct_type, not just struct instance.
-/*
-			if(vm2._call_stack.back()->_values.count(name) != 0){
-				throw std::runtime_error("Local value already exists.");
-			}
-
-			const auto source_type = result_value.get_literal().get_type();
-			if(!(dest_type == source_type)){
-				throw std::runtime_error("Types not compatible in bind.");
-			}
-
-			vm2._call_stack.back()->_values[name] = result_value.get_literal();
-*/
+			const auto struct_typeid = typeid_t::make_struct(std::make_shared<struct_definition_t>(s->_def));
+			vm2._call_stack.back()->_values[name] = make_typeid_value(struct_typeid);
 			return { vm2, {}};
 		}
 
@@ -631,12 +616,14 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				QUARK_ASSERT(false);
 			}
 		}
+
 		//	struct
 		else if(left_constant.is_struct() && right_constant.is_struct()){
 			const auto left = left_constant.get_struct();
 			const auto right = right_constant.get_struct();
 
-			if(!(left->_def._struct_type == right->_def._struct_type)){
+			//	Structs mue be exactly the same type to match.
+			if(left_constant.get_typeid() == right_constant.get_typeid()){
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
@@ -669,6 +656,9 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		}
 
 		else if(left_constant.is_vector() && right_constant.is_vector()){
+			QUARK_ASSERT(false);
+		}
+		else if(left_constant.is_function() && right_constant.is_function()){
 			QUARK_ASSERT(false);
 		}
 		else{
