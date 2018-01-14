@@ -78,7 +78,7 @@ enum class eoperator_precedence {
 
 
 
-///////////////////////////////////			eoperator_precedence
+///////////////////////////////////			eoperation
 
 
 /*
@@ -133,6 +133,9 @@ enum class eoperation {
 
 	//	-a
 	k_1_unary_minus
+
+
+//	k_0_identifier
 };
 
 
@@ -183,6 +186,15 @@ struct constant_value_t {
 	int _int = 0;
 	float _float = 0.0f;
 	std::string _string;
+};
+
+
+struct expr_t {
+	eoperation _op;
+	std::vector<expr_t> _exprs;
+
+	std::shared_ptr<constant_value_t> _constant;
+	std::string _identifier;
 };
 
 
