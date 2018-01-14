@@ -444,7 +444,7 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _members == other._members;
+		return _name == other._name && _members == other._members;
 	}
 
 	json_t struct_definition_t::to_json() const {

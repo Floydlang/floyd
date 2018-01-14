@@ -448,8 +448,20 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	const auto right_expr = evaluate_expression(vm2, *simple2_expr->_right);
 	vm2 = right_expr.first;
 
+
 	//	Both left and right are constants, replace the math_operation with a constant!
-	if(left_expr.second.is_literal() && right_expr.second.is_literal()){
+	if(
+		left_expr.second.is_literal()
+		&& right_expr.second.is_literal()
+	)
+	{
+
+		if(!(left_expr.second.get_result_type() == right_expr.second.get_result_type())){
+			throw std::runtime_error("Left and right expressions must be same type!");
+		}
+
+
+
 		//	Perform math operation on the two constants => new constant.
 		const auto left_constant = left_expr.second.get_literal();
 		const auto right_constant = right_expr.second.get_literal();
@@ -2153,6 +2165,54 @@ QUARK_UNIT_TESTQ("run_main()", "return struct from function"){
 }
 
 
+
+
+QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		print(color(1, 2, 3) == color(1, 2, 3));
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		print(color(9, 2, 3) == color(1, 2, 3));
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"false"		}	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
+	try {
+		const auto vm = run_global(R"(
+			struct color { int red; int green; int blue;}
+			struct file { int id;}
+			print(color(1, 2, 3) == file(404));
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+/*
+
+QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		print(color(1, 2, 3) < color(1, 2, 3));
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"false"		}	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		print(color(1, 2, 3) < color(1, 4, 3));
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
+}
+*/
 
 }	//	floyd
 

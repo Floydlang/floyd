@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "json_support.h"
+#include "utils.h"
 
 
 namespace floyd {
@@ -276,7 +277,12 @@ namespace floyd {
 
 
 		public: bool operator==(const typeid_t& other) const{
-			return _base_type == other._base_type && _parts == other._parts && _unique_type_id == other._unique_type_id;
+			return
+				_base_type == other._base_type
+				&& _parts == other._parts
+				&& _unique_type_id == other._unique_type_id
+				&& _unknown_identifier == other._unknown_identifier
+				&& compare_shared_values(_struct_def, other._struct_def);
 		}
 
 		public: bool check_invariant() const;

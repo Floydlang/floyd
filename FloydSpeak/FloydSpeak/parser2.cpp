@@ -627,6 +627,26 @@ QUARK_UNIT_TESTQ("parse_expression()", "function call, expression argument"){
 	)
 }
 
+
+
+QUARK_UNIT_TESTQ("parse_expression()", "function call"){
+
+
+
+	json_helper helper;
+	const auto result = parse_expression_template(helper, seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
+
+
+	QUARK_UT_VERIFY(
+		test__parse_expression(
+			"print(color(1, 2, 3) == file(404)) xxx",
+			"[\"call\", [\"@\", \"print\"], [[\"==\", [\"call\", [\"@\", \"color\"], [[\"k\", \"int\", 1], [\"k\", \"int\", 2], [\"k\", \"int\", 3]]], [\"call\", [\"@\", \"file\"], [[\"k\", \"int\", 404]]]]]]",
+			" xxx"
+		)
+	)
+}
+
+
 //////////////////////////////////			MEMBER ACCESS
 
 QUARK_UNIT_1("parse_expression()", "struct member access", test__parse_expression(
