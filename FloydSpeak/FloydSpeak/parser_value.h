@@ -347,6 +347,7 @@ namespace floyd {
 			_float(other._float),
 			_string(other._string),
 			_struct(other._struct),
+			_struct_type(other._struct_type),
 			_vector(other._vector),
 			_function(other._function)
 		{
@@ -397,6 +398,9 @@ namespace floyd {
 
 			else if(base_type == base_type::k_struct){
 				return *_struct == *other._struct;
+			}
+			else if(base_type == base_type::k_struct_type){
+				return *_struct_type == *other._struct_type;
 			}
 			else if(base_type == base_type::k_vector){
 				return *_vector == *other._vector;
@@ -459,6 +463,10 @@ namespace floyd {
 			else if(base_type == base_type::k_struct){
 				return to_preview(*_struct);
 			}
+			else if(base_type == base_type::k_struct_type){
+				return "struct-type -- ??? add code here";
+//				return to_preview(*_struct_type);
+			}
 			else if(base_type == base_type::k_vector){
 				return to_preview(*_vector);
 			}
@@ -483,6 +491,7 @@ namespace floyd {
 			if(is_null()){
 				return "<null>";
 			}
+			//	Special handling of strings, we want to wrap in "".
 			else if(is_string()){
 				std::string type_string = json_to_compact_string(typeid_to_json(_typeid));
 				return type_string + ": " + "\"" + plain_value_to_string() + "\"";
@@ -533,6 +542,12 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid.get_base_type() == base_type::k_struct;
+		}
+
+		public: bool is_struct_type() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_struct_type;
 		}
 
 		public: bool is_vector() const {
@@ -592,6 +607,15 @@ namespace floyd {
 			return _struct;
 		}
 
+		public: std::shared_ptr<struct_definition_t> get_struct_type() const{
+			QUARK_ASSERT(check_invariant());
+			if(!is_struct_type()){
+				throw std::runtime_error("Type mismatch!");
+			}
+
+			return _struct_type;
+		}
+
 		public: std::shared_ptr<vector_instance_t> get_vector() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_vector()){
@@ -621,6 +645,7 @@ namespace floyd {
 			std::swap(_float, other._float);
 			std::swap(_string, other._string);
 			std::swap(_struct, other._struct);
+			std::swap(_struct_type, other._struct_type);
 			std::swap(_vector, other._vector);
 			std::swap(_function, other._function);
 
@@ -650,6 +675,9 @@ namespace floyd {
 	inline value_t make_struct_value(const struct_definition_t& def){
 		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, {}});
 		return value_t(f);
+	}
+	inline value_t make_struct_type(const struct_definition_t& def){
+		return value_t(std::make_shared<struct_definition_t>(def));
 	}
 	inline value_t make_function_value(const function_definition_t& def){
 		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});
