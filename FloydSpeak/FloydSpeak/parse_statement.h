@@ -15,7 +15,7 @@
 struct json_t;
 struct seq_t;
 
-namespace floyd_parser {
+namespace floyd {
 
 
 
@@ -119,7 +119,7 @@ namespace floyd_parser {
 	//	x = expression:
 	std::pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s);
 
-}	//	floyd_parser
+}	//	floyd
 
 
 #endif /* parser_statement_hpp */

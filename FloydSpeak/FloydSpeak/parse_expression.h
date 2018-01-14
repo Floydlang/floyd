@@ -14,7 +14,7 @@
 struct seq_t;
 struct json_t;
 
-namespace floyd_parser {
+namespace floyd {
 
 	/*
 		Parses the expression string
@@ -56,7 +56,7 @@ namespace floyd_parser {
 
 	std::pair<json_t, seq_t> parse_expression_seq(const seq_t& expression);
 
-}	//	floyd_parser
+}	//	floyd
 
 
 #endif /* parse_expression_hpp */

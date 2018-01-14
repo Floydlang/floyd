@@ -15,40 +15,7 @@ using std::string;
 using std::make_shared;
 
 
-//??? rename to ast_value.cpp
-
-
-namespace floyd_ast {
-
-
-
-
-	//////////////////////////////////////////////////		struct_definition_t
-
-	bool struct_definition_t::check_invariant() const{
-		QUARK_ASSERT(_struct_type._base_type != floyd_basics::base_type::k_null && _struct_type.check_invariant());
-
-		for(const auto m: _members){
-			QUARK_ASSERT(m.check_invariant());
-		}
-		return true;
-	}
-
-	bool struct_definition_t::operator==(const struct_definition_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		return _struct_type == other._struct_type && _members == other._members;
-	}
-
-	json_t struct_definition_t::to_json() const {
-//		floyd_basics::typeid_t function_type = get_function_type(*this);
-		return json_t::make_array({
-			"struct-def",
-			members_to_json(_members)
-		});
-	}
-
+namespace floyd {
 
 
 
@@ -58,7 +25,7 @@ namespace floyd_ast {
 
 
 	bool struct_instance_t::check_invariant() const{
-//		QUARK_ASSERT(_struct_type._base_type != floyd_basics::base_type::k_null && _struct_type.check_invariant());
+//		QUARK_ASSERT(_struct_type._base_type != base_type::k_null && _struct_type.check_invariant());
 
 		QUARK_ASSERT(_def.check_invariant());
 
@@ -117,6 +84,49 @@ namespace floyd_ast {
 
 
 
+	//////////////////////////////////////		vector_def_t
+
+
+
+	vector_def_t vector_def_t::make2(
+		const floyd::typeid_t& element_type)
+	{
+		QUARK_ASSERT(element_type._base_type != floyd::base_type::k_null && element_type.check_invariant());
+
+		vector_def_t result;
+		result._element_type = element_type;
+
+		QUARK_ASSERT(result.check_invariant());
+		return result;
+	}
+
+	bool vector_def_t::check_invariant() const{
+		QUARK_ASSERT(_element_type._base_type != floyd::base_type::k_null && _element_type.check_invariant());
+		return true;
+	}
+
+	bool vector_def_t::operator==(const vector_def_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(!(_element_type == other._element_type)){
+			return false;
+		}
+		return true;
+	}
+
+	void trace(const vector_def_t& e){
+		QUARK_ASSERT(e.check_invariant());
+		QUARK_SCOPED_TRACE("vector_def_t");
+		QUARK_TRACE_SS("element_type: " << e._element_type.to_string());
+	}
+
+	json_t vector_def_to_json(const vector_def_t& s){
+		return {
+		};
+	}
+
+
 /*
 
 QUARK_UNIT_TESTQ("host_function_t", "null"){
@@ -147,7 +157,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	function_definition_t::function_definition_t(
 		const std::vector<member_t>& args,
 		const std::vector<std::shared_ptr<statement_t>> statements,
-		const floyd_basics::typeid_t& return_type
+		const typeid_t& return_type
 	)
 	:
 		_args(args),
@@ -160,7 +170,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	function_definition_t::function_definition_t(
 		const std::vector<member_t>& args,
 		const int host_function,
-		const floyd_basics::typeid_t& return_type
+		const typeid_t& return_type
 	)
 	:
 		_args(args),
@@ -170,7 +180,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	}
 
 	json_t function_definition_t::to_json() const {
-		floyd_basics::typeid_t function_type = get_function_type(*this);
+		typeid_t function_type = get_function_type(*this);
 		return json_t::make_array({
 			"func-def",
 			typeid_to_json(function_type),
@@ -188,8 +198,8 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 			&& lhs._return_type == rhs._return_type;
 	}
 
-	floyd_basics::typeid_t get_function_type(const function_definition_t f){
-		return floyd_basics::typeid_t::make_function(f._return_type, get_member_types(f._args));
+	typeid_t get_function_type(const function_definition_t f){
+		return typeid_t::make_function(f._return_type, get_member_types(f._args));
 	}
 
 
@@ -216,7 +226,7 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 		QUARK_ASSERT(def && def->check_invariant());
 
 		auto instance = make_shared<vector_instance_t>();
-		instance->_vector_type = floyd_basics::typeid_t::make_vector(def->_element_type);
+		instance->_vector_type = typeid_t::make_vector(def->_element_type);
 		instance->_elements = elements;
 		return value_t(instance);
 	}
@@ -277,16 +287,16 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(left.get_type() == right.get_type());
 
 	const auto type = left._typeid.get_base_type();
-	if(type == floyd_basics::base_type::k_null){
+	if(type == base_type::k_null){
 		return 0;
 	}
-	else if(type == floyd_basics::base_type::k_bool){
+	else if(type == base_type::k_bool){
 		return (left.get_bool() ? 1 : 0) - (right.get_bool() ? 1 : 0);
 	}
-	else if(type == floyd_basics::base_type::k_int){
+	else if(type == base_type::k_int){
 		return limit(left.get_int() - right.get_int(), -1, 1);
 	}
-	else if(type == floyd_basics::base_type::k_float){
+	else if(type == base_type::k_float){
 		const auto a = left.get_float();
 		const auto b = right.get_float();
 		if(a > b){
@@ -299,10 +309,10 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return 0;
 		}
 	}
-	else if(type == floyd_basics::base_type::k_string){
+	else if(type == base_type::k_string){
 		return compare_string(left.get_string(), right.get_string());
 	}
-	else if(type == floyd_basics::base_type::k_struct){
+	else if(type == base_type::k_struct){
 		//	Shortcut: same obejct == we know values are same without having to check them.
 		if(left.get_struct() == right.get_struct()){
 			return 0;
@@ -311,11 +321,11 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return compare_value_true_deep(*left.get_struct(), *right.get_struct());
 		}
 	}
-	else if(type == floyd_basics::base_type::k_vector){
+	else if(type == base_type::k_vector){
 		QUARK_ASSERT(false);
 		return 0;
 	}
-	else if(type == floyd_basics::base_type::k_function){
+	else if(type == base_type::k_function){
 		QUARK_ASSERT(false);
 		return 0;
 	}
@@ -445,10 +455,10 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 QUARK_UNIT_TESTQ("value_t()", "struct"){
 	const auto struct_scope_ref = lexical_scope_t::make_struct_object(
 		std::vector<member_t>{
-			{ floyd_basics::typeid_t::make_string(), "x" }
+			{ typeid_t::make_string(), "x" }
 		}
 	);
-	const auto struct_type = floyd_basics::typeid_t::make_struct("xxx"/*struct_scope_ref*/);
+	const auto struct_type = typeid_t::make_struct("xxx"/*struct_scope_ref*/);
 	const auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, std::map<std::string, value_t>{
 		{ "x", value_t("skalman")}
 	}));
@@ -469,7 +479,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(floyd_basics::typeid_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
 	const auto a = make_vector_instance(vector_def, {});
 	const auto b = make_vector_instance(vector_def, {});
 
@@ -490,7 +500,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 
 QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(floyd_basics::typeid_t::make_int()));
+	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
 	const auto a = make_vector_instance(vector_def, { 3, 4, 5});
 	const auto b = make_vector_instance(vector_def, { 3, 4 });
 
@@ -506,15 +516,15 @@ value_t make_test_func(){
 	const auto function_scope_ref = lexical_scope_t::make_function_object(
 		type_identifier_t::make("my_func"),
 		std::vector<member_t>{
-			{ floyd_basics::typeid_t::make_int(), "a" },
-			{ floyd_basics::typeid_t::make_string(), "b" }
+			{ typeid_t::make_int(), "a" },
+			{ typeid_t::make_string(), "b" }
 		},
 		{},
 		{},
-		floyd_basics::typeid_t::make_bool()
+		typeid_t::make_bool()
 	);
 
-	const auto function_type = floyd_basics::typeid_t::make_function_type_def(function_scope_ref);
+	const auto function_type = typeid_t::make_function_type_def(function_scope_ref);
 	const auto a = value_t(function_type);
 	return a;
 }
@@ -670,4 +680,4 @@ QUARK_UNIT_TESTQ("value_to_json()", ""){
 }
 
 
-}	//	floyd_ast
+}	//	floyd

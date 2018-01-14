@@ -23,7 +23,7 @@
 #include <thread>
 #include <chrono>
 
-namespace floyd_interpreter {
+namespace floyd {
 
 
 using std::vector;
@@ -33,12 +33,12 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
 
-using namespace floyd_ast;
+using namespace floyd;
 
 
 
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
-value_t make_struct_instance(const interpreter_t& vm, const floyd_basics::typeid_t& struct_type);
+value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
 
 namespace {
 
@@ -69,7 +69,7 @@ namespace {
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements_in_env(
 		const interpreter_t& vm,
 		const std::vector<std::shared_ptr<statement_t>>& statements,
-		const std::map<std::string, floyd_ast::value_t>& values
+		const std::map<std::string, value_t>& values
 	){
 		QUARK_ASSERT(vm.check_invariant());
 
@@ -190,7 +190,7 @@ namespace {
 			const auto end_value = end_value0.second.get_literal().get_int();
 
 			for(int x = start_value ; x <= end_value ; x++){
-				const std::map<std::string, floyd_ast::value_t> values = { { s->_iterator_name, value_t(x)} };
+				const std::map<std::string, value_t> values = { { s->_iterator_name, value_t(x)} };
 				const auto result = execute_statements_in_env(vm2, s->_body, values);
 				vm2 = result.first;
 				const auto return_value = result.second;
@@ -242,30 +242,30 @@ namespace {
 }	//	unnamed
 
 
-value_t make_default_value(const interpreter_t& vm, const floyd_basics::typeid_t& t){
+value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(t.check_invariant());
 
 	const auto type = t.get_base_type();
-	if(type == floyd_basics::base_type::k_bool){
+	if(type == base_type::k_bool){
 		return value_t(false);
 	}
-	else if(type == floyd_basics::base_type::k_int){
+	else if(type == base_type::k_int){
 		return value_t(0);
 	}
-	else if(type == floyd_basics::base_type::k_float){
+	else if(type == base_type::k_float){
 		return value_t(0.0f);
 	}
-	else if(type == floyd_basics::base_type::k_string){
+	else if(type == base_type::k_string){
 		return value_t("");
 	}
-	else if(type == floyd_basics::base_type::k_struct){
+	else if(type == base_type::k_struct){
 		return make_struct_instance(vm, t);
 	}
-	else if(type == floyd_basics::base_type::k_vector){
+	else if(type == base_type::k_vector){
 		QUARK_ASSERT(false);
 	}
-	else if(type == floyd_basics::base_type::k_function){
+	else if(type == base_type::k_function){
 		QUARK_ASSERT(false);
 	}
 	else{
@@ -273,7 +273,7 @@ value_t make_default_value(const interpreter_t& vm, const floyd_basics::typeid_t
 	}
 }
 
-value_t make_struct_instance(const interpreter_t& vm, const floyd_basics::typeid_t& struct_type){
+value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(!struct_type.is_null() && struct_type.check_invariant());
 
@@ -314,7 +314,7 @@ value_t make_struct_instance(const interpreter_t& vm, const floyd_basics::typeid
 
 //	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
 
-floyd_ast::value_t resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
+floyd::value_t resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(env && env->check_invariant());
 	QUARK_ASSERT(s.size() > 0);
@@ -331,7 +331,7 @@ floyd_ast::value_t resolve_env_variable_deep(const interpreter_t& vm, const shar
 	}
 }
 
-floyd_ast::value_t resolve_env_variable(const interpreter_t& vm, const std::string& s){
+floyd::value_t resolve_env_variable(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
@@ -358,7 +358,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 	const auto op = e.get_operation();
 
-	if(op == floyd_basics::expression_type::k_resolve_member){
+	if(op == expression_type::k_resolve_member){
 		const auto expr = e.get_resolve_member();
 		const auto parent_expr = evaluate_expression(vm2, *expr->_parent_address);
 		if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
@@ -379,18 +379,18 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			throw std::runtime_error("Resolve member failed.");
 		}
 	}
-	else if(op == floyd_basics::expression_type::k_variable){
+	else if(op == expression_type::k_variable){
 		const auto expr = e.get_variable();
 		const value_t value = resolve_env_variable(vm2, expr->_variable);
 		return {vm2, expression_t::make_literal(value)};
 	}
 
-	else if(op == floyd_basics::expression_type::k_call){
+	else if(op == expression_type::k_call){
 		return evaluate_call_expression(vm2, e);
 	}
 /*
 ??? define struct should be statement, not an expression!
-	else if(op == floyd_basics::expression_type::k_define_struct){
+	else if(op == expression_type::k_define_struct){
 		const auto expr = e.get_struct_definition();
 
 //	Make a local variable my_struct = constructor function for struct
@@ -398,13 +398,13 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		return {vm2, expression_t::make_literal(make_struct_value(expr->_def))};
 	}
 */
-	else if(op == floyd_basics::expression_type::k_define_function){
+	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
 		return {vm2, expression_t::make_literal(make_function_value(expr->_def))};
 	}
 
 	//	This can be desugared at compile time.
-	else if(op == floyd_basics::expression_type::k_arithmetic_unary_minus__1){
+	else if(op == expression_type::k_arithmetic_unary_minus__1){
 		const auto expr = e.get_unary_minus();
 		const auto& expr2 = evaluate_expression(vm2, *expr->_expr);
 		vm2 = expr2.first;
@@ -416,13 +416,13 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			if(c.is_int()){
 				return evaluate_expression(
 					vm2,
-					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second)
+					expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second)
 				);
 			}
 			else if(c.is_float()){
 				return evaluate_expression(
 					vm2,
-					expression_t::make_simple_expression__2(floyd_basics::expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second)
+					expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second)
 				);
 			}
 			else{
@@ -435,7 +435,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	else if(op == floyd_basics::expression_type::k_conditional_operator3){
+	else if(op == expression_type::k_conditional_operator3){
 		const auto expr = e.get_conditional();
 		const auto cond_result = evaluate_expression(vm2, *expr->_condition);
 		vm2 = cond_result.first;
@@ -471,29 +471,29 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	Is operation supported by all types?
 		{
-			if(op == floyd_basics::expression_type::k_comparison_smaller_or_equal__2){
+			if(op == expression_type::k_comparison_smaller_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm2, expression_t::make_literal_bool(diff <= 0)};
 			}
-			else if(op == floyd_basics::expression_type::k_comparison_smaller__2){
+			else if(op == expression_type::k_comparison_smaller__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm2, expression_t::make_literal_bool(diff < 0)};
 			}
-			else if(op == floyd_basics::expression_type::k_comparison_larger_or_equal__2){
+			else if(op == expression_type::k_comparison_larger_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm2, expression_t::make_literal_bool(diff >= 0)};
 			}
-			else if(op == floyd_basics::expression_type::k_comparison_larger__2){
+			else if(op == expression_type::k_comparison_larger__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm2, expression_t::make_literal_bool(diff > 0)};
 			}
 
 
-			else if(op == floyd_basics::expression_type::k_logical_equal__2){
+			else if(op == expression_type::k_logical_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm2, expression_t::make_literal_bool(diff == 0)};
 			}
-			else if(op == floyd_basics::expression_type::k_logical_nonequal__2){
+			else if(op == expression_type::k_logical_nonequal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm2, expression_t::make_literal_bool(diff != 0)};
 			}
@@ -504,19 +504,19 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const bool left = left_constant.get_bool();
 			const bool right = right_constant.get_bool();
 
-			if(op == floyd_basics::expression_type::k_arithmetic_add__2
-			|| op == floyd_basics::expression_type::k_arithmetic_subtract__2
-			|| op == floyd_basics::expression_type::k_arithmetic_multiply__2
-			|| op == floyd_basics::expression_type::k_arithmetic_divide__2
-			|| op == floyd_basics::expression_type::k_arithmetic_remainder__2
+			if(op == expression_type::k_arithmetic_add__2
+			|| op == expression_type::k_arithmetic_subtract__2
+			|| op == expression_type::k_arithmetic_multiply__2
+			|| op == expression_type::k_arithmetic_divide__2
+			|| op == expression_type::k_arithmetic_remainder__2
 			){
 				throw std::runtime_error("Arithmetics on bool not allowed.");
 			}
 
-			else if(op == floyd_basics::expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and__2){
 				return {vm2, expression_t::make_literal_bool(left && right)};
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or__2){
 				return {vm2, expression_t::make_literal_bool(left || right)};
 			}
 			else{
@@ -529,32 +529,32 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const int left = left_constant.get_int();
 			const int right = right_constant.get_int();
 
-			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add__2){
 				return {vm2, expression_t::make_literal_int(left + right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract__2){
 				return {vm2, expression_t::make_literal_int(left - right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply__2){
 				return {vm2, expression_t::make_literal_int(left * right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return {vm2, expression_t::make_literal_int(left / right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return {vm2, expression_t::make_literal_int(left % right)};
 			}
 
-			else if(op == floyd_basics::expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and__2){
 				return {vm2, expression_t::make_literal_bool((left != 0) && (right != 0))};
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or__2){
 				return {vm2, expression_t::make_literal_bool((left != 0) || (right != 0))};
 			}
 			else{
@@ -567,30 +567,30 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const float left = left_constant.get_float();
 			const float right = right_constant.get_float();
 
-			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add__2){
 				return {vm2, expression_t::make_literal_float(left + right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract__2){
 				return {vm2, expression_t::make_literal_float(left - right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply__2){
 				return {vm2, expression_t::make_literal_float(left * right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide__2){
 				if(right == 0.0f){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
 				return {vm2, expression_t::make_literal_float(left / right)};
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Modulo operation on float not allowed.");
 			}
 
 
-			else if(op == floyd_basics::expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and__2){
 				return {vm2, expression_t::make_literal_bool((left != 0.0f) && (right != 0.0f))};
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or__2){
 				return {vm2, expression_t::make_literal_bool((left != 0.0f) || (right != 0.0f))};
 			}
 			else{
@@ -603,28 +603,28 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const string left = left_constant.get_string();
 			const string right = right_constant.get_string();
 
-			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add__2){
 				return {vm2, expression_t::make_literal_string(left + right)};
 			}
 
-			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 
 
-			else if(op == floyd_basics::expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or__2){
 				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else{
@@ -640,27 +640,27 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
-			if(op == floyd_basics::expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add__2){
 				//??? allow
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 
-			else if(op == floyd_basics::expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
-			else if(op == floyd_basics::expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or__2){
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else{
@@ -684,7 +684,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 }
 
 
-std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpreter_t& vm, const floyd_ast::value_t& f, const vector<value_t>& args){
+std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
@@ -745,7 +745,7 @@ bool all_literals(const vector<expression_t>& e){
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_operation() == floyd_basics::expression_type::k_call);
+	QUARK_ASSERT(e.get_operation() == expression_type::k_call);
 
 	auto vm2 = vm;
 	const auto call = e.get_function_call();
@@ -827,7 +827,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "literal 1234 == 1234") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 	test__evaluate_expression(
 		expression_t::make_simple_expression__2(
-			floyd_basics::expression_type::k_arithmetic_add__2,
+			expression_type::k_arithmetic_add__2,
 			expression_t::make_literal_int(1),
 			expression_t::make_literal_int(2)
 		),
@@ -839,7 +839,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 	test__evaluate_expression(
 		expression_t::make_simple_expression__2(
-			floyd_basics::expression_type::k_arithmetic_multiply__2,
+			expression_type::k_arithmetic_multiply__2,
 			expression_t::make_literal_int(3),
 			expression_t::make_literal_int(4)
 		),
@@ -850,9 +850,9 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 	test__evaluate_expression(
 		expression_t::make_simple_expression__2(
-			floyd_basics::expression_type::k_arithmetic_multiply__2,
+			expression_type::k_arithmetic_multiply__2,
 			expression_t::make_simple_expression__2(
-				floyd_basics::expression_type::k_arithmetic_multiply__2,
+				expression_type::k_arithmetic_multiply__2,
 				expression_t::make_literal_int(3),
 				expression_t::make_literal_int(4)
 			),
@@ -871,7 +871,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 std::shared_ptr<environment_t> environment_t::make_environment(
 	const interpreter_t& vm,
-	std::shared_ptr<floyd_interpreter::environment_t>& parent_env
+	std::shared_ptr<environment_t>& parent_env
 )
 {
 	QUARK_ASSERT(vm.check_invariant());
@@ -995,7 +995,7 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 
-std::pair<interpreter_t, floyd_ast::value_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd_ast::value_t> args) const{
+std::pair<interpreter_t, floyd::value_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd::value_t> args) const{
 	if(function_id == static_cast<int>(host_functions::k_print)){
 		return host__print(*this, args);
 	}
@@ -1024,18 +1024,18 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	init_statements.push_back(make_shared<statement_t>(make_function_statement(
 		"print",
 		function_definition_t(
-			{ member_t{ floyd_basics::typeid_t::make_string(), "s" } },
+			{ member_t{ typeid_t::make_string(), "s" } },
 			host_functions::k_print,
-			floyd_basics::typeid_t::make_null()
+			typeid_t::make_null()
 		)
 	)));
 
 	init_statements.push_back(make_shared<statement_t>(make_function_statement(
 		"assert",
 		function_definition_t(
-			{ member_t{ floyd_basics::typeid_t::make_string(), "success" } },
+			{ member_t{ typeid_t::make_string(), "success" } },
 			host_functions::k_assert,
-			floyd_basics::typeid_t::make_null()
+			typeid_t::make_null()
 		)
 	)));
 
@@ -1045,7 +1045,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 			//??? Supports arg of any type.
 			{ },
 			host_functions::k_to_string,
-			floyd_basics::typeid_t::make_string()
+			typeid_t::make_string()
 		)
 	)));
 
@@ -1054,7 +1054,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		function_definition_t(
 			{},
 			host_functions::k_get_time_of_day_ms,
-			floyd_basics::typeid_t::make_int()
+			typeid_t::make_int()
 		)
 	)));
 
@@ -1115,7 +1115,7 @@ bool interpreter_t::check_invariant() const {
 
 
 ast_t program_to_ast2(const string& program){
-	const auto pass1 = floyd_parser::parse_program2(program);
+	const auto pass1 = floyd::parse_program2(program);
 	const auto pass2 = run_pass2(pass1);
 	trace(pass2);
 	return pass2;
@@ -1129,7 +1129,7 @@ interpreter_t run_global(const string& source){
 	return vm;
 }
 
-std::pair<interpreter_t, floyd_ast::value_t> run_main(const string& source, const vector<floyd_ast::value_t>& args){
+std::pair<interpreter_t, floyd::value_t> run_main(const string& source, const vector<floyd::value_t>& args){
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
@@ -1160,7 +1160,7 @@ void test__run_init2(const std::string& program){
 }
 
 
-void test__run_main(const std::string& program, const vector<floyd_ast::value_t>& args, const value_t& expected_return){
+void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
 	const auto result = run_main(program, args);
 	ut_compare_jsons(
 		expression_to_json(expression_t::make_literal(result.second)),
@@ -1547,19 +1547,19 @@ QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 		"string main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n",
-		vector<floyd_ast::value_t>{floyd_ast::value_t("program_name 1 2 3 4")},
-		floyd_ast::value_t("123456")
+		vector<value_t>{value_t("program_name 1 2 3 4")},
+		value_t("123456")
 	);
 }
 
 QUARK_UNIT_TESTQ("run_main()", ""){
-	test__run_main("bool main(){ return 4 < 5; }", {}, floyd_ast::value_t(true));
+	test__run_main("bool main(){ return 4 < 5; }", {}, value_t(true));
 }
 QUARK_UNIT_TESTQ("run_main()", ""){
-	test__run_main("bool main(){ return 5 < 4; }", {}, floyd_ast::value_t(false));
+	test__run_main("bool main(){ return 5 < 4; }", {}, value_t(false));
 }
 QUARK_UNIT_TESTQ("run_main()", ""){
-	test__run_main("bool main(){ return 4 <= 4; }", {}, floyd_ast::value_t(true));
+	test__run_main("bool main(){ return 4 <= 4; }", {}, value_t(true));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
@@ -1570,8 +1570,8 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(*result.second == floyd_ast::value_t(7));
+	const auto result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
+	QUARK_TEST_VERIFY(*result.second == value_t(7));
 }
 
 
@@ -1583,8 +1583,8 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(*result.second == floyd_ast::value_t("123456"));
+	const auto result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
+	QUARK_TEST_VERIFY(*result.second == value_t("123456"));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
@@ -1596,8 +1596,8 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(*result.second == floyd_ast::value_t(15));
+	const auto result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
+	QUARK_TEST_VERIFY(*result.second == value_t(15));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
@@ -1608,11 +1608,11 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("xyz") });
-	QUARK_TEST_VERIFY(*result.second == floyd_ast::value_t("-xyz-"));
+	const auto result = call_function(vm, f, vector<value_t>{ value_t("xyz") });
+	QUARK_TEST_VERIFY(*result.second == value_t("-xyz-"));
 
-	const auto result2 = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("Hello, world!") });
-	QUARK_TEST_VERIFY(*result2.second == floyd_ast::value_t("-Hello, world!-"));
+	const auto result2 = call_function(vm, f, vector<value_t>{ value_t("Hello, world!") });
+	QUARK_TEST_VERIFY(*result2.second == value_t("-Hello, world!-"));
 }
 
 
@@ -1625,11 +1625,11 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("xyz") });
-	QUARK_TEST_VERIFY(*result.second == floyd_ast::value_t("--xyz<xyz>--"));
+	const auto result = call_function(vm, f, vector<value_t>{ value_t("xyz") });
+	QUARK_TEST_VERIFY(*result.second == value_t("--xyz<xyz>--"));
 
-	const auto result2 = call_function(vm, f, vector<floyd_ast::value_t>{ floyd_ast::value_t("123") });
-	QUARK_TEST_VERIFY(*result2.second == floyd_ast::value_t("--123<123>--"));
+	const auto result2 = call_function(vm, f, vector<value_t>{ value_t("123") });
+	QUARK_TEST_VERIFY(*result2.second == value_t("--123<123>--"));
 }
 
 
@@ -2055,14 +2055,14 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 #if false
 QUARK_UNIT_1("run_main()", "", test__run_main(
 	"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
-	floyd_ast::value_t(true)
+	value_t(true)
 ));
 
 
 QUARK_UNIT_TESTQ("run_main()", ""){
 	QUARK_TEST_VERIFY(test__run_main(
 		"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
-		floyd_ast::value_t(true)
+		value_t(true)
 	));
 }
 
@@ -2070,7 +2070,7 @@ QUARK_UNIT_TESTQ("run_main()", ""){
 	try {
 		test__run_main(
 			"struct t { int a;} bool main(){ t a = t_constructor(); int b = 1055; return a == b; }",
-			floyd_ast::value_t(true)
+			value_t(true)
 		);
 		QUARK_UT_VERIFY(false);
 	}
@@ -2145,5 +2145,5 @@ QUARK_UNIT_TESTQ("struct", "Can return struct"){
 
 
 
-}	//	floyd_interpreter
+}	//	floyd
 

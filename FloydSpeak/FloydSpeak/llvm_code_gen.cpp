@@ -10,7 +10,7 @@
 
 #include "parser_ast.h"
 
-using namespace floyd_parser;
+using namespace floyd;
 
 
 	/*

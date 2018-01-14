@@ -24,7 +24,7 @@
 #include <iostream>
 #include <cmath>
 
-namespace floyd_parser {
+namespace floyd {
 
 
 using namespace std;
@@ -619,5 +619,5 @@ QUARK_UNIT_TESTQ("parse_program1()", "Call function a from function b"){
 #endif
 
 
-}	//	floyd_parser
+}	//	namespace floyd
 

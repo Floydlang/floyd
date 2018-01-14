@@ -17,13 +17,10 @@
 #include <map>
 #include "parser_ast.h"
 
-namespace floyd_ast {
+namespace floyd {
 	struct expression_t;
 	struct value_t;
 	struct statement_t;
-}
-
-namespace floyd_interpreter {
 	struct interpreter_t;
 
 
@@ -35,7 +32,7 @@ namespace floyd_interpreter {
 
 	struct environment_t {
 		public: std::shared_ptr<environment_t> _parent_env;
-		public: std::map<std::string, floyd_ast::value_t> _values;
+		public: std::map<std::string, value_t> _values;
 
 
 		public: bool check_invariant() const;
@@ -55,12 +52,12 @@ namespace floyd_interpreter {
 	*/
 
 	struct interpreter_t {
-		public: interpreter_t(const floyd_ast::ast_t& ast);
+		public: interpreter_t(const ast_t& ast);
 		public: interpreter_t(const interpreter_t& other);
 		public: const interpreter_t& operator=(const interpreter_t& other);
 		public: bool check_invariant() const;
 
-		public: std::pair<interpreter_t, floyd_ast::value_t> call_host_function(int function_id, const std::vector<floyd_ast::value_t> args) const;
+		public: std::pair<interpreter_t, value_t> call_host_function(int function_id, const std::vector<value_t> args) const;
 
 
 		////////////////////////		STATE
@@ -68,7 +65,7 @@ namespace floyd_interpreter {
 
 
 		//	Constant!
-		public: floyd_ast::ast_t _ast;
+		public: ast_t _ast;
 
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
@@ -86,12 +83,12 @@ namespace floyd_interpreter {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	std::pair<interpreter_t, floyd_ast::expression_t> evaluate_expression(const interpreter_t& vm, const floyd_ast::expression_t& e);
+	std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e);
 
-	std::pair<interpreter_t, std::shared_ptr<floyd_ast::value_t>> call_function(
+	std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(
 		const interpreter_t& vm,
-		const floyd_ast::value_t& f,
-		const std::vector<floyd_ast::value_t>& args
+		const value_t& f,
+		const std::vector<value_t>& args
 	);
 
 
@@ -102,12 +99,12 @@ namespace floyd_interpreter {
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
-	std::pair<interpreter_t, floyd_ast::value_t> run_main(
+	std::pair<interpreter_t, value_t> run_main(
 		const std::string& source,
-		const std::vector<floyd_ast::value_t>& args
+		const std::vector<value_t>& args
 	);
 
-} //	floyd_interpreter
+} //	floyd
 
 
 #endif /* floyd_interpreter_hpp */

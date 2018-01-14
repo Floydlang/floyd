@@ -18,7 +18,7 @@
 
 #include "json_support.h"
 
-namespace floyd_parser {
+namespace floyd {
 
 
 using std::pair;
@@ -126,4 +126,4 @@ std::pair<json_t, seq_t> parse_expression_seq(const seq_t& expression){
 }
 
 
-}	//	floyd_parser
+}	//	floyd

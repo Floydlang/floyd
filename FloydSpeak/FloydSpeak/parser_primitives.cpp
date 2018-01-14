@@ -25,12 +25,12 @@
 #include <iostream>
 #include <cmath>
 
-namespace floyd_parser {
+namespace floyd {
 
 using std::vector;
 using std::string;
 using std::pair;
-using floyd_basics::typeid_t;
+
 
 //////////////////////////////////////////////////		Text parsing primitives
 
@@ -281,7 +281,7 @@ QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
 
 //??? Fix resolve_base_type_name(). Also make to/from JSON.
 
-std::pair<floyd_basics::typeid_t, seq_t> read_basic_type(const seq_t& s){
+std::pair<typeid_t, seq_t> read_basic_type(const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 
 	const auto pos1 = read_while(pos0, identifier_chars);
@@ -354,7 +354,7 @@ std::pair<vector<pair<typeid_t, string>>, seq_t> read_function_arg_parantheses(c
 	return { r, args_pos.second };
 }
 
-std::pair<floyd_basics::typeid_t, seq_t> read_basic_or_vector(const seq_t& s){
+std::pair<typeid_t, seq_t> read_basic_or_vector(const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 	if(pos0.first1() == "["){
 		const auto pos2 = pos0.rest1();
@@ -372,7 +372,7 @@ std::pair<floyd_basics::typeid_t, seq_t> read_basic_or_vector(const seq_t& s){
 	}
 }
 
-std::pair<floyd_basics::typeid_t, seq_t> read_optional_trailing_function_args(const typeid_t& type, const seq_t& s){
+std::pair<typeid_t, seq_t> read_optional_trailing_function_args(const typeid_t& type, const seq_t& s){
 	//	See if there is a () afterward type_pos -- that would be that type_pos is the return value of a function-type.
 	const auto more_pos = skip_whitespace(s);
 	if(more_pos.first1() == "("){
@@ -390,7 +390,7 @@ std::pair<floyd_basics::typeid_t, seq_t> read_optional_trailing_function_args(co
 		return { type, s };
 	}
 }
-std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s){
+std::pair<typeid_t, seq_t> read_type_identifier2(const seq_t& s){
 	const auto type_pos = read_basic_or_vector(s);
 	if(type_pos.first.is_null()){
 		return type_pos;
@@ -478,7 +478,7 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 
 
 
-pair<floyd_basics::typeid_t, seq_t> read_required_type_identifier2(const seq_t& s){
+pair<typeid_t, seq_t> read_required_type_identifier2(const seq_t& s){
 	const auto type_pos = read_type_identifier2(s);
 	if(type_pos.first.is_null()){
 		throw std::runtime_error("illegal character in type identifier");
@@ -518,4 +518,4 @@ json_t make_member_def(const std::string& type, const std::string& name, const j
 }
 
 
-}	//	floyd_parser
+}	//	floyd

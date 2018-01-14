@@ -15,7 +15,7 @@
 struct json_t;
 struct seq_t;
 
-namespace floyd_parser {
+namespace floyd {
 
 
 const std::string k_test_program_0_source = "int main(){ return 3; }";
@@ -233,7 +233,7 @@ const char k_test_program_100_parserout[] = R"(
 	*/
 	json_t parse_program2(const std::string& program);
 
-}	//	floyd_parser
+}	//	floyd
 
 
 #endif /* floyd_parser_h */

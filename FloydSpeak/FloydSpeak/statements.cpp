@@ -17,7 +17,7 @@
 #include "json_writer.h"
 
 
-namespace floyd_ast {
+namespace floyd {
 
 	using std::string;
 	using std::vector;
@@ -38,7 +38,7 @@ namespace floyd_ast {
 		return statement_t(value);
 	}
 
-	statement_t make__bind_statement(const std::string& new_variable_name, const floyd_basics::typeid_t& bindtype, const expression_t& expression){
+	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression){
 		return statement_t(bind_statement_t{ new_variable_name, bindtype, expression });
 	}
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
@@ -248,10 +248,10 @@ namespace floyd_ast {
 
 
 statement_t make_function_statement(const string name, const function_definition_t def){
-	const auto function_typeid = floyd_basics::typeid_t::make_function(def._return_type, get_member_types(def._args));
+	const auto function_typeid = typeid_t::make_function(def._return_type, get_member_types(def._args));
 	const auto function_def_expr = expression_t::make_function_definition(def);
 	return make__bind_statement(name, function_typeid, function_def_expr);
 }
 
 
-}	//	floyd_ast
+}	//	floyd

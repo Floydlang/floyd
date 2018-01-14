@@ -15,44 +15,13 @@
 #include <string>
 #include <map>
 
-#include "parser_ast.h"
 #include "floyd_basics.h"
 
-namespace floyd_ast {
+namespace floyd {
 	struct statement_t;
 	struct expression_t;
 	struct value_t;
 	struct interpreter_t;
-
-
-
-
-
-
-	//////////////////////////////////////////////////		struct_definition_t
-
-
-	struct struct_definition_t {
-		public: struct_definition_t(const floyd_basics::typeid_t& struct_type, const std::string& name, const std::vector<member_t>& members) :
-			_struct_type(struct_type),
-			_name(name),
-			_members(members)
-		{
-			QUARK_ASSERT(struct_type.check_invariant());
-			QUARK_ASSERT(name.size() > 0);
-
-			QUARK_ASSERT(check_invariant());
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const struct_definition_t& other) const;
-
-		public: json_t to_json() const;
-
-
-		public: floyd_basics::typeid_t _struct_type;
-		public: std::string _name;
-		public: std::vector<member_t> _members;
-	};
 
 
 	//////////////////////////////////////////////////		struct_instance_t
@@ -91,7 +60,7 @@ namespace floyd_ast {
 		public: bool operator==(const vector_instance_t& other) const;
 
 		//	??? Remove this at later time, when we statically track the type of structs OK.
-		floyd_basics::typeid_t _vector_type;
+		typeid_t _vector_type;
 
 		std::vector<value_t> _elements;
 	};
@@ -107,12 +76,12 @@ namespace floyd_ast {
 		public: function_definition_t(
 			const std::vector<member_t>& args,
 			const std::vector<std::shared_ptr<statement_t>> statements,
-			const floyd_basics::typeid_t& return_type
+			const typeid_t& return_type
 		);
 		public: function_definition_t(
 			const std::vector<member_t>& args,
 			int host_function,
-			const floyd_basics::typeid_t& return_type
+			const typeid_t& return_type
 		);
 		public: json_t to_json() const;
 
@@ -120,12 +89,12 @@ namespace floyd_ast {
 		const std::vector<member_t> _args;
 		const std::vector<std::shared_ptr<statement_t>> _statements;
 		const int _host_function;
-		const floyd_basics::typeid_t _return_type;
+		const typeid_t _return_type;
 	};
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
-	floyd_basics::typeid_t get_function_type(const function_definition_t f);
+	typeid_t get_function_type(const function_definition_t f);
 
 
 	//////////////////////////////////////////////////		function_instance_t
@@ -138,6 +107,33 @@ namespace floyd_ast {
 
 		public: function_definition_t _def;
 	};
+
+
+
+
+
+	//////////////////////////////////////		vector_def_t
+
+
+	/*
+		Notice that vector has no scope of its own.
+	*/
+	struct vector_def_t {
+		public: static vector_def_t make2(const floyd::typeid_t& element_type);
+
+		public: vector_def_t(){};
+		public: bool check_invariant() const;
+		public: bool operator==(const vector_def_t& other) const;
+
+
+		/////////////////////////////		STATE
+		public: floyd::typeid_t _element_type;
+	};
+
+	void trace(const vector_def_t& e);
+	json_t vector_def_to_json(const vector_def_t& s);
+
+
 
 
 	//////////////////////////////////////////////////		value_t
@@ -159,80 +155,100 @@ namespace floyd_ast {
 			QUARK_ASSERT(_typeid.check_invariant());
 
 			const auto base_type = _typeid.get_base_type();
-			if(base_type == floyd_basics::base_type::k_null){
+			if(base_type == base_type::k_null){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
-			else if(base_type == floyd_basics::base_type::k_bool){
+			else if(base_type == base_type::k_bool){
 //				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
-			else if(base_type == floyd_basics::base_type::k_int){
+			else if(base_type == base_type::k_int){
 				QUARK_ASSERT(_bool == false);
 //				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
-			else if(base_type == floyd_basics::base_type::k_float){
+			else if(base_type == base_type::k_float){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 //				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
-			else if(base_type == floyd_basics::base_type::k_string){
+			else if(base_type == base_type::k_string){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 //				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 			}
 
-			else if(base_type == floyd_basics::base_type::k_struct){
+			else if(base_type == base_type::k_struct){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct != nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function == nullptr);
 
 				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
-			else if(base_type == floyd_basics::base_type::k_vector){
+			else if(base_type == base_type::k_struct_type){
+				QUARK_ASSERT(_bool == false);
+				QUARK_ASSERT(_int == 0);
+				QUARK_ASSERT(_float == 0.0f);
+				QUARK_ASSERT(_string == "");
+				QUARK_ASSERT(_struct != nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
+				QUARK_ASSERT(_vector == nullptr);
+				QUARK_ASSERT(_function == nullptr);
+
+				QUARK_ASSERT(_struct_type && _struct_type->check_invariant());
+			}
+			else if(base_type == base_type::k_vector){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector != nullptr);
 				QUARK_ASSERT(_function == nullptr);
 
 				QUARK_ASSERT(_vector && _vector->check_invariant());
 			}
-			else if(base_type == floyd_basics::base_type::k_function){
+			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(_bool == false);
 				QUARK_ASSERT(_int == 0);
 				QUARK_ASSERT(_float == 0.0f);
 				QUARK_ASSERT(_string == "");
 				QUARK_ASSERT(_struct == nullptr);
+				QUARK_ASSERT(_struct_type == nullptr);
 				QUARK_ASSERT(_vector == nullptr);
 				QUARK_ASSERT(_function != nullptr);
 
@@ -245,34 +261,34 @@ namespace floyd_ast {
 		}
 
 		public: value_t() :
-			_typeid(floyd_basics::typeid_t::make_null())
+			_typeid(typeid_t::make_null())
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(bool value) :
-			_typeid(floyd_basics::typeid_t::make_bool()),
+			_typeid(typeid_t::make_bool()),
 			_bool(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(int value) :
-			_typeid(floyd_basics::typeid_t::make_int()),
+			_typeid(typeid_t::make_int()),
 			_int(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_t(float value) :
-			_typeid(floyd_basics::typeid_t::make_float()),
+			_typeid(typeid_t::make_float()),
 			_float(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: explicit value_t(const char s[]) :
-			_typeid(floyd_basics::typeid_t::make_string()),
+			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(s != nullptr);
@@ -281,7 +297,7 @@ namespace floyd_ast {
 		}
 
 		public: explicit value_t(const std::string& s) :
-			_typeid(floyd_basics::typeid_t::make_string()),
+			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -289,10 +305,19 @@ namespace floyd_ast {
 
 		public: value_t(const std::shared_ptr<struct_instance_t>& instance) :
 			//??? Use exact type of struct!
-		_typeid(floyd_basics::typeid_t::make_struct("??? Use exact type of struct")),
+			_typeid(typeid_t::make_struct("??? Use exact type of struct")),
 			_struct(instance)
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
+
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: value_t(const std::shared_ptr<struct_definition_t>& def) :
+			_typeid(typeid_t::make_struct_type(*def)),
+			_struct_type(def)
+		{
+			QUARK_ASSERT(def && def->check_invariant());
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -354,29 +379,29 @@ namespace floyd_ast {
 			}
 
 			const auto base_type = _typeid.get_base_type();
-			if(base_type == floyd_basics::base_type::k_null){
+			if(base_type == base_type::k_null){
 				return true;
 			}
-			else if(base_type == floyd_basics::base_type::k_bool){
+			else if(base_type == base_type::k_bool){
 				return _bool == other._bool;
 			}
-			else if(base_type == floyd_basics::base_type::k_int){
+			else if(base_type == base_type::k_int){
 				return _int == other._int;
 			}
-			else if(base_type == floyd_basics::base_type::k_float){
+			else if(base_type == base_type::k_float){
 				return _float == other._float;
 			}
-			else if(base_type == floyd_basics::base_type::k_string){
+			else if(base_type == base_type::k_string){
 				return _string == other._string;
 			}
 
-			else if(base_type == floyd_basics::base_type::k_struct){
+			else if(base_type == base_type::k_struct){
 				return *_struct == *other._struct;
 			}
-			else if(base_type == floyd_basics::base_type::k_vector){
+			else if(base_type == base_type::k_vector){
 				return *_vector == *other._vector;
 			}
-			else if(base_type == floyd_basics::base_type::k_function){
+			else if(base_type == base_type::k_function){
 				return *_function == *other._function;
 			}
 			else {
@@ -411,33 +436,33 @@ namespace floyd_ast {
 			QUARK_ASSERT(check_invariant());
 
 			const auto base_type = _typeid.get_base_type();
-			if(base_type == floyd_basics::base_type::k_null){
+			if(base_type == base_type::k_null){
 				return "<null>";
 			}
-			else if(base_type == floyd_basics::base_type::k_bool){
+			else if(base_type == base_type::k_bool){
 				return _bool ? "true" : "false";
 			}
-			else if(base_type == floyd_basics::base_type::k_int){
+			else if(base_type == base_type::k_int){
 				char temp[200 + 1];//### Use C++ function instead.
 				sprintf(temp, "%d", _int);
 				return std::string(temp);
 			}
-			else if(base_type == floyd_basics::base_type::k_float){
+			else if(base_type == base_type::k_float){
 				char temp[200 + 1];//### Use C++ function instead.
 				sprintf(temp, "%f", _float);
 				return std::string(temp);
 			}
-			else if(base_type == floyd_basics::base_type::k_string){
+			else if(base_type == base_type::k_string){
 				return _string;
 			}
 
-			else if(base_type == floyd_basics::base_type::k_struct){
+			else if(base_type == base_type::k_struct){
 				return to_preview(*_struct);
 			}
-			else if(base_type == floyd_basics::base_type::k_vector){
+			else if(base_type == base_type::k_vector){
 				return to_preview(*_vector);
 			}
-			else if(base_type == floyd_basics::base_type::k_function){
+			else if(base_type == base_type::k_function){
 				return json_to_compact_string(typeid_to_json(_typeid));
 			}
 
@@ -468,7 +493,7 @@ namespace floyd_ast {
 			}
 		}
 
-		public: floyd_basics::typeid_t get_type() const{
+		public: typeid_t get_type() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid;
@@ -477,49 +502,49 @@ namespace floyd_ast {
 		public: bool is_null() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_null;
+			return _typeid.get_base_type() == base_type::k_null;
 		}
 
 		public: bool is_bool() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_bool;
+			return _typeid.get_base_type() == base_type::k_bool;
 		}
 
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_int;
+			return _typeid.get_base_type() == base_type::k_int;
 		}
 
 		public: bool is_float() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_float;
+			return _typeid.get_base_type() == base_type::k_float;
 		}
 
 		public: bool is_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_string;
+			return _typeid.get_base_type() == base_type::k_string;
 		}
 
 		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_struct;
+			return _typeid.get_base_type() == base_type::k_struct;
 		}
 
 		public: bool is_vector() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_vector;
+			return _typeid.get_base_type() == base_type::k_vector;
 		}
 
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _typeid.get_base_type() == floyd_basics::base_type::k_function;
+			return _typeid.get_base_type() == base_type::k_function;
 		}
 
 		public: bool get_bool() const{
@@ -608,13 +633,14 @@ namespace floyd_ast {
 
 
 		////////////////		STATE
-		private: floyd_basics::typeid_t _typeid;
+		private: typeid_t _typeid;
 
 		private: bool _bool = false;
 		private: int _int = 0;
 		private: float _float = 0.0f;
 		private: std::string _string = "";
 		private: std::shared_ptr<struct_instance_t> _struct;
+		private: std::shared_ptr<struct_definition_t> _struct_type;
 		private: std::shared_ptr<vector_instance_t> _vector;
 		private: std::shared_ptr<const function_instance_t> _function;
 	};
@@ -639,6 +665,6 @@ namespace floyd_ast {
 	value_t make_test_func();
 
 
-}	//	floyd_ast
+}	//	floyd
 
 #endif /* parser_value_hpp */

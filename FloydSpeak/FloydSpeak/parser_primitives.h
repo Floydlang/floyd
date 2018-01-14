@@ -24,7 +24,7 @@
 
 struct json_t;
 
-namespace floyd_parser {
+namespace floyd {
 
 	const std::string whitespace_chars = " \n\t";
 	const std::string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
@@ -95,8 +95,8 @@ namespace floyd_parser {
 		Does NOT make sure this a known type-identifier.
 		String must not be empty.
 	*/
-	std::pair<floyd_basics::typeid_t, seq_t> read_type_identifier2(const seq_t& s);
-	std::pair<floyd_basics::typeid_t, seq_t> read_required_type_identifier2(const seq_t& s);
+	std::pair<typeid_t, seq_t> read_type_identifier2(const seq_t& s);
+	std::pair<typeid_t, seq_t> read_required_type_identifier2(const seq_t& s);
 
 
 
@@ -131,10 +131,10 @@ namespace floyd_parser {
 
 		(int, int)
 	*/
-	std::vector<std::pair<floyd_basics::typeid_t, std::string>> parse_functiondef_arguments2(const std::string& s);
+	std::vector<std::pair<typeid_t, std::string>> parse_functiondef_arguments2(const std::string& s);
 
 
-}	//	floyd_parser
+}	//	floyd
 
 
 #endif /* parser_primitives_hpp */

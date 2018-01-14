@@ -14,7 +14,7 @@
 #include "json_support.h"
 #include "json_parser.h"
 
-namespace floyd_parser {
+namespace floyd {
 	using std::string;
 	using std::vector;
 	using std::pair;
@@ -437,4 +437,4 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 
 
 
-}	//	floyd_parser
+}	//	floyd

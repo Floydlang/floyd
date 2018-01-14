@@ -16,7 +16,7 @@
 #include <cmath>
 #include <typeinfo>
 
-namespace floyd_ast {
+namespace floyd {
 
 using std::pair;
 using std::string;
@@ -30,11 +30,11 @@ string expression_to_json_string(const expression_t& e);
 /*
 QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 	const auto a = expression_t::make_simple_expression__2(
-		floyd_basics::expression_type::k_arithmetic_add__2,
+		expression_type::k_arithmetic_add__2,
 		expression_t::make_literal_int(3),
 		expression_t::make_literal_int(4));
 	const auto b = expression_t::make_simple_expression__2(
-		floyd_basics::expression_type::k_arithmetic_add__2,
+		expression_type::k_arithmetic_add__2,
 		expression_t::make_literal_int(3),
 		expression_t::make_literal_int(4));
 	QUARK_TEST_VERIFY(a == b);
@@ -45,7 +45,7 @@ QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
 
 
 expression_t::expression_t(
-	const floyd_basics::expression_type operation,
+	const expression_type operation,
 	const std::shared_ptr<const expr_base_t>& expr
 )
 :
@@ -95,7 +95,7 @@ bool expression_t::operator==(const expression_t& other) const {
 	}
 }
 
-floyd_basics::expression_type expression_t::get_operation() const{
+expression_type expression_t::get_operation() const{
 	QUARK_ASSERT(check_invariant());
 
 	return _operation;
@@ -186,7 +186,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_simple_expression__2(
-				floyd_basics::expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3))
+				expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3))
 			),
 		R"(["+", ["k", 2, "int"], ["k", 3, "int"], "int"])"
 	);
@@ -196,12 +196,12 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_function_call(
-				expression_t::make_variable_expression("my_func", floyd_basics::typeid_t::make_null()),
+				expression_t::make_variable_expression("my_func", typeid_t::make_null()),
 				{
 					expression_t::make_literal_string("xyz"),
 					expression_t::make_literal_int(123)
 				},
-				floyd_basics::typeid_t::make_string()
+				typeid_t::make_string()
 			)
 		),
 		R"(["call", ["@", "my_func", "null"], [["k", "xyz", "string"], ["k", 123, "int"]], "string"])"
@@ -212,9 +212,9 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare(
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_variable_expression("hello", floyd_basics::typeid_t::make_string()),
+				expression_t::make_variable_expression("hello", typeid_t::make_string()),
 				expression_t::make_literal_string("xyz"),
-				floyd_basics::typeid_t::make_string()
+				typeid_t::make_string()
 			)
 		),
 		R"(["[-]", ["@", "hello", "string"], ["k", "xyz", "string"], "string"])"
@@ -222,4 +222,4 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 }
 
 
-}	//	floyd_ast
+}	//	floyd

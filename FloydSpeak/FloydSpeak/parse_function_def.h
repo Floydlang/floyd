@@ -15,7 +15,7 @@
 struct json_t;
 struct seq_t;
 
-namespace floyd_parser {
+namespace floyd {
 	/*
 		OUTPUT:
 			[

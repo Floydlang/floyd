@@ -11,9 +11,9 @@
 
 #include "parser_ast.h"
 
+namespace floyd {
 
-floyd_ast::ast_t run_pass2(const json_t& parse_tree);
+	floyd::ast_t run_pass2(const json_t& parse_tree);
 
-
-
+}
 #endif /* pass2_hpp */

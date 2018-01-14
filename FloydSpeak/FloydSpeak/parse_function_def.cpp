@@ -16,7 +16,7 @@
 
 #include <cmath>
 
-namespace floyd_parser {
+namespace floyd {
 	using std::pair;
 	using std::string;
 	using std::vector;
@@ -187,5 +187,5 @@ QUARK_UNIT_TEST("", "parse_function_definition2()", "BATCH", "Correct output JSO
 	}
 }
 
-}	//	floyd_parser
+}	//	floyd
 

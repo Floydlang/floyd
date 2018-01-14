@@ -14,7 +14,8 @@
 
 #include "json_support.h"
 
-namespace floyd_basics {
+
+namespace floyd {
 
 	const std::vector<std::string> basic_types {
 		"bool",
@@ -162,9 +163,8 @@ namespace floyd_basics {
 		//	c99: a[b]			token: "[-]"
 		k_lookup_element,
 
-		k_define_function,
-
-		k_define_struct
+		//???	use k_literal for function values?
+		k_define_function
 	};
 
 	expression_type token_to_expression_type(const std::string& op);
@@ -185,6 +185,7 @@ namespace floyd_basics {
 		k_string,
 
 		k_struct,
+		k_struct_type,
 		k_vector,
 		k_function,
 
@@ -197,75 +198,92 @@ namespace floyd_basics {
 
 	//////////////////////////////////////		typeid_t
 
+	/*
+		in-code						base			more		notes
+		================================================================================================================
+		bool						k_bool
+		int							k_int
+		float						k_float
+		string						k_string
 
-	struct typeid_t;
-	json_t typeid_to_json(const typeid_t& t);
+		struct						k_struct		"coord_t/8000"
+
+		[int]						k_vector		typeid_t(k_int)
+
+		int ()
+		int (float, [string])		k_function		k_int, k_float, k_vector
+
+		randomize_player			k_custom_type	"randomize_player"
+
+		- When parsing we find identifiers that we don't know what they mean. Stored as k_custom_type with identifier
+
+	*/
+
+
+	struct struct_definition_t;
 
 	struct typeid_t {
 
 		public: static typeid_t make_null(){
-			return { floyd_basics::base_type::k_null, {}, {}, {} };
+			return { floyd::base_type::k_null, {}, {}, {}, {} };
 		}
 
 		public: static typeid_t make_bool(){
-			return { floyd_basics::base_type::k_bool, {}, {}, {} };
+			return { floyd::base_type::k_bool, {}, {}, {}, {} };
 		}
 
 		public: static typeid_t make_int(){
-			return { floyd_basics::base_type::k_int, {}, {}, {} };
+			return { floyd::base_type::k_int, {}, {}, {}, {} };
 		}
 
 		public: static typeid_t make_float(){
-			return { floyd_basics::base_type::k_float, {}, {}, {} };
+			return { floyd::base_type::k_float, {}, {}, {}, {} };
 		}
 
 		public: static typeid_t make_string(){
-			return { floyd_basics::base_type::k_string, {}, {}, {} };
+			return { floyd::base_type::k_string, {}, {}, {}, {} };
 		}
 
 		public: static typeid_t make_custom_type(const std::string& s){
-			return { floyd_basics::base_type::k_custom_type, {}, {}, s };
+			return { floyd::base_type::k_custom_type, {}, {}, s, {} };
 		}
 
 		public: bool is_null() const {
-			return _base_type == floyd_basics::base_type::k_null;
+			return _base_type == floyd::base_type::k_null;
 		}
 
-		public: static typeid_t make_struct(const std::string& struct_def_id){
-			return { floyd_basics::base_type::k_struct, {}, struct_def_id, {} };
+		public: static typeid_t make_struct(const std::string& unique_type_id){
+			return { floyd::base_type::k_struct, {}, unique_type_id, {}, {} };
+		}
+
+		public: static typeid_t make_struct_type(const struct_definition_t& def){
+			return { floyd::base_type::k_struct, {}, {}, {}, std::make_shared<struct_definition_t>(def) };
 		}
 
 		public: static typeid_t make_vector(const typeid_t& element_type){
-			return { floyd_basics::base_type::k_vector, { element_type }, {}, {} };
+			return { floyd::base_type::k_vector, { element_type }, {}, {}, {} };
 		}
 
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
 			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 			std::vector<typeid_t> parts = { ret };
 			parts.insert(parts.end(), args.begin(), args.end());
-			return { floyd_basics::base_type::k_function, parts, {}, {} };
+			return { floyd::base_type::k_function, parts, {}, {}, {} };
 		}
 
 		public: bool operator==(const typeid_t& other) const{
-			return _base_type == other._base_type && _parts == other._parts && _struct_def_id == other._struct_def_id;
+			return _base_type == other._base_type && _parts == other._parts && _unique_type_id == other._unique_type_id;
 		}
 
 		public: bool check_invariant() const;
 
 		public: void swap(typeid_t& other);
 
-		/*
-			"int"
-			"[int]"
-			"int (float, [int])"
-			"coord_t/8000"
-			??? use json instead.
-		*/
 		public: std::string to_string() const;
 		public: static typeid_t from_string(const std::string& s);
 
 
-		public: floyd_basics::base_type get_base_type() const{
+		public: floyd::base_type get_base_type() const{
 			return _base_type;
 		}
 
@@ -273,26 +291,78 @@ namespace floyd_basics {
 		/////////////////////////////		STATE
 
 
-		/*
-			"int"
-			"coord_t"
-			"coord_t/8000"
-			"int (float a, float b)"
-			"[string]"
-			"[string([bool(float,string),pixel)])"
-			"[coord_t/8000]"
-			"pixel_coord_t = coord_t/8000"
-		*/
-		public: floyd_basics::base_type _base_type;
+		public: floyd::base_type _base_type;
 		public: std::vector<typeid_t> _parts;
-		public: std::string _struct_def_id;
+		public: std::string _unique_type_id;
 
 		//	This is used it overrides _base_type (which will be k_custom_type).
-		public: std::string _unresolved_type_symbol;
+		public: std::string _unresolved_identifier;
+
+		public: std::shared_ptr<struct_definition_t> _struct_def;
 	};
 
 	json_t typeid_to_json(const typeid_t& t);
 
+
+
+	struct value_t;
+	struct statement_t;
+
+
+	//////////////////////////////////////		member_t
+
+	/*
+		Definition of a struct-member.
+	*/
+
+	struct member_t {
+		public: member_t(const floyd::typeid_t& type, const std::string& name);
+		public: member_t(const floyd::typeid_t& type, const std::shared_ptr<value_t>& value, const std::string& name);
+		bool operator==(const member_t& other) const;
+		public: bool check_invariant() const;
+
+
+		/////////////////////////////		STATE
+		public: floyd::typeid_t _type;
+
+		//	Optional -- must have same type as _type.
+		public: std::shared_ptr<const value_t> _value;
+
+		public: std::string _name;
+	};
+
+	void trace(const member_t& member);
+
+
+	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
+
+	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
+	json_t members_to_json(const std::vector<member_t>& members);
+
+	//////////////////////////////////////////////////		struct_definition_t
+
+
+	struct struct_definition_t {
+		public: struct_definition_t(const floyd::typeid_t& struct_type, const std::string& name, const std::vector<member_t>& members) :
+			_struct_type(struct_type),
+			_name(name),
+			_members(members)
+		{
+			QUARK_ASSERT(struct_type.check_invariant());
+			QUARK_ASSERT(name.size() > 0);
+
+			QUARK_ASSERT(check_invariant());
+		}
+		public: bool check_invariant() const;
+		public: bool operator==(const struct_definition_t& other) const;
+
+		public: json_t to_json() const;
+
+
+		public: floyd::typeid_t _struct_type;
+		public: std::string _name;
+		public: std::vector<member_t> _members;
+	};
 
 
 }

@@ -16,7 +16,7 @@
 #include "json_parser.h"
 #include "parser_primitives.h"
 
-using namespace floyd_ast;
+namespace floyd {
 using namespace std;
 
 
@@ -88,10 +88,10 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 */
 
 
-floyd_basics::typeid_t resolve_type_name(const string& t){
+typeid_t resolve_type_name(const string& t){
 	QUARK_ASSERT(t.size() > 0);
 
-	const auto t2 = floyd_basics::typeid_t::from_string(t);
+	const auto t2 = typeid_t::from_string(t);
 	return t2;
 }
 
@@ -110,16 +110,16 @@ expression_t parser_expression_to_ast(const json_t& e){
 		if(type2.is_null()){
 			return expression_t::make_literal_null();
 		}
-		else if(type2.get_base_type() == floyd_basics::base_type::k_bool){
+		else if(type2.get_base_type() == base_type::k_bool){
 			return expression_t::make_literal_bool(value.is_false() ? false : true);
 		}
-		else if(type2.get_base_type() == floyd_basics::base_type::k_int){
+		else if(type2.get_base_type() == base_type::k_int){
 			return expression_t::make_literal_int((int)value.get_number());
 		}
-		else if(type2.get_base_type() == floyd_basics::base_type::k_float){
+		else if(type2.get_base_type() == base_type::k_float){
 			return expression_t::make_literal_float((float)value.get_number());
 		}
-		else if(type2.get_base_type() == floyd_basics::base_type::k_string){
+		else if(type2.get_base_type() == base_type::k_string){
 			return expression_t::make_literal_string(value.get_string());
 		}
 		else{
@@ -131,9 +131,9 @@ expression_t parser_expression_to_ast(const json_t& e){
 		const auto expr = parser_expression_to_ast(e.get_array_n(1));
 		return expression_t::make_unary_minus(expr);
 	}
-	else if(floyd_ast::is_simple_expression__2(op)){
+	else if(is_simple_expression__2(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto op2 = floyd_basics::token_to_expression_type(op);
+		const auto op2 = token_to_expression_type(op);
 		const auto lhs_expr = parser_expression_to_ast(e.get_array_n(1));
 		const auto rhs_expr = parser_expression_to_ast(e.get_array_n(2));
 		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr);
@@ -153,18 +153,18 @@ expression_t parser_expression_to_ast(const json_t& e){
 		for(const auto& arg: args.get_array()){
 			args2.push_back(parser_expression_to_ast(arg));
 		}
-		return expression_t::make_function_call(function_expr, args2, floyd_basics::typeid_t::make_null());
+		return expression_t::make_function_call(function_expr, args2, typeid_t::make_null());
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto base_expr = parser_expression_to_ast(e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
-		return expression_t::make_resolve_member(base_expr, member, floyd_basics::typeid_t::make_null());
+		return expression_t::make_resolve_member(base_expr, member, typeid_t::make_null());
 	}
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_variable_expression(variable_symbol, floyd_basics::typeid_t::make_null());
+		return expression_t::make_variable_expression(variable_symbol, typeid_t::make_null());
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -243,7 +243,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
-			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, floyd_basics::typeid_t::make_null(), expr2)));
+			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, typeid_t::make_null(), expr2)));
 		}
 
 		//	[ "block", [ STATEMENTS ] ],
@@ -302,7 +302,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto fstatements2 = parser_statements_to_ast(fstatements);
 			const auto return_type2 = resolve_type_name(return_type.get_string());
 
-			const auto function_typeid = floyd_basics::typeid_t::make_function(return_type2, get_member_types(args2));
+			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, function_typeid, function_def_expr)));
@@ -350,7 +350,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto members = struct_def.get_object_element("members").get_array();
 
 			const auto memebers2 = conv_members(members);
-			const auto struct_type = floyd_basics::typeid_t::make_struct("??? need to generate ids");
+			const auto struct_type = typeid_t::make_struct("??? need to generate ids");
 			const auto struct_def2 = struct_definition_t(struct_type, name, memebers2);
 
 			const auto s = define_struct_statement_t{ struct_def2 };
@@ -470,9 +470,9 @@ ast_t run_pass2(const json_t& parse_tree){
 	- Correct errors are emitted.
 */
 QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
-	const auto pass1 = parse_json(seq_t(floyd_parser::k_test_program_0_parserout)).first;
+	const auto pass1 = parse_json(seq_t(floyd::k_test_program_0_parserout)).first;
 	const auto pass2 = run_pass2(pass1);
-	const auto pass2_output = parse_json(seq_t(floyd_parser::k_test_program_0_pass2output)).first;
+	const auto pass2_output = parse_json(seq_t(floyd::k_test_program_0_pass2output)).first;
 	ut_compare_jsons(ast_to_json(pass2), pass2_output);
 }
 
@@ -486,7 +486,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_100"){
 */
 
 void test_error(const string& program, const string& error_string){
-	const auto pass1 = floyd_parser::parse_program2(program);
+	const auto pass1 = floyd::parse_program2(program);
 	try{
 		const auto pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);
@@ -638,3 +638,6 @@ QUARK_UNIT_TESTQ("run_pass2()", "1010"){
 	);
 }
 #endif
+
+}	//	floyd
+

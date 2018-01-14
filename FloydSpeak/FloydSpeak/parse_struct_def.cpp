@@ -13,7 +13,7 @@
 #include "json_support.h"
 
 
-namespace floyd_parser {
+namespace floyd {
 	using std::string;
 	using std::vector;
 	using std::pair;
@@ -91,5 +91,5 @@ namespace floyd_parser {
 	}
 
 
-}	//	floyd_parser
+}	//	namespace floyd
 

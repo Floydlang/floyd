@@ -21,7 +21,7 @@
 
 struct json_t;
 
-namespace floyd_ast {
+namespace floyd {
 	struct statement_t;
 	struct expression_t;
 
@@ -42,7 +42,7 @@ namespace floyd_ast {
 		std::string _name;
 		std::vector<member_t> _args;
 		std::vector<std::shared_ptr<statement_t>> _statements;
-		floyd_basics::typeid_t _return_type;
+		typeid_t _return_type;
 	};
 */
 
@@ -78,7 +78,7 @@ namespace floyd_ast {
 		}
 
 		std::string _new_variable_name;
-		floyd_basics::typeid_t _bindtype;
+		typeid_t _bindtype;
 		expression_t _expression;
 	};
 
@@ -263,7 +263,7 @@ namespace floyd_ast {
 	statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
 	statement_t make__define_struct_statement(const define_struct_statement_t& value);
-	statement_t make__bind_statement(const std::string& new_variable_name, const floyd_basics::typeid_t& bindtype, const expression_t& expression);
+	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression);
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);
 	statement_t make__ifelse_statement(
 		const expression_t& condition,
@@ -288,7 +288,7 @@ namespace floyd_ast {
 	statement_t make_function_statement(const std::string name, const function_definition_t def);
 
 
-}	//	floyd_ast
+}	//	floyd
 
 
 #endif /* parser_statement_hpp */
