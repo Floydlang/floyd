@@ -42,13 +42,20 @@ namespace floyd {
 		return _def == other._def && _member_values == other._member_values;
 	}
 
+	std::string to_string(const struct_instance_t& v){
+		auto s = "struct " + v._def._name + " {";
+		for(int i = 0 ; i < v._def._members.size() ; i++){
+			const auto& def = v._def._members[i];
+			const auto& value = v._member_values[i];
 
-	std::string to_preview(const struct_instance_t& instance){
-		string r;
-		for(const auto m: instance._member_values){
-			r = r + m.plain_value_to_string();
+			const auto m = def._type.to_string() + " " + def._name + "=" + value.to_string()  + ",";
+			s = s + m;
 		}
-		return string("{") + r + "}";
+		if(s.back() == ','){
+			s.pop_back();
+		}
+		s = s + "}";
+		return s;
 	}
 
 
@@ -149,58 +156,6 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	QUARK_TEST_VERIFY(t3->host_function_call({}) == value_t(13));
 }
 */
-
-
-	//////////////////////////////////////////////////		function_definition_t
-
-
-	function_definition_t::function_definition_t(
-		const std::vector<member_t>& args,
-		const std::vector<std::shared_ptr<statement_t>> statements,
-		const typeid_t& return_type
-	)
-	:
-		_args(args),
-		_statements(statements),
-		_host_function(0),
-		_return_type(return_type)
-	{
-	}
-
-	function_definition_t::function_definition_t(
-		const std::vector<member_t>& args,
-		const int host_function,
-		const typeid_t& return_type
-	)
-	:
-		_args(args),
-		_host_function(host_function),
-		_return_type(return_type)
-	{
-	}
-
-	json_t function_definition_t::to_json() const {
-		typeid_t function_type = get_function_type(*this);
-		return json_t::make_array({
-			"func-def",
-			typeid_to_json(function_type),
-			members_to_json(_args),
-			statements_to_json(_statements),
-			typeid_to_json(_return_type)
-		});
-	}
-
-	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
-		return
-			lhs._args == rhs._args
-			&& compare_shared_value_vectors(lhs._statements, rhs._statements)
-			&& lhs._host_function == rhs._host_function
-			&& lhs._return_type == rhs._return_type;
-	}
-
-	typeid_t get_function_type(const function_definition_t f){
-		return typeid_t::make_function(f._return_type, get_member_types(f._args));
-	}
 
 
 	//////////////////////////////////////////////////		function_instance_t
@@ -681,6 +636,82 @@ QUARK_UNIT_TESTQ("value_to_json()", ""){
 QUARK_UNIT_TESTQ("value_to_json()", ""){
 	quark::ut_compare(value_to_json(value_t()), json_t());
 }
+
+
+
+
+
+
+
+
+
+	//////////////////////////////////////////////////		function_definition_t
+
+
+	function_definition_t::function_definition_t(
+		const std::vector<member_t>& args,
+		const std::vector<std::shared_ptr<statement_t>> statements,
+		const typeid_t& return_type
+	)
+	:
+		_args(args),
+		_statements(statements),
+		_host_function(0),
+		_return_type(return_type)
+	{
+	}
+
+	function_definition_t::function_definition_t(
+		const std::vector<member_t>& args,
+		const int host_function,
+		const typeid_t& return_type
+	)
+	:
+		_args(args),
+		_host_function(host_function),
+		_return_type(return_type)
+	{
+	}
+
+	json_t function_definition_t::to_json() const {
+		typeid_t function_type = get_function_type(*this);
+		return json_t::make_array({
+			"func-def",
+			typeid_to_json(function_type),
+			members_to_json(_args),
+			statements_to_json(_statements),
+			typeid_to_json(_return_type)
+		});
+	}
+
+	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
+		return
+			lhs._args == rhs._args
+			&& compare_shared_value_vectors(lhs._statements, rhs._statements)
+			&& lhs._host_function == rhs._host_function
+			&& lhs._return_type == rhs._return_type;
+	}
+
+	typeid_t get_function_type(const function_definition_t& f){
+		return typeid_t::make_function(f._return_type, get_member_types(f._args));
+	}
+
+	std::string to_string(const function_definition_t& v){
+		return "???missing impl for to_string(function_definition_t)";
+/*
+		auto s = _parts[0].to_string() + " (";
+
+		//??? doesn't work when size() == 2, that is ONE argument.
+		if(_parts.size() > 2){
+			for(int i = 1 ; i < _parts.size() - 1 ; i++){
+				s = s + _parts[i].to_string() + ",";
+			}
+			s = s + _parts[_parts.size() - 1].to_string();
+		}
+		s = s + ")";
+		return s;
+*/
+	}
 
 
 }	//	floyd

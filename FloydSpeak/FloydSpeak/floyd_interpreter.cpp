@@ -2081,12 +2081,22 @@ QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
 	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].is_typeid()	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "struct"){
+QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 	const auto vm = run_global(R"(
 		struct t { int a;}
-		print(3);
+		t(3);
+		print(t);
 	)");
-//	QUARK_UT_VERIFY((vm._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "typeid(struct t {int a})" }	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
+	const auto vm = run_global(R"(
+		struct t { int a;}
+		a = t(3);
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "struct t {int a=3}" }	));
 }
 
 

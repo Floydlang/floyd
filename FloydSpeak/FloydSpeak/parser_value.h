@@ -22,6 +22,7 @@ namespace floyd {
 	struct expression_t;
 	struct value_t;
 	struct interpreter_t;
+	struct function_definition_t;
 
 
 	//////////////////////////////////////////////////		struct_instance_t
@@ -49,7 +50,7 @@ namespace floyd {
 		public: std::vector<value_t> _member_values;
 	};
 
-	std::string to_preview(const struct_instance_t& instance);
+	std::string to_string(const struct_instance_t& instance);
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -66,6 +67,10 @@ namespace floyd {
 	};
 
 	std::string to_preview(const vector_instance_t& instance);
+
+
+
+
 
 
 	//////////////////////////////////////////////////		function_definition_t
@@ -94,7 +99,10 @@ namespace floyd {
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
-	typeid_t get_function_type(const function_definition_t f);
+	std::string to_string(const function_definition_t& v);
+
+	typeid_t get_function_type(const function_definition_t& f);
+
 
 
 	//////////////////////////////////////////////////		function_instance_t
@@ -427,6 +435,9 @@ namespace floyd {
 			"Hello, world"
 			Notice, strings don't get wrapped in "".
 		*/
+		std::string to_string() const {
+			return plain_value_to_string();
+		}
 		std::string plain_value_to_string() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -452,11 +463,10 @@ namespace floyd {
 			}
 
 			else if(base_type == base_type::k_typeid){
-				return "typeid:" + _typeid.to_string();
-//				return to_preview(*_struct_type);
+				return _typeid.to_string();
 			}
 			else if(base_type == base_type::k_struct){
-				return to_preview(*_struct);
+				return floyd::to_string(*_struct);
 			}
 			else if(base_type == base_type::k_vector){
 				return to_preview(*_vector);
@@ -676,12 +686,8 @@ namespace floyd {
 		return value_t(f);
 	}
 
-
-
 	void trace(const value_t& e);
-
 	json_t value_to_json(const value_t& v);
-
 	value_t make_test_func();
 
 

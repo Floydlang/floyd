@@ -286,6 +286,15 @@ namespace floyd {
 
 		//	Supports non-lossy round trip between to_string() and from_string(). ??? make it so and test!
 		//	Compatible with Floyd sources.
+
+		/*
+			"int"
+			"[int]"
+			"int f(float b)"
+			"typeid(int)"
+
+			### Store as compact JSON instead? Then we can't use [ and {".
+		*/
 		public: std::string to_string() const;
 		public: static typeid_t from_string(const std::string& s);
 
@@ -347,6 +356,11 @@ namespace floyd {
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 	json_t members_to_json(const std::vector<member_t>& members);
 
+
+
+
+
+
 	//////////////////////////////////////////////////		struct_definition_t
 
 
@@ -368,6 +382,7 @@ namespace floyd {
 		public: std::vector<member_t> _members;
 	};
 
+	std::string to_string(const struct_definition_t& v);
 
 }
 

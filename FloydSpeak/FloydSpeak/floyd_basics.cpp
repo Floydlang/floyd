@@ -286,20 +286,17 @@ expression_type token_to_expression_type(const string& op){
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
 			//??? How to encode typeid in floyd source code?
-			return "{[" + _parts[0].to_string() + "}";
+			return "typeid(" + _parts[0].to_string() + ")";
 		}
 		else if(_base_type == floyd::base_type::k_struct){
-			//??? Include struct name + all struct members.
-			return "{[" + _struct_def->_name + "}";
+			return floyd::to_string(*_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_vector){
 			return "[" + _parts[0].to_string() + "]";
 		}
 		else if(_base_type == floyd::base_type::k_function){
-			auto s = _parts[0].to_string() + " (";
-
-			//??? doesn't work when size() == 2, that is ONE argument.
-			if(_parts.size() > 2){
+			auto s = _parts[0].to_string() + "(";
+			if(_parts.size() > 1){
 				for(int i = 1 ; i < _parts.size() - 1 ; i++){
 					s = s + _parts[i].to_string() + ",";
 				}
@@ -321,6 +318,10 @@ expression_type token_to_expression_type(const string& op){
 
 		return a.first;
 	}
+
+
+
+
 
 
 	json_t typeid_to_json(const typeid_t& t){
@@ -422,7 +423,13 @@ expression_type token_to_expression_type(const string& op){
 		return r;
 	}
 
+
+
+
 	//////////////////////////////////////////////////		struct_definition_t
+
+
+
 
 	bool struct_definition_t::check_invariant() const{
 //		QUARK_ASSERT(_struct_type._base_type != floyd::base_type::k_null && _struct_type.check_invariant());
@@ -447,6 +454,21 @@ expression_type token_to_expression_type(const string& op){
 			members_to_json(_members)
 		});
 	}
+
+	std::string to_string(const struct_definition_t& v){
+		auto s = "struct " + v._name + " {";
+		for(const auto e: v._members){
+			s = s + e._type.to_string() + " " + e._name + ",";
+		}
+		if(s.back() == ','){
+			s.pop_back();
+		}
+		s = s + "}";
+		return s;
+	}
+
+
+
 
 
 
