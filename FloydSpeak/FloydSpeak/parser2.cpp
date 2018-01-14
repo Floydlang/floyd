@@ -307,12 +307,18 @@ QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 
 
 
+std::pair<std::string, seq_t> test_parse_expression2(const seq_t& expression){
+	json_helper helper;
+	const auto result = parse_expression_template(helper, seq_t(expression));
+	return result;
+}
+
+
 bool test__parse_expression(const std::string& expression, string expected_value, string expected_seq){
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
 
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t(expression));
+	const auto result = test_parse_expression2(seq_t(expression));
 	QUARK_TRACE_SS("result:" << result.first);
 	if(result.first != expected_value){
 		return false;
@@ -618,49 +624,40 @@ QUARK_UNIT_1("parse_expression()", "function call with expression-args", test__p
 ));
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call, expression argument"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("1 == 2)"));
+	const auto result = test_parse_expression2(seq_t("1 == 2)"));
 	QUARK_UT_VERIFY((		result == pair<string, seq_t>( "[\"==\", [\"k\", \"int\", 1], [\"k\", \"int\", 2]]", ")" )		));
 }
 
 
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call, expression argument"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("f(1 == 2)"));
+	const auto result = test_parse_expression2(seq_t("f(1 == 2)"));
 	QUARK_UT_VERIFY((		result == pair<string, seq_t>( R"(["call", ["@", "f"], [["==", ["k", "int", 1], ["k", "int", 2]]]])", "" )		));
 }
 
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("((3))))"));
+	const auto result = test_parse_expression2(seq_t("((3))))"));
 }
 QUARK_UNIT_TESTQ("parse_expression()", "function call"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("print((3))))"));
+	const auto result = test_parse_expression2(seq_t("print((3))))"));
 }
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("print(1 < 2)"));
+	const auto result = test_parse_expression2(seq_t("print(1 < 2)"));
 }
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("print(1 < color(1, 2, 3))"));
+	const auto result = test_parse_expression2(seq_t("print(1 < color(1, 2, 3))"));
 }
 
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
+	const auto result = test_parse_expression2(seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
 }
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call"){
-	json_helper helper;
-	const auto result = parse_expression_template(helper, seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
-
+	const auto result = test_parse_expression2(seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
 
 	QUARK_UT_VERIFY(
 		test__parse_expression(
