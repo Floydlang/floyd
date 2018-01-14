@@ -2099,99 +2099,58 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "struct t {int a=3}" }	));
 }
 
-
-
-
-#if false
-QUARK_UNIT_1("run_main()", "", test__run_main(
-	"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
-	value_t(true)
-));
-
-
-QUARK_UNIT_TESTQ("run_main()", ""){
-	QUARK_TEST_VERIFY(test__run_main(
-		"struct t { int a;} bool main(){ t a = t_constructor(); t b = t_constructor(); return a == b; }",
-		value_t(true)
-	));
+QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
+	const auto vm = run_global(R"(
+		struct t { int a;}
+		temp = t(4);
+		print(temp.a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "4" }	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", ""){
-	try {
-		test__run_main(
-			"struct t { int a;} bool main(){ t a = t_constructor(); int b = 1055; return a == b; }",
-			value_t(true)
-		);
-		QUARK_UT_VERIFY(false);
-	}
-	catch(...){
-	}
+QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		struct image { pixel background_color; pixel foreground_color;}
+
+		c = color(128, 192, 255);
+		print(c);
+
+		i = image(color(1, 2, 3), color(200, 201, 202));
+		print(i);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"struct color {int red=128,int green=192,int blue=255}",
+		"struct image {pixel background_color=struct color {int red=1,int green=2,int blue=3},pixel foreground_color=struct color {int red=200,int green=201,int blue=202}}"
+	}	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		struct image { pixel background_color; pixel foreground_color;}
+		i = image(color(1, 2, 3), color(200, 201, 202));
+		print(i.foreground_color.green);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"201"
+	}	));
 }
 
 
-QUARK_UNIT_TESTQ("struct", "Can define struct, instantiate it and read member data"){
-	const auto a = run_main(
-		"struct pixel { string s; }"
-		"string main(){\n"
-		"	pixel p = pixel_constructor();"
-		"	return p.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t(""));
+QUARK_UNIT_TESTQ("run_main()", "return struct from function"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		struct image { pixel background_color; pixel foreground_color;}
+		color make_color(){
+			return color(100, 101, 102);
+		}
+		print(make_color());
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"struct color {int red=100,int green=101,int blue=102}",
+	}	));
 }
-
-QUARK_UNIT_TESTQ("struct", "Struct member default value"){
-	const auto a = run_main(
-		"struct pixel { string s = \"one\"; }"
-		"string main(){\n"
-		"	pixel p = pixel_constructor();"
-		"	return p.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t("one"));
-}
-
-QUARK_UNIT_TESTQ("struct", "Nesting structs"){
-	const auto a = run_main(
-		"struct pixel { string s = \"two\"; }"
-		"struct image { pixel background_color; int width; int height; }"
-		"string main(){\n"
-		"	image i = image_constructor();"
-		"	return i.background_color.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t("two"));
-}
-
-QUARK_UNIT_TESTQ("struct", "Can use struct as argument"){
-	const auto a = run_main(
-		"string get_s(pixel p){ return p.s; }"
-		"struct pixel { string s = \"two\"; }"
-		"string main(){\n"
-		"	pixel p = pixel_constructor();"
-		"	return get_s(p);"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t("two"));
-}
-
-QUARK_UNIT_TESTQ("struct", "Can return struct"){
-	const auto a = run_main(
-		"struct pixel { string s = \"three\"; }"
-		"pixel test(){ return pixel_constructor(); }"
-		"string main(){\n"
-		"	pixel p = test();"
-		"	return p.s;"
-		"}\n",
-		{}
-	);
-	QUARK_TEST_VERIFY(a.second == value_t("three"));
-}
-#endif
 
 
 
