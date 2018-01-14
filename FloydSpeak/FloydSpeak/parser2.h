@@ -358,6 +358,7 @@ std::pair<EXPRESSION, seq_t> parse_atom(const maker<EXPRESSION>& helper, const s
 	"lhs()"
 	"lhs(1)"
 	"lhs(a + b)"
+	"lhs(a, b)"
 */
 template<typename EXPRESSION>
 std::pair<EXPRESSION, seq_t> parse_function_call(const maker<EXPRESSION>& helper, const seq_t& p1, const EXPRESSION& lhs, const eoperator_precedence prev_precedence){
@@ -540,9 +541,7 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
 			const auto rhs = parse_expression_int(helper, p.rest(2), eoperator_precedence::k_equal__not_equal);
 			const auto value2 = helper.maker__make2(eoperation::k_2_logical_nonequal, lhs, rhs.first);
-
-			//	End this precedence level.
-			return { value2, rhs.second.rest() };
+			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	!!! Check for "<=" before we check for "<".
@@ -550,14 +549,14 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
 			const auto rhs = parse_expression_int(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make2(eoperation::k_2_smaller_or_equal, lhs, rhs.first);
-			return parse_operation(helper, rhs.second.rest(), value2, precedence);
+			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION < EXPRESSION
 		else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
 			const auto rhs = parse_expression_int(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make2(eoperation::k_2_smaller, lhs, rhs.first);
-			return parse_operation(helper, rhs.second.rest(), value2, precedence);
+			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 
@@ -566,14 +565,14 @@ std::pair<EXPRESSION, seq_t> parse_operation(const maker<EXPRESSION>& helper, co
 		else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
 			const auto rhs = parse_expression_int(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make2(eoperation::k_2_larger_or_equal, lhs, rhs.first);
-			return parse_operation(helper, rhs.second.rest(), value2, precedence);
+			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 		//	EXPRESSION > EXPRESSION
 		else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
 			const auto rhs = parse_expression_int(helper, p.rest(2), eoperator_precedence::k_larger_smaller);
 			const auto value2 = helper.maker__make2(eoperation::k_2_larger, lhs, rhs.first);
-			return parse_operation(helper, rhs.second.rest(), value2, precedence);
+			return parse_operation(helper, rhs.second, value2, precedence);
 		}
 
 

@@ -1811,7 +1811,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 
 //////////////////////////		Host: assert
 
-
+/*
 QUARK_UNIT_TESTQ("run_global()", ""){
 	const auto r = run_global(
 		R"(
@@ -1831,7 +1831,7 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A" }));
 }
-
+*/
 
 //////////////////////////		Host: get_time_of_day()
 
@@ -2195,7 +2195,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 	catch(...){
 	}
 }
-/*
+
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 	const auto vm = run_global(R"(
@@ -2212,7 +2212,6 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
 }
-*/
 
 }	//	floyd
 
