@@ -290,7 +290,7 @@ expression_type token_to_expression_type(const string& op){
 		}
 		else if(_base_type == floyd::base_type::k_struct){
 			//??? Include struct name + all struct members.
-			return "{[" + _parts[0].to_string() + "}";
+			return "{[" + _struct_def->_name + "}";
 		}
 		else if(_base_type == floyd::base_type::k_vector){
 			return "[" + _parts[0].to_string() + "]";

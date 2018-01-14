@@ -732,6 +732,19 @@ bool all_literals(const vector<expression_t>& e){
 	return true;
 }
 
+std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
+	const auto& def = *struct_type._struct_def;
+	if(values.size() != def._members.size()){
+		throw std::runtime_error(
+								 string() + "Calling constructor for \"" + def._name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
+		);
+	}
+	//??? check types of members.
+
+	const auto instance = make_struct_value(struct_type, def, values);
+	return std::pair<interpreter_t, value_t>(vm, instance);
+}
+
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -756,20 +769,48 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		return {vm2, expression_t::make_function_call(function.second, args2, e.get_result_type())};
 	}
 
-	//	Get function value and arg values.
+	//	Convert to values.
 	const auto& function_value = function.second.get_literal();
+	vector<value_t> arg_values;
+	for(int i = 0 ; i < args2.size() ; i++){
+		const auto& v = args2[i].get_literal();
+		arg_values.push_back(v);
+	}
+
+
+	//	Get function value and arg values.
 	if(function_value.is_function() == false){
-		throw std::runtime_error("Cannot call non-function.");
+		//	Attempting to call a TYPE? Then this may be a constructor call.
+		if(function_value.is_typeid()){
+			const auto t = function_value.get_typeid();
+			const auto typeid_contained_type = t._parts[0];
+			if(typeid_contained_type.get_base_type() == base_type::k_struct){
+				//	Constructor.
+
+				const auto result = construct_struct(vm2, typeid_contained_type, arg_values);
+				vm2 = result.first;
+				return { vm2, expression_t::make_literal(result.second)};
+			}
+			else{
+				throw std::runtime_error("Cannot call non-function.");
+			}
+		}
+		else{
+			throw std::runtime_error("Cannot call non-function.");
+		}
 	}
 
-	vector<value_t> args3;
-	for(const auto& i: args2){
-		args3.push_back(i.get_literal());
-	}
+	//	Call function-value.
+	else{
+		vector<value_t> args3;
+		for(const auto& i: args2){
+			args3.push_back(i.get_literal());
+		}
 
-	const auto& result = call_function(vm2, function_value, args3);
-	vm2 = result.first;
-	return { vm2, expression_t::make_literal(*result.second)};
+		const auto& result = call_function(vm2, function_value, args3);
+		vm2 = result.first;
+		return { vm2, expression_t::make_literal(*result.second)};
+	}
 }
 
 
@@ -2032,6 +2073,14 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 	)");
 }
 
+QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
+	const auto vm = run_global(R"(
+		struct t { int a;}
+		t(3);
+	)");
+	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].is_typeid()	));
+}
+
 QUARK_UNIT_TESTQ("run_main()", "struct"){
 	const auto vm = run_global(R"(
 		struct t { int a;}
@@ -2039,6 +2088,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 	)");
 //	QUARK_UT_VERIFY((vm._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
 }
+
 
 
 

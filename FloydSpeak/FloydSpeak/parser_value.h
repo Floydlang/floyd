@@ -664,8 +664,8 @@ namespace floyd {
 	};
 
 
-	inline value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def){
-		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, {}});
+	inline value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values){
+		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
 		return value_t(struct_type, f);
 	}
 	inline value_t make_typeid_value(const typeid_t& type_id){

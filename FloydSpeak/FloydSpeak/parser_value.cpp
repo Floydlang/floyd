@@ -585,6 +585,9 @@ json_t value_to_json(const value_t& v){
 	else if(v.is_string()){
 		return json_t(v.get_string());
 	}
+	else if(v.is_typeid()){
+		return json_t(v.get_typeid().to_string());
+	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct();
 		std::map<string, json_t> result;
