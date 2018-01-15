@@ -352,5 +352,9 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 json_t dissoc(const json_t& value, const json_t& key);
 
 
+//	Converts the value into a vector of strings.
+std::vector<std::string> to_string_vec(const json_t& json);
+
+
 
 #endif /* json_support_hpp */

@@ -782,3 +782,17 @@ QUARK_UNIT_TESTQ("assoc_in()", "mixed arrays and trees"){
 }
 
 
+
+
+std::vector<std::string> to_string_vec(const json_t& json){
+	QUARK_ASSERT(json.is_array());
+
+	const auto size = json.get_array_size();
+	vector<string> result;
+	for(int i = 0 ; i < size ; i++){
+		const auto e = json.get_array_n(i);
+		result.push_back(e.get_string());
+	}
+	return result;
+}
+

@@ -356,7 +356,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_compare_jsons(
 		parse_prefixless_statement(seq_t("int x = f(3);")).first,
-		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
+		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]], {}])")).first
 	);
 }
 
@@ -397,7 +397,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
 		parse_statement(seq_t("int x = 10;")).first,
-		parse_json(seq_t(R"(["bind", "int", "x", ["k", 10, "int"] ])")).first
+		parse_json(seq_t(R"(["bind", "int", "x", ["k", 10, "int"], {}])")).first
 	);
 }
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
@@ -422,7 +422,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
 		parse_statement(seq_t("int x = f(3);")).first,
-		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
+		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]], {}])")).first
 	);
 }
 

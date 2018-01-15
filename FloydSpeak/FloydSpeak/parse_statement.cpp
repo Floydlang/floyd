@@ -44,8 +44,8 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 				[
 					"block",
 					[
-						["bind","int","x",["k",1,"int"]],
-						["bind","int","y",["k",2,"int"]]
+						["bind","int","x",["k",1,"int"], {}],
+						["bind","int","y",["k",2,"int"], {}]
 					]
 				]
 			)"
@@ -100,7 +100,7 @@ pair<json_t, seq_t> parse_assignment_statement(const seq_t& s){
 
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-	const auto statement = json_t::make_array({ "bind", type, variable_pos.first, expression });
+	const auto statement = json_t::make_array({ "bind", type, variable_pos.first, expression, json_t::make_object() });
 
 	//	Skip trailing ";".
 	return { statement, expression_pos.second.rest1() };
@@ -111,7 +111,7 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
 		parse_assignment_statement(seq_t("bool bb = true;")).first,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "bool", "bb", ["k", true, "bool"]]
+				[ "bind", "bool", "bb", ["k", true, "bool"], {}]
 			)"
 		)).first
 	);
@@ -121,7 +121,7 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
 		parse_assignment_statement(seq_t("int hello = 3;")).first,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "int", "hello", ["k", 3, "int"]]
+				[ "bind", "int", "hello", ["k", 3, "int"], {}]
 			)"
 		)).first
 	);
@@ -462,7 +462,7 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 					["k",1,"int"],
 					["k",5,"int"],
 					[
-						["bind","int","y",["k",11,"int"]]
+						["bind","int","y",["k",11,"int"], {}]
 					]
 				]
 			)"

@@ -196,6 +196,7 @@ std::vector<member_t> conv_members(const json_t& members){
 
 
 
+
 /*
 	Input is an array of statements from parser.
 	A function has its own list of statements.
@@ -222,20 +223,23 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			statements2.push_back(make_shared<statement_t>(make__return_statement(expr)));
 		}
 
-		//	[ "bind", "float", "x", EXPRESSION ],
+		//	[ "bind", "float", "x", EXPRESSION, {} ]
+		//	Last element is a list of meta info, like "mutable" etc.
 		else if(type == "bind"){
-			QUARK_ASSERT(statement.get_array_size() == 4);
+			QUARK_ASSERT(statement.get_array_size() == 5);
 			const auto bind_type = statement.get_array_n(1);
 			const auto name = statement.get_array_n(2);
 			const auto expr = statement.get_array_n(3);
+			const auto meta = statement.get_array_n(4);
 
 			const auto bind_type2 = resolve_type_name(bind_type.get_string());
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
+			bool mutable_flag = meta.does_object_element_exist("mutable");
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, bind_type2, expr2)));
 		}
 
-		//	[ "assign", "x", EXPRESSION ],
+		//	[ "assign", "x", EXPRESSION ]
 		else if(type == "assign"){
 			QUARK_ASSERT(statement.get_array_size() == 3);
 			const auto name = statement.get_array_n(1);
@@ -246,7 +250,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, typeid_t::make_null(), expr2)));
 		}
 
-		//	[ "block", [ STATEMENTS ] ],
+		//	[ "block", [ STATEMENTS ] ]
 		else if(type == "block"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 
@@ -400,7 +404,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 		}
 
-		//	[ "expression-statement", EXPRESSION ],
+		//	[ "expression-statement", EXPRESSION ]
 		else if(type == "expression-statement"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 			const auto expr = statement.get_array_n(1);

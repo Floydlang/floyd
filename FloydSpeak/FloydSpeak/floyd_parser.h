@@ -127,7 +127,8 @@ const char k_test_program_100_parserout[] = R"(
 						"bind",
 						"pixel",
 						"p",
-						["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]]
+						["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]],
+						{}
 					],
 					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 				]
