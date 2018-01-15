@@ -93,30 +93,46 @@ namespace {
 		if(statement._bind){
 			const auto& s = statement._bind;
 			const auto name = s->_new_variable_name;
-			if(vm2._call_stack.back()->_values.count(name) != 0){
-				throw std::runtime_error("Local value already exists.");
-			}
+
 			const auto result = evaluate_expression(vm2, s->_expression);
 			vm2 = result.first;
 			const auto result_value = result.second;
 
+			const auto dest_type = s->_bindtype;
+
 			if(result_value.is_literal() == false){
 				throw std::runtime_error("Cannot evaluate expression.");
 			}
-
-			const auto dest_type = s->_bindtype;
-
-			//	Deduced bind.
-			if(dest_type.is_null()){
-			}
 			else{
-				const auto source_type = result_value.get_literal().get_type();
-				if(!(dest_type == source_type)){
-					throw std::runtime_error("Types not compatible in bind.");
+
+				bool exists = vm2._call_stack.back()->_values.count(name) != 0;
+
+				//	Deduced bind. "x = 3;"
+				//	Deduced bind can also be used to MUTATE existing variable.
+				if(dest_type.is_null()){
+					if(exists){
+						//	Mutate.
+						vm2._call_stack.back()->_values[name] = result_value.get_literal();
+					}
+					else{
+						vm2._call_stack.back()->_values[name] = result_value.get_literal();
+					}
+				}
+
+				//	Regular bind, with explicit type: "int x = 3;"
+				else{
+					if(exists){
+						throw std::runtime_error("Local value already exists.");
+					}
+
+					const auto source_type = result_value.get_literal().get_type();
+					if(!(dest_type == source_type)){
+						throw std::runtime_error("Types not compatible in bind.");
+					}
+					vm2._call_stack.back()->_values[name] = result_value.get_literal();
 				}
 			}
 
-			vm2._call_stack.back()->_values[name] = result_value.get_literal();
 			return { vm2, {}};
 		}
 		else if(statement._block){
@@ -1676,6 +1692,39 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 }
 
 
+
+
+QUARK_UNIT_TESTQ("call_function()", "mutate variabl"){
+	auto r = run_global(
+		R"(
+			a = 1;
+			a = 2;
+			print(a);
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "2" }));
+}
+
+/*
+QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
+	try {
+		const auto vm = run_global(R"(
+			a = 3;
+			a = 4;
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+*/
+
+
+
+
+//////////////////////////		RETURN-statement, advanced usage.
+
+
 QUARK_UNIT_TESTQ("call_function()", "return from middle of function"){
 	auto r = run_global(
 		"string f(){"
@@ -1756,8 +1805,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	test__run_init__check_result(
 		R"(
 			string result = to_string(145);
-		)"
-		,
+		)",
 		value_t("145")
 	);
 }
@@ -1765,8 +1813,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	test__run_init__check_result(
 		R"(
 			string result = to_string(3.1);
-		)"
-		,
+		)",
 		value_t("3.100000")
 	);
 }
@@ -1941,7 +1988,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 
 
 
-QUARK_UNIT_TESTQ("run_init()", ""){
+QUARK_UNIT_TESTQ("run_init()", "if"){
 	const auto r = run_global(
 		R"(
 			if(1 == 1){
@@ -1961,7 +2008,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "one" }));
 }
 
-QUARK_UNIT_TESTQ("run_init()", ""){
+QUARK_UNIT_TESTQ("run_init()", "if"){
 	const auto r = run_global(
 		R"(
 			if(1 == 0){
@@ -1981,7 +2028,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "two" }));
 }
 
-QUARK_UNIT_TESTQ("run_init()", ""){
+QUARK_UNIT_TESTQ("run_init()", "if"){
 	const auto r = run_global(
 		R"(
 			if(1 == 0){
@@ -2001,7 +2048,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "three" }));
 }
 
-QUARK_UNIT_TESTQ("run_init()", ""){
+QUARK_UNIT_TESTQ("run_init()", "if"){
 	const auto r = run_global(
 		R"(
 			if(1 == 0){
@@ -2229,17 +2276,6 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 	}	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
-	try {
-		const auto vm = run_global(R"(
-			a = 3;
-			a = 4;
-		)");
-		QUARK_UT_VERIFY(false);
-	}
-	catch(...){
-	}
-}
 
 
 

@@ -85,6 +85,13 @@ Use _mutable_ to define a local variable that can be mutated. Only _local variab
 	}
 
 
+??? Treat function local variables as member of a struct. Mutating a variable gives us a completely new local state -- the old one still exists.
+
+??? When do you need to mutate local variables?
+
+Insight: local variable mutation makes it easier to learn for imperative programmers.
+
+
 
 
 # MORE EXPRESSIONS
