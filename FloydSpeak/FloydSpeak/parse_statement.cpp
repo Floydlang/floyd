@@ -178,7 +178,7 @@ pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s){
 
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-	const auto statement = json_t::make_array({ "deduced-bind", variable_pos.first, expression });
+	const auto statement = json_t::make_array({ "assign", variable_pos.first, expression });
 
 	//	Skip trailing ";".
 	return { statement, expression_pos.second.rest1() };
@@ -189,7 +189,7 @@ QUARK_UNIT_TEST("", "parse_deduced_bind_statement()", "", ""){
 		parse_deduced_bind_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
-				["deduced-bind","x",["k",10,"int"]]
+				["assign","x",["k",10,"int"]]
 			)"
 		)).first
 	);

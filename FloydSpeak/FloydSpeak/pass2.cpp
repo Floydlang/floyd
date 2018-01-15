@@ -235,8 +235,8 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, bind_type2, expr2)));
 		}
 
-		//	[ "bind", "x", EXPRESSION ],
-		else if(type == "deduced-bind"){
+		//	[ "assign", "x", EXPRESSION ],
+		else if(type == "assign"){
 			QUARK_ASSERT(statement.get_array_size() == 3);
 			const auto name = statement.get_array_n(1);
 			const auto expr = statement.get_array_n(2);
