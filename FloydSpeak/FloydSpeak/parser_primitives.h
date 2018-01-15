@@ -95,7 +95,7 @@ namespace floyd {
 		Does NOT make sure this a known type-identifier.
 		String must not be empty.
 	*/
-	std::pair<typeid_t, seq_t> read_type_identifier2(const seq_t& s);
+	std::pair<std::shared_ptr<typeid_t>, seq_t> read_type_identifier2(const seq_t& s);
 	std::pair<typeid_t, seq_t> read_required_type_identifier2(const seq_t& s);
 
 

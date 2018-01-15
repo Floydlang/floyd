@@ -1702,7 +1702,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 /*
 
-QUARK_UNIT_TESTQ("call_function()", "mutate variabl"){
+QUARK_UNIT_TESTQ("call_function()", "mutate local"){
 	auto r = run_global(
 		R"(
 			mutable a = 1;
