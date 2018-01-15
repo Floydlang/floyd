@@ -18,13 +18,14 @@ namespace floyd {
 
 	/*
 		Parses the expression string
+
 		Requires all characters to be part of expression - does not stop until all characters have been evaluated.
 		Checks syntax
 
-		Returns abstraxt syntax tree, in JSON-format.
+		Returns AST, in JSON-format.
 
-		FALSE: Validates that called functions exists and has correct type.
-		FALSE: Validates that accessed variables exists and has correct types.
+		Does NOT validates that called functions exists and has correct type.
+		Does NOT validates that accessed variables exists and has correct types.
 
 		- Supports nesting, full paths, like "my_global[10 + f(selector)].lookup("asd").next"
 		- Supports function calls-
