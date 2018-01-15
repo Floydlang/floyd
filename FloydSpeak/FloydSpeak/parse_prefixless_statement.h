@@ -16,9 +16,6 @@ struct seq_t;
 
 namespace floyd {
 
-	std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s);
-
-
 	/*
 		int a = 10;
 		float b = 0.3;
@@ -52,6 +49,36 @@ namespace floyd {
 		print(13);
 	*/
 	std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
+
+
+	/*
+		let TYPE SYMBOL = EXPRESSION;
+		FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
+		let SYMBOL = EXPRESSION;
+
+		BIND					TYPE				SYMBOL		=		EXPRESSION;
+		BIND					int					x			=		10;
+		BIND					int	(string a)		x			=		f(4 == 5);
+
+		FUNCTION-DEFINITION		TYPE				SYMBOL				( EXPRESSION-LIST )	{ STATEMENTS }
+		FUNCTION-DEFINITION		int					f					(string name)		{ return 13; }
+		FUNCTION-DEFINITION		int (string a)		f					(string name)		{ return 100 == 101; }
+
+		EXPRESSION-STATEMENT						EXPRESSION;
+		EXPRESSION-STATEMENT						print				("Hello, World!");
+		EXPRESSION-STATEMENT						print				("Hello, World!" + f(3) == 2);
+
+		ASSIGN										SYMBOL		=		EXPRESSION;
+		ASSIGN										x			=		10;
+		ASSIGN										x			=		"hello";
+		ASSIGN										x			=		f(3) == 2;
+
+		MUTATE-LOCAL								SYMBOL		<===	EXPRESSION;
+		MUTATE-LOCAL								x			<===	11;
+	*/
+
+	//	Main function: detects each of the other implicit statements and parses them.
+	std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 
 }
 

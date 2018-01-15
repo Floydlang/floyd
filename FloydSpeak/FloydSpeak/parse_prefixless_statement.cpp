@@ -47,41 +47,9 @@ std::string concat_strings(const vector<string>& v){
 	}
 }
 
-//////////////////////////////////////////////////		parse_statement()
+//////////////////////////////////////////////////		parse_implicit_statement()
 
-/*
-	let TYPE SYMBOL = EXPRESSION;
-	FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
-	let SYMBOL = EXPRESSION;
 
-	BIND					TYPE				SYMBOL		=		EXPRESSION;
-	BIND					int					x			=		10;
-	BIND					int	(string a)		x			=		f(4 == 5);
-
-	FUNCTION-DEFINITION		TYPE				SYMBOL				( EXPRESSION-LIST )	{ STATEMENTS }
-	FUNCTION-DEFINITION		int					f					(string name)		{ return 13; }
-	FUNCTION-DEFINITION		int (string a)		f					(string name)		{ return 100 == 101; }
-
-	EXPRESSION-STATEMENT						EXPRESSION;
-	EXPRESSION-STATEMENT						print				("Hello, World!");
-	EXPRESSION-STATEMENT						print				("Hello, World!" + f(3) == 2);
-
-	ASSIGN										SYMBOL		=		EXPRESSION;
-	ASSIGN										x			=		10;
-	ASSIGN										x			=		"hello";
-	ASSIGN										x			=		f(3) == 2;
-
-	MUTATE-LOCAL								SYMBOL		<===	EXPRESSION;
-	MUTATE-LOCAL								x			<===	11;
-
-//	read entire statement
-find thislevel "}" or thislevel ";"
-
-find thislevel "="
-	BIND or DEDUCED_BIND
-else
-	FUNCTION-DEFINITION or EXPRESSION-STATEMENT
-*/
 
 
 // Includes trailing ";". Does not include body of a function definition.
@@ -140,7 +108,8 @@ pair<string, string> split_at_tail_symbol(const std::string& s){
 }
 
 
-
+//	NOTICE: This function is very complex -- let's keep it FOCUSED just on figuring out the type of statement.
+//	Don't give it more work.
 pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 	const auto r = seq_t(read_until_semicolor_or_seagull(s1).first);
 	const auto equal_sign_pos = read_until_toplevel_char(r, '=');
@@ -322,35 +291,6 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 }
 
 
-std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
-	const auto pos = skip_whitespace(s);
-	const auto implicit = parse_implicit_statement(pos);
-	const auto statement_type = implicit.first[0];
-	if(statement_type == "[BIND]"){
-		return parse_bind_statement(pos);
-	}
-	else if(statement_type == "[FUNCTION-DEFINITION]"){
-		return parse_function_definition2(pos);
-	}
-	else if(statement_type == "[EXPRESSION-STATEMENT]"){
-		return parse_expression_statement(pos);
-	}
-	else if(statement_type == "[ASSIGN]"){
-		return parse_assign_statement(pos);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
-	ut_compare_jsons(
-		parse_prefixless_statement(seq_t("int x = f(3);")).first,
-		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]], {}])")).first
-	);
-}
-
-
 
 
 //////////////////////////////////////////////////		parse_bind_statement()
@@ -479,5 +419,34 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 }
 
 
+
+
+std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
+	const auto pos = skip_whitespace(s);
+	const auto implicit = parse_implicit_statement(pos);
+	const auto statement_type = implicit.first[0];
+	if(statement_type == "[BIND]"){
+		return parse_bind_statement(pos);
+	}
+	else if(statement_type == "[FUNCTION-DEFINITION]"){
+		return parse_function_definition2(pos);
+	}
+	else if(statement_type == "[EXPRESSION-STATEMENT]"){
+		return parse_expression_statement(pos);
+	}
+	else if(statement_type == "[ASSIGN]"){
+		return parse_assign_statement(pos);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
+	ut_compare_jsons(
+		parse_prefixless_statement(seq_t("int x = f(3);")).first,
+		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]], {}])")).first
+	);
+}
 
 }	//	floyd
