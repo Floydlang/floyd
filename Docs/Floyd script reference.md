@@ -237,7 +237,7 @@ The loop is expanded before the first time the body is called. There is no way t
 	while (my_array[a] != 3){
 	}
 
-- condition: executed before body is executed.
+- condition: executed each time before body is executed.
 
 
 # STRUCTs - Simple structs
@@ -313,8 +313,9 @@ This works with nested values too:
 
 	assert(a.size.width == 512);
 
+???
 	//	Update the width-member inside the image's size-member. The result is a brand new image, b!
-	b = a.size.width = 100;
+	b = a.size.width <= 100;
 	assert(a.size.width == 512);
 	assert(b.size.width == 100);
 

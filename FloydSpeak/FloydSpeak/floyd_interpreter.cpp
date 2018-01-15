@@ -2344,5 +2344,24 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 }
 
 
+
+QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		struct image { pixel a; pixel b;}
+		f = image(color(255,128,128), color(127,127,255));
+		g = f.a.green <= 3;
+		print(f);
+		print(g);
+	)");
+/*
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"struct color {int red=100,int green=101,int blue=102}",
+	}	));
+*/
+
+}
+
+
 }	//	floyd
 
