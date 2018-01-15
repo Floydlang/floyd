@@ -493,6 +493,22 @@ pair<typeid_t, seq_t> read_required_type_identifier2(const seq_t& s){
 
 
 
+std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
+	const auto pos2 = skip_whitespace(pos);
+	read_required(pos2, "(");
+	const auto range = get_balanced(pos2);
+	const auto range2 = seq_t(trim_ends(range.first));
+	return { range2.str(), range.second };
+}
+
+QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
+	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t("()xyz")) == std::pair<std::string, seq_t>{"", seq_t("xyz") } 	));
+}
+QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
+	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
+}
+
+
 
 //////////////////////////////////////		FLOYD JSON BASICS
 
@@ -518,6 +534,7 @@ json_t make_member_def(const std::string& type, const std::string& name, const j
 		});
 	}
 }
+
 
 
 }	//	floyd

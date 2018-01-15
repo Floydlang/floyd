@@ -295,21 +295,6 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 
 //////////////////////////////////////////////////		parse_bind_statement()
 
-/*
-|	|	|		|	BIND	|	int x = 10;xyz	|	int x = 10;xyz	|	[BIND] TYPE: "int" SYMBOL: "x" = EXPRESSION: "10"
-|	|	|		|	BIND	|	int (string a) x = f(4 == 5);xyz	|	int (string a) x = f(4 == 5);x	|	[BIND] TYPE: "int (string a)" SYMBOL: "x" = EXPRESSION: "f(4 == 5)"
-|	|	|		|	BIND	|	mutable int x = 10;xyz	|	mutable int x = 10;xyz	|	[BIND] TYPE: "mutable int" SYMBOL: "x" = EXPRESSION: "10"
-|	|	|		|	BIND	|	mutable x = 10;xyz	|	mutable x = 10;xyz	|	[BIND] TYPE: "mutable" SYMBOL: "x" = EXPRESSION: "10"
-
-
-
-[0]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"[BIND]"
-[1]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"int"
-[2]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"x"
-[3]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"10"
-
-*/
-
 
 
 pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, const seq_t& full_statement_pos){

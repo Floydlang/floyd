@@ -85,23 +85,6 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	);
 }
 
-/*
-	()	=> ""
-	(x)	=>	"x"
-	(int x, int y) => "int x, int y"
-*/
-std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
-	const auto pos2 = skip_whitespace(pos);
-	read_required(pos2, "(");
-	const auto range = get_balanced(pos2);
-	const auto range2 = seq_t(trim_ends(range.first));
-	return { range2.str(), range.second };
-}
-
-QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
-	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
-}
-
 
 
 //////////////////////////////////////////////////		parse_block()
@@ -130,7 +113,9 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 }
 
 
+
 //////////////////////////////////////////////////		parse_block()
+
 
 
 pair<json_t, seq_t> parse_return_statement(const seq_t& s){
@@ -169,14 +154,9 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	std::pair<bool, seq_t> a = if_first(pos, "if");
 	QUARK_ASSERT(a.first);
 
-	const auto pos2 = skip_whitespace(a.second);
-	read_required(pos2, "(");
-	const auto condition_parantheses = get_balanced(pos2);
-	const auto condition = trim_ends(condition_parantheses.first);
-
-	const auto then_body = parse_statement_body(condition_parantheses.second);
-
-	const auto condition2 = parse_expression_all(seq_t(condition));
+	const auto condition = read_enclosed_in_parantheses(a.second);
+	const auto then_body = parse_statement_body(condition.second);
+	const auto condition2 = parse_expression_all(seq_t(condition.first));
 
 	return { json_t::make_array({ "if", condition2, then_body.first }), then_body.second };
 }
@@ -318,35 +298,29 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 
 
 std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
-	std::pair<bool, seq_t> pos1 = if_first(pos, "for");
-	QUARK_ASSERT(pos1.first);
-	const auto pos2 = skip_whitespace(pos1.second);
-	read_required(pos2, "(");
-	const auto header_in_parantheses = get_balanced(pos2);
+	std::pair<bool, seq_t> for_pos = if_first(pos, "for");
+	QUARK_ASSERT(for_pos.first);
 
-	const auto body = parse_statement_body(header_in_parantheses.second);
-
-
-	//	header_in_parantheses == "( index in 1 ... 5 )"
 	//	header == " index in 1 ... 5 "
-	const auto header = seq_t(trim_ends(header_in_parantheses.first));
+	const auto header = read_enclosed_in_parantheses(for_pos.second);
+
+	const auto body = parse_statement_body(header.second);
 
 	//	iterator == "index".
-	const auto iterator_name = read_required_single_symbol(header);
+	const auto iterator_name = read_required_single_symbol(seq_t(header.first));
 	if(iterator_name.first.empty()){
 		throw std::runtime_error("For loop requires iterator name.");
 	}
 
-
-	//???parse_statement_body()
+	const auto in_str = read_required(skip_whitespace(iterator_name.second), "in");
 
 	//	range == "1 ... 5 ".
-	const auto range = skip_whitespace(read_required(skip_whitespace(iterator_name.second), "in"));
+	const auto range = skip_whitespace(in_str);
 
 	//	left_and_right == "1 ", " 5 ".
-	const auto left_and_right = split_at(range, "...");
-	const auto start = left_and_right.first;
-	const auto end = left_and_right.second;
+	const auto start_end = split_at(range, "...");
+	const auto start = start_end.first;
+	const auto end = start_end.second;
 
 	const auto start_expr = parse_expression_all(seq_t(start));
 	const auto end_expr = parse_expression_all(end);
@@ -359,7 +333,6 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 			start_expr,
 			end_expr,
 			body.first
-		
 		}
 	);
 	return { r, body.second };

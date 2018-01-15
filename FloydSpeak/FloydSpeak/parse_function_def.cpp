@@ -73,18 +73,10 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- t
 std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto return_type_pos = read_required_type_identifier2(pos);
 	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
-
-	//	Skip whitespace.
-	const auto rest = skip_whitespace(function_name_pos.second);
-
-	if(!if_first(rest, "(").first){
-		throw std::runtime_error("expected function argument list enclosed by (),");
-	}
-
-	const auto arg_list_pos = get_balanced(rest);
-	const auto args = parse_functiondef_arguments(seq_t(arg_list_pos.first));
+	const auto header = read_enclosed_in_parantheses(function_name_pos.second);
+	const auto args = parse_functiondef_arguments(seq_t("(" + header.first + ")"));
 	const auto function_name = function_name_pos.first;
-	const auto body = parse_statement_body(arg_list_pos.second);
+	const auto body = parse_statement_body(header.second);
 
 	json_t function_def = json_t::make_array({
 		"def-func",

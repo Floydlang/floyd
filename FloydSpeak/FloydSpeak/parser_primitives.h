@@ -134,6 +134,13 @@ namespace floyd {
 	std::vector<std::pair<typeid_t, std::string>> parse_functiondef_arguments2(const std::string& s);
 
 
+	/*
+		()	=> ""
+		(x)	=>	"x"
+		(int x, int y) => "int x, int y"
+	*/
+	std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos);
+
 }	//	floyd
 
 
