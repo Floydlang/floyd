@@ -55,7 +55,7 @@ namespace floyd {
 			return _expression == other._expression;
 		}
 
-		expression_t _expression;
+		const expression_t _expression;
 	};
 	//////////////////////////////////////		define_struct_statement_t
 
@@ -65,8 +65,8 @@ namespace floyd {
 			return _name == other._name && _def == other._def;
 		}
 
-		std::string _name;
-		struct_definition_t _def;
+		const std::string _name;
+		const struct_definition_t _def;
 	};
 
 
@@ -81,10 +81,10 @@ namespace floyd {
 				&& _bind_as_mutable_tag == other._bind_as_mutable_tag;
 		}
 
-		std::string _new_variable_name;
-		typeid_t _bindtype;
-		expression_t _expression;
-		bool _bind_as_mutable_tag;
+		const std::string _new_variable_name;
+		const typeid_t _bindtype;
+		const expression_t _expression;
+		const bool _bind_as_mutable_tag;
 	};
 
 
@@ -96,7 +96,7 @@ namespace floyd {
 			return compare_shared_value_vectors(_statements, other._statements);
 		}
 
-		std::vector<std::shared_ptr<statement_t>> _statements;
+		const std::vector<std::shared_ptr<statement_t>> _statements;
 	};
 
 
@@ -151,9 +151,9 @@ namespace floyd {
 				;
 		}
 
-		expression_t _condition;
-		std::vector<std::shared_ptr<statement_t>> _then_statements;
-		std::vector<std::shared_ptr<statement_t>> _else_statements;
+		const expression_t _condition;
+		const std::vector<std::shared_ptr<statement_t>> _then_statements;
+		const std::vector<std::shared_ptr<statement_t>> _else_statements;
 	};
 
 
@@ -176,6 +176,22 @@ namespace floyd {
 		const std::vector<std::shared_ptr<statement_t>> _body;
 	};
 
+
+	//////////////////////////////////////		while_statement_t
+
+
+	struct while_statement_t {
+		bool operator==(const while_statement_t& other) const {
+			return
+				_condition == other._condition
+				&& compare_shared_value_vectors(_body, other._body);
+		}
+
+		const expression_t _condition;
+		const std::vector<std::shared_ptr<statement_t>> _body;
+	};
+
+
 	//////////////////////////////////////		expression_statement_t
 
 
@@ -184,7 +200,7 @@ namespace floyd {
 			return _expression == other._expression;
 		}
 
-		expression_t _expression;
+		const expression_t _expression;
 	};
 
 
@@ -192,7 +208,7 @@ namespace floyd {
 
 	/*
 		Defines a statement, like "return" including any needed expression trees for the statement.
-		??? make immutable
+		Immutable
 	*/
 	struct statement_t {
 		public: statement_t(const statement_t& other) = default;
@@ -225,6 +241,10 @@ namespace floyd {
 			_for(std::make_shared<for_statement_t>(value))
 		{
 		}
+        public: statement_t(const while_statement_t& value) :
+			_while(std::make_shared<while_statement_t>(value))
+		{
+		}
         public: statement_t(const expression_statement_t& value) :
 			_expression(std::make_shared<expression_statement_t>(value))
 		{
@@ -243,6 +263,9 @@ namespace floyd {
 			else if(_for){
 				return other._for && *_for == *other._for;
 			}
+			else if(_while){
+				return other._while && *_while == *other._while;
+			}
 			else{
 				QUARK_ASSERT(false);
 				return false;
@@ -257,6 +280,7 @@ namespace floyd {
 		public: const std::shared_ptr<block_statement_t> _block;
 		public: const std::shared_ptr<ifelse_statement_t> _if;
 		public: const std::shared_ptr<for_statement_t> _for;
+		public: const std::shared_ptr<while_statement_t> _while;
 		public: const std::shared_ptr<expression_statement_t> _expression;
 	};
 
@@ -281,6 +305,7 @@ namespace floyd {
 		const expression_t& end_expression,
 		const std::vector<std::shared_ptr<statement_t>> body
 	);
+	statement_t make__while_statement(const expression_t& condition, const std::vector<std::shared_ptr<statement_t>> body);
 
 	statement_t make__expression_statement(const expression_t& expression);
 

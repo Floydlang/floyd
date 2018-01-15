@@ -364,12 +364,23 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 
 
 std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
-/*
-*/
-	return std::pair<json_t, seq_t>(json_t(), seq_t(""));
+	std::pair<bool, seq_t> while_pos = if_first(pos, "while");
+	QUARK_ASSERT(while_pos.first);
+
+	const auto condition = read_enclosed_in_parantheses(while_pos.second);
+	const auto body = parse_statement_body(condition.second);
+	const auto condition_expr = parse_expression_all(seq_t(condition.first));
+	const auto r = json_t::make_array(
+		{
+			"while",
+			condition_expr,
+			body.first
+		}
+	);
+	return { r, body.second };
+//	return std::pair<json_t, seq_t>(json_t(), seq_t(""));
 }
 
-/*
 QUARK_UNIT_TEST("", "parse_while_statement()", "for(){}", ""){
 	ut_compare_jsons(
 		parse_while_statement(seq_t("while (a < 10) { print(a); }")).first,
@@ -377,18 +388,22 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "for(){}", ""){
 			R"(
 				[
 					"while",
-					["k",1,"int"],
-					["k",5,"int"],
+					["<", ["@", "a"], ["k",10,"int"]],
 					[
-						["print","int","y",["k",11,"int"], {}]
+						["expression-statement",
+							["call",
+								["@", "print"],
+								[
+									["@","a"]
+								]
+							]
+						]
 					]
 				]
 			)"
 		)).first
 	);
 }
-
-*/
 
 
 

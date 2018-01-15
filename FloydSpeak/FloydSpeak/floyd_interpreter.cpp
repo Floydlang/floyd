@@ -38,7 +38,6 @@ using namespace floyd;
 
 
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
-value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type);
 
 namespace {
 
@@ -89,6 +88,8 @@ namespace {
 		QUARK_ASSERT(statement.check_invariant());
 
 		auto vm2 = vm0;
+
+//???		const value_t value = resolve_env_variable(vm2, expr->_variable);
 
 		if(statement._bind_or_assign){
 			const auto& s = statement._bind_or_assign;
@@ -161,7 +162,6 @@ namespace {
 					}
 				}
 			}
-
 			return { vm2, {}};
 		}
 		else if(statement._block){
@@ -186,6 +186,9 @@ namespace {
 			const auto& s = statement._def_struct;
 
 			const auto name = s->_def._name;
+			if(vm2._call_stack.back()->_values.count(name) > 0){
+				throw std::runtime_error("Name already used.");
+			}
 			const auto struct_typeid = typeid_t::make_struct(std::make_shared<struct_definition_t>(s->_def));
 			vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(make_typeid_value(struct_typeid), false);
 			return { vm2, {}};
@@ -228,7 +231,29 @@ namespace {
 					return { vm2, return_value };
 				}
 			}
+			return { vm2, {} };
+		}
+		else if(statement._while){
+			const auto& s = statement._while;
 
+			bool again = true;
+			while(again){
+				const auto condition_value_expr = evaluate_expression(vm2, s->_condition);
+				vm2 = condition_value_expr.first;
+				const auto condition_value = condition_value_expr.second.get_literal().get_bool();
+
+				if(condition_value){
+					const auto result = execute_statements_in_env(vm2, s->_body, {});
+					vm2 = result.first;
+					const auto return_value = result.second;
+					if(return_value != nullptr){
+						return { vm2, return_value };
+					}
+				}
+				else{
+					again = false;
+				}
+			}
 			return { vm2, {} };
 		}
 		else if(statement._expression){
@@ -290,7 +315,8 @@ value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 		return value_t("");
 	}
 	else if(type == base_type::k_struct){
-		return make_struct_instance(vm, t);
+		QUARK_ASSERT(false);
+//		return make_struct_instance(vm, t);
 	}
 	else if(type == base_type::k_vector){
 		QUARK_ASSERT(false);
@@ -303,44 +329,6 @@ value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	}
 }
 
-value_t make_struct_instance(const interpreter_t& vm, const typeid_t& struct_type){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(!struct_type.is_null() && struct_type.check_invariant());
-
-	return value_t();
-/*
-	const auto k = struct_type.to_string();
-	const auto& objects = vm._ast.get_objects();
-	const auto struct_def_it = objects.find(k);
-	if(struct_def_it == objects.end()){
-		throw std::runtime_error("Undefined struct type!");
-	}
-
-	const auto struct_def = struct_def_it->second;
-
-	std::map<std::string, value_t> member_values;
-	for(int i = 0 ; i < struct_def->_members.size() ; i++){
-		const auto& member_def = struct_def->_members[i];
-
-		const auto member_type = member_def._type;
-		if(!member_type.is_null()){
-			throw std::runtime_error("Undefined struct type!");
-		}
-
-		//	If there is an initial value for this member, use that. Else use default value for this type.
-		value_t value;
-		if(member_def._value){
-			value = *member_def._value;
-		}
-		else{
-			value = make_default_value(vm, member_def._type);
-		}
-		member_values[member_def._name] = value;
-	}
-	auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, member_values));
-	return value_t(instance);
-*/
-}
 
 //	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
 
@@ -1725,6 +1713,9 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
+//////////////////////////		mutate
+
+
 
 QUARK_UNIT_TESTQ("call_function()", "mutate local"){
 	auto r = run_global(
@@ -1735,6 +1726,17 @@ QUARK_UNIT_TESTQ("call_function()", "mutate local"){
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "2" }));
+}
+
+QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
+	const auto r = run_global(
+		R"(
+			mutable a = 1000;
+			a = a + 1;
+			print(a);
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "1001" }));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
@@ -1763,6 +1765,18 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 	}
 }
 
+/*
+QUARK_UNIT_TESTQ("run_main()", "test mutating from a subscope"){
+	const auto r = run_global(R"(
+		mutable a = 7;
+		{
+			a = 8;
+		}
+		print(a);
+	)");
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "8" }));
+}
+*/
 
 
 
@@ -1973,6 +1987,8 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 }
 
 
+
+
 //////////////////////////		if-statement
 
 
@@ -1988,6 +2004,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!", "Goodbye!" }));
 }
+
 QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 	const auto r = run_global(
 		R"(
@@ -1999,8 +2016,6 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
 }
-
-
 
 QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 	const auto r = run_global(
@@ -2015,6 +2030,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!" }));
 }
+
 QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 	const auto r = run_global(
 		R"(
@@ -2028,9 +2044,6 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
 }
-
-
-
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
 	const auto r = run_global(
@@ -2118,6 +2131,8 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 //////////////////////////		for-statement
 
 
+
+
 QUARK_UNIT_TESTQ("run_init()", "for"){
 	const auto r = run_global(
 		R"(
@@ -2128,11 +2143,6 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
 }
-
-
-
-//////////////////////////		fibonacci
-
 
 QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 	const auto vm = run_global(
@@ -2160,11 +2170,12 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 
 //////////////////////////		while-statement
 
+
 /*
 QUARK_UNIT_TESTQ("run_init()", "for"){
 	const auto r = run_global(
 		R"(
-			mutable a = 100
+			mutable a = 100;
 			while(a < 105){
 				print("#: " + to_string(a));
 				a = a + 1;
@@ -2175,7 +2186,8 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 }
 */
 
-//////////////////////////		TEST STRUCT SUPPORT
+
+//////////////////////////		struct
 
 
 
@@ -2272,7 +2284,6 @@ QUARK_UNIT_TESTQ("run_main()", "return struct from function"){
 
 
 
-
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
@@ -2334,10 +2345,6 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 		"struct color {int red=255,int green=128,int blue=129}",
 	}	));
 }
-
-
-
-
 
 
 }	//	floyd

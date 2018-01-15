@@ -45,7 +45,7 @@ QUARK_UNIT_TESTQ("C++ enum class()", ""){
 
 
 bool is_valid_expr_chars(const std::string& s){
-	const auto allowed = k_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[]().?:=!<>&,|";
+	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[]().?:=!<>&,|#$";
 	for(auto i = 0 ; i < s.size() ; i++){
 		const char ch = s[i];
 		if(allowed.find(ch) == string::npos){
@@ -355,7 +355,7 @@ std::pair<expr_t, seq_t> parse_single(const seq_t& p) {
 
 	//	Identifier?
 	{
-		const auto identifier_s = read_while(p, k_identifier_chars);
+		const auto identifier_s = read_while(p, k_c99_identifier_chars);
 		if(!identifier_s.first.empty()){
 			const auto resolve = maker__make_identifier(identifier_s.first);
 			return { resolve, identifier_s.second };
@@ -452,7 +452,7 @@ std::pair<expr_t, seq_t> parse_member_access_operator(const seq_t& p, const expr
 	QUARK_ASSERT(p.first() == ".");
 	QUARK_ASSERT(prev_precedence > eoperator_precedence::k_member_access);
 
-	const auto identifier_s = read_while(skip_expr_whitespace(p.rest()), k_identifier_chars);
+	const auto identifier_s = read_while(skip_expr_whitespace(p.rest()), k_c99_identifier_chars);
 	if(identifier_s.first.empty()){
 		throw std::runtime_error("Expected ')'");
 	}

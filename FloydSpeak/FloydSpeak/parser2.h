@@ -25,7 +25,7 @@ namespace parser2 {
 */
 const std::string k_c99_number_chars = "0123456789.";
 const std::string k_c99_whitespace_chars = " \n\t\r";
-	const std::string k_identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+	const std::string k_c99_identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 
 /*
 	White-space policy:

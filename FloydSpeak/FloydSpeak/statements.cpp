@@ -42,12 +42,6 @@ namespace floyd {
 		return statement_t(bind_or_assign_statement_t{ new_variable_name, bindtype, expression, bind_as_mutable_tag });
 	}
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
-/*
-		vector<shared_ptr<statement_t>> statements2;
-		for(const auto e: statements){
-			statements2.push_back(std::make_shared<statement_t>(e));
-		}
-*/
 		return statement_t(block_statement_t{ statements });
 	}
 
@@ -67,6 +61,13 @@ namespace floyd {
 		const std::vector<std::shared_ptr<statement_t>> body
 	){
 		return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
+	}
+
+	statement_t make__while_statement(
+		const expression_t& condition,
+		const std::vector<std::shared_ptr<statement_t>> body
+	){
+		return statement_t(while_statement_t{ condition, body });
 	}
 
 	statement_t make__expression_statement(const expression_t& expression){
@@ -92,68 +93,32 @@ namespace floyd {
 
 
 	bool statement_t::check_invariant() const {
+		int count = 0;
+		count = count + (_return != nullptr ? 1 : 0);
+		count = count + (_def_struct != nullptr ? 1 : 0);
+		count = count + (_bind_or_assign != nullptr ? 1 : 0);
+		count = count + (_block != nullptr ? 1 : 0);
+		count = count + (_if != nullptr ? 1 : 0);
+		count = count + (_for != nullptr ? 1 : 0);
+		count = count + (_while != nullptr ? 1 : 0);
+		count = count + (_expression != nullptr ? 1 : 0);
+		QUARK_ASSERT(count == 1);
+
 		if(_return != nullptr){
-			QUARK_ASSERT(_return != nullptr);
-			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind_or_assign == nullptr);
-			QUARK_ASSERT(_block == nullptr);
-			QUARK_ASSERT(_if == nullptr);
-			QUARK_ASSERT(_for == nullptr);
-			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_def_struct != nullptr){
-			QUARK_ASSERT(_return == nullptr);
-			QUARK_ASSERT(_def_struct != nullptr);
-			QUARK_ASSERT(_bind_or_assign == nullptr);
-			QUARK_ASSERT(_block == nullptr);
-			QUARK_ASSERT(_if == nullptr);
-			QUARK_ASSERT(_for == nullptr);
-			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_bind_or_assign){
-			QUARK_ASSERT(_return == nullptr);
-			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind_or_assign != nullptr);
-			QUARK_ASSERT(_block == nullptr);
-			QUARK_ASSERT(_if == nullptr);
-			QUARK_ASSERT(_for == nullptr);
-			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_block){
-			QUARK_ASSERT(_return == nullptr);
-			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind_or_assign == nullptr);
-			QUARK_ASSERT(_block != nullptr);
-			QUARK_ASSERT(_if == nullptr);
-			QUARK_ASSERT(_for == nullptr);
-			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_if){
-			QUARK_ASSERT(_return == nullptr);
-			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind_or_assign == nullptr);
-			QUARK_ASSERT(_block == nullptr);
-			QUARK_ASSERT(_if != nullptr);
-			QUARK_ASSERT(_for == nullptr);
-			QUARK_ASSERT(_expression == nullptr);
 		}
 		else if(_for){
-			QUARK_ASSERT(_return == nullptr);
-			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind_or_assign == nullptr);
-			QUARK_ASSERT(_block == nullptr);
-			QUARK_ASSERT(_if == nullptr);
-			QUARK_ASSERT(_for != nullptr);
-			QUARK_ASSERT(_expression == nullptr);
+		}
+		else if(_while){
 		}
 		else if(_expression){
-			QUARK_ASSERT(_return == nullptr);
-			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind_or_assign == nullptr);
-			QUARK_ASSERT(_block == nullptr);
-			QUARK_ASSERT(_if == nullptr);
-			QUARK_ASSERT(_for == nullptr);
-			QUARK_ASSERT(_expression != nullptr);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -217,6 +182,13 @@ namespace floyd {
 				expression_to_json(e._for->_start_expression),
 				expression_to_json(e._for->_end_expression),
 				statements_to_json(e._for->_body)
+			});
+		}
+		else if(e._while){
+			return json_t::make_array({
+				json_t("while"),
+				expression_to_json(e._while->_condition),
+				statements_to_json(e._while->_body)
 			});
 		}
 		else if(e._expression){
