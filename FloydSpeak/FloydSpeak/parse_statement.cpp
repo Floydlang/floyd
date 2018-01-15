@@ -189,14 +189,10 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 			};
 		}
 		else{
-			read_required(pos2, "{");
-			const auto else_statements_parantheses = get_balanced(pos2);
-			const auto else_statements = trim_ends(else_statements_parantheses.first);
-			const auto else_statements2 = parse_statements(seq_t(else_statements));
-
+			const auto else_body = parse_statement_body(pos2);
 			return { json_t::make_array(
-				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_statements2.first }),
-				else_statements_parantheses.second
+				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_body.first }),
+				else_body.second
 			};
 		}
 	}
