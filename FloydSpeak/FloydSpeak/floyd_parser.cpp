@@ -198,9 +198,11 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 	else{
 		//	BIND:			int x = 10;
 		//	BIND:			int (string a) x = f(4 == 5);
+		//	BIND:			mutable int x = 10;
 		//	DEDUCED-BIND	x = 10;
 		//	DEDUCED-BIND	x = "hello";
 		//	DEDUCED-BIND	x = f(3) == 2;
+		//	DEDUCED-BIND	mutable x = 10;
 		//	MUTATE_LOCAL	x <=== 11;
 		auto rhs_expression1 = skip_whitespace(equal_sign_pos.second.rest1().str());
 		if(rhs_expression1.back() != ';'){
@@ -263,6 +265,7 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	//	BIND	TYPE	SYMBOL	=	EXPRESSION;
 	QUARK_TRACE((test_split_line("BIND", seq_t("int x = 10;xyz"))));
 	QUARK_TRACE((test_split_line("BIND", seq_t("int (string a) x = f(4 == 5);xyz"))));
+	QUARK_TRACE((test_split_line("BIND", seq_t("mutable int x = 10;xyz"))));
 
 	//	FUNCTION-DEFINITION	TYPE	SYMBOL	( EXPRESSION-LIST )	{ STATEMENTS }
 	QUARK_TRACE((test_split_line("FUNCTION-DEFINITION", seq_t("int f(){ return 0; }xyz"))));
@@ -278,6 +281,7 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	QUARK_TRACE((test_split_line("DEDUCED-BIND", seq_t("x = 10;xyz"))));
 	QUARK_TRACE((test_split_line("DEDUCED-BIND", seq_t("x = \"hello\";xyz"))));
 	QUARK_TRACE((test_split_line("DEDUCED-BIND", seq_t("x = f(3) == 2;xyz"))));
+	QUARK_TRACE((test_split_line("DEDUCED-BIND", seq_t("mutable x = 10;xyz"))));
 
 	//	MUTATE-LOCAL	SYMBOL	<===	EXPRESSION;
 	//	QUARK_TRACE((test_split_line("MUTATE-LOCAL", seq_t("x <=== 11;xyz"))));
@@ -288,6 +292,9 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 }
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int ( string a ) x = f ( 4 == 5 ) ; xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[BIND]", "int ( string a )", "x", "f ( 4 == 5 )" }, seq_t(" int ( string a ) x = f ( 4 == 5 ) ; xyz") }	));
+}
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" mutable int x = 10 ; xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[BIND]", "mutable int", "x", "10" }, seq_t(" mutable int x = 10 ; xyz") }	));
 }
 
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
@@ -319,6 +326,12 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" x = f ( 3 ) == 2 ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[DEDUCED-BIND]", "x", "f ( 3 ) == 2" }, seq_t(" x = f ( 3 ) == 2 ;xyz") }	));
 }
+
+/*
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
+	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" mutable x = 10 ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[DEDUCED-BIND]", "x", "10" }, seq_t(" mutable x = 10 ;xyz") }	));
+}
+*/
 
 
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){

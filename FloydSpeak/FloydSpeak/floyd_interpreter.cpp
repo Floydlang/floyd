@@ -1693,11 +1693,12 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
+/*
 
 QUARK_UNIT_TESTQ("call_function()", "mutate variabl"){
 	auto r = run_global(
 		R"(
-			a = 1;
+			mutable a = 1;
 			a = 2;
 			print(a);
 		)"
@@ -1705,7 +1706,6 @@ QUARK_UNIT_TESTQ("call_function()", "mutate variabl"){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "2" }));
 }
 
-/*
 QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
 	try {
 		const auto vm = run_global(R"(

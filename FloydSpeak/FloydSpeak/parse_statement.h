@@ -47,22 +47,33 @@ namespace floyd {
 
 
 	/*
-		"int a = 10;"
-		"float b = 0.3;"
-		"int c = a + b;"
-		"int b = f(a);"
-		"string hello = f(a) + \"_suffix\";";
+		int a = 10;
+		float b = 0.3;
+		int c = a + b;
+		int b = f(a);
+		string hello = f(a) + "_suffix";;
+
+		mutable a = 10;
 
 		...can contain trailing whitespace.
 
 
-		"int b = f("hello");"
-		"bool a = is_hello("hello")";
+		int b = f("hello");
+		bool a = is_hello("hello");
 
 		OUTPUT:
 			[ "bind", "float", "x", EXPRESSION ]
 	*/
 	std::pair<json_t, seq_t> parse_assignment_statement(const seq_t& s);
+
+	/*
+		x = expression:
+		mutable x = expression;
+
+		x = 4
+	*/
+	std::pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s);
+
 
 	/*
 		print(13);
@@ -115,9 +126,6 @@ namespace floyd {
 	*/
 	std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos);
 
-
-	//	x = expression:
-	std::pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s);
 
 }	//	floyd
 

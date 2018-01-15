@@ -23,17 +23,18 @@ namespace floyd {
 
 
 
+//////////////////////////////////////////////////		parse_block()
 
 
-	pair<json_t, seq_t> parse_block(const seq_t& s){
-		const auto pos = skip_whitespace(s);
-		QUARK_ASSERT(pos.first1() == "{");
+pair<json_t, seq_t> parse_block(const seq_t& s){
+	const auto pos = skip_whitespace(s);
+	QUARK_ASSERT(pos.first1() == "{");
 
-		const auto b_str = get_balanced(pos);
-		const auto body_str = seq_t(trim_ends(b_str.first));
-		const auto body_statements2 = parse_statements(body_str);
-		return { json_t::make_array({ "block", body_statements2.first }), b_str.second };
-	}
+	const auto b_str = get_balanced(pos);
+	const auto body_str = seq_t(trim_ends(b_str.first));
+	const auto body_statements2 = parse_statements(body_str);
+	return { json_t::make_array({ "block", body_statements2.first }), b_str.second };
+}
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 	ut_compare_jsons(
@@ -53,109 +54,164 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 }
 
 
+//////////////////////////////////////////////////		parse_block()
 
 
+pair<json_t, seq_t> parse_return_statement(const seq_t& s){
+	const auto token_pos = if_first(skip_whitespace(s), "return");
+	QUARK_ASSERT(token_pos.first);
+	const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
+	const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
+	const auto statement = json_t::make_array({ json_t("return"), expression1 });
+	//	Skip trailing ";".
+	const auto pos = skip_whitespace(expression_pos.second.rest1());
+	return { statement, pos };
+}
 
-
-
-	pair<json_t, seq_t> parse_return_statement(const seq_t& s){
-		const auto token_pos = if_first(skip_whitespace(s), "return");
-		QUARK_ASSERT(token_pos.first);
-		const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
-		const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
-		const auto statement = json_t::make_array({ json_t("return"), expression1 });
-		//	Skip trailing ";".
-		const auto pos = skip_whitespace(expression_pos.second.rest1());
-		return { statement, pos };
-	}
-
-	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
-		const auto result = parse_return_statement(seq_t("return 0;"));
-		QUARK_TEST_VERIFY(json_to_compact_string(result.first) == R"(["return", ["k", 0, "int"]])");
-		QUARK_TEST_VERIFY(result.second.get_s() == "");
-	}
+QUARK_UNIT_TESTQ("parse_return_statement()", ""){
+	const auto result = parse_return_statement(seq_t("return 0;"));
+	QUARK_TEST_VERIFY(json_to_compact_string(result.first) == R"(["return", ["k", 0, "int"]])");
+	QUARK_TEST_VERIFY(result.second.get_s() == "");
+}
 
 #if false
-	QUARK_UNIT_TESTQ("parse_return_statement()", ""){
-		const auto t = make_shared<expression_t>(expression_t::make_constant(123));
-		
-		QUARK_TEST_VERIFY((
-			parse_return_statement("return \t123\t;\t\nxyz}") == pair<return_statement_t, string>(return_statement_t{t}, "xyz}")
-		));
-	}
+QUARK_UNIT_TESTQ("parse_return_statement()", ""){
+	const auto t = make_shared<expression_t>(expression_t::make_constant(123));
+	
+	QUARK_TEST_VERIFY((
+		parse_return_statement("return \t123\t;\t\nxyz}") == pair<return_statement_t, string>(return_statement_t{t}, "xyz}")
+	));
+}
 #endif
 
 
 
-	pair<json_t, seq_t> parse_assignment_statement(const seq_t& s){
-		const auto token_pos = read_until(s, whitespace_chars);
-		const auto type = token_pos.first;
-
-		const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
-		const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
-		const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
-
-		const auto expression = parse_expression_all(seq_t(expression_pos.first));
-
-		const auto statement = json_t::make_array({ "bind", type, variable_pos.first, expression });
-
-		//	Skip trailing ";".
-		return { statement, expression_pos.second.rest1() };
-	}
-
-#if false
-	QUARK_UNIT_TESTQ("parse_assignment_statement", "bool true"){
-		const auto a = parse_assignment_statement("bool bb = true; \n");
-		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "bb");
-		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(true));
-		QUARK_TEST_VERIFY(a.second == " \n");
-	}
-
-	QUARK_UNIT_TESTQ("parse_assignment_statement", "bool false"){
-		const auto a = parse_assignment_statement("bool bb = false; \n");
-		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "bb");
-		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(false));
-		QUARK_TEST_VERIFY(a.second == " \n");
-	}
-
-	QUARK_UNIT_TESTQ("parse_assignment_statement", "int"){
-		const auto a = parse_assignment_statement("int a = 10; \n");
-		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "a");
-		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(10));
-		QUARK_TEST_VERIFY(a.second == " \n");
-	}
-
-	QUARK_UNIT_TESTQ("parse_assignment_statement", "float"){
-		const auto a = parse_assignment_statement("float b = 0.3; \n");
-		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "b");
-		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(0.3f));
-		QUARK_TEST_VERIFY(a.second == " \n");
-	}
-
-	QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
-		const auto a = parse_assignment_statement("float test = log(\"hello\");\n");
-		QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
-		QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_function.to_string() == "log");
-		QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_inputs.size() == 1);
-		QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_call->_inputs[0]._constant ==value_t("hello"));
-		QUARK_TEST_VERIFY(a.second == "\n");
-	}
-#endif
+//////////////////////////////////////////////////		parse_assignment_statement()
 
 
-	pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
-		const auto expression_pos = read_until(skip_whitespace(s), ";");
-		const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-		const auto statement = json_t::make_array({
-			"expression-statement",
+pair<json_t, seq_t> parse_assignment_statement(const seq_t& s){
+	const auto token_pos = read_until(s, whitespace_chars);
+	const auto type = token_pos.first;
+
+	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
+	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
+	const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
+
+	const auto expression = parse_expression_all(seq_t(expression_pos.first));
+
+	const auto statement = json_t::make_array({ "bind", type, variable_pos.first, expression });
+
+	//	Skip trailing ";".
+	return { statement, expression_pos.second.rest1() };
+}
+
+QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+	ut_compare_jsons(
+		parse_assignment_statement(seq_t("bool bb = true;")).first,
+		parse_json(seq_t(
+			R"(
+				[ "bind", "bool", "bb", ["k", true, "bool"]]
+			)"
+		)).first
+	);
+}
+QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+	ut_compare_jsons(
+		parse_assignment_statement(seq_t("int hello = 3;")).first,
+		parse_json(seq_t(
+			R"(
+				[ "bind", "int", "hello", ["k", 3, "int"]]
+			)"
+		)).first
+	);
+}
+
+/*
+QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+	ut_compare_jsons(
+		parse_assignment_statement(seq_t("mutable int hello = 3;")).first,
+		parse_json(seq_t(
+			R"(
+				[ "bind", "int", "hello", ["k", 3, "int"]]
+			)"
+		)).first
+	);
+}
+QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+	ut_compare_jsons(
+		parse_assignment_statement(seq_t("mutable bye = 3;")).first,
+		parse_json(seq_t(
+			R"(
+				[ "bind", "int", "hello", ["k", 3, "int"]]
+			)"
+		)).first
+	);
+}
+*/
+
+/*
+QUARK_UNIT_TESTQ("parse_assignment_statement", "float"){
+	const auto a = parse_assignment_statement("float b = 0.3; \n");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "b");
+	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(0.3f));
+	QUARK_TEST_VERIFY(a.second == " \n");
+}
+QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
+	const auto a = parse_assignment_statement("float test = log(\"hello\");\n");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_function.to_string() == "log");
+	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_inputs.size() == 1);
+	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_call->_inputs[0]._constant ==value_t("hello"));
+	QUARK_TEST_VERIFY(a.second == "\n");
+}
+*/
+
+
+//////////////////////////////////////////////////		parse_deduced_bind_statement()
+
+
+pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s){
+	const auto variable_pos = read_single_symbol(s);
+	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
+	const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
+
+	const auto expression = parse_expression_all(seq_t(expression_pos.first));
+
+	const auto statement = json_t::make_array({ "deduced-bind", variable_pos.first, expression });
+
+	//	Skip trailing ";".
+	return { statement, expression_pos.second.rest1() };
+}
+
+QUARK_UNIT_TEST("", "parse_deduced_bind_statement()", "", ""){
+	ut_compare_jsons(
+		parse_deduced_bind_statement(seq_t("x = 10;")).first,
+		parse_json(seq_t(
+			R"(
+				["deduced-bind","x",["k",10,"int"]]
+			)"
+		)).first
+	);
+}
+
+
+//////////////////////////////////////////////////		parse_expression_statement()
+
+
+pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
+	const auto expression_pos = read_until(skip_whitespace(s), ";");
+	const auto expression = parse_expression_all(seq_t(expression_pos.first));
+
+	const auto statement = json_t::make_array({
+		"expression-statement",
 //			"<" + type + ">",
-			expression
-		});
+		expression
+	});
 
-		//	Skip trailing ";".
-		return { statement, expression_pos.second.rest1() };
-	}
+	//	Skip trailing ";".
+	return { statement, expression_pos.second.rest1() };
+}
 
 QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 	ut_compare_jsons(
@@ -170,31 +226,7 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 
 
 
-	pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s){
-		const auto variable_pos = read_single_symbol(s);
-		const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
-		const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
-
-		const auto expression = parse_expression_all(seq_t(expression_pos.first));
-
-		const auto statement = json_t::make_array({ "deduced-bind", variable_pos.first, expression });
-
-		//	Skip trailing ";".
-		return { statement, expression_pos.second.rest1() };
-	}
-
-QUARK_UNIT_TEST("", "parse_deduced_bind_statement()", "", ""){
-	ut_compare_jsons(
-		parse_deduced_bind_statement(seq_t("x = 10;")).first,
-		parse_json(seq_t(
-			R"(
-				["deduced-bind","x",["k",10,"int"]]
-			)"
-		)).first
-	);
-}
-
-
+//////////////////////////////////////////////////		parse_if()
 
 
 
@@ -202,11 +234,10 @@ QUARK_UNIT_TEST("", "parse_deduced_bind_statement()", "", ""){
 
 
 /*
-		Parse: if (EXPRESSION) { THEN_STATEMENTS }
-
-		if(a){
-			a
-		}
+	Parse: if (EXPRESSION) { THEN_STATEMENTS }
+	if(a){
+		a
+	}
 */
 std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	std::pair<bool, seq_t> a = if_first(pos, "if");
@@ -362,6 +393,12 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 	);
 }
 
+
+
+//////////////////////////////////////////////////		parse_for_statement()
+
+
+
 std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	std::pair<bool, seq_t> pos1 = if_first(pos, "for");
 	QUARK_ASSERT(pos1.first);
@@ -432,8 +469,6 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 		)).first
 	);
 }
-
-
 
 
 
