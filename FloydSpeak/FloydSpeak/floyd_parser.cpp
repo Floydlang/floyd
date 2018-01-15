@@ -62,6 +62,9 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 	else if(is_first(pos, "for")){
 		return parse_for_statement(seq_t(pos));
 	}
+	else if(is_first(pos, "while")){
+		return parse_while_statement(seq_t(pos));
+	}
 	else {
 		return parse_prefixless_statement(pos);
 	}

@@ -23,6 +23,58 @@ namespace floyd {
 
 
 
+std::pair<json_t, seq_t> parse_statement_body(const seq_t& s){
+	const auto pos = skip_whitespace(s);
+	read_required(pos, "{");
+	const auto b_str = get_balanced(pos);
+	const auto body_str = seq_t(trim_ends(b_str.first));
+	const auto body_statements2 = parse_statements(body_str);
+	return { body_statements2.first, b_str.second };
+}
+
+
+QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
+	ut_compare_jsons(
+		parse_statement_body(seq_t("{}")).first,
+		parse_json(seq_t(
+			R"(
+				[
+				]
+			)"
+		)).first
+	);
+}
+QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
+	ut_compare_jsons(
+		parse_statement_body(seq_t("{ int y = 11; }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					["bind","int","y",["k",11,"int"], {}]
+				]
+			)"
+		)).first
+	);
+}
+QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
+	ut_compare_jsons(
+		parse_statement_body(seq_t("{ int y = 11; print(3); }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					["bind","int","y",["k",11,"int"], {}],
+					["expression-statement",
+						["call",["@", "print"],[["k",3, "int"]]]
+					]
+				]
+			)"
+		)).first
+	);
+}
+
+
+
+
 //////////////////////////////////////////////////		parse_block()
 
 
@@ -244,6 +296,9 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 }
 
 
+
+
+
 //////////////////////////////////////////////////		parse_for_statement()
 
 
@@ -270,6 +325,9 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	if(iterator_name.first.empty()){
 		throw std::runtime_error("For loop requires iterator name.");
 	}
+
+
+	//???parse_statement_body()
 
 	//	range == "1 ... 5 ".
 	const auto range = skip_whitespace(read_required(skip_whitespace(iterator_name.second), "in"));
@@ -318,6 +376,86 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 		)).first
 	);
 }
+
+
+//////////////////////////////////////////////////		parse_while_statement()
+
+
+
+std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
+/*
+	std::pair<bool, seq_t> while_pos = if_first(pos, "while");
+	QUARK_ASSERT(while_pos.first);
+	const auto pos2 = skip_whitespace(while_pos.second);
+	read_required(pos2, "(");
+	const auto header_in_parantheses = get_balanced(pos2);
+
+
+	const auto pos3 = skip_whitespace(header_in_parantheses.second);
+	read_required(pos3, "{");
+	const auto body = get_balanced(pos3);
+	const auto body_statements_str = trim_ends(body.first);
+
+	//???parse_statement_body()
+
+
+	//	header_in_parantheses == "( index in 1 ... 5 )"
+	//	header == " index in 1 ... 5 "
+	const auto header = seq_t(trim_ends(header_in_parantheses.first));
+
+	//	iterator == "index".
+	const auto iterator_name = read_required_single_symbol(header);
+	if(iterator_name.first.empty()){
+		throw std::runtime_error("For loop requires iterator name.");
+	}
+
+	//	range == "1 ... 5 ".
+	const auto range = skip_whitespace(read_required(skip_whitespace(iterator_name.second), "in"));
+
+	//	left_and_right == "1 ", " 5 ".
+	const auto left_and_right = split_at(range, "...");
+	const auto start = left_and_right.first;
+	const auto end = left_and_right.second;
+
+	const auto start_expr = parse_expression_all(seq_t(start));
+	const auto end_expr = parse_expression_all(end);
+
+
+	const auto body_statements2 = parse_statements(seq_t(body_statements_str));
+
+	const auto r = json_t::make_array(
+		{
+			"while",
+			condition_expr,
+			body_statements2.first
+		}
+	);
+	return { r, body.second };
+*/
+	return std::pair<json_t, seq_t>(json_t(), seq_t(""));
+}
+
+/*
+QUARK_UNIT_TEST("", "parse_while_statement()", "for(){}", ""){
+	ut_compare_jsons(
+		parse_while_statement(seq_t("while (a < 10) { print(a); }")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					"while",
+					["k",1,"int"],
+					["k",5,"int"],
+					[
+						["print","int","y",["k",11,"int"], {}]
+					]
+				]
+			)"
+		)).first
+	);
+}
+
+*/
+
 
 
 }	//	floyd

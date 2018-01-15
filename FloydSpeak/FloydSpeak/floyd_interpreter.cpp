@@ -2158,7 +2158,22 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 
 
 
+//////////////////////////		while-statement
 
+/*
+QUARK_UNIT_TESTQ("run_init()", "for"){
+	const auto r = run_global(
+		R"(
+			mutable a = 100
+			while(a < 105){
+				print("#: " + to_string(a));
+				a = a + 1;
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "100", "101", "102", "103", "104" }));
+}
+*/
 
 //////////////////////////		TEST STRUCT SUPPORT
 

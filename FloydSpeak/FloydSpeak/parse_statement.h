@@ -19,6 +19,21 @@ namespace floyd {
 
 
 
+
+
+	/*
+		INPUT:
+			"{}"
+			"{\n}"
+			"{ int x = 1; }"
+			"{ int x = 1; ; int y = 2; }"
+
+		OUTPUT:
+			[ STATEMENTS ]
+	*/
+	std::pair<json_t, seq_t> parse_statement_body(const seq_t& pos);
+
+
 	/*
 		INPUT:
 			"{}"
@@ -91,6 +106,20 @@ namespace floyd {
 			[ "for", "open_range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
 	*/
 	std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos);
+
+
+	/*
+		while (a < 10) {
+			print(a)
+		}
+		while (count_trees(s) != 0) {
+			print(4)
+		}
+
+		OUTPUT
+			[ "while", "EXPRESSION, BODY ]
+	*/
+	std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos);
 
 
 }	//	floyd
