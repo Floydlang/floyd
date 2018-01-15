@@ -24,12 +24,13 @@ namespace floyd {
 
 
 std::pair<json_t, seq_t> parse_statement_body(const seq_t& s){
-	const auto pos = skip_whitespace(s);
-	read_required(pos, "{");
-	const auto b_str = get_balanced(pos);
-	const auto body_str = seq_t(trim_ends(b_str.first));
-	const auto body_statements2 = parse_statements(body_str);
-	return { body_statements2.first, b_str.second };
+	const auto start_seq = skip_whitespace(s);
+	read_required(start_seq, "{");
+
+	const auto body = get_balanced(start_seq);
+	const auto body_contents = seq_t(trim_ends(body.first));
+	const auto statements = parse_statements(body_contents);
+	return { statements.first, body.second };
 }
 
 
@@ -38,8 +39,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_statement_body(seq_t("{}")).first,
 		parse_json(seq_t(
 			R"(
-				[
-				]
+				[]
 			)"
 		)).first
 	);
@@ -63,9 +63,22 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 			R"(
 				[
 					["bind","int","y",["k",11,"int"], {}],
-					["expression-statement",
-						["call",["@", "print"],[["k",3, "int"]]]
-					]
+					["expression-statement", ["call",["@", "print"],[["k",3, "int"]]] ]
+				]
+			)"
+		)).first
+	);
+}
+
+//### test nested blocks.
+QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
+	ut_compare_jsons(
+		parse_statement_body(seq_t(" { int x = 1; int y = 2; } ")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					["bind","int","x",["k",1,"int"], {}],
+					["bind","int","y",["k",2,"int"], {}]
 				]
 			)"
 		)).first
@@ -79,13 +92,8 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 
 
 pair<json_t, seq_t> parse_block(const seq_t& s){
-	const auto pos = skip_whitespace(s);
-	QUARK_ASSERT(pos.first1() == "{");
-
-	const auto b_str = get_balanced(pos);
-	const auto body_str = seq_t(trim_ends(b_str.first));
-	const auto body_statements2 = parse_statements(body_str);
-	return { json_t::make_array({ "block", body_statements2.first }), b_str.second };
+	const auto body = parse_statement_body(s);
+	return { json_t::make_array({ "block", body.first }), body.second };
 }
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
@@ -150,17 +158,11 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	const auto condition_parantheses = get_balanced(pos2);
 	const auto condition = trim_ends(condition_parantheses.first);
 
-	const auto pos3 = skip_whitespace(condition_parantheses.second);
-	read_required(pos3, "{");
-	const auto then_statements_parantheses = get_balanced(pos3);
-	const auto then_statements = trim_ends(then_statements_parantheses.first);
-
-	auto return_pos = then_statements_parantheses.second;
+	const auto then_body = parse_statement_body(condition_parantheses.second);
 
 	const auto condition2 = parse_expression_all(seq_t(condition));
-	const auto then_statements2 = parse_statements(seq_t(then_statements)).first;
 
-	return { json_t::make_array({ "if", condition2, then_statements2 }), return_pos };
+	return { json_t::make_array({ "if", condition2, then_body.first }), then_body.second };
 }
 
 /*
