@@ -295,27 +295,55 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 
 //////////////////////////////////////////////////		parse_bind_statement()
 
+/*
+|	|	|		|	BIND	|	int x = 10;xyz	|	int x = 10;xyz	|	[BIND] TYPE: "int" SYMBOL: "x" = EXPRESSION: "10"
+|	|	|		|	BIND	|	int (string a) x = f(4 == 5);xyz	|	int (string a) x = f(4 == 5);x	|	[BIND] TYPE: "int (string a)" SYMBOL: "x" = EXPRESSION: "f(4 == 5)"
+|	|	|		|	BIND	|	mutable int x = 10;xyz	|	mutable int x = 10;xyz	|	[BIND] TYPE: "mutable int" SYMBOL: "x" = EXPRESSION: "10"
+|	|	|		|	BIND	|	mutable x = 10;xyz	|	mutable x = 10;xyz	|	[BIND] TYPE: "mutable" SYMBOL: "x" = EXPRESSION: "10"
+
+
+
+[0]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"[BIND]"
+[1]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"int"
+[2]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"x"
+[3]	std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >	"10"
+
+*/
+
 
 
 pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, const seq_t& full_statement_pos){
-	const auto token_pos = read_until(full_statement_pos, whitespace_chars);
-	const auto type = token_pos.first;
+	QUARK_ASSERT(parsed_bits.size() == 4);
+	QUARK_ASSERT(parsed_bits[0] == "[BIND]");
+	QUARK_ASSERT(parsed_bits[1].empty() == false);
+	QUARK_ASSERT(parsed_bits[2].empty() == false);
+	QUARK_ASSERT(parsed_bits[3].empty() == false);
 
-	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
-	const auto equal_rest = read_required_char(skip_whitespace(variable_pos.second), '=');
-	const auto expression_pos = read_until(skip_whitespace(equal_rest), ";");
+	const auto type_seq = seq_t(parsed_bits[1]);
+	const auto identifier = parsed_bits[2];
+	const auto expression_str = parsed_bits[3];
 
-	const auto expression = parse_expression_all(seq_t(expression_pos.first));
+	const auto pos = skip_whitespace(type_seq);
+	const auto mutable_pos = if_first(pos,"mutable");
+	const bool mutable_flag = mutable_pos.first;
 
-	const auto statement = json_t::make_array({ "bind", type, variable_pos.first, expression, json_t::make_object() });
+	const auto type_pos = skip_whitespace(mutable_pos.second);
+	const auto type = typeid_t::from_string(type_pos.str());
+	const auto expression = parse_expression_all(seq_t(expression_str));
+
+	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t::make_object();
+
+	const auto statement = json_t::make_array({ "bind", type.to_string(), identifier, expression, meta });
+
+	const auto x = read_until(full_statement_pos, ";");
 
 	//	Skip trailing ";".
-	return { statement, expression_pos.second.rest1() };
+	return { statement, x.second.rest1() };
 }
 
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement({}, seq_t("bool bb = true;")).first,
+		parse_bind_statement({ "[BIND]", "bool", "bb", "true" }, seq_t("bool bb = true;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "bool", "bb", ["k", true, "bool"], {}]
@@ -325,7 +353,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 }
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement({}, seq_t("int hello = 3;")).first,
+		parse_bind_statement({ "[BIND]", "int", "hello", "3" }, seq_t("int hello = 3;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "int", "hello", ["k", 3, "int"], {}]
@@ -334,17 +362,18 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	);
 }
 
-/*
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("mutable int hello = 3;")).first,
+		parse_bind_statement({ "[BIND]", "mutable int", "a", "14" }, seq_t("mutable int hello = 3;")).first,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "int", "hello", ["k", 3, "int"]]
+				[ "bind", "int", "a", ["k", 14, "int"], { "mutable": true }]
 			)"
 		)).first
 	);
 }
+
+/*
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
 		parse_bind_statement(seq_t("mutable bye = 3;")).first,
