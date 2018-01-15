@@ -129,176 +129,6 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 
 
 
-
-
-
-
-
-
-
-
-
-
-static const std::map<eoperation, string> k_2_operator_to_string{
-//	{ eoperation::k_x_member_access, "->" },
-
-	{ eoperation::k_2_looup, "[-]" },
-
-	{ eoperation::k_2_add, "+" },
-	{ eoperation::k_2_subtract, "-" },
-	{ eoperation::k_2_multiply, "*" },
-	{ eoperation::k_2_divide, "/" },
-	{ eoperation::k_2_remainder, "%" },
-
-	{ eoperation::k_2_smaller_or_equal, "<=" },
-	{ eoperation::k_2_smaller, "<" },
-	{ eoperation::k_2_larger_or_equal, ">=" },
-	{ eoperation::k_2_larger, ">" },
-
-	{ eoperation::k_2_logical_equal, "==" },
-	{ eoperation::k_2_logical_nonequal, "!=" },
-	{ eoperation::k_2_logical_and, "&&" },
-	{ eoperation::k_2_logical_or, "||" },
-};
-
-
-/*
-	Generates expressions encode as JSON in std::string values. Use for testing.
-
-
-	public: virtual const string maker__make2(const eoperation op, const string& lhs, const string& rhs) const{
-		const auto op_str = k_2_operator_to_string.at(op);
-		return make3(quote(op_str), lhs, rhs);
-	}
-*/
-
-	static string make2(string s0, string s1){
-		std::ostringstream ss;
-		ss << "[" << s0 << ", " << s1 << "]";
-		return ss.str();
-	}
-
-	static string make3(string s0, string s1, string s2){
-		std::ostringstream ss;
-		ss << "[" << s0 << ", " << s1 << ", " << s2 << "]";
-		return ss.str();
-	}
-
-	std::string expr_to_string(const expr_t& e);
-
-	static string op_to_string(eoperation op, const expr_t& expr0, const expr_t& expr1){
-		const auto op_string = quote(k_2_operator_to_string.at(op));
-		const auto expr0_str = expr_to_string(expr0);
-		const auto expr1_str = expr_to_string(expr1);
-
-		std::ostringstream ss;
-		ss << "[" << op_string << ", " << expr0_str << ", " << expr1_str << "]";
-		return ss.str();
-	}
-
-std::string expr_to_string(const expr_t& e){
-	if(e._op == eoperation::k_0_number_constant){
-		const auto value = *e._constant;
-		if(value._type == constant_value_t::etype::k_bool){
-			return make3("\"k\"", "\"bool\"", value._bool ? "true" : "false");
-		}
-		else if(value._type == constant_value_t::etype::k_int){
-			return make3("\"k\"", "\"int\"", std::to_string(value._int));
-		}
-		else if(value._type == constant_value_t::etype::k_float){
-			return make3("\"k\"", "\"float\"", float_to_string(value._float));
-		}
-		else if(value._type == constant_value_t::etype::k_string){
-			//	 Use k_0_string_literal!
-			QUARK_ASSERT(false);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-	else if(e._op == eoperation::k_0_resolve){
-		return make2(quote("@"), quote(e._identifier));
-	}
-	else if(e._op == eoperation::k_0_string_literal){
-		const auto value = *e._constant;
-		QUARK_ASSERT(value._type == constant_value_t::etype::k_string);
-		return make3("\"k\"", "\"string\"", quote(value._string));
-	}
-	else if(e._op == eoperation::k_x_member_access){
-		return make3(quote("->"), expr_to_string(e._exprs[0]), quote(e._identifier));
-	}
-	else if(e._op == eoperation::k_2_looup){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_add){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_subtract){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_multiply){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_divide){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_remainder){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_smaller_or_equal){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_smaller){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_larger_or_equal){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_larger){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_logical_equal){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_logical_nonequal){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_logical_and){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_2_logical_or){
-		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
-	}
-	else if(e._op == eoperation::k_3_conditional_operator){
-		std::ostringstream ss;
-		ss << "[\"?:\", " << expr_to_string(e._exprs[0]) << ", " << expr_to_string(e._exprs[1]) << ", " << expr_to_string(e._exprs[2]) + "]";
-		return ss.str();
-	}
-	else if(e._op == eoperation::k_n_call){
-		std::ostringstream ss;
-		ss << "[\"call\", " + expr_to_string(e._exprs[0]) + ", [";
-		for(auto i = 0 ; i < e._exprs.size() - 1 ; i++){
-			const auto& arg = expr_to_string(e._exprs[i + 1]);
-			ss << arg;
-			if(i != (e._exprs.size() - 2)){
-				ss << ", ";
-			}
-		}
-		ss << "]]";
-		return ss.str();
-
-	}
-	else if(e._op == eoperation::k_1_unary_minus){
-		return "[\"unary_minus\", " + expr_to_string(e._exprs[0]) + "]";
-	}
-	else{
-		QUARK_ASSERT(false)
-		return "";
-	}
-}
-
-
-
 /*
 	Generates expressions encode as JSON in std::string values. Use for testing.
 */
@@ -665,6 +495,164 @@ std::pair<expr_t, seq_t> parse_expression(const seq_t& p){
 
 
 
+
+
+
+
+//////////////////////			expr_to_string
+
+
+/*
+	Convert expr_t to a json-formatted string, for easy testing.
+*/
+
+static const std::map<eoperation, string> k_2_operator_to_string{
+//	{ eoperation::k_x_member_access, "->" },
+
+	{ eoperation::k_2_looup, "[-]" },
+
+	{ eoperation::k_2_add, "+" },
+	{ eoperation::k_2_subtract, "-" },
+	{ eoperation::k_2_multiply, "*" },
+	{ eoperation::k_2_divide, "/" },
+	{ eoperation::k_2_remainder, "%" },
+
+	{ eoperation::k_2_smaller_or_equal, "<=" },
+	{ eoperation::k_2_smaller, "<" },
+	{ eoperation::k_2_larger_or_equal, ">=" },
+	{ eoperation::k_2_larger, ">" },
+
+	{ eoperation::k_2_logical_equal, "==" },
+	{ eoperation::k_2_logical_nonequal, "!=" },
+	{ eoperation::k_2_logical_and, "&&" },
+	{ eoperation::k_2_logical_or, "||" },
+};
+
+
+	static string make2(string s0, string s1){
+		std::ostringstream ss;
+		ss << "[" << s0 << ", " << s1 << "]";
+		return ss.str();
+	}
+
+	static string make3(string s0, string s1, string s2){
+		std::ostringstream ss;
+		ss << "[" << s0 << ", " << s1 << ", " << s2 << "]";
+		return ss.str();
+	}
+
+	std::string expr_to_string(const expr_t& e);
+
+	static string op_to_string(eoperation op, const expr_t& expr0, const expr_t& expr1){
+		const auto op_string = quote(k_2_operator_to_string.at(op));
+		const auto expr0_str = expr_to_string(expr0);
+		const auto expr1_str = expr_to_string(expr1);
+
+		std::ostringstream ss;
+		ss << "[" << op_string << ", " << expr0_str << ", " << expr1_str << "]";
+		return ss.str();
+	}
+
+std::string expr_to_string(const expr_t& e){
+	if(e._op == eoperation::k_0_number_constant){
+		const auto value = *e._constant;
+		if(value._type == constant_value_t::etype::k_bool){
+			return make3("\"k\"", "\"bool\"", value._bool ? "true" : "false");
+		}
+		else if(value._type == constant_value_t::etype::k_int){
+			return make3("\"k\"", "\"int\"", std::to_string(value._int));
+		}
+		else if(value._type == constant_value_t::etype::k_float){
+			return make3("\"k\"", "\"float\"", float_to_string(value._float));
+		}
+		else if(value._type == constant_value_t::etype::k_string){
+			//	 Use k_0_string_literal!
+			QUARK_ASSERT(false);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	else if(e._op == eoperation::k_0_resolve){
+		return make2(quote("@"), quote(e._identifier));
+	}
+	else if(e._op == eoperation::k_0_string_literal){
+		const auto value = *e._constant;
+		QUARK_ASSERT(value._type == constant_value_t::etype::k_string);
+		return make3("\"k\"", "\"string\"", quote(value._string));
+	}
+	else if(e._op == eoperation::k_x_member_access){
+		return make3(quote("->"), expr_to_string(e._exprs[0]), quote(e._identifier));
+	}
+	else if(e._op == eoperation::k_2_looup){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_add){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_subtract){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_multiply){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_divide){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_remainder){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_smaller_or_equal){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_smaller){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_larger_or_equal){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_larger){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_logical_equal){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_logical_nonequal){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_logical_and){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_2_logical_or){
+		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
+	}
+	else if(e._op == eoperation::k_3_conditional_operator){
+		std::ostringstream ss;
+		ss << "[\"?:\", " << expr_to_string(e._exprs[0]) << ", " << expr_to_string(e._exprs[1]) << ", " << expr_to_string(e._exprs[2]) + "]";
+		return ss.str();
+	}
+	else if(e._op == eoperation::k_n_call){
+		std::ostringstream ss;
+		ss << "[\"call\", " + expr_to_string(e._exprs[0]) + ", [";
+		for(auto i = 0 ; i < e._exprs.size() - 1 ; i++){
+			const auto& arg = expr_to_string(e._exprs[i + 1]);
+			ss << arg;
+			if(i != (e._exprs.size() - 2)){
+				ss << ", ";
+			}
+		}
+		ss << "]]";
+		return ss.str();
+
+	}
+	else if(e._op == eoperation::k_1_unary_minus){
+		return "[\"unary_minus\", " + expr_to_string(e._exprs[0]) + "]";
+	}
+	else{
+		QUARK_ASSERT(false)
+		return "";
+	}
+}
 
 
 
@@ -1175,6 +1163,8 @@ QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
 
 
 //////////////////////////////////			EXPRESSION ERRORS
+
+
 
 void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
 	try{
