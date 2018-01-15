@@ -2213,5 +2213,37 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
 }
 
+
+
+QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		a = color(255, 128, 128);
+		b = color(a.red, a.green, 129);
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"struct color {int red=255,int green=128,int blue=128}",
+		"struct color {int red=255,int green=128,int blue=129}",
+	}	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
+	try {
+		const auto vm = run_global(R"(
+			a = 3;
+			a = 4;
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+
+
+
+
 }	//	floyd
 
