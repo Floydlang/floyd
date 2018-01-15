@@ -11,6 +11,7 @@
 #include "text_parser.h"
 #include "floyd_parser.h"
 #include "parser_primitives.h"
+#include "parse_statement.h"
 #include "json_support.h"
 #include "json_parser.h"
 
@@ -82,26 +83,19 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 
 	const auto arg_list_pos = get_balanced(rest);
 	const auto args = parse_functiondef_arguments(seq_t(arg_list_pos.first));
-	const auto body_rest_pos = skip_whitespace(arg_list_pos.second);
-
-	if(!if_first(body_rest_pos, "{").first){
-		throw std::runtime_error("expected function body enclosed by {}.");
-	}
-	const auto body_pos = get_balanced(body_rest_pos);
 	const auto function_name = function_name_pos.first;
-
-	const auto statements = parse_statements(seq_t(trim_ends(body_pos.first)));
+	const auto body = parse_statement_body(arg_list_pos.second);
 
 	json_t function_def = json_t::make_array({
 		"def-func",
 		json_t::make_object({
 			{ "name", function_name },
 			{ "args", json_t::make_array(args) },
-			{ "statements", statements.first },
+			{ "statements", body.first },
 			{ "return_type", return_type_pos.first.to_string() }
 		})
 	});
-	return { function_def, body_pos.second };
+	return { function_def, body.second };
 }
 
 struct test {
