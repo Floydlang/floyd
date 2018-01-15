@@ -86,11 +86,11 @@ QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 
 
 
-//////////////////////////////////////////////////		parse_assignment_statement()
+//////////////////////////////////////////////////		parse_bind_statement()
 
 
 
-pair<json_t, seq_t> parse_assignment_statement(const seq_t& s){
+pair<json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto token_pos = read_until(s, whitespace_chars);
 	const auto type = token_pos.first;
 
@@ -106,9 +106,9 @@ pair<json_t, seq_t> parse_assignment_statement(const seq_t& s){
 	return { statement, expression_pos.second.rest1() };
 }
 
-QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_assignment_statement(seq_t("bool bb = true;")).first,
+		parse_bind_statement(seq_t("bool bb = true;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "bool", "bb", ["k", true, "bool"], {}]
@@ -116,9 +116,9 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
 		)).first
 	);
 }
-QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_assignment_statement(seq_t("int hello = 3;")).first,
+		parse_bind_statement(seq_t("int hello = 3;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "int", "hello", ["k", 3, "int"], {}]
@@ -128,9 +128,9 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
 }
 
 /*
-QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_assignment_statement(seq_t("mutable int hello = 3;")).first,
+		parse_bind_statement(seq_t("mutable int hello = 3;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "int", "hello", ["k", 3, "int"]]
@@ -138,9 +138,9 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
 		)).first
 	);
 }
-QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
+QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_assignment_statement(seq_t("mutable bye = 3;")).first,
+		parse_bind_statement(seq_t("mutable bye = 3;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "int", "hello", ["k", 3, "int"]]
@@ -151,14 +151,14 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", ""){
 */
 
 /*
-QUARK_UNIT_TESTQ("parse_assignment_statement", "float"){
-	const auto a = parse_assignment_statement("float b = 0.3; \n");
+QUARK_UNIT_TESTQ("parse_bind_statement", "float"){
+	const auto a = parse_bind_statement("float b = 0.3; \n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "b");
 	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(0.3f));
 	QUARK_TEST_VERIFY(a.second == " \n");
 }
-QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
-	const auto a = parse_assignment_statement("float test = log(\"hello\");\n");
+QUARK_UNIT_TESTQ("parse_bind_statement", "function call"){
+	const auto a = parse_bind_statement("float test = log(\"hello\");\n");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_function.to_string() == "log");
 	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_inputs.size() == 1);
@@ -168,10 +168,10 @@ QUARK_UNIT_TESTQ("parse_assignment_statement", "function call"){
 */
 
 
-//////////////////////////////////////////////////		parse_deduced_bind_statement()
+//////////////////////////////////////////////////		parse_assign_statement()
 
 
-pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s){
+pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto variable_pos = read_single_symbol(s);
 	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
@@ -184,9 +184,9 @@ pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s){
 	return { statement, expression_pos.second.rest1() };
 }
 
-QUARK_UNIT_TEST("", "parse_deduced_bind_statement()", "", ""){
+QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 	ut_compare_jsons(
-		parse_deduced_bind_statement(seq_t("x = 10;")).first,
+		parse_assign_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
 				["assign","x",["k",10,"int"]]

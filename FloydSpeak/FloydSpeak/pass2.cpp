@@ -236,7 +236,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
 			bool mutable_flag = meta.does_object_element_exist("mutable");
-			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, bind_type2, expr2)));
+			statements2.push_back(make_shared<statement_t>(make__bind_or_assign_statement(name2, bind_type2, expr2, mutable_flag)));
 		}
 
 		//	[ "assign", "x", EXPRESSION ]
@@ -247,7 +247,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
-			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, typeid_t::make_null(), expr2)));
+			statements2.push_back(make_shared<statement_t>(make__bind_or_assign_statement(name2, typeid_t::make_null(), expr2, false)));
 		}
 
 		//	[ "block", [ STATEMENTS ] ]
@@ -309,7 +309,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
-			statements2.push_back(make_shared<statement_t>(make__bind_statement(name2, function_typeid, function_def_expr)));
+			statements2.push_back(make_shared<statement_t>(make__bind_or_assign_statement(name2, function_typeid, function_def_expr, false)));
 		}
 
 		/*

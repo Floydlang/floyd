@@ -38,8 +38,8 @@ namespace floyd {
 		return statement_t(value);
 	}
 
-	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression){
-		return statement_t(bind_statement_t{ new_variable_name, bindtype, expression });
+	statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bool bind_as_mutable_tag){
+		return statement_t(bind_or_assign_statement_t{ new_variable_name, bindtype, expression, bind_as_mutable_tag });
 	}
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
 /*
@@ -95,7 +95,7 @@ namespace floyd {
 		if(_return != nullptr){
 			QUARK_ASSERT(_return != nullptr);
 			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_bind_or_assign == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
@@ -104,16 +104,16 @@ namespace floyd {
 		else if(_def_struct != nullptr){
 			QUARK_ASSERT(_return == nullptr);
 			QUARK_ASSERT(_def_struct != nullptr);
-			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_bind_or_assign == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
 			QUARK_ASSERT(_expression == nullptr);
 		}
-		else if(_bind){
+		else if(_bind_or_assign){
 			QUARK_ASSERT(_return == nullptr);
 			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind != nullptr);
+			QUARK_ASSERT(_bind_or_assign != nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
@@ -122,7 +122,7 @@ namespace floyd {
 		else if(_block){
 			QUARK_ASSERT(_return == nullptr);
 			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_bind_or_assign == nullptr);
 			QUARK_ASSERT(_block != nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
@@ -131,7 +131,7 @@ namespace floyd {
 		else if(_if){
 			QUARK_ASSERT(_return == nullptr);
 			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_bind_or_assign == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if != nullptr);
 			QUARK_ASSERT(_for == nullptr);
@@ -140,7 +140,7 @@ namespace floyd {
 		else if(_for){
 			QUARK_ASSERT(_return == nullptr);
 			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_bind_or_assign == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for != nullptr);
@@ -149,7 +149,7 @@ namespace floyd {
 		else if(_expression){
 			QUARK_ASSERT(_return == nullptr);
 			QUARK_ASSERT(_def_struct == nullptr);
-			QUARK_ASSERT(_bind == nullptr);
+			QUARK_ASSERT(_bind_or_assign == nullptr);
 			QUARK_ASSERT(_block == nullptr);
 			QUARK_ASSERT(_if == nullptr);
 			QUARK_ASSERT(_for == nullptr);
@@ -185,12 +185,15 @@ namespace floyd {
 //				expression_to_json(e._def_struct)
 			});
 		}
-		else if(e._bind){
+		else if(e._bind_or_assign){
+			const auto meta = (e._bind_or_assign->_bind_as_mutable_tag) ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t::make_object();
+
 			return json_t::make_array({
 				json_t("bind"),
-				e._bind->_new_variable_name,
-				typeid_to_json(e._bind->_bindtype),
-				expression_to_json(e._bind->_expression)
+				e._bind_or_assign->_new_variable_name,
+				typeid_to_json(e._bind_or_assign->_bindtype),
+				expression_to_json(e._bind_or_assign->_expression),
+				meta
 			});
 		}
 		else if(e._block){
@@ -250,7 +253,7 @@ namespace floyd {
 statement_t make_function_statement(const string name, const function_definition_t def){
 	const auto function_typeid = typeid_t::make_function(def._return_type, get_member_types(def._args));
 	const auto function_def_expr = expression_t::make_function_definition(def);
-	return make__bind_statement(name, function_typeid, function_def_expr);
+	return make__bind_or_assign_statement(name, function_typeid, function_def_expr, false);
 }
 
 

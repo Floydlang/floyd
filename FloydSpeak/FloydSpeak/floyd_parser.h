@@ -41,7 +41,8 @@ const std::string k_test_program_0_pass2output = R"(
 			"bind",
 			"main",
 			{ "base_type": "function", "parts": ["int"] },
-			["func-def", { "base_type": "function", "parts": ["int"] }, [], [["return", ["k", 3, "int"]]], "int"]
+			["func-def", { "base_type": "function", "parts": ["int"] }, [], [["return", ["k", 3, "int"]]], "int"],
+			{}
 		]
 	]
 })";

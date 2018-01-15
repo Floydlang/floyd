@@ -337,7 +337,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto implicit = parse_implicit_statement(pos);
 	const auto statement_type = implicit.first[0];
 	if(statement_type == "[BIND]"){
-		return parse_assignment_statement(pos);
+		return parse_bind_statement(pos);
 	}
 	else if(statement_type == "[FUNCTION-DEFINITION]"){
 		return parse_function_definition2(pos);
@@ -346,7 +346,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 		return parse_expression_statement(pos);
 	}
 	else if(statement_type == "[ASSIGN]"){
-		return parse_deduced_bind_statement(pos);
+		return parse_assign_statement(pos);
 	}
 	else{
 		QUARK_ASSERT(false);

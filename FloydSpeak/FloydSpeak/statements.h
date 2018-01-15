@@ -70,17 +70,21 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////		bind_statement_t
+	//////////////////////////////////////		bind_or_assign_statement_t
 
-
-	struct bind_statement_t {
-		bool operator==(const bind_statement_t& other) const {
-			return _new_variable_name == other._new_variable_name && _bindtype == other._bindtype && _expression == other._expression;
+	//	FYI: We don't know until runtime if a = 10 is a deduced bind or a mutation.
+	struct bind_or_assign_statement_t {
+		bool operator==(const bind_or_assign_statement_t& other) const {
+			return _new_variable_name == other._new_variable_name
+				&& _bindtype == other._bindtype
+				&& _expression == other._expression
+				&& _bind_as_mutable_tag == other._bind_as_mutable_tag;
 		}
 
 		std::string _new_variable_name;
 		typeid_t _bindtype;
 		expression_t _expression;
+		bool _bind_as_mutable_tag;
 	};
 
 
@@ -205,8 +209,8 @@ namespace floyd {
 			_def_struct(std::make_shared<define_struct_statement_t>(value))
 		{
 		}
-        public: statement_t(const bind_statement_t& value) :
-			_bind(std::make_shared<bind_statement_t>(value))
+        public: statement_t(const bind_or_assign_statement_t& value) :
+			_bind_or_assign(std::make_shared<bind_or_assign_statement_t>(value))
 		{
 		}
         public: statement_t(const block_statement_t& value) :
@@ -230,8 +234,8 @@ namespace floyd {
 			if(_return){
 				return other._return && *_return == *other._return;
 			}
-			else if(_bind){
-				return other._bind && *_bind == *other._bind;
+			else if(_bind_or_assign){
+				return other._bind_or_assign && *_bind_or_assign == *other._bind_or_assign;
 			}
 			else if(_block){
 				return other._block && *_block == *other._block;
@@ -247,13 +251,13 @@ namespace floyd {
 
 
 		//	Only *one* of these are used for each instance.
-		public: std::shared_ptr<return_statement_t> _return;
-		public: std::shared_ptr<define_struct_statement_t> _def_struct;
-		public: std::shared_ptr<bind_statement_t> _bind;
-		public: std::shared_ptr<block_statement_t> _block;
-		public: std::shared_ptr<ifelse_statement_t> _if;
-		public: std::shared_ptr<for_statement_t> _for;
-		public: std::shared_ptr<expression_statement_t> _expression;
+		public: const std::shared_ptr<return_statement_t> _return;
+		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
+		public: const std::shared_ptr<bind_or_assign_statement_t> _bind_or_assign;
+		public: const std::shared_ptr<block_statement_t> _block;
+		public: const std::shared_ptr<ifelse_statement_t> _if;
+		public: const std::shared_ptr<for_statement_t> _for;
+		public: const std::shared_ptr<expression_statement_t> _expression;
 	};
 
 
@@ -264,7 +268,7 @@ namespace floyd {
 	statement_t make__return_statement(const return_statement_t& value);
 	statement_t make__return_statement(const expression_t& expression);
 	statement_t make__define_struct_statement(const define_struct_statement_t& value);
-	statement_t make__bind_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression);
+	statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bool bind_as_mutable_tag);
 	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);
 	statement_t make__ifelse_statement(
 		const expression_t& condition,

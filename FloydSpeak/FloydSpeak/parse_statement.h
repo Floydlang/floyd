@@ -64,7 +64,7 @@ namespace floyd {
 		OUTPUT:
 			[ "bind", "float", "x", EXPRESSION ]
 	*/
-	std::pair<json_t, seq_t> parse_assignment_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s);
 
 	/*
 		x = expression:
@@ -72,7 +72,7 @@ namespace floyd {
 
 		x = 4
 	*/
-	std::pair<json_t, seq_t> parse_deduced_bind_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s);
 
 
 	/*

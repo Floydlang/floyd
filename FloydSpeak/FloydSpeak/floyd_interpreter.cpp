@@ -90,8 +90,8 @@ namespace {
 
 		auto vm2 = vm0;
 
-		if(statement._bind){
-			const auto& s = statement._bind;
+		if(statement._bind_or_assign){
+			const auto& s = statement._bind_or_assign;
 			const auto name = s->_new_variable_name;
 
 			const auto result = evaluate_expression(vm2, s->_expression);
@@ -100,36 +100,43 @@ namespace {
 
 			const auto dest_type = s->_bindtype;
 
+			//	If we have a type or we have the mutable-flag, then this statement is a bind.
+			bool is_bind = s->_bindtype.is_null() == false || s->_bind_as_mutable_tag;
+
 			if(result_value.is_literal() == false){
 				throw std::runtime_error("Cannot evaluate expression.");
 			}
 			else{
+				bool variable_exists_flag = vm2._call_stack.back()->_values.count(name) != 0;
 
-				bool exists = vm2._call_stack.back()->_values.count(name) != 0;
-
-				//	Deduced bind. "x = 3;"
-				//	Deduced bind can also be used to MUTATE existing variable.
-				if(dest_type.is_null()){
-					if(exists){
-						//	Mutate.
-						vm2._call_stack.back()->_values[name] = result_value.get_literal();
+				//	Bind statement, with explicit type: "int x = 3;". Create a new variable.
+				if(is_bind){
+					if(variable_exists_flag){
+						throw std::runtime_error("Local identifier already exists.");
 					}
-					else{
-						vm2._call_stack.back()->_values[name] = result_value.get_literal();
-					}
-				}
-
-				//	Regular bind, with explicit type: "int x = 3;"
-				else{
-					if(exists){
-						throw std::runtime_error("Local value already exists.");
-					}
-
 					const auto source_type = result_value.get_literal().get_type();
 					if(!(dest_type == source_type)){
 						throw std::runtime_error("Types not compatible in bind.");
 					}
 					vm2._call_stack.back()->_values[name] = result_value.get_literal();
+				}
+
+				//	Deduced bind or assignment.
+				//	Deduced bind. "x = 3;"
+				//	Deduced bind can also be used to MUTATE existing variable.
+				else{
+					if(variable_exists_flag){
+						//	Mutate.
+						if(s->_bind_as_mutable_tag){
+							vm2._call_stack.back()->_values[name] = result_value.get_literal();
+						}
+						else{
+							throw std::runtime_error("Cannot assign to immutable identifier.");
+						}
+					}
+					else{
+						vm2._call_stack.back()->_values[name] = result_value.get_literal();
+					}
 				}
 			}
 
