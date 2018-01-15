@@ -16,6 +16,7 @@
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
 		2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C384AD21F3B604E0028C742 /* floyd_basics.cpp */; };
 		2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
+		2C4427A5200CED94006AAE1A /* parse_prefixless_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4427A3200CED94006AAE1A /* parse_prefixless_statement.cpp */; };
 		2C4F355C1D4792C60061CA93 /* parse_expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355A1D4792C60061CA93 /* parse_expression.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* parser_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* parser_value.cpp */; };
 		2C4F35621D4795C20061CA93 /* parse_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F35601D4795C20061CA93 /* parse_statement.cpp */; };
@@ -73,6 +74,8 @@
 		2C384AD31F3B604E0028C742 /* floyd_basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_basics.h; sourceTree = "<group>"; };
 		2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = immutable_ref_value.cpp; sourceTree = "<group>"; };
 		2C40A71E1D76E179003245E3 /* immutable_ref_value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = immutable_ref_value.h; sourceTree = "<group>"; };
+		2C4427A3200CED94006AAE1A /* parse_prefixless_statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parse_prefixless_statement.cpp; sourceTree = "<group>"; };
+		2C4427A4200CED94006AAE1A /* parse_prefixless_statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parse_prefixless_statement.h; sourceTree = "<group>"; };
 		2C4F355A1D4792C60061CA93 /* parse_expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parse_expression.cpp; sourceTree = "<group>"; };
 		2C4F355B1D4792C60061CA93 /* parse_expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parse_expression.h; sourceTree = "<group>"; };
 		2C4F355D1D4794CD0061CA93 /* parser_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_value.cpp; sourceTree = "<group>"; };
@@ -136,18 +139,20 @@
 		2C00BC401F2427510087B8BB /* pass1 */ = {
 			isa = PBXGroup;
 			children = (
-				2C8270021D46D9A300E697ED /* parser_primitives.cpp */,
-				2C8270031D46D9A300E697ED /* parser_primitives.h */,
 				2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */,
 				2C789ED71CBA54C400DDBD3C /* floyd_parser.h */,
 				2C4F355A1D4792C60061CA93 /* parse_expression.cpp */,
 				2C4F355B1D4792C60061CA93 /* parse_expression.h */,
 				2CA061CA1D4C317A0045AF86 /* parse_function_def.cpp */,
 				2CA061CB1D4C317A0045AF86 /* parse_function_def.h */,
+				2C4427A3200CED94006AAE1A /* parse_prefixless_statement.cpp */,
+				2C4427A4200CED94006AAE1A /* parse_prefixless_statement.h */,
 				2C4F35601D4795C20061CA93 /* parse_statement.cpp */,
 				2C4F35611D4795C20061CA93 /* parse_statement.h */,
 				2CA061CD1D4C34B70045AF86 /* parse_struct_def.cpp */,
 				2CA061CE1D4C34B70045AF86 /* parse_struct_def.h */,
+				2C8270021D46D9A300E697ED /* parser_primitives.cpp */,
+				2C8270031D46D9A300E697ED /* parser_primitives.h */,
 				2C71179C1D6E48AE004B8F69 /* parser2.cpp */,
 				2CE2D87A1D6F33B7007E5C53 /* parser2.h */,
 			);
@@ -325,6 +330,7 @@
 				2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */,
 				2C0056AD1D5D53FD009F8219 /* json_writer.cpp in Sources */,
 				2C0056B11D5D5E88009F8219 /* json_parser.cpp in Sources */,
+				2C4427A5200CED94006AAE1A /* parse_prefixless_statement.cpp in Sources */,
 				2C95E6D21D5AA47200186D5A /* llvm_code_gen.cpp in Sources */,
 				2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */,
 				2CA0F8971D6910D000068871 /* pass3.cpp in Sources */,
