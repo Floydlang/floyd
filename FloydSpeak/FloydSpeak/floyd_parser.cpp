@@ -360,15 +360,6 @@ QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
 	);
 }
 
-#if false
-QUARK_UNIT_TEST("", "parse_statement()", "", ""){
-	ut_compare_jsons(
-		parse_prefixless_statement(seq_t("f(3);")).first,
-		parse_json(seq_t(R"(["call", ["@", "f"], [["k", 3, "int"]]])")).first
-	);
-}
-#endif
-
 
 std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 	const auto pos = skip_whitespace(pos0);

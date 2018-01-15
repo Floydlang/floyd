@@ -74,16 +74,6 @@ QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 	QUARK_TEST_VERIFY(result.second.get_s() == "");
 }
 
-#if false
-QUARK_UNIT_TESTQ("parse_return_statement()", ""){
-	const auto t = make_shared<expression_t>(expression_t::make_constant(123));
-	
-	QUARK_TEST_VERIFY((
-		parse_return_statement("return \t123\t;\t\nxyz}") == pair<return_statement_t, string>(return_statement_t{t}, "xyz}")
-	));
-}
-#endif
-
 
 
 //////////////////////////////////////////////////		parse_bind_statement()
@@ -149,23 +139,10 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	);
 }
 */
+//### test float literal
+//### test string literal
 
-/*
-QUARK_UNIT_TESTQ("parse_bind_statement", "float"){
-	const auto a = parse_bind_statement("float b = 0.3; \n");
-	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "b");
-	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_constant == value_t(0.3f));
-	QUARK_TEST_VERIFY(a.second == " \n");
-}
-QUARK_UNIT_TESTQ("parse_bind_statement", "function call"){
-	const auto a = parse_bind_statement("float test = log(\"hello\");\n");
-	QUARK_TEST_VERIFY(a.first._bind_statement->_identifier == "test");
-	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_function.to_string() == "log");
-	QUARK_TEST_VERIFY(a.first._bind_statement->_expression->_call->_inputs.size() == 1);
-	QUARK_TEST_VERIFY(*a.first._bind_statement->_expression->_call->_inputs[0]._constant ==value_t("hello"));
-	QUARK_TEST_VERIFY(a.second == "\n");
-}
-*/
+
 
 
 //////////////////////////////////////////////////		parse_assign_statement()
@@ -469,7 +446,6 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 		)).first
 	);
 }
-
 
 
 }	//	floyd
