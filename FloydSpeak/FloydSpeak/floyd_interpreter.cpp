@@ -38,6 +38,7 @@ using namespace floyd;
 
 
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
+std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 namespace {
 
@@ -89,8 +90,6 @@ namespace {
 
 		auto vm2 = vm0;
 
-//???		const value_t value = resolve_env_variable(vm2, expr->_variable);
-
 		if(statement._bind_or_assign){
 			const auto& s = statement._bind_or_assign;
 			const auto name = s->_new_variable_name;
@@ -103,11 +102,6 @@ namespace {
 				throw std::runtime_error("Cannot evaluate expression.");
 			}
 			else{
-				const auto existing_value = vm2._call_stack.back()->_values.count(name) != 0
-					? make_shared<std::pair<value_t, bool>>(vm2._call_stack.back()->_values.at(name))
-					: nullptr;
-				const bool existing_variable_is_mutable = existing_value && existing_value->second;
-
 				const auto bind_statement_type = s->_bindtype;
 				const auto bind_statement_mutable_tag_flag = s->_bind_as_mutable_tag;
 
@@ -122,7 +116,9 @@ namespace {
 				//	mutable a = 10
 				//	mutable = 10
 				if(is_bind){
-					if(existing_value != nullptr){
+					const auto value_exists_in_env = vm2._call_stack.back()->_values.count(name) > 0;
+
+					if(value_exists_in_env){
 						throw std::runtime_error("Local identifier already exists.");
 					}
 
@@ -143,20 +139,24 @@ namespace {
 				//	Assign
 				//	a = 10
 				else{
+					const auto existing_value_deep_ptr = resolve_env_variable(vm2, name);
+					const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
+
 					//	Mutate!
-					if(existing_value){
+					if(existing_value_deep_ptr){
 						if(existing_variable_is_mutable){
-							const auto existing_value_type = existing_value->first.get_type();
+							const auto existing_value_type = existing_value_deep_ptr->first.get_type();
 							if(!(existing_value_type == new_value_type)){
 								throw std::runtime_error("Types not compatible in bind.");
 							}
-							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, existing_variable_is_mutable);
+							*existing_value_deep_ptr = std::pair<value_t, bool>(new_value, existing_variable_is_mutable);
 						}
 						else{
 							throw std::runtime_error("Cannot assign to immutable identifier.");
 						}
 					}
-					//	Deduce type and bind it.
+
+					//	Deduce type and bind it -- to local env.
 					else{
 						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
 					}
@@ -329,39 +329,38 @@ value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	}
 }
 
-
-//	const auto it = find_if(s._state.begin(), s._state.end(), [&] (const member_t& e) { return e._name == name; } );
-
-floyd::value_t resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(env && env->check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto it = env->_values.find(s);
 	if(it != env->_values.end()){
-		return it->second.first;
+		return &it->second;
 	}
 	else if(env->_parent_env){
 		return resolve_env_variable_deep(vm, env->_parent_env, s);
 	}
 	else{
-		throw std::runtime_error("Undefined variable \"" + s + "\"!");
+		return nullptr;
 	}
 }
 
-floyd::value_t resolve_env_variable(const interpreter_t& vm, const std::string& s){
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
 	return resolve_env_variable_deep(vm, vm._call_stack.back(), s);
 }
 
-value_t find_global_symbol(const interpreter_t& vm, const string& s){
-	const auto v = resolve_env_variable(vm, s);
-	if(v.is_null()){
-		throw std::runtime_error("Undefined function!");
+floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
+	const auto t = resolve_env_variable(vm, s);
+	if(t == nullptr){
+		throw std::runtime_error("Undefined variable \"" + s + "\"!");
 	}
-	return v;
+	return t->first;
 }
 
 std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
@@ -399,8 +398,11 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	}
 	else if(op == expression_type::k_variable){
 		const auto expr = e.get_variable();
-		const value_t value = resolve_env_variable(vm2, expr->_variable);
-		return {vm2, expression_t::make_literal(value)};
+		const auto value = resolve_env_variable(vm2, expr->_variable);
+		if(value == nullptr){
+			throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
+		}
+		return {vm2, expression_t::make_literal(value->first)};
 	}
 
 	else if(op == expression_type::k_call){
@@ -1765,7 +1767,6 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 	}
 }
 
-/*
 QUARK_UNIT_TESTQ("run_main()", "test mutating from a subscope"){
 	const auto r = run_global(R"(
 		mutable a = 7;
@@ -1776,7 +1777,6 @@ QUARK_UNIT_TESTQ("run_main()", "test mutating from a subscope"){
 	)");
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "8" }));
 }
-*/
 
 
 
@@ -2167,24 +2167,21 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 }
 
 
-
 //////////////////////////		while-statement
 
 
-/*
 QUARK_UNIT_TESTQ("run_init()", "for"){
 	const auto r = run_global(
 		R"(
 			mutable a = 100;
 			while(a < 105){
-				print("#: " + to_string(a));
+				print(to_string(a));
 				a = a + 1;
 			}
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "100", "101", "102", "103", "104" }));
 }
-*/
 
 
 //////////////////////////		struct
