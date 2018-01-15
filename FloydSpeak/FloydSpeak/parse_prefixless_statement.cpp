@@ -297,8 +297,8 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 
 
 
-pair<json_t, seq_t> parse_bind_statement(const seq_t& s){
-	const auto token_pos = read_until(s, whitespace_chars);
+pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, const seq_t& full_statement_pos){
+	const auto token_pos = read_until(full_statement_pos, whitespace_chars);
 	const auto type = token_pos.first;
 
 	const auto variable_pos = read_until(skip_whitespace(token_pos.second), whitespace_chars + "=");
@@ -315,7 +315,7 @@ pair<json_t, seq_t> parse_bind_statement(const seq_t& s){
 
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("bool bb = true;")).first,
+		parse_bind_statement({}, seq_t("bool bb = true;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "bool", "bb", ["k", true, "bool"], {}]
@@ -325,7 +325,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 }
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("int hello = 3;")).first,
+		parse_bind_statement({}, seq_t("int hello = 3;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "int", "hello", ["k", 3, "int"], {}]
@@ -426,7 +426,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto implicit = parse_implicit_statement(pos);
 	const auto statement_type = implicit.first[0];
 	if(statement_type == "[BIND]"){
-		return parse_bind_statement(pos);
+		return parse_bind_statement(implicit.first, implicit.second);
 	}
 	else if(statement_type == "[FUNCTION-DEFINITION]"){
 		return parse_function_definition2(pos);

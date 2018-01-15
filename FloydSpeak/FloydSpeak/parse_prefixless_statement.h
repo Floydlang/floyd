@@ -34,7 +34,7 @@ namespace floyd {
 		OUTPUT:
 			[ "bind", "float", "x", EXPRESSION ]
 	*/
-	std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_bind_statement(const std::vector<std::string>& parsed_bits, const seq_t& full_statement_pos);
 
 	/*
 		x = expression:
