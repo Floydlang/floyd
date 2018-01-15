@@ -384,18 +384,6 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	);
 }
 
-/*
-QUARK_UNIT_TESTQ("parse_bind_statement", ""){
-	ut_compare_jsons(
-		parse_bind_statement(seq_t("mutable bye = 3;")).first,
-		parse_json(seq_t(
-			R"(
-				[ "bind", "int", "hello", ["k", 3, "int"]]
-			)"
-		)).first
-	);
-}
-*/
 //### test float literal
 //### test string literal
 

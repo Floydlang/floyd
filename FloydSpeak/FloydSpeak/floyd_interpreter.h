@@ -32,7 +32,7 @@ namespace floyd {
 
 	struct environment_t {
 		public: std::shared_ptr<environment_t> _parent_env;
-		public: std::map<std::string, value_t> _values;
+		public: std::map<std::string, std::pair<value_t, bool> > _values;
 
 
 		public: bool check_invariant() const;

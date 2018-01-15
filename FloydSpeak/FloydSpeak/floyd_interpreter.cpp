@@ -69,7 +69,7 @@ namespace {
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements_in_env(
 		const interpreter_t& vm,
 		const std::vector<std::shared_ptr<statement_t>>& statements,
-		const std::map<std::string, value_t>& values
+		const std::map<std::string, std::pair<value_t, bool>>& values
 	){
 		QUARK_ASSERT(vm.check_invariant());
 
@@ -98,44 +98,66 @@ namespace {
 			vm2 = result.first;
 			const auto result_value = result.second;
 
-			const auto dest_type = s->_bindtype;
-
-			//	If we have a type or we have the mutable-flag, then this statement is a bind.
-			bool is_bind = s->_bindtype.is_null() == false || s->_bind_as_mutable_tag;
-
 			if(result_value.is_literal() == false){
 				throw std::runtime_error("Cannot evaluate expression.");
 			}
 			else{
-				bool variable_exists_flag = vm2._call_stack.back()->_values.count(name) != 0;
+				const auto existing_value = vm2._call_stack.back()->_values.count(name) != 0
+					? make_shared<std::pair<value_t, bool>>(vm2._call_stack.back()->_values.at(name))
+					: nullptr;
+				const bool existing_variable_is_mutable = existing_value && existing_value->second;
 
-				//	Bind statement, with explicit type: "int x = 3;". Create a new variable.
+				const auto bind_statement_type = s->_bindtype;
+				const auto bind_statement_mutable_tag_flag = s->_bind_as_mutable_tag;
+
+				const auto new_value = result_value.get_literal();
+				const auto new_value_type = new_value.get_type();
+
+				//	If we have a type or we have the mutable-flag, then this statement is a bind.
+				bool is_bind = bind_statement_type.is_null() == false || bind_statement_mutable_tag_flag;
+
+				//	Bind.
+				//	int a = 10
+				//	mutable a = 10
+				//	mutable = 10
 				if(is_bind){
-					if(variable_exists_flag){
+					if(existing_value != nullptr){
 						throw std::runtime_error("Local identifier already exists.");
 					}
-					const auto source_type = result_value.get_literal().get_type();
-					if(!(dest_type == source_type)){
-						throw std::runtime_error("Types not compatible in bind.");
+
+					//	Deduced bind type -- use new value's type.
+					if(bind_statement_type.is_null()){
+						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, bind_statement_mutable_tag_flag);
 					}
-					vm2._call_stack.back()->_values[name] = result_value.get_literal();
+
+					//	Explicit bind-type -- make sure source + dest types match.
+					else{
+						if(!(bind_statement_type == new_value_type)){
+							throw std::runtime_error("Types not compatible in bind.");
+						}
+						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, bind_statement_mutable_tag_flag);
+					}
 				}
 
-				//	Deduced bind or assignment.
-				//	Deduced bind. "x = 3;"
-				//	Deduced bind can also be used to MUTATE existing variable.
+				//	Assign
+				//	a = 10
 				else{
-					if(variable_exists_flag){
-						//	Mutate.
-						if(s->_bind_as_mutable_tag){
-							vm2._call_stack.back()->_values[name] = result_value.get_literal();
+					//	Mutate!
+					if(existing_value){
+						if(existing_variable_is_mutable){
+							const auto existing_value_type = existing_value->first.get_type();
+							if(!(existing_value_type == new_value_type)){
+								throw std::runtime_error("Types not compatible in bind.");
+							}
+							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, existing_variable_is_mutable);
 						}
 						else{
 							throw std::runtime_error("Cannot assign to immutable identifier.");
 						}
 					}
+					//	Deduce type and bind it.
 					else{
-						vm2._call_stack.back()->_values[name] = result_value.get_literal();
+						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
 					}
 				}
 			}
@@ -156,7 +178,7 @@ namespace {
 			if(!result_value.is_literal()){
 				throw std::runtime_error("undefined");
 			}
-
+//??? Check that return value's type matches function's return type.
 			return { vm2, make_shared<value_t>(result_value.get_literal()) };
 		}
 
@@ -165,7 +187,7 @@ namespace {
 
 			const auto name = s->_def._name;
 			const auto struct_typeid = typeid_t::make_struct(std::make_shared<struct_definition_t>(s->_def));
-			vm2._call_stack.back()->_values[name] = make_typeid_value(struct_typeid);
+			vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(make_typeid_value(struct_typeid), false);
 			return { vm2, {}};
 		}
 
@@ -198,7 +220,7 @@ namespace {
 			const auto end_value = end_value0.second.get_literal().get_int();
 
 			for(int x = start_value ; x <= end_value ; x++){
-				const std::map<std::string, value_t> values = { { s->_iterator_name, value_t(x)} };
+				const std::map<std::string, std::pair<value_t, bool>> values = { { s->_iterator_name, std::pair<value_t, bool>(value_t(x), false) } };
 				const auto result = execute_statements_in_env(vm2, s->_body, values);
 				vm2 = result.first;
 				const auto return_value = result.second;
@@ -329,7 +351,7 @@ floyd::value_t resolve_env_variable_deep(const interpreter_t& vm, const shared_p
 
 	const auto it = env->_values.find(s);
 	if(it != env->_values.end()){
-		return it->second;
+		return it->second.first;
 	}
 	else if(env->_parent_env){
 		return resolve_env_variable_deep(vm, env->_parent_env, s);
@@ -738,7 +760,9 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 		for(int i = 0 ; i < function_def._args.size() ; i++){
 			const auto& arg_name = function_def._args[i]._name;
 			const auto& arg_value = args[i];
-			new_environment->_values[arg_name] = arg_value;
+
+			//	Function arguments are immutable while executing the function body.
+			new_environment->_values[arg_name] = std::pair<value_t, bool>(arg_value, false);
 		}
 		vm2._call_stack.push_back(new_environment);
 
@@ -855,7 +879,8 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	for(const auto& e: vm._call_stack){
 		std::map<string, json_t> values;
 		for(const auto&v: e->_values){
-			values[v.first] = value_to_json(v.second);
+		//??? INlcude mutable-flag?
+			values[v.first] = value_to_json(v.second.first);
 		}
 
 		const auto& env = json_t::make_object({
@@ -1217,7 +1242,7 @@ void test__run_init__check_result(const std::string& program, const value_t& exp
 	const auto result = run_global(program);
 	const auto result_value = result._call_stack[0]->_values["result"];
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_literal(result_value)),
+		expression_to_json(expression_t::make_literal(result_value.first)),
 		expression_to_json(expression_t::make_literal(expected_result))
 	);
 }
@@ -1700,7 +1725,6 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-/*
 
 QUARK_UNIT_TESTQ("call_function()", "mutate local"){
 	auto r = run_global(
@@ -1724,7 +1748,20 @@ QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
 	catch(...){
 	}
 }
-*/
+
+QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
+	try {
+		const auto vm = run_global(R"(
+			int f(int x){
+				x = 6;
+			}
+			f(5);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
 
 
 
@@ -2144,7 +2181,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
 		struct t { int a;}
 		t(3);
 	)");
-	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].is_typeid()	));
+	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].first.is_typeid()	));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
