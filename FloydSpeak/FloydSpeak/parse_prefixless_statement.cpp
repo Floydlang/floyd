@@ -51,50 +51,7 @@ std::string concat_strings(const vector<string>& v){
 
 
 
-
-// Includes trailing ";". Does not include body of a function definition.
-std::pair<string, seq_t> read_until_semicolor_or_seagull(const seq_t& pos0){
-	const auto pos1 = skip_whitespace(pos0);
-	auto pos = pos1;
-	while(pos.first() != ";" && pos.first() != "{" && pos.empty() == false){
-		if(is_start_char(pos.first()[0])){
-			const auto end = get_balanced(pos).second;
-			pos = end;
-		}
-		else{
-			pos = pos.rest1();
-		}
-	}
-	if(pos.first1() == ";"){
-		pos = pos.rest1();
-	}
-	const auto r = get_range(pos1, pos);
-	return { r, pos };
-}
-
-//	If none are found, returns { "", s }
-std::pair<string, seq_t> read_until_toplevel_char(const seq_t& s, const char ch){
-	auto pos = s;
-	while(pos.empty() == false && pos.first1_char() != ch){
-		if(is_start_char(pos.first()[0])){
-			const auto end = get_balanced(pos).second;
-			pos = end;
-		}
-		else{
-			pos = pos.rest1();
-		}
-	}
-	if (pos.empty()){
-		return { "", s };
-	}
-	else{
-		const auto r = get_range(s, pos);
-		return { r, pos };
-	}
-}
-
-
-pair<string, string> split_at_tail_symbol(const std::string& s){
+pair<string, string> split_at_tail_identifier(const std::string& s){
 	auto i = s.size();
 	while(i > 0 && whitespace_chars.find(s[i - 1]) != string::npos){
 		i--;
@@ -102,9 +59,9 @@ pair<string, string> split_at_tail_symbol(const std::string& s){
 	while(i > 0 && identifier_chars.find(s[i - 1]) != string::npos){
 		i--;
 	}
-	const auto pre_symbol = skip_whitespace(s.substr(0, i));
-	const auto symbol = s.substr(i);
-	return { pre_symbol, symbol };
+	const auto pre_identifier = skip_whitespace(s.substr(0, i));
+	const auto identifier = s.substr(i);
+	return { pre_identifier, identifier };
 }
 
 
@@ -112,7 +69,7 @@ pair<string, string> split_at_tail_symbol(const std::string& s){
 //	Don't give it more work.
 pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 	const auto r = seq_t(read_until_semicolor_or_seagull(s1).first);
-	const auto equal_sign_pos = read_until_toplevel_char(r, '=');
+	const auto equal_sign_pos = read_until_toplevel_match(r, "=");
 	if(equal_sign_pos.first.empty()){
 		//	FUNCTION-DEFINITION:	int f(string name)
 		//	FUNCTION-DEFINITION:	int (string a) f(string name)
@@ -138,11 +95,11 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 		const auto pre_parantheses = s2.substr(0, split_pos);
 		const auto parantheses = s2.substr(split_pos);
 
-		const auto pre_symbol__symbol = split_at_tail_symbol(pre_parantheses);
-		const auto pre_symbol = skip_whitespace_ends(pre_symbol__symbol.first);
-		const auto symbol = skip_whitespace_ends(pre_symbol__symbol.second);
+		const auto pre_identifier__identifier = split_at_tail_identifier(pre_parantheses);
+		const auto pre_identifier = skip_whitespace_ends(pre_identifier__identifier.first);
+		const auto identifier = skip_whitespace_ends(pre_identifier__identifier.second);
 
-		if(pre_symbol == ""){
+		if(pre_identifier == ""){
 			auto s3 = skip_whitespace_ends(s2);
 			if(s3.back() != ';'){
 				throw std::runtime_error("syntax error");
@@ -174,15 +131,15 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 		}
 		const auto rhs_expression = skip_whitespace_ends(rhs_expression1);
 
-		const auto pre_symbol__symbol = split_at_tail_symbol(equal_sign_pos.first);
-		const auto pre_symbol = skip_whitespace_ends(pre_symbol__symbol.first);
-		const auto symbol = skip_whitespace_ends(pre_symbol__symbol.second);
+		const auto pre_identifier__identifier = split_at_tail_identifier(equal_sign_pos.first);
+		const auto pre_identifier = skip_whitespace_ends(pre_identifier__identifier.first);
+		const auto identifier = skip_whitespace_ends(pre_identifier__identifier.second);
 
-		if(pre_symbol == ""){
-			return { { "[ASSIGN]", symbol, rhs_expression }, s1 };
+		if(pre_identifier == ""){
+			return { { "[ASSIGN]", identifier, rhs_expression }, s1 };
 		}
 		else{
-			return { { "[BIND]", pre_symbol, symbol, rhs_expression }, s1 };
+			return { { "[BIND]", pre_identifier, identifier, rhs_expression }, s1 };
 		}
 	}
 }
@@ -205,15 +162,15 @@ std::string test_split_line(const string& title, const seq_t& in){
 		analysis = string() + "[FUNCTION-DEFINITION] DEF: " + "\"" + function_def + "\"";
 	}
 	else if(split.first[0] == "[ASSIGN]"){
-		const auto symbol = split.first[1];
+		const auto identifier = split.first[1];
 		const auto rhs_expression = split.first[2];
-		analysis = string() + "[ASSIGN] SYMBOL: " + "\"" + symbol + "\"" + " = EXPRESSION: " + "\"" + rhs_expression + "\"";
+		analysis = string() + "[ASSIGN] IDENTIFIER: " + "\"" + identifier + "\"" + " = EXPRESSION: " + "\"" + rhs_expression + "\"";
 	}
 	else if(split.first[0] == "[BIND]"){
-		const auto pre_symbol = split.first[1];
-		const auto symbol = split.first[2];
+		const auto pre_identifier = split.first[1];
+		const auto identifier = split.first[2];
 		const auto rhs_expression = split.first[3];
-		analysis = string() + "[BIND] TYPE: " + "\"" + pre_symbol + "\"" + " SYMBOL: " + "\"" + symbol + "\"" + " = EXPRESSION: " + "\"" + rhs_expression + "\"";
+		analysis = string() + "[BIND] TYPE: " + "\"" + pre_identifier + "\"" + " IDENTIFIER: " + "\"" + identifier + "\"" + " = EXPRESSION: " + "\"" + rhs_expression + "\"";
 	}
 	temp = temp + analysis;
 
@@ -222,13 +179,13 @@ std::string test_split_line(const string& title, const seq_t& in){
 }
 
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
-	//	BIND	TYPE	SYMBOL	=	EXPRESSION;
+	//	BIND	TYPE	IDENTIFIER	=	EXPRESSION;
 	QUARK_TRACE((test_split_line("BIND", seq_t("int x = 10;xyz"))));
 	QUARK_TRACE((test_split_line("BIND", seq_t("int (string a) x = f(4 == 5);xyz"))));
 	QUARK_TRACE((test_split_line("BIND", seq_t("mutable int x = 10;xyz"))));
 	QUARK_TRACE((test_split_line("BIND", seq_t("mutable x = 10;xyz"))));
 
-	//	FUNCTION-DEFINITION	TYPE	SYMBOL	( EXPRESSION-LIST )	{ STATEMENTS }
+	//	FUNCTION-DEFINITION	TYPE	IDENTIFIER	( EXPRESSION-LIST )	{ STATEMENTS }
 	QUARK_TRACE((test_split_line("FUNCTION-DEFINITION", seq_t("int f(){ return 0; }xyz"))));
 	QUARK_TRACE((test_split_line("FUNCTION-DEFINITION", seq_t("int f(string name){ return 13; }xyz"))));
 	QUARK_TRACE((test_split_line("FUNCTION-DEFINITION", seq_t("int (string a) f(string name){ return 100 == 101; }xyz"))));
@@ -238,12 +195,12 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	QUARK_TRACE((test_split_line("EXPRESSION-STATEMENT", seq_t("print(\"Hello, World!\" + f(3) == 2);xyz"))));
 	QUARK_TRACE((test_split_line("EXPRESSION-STATEMENT", seq_t("print(3);xyz"))));
 
-	//	ASSIGN			SYMBOL	=	EXPRESSION;
+	//	ASSIGN			IDENTIFIER	=	EXPRESSION;
 	QUARK_TRACE((test_split_line("ASSIGN", seq_t("x = 10;xyz"))));
 	QUARK_TRACE((test_split_line("ASSIGN", seq_t("x = \"hello\";xyz"))));
 	QUARK_TRACE((test_split_line("ASSIGN", seq_t("x = f(3) == 2;xyz"))));
 
-	//	MUTATE-LOCAL	SYMBOL	<===	EXPRESSION;
+	//	MUTATE-LOCAL	IDENTIFIER	<===	EXPRESSION;
 	//	QUARK_TRACE((test_split_line("MUTATE-LOCAL", seq_t("x <=== 11;xyz"))));
 }
 
@@ -379,7 +336,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 
 
 pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
-	const auto variable_pos = read_single_symbol(s);
+	const auto variable_pos = read_single_identifier(s);
 	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
 

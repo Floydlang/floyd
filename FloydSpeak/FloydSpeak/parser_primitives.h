@@ -50,6 +50,10 @@ namespace floyd {
 
 	bool is_whitespace(char ch);
 
+
+	//////////////////////////////////////////////////		BALANCING PARANTHESES, BRACKETS
+
+
 	bool is_start_char(char c);
 	bool is_end_char(char c);
 	char start_char_to_end_char(char start_char);
@@ -58,18 +62,45 @@ namespace floyd {
 	/*
 		First char is the start char, like '(' or '{'.
 		Checks *all* balancing-chars
-		Is recursive and not just count intermediate chars, also pair match them.
+		Is recursive and not just checking intermediate chars, also pair match them.
 	*/
 	std::pair<std::string, seq_t> get_balanced(const seq_t& s);
+
+	/*
+		()	=> ""
+		(x)	=>	"x"
+		(int x, int y) => "int x, int y"
+	*/
+	std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos);
+
+
+
+	std::pair<std::string, seq_t> read_until_semicolor_or_seagull(const seq_t& pos0);
+
+
+	/*
+		Understands nested parantheses and brackets and skips those.
+		Does NOT skip leading whitespace.
+		If none are found, returns { "", s }
+	*/
+	std::pair<std::string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars);
+
+
+
+
+
+
+	//////////////////////////////////////		BASIC STRING
+
 
 
 	std::string reverse(const std::string& s);
 
 
-	//////////////////////////////////////		SYMBOLS
+	//////////////////////////////////////		IDENTIFIER
 
 
-	std::pair<std::string, seq_t> read_single_symbol(const seq_t& s);
+	std::pair<std::string, seq_t> read_single_identifier(const seq_t& s);
 
 	/*
 		Reads an identifier, like a variable name or function name.
@@ -81,7 +112,7 @@ namespace floyd {
 		Does not skip whitespace on the rest of the string.
 			"\thello\txxx" => "hello" + "\txxx"
 	*/
-	std::pair<std::string, seq_t> read_required_single_symbol(const seq_t& s);
+	std::pair<std::string, seq_t> read_required_single_identifier(const seq_t& s);
 
 
 
@@ -132,14 +163,6 @@ namespace floyd {
 		(int, int)
 	*/
 	std::vector<std::pair<typeid_t, std::string>> parse_functiondef_arguments2(const std::string& s);
-
-
-	/*
-		()	=> ""
-		(x)	=>	"x"
-		(int x, int y) => "int x, int y"
-	*/
-	std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos);
 
 }	//	floyd
 

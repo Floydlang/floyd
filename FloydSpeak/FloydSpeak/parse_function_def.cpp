@@ -72,7 +72,7 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- t
 
 std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto return_type_pos = read_required_type_identifier2(pos);
-	const auto function_name_pos = read_required_single_symbol(return_type_pos.second);
+	const auto function_name_pos = read_required_single_identifier(return_type_pos.second);
 	const auto header = read_enclosed_in_parantheses(function_name_pos.second);
 	const auto args = parse_functiondef_arguments(seq_t("(" + header.first + ")"));
 	const auto function_name = function_name_pos.first;

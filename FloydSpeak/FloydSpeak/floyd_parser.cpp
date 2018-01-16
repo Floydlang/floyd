@@ -43,8 +43,8 @@ https://en.wikipedia.org/wiki/Parsing
 */
 
 
-std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
-	const auto pos = skip_whitespace(pos0);
+std::pair<json_t, seq_t> parse_statement(const seq_t& s){
+	const auto pos = skip_whitespace(s);
 	if(is_first(pos, "{")){
 		return parse_block(pos);
 	}
@@ -55,9 +55,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& pos0){
 		return parse_struct_definition(seq_t(pos));
 	}
 	else if(is_first(pos, "if")){
-		const auto temp = parse_if_statement(seq_t(pos));
-		QUARK_TRACE(json_to_pretty_string(temp.first));
-		return temp;
+		return  parse_if_statement(seq_t(pos));
 	}
 	else if(is_first(pos, "for")){
 		return parse_for_statement(seq_t(pos));
@@ -104,13 +102,12 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 
 
 
-std::pair<json_t, seq_t> parse_statements(const seq_t& s0){
+std::pair<json_t, seq_t> parse_statements(const seq_t& s){
 	vector<json_t> statements;
-	auto pos = skip_whitespace(s0);
+	auto pos = skip_whitespace(s);
 	while(!pos.empty()){
 		const auto statement_pos = parse_statement(pos);
-		const auto statement = statement_pos.first;
-		statements.push_back(statement);
+		statements.push_back(statement_pos.first);
 		pos = skip_whitespace(statement_pos.second);
 	}
 	return { json_t::make_array(statements), pos };
@@ -307,4 +304,3 @@ QUARK_UNIT_TESTQ("parse_program1()", "Call function a from function b"){
 
 
 }	//	namespace floyd
-

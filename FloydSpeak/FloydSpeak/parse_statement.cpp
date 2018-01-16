@@ -307,7 +307,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	const auto body = parse_statement_body(header.second);
 
 	//	iterator == "index".
-	const auto iterator_name = read_required_single_symbol(seq_t(header.first));
+	const auto iterator_name = read_required_single_identifier(seq_t(header.first));
 	if(iterator_name.first.empty()){
 		throw std::runtime_error("For loop requires iterator name.");
 	}

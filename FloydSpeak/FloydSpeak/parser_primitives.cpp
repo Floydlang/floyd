@@ -108,6 +108,10 @@ QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
 
 
 
+//////////////////////////////////////////////////		BALANCING PARANTHESES, BRACKETS
+
+
+
 bool is_start_char(char c){
 	return c == '(' || c == '[' || c == '{';
 }
@@ -246,6 +250,96 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 
 
 
+std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
+	const auto pos2 = skip_whitespace(pos);
+	read_required(pos2, "(");
+	const auto range = get_balanced(pos2);
+	const auto range2 = seq_t(trim_ends(range.first));
+	return { range2.str(), range.second };
+}
+
+QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
+	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t("()xyz")) == std::pair<std::string, seq_t>{"", seq_t("xyz") } 	));
+}
+QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
+	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
+}
+
+
+
+
+std::pair<string, seq_t> read_until_semicolor_or_seagull(const seq_t& pos0){
+	const auto pos1 = skip_whitespace(pos0);
+	auto pos = pos1;
+	while(pos.empty() == false && pos.first() != ";" && pos.first() != "{"){
+		if(is_start_char(pos.first()[0])){
+			const auto end = get_balanced(pos).second;
+			pos = end;
+		}
+		else{
+			pos = pos.rest1();
+		}
+	}
+	if(pos.first1() == ";"){
+		pos = pos.rest1();
+	}
+	const auto r = get_range(pos1, pos);
+	return { r, pos };
+}
+
+//	If none are found, returns { "", s }
+std::pair<string, seq_t> read_until_toplevel_char(const seq_t& s, const char ch){
+	auto pos = s;
+	while(pos.empty() == false && pos.first1_char() != ch){
+		if(is_start_char(pos.first()[0])){
+			const auto end = get_balanced(pos).second;
+			pos = end;
+		}
+		else{
+			pos = pos.rest1();
+		}
+	}
+	if (pos.empty()){
+		return { "", s };
+	}
+	else{
+		const auto r = get_range(s, pos);
+		return { r, pos };
+	}
+}
+
+/*
+	Understands nested parantheses and brackets and skips those.
+	Does NOT skip leading whitespace.
+	If none are found, returns { "", s }
+*/
+std::pair<string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars){
+	auto pos = s;
+	while(pos.empty() == false && match_chars.find(pos.first1()) == string::npos){
+		if(is_start_char(pos.first()[0])){
+			const auto end = get_balanced(pos).second;
+			pos = end;
+		}
+		else{
+			pos = pos.rest1();
+		}
+	}
+	if (pos.empty()){
+		return { "", s };
+	}
+	else{
+		const auto r = get_range(s, pos);
+		return { r, pos };
+	}
+}
+
+///### TESTS
+
+
+
+//////////////////////////////////////		BASIC STRING
+
+
 std::string reverse(const std::string& s){
 	return std::string(s.rbegin(), s.rend());
 }
@@ -253,27 +347,31 @@ std::string reverse(const std::string& s){
 
 
 
-//////////////////////////////////////		SYMBOLS
+//////////////////////////////////////		IDENTIFIER
 
 
 //	Returns "" if no symbol is found.
-std::pair<std::string, seq_t> read_single_symbol(const seq_t& s){
+std::pair<std::string, seq_t> read_single_identifier(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, identifier_chars);
 	return b;
 }
-std::pair<std::string, seq_t> read_required_single_symbol(const seq_t& s){
-	const auto b = read_single_symbol(s);
+std::pair<std::string, seq_t> read_required_single_identifier(const seq_t& s){
+	const auto b = read_single_identifier(s);
 	if(b.first.empty()){
 		throw std::runtime_error("missing identifier");
 	}
 	return b;
 }
 
-QUARK_UNIT_TESTQ("read_required_single_symbol()", ""){
-	QUARK_TEST_VERIFY(read_required_single_symbol(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
+QUARK_UNIT_TESTQ("read_required_single_identifier()", ""){
+	QUARK_TEST_VERIFY(read_required_single_identifier(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
 }
 
+
+
+
+//////////////////////////////////////		TYPES
 
 
 
@@ -315,7 +413,7 @@ vector<pair<typeid_t, string>> parse_functiondef_arguments2(const string& s){
 	auto pos = skip_whitespace(s2);
 	while(!pos.empty()){
 		const auto arg_type = read_required_type_identifier2(pos);
-		const auto arg_name = read_single_symbol(arg_type.second);
+		const auto arg_name = read_single_identifier(arg_type.second);
 		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 		args.push_back({ arg_type.first, arg_name.first });
 		pos = skip_whitespace(optional_comma.second);
@@ -493,20 +591,6 @@ pair<typeid_t, seq_t> read_required_type_identifier2(const seq_t& s){
 
 
 
-std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
-	const auto pos2 = skip_whitespace(pos);
-	read_required(pos2, "(");
-	const auto range = get_balanced(pos2);
-	const auto range2 = seq_t(trim_ends(range.first));
-	return { range2.str(), range.second };
-}
-
-QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
-	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t("()xyz")) == std::pair<std::string, seq_t>{"", seq_t("xyz") } 	));
-}
-QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
-	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
-}
 
 
 
