@@ -76,12 +76,6 @@ This is used through out this document to demonstrate language features.
 - Contents of collections
 
 
-Use _mutable_ to define a local variable that can be mutated. Only _local variables_ can be mutable.
-
-	int hello2(){
-		mutable a = "hello";
-		a = "goodbye";	//	Changes variable a to "goodbye".
-		return 3;
 	}
 
 

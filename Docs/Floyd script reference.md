@@ -48,23 +48,43 @@ These are features built into every type: integer, string, struct, collections e
 
 
 # VALUES, VARIABLES AND CONSTANTS
-All "variables" aka values are by default constants / immutable.
+All "variables" aka values are by immutable.
 
 - Function arguments
 - Local function variables
 - Member variables of structs etc.
 
-	assert(
-		floyd_verify(
-			"int hello1(){
-				a = "hello";
-				a = "goodbye";	//	Compilation error - you cannot change variable a.
-				return 3;
-			}"
-		)
-		== -3
-	);
+Floyd is statically types, which means every variable only supports a specific type of value.
 
+When defining a variable you can often skip telling which type it is, since the type can be deduced.
+
+Explicit
+
+	int x = 10;
+
+Implicit
+
+	y = 11;
+
+
+
+Example:
+
+	int main(){
+		a = "hello";
+		a = "goodbye";	//	Runtime error - you cannot change variable a.
+		return 3;
+	}
+
+You can use "mutable" to make a local variable changeable.
+
+	int main(){
+		mutable a = "hello";
+		a = "goodbye";	//	Changes variable a to "goodbye".
+		return 3;
+	}
+
+You can often avoid mutable variables. Brings comfort to imperative programmers.
 
 # GLOBAL SCOPE
 Used for function definitions, and structs.
