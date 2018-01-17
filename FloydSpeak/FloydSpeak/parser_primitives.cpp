@@ -359,13 +359,13 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 }
 
 
-vector<pair<typeid_t, string>> parse_functiondef_arguments2(const string& s){
+vector<member_t> parse_functiondef_arguments2(const string& s){
 	QUARK_ASSERT(s.size() >= 2);
 	QUARK_ASSERT(s[0] == '(');
 	QUARK_ASSERT(s.back() == ')');
 
 	const auto s2 = seq_t(trim_ends(s));
-	vector<pair<typeid_t, string>> args;
+	vector<member_t> args;
 	auto pos = skip_whitespace(s2);
 	while(!pos.empty()){
 		const auto arg_type = read_required_type(pos);
@@ -378,13 +378,13 @@ vector<pair<typeid_t, string>> parse_functiondef_arguments2(const string& s){
 }
 
 QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("()") == vector<pair<typeid_t, string>>{}		));
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("()") == vector<member_t>{}		));
 }
 QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int a)") == vector<pair<typeid_t, string>>{ { typeid_t::make_int(), "a" }}		));
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int a)") == vector<member_t>{ { typeid_t::make_int(), "a" }}		));
 }
 QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int x, string y, float z)") == vector<pair<typeid_t, string>>{
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int x, string y, float z)") == vector<member_t>{
 		{ typeid_t::make_int(), "x" },
 		{ typeid_t::make_string(), "y" },
 		{ typeid_t::make_float(), "z" }
@@ -392,8 +392,7 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
 	}		));
 }
 
-//??? use member_t
-std::pair<vector<pair<typeid_t, string>>, seq_t> read_function_arg_parantheses(const seq_t& s){
+std::pair<vector<member_t>, seq_t> read_function_arg_parantheses(const seq_t& s){
 	QUARK_ASSERT(s.first1() == "(");
 
 	std::pair<std::string, seq_t> args_pos = read_balanced2(s, brackets);
@@ -427,10 +426,8 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_optional_trailing_function_args(cons
 	const auto more_pos = skip_whitespace(s);
 	if(more_pos.first1() == "("){
 		const auto function_args_pos = read_function_arg_parantheses(more_pos);
-		vector<typeid_t> nameless_args;
-		for(const auto e: function_args_pos.first){
-			nameless_args.push_back(e.first);
-		}
+		vector<typeid_t> nameless_args = get_member_types(function_args_pos.first);
+
 		const auto pos = function_args_pos.second;
 		const auto function_type = typeid_t::make_function(type, nameless_args);
 		const auto result = read_optional_trailing_function_args(function_type, pos);
@@ -545,26 +542,6 @@ pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 
 
 
-
-
-
-
-
-//////////////////////////////////////		FLOYD JSON BASICS
-
-
-
-
-
-json_t make_member_def(const typeid_t& type, const std::string& name){
-	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(name.size() > 0);
-
-	return json_t::make_object({
-		{ "type", typeid_to_ast_json(type) },
-		{ "name", name }
-	});
-}
 
 
 

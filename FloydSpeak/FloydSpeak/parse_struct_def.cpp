@@ -29,14 +29,12 @@ namespace floyd {
 		read_required_char(s2, '{');
 		const auto body_pos = get_balanced(s2);
 
-		vector<json_t> members;
+		vector<member_t> members;
 		auto pos = seq_t(trim_ends(body_pos.first));
 		while(!pos.empty()){
 			const auto member_type = read_required_type(pos);
 			const auto member_name = read_required_identifier(member_type.second);
-
-			const auto a = make_member_def(member_type.first, member_name.first);
-			members.push_back(a);
+			members.push_back(member_t(member_type.first, member_name.first));
 			pos = read_required_char(skip_whitespace(member_name.second), ';');
 			pos = skip_whitespace(pos);
 		}
@@ -45,7 +43,7 @@ namespace floyd {
 			"def-struct",
 			json_t::make_object({
 				{ "name", json_t(struct_name_pos.first) },
-				{ "members", members }
+				{ "members", members_to_json(members) }
 			})
 		});
 		return { r, skip_whitespace(body_pos.second) };

@@ -129,18 +129,6 @@ namespace floyd {
 	//////////////////////////////////////		HIGH LEVEL
 
 
-	/*
-		Used for:
-			struct member variable
-			function's local variable
-
-		member
-		{
-			"type": "int",
-			"name": "my_local"
-		}
-	*/
-	json_t make_member_def(const typeid_t& type, const std::string& name);
 
 
 	/*
@@ -153,9 +141,9 @@ namespace floyd {
 
 		(int, int)
 	*/
-	std::vector<std::pair<typeid_t, std::string>> parse_functiondef_arguments2(const std::string& s);
+	std::vector<member_t> parse_functiondef_arguments2(const std::string& s);
 
-	std::pair<std::vector<std::pair<typeid_t, std::string>>, seq_t> read_function_arg_parantheses(const seq_t& s);
+	std::pair<std::vector<member_t>, seq_t> read_function_arg_parantheses(const seq_t& s);
 
 }	//	floyd
 

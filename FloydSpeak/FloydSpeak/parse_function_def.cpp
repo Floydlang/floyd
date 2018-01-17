@@ -23,17 +23,6 @@ namespace floyd {
 	using std::vector;
 
 
-static vector<json_t> args_to_json(const std::vector<std::pair<typeid_t, std::string>>& args0){
-	vector<json_t> args;
-	for(const auto e: args0){
-		const auto arg_type = e.first;
-		const auto arg_name = e.second;
-		const auto a = make_member_def(arg_type, arg_name);
-		args.push_back(a);
-	}
-	return args;
-}
-
 
 std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto return_type_pos = read_required_type(pos);
@@ -41,14 +30,14 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto args_pos = read_function_arg_parantheses(function_name_pos.second);
 	const auto body = parse_statement_body(args_pos.second);
 
-	const auto args = args_to_json(args_pos.first);
+	const auto args = members_to_json(args_pos.first);
 	const auto function_name = function_name_pos.first;
 
 	json_t function_def = json_t::make_array({
 		"def-func",
 		json_t::make_object({
 			{ "name", function_name },
-			{ "args", json_t::make_array(args) },
+			{ "args", args },
 			{ "statements", body.first },
 			{ "return_type", typeid_to_ast_json(return_type_pos.first) }
 		})
