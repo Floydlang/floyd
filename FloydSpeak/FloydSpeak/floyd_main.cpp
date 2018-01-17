@@ -21,6 +21,7 @@ int main(int argc, const char * argv[]) {
 	try {
 #if QUARK_UNIT_TESTS_ON
 		quark::run_tests({
+			"floyd_basics.cpp",
 			"floyd_parser.cpp",
 			"parse_statement.cpp",
 			"floyd_interpreter.cpp",

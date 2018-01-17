@@ -181,6 +181,8 @@ namespace {
 			return { vm2, make_shared<value_t>(result_value.get_literal()) };
 		}
 
+
+			//??? make structs unique even though they share layout and name. USer unique-ID-generator?
 		else if(statement._def_struct){
 			const auto& s = statement._def_struct;
 
@@ -404,16 +406,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	else if(op == expression_type::k_call){
 		return evaluate_call_expression(vm2, e);
 	}
-/*
-??? define struct should be statement, not an expression!
-	else if(op == expression_type::k_define_struct){
-		const auto expr = e.get_struct_definition();
 
-//	Make a local variable my_struct = constructor function for struct
-
-		return {vm2, expression_t::make_literal(make_struct_value(expr->_def))};
-	}
-*/
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
 		return {vm2, expression_t::make_literal(make_function_value(expr->_def))};
@@ -778,15 +771,26 @@ bool all_literals(const vector<expression_t>& e){
 }
 
 std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
+	QUARK_SCOPED_TRACE("construct_struct()");
+	QUARK_TRACE("struct_type: " + struct_type.to_string());
+
 	const auto& def = *struct_type._struct_def;
 	if(values.size() != def._members.size()){
 		throw std::runtime_error(
 			 string() + "Calling constructor for \"" + def._name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
 		);
 	}
+
 	//??? check types of members.
 
+	for(const auto e: values){
+		QUARK_ASSERT(e.check_invariant());
+		QUARK_ASSERT(e.get_type().get_base_type() != base_type::k_unknown_identifier);
+	}
+
 	const auto instance = make_struct_value(struct_type, def, values);
+	QUARK_TRACE(instance.to_string());
+
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
 
@@ -1068,20 +1072,28 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 
-//### add checking of function types.
+//### add checking of function types when calling / returning from them. Also host functions.
 
 
-
-
-value_t update_struct_member_shallow(const value_t& obj, int member_index, const value_t& new_value){
+value_t update_struct_member_shallow(const value_t& obj, const std::string& member_name, const value_t& new_value){
 	QUARK_ASSERT(obj.check_invariant());
-	QUARK_ASSERT(member_index >= 0);
+	QUARK_ASSERT(member_name.empty() == false);
 	QUARK_ASSERT(new_value.check_invariant());
 
 	const auto s = obj.get_struct();
 	const auto def = s->_def;
+
+	int member_index = find_struct_member_index(def, member_name);
+	if(member_index == -1){
+		throw std::runtime_error("Unknown member.");
+	}
+
 	const auto struct_typeid = obj.get_type();
 	const auto values = s->_member_values;
+
+
+	QUARK_TRACE(new_value.get_type().to_string());
+	QUARK_TRACE(def._members[member_index]._type.to_string());
 
 	if(!(new_value.get_type() == def._members[member_index]._type)){
 		throw std::runtime_error("Value type not matching struct member type.");
@@ -1094,12 +1106,44 @@ value_t update_struct_member_shallow(const value_t& obj, int member_index, const
 	return s2;
 }
 
+value_t update_struct_member_deep(const value_t& obj, const std::vector<std::string>& path, const value_t& new_value){
+	QUARK_ASSERT(obj.check_invariant());
+	QUARK_ASSERT(path.empty() == false);
+	QUARK_ASSERT(new_value.check_invariant());
+
+	if(path.size() == 1){
+		return update_struct_member_shallow(obj, path[0], new_value);
+	}
+	else{
+		vector<string> subpath = path;
+		subpath.erase(subpath.begin());
+
+		const auto s = obj.get_struct();
+		const auto def = s->_def;
+		int member_index = find_struct_member_index(def, path[0]);
+		if(member_index == -1){
+			throw std::runtime_error("Unknown member.");
+		}
+
+		const auto child_value = s->_member_values[member_index];
+		if(child_value.is_struct() == false){
+			throw std::runtime_error("Value type not matching struct member type.");
+		}
+
+		const auto child2 = update_struct_member_deep(child_value, subpath, new_value);
+		const auto obj2 = update_struct_member_shallow(obj, path[0], child2);
+		return obj2;
+	}
+}
+
 
 
 //### use to update vector too!
 /*
 */
 std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
 	const auto& obj = args[0];
 	const auto& member_name = args[1];
 	const auto& new_value = args[2];
@@ -1114,18 +1158,13 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 		throw std::runtime_error("You must specify structure member using string.");
 	}
 	else{
-		const auto s = obj.get_struct();
-		const auto def = s->_def;
-		const auto struct_typeid = obj.get_type();
-		const auto values = s->_member_values;
-
 		//### Does simple check for "." -- we should use vector of strings instead.
 		const auto nodes = split_on_chars(seq_t(member_name.get_string()), ".");
 		if(nodes.empty()){
 			throw std::runtime_error("You must specify structure member using string.");
 		}
-		int member_index = find_struct_member_index(def, member_name.get_string());
-		const auto s2 = update_struct_member_shallow(obj, member_index, new_value);
+
+		const auto s2 = update_struct_member_deep(obj, nodes, new_value);
 		return {vm, s2 };
 	}
 }
@@ -2425,6 +2464,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using = won't work"){
 	}
 }
 
+#if false
 QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
@@ -2439,8 +2479,9 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 		"struct color {int red=255,int green=3,int blue=128}",
 	}	));
 }
-#if false
+#endif
 
+#if false
 QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}

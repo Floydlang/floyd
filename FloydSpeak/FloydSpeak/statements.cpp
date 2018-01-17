@@ -147,7 +147,8 @@ namespace floyd {
 		else if(e._def_struct){
 			return json_t::make_array({
 				json_t("def-struct"),
-//				expression_to_json(e._def_struct)
+				json_t(e._def_struct->_name),
+				to_json(e._def_struct->_def)
 			});
 		}
 		else if(e._bind_or_assign){

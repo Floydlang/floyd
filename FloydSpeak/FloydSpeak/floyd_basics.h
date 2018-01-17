@@ -228,6 +228,8 @@ namespace floyd {
 	struct typeid_t {
 
 		public: bool is_null() const {
+			QUARK_ASSERT(check_invariant());
+
 			return _base_type == floyd::base_type::k_null;
 		}
 
@@ -310,6 +312,22 @@ namespace floyd {
 		}
 
 
+		private: typeid_t(
+			floyd::base_type base_type,
+			const std::vector<typeid_t>& parts,
+			const std::string& unique_type_id,
+			const std::string& unknown_identifier,
+			const std::shared_ptr<struct_definition_t>& struct_def
+		):
+			_base_type(base_type),
+			_parts(parts),
+			_unique_type_id(unique_type_id),
+			_unknown_identifier(unknown_identifier),
+			_struct_def(struct_def)
+		{
+		}
+
+
 		/////////////////////////////		STATE
 
 
@@ -381,15 +399,13 @@ namespace floyd {
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_definition_t& other) const;
 
-		public: json_t to_json() const;
-
 
 		public: std::string _name;
 		public: std::vector<member_t> _members;
 	};
 
 	std::string to_string(const struct_definition_t& v);
-
+	json_t to_json(const struct_definition_t& v);
 
 	//	Returns -1 if not found.
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);

@@ -100,8 +100,7 @@ namespace floyd {
 	{
 		QUARK_ASSERT(element_type._base_type != floyd::base_type::k_null && element_type.check_invariant());
 
-		vector_def_t result;
-		result._element_type = element_type;
+		vector_def_t result(element_type);
 
 		QUARK_ASSERT(result.check_invariant());
 		return result;
@@ -180,9 +179,8 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def, const std::vector<value_t>& elements){
 		QUARK_ASSERT(def && def->check_invariant());
 
-		auto instance = make_shared<vector_instance_t>();
-		instance->_vector_type = typeid_t::make_vector(def->_element_type);
-		instance->_elements = elements;
+		const auto vector_type = typeid_t::make_vector(def->_element_type);
+		auto instance = make_shared<vector_instance_t>(vector_type, elements);
 		return value_t(instance);
 	}
 

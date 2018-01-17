@@ -187,11 +187,6 @@ expression_type token_to_expression_type(const string& op){
 		}
 	}
 
-
-
-	////////////////////////			typeid_t
-
-
 	bool typeid_t::check_invariant() const{
 		if(_base_type == floyd::base_type::k_null){
 			QUARK_ASSERT(_parts.empty());
@@ -281,8 +276,8 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(check_invariant());
 
 		if(_base_type == floyd::base_type::k_unknown_identifier){
-			QUARK_ASSERT(_unknown_identifier != "");
-			return /*"unresolved:" +*/ _unknown_identifier;
+//			return "[unknown-identifier:" + _unknown_identifier + "]";
+			return _unknown_identifier;
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
 			//??? How to encode typeid in floyd source code?
@@ -305,9 +300,6 @@ expression_type token_to_expression_type(const string& op){
 			s = s + ")";
 			return s;
 		}
-		else if(_base_type == floyd::base_type::k_unknown_identifier){
-			return "[ \"" + _unknown_identifier + "\", " + _parts[0].to_string() + "]";
-		}
 		else{
 			return base_type_to_string(_base_type);
 		}
@@ -320,11 +312,9 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
-
-
-
-
 	json_t typeid_to_json(const typeid_t& t){
+		QUARK_ASSERT(t.check_invariant());
+
 		if(t._parts.empty() && t._unique_type_id.empty()){
 			return base_type_to_string(t.get_base_type());
 		}
@@ -341,11 +331,51 @@ expression_type token_to_expression_type(const string& op){
 		}
 	}
 
+/*
+	json_t typeid_to_json(const typeid_t& t){
+		const auto s = t.to_string();
+		return json_t::make_array({
+			json_t("typeid"),
+			json_t(s)
+		});
+	}
+*/
 
-	QUARK_UNIT_TESTQ("typeid_t{}", ""){
+	QUARK_UNIT_TESTQ("typeid_t", "null"){
+		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
 	}
 
 
+//??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
+	QUARK_UNIT_TESTQ("typeid_t", "string"){
+		QUARK_UT_VERIFY(typeid_t::make_string().get_base_type() == base_type::k_string);
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
+		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").get_base_type() == base_type::k_unknown_identifier);
+	}
+
+
+
+
+	QUARK_UNIT_TESTQ("to_string", ""){
+		QUARK_UT_VERIFY(typeid_t::make_null().to_string() == "null");
+	}
+	QUARK_UNIT_TESTQ("to_string", ""){
+		QUARK_UT_VERIFY(typeid_t::make_bool().to_string() == "bool");
+	}
+	QUARK_UNIT_TESTQ("to_string", ""){
+		QUARK_UT_VERIFY(typeid_t::make_string().to_string() == "string");
+	}
+	QUARK_UNIT_TESTQ("to_string", ""){
+		const auto struct_def = std::make_shared<struct_definition_t>(struct_definition_t("file", {}));
+		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).to_string() == "struct file {}");
+	}
+	QUARK_UNIT_TESTQ("to_string", ""){
+		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string() == "hello");
+//		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string() == "[unknown-identifier:hello]");
+	}
 
 
 
@@ -447,14 +477,6 @@ expression_type token_to_expression_type(const string& op){
 		return _name == other._name && _members == other._members;
 	}
 
-	json_t struct_definition_t::to_json() const {
-//		floyd::typeid_t function_type = get_function_type(*this);
-		return json_t::make_array({
-			"struct-def",
-			members_to_json(_members)
-		});
-	}
-
 	std::string to_string(const struct_definition_t& v){
 		auto s = "struct " + v._name + " {";
 		for(const auto e: v._members){
@@ -465,6 +487,16 @@ expression_type token_to_expression_type(const string& op){
 		}
 		s = s + "}";
 		return s;
+	}
+
+	json_t to_json(const struct_definition_t& v){
+		QUARK_ASSERT(v.check_invariant());
+
+		return json_t::make_array({
+			"struct-def",
+			json_t(v._name),
+			members_to_json(v._members)
+		});
 	}
 
 
@@ -480,8 +512,6 @@ expression_type token_to_expression_type(const string& op){
 				return index;
 			}
 	}
-
-
 
 
 }

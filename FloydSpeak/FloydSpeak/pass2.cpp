@@ -355,7 +355,6 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 			const auto members2 = conv_members(members);
 			const auto struct_def2 = struct_definition_t(name, members2);
-//			const auto struct_type = typeid_t::make_struct(make_shared<struct_definition_t>(struct_def2));
 
 			const auto s = define_struct_statement_t{ name, struct_def2 };
 			statements2.push_back(make_shared<statement_t>(make__define_struct_statement(s)));

@@ -57,9 +57,16 @@ namespace floyd {
 		public: bool check_invariant() const;
 		public: bool operator==(const vector_instance_t& other) const;
 
-		//	??? Remove this at later time, when we statically track the type of structs OK.
-		typeid_t _vector_type;
+		public: vector_instance_t(
+			typeid_t vector_type,
+			const std::vector<value_t>& elements
+		):
+			_vector_type(vector_type),
+			_elements(elements)
+		{
+		}
 
+		typeid_t _vector_type;
 		std::vector<value_t> _elements;
 	};
 
@@ -126,7 +133,10 @@ namespace floyd {
 	struct vector_def_t {
 		public: static vector_def_t make2(const floyd::typeid_t& element_type);
 
-		public: vector_def_t(){};
+		public: vector_def_t(floyd::typeid_t element_type) :
+			_element_type(element_type)
+		{
+		}
 		public: bool check_invariant() const;
 		public: bool operator==(const vector_def_t& other) const;
 
@@ -672,6 +682,9 @@ namespace floyd {
 
 
 	inline value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values){
+		QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unknown_identifier);
+		QUARK_ASSERT(def.check_invariant());
+
 		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
 		return value_t(struct_type, f);
 	}
