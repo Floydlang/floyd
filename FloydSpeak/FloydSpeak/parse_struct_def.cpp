@@ -19,8 +19,6 @@ namespace floyd {
 	using std::pair;
 
 
-	//	### simplify
-	//	### remove support for default values.
 	std::pair<json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
 		std::pair<bool, seq_t> token_pos = if_first(pos0, "struct");
 		QUARK_ASSERT(token_pos.first);
@@ -37,25 +35,10 @@ namespace floyd {
 			const auto member_type = read_required_type(pos);
 			const auto member_name = read_required_identifier(member_type.second);
 
-			string default_value;
-			const auto optional_default_value = read_optional_char(skip_whitespace(member_name.second), '=');
-			if(optional_default_value.first){
-				pos = skip_whitespace(optional_default_value.second);
-
-				const auto constant_expr_pos_s = read_until(pos, ";");
-				const auto constant_expr_pos = parse_expression_seq(seq_t(constant_expr_pos_s.first));
-				const auto constant_expr = constant_expr_pos.first;
-
-				const auto a = make_member_def(member_type.first.to_string(), member_name.first, constant_expr_pos.first);
-				members.push_back(a);
-				pos = skip_whitespace(constant_expr_pos_s.second);
-			}
-			else{
-				const auto a = make_member_def(member_type.first.to_string(), member_name.first, json_t());
-				members.push_back(a);
-				pos = skip_whitespace(optional_default_value.second);
-			}
-			pos = skip_whitespace(read_required_char(pos, ';'));
+			const auto a = make_member_def(member_type.first.to_string(), member_name.first, json_t());
+			members.push_back(a);
+			pos = read_required_char(skip_whitespace(member_name.second), ';');
+			pos = skip_whitespace(pos);
 		}
 
 		const auto r = json_t::make_array({
