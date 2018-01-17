@@ -468,6 +468,18 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
+	int find_struct_member_index(const struct_definition_t& def, const std::string& name){
+			int index = 0;
+			while(index < def._members.size() && def._members[index]._name != name){
+				index++;
+			}
+			if(index == def._members.size()){
+				return -1;
+			}
+			else{
+				return index;
+			}
+	}
 
 
 

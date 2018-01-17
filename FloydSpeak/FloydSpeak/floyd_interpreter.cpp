@@ -381,11 +381,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			vm2 = parent_expr.first;
 			const auto struct_instance = parent_expr.second.get_literal().get_struct();
 
-			int index = 0;
-			while(index < struct_instance->_def._members.size() && struct_instance->_def._members[index]._name != expr->_member_name){
-				index++;
-			}
-			if(index == struct_instance->_def._members.size()){
+			int index = find_struct_member_index(struct_instance->_def, expr->_member_name);
+			if(index == -1){
 				throw std::runtime_error("Unknown struct member \"" + expr->_member_name + "\".");
 			}
 			const value_t value = struct_instance->_member_values[index];
@@ -784,7 +781,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	const auto& def = *struct_type._struct_def;
 	if(values.size() != def._members.size()){
 		throw std::runtime_error(
-								 string() + "Calling constructor for \"" + def._name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
+			 string() + "Calling constructor for \"" + def._name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
 		);
 	}
 	//??? check types of members.
@@ -975,7 +972,7 @@ enum host_functions {
 	k_assert,
 	k_to_string,
 	k_get_time_of_day_ms,
-	k_struct_constructor
+	k_update
 };
 
 //	Records all output to interpreter
@@ -1070,8 +1067,44 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 }
 
 
+//### add checking of function types.
 
+//### use to update vector too!
+/*
+*/
+std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const std::vector<value_t>& args){
+	const auto& obj = args[0];
+	const auto& member_name = args[1];
+	const auto& new_value = args[2];
 
+	if(args.size() != 3){
+		throw std::runtime_error("update() needs 3 arguments.");
+	}
+	else if(obj.is_struct() == false){
+		throw std::runtime_error("Can only update struct.");
+	}
+	else if(member_name.is_string() == false){
+		throw std::runtime_error("You must specify structure member using string.");
+	}
+	else{
+		const auto s = obj.get_struct();
+		const auto def = s->_def;
+		const auto struct_typeid = obj.get_type();
+		const auto values = s->_member_values;
+
+		int member_index = find_struct_member_index(def, member_name.get_string());
+
+		if(!(new_value.get_type() == def._members[member_index]._type)){
+			throw std::runtime_error("Value type not matching struct member type.");
+		}
+
+		auto values2 = values;
+		values2[member_index] = new_value;
+
+		auto s2 = make_struct_value(struct_typeid, def, values2);
+		return {vm, s2 };
+	}
+}
 
 
 
@@ -1087,6 +1120,9 @@ std::pair<interpreter_t, floyd::value_t> interpreter_t::call_host_function(int f
 	}
 	else if(function_id == static_cast<int>(host_functions::k_get_time_of_day_ms)){
 		return host__get_time_of_day(*this, args);
+	}
+	else if(function_id == static_cast<int>(host_functions::k_update)){
+		return host__update(*this, args);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1134,6 +1170,14 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		function_definition_t(
 			{},
 			host_functions::k_get_time_of_day_ms,
+			typeid_t::make_int()
+		)
+	)));
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
+		"update",
+		function_definition_t(
+			{},
+			host_functions::k_update,
 			typeid_t::make_int()
 		)
 	)));
@@ -2343,7 +2387,36 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 }
 
 
+QUARK_UNIT_TESTQ("run_main()", "mutate struct member using = won't work"){
+	try {
+		const auto vm = run_global(R"(
+			struct color { int red; int green; int blue;}
+			a = color(255,128,128);
+			b = a.green = 3;
+			print(a);
+			print(b);
+		)");
+	}
+	catch(...){
+	}
+}
 
+QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
+	const auto vm = run_global(R"(
+		struct color { int red; int green; int blue;}
+		a = color(255,128,128);
+		b = update(a, "green", 3);
+		print(a);
+		print(b);
+	)");
+
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"struct color {int red=255,int green=128,int blue=128}",
+		"struct color {int red=255,int green=3,int blue=128}",
+	}	));
+}
+
+/*
 QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
@@ -2353,14 +2426,12 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 		print(f);
 		print(g);
 	)");
-/*
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct color {int red=100,int green=101,int blue=102}",
+		"struct color {int red=255,int green=128,int blue=128}",
+		"struct color {int red=255,int green=3,int blue=128}",
 	}	));
-*/
-
 }
-
+*/
 
 }	//	floyd
 

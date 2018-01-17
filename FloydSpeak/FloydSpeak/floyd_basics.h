@@ -390,6 +390,10 @@ namespace floyd {
 
 	std::string to_string(const struct_definition_t& v);
 
+
+	//	Returns -1 if not found.
+	int find_struct_member_index(const struct_definition_t& def, const std::string& name);
+
 }
 
 

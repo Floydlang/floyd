@@ -43,10 +43,7 @@ namespace floyd {
 		public: bool operator==(const struct_instance_t& other) const;
 
 
-		//	??? Remove this pointer at later time, when we statically track the type of structs OK. We alreay know this via __def!
 		public: struct_definition_t _def;
-
-		//	??? Use ::vector<value_t> _member_values and index of member to find the value.
 		public: std::vector<value_t> _member_values;
 	};
 
