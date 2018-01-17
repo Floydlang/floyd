@@ -401,7 +401,7 @@ TODO
 		std::vector<json_t> r;
 		for(const auto i: members){
 			const auto member = make_object({
-				{ "type", typeid_to_json(i._type) },
+				{ "type", typeid_to_ast_json(i._type) },
 				{ "name", json_t(i._name) }
 			});
 			r.push_back(json_t(member));
