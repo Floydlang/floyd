@@ -48,6 +48,46 @@ QUARK_UNIT_TESTQ("quote()", ""){
 }
 
 
+vector<string> split_on_chars(const seq_t& s, const string& match_chars){
+	vector<string> result;
+
+	auto start = s;
+	auto pos = start;
+	while(pos.empty() == false){
+		if(match_chars.find(pos.first()) != string::npos){
+			const auto new_string = get_range(start, pos);
+			result.push_back(new_string);
+			pos = pos.rest1();
+			start = pos;
+		}
+		else{
+			pos = pos.rest1();
+		}
+	}
+	if(start != pos){
+		const auto last = get_range(start, pos);
+		result.push_back(last);
+	}
+	return result;
+}
+
+QUARK_UNIT_TESTQ("split_on_chars()", ""){
+	quark::ut_compare(split_on_chars(seq_t(""),"#"), vector<string>{});
+}
+QUARK_UNIT_TESTQ("split_on_chars()", ""){
+	quark::ut_compare(split_on_chars(seq_t("#"),"#"), vector<string>{""});
+}
+QUARK_UNIT_TESTQ("split_on_chars()", ""){
+	quark::ut_compare(split_on_chars(seq_t("123#"),"#"), vector<string>{"123"});
+}
+QUARK_UNIT_TESTQ("split_on_chars()", ""){
+	quark::ut_compare(split_on_chars(seq_t("123#456"),"#"), vector<string>{"123", "456"});
+}
+QUARK_UNIT_TESTQ("split_on_chars()", ""){
+	quark::ut_compare(split_on_chars(seq_t("a##b"),"#"), vector<string>{"a", "", "b"});
+}
+
+
 
 float parse_float(const std::string& pos){
 	size_t end = -1;

@@ -1067,7 +1067,34 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 }
 
 
+
 //### add checking of function types.
+
+
+
+
+value_t update_struct_member_shallow(const value_t& obj, int member_index, const value_t& new_value){
+	QUARK_ASSERT(obj.check_invariant());
+	QUARK_ASSERT(member_index >= 0);
+	QUARK_ASSERT(new_value.check_invariant());
+
+	const auto s = obj.get_struct();
+	const auto def = s->_def;
+	const auto struct_typeid = obj.get_type();
+	const auto values = s->_member_values;
+
+	if(!(new_value.get_type() == def._members[member_index]._type)){
+		throw std::runtime_error("Value type not matching struct member type.");
+	}
+
+	auto values2 = values;
+	values2[member_index] = new_value;
+
+	auto s2 = make_struct_value(struct_typeid, def, values2);
+	return s2;
+}
+
+
 
 //### use to update vector too!
 /*
@@ -1092,16 +1119,13 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 		const auto struct_typeid = obj.get_type();
 		const auto values = s->_member_values;
 
-		int member_index = find_struct_member_index(def, member_name.get_string());
-
-		if(!(new_value.get_type() == def._members[member_index]._type)){
-			throw std::runtime_error("Value type not matching struct member type.");
+		//### Does simple check for "." -- we should use vector of strings instead.
+		const auto nodes = split_on_chars(seq_t(member_name.get_string()), ".");
+		if(nodes.empty()){
+			throw std::runtime_error("You must specify structure member using string.");
 		}
-
-		auto values2 = values;
-		values2[member_index] = new_value;
-
-		auto s2 = make_struct_value(struct_typeid, def, values2);
+		int member_index = find_struct_member_index(def, member_name.get_string());
+		const auto s2 = update_struct_member_shallow(obj, member_index, new_value);
 		return {vm, s2 };
 	}
 }
@@ -2281,7 +2305,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel background_color; pixel foreground_color;}
+		struct image { pixel back; pixel front;}
 
 		c = color(128, 192, 255);
 		print(c);
@@ -2291,16 +2315,16 @@ QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
 		"struct color {int red=128,int green=192,int blue=255}",
-		"struct image {pixel background_color=struct color {int red=1,int green=2,int blue=3},pixel foreground_color=struct color {int red=200,int green=201,int blue=202}}"
+		"struct image {pixel back=struct color {int red=1,int green=2,int blue=3},pixel front=struct color {int red=200,int green=201,int blue=202}}"
 	}	));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel background_color; pixel foreground_color;}
+		struct image { pixel back; pixel front;}
 		i = image(color(1, 2, 3), color(200, 201, 202));
-		print(i.foreground_color.green);
+		print(i.front.green);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
 		"201"
@@ -2311,7 +2335,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 QUARK_UNIT_TESTQ("run_main()", "return struct from function"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel background_color; pixel foreground_color;}
+		struct image { pixel back; pixel front;}
 		color make_color(){
 			return color(100, 101, 102);
 		}
@@ -2415,23 +2439,23 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 		"struct color {int red=255,int green=3,int blue=128}",
 	}	));
 }
+#if false
 
-/*
 QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel a; pixel b;}
-		f = image(color(255,128,128), color(127,127,255));
-		g = f.a.green <= 3;
-		print(f);
-		print(g);
+		struct image { pixel back; pixel front;}
+		a = image(color(0,100,200), color(0,0,0));
+		b = update(a, "front.green", 3);
+		print(a);
+		print(b);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct color {int red=255,int green=128,int blue=128}",
-		"struct color {int red=255,int green=3,int blue=128}",
+		"struct image {pixel back=struct color {int red=0,int green=100,int blue=200},pixel front=struct color {int red=0,int green=0,int blue=0}}",
+		"struct image {pixel back=struct color {int red=0,int green=100,int blue=200},pixel front=struct color {int red=0,int green=3,int blue=0}}"
 	}	));
 }
-*/
+#endif
 
 }	//	floyd
 

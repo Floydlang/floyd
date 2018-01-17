@@ -11,7 +11,7 @@
 
 #include <string>
 
-
+struct seq_t;
 
 const std::string test_whitespace_chars = " \n\t\r";
 
@@ -21,6 +21,10 @@ const std::string test_whitespace_chars = " \n\t\r";
 
 
 std::string trim_ends(const std::string& s);
+
+std::vector<std::string> split_on_chars(const seq_t& s, const std::string& match_chars);
+
+
 std::string quote(const std::string& s);
 
 float parse_float(const std::string& pos);
