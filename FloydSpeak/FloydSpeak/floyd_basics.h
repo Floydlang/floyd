@@ -292,18 +292,16 @@ namespace floyd {
 		public: void swap(typeid_t& other);
 
 
-		//	Supports non-lossy round trip between to_string() and from_string(). ??? make it so and test!
-		//	Compatible with Floyd sources.
 
 		/*
 			"int"
 			"[int]"
 			"int f(float b)"
 			"typeid(int)"
-
-			### Store as compact JSON instead? Then we can't use [ and {".
 		*/
-		public: std::string to_string() const;
+
+		//	to_string() is used by parser to output JSON.
+		public: std::string to_string2() const;
 		public: static typeid_t from_string(const std::string& s);
 
 
@@ -344,6 +342,9 @@ namespace floyd {
 
 	json_t typeid_to_json(const typeid_t& t);
 
+	inline json_t typeid_to_ast_json(const typeid_t& t){
+		return t.to_string2();
+	}
 
 
 	struct value_t;
@@ -358,16 +359,12 @@ namespace floyd {
 
 	struct member_t {
 		public: member_t(const floyd::typeid_t& type, const std::string& name);
-		public: member_t(const floyd::typeid_t& type, const std::shared_ptr<value_t>& value, const std::string& name);
 		bool operator==(const member_t& other) const;
 		public: bool check_invariant() const;
 
 
 		/////////////////////////////		STATE
 		public: floyd::typeid_t _type;
-
-		//	Optional -- must have same type as _type.
-		public: std::shared_ptr<const value_t> _value;
 
 		public: std::string _name;
 	};
@@ -382,6 +379,9 @@ namespace floyd {
 
 
 
+
+
+	json_t values_to_json_array(const std::vector<value_t>& values);
 
 
 

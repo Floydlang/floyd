@@ -28,7 +28,7 @@ static vector<json_t> args_to_json(const std::vector<std::pair<typeid_t, std::st
 	for(const auto e: args0){
 		const auto arg_type = e.first;
 		const auto arg_name = e.second;
-		const auto a = make_member_def(arg_type.to_string(), arg_name, json_t());
+		const auto a = make_member_def(arg_type, arg_name);
 		args.push_back(a);
 	}
 	return args;
@@ -50,7 +50,7 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 			{ "name", function_name },
 			{ "args", json_t::make_array(args) },
 			{ "statements", body.first },
-			{ "return_type", return_type_pos.first.to_string() }
+			{ "return_type", typeid_to_ast_json(return_type_pos.first) }
 		})
 	});
 	return { function_def, body.second };

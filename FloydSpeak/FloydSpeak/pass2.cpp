@@ -171,7 +171,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 	}
 }
 
-
+//??? move to basics.
 /*
 	Example:
 		[
@@ -188,7 +188,7 @@ std::vector<member_t> conv_members(const json_t& members){
 		const string arg_type = i.get_object_element("type").get_string();
 
 		const auto arg_type2 = resolve_type_name(arg_type);
-		members2.push_back(member_t{arg_type2, nullptr, arg_name });
+		members2.push_back(member_t{arg_type2, arg_name });
 	}
 	return members2;
 }

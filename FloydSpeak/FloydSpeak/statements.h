@@ -26,26 +26,6 @@ namespace floyd {
 	struct expression_t;
 
 
-/*
-	//////////////////////////////////////		funcdef_statement_t
-
-
-	struct function_definition_statement_t {
-		bool operator==(const funcdef_statement_t& other) const {
-			return
-				_name == other._name
-				&& _args == other._args
-				&& compare_shared_value_vectors(_statements, other._statements)
-				&& _return_type == other._return_type;
-		}
-
-		std::string _name;
-		std::vector<member_t> _args;
-		std::vector<std::shared_ptr<statement_t>> _statements;
-		typeid_t _return_type;
-	};
-*/
-
 
 	//////////////////////////////////////		return_statement_t
 

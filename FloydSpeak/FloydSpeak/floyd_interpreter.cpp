@@ -177,12 +177,13 @@ namespace {
 			if(!result_value.is_literal()){
 				throw std::runtime_error("undefined");
 			}
-//??? Check that return value's type matches function's return type.
+
+			//??? Check that return value's type matches function's return type.
 			return { vm2, make_shared<value_t>(result_value.get_literal()) };
 		}
 
 
-			//??? make structs unique even though they share layout and name. USer unique-ID-generator?
+		//??? make structs unique even though they share layout and name. USer unique-ID-generator?
 		else if(statement._def_struct){
 			const auto& s = statement._def_struct;
 
@@ -664,7 +665,6 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 
 			if(op == expression_type::k_arithmetic_add__2){
-				//??? allow
 				throw std::runtime_error("Operation not allowed on struct.");
 			}
 			else if(op == expression_type::k_arithmetic_subtract__2){
@@ -772,7 +772,7 @@ bool all_literals(const vector<expression_t>& e){
 
 std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
 	QUARK_SCOPED_TRACE("construct_struct()");
-	QUARK_TRACE("struct_type: " + struct_type.to_string());
+	QUARK_TRACE("struct_type: " + struct_type.to_string2());
 
 	const auto& def = *struct_type._struct_def;
 	if(values.size() != def._members.size()){
@@ -999,8 +999,7 @@ std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const st
 	bool ok = value.get_bool();
 	if(!ok){
 		vm2._print_output.push_back("Assertion failed.");
-
-		//??? unwind VM stack here.
+		throw std::runtime_error("Floyd assertion failed.");
 	}
 	return {vm2, value_t() };
 }
@@ -1092,8 +1091,8 @@ value_t update_struct_member_shallow(const value_t& obj, const std::string& memb
 	const auto values = s->_member_values;
 
 
-	QUARK_TRACE(new_value.get_type().to_string());
-	QUARK_TRACE(def._members[member_index]._type.to_string());
+	QUARK_TRACE(new_value.get_type().to_string2());
+	QUARK_TRACE(def._members[member_index]._type.to_string2());
 
 	if(!(new_value.get_type() == def._members[member_index]._type)){
 		throw std::runtime_error("Value type not matching struct member type.");
@@ -1383,11 +1382,6 @@ QUARK_UNIT_TESTQ("Floyd test suite", "string constant expression"){
 	test__run_init__check_result("string result = \"xyz\";", value_t("xyz"));
 }
 
-//??? struct
-//??? vector
-//??? function
-
-
 
 
 
@@ -1518,7 +1512,6 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
 }
 
 
-//??? add tests  for pass2()
 QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 	test__run_init__check_result("int result = true ? 4 : 6;", value_t(4));
 }

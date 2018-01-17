@@ -48,6 +48,7 @@ namespace floyd {
 	};
 
 	std::string to_string(const struct_instance_t& instance);
+	json_t to_json(const struct_instance_t& instance);
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -378,9 +379,6 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			//??? Use better way to compare types!!!
-			// Use the base_type enum instead of strings for basic types? Use string for basics, hash for composite, functions, typedefs?
-
 			if(!(_typeid == other._typeid)){
 				return false;
 			}
@@ -442,10 +440,10 @@ namespace floyd {
 			"Hello, world"
 			Notice, strings don't get wrapped in "".
 		*/
-		std::string to_string() const {
-			return plain_value_to_string();
-		}
 		std::string plain_value_to_string() const {
+			return to_string();
+		}
+		std::string to_string() const {
 			QUARK_ASSERT(check_invariant());
 
 			const auto base_type = _typeid.get_base_type();
@@ -470,7 +468,7 @@ namespace floyd {
 			}
 
 			else if(base_type == base_type::k_typeid){
-				return _typeid.to_string();
+				return _typeid.to_string2();
 			}
 			else if(base_type == base_type::k_struct){
 				return floyd::to_string(*_struct);

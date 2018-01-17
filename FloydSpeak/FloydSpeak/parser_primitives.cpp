@@ -392,7 +392,7 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
 	}		));
 }
 
-
+//??? use member_t
 std::pair<vector<pair<typeid_t, string>>, seq_t> read_function_arg_parantheses(const seq_t& s){
 	QUARK_ASSERT(s.first1() == "(");
 
@@ -556,23 +556,14 @@ pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 
 
 
-json_t make_member_def(const std::string& type, const std::string& name, const json_t& expression){
-	QUARK_ASSERT(type.empty() || type.size() > 2);
-	QUARK_ASSERT(expression.check_invariant());
+json_t make_member_def(const typeid_t& type, const std::string& name){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(name.size() > 0);
 
-	if(expression.is_null()){
-		return json_t::make_object({
-			{ "type", type },
-			{ "name", name }
-		});
-	}
-	else{
-		return json_t::make_object({
-			{ "type", type },
-			{ "name", name },
-			{ "expr", expression }
-		});
-	}
+	return json_t::make_object({
+		{ "type", typeid_to_ast_json(type) },
+		{ "name", name }
+	});
 }
 
 

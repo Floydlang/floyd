@@ -278,7 +278,7 @@ pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, cons
 	const auto expression = parse_expression_all(seq_t(expression_str));
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t::make_object();
-	const auto statement = json_t::make_array({ "bind", type.to_string(), identifier, expression, meta });
+	const auto statement = json_t::make_array({ "bind", typeid_to_ast_json(type), identifier, expression, meta });
 
 	const auto x = read_until(full_statement_pos, ";");
 	return { statement, x.second.rest1() };

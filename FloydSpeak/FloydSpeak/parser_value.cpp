@@ -48,7 +48,7 @@ namespace floyd {
 			const auto& def = v._def._members[i];
 			const auto& value = v._member_values[i];
 
-			const auto m = def._type.to_string() + " " + def._name + "=" + value.to_string()  + ",";
+			const auto m = def._type.to_string2() + " " + def._name + "=" + value.to_string()  + ",";
 			s = s + m;
 		}
 		if(s.back() == ','){
@@ -58,7 +58,14 @@ namespace floyd {
 		return s;
 	}
 
-
+	json_t to_json(const struct_instance_t& t){
+		return json_t::make_object(
+			{
+				{ "def", to_json(t._def) },
+				{ "member_values", values_to_json_array(t._member_values) }
+			}
+		);
+	}
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -124,7 +131,7 @@ namespace floyd {
 	void trace(const vector_def_t& e){
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("vector_def_t");
-		QUARK_TRACE_SS("element_type: " << e._element_type.to_string());
+		QUARK_TRACE_SS("element_type: " << e._element_type.to_string2());
 	}
 
 	json_t vector_def_to_json(const vector_def_t& s){
@@ -539,21 +546,12 @@ json_t value_to_json(const value_t& v){
 		return json_t(v.get_string());
 	}
 	else if(v.is_typeid()){
-		return json_t(v.get_typeid().to_string());
+//		return json_t(v.get_typeid().to_string2());
+		return typeid_to_ast_json(v.get_typeid());
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct();
-		std::map<string, json_t> result;
-/*
-???
-		for(const auto member: value->_struct_type.get_def()->_members){
-			const auto member_name = member._name;
-			const auto member_value = value->_member_values[member_name];
-			result[member_name] = value_to_json(member_value);
-		}
-*/
-
-		return result;
+		return to_json(*value);
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector();
@@ -562,7 +560,6 @@ json_t value_to_json(const value_t& v){
 			const auto element_value = value->_elements[i];
 			result.push_back(value_to_json(element_value));
 		}
-
 		return result;
 	}
 	else if(v.is_function()){

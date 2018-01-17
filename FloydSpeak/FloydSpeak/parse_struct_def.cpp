@@ -35,7 +35,7 @@ namespace floyd {
 			const auto member_type = read_required_type(pos);
 			const auto member_name = read_required_identifier(member_type.second);
 
-			const auto a = make_member_def(member_type.first.to_string(), member_name.first, json_t());
+			const auto a = make_member_def(member_type.first, member_name.first);
 			members.push_back(a);
 			pos = read_required_char(skip_whitespace(member_name.second), ';');
 			pos = skip_whitespace(pos);

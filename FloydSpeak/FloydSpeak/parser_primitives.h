@@ -134,17 +134,13 @@ namespace floyd {
 			struct member variable
 			function's local variable
 
-
-		type is optional, can be "".
-		expr is optional, can be null.
 		member
 		{
 			"type": "int",
-			"name": "my_local",
-			"expr": "[\"k\", 1000]
+			"name": "my_local"
 		}
 	*/
-	json_t make_member_def(const std::string& type, const std::string& name, const json_t& expression);
+	json_t make_member_def(const typeid_t& type, const std::string& name);
 
 
 	/*

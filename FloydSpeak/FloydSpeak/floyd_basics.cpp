@@ -146,45 +146,9 @@ expression_type token_to_expression_type(const string& op){
 
 
 
-	//??? use json
 	void trace(const typeid_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
-
-		const auto type = t.get_base_type();
-		if(type == floyd::base_type::k_bool){
-			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
-		}
-		else if(type == floyd::base_type::k_int){
-			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
-		}
-		else if(type == floyd::base_type::k_float){
-			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
-		}
-		else if(type == floyd::base_type::k_string){
-			QUARK_TRACE("<" + base_type_to_string(type) + "> " + label);
-		}
-		else if(type == floyd::base_type::k_typeid){
-			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
-		}
-		else if(type == floyd::base_type::k_struct){
-			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
-//			trace(QUARK_TRACE());
-		}
-		else if(type == floyd::base_type::k_vector){
-			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
-//			trace(*t._vector_def->_value_type, "");
-		}
-		else if(type == floyd::base_type::k_function){
-			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
-//			trace(t.get_function_def());
-		}
-		else if(type == floyd::base_type::k_unknown_identifier){
-			QUARK_SCOPED_TRACE("<" + base_type_to_string(type) + "> " + label);
-			QUARK_TRACE(t._unknown_identifier);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+		json_to_pretty_string(typeid_to_json(t));
 	}
 
 	bool typeid_t::check_invariant() const{
@@ -272,7 +236,7 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
-	std::string typeid_t::to_string() const {
+	std::string typeid_t::to_string2() const {
 		QUARK_ASSERT(check_invariant());
 
 		if(_base_type == floyd::base_type::k_unknown_identifier){
@@ -280,22 +244,21 @@ expression_type token_to_expression_type(const string& op){
 			return _unknown_identifier;
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
-			//??? How to encode typeid in floyd source code?
-			return "typeid(" + _parts[0].to_string() + ")";
+			return "typeid(" + _parts[0].to_string2() + ")";
 		}
 		else if(_base_type == floyd::base_type::k_struct){
 			return floyd::to_string(*_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_vector){
-			return "[" + _parts[0].to_string() + "]";
+			return "[" + _parts[0].to_string2() + "]";
 		}
 		else if(_base_type == floyd::base_type::k_function){
-			auto s = _parts[0].to_string() + "(";
+			auto s = _parts[0].to_string2() + "(";
 			if(_parts.size() > 1){
 				for(int i = 1 ; i < _parts.size() - 1 ; i++){
-					s = s + _parts[i].to_string() + ",";
+					s = s + _parts[i].to_string2() + ",";
 				}
-				s = s + _parts[_parts.size() - 1].to_string();
+				s = s + _parts[_parts.size() - 1].to_string2();
 			}
 			s = s + ")";
 			return s;
@@ -341,12 +304,23 @@ expression_type token_to_expression_type(const string& op){
 	}
 */
 
+
+/*
+TODO
+
+		//	Supports non-lossy round trip between to_string() and from_string(). ??? make it so and test!
+		//	Compatible with Floyd sources.
+			### Store as compact JSON instead? Then we can't use [ and {".
+
+			//??? How to encode typeid in floyd source code?
+//??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
+*/
+
 	QUARK_UNIT_TESTQ("typeid_t", "null"){
 		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
 	}
 
 
-//??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
 	QUARK_UNIT_TESTQ("typeid_t", "string"){
 		QUARK_UT_VERIFY(typeid_t::make_string().get_base_type() == base_type::k_string);
 	}
@@ -359,21 +333,21 @@ expression_type token_to_expression_type(const string& op){
 
 
 
-	QUARK_UNIT_TESTQ("to_string", ""){
-		QUARK_UT_VERIFY(typeid_t::make_null().to_string() == "null");
+	QUARK_UNIT_TESTQ("to_string2", ""){
+		QUARK_UT_VERIFY(typeid_t::make_null().to_string2() == "null");
 	}
-	QUARK_UNIT_TESTQ("to_string", ""){
-		QUARK_UT_VERIFY(typeid_t::make_bool().to_string() == "bool");
+	QUARK_UNIT_TESTQ("to_string2", ""){
+		QUARK_UT_VERIFY(typeid_t::make_bool().to_string2() == "bool");
 	}
-	QUARK_UNIT_TESTQ("to_string", ""){
-		QUARK_UT_VERIFY(typeid_t::make_string().to_string() == "string");
+	QUARK_UNIT_TESTQ("to_string2", ""){
+		QUARK_UT_VERIFY(typeid_t::make_string().to_string2() == "string");
 	}
-	QUARK_UNIT_TESTQ("to_string", ""){
+	QUARK_UNIT_TESTQ("to_string2", ""){
 		const auto struct_def = std::make_shared<struct_definition_t>(struct_definition_t("file", {}));
-		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).to_string() == "struct file {}");
+		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).to_string2() == "struct file {}");
 	}
-	QUARK_UNIT_TESTQ("to_string", ""){
-		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string() == "hello");
+	QUARK_UNIT_TESTQ("to_string2", ""){
+		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string2() == "hello");
 //		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string() == "[unknown-identifier:hello]");
 	}
 
@@ -394,24 +368,9 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(check_invariant());
 	}
 
-	member_t::member_t(const floyd::typeid_t& type, const std::shared_ptr<value_t>& value, const std::string& name) :
-		_type(type),
-		_value(value),
-		_name(name)
-	{
-		QUARK_ASSERT(type._base_type != floyd::base_type::k_null && type.check_invariant());
-		QUARK_ASSERT(name.size() > 0);
-
-		QUARK_ASSERT(check_invariant());
-	}
-
 	bool member_t::check_invariant() const{
 		QUARK_ASSERT(_type._base_type != floyd::base_type::k_null && _type.check_invariant());
 		QUARK_ASSERT(_name.size() > 0);
-		QUARK_ASSERT(!_value || _value->check_invariant());
-		if(_value){
-			QUARK_ASSERT(_type == _value->get_type());
-		}
 		return true;
 	}
 
@@ -419,14 +378,12 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return (_type == other._type)
-			&& (_name == other._name)
-			&& compare_shared_values(_value, other._value);
+		return (_type == other._type) && (_name == other._name);
 	}
 
 
 	void trace(const member_t& member){
-		QUARK_TRACE("<member> type: <" + member._type.to_string() + "> name: \"" + member._name + "\"");
+		QUARK_TRACE("<member> type: <" + member._type.to_string2() + "> name: \"" + member._name + "\"");
 	}
 
 
@@ -445,12 +402,20 @@ expression_type token_to_expression_type(const string& op){
 		for(const auto i: members){
 			const auto member = make_object({
 				{ "type", typeid_to_json(i._type) },
-				{ "value", i._value ? value_to_json(*i._value) : json_t() },
 				{ "name", json_t(i._name) }
 			});
 			r.push_back(json_t(member));
 		}
 		return r;
+	}
+
+	json_t values_to_json_array(const std::vector<value_t>& values){
+		std::vector<json_t> r;
+		for(const auto i: values){
+			const auto j = value_to_json(i);
+			r.push_back(j);
+		}
+		return json_t::make_array(r);
 	}
 
 
@@ -480,7 +445,7 @@ expression_type token_to_expression_type(const string& op){
 	std::string to_string(const struct_definition_t& v){
 		auto s = "struct " + v._name + " {";
 		for(const auto e: v._members){
-			s = s + e._type.to_string() + " " + e._name + ",";
+			s = s + e._type.to_string2() + " " + e._name + ",";
 		}
 		if(s.back() == ','){
 			s.pop_back();
