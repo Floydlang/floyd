@@ -67,8 +67,14 @@ pair<string, string> split_at_tail_identifier(const std::string& s){
 
 //	NOTICE: This function is very complex -- let's keep it FOCUSED just on figuring out the type of statement.
 //	Don't give it more work.
-pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
-	const auto r = seq_t(read_until_semicolor_or_seagull(s1).first);
+pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s){
+	auto pos = read_until_toplevel_match(skip_whitespace(s), ";{");
+	if(pos.second.first1() == ";"){
+		pos.first.push_back(';');
+		pos.second = pos.second.rest1();
+	}
+	const auto r = seq_t(pos.first);
+
 	const auto equal_sign_pos = read_until_toplevel_match(r, "=");
 	if(equal_sign_pos.first.empty()){
 		//	FUNCTION-DEFINITION:	int f(string name)
@@ -106,10 +112,10 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 			}
 			s3.pop_back();
 			s3 = skip_whitespace_ends(s3);
-			return { { "[EXPRESSION-STATEMENT]", s3 }, s1 };
+			return { { "[EXPRESSION-STATEMENT]", s3 }, s };
 		}
 		else{
-			return { { "[FUNCTION-DEFINITION]", skip_whitespace_ends(s2) }, s1 };
+			return { { "[FUNCTION-DEFINITION]", skip_whitespace_ends(s2) }, s };
 		}
 	}
 	else{
@@ -136,10 +142,10 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s1){
 		const auto identifier = skip_whitespace_ends(pre_identifier__identifier.second);
 
 		if(pre_identifier == ""){
-			return { { "[ASSIGN]", identifier, rhs_expression }, s1 };
+			return { { "[ASSIGN]", identifier, rhs_expression }, s };
 		}
 		else{
-			return { { "[BIND]", pre_identifier, identifier, rhs_expression }, s1 };
+			return { { "[BIND]", pre_identifier, identifier, rhs_expression }, s };
 		}
 	}
 }
@@ -265,21 +271,16 @@ pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, cons
 	const auto identifier = parsed_bits[2];
 	const auto expression_str = parsed_bits[3];
 
-	const auto pos = skip_whitespace(type_seq);
-	const auto mutable_pos = if_first(pos,"mutable");
+	const auto mutable_pos = if_first(skip_whitespace(type_seq), "mutable");
 	const bool mutable_flag = mutable_pos.first;
-
 	const auto type_pos = skip_whitespace(mutable_pos.second);
 	const auto type = type_pos.empty() ? typeid_t::make_null() : typeid_t::from_string(type_pos.str());
 	const auto expression = parse_expression_all(seq_t(expression_str));
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t::make_object();
-
 	const auto statement = json_t::make_array({ "bind", type.to_string(), identifier, expression, meta });
 
 	const auto x = read_until(full_statement_pos, ";");
-
-	//	Skip trailing ";".
 	return { statement, x.second.rest1() };
 }
 
@@ -336,15 +337,12 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 
 
 pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
-	const auto variable_pos = read_single_identifier(s);
+	const auto variable_pos = read_identifier(s);
 	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
-
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
 	const auto statement = json_t::make_array({ "assign", variable_pos.first, expression });
-
-	//	Skip trailing ";".
 	return { statement, expression_pos.second.rest1() };
 }
 
@@ -367,13 +365,7 @@ pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
 	const auto expression_pos = read_until(skip_whitespace(s), ";");
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-	const auto statement = json_t::make_array({
-		"expression-statement",
-//			"<" + type + ">",
-		expression
-	});
-
-	//	Skip trailing ";".
+	const auto statement = json_t::make_array({ "expression-statement", expression });
 	return { statement, expression_pos.second.rest1() };
 }
 
@@ -394,6 +386,8 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
 	const auto implicit = parse_implicit_statement(pos);
+	QUARK_ASSERT(implicit.first.size() > 0);
+
 	const auto statement_type = implicit.first[0];
 	if(statement_type == "[BIND]"){
 		return parse_bind_statement(implicit.first, implicit.second);

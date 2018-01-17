@@ -314,7 +314,7 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 	typeid_t typeid_t::from_string(const std::string& s){
-		const auto a = read_required_type_identifier2(seq_t(s));
+		const auto a = read_required_type(seq_t(s));
 
 		return a.first;
 	}

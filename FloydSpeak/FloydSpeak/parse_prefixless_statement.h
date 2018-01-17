@@ -32,7 +32,7 @@ namespace floyd {
 		bool a = is_hello("hello");
 
 		OUTPUT:
-			[ "bind", "float", "x", EXPRESSION ]
+			[ "bind", "float", "x", EXPRESSION, { "mutable": true } ]
 	*/
 	std::pair<json_t, seq_t> parse_bind_statement(const std::vector<std::string>& parsed_bits, const seq_t& full_statement_pos);
 

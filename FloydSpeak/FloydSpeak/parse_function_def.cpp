@@ -22,13 +22,8 @@ namespace floyd {
 	using std::string;
 	using std::vector;
 
-/*
-	()
-	(int a)
-	(int x, int y)
-*/
-static vector<json_t> parse_functiondef_arguments(const seq_t& s){
-	const auto args0 = parse_functiondef_arguments2(s.str());
+
+static vector<json_t> args_to_json(const std::vector<std::pair<typeid_t, std::string>>& args0){
 	vector<json_t> args;
 	for(const auto e: args0){
 		const auto arg_type = e.first;
@@ -40,43 +35,14 @@ static vector<json_t> parse_functiondef_arguments(const seq_t& s){
 }
 
 
-const auto kTestFunctionArguments0 = "()";
-const string kTestFunctionArguments0JSON = R"(
-	[]
-)";
-
-QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 0 -- zero arguments", "Correct output JSON"){
-	ut_compare_jsons(
-		json_t::make_array(parse_functiondef_arguments(seq_t(kTestFunctionArguments0))),
-		parse_json(seq_t(kTestFunctionArguments0JSON)).first
-	);
-}
-
-
-const auto kTestFunctionArguments1 = "(int x, string y, float z)";
-const string kTestFunctionArguments1JSON = R"(
-	[
-		{ "name": "x", "type": "int" },
-		{ "name": "y", "type": "string" },
-		{ "name": "z", "type": "float" },
-	]
-)";
-
-QUARK_UNIT_TEST("", "parse_functiondef_arguments()", "Function definition 1 -- three arguments", "Correct output JSON"){
-	ut_compare_jsons(
-		json_t::make_array(parse_functiondef_arguments(seq_t(kTestFunctionArguments1))),
-		parse_json(seq_t(kTestFunctionArguments1JSON)).first
-	);
-}
-
-
 std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
-	const auto return_type_pos = read_required_type_identifier2(pos);
-	const auto function_name_pos = read_required_single_identifier(return_type_pos.second);
-	const auto header = read_enclosed_in_parantheses(function_name_pos.second);
-	const auto args = parse_functiondef_arguments(seq_t("(" + header.first + ")"));
+	const auto return_type_pos = read_required_type(pos);
+	const auto function_name_pos = read_required_identifier(return_type_pos.second);
+	const auto args_pos = read_function_arg_parantheses(function_name_pos.second);
+	const auto body = parse_statement_body(args_pos.second);
+
+	const auto args = args_to_json(args_pos.first);
 	const auto function_name = function_name_pos.first;
-	const auto body = parse_statement_body(header.second);
 
 	json_t function_def = json_t::make_array({
 		"def-func",

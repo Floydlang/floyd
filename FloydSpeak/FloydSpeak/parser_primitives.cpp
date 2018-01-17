@@ -268,51 +268,7 @@ QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
 
 
 
-std::pair<string, seq_t> read_until_semicolor_or_seagull(const seq_t& pos0){
-	const auto pos1 = skip_whitespace(pos0);
-	auto pos = pos1;
-	while(pos.empty() == false && pos.first() != ";" && pos.first() != "{"){
-		if(is_start_char(pos.first()[0])){
-			const auto end = get_balanced(pos).second;
-			pos = end;
-		}
-		else{
-			pos = pos.rest1();
-		}
-	}
-	if(pos.first1() == ";"){
-		pos = pos.rest1();
-	}
-	const auto r = get_range(pos1, pos);
-	return { r, pos };
-}
 
-//	If none are found, returns { "", s }
-std::pair<string, seq_t> read_until_toplevel_char(const seq_t& s, const char ch){
-	auto pos = s;
-	while(pos.empty() == false && pos.first1_char() != ch){
-		if(is_start_char(pos.first()[0])){
-			const auto end = get_balanced(pos).second;
-			pos = end;
-		}
-		else{
-			pos = pos.rest1();
-		}
-	}
-	if (pos.empty()){
-		return { "", s };
-	}
-	else{
-		const auto r = get_range(s, pos);
-		return { r, pos };
-	}
-}
-
-/*
-	Understands nested parantheses and brackets and skips those.
-	Does NOT skip leading whitespace.
-	If none are found, returns { "", s }
-*/
 std::pair<string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars){
 	auto pos = s;
 	while(pos.empty() == false && match_chars.find(pos.first1()) == string::npos){
@@ -351,21 +307,21 @@ std::string reverse(const std::string& s){
 
 
 //	Returns "" if no symbol is found.
-std::pair<std::string, seq_t> read_single_identifier(const seq_t& s){
+std::pair<std::string, seq_t> read_identifier(const seq_t& s){
 	const auto a = skip_whitespace(s);
 	const auto b = read_while(a, identifier_chars);
 	return b;
 }
-std::pair<std::string, seq_t> read_required_single_identifier(const seq_t& s){
-	const auto b = read_single_identifier(s);
+std::pair<std::string, seq_t> read_required_identifier(const seq_t& s){
+	const auto b = read_identifier(s);
 	if(b.first.empty()){
 		throw std::runtime_error("missing identifier");
 	}
 	return b;
 }
 
-QUARK_UNIT_TESTQ("read_required_single_identifier()", ""){
-	QUARK_TEST_VERIFY(read_required_single_identifier(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
+QUARK_UNIT_TESTQ("read_required_identifier()", ""){
+	QUARK_TEST_VERIFY(read_required_identifier(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
 }
 
 
@@ -412,8 +368,8 @@ vector<pair<typeid_t, string>> parse_functiondef_arguments2(const string& s){
 	vector<pair<typeid_t, string>> args;
 	auto pos = skip_whitespace(s2);
 	while(!pos.empty()){
-		const auto arg_type = read_required_type_identifier2(pos);
-		const auto arg_name = read_single_identifier(arg_type.second);
+		const auto arg_type = read_required_type(pos);
+		const auto arg_name = read_identifier(arg_type.second);
 		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 		args.push_back({ arg_type.first, arg_name.first });
 		pos = skip_whitespace(optional_comma.second);
@@ -452,7 +408,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_or_vector(const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 	if(pos0.first1() == "["){
 		const auto pos2 = pos0.rest1();
-		const auto element_type_pos = read_required_type_identifier2(pos2);
+		const auto element_type_pos = read_required_type(pos2);
 		const auto pos3 = skip_whitespace(element_type_pos.second);
 		if(pos3.first1() != "]"){
 			throw std::runtime_error("unbalanced []");
@@ -484,7 +440,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_optional_trailing_function_args(cons
 		return { make_shared<typeid_t>(type), s };
 	}
 }
-std::pair<std::shared_ptr<typeid_t>, seq_t> read_type_identifier2(const seq_t& s){
+std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s){
 	const auto type_pos = read_basic_or_vector(s);
 	if(type_pos.first == nullptr){
 		return type_pos;
@@ -494,54 +450,54 @@ std::pair<std::shared_ptr<typeid_t>, seq_t> read_type_identifier2(const seq_t& s
 	}
 }
 
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier2(seq_t("-3")).first == nullptr);
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(read_type(seq_t("-3")).first == nullptr);
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(*read_type_identifier2(seq_t("null")).first == typeid_t::make_null());
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(*read_type(seq_t("null")).first == typeid_t::make_null());
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(*read_type_identifier2(seq_t("bool")).first == typeid_t::make_bool());
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(*read_type(seq_t("bool")).first == typeid_t::make_bool());
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(*read_type_identifier2(seq_t("int")).first == typeid_t::make_int());
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(*read_type(seq_t("int")).first == typeid_t::make_int());
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(*read_type_identifier2(seq_t("float")).first == typeid_t::make_float());
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(*read_type(seq_t("float")).first == typeid_t::make_float());
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	QUARK_TEST_VERIFY(*read_type_identifier2(seq_t("string")).first == typeid_t::make_string());
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(*read_type(seq_t("string")).first == typeid_t::make_string());
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	const auto r = read_type_identifier2(seq_t("temp"));
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	const auto r = read_type(seq_t("temp"));
 	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_unknown_identifier("temp"));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	const auto r = read_type_identifier2(seq_t("[int]"));
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	const auto r = read_type(seq_t("[int]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_vector(typeid_t::make_int())		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	const auto r = read_type_identifier2(seq_t("[[int]]"));
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	const auto r = read_type(seq_t("[[int]]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_vector(typeid_t::make_vector(typeid_t::make_int()))		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
 
-QUARK_UNIT_TEST("", "read_type_identifier2()", "", ""){
-	const auto r = read_type_identifier2(seq_t("int ()"));
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	const auto r = read_type(seq_t("int ()"));
 	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_function(typeid_t::make_int(), {}));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	const auto r = read_type_identifier2(seq_t("string (float a, float b)"));
+	const auto r = read_type(seq_t("string (float a, float b)"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_float(), typeid_t::make_float() })	);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	const auto r = read_type_identifier2(seq_t("int (float a) ()"));
+	const auto r = read_type(seq_t("int (float a) ()"));
 
 	QUARK_TEST_VERIFY( *r.first == typeid_t::make_function(
 			typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_float() }),
@@ -551,7 +507,7 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 	QUARK_TEST_VERIFY(	r.second == seq_t("") );
 }
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	const auto r = read_type_identifier2(seq_t("bool (int (float a) b)"));
+	const auto r = read_type(seq_t("bool (int (float a) b)"));
 
 	QUARK_TEST_VERIFY(
 		*r.first
@@ -578,8 +534,8 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 
 
 
-pair<typeid_t, seq_t> read_required_type_identifier2(const seq_t& s){
-	const auto type_pos = read_type_identifier2(s);
+pair<typeid_t, seq_t> read_required_type(const seq_t& s){
+	const auto type_pos = read_type(s);
 	if(type_pos.first == nullptr){
 		throw std::runtime_error("illegal character in type identifier");
 	}

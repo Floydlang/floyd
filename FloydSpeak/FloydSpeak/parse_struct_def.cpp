@@ -19,13 +19,13 @@ namespace floyd {
 	using std::pair;
 
 
+	//	### simplify
+	//	### remove support for default values.
 	std::pair<json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
-		QUARK_ASSERT(pos0.size() > 0);
+		std::pair<bool, seq_t> token_pos = if_first(pos0, "struct");
+		QUARK_ASSERT(token_pos.first);
 
-		const auto token_pos = read_until(pos0, whitespace_chars);
-		QUARK_ASSERT(token_pos.first == "struct");
-
-		const auto struct_name_pos = read_required_single_identifier(token_pos.second);
+		const auto struct_name_pos = read_required_identifier(token_pos.second);
 
 		const auto s2 = skip_whitespace(struct_name_pos.second);
 		read_required_char(s2, '{');
@@ -34,8 +34,8 @@ namespace floyd {
 		vector<json_t> members;
 		auto pos = seq_t(trim_ends(body_pos.first));
 		while(!pos.empty()){
-			const auto member_type = read_required_type_identifier2(pos);
-			const auto member_name = read_required_single_identifier(member_type.second);
+			const auto member_type = read_required_type(pos);
+			const auto member_name = read_required_identifier(member_type.second);
 
 			string default_value;
 			const auto optional_default_value = read_optional_char(skip_whitespace(member_name.second), '=');

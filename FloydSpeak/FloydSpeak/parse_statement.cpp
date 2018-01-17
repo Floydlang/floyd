@@ -123,8 +123,8 @@ pair<json_t, seq_t> parse_return_statement(const seq_t& s){
 	QUARK_ASSERT(token_pos.first);
 	const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 	const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
+
 	const auto statement = json_t::make_array({ json_t("return"), expression1 });
-	//	Skip trailing ";".
 	const auto pos = skip_whitespace(expression_pos.second.rest1());
 	return { statement, pos };
 }
@@ -177,8 +177,10 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 	if(else_start.first){
 		const auto pos2 = skip_whitespace(else_start.second);
 		std::pair<bool, seq_t> elseif_pos = if_first(pos2, "if");
+
 		if(elseif_pos.first){
 			const auto elseif_statement2 = parse_if_statement(pos2);
+
 			return { json_t::make_array(
 				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), json_t::make_array({elseif_statement2.first}) }),
 				elseif_statement2.second
@@ -186,6 +188,7 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 		}
 		else{
 			const auto else_body = parse_statement_body(pos2);
+
 			return { json_t::make_array(
 				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_body.first }),
 				else_body.second
@@ -307,7 +310,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	const auto body = parse_statement_body(header.second);
 
 	//	iterator == "index".
-	const auto iterator_name = read_required_single_identifier(seq_t(header.first));
+	const auto iterator_name = read_required_identifier(seq_t(header.first));
 	if(iterator_name.first.empty()){
 		throw std::runtime_error("For loop requires iterator name.");
 	}
@@ -369,6 +372,7 @@ std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
 
 	const auto condition = read_enclosed_in_parantheses(while_pos.second);
 	const auto body = parse_statement_body(condition.second);
+
 	const auto condition_expr = parse_expression_all(seq_t(condition.first));
 	const auto r = json_t::make_array(
 		{

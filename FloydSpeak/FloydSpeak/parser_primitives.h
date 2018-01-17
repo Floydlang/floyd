@@ -75,10 +75,8 @@ namespace floyd {
 
 
 
-	std::pair<std::string, seq_t> read_until_semicolor_or_seagull(const seq_t& pos0);
-
-
 	/*
+		??? Use this is all places we scan.
 		Understands nested parantheses and brackets and skips those.
 		Does NOT skip leading whitespace.
 		If none are found, returns { "", s }
@@ -100,7 +98,7 @@ namespace floyd {
 	//////////////////////////////////////		IDENTIFIER
 
 
-	std::pair<std::string, seq_t> read_single_identifier(const seq_t& s);
+	std::pair<std::string, seq_t> read_identifier(const seq_t& s);
 
 	/*
 		Reads an identifier, like a variable name or function name.
@@ -108,11 +106,8 @@ namespace floyd {
 			"hello xxx"
 			"hello()xxx"
 			"hello+xxx"
-
-		Does not skip whitespace on the rest of the string.
-			"\thello\txxx" => "hello" + "\txxx"
 	*/
-	std::pair<std::string, seq_t> read_required_single_identifier(const seq_t& s);
+	std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
 
 
 
@@ -126,8 +121,8 @@ namespace floyd {
 		Does NOT make sure this a known type-identifier.
 		String must not be empty.
 	*/
-	std::pair<std::shared_ptr<typeid_t>, seq_t> read_type_identifier2(const seq_t& s);
-	std::pair<typeid_t, seq_t> read_required_type_identifier2(const seq_t& s);
+	std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s);
+	std::pair<typeid_t, seq_t> read_required_type(const seq_t& s);
 
 
 
@@ -163,6 +158,8 @@ namespace floyd {
 		(int, int)
 	*/
 	std::vector<std::pair<typeid_t, std::string>> parse_functiondef_arguments2(const std::string& s);
+
+	std::pair<std::vector<std::pair<typeid_t, std::string>>, seq_t> read_function_arg_parantheses(const seq_t& s);
 
 }	//	floyd
 

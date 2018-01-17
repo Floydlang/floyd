@@ -29,7 +29,11 @@ namespace floyd {
 			"{ int x = 1; ; int y = 2; }"
 
 		OUTPUT:
-			[ STATEMENTS ]
+			[
+				STATEMENT
+				STATEMENT
+				...
+			]
 	*/
 	std::pair<json_t, seq_t> parse_statement_body(const seq_t& pos);
 
