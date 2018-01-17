@@ -304,18 +304,6 @@ expression_type token_to_expression_type(const string& op){
 	}
 */
 
-
-/*
-TODO
-
-		//	Supports non-lossy round trip between to_string() and from_string(). ??? make it so and test!
-		//	Compatible with Floyd sources.
-			### Store as compact JSON instead? Then we can't use [ and {".
-
-			//??? How to encode typeid in floyd source code?
-//??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
-*/
-
 	QUARK_UNIT_TESTQ("typeid_t", "null"){
 		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
 	}

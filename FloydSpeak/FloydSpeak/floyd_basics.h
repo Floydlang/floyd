@@ -204,6 +204,7 @@ namespace floyd {
 		in-code						base					parts[]									notes
 		================================================================================================================
 		bool						k_bool
+		bool						k_bool
 		int							k_int
 		float						k_float
 		string						k_string
@@ -218,6 +219,29 @@ namespace floyd {
 		randomize_player			k_unknown_identifier	"randomize_player"
 
 		- When parsing we find identifiers that we don't know what they mean. Stored as k_unknown_identifier with identifier
+
+
+
+		TODO
+
+		??? Supports non-lossy round trip between to_string() and from_string(). ??? make it so and test!
+
+		??? Compatible with Floyd sources.
+				### Store as compact JSON instead? Then we can't use [ and {".
+
+
+		??? How to encode typeid in floyd source code?
+
+		??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
+
+
+
+		1) Type as in source code
+		2) Type encoded as json from parser
+		3) Type encoded as typeid_t in compiler
+		4) Type in log, as json
+		5) Roundtrip typeid_t -> json -> typeid_t
+
 	*/
 
 
