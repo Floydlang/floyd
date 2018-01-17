@@ -201,21 +201,19 @@ namespace floyd {
 	//////////////////////////////////////		typeid_t
 
 	/*
-		in-code						base					more									notes
+		in-code						base					parts[]									notes
 		================================================================================================================
 		bool						k_bool
 		int							k_int
 		float						k_float
 		string						k_string
 
-									k_typeid
+		-							k_typeid				[target type id]
 		struct						k_struct				"coord_t/8000", struct_definition_t
 		struct						k_struct_type			"coord_t/8000"
-
 		[int]						k_vector				typeid_t(k_int)
-
-		int ()
-		int (float, [string])		k_function				k_int, k_float, k_vector
+		int ()						k_function
+		int (float, [string])		k_function				[k_int, k_float, [k_vector, string] ]
 
 		randomize_player			k_unknown_identifier	"randomize_player"
 
@@ -253,13 +251,26 @@ namespace floyd {
 			return { floyd::base_type::k_string, {}, {}, {}, {} };
 		}
 
+		//	This is a type that specifies another type.
 		public: static typeid_t make_typeid(const typeid_t& type){
 			return { floyd::base_type::k_typeid, { type }, {}, {}, {} };
 		}
 
+		public: const typeid_t& get_typeid_typeid() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_typeid);
+			return _parts[0];
+		}
+
+
 		public: static typeid_t make_struct(const std::shared_ptr<struct_definition_t>& def){
 			return { floyd::base_type::k_struct, {}, {}, {}, def };
 		}
+
+		public: const struct_definition_t& get_struct() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_struct);
+			return *_struct_def;
+		}
+
 
 		public: static typeid_t make_vector(const typeid_t& element_type){
 			return { floyd::base_type::k_vector, { element_type }, {}, {}, {} };
@@ -328,16 +339,18 @@ namespace floyd {
 
 		/////////////////////////////		STATE
 
+		friend json_t typeid_to_json(const typeid_t& t);
 
-		public: floyd::base_type _base_type;
-		public: std::vector<typeid_t> _parts;
-		public: std::string _unique_type_id;
+
+		private: floyd::base_type _base_type;
+		private: std::vector<typeid_t> _parts;
+		private: std::string _unique_type_id;
 
 		//	Used for k_unknown_identifier.
-		public: std::string _unknown_identifier;
+		private: std::string _unknown_identifier;
 
 		//??? Add path to environment when struct was defined = make it unqiue.
-		public: std::shared_ptr<struct_definition_t> _struct_def;
+		private: std::shared_ptr<struct_definition_t> _struct_def;
 	};
 
 	json_t typeid_to_json(const typeid_t& t);

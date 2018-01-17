@@ -362,14 +362,14 @@ TODO
 		_type(type),
 		_name(name)
 	{
-		QUARK_ASSERT(type._base_type != floyd::base_type::k_null && type.check_invariant());
+		QUARK_ASSERT(!type.is_null() && type.check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool member_t::check_invariant() const{
-		QUARK_ASSERT(_type._base_type != floyd::base_type::k_null && _type.check_invariant());
+		QUARK_ASSERT(!_type.is_null() && _type.check_invariant());
 		QUARK_ASSERT(_name.size() > 0);
 		return true;
 	}
@@ -428,7 +428,7 @@ TODO
 
 
 	bool struct_definition_t::check_invariant() const{
-//		QUARK_ASSERT(_struct_type._base_type != floyd::base_type::k_null && _struct_type.check_invariant());
+//		QUARK_ASSERT(_struct!type.is_null() && _struct_type.check_invariant());
 
 		for(const auto m: _members){
 			QUARK_ASSERT(m.check_invariant());

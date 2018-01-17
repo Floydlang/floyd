@@ -105,7 +105,7 @@ namespace floyd {
 	vector_def_t vector_def_t::make2(
 		const floyd::typeid_t& element_type)
 	{
-		QUARK_ASSERT(element_type._base_type != floyd::base_type::k_null && element_type.check_invariant());
+		QUARK_ASSERT(!element_type.is_null() && element_type.check_invariant());
 
 		vector_def_t result(element_type);
 
@@ -114,7 +114,7 @@ namespace floyd {
 	}
 
 	bool vector_def_t::check_invariant() const{
-		QUARK_ASSERT(_element_type._base_type != floyd::base_type::k_null && _element_type.check_invariant());
+		QUARK_ASSERT(!_element_type.is_null() && _element_type.check_invariant());
 		return true;
 	}
 

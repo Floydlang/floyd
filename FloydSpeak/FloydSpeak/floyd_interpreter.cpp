@@ -771,10 +771,11 @@ bool all_literals(const vector<expression_t>& e){
 }
 
 std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
+	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
 	QUARK_SCOPED_TRACE("construct_struct()");
 	QUARK_TRACE("struct_type: " + struct_type.to_string2());
 
-	const auto& def = *struct_type._struct_def;
+	const auto& def = struct_type.get_struct();
 	if(values.size() != def._members.size()){
 		throw std::runtime_error(
 			 string() + "Calling constructor for \"" + def._name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
@@ -832,7 +833,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		//	Attempting to call a TYPE? Then this may be a constructor call.
 		if(function_value.is_typeid()){
 			const auto t = function_value.get_typeid();
-			const auto typeid_contained_type = t._parts[0];
+			const auto typeid_contained_type = t.get_typeid_typeid();
 			if(typeid_contained_type.get_base_type() == base_type::k_struct){
 				//	Constructor.
 
