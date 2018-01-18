@@ -147,10 +147,6 @@ expression_type token_to_expression_type(const string& op){
 
 
 
-	void trace(const typeid_t& t, const std::string& label){
-		QUARK_ASSERT(t.check_invariant());
-		json_to_pretty_string(typeid_to_normalized_json(t));
-	}
 
 	bool typeid_t::check_invariant() const{
 		if(_base_type == floyd::base_type::k_null){
@@ -240,11 +236,9 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
 	}
 
-
 	QUARK_UNIT_TESTQ("typeid_t", "string"){
 		QUARK_UT_VERIFY(typeid_t::make_string().get_base_type() == base_type::k_string);
 	}
-
 
 	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
 		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").get_base_type() == base_type::k_unknown_identifier);
@@ -304,91 +298,6 @@ expression_type token_to_expression_type(const string& op){
 			QUARK_ASSERT(false);
 		}
 	}
-
-
-	struct typeid_str_test_t {
-		typeid_t _typeid;
-		string _normalized_json;
-		string _compact_str;
-	};
-
-
-	const vector<typeid_str_test_t> make_typeid_str_tests(){
-		const auto s1 = typeid_t::make_struct(
-			std::make_shared<struct_definition_t>(struct_definition_t("file", {}))
-		);
-
-		return vector<typeid_str_test_t>{
-			{ typeid_t::make_null(), "\"null\"", "null" },
-			{ typeid_t::make_bool(), "\"bool\"", "bool" },
-			{ typeid_t::make_int(), "\"int\"", "int" },
-			{ typeid_t::make_float(), "\"float\"", "float" },
-			{ typeid_t::make_string(), "\"string\"", "string" },
-
-			{ typeid_t::make_typeid(typeid_t::make_float()), R"([ "typeid" , "float"])", "typeid(float)" },
-			{ typeid_t::make_typeid(typeid_t::make_string()), R"([ "typeid" , "string"])", "typeid(string)" },
-
-			{ s1, R"(["struct", ["file", []]])", "struct file {}" },
-
-			{
-				typeid_t::make_typeid(s1),
-				R"(
-					[
-						"typeid",
-						["struct", ["file", []]]
-					]
-				)",
-				"typeid(struct file {})"
-			},
-
-			{ typeid_t::make_unknown_identifier("hello"), "\"hello\"", "hello" }
-		};
-	}
-
-
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json()", ""){
-		const auto f = make_typeid_str_tests();
-		for(int i = 0 ; i < f.size() ; i++){
-			const auto start_typeid = f[i]._typeid;
-			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
-
-			//	Test typeid_to_normalized_json().
-			const auto result1 = typeid_to_normalized_json(start_typeid);
-			ut_compare_jsons(result1, expected_normalized_json);
-		}
-	}
-
-
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		const auto f = make_typeid_str_tests();
-		for(int i = 0 ; i < f.size() ; i++){
-			const auto start_typeid = f[i]._typeid;
-			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
-
- 			//	Test typeid_from_normalized_json();
- 			const auto result2 = typeid_from_normalized_json(expected_normalized_json);
-			QUARK_UT_VERIFY(result2 == start_typeid);
-		}
-		QUARK_TRACE("OK!");
-	}
-
-
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		const auto f = make_typeid_str_tests();
-		for(int i = 0 ; i < f.size() ; i++){
-			const auto start_typeid = f[i]._typeid;
-
-			//	Test typeid_to_compact_string().
-			const auto result3 = typeid_to_compact_string(start_typeid);
-			quark::ut_compare(result3, f[i]._compact_str);
-		}
-		QUARK_TRACE("OK!");
-	}
-
-
-
-
-
 
 	typeid_t typeid_from_normalized_json(const json_t& t){
 		if(t.is_string()){
@@ -495,6 +404,86 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
+
+
+	struct typeid_str_test_t {
+		typeid_t _typeid;
+		string _normalized_json;
+		string _compact_str;
+	};
+
+
+	const vector<typeid_str_test_t> make_typeid_str_tests(){
+		const auto s1 = typeid_t::make_struct(
+			std::make_shared<struct_definition_t>(struct_definition_t("file", {}))
+		);
+
+		return vector<typeid_str_test_t>{
+			{ typeid_t::make_null(), "\"null\"", "null" },
+			{ typeid_t::make_bool(), "\"bool\"", "bool" },
+			{ typeid_t::make_int(), "\"int\"", "int" },
+			{ typeid_t::make_float(), "\"float\"", "float" },
+			{ typeid_t::make_string(), "\"string\"", "string" },
+
+			{ typeid_t::make_typeid(typeid_t::make_float()), R"([ "typeid" , "float"])", "typeid(float)" },
+			{ typeid_t::make_typeid(typeid_t::make_string()), R"([ "typeid" , "string"])", "typeid(string)" },
+
+			{ s1, R"(["struct", ["file", []]])", "struct file {}" },
+
+			{
+				typeid_t::make_typeid(s1),
+				R"(
+					[
+						"typeid",
+						["struct", ["file", []]]
+					]
+				)",
+				"typeid(struct file {})"
+			},
+
+			{ typeid_t::make_unknown_identifier("hello"), "\"hello\"", "hello" }
+		};
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json()", ""){
+		const auto f = make_typeid_str_tests();
+		for(int i = 0 ; i < f.size() ; i++){
+			const auto start_typeid = f[i]._typeid;
+			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
+
+			//	Test typeid_to_normalized_json().
+			const auto result1 = typeid_to_normalized_json(start_typeid);
+			ut_compare_jsons(result1, expected_normalized_json);
+		}
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		const auto f = make_typeid_str_tests();
+		for(int i = 0 ; i < f.size() ; i++){
+			const auto start_typeid = f[i]._typeid;
+			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
+
+ 			//	Test typeid_from_normalized_json();
+ 			const auto result2 = typeid_from_normalized_json(expected_normalized_json);
+			QUARK_UT_VERIFY(result2 == start_typeid);
+		}
+		QUARK_TRACE("OK!");
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		const auto f = make_typeid_str_tests();
+		for(int i = 0 ; i < f.size() ; i++){
+			const auto start_typeid = f[i]._typeid;
+
+			//	Test typeid_to_compact_string().
+			const auto result3 = typeid_to_compact_string(start_typeid);
+			quark::ut_compare(result3, f[i]._compact_str);
+		}
+		QUARK_TRACE("OK!");
+	}
 
 
 

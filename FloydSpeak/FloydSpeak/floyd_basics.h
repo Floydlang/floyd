@@ -397,7 +397,7 @@ namespace floyd {
 		//	Used for k_unknown_identifier.
 		private: std::string _unknown_identifier;
 
-		//??? Add path to environment when struct was defined = make it unqiue.
+		//??? Add path to environment when struct was defined = make it unique.
 		private: std::shared_ptr<struct_definition_t> _struct_def;
 	};
 
