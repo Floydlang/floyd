@@ -456,9 +456,6 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 	std::string typeid_to_compact_string(const typeid_t& t){
-//		const auto j = typeid_to_normalized_json(t);
-//		return json_to_compact_string(j);
-
 		QUARK_ASSERT(t.check_invariant());
 
 		const auto basetype = t.get_base_type();

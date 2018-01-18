@@ -409,12 +409,6 @@ namespace floyd {
 	/*
 		typeid_t --- formats: json, source code etc.
 
-			"int"
-			"[int]"
-			"int f(float b)"
-			"typeid(int)"
-
-
 		in-code						base					More								notes
 		================================================================================================================
 		null						k_null
@@ -439,31 +433,26 @@ namespace floyd {
 
 
 
-		TODO
 
-		??? Supports non-lossy round trip between to_string() and from_source_code_string(). ??? make it so and test!
+		NORMALIZED JSON
+		This is the JSON format we use to pass AST around. The normalized format means it supports roundtrip. Use
+				typeid_to_normalized_json() and typeid_from_normalized_json().
 
-		??? Compatible with Floyd sources.
-				### Store as compact JSON instead? Then we can't use [ and {".
+		COMPACT_STRING
+		This is a nice user-visible representation of the typeid_t. It may be lossy. It's for REPLs etc. UI.
 
 
-		??? How to encode typeid in floyd source code?
+		SOURCE CODE TYPE
+		Use read_required_type()
+
 
 		??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
-
-		1) Type as in source code: SOURCE-CODE-TYPE, use read_required_type()
-		2) Type encoded as json from parser
-		3) Type encoded as typeid_t, used inside compiler
-		4) Type in log, as json
-		5) Roundtrip typeid_t -> json -> typeid_t: NORMALIZED TYPE JSON
-		6) Compact string, used for debugger etc.
 	*/
 
 	json_t typeid_to_normalized_json(const typeid_t& t);
 	typeid_t typeid_from_normalized_json(const json_t& t);
 
 	std::string typeid_to_compact_string(const typeid_t& t);
-
 
 
 

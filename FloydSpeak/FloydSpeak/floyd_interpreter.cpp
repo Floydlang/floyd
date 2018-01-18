@@ -45,11 +45,12 @@ namespace {
 
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements);
 
+/*
 	bool compare_float_approx(float value, float expected){
 		float diff = static_cast<float>(fabs(value - expected));
 		return diff < 0.00001;
 	}
-
+*/
 
 	interpreter_t begin_subenv(const interpreter_t& vm){
 		QUARK_ASSERT(vm.check_invariant());
