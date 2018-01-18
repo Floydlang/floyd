@@ -13,6 +13,7 @@
 
 #include "quark.h"
 #include "text_parser.h"
+#include "utils.h"
 
 #include <string>
 #include <memory>
@@ -188,6 +189,13 @@ struct constant_value_t {
 	std::string _string;
 };
 
+inline bool operator==(const constant_value_t& a, const constant_value_t& b){
+	return a._type == b._type
+		&& a._bool == b._bool
+		&& a._int == b._int
+		&& a._float == b._float
+		&& a._string == b._string;
+}
 
 
 ///////////////////////////////////			expr_t
@@ -203,6 +211,12 @@ struct expr_t {
 	std::string _identifier;
 };
 
+inline bool operator==(const expr_t& a, const expr_t& b){
+	return a._op == b._op
+		&& a._exprs == b._exprs
+		&& compare_shared_values(a._constant, b._constant)
+		&& a._identifier == b._identifier;
+}
 
 ///////////////////////////////////			FUNCTIONS
 

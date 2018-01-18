@@ -36,7 +36,7 @@ These are the primitive data types built into the language itself. The goals is 
 # COMPOSITE TYPES
 These are composites and collections of other types.
 - **struct**		like C struct or class or tuple.
-
+- **vector**		an a continous array of elements addressed via indexes.
 
 # CORE TYPE FEATURES
 These are features built into every type: integer, string, struct, collections etc.
@@ -258,6 +258,50 @@ The loop is expanded before the first time the body is called. There is no way t
 	}
 
 - condition: executed each time before body is executed.
+
+
+
+
+# VECTOR
+A vector is a collection where you lookup your values using an index between 0 and (vector size - 1). The elements are ordered. Finding the correct element is constant time.
+
+Examples:
+
+	a = [int]();					//	Create empty vector of ints.
+	b = [int](1, 2, 3);				//	Create a vector with three ints.
+	b = [1, 2, 3];					//	Shortcut to create a vector with three ints. Int-type is deducted from value.
+	a = [string]();					//	Empty vector of strings
+	b = [string] ( "a", "b", "c");	//	Vector initialized to 3 strings.
+	b = ["one", "two", "three"];	//	Shortcut to create a vector with 3 strings.
+
+The vector is persistent so you *can* write elements to it, but you always get a *new* vector back - the original vector is unmodified:
+
+	a = ["one", "two", "three" ];
+	b = update(a, 1, "zwei");
+	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
+
+
+### OPTIMIZATIONS IN BACKEND
+The runtime has several types of backends for a vector and choses for each vector *instances* - not each type:
+
+1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
+2. A HAMT-based persistent vector. Medium-fast to make, read and write. Uses more memory.
+3. A function. Compact, potentially very fast / very slow. No write.
+
+### Vector Reference:
+
+	a = [T][ 1, 2, 3, ... ];
+	c = a[0]
+	int a.size()
+	a = [1, 2, 3] + [4, 5, 6] //	append
+	a = [1, 2, 3] + 4			 //	append
+	[T] subset([T] in, int start, int end);
+	[T] = replace([T], 4, 10, [T], 0, 2)
+	for(x: [1, 2, 3]){ print(x)	; }
+
+Future: find, filter, map, fold, sort
+
+
 
 
 # STRUCTs - Simple structs

@@ -2437,7 +2437,6 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 	}
 }
 
-
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
@@ -2514,6 +2513,43 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 		"struct image {color back=struct color {int red=0,int green=100,int blue=200},color front=struct color {int red=0,int green=3,int blue=0}}"
 	}	));
 }
+
+
+
+//////////////////////////		vector
+
+
+#if false
+
+QUARK_UNIT_TESTQ("run_main()", "struct"){
+	const auto vm = run_global(R"(
+		a = [1, 2];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"struct color {int red=255,int green=128,int blue=128}",
+		"struct color {int red=255,int green=128,int blue=129}",
+	}	));
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct"){
+	const auto vm = run_global(R"(
+		struct t { int a;}
+	)");
+}
+
+QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
+	const auto vm = run_global(R"(
+		struct t { int a;}
+		t(3);
+	)");
+	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].first.is_typeid()	));
+}
+
+#endif
+
+
+
 
 }	//	floyd
 

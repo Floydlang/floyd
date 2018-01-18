@@ -405,6 +405,17 @@ std::pair<expr_t, seq_t> parse_atom(const seq_t& p){
 	}
 }
 
+QUARK_UNIT_TESTQ("parse_atom()", ""){
+	const auto a = parse_atom(seq_t("3"));
+	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
+}
+#if false
+QUARK_UNIT_TESTQ("parse_atom()", ""){
+	const auto a = parse_atom(seq_t("[3]"));
+	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
+}
+#endif
+
 std::pair<expr_t, seq_t> parse_function_call(const seq_t& p1, const expr_t& lhs, const eoperator_precedence prev_precedence){
 	QUARK_ASSERT(p1.check_invariant());
 	QUARK_ASSERT(p1.first() == "(");
@@ -720,6 +731,7 @@ QUARK_UNIT_1("parse_single()", "identifier", test__parse_single(
 	R"(["k", "bool", false])",
 	" xxx"
 ));
+
 
 
 
