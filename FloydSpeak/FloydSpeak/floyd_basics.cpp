@@ -279,16 +279,10 @@ expression_type token_to_expression_type(const string& op){
 			QUARK_ASSERT(false);
 		}
 		else if(b == base_type::k_function){
-			vector<json_t> arg_types;
-			for(const auto e: t.get_function_args()){
-				const auto e2 = typeid_to_normalized_json(e);
-				arg_types.push_back(e2);
-			}
-
 			return json_t::make_array({
 				basetype_str,
 				typeid_to_normalized_json(t.get_function_return()),
-				json_t::make_array(arg_types)
+				typeids_to_json_array(t.get_function_args())
 			});
 		}
 		else if(b == base_type::k_unknown_identifier){
@@ -343,8 +337,10 @@ expression_type token_to_expression_type(const string& op){
 				return typeid_t::make_null();
 			}
 			else if(s == "function"){
-				QUARK_ASSERT(false);
-				return typeid_t::make_null();
+				const auto ret_type = typeid_from_normalized_json(a[1]);
+				const auto arg_types_array = a[2].get_array();
+				const vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
+				return typeid_t::make_function(ret_type, arg_types);
 			}
 			else if(s == "unknown-identifier"){
 				QUARK_ASSERT(false);
@@ -449,7 +445,7 @@ expression_type token_to_expression_type(const string& op){
 					))
 				),
 				R"(["struct", ["file", [{ "type": "int", "name": "a"}, {"type": "float", "name": "b"}]]])",
-				"struct file {int a;int b;}"
+				"struct file {int a;float b;}"
 			},
 
 			//	unknown_identifier
@@ -579,6 +575,21 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
+	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m){
+		vector<json_t> r;
+		for(const auto a: m){
+			r.push_back(typeid_to_normalized_json(a));
+		}
+		return r;
+	}
+	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m){
+		vector<typeid_t> r;
+		for(const auto a: m){
+			r.push_back(typeid_from_normalized_json(a));
+		}
+		return r;
+	}
+
 
 
 	//////////////////////////////////////////////////		struct_definition_t
@@ -605,7 +616,7 @@ expression_type token_to_expression_type(const string& op){
 	std::string to_compact_string(const struct_definition_t& v){
 		auto s = "struct " + v._name + " {";
 		for(const auto e: v._members){
-			s = s + typeid_to_compact_string(e._type) + "" + e._name + ";";
+			s = s + typeid_to_compact_string(e._type) + " " + e._name + ";";
 		}
 /*
 		if(s.back() == ','){

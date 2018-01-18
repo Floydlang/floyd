@@ -488,6 +488,10 @@ namespace floyd {
 	json_t values_to_json_array(const std::vector<value_t>& values);
 
 
+	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m);
+	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
+
+
 
 	//////////////////////////////////////////////////		struct_definition_t
 

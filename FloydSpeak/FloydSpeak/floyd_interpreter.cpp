@@ -2337,11 +2337,10 @@ QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
 QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 	const auto vm = run_global(R"(
 		struct t { int a;}
-		t(3);
 		print(t);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"typeid(struct t {int a})"
+		"typeid(struct t {int a;})"
 	}	));
 }
 
