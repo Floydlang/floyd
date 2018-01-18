@@ -291,33 +291,86 @@ expression_type token_to_expression_type(const string& op){
 		}
 	}
 
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_null()), parse_json(seq_t("\"null\"")).first);
-	}
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_bool()), parse_json(seq_t("\"bool\"")).first);
-	}
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_int()), parse_json(seq_t("\"int\"")).first);
-	}
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_float()), parse_json(seq_t("\"float\"")).first);
-	}
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_string()), parse_json(seq_t("\"string\"")).first);
-	}
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		ut_compare_jsons(
-			typeid_to_normalized_json(
-				typeid_t::make_typeid(typeid_t::make_float())
-			),
-			parse_json(seq_t(R"([ "typeid" , "float"])")).first
+
+	struct typeid_str_test_t {
+		typeid_t _typeid;
+		string _normalized_json;
+		string _compact_str;
+	};
+
+
+	const vector<typeid_str_test_t> make_typeid_str_tests(){
+		const auto s1 = typeid_t::make_struct(
+			std::make_shared<struct_definition_t>(struct_definition_t("file", {}))
 		);
+
+		return vector<typeid_str_test_t>{
+			{ typeid_t::make_null(), "\"null\"", "null" },
+			{ typeid_t::make_bool(), "\"bool\"", "bool" },
+			{ typeid_t::make_int(), "\"int\"", "int" },
+			{ typeid_t::make_float(), "\"float\"", "float" },
+			{ typeid_t::make_string(), "\"string\"", "string" },
+
+			{ typeid_t::make_typeid(typeid_t::make_float()), R"([ "typeid" , "float"])", "typeid(float)" },
+			{ typeid_t::make_typeid(typeid_t::make_string()), R"([ "typeid" , "string"])", "typeid(string)" },
+
+			{ s1, R"(["struct", ["file", []]])", "struct file {}" },
+
+			{
+				typeid_t::make_typeid(s1),
+				R"(
+					[
+						"typeid",
+						["struct", ["file", []]]
+					]
+				)",
+				"typeid(struct file {})"
+			},
+
+			{ typeid_t::make_unknown_identifier("hello"), "\"hello\"", "hello" }
+		};
 	}
 
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
-		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_unknown_identifier("hello")), parse_json(seq_t("\"hello\"")).first);
+
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json()", ""){
+		const auto f = make_typeid_str_tests();
+		for(int i = 0 ; i < f.size() ; i++){
+			const auto start_typeid = f[i]._typeid;
+			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
+
+			//	Test typeid_to_normalized_json().
+			const auto result1 = typeid_to_normalized_json(start_typeid);
+			ut_compare_jsons(result1, expected_normalized_json);
+		}
 	}
+
+
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		const auto f = make_typeid_str_tests();
+		for(int i = 0 ; i < f.size() ; i++){
+			const auto start_typeid = f[i]._typeid;
+			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
+
+ 			//	Test typeid_from_normalized_json();
+ 			const auto result2 = typeid_from_normalized_json(expected_normalized_json);
+			QUARK_UT_VERIFY(result2 == start_typeid);
+		}
+		QUARK_TRACE("OK!");
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		const auto f = make_typeid_str_tests();
+		for(int i = 0 ; i < f.size() ; i++){
+			const auto start_typeid = f[i]._typeid;
+
+			//	Test typeid_to_compact_string().
+			const auto result3 = typeid_to_compact_string(start_typeid);
+			quark::ut_compare(result3, f[i]._compact_str);
+		}
+		QUARK_TRACE("OK!");
+	}
+
 
 
 
@@ -345,8 +398,44 @@ expression_type token_to_expression_type(const string& op){
 				return typeid_t::make_unknown_identifier(s);
 			}
 		}
+		else if(t.is_array()){
+			const auto a = t.get_array();
+			const auto s = a[0].get_string();
+			if(s == "typeid"){
+				const auto t2 = typeid_from_normalized_json(a[1]);
+				return typeid_t::make_typeid(t2);
+			}
+			else if(s == "struct"){
+				const auto struct_def_array = a[1].get_array();
+				const auto struct_name = struct_def_array[0].get_string();
+				const auto member_array = struct_def_array[1].get_array();
+
+				//??? handle members here
+				QUARK_ASSERT(member_array.size() == 0);
+
+				const vector<member_t> struct_members;
+				return typeid_t::make_struct(
+					std::make_shared<struct_definition_t>(struct_definition_t(struct_name, struct_members))
+				);
+			}
+			else if(s == "vector"){
+				QUARK_ASSERT(false);
+				return typeid_t::make_null();
+			}
+			else if(s == "function"){
+				QUARK_ASSERT(false);
+				return typeid_t::make_null();
+			}
+			else if(s == "unknown-identifier"){
+				QUARK_ASSERT(false);
+				return typeid_t::make_null();
+			}
+			else {
+				QUARK_ASSERT(false);
+				return typeid_t::make_null();
+			}
+		}
 		else{
-		//??? structs etc!?
 			QUARK_ASSERT(false);
 			return typeid_t::make_null();
 		}
@@ -361,7 +450,6 @@ expression_type token_to_expression_type(const string& op){
 		const auto basetype = t.get_base_type();
 
 		if(basetype == floyd::base_type::k_unknown_identifier){
-//			return "[unknown-identifier:" + _unknown_identifier + "]";
 			return t.get_unknown_identifier();
 		}
 		else if(basetype == floyd::base_type::k_typeid){
