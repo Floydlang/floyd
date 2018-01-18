@@ -382,8 +382,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	if(op == expression_type::k_resolve_member){
 		const auto expr = e.get_resolve_member();
 		const auto parent_expr = evaluate_expression(vm2, *expr->_parent_address);
+		vm2 = parent_expr.first;
 		if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
-			vm2 = parent_expr.first;
 			const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
 
 			int index = find_struct_member_index(struct_instance->_def, expr->_member_name);
@@ -395,6 +395,34 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		}
 		else{
 			throw std::runtime_error("Resolve member failed.");
+		}
+	}
+	else if(op == expression_type::k_lookup_element){
+		const auto expr = e.get_lookup();
+		const auto parent_expr = evaluate_expression(vm2, *expr->_parent_address);
+		vm2 = parent_expr.first;
+		if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_vector() == false){
+			throw std::runtime_error("Can only lookup inside vectors using [].");
+		}
+		else{
+			const auto key_expr = evaluate_expression(vm2, *expr->_lookup_key);
+			vm2 = key_expr.first;
+
+			if(key_expr.second.is_literal() && key_expr.second.get_literal().is_int() == false){
+				throw std::runtime_error("Lookup in vector by index-only.");
+			}
+			else{
+				const auto vector_instance = parent_expr.second.get_literal().get_vector_value();
+
+				int lookup_index = key_expr.second.get_literal().get_int_value();
+				if(lookup_index < 0 || lookup_index >= vector_instance->_elements.size()){
+					throw std::runtime_error("Lookup in vector: out of bounds.");
+				}
+				else{
+					const value_t value = vector_instance->_elements[lookup_index];
+					return { vm2, expression_t::make_literal(value)};
+				}
+			}
 		}
 	}
 	else if(op == expression_type::k_variable){
@@ -2582,28 +2610,25 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 		a = vector(int, 1, 2);
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"[int](1,2)"
-	}	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"[int](1,2)"	}	));
 }
-
-#if false
 
 QUARK_UNIT_TESTQ("run_main()", "struct"){
 	const auto vm = run_global(R"(
-		struct t { int a;}
+		a = vector(int, 1, 2);
+		print(a[0]);
+		print(a[1]);
 	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"1", "2"	}	));
 }
-
-QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
+QUARK_UNIT_TESTQ("run_main()", "struct"){
 	const auto vm = run_global(R"(
-		struct t { int a;}
-		t(3);
+		a = vector(string, "one", "two");
+		print(a[0]);
+		print(a[1]);
 	)");
-	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].first.is_typeid()	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
 }
-
-#endif
 
 
 

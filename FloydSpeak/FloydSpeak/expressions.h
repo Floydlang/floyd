@@ -569,7 +569,7 @@ namespace floyd {
 		)
 		{
 			return expression_t{
-				expression_type::k_resolve_member,
+				expression_type::k_lookup_element,
 				std::make_shared<lookup_expr_t>(
 					lookup_expr_t{ parent_address, lookup_key, result }
 				)

@@ -167,6 +167,12 @@ expression_t parser_expression_to_ast(const json_t& e){
 		const auto variable_symbol = e.get_array_n(1).get_string();
 		return expression_t::make_variable_expression(variable_symbol, typeid_t::make_null());
 	}
+	else if(op == "[-]"){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		const auto parent_address_expr = parser_expression_to_ast(e.get_array_n(1));
+		const auto lookup_key_expr = parser_expression_to_ast(e.get_array_n(2));
+		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, typeid_t::make_null());
+	}
 	else{
 		QUARK_ASSERT(false);
 	}
