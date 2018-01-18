@@ -313,12 +313,13 @@ Changing member variable of a struct:
 	};
 
 	a = rect(0, 3);
+
 	//	Nothing happens! Setting width to 100 returns us a new rect but we we don't keep it.
-	a.width = 100
+	update(a,"width", 100)
 	assert(a.width == 0)
 
 	//	Modifying a member creates a new instance, we assign it to b
-	b = a.width = 100
+	b = update(a,"width", 100)
 
 	//	Now we have the original, unmodified a and the new, updated b.
 	assert(a.width == 0)
@@ -333,9 +334,8 @@ This works with nested values too:
 
 	assert(a.size.width == 512);
 
-???
 	//	Update the width-member inside the image's size-member. The result is a brand new image, b!
-	b = a.size.width <= 100;
+	b = update(a, "size.width", 100);
 	assert(a.size.width == 512);
 	assert(b.size.width == 100);
 

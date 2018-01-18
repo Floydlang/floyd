@@ -2438,7 +2438,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 }
 
 
-QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
+QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 2, 3));
@@ -2446,7 +2446,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"false"		}	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
+QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 4, 3));
