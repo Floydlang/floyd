@@ -162,7 +162,7 @@ namespace floyd {
 		//	c99: a.b			token: "->"
 		k_resolve_member,
 
-		//	c99: a[b]			token: "[-]"
+		//	c99: a[b]			token: "[]"
 		k_lookup_element,
 
 		//???	use k_literal for function values?

@@ -550,7 +550,7 @@ namespace floyd {
 			}
 
 			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "[-]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key), typeid_to_normalized_json(_result) });
+				return json_t::make_array({ "[]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key), typeid_to_normalized_json(_result) });
 			}
 
 

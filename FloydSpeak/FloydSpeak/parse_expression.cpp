@@ -28,7 +28,7 @@ using namespace parser2;
 const std::map<eoperation, string> k_2_operator_to_string{
 //	{ eoperation::k_x_member_access, "->" },
 
-	{ eoperation::k_2_looup, "[-]" },
+	{ eoperation::k_2_looup, "[]" },
 
 	{ eoperation::k_2_add, "+" },
 	{ eoperation::k_2_subtract, "-" },

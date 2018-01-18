@@ -112,7 +112,7 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_variable, "@" },
 	{ expression_type::k_resolve_member, "->" },
 
-	{ expression_type::k_lookup_element, "[-]" }
+	{ expression_type::k_lookup_element, "[]" }
 };
 
 std::map<string, expression_type> make_reverse(const std::map<expression_type, string>& m){

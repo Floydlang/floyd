@@ -520,7 +520,7 @@ std::pair<expr_t, seq_t> parse_expression(const seq_t& p){
 static const std::map<eoperation, string> k_2_operator_to_string{
 //	{ eoperation::k_x_member_access, "->" },
 
-	{ eoperation::k_2_looup, "[-]" },
+	{ eoperation::k_2_looup, "[]" },
 
 	{ eoperation::k_2_add, "+" },
 	{ eoperation::k_2_subtract, "-" },
@@ -1117,19 +1117,19 @@ QUARK_UNIT_1("parse_expression()", "struct member access -- whitespace", test__p
 
 QUARK_UNIT_1("parse_expression()", "lookup with int", test__parse_expression(
 	"hello[10] xxx",
-	R"(["[-]", ["@", "hello"], ["k", "int", 10]])",
+	R"(["[]", ["@", "hello"], ["k", "int", 10]])",
 	" xxx"
 ));
 
 QUARK_UNIT_1("parse_expression()", "lookup with string", test__parse_expression(
 	"hello[\"troll\"] xxx",
-	R"(["[-]", ["@", "hello"], ["k", "string", "troll"]])",
+	R"(["[]", ["@", "hello"], ["k", "string", "troll"]])",
 	" xxx"
 ));
 
 QUARK_UNIT_1("parse_expression()", "lookup with string -- whitespace", test__parse_expression(
 	"hello [ \"troll\" ] xxx",
-	R"(["[-]", ["@", "hello"], ["k", "string", "troll"]])",
+	R"(["[]", ["@", "hello"], ["k", "string", "troll"]])",
 	" xxx"
 ));
 
@@ -1154,14 +1154,14 @@ QUARK_UNIT_1("parse_expression()", "combo - function call", test__parse_expressi
 
 QUARK_UNIT_1("parse_expression()", "complex chain", test__parse_expression(
 	"hello[\"troll\"].kitty[10].cat xxx",
-	R"(["->", ["[-]", ["->", ["[-]", ["@", "hello"], ["k", "string", "troll"]], "kitty"], ["k", "int", 10]], "cat"])",
+	R"(["->", ["[]", ["->", ["[]", ["@", "hello"], ["k", "string", "troll"]], "kitty"], ["k", "int", 10]], "cat"])",
 	" xxx"
 ));
 
 
 QUARK_UNIT_1("parse_expression()", "chain", test__parse_expression(
 	"poke.mon.v[10].a.b.c[\"three\"] xxx",
-	R"(["[-]", ["->", ["->", ["->", ["[-]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", "int", 10]], "a"], "b"], "c"], ["k", "string", "three"]])",
+	R"(["[]", ["->", ["->", ["->", ["[]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", "int", 10]], "a"], "b"], "c"], ["k", "string", "three"]])",
 	" xxx"
 ));
 

@@ -217,7 +217,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 				typeid_t::make_string()
 			)
 		),
-		R"(["[-]", ["@", "hello", "string"], ["k", "xyz", "string"], "string"])"
+		R"(["[]", ["@", "hello", "string"], ["k", "xyz", "string"], "string"])"
 	);
 }
 
