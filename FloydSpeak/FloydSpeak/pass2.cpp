@@ -91,7 +91,8 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 typeid_t resolve_type_name(const string& t){
 	QUARK_ASSERT(t.size() > 0);
 
-	const auto t2 = from_source_code_string(t);
+//	const auto t2 = from_source_code_string(t);
+	const auto t2 = typeid_from_normalized_json(t);
 	return t2;
 }
 

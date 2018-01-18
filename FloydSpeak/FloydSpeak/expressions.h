@@ -66,7 +66,7 @@ namespace floyd {
 			}
 
 			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "k", value_to_json(_value), to_normalized_json(_value.get_type()) });
+				return json_t::make_array({ "k", value_to_json(_value), typeid_to_normalized_json(_value.get_type()) });
 			}
 
 
@@ -122,7 +122,7 @@ namespace floyd {
 					expression_type_to_token(_op),
 					expression_to_json(*_left),
 					expression_to_json(*_right),
-					to_normalized_json(get_result_type())
+					typeid_to_normalized_json(get_result_type())
 				});
 			}
 
@@ -262,7 +262,7 @@ namespace floyd {
 					expression_to_json(*_condition),
 					expression_to_json(*_a),
 					expression_to_json(*_b),
-					to_normalized_json(get_result_type())
+					typeid_to_normalized_json(get_result_type())
 				});
 			}
 
@@ -352,7 +352,7 @@ namespace floyd {
 					"call",
 					expression_to_json(*_function),
 					expressions_to_json(_args),
-					to_normalized_json(_result)
+					typeid_to_normalized_json(_result)
 				});
 			}
 
@@ -440,7 +440,7 @@ namespace floyd {
 			}
 
 			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "@", json_t(_variable), to_normalized_json(_result) });
+				return json_t::make_array({ "@", json_t(_variable), typeid_to_normalized_json(_result) });
 			}
 
 
@@ -550,7 +550,7 @@ namespace floyd {
 			}
 
 			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "[-]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key), to_normalized_json(_result) });
+				return json_t::make_array({ "[-]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key), typeid_to_normalized_json(_result) });
 			}
 
 

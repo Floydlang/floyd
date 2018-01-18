@@ -148,7 +148,7 @@ namespace floyd {
 			return json_t::make_array({
 				json_t("def-struct"),
 				json_t(e._def_struct->_name),
-				to_normalized_json(e._def_struct->_def)
+				typeid_to_normalized_json(e._def_struct->_def)
 			});
 		}
 		else if(e._bind_or_assign){
@@ -157,7 +157,7 @@ namespace floyd {
 			return json_t::make_array({
 				json_t("bind"),
 				e._bind_or_assign->_new_variable_name,
-				to_normalized_json(e._bind_or_assign->_bindtype),
+				typeid_to_normalized_json(e._bind_or_assign->_bindtype),
 				expression_to_json(e._bind_or_assign->_expression),
 				meta
 			});

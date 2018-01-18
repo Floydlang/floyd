@@ -64,7 +64,7 @@ namespace floyd {
 	json_t to_json(const struct_instance_t& t){
 		return json_t::make_object(
 			{
-				{ "def", to_normalized_json(t._def) },
+				{ "def", typeid_to_normalized_json(t._def) },
 				{ "member_values", values_to_json_array(t._member_values) }
 			}
 		);
@@ -549,7 +549,7 @@ json_t value_to_json(const value_t& v){
 		return json_t(v.get_string());
 	}
 	else if(v.is_typeid()){
-		return to_normalized_json(v.get_typeid());
+		return typeid_to_normalized_json(v.get_typeid());
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct();
@@ -568,7 +568,7 @@ json_t value_to_json(const value_t& v){
 		const auto value = v.get_function();
 		return json_t::make_object(
 			{
-				{ "function_type", to_normalized_json(get_function_type(value->_def)) }
+				{ "function_type", typeid_to_normalized_json(get_function_type(value->_def)) }
 			}
 		);
 	}
@@ -674,10 +674,10 @@ QUARK_UNIT_TESTQ("value_to_json()", ""){
 		typeid_t function_type = get_function_type(*this);
 		return json_t::make_array({
 			"func-def",
-			to_normalized_json(function_type),
+			typeid_to_normalized_json(function_type),
 			members_to_json(_args),
 			statements_to_json(_statements),
-			to_normalized_json(_return_type)
+			typeid_to_normalized_json(_return_type)
 		});
 	}
 

@@ -11,6 +11,7 @@
 
 #include "parser_primitives.h"
 #include "parser_value.h"
+#include "json_parser.h"
 #include "utils.h"
 
 using std::string;
@@ -148,7 +149,7 @@ expression_type token_to_expression_type(const string& op){
 
 	void trace(const typeid_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
-		json_to_pretty_string(to_normalized_json(t));
+		json_to_pretty_string(typeid_to_normalized_json(t));
 	}
 
 	bool typeid_t::check_invariant() const{
@@ -242,13 +243,8 @@ expression_type token_to_expression_type(const string& op){
 
 
 
-	typeid_t from_source_code_string(const std::string& s){
-		const auto a = read_required_type(seq_t(s));
 
-		return a.first;
-	}
-
-	json_t to_normalized_json(const typeid_t& t){
+	json_t typeid_to_normalized_json(const typeid_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
 		const auto b = t.get_base_type();
@@ -261,14 +257,14 @@ expression_type token_to_expression_type(const string& op){
 			const auto typeid2 = t.get_typeid_typeid();
 			return json_t::make_array({
 				json_t(basetype_str),
-				to_normalized_json(typeid2)
+				typeid_to_normalized_json(typeid2)
 			});
 		}
 		else if(b == base_type::k_struct){
 			const auto struct_def = t.get_struct();
 			return json_t::make_array({
 				json_t(basetype_str),
-				to_normalized_json(struct_def)
+				typeid_to_normalized_json(struct_def)
 			});
 		}
 		else if(b == base_type::k_vector){
@@ -277,13 +273,13 @@ expression_type token_to_expression_type(const string& op){
 		else if(b == base_type::k_function){
 			vector<json_t> arg_types;
 			for(const auto e: t.get_function_args()){
-				const auto e2 = to_normalized_json(e);
+				const auto e2 = typeid_to_normalized_json(e);
 				arg_types.push_back(e2);
 			}
 
 			return json_t::make_array({
 				basetype_str,
-				to_normalized_json(t.get_function_return()),
+				typeid_to_normalized_json(t.get_function_return()),
 				json_t::make_array(arg_types)
 			});
 		}
@@ -295,13 +291,69 @@ expression_type token_to_expression_type(const string& op){
 		}
 	}
 
-	typeid_t from_normalized_json(const json_t& t){
-		QUARK_ASSERT(false);
-		return typeid_t::make_null();
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_null()), parse_json(seq_t("\"null\"")).first);
+	}
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_bool()), parse_json(seq_t("\"bool\"")).first);
+	}
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_int()), parse_json(seq_t("\"int\"")).first);
+	}
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_float()), parse_json(seq_t("\"float\"")).first);
+	}
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_string()), parse_json(seq_t("\"string\"")).first);
+	}
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		ut_compare_jsons(
+			typeid_to_normalized_json(
+				typeid_t::make_typeid(typeid_t::make_float())
+			),
+			parse_json(seq_t(R"([ "typeid" , "float"])")).first
+		);
+	}
+
+	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+		ut_compare_jsons(typeid_to_normalized_json(typeid_t::make_unknown_identifier("hello")), parse_json(seq_t("\"hello\"")).first);
+	}
+
+
+
+
+
+	typeid_t typeid_from_normalized_json(const json_t& t){
+		if(t.is_string()){
+			const auto s = t.get_string();
+			if(s == "null"){
+				return typeid_t::make_null();
+			}
+			else if(s == "bool"){
+				return typeid_t::make_bool();
+			}
+			else if(s == "int"){
+				return typeid_t::make_int();
+			}
+			else if(s == "float"){
+				return typeid_t::make_float();
+			}
+			else if(s == "string"){
+				return typeid_t::make_string();
+			}
+			else{
+				return typeid_t::make_unknown_identifier(s);
+			}
+		}
+		else{
+		//??? structs etc!?
+			QUARK_ASSERT(false);
+			return typeid_t::make_null();
+		}
 	}
 
 	std::string typeid_to_compact_string(const typeid_t& t){
-//		const auto j = to_normalized_json(t);
+//		const auto j = typeid_to_normalized_json(t);
 //		return json_to_compact_string(j);
 
 		QUARK_ASSERT(t.check_invariant());
@@ -433,7 +485,7 @@ expression_type token_to_expression_type(const string& op){
 		std::vector<json_t> r;
 		for(const auto i: members){
 			const auto member = make_object({
-				{ "type", to_normalized_json(i._type) },
+				{ "type", typeid_to_normalized_json(i._type) },
 				{ "name", json_t(i._name) }
 			});
 			r.push_back(json_t(member));
@@ -487,7 +539,7 @@ expression_type token_to_expression_type(const string& op){
 		return s;
 	}
 
-	json_t to_normalized_json(const struct_definition_t& v){
+	json_t typeid_to_normalized_json(const struct_definition_t& v){
 		QUARK_ASSERT(v.check_invariant());
 
 		return json_t::make_array({

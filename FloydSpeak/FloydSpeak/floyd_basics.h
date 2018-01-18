@@ -334,8 +334,8 @@ namespace floyd {
 
 
 		//	Remove need for friends.
-		friend json_t to_normalized_json(const typeid_t& t);
-		friend typeid_t from_normalized_json(const json_t& t);
+		friend json_t typeid_to_normalized_json(const typeid_t& t);
+		friend typeid_t typeid_from_normalized_json(const json_t& t);
 
 		friend std::string typeid_to_compact_string(const typeid_t& t);
 
@@ -404,7 +404,7 @@ namespace floyd {
 
 		??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
 
-		1) Type as in source code: SOURCE-CODE-TYPE
+		1) Type as in source code: SOURCE-CODE-TYPE, use read_required_type()
 		2) Type encoded as json from parser
 		3) Type encoded as typeid_t, used inside compiler
 		4) Type in log, as json
@@ -412,11 +412,8 @@ namespace floyd {
 		6) Compact string, used for debugger etc.
 	*/
 
-
-	typeid_t from_source_code_string(const std::string& s);
-
-	json_t to_normalized_json(const typeid_t& t);
-	typeid_t from_normalized_json(const json_t& t);
+	json_t typeid_to_normalized_json(const typeid_t& t);
+	typeid_t typeid_from_normalized_json(const json_t& t);
 
 	std::string typeid_to_compact_string(const typeid_t& t);
 
@@ -475,7 +472,7 @@ namespace floyd {
 	};
 
 	std::string to_string(const struct_definition_t& v);
-	json_t to_normalized_json(const struct_definition_t& v);
+	json_t typeid_to_normalized_json(const struct_definition_t& v);
 
 	//	Returns -1 if not found.
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);

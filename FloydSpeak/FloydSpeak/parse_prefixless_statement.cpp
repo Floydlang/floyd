@@ -274,11 +274,12 @@ pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, cons
 	const auto mutable_pos = if_first(skip_whitespace(type_seq), "mutable");
 	const bool mutable_flag = mutable_pos.first;
 	const auto type_pos = skip_whitespace(mutable_pos.second);
-	const auto type = type_pos.empty() ? typeid_t::make_null() : from_source_code_string(type_pos.str());
+
+	const auto type = type_pos.empty() ? typeid_t::make_null() : read_required_type(type_pos).first;
 	const auto expression = parse_expression_all(seq_t(expression_str));
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t::make_object();
-	const auto statement = json_t::make_array({ "bind", to_normalized_json(type), identifier, expression, meta });
+	const auto statement = json_t::make_array({ "bind", typeid_to_normalized_json(type), identifier, expression, meta });
 
 	const auto x = read_until(full_statement_pos, ";");
 	return { statement, x.second.rest1() };

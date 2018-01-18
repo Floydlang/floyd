@@ -437,7 +437,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				);
 			}
 			else{
-				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(to_normalized_json(c.get_type())) + "\".");
+				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_normalized_json(c.get_type())) + "\".");
 			}
 		}
 		else{
