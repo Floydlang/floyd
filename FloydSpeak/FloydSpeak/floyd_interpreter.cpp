@@ -15,6 +15,7 @@
 #include "parser_value.h"
 #include "pass2.h"
 #include "json_support.h"
+#include "json_parser.h"
 
 #include <cmath>
 #include <sys/time.h>
@@ -436,7 +437,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				);
 			}
 			else{
-				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_json(c.get_type())) + "\".");
+				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(to_normalized_json(c.get_type())) + "\".");
 			}
 		}
 		else{
@@ -773,7 +774,7 @@ bool all_literals(const vector<expression_t>& e){
 std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
 	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
 	QUARK_SCOPED_TRACE("construct_struct()");
-	QUARK_TRACE("struct_type: " + struct_type.to_string2());
+	QUARK_TRACE("struct_type: " + typeid_to_compact_string(struct_type));
 
 	const auto& def = struct_type.get_struct();
 	if(values.size() != def._members.size()){
@@ -790,7 +791,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	}
 
 	const auto instance = make_struct_value(struct_type, def, values);
-	QUARK_TRACE(instance.to_string());
+	QUARK_TRACE(instance.to_compact_string());
 
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
@@ -984,7 +985,7 @@ enum host_functions {
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
 	auto vm2 = vm;
 	const auto& value = args[0];
-	const auto s = value.plain_value_to_string();
+	const auto s = value.to_compact_string();
 	printf("%s\n", s.c_str());
 
 	vm2._print_output.push_back(s);
@@ -1008,7 +1009,7 @@ std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const st
 //	string to_string(value_t)
 std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const std::vector<value_t>& args){
 	const auto& value = args[0];
-	const auto a = value.plain_value_to_string();
+	const auto a = value.to_compact_string();
 	return {vm, value_t(a) };
 }
 
@@ -1092,8 +1093,8 @@ value_t update_struct_member_shallow(const value_t& obj, const std::string& memb
 	const auto values = s->_member_values;
 
 
-	QUARK_TRACE(new_value.get_type().to_string2());
-	QUARK_TRACE(def._members[member_index]._type.to_string2());
+	QUARK_TRACE(typeid_to_compact_string(new_value.get_type()));
+	QUARK_TRACE(typeid_to_compact_string(def._members[member_index]._type));
 
 	if(!(new_value.get_type() == def._members[member_index]._type)){
 		throw std::runtime_error("Value type not matching struct member type.");
@@ -2314,7 +2315,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		t(3);
 		print(t);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "typeid(struct t {int a})" }	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"typeid(struct t {int a})"
+	}	));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
@@ -2323,7 +2326,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		a = t(3);
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "struct t {int a=3}" }	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ R"(struct t {int a=3})" }		));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){

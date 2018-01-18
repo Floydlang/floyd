@@ -148,7 +148,7 @@ expression_type token_to_expression_type(const string& op){
 
 	void trace(const typeid_t& t, const std::string& label){
 		QUARK_ASSERT(t.check_invariant());
-		json_to_pretty_string(typeid_to_json(t));
+		json_to_pretty_string(to_normalized_json(t));
 	}
 
 	bool typeid_t::check_invariant() const{
@@ -236,73 +236,119 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
-	std::string typeid_t::to_string2() const {
-		QUARK_ASSERT(check_invariant());
 
-		if(_base_type == floyd::base_type::k_unknown_identifier){
-//			return "[unknown-identifier:" + _unknown_identifier + "]";
-			return _unknown_identifier;
-		}
-		else if(_base_type == floyd::base_type::k_typeid){
-			return "typeid(" + _parts[0].to_string2() + ")";
-		}
-		else if(_base_type == floyd::base_type::k_struct){
-			return floyd::to_string(*_struct_def);
-		}
-		else if(_base_type == floyd::base_type::k_vector){
-			return "[" + _parts[0].to_string2() + "]";
-		}
-		else if(_base_type == floyd::base_type::k_function){
-			auto s = _parts[0].to_string2() + "(";
-			if(_parts.size() > 1){
-				for(int i = 1 ; i < _parts.size() - 1 ; i++){
-					s = s + _parts[i].to_string2() + ",";
-				}
-				s = s + _parts[_parts.size() - 1].to_string2();
-			}
-			s = s + ")";
-			return s;
-		}
-		else{
-			return base_type_to_string(_base_type);
-		}
-	}
+	//////////////////////////////////////		FORMATS
 
-	typeid_t typeid_t::from_string(const std::string& s){
+
+
+
+	typeid_t from_source_code_string(const std::string& s){
 		const auto a = read_required_type(seq_t(s));
 
 		return a.first;
 	}
 
-
-	json_t typeid_to_json(const typeid_t& t){
+	json_t to_normalized_json(const typeid_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
-		if(t._parts.empty() && t._unique_type_id.empty()){
-			return base_type_to_string(t.get_base_type());
+		const auto b = t.get_base_type();
+		const auto basetype_str = base_type_to_string(b);
+
+		if(b == base_type::k_null || b == base_type::k_bool || b == base_type::k_int || b == base_type::k_float || b == base_type::k_string){
+			return basetype_str;
+		}
+		else if(b == base_type::k_typeid){
+			const auto typeid2 = t.get_typeid_typeid();
+			return json_t::make_array({
+				json_t(basetype_str),
+				to_normalized_json(typeid2)
+			});
+		}
+		else if(b == base_type::k_struct){
+			const auto struct_def = t.get_struct();
+			return json_t::make_array({
+				json_t(basetype_str),
+				to_normalized_json(struct_def)
+			});
+		}
+		else if(b == base_type::k_vector){
+			QUARK_ASSERT(false);
+		}
+		else if(b == base_type::k_function){
+			vector<json_t> arg_types;
+			for(const auto e: t.get_function_args()){
+				const auto e2 = to_normalized_json(e);
+				arg_types.push_back(e2);
+			}
+
+			return json_t::make_array({
+				basetype_str,
+				to_normalized_json(t.get_function_return()),
+				json_t::make_array(arg_types)
+			});
+		}
+		else if(b == base_type::k_unknown_identifier){
+			return t.get_unknown_identifier();
 		}
 		else{
-			auto parts = json_t::make_array();
-			for(const auto e: t._parts){
-				parts = push_back(parts, typeid_to_json(e));
-			}
-			return make_object({
-				{ "base_type", json_t(base_type_to_string(t.get_base_type())) },
-				{ "parts", parts },
-				{ "struct_def_id", t._unique_type_id.empty() == false ? t._unique_type_id : json_t() }
-			});
+			QUARK_ASSERT(false);
 		}
 	}
 
-/*
-	json_t typeid_to_json(const typeid_t& t){
-		const auto s = t.to_string();
-		return json_t::make_array({
-			json_t("typeid"),
-			json_t(s)
-		});
+	typeid_t from_normalized_json(const json_t& t){
+		QUARK_ASSERT(false);
+		return typeid_t::make_null();
 	}
-*/
+
+	std::string typeid_to_compact_string(const typeid_t& t){
+//		const auto j = to_normalized_json(t);
+//		return json_to_compact_string(j);
+
+		QUARK_ASSERT(t.check_invariant());
+
+		const auto basetype = t.get_base_type();
+
+		if(basetype == floyd::base_type::k_unknown_identifier){
+//			return "[unknown-identifier:" + _unknown_identifier + "]";
+			return t.get_unknown_identifier();
+		}
+		else if(basetype == floyd::base_type::k_typeid){
+			const auto t2 = t.get_typeid_typeid();
+			return "typeid(" + typeid_to_compact_string(t2) + ")";
+		}
+		else if(basetype == floyd::base_type::k_struct){
+			const auto struct_def = t.get_struct();
+			return floyd::to_string(struct_def);
+		}
+		else if(basetype == floyd::base_type::k_vector){
+			return "[" + typeid_to_compact_string(t._parts[0]) + "]";
+		}
+		else if(basetype == floyd::base_type::k_function){
+			const auto ret = t.get_function_return();
+			const auto args = t.get_function_args();
+
+			auto s = typeid_to_compact_string(ret) + "(";
+			if(args.size() > 0){
+				for(int i = 0 ; i < args.size() - 1 ; i++){
+					s = s + typeid_to_compact_string(args[i]) + ",";
+				}
+				s = s + typeid_to_compact_string(args.back());
+			}
+			s = s + ")";
+			return s;
+		}
+		else{
+			return base_type_to_string(basetype);
+		}
+	}
+
+
+
+
+
+
+
+
 
 	QUARK_UNIT_TESTQ("typeid_t", "null"){
 		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
@@ -321,21 +367,21 @@ expression_type token_to_expression_type(const string& op){
 
 
 
-	QUARK_UNIT_TESTQ("to_string2", ""){
-		QUARK_UT_VERIFY(typeid_t::make_null().to_string2() == "null");
+	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
+		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_null()) == "null");
 	}
-	QUARK_UNIT_TESTQ("to_string2", ""){
-		QUARK_UT_VERIFY(typeid_t::make_bool().to_string2() == "bool");
+	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
+		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_bool()) == "bool");
 	}
-	QUARK_UNIT_TESTQ("to_string2", ""){
-		QUARK_UT_VERIFY(typeid_t::make_string().to_string2() == "string");
+	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
+		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_string()) == "string");
 	}
-	QUARK_UNIT_TESTQ("to_string2", ""){
+	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
 		const auto struct_def = std::make_shared<struct_definition_t>(struct_definition_t("file", {}));
-		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).to_string2() == "struct file {}");
+		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_struct(struct_def)) == "struct file {}");
 	}
-	QUARK_UNIT_TESTQ("to_string2", ""){
-		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string2() == "hello");
+	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
+		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_unknown_identifier("hello")) == "hello");
 //		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string() == "[unknown-identifier:hello]");
 	}
 
@@ -369,11 +415,9 @@ expression_type token_to_expression_type(const string& op){
 		return (_type == other._type) && (_name == other._name);
 	}
 
-
 	void trace(const member_t& member){
-		QUARK_TRACE("<member> type: <" + member._type.to_string2() + "> name: \"" + member._name + "\"");
+		QUARK_TRACE("<member> type: <" + typeid_to_compact_string(member._type) + "> name: \"" + member._name + "\"");
 	}
-
 
 
 
@@ -389,7 +433,7 @@ expression_type token_to_expression_type(const string& op){
 		std::vector<json_t> r;
 		for(const auto i: members){
 			const auto member = make_object({
-				{ "type", typeid_to_ast_json(i._type) },
+				{ "type", to_normalized_json(i._type) },
 				{ "name", json_t(i._name) }
 			});
 			r.push_back(json_t(member));
@@ -434,7 +478,7 @@ expression_type token_to_expression_type(const string& op){
 	std::string to_string(const struct_definition_t& v){
 		auto s = "struct " + v._name + " {";
 		for(const auto e: v._members){
-			s = s + e._type.to_string2() + " " + e._name + ",";
+			s = s + typeid_to_compact_string(e._type) + " " + e._name + ",";
 		}
 		if(s.back() == ','){
 			s.pop_back();
@@ -443,11 +487,10 @@ expression_type token_to_expression_type(const string& op){
 		return s;
 	}
 
-	json_t to_json(const struct_definition_t& v){
+	json_t to_normalized_json(const struct_definition_t& v){
 		QUARK_ASSERT(v.check_invariant());
 
 		return json_t::make_array({
-			"struct-def",
 			json_t(v._name),
 			members_to_json(v._members)
 		});
@@ -455,16 +498,16 @@ expression_type token_to_expression_type(const string& op){
 
 
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name){
-			int index = 0;
-			while(index < def._members.size() && def._members[index]._name != name){
-				index++;
-			}
-			if(index == def._members.size()){
-				return -1;
-			}
-			else{
-				return index;
-			}
+		int index = 0;
+		while(index < def._members.size() && def._members[index]._name != name){
+			index++;
+		}
+		if(index == def._members.size()){
+			return -1;
+		}
+		else{
+			return index;
+		}
 	}
 
 

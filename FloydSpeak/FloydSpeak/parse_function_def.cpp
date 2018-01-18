@@ -39,7 +39,7 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 			{ "name", function_name },
 			{ "args", args },
 			{ "statements", body.first },
-			{ "return_type", typeid_to_ast_json(return_type_pos.first) }
+			{ "return_type", to_normalized_json(return_type_pos.first) }
 		})
 	});
 	return { function_def, body.second };

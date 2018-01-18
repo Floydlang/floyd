@@ -17,6 +17,7 @@
 struct json_t;
 
 std::string json_to_compact_string(const json_t& v);
+std::string json_to_compact_string_minimal_quotes(const json_t& v);
 
 
 //	Defaults to 120 chars width print out, 4 space-tabs.

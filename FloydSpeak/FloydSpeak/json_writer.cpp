@@ -25,6 +25,8 @@ using namespace std;
 static const size_t k_default_pretty_columns = 160;
 
 
+std::string json_to_compact_string2(const json_t& v, bool quote_fields);
+
 
 ////////////////////////////////////////////////		C++11 raw string literals tests
 
@@ -128,14 +130,14 @@ QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
 
 
 
-std::string object_to_compact_string(const std::map<std::string, json_t>& object){
+std::string object_to_compact_string(const std::map<std::string, json_t>& object, bool quote_fields){
 	if(object.empty()){
 		return "{}";
 	}
 	else{
 		string members;
 		for(const auto m: object){
-			const auto s = quote(m.first) + ": " + json_to_compact_string(m.second) + ", ";
+			const auto s = (quote_fields ? quote(m.first) : m.first) + ": " + json_to_compact_string2(m.second, quote_fields) + ", ";
 			members = members + s;
 		}
 
@@ -148,7 +150,7 @@ std::string object_to_compact_string(const std::map<std::string, json_t>& object
 }
 
 QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
-	quark::ut_compare(object_to_compact_string(std::map<string, json_t>{}), "{}");
+	quark::ut_compare(object_to_compact_string(std::map<string, json_t>{}, true), "{}");
 }
 
 QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
@@ -157,13 +159,14 @@ QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
 			{ "one", json_t("1") },
 			{ "two", json_t("2") }
 		}
+		, true
 		),
 		"{ \"one\": \"1\", \"two\": \"2\" }"
 	);
 }
 
 
-std::string array_to_compact_string(const std::vector<json_t>& array){
+std::string array_to_compact_string(const std::vector<json_t>& array, bool quote_fields){
 	if(array.empty()){
 		return "[]";
 	}
@@ -172,12 +175,12 @@ std::string array_to_compact_string(const std::vector<json_t>& array){
 		size_t count = array.size();
 		size_t index = 0;
 		while(count > 1){
-			items = items + json_to_compact_string(array[index]) + ", ";
+			items = items + json_to_compact_string2(array[index], quote_fields) + ", ";
 			count--;
 			index++;
 		}
 		if(count > 0){
-			items = items + json_to_compact_string(array[index]);
+			items = items + json_to_compact_string2(array[index], quote_fields);
 		}
 		const auto result = std::string("[") + items + "]";
 		return result;
@@ -185,11 +188,11 @@ std::string array_to_compact_string(const std::vector<json_t>& array){
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
-	quark::ut_compare(array_to_compact_string(std::vector<json_t>{}), "[]");
+	quark::ut_compare(array_to_compact_string(std::vector<json_t>{}, true), "[]");
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
-	quark::ut_compare(array_to_compact_string(std::vector<json_t>{ json_t(13.4) }), "[13.4]");
+	quark::ut_compare(array_to_compact_string(std::vector<json_t>{ json_t(13.4) }, true), "[13.4]");
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
@@ -197,18 +200,18 @@ QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
 		array_to_compact_string(vector<json_t>{
 			json_t("a"),
 			json_t("b")
-		}),
+		}, true),
 		"[\"a\", \"b\"]"
 	);
 }
 
 
-std::string json_to_compact_string(const json_t& v){
+std::string json_to_compact_string2(const json_t& v, bool quote_fields){
 	if(v.is_object()){
-		return object_to_compact_string(v.get_object());
+		return object_to_compact_string(v.get_object(), quote_fields);
 	}
 	else if(v.is_array()){
-		return array_to_compact_string(v.get_array());
+		return array_to_compact_string(v.get_array(), quote_fields);
 	}
 	else if(v.is_string()){
 		return quote(v.get_string());
@@ -230,6 +233,14 @@ std::string json_to_compact_string(const json_t& v){
 	}
 }
 
+std::string json_to_compact_string_minimal_quotes(const json_t& v){
+	return json_to_compact_string2(v, false);
+}
+
+std::string json_to_compact_string(const json_t& v){
+	return json_to_compact_string2(v, true);
+}
+
 QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	const auto a = std::map<string, json_t>{
 		{ "firstName", json_t("John") },
@@ -239,7 +250,7 @@ QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	quark::ut_compare(json_to_compact_string(json_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	quark::ut_compare(
 		json_to_compact_string(json_t(
 			vector<json_t>{
@@ -251,32 +262,32 @@ QUARK_UNIT_TESTQ("to_string()", ""){
 	);
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	QUARK_UT_VERIFY(json_to_compact_string(json_t("")) == "\"\"");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	QUARK_UT_VERIFY(json_to_compact_string(json_t("xyz")) == "\"xyz\"");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	QUARK_UT_VERIFY(json_to_compact_string(json_t(12.3)) == "12.3");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	QUARK_UT_VERIFY(json_to_compact_string(json_t(true)) == "true");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	QUARK_UT_VERIFY(json_to_compact_string(json_t(false)) == "false");
 }
 
-QUARK_UNIT_TESTQ("to_string()", ""){
+QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 	QUARK_UT_VERIFY(json_to_compact_string(json_t()) == "null");
 }
 
 
-
+//??? Should not use quark::get_log_indent()!!!!
 std::string json_to_pretty_string(const json_t& v){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	return json_to_pretty_string(v, quark::get_log_indent(), pretty);

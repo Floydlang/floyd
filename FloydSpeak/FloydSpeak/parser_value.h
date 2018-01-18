@@ -47,7 +47,7 @@ namespace floyd {
 		public: std::vector<value_t> _member_values;
 	};
 
-	std::string to_string(const struct_instance_t& instance);
+	std::string to_compact_string(const struct_instance_t& instance);
 	json_t to_json(const struct_instance_t& instance);
 
 
@@ -440,10 +440,7 @@ namespace floyd {
 			"Hello, world"
 			Notice, strings don't get wrapped in "".
 		*/
-		std::string plain_value_to_string() const {
-			return to_string();
-		}
-		std::string to_string() const {
+		std::string to_compact_string() const {
 			QUARK_ASSERT(check_invariant());
 
 			const auto base_type = _typeid.get_base_type();
@@ -468,16 +465,16 @@ namespace floyd {
 			}
 
 			else if(base_type == base_type::k_typeid){
-				return _typeid.to_string2();
+				return floyd::typeid_to_compact_string(_typeid);
 			}
 			else if(base_type == base_type::k_struct){
-				return floyd::to_string(*_struct);
+				return floyd::to_compact_string(*_struct);
 			}
 			else if(base_type == base_type::k_vector){
 				return to_preview(*_vector);
 			}
 			else if(base_type == base_type::k_function){
-				return json_to_compact_string(typeid_to_json(_typeid));
+				return floyd::typeid_to_compact_string(_typeid);
 			}
 			else if(base_type == base_type::k_unknown_identifier){
 				QUARK_ASSERT(false);
@@ -503,12 +500,12 @@ namespace floyd {
 			}
 			//	Special handling of strings, we want to wrap in "".
 			else if(is_string()){
-				std::string type_string = json_to_compact_string(typeid_to_json(_typeid));
-				return type_string + ": " + "\"" + plain_value_to_string() + "\"";
+				std::string type_string = floyd::typeid_to_compact_string(_typeid);
+				return type_string + ": " + "\"" + to_compact_string() + "\"";
 			}
 			else{
-				std::string type_string = json_to_compact_string(typeid_to_json(_typeid));
-				return type_string + ": " + plain_value_to_string();
+				std::string type_string = floyd::typeid_to_compact_string(_typeid);
+				return type_string + ": " + to_compact_string();
 			}
 		}
 

@@ -42,13 +42,14 @@ namespace floyd {
 		return _def == other._def && _member_values == other._member_values;
 	}
 
-	std::string to_string(const struct_instance_t& v){
+
+	std::string to_compact_string(const struct_instance_t& v){
 		auto s = "struct " + v._def._name + " {";
 		for(int i = 0 ; i < v._def._members.size() ; i++){
 			const auto& def = v._def._members[i];
 			const auto& value = v._member_values[i];
 
-			const auto m = def._type.to_string2() + " " + def._name + "=" + value.to_string()  + ",";
+			const auto m = typeid_to_compact_string(def._type) + " " + def._name + "=" + value.to_compact_string()  + ",";
 			s = s + m;
 		}
 		if(s.back() == ','){
@@ -56,12 +57,14 @@ namespace floyd {
 		}
 		s = s + "}";
 		return s;
+
+//		return json_to_compact_string(to_json(v));
 	}
 
 	json_t to_json(const struct_instance_t& t){
 		return json_t::make_object(
 			{
-				{ "def", to_json(t._def) },
+				{ "def", to_normalized_json(t._def) },
 				{ "member_values", values_to_json_array(t._member_values) }
 			}
 		);
@@ -90,7 +93,7 @@ namespace floyd {
 		std::string to_preview(const vector_instance_t& instance){
 			string r;
 			for(const auto m: instance._elements){
-				r = r + m.plain_value_to_string() + " ";
+				r = r + m.to_compact_string() + " ";
 			}
 			return /*"[" + instance._vector_type._parts[0].to_string() + "]*/ "[" + r + "]";
 		}
@@ -131,7 +134,7 @@ namespace floyd {
 	void trace(const vector_def_t& e){
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("vector_def_t");
-		QUARK_TRACE_SS("element_type: " << e._element_type.to_string2());
+		QUARK_TRACE_SS("element_type: " << typeid_to_compact_string(e._element_type));
 	}
 
 	json_t vector_def_to_json(const vector_def_t& s){
@@ -322,7 +325,7 @@ QUARK_UNIT_TESTQ("value_t()", "null"){
 
 	QUARK_TEST_VERIFY(a == value_t());
 	QUARK_TEST_VERIFY(a != value_t("test"));
-	QUARK_TEST_VERIFY(a.plain_value_to_string() == "<null>");
+	QUARK_TEST_VERIFY(a.to_compact_string() == "<null>");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<null>");
 }
 
@@ -339,8 +342,8 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 
 	QUARK_TEST_VERIFY(a == value_t(true));
 	QUARK_TEST_VERIFY(a != value_t(false));
-	QUARK_TEST_VERIFY(a.plain_value_to_string() == "true");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"bool\": true");
+	QUARK_TEST_VERIFY(a.to_compact_string() == "true");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "bool: true");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "bool - false"){
@@ -356,8 +359,8 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 
 	QUARK_TEST_VERIFY(a == value_t(false));
 	QUARK_TEST_VERIFY(a != value_t(true));
-	QUARK_TEST_VERIFY(a.plain_value_to_string() == "false");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"bool\": false");
+	QUARK_TEST_VERIFY(a.to_compact_string() == "false");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "bool: false");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "int"){
@@ -373,8 +376,8 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 
 	QUARK_TEST_VERIFY(a == value_t(13));
 	QUARK_TEST_VERIFY(a != value_t(14));
-	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"int\": 13");
+	QUARK_TEST_VERIFY(a.to_compact_string() == "13");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "int: 13");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "float"){
@@ -390,8 +393,8 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
 	QUARK_TEST_VERIFY(a != value_t(14.0f));
-	QUARK_TEST_VERIFY(a.plain_value_to_string() == "13.500000");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"float\": 13.500000");
+	QUARK_TEST_VERIFY(a.to_compact_string() == "13.500000");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "float: 13.500000");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "string"){
@@ -407,8 +410,8 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	QUARK_TEST_VERIFY(a.plain_value_to_string() == "xyz");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "\"string\": \"xyz\"");
+	QUARK_TEST_VERIFY(a.to_compact_string() == "xyz");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "string: \"xyz\"");
 }
 
 #if 0
@@ -454,8 +457,8 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 	QUARK_TEST_VERIFY(a == b);
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	quark::ut_compare(a.plain_value_to_string(), "[]");
-	quark::ut_compare(a.value_and_type_to_string(), "{ \"base_type\": \"vector\", \"parts\": [\"int\"] }: []");
+	quark::ut_compare(a.to_compact_string(), "[]");
+	quark::ut_compare(a.value_and_type_to_string(), "[int]: []");
 }
 
 
@@ -546,8 +549,7 @@ json_t value_to_json(const value_t& v){
 		return json_t(v.get_string());
 	}
 	else if(v.is_typeid()){
-//		return json_t(v.get_typeid().to_string2());
-		return typeid_to_ast_json(v.get_typeid());
+		return to_normalized_json(v.get_typeid());
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct();
@@ -566,7 +568,7 @@ json_t value_to_json(const value_t& v){
 		const auto value = v.get_function();
 		return json_t::make_object(
 			{
-				{ "function_type", typeid_to_json(get_function_type(value->_def)) }
+				{ "function_type", to_normalized_json(get_function_type(value->_def)) }
 			}
 		);
 	}
@@ -672,10 +674,10 @@ QUARK_UNIT_TESTQ("value_to_json()", ""){
 		typeid_t function_type = get_function_type(*this);
 		return json_t::make_array({
 			"func-def",
-			typeid_to_json(function_type),
+			to_normalized_json(function_type),
 			members_to_json(_args),
 			statements_to_json(_statements),
-			typeid_to_json(_return_type)
+			to_normalized_json(_return_type)
 		});
 	}
 

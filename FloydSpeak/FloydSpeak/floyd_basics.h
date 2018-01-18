@@ -17,6 +17,7 @@
 
 
 namespace floyd {
+	struct value_t;
 
 	const std::vector<std::string> basic_types {
 		"bool",
@@ -185,12 +186,14 @@ namespace floyd {
 		k_float,
 		k_string,
 
+		//	This is a type that specifies another type.
 		k_typeid,
 
 		k_struct,
 		k_vector,
 		k_function,
 
+		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
 		k_unknown_identifier
 	};
 
@@ -199,50 +202,6 @@ namespace floyd {
 
 
 	//////////////////////////////////////		typeid_t
-
-	/*
-		in-code						base					parts[]									notes
-		================================================================================================================
-		bool						k_bool
-		bool						k_bool
-		int							k_int
-		float						k_float
-		string						k_string
-
-		-							k_typeid				[target type id]
-		struct						k_struct				"coord_t/8000", struct_definition_t
-		struct						k_struct_type			"coord_t/8000"
-		[int]						k_vector				typeid_t(k_int)
-		int ()						k_function
-		int (float, [string])		k_function				[k_int, k_float, [k_vector, string] ]
-
-		randomize_player			k_unknown_identifier	"randomize_player"
-
-		- When parsing we find identifiers that we don't know what they mean. Stored as k_unknown_identifier with identifier
-
-
-
-		TODO
-
-		??? Supports non-lossy round trip between to_string() and from_string(). ??? make it so and test!
-
-		??? Compatible with Floyd sources.
-				### Store as compact JSON instead? Then we can't use [ and {".
-
-
-		??? How to encode typeid in floyd source code?
-
-		??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
-
-
-
-		1) Type as in source code
-		2) Type encoded as json from parser
-		3) Type encoded as typeid_t in compiler
-		4) Type in log, as json
-		5) Roundtrip typeid_t -> json -> typeid_t
-
-	*/
 
 
 	struct struct_definition_t;
@@ -275,7 +234,7 @@ namespace floyd {
 			return { floyd::base_type::k_string, {}, {}, {}, {} };
 		}
 
-		//	This is a type that specifies another type.
+
 		public: static typeid_t make_typeid(const typeid_t& type){
 			return { floyd::base_type::k_typeid, { type }, {}, {}, {} };
 		}
@@ -292,6 +251,7 @@ namespace floyd {
 
 		public: const struct_definition_t& get_struct() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_struct);
+
 			return *_struct_def;
 		}
 
@@ -299,6 +259,12 @@ namespace floyd {
 		public: static typeid_t make_vector(const typeid_t& element_type){
 			return { floyd::base_type::k_vector, { element_type }, {}, {}, {} };
 		}
+		public: const typeid_t& get_vector_element_type() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_vector);
+
+			return _parts[0];
+		}
+
 
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
 			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
@@ -306,9 +272,27 @@ namespace floyd {
 			parts.insert(parts.end(), args.begin(), args.end());
 			return { floyd::base_type::k_function, parts, {}, {}, {} };
 		}
+		public: typeid_t get_function_return() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_function);
+
+			return _parts[0];
+		}
+		public: std::vector<typeid_t> get_function_args() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_function);
+
+			auto r = _parts;
+			r.erase(r.begin());
+			return r;
+		}
+
 
 		public: static typeid_t make_unknown_identifier(const std::string& s){
 			return { floyd::base_type::k_unknown_identifier, {}, {}, s, {} };
+		}
+		public: std::string get_unknown_identifier() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_unknown_identifier);
+
+			return _unknown_identifier;
 		}
 
 
@@ -325,19 +309,6 @@ namespace floyd {
 		public: bool check_invariant() const;
 
 		public: void swap(typeid_t& other);
-
-
-
-		/*
-			"int"
-			"[int]"
-			"int f(float b)"
-			"typeid(int)"
-		*/
-
-		//	to_string() is used by parser to output JSON.
-		public: std::string to_string2() const;
-		public: static typeid_t from_string(const std::string& s);
 
 
 		public: floyd::base_type get_base_type() const{
@@ -361,10 +332,16 @@ namespace floyd {
 		}
 
 
+
+		//	Remove need for friends.
+		friend json_t to_normalized_json(const typeid_t& t);
+		friend typeid_t from_normalized_json(const json_t& t);
+
+		friend std::string typeid_to_compact_string(const typeid_t& t);
+
+
+
 		/////////////////////////////		STATE
-
-		friend json_t typeid_to_json(const typeid_t& t);
-
 
 		private: floyd::base_type _base_type;
 		private: std::vector<typeid_t> _parts;
@@ -377,15 +354,74 @@ namespace floyd {
 		private: std::shared_ptr<struct_definition_t> _struct_def;
 	};
 
-	json_t typeid_to_json(const typeid_t& t);
-
-	inline json_t typeid_to_ast_json(const typeid_t& t){
-		return t.to_string2();
-	}
 
 
-	struct value_t;
-	struct statement_t;
+
+	//////////////////////////////////////		FORMATS
+
+	/*
+		typeid_t --- formats: json, source code etc.
+
+			"int"
+			"[int]"
+			"int f(float b)"
+			"typeid(int)"
+
+
+		in-code						base					More								notes
+		================================================================================================================
+		null						k_null
+		bool						k_bool
+		int							k_int
+		float						k_float
+		string						k_string
+
+
+		-							k_typeid				[target type id]
+
+		struct red { int x;}		k_struct				struct_definition_t (name = "red", { "x", k_int })
+
+		[int]						k_vector				k_int
+
+		int ()						k_function				return = k_int, args = []
+
+		int (float, [string])		k_function				return = k_int, args = [ k_float, typeid_t(k_vector, string) ]
+
+		randomize_player			k_unknown_identifier	"randomize_player"
+		- When parsing we find identifiers that we don't know what they mean. Stored as k_unknown_identifier with identifier
+
+
+
+		TODO
+
+		??? Supports non-lossy round trip between to_string() and from_source_code_string(). ??? make it so and test!
+
+		??? Compatible with Floyd sources.
+				### Store as compact JSON instead? Then we can't use [ and {".
+
+
+		??? How to encode typeid in floyd source code?
+
+		??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
+
+		1) Type as in source code: SOURCE-CODE-TYPE
+		2) Type encoded as json from parser
+		3) Type encoded as typeid_t, used inside compiler
+		4) Type in log, as json
+		5) Roundtrip typeid_t -> json -> typeid_t: NORMALIZED TYPE JSON
+		6) Compact string, used for debugger etc.
+	*/
+
+
+	typeid_t from_source_code_string(const std::string& s);
+
+	json_t to_normalized_json(const typeid_t& t);
+	typeid_t from_normalized_json(const json_t& t);
+
+	std::string typeid_to_compact_string(const typeid_t& t);
+
+
+
 
 
 	//////////////////////////////////////		member_t
@@ -409,11 +445,8 @@ namespace floyd {
 	void trace(const member_t& member);
 
 
-	void trace(const std::vector<std::shared_ptr<statement_t>>& e);
-
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 	json_t members_to_json(const std::vector<member_t>& members);
-
 
 
 
@@ -442,7 +475,7 @@ namespace floyd {
 	};
 
 	std::string to_string(const struct_definition_t& v);
-	json_t to_json(const struct_definition_t& v);
+	json_t to_normalized_json(const struct_definition_t& v);
 
 	//	Returns -1 if not found.
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);
