@@ -480,6 +480,7 @@ namespace floyd {
 
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 	json_t members_to_json(const std::vector<member_t>& members);
+	std::vector<member_t> members_from_json(const json_t& members);
 
 
 
@@ -507,7 +508,7 @@ namespace floyd {
 		public: std::vector<member_t> _members;
 	};
 
-	std::string to_string(const struct_definition_t& v);
+	std::string to_compact_string(const struct_definition_t& v);
 	json_t typeid_to_normalized_json(const struct_definition_t& v);
 
 	//	Returns -1 if not found.
