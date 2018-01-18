@@ -236,6 +236,20 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(check_invariant());
 	}
 
+	QUARK_UNIT_TESTQ("typeid_t", "null"){
+		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "string"){
+		QUARK_UT_VERIFY(typeid_t::make_string().get_base_type() == base_type::k_string);
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
+		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").get_base_type() == base_type::k_unknown_identifier);
+	}
+
 
 
 	//////////////////////////////////////		FORMATS
@@ -483,47 +497,6 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
-
-
-
-
-
-
-
-	QUARK_UNIT_TESTQ("typeid_t", "null"){
-		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
-	}
-
-
-	QUARK_UNIT_TESTQ("typeid_t", "string"){
-		QUARK_UT_VERIFY(typeid_t::make_string().get_base_type() == base_type::k_string);
-	}
-
-
-	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
-		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").get_base_type() == base_type::k_unknown_identifier);
-	}
-
-
-
-
-	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
-		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_null()) == "null");
-	}
-	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
-		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_bool()) == "bool");
-	}
-	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
-		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_string()) == "string");
-	}
-	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
-		const auto struct_def = std::make_shared<struct_definition_t>(struct_definition_t("file", {}));
-		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_struct(struct_def)) == "struct file {}");
-	}
-	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
-		QUARK_UT_VERIFY(typeid_to_compact_string(typeid_t::make_unknown_identifier("hello")) == "hello");
-//		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").to_string() == "[unknown-identifier:hello]");
-	}
 
 
 
