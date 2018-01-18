@@ -78,16 +78,17 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			return _vector_type == other._vector_type && _elements == other._elements;
+			return _element_type == other._element_type && _elements == other._elements;
 		}
 
 
-		std::string to_preview(const vector_instance_t& instance){
-			string r;
+		std::string to_compact_string(const vector_instance_t& instance){
+			std::vector<std::string> elements;
 			for(const auto m: instance._elements){
-				r = r + m.to_compact_string() + " ";
+				const auto s = m.to_compact_string();
+				elements.push_back(s);
 			}
-			return /*"[" + instance._vector_type._parts[0].to_string() + "]*/ "[" + r + "]";
+			return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
 		}
 
 
@@ -178,13 +179,6 @@ QUARK_UNIT_TESTQ("host_function_t", "null"){
 
 
 
-	value_t make_vector_instance(const std::shared_ptr<const vector_def_t>& def, const std::vector<value_t>& elements){
-		QUARK_ASSERT(def && def->check_invariant());
-
-		const auto vector_type = typeid_t::make_vector(def->_element_type);
-		auto instance = make_shared<vector_instance_t>(vector_type, elements);
-		return value_t(instance);
-	}
 
 
 
@@ -440,7 +434,7 @@ QUARK_UNIT_TESTQ("value_t()", "struct"){
 }
 #endif
 
-
+/*
 QUARK_UNIT_TESTQ("value_t()", "vector"){
 	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
 	const auto a = make_vector_instance(vector_def, {});
@@ -473,6 +467,7 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[1] == 4);
 	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[2] == 5);
 }
+*/
 
 #if false
 value_t make_test_func(){

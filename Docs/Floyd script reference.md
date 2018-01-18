@@ -67,7 +67,6 @@ Implicit
 	y = 11;
 
 
-
 Example:
 
 	int main(){
@@ -267,6 +266,9 @@ A vector is a collection where you lookup your values using an index between 0 a
 
 Examples:
 
+		vector(int)
+		vector(int, 1, 2, 3)
+
 	a = [int]();					//	Create empty vector of ints.
 	b = [int](1, 2, 3);				//	Create a vector with three ints.
 	b = [1, 2, 3];					//	Shortcut to create a vector with three ints. Int-type is deducted from value.
@@ -281,25 +283,17 @@ The vector is persistent so you *can* write elements to it, but you always get a
 	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
 
 
-### OPTIMIZATIONS IN BACKEND
-The runtime has several types of backends for a vector and choses for each vector *instances* - not each type:
-
-1. A C-array. Very fast to make and read, very compact. Slow and expensive to mutate (requires copying the entire array).
-2. A HAMT-based persistent vector. Medium-fast to make, read and write. Uses more memory.
-3. A function. Compact, potentially very fast / very slow. No write.
-
 ### Vector Reference:
 
 	a = [T][ 1, 2, 3, ... ];
 	c = a[0]
-	int a.size()
+	int s a.size()
 	a = [1, 2, 3] + [4, 5, 6] //	append
 	a = [1, 2, 3] + 4			 //	append
 	[T] subset([T] in, int start, int end);
 	[T] = replace([T], 4, 10, [T], 0, 2)
 	for(x: [1, 2, 3]){ print(x)	; }
 
-Future: find, filter, map, fold, sort
 
 
 

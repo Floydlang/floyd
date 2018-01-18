@@ -276,7 +276,11 @@ expression_type token_to_expression_type(const string& op){
 			});
 		}
 		else if(b == base_type::k_vector){
-			QUARK_ASSERT(false);
+			const auto d = t.get_vector_element_type();
+			return json_t::make_array({
+				json_t(basetype_str),
+				typeid_to_normalized_json(d)
+			});
 		}
 		else if(b == base_type::k_function){
 			return json_t::make_array({
@@ -333,8 +337,8 @@ expression_type token_to_expression_type(const string& op){
 				);
 			}
 			else if(s == "vector"){
-				QUARK_ASSERT(false);
-				return typeid_t::make_null();
+				const auto element_type = typeid_from_normalized_json(a[1]);
+				return typeid_t::make_vector(element_type);
 			}
 			else if(s == "function"){
 				const auto ret_type = typeid_from_normalized_json(a[1]);

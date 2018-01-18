@@ -399,11 +399,30 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	}
 	else if(op == expression_type::k_variable){
 		const auto expr = e.get_variable();
+
 		const auto value = resolve_env_variable(vm2, expr->_variable);
-		if(value == nullptr){
-			throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
+		if(value != nullptr){
+			return {vm2, expression_t::make_literal(value->first)};
 		}
-		return {vm2, expression_t::make_literal(value->first)};
+		else{
+			//??? Hack to make "vector(int)" work.
+			if(expr->_variable == "bool"){
+				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_bool()))};
+			}
+			else if(expr->_variable == "int"){
+				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_int()))};
+			}
+			else if(expr->_variable == "float"){
+				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_float()))};
+			}
+			else if(expr->_variable == "string"){
+				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_string()))};
+			}
+
+			else {
+				throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
+			}
+		}
 	}
 
 	else if(op == expression_type::k_call){
@@ -979,7 +998,8 @@ enum host_functions {
 	k_assert,
 	k_to_string,
 	k_get_time_of_day_ms,
-	k_update
+	k_update,
+	k_vector
 };
 
 //	Records all output to interpreter
@@ -1164,9 +1184,7 @@ value_t update_struct_member_deep(const interpreter_t& vm, const value_t& obj, c
 
 
 
-//### use to update vector too!
-/*
-*/
+//??? use to update vector too!
 std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
@@ -1197,6 +1215,34 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 
 
 
+//		vector(int)
+//		vector(int, 1, 2, 3)
+std::pair<interpreter_t, value_t> host__vector(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+	if(args.size() == 0){
+		throw std::runtime_error("vector() requires minimum one argument.");
+	}
+
+	if(args[0].is_typeid() == false){
+		throw std::runtime_error("vector() first argument must be the type of elements in the vector.");
+	}
+	const auto element_type = args[0].get_typeid_value();
+
+	for(int i = 1 ; i < args.size() ; i++){
+		if((args[i].get_type() == element_type) == false){
+			throw std::runtime_error("vector() element wrong type.");
+		}
+	}
+
+	const auto elements = vector<value_t>(args.begin() + 1, args.end());
+	const auto v = make_vector_value(element_type, elements);
+	return {vm, v};
+}
+
+
+
+
+
 std::pair<interpreter_t, floyd::value_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd::value_t> args) const{
 	if(function_id == static_cast<int>(host_functions::k_print)){
 		return host__print(*this, args);
@@ -1212,6 +1258,9 @@ std::pair<interpreter_t, floyd::value_t> interpreter_t::call_host_function(int f
 	}
 	else if(function_id == static_cast<int>(host_functions::k_update)){
 		return host__update(*this, args);
+	}
+	else if(function_id == static_cast<int>(host_functions::k_vector)){
+		return host__vector(*this, args);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1267,6 +1316,14 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		function_definition_t(
 			{},
 			host_functions::k_update,
+			typeid_t::make_int()
+		)
+	)));
+	init_statements.push_back(make_shared<statement_t>(make_function_statement(
+		"vector",
+		function_definition_t(
+			{},
+			host_functions::k_vector,
 			typeid_t::make_int()
 		)
 	)));
@@ -2519,18 +2576,18 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 //////////////////////////		vector
 
 
-#if false
 
 QUARK_UNIT_TESTQ("run_main()", "struct"){
 	const auto vm = run_global(R"(
-		a = [1, 2];
+		a = vector(int, 1, 2);
 		print(a);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct color {int red=255,int green=128,int blue=128}",
-		"struct color {int red=255,int green=128,int blue=129}",
+		"[int](1,2)"
 	}	));
 }
+
+#if false
 
 QUARK_UNIT_TESTQ("run_main()", "struct"){
 	const auto vm = run_global(R"(

@@ -59,19 +59,19 @@ namespace floyd {
 		public: bool operator==(const vector_instance_t& other) const;
 
 		public: vector_instance_t(
-			typeid_t vector_type,
+			typeid_t element_type,
 			const std::vector<value_t>& elements
 		):
-			_vector_type(vector_type),
+			_element_type(element_type),
 			_elements(elements)
 		{
 		}
 
-		typeid_t _vector_type;
+		typeid_t _element_type;
 		std::vector<value_t> _elements;
 	};
 
-	std::string to_preview(const vector_instance_t& instance);
+	std::string to_compact_string(const vector_instance_t& instance);
 
 
 
@@ -331,7 +331,7 @@ namespace floyd {
 		}
 
 		public: value_t(const std::shared_ptr<vector_instance_t>& instance) :
-			_typeid(instance->_vector_type),
+			_typeid(typeid_t::make_vector(instance->_element_type)),
 			_vector(instance)
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
@@ -471,7 +471,7 @@ namespace floyd {
 				return floyd::to_compact_string(*_struct);
 			}
 			else if(base_type == base_type::k_vector){
-				return to_preview(*_vector);
+				return floyd::to_compact_string(*_vector);
 			}
 			else if(base_type == base_type::k_function){
 				return floyd::typeid_to_compact_string(_typeid);
@@ -676,6 +676,9 @@ namespace floyd {
 	};
 
 
+	inline value_t make_typeid_value(const typeid_t& type_id){
+		return value_t(type_id);
+	}
 	inline value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values){
 		QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unknown_identifier);
 		QUARK_ASSERT(def.check_invariant());
@@ -683,9 +686,11 @@ namespace floyd {
 		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
 		return value_t(struct_type, f);
 	}
-	inline value_t make_typeid_value(const typeid_t& type_id){
-		return value_t(type_id);
+	inline value_t make_vector_value(const typeid_t& element_type, const std::vector<value_t>& elements){
+		auto f = std::shared_ptr<vector_instance_t>(new vector_instance_t{element_type, elements});
+		return value_t(f);
 	}
+
 	inline value_t make_function_value(const function_definition_t& def){
 		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});
 		return value_t(f);
