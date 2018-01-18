@@ -24,6 +24,10 @@ std::string trim_ends(const std::string& s);
 
 std::vector<std::string> split_on_chars(const seq_t& s, const std::string& match_chars);
 
+/*
+	Concatunates vector of strings. Adds div between every pair of strings. There is never a div at end.
+*/
+std::string concat_strings_with_divider(const std::vector<std::string>& v, const std::string& div);
 
 std::string quote(const std::string& s);
 

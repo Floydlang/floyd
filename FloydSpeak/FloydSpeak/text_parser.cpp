@@ -88,6 +88,31 @@ QUARK_UNIT_TESTQ("split_on_chars()", ""){
 }
 
 
+std::string concat_strings_with_divider(const std::vector<std::string>& v, const std::string& div){
+	if(v.size()== 0){
+		return "";
+	}
+	else{
+		std::string s;
+		for(int i = 0 ; i < v.size() - 1 ; i++){
+			s = s + v[i] + div;
+		}
+		s = s + v.back();
+		return s;
+	}
+}
+
+QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
+	quark::ut_compare(concat_strings_with_divider({""},", "), "");
+}
+QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
+	quark::ut_compare(concat_strings_with_divider({"one"},", "), "one");
+}
+QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
+	quark::ut_compare(concat_strings_with_divider({"one","two"},", "), "one, two");
+}
+
+
 
 float parse_float(const std::string& pos){
 	size_t end = -1;

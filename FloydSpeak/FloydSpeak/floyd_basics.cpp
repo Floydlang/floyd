@@ -381,10 +381,10 @@ expression_type token_to_expression_type(const string& op){
 			const auto ret = t.get_function_return();
 			const auto args = t.get_function_args();
 
-			auto s = typeid_to_compact_string(ret) + "(";
+			auto s = string() + "function " + typeid_to_compact_string(ret) + "(";
 			if(args.size() > 0){
 				for(int i = 0 ; i < args.size() - 1 ; i++){
-					s = s + typeid_to_compact_string(args[i]) + ";";
+					s = s + typeid_to_compact_string(args[i]) + ",";
 				}
 				s = s + typeid_to_compact_string(args.back());
 			}
@@ -411,7 +411,7 @@ expression_type token_to_expression_type(const string& op){
 			std::make_shared<struct_definition_t>(struct_definition_t("file", {}))
 		);
 
-		return vector<typeid_str_test_t>{
+		const auto tests = vector<typeid_str_test_t>{
 			{ typeid_t::make_null(), "\"null\"", "null" },
 			{ typeid_t::make_bool(), "\"bool\"", "bool" },
 			{ typeid_t::make_int(), "\"int\"", "int" },
@@ -448,9 +448,20 @@ expression_type token_to_expression_type(const string& op){
 				"struct file {int a;float b;}"
 			},
 
+
+			//	Function
+			{
+				typeid_t::make_function(typeid_t::make_bool(), vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_float() }),
+				R"(["function", "bool", [ "int", "float"]])",
+				"function bool(int,float)"
+			},
+
+
+
 			//	unknown_identifier
 			{ typeid_t::make_unknown_identifier("hello"), "\"hello\"", "hello" }
 		};
+		return tests;
 	}
 
 
@@ -467,7 +478,7 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+	QUARK_UNIT_TESTQ("typeid_from_normalized_json", ""){
 		const auto f = make_typeid_str_tests();
 		for(int i = 0 ; i < f.size() ; i++){
 			const auto start_typeid = f[i]._typeid;
@@ -481,7 +492,7 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 
-	QUARK_UNIT_TESTQ("typeid_to_normalized_json", ""){
+	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
 		const auto f = make_typeid_str_tests();
 		for(int i = 0 ; i < f.size() ; i++){
 			const auto start_typeid = f[i]._typeid;
