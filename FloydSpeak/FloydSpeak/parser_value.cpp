@@ -42,21 +42,15 @@ namespace floyd {
 
 
 	std::string to_compact_string(const struct_instance_t& v){
-		auto s = "struct " + v._def._name + " {";
+		std::vector<std::string> members;
 		for(int i = 0 ; i < v._def._members.size() ; i++){
 			const auto& def = v._def._members[i];
 			const auto& value = v._member_values[i];
 
-			const auto m = typeid_to_compact_string(def._type) + " " + def._name + "=" + value.to_compact_string()  + ",";
-			s = s + m;
+			const auto m = typeid_to_compact_string(def._type) + " " + def._name + "=" + value.to_compact_string();
+			members.push_back(m);
 		}
-		if(s.back() == ','){
-			s.pop_back();
-		}
-		s = s + "}";
-		return s;
-
-//		return json_to_compact_string(to_json(v));
+		return "struct " + v._def._name + " {" + concat_strings_with_divider(members, ",") + "}";
 	}
 
 	json_t to_json(const struct_instance_t& t){

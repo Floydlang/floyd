@@ -381,15 +381,12 @@ expression_type token_to_expression_type(const string& op){
 			const auto ret = t.get_function_return();
 			const auto args = t.get_function_args();
 
-			auto s = string() + "function " + typeid_to_compact_string(ret) + "(";
-			if(args.size() > 0){
-				for(int i = 0 ; i < args.size() - 1 ; i++){
-					s = s + typeid_to_compact_string(args[i]) + ",";
-				}
-				s = s + typeid_to_compact_string(args.back());
+			vector<string> args_str;
+			for(const auto a: args){
+				args_str.push_back(typeid_to_compact_string(a));
 			}
-			s = s + ")";
-			return s;
+
+			return string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ")";
 		}
 		else{
 			return base_type_to_string(basetype);
@@ -629,11 +626,6 @@ expression_type token_to_expression_type(const string& op){
 		for(const auto e: v._members){
 			s = s + typeid_to_compact_string(e._type) + " " + e._name + ";";
 		}
-/*
-		if(s.back() == ','){
-			s.pop_back();
-		}
-*/
 		s = s + "}";
 		return s;
 	}
