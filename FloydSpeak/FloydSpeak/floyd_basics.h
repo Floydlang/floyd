@@ -388,15 +388,6 @@ namespace floyd {
 		}
 
 
-
-		//	Remove need for friends.
-		friend json_t typeid_to_normalized_json(const typeid_t& t);
-		friend typeid_t typeid_from_normalized_json(const json_t& t);
-
-		friend std::string typeid_to_compact_string(const typeid_t& t);
-
-
-
 		/////////////////////////////		STATE
 
 		private: floyd::base_type _base_type;

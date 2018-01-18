@@ -475,7 +475,8 @@ expression_type token_to_expression_type(const string& op){
 			return floyd::to_string(struct_def);
 		}
 		else if(basetype == floyd::base_type::k_vector){
-			return "[" + typeid_to_compact_string(t._parts[0]) + "]";
+			const auto e = t.get_vector_element_type();
+			return "[" + typeid_to_compact_string(e) + "]";
 		}
 		else if(basetype == floyd::base_type::k_function){
 			const auto ret = t.get_function_return();
