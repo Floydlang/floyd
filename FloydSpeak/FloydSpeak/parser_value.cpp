@@ -25,8 +25,6 @@ namespace floyd {
 
 
 	bool struct_instance_t::check_invariant() const{
-//		QUARK_ASSERT(_struct_type._base_type != base_type::k_null && _struct_type.check_invariant());
-
 		QUARK_ASSERT(_def.check_invariant());
 
 		for(const auto m: _member_values){
@@ -249,19 +247,19 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(right.check_invariant());
 	QUARK_ASSERT(left.get_type() == right.get_type());
 
-	const auto type = left._typeid.get_base_type();
-	if(type == base_type::k_null){
+	const auto type = left._typeid;
+	if(type.is_null()){
 		return 0;
 	}
-	else if(type == base_type::k_bool){
-		return (left.get_bool() ? 1 : 0) - (right.get_bool() ? 1 : 0);
+	else if(type.is_bool()){
+		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
 	}
-	else if(type == base_type::k_int){
-		return limit(left.get_int() - right.get_int(), -1, 1);
+	else if(type.is_int()){
+		return limit(left.get_int_value() - right.get_int_value(), -1, 1);
 	}
-	else if(type == base_type::k_float){
-		const auto a = left.get_float();
-		const auto b = right.get_float();
+	else if(type.is_float()){
+		const auto a = left.get_float_value();
+		const auto b = right.get_float_value();
 		if(a > b){
 			return 1;
 		}
@@ -272,23 +270,31 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return 0;
 		}
 	}
-	else if(type == base_type::k_string){
-		return compare_string(left.get_string(), right.get_string());
+	else if(type.is_string()){
+		return compare_string(left.get_string_value(), right.get_string_value());
 	}
-	else if(type == base_type::k_struct){
-		//	Shortcut: same obejct == we know values are same without having to check them.
-		if(left.get_struct() == right.get_struct()){
-			return 0;
-		}
-		else{
-			return compare_value_true_deep(*left.get_struct(), *right.get_struct());
-		}
-	}
-	else if(type == base_type::k_vector){
+	else if(type.is_typeid()){
 		QUARK_ASSERT(false);
 		return 0;
 	}
-	else if(type == base_type::k_function){
+	else if(type.is_struct()){
+		//	Shortcut: same obejct == we know values are same without having to check them.
+		if(left.get_struct_value() == right.get_struct_value()){
+			return 0;
+		}
+		else{
+			return compare_value_true_deep(*left.get_struct_value(), *right.get_struct_value());
+		}
+	}
+	else if(type.is_vector()){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else if(type.is_function()){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else if(type.is_unknown_identifier()){
 		QUARK_ASSERT(false);
 		return 0;
 	}
@@ -469,9 +475,9 @@ QUARK_UNIT_TESTQ("value_t()", "vector"){
 
 	QUARK_TEST_VERIFY(a != b);
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	QUARK_TEST_VERIFY(a.get_vector()->_elements[0] == 3);
-	QUARK_TEST_VERIFY(a.get_vector()->_elements[1] == 4);
-	QUARK_TEST_VERIFY(a.get_vector()->_elements[2] == 5);
+	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[0] == 3);
+	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[1] == 4);
+	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[2] == 5);
 }
 
 #if false
@@ -537,26 +543,26 @@ json_t value_to_json(const value_t& v){
 		return json_t();
 	}
 	else if(v.is_bool()){
-		return json_t(v.get_bool());
+		return json_t(v.get_bool_value());
 	}
 	else if(v.is_int()){
-		return json_t(static_cast<double>(v.get_int()));
+		return json_t(static_cast<double>(v.get_int_value()));
 	}
 	else if(v.is_float()){
-		return json_t(static_cast<double>(v.get_float()));
+		return json_t(static_cast<double>(v.get_float_value()));
 	}
 	else if(v.is_string()){
-		return json_t(v.get_string());
+		return json_t(v.get_string_value());
 	}
 	else if(v.is_typeid()){
-		return typeid_to_normalized_json(v.get_typeid());
+		return typeid_to_normalized_json(v.get_typeid_value());
 	}
 	else if(v.is_struct()){
-		const auto value = v.get_struct();
+		const auto value = v.get_struct_value();
 		return to_json(*value);
 	}
 	else if(v.is_vector()){
-		const auto value = v.get_vector();
+		const auto value = v.get_vector_value();
 		std::vector<json_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
 			const auto element_value = value->_elements[i];
@@ -565,7 +571,7 @@ json_t value_to_json(const value_t& v){
 		return result;
 	}
 	else if(v.is_function()){
-		const auto value = v.get_function();
+		const auto value = v.get_function_value();
 		return json_t::make_object(
 			{
 				{ "function_type", typeid_to_normalized_json(get_function_type(value->_def)) }

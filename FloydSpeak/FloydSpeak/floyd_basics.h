@@ -208,35 +208,64 @@ namespace floyd {
 
 	struct typeid_t {
 
+		public: static typeid_t make_null(){
+			return { floyd::base_type::k_null, {}, {}, {}, {} };
+		}
+
 		public: bool is_null() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _base_type == floyd::base_type::k_null;
 		}
 
-		public: static typeid_t make_null(){
-			return { floyd::base_type::k_null, {}, {}, {}, {} };
-		}
-
 		public: static typeid_t make_bool(){
 			return { floyd::base_type::k_bool, {}, {}, {}, {} };
+		}
+
+		public: bool is_bool() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_bool;
 		}
 
 		public: static typeid_t make_int(){
 			return { floyd::base_type::k_int, {}, {}, {}, {} };
 		}
 
+		public: bool is_int() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_int;
+		}
+
 		public: static typeid_t make_float(){
 			return { floyd::base_type::k_float, {}, {}, {}, {} };
+		}
+
+		public: bool is_float() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_float;
 		}
 
 		public: static typeid_t make_string(){
 			return { floyd::base_type::k_string, {}, {}, {}, {} };
 		}
 
+		public: bool is_string() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_string;
+		}
 
 		public: static typeid_t make_typeid(const typeid_t& type){
 			return { floyd::base_type::k_typeid, { type }, {}, {}, {} };
+		}
+
+		public: bool is_typeid() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_typeid;
 		}
 
 		public: const typeid_t& get_typeid_typeid() const{
@@ -249,6 +278,12 @@ namespace floyd {
 			return { floyd::base_type::k_struct, {}, {}, {}, def };
 		}
 
+		public: bool is_struct() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_struct;
+		}
+
 		public: const struct_definition_t& get_struct() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_struct);
 
@@ -259,6 +294,13 @@ namespace floyd {
 		public: static typeid_t make_vector(const typeid_t& element_type){
 			return { floyd::base_type::k_vector, { element_type }, {}, {}, {} };
 		}
+
+		public: bool is_vector() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_vector;
+		}
+
 		public: const typeid_t& get_vector_element_type() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_vector);
 
@@ -272,6 +314,13 @@ namespace floyd {
 			parts.insert(parts.end(), args.begin(), args.end());
 			return { floyd::base_type::k_function, parts, {}, {}, {} };
 		}
+
+		public: bool is_function() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_function;
+		}
+
 		public: typeid_t get_function_return() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_function);
 
@@ -289,6 +338,13 @@ namespace floyd {
 		public: static typeid_t make_unknown_identifier(const std::string& s){
 			return { floyd::base_type::k_unknown_identifier, {}, {}, s, {} };
 		}
+
+		public: bool is_unknown_identifier() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_unknown_identifier;
+		}
+
 		public: std::string get_unknown_identifier() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_unknown_identifier);
 

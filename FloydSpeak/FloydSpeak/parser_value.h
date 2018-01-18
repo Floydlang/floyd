@@ -569,7 +569,7 @@ namespace floyd {
 			return _typeid.get_base_type() == base_type::k_function;
 		}
 
-		public: bool get_bool() const{
+		public: bool get_bool_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_bool()){
 				throw std::runtime_error("Type mismatch!");
@@ -578,7 +578,7 @@ namespace floyd {
 			return _bool;
 		}
 
-		public: int get_int() const{
+		public: int get_int_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_int()){
 				throw std::runtime_error("Type mismatch!");
@@ -587,7 +587,7 @@ namespace floyd {
 			return _int;
 		}
 
-		public: float get_float() const{
+		public: float get_float_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_float()){
 				throw std::runtime_error("Type mismatch!");
@@ -596,7 +596,7 @@ namespace floyd {
 			return _float;
 		}
 
-		public: std::string get_string() const{
+		public: std::string get_string_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_string()){
 				throw std::runtime_error("Type mismatch!");
@@ -605,16 +605,16 @@ namespace floyd {
 			return _string;
 		}
 
-		public: typeid_t get_typeid() const{
+		public: typeid_t get_typeid_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_typeid()){
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _typeid;
+			return _typeid.get_typeid_typeid();
 		}
 
-		public: std::shared_ptr<struct_instance_t> get_struct() const{
+		public: std::shared_ptr<struct_instance_t> get_struct_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_struct()){
 				throw std::runtime_error("Type mismatch!");
@@ -623,7 +623,7 @@ namespace floyd {
 			return _struct;
 		}
 
-		public: std::shared_ptr<vector_instance_t> get_vector() const{
+		public: std::shared_ptr<vector_instance_t> get_vector_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_vector()){
 				throw std::runtime_error("Type mismatch!");
@@ -632,7 +632,7 @@ namespace floyd {
 			return _vector;
 		}
 
-		public: std::shared_ptr<const function_instance_t> get_function() const{
+		public: std::shared_ptr<const function_instance_t> get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
 				throw std::runtime_error("Type mismatch!");

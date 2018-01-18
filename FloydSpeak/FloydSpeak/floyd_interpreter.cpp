@@ -206,7 +206,7 @@ namespace {
 				throw std::runtime_error("Boolean condition required.");
 			}
 
-			bool r = condition_result_value.get_literal().get_bool();
+			bool r = condition_result_value.get_literal().get_bool_value();
 			if(r){
 				return execute_statements_in_env(vm2, s->_then_statements, {});
 			}
@@ -219,11 +219,11 @@ namespace {
 
 			const auto start_value0 = evaluate_expression(vm2, s->_start_expression);
 			vm2 = start_value0.first;
-			const auto start_value = start_value0.second.get_literal().get_int();
+			const auto start_value = start_value0.second.get_literal().get_int_value();
 
 			const auto end_value0 = evaluate_expression(vm2, s->_end_expression);
 			vm2 = end_value0.first;
-			const auto end_value = end_value0.second.get_literal().get_int();
+			const auto end_value = end_value0.second.get_literal().get_int_value();
 
 			for(int x = start_value ; x <= end_value ; x++){
 				const std::map<std::string, std::pair<value_t, bool>> values = { { s->_iterator_name, std::pair<value_t, bool>(value_t(x), false) } };
@@ -243,7 +243,7 @@ namespace {
 			while(again){
 				const auto condition_value_expr = evaluate_expression(vm2, s->_condition);
 				vm2 = condition_value_expr.first;
-				const auto condition_value = condition_value_expr.second.get_literal().get_bool();
+				const auto condition_value = condition_value_expr.second.get_literal().get_bool_value();
 
 				if(condition_value){
 					const auto result = execute_statements_in_env(vm2, s->_body, {});
@@ -383,7 +383,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		const auto parent_expr = evaluate_expression(vm2, *expr->_parent_address);
 		if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
 			vm2 = parent_expr.first;
-			const auto struct_instance = parent_expr.second.get_literal().get_struct();
+			const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
 
 			int index = find_struct_member_index(struct_instance->_def, expr->_member_name);
 			if(index == -1){
@@ -452,7 +452,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		vm2 = cond_result.first;
 
 		if(cond_result.second.is_literal() && cond_result.second.get_literal().is_bool()){
-			const bool cond_flag = cond_result.second.get_literal().get_bool();
+			const bool cond_flag = cond_result.second.get_literal().get_bool_value();
 
 			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 			if(cond_flag){
@@ -524,8 +524,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	bool
 		if(left_constant.is_bool() && right_constant.is_bool()){
-			const bool left = left_constant.get_bool();
-			const bool right = right_constant.get_bool();
+			const bool left = left_constant.get_bool_value();
+			const bool right = right_constant.get_bool_value();
 
 			if(op == expression_type::k_arithmetic_add__2
 			|| op == expression_type::k_arithmetic_subtract__2
@@ -549,8 +549,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	int
 		else if(left_constant.is_int() && right_constant.is_int()){
-			const int left = left_constant.get_int();
-			const int right = right_constant.get_int();
+			const int left = left_constant.get_int_value();
+			const int right = right_constant.get_int_value();
 
 			if(op == expression_type::k_arithmetic_add__2){
 				return {vm2, expression_t::make_literal_int(left + right)};
@@ -587,8 +587,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	float
 		else if(left_constant.is_float() && right_constant.is_float()){
-			const float left = left_constant.get_float();
-			const float right = right_constant.get_float();
+			const float left = left_constant.get_float_value();
+			const float right = right_constant.get_float_value();
 
 			if(op == expression_type::k_arithmetic_add__2){
 				return {vm2, expression_t::make_literal_float(left + right)};
@@ -623,8 +623,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	string
 		else if(left_constant.is_string() && right_constant.is_string()){
-			const string left = left_constant.get_string();
-			const string right = right_constant.get_string();
+			const string left = left_constant.get_string_value();
+			const string right = right_constant.get_string_value();
 
 			if(op == expression_type::k_arithmetic_add__2){
 				return {vm2, expression_t::make_literal_string(left + right)};
@@ -657,11 +657,11 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	struct
 		else if(left_constant.is_struct() && right_constant.is_struct()){
-			const auto left = left_constant.get_struct();
-			const auto right = right_constant.get_struct();
+			const auto left = left_constant.get_struct_value();
+			const auto right = right_constant.get_struct_value();
 
 			//	Structs mue be exactly the same type to match.
-			if(left_constant.get_typeid() == right_constant.get_typeid()){
+			if(left_constant.get_typeid_value() == right_constant.get_typeid_value()){
 				throw std::runtime_error("Struct type mismatch.");
 			}
 
@@ -724,7 +724,7 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 		throw std::runtime_error("Cannot call non-function.");
 	}
 
-	const auto& function_def = f.get_function()->_def;
+	const auto& function_def = f.get_function_value()->_def;
 	if(function_def._host_function != 0){
 		const auto r = vm2.call_host_function(function_def._host_function, args);
 		return { r.first, make_shared<value_t>(r.second) };
@@ -833,8 +833,8 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 	if(function_value.is_function() == false){
 		//	Attempting to call a TYPE? Then this may be a constructor call.
 		if(function_value.is_typeid()){
-			const auto t = function_value.get_typeid();
-			const auto typeid_contained_type = t.get_typeid_typeid();
+			const auto typeid_contained_type = function_value.get_typeid_value();
+//			const auto typeid_contained_type = t.get_typeid_typeid();
 			if(typeid_contained_type.get_base_type() == base_type::k_struct){
 				//	Constructor.
 
@@ -998,7 +998,7 @@ std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const st
 	if(value.is_bool() == false){
 		throw std::runtime_error("First argument to assert() must be of type bool.");
 	}
-	bool ok = value.get_bool();
+	bool ok = value.get_bool_value();
 	if(!ok){
 		vm2._print_output.push_back("Assertion failed.");
 		throw std::runtime_error("Floyd assertion failed.");
@@ -1075,13 +1075,33 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 //### add checking of function types when calling / returning from them. Also host functions.
 
+typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
+	if(type.get_base_type() == base_type::k_unknown_identifier){
+		const auto v = resolve_env_variable(vm, type.get_unknown_identifier());
+		if(v){
+			if(v->first.is_typeid()){
+				return v->first.get_typeid_value();
+			}
+			else{
+				return typeid_t::make_null();
+			}
+		}
+		else{
+			return typeid_t::make_null();
+		}
+	}
+	else{
+		return type;
+	}
+}
 
-value_t update_struct_member_shallow(const value_t& obj, const std::string& member_name, const value_t& new_value){
+
+value_t update_struct_member_shallow(const interpreter_t& vm, const value_t& obj, const std::string& member_name, const value_t& new_value){
 	QUARK_ASSERT(obj.check_invariant());
 	QUARK_ASSERT(member_name.empty() == false);
 	QUARK_ASSERT(new_value.check_invariant());
 
-	const auto s = obj.get_struct();
+	const auto s = obj.get_struct_value();
 	const auto def = s->_def;
 
 	int member_index = find_struct_member_index(def, member_name);
@@ -1096,7 +1116,11 @@ value_t update_struct_member_shallow(const value_t& obj, const std::string& memb
 	QUARK_TRACE(typeid_to_compact_string(new_value.get_type()));
 	QUARK_TRACE(typeid_to_compact_string(def._members[member_index]._type));
 
-	if(!(new_value.get_type() == def._members[member_index]._type)){
+	const auto dest_member_entry = def._members[member_index];
+	auto dest_member_resolved_type = dest_member_entry._type;
+	dest_member_resolved_type = resolve_type_using_env(vm, dest_member_entry._type);
+
+	if(!(new_value.get_type() == dest_member_resolved_type)){
 		throw std::runtime_error("Value type not matching struct member type.");
 	}
 
@@ -1107,19 +1131,19 @@ value_t update_struct_member_shallow(const value_t& obj, const std::string& memb
 	return s2;
 }
 
-value_t update_struct_member_deep(const value_t& obj, const std::vector<std::string>& path, const value_t& new_value){
+value_t update_struct_member_deep(const interpreter_t& vm, const value_t& obj, const std::vector<std::string>& path, const value_t& new_value){
 	QUARK_ASSERT(obj.check_invariant());
 	QUARK_ASSERT(path.empty() == false);
 	QUARK_ASSERT(new_value.check_invariant());
 
 	if(path.size() == 1){
-		return update_struct_member_shallow(obj, path[0], new_value);
+		return update_struct_member_shallow(vm, obj, path[0], new_value);
 	}
 	else{
 		vector<string> subpath = path;
 		subpath.erase(subpath.begin());
 
-		const auto s = obj.get_struct();
+		const auto s = obj.get_struct_value();
 		const auto def = s->_def;
 		int member_index = find_struct_member_index(def, path[0]);
 		if(member_index == -1){
@@ -1131,8 +1155,8 @@ value_t update_struct_member_deep(const value_t& obj, const std::vector<std::str
 			throw std::runtime_error("Value type not matching struct member type.");
 		}
 
-		const auto child2 = update_struct_member_deep(child_value, subpath, new_value);
-		const auto obj2 = update_struct_member_shallow(obj, path[0], child2);
+		const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
+		const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2);
 		return obj2;
 	}
 }
@@ -1160,12 +1184,12 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 	}
 	else{
 		//### Does simple check for "." -- we should use vector of strings instead.
-		const auto nodes = split_on_chars(seq_t(member_name.get_string()), ".");
+		const auto nodes = split_on_chars(seq_t(member_name.get_string_value()), ".");
 		if(nodes.empty()){
 			throw std::runtime_error("You must specify structure member using string.");
 		}
 
-		const auto s2 = update_struct_member_deep(obj, nodes, new_value);
+		const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value);
 		return {vm, s2 };
 	}
 }
@@ -2461,7 +2485,6 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using = won't work"){
 	}
 }
 
-#if false
 QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
@@ -2476,24 +2499,21 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 		"struct color {int red=255,int green=3,int blue=128}",
 	}	));
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel back; pixel front;}
+		struct image { color back; color front;}
 		a = image(color(0,100,200), color(0,0,0));
 		b = update(a, "front.green", 3);
 		print(a);
 		print(b);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct image {pixel back=struct color {int red=0,int green=100,int blue=200},pixel front=struct color {int red=0,int green=0,int blue=0}}",
-		"struct image {pixel back=struct color {int red=0,int green=100,int blue=200},pixel front=struct color {int red=0,int green=3,int blue=0}}"
+		"struct image {color back=struct color {int red=0,int green=100,int blue=200},color front=struct color {int red=0,int green=0,int blue=0}}",
+		"struct image {color back=struct color {int red=0,int green=100,int blue=200},color front=struct color {int red=0,int green=3,int blue=0}}"
 	}	));
 }
-#endif
 
 }	//	floyd
 
