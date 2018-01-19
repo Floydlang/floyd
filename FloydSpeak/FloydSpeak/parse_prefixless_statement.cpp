@@ -287,7 +287,7 @@ pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, cons
 
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement({ "[BIND]", "bool", "bb", "true" }, seq_t("bool bb = true;")).first,
+		parse_bind_statement({ "[BIND]", keyword_t::k_bool, "bb", keyword_t::k_true }, seq_t("bool bb = true;")).first,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "bool", "bb", ["k", true, "bool"], {}]

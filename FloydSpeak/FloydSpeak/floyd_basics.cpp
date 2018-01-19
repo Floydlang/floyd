@@ -25,6 +25,9 @@ namespace floyd {
 const std::string keyword_t::k_return = "return";
 const std::string keyword_t::k_while = "while";
 
+const std::string keyword_t::k_false = "false";
+const std::string keyword_t::k_true = "true";
+const std::string keyword_t::k_bool = "bool";
 
 
 	//////////////////////////////////////////////////		base_type
@@ -35,7 +38,7 @@ const std::string keyword_t::k_while = "while";
 			return "null";
 		}
 		else if(t == base_type::k_bool){
-			return "bool";
+			return keyword_t::k_bool;
 		}
 		else if(t == base_type::k_int){
 			return "int";
@@ -75,7 +78,7 @@ const std::string keyword_t::k_while = "while";
 
 
 	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == "bool");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == keyword_t::k_bool);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == "int");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == "float");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == "string");
@@ -317,7 +320,7 @@ expression_type token_to_expression_type(const string& op){
 			else if(s == "null"){
 				return typeid_t::make_null();
 			}
-			else if(s == "bool"){
+			else if(s == keyword_t::k_bool){
 				return typeid_t::make_bool();
 			}
 			else if(s == "int"){
@@ -428,7 +431,7 @@ expression_type token_to_expression_type(const string& op){
 
 		const auto tests = vector<typeid_str_test_t>{
 			{ typeid_t::make_null(), "\"null\"", "null" },
-			{ typeid_t::make_bool(), "\"bool\"", "bool" },
+			{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
 			{ typeid_t::make_int(), "\"int\"", "int" },
 			{ typeid_t::make_float(), "\"float\"", "float" },
 			{ typeid_t::make_string(), "\"string\"", "string" },

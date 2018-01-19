@@ -14,6 +14,7 @@
 #include <memory>
 #include <map>
 #include "text_parser.h"
+#include "floyd_basics.h"
 
 
 #include "parser2.h"
@@ -355,13 +356,13 @@ std::pair<expr_t, seq_t> parse_single(const seq_t& p) {
 		return { result, value_p.second };
 	}
 
-	else if(if_first(p, "true").first){
+	else if(if_first(p, keyword_t::k_true).first){
 		const auto result = maker__make_constant(constant_value_t(true));
-		return { result, if_first(p, "true").second };
+		return { result, if_first(p, keyword_t::k_true).second };
 	}
-	else if(if_first(p, "false").first){
+	else if(if_first(p, keyword_t::k_false).first){
 		const auto result = maker__make_constant(constant_value_t(false));
-		return { result, if_first(p, "false").second };
+		return { result, if_first(p, keyword_t::k_false).second };
 	}
 
 	//	Identifier?
@@ -625,7 +626,7 @@ std::string expr_to_string(const expr_t& e){
 	if(e._op == eoperation::k_0_number_constant){
 		const auto value = *e._constant;
 		if(value._type == constant_value_t::etype::k_bool){
-			return make3("\"k\"", "\"bool\"", value._bool ? "true" : "false");
+			return make3("\"k\"", "\"bool\"", value._bool ? keyword_t::k_true : keyword_t::k_false);
 		}
 		else if(value._type == constant_value_t::etype::k_int){
 			return make3("\"k\"", "\"int\"", std::to_string(value._int));

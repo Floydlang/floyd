@@ -434,7 +434,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		}
 		else{
 			//??? Hack to make "vector(int)" work.
-			if(expr->_variable == "bool"){
+			if(expr->_variable == keyword_t::k_bool){
 				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_bool()))};
 			}
 			else if(expr->_variable == "int"){
@@ -2559,7 +2559,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) == color(1, 2, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		keyword_t::k_true		}	));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
@@ -2567,7 +2567,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red; int green; int blue;}
 		print(color(9, 2, 3) == color(1, 2, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"false"		}	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		keyword_t::k_false		}	));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
@@ -2588,7 +2588,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 2, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"false"		}	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		keyword_t::k_false		}	));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
@@ -2596,7 +2596,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 4, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		keyword_t::k_true		}	));
 }
 
 

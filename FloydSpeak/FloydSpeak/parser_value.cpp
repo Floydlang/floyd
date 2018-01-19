@@ -336,7 +336,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 
 	QUARK_TEST_VERIFY(a == value_t(true));
 	QUARK_TEST_VERIFY(a != value_t(false));
-	QUARK_TEST_VERIFY(a.to_compact_string() == "true");
+	QUARK_TEST_VERIFY(a.to_compact_string() == keyword_t::k_true);
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "bool: true");
 }
 
@@ -353,7 +353,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 
 	QUARK_TEST_VERIFY(a == value_t(false));
 	QUARK_TEST_VERIFY(a != value_t(true));
-	QUARK_TEST_VERIFY(a.to_compact_string() == "false");
+	QUARK_TEST_VERIFY(a.to_compact_string() == keyword_t::k_false);
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "bool: false");
 }
 

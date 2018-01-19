@@ -68,7 +68,7 @@ json_t expr_to_json(const expr_t& e){
 	if(e._op == eoperation::k_0_number_constant){
 		const auto value = *e._constant;
 		if(value._type == constant_value_t::etype::k_bool){
-			return make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t("bool") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t(keyword_t::k_bool) });
 		}
 		else if(value._type == constant_value_t::etype::k_int){
 			return make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t("int") });

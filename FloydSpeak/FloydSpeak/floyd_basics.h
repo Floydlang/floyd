@@ -25,41 +25,50 @@ namespace floyd {
 	struct keyword_t {
 		static const std::string k_return;
 		static const std::string k_while;
-
-	};
-
-	const std::vector<std::string> keywordsxxx {
+		static const std::string k_false;
+		static const std::string k_true;
+		static const std::string k_bool;
+/*
 		"assert",
-		"-catch",
-		"-deserialize()",
-		"-diff()",
-		"else",
-		"-ensure",
-		"false",
-		"foreach",
-		"-hash()",
+		"catch",
+
 		"if",
-		"-invariant",
-		"log",
+		"else",
+		"print",
+		"to_string",
+		"update",
+		"size",
+
 		"mutable",
-		"-namespace",
-		"-null",
-		"-private",
-		"-property",
-		"-prove",
-		"-require",
-		"return",
-		"-serialize()",
-		"-swap",
-		"-switch",
-		"-tag",
-		"-test",
-		"-this",
-		"true",
-		"-try",
-		"-typecast",
-		"-typeof",
+
+		"null",
+*/
+
+/*
+		"deserialize()",
+		"diff()",
+		"ensure",
+		"foreach",
+		"hash()",
+		"invariant",
+		"log",
+		"namespace",
+		"private",
+		"property",
+		"prove",
+		"require",
+		"serialize()",
+		"swap",
+		"switch",
+		"tag",
+		"test",
+		"this",
+		"try",
+		"typecast",
+		"typeof",
+*/
 	};
+
 
 
 

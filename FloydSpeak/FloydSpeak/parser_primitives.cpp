@@ -341,7 +341,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	else if(pos1.first == "null"){
 		return { make_shared<typeid_t>(typeid_t::make_null()), pos1.second };
 	}
-	else if(pos1.first == "bool"){
+	else if(pos1.first == keyword_t::k_bool){
 		return { make_shared<typeid_t>(typeid_t::make_bool()), pos1.second };
 	}
 	else if(pos1.first == "int"){
@@ -454,7 +454,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("null")).first == typeid_t::make_null());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
-	QUARK_TEST_VERIFY(*read_type(seq_t("bool")).first == typeid_t::make_bool());
+	QUARK_TEST_VERIFY(*read_type(seq_t(keyword_t::k_bool)).first == typeid_t::make_bool());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("int")).first == typeid_t::make_int());

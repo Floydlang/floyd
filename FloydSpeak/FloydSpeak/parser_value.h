@@ -448,7 +448,7 @@ namespace floyd {
 				return "<null>";
 			}
 			else if(base_type == base_type::k_bool){
-				return _bool ? "true" : "false";
+				return _bool ? keyword_t::k_true : keyword_t::k_false;
 			}
 			else if(base_type == base_type::k_int){
 				char temp[200 + 1];//### Use C++ function instead.
