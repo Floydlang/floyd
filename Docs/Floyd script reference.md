@@ -287,7 +287,7 @@ The vector is persistent so you *can* write elements to it, but you always get a
 
 	a = [T][ 1, 2, 3, ... ];
 	c = a[0]
-	int s a.size()
+	int s size(a)
 	a = [1, 2, 3] + [4, 5, 6] //	append
 	a = [1, 2, 3] + 4			 //	append
 	[T] subset([T] in, int start, int end);
