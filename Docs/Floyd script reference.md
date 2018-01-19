@@ -1,9 +1,11 @@
 GOALS
 
-1) Take best part of imperative and functional languages and make it extremely fast and simple.
-2) Easy to learn for new programmers, easy to like for imperative programmers.
-
-??? Why do you make quick scripts in python or shell script, not in C++? Fix this with Floyd
+1) Take best part of imperative and functional languages and destil it down to the most important mechanisms.
+2) Make it execute extremely quickly.
+3) Easy to learn for new programmers, easy to enjoy for experienced programmers.
+4) Have explict and sold way to do each thing - no need to reinvent basics or invent policies.
+5) Robustness.
+6) Composable: build huge programs (millions of lines of code).
 
 
 # Floyd Script Reference
@@ -14,14 +16,23 @@ It's focus is composability, minimalism and proven programming techniques, like 
 
 It as a unique concept to handle mutation of data, control of the outside world (files, network, UI) and controlling time.
 
-Functions and classes are pure. A pure function can only call pure functions. This delegates all mutation / time to the top levels of your program. Here you need to call non-pure functions to affect the world around the program. You must tag your functions with "nonpure" to be able to call other nonpure functions.
+Functions and classes are pure. A pure function can only call pure functions. Mutable data can exist locally inside a function, but never leak out of the function. 
+
+This delegates all mutation / time to the top levels of your program. Here you need to call non-pure functions to affect the world around the program. You must tag your functions with "nonpure" to be able to call other nonpure functions.
+
+	But programming is NOT math!
 
 This makes those functions a risk. Have as little nonpure code as possible. Try to not have any conditional code inside nonpure code - this makes testing easier. Put all logic into the pure functions.
 
-Mutable data can exist locally inside a function, but never leak out of the function. 
+# COMPOSABILITY
+
+Features that break composabiity is limited and carefully controlled in the language. Things like threading and synchronisation, error responses, file handling, optimization choices. Normal Floyd code lives free, outside of time and the real world and can be used in many contexts.
+
+To easy composability, the basic wiring between libraries and subsystems is built-in and standardized - this like common datatypes, error propagation between libraries, logging and asserts, memory handling and streaming data. All built-in and composable.
 
 
 # BASIC TYPES
+
 These are the primitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
 - **int**			Same as int64
@@ -34,63 +45,87 @@ These are the primitive data types built into the language itself. The goals is 
 
 
 # COMPOSITE TYPES
+
 These are composites and collections of other types.
 - **struct**		like C struct or class or tuple.
 - **vector**		an a continous array of elements addressed via indexes.
 
 # CORE TYPE FEATURES
+
 These are features built into every type: integer, string, struct, collections etc.
 
 - **a = b** 							This true-deep copies the value b to the new name a.
-- **a != b**										derivated of a = b.
-- **a < b**								tests all member data in the order they appear in the struct.
-- **a <= b**, **a > b**, **a >= b**	these are derivated of a < b
+- **a == b**							Compares the two values, deeply.
+- **a != b**							Derivated of a == b.
+- **a < b**								Tests all member data in the order they appear in the struct.
+- **a <= b**, **a > b**, **a >= b**	These are derivated of a < b
+
+
+# TRUE DEEP
+
+True-deep is a Floyd term that means that all values and sub-values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment, for example.
+
+The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
 
 
 # VALUES, VARIABLES AND CONSTANTS
-All "variables" aka values are by immutable.
+
+All "variables" aka values are immutable.
 
 - Function arguments
 - Local function variables
 - Member variables of structs etc.
 
-Floyd is statically types, which means every variable only supports a specific type of value.
+Floyd is statically typed, which means every variable only supports a specific type of value.
 
-When defining a variable you can often skip telling which type it is, since the type can be deduced.
+When defining a variable you can often skip telling which type it is, since the type can be deduced by the Floyd compiler.
 
 Explicit
 
+```
 	int x = 10;
+```
 
 Implicit
 
+```
 	y = 11;
+```
 
 
 Example:
 
+```
 	int main(){
 		a = "hello";
 		a = "goodbye";	//	Runtime error - you cannot change variable a.
 		return 3;
 	}
+```
 
 You can use "mutable" to make a local variable changeable.
 
+```
 	int main(){
 		mutable a = "hello";
 		a = "goodbye";	//	Changes variable a to "goodbye".
 		return 3;
 	}
-
-You can often avoid mutable variables. Brings comfort to imperative programmers.
+```
 
 # GLOBAL SCOPE
-Used for function definitions, and structs.
+
+Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start, before main() is called. You don't even need a main function if you don't want it.
+
+
+**main()** This function is called by the host when program starts. You get the input arguments from the outside world (command line arguments etc) and you can return an integer to the outside.
 
 
 # FUNCTIONS
-Functions in Floyd are pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at different times, like get_time().
+
+Functions in Floyd are by default pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at different times, like get_time().
+
+While a function executes, it percieves the outside world to stand still.
 
 Functions always return exactly one value. Use a struct to return more values.
 
@@ -98,6 +133,7 @@ A function without return value usually makes no sense since function cannot hav
 
 Example function definitions:
 
+```
 	int f1(string x){
 		return 3;
 	}
@@ -113,38 +149,36 @@ Example function definitions:
 	string f4(string x, bool y){
 		return "<" + x + ">";
 	}
+```
 
 Function types:
 
+```
 	bool (string, float)
+```
 
-
-Details:
-
-	bool f(string a, string b){
-		return a == b;
-	}
-
-This creates:
-
-1. a new type, bool (string, string)
-2. a new function object (containing the code) with type: bool (string, string).
-3. a new variable "f" assigned to the new function value.
 
 This is a function that takes a function value as argument:
 
+```
 	int f5(bool (string, string))
+```
 
 This is a function that returns a function value:
 
+```
 	bool (string, string) f5(int x)
+```
 
 
 # EXPRESSIONS
+
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep - they consider all members and also member structs and collections.
 
 ###	Arithmetic Operators
+How to add and combine values:
+
 ```
 +	Addition - adds two operands: "a = b + c", "a = b + c + d"
 −	Subtracts second operand from the first. "a = b - c", "a = b - c - d"
@@ -154,8 +188,10 @@ Comparisons are true-deep - they consider all members and also member structs an
 ```
 
 ### Relational Operators
+Used to compare two values. The result is true or false:
+
 ```
-	a == b				true if a and b have the same value
+**a == b**				true if a and b have the same value
 	a != b				true if a and b have different values
 	a > b				true if the value of a is greater than the value of b
 	a < b				true if the value of a is smaller than the value of b
@@ -164,37 +200,53 @@ Comparisons are true-deep - they consider all members and also member structs an
 ```
 
 ### Logical Operators
+Used to compare two values. The result is true or false:
+
+```
 	a && b
 	a || b
+```
 
 ### Conditional Operator
-condition ? a : b		When condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls etc.
+```
+	condition ? a : b
+```
 
+When the condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls etc.
+
+```
 	bool is_polite(string x){
 		return x == "hello" ? "polite" : "rude"
 	}
 	assert(is_polity("hiya!") == false);
 	assert(is_polity("hello") == true);
+```
 
 
 # IF - THEN - ELSE -- STATEMENT
+
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
+```
 		if (s == "one"){
 			return 1;
 		}
+```
 
 You can add an else body like this:
 
+```
 		if(s == "one"){
 			return 1;
 		}
 		else{
 			return -1;
 		}
+```
 
 Else-if lets you avoid big nested if-else statements and do this:
 
+```
 		if(s == "one"){
 			return 1;
 		}
@@ -204,6 +256,7 @@ Else-if lets you avoid big nested if-else statements and do this:
 		else{
 			return -1;
 		}
+```
 
 In each body you can write any statements. There is no "break" keyword.
 
@@ -215,33 +268,41 @@ There are two loop feature, the for-loop and the while-loop. They are simpler an
 
 # FOR
 
-For-loops are used to evaluate its body many times, with a range of input values. The entire condition expression is evaluated *before* the first time the body is called.
+For-loops are used to evaluate its body many times, with a range of input values. The entire condition expression is evaluated *before* the first time the body is called. This means the program already decided the number of loops to run before running the first time.
 
 Closed range that starts with 1 and ends with 5.:
 
+```
 	for (index in 1...5) {
 		print(index)
 	}
+```
 
 Open range that starts with 1 and ends with 59:
 
+```
 	for (tickMark in 0..<60) {
 	}
+```
 
 You can use expressions for range:
 
+```
 	for (tickMark in a..<string.size()) {
 	}
+```
 
 
 
 Above snippet simulates the for loop of the C language but it works a little differently. There is always exactly ONE loop variable and it is defined and inited in the first section, checked in the condition section and incremented / updated in the third section. It must be the same symbol.
 The result is the equivalent to
 
+```
 	b = 3
 	{ a = 0; print(a + b); }
 	{ a = 1; print(a + b); }
 	{ a = 2; print(a + b); }
+```
 
 The loop is expanded before the first time the body is called. There is no way to have any other kind of condition expression, that relies on the result of the body etc.
 
@@ -253,38 +314,41 @@ The loop is expanded before the first time the body is called. There is no way t
 
 # WHILE
 
+```
 	while (my_array[a] != 3){
 	}
+```
 
-- condition: executed each time before body is executed.
-
+- condition: executed each time before body is executed. If the condition is false initially, then zero loops will run.
 
 
 
 # VECTOR
-A vector is a collection where you lookup your values using an index between 0 and (vector size - 1). The elements are ordered. Finding the correct element is constant time.
+A vector is a collection of values where you lookup your values using an index between 0 and (vector size - 1). The elements are ordered. Finding the correct element is constant time. In other languages vectors are called "arrays" or even "lists".
 
 Examples:
 
-		vector(int)
-		vector(int, 1, 2, 3)
-
+```
 	a = [int]();					//	Create empty vector of ints.
 	b = [int](1, 2, 3);				//	Create a vector with three ints.
 	b = [1, 2, 3];					//	Shortcut to create a vector with three ints. Int-type is deducted from value.
 	a = [string]();					//	Empty vector of strings
 	b = [string] ( "a", "b", "c");	//	Vector initialized to 3 strings.
 	b = ["one", "two", "three"];	//	Shortcut to create a vector with 3 strings.
+```
 
 The vector is persistent so you *can* write elements to it, but you always get a *new* vector back - the original vector is unmodified:
 
+```
 	a = ["one", "two", "three" ];
 	b = update(a, 1, "zwei");
 	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
+```
 
 
 ### Vector Reference:
 
+```
 	a = [T][ 1, 2, 3, ... ];
 	c = a[0]
 	int s size(a)
@@ -293,40 +357,43 @@ The vector is persistent so you *can* write elements to it, but you always get a
 	[T] subset([T] in, int start, int end);
 	[T] = replace([T], 4, 10, [T], 0, 2)
 	for(x: [1, 2, 3]){ print(x)	; }
+```
 
 
 
+# STRUCTs - BASICS
 
+Structs are the central building block for composing data in Floyd. They are used in place of structs and classes in other programming languages. Structs are always values and immutable. They are still fast and compact: behind the curtains copied structs  shares state between them, even when partially modified.
 
-# STRUCTs - Simple structs
-Structs are the central building blocks for composing data in Floyd. They are used in place of C-structs, classes and tuples in other languages. Structs are always values and immutable. Behind the curtains they share state between copies so they are fast and compact.
+### Automatic features of every struct:
 
-Built-in features of every struct:
-
-- init(...) by supplying EVERY member in order
-- destructor
+- constructor -- this is the only function that can create a value of the struct. It always requires every struct member, in the order they are listed in the struct definition. Make explicit function that makes making values more convenient.
+- destructor -- will destroy the value including member values, when no longer needed. There are no custom destructors.
 - Comparison operators: == != < > <= >= (this allows sorting too)
-- read member
-- modify member (this keeps original struct and gives you a new, updated struct)
+- Reading member values.
+- Modify member values
 
 There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects caused by several clients modifying the same struct.
 
-This all makes simple structs extremely simple to create.
+This all makes simple structs extremely simple to create and use.
 
-Structs are **true-deep**. True-deep is a Floyd term that means that all values and sub-values are always considered so any type of nesting of structs and values and collections. This includes equality checks or assignment, for example. The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
+### Not possible:
 
-- There is only *one* way to initialize the members, via the constructor - which always takes *all* members
+- You cannot make constructors. There is only *one* way to initialize the members, via the constructor - which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
 - There is no way to have several different constructors, instead create explicit functions like make_square().
 - If you want a default constructor, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0); }```.
+- There is no aliasing of structs -- changing a struct is always invisible to all other code that has copies of that struct.
 
-Insight: there are two different needs for structs: A) we want simple struct to be dead-simple -- whenyou just want to collect data together. B) We want to be able to have explicit control over the member data invariant.
-
+```
 	//	Make simple, ready-for use struct.
 	struct rect {
 		float width;
 		float height;
 	};
+
+
+	//	Try the new struct:
 
 	a = rect(0, 3);
 	assert(a.width == 0);
@@ -339,11 +406,13 @@ Insight: there are two different needs for structs: A) we want simple struct to 
 	asset(a == b)
 	asset(a != c)
 	asset(c > a)
+```
 
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
 
-Changing member variable of a struct:
+### Changing member variable of a struct:
 
+```
 	//	Make simple, ready-for use struct.
 	struct rect {
 		float width;
@@ -362,9 +431,11 @@ Changing member variable of a struct:
 	//	Now we have the original, unmodified a and the new, updated b.
 	assert(a.width == 0)
 	assert(b.width == 100)
+```
 
 This works with nested values too:
 
+```
 	//	Define an image-struct that holds some stuff, including a pixel struct.
 	struct image { string name; rect size; };
 
@@ -376,33 +447,13 @@ This works with nested values too:
 	b = update(a, "size.width", 100);
 	assert(a.size.width == 512);
 	assert(b.size.width == 100);
+```
 
 
 ### Struct runtime
+
 Notice about optimizations, many accellerations are made behind the scenes:
 
 - Causing a struct to be copied normally only bumps a reference counter and shares the data via a reference. This makes copy fast. This makes equality fast too -- the same objects is always equal.
 
 - You cannot know that two structs with identical contents use the same storage -- if they are created independenlty from each other (not by copying) they are not necessarily deduplicated into the same object.
-
-
-
-
-# SYNTAX REFERENCE
-
-
-### TYPE IDENTIFIERS
-
-#### Basic types
--	null
--	bool
--	int
--	float
--	string
-
-#### Composite types
--	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)
-
-#### Custom types
--	struct_type_x
--	struct_type_y
