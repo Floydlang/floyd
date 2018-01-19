@@ -133,10 +133,12 @@ enum class eoperation {
 //	k_1_logical_not
 
 	//	-a
-	k_1_unary_minus
+	k_1_unary_minus,
 
 
 //	k_0_identifier
+
+	k_1_vector_definition
 };
 
 
@@ -145,6 +147,7 @@ enum class eoperation {
 
 
 /*
+	??? rename to "literal_t"?
 	Used to store a constant, of one of the built-in C-types.
 */
 struct constant_value_t {

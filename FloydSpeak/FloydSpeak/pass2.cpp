@@ -88,10 +88,7 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 */
 
 
-typeid_t resolve_type_name(const string& t){
-	QUARK_ASSERT(t.size() > 0);
-
-//	const auto t2 = from_source_code_string(t);
+typeid_t resolve_type_name(const json_t& t){
 	const auto t2 = typeid_from_normalized_json(t);
 	return t2;
 }
@@ -105,7 +102,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 		QUARK_ASSERT(e.get_array_size() == 3);
 
 		const auto value = e.get_array_n(1);
-		const auto type = e.get_array_n(2).get_string();
+		const auto type = e.get_array_n(2);
 		const auto type2 = resolve_type_name(type);
 
 		if(type2.is_null()){
@@ -173,6 +170,18 @@ expression_t parser_expression_to_ast(const json_t& e){
 		const auto lookup_key_expr = parser_expression_to_ast(e.get_array_n(2));
 		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, typeid_t::make_null());
 	}
+	else if(op == "vector-def"){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		const auto element_type = resolve_type_name(e.get_array_n(1));
+		const auto elements = e.get_array_n(2).get_array();
+
+		std::vector<expression_t> elements2;
+		for(const auto m: elements){
+			elements2.push_back(parser_expression_to_ast(m));
+		}
+
+		return expression_t::make_vector_definition(element_type, elements2);
+	}
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -239,7 +248,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto expr = statement.get_array_n(3);
 			const auto meta = statement.get_array_n(4);
 
-			const auto bind_type2 = resolve_type_name(bind_type.get_string());
+			const auto bind_type2 = resolve_type_name(bind_type);
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
 			bool mutable_flag = meta.does_object_element_exist("mutable");
@@ -311,7 +320,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto name2 = name.get_string();
 			const auto args2 = conv_members(args);
 			const auto fstatements2 = parser_statements_to_ast(fstatements);
-			const auto return_type2 = resolve_type_name(return_type.get_string());
+			const auto return_type2 = resolve_type_name(return_type);
 
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);

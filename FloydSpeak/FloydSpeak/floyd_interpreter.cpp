@@ -462,6 +462,39 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		return {vm2, expression_t::make_literal(make_function_value(expr->_def))};
 	}
 
+	else if(op == expression_type::k_vector_definition){
+		const auto expr = e.get_vector_definition();
+
+		const std::vector<expression_t>& elements = expr->_elements;
+		std::vector<value_t> elements2;
+
+		typeid_t element_type = expr->_element_type;
+
+		for(const auto m: elements){
+			const auto element_expr = evaluate_expression(vm2, m);
+			vm2 = element_expr.first;
+			if(element_expr.second.is_literal() == false){
+				throw std::runtime_error("Cannot evaluate element of vector definition!");
+			}
+
+			const auto element = element_expr.second.get_literal();
+
+			//	Grab vector type from element(s). This is a little fuzzy. Should probably make sure all elements are the same type.
+			if(element_type.is_null()){
+				element_type = element.get_type();
+			}
+
+			elements2.push_back(element);
+		}
+
+		for(const auto m: elements2){
+			if((m.get_type() == element_type) == false){
+				throw std::runtime_error("Vector can not hold elements of different type!");
+			}
+		}
+		return {vm2, expression_t::make_literal(make_vector_value(element_type, elements2))};
+	}
+
 	//	This can be desugared at compile time.
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
 		const auto expr = e.get_unary_minus();
@@ -2633,7 +2666,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 
 
 
-QUARK_UNIT_TESTQ("run_main()", "vector"){
+QUARK_UNIT_TEST("vector", "vector()", "ints", "valid vector"){
 	const auto vm = run_global(R"(
 		a = vector(int, 1, 2);
 		print(a);
@@ -2641,7 +2674,7 @@ QUARK_UNIT_TESTQ("run_main()", "vector"){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"[int](1,2)"	}	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "vector"){
+QUARK_UNIT_TEST("vector", "[]", "ints", "valid readback"){
 	const auto vm = run_global(R"(
 		a = vector(int, 1, 2);
 		print(a[0]);
@@ -2649,18 +2682,45 @@ QUARK_UNIT_TESTQ("run_main()", "vector"){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"1", "2"	}	));
 }
-QUARK_UNIT_TESTQ("run_main()", "vector"){
+
+QUARK_UNIT_TEST("vector", "vector()", "strings", "valid vector"){
 	const auto vm = run_global(R"(
 		a = vector(string, "one", "two");
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+}
+
+QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = ["one", "two"];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+}
+
+QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		[string] a = ["one", "two"];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+}
+#if false
+QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		[string] a = [string]("one", "two");
 		print(a[0]);
 		print(a[1]);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
 }
+#endif
 
-QUARK_UNIT_TESTQ("run_main()", "vector"){
+
+QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){
 	const auto vm = run_global(R"(
-		a = vector(string, "one", "two", "three");
+		a = [ "one", "two", "three"];
 		b = update(a, 1, "zwei");
 		print(a);
 		print(b);
@@ -2671,7 +2731,9 @@ QUARK_UNIT_TESTQ("run_main()", "vector"){
 	}	));
 }
 
-//??? try accessing array->struct->array.
+
+//??? test accessing array->struct->array.
+//??? test structs in vectors.
 
 
 }	//	floyd

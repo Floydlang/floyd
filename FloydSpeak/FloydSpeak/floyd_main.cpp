@@ -21,13 +21,25 @@ int main(int argc, const char * argv[]) {
 	try {
 #if QUARK_UNIT_TESTS_ON
 		quark::run_tests({
+			"quark.cpp",
+
 			"floyd_basics.cpp",
+
+			"parser2.cpp",
+			"parser_value.cpp",
+			"parser_primitives.cpp",
+
+			"parser_expression.cpp",
+			"parser_function.cpp",
+			"parser_statement.cpp",
+			"parser_struct.cpp",
+
 			"floyd_parser.cpp",
+
 			"parse_statement.cpp",
 			"floyd_interpreter.cpp",
 
 			//	Core libs
-			"quark.cpp"
 /*
 			"steady_vector.cpp",
 			"text_parser.cpp",
@@ -47,16 +59,6 @@ int main(int argc, const char * argv[]) {
 
 			"llvm_code_gen.cpp",
 
-			"parser2.cpp",
-			"parser_value.cpp",
-			"parser_types_collector.cpp",
-			"parser_expression.cpp",
-			"parser_function.cpp",
-			"parser_primitives.cpp",
-			"parser_statement.cpp",
-			"parser_struct.cpp",
-
-			"floyd_parser.cpp",
 
 			"runtime_core.cpp",
 			"runtime_value.cpp",

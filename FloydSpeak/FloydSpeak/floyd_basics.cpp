@@ -149,6 +149,8 @@ expression_type token_to_expression_type(const string& op){
 
 
 	bool typeid_t::check_invariant() const{
+		QUARK_ASSERT(_DEBUG != "");
+
 		if(_base_type == floyd::base_type::k_null){
 			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unique_type_id.empty());
@@ -222,6 +224,7 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
 
+		std::swap(_DEBUG, other._DEBUG);
 		std::swap(_base_type, other._base_type);
 		_parts.swap(other._parts);
 		_unique_type_id.swap(other._unique_type_id);
@@ -300,7 +303,10 @@ expression_type token_to_expression_type(const string& op){
 	typeid_t typeid_from_normalized_json(const json_t& t){
 		if(t.is_string()){
 			const auto s = t.get_string();
-			if(s == "null"){
+			if(s == ""){
+				return typeid_t::make_null();
+			}
+			else if(s == "null"){
 				return typeid_t::make_null();
 			}
 			else if(s == "bool"){
@@ -362,7 +368,7 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 	std::string typeid_to_compact_string(const typeid_t& t){
-		QUARK_ASSERT(t.check_invariant());
+//		QUARK_ASSERT(t.check_invariant());
 
 		const auto basetype = t.get_base_type();
 

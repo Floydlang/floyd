@@ -18,6 +18,9 @@
 
 namespace floyd {
 	struct value_t;
+	struct typeid_t;
+
+	std::string typeid_to_compact_string(const typeid_t& t);
 
 	const std::vector<std::string> basic_types {
 		"bool",
@@ -166,7 +169,9 @@ namespace floyd {
 		k_lookup_element,
 
 		//???	use k_literal for function values?
-		k_define_function
+		k_define_function,
+
+		k_vector_definition
 	};
 
 	expression_type token_to_expression_type(const std::string& op);
@@ -355,7 +360,8 @@ namespace floyd {
 
 		public: bool operator==(const typeid_t& other) const{
 			return
-				_base_type == other._base_type
+				_DEBUG == other._DEBUG
+				&& _base_type == other._base_type
 				&& _parts == other._parts
 				&& _unique_type_id == other._unique_type_id
 				&& _unknown_identifier == other._unknown_identifier
@@ -385,11 +391,12 @@ namespace floyd {
 			_unknown_identifier(unknown_identifier),
 			_struct_def(struct_def)
 		{
+			_DEBUG = typeid_to_compact_string(*this);
 		}
 
 
 		/////////////////////////////		STATE
-
+		private: std::string _DEBUG;
 		private: floyd::base_type _base_type;
 		private: std::vector<typeid_t> _parts;
 		private: std::string _unique_type_id;

@@ -56,6 +56,14 @@ static json_t op2_to_json(eoperation op, const expr_t& expr0, const expr_t& expr
 }
 
 
+json_t expr_vector_to_json_array(const vector<expr_t>& v){
+	vector<json_t> v2;
+	for(const auto e: v){
+		v2.push_back(expr_to_json(e));
+	}
+	return v2;
+}
+
 json_t expr_to_json(const expr_t& e){
 	if(e._op == eoperation::k_0_number_constant){
 		const auto value = *e._constant;
@@ -142,6 +150,9 @@ json_t expr_to_json(const expr_t& e){
 	}
 	else if(e._op == eoperation::k_1_unary_minus){
 		return make_array_skip_nulls({ json_t("unary_minus"), json_t(), expr_to_json(e._exprs[0]) });
+	}
+	else if(e._op == eoperation::k_1_vector_definition){
+		return json_t::make_array({ json_t("vector-def"), e._identifier, expr_vector_to_json_array(e._exprs) });
 	}
 	else{
 		QUARK_ASSERT(false)

@@ -25,6 +25,9 @@ using namespace std;
 namespace parser2 {
 
 
+std::pair<expr_t, seq_t> parse_vector_definition(const seq_t& p);
+
+
 QUARK_UNIT_TESTQ("C++ operators", ""){
 	const int a = 2-+-2;
 	QUARK_TEST_VERIFY(a == 4);
@@ -156,6 +159,10 @@ const expr_t maker__call(const expr_t& f, const std::vector<expr_t>& args){
 	return expr_t{ eoperation::k_n_call, exprs, {}, "" };
 }
 
+const expr_t maker_vector_definition(const std::string& element_type, const std::vector<expr_t>& elements){
+	return expr_t{ eoperation::k_1_vector_definition, elements, {}, element_type };
+}
+
 const expr_t maker__member_access(const expr_t& address, const std::string& member_name){
 	return expr_t{ eoperation::k_x_member_access, { address }, {}, member_name };
 }
@@ -180,6 +187,10 @@ std::pair<expr_t, seq_t> parse_operation(const seq_t& p0, const expr_t& lhs, con
 
 		//	Ending parantesis
 		if(op1 == ")" && precedence > eoperator_precedence::k_parentesis){
+			return { lhs, p0 };
+		}
+
+		else if(op1 == "]" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
 		}
 
@@ -397,6 +408,12 @@ std::pair<expr_t, seq_t> parse_atom(const seq_t& p){
 		return { a.first, p3.rest() };
 	}
 
+	//	Vector definition "[ 1, 2, 3 ]", "[ calc_pi(), 2.8, calc_pi * 2.0]"
+	else if(ch1 == '['){
+		const auto a = parse_vector_definition(p2);
+		return { a.first, a.second };
+	}
+
 	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
 	//	"1234xxx" or "my_function(3)xxx"
 	else {
@@ -457,6 +474,46 @@ std::pair<expr_t, seq_t> parse_function_call(const seq_t& p1, const expr_t& lhs,
 	}
 }
 
+//??? Unify with parse_function_call.
+//	[1,2,3]
+std::pair<expr_t, seq_t> parse_vector_definition(const seq_t& p){
+	QUARK_ASSERT(p.check_invariant());
+	QUARK_ASSERT(p.first() == "[");
+
+	const auto pos3 = skip_expr_whitespace(p.rest());
+
+	//	No elements.
+	if(pos3.first() == "]"){
+		const auto result = maker_vector_definition("", {});
+		return {result, pos3 };
+	}
+	//	1-many arguments.
+	else{
+		auto pos_loop = skip_expr_whitespace(pos3);
+		std::vector<expr_t> elements_expr;
+		bool more = true;
+		while(more){
+			const auto a = parse_expression_chaining(pos_loop, eoperator_precedence::k_super_weak);
+			elements_expr.push_back(a.first);
+
+			const auto pos5 = skip_expr_whitespace(a.second);
+			const auto ch = pos5.first();
+			if(ch == ","){
+				more = true;
+			}
+			else if(ch == "]"){
+				more = false;
+			}
+			else{
+				throw std::runtime_error("Unexpected char");
+			}
+			pos_loop = pos5.rest();
+		}
+
+		const auto result = maker_vector_definition("", elements_expr);
+		return {result, pos_loop };
+	}
+}
 
 std::pair<expr_t, seq_t> parse_member_access_operator(const seq_t& p, const expr_t& lhs, const eoperator_precedence prev_precedence){
 	QUARK_ASSERT(p.check_invariant());
@@ -654,10 +711,23 @@ std::string expr_to_string(const expr_t& e){
 		}
 		ss << "]]";
 		return ss.str();
-
 	}
 	else if(e._op == eoperation::k_1_unary_minus){
 		return "[\"unary_minus\", " + expr_to_string(e._exprs[0]) + "]";
+	}
+	//	["vector-def", ELEMENT-TYPE, [ ELEMENT, ELEMENT, ...]]
+	else if(e._op == eoperation::k_1_vector_definition){
+		std::ostringstream ss;
+		ss << "[\"vector-def\", " << "\"" << e._identifier + "\"" << ", [";
+		for(auto i = 0 ; i < e._exprs.size() ; i++){
+			const auto& arg = expr_to_string(e._exprs[i]);
+			ss << arg;
+			if(i != (e._exprs.size() - 1)){
+				ss << ", ";
+			}
+		}
+		ss << "]]";
+		return ss.str();
 	}
 	else{
 		QUARK_ASSERT(false)
@@ -857,6 +927,16 @@ QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression(
 	R"(["-", ["+", ["*", ["k", "int", 3], ["k", "int", 2]], ["*", ["k", "int", 8], ["k", "int", 2]]], ["*", ["k", "int", 1], ["k", "int", 2]]])",
 	""
 ));
+
+
+
+//////////////////////////////////			vector definition
+
+//	"[\"vector-def\", \"\", [[\"k\", \"int\", 1], [\"k\", \"int\", 2], [\"k\", \"int\", 3]]]"
+
+QUARK_UNIT_TESTQ("run_main()", "vector"){
+	QUARK_UT_VERIFY(test__parse_expression("[1,2,3]", R"(["vector-def", "", [["k", "int", 1], ["k", "int", 2], ["k", "int", 3]]])", ""));
+}
 
 
 //////////////////////////////////			NEG

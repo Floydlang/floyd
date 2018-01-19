@@ -176,7 +176,8 @@ namespace floyd {
 				|| op == expression_type::k_call
 				|| op == expression_type::k_variable
 				|| op == expression_type::k_resolve_member
-				|| op == expression_type::k_lookup_element)
+				|| op == expression_type::k_lookup_element
+				|| op == expression_type::k_define_function)
 			{
 				QUARK_ASSERT(false);
 			}
@@ -285,45 +286,6 @@ namespace floyd {
 		public: const conditional_expr_t* get_conditional() const {
 			return dynamic_cast<const conditional_expr_t*>(_expr.get());
 		}
-
-/*
-		////////////////////////////////			make_struct_definition()
-
-
-		public: struct struct_definition_expr_t : public expr_base_t {
-			public: virtual ~struct_definition_expr_t(){};
-
-			public: struct_definition_expr_t(const struct_definition_t & def)
-			:
-				_def(def)
-			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _def._struct_type;
-			}
-
-			public: virtual json_t expr_base__to_json() const {
-				return _def.to_json();
-			}
-
-
-			const struct_definition_t _def;
-		};
-
-		public: static expression_t make_struct_definition(const struct_definition_expr_t& def){
-			return expression_t{
-				expression_type::k_define_struct,
-				std::make_shared<struct_definition_expr_t>(
-					struct_definition_expr_t{ struct_definition_expr_t(def) }
-				)
-			};
-		}
-
-		public: const struct_definition_expr_t* get_struct_definition() const {
-			return dynamic_cast<const struct_definition_expr_t*>(_expr.get());
-		}
-*/
 
 		////////////////////////////////			make_function_call()
 
@@ -582,6 +544,60 @@ namespace floyd {
 
 
 
+		////////////////////////////////			make_vector_definition()
+
+
+
+		public: struct vector_definition_exprt_t : public expr_base_t {
+			public: virtual ~vector_definition_exprt_t(){};
+
+			public: vector_definition_exprt_t(
+				const typeid_t& element_type,
+				const std::vector<expression_t>& elements
+			)
+			:
+				_element_type(element_type),
+				_elements(elements)
+			{
+			}
+
+			public: virtual typeid_t get_result_type() const{
+				return _element_type;
+			}
+
+			public: virtual json_t expr_base__to_json() const {
+				return json_t::make_array({
+					"vector-def",
+					typeid_to_normalized_json(_element_type),
+					expressions_to_json(_elements)
+				});
+			}
+
+
+			const typeid_t _element_type;
+			std::vector<expression_t> _elements;
+		};
+
+		public: static expression_t make_vector_definition(
+			const typeid_t& element_type,
+			const std::vector<expression_t>& elements
+		)
+		{
+			return expression_t{
+				expression_type::k_vector_definition,
+				std::make_shared<vector_definition_exprt_t>(
+					vector_definition_exprt_t{ element_type, elements }
+				)
+			};
+		}
+
+		public: const vector_definition_exprt_t* get_vector_definition() const {
+			return dynamic_cast<const vector_definition_exprt_t*>(_expr.get());
+		}
+
+
+
+
 		////////////////////////////////			OTHER
 
 
@@ -614,7 +630,7 @@ namespace floyd {
 			const std::shared_ptr<const expr_base_t>& expr
 		);
 
-
+//??? make const
 		//////////////////////////		STATE
 		private: std::string _debug;
 		private: expression_type _operation;
@@ -651,10 +667,6 @@ namespace floyd {
 			&& lhs._result == rhs._result;
 	}
 
-/*	inline bool operator==(const expression_t::struct_definition_expr_t& lhs, const expression_t::struct_definition_expr_t& rhs){
-		return lhs._def == rhs._def;
-	}
-*/
 	inline bool operator==(const expression_t::function_definition_expr_t& lhs, const expression_t::function_definition_expr_t& rhs){
 		return lhs._def == rhs._def;
 	}
@@ -664,6 +676,11 @@ namespace floyd {
 			lhs._function == rhs._function
 			&& lhs._args == rhs._args
 			&& lhs._result == rhs._result;
+	}
+	inline bool operator==(const expression_t::vector_definition_exprt_t& lhs, const expression_t::vector_definition_exprt_t& rhs){
+		return
+			lhs._element_type == rhs._element_type
+			&& lhs._elements == rhs._elements;
 	}
 
 }	//	floyd
