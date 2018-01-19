@@ -140,7 +140,7 @@ namespace floyd {
 
 		if(e._return){
 			return json_t::make_array({
-				json_t("return"),
+				json_t(keyword_t::k_return),
 				expression_to_json(e._return->_expression)
 			});
 		}
@@ -187,7 +187,7 @@ namespace floyd {
 		}
 		else if(e._while){
 			return json_t::make_array({
-				json_t("while"),
+				json_t(keyword_t::k_while),
 				expression_to_json(e._while->_condition),
 				statements_to_json(e._while->_body)
 			});

@@ -417,7 +417,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 				)
 			));
 		}
-		else if(type == "while"){
+		else if(type == keyword_t::k_while){
 			QUARK_ASSERT(statement.get_array_size() == 3);
 			const auto expression = statement.get_array_n(1);
 			const auto body_statements = statement.get_array_n(2);

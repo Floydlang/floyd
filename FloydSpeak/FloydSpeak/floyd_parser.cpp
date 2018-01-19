@@ -48,7 +48,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 	if(is_first(pos, "{")){
 		return parse_block(pos);
 	}
-	else if(is_first(pos, "return")){
+	else if(is_first(pos, keyword_t::k_return)){
 		return parse_return_statement(pos);
 	}
 	else if(is_first(pos, "struct")){
@@ -60,7 +60,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 	else if(is_first(pos, "for")){
 		return parse_for_statement(seq_t(pos));
 	}
-	else if(is_first(pos, "while")){
+	else if(is_first(pos, keyword_t::k_while)){
 		return parse_while_statement(seq_t(pos));
 	}
 	else {

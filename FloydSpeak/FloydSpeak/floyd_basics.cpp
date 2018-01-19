@@ -19,6 +19,14 @@ using std::vector;
 
 namespace floyd {
 
+	//////////////////////////////////////////////////		keywords
+
+
+const std::string keyword_t::k_return = "return";
+const std::string keyword_t::k_while = "while";
+
+
+
 	//////////////////////////////////////////////////		base_type
 
 

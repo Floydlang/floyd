@@ -364,7 +364,6 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 
 
 std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
-	std::pair<bool, seq_t> while_pos = if_first(pos, "while");
 	QUARK_ASSERT(while_pos.first);
 
 	const auto condition = read_enclosed_in_parantheses(while_pos.second);
@@ -373,7 +372,6 @@ std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
 	const auto condition_expr = parse_expression_all(seq_t(condition.first));
 	const auto r = json_t::make_array(
 		{
-			"while",
 			condition_expr,
 			body.first
 		}

@@ -19,8 +19,50 @@
 namespace floyd {
 	struct value_t;
 	struct typeid_t;
-
 	std::string typeid_to_compact_string(const typeid_t& t);
+
+
+	struct keyword_t {
+		static const std::string k_return;
+		static const std::string k_while;
+
+	};
+
+	const std::vector<std::string> keywordsxxx {
+		"assert",
+		"-catch",
+		"-deserialize()",
+		"-diff()",
+		"else",
+		"-ensure",
+		"false",
+		"foreach",
+		"-hash()",
+		"if",
+		"-invariant",
+		"log",
+		"mutable",
+		"-namespace",
+		"-null",
+		"-private",
+		"-property",
+		"-prove",
+		"-require",
+		"return",
+		"-serialize()",
+		"-swap",
+		"-switch",
+		"-tag",
+		"-test",
+		"-this",
+		"true",
+		"-try",
+		"-typecast",
+		"-typeof",
+	};
+
+
+
 
 	const std::vector<std::string> basic_types {
 		"bool",
@@ -56,40 +98,6 @@ namespace floyd {
 		"struct",
 		"-typedef",
 		"-vector"
-	};
-
-	const std::vector<std::string> keywords {
-		"assert",
-		"-catch",
-		"-deserialize()",
-		"-diff()",
-		"else",
-		"-ensure",
-		"false",
-		"foreach",
-		"-hash()",
-		"if",
-		"-invariant",
-		"log",
-		"mutable",
-		"-namespace",
-		"-null",
-		"-private",
-		"-property",
-		"-prove",
-		"-require",
-		"return",
-		"-serialize()",
-		"-swap",
-		"-switch",
-		"-tag",
-		"-test",
-		"-this",
-		"true",
-		"-try",
-		"-typecast",
-		"-typeof",
-		"while"
 	};
 
 
