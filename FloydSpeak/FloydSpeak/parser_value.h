@@ -486,6 +486,17 @@ namespace floyd {
 			}
 		}
 
+		//	Special handling of strings, we want to wrap in "".
+		std::string to_compact_string_quote_strings() const {
+			const auto s = to_compact_string();
+			if(is_string()){
+				return "\"" + s + "\"";
+			}
+			else{
+				return s;
+			}
+		}
+
 		/*
 			bool: "true"
 			int: "0"
@@ -498,15 +509,8 @@ namespace floyd {
 			if(is_null()){
 				return "<null>";
 			}
-			//	Special handling of strings, we want to wrap in "".
-			else if(is_string()){
-				std::string type_string = floyd::typeid_to_compact_string(_typeid);
-				return type_string + ": " + "\"" + to_compact_string() + "\"";
-			}
-			else{
-				std::string type_string = floyd::typeid_to_compact_string(_typeid);
-				return type_string + ": " + to_compact_string();
-			}
+			std::string type_string = floyd::typeid_to_compact_string(_typeid);
+			return type_string + ": " + to_compact_string_quote_strings();
 		}
 
 		public: typeid_t get_type() const{

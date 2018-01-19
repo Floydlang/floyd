@@ -1210,34 +1210,62 @@ value_t update_struct_member_deep(const interpreter_t& vm, const value_t& obj, c
 	}
 }
 
-
-
-//??? use to update vector too!
 std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto& obj = args[0];
-	const auto& member_name = args[1];
+	const auto& lookup_key = args[1];
 	const auto& new_value = args[2];
 
 	if(args.size() != 3){
 		throw std::runtime_error("update() needs 3 arguments.");
 	}
-	else if(obj.is_struct() == false){
-		throw std::runtime_error("Can only update struct.");
-	}
-	else if(member_name.is_string() == false){
-		throw std::runtime_error("You must specify structure member using string.");
+	else if(obj.is_struct() == false && obj.is_vector() == false){
+		throw std::runtime_error("Can only update struct or vector.");
 	}
 	else{
-		//### Does simple check for "." -- we should use vector of strings instead.
-		const auto nodes = split_on_chars(seq_t(member_name.get_string_value()), ".");
-		if(nodes.empty()){
-			throw std::runtime_error("You must specify structure member using string.");
-		}
+		if(obj.is_struct()){
+			if(lookup_key.is_string() == false){
+				throw std::runtime_error("You must specify structure member using string.");
+			}
+			else{
+				//### Does simple check for "." -- we should use vector of strings instead.
+				const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value()), ".");
+				if(nodes.empty()){
+					throw std::runtime_error("You must specify structure member using string.");
+				}
 
-		const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value);
-		return {vm, s2 };
+				const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value);
+				return {vm, s2 };
+			}
+		}
+		else if(obj.is_vector()){
+			if(lookup_key.is_int() == false){
+				throw std::runtime_error("Vector lookup using integer index only.");
+			}
+			else{
+				const auto v = obj.get_vector_value();
+				auto v2 = v->_elements;
+
+				if((v->_element_type == new_value.get_type()) == false){
+					throw std::runtime_error("Update element must match vector type.");
+				}
+				else{
+					const int lookup_index = lookup_key.get_int_value();
+					if(lookup_index < 0 || lookup_index >= v->_elements.size()){
+						throw std::runtime_error("Vector lookup out of bounds.");
+					}
+					else{
+						v2[lookup_index] = new_value;
+						const auto s2 = make_vector_value(v->_element_type, v2);
+						return {vm, s2 };
+					}
+				}
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 	}
 }
 
@@ -2605,7 +2633,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 
 
 
-QUARK_UNIT_TESTQ("run_main()", "struct"){
+QUARK_UNIT_TESTQ("run_main()", "vector"){
 	const auto vm = run_global(R"(
 		a = vector(int, 1, 2);
 		print(a);
@@ -2613,7 +2641,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"[int](1,2)"	}	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "struct"){
+QUARK_UNIT_TESTQ("run_main()", "vector"){
 	const auto vm = run_global(R"(
 		a = vector(int, 1, 2);
 		print(a[0]);
@@ -2621,7 +2649,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"1", "2"	}	));
 }
-QUARK_UNIT_TESTQ("run_main()", "struct"){
+QUARK_UNIT_TESTQ("run_main()", "vector"){
 	const auto vm = run_global(R"(
 		a = vector(string, "one", "two");
 		print(a[0]);
@@ -2630,7 +2658,20 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
 }
 
+QUARK_UNIT_TESTQ("run_main()", "vector"){
+	const auto vm = run_global(R"(
+		a = vector(string, "one", "two", "three");
+		b = update(a, 1, "zwei");
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string]("one","two","three"))",
+		R"([string]("one","zwei","three"))"
+	}	));
+}
 
+//??? try accessing array->struct->array.
 
 
 }	//	floyd

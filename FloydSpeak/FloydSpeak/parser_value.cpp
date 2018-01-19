@@ -47,7 +47,7 @@ namespace floyd {
 			const auto& def = v._def._members[i];
 			const auto& value = v._member_values[i];
 
-			const auto m = typeid_to_compact_string(def._type) + " " + def._name + "=" + value.to_compact_string();
+			const auto m = typeid_to_compact_string(def._type) + " " + def._name + "=" + value.to_compact_string_quote_strings();
 			members.push_back(m);
 		}
 		return "struct " + v._def._name + " {" + concat_strings_with_divider(members, ",") + "}";
@@ -84,9 +84,9 @@ namespace floyd {
 
 		std::string to_compact_string(const vector_instance_t& instance){
 			std::vector<std::string> elements;
-			for(const auto m: instance._elements){
-				const auto s = m.to_compact_string();
-				elements.push_back(s);
+			for(const auto e: instance._elements){
+				const auto es = e.to_compact_string_quote_strings();
+				elements.push_back(es);
 			}
 			return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
 		}
