@@ -183,10 +183,14 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 	QUARK_ASSERT(p0.check_invariant());
 
 	const auto p = skip_expr_whitespace(p0);
-	if(!p.empty()){
+	if(p.empty()){
+		return { lhs, p0 };
+	}
+	else {
 		const auto op1 = p.first();
 		const auto op2 = p.first(2);
 
+		//	Detect end of chain.
 		//	Ending parantesis
 		if(op1 == ")" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
@@ -196,140 +200,140 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			return { lhs, p0 };
 		}
 
-		//	Function call
-		//	EXPRESSION (EXPRESSION +, EXPRESSION)
-		else if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
-			return parse_function_call_operation(p, lhs, precedence);
-		}
-
-		//	Member access
-		//	EXPRESSION . EXPRESSION +
-		else if(op1 == "."  && precedence > eoperator_precedence::k_member_access){
-			return parse_member_access_operation(p, lhs, precedence);
-		}
-
-		//	Lookup / subscription
-		//	EXPRESSION [ EXPRESSIONS ] +
-		else if(op1 == "["  && precedence > eoperator_precedence::k_looup){
-			return parse_lookup_operation(p, lhs, precedence);
-		}
-
-		//	EXPRESSION + EXPRESSION +
-		else if(op1 == "+"  && precedence > eoperator_precedence::k_add_sub){
-			const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_add_sub);
-			const auto value2 = maker__make2(eoperation::k_2_add, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		//	EXPRESSION - EXPRESSION -
-		else if(op1 == "-" && precedence > eoperator_precedence::k_add_sub){
-			const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_add_sub);
-			const auto value2 = maker__make2(eoperation::k_2_subtract, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		//	EXPRESSION * EXPRESSION *
-		else if(op1 == "*" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = maker__make2(eoperation::k_2_multiply, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-		//	EXPRESSION / EXPRESSION /
-		else if(op1 == "/" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = maker__make2(eoperation::k_2_divide, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		//	EXPRESSION % EXPRESSION %
-		else if(op1 == "%" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-			const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-			const auto value2 = maker__make2(eoperation::k_2_remainder, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-
-		//	EXPRESSION ? EXPRESSION : EXPRESSION
-		else if(op1 == "?" && precedence > eoperator_precedence::k_comparison_operator) {
-			const auto true_expr_p = parse_expression_int(p.rest(), eoperator_precedence::k_comparison_operator);
-
-			const auto pos2 = skip_expr_whitespace(true_expr_p.second);
-			const auto colon = pos2.first();
-			if(colon != ":"){
-				throw std::runtime_error("Expected \":\"");
+		//	lhs OPERATOR rhs
+		else {
+			//	Function call
+			//	EXPRESSION (EXPRESSION +, EXPRESSION)
+			if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
+				return parse_function_call_operation(p, lhs, precedence);
 			}
 
-			const auto false_expr_p = parse_expression_int(pos2.rest(), precedence);
-			const auto value2 = maker__make3(eoperation::k_3_conditional_operator, lhs, true_expr_p.first, false_expr_p.first);
-			return parse_optional_operation_rightward(false_expr_p.second, value2, precedence);
+			//	Member access
+			//	EXPRESSION . EXPRESSION +
+			else if(op1 == "."  && precedence > eoperator_precedence::k_member_access){
+				return parse_member_access_operation(p, lhs, precedence);
+			}
+
+			//	Lookup / subscription
+			//	EXPRESSION [ EXPRESSIONS ] +
+			else if(op1 == "["  && precedence > eoperator_precedence::k_looup){
+				return parse_lookup_operation(p, lhs, precedence);
+			}
+
+			//	EXPRESSION + EXPRESSION +
+			else if(op1 == "+"  && precedence > eoperator_precedence::k_add_sub){
+				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_add_sub);
+				const auto value2 = maker__make2(eoperation::k_2_add, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			//	EXPRESSION - EXPRESSION -
+			else if(op1 == "-" && precedence > eoperator_precedence::k_add_sub){
+				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_add_sub);
+				const auto value2 = maker__make2(eoperation::k_2_subtract, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			//	EXPRESSION * EXPRESSION *
+			else if(op1 == "*" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+				const auto value2 = maker__make2(eoperation::k_2_multiply, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+			//	EXPRESSION / EXPRESSION /
+			else if(op1 == "/" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+				const auto value2 = maker__make2(eoperation::k_2_divide, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			//	EXPRESSION % EXPRESSION %
+			else if(op1 == "%" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
+				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+				const auto value2 = maker__make2(eoperation::k_2_remainder, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+
+			//	EXPRESSION ? EXPRESSION : EXPRESSION
+			else if(op1 == "?" && precedence > eoperator_precedence::k_comparison_operator) {
+				const auto true_expr_p = parse_expression_int(p.rest(), eoperator_precedence::k_comparison_operator);
+
+				const auto pos2 = skip_expr_whitespace(true_expr_p.second);
+				const auto colon = pos2.first();
+				if(colon != ":"){
+					throw std::runtime_error("Expected \":\"");
+				}
+
+				const auto false_expr_p = parse_expression_int(pos2.rest(), precedence);
+				const auto value2 = maker__make3(eoperation::k_3_conditional_operator, lhs, true_expr_p.first, false_expr_p.first);
+				return parse_optional_operation_rightward(false_expr_p.second, value2, precedence);
+			}
+
+
+			//	EXPRESSION == EXPRESSION
+			else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_equal__not_equal);
+				const auto value2 = maker__make2(eoperation::k_2_logical_equal, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+			//	EXPRESSION != EXPRESSION
+			else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_equal__not_equal);
+				const auto value2 = maker__make2(eoperation::k_2_logical_nonequal, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			//	!!! Check for "<=" before we check for "<".
+			//	EXPRESSION <= EXPRESSION
+			else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto value2 = maker__make2(eoperation::k_2_smaller_or_equal, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			//	EXPRESSION < EXPRESSION
+			else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto value2 = maker__make2(eoperation::k_2_smaller, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+
+			//	!!! Check for ">=" before we check for ">".
+			//	EXPRESSION >= EXPRESSION
+			else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto value2 = maker__make2(eoperation::k_2_larger_or_equal, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			//	EXPRESSION > EXPRESSION
+			else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto value2 = maker__make2(eoperation::k_2_larger, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+
+			//	EXPRESSION && EXPRESSION
+			else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_logical_and);
+				const auto value2 = maker__make2(eoperation::k_2_logical_and, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			//	EXPRESSION || EXPRESSION
+			else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
+				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_logical_or);
+				const auto value2 = maker__make2(eoperation::k_2_logical_or, lhs, rhs.first);
+				return parse_optional_operation_rightward(rhs.second, value2, precedence);
+			}
+
+			else{
+				return { lhs, p0 };
+			}
 		}
-
-
-		//	EXPRESSION == EXPRESSION
-		else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_equal__not_equal);
-			const auto value2 = maker__make2(eoperation::k_2_logical_equal, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-		//	EXPRESSION != EXPRESSION
-		else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_equal__not_equal);
-			const auto value2 = maker__make2(eoperation::k_2_logical_nonequal, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		//	!!! Check for "<=" before we check for "<".
-		//	EXPRESSION <= EXPRESSION
-		else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
-			const auto value2 = maker__make2(eoperation::k_2_smaller_or_equal, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		//	EXPRESSION < EXPRESSION
-		else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
-			const auto value2 = maker__make2(eoperation::k_2_smaller, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-
-		//	!!! Check for ">=" before we check for ">".
-		//	EXPRESSION >= EXPRESSION
-		else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
-			const auto value2 = maker__make2(eoperation::k_2_larger_or_equal, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		//	EXPRESSION > EXPRESSION
-		else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
-			const auto value2 = maker__make2(eoperation::k_2_larger, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-
-		//	EXPRESSION && EXPRESSION
-		else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_logical_and);
-			const auto value2 = maker__make2(eoperation::k_2_logical_and, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		//	EXPRESSION || EXPRESSION
-		else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
-			const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_logical_or);
-			const auto value2 = maker__make2(eoperation::k_2_logical_or, lhs, rhs.first);
-			return parse_optional_operation_rightward(rhs.second, value2, precedence);
-		}
-
-		else{
-			return { lhs, p0 };
-		}
-	}
-	else{
-		return { lhs, p0 };
 	}
 }
 
