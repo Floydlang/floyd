@@ -2706,17 +2706,16 @@ QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "val
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
 }
+
 #if false
 QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vector"){
 	const auto vm = run_global(R"(
-		[string] a = [string]("one", "two");
-		print(a[0]);
-		print(a[1]);
+		a = [string]("one", "two");
+		print(a);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
 }
 #endif
-
 
 QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){
 	const auto vm = run_global(R"(

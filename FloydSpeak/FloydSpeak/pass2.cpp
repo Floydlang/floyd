@@ -219,16 +219,16 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 		//	[ "bind", "float", "x", EXPRESSION, {} ]
 		//	Last element is a list of meta info, like "mutable" etc.
 		else if(type == "bind"){
-			QUARK_ASSERT(statement.get_array_size() == 5);
+			QUARK_ASSERT(statement.get_array_size() == 4 || statement.get_array_size() == 5);
 			const auto bind_type = statement.get_array_n(1);
 			const auto name = statement.get_array_n(2);
 			const auto expr = statement.get_array_n(3);
-			const auto meta = statement.get_array_n(4);
+			const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
 
 			const auto bind_type2 = resolve_type_name(bind_type);
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
-			bool mutable_flag = meta.does_object_element_exist("mutable");
+			bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
 			statements2.push_back(make_shared<statement_t>(make__bind_or_assign_statement(name2, bind_type2, expr2, mutable_flag)));
 		}
 

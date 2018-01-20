@@ -50,7 +50,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					["bind","int","y",["k",11,"int"], {}]
+					["bind","int","y",["k",11,"int"]]
 				]
 			)"
 		)).first
@@ -62,7 +62,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					["bind","int","y",["k",11,"int"], {}],
+					["bind","int","y",["k",11,"int"]],
 					["expression-statement", ["call",["@", "print"],[["k",3, "int"]]] ]
 				]
 			)"
@@ -77,8 +77,8 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					["bind","int","x",["k",1,"int"], {}],
-					["bind","int","y",["k",2,"int"], {}]
+					["bind","int","x",["k",1,"int"]],
+					["bind","int","y",["k",2,"int"]]
 				]
 			)"
 		)).first
@@ -103,8 +103,8 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 				[
 					"block",
 					[
-						["bind","int","x",["k",1,"int"], {}],
-						["bind","int","y",["k",2,"int"], {}]
+						["bind","int","x",["k",1,"int"]],
+						["bind","int","y",["k",2,"int"]]
 					]
 				]
 			)"
@@ -350,7 +350,7 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 					["k",1,"int"],
 					["k",5,"int"],
 					[
-						["bind","int","y",["k",11,"int"], {}]
+						["bind","int","y",["k",11,"int"]]
 					]
 				]
 			)"

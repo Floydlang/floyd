@@ -75,7 +75,7 @@ const std::string k_test_program_0_parserout = R"(
 	]
 )";
 const std::string k_test_program_0_pass2output = R"(
-	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int"]]], "int"], {}]] }
+	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int"]]], "int"]]] }
 )";
 
 
@@ -159,8 +159,7 @@ const char k_test_program_100_parserout[] = R"(
 						"bind",
 						"pixel",
 						"p",
-						["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]],
-						{}
+						["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]]
 					],
 					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 				]

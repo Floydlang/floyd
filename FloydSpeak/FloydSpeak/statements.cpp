@@ -152,9 +152,9 @@ namespace floyd {
 			});
 		}
 		else if(e._bind_or_assign){
-			const auto meta = (e._bind_or_assign->_bind_as_mutable_tag) ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t::make_object();
+			const auto meta = (e._bind_or_assign->_bind_as_mutable_tag) ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
 
-			return json_t::make_array({
+			return make_array_skip_nulls({
 				json_t("bind"),
 				e._bind_or_assign->_new_variable_name,
 				typeid_to_normalized_json(e._bind_or_assign->_bindtype),
