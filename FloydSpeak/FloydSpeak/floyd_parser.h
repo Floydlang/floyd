@@ -20,39 +20,48 @@ struct seq_t;
 PEG
 https://en.wikipedia.org/wiki/Parsing_expression_grammar
 
+	TYPES:
+		"null"
+		"bool"
+		"int"
+		"float"
+		"string"
+		"hello" -- unknown type.
+		"[" TYPE "]"
+
+		TYPE "(" TYPE "," TYPE "," ")"
+
 	STATEMENTS:
-		BLOCK = { STATEMENTS }
-		BLOCK
-		return EXPRESSION
-		struct IDENTIFIER { TYPE IDENTIFIER; TYPE IDENTIFIER; ... }
-		if (EXPRESSION) BLOCK else BLOCK
-		if (EXPRESSION) BLOCK else if(EXPRESSION) BLOCK else BLOCK
-		for (IDENTIFIER in EXPRESSION ... EXPRESSION) BLOCK
-		while(EXPRESSOIN) BLOCK
+		BODY = "{" STATEMENTS "}"
+		BODY
 
- 		TYPE IDENTIFIER = EXPRESSION		--	BIND
-		TYPE IDENTIFIER ( EXPRESSION, EXPRESSION...){ STATEMENTS }		-- FUNCTION DEF.
-		EXPRESSION						--- EXPRESSION STATEMENT
- 		SYMBOL = EXPRESSION 		-- ASSIGNMENT,POSIBLE DEDUCT BIND
+		return:							"return" EXPRESSION
+		def-struct:						"struct" IDENTIFIER "{" TYPE IDENTIFIER ";" TYPE IDENTIFIER ";" ... "}"
+		if:								"if" "(" EXPRESSION ")" BODY "else" BODY
+		if-else:						"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
+		for:							"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
+		while: 							"while" "(" EXPRESSOIN ")" BODY
 
-
-? 		SYMBOL = TYPE(EXPRESSION)
+ 		Bind:							TYPE IDENTIFIER "=" EXPRESSION
+		Function definition:		 	TYPE IDENTIFIER "(" EXPRESSION "," EXPRESSION... ")" BODY
+		Expression statement: 			EXPRESSION
+ 		Assignment: 					SYMBOL = EXPRESSION
 
 	EXPRESSIONS:
-		0123456789
-		IDENTIFIER										resolve identifier
-		[ EXPRESSION, EXPRESSION, ...]					vector definition
-		EXPRESSION + EXPRESSION +++
-		EXPRESSION - EXPRESSION +++
-		EXPRESSION && EXPRESSION +++
-		EXPRESSION .EXPRESSION +++						resolve member
-		(EXPRESSION)
-		EXPRESSION [EXPRESSION] +++						lookup
-		EXPRESSION(EXPRESSION, EXPRESSION, ...)			call()
-		-EXPRESSION										k_1_unary_minus
-		EXPRESSION ? EXPRESSION : EXPRESSION
+		Numberic literal:				"0123456789" +++
+		Resolve-identifier:				IDENTIFIER +++
+		Vector-definition				"[" EXPRESSION "," EXPRESSION "," ... "]"
+		Add								EXPRESSION "+" EXPRESSION +++
+		Sub								EXPRESSION "-" EXPRESSION +++
+										EXPRESSION "&&" EXPRESSION +++
+		Resolve-member:					EXPRESSION "." EXPRESSION +++
+		Group							"(" EXPRESSION ")"" +++
+		Lookup []						EXPRESSION "[" EXPRESSION "]"" +++
+		Call							EXPRESSION "(" EXPRESSION "," EXPRESSION "," ...")"" +++
+		k_1_unary_minus					"-" EXPRESSION
+										EXPRESSION ? EXPRESSION : EXPRESSION +++
 
-	EXPRESSION
+		Convert-to-type:				TYPE(EXPRESSION)
 */
 
 namespace floyd {

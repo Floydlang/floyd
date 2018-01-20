@@ -486,7 +486,7 @@ std::pair<expr_t, seq_t> parse_vector_definition(const seq_t& p){
 	//	No elements.
 	if(pos3.first() == "]"){
 		const auto result = maker_vector_definition("", {});
-		return {result, pos3 };
+		return {result, pos3.rest1() };
 	}
 	//	1-many arguments.
 	else{

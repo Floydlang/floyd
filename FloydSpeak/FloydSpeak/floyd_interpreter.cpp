@@ -130,7 +130,9 @@ namespace {
 
 					//	Explicit bind-type -- make sure source + dest types match.
 					else{
-						if(!(bind_statement_type == new_value_type)){
+						bool is_empty_notype_vector = new_value_type == typeid_t::make_vector(typeid_t::make_null()) && new_value.get_vector_value()->_elements.size() == 0;
+
+						if(!(bind_statement_type == new_value_type) && is_empty_notype_vector == false){
 							throw std::runtime_error("Types not compatible in bind.");
 						}
 						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, bind_statement_mutable_tag_flag);
@@ -1054,14 +1056,6 @@ bool environment_t::check_invariant() const {
 
 
 
-enum host_functions {
-	k_print = 1,
-	k_assert,
-	k_to_string,
-	k_get_time_of_day_ms,
-	k_update,
-	k_vector
-};
 
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -1155,6 +1149,8 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 
+
+
 //### add checking of function types when calling / returning from them. Also host functions.
 
 typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
@@ -1178,70 +1174,70 @@ typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 }
 
 
-value_t update_struct_member_shallow(const interpreter_t& vm, const value_t& obj, const std::string& member_name, const value_t& new_value){
-	QUARK_ASSERT(obj.check_invariant());
-	QUARK_ASSERT(member_name.empty() == false);
-	QUARK_ASSERT(new_value.check_invariant());
-
-	const auto s = obj.get_struct_value();
-	const auto def = s->_def;
-
-	int member_index = find_struct_member_index(def, member_name);
-	if(member_index == -1){
-		throw std::runtime_error("Unknown member.");
-	}
-
-	const auto struct_typeid = obj.get_type();
-	const auto values = s->_member_values;
-
-
-	QUARK_TRACE(typeid_to_compact_string(new_value.get_type()));
-	QUARK_TRACE(typeid_to_compact_string(def._members[member_index]._type));
-
-	const auto dest_member_entry = def._members[member_index];
-	auto dest_member_resolved_type = dest_member_entry._type;
-	dest_member_resolved_type = resolve_type_using_env(vm, dest_member_entry._type);
-
-	if(!(new_value.get_type() == dest_member_resolved_type)){
-		throw std::runtime_error("Value type not matching struct member type.");
-	}
-
-	auto values2 = values;
-	values2[member_index] = new_value;
-
-	auto s2 = make_struct_value(struct_typeid, def, values2);
-	return s2;
-}
-
-value_t update_struct_member_deep(const interpreter_t& vm, const value_t& obj, const std::vector<std::string>& path, const value_t& new_value){
-	QUARK_ASSERT(obj.check_invariant());
-	QUARK_ASSERT(path.empty() == false);
-	QUARK_ASSERT(new_value.check_invariant());
-
-	if(path.size() == 1){
-		return update_struct_member_shallow(vm, obj, path[0], new_value);
-	}
-	else{
-		vector<string> subpath = path;
-		subpath.erase(subpath.begin());
+	value_t update_struct_member_shallow(const interpreter_t& vm, const value_t& obj, const std::string& member_name, const value_t& new_value){
+		QUARK_ASSERT(obj.check_invariant());
+		QUARK_ASSERT(member_name.empty() == false);
+		QUARK_ASSERT(new_value.check_invariant());
 
 		const auto s = obj.get_struct_value();
 		const auto def = s->_def;
-		int member_index = find_struct_member_index(def, path[0]);
+
+		int member_index = find_struct_member_index(def, member_name);
 		if(member_index == -1){
 			throw std::runtime_error("Unknown member.");
 		}
 
-		const auto child_value = s->_member_values[member_index];
-		if(child_value.is_struct() == false){
+		const auto struct_typeid = obj.get_type();
+		const auto values = s->_member_values;
+
+
+		QUARK_TRACE(typeid_to_compact_string(new_value.get_type()));
+		QUARK_TRACE(typeid_to_compact_string(def._members[member_index]._type));
+
+		const auto dest_member_entry = def._members[member_index];
+		auto dest_member_resolved_type = dest_member_entry._type;
+		dest_member_resolved_type = resolve_type_using_env(vm, dest_member_entry._type);
+
+		if(!(new_value.get_type() == dest_member_resolved_type)){
 			throw std::runtime_error("Value type not matching struct member type.");
 		}
 
-		const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
-		const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2);
-		return obj2;
+		auto values2 = values;
+		values2[member_index] = new_value;
+
+		auto s2 = make_struct_value(struct_typeid, def, values2);
+		return s2;
 	}
-}
+
+	value_t update_struct_member_deep(const interpreter_t& vm, const value_t& obj, const std::vector<std::string>& path, const value_t& new_value){
+		QUARK_ASSERT(obj.check_invariant());
+		QUARK_ASSERT(path.empty() == false);
+		QUARK_ASSERT(new_value.check_invariant());
+
+		if(path.size() == 1){
+			return update_struct_member_shallow(vm, obj, path[0], new_value);
+		}
+		else{
+			vector<string> subpath = path;
+			subpath.erase(subpath.begin());
+
+			const auto s = obj.get_struct_value();
+			const auto def = s->_def;
+			int member_index = find_struct_member_index(def, path[0]);
+			if(member_index == -1){
+				throw std::runtime_error("Unknown member.");
+			}
+
+			const auto child_value = s->_member_values[member_index];
+			if(child_value.is_struct() == false){
+				throw std::runtime_error("Value type not matching struct member type.");
+			}
+
+			const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
+			const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2);
+			return obj2;
+		}
+	}
 
 std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
@@ -1328,32 +1324,50 @@ std::pair<interpreter_t, value_t> host__vector(const interpreter_t& vm, const st
 	return {vm, v};
 }
 
+std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(args.size() == 1);
+
+	const auto obj = args[0];
+	if(obj.is_vector()){
+		const int size = obj.get_vector_value()->_elements.size();
+		return {vm, value_t(size)};
+	}
+	else{
+		throw std::runtime_error("Calling size() on unsupported type of value.");
+	}
+}
+
+
+
+typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
+
+struct host_function_t {
+	std::string _name;
+	HOST_FUNCTION_PTR _function_ptr;
+	typeid_t _function_type;
+};
+
+const vector<host_function_t> k_host_functions {
+	host_function_t{ "print", host__print, typeid_t::make_function(typeid_t::make_null(), {}) },
+	host_function_t{ "assert", host__assert, typeid_t::make_function(typeid_t::make_null(), {}) },
+	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {}) },
+	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
+	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {}) },
+	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
+	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) }
+};
+
 
 
 
 
 std::pair<interpreter_t, floyd::value_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd::value_t> args) const{
-	if(function_id == static_cast<int>(host_functions::k_print)){
-		return host__print(*this, args);
-	}
-	else if(function_id == static_cast<int>(host_functions::k_assert)){
-		return host__assert(*this, args);
-	}
-	else if(function_id == static_cast<int>(host_functions::k_to_string)){
-		return host__to_string(*this, args);
-	}
-	else if(function_id == static_cast<int>(host_functions::k_get_time_of_day_ms)){
-		return host__get_time_of_day(*this, args);
-	}
-	else if(function_id == static_cast<int>(host_functions::k_update)){
-		return host__update(*this, args);
-	}
-	else if(function_id == static_cast<int>(host_functions::k_vector)){
-		return host__vector(*this, args);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
+	const int index = function_id - 1000;
+	QUARK_ASSERT(index >= 0 && index < k_host_functions.size())
+
+	const auto& host_function = k_host_functions[index];
+	return (host_function._function_ptr)(*this, args);
 }
 
 
@@ -1363,60 +1377,18 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	std::vector<std::shared_ptr<statement_t>> init_statements;
 
 	//	Insert built-in functions into AST.
-
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"print",
-		function_definition_t(
-			{ member_t{ typeid_t::make_string(), "s" } },
-			host_functions::k_print,
-			typeid_t::make_null()
-		)
-	)));
-
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"assert",
-		function_definition_t(
-			{ member_t{ typeid_t::make_string(), "success" } },
-			host_functions::k_assert,
-			typeid_t::make_null()
-		)
-	)));
-
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"to_string",
-		function_definition_t(
-			//??? Supports arg of any type.
-			{ },
-			host_functions::k_to_string,
-			typeid_t::make_string()
-		)
-	)));
-
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"get_time_of_day",
-		function_definition_t(
+	for(auto i = 0 ; i < k_host_functions.size() ; i++){
+		const auto& hf = k_host_functions[i];
+		const auto def = function_definition_t(
 			{},
-			host_functions::k_get_time_of_day_ms,
-			typeid_t::make_int()
-		)
-	)));
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"update",
-		function_definition_t(
-			{},
-			host_functions::k_update,
-			typeid_t::make_int()
-		)
-	)));
-	init_statements.push_back(make_shared<statement_t>(make_function_statement(
-		"vector",
-		function_definition_t(
-			{},
-			host_functions::k_vector,
-			typeid_t::make_int()
-		)
-	)));
+			i + 1000,
+			hf._function_type.get_function_return()
+		);
 
+		init_statements.push_back(
+			make_shared<statement_t>(make_function_statement(hf._name, def))
+		);
+	}
 
 	_ast = ast_t(init_statements + ast._statements);
 
@@ -2699,6 +2671,16 @@ QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vec
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
 }
 
+/*
+QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = [];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+}
+*/
+
 QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "valid vector"){
 	const auto vm = run_global(R"(
 		[string] a = ["one", "two"];
@@ -2707,7 +2689,16 @@ QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "val
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
 }
 
+QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
+	const auto vm = run_global(R"(
+		[string] a = [];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([null]())"	}	));
+}
+
 #if false
+//	[string]() -- requires TYPE(EXPRESSION) conversion expressions.
 QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vector"){
 	const auto vm = run_global(R"(
 		a = [string]("one", "two");
@@ -2716,6 +2707,31 @@ QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vec
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
 }
 #endif
+
+QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
+	try{
+		const auto vm = run_global(R"(
+			[string] a = ["one", "two"];
+			assert(size(a) == 0);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
+	const auto vm = run_global(R"(
+		[string] a = [];
+		assert(size(a) == 0);
+	)");
+}
+QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
+	const auto vm = run_global(R"(
+		[string] a = ["one", "two"];
+		assert(size(a) == 2);
+	)");
+}
+
 
 QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){
 	const auto vm = run_global(R"(
