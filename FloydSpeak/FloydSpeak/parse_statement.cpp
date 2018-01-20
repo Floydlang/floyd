@@ -148,14 +148,14 @@ QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 	}
 */
 std::pair<json_t, seq_t> parse_if(const seq_t& pos){
-	std::pair<bool, seq_t> a = if_first(pos, "if");
+	std::pair<bool, seq_t> a = if_first(pos, keyword_t::k_if);
 	QUARK_ASSERT(a.first);
 
 	const auto condition = read_enclosed_in_parantheses(a.second);
 	const auto then_body = parse_statement_body(condition.second);
 	const auto condition2 = parse_expression_all(seq_t(condition.first));
 
-	return { json_t::make_array({ "if", condition2, then_body.first }), then_body.second };
+	return { json_t::make_array({ keyword_t::k_if, condition2, then_body.first }), then_body.second };
 }
 
 /*
@@ -170,16 +170,16 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 
 std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 	const auto if_statement2 = parse_if(pos);
-	std::pair<bool, seq_t> else_start = if_first(skip_whitespace(if_statement2.second), "else");
+	std::pair<bool, seq_t> else_start = if_first(skip_whitespace(if_statement2.second), keyword_t::k_else);
 	if(else_start.first){
 		const auto pos2 = skip_whitespace(else_start.second);
-		std::pair<bool, seq_t> elseif_pos = if_first(pos2, "if");
+		std::pair<bool, seq_t> elseif_pos = if_first(pos2, keyword_t::k_if);
 
 		if(elseif_pos.first){
 			const auto elseif_statement2 = parse_if_statement(pos2);
 
 			return { json_t::make_array(
-				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), json_t::make_array({elseif_statement2.first}) }),
+				{ keyword_t::k_if, if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), json_t::make_array({elseif_statement2.first}) }),
 				elseif_statement2.second
 			};
 		}
@@ -187,7 +187,7 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 			const auto else_body = parse_statement_body(pos2);
 
 			return { json_t::make_array(
-				{ "if", if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_body.first }),
+				{ keyword_t::k_if, if_statement2.first.get_array_n(1), if_statement2.first.get_array_n(2), else_body.first }),
 				else_body.second
 			};
 		}
@@ -298,7 +298,7 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 
 
 std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
-	std::pair<bool, seq_t> for_pos = if_first(pos, "for");
+	std::pair<bool, seq_t> for_pos = if_first(pos, keyword_t::k_for);
 	QUARK_ASSERT(for_pos.first);
 
 	//	header == " index in 1 ... 5 "
@@ -327,7 +327,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 
 	const auto r = json_t::make_array(
 		{
-			"for",
+			keyword_t::k_for,
 			"open_range",
 			iterator_name.first,
 			start_expr,
@@ -364,6 +364,7 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 
 
 std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
+	std::pair<bool, seq_t> while_pos = if_first(pos, keyword_t::k_while);
 	QUARK_ASSERT(while_pos.first);
 
 	const auto condition = read_enclosed_in_parantheses(while_pos.second);
@@ -372,6 +373,7 @@ std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
 	const auto condition_expr = parse_expression_all(seq_t(condition.first));
 	const auto r = json_t::make_array(
 		{
+			keyword_t::k_while,
 			condition_expr,
 			body.first
 		}
