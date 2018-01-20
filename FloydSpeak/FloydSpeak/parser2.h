@@ -273,18 +273,10 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p);
 std::pair<std::vector<expr_t>, seq_t> parse_function_call_operation(const seq_t& p1);
 
 /*
-	hello.func(x)
-	lhs = ["@", "hello"]
+
+	lhs operation EXPR +++
+	lhs OPERATION EXPRESSION ...
 */
-std::pair<expr_t, seq_t> parse_member_access_operation(const seq_t& p, const expr_t& lhs, const eoperator_precedence prev_precedence);
-
-/*
-
-	lhs "+" EXPR
-	lhs "==" EXPR
-*/
-std::pair<expr_t, seq_t> parse_lookup_operation(const seq_t& p, const expr_t& lhs, const eoperator_precedence prev_precedence);
-
 std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const expr_t& lhs, const eoperator_precedence precedence);
 
 std::pair<expr_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence);
