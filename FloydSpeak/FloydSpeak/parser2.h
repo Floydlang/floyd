@@ -270,7 +270,7 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p);
 	rhs("start", get_playlist())
 		used like this: convert_to_json("start", get_playlist())
 */
-std::pair<expr_t, seq_t> parse_function_call_operation(const seq_t& p1, const expr_t& lhs, const eoperator_precedence prev_precedence);
+std::pair<std::vector<expr_t>, seq_t> parse_function_call_operation(const seq_t& p1);
 
 /*
 	hello.func(x)

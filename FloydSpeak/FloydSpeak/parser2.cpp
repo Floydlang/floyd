@@ -205,7 +205,9 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	Function call
 			//	EXPRESSION (EXPRESSION +, EXPRESSION)
 			if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
-				return parse_function_call_operation(p, lhs, precedence);
+				const auto a_pos = parse_function_call_operation(p);
+				const auto call = maker__call(lhs, a_pos.first);
+				return parse_optional_operation_rightward(a_pos.second, call, precedence);
 			}
 
 			//	Member access
@@ -447,19 +449,16 @@ QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
 #endif
 
 
-
-std::pair<expr_t, seq_t> parse_function_call_operation(const seq_t& p1, const expr_t& lhs, const eoperator_precedence prev_precedence){
+std::pair<std::vector<expr_t>, seq_t> parse_function_call_operation(const seq_t& p1){
 	QUARK_ASSERT(p1.check_invariant());
 	QUARK_ASSERT(p1.first() == "(");
-	QUARK_ASSERT(prev_precedence > eoperator_precedence::k_function_call);
 
 	const auto p = p1;
 	const auto pos3 = skip_expr_whitespace(p.rest());
 
 	//	No arguments.
 	if(pos3.first() == ")"){
-		const auto result = maker__call(lhs, {});
-		return parse_optional_operation_rightward(pos3.rest(), result, prev_precedence);
+		return {{}, pos3.rest() };
 	}
 	//	1-many arguments.
 	else{
@@ -483,11 +482,10 @@ std::pair<expr_t, seq_t> parse_function_call_operation(const seq_t& p1, const ex
 			}
 			pos_loop = pos5.rest();
 		}
-
-		const auto result = maker__call(lhs, arg_exprs);
-		return parse_optional_operation_rightward(pos_loop, result, prev_precedence);
+		return { arg_exprs, pos_loop };
 	}
 }
+
 
 //??? Unify with parse_function_call_operation.
 //	[1,2,3]
