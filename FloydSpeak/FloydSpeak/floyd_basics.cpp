@@ -24,10 +24,17 @@ namespace floyd {
 
 const std::string keyword_t::k_return = "return";
 const std::string keyword_t::k_while = "while";
+const std::string keyword_t::k_if = "if";
+const std::string keyword_t::k_else = "else";
 
 const std::string keyword_t::k_false = "false";
 const std::string keyword_t::k_true = "true";
 const std::string keyword_t::k_bool = "bool";
+
+const std::string keyword_t::k_int = "int";
+const std::string keyword_t::k_float = "float";
+const std::string keyword_t::k_string = "string";
+const std::string keyword_t::k_struct = "struct";
 
 
 	//////////////////////////////////////////////////		base_type
@@ -41,10 +48,10 @@ const std::string keyword_t::k_bool = "bool";
 			return keyword_t::k_bool;
 		}
 		else if(t == base_type::k_int){
-			return "int";
+			return keyword_t::k_int;
 		}
 		else if(t == base_type::k_float){
-			return "float";
+			return keyword_t::k_float;
 		}
 		else if(t == base_type::k_string){
 			return "string";
@@ -79,8 +86,8 @@ const std::string keyword_t::k_bool = "bool";
 
 	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == keyword_t::k_bool);
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == "int");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == "float");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == keyword_t::int);
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == keyword_t::k_float);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == "string");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == "struct");
@@ -323,10 +330,10 @@ expression_type token_to_expression_type(const string& op){
 			else if(s == keyword_t::k_bool){
 				return typeid_t::make_bool();
 			}
-			else if(s == "int"){
+			else if(s == keyword_t::k_int){
 				return typeid_t::make_int();
 			}
-			else if(s == "float"){
+			else if(s == keyword_t::k_float){
 				return typeid_t::make_float();
 			}
 			else if(s == "string"){
@@ -432,8 +439,8 @@ expression_type token_to_expression_type(const string& op){
 		const auto tests = vector<typeid_str_test_t>{
 			{ typeid_t::make_null(), "\"null\"", "null" },
 			{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
-			{ typeid_t::make_int(), "\"int\"", "int" },
-			{ typeid_t::make_float(), "\"float\"", "float" },
+			{ typeid_t::make_int(), quote(keyword_t::k_int), keyword_t::k_int },
+			{ typeid_t::make_float(), quote(keyword_t::k_float), keyword_t::k_float },
 			{ typeid_t::make_string(), "\"string\"", "string" },
 
 			//	Typeid

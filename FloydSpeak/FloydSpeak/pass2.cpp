@@ -378,7 +378,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 		//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]
 		//	Else is optional.
-		else if(type == "if"){
+		else if(type == keyword_t::k_if){
 			QUARK_ASSERT(statement.get_array_size() == 3 || statement.get_array_size() == 4);
 			const auto condition_expression = statement.get_array_n(1);
 			const auto then_statements = statement.get_array_n(2);

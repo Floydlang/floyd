@@ -170,7 +170,7 @@ namespace floyd {
 		}
 		else if(e._if){
 			return json_t::make_array({
-				json_t("if"),
+				json_t(keyword_t::k_if),
 				expression_to_json(e._if->_condition),
 				json_t::make_array(statements_shared_to_json(e._if->_then_statements)),
 				json_t::make_array(statements_shared_to_json(e._if->_else_statements))

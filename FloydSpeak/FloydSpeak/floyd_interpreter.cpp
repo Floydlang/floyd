@@ -437,13 +437,13 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			if(expr->_variable == keyword_t::k_bool){
 				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_bool()))};
 			}
-			else if(expr->_variable == "int"){
+			else if(expr->_variable == keyword_t::k_int){
 				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_int()))};
 			}
-			else if(expr->_variable == "float"){
+			else if(expr->_variable == keyword_t::k_float){
 				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_float()))};
 			}
-			else if(expr->_variable == "string"){
+			else if(expr->_variable == keyword_t::k_string){
 				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_string()))};
 			}
 

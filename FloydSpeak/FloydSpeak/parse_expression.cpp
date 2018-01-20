@@ -10,6 +10,7 @@
 
 #include "parser2.h"
 #include "json_support.h"
+#include "floyd_basics.h"
 
 namespace floyd {
 
@@ -71,14 +72,14 @@ json_t expr_to_json(const expr_t& e){
 			return make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t(keyword_t::k_bool) });
 		}
 		else if(value._type == constant_value_t::etype::k_int){
-			return make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t("int") });
+			return make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t(keyword_t::k_int) });
 		}
 		else if(value._type == constant_value_t::etype::k_float){
-			return make_array_skip_nulls({ json_t("k"), json_t(value._float), json_t("float") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._float), json_t(keyword_t::k_float) });
 		}
 		else if(value._type == constant_value_t::etype::k_string){
 			//	 Use k_0_string_literal!
-			return make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t("string") });
+			return make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t(keyword_t::k_string) });
 		}
 		else{
 			QUARK_ASSERT(false);

@@ -25,23 +25,31 @@ namespace floyd {
 	struct keyword_t {
 		static const std::string k_return;
 		static const std::string k_while;
+		static const std::string k_if;
+		static const std::string k_else;
+
 		static const std::string k_false;
 		static const std::string k_true;
 		static const std::string k_bool;
+
+		static const std::string k_int;
+		static const std::string k_float;
+		static const std::string k_string;
+		static const std::string k_struct;
 /*
+		"mutable",
+		"null",
+
+		const std::string keyword_t::k_typeid = "typeid";
+
 		"assert",
 		"catch",
 
-		"if",
-		"else",
 		"print",
 		"to_string",
 		"update",
 		"size",
 
-		"mutable",
-
-		"null",
 */
 
 /*
@@ -69,29 +77,21 @@ namespace floyd {
 */
 	};
 
-
-
-
-
+/*
 	const std::vector<std::string> basic_types {
-		"bool",
 		"char",
 		"-code_point",
 		"-double",
-		"float",
 		"float32",
 		"float80",
 		"-hash",
-		"int",
 		"int16",
 		"int32",
 		"int64",
 		"int8",
 		"-path",
-		"string",
 		"-text"
 	};
-
 	const std::vector<std::string> advanced_types {
 		"-clock",
 		"-defect_exception",
@@ -104,10 +104,9 @@ namespace floyd {
 		"-rights",
 		"-runtime_exception",
 		"seq",
-		"struct",
 		"-typedef",
-		"-vector"
 	};
+*/
 
 
 	//////////////////////////////////////		base_type

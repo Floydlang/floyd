@@ -20,6 +20,7 @@
 #include "parser2.h"
 
 using namespace std;
+using floyd::keyword_t;
 
 
 
@@ -331,7 +332,6 @@ std::pair<expr_t, seq_t> parse_operation(const seq_t& p0, const expr_t& lhs, con
 		return { lhs, p0 };
 	}
 }
-
 
 
 
