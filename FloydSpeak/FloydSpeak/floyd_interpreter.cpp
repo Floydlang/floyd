@@ -1330,8 +1330,12 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 
 	const auto obj = args[0];
 	if(obj.is_vector()){
-		const int size = obj.get_vector_value()->_elements.size();
-		return {vm, value_t(size)};
+		const auto size = obj.get_vector_value()->_elements.size();
+		return {vm, value_t(static_cast<int>(size))};
+	}
+	else if(obj.is_string()){
+		const auto size = obj.get_string_value().size();
+		return {vm, value_t(static_cast<int>(size))};
 	}
 	else{
 		throw std::runtime_error("Calling size() on unsupported type of value.");
@@ -2719,16 +2723,27 @@ QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
 	catch(...){
 	}
 }
-QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
+QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = [];
 		assert(size(a) == 0);
 	)");
 }
-QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
+QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = ["one", "two"];
 		assert(size(a) == 2);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "size()", "string", "0"){
+	const auto vm = run_global(R"(
+		assert(size("") == 0);
+	)");
+}
+QUARK_UNIT_TEST("vector", "size()", "string", "10"){
+	const auto vm = run_global(R"(
+		assert(size("How long is this string?") == 24);
 	)");
 }
 
