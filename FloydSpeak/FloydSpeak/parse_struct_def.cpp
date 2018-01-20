@@ -20,7 +20,7 @@ namespace floyd {
 
 
 	std::pair<json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
-		std::pair<bool, seq_t> token_pos = if_first(pos0, "struct");
+		std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
 		QUARK_ASSERT(token_pos.first);
 
 		const auto struct_name_pos = read_required_identifier(token_pos.second);

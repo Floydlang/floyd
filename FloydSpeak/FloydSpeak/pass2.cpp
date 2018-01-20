@@ -187,29 +187,6 @@ expression_t parser_expression_to_ast(const json_t& e){
 	}
 }
 
-//??? move to basics.
-/*
-	Example:
-		[
-			{ "name": "g_version", "type": "int" },
-			{ "name": "message", "type": "string" },
-			{ "name": "pos", "type": "pixel" },
-			{ "name": "pos", "type": "image_lib.image.pixel_t" }
-		]
-*/
-std::vector<member_t> conv_members(const json_t& members){
-	std::vector<member_t> members2;
-	for(const auto i: members.get_array()){
-		const string arg_name = i.get_object_element("name").get_string();
-		const string arg_type = i.get_object_element("type").get_string();
-
-		const auto arg_type2 = resolve_type_name(arg_type);
-		members2.push_back(member_t{arg_type2, arg_name });
-	}
-	return members2;
-}
-
-
 
 
 
@@ -318,7 +295,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto return_type = def.get_object_element("return_type");
 
 			const auto name2 = name.get_string();
-			const auto args2 = conv_members(args);
+			const auto args2 = members_from_json(args);
 			const auto fstatements2 = parser_statements_to_ast(fstatements);
 			const auto return_type2 = resolve_type_name(return_type);
 
@@ -369,7 +346,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto name = struct_def.get_object_element("name").get_string();
 			const auto members = struct_def.get_object_element("members").get_array();
 
-			const auto members2 = conv_members(members);
+			const auto members2 = members_from_json(members);
 			const auto struct_def2 = struct_definition_t(name, members2);
 
 			const auto s = define_struct_statement_t{ name, struct_def2 };
@@ -396,7 +373,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 				)
 			));
 		}
-		else if(type == "for"){
+		else if(type == keyword_t::k_for){
 			QUARK_ASSERT(statement.get_array_size() == 6);
 			const auto for_mode = statement.get_array_n(1);
 			const auto iterator_name = statement.get_array_n(2);
@@ -529,8 +506,7 @@ void test_error(const string& program, const string& error_string){
 	}
 }
 
-
-#if false
+/*
 
 QUARK_UNIT_TESTQ("run_pass2()", "1001"){
 	test_error(
@@ -554,9 +530,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1002"){
 		""//"1002 - Undefined function \"f\"."
 	);
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "1003"){
 	test_error(
 		R"(
@@ -568,9 +542,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1003"){
 		"1003 - Wrong number of argument to function \"main\"."
 	);
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "1004"){
 	test_error(
 		R"(
@@ -596,9 +568,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1005"){
 		""//"1005 - Undefined variable \"p\"."
 	);
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "Return undefine type"){
 	test_error(
 		R"(
@@ -609,9 +579,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "Return undefine type"){
 		"Undefined type \"xyz\""
 	);
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "1006"){
 	test_error(
 		R"(
@@ -623,9 +591,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1006"){
 		"1006 - Bind type mismatch."
 	);
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "1007"){
 	test_error(
 		R"(
@@ -637,9 +603,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1007"){
 		"1007 - Return-statement not allowed outside function definition."
 	);
 }
-#endif
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "1008"){
 	test_error(
 		R"(
@@ -650,10 +614,8 @@ QUARK_UNIT_TESTQ("run_pass2()", "1008"){
 		"1008 - return value doesn't match function return type."
 	);
 }
-#endif
 
 
-#if false
 QUARK_UNIT_TESTQ("run_pass2()", "1010"){
 	test_error(
 		R"(
@@ -667,7 +629,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "1010"){
 		"Unresolved member \"xyz\""
 	);
 }
-#endif
+*/
 
 }	//	floyd
 

@@ -19,11 +19,12 @@ using std::vector;
 
 namespace floyd {
 
-	//////////////////////////////////////////////////		keywords
+//////////////////////////////////////////////////		keywords
 
 
 const std::string keyword_t::k_return = "return";
 const std::string keyword_t::k_while = "while";
+const std::string keyword_t::k_for = "for";
 const std::string keyword_t::k_if = "if";
 const std::string keyword_t::k_else = "else";
 
@@ -35,6 +36,8 @@ const std::string keyword_t::k_int = "int";
 const std::string keyword_t::k_float = "float";
 const std::string keyword_t::k_string = "string";
 const std::string keyword_t::k_struct = "struct";
+
+const std::string keyword_t::k_mutable = "mutable";
 
 
 	//////////////////////////////////////////////////		base_type
@@ -54,7 +57,7 @@ const std::string keyword_t::k_struct = "struct";
 			return keyword_t::k_float;
 		}
 		else if(t == base_type::k_string){
-			return "string";
+			return keyword_t::k_string;
 		}
 
 		else if(t == base_type::k_typeid){
@@ -62,7 +65,7 @@ const std::string keyword_t::k_struct = "struct";
 		}
 
 		else if(t == base_type::k_struct){
-			return "struct";
+			return keyword_t::k_struct;
 		}
 		else if(t == base_type::k_vector){
 			return "vector";
@@ -86,11 +89,11 @@ const std::string keyword_t::k_struct = "struct";
 
 	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == keyword_t::k_bool);
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == keyword_t::int);
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == keyword_t::k_int);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == keyword_t::k_float);
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == "string");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == keyword_t::k_string);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == "struct");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "function");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_unknown_identifier) == "unknown-identifier");
@@ -336,7 +339,7 @@ expression_type token_to_expression_type(const string& op){
 			else if(s == keyword_t::k_float){
 				return typeid_t::make_float();
 			}
-			else if(s == "string"){
+			else if(s == keyword_t::k_string){
 				return typeid_t::make_string();
 			}
 			else{
@@ -350,7 +353,7 @@ expression_type token_to_expression_type(const string& op){
 				const auto t2 = typeid_from_normalized_json(a[1]);
 				return typeid_t::make_typeid(t2);
 			}
-			else if(s == "struct"){
+			else if(s == keyword_t::k_struct){
 				const auto struct_def_array = a[1].get_array();
 				const auto struct_name = struct_def_array[0].get_string();
 				const auto member_array = struct_def_array[1].get_array();

@@ -271,7 +271,7 @@ pair<json_t, seq_t> parse_bind_statement(const vector<string>& parsed_bits, cons
 	const auto identifier = parsed_bits[2];
 	const auto expression_str = parsed_bits[3];
 
-	const auto mutable_pos = if_first(skip_whitespace(type_seq), "mutable");
+	const auto mutable_pos = if_first(skip_whitespace(type_seq), keyword_t::k_mutable);
 	const bool mutable_flag = mutable_pos.first;
 	const auto type_pos = skip_whitespace(mutable_pos.second);
 

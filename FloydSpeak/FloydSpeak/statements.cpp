@@ -178,7 +178,7 @@ namespace floyd {
 		}
 		else if(e._for){
 			return json_t::make_array({
-				json_t("for"),
+				json_t(keyword_t::k_for),
 				json_t("open_range"),
 				expression_to_json(e._for->_start_expression),
 				expression_to_json(e._for->_end_expression),

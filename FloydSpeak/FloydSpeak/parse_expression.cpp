@@ -91,7 +91,7 @@ json_t expr_to_json(const expr_t& e){
 	else if(e._op == eoperation::k_0_string_literal){
 		const auto value = *e._constant;
 		QUARK_ASSERT(value._type == constant_value_t::etype::k_string);
-		return make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t("string") });
+		return make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t(keyword_t::k_string) });
 	}
 	else if(e._op == eoperation::k_x_member_access){
 		return make_array_skip_nulls({ json_t("->"), json_t(), expr_to_json(e._exprs[0]), json_t(e._identifier) });

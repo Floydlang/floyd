@@ -454,7 +454,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("null")).first == typeid_t::make_null());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
-	QUARK_TEST_VERIFY(*read_type(seq_t(keyword_t::k_bool)).first == typeid_t::make_bool());
+	QUARK_TEST_VERIFY(*read_type(seq_t("bool")).first == typeid_t::make_bool());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("int")).first == typeid_t::make_int());

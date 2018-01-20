@@ -21,10 +21,11 @@ namespace floyd {
 	struct typeid_t;
 	std::string typeid_to_compact_string(const typeid_t& t);
 
-
+	//	Keywords in source code.
 	struct keyword_t {
 		static const std::string k_return;
 		static const std::string k_while;
+		static const std::string k_for;
 		static const std::string k_if;
 		static const std::string k_else;
 
@@ -36,23 +37,22 @@ namespace floyd {
 		static const std::string k_float;
 		static const std::string k_string;
 		static const std::string k_struct;
-/*
-		"mutable",
-		"null",
 
-		const std::string keyword_t::k_typeid = "typeid";
+		static const std::string k_mutable;
+
+		//	"null" is not a keyword, since it can be used in source code.
+/*
+		"typeid",
 
 		"assert",
-		"catch",
-
 		"print",
 		"to_string",
 		"update",
 		"size",
-
 */
 
 /*
+		"catch",
 		"deserialize()",
 		"diff()",
 		"ensure",
@@ -75,38 +75,39 @@ namespace floyd {
 		"typecast",
 		"typeof",
 */
-	};
 
 /*
 	const std::vector<std::string> basic_types {
 		"char",
-		"-code_point",
-		"-double",
+		code_point",
+		double",
 		"float32",
 		"float80",
-		"-hash",
+		hash",
 		"int16",
 		"int32",
 		"int64",
 		"int8",
-		"-path",
-		"-text"
+		path",
+		text"
 	};
 	const std::vector<std::string> advanced_types {
-		"-clock",
-		"-defect_exception",
-		"-dyn",
-		"-dyn**<>",
-		"-enum",
-		"-exception",
-		"map",
-		"-protocol",
-		"-rights",
-		"-runtime_exception",
+		clock",
+		defect_exception",
+		dyn",
+		dyn**<>",
+		enum",
+		exception",
+		"dict",
+		protocol",
+		rights",
+		runtime_exception",
 		"seq",
-		"-typedef",
+		typedef",
 	};
 */
+	};
+
 
 
 	//////////////////////////////////////		base_type
