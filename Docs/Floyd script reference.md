@@ -323,6 +323,40 @@ The loop is expanded before the first time the body is called. There is no way t
 
 
 
+# STRING
+This is a pure 8-bit string type. It is immutable. You can compare it etc.
+
+
+??? make string & vector supports similar functions.
+
+==
+<=
+!=
+
+size()
+subset()
+replace()
+update()
+find()
+sort()
+[]
+
++
+
+String literals. Multiline. Escapes. Support JSON sources -- as-is with escapes etc.
+
+
+"Number \(x) of \(y)" -- string interpolation.
+
+int_to_string()
+string_to_int()
+float_to_string()
+string_to_float()
+
+seq_t---style iteration.
+
+
+
 # VECTOR
 A vector is a collection of values where you lookup your values using an index between 0 and (vector size - 1). The elements are ordered. Finding the correct element is constant time. In other languages vectors are called "arrays" or even "lists".
 

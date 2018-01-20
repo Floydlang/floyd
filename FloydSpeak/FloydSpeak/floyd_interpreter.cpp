@@ -2741,11 +2741,28 @@ QUARK_UNIT_TEST("vector", "size()", "string", "0"){
 		assert(size("") == 0);
 	)");
 }
-QUARK_UNIT_TEST("vector", "size()", "string", "10"){
+QUARK_UNIT_TEST("vector", "size()", "string", "24"){
 	const auto vm = run_global(R"(
 		assert(size("How long is this string?") == 24);
 	)");
 }
+
+
+/*
+QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
+	const auto vm = run_global(R"(
+		[string] a = [] + [];
+		assert(a == "[]);
+	)");
+}
+QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
+	const auto vm = run_global(R"(
+		[string] a = ["one"] + ["two"];
+		assert(a == ["one", "two"];
+	)");
+}
+*/
+
 
 
 QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){

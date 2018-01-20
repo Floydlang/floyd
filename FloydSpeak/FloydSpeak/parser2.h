@@ -225,87 +225,69 @@ inline bool operator==(const expr_t& a, const expr_t& b){
 
 
 
-std::pair<expr_t, seq_t> parse_operation(const seq_t& p1, const expr_t& lhs, const eoperator_precedence precedence);
-
 bool is_valid_expr_chars(const std::string& s);
 seq_t skip_expr_whitespace(const seq_t& p);
 
 std::pair<std::string, seq_t> parse_string_literal(const seq_t& p);
 
+
 // [0-9] and "."  => numeric constant.
 std::pair<constant_value_t, seq_t> parse_numeric_constant(const seq_t& p);
 
 /*
-	Constant literal
-		"3"
-		"3.0"
-		"\"three\""
-		"true"
-		"false"
-
-	Function call
-		"f ()"
-		"f(g())"
-		"f(a + "xyz")"
-		"f(a + "xyz", 1000 * 3)"
-
-	Variable read
-		"x1"
-		"hello2"
-		"hello.member"
-
-		x[10 + f()]
+	Constant literal or identifier.
+		3
+		3.0
+		"three"
+		true
+		false
+		hello2
+		x
 */
-std::pair<expr_t, seq_t> parse_single(const seq_t& p);
+std::pair<expr_t, seq_t> parse_terminal(const seq_t& p);
 
 /*
-	Parse a single constant or an expression in parenthesis
-	number
-	string literal
-	somethinge within ().
-	function call
-	a ? b : c
-	-a
+	Atom = standalone expression, like a constant, a function call.
+	It can be composed of subexpressions
 
+	It may then be chained rightwards using operations like "+" etc.
 
 	Examples:
-		"123"
-		"-123"
-		"--+-123"
-		"(123 + 123 * x + f(y*3))"
-
+		123
+		-123
+		--+-123
+		(123 + 123 * x + f(y*3))
+		[ 1, 2, calc_exp(3) ]
 */
-std::pair<expr_t, seq_t> parse_atom(const seq_t& p);
+std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p);
 
 /*
-	"lhs()"
-	"lhs(1)"
-	"lhs(a + b)"
-	"lhs(a, b)"
+	lhs()
+	lhs(1)
+	lhs(a + b)
+	lhs(a, b)
+
+	rhs("start", get_playlist())
+		used like this: convert_to_json("start", get_playlist())
 */
-std::pair<expr_t, seq_t> parse_function_call(const seq_t& p1, const expr_t& lhs, const eoperator_precedence prev_precedence);
+std::pair<expr_t, seq_t> parse_function_call_operation(const seq_t& p1, const expr_t& lhs, const eoperator_precedence prev_precedence);
 
 /*
 	hello.func(x)
 	lhs = ["@", "hello"]
-
-	return = ["->", [], "kitty"]
 */
-std::pair<expr_t, seq_t> parse_member_access_operator(const seq_t& p, const expr_t& lhs, const eoperator_precedence prev_precedence);
+std::pair<expr_t, seq_t> parse_member_access_operation(const seq_t& p, const expr_t& lhs, const eoperator_precedence prev_precedence);
 
 /*
-	lhs[<expression>]...
-	lhs[10 + z]
-	lhs[f(3)]
-	lhs["troll"]
 
-	Chains to right.
+	lhs "+" EXPR
+	lhs "==" EXPR
 */
-std::pair<expr_t, seq_t> parse_lookup(const seq_t& p, const expr_t& lhs, const eoperator_precedence prev_precedence);
+std::pair<expr_t, seq_t> parse_lookup_operation(const seq_t& p, const expr_t& lhs, const eoperator_precedence prev_precedence);
 
-std::pair<expr_t, seq_t> parse_operation(const seq_t& p0, const expr_t& lhs, const eoperator_precedence precedence);
+std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const expr_t& lhs, const eoperator_precedence precedence);
 
-std::pair<expr_t, seq_t> parse_expression_chaining(const seq_t& p, const eoperator_precedence precedence);
+std::pair<expr_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence);
 
 //	Top-level function that parses entire expression into expr_t.
 std::pair<expr_t, seq_t> parse_expression(const seq_t& p);
