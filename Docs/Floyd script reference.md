@@ -325,23 +325,39 @@ The loop is expanded before the first time the body is called. There is no way t
 
 # STRING
 This is a pure 8-bit string type. It is immutable. You can compare it etc.
-
-
 ??? make string & vector supports similar functions.
 
-==
-<=
-!=
 
-size()
+
+a == b
+a <= b
+a != b
+
+pos = find(str, substr)
+pos = -1 if not found.
+
+	assert(find([1,2,3], 4) == -1)
+	assert(find([1,2,3], 1] == 0)
+	assert(find([1,2,2,2,3], 2] == 1)
+
+	assert(find("hello, world", "he"] == 0)
+	assert(find("hello, world", "e"] == 1)
+	assert(find("hello, world", "x"] == -1)
+
+[]
++
+
+number_of_characters = a.size()
+
+
+
+
 subset()
 replace()
 update()
 find()
 sort()
-[]
 
-+
 
 String literals. Multiline. Escapes. Support JSON sources -- as-is with escapes etc.
 

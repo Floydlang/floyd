@@ -19,6 +19,7 @@ struct seq_t;
 /*
 PEG
 https://en.wikipedia.org/wiki/Parsing_expression_grammar
+http://craftinginterpreters.com/representing-code.html
 
 	TYPES:
 		"null"

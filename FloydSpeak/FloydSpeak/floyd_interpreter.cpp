@@ -1138,6 +1138,12 @@ bool environment_t::check_invariant() const {
 
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("assert() requires 1 argument!");
+	}
+
 	auto vm2 = vm;
 	const auto& value = args[0];
 	const auto s = value.to_compact_string();
@@ -1148,6 +1154,12 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 }
 
 std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("assert() requires 1 argument!");
+	}
+
 	auto vm2 = vm;
 	const auto& value = args[0];
 	if(value.is_bool() == false){
@@ -1163,6 +1175,12 @@ std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const st
 
 //	string to_string(value_t)
 std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("to_string() requires 1 argument!");
+	}
+
 	const auto& value = args[0];
 	const auto a = value.to_compact_string();
 	return {vm, value_t(a) };
@@ -1204,6 +1222,12 @@ std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const
 #endif
 
 std::pair<interpreter_t, value_t> host__get_time_of_day(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 2){
+		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
+	}
+
 	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = t - vm._start_time;
 	const auto ms = elapsed_seconds.count() * 1000.0;
@@ -1319,6 +1343,8 @@ typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 	}
 
 std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto& obj = args[0];
@@ -1382,7 +1408,10 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 //		vector(int)
 //		vector(int, 1, 2, 3)
 std::pair<interpreter_t, value_t> host__vector(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
 	if(args.size() == 0){
 		throw std::runtime_error("vector() requires minimum one argument.");
 	}
@@ -1405,7 +1434,10 @@ std::pair<interpreter_t, value_t> host__vector(const interpreter_t& vm, const st
 
 std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(args.size() == 1);
+
+	if(args.size() != 1){
+		throw std::runtime_error("find requires 2 arguments");
+	}
 
 	const auto obj = args[0];
 	if(obj.is_vector()){
@@ -1415,6 +1447,49 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 	else if(obj.is_string()){
 		const auto size = obj.get_string_value().size();
 		return {vm, value_t(static_cast<int>(size))};
+	}
+	else{
+		throw std::runtime_error("Calling size() on unsupported type of value.");
+	}
+}
+
+std::pair<interpreter_t, value_t> host__find(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 2){
+		throw std::runtime_error("find requires 2 arguments");
+	}
+
+	const auto obj = args[0];
+	const auto wanted = args[1];
+	if(obj.is_vector()){
+		const auto vec = obj.get_vector_value();
+		if(wanted.get_type() != vec->_element_type){
+			throw std::runtime_error("Type mismatch.");
+		}
+		const auto size = vec->_elements.size();
+		int index = 0;
+		while(index < size && vec->_elements[index] != wanted){
+			index++;
+		}
+		if(index == size){
+			return {vm, value_t(static_cast<int>(-1))};
+		}
+		else{
+			return {vm, value_t(static_cast<int>(index))};
+		}
+	}
+	else if(obj.is_string()){
+		const auto str = obj.get_string_value();
+		const auto wanted2 = wanted.get_string_value();
+
+		const auto r = str.find(wanted2);
+		if(r == std::string::npos){
+			return {vm, value_t(static_cast<int>(-1))};
+		}
+		else{
+			return {vm, value_t(static_cast<int>(r))};
+		}
 	}
 	else{
 		throw std::runtime_error("Calling size() on unsupported type of value.");
@@ -1438,7 +1513,8 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) }
+	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
+	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) }
 };
 
 
@@ -2840,14 +2916,22 @@ QUARK_UNIT_TEST("vector", "+()", "non-empty vectors", "correct size"){
 		assert(a == ["one", "two"]);
 	)");
 }
-/*
-QUARK_UNIT_TEST_VIP("vector", "+()", "vector + element", "correct size"){
+
+QUARK_UNIT_TEST_VIP("vector", "find()", "vector", "correct return"){
 	const auto vm = run_global(R"(
-		[string] a = ["one"] + "two";
-		assert(a == ["one", "two"]);
+		assert(find([1,2,3], 4) == -1);
+		assert(find([1,2,3], 1) == 0);
+		assert(find([1,2,2,2,3], 2) == 1);
 	)");
 }
-*/
+
+QUARK_UNIT_TEST_VIP("vector", "find()", "string", "correct return"){
+	const auto vm = run_global(R"(
+		assert(find("hello, world", "he") == 0);
+		assert(find("hello, world", "e") == 1);
+		assert(find("hello, world", "x") == -1);
+	)");
+}
 
 QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){
 	const auto vm = run_global(R"(
