@@ -119,17 +119,33 @@ const expr_t maker__make_constant(const constant_value_t& value){
 	(100)
 	(100, 200)
 	(get_first() * 3, 4)
+
+	[:]
+	["one": 1000, "two": 2000]
 */
-std::pair<std::vector<expr_t>, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
+struct collection_element_t {
+	shared_ptr<expr_t> _key;
+	expr_t _value;
+};
+
+bool operator==(const collection_element_t& lhs, const collection_element_t& rhs){
+	return compare_shared_values(lhs._key, rhs._key)
+	&& lhs._value == rhs._value;
+}
+
+std::pair<std::vector<collection_element_t>, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
 	QUARK_ASSERT(s.check_invariant());
 	QUARK_ASSERT(s.first() == start_char);
 
 	auto pos = skip_expr_whitespace(s.rest1());
 
-	std::vector<expr_t> arg_exprs;
+	std::vector<collection_element_t> arg_exprs;
 	while(pos.first1() != end_char){
 		const auto expression_pos = parse_expression_int(pos, eoperator_precedence::k_super_weak);
-		arg_exprs.push_back(expression_pos.first);
+		arg_exprs.push_back({
+			nullptr,
+			expression_pos.first
+		});
 
 		const auto next_pos = skip_expr_whitespace(expression_pos.second);
 		const auto ch = next_pos.first1();
@@ -146,17 +162,17 @@ std::pair<std::vector<expr_t>, seq_t> parse_bounded_list(const seq_t& s, const s
 	return { arg_exprs, pos.rest1() };
 }
 
-QUARK_UNIT_TEST_VIP("parser", "parse_bounded_list()", "", ""){
-	quark::ut_compare(parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<vector<expr_t>, seq_t>({}, seq_t("xyz")));
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+	quark::ut_compare(parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<vector<collection_element_t>, seq_t>({}, seq_t("xyz")));
 }
 
-QUARK_UNIT_TEST_VIP("parser", "parse_bounded_list()", "", ""){
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 	quark::ut_compare(
 		parse_bounded_list(seq_t("[1,2]xyz"), "[", "]"),
-		pair<vector<expr_t>, seq_t>(
+		pair<vector<collection_element_t>, seq_t>(
 			{
-				maker__make_constant(constant_value_t{1}),
-				maker__make_constant(constant_value_t{2})
+				{ nullptr, maker__make_constant(constant_value_t{1}) },
+				{ nullptr, maker__make_constant(constant_value_t{2}) }
 			},
 			seq_t("xyz")
 		)
@@ -167,16 +183,35 @@ QUARK_UNIT_TEST_VIP("parser", "parse_bounded_list()", "", ""){
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 	quark::ut_compare(
 		parse_bounded_list(seq_t(R"(["one": 1, "two": 2]xyz)"), "[", "])"),
-		pair<vector<expr_t>, seq_t>(
+		pair<vector<collection_element_t>, seq_t>(
 			{
-				maker__make_constant(constant_value_t{1}),
-				maker__make_constant(constant_value_t{2})
+				{ nullptr, maker__make_constant(constant_value_t{1}) },
+				{ nullptr, maker__make_constant(constant_value_t{2}) }
 			},
 			seq_t("xyz")
 		)
 	);
 }
 #endif
+
+bool are_keys_used(const std::vector<collection_element_t>& c){
+	for(const auto e: c){
+		if(e._key != nullptr){
+			return true;
+		}
+	}
+	return false;
+}
+
+vector<expr_t> get_values(const std::vector<collection_element_t>& c){
+	vector<expr_t> result;
+	for(const auto e: c){
+		result.push_back(e._value);
+	}
+	return result;
+}
+
+
 
 pair<std::string, seq_t> parse_string_literal(const seq_t& p){
 	QUARK_ASSERT(!p.empty());
@@ -270,7 +305,12 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION (EXPRESSION +, EXPRESSION)
 			if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
 				const auto a_pos = parse_bounded_list(p, "(", ")");
-				const auto call = maker__call(lhs, a_pos.first);
+
+				if(are_keys_used(a_pos.first)){
+					throw std::runtime_error("Cannot name arguments in function call!");
+				}
+				const auto values = get_values(a_pos.first);
+				const auto call = maker__call(lhs, values);
 				return parse_optional_operation_rightward(a_pos.second, call, precedence);
 			}
 
@@ -507,7 +547,7 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 	*/
 	else if(ch1 == '['){
 		const auto a = parse_bounded_list(p2, "[", "]");
-		const auto result = maker_vector_definition("", a.first);
+		const auto result = maker_vector_definition("", get_values(a.first));
 		return {result, a.second };
 	}
 
