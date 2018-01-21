@@ -120,48 +120,37 @@ const expr_t maker__make_constant(const constant_value_t& value){
 	(100, 200)
 	(get_first() * 3, 4)
 */
-std::pair<std::vector<expr_t>, seq_t> parse_bounded_list(const seq_t& p1, const std::string& start_char, const std::string& end_char){
-	QUARK_ASSERT(p1.check_invariant());
-	QUARK_ASSERT(p1.first() == start_char);
+std::pair<std::vector<expr_t>, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
+	QUARK_ASSERT(s.check_invariant());
+	QUARK_ASSERT(s.first() == start_char);
 
-	const auto p = p1;
-	const auto pos3 = skip_expr_whitespace(p.rest());
+	auto pos = skip_expr_whitespace(s.rest1());
 
-	//	No arguments.
-	if(pos3.first() == end_char){
-		return {{}, pos3.rest() };
-	}
-	//	1-many arguments.
-	else{
-		auto pos_loop = skip_expr_whitespace(pos3);
-		std::vector<expr_t> arg_exprs;
-		bool more = true;
-		while(more){
-			const auto a = parse_expression_int(pos_loop, eoperator_precedence::k_super_weak);
-			arg_exprs.push_back(a.first);
+	std::vector<expr_t> arg_exprs;
+	while(pos.first1() != end_char){
+		const auto expression_pos = parse_expression_int(pos, eoperator_precedence::k_super_weak);
+		arg_exprs.push_back(expression_pos.first);
 
-			const auto pos5 = skip_expr_whitespace(a.second);
-			const auto ch = pos5.first();
-			if(ch == ","){
-				more = true;
-			}
-			else if(ch == end_char){
-				more = false;
-			}
-			else{
-				throw std::runtime_error("Unexpected char");
-			}
-			pos_loop = pos5.rest();
+		const auto next_pos = skip_expr_whitespace(expression_pos.second);
+		const auto ch = next_pos.first1();
+		if(ch == ","){
+			pos = next_pos.rest1();
 		}
-		return { arg_exprs, pos_loop };
+		else if(ch == end_char){
+			pos = next_pos;
+		}
+		else{
+			throw std::runtime_error("Unexpected char");
+		}
 	}
+	return { arg_exprs, pos.rest1() };
 }
 
-QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+QUARK_UNIT_TEST_VIP("parser", "parse_bounded_list()", "", ""){
 	quark::ut_compare(parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<vector<expr_t>, seq_t>({}, seq_t("xyz")));
 }
 
-QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+QUARK_UNIT_TEST_VIP("parser", "parse_bounded_list()", "", ""){
 	quark::ut_compare(
 		parse_bounded_list(seq_t("[1,2]xyz"), "[", "]"),
 		pair<vector<expr_t>, seq_t>(
