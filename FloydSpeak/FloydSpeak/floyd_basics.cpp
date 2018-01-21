@@ -70,6 +70,9 @@ const std::string keyword_t::k_mutable = "mutable";
 		else if(t == base_type::k_vector){
 			return "vector";
 		}
+		else if(t == base_type::k_dict){
+			return "dict";
+		}
 		else if(t == base_type::k_function){
 			return "function";
 		}
@@ -95,6 +98,7 @@ const std::string keyword_t::k_mutable = "mutable";
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "function");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_unknown_identifier) == "unknown-identifier");
 	}
@@ -208,6 +212,8 @@ expression_type token_to_expression_type(const string& op){
 			QUARK_ASSERT(_unique_type_id.empty());
 			QUARK_ASSERT(_unknown_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
+
+			QUARK_ASSERT(_parts[0].check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_struct){
 			QUARK_ASSERT(_parts.empty() == true);
@@ -221,13 +227,27 @@ expression_type token_to_expression_type(const string& op){
 			QUARK_ASSERT(_unique_type_id.empty() == true);
 			QUARK_ASSERT(_unknown_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
-		}
-		else if(_base_type == floyd::base_type::k_function){
-			QUARK_ASSERT(_parts.empty() == false);
+
 			QUARK_ASSERT(_parts[0].check_invariant());
+		}
+		else if(_base_type == floyd::base_type::k_dict){
+			QUARK_ASSERT(_parts.size() == 2);
 			QUARK_ASSERT(_unique_type_id.empty() == true);
 			QUARK_ASSERT(_unknown_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
+
+			QUARK_ASSERT(_parts[0].check_invariant());
+			QUARK_ASSERT(_parts[1].check_invariant());
+		}
+		else if(_base_type == floyd::base_type::k_function){
+			QUARK_ASSERT(_parts.size() >= 1);
+			QUARK_ASSERT(_unique_type_id.empty() == true);
+			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(!_struct_def);
+
+			for(const auto e: _parts){
+				QUARK_ASSERT(e.check_invariant());
+			}
 		}
 		else if(_base_type == floyd::base_type::k_unknown_identifier){
 			QUARK_ASSERT(_parts.empty());
@@ -306,6 +326,13 @@ expression_type token_to_expression_type(const string& op){
 				typeid_to_normalized_json(d)
 			});
 		}
+		else if(b == base_type::k_dict){
+???			const auto d = t.get_vector_element_type();
+			return json_t::make_array({
+				json_t(basetype_str),
+				typeid_to_normalized_json(d)
+			});
+		}
 		else if(b == base_type::k_function){
 			return json_t::make_array({
 				basetype_str,
@@ -367,6 +394,10 @@ expression_type token_to_expression_type(const string& op){
 				const auto element_type = typeid_from_normalized_json(a[1]);
 				return typeid_t::make_vector(element_type);
 			}
+			else if(s == "dict"){
+???				const auto element_type = typeid_from_normalized_json(a[1]);
+				return typeid_t::make_vector(element_type);
+			}
 			else if(s == "function"){
 				const auto ret_type = typeid_from_normalized_json(a[1]);
 				const auto arg_types_array = a[2].get_array();
@@ -406,6 +437,10 @@ expression_type token_to_expression_type(const string& op){
 		}
 		else if(basetype == floyd::base_type::k_vector){
 			const auto e = t.get_vector_element_type();
+			return "[" + typeid_to_compact_string(e) + "]";
+		}
+		else if(basetype == floyd::base_type::k_dict){
+???			const auto e = t.get_vector_element_type();
 			return "[" + typeid_to_compact_string(e) + "]";
 		}
 		else if(basetype == floyd::base_type::k_function){
@@ -459,6 +494,10 @@ expression_type token_to_expression_type(const string& op){
 				)",
 				"typeid(struct file {})"
 			},
+
+
+??? vector
+??? dict
 
 			//	Struct
 			{ s1, R"(["struct", ["file", []]])", "struct file {}" },

@@ -188,7 +188,8 @@ namespace floyd {
 		//???	use k_literal for function values?
 		k_define_function,
 
-		k_vector_definition
+		k_vector_definition,
+		k_dict_definition
 	};
 
 	expression_type token_to_expression_type(const std::string& op);
@@ -213,6 +214,7 @@ namespace floyd {
 
 		k_struct,
 		k_vector,
+		k_dict,
 		k_function,
 
 		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
@@ -328,6 +330,31 @@ namespace floyd {
 
 			return _parts[0];
 		}
+
+
+
+		public: static typeid_t make_dict(const typeid_t& key_type, const typeid_t& value_type){
+			return { floyd::base_type::k_dict, { key_type, value_type }, {}, {}, {} };
+		}
+
+		public: bool is_dict() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_dict;
+		}
+
+		public: const typeid_t& get_dict_key_type() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_dict);
+
+			return _parts[0];
+		}
+		public: const typeid_t& get_dict_value_type() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_dict);
+
+			return _parts[1];
+		}
+
+
 
 
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
@@ -448,6 +475,7 @@ namespace floyd {
 		struct red { int x;}		k_struct				struct_definition_t (name = "red", { "x", k_int })
 
 		[int]						k_vector				k_int
+		[string: int]				k_dict					k_string, k_int
 
 		int ()						k_function				return = k_int, args = []
 

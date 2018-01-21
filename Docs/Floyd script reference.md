@@ -530,6 +530,39 @@ vector2 = replace(vector1, start_pos, end_pos, new_bit)
 
 
 
+
+# DICTIONARY
+
+A collection that maps a key to a value. Unsorted. Like a C++ map. 
+
+
+	a = [string: int]
+
+	//	Create a string -> int dictionary with three entries.
+	a = [string: int]["red": 0, "blue": 100,"green": 255];
+
+	//	Make dictionary where key is a string and value is an int. Initialize it.
+	a = [string: int]("one": 1, "two": 2, "three": 3);
+
+	//	Make a string->int dictionary where collection type is deducted from the initialization values.
+	b = ["one": 1, "two": 2, "three", 3];
+
+	c = [string: int]; //	Empty dictionary of string,int.
+	
+
+Dictionary Reference
+
+	V my_dict.at(K key)
+	V my_dict[K key]
+	my_dict[K key] = value
+	bool my_dict.empty()
+	size_t my_dict.size()
+	dict<K, V> my_dict.insert(K key, V value)
+	size_t my_dict.count()
+	dict<K, V> my_dict.erase(K key)
+
+
+
 # STRUCTs - BASICS
 
 Structs are the central building block for composing data in Floyd. They are used in place of structs and classes in other programming languages. Structs are always values and immutable. They are still fast and compact: behind the curtains copied structs  shares state between them, even when partially modified.
