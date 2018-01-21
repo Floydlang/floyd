@@ -505,7 +505,7 @@ QUARK_UNIT_TEST("", "read_type()", "vector", ""){
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
-QUARK_UNIT_TEST_VIP("", "read_type()", "dict", ""){
+QUARK_UNIT_TEST("", "read_type()", "dict", ""){
 	const auto r = read_type(seq_t("[string: int]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_dict(typeid_t::make_int())		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
