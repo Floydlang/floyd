@@ -67,6 +67,53 @@ seq_t skip_expr_whitespace(const seq_t& p) {
 	return read_while(p, k_c99_whitespace_chars).second;
 }
 
+
+
+
+
+/*
+	Generates expressions encode as JSON in std::string values. Use for testing.
+*/
+
+const expr_t maker__make_identifier(const std::string& s){
+	return expr_t{ eoperation::k_0_resolve, {}, {}, s };
+}
+
+const expr_t maker__make1(const eoperation op, const expr_t& expr){
+	return expr_t{ op, { expr }, {}, "" };
+}
+
+const expr_t maker__make2(const eoperation op, const expr_t& lhs, const expr_t& rhs){
+	return expr_t{ op, { lhs, rhs }, {}, "" };
+}
+
+const expr_t maker__make3(const eoperation op, const expr_t& e1, const expr_t& e2, const expr_t& e3){
+	return expr_t{ op, { e1, e2, e3 }, {}, "" };
+}
+
+const expr_t maker__call(const expr_t& f, const std::vector<expr_t>& args){
+	std::vector<expr_t> exprs;
+	exprs.push_back(f);
+	exprs.insert(exprs.end(), args.begin(), args.end());
+	return expr_t{ eoperation::k_n_call, exprs, {}, "" };
+}
+
+const expr_t maker_vector_definition(const std::string& element_type, const std::vector<expr_t>& elements){
+	return expr_t{ eoperation::k_1_vector_definition, elements, {}, element_type };
+}
+
+const expr_t maker__member_access(const expr_t& address, const std::string& member_name){
+	return expr_t{ eoperation::k_x_member_access, { address }, {}, member_name };
+}
+
+const expr_t maker__make_constant(const constant_value_t& value){
+	if(value._type == constant_value_t::etype::k_string){
+		return expr_t{ eoperation::k_0_string_literal, {}, std::make_shared<constant_value_t>(value), "" };
+	}
+	else{
+		return expr_t{ eoperation::k_0_number_constant, {}, std::make_shared<constant_value_t>(value), "" };
+	}
+}
 /*
 	()
 	(100)
@@ -110,6 +157,37 @@ std::pair<std::vector<expr_t>, seq_t> parse_bounded_list(const seq_t& p1, const 
 	}
 }
 
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+	quark::ut_compare(parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<vector<expr_t>, seq_t>({}, seq_t("xyz")));
+}
+
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+	quark::ut_compare(
+		parse_bounded_list(seq_t("[1,2]xyz"), "[", "]"),
+		pair<vector<expr_t>, seq_t>(
+			{
+				maker__make_constant(constant_value_t{1}),
+				maker__make_constant(constant_value_t{2})
+			},
+			seq_t("xyz")
+		)
+	);
+}
+
+#if false
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+	quark::ut_compare(
+		parse_bounded_list(seq_t(R"(["one": 1, "two": 2]xyz)"), "[", "])"),
+		pair<vector<expr_t>, seq_t>(
+			{
+				maker__make_constant(constant_value_t{1}),
+				maker__make_constant(constant_value_t{2})
+			},
+			seq_t("xyz")
+		)
+	);
+}
+#endif
 
 pair<std::string, seq_t> parse_string_literal(const seq_t& p){
 	QUARK_ASSERT(!p.empty());
@@ -175,49 +253,6 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 
 
 
-/*
-	Generates expressions encode as JSON in std::string values. Use for testing.
-*/
-
-const expr_t maker__make_identifier(const std::string& s){
-	return expr_t{ eoperation::k_0_resolve, {}, {}, s };
-}
-
-const expr_t maker__make1(const eoperation op, const expr_t& expr){
-	return expr_t{ op, { expr }, {}, "" };
-}
-
-const expr_t maker__make2(const eoperation op, const expr_t& lhs, const expr_t& rhs){
-	return expr_t{ op, { lhs, rhs }, {}, "" };
-}
-
-const expr_t maker__make3(const eoperation op, const expr_t& e1, const expr_t& e2, const expr_t& e3){
-	return expr_t{ op, { e1, e2, e3 }, {}, "" };
-}
-
-const expr_t maker__call(const expr_t& f, const std::vector<expr_t>& args){
-	std::vector<expr_t> exprs;
-	exprs.push_back(f);
-	exprs.insert(exprs.end(), args.begin(), args.end());
-	return expr_t{ eoperation::k_n_call, exprs, {}, "" };
-}
-
-const expr_t maker_vector_definition(const std::string& element_type, const std::vector<expr_t>& elements){
-	return expr_t{ eoperation::k_1_vector_definition, elements, {}, element_type };
-}
-
-const expr_t maker__member_access(const expr_t& address, const std::string& member_name){
-	return expr_t{ eoperation::k_x_member_access, { address }, {}, member_name };
-}
-
-const expr_t maker__make_constant(const constant_value_t& value){
-	if(value._type == constant_value_t::etype::k_string){
-		return expr_t{ eoperation::k_0_string_literal, {}, std::make_shared<constant_value_t>(value), "" };
-	}
-	else{
-		return expr_t{ eoperation::k_0_number_constant, {}, std::make_shared<constant_value_t>(value), "" };
-	}
-}
 
 
 std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const expr_t& lhs, const eoperator_precedence precedence){
@@ -471,8 +506,16 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 		return { a.first, p3.rest() };
 	}
 
-	//	Vector definition "[ 1, 2, 3 ]", "[ calc_pi(), 2.8, calc_pi * 2.0]"
-	//	"[ EXPRESSION, EXPRESSION... ]"
+	/*
+		Vector definition: "[" EXPRESSION "," EXPRESSION... "]"
+		 	[ 1, 2, 3 ]
+		 	[ calc_pi(), 2.8, calc_pi * 2.0]
+	
+		OR
+
+		Dict definition: "[" EXPRESSION ":" EXPRESSION, EXPRESSION ":" EXPRESSION, ... "]"
+		 [ "one": 1, "two": 2, "three": 3 ]
+	*/
 	else if(ch1 == '['){
 		const auto a = parse_bounded_list(p2, "[", "]");
 		const auto result = maker_vector_definition("", a.first);
@@ -884,7 +927,6 @@ QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression(
 
 //////////////////////////////////			vector definition
 
-//	"[\"vector-def\", \"\", [[\"k\", \"int\", 1], [\"k\", \"int\", 2], [\"k\", \"int\", 3]]]"
 
 QUARK_UNIT_TESTQ("run_main()", "vector"){
 	QUARK_UT_VERIFY(test__parse_expression("[]", R"(["vector-def", "", []])", ""));
@@ -893,11 +935,29 @@ QUARK_UNIT_TESTQ("run_main()", "vector"){
 QUARK_UNIT_TESTQ("run_main()", "vector"){
 	QUARK_UT_VERIFY(test__parse_expression("[1,2,3]", R"(["vector-def", "", [["k", "int", 1], ["k", "int", 2], ["k", "int", 3]]])", ""));
 }
-/*
-QUARK_UNIT_TESTQ("run_main()", "vector"){
-	QUARK_UT_VERIFY(test__parse_expression("[1,2] + [3,4]", R"(["vector-def", "", [["k", "int", 1], ["k", "int", 2], ["k", "int", 3]]])", ""));
+
+
+
+//////////////////////////////////			DICT definition
+
+#if false
+QUARK_UNIT_TESTQ("run_main()", "dict"){
+	QUARK_UT_VERIFY(test__parse_expression("[:]", R"(["dict-def", "", []])", ""));
 }
-*/
+
+QUARK_UNIT_TEST("parser", "parge_expression()", "dict definition", ""){
+	QUARK_UT_VERIFY(test__parse_expression(R"(["one": 1, "two": 2, "three": 3])", R"(
+		"dict-def", "",
+		[
+			[["k", "string", "one"], ["k", "int", 1]],
+			[["k", "string", "two"], ["k", "int", 2]],
+			[["k", "string", "three"], ["k", "int", 3]]
+		]
+	)", ""));
+}
+#endif
+
+
 
 //////////////////////////////////			NEG
 
