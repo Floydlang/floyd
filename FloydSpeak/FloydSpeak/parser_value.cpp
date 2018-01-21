@@ -69,7 +69,7 @@ namespace floyd {
 		bool vector_instance_t::check_invariant() const{
 			for(const auto m: _elements){
 				QUARK_ASSERT(m.check_invariant());
-				//??? check type of member value is the same as in the type_def.
+				QUARK_ASSERT(m.get_type() == _element_type);
 			}
 			return true;
 		}
@@ -92,22 +92,43 @@ namespace floyd {
 		}
 
 
+//////////////////////////////////////////////////		dict_instance_t
+
+
+bool dict_instance_t::check_invariant() const{
+	for(const auto m: _elements){
+		QUARK_ASSERT(m.second.check_invariant());
+		QUARK_ASSERT(m.second.get_type() == _value_type);
+	}
+	return true;
+}
+
+bool dict_instance_t::operator==(const dict_instance_t& other) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(other.check_invariant());
+
+	return _value_type == other._value_type && _elements == other._elements;
+}
+
+
+std::string to_compact_string(const dict_instance_t& instance){
+	std::vector<std::string> elements;
+	for(const auto e: instance._elements){
+		const auto key_str = e.first;
+		const auto value_str = e.second.to_compact_string_quote_strings();
+		const auto es = key_str + ":\t" + value_str;
+		elements.push_back(es);
+	}
+	return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
+}
+
+
+
 
 
 	//////////////////////////////////////		vector_def_t
 
 
-
-	vector_def_t vector_def_t::make2(
-		const floyd::typeid_t& element_type)
-	{
-		QUARK_ASSERT(!element_type.is_null() && element_type.check_invariant());
-
-		vector_def_t result(element_type);
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
 
 	bool vector_def_t::check_invariant() const{
 		QUARK_ASSERT(!_element_type.is_null() && _element_type.check_invariant());
@@ -124,40 +145,41 @@ namespace floyd {
 		return true;
 	}
 
+//???delete
 	void trace(const vector_def_t& e){
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_SCOPED_TRACE("vector_def_t");
 		QUARK_TRACE_SS("element_type: " << typeid_to_compact_string(e._element_type));
 	}
 
-	json_t vector_def_to_json(const vector_def_t& s){
-		return {
-		};
+
+
+
+
+	//////////////////////////////////////		dict_def_t
+
+
+
+	bool dict_def_t::check_invariant() const{
+		QUARK_ASSERT(_value_type.check_invariant());
+		QUARK_ASSERT(_value_type.is_null() == false);
+		return true;
+	}
+
+	bool dict_def_t::operator==(const dict_def_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(!(_value_type == other._value_type)){
+			return false;
+		}
+		return true;
 	}
 
 
-/*
 
-QUARK_UNIT_TESTQ("host_function_t", "null"){
 
-	struct dummy_t : public host_function_t {
-		public: virtual value_t host_function_call(const std::vector<value_t> args){
-			QUARK_ASSERT(true);
-			return value_t(13);
-		};
-	};
 
-	dummy_t t;
-	host_function_t* t2 = &t;
-
-	host_function_t* const t3 = t2;
-//	t3 = t3;
-
-	QUARK_TEST_VERIFY(t.host_function_call({}) == value_t(13));
-	QUARK_TEST_VERIFY(t2->host_function_call({}) == value_t(13));
-	QUARK_TEST_VERIFY(t3->host_function_call({}) == value_t(13));
-}
-*/
 
 
 	//////////////////////////////////////////////////		function_instance_t
@@ -256,6 +278,14 @@ int compare_vector_true_deep(const vector_instance_t& left, const vector_instanc
 	}
 }
 
+int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& right){
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+
+//??? implement!
+	return -1;
+}
+
 
 
 int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
@@ -317,6 +347,16 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return compare_vector_true_deep(*left_vec, *right_vec);
 		}
 	}
+	else if(type.is_dict()){
+		if(left.get_type() != right.get_type()){
+			throw std::runtime_error("Cannot compare dicts of different type.");
+		}
+		else{
+			const auto left2 = left.get_dict_value();
+			const auto right2 = right.get_dict_value();
+			return compare_dict_true_deep(*left2, *right2);
+		}
+	}
 	else if(type.is_function()){
 		QUARK_ASSERT(false);
 		return 0;
@@ -354,6 +394,7 @@ QUARK_UNIT_TESTQ("value_t()", "null"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t());
@@ -371,6 +412,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(true));
@@ -388,6 +430,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(false));
@@ -405,6 +448,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(13));
@@ -422,6 +466,7 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
@@ -439,6 +484,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
+	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
@@ -446,124 +492,6 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(a.to_compact_string() == "xyz");
 	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "string: \"xyz\"");
 }
-
-#if 0
-QUARK_UNIT_TESTQ("value_t()", "struct"){
-	const auto struct_scope_ref = lexical_scope_t::make_struct_object(
-		std::vector<member_t>{
-			{ typeid_t::make_string(), "x" }
-		}
-	);
-	const auto struct_type = typeid_t::make_struct("xxx"/*struct_scope_ref*/);
-	const auto instance = make_shared<struct_instance_t>(struct_instance_t(struct_type, std::map<std::string, value_t>{
-		{ "x", value_t("skalman")}
-	}));
-	const auto a = value_t(instance);
-
-	QUARK_TEST_VERIFY(!a.is_null());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_function());
-
-	QUARK_TEST_VERIFY(a != value_t("xyza"));
-}
-#endif
-
-/*
-QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
-	const auto a = make_vector_instance(vector_def, {});
-	const auto b = make_vector_instance(vector_def, {});
-
-	QUARK_TEST_VERIFY(!a.is_null());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(a.is_vector());
-	QUARK_TEST_VERIFY(!a.is_function());
-
-	QUARK_TEST_VERIFY(a == b);
-	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	quark::ut_compare(a.to_compact_string(), "[]");
-	quark::ut_compare(a.value_and_type_to_string(), "[int]: []");
-}
-
-
-QUARK_UNIT_TESTQ("value_t()", "vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(typeid_t::make_int()));
-	const auto a = make_vector_instance(vector_def, { 3, 4, 5});
-	const auto b = make_vector_instance(vector_def, { 3, 4 });
-
-	QUARK_TEST_VERIFY(a != b);
-	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[0] == 3);
-	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[1] == 4);
-	QUARK_TEST_VERIFY(a.get_vector_value()->_elements[2] == 5);
-}
-*/
-
-#if false
-value_t make_test_func(){
-	const auto function_scope_ref = lexical_scope_t::make_function_object(
-		type_identifier_t::make("my_func"),
-		std::vector<member_t>{
-			{ typeid_t::make_int(), "a" },
-			{ typeid_t::make_string(), "b" }
-		},
-		{},
-		{},
-		typeid_t::make_bool()
-	);
-
-	const auto function_type = typeid_t::make_function_type_def(function_scope_ref);
-	const auto a = value_t(function_type);
-	return a;
-}
-
-QUARK_UNIT_TESTQ("value_t()", "function"){
-	const auto a = make_test_func();
-
-	QUARK_TEST_VERIFY(!a.is_null());
-	QUARK_TEST_VERIFY(!a.is_bool());
-	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
-	QUARK_TEST_VERIFY(!a.is_string());
-	QUARK_TEST_VERIFY(!a.is_struct());
-	QUARK_TEST_VERIFY(!a.is_vector());
-	QUARK_TEST_VERIFY(a.is_function());
-
-	QUARK_TEST_VERIFY(a != value_t("xyza"));
-}
-#endif
-
-#if false
-
-struct_fixture_t::struct_fixture_t() :
-	_struct6_def(make_struct6(_ast._global_scope))
-{
-	auto pixel_def = lexical_scope_t::make_struct(
-		type_identifier_t::make("pixel"),
-		std::vector<member_t>(
-			{
-				member_t(type_identifier_t::make_int(), "red", value_t(55)),
-				member_t(type_identifier_t::make_int(), "green", value_t(66)),
-				member_t(type_identifier_t::make_int(), "blue", value_t(77))
-			}
-		));
-
-	_ast._global_scope = _ast._global_scope->set_types(define_struct_type(_ast._global_scope->_types_collector, "pixel", pixel_def));
-
-	_struct6_instance0 = make_struct_instance(make_resolved_root(_ast), _struct6_def);
-	_struct6_instance1 = make_struct_instance(make_resolved_root(_ast), _struct6_def);
-}
-#endif
-
 
 
 json_t value_to_json(const value_t& v){
@@ -598,6 +526,19 @@ json_t value_to_json(const value_t& v){
 		}
 		return result;
 	}
+	else if(v.is_dict()){
+/*
+		const auto value = v.get_vector_value();
+		std::vector<json_t> result;
+		for(int i = 0 ; i < value->_elements.size() ; i++){
+			const auto element_value = value->_elements[i];
+			result.push_back(value_to_json(element_value));
+		}
+		return result;
+*/
+//??? implement
+		return json_t("???");
+	}
 	else if(v.is_function()){
 		const auto value = v.get_function_value();
 		return json_t::make_object(
@@ -610,43 +551,6 @@ json_t value_to_json(const value_t& v){
 		QUARK_ASSERT(false);
 	}
 }
-
-#if false
-QUARK_UNIT_TESTQ("value_to_json()", "Nested struct to nested JSON objects"){
-	struct_fixture_t f;
-	const value_t value = f._struct6_instance0;
-
-	const auto result = value_to_json(value);
-
-	QUARK_UT_VERIFY(result.is_object());
-	const auto obj = result.get_object();
-
-	QUARK_UT_VERIFY(obj.at("_bool_true").is_true());
-	QUARK_UT_VERIFY(obj.at("_bool_false").is_false());
-	QUARK_UT_VERIFY(obj.at("_int").get_number() == 111.0);
-	QUARK_UT_VERIFY(obj.at("_string").get_string() == "test 123");
-	QUARK_UT_VERIFY(obj.at("_pixel").is_object());
-	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("red").get_number() == 55.0);
-	QUARK_UT_VERIFY(obj.at("_pixel").get_object_element("green").get_number() == 66.0);
-}
-#endif
-
-#if 0
-QUARK_UNIT_TESTQ("value_to_json()", "Vector"){
-	const auto vector_def = make_shared<const vector_def_t>(vector_def_t::make2(type_identifier_t::make("my_vec"), type_identifier_t::make_int()));
-	const auto a = make_vector_instance(vector_def, { 10, 11, 12 });
-	const auto b = make_vector_instance(vector_def, { 10, 4 });
-
-	const auto result = value_to_json(a);
-
-	QUARK_UT_VERIFY(result.is_array());
-	const auto array = result.get_array();
-
-	QUARK_UT_VERIFY(array[0] == 10);
-	QUARK_UT_VERIFY(array[1] == 11);
-	QUARK_UT_VERIFY(array[2] == 12);
-}
-#endif
 
 QUARK_UNIT_TESTQ("value_to_json()", ""){
 	quark::ut_compare(value_to_json(value_t("hello")), json_t("hello"));

@@ -51,18 +51,26 @@ http://craftinginterpreters.com/representing-code.html
 	EXPRESSIONS:
 		Numberic literal:				"0123456789" +++
 		Resolve-identifier:				IDENTIFIER +++
-		Vector-definition				"[" EXPRESSION "," EXPRESSION "," ... "]"
-		Add								EXPRESSION "+" EXPRESSION +++
-		Sub								EXPRESSION "-" EXPRESSION +++
+		Vector-definition:				"[" EXPRESSION "," EXPRESSION "," ... "]"
+		Dict-definition:				"[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" EXPRESSION "," ... "]"
+		Add:							EXPRESSION "+" EXPRESSION +++
+		Sub:							EXPRESSION "-" EXPRESSION +++
 										EXPRESSION "&&" EXPRESSION +++
 		Resolve-member:					EXPRESSION "." EXPRESSION +++
-		Group							"(" EXPRESSION ")"" +++
-		Lookup []						EXPRESSION "[" EXPRESSION "]"" +++
-		Call							EXPRESSION "(" EXPRESSION "," EXPRESSION "," ...")"" +++
-		k_1_unary_minus					"-" EXPRESSION
+		Group:							"(" EXPRESSION ")"" +++
+		Lookup []:						EXPRESSION "[" EXPRESSION "]"" +++
+		Call:							EXPRESSION "(" EXPRESSION "," EXPRESSION "," ...")"" +++
+		k_1_unary_minus:				"-" EXPRESSION
 										EXPRESSION ? EXPRESSION : EXPRESSION +++
 
 		Convert-to-type:				TYPE(EXPRESSION)
+
+
+
+
+	airports: [String: String] = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
+
+
 */
 
 namespace floyd {
