@@ -186,16 +186,16 @@
 				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
 				2C81894C1D47B62400030C96 /* floyd_interpreter.h */,
 				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
+				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
+				2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */,
 				2C95E6D01D5AA47200186D5A /* llvm_code_gen.cpp */,
 				2C95E6D11D5AA47200186D5A /* llvm_code_gen.h */,
-				2CBCA7D81D569C6D000FAE81 /* parts */,
 				2C00BC401F2427510087B8BB /* parser */,
+				2CBCA7D81D569C6D000FAE81 /* parts */,
 				2CD68C5F1D5A71610070892A /* pass2.cpp */,
 				2CD68C601D5A71610070892A /* pass2.h */,
 				2C0AC17A1CADB26B00979C49 /* runtime.cpp */,
 				2C0AC17B1CADB26B00979C49 /* runtime.h */,
-				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
-				2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */,
 			);
 			path = FloydSpeak;
 			sourceTree = "<group>";

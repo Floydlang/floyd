@@ -86,9 +86,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "string constant expression"){
 }
 
 
-
-
-//////////////////////////		TEST EXPRESSIONS
+//////////////////////////		BASIC EXPRESSIONS
 
 
 QUARK_UNIT_TESTQ("Floyd test suite", "+") {
@@ -118,10 +116,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
 }
 
 
-
-
-
-//////////////////////////		TEST conditional expression
+//////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
 QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
@@ -141,19 +136,29 @@ QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 }
 
 
+//////////////////////////		BASIC EXPRESSIONS - PARANTHESES
 
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses") {
 	test__run_init__check_result("int result = 5*(4+4+1);", value_t(45));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses") {
 	test__run_init__check_result("int result = 5*(2*(1+3)+1);", value_t(45));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses") {
 	test__run_init__check_result("int result = 5*((1+3)*2+1);", value_t(45));
 }
 
+QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parentheses") {
+	test__run_init__check_result("int result = -(2+1)*4;", value_t(-12));
+}
+QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parentheses") {
+	test__run_init__check_result("int result = -4*(2+1);", value_t(-12));
+}
+
+
+//////////////////////////		BASIC EXPRESSIONS - SPACES
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
@@ -166,12 +171,9 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 	test__run_init__check_result("int result =  5 - 2 * ( ( 4 )  - 1 ) ;", value_t(-1));
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
-	test__run_init__check_result("int result = -(2+1)*4;", value_t(-12));
-}
-QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parenthesis") {
-	test__run_init__check_result("int result = -4*(2+1);", value_t(-12));
-}
+
+//////////////////////////		BASIC EXPRESSIONS - FLOAT
+
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
@@ -193,6 +195,9 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	test__run_init__check_result("float result = .25 / 2.0 * .5;", value_t(0.0625f));
 }
 
+//////////////////////////		BASIC EXPRESSIONS - EDGE CASES
+
+
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 	test__run_init__check_result("int result = 1+-2;", value_t(-1));
 }
@@ -207,12 +212,19 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 }
 
 
+//////////////////////////		BASIC EXPRESSIONS - BOOL
+
+
 QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
 	test__run_init__check_result("bool result = true;", value_t(true));
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
 	test__run_init__check_result("bool result = false;", value_t(false));
 }
+
+
+//////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
+
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
@@ -238,6 +250,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 }
 
 
+//////////////////////////		BASIC EXPRESSIONS - OPERATOR ==
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
@@ -255,6 +268,9 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 	test__run_init__check_result("bool result = \"hello\" == \"bye\";", value_t(false));
 }
+
+
+//////////////////////////		BASIC EXPRESSIONS - OPERATOR <
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
@@ -276,6 +292,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	test__run_init__check_result("bool result = \"boat\" < \"adwark\";", value_t(false));
 }
 
+//////////////////////////		BASIC EXPRESSIONS - OPERATOR &&
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	test__run_init__check_result("bool result = false && false;", value_t(false));
@@ -312,6 +329,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	test__run_init__check_result("bool result = true && true && true;", value_t(true));
 }
 
+//////////////////////////		BASIC EXPRESSIONS - OPERATOR ||
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	test__run_init__check_result("bool result = false || false;", value_t(false));
@@ -351,6 +369,10 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	test__run_init__check_result("bool result = true || true || true;", value_t(true));
 }
+
+
+//////////////////////////		BASIC EXPRESSIONS - ERRORS
+
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Type mismatch") {
 	try{
@@ -395,7 +417,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
 
 	// ...or the first one
 	QUARK_TEST_VERIFY(test__evaluate_expression("q+1/0)") == EEE_WRONG_CHAR);
-	QUARK_TEST_VERIFY(test__evaluate_expression("+1/0)") == EEE_PARENTHESIS);
+	QUARK_TEST_VERIFY(test__evaluate_expression("+1/0)") == EEE_PARENTHESES);
 	QUARK_TEST_VERIFY(test__evaluate_expression("+1/0") == EEE_DIVIDE_BY_ZERO);
 */
 }
@@ -409,7 +431,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
 
 
 
-//////////////////////////		TEST FUNCTIONS
+//////////////////////////		MINIMAL PROGRAMS
 
 
 
@@ -423,7 +445,6 @@ QUARK_UNIT_TESTQ("run_main", "Can make and read global int"){
 		value_t(123)
 	);
 }
-
 
 QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
 	test__run_main(
@@ -457,7 +478,6 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	QUARK_TEST_VERIFY(*result.second == value_t(7));
 }
 
-
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	auto ast = program_to_ast2(
 		"string main(string args){\n"
@@ -469,6 +489,11 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	const auto result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(*result.second == value_t("123456"));
 }
+
+
+//////////////////////////		CALL FUNCTIONS
+
+
 
 QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
 	auto ast = program_to_ast2(
@@ -499,6 +524,9 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 }
 
 
+//////////////////////////		USE LOCAL VARIABLES IN FUNCTION
+
+
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto ast = program_to_ast2(
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
@@ -517,7 +545,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-//////////////////////////		mutate
+//////////////////////////		MUTATE VARIABLES
 
 
 
@@ -582,7 +610,7 @@ QUARK_UNIT_TESTQ("run_main()", "test mutating from a subscope"){
 
 
 
-//////////////////////////		RETURN-statement, advanced usage.
+//////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
 
 QUARK_UNIT_TESTQ("call_function()", "return from middle of function"){
@@ -657,7 +685,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 
 
 
-//////////////////////////		Host: to_string()
+//////////////////////////		HOST FUNCTION - to_string()
 
 
 
@@ -679,7 +707,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 }
 
 
-//////////////////////////		Host: Print
+//////////////////////////		HOST FUNCTION - print()
 
 
 
@@ -716,7 +744,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 }
 
 
-//////////////////////////		Host: assert
+//////////////////////////		HOST FUNCTION - assert()
 
 /*
 QUARK_UNIT_TESTQ("run_global()", ""){
@@ -740,7 +768,8 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 }
 */
 
-//////////////////////////		Host: get_time_of_day()
+
+//////////////////////////		HOST FUNCTION - get_time_of_day()
 
 
 
@@ -756,7 +785,7 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 }
 
 
-//////////////////////////		Blocks and scoping
+//////////////////////////		BLOCKS AND SCOPING
 
 
 
@@ -791,7 +820,7 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 
 
 
-//////////////////////////		if-statement
+//////////////////////////		IF STATEMENT
 
 
 
@@ -930,7 +959,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 
 
 
-//////////////////////////		for-statement
+//////////////////////////		FOR STATEMENT
 
 
 
@@ -969,7 +998,7 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 }
 
 
-//////////////////////////		while-statement
+//////////////////////////		WHILE STATEMENT
 
 
 QUARK_UNIT_TESTQ("run_init()", "for"){
@@ -986,7 +1015,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 }
 
 
-//////////////////////////		struct
+//////////////////////////		STRUCTS
 
 
 
@@ -1190,9 +1219,30 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 	}	));
 }
 
+//////////////////////////		STRING
 
 
-//////////////////////////		vector
+
+QUARK_UNIT_TEST("vector", "size()", "string", "0"){
+	const auto vm = run_global(R"(
+		assert(size("") == 0);
+	)");
+}
+QUARK_UNIT_TEST("vector", "size()", "string", "24"){
+	const auto vm = run_global(R"(
+		assert(size("How long is this string?") == 24);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "push_back()", "string", "correct final vector"){
+	const auto vm = run_global(R"(
+		a = push_back("one", "two");
+		assert(a == "onetwo");
+	)");
+}
+
+
+//////////////////////////		VECTOR
 
 
 
@@ -1290,18 +1340,6 @@ QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "size()", "string", "0"){
-	const auto vm = run_global(R"(
-		assert(size("") == 0);
-	)");
-}
-QUARK_UNIT_TEST("vector", "size()", "string", "24"){
-	const auto vm = run_global(R"(
-		assert(size("How long is this string?") == 24);
-	)");
-}
-
-
 QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
 	const auto vm = run_global(R"(
 		[string] a = [] + [];
@@ -1320,12 +1358,6 @@ QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
 	const auto vm = run_global(R"(
 		[string] a = push_back(["one"], "two");
 		assert(a == ["one", "two"]);
-	)");
-}
-QUARK_UNIT_TEST("vector", "push_back()", "string", "correct final vector"){
-	const auto vm = run_global(R"(
-		a = push_back("one", "two");
-		assert(a == "onetwo");
 	)");
 }
 

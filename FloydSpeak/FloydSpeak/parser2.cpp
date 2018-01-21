@@ -1232,11 +1232,11 @@ void test__parse_expression__throw(const std::string& expression, const std::str
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis error") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses error") {
 	test__parse_expression__throw("5*((1+3)*2+1", "");
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parenthesis error") {
+QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses error") {
 //	test__parse_expression__throw("5*((1+3)*2)+1)", "");
 }
 
