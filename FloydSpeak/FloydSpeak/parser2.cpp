@@ -27,7 +27,6 @@ using floyd::keyword_t;
 namespace parser2 {
 
 
-std::pair<expr_t, seq_t> parse_vector_definition(const seq_t& p);
 
 
 QUARK_UNIT_TESTQ("C++ operators", ""){
@@ -400,6 +399,10 @@ std::pair<expr_t, seq_t> parse_terminal(const seq_t& p0) {
 	throw std::runtime_error("Expected constant or identifier.");
 }
 
+
+std::pair<vector<expr_t>, seq_t> parse_vector_definition2(const seq_t& p);
+
+
 std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
@@ -434,24 +437,9 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 	//	Vector definition "[ 1, 2, 3 ]", "[ calc_pi(), 2.8, calc_pi * 2.0]"
 	//	"[ EXPRESSION, EXPRESSION... ]"
 	else if(ch1 == '['){
-		const auto close_pos = skip_expr_whitespace(p2.rest1());
-		if(close_pos.first1() == "]"){
-			const auto result = maker_vector_definition("", {});
-			return {result, close_pos.rest1() };
-		}
-		else{
-#if true
-			const auto a = parse_vector_definition(p2);
-			return { a.first, a.second };
-#else
-			const auto a = parse_expression_int(p2.rest1(), eoperator_precedence::k_super_weak);
-			const auto p3 = skip_expr_whitespace(a.second);
-			if (p3.first() != "]"){
-				throw std::runtime_error("Expected ']'");
-			}
-			return { a.first, p3.rest() };
-#endif
-		}
+		const auto a = parse_vector_definition2(p2);
+		const auto result = maker_vector_definition("", a.first);
+		return {result, a.second };
 	}
 
 	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
@@ -514,7 +502,7 @@ std::pair<std::vector<expr_t>, seq_t> parse_function_call_operation(const seq_t&
 
 //??? Unify with parse_function_call_operation.
 //	[1,2,3]
-std::pair<expr_t, seq_t> parse_vector_definition(const seq_t& p){
+std::pair<vector<expr_t>, seq_t> parse_vector_definition2(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(p.first() == "[");
 
@@ -522,8 +510,7 @@ std::pair<expr_t, seq_t> parse_vector_definition(const seq_t& p){
 
 	//	No elements.
 	if(pos3.first() == "]"){
-		const auto result = maker_vector_definition("", {});
-		return {result, pos3.rest1() };
+		return {{}, pos3.rest1() };
 	}
 	//	1-many arguments.
 	else{
@@ -547,11 +534,10 @@ std::pair<expr_t, seq_t> parse_vector_definition(const seq_t& p){
 			}
 			pos_loop = pos5.rest();
 		}
-
-		const auto result = maker_vector_definition("", elements_expr);
-		return {result, pos_loop };
+		return {elements_expr, pos_loop };
 	}
 }
+
 
 
 
