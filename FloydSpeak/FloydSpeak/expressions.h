@@ -44,7 +44,6 @@ namespace floyd {
 		private: struct expr_base_t {
 			public: virtual ~expr_base_t(){};
 
-			public: virtual typeid_t get_result_type() const = 0;
 			public: virtual json_t expr_base__to_json() const{ return json_t(); };
 		};
 
@@ -59,10 +58,6 @@ namespace floyd {
 			:
 				_value(value)
 			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _value.get_type();
 			}
 
 			public: virtual json_t expr_base__to_json() const {
@@ -102,27 +97,20 @@ namespace floyd {
 			public: simple_expr__2_t(
 				expression_type op,
 				const expression_t& left,
-				const expression_t& right,
-				const typeid_t result_type
+				const expression_t& right
 			)
 			:
 				_op(op),
 				_left(std::make_shared<expression_t>(left)),
-				_right(std::make_shared<expression_t>(right)),
-				_result_type(result_type)
+				_right(std::make_shared<expression_t>(right))
 			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _result_type;
 			}
 
 			public: virtual json_t expr_base__to_json() const {
 				return json_t::make_array({
 					expression_type_to_token(_op),
 					expression_to_json(*_left),
-					expression_to_json(*_right),
-					typeid_to_normalized_json(get_result_type())
+					expression_to_json(*_right)
 				});
 			}
 
@@ -130,7 +118,6 @@ namespace floyd {
 			const expression_type _op;
 			const std::shared_ptr<expression_t> _left;
 			const std::shared_ptr<expression_t> _right;
-			const typeid_t _result_type;
 		};
 
 		public: static expression_t make_simple_expression__2(expression_type op, const expression_t& left, const expression_t& right){
@@ -145,7 +132,7 @@ namespace floyd {
 				return expression_t{
 					op,
 					std::make_shared<simple_expr__2_t>(
-						simple_expr__2_t{ op, left, right, left.get_result_type() }
+						simple_expr__2_t{ op, left, right }
 					)
 				};
 			}
@@ -165,7 +152,7 @@ namespace floyd {
 				return expression_t{
 					op,
 					std::make_shared<simple_expr__2_t>(
-						simple_expr__2_t{ op, left, right, typeid_t::make_bool() }
+						simple_expr__2_t{ op, left, right }
 					)
 				};
 			}
@@ -205,9 +192,6 @@ namespace floyd {
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
-				return _expr->get_result_type();
-			}
 
 			public: virtual json_t expr_base__to_json() const {
 				return json_t::make_array({
@@ -243,19 +227,13 @@ namespace floyd {
 			public: conditional_expr_t(
 				const expression_t& condition,
 				const expression_t& a,
-				const expression_t& b,
-				const typeid_t result_type
+				const expression_t& b
 			)
 			:
 				_condition(std::make_shared<expression_t>(condition)),
 				_a(std::make_shared<expression_t>(a)),
-				_b(std::make_shared<expression_t>(b)),
-				_result_type(result_type)
+				_b(std::make_shared<expression_t>(b))
 			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _result_type;
 			}
 
 			public: virtual json_t expr_base__to_json() const {
@@ -263,7 +241,6 @@ namespace floyd {
 					expression_to_json(*_condition),
 					expression_to_json(*_a),
 					expression_to_json(*_b),
-					typeid_to_normalized_json(get_result_type())
 				});
 			}
 
@@ -271,14 +248,13 @@ namespace floyd {
 			const std::shared_ptr<expression_t> _condition;
 			const std::shared_ptr<expression_t> _a;
 			const std::shared_ptr<expression_t> _b;
-			const typeid_t _result_type;
 		};
 
 		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b){
 			return expression_t{
 				expression_type::k_conditional_operator3,
 				std::make_shared<conditional_expr_t>(
-					conditional_expr_t{ condition, a, b, a.get_result_type() }
+					conditional_expr_t{ condition, a, b }
 				)
 			};
 		}
@@ -295,45 +271,36 @@ namespace floyd {
 
 			public: function_call_expr_t(
 				const expression_t& function,
-				std::vector<expression_t> args,
-				typeid_t result
+				std::vector<expression_t> args
 			)
 			:
 				_function(std::make_shared<expression_t>(function)),
-				_args(args),
-				_result(result)
+				_args(args)
 			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _result;
 			}
 
 			public: virtual json_t expr_base__to_json() const {
 				return json_t::make_array({
 					"call",
 					expression_to_json(*_function),
-					expressions_to_json(_args),
-					typeid_to_normalized_json(_result)
+					expressions_to_json(_args)
 				});
 			}
 
 
 			const std::shared_ptr<expression_t> _function;
 			const std::vector<expression_t> _args;
-			const typeid_t _result;
 		};
 
 		public: static expression_t make_function_call(
 			const expression_t& function,
-			const std::vector<expression_t>& args,
-			const typeid_t& result
+			const std::vector<expression_t>& args
 		)
 		{
 			return expression_t{
 				expression_type::k_call,
 				std::make_shared<function_call_expr_t>(
-					function_call_expr_t{ function, args, result }
+					function_call_expr_t{ function, args }
 				)
 			};
 		}
@@ -353,10 +320,6 @@ namespace floyd {
 			:
 				_def(def)
 			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _def._return_type;
 			}
 
 			public: virtual json_t expr_base__to_json() const {
@@ -388,26 +351,20 @@ namespace floyd {
 			public: virtual ~variable_expr_t(){};
 
 			public: variable_expr_t(
-				std::string variable,
-				typeid_t result
+				std::string variable
 			)
 			:
-				_variable(variable),
-				_result(result)
+				_variable(variable)
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
-				return _result;
-			}
 
 			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "@", json_t(_variable), typeid_to_normalized_json(_result) });
+				return json_t::make_array({ "@", json_t(_variable) });
 			}
 
 
 			std::string _variable;
-			typeid_t _result;
 		};
 
 		/*
@@ -415,14 +372,13 @@ namespace floyd {
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 		*/
 		public: static expression_t make_variable_expression(
-			const std::string& variable,
-			const typeid_t& result
+			const std::string& variable
 		)
 		{
 			return expression_t{
 				expression_type::k_variable,
 				std::make_shared<variable_expr_t>(
-					variable_expr_t{ variable, result }
+					variable_expr_t{ variable }
 				)
 			};
 		}
@@ -440,18 +396,12 @@ namespace floyd {
 
 			public: resolve_member_expr_t(
 				const expression_t& parent_address,
-				std::string member_name,
-				typeid_t result
+				std::string member_name
 			)
 			:
 				_parent_address(std::make_shared<expression_t>(parent_address)),
-				_member_name(member_name),
-				_result(result)
+				_member_name(member_name)
 			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _result;
 			}
 
 			public: virtual json_t expr_base__to_json() const {
@@ -461,7 +411,6 @@ namespace floyd {
 
 			std::shared_ptr<expression_t> _parent_address;
 			std::string _member_name;
-			typeid_t _result;
 		};
 
 		/*
@@ -469,14 +418,13 @@ namespace floyd {
 		*/
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
-			const std::string& member_name,
-			const typeid_t& result
+			const std::string& member_name
 		)
 		{
 			return expression_t{
 				expression_type::k_resolve_member,
 				std::make_shared<resolve_member_expr_t>(
-					resolve_member_expr_t{ parent_address, member_name, result }
+					resolve_member_expr_t{ parent_address, member_name }
 				)
 			};
 		}
@@ -497,28 +445,21 @@ namespace floyd {
 
 			public: lookup_expr_t(
 				const expression_t& parent_address,
-				const expression_t& lookup_key,
-				typeid_t result
+				const expression_t& lookup_key
 			)
 			:
 				_parent_address(std::make_shared<expression_t>(parent_address)),
-				_lookup_key(std::make_shared<expression_t>(lookup_key)),
-				_result(result)
+				_lookup_key(std::make_shared<expression_t>(lookup_key))
 			{
 			}
 
-			public: virtual typeid_t get_result_type() const{
-				return _result;
-			}
-
 			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "[]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key), typeid_to_normalized_json(_result) });
+				return json_t::make_array({ "[]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key) });
 			}
 
 
 			std::shared_ptr<expression_t> _parent_address;
 			std::shared_ptr<expression_t> _lookup_key;
-			typeid_t _result;
 		};
 
 		/*
@@ -526,14 +467,13 @@ namespace floyd {
 		*/
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
-			const expression_t& lookup_key,
-			const typeid_t result
+			const expression_t& lookup_key
 		)
 		{
 			return expression_t{
 				expression_type::k_lookup_element,
 				std::make_shared<lookup_expr_t>(
-					lookup_expr_t{ parent_address, lookup_key, result }
+					lookup_expr_t{ parent_address, lookup_key }
 				)
 			};
 		}
@@ -559,10 +499,6 @@ namespace floyd {
 				_element_type(element_type),
 				_elements(elements)
 			{
-			}
-
-			public: virtual typeid_t get_result_type() const{
-				return _element_type;
 			}
 
 			public: virtual json_t expr_base__to_json() const {
@@ -605,15 +541,6 @@ namespace floyd {
 
 		public: bool operator==(const expression_t& other) const;
 
-		/*
-			Returns pre-computed result of the expression - the type of value it represents.
-			null if not resolved.
-		*/
-		public: typeid_t get_result_type() const{
-			QUARK_ASSERT(check_invariant());
-
-			return _expr->get_result_type();
-		}
 
 		public: expression_type get_operation() const;
 
@@ -657,14 +584,12 @@ namespace floyd {
 	}
 
 	inline bool operator==(const expression_t::variable_expr_t& lhs, const expression_t::variable_expr_t& rhs){
-		return lhs._variable == rhs._variable
-			&& lhs._result == rhs._result;
+		return lhs._variable == rhs._variable;
 	}
 
 	inline bool operator==(const expression_t::resolve_member_expr_t& lhs, const expression_t::resolve_member_expr_t& rhs){
 		return compare_shared_values(lhs._parent_address, rhs._parent_address)
-			&& lhs._member_name == rhs._member_name
-			&& lhs._result == rhs._result;
+			&& lhs._member_name == rhs._member_name;
 	}
 
 	inline bool operator==(const expression_t::function_definition_expr_t& lhs, const expression_t::function_definition_expr_t& rhs){
@@ -674,13 +599,11 @@ namespace floyd {
 	inline bool operator==(const expression_t::function_call_expr_t& lhs, const expression_t::function_call_expr_t& rhs){
 		return
 			lhs._function == rhs._function
-			&& lhs._args == rhs._args
-			&& lhs._result == rhs._result;
+			&& lhs._args == rhs._args;
 	}
 	inline bool operator==(const expression_t::vector_definition_exprt_t& lhs, const expression_t::vector_definition_exprt_t& rhs){
 		return
-			lhs._element_type == rhs._element_type
-			&& lhs._elements == rhs._elements;
+			lhs._element_type == rhs._element_type;
 	}
 
 }	//	floyd

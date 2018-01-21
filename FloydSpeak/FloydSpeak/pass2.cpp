@@ -151,24 +151,24 @@ expression_t parser_expression_to_ast(const json_t& e){
 		for(const auto& arg: args.get_array()){
 			args2.push_back(parser_expression_to_ast(arg));
 		}
-		return expression_t::make_function_call(function_expr, args2, typeid_t::make_null());
+		return expression_t::make_function_call(function_expr, args2);
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto base_expr = parser_expression_to_ast(e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
-		return expression_t::make_resolve_member(base_expr, member, typeid_t::make_null());
+		return expression_t::make_resolve_member(base_expr, member);
 	}
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_variable_expression(variable_symbol, typeid_t::make_null());
+		return expression_t::make_variable_expression(variable_symbol);
 	}
 	else if(op == "[]"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto parent_address_expr = parser_expression_to_ast(e.get_array_n(1));
 		const auto lookup_key_expr = parser_expression_to_ast(e.get_array_n(2));
-		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, typeid_t::make_null());
+		return expression_t::make_lookup(parent_address_expr, lookup_key_expr);
 	}
 	else if(op == "vector-def"){
 		QUARK_ASSERT(e.get_array_size() == 3);

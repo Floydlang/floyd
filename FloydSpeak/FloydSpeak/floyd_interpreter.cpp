@@ -605,21 +605,15 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 
 	//	Both left and right are constants, replace the math_operation with a constant!
-	if(
-		left_expr.second.is_literal()
-		&& right_expr.second.is_literal()
-	)
-	{
-
-		if(!(left_expr.second.get_result_type() == right_expr.second.get_result_type())){
-			throw std::runtime_error("Left and right expressions must be same type!");
-		}
-
-
+	if(left_expr.second.is_literal() && right_expr.second.is_literal()) {
 
 		//	Perform math operation on the two constants => new constant.
 		const auto left_constant = left_expr.second.get_literal();
 		const auto right_constant = right_expr.second.get_literal();
+
+		if(!(left_constant.get_type()== right_constant.get_type())){
+			throw std::runtime_error("Left and right expressions must be same type!");
+		}
 
 		//	Is operation supported by all types?
 		{
@@ -987,7 +981,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 
 	//	If not all input expressions could be evaluated, return a (maybe simplified) expression.
 	if(function.second.is_literal() == false || all_literals(args2) == false){
-		return {vm2, expression_t::make_function_call(function.second, args2, e.get_result_type())};
+		return {vm2, expression_t::make_function_call(function.second, args2)};
 	}
 
 	//	Convert to values.
@@ -2833,20 +2827,27 @@ QUARK_UNIT_TEST("vector", "size()", "string", "24"){
 }
 
 
-QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
+QUARK_UNIT_TEST("vector", "+()", "add empty vectors", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = [] + [];
 		assert(a == []);
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
+QUARK_UNIT_TEST("vector", "+()", "non-empty vectors", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = ["one"] + ["two"];
 		assert(a == ["one", "two"]);
 	)");
 }
-
+/*
+QUARK_UNIT_TEST_VIP("vector", "+()", "vector + element", "correct size"){
+	const auto vm = run_global(R"(
+		[string] a = ["one"] + "two";
+		assert(a == ["one", "two"]);
+	)");
+}
+*/
 
 QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){
 	const auto vm = run_global(R"(
