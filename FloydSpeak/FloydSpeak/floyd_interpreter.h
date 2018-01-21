@@ -96,6 +96,9 @@ namespace floyd {
 	//////////////////////////		run_main()
 
 
+
+	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
+
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
@@ -103,6 +106,12 @@ namespace floyd {
 		const std::string& source,
 		const std::vector<value_t>& args
 	);
+
+	ast_t program_to_ast2(const std::string& program);
+
+
+	interpreter_t run_global(const std::string& source);
+
 
 } //	floyd
 

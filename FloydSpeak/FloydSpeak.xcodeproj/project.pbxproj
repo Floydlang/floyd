@@ -11,6 +11,7 @@
 		2C0056AD1D5D53FD009F8219 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0056AC1D5D53FD009F8219 /* json_writer.cpp */; };
 		2C0056B11D5D5E88009F8219 /* json_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0056AF1D5D5E88009F8219 /* json_parser.cpp */; };
 		2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */; };
+		2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */; };
 		2C0AC17C1CADB26B00979C49 /* runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0AC17A1CADB26B00979C49 /* runtime.cpp */; };
 		2C1D84E11CA765A90042F0A8 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */; };
 		2C1D84ED1CA766470042F0A8 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D84E81CA766470042F0A8 /* quark.cpp */; };
@@ -61,6 +62,8 @@
 		2C0056AF1D5D5E88009F8219 /* json_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = json_parser.cpp; path = ../json_parser.cpp; sourceTree = "<group>"; };
 		2C0056B01D5D5E88009F8219 /* json_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = json_parser.h; path = ../json_parser.h; sourceTree = "<group>"; };
 		2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_experiments.cpp; sourceTree = "<group>"; };
+		2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_test_suite.cpp; sourceTree = "<group>"; };
+		2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = floyd_test_suite.hpp; sourceTree = "<group>"; };
 		2C0AC17A1CADB26B00979C49 /* runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime.cpp; sourceTree = "<group>"; };
 		2C0AC17B1CADB26B00979C49 /* runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime.h; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* FloydSpeak */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FloydSpeak; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -191,6 +194,8 @@
 				2CD68C601D5A71610070892A /* pass2.h */,
 				2C0AC17A1CADB26B00979C49 /* runtime.cpp */,
 				2C0AC17B1CADB26B00979C49 /* runtime.h */,
+				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
+				2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */,
 			);
 			path = FloydSpeak;
 			sourceTree = "<group>";
@@ -330,6 +335,7 @@
 				2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */,
 				2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */,
 				2C95E6CE1D5A9F3500186D5A /* statements.cpp in Sources */,
+				2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */,
 				2CA061CF1D4C34B70045AF86 /* parse_struct_def.cpp in Sources */,
 				2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */,
 				2CD68C611D5A71610070892A /* pass2.cpp in Sources */,
