@@ -338,6 +338,23 @@ The encoding of the characters in the string is undefined. You can put 7-bit ASC
 - a != b
 
 
+##### STRING LITERALS
+
+This is the strings contents you enter into the script code. They look like "Hello".
+You cannot use any escape characters, like in the C-language.
+
+
+##### UPDATE()
+
+The string is persistent so you *can* write elements to it, but you always get a *new* string back - the original string is unmodified. You use the update() function for this.
+
+```
+	a = "hello";
+	b = update(a, 1, "z");
+	assert(a == "hzllo");
+```
+
+
 ##### LOOKUP
 
 This lets you access a random character in the string, using its integer position.
@@ -350,14 +367,12 @@ Notice 1: You cannot modify the string using [], only read. Use update() to chan
 Notice 2: Floyd returns the character in a new string.
 
 
-
 ##### ADD / CONCATUNATING STRINGS
 
 You can append to strings together using the + operation.
 
 	a = "Hello" + ", world!"
 	assert(a == "Hello, world!"
-
 
 
 ##### SIZE()
@@ -367,7 +382,6 @@ number_of_characters = a.size()
 
 	assert(size("Hello") == 5)
 	assert(size("") == 0)
-
 
 
 ##### FIND()
@@ -396,14 +410,6 @@ end_pos: must be positive. It will be limited to the length of str1.
 	assert(subset("abc", 0, 3) == "abc");
 	assert(subset("abc", 1, 3) == "bc");
 	assert(subset("abc", 0, 0) == "");
-
-
-
-##### STRING LITERALS
-
-This is the strings contents you enter into the script code. They look like "Hello".
-You cannot use any escape characters, like in the C-language.
-
 
 
 
@@ -434,6 +440,26 @@ This lets you access a random element in the vector, using its integer position.
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
+##### VECTOR DEFINITIONS
+
+You can make a new vector and specify its elements directly, like this:
+
+	a = [ 1, 2, 3];		//	Creates a vector of ints with 3 elements.
+
+You can also calculate elements:
+
+	a = [ calc_pi(4), 2.1, calc_bounds() ];
+
+
+##### UPDATE()
+
+The vector is persistent so you *can* write elements to it, but you always get a *new* vector back - the original vector is unmodified. You use the update() function for this.
+
+```
+	a = ["one", "two", "three" ];
+	b = update(a, 1, "zwei");
+	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
+```
 
 
 ##### ADD / CONCATUNATING VECTORS
@@ -459,13 +485,13 @@ number_of_elements = a.size()
 
 Finds first occurance, looking from start towards end of str.
 
-	pos = find(str, substr)
+	pos = find(a, b)
 
 pos = -1 if not found
 
-	assert(find("hello, world", "he"] == 0)
-	assert(find("hello, world", "e"] == 1)
-	assert(find("hello, world", "x"] == -1)
+	assert(find([1,2,3], 4) == -1)
+	assert(find([1,2,3], 1] == 0)
+	assert(find([1,2,2,2,3], 2] == 1)
 
 
 ##### SUBSET()
@@ -484,41 +510,11 @@ end_pos: must be positive. It will be limited to the length of str1.
 
 
 
-##### VECTOR DEFINITIONS
-
-You can make a new vector and specify its elements directly, like this:
-
-	a = [ 1, 2, 3];		//	Creates a vector of ints with 3 elements.
-
-You can also calculate elements:
-
-	a = [ calc_pi(4), 2.1, calc_bounds() ];
-
-
-
-##### UPDATE()
-
-The vector is persistent so you *can* write elements to it, but you always get a *new* vector back - the original vector is unmodified. You use the update() function for this.
-
-```
-	a = ["one", "two", "three" ];
-	b = update(a, 1, "zwei");
-	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
-```
-
-##### FIND()
-
-	assert(find([1,2,3], 4) == -1)
-	assert(find([1,2,3], 1] == 0)
-	assert(find([1,2,2,2,3], 2] == 1)
-
-
-
 # STRUCTs - BASICS
 
 Structs are the central building block for composing data in Floyd. They are used in place of structs and classes in other programming languages. Structs are always values and immutable. They are still fast and compact: behind the curtains copied structs  shares state between them, even when partially modified.
 
-### Automatic features of every struct:
+##### Automatic features of every struct:
 
 - constructor -- this is the only function that can create a value of the struct. It always requires every struct member, in the order they are listed in the struct definition. Make explicit function that makes making values more convenient.
 - destructor -- will destroy the value including member values, when no longer needed. There are no custom destructors.
@@ -530,7 +526,7 @@ There is no concept of pointers or references or shared structs so there are no 
 
 This all makes simple structs extremely simple to create and use.
 
-### Not possible:
+##### Not possible:
 
 - You cannot make constructors. There is only *one* way to initialize the members, via the constructor - which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
@@ -563,7 +559,11 @@ This all makes simple structs extremely simple to create and use.
 
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
 
-### Changing member variable of a struct:
+##### UPDATE()
+
+b = update(a, member, value);
+
+
 
 ```
 	//	Make simple, ready-for use struct.
