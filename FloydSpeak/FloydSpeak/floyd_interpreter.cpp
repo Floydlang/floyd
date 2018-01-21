@@ -1224,7 +1224,7 @@ std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const
 std::pair<interpreter_t, value_t> host__get_time_of_day(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 2){
+	if(args.size() != 0){
 		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
 	}
 
@@ -1492,9 +1492,45 @@ std::pair<interpreter_t, value_t> host__find(const interpreter_t& vm, const std:
 		}
 	}
 	else{
-		throw std::runtime_error("Calling size() on unsupported type of value.");
+		throw std::runtime_error("Calling find() on unsupported type of value.");
 	}
 }
+
+
+//	assert(push_back(["one","two"], "three") == ["one","two","three"])
+std::pair<interpreter_t, value_t> host__push_back(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 2){
+		throw std::runtime_error("find requires 2 arguments");
+	}
+
+	const auto obj = args[0];
+	const auto element = args[1];
+	if(obj.is_vector()){
+		const auto vec = obj.get_vector_value();
+		if(element.get_type() != vec->_element_type){
+			throw std::runtime_error("Type mismatch.");
+		}
+		auto elements2 = vec->_elements;
+		elements2.push_back(element);
+		const auto v = make_vector_value(vec->_element_type, elements2);
+		return {vm, v};
+	}
+	else if(obj.is_string()){
+		const auto str = obj.get_string_value();
+		const auto ch = element.get_string_value();
+
+		auto str2 = str + ch;
+		const auto v = value_t(str2);
+		return {vm, v};
+	}
+	else{
+		throw std::runtime_error("Calling push_back() on unsupported type of value.");
+	}
+}
+
+
 
 
 
@@ -1514,7 +1550,8 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) }
+	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) },
+	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {}) }
 };
 
 
@@ -2903,21 +2940,34 @@ QUARK_UNIT_TEST("vector", "size()", "string", "24"){
 }
 
 
-QUARK_UNIT_TEST("vector", "+()", "add empty vectors", "correct size"){
+QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
 	const auto vm = run_global(R"(
 		[string] a = [] + [];
 		assert(a == []);
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "+()", "non-empty vectors", "correct size"){
+QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
 	const auto vm = run_global(R"(
 		[string] a = ["one"] + ["two"];
 		assert(a == ["one", "two"]);
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("vector", "find()", "vector", "correct return"){
+QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
+	const auto vm = run_global(R"(
+		[string] a = push_back(["one"], "two");
+		assert(a == ["one", "two"]);
+	)");
+}
+QUARK_UNIT_TEST("vector", "push_back()", "string", "correct final vector"){
+	const auto vm = run_global(R"(
+		a = push_back("one", "two");
+		assert(a == "onetwo");
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "find()", "vector", "correct return"){
 	const auto vm = run_global(R"(
 		assert(find([1,2,3], 4) == -1);
 		assert(find([1,2,3], 1) == 0);
@@ -2925,7 +2975,7 @@ QUARK_UNIT_TEST_VIP("vector", "find()", "vector", "correct return"){
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("vector", "find()", "string", "correct return"){
+QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
 	const auto vm = run_global(R"(
 		assert(find("hello, world", "he") == 0);
 		assert(find("hello, world", "e") == 1);
