@@ -230,6 +230,34 @@ int value_t::compare_value_true_deep(const struct_instance_t& left, const struct
 	return 0;
 }
 
+
+//	Compare vector element by element.
+//	### Think more of equality when vectors have different size and shared elements are equal.
+int compare_vector_true_deep(const vector_instance_t& left, const vector_instance_t& right){
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+	QUARK_ASSERT(left._element_type == right._element_type);
+
+	const auto shared_count = std::min(left._elements.size(), right._elements.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		const auto element_result = value_t::compare_value_true_deep(left._elements[0], right._elements[0]);
+		if(element_result != 0){
+			return element_result;
+		}
+	}
+	if(left._elements.size() == right._elements.size()){
+		return 0;
+	}
+	else if(left._elements.size() > right._elements.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+
+
 int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
@@ -266,17 +294,28 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		return 0;
 	}
 	else if(type.is_struct()){
-		//	Shortcut: same obejct == we know values are same without having to check them.
-		if(left.get_struct_value() == right.get_struct_value()){
-			return 0;
+		if(left.get_type() != right.get_type()){
+			throw std::runtime_error("Cannot compare structs of different type.");
 		}
 		else{
-			return compare_value_true_deep(*left.get_struct_value(), *right.get_struct_value());
+			//	Shortcut: same obejct == we know values are same without having to check them.
+			if(left.get_struct_value() == right.get_struct_value()){
+				return 0;
+			}
+			else{
+				return compare_value_true_deep(*left.get_struct_value(), *right.get_struct_value());
+			}
 		}
 	}
 	else if(type.is_vector()){
-		QUARK_ASSERT(false);
-		return 0;
+		if(left.get_type() != right.get_type()){
+			throw std::runtime_error("Cannot compare structs of different type.");
+		}
+		else{
+			const auto left_vec = left.get_vector_value();
+			const auto right_vec = right.get_vector_value();
+			return compare_vector_true_deep(*left_vec, *right_vec);
+		}
 	}
 	else if(type.is_function()){
 		QUARK_ASSERT(false);

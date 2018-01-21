@@ -50,7 +50,7 @@ namespace floyd {
 
 
 		////////////////////////////////			make_literal()
-
+		//### Not really "literals". "Terminal values" maybe better term?
 
 		public: struct literal_expr_t : public expr_base_t {
 			public: virtual ~literal_expr_t(){};

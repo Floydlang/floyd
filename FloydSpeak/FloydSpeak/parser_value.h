@@ -247,6 +247,7 @@ namespace floyd {
 				QUARK_ASSERT(_function == nullptr);
 
 				QUARK_ASSERT(_vector && _vector->check_invariant());
+				QUARK_ASSERT(_typeid.get_vector_element_type() == _vector->_element_type);
 			}
 			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(_bool == false);

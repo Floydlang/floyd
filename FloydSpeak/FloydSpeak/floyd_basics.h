@@ -384,6 +384,7 @@ namespace floyd {
 				&& _unknown_identifier == other._unknown_identifier
 				&& compare_shared_values(_struct_def, other._struct_def);
 		}
+		public: bool operator!=(const typeid_t& other) const{ return !(*this == other);}
 
 		public: bool check_invariant() const;
 

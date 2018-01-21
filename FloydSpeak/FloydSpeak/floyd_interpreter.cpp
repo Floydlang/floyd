@@ -42,6 +42,52 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 
 namespace {
 
+	//	WHen [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
+	bool is_vector_john_doe(const value_t& value){
+		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(value.is_vector());
+
+		const auto p = value.get_vector_value();
+		if(p->_element_type.is_null() && p->_elements.empty()){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
+	// ### Make this built in into evaluate_expression()?
+	value_t improve_vector(const value_t& value){
+		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(value.is_vector());
+
+		const auto p = value.get_vector_value();
+
+		const auto element_type = p->_element_type;//	.get_typeid_typeid().is_null()){
+
+		//	Type == vector[null]?
+		if(element_type.is_null()){
+			if(p->_elements.empty()){
+				return value;
+			}
+			else{
+				//	Figure out the element type.
+				const auto element_type2 = p->_elements[0].get_type();
+				return improve_vector(make_vector_value(element_type2, p->_elements));
+			}
+		}
+		else{
+			//	Check that element types match vector type.
+			for(const auto e: p->_elements){
+				if(e.get_type() != element_type){
+					throw std::runtime_error("Vector element of wrong type.");
+				}
+			}
+			return value;
+		}
+	}
+
+
 
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements);
 
@@ -130,7 +176,7 @@ namespace {
 
 					//	Explicit bind-type -- make sure source + dest types match.
 					else{
-						bool is_empty_notype_vector = new_value_type == typeid_t::make_vector(typeid_t::make_null()) && new_value.get_vector_value()->_elements.size() == 0;
+						bool is_empty_notype_vector = new_value.is_vector() && is_vector_john_doe(new_value);
 
 						if(!(bind_statement_type == new_value_type) && is_empty_notype_vector == false){
 							throw std::runtime_error("Types not compatible in bind.");
@@ -706,8 +752,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	string
 		else if(left_constant.is_string() && right_constant.is_string()){
-			const string left = left_constant.get_string_value();
-			const string right = right_constant.get_string_value();
+			const auto left = left_constant.get_string_value();
+			const auto right = right_constant.get_string_value();
 
 			if(op == expression_type::k_arithmetic_add__2){
 				return {vm2, expression_t::make_literal_string(left + right)};
@@ -776,10 +822,51 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		}
 
 		else if(left_constant.is_vector() && right_constant.is_vector()){
-			QUARK_ASSERT(false);
+			//	Improves vectors before using them.
+			const auto left = improve_vector(left_constant.get_vector_value());
+			const auto right = improve_vector(right_constant.get_vector_value());
+
+			const auto element_type = left_constant.get_type().get_vector_element_type();
+
+			if(!(left_constant.get_type() == right_constant.get_type())){
+				throw std::runtime_error("Vector types don't match.");
+			}
+			else{
+				if(op == expression_type::k_arithmetic_add__2){
+					auto elements2 = left.get_vector_value()->_elements;
+					elements2.insert(elements2.end(), right.get_vector_value()->_elements.begin(), right.get_vector_value()->_elements.end());
+
+					const auto value2 = make_vector_value(element_type, elements2);
+					return {vm2, expression_t::make_literal(value2)};
+				}
+
+				else if(op == expression_type::k_arithmetic_subtract__2){
+					throw std::runtime_error("Operation not allowed on vectors.");
+				}
+				else if(op == expression_type::k_arithmetic_multiply__2){
+					throw std::runtime_error("Operation not allowed on vectors.");
+				}
+				else if(op == expression_type::k_arithmetic_divide__2){
+					throw std::runtime_error("Operation not allowed on vectors.");
+				}
+				else if(op == expression_type::k_arithmetic_remainder__2){
+					throw std::runtime_error("Operation not allowed on vectors.");
+				}
+
+
+				else if(op == expression_type::k_logical_and__2){
+					throw std::runtime_error("Operation not allowed on vectors.");
+				}
+				else if(op == expression_type::k_logical_or__2){
+					throw std::runtime_error("Operation not allowed on vectors.");
+				}
+				else{
+					QUARK_ASSERT(false);
+				}
+			}
 		}
 		else if(left_constant.is_function() && right_constant.is_function()){
-			QUARK_ASSERT(false);
+			throw std::runtime_error("Cannot perform operations on two function values.");
 		}
 		else{
 			throw std::runtime_error("Arithmetics failed.");
@@ -917,10 +1004,8 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		//	Attempting to call a TYPE? Then this may be a constructor call.
 		if(function_value.is_typeid()){
 			const auto typeid_contained_type = function_value.get_typeid_value();
-//			const auto typeid_contained_type = t.get_typeid_typeid();
 			if(typeid_contained_type.get_base_type() == base_type::k_struct){
 				//	Constructor.
-
 				const auto result = construct_struct(vm2, typeid_contained_type, arg_values);
 				vm2 = result.first;
 				return { vm2, expression_t::make_literal(result.second)};
@@ -2747,15 +2832,15 @@ QUARK_UNIT_TEST("vector", "size()", "string", "24"){
 	)");
 }
 
-/*
 
-VIP_QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
+QUARK_UNIT_TEST_VIP("vector", "+()", "vectors", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = [] + [];
-		assert(a == "[]);
+		assert(a == []);
 	)");
 }
 
+/*
 QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = ["one"] + ["two"];
