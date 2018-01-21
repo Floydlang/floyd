@@ -67,6 +67,48 @@ seq_t skip_expr_whitespace(const seq_t& p) {
 	return read_while(p, k_c99_whitespace_chars).second;
 }
 
+/*
+	()
+	(100)
+	(100, 200)
+	(get_first() * 3, 4)
+*/
+std::pair<std::vector<expr_t>, seq_t> parse_bounded_list(const seq_t& p1, const std::string& start_char, const std::string& end_char){
+	QUARK_ASSERT(p1.check_invariant());
+	QUARK_ASSERT(p1.first() == start_char);
+
+	const auto p = p1;
+	const auto pos3 = skip_expr_whitespace(p.rest());
+
+	//	No arguments.
+	if(pos3.first() == end_char){
+		return {{}, pos3.rest() };
+	}
+	//	1-many arguments.
+	else{
+		auto pos_loop = skip_expr_whitespace(pos3);
+		std::vector<expr_t> arg_exprs;
+		bool more = true;
+		while(more){
+			const auto a = parse_expression_int(pos_loop, eoperator_precedence::k_super_weak);
+			arg_exprs.push_back(a.first);
+
+			const auto pos5 = skip_expr_whitespace(a.second);
+			const auto ch = pos5.first();
+			if(ch == ","){
+				more = true;
+			}
+			else if(ch == end_char){
+				more = false;
+			}
+			else{
+				throw std::runtime_error("Unexpected char");
+			}
+			pos_loop = pos5.rest();
+		}
+		return { arg_exprs, pos_loop };
+	}
+}
 
 
 pair<std::string, seq_t> parse_string_literal(const seq_t& p){
@@ -189,8 +231,7 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 		const auto op1 = p.first();
 		const auto op2 = p.first(2);
 
-		//	Detect end of chain.
-		//	Ending parantesis
+		//	Detect end of chain. Notice that we leave the ")" or "]".
 		if(op1 == ")" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
 		}
@@ -204,7 +245,7 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	Function call
 			//	EXPRESSION (EXPRESSION +, EXPRESSION)
 			if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
-				const auto a_pos = parse_function_call_operation(p);
+				const auto a_pos = parse_bounded_list(p, "(", ")");
 				const auto call = maker__call(lhs, a_pos.first);
 				return parse_optional_operation_rightward(a_pos.second, call, precedence);
 			}
@@ -399,10 +440,6 @@ std::pair<expr_t, seq_t> parse_terminal(const seq_t& p0) {
 	throw std::runtime_error("Expected constant or identifier.");
 }
 
-
-std::pair<vector<expr_t>, seq_t> parse_vector_definition2(const seq_t& p);
-
-
 std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
@@ -437,7 +474,7 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 	//	Vector definition "[ 1, 2, 3 ]", "[ calc_pi(), 2.8, calc_pi * 2.0]"
 	//	"[ EXPRESSION, EXPRESSION... ]"
 	else if(ch1 == '['){
-		const auto a = parse_vector_definition2(p2);
+		const auto a = parse_bounded_list(p2, "[", "]");
 		const auto result = maker_vector_definition("", a.first);
 		return {result, a.second };
 	}
@@ -462,83 +499,6 @@ QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
 #endif
 
 
-std::pair<std::vector<expr_t>, seq_t> parse_function_call_operation(const seq_t& p1){
-	QUARK_ASSERT(p1.check_invariant());
-	QUARK_ASSERT(p1.first() == "(");
-
-	const auto p = p1;
-	const auto pos3 = skip_expr_whitespace(p.rest());
-
-	//	No arguments.
-	if(pos3.first() == ")"){
-		return {{}, pos3.rest() };
-	}
-	//	1-many arguments.
-	else{
-		auto pos_loop = skip_expr_whitespace(pos3);
-		std::vector<expr_t> arg_exprs;
-		bool more = true;
-		while(more){
-			const auto a = parse_expression_int(pos_loop, eoperator_precedence::k_super_weak);
-			arg_exprs.push_back(a.first);
-
-			const auto pos5 = skip_expr_whitespace(a.second);
-			const auto ch = pos5.first();
-			if(ch == ","){
-				more = true;
-			}
-			else if(ch == ")"){
-				more = false;
-			}
-			else{
-				throw std::runtime_error("Unexpected char");
-			}
-			pos_loop = pos5.rest();
-		}
-		return { arg_exprs, pos_loop };
-	}
-}
-
-
-//??? Unify with parse_function_call_operation.
-//	[1,2,3]
-std::pair<vector<expr_t>, seq_t> parse_vector_definition2(const seq_t& p){
-	QUARK_ASSERT(p.check_invariant());
-	QUARK_ASSERT(p.first() == "[");
-
-	const auto pos3 = skip_expr_whitespace(p.rest());
-
-	//	No elements.
-	if(pos3.first() == "]"){
-		return {{}, pos3.rest1() };
-	}
-	//	1-many arguments.
-	else{
-		auto pos_loop = skip_expr_whitespace(pos3);
-		std::vector<expr_t> elements_expr;
-		bool more = true;
-		while(more){
-			const auto a = parse_expression_int(pos_loop, eoperator_precedence::k_super_weak);
-			elements_expr.push_back(a.first);
-
-			const auto pos5 = skip_expr_whitespace(a.second);
-			const auto ch = pos5.first();
-			if(ch == ","){
-				more = true;
-			}
-			else if(ch == "]"){
-				more = false;
-			}
-			else{
-				throw std::runtime_error("Unexpected char");
-			}
-			pos_loop = pos5.rest();
-		}
-		return {elements_expr, pos_loop };
-	}
-}
-
-
 
 
 std::pair<expr_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence){
@@ -555,11 +515,6 @@ std::pair<expr_t, seq_t> parse_expression(const seq_t& p){
 	}
 	return parse_expression_int(p, eoperator_precedence::k_super_weak);
 }
-
-
-
-
-
 
 
 

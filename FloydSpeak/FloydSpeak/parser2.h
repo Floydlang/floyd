@@ -261,16 +261,6 @@ std::pair<expr_t, seq_t> parse_terminal(const seq_t& p);
 */
 std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p);
 
-/*
-	lhs()
-	lhs(1)
-	lhs(a + b)
-	lhs(a, b)
-
-	rhs("start", get_playlist())
-		used like this: convert_to_json("start", get_playlist())
-*/
-std::pair<std::vector<expr_t>, seq_t> parse_function_call_operation(const seq_t& p1);
 
 /*
 
