@@ -176,7 +176,7 @@ This is a function that returns a function value:
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep - they consider all members and also member structs and collections.
 
-###	Arithmetic Operators
+##### Arithmetic Operators
 How to add and combine values:
 
 ```
@@ -187,7 +187,7 @@ How to add and combine values:
 %	Modulus Operator and remainder of after an integer division: "a = b / c", "a = b / c / d"
 ```
 
-### Relational Operators
+##### Relational Operators
 Used to compare two values. The result is true or false:
 
 ```
@@ -199,7 +199,7 @@ Used to compare two values. The result is true or false:
 	a <= b
 ```
 
-### Logical Operators
+##### Logical Operators
 Used to compare two values. The result is true or false:
 
 ```
@@ -207,7 +207,7 @@ Used to compare two values. The result is true or false:
 	a || b
 ```
 
-### Conditional Operator
+##### Conditional Operator
 ```
 	condition ? a : b
 ```
@@ -623,7 +623,7 @@ This works with nested values too:
 ```
 
 
-### Struct runtime
+##### Struct runtime
 
 Notice about optimizations, many accellerations are made behind the scenes:
 
