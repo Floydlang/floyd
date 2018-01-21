@@ -1,3 +1,4 @@
+
 //
 //  parser_evaluator.cpp
 //  FloydSpeak
@@ -22,6 +23,8 @@
 
 #include <thread>
 #include <chrono>
+#include <algorithm>
+
 
 namespace floyd {
 
@@ -87,6 +90,27 @@ namespace {
 		}
 	}
 
+	value_t improve_value(const value_t& value){
+		if(value.is_vector()){
+			return improve_vector(value);
+		}
+		else{
+			return value;
+		}
+	}
+
+	//	We know which type we need. If the value has not type, retype it.
+	value_t improve_value_type(const value_t& value, const typeid_t& expected_type){
+		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(expected_type.check_invariant());
+
+		if(value.is_vector() && is_vector_john_doe(value) && expected_type.is_vector()){
+			return make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
+		}
+		else{
+			return value;
+		}
+	}
 
 
 	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements);
@@ -153,7 +177,6 @@ namespace {
 				const auto bind_statement_mutable_tag_flag = s->_bind_as_mutable_tag;
 
 				const auto new_value = result_value.get_literal();
-				const auto new_value_type = new_value.get_type();
 
 				//	If we have a type or we have the mutable-flag, then this statement is a bind.
 				bool is_bind = bind_statement_type.is_null() == false || bind_statement_mutable_tag_flag;
@@ -176,9 +199,9 @@ namespace {
 
 					//	Explicit bind-type -- make sure source + dest types match.
 					else{
-						bool is_empty_notype_vector = new_value.is_vector() && is_vector_john_doe(new_value);
+						const auto retyped_value = improve_value_type(new_value, bind_statement_type);
 
-						if(!(bind_statement_type == new_value_type) && is_empty_notype_vector == false){
+						if(bind_statement_type != retyped_value.get_type()){
 							throw std::runtime_error("Types not compatible in bind.");
 						}
 						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, bind_statement_mutable_tag_flag);
@@ -195,7 +218,7 @@ namespace {
 					if(existing_value_deep_ptr){
 						if(existing_variable_is_mutable){
 							const auto existing_value_type = existing_value_deep_ptr->first.get_type();
-							if(!(existing_value_type == new_value_type)){
+							if(existing_value_type != new_value.get_type()){
 								throw std::runtime_error("Types not compatible in bind.");
 							}
 							*existing_value_deep_ptr = std::pair<value_t, bool>(new_value, existing_variable_is_mutable);
@@ -415,7 +438,19 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	return t->first;
 }
 
+std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interpreter_t& vm, const expression_t& e);
+
 std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
+	const auto result = evaluate_expression_internal(vm, e);
+	if(result.second.is_literal()){
+		const auto value2 = improve_value(result.second.get_literal());
+		return { result.first, expression_t::make_literal(value2)};
+	}
+	else{
+		return result;
+	}
+}
+std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -609,13 +644,15 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		//	Perform math operation on the two constants => new constant.
 		const auto left_constant = left_expr.second.get_literal();
-		const auto right_constant = right_expr.second.get_literal();
+
+		//	Make rhs match left if needed/possible.
+		const auto right_constant = improve_value_type(right_expr.second.get_literal(), left_constant.get_type());
 
 		if(!(left_constant.get_type()== right_constant.get_type())){
 			throw std::runtime_error("Left and right expressions must be same type!");
 		}
 
-		//	Is operation supported by all types?
+		//	Do generic functionalliy, independant on types?
 		{
 			if(op == expression_type::k_comparison_smaller_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
@@ -817,9 +854,6 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 		else if(left_constant.is_vector() && right_constant.is_vector()){
 			//	Improves vectors before using them.
-			const auto left = improve_vector(left_constant.get_vector_value());
-			const auto right = improve_vector(right_constant.get_vector_value());
-
 			const auto element_type = left_constant.get_type().get_vector_element_type();
 
 			if(!(left_constant.get_type() == right_constant.get_type())){
@@ -827,8 +861,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 			else{
 				if(op == expression_type::k_arithmetic_add__2){
-					auto elements2 = left.get_vector_value()->_elements;
-					elements2.insert(elements2.end(), right.get_vector_value()->_elements.begin(), right.get_vector_value()->_elements.end());
+					auto elements2 = left_constant.get_vector_value()->_elements;
+					elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
 
 					const auto value2 = make_vector_value(element_type, elements2);
 					return {vm2, expression_t::make_literal(value2)};
@@ -1530,6 +1564,54 @@ std::pair<interpreter_t, value_t> host__push_back(const interpreter_t& vm, const
 	}
 }
 
+//	assert(subset("abc", 1, 3) == "bc");
+std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 3){
+		throw std::runtime_error("subset() requires 2 arguments");
+	}
+
+	const auto obj = args[0];
+
+	if(args[1].is_int() == false || args[2].is_int() == false){
+		throw std::runtime_error("subset() requires start and end to be integers.");
+	}
+
+	const auto start = args[1].get_int_value();
+	const auto end = args[2].get_int_value();
+	if(start < 0 || end < 0){
+		throw std::runtime_error("subset() requires start and end to be non-negative.");
+	}
+
+	if(obj.is_vector()){
+		const auto vec = obj.get_vector_value();
+		const auto start2 = std::min(start, static_cast<int>(vec->_elements.size()));
+		const auto end2 = std::min(end, static_cast<int>(vec->_elements.size()));
+		vector<value_t> elements2;
+		for(int i = start2 ; i < end2 ; i++){
+			elements2.push_back(vec->_elements[i]);
+		}
+		const auto v = make_vector_value(vec->_element_type, elements2);
+		return {vm, v};
+	}
+	else if(obj.is_string()){
+		const auto str = obj.get_string_value();
+		const auto start2 = std::min(start, static_cast<int>(str.size()));
+		const auto end2 = std::min(end, static_cast<int>(str.size()));
+
+		string str2;
+		for(int i = start2 ; i < end2 ; i++){
+			str2.push_back(str[i]);
+		}
+		const auto v = value_t(str2);
+		return {vm, v};
+	}
+	else{
+		throw std::runtime_error("Calling push_back() on unsupported type of value.");
+	}
+}
+
 
 
 
@@ -1551,7 +1633,8 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) },
-	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {}) }
+	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {}) },
+	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {}) }
 };
 
 

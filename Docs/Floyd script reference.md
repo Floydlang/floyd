@@ -324,70 +324,181 @@ The loop is expanded before the first time the body is called. There is no way t
 
 
 # STRING
-This is a pure 8-bit string type. It is immutable. You can compare it etc.
-??? make string & vector supports similar functions.
+
+This is a pure 8-bit string type. It is immutable. You can compare with other strings, copy it using = and so on. There is a small kit of functions for changing and processing strings.
+
+The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them. Or UTF-8 etc. You can also use them as fast arrays of bytes.
+
+
+##### ASSIGNMENT AND EQUALITY
+
+- a = b
+- a == b
+- a <= b
+- a != b
+
+
+##### LOOKUP
+
+This lets you access a random character in the string, using its integer position.
+
+	a = "Hello"[1];
+	assert(a == "e")
+
+
+Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
+Notice 2: Floyd returns the character in a new string.
 
 
 
-a == b
-a <= b
-a != b
+##### ADD / CONCATUNATING STRINGS
 
-pos = find(str, substr)
-pos = -1 if not found.
+You can append to strings together using the + operation.
 
-	assert(find([1,2,3], 4) == -1)
-	assert(find([1,2,3], 1] == 0)
-	assert(find([1,2,2,2,3], 2] == 1)
+	a = "Hello" + ", world!"
+	assert(a == "Hello, world!"
+
+
+
+##### SIZE()
+
+Returns the number of character elements in the string.
+number_of_characters = a.size()
+
+	assert(size("Hello") == 5)
+	assert(size("") == 0)
+
+
+
+##### FIND()
+
+Finds first occurance, looking from start towards end of str.
+
+	pos = find(str, substr)
+
+pos = -1 if not found
 
 	assert(find("hello, world", "he"] == 0)
 	assert(find("hello, world", "e"] == 1)
 	assert(find("hello, world", "x"] == -1)
 
-[]
-+
 
-number_of_characters = a.size()
+##### SUBSET()
 
+Extracts a range of characters from a string.
+aka substr()
 
+str2 = subset(str1, start_pos, end_pos)
 
+start_pos: must be positive. It will be limited to the length of str1.
+end_pos: must be positive. It will be limited to the length of str1.
 
-subset()
-replace()
-update()
-find()
-sort()
-
-
-String literals. Multiline. Escapes. Support JSON sources -- as-is with escapes etc.
+	assert(subset("abc", 0, 3) == "abc");
+	assert(subset("abc", 1, 3) == "bc");
+	assert(subset("abc", 0, 0) == "");
 
 
-"Number \(x) of \(y)" -- string interpolation.
 
-int_to_string()
-string_to_int()
-float_to_string()
-string_to_float()
+##### STRING LITERALS
 
-seq_t---style iteration.
+This is the strings contents you enter into the script code. They look like "Hello".
+You cannot use any escape characters, like in the C-language.
+
 
 
 
 # VECTOR
-A vector is a collection of values where you lookup your values using an index between 0 and (vector size - 1). The elements are ordered. Finding the correct element is constant time. In other languages vectors are called "arrays" or even "lists".
 
-Examples:
+A vector is a collection of values where you lookup the values using an index between 0 and (vector size - 1). The positions in the vector are called "elements". The elements are ordered. Finding an element at a position uses constant time. In other languages vectors are called "arrays" or even "lists".
 
-```
-	a = [int]();					//	Create empty vector of ints.
-	b = [int](1, 2, 3);				//	Create a vector with three ints.
-	b = [1, 2, 3];					//	Shortcut to create a vector with three ints. Int-type is deducted from value.
-	a = [string]();					//	Empty vector of strings
-	b = [string] ( "a", "b", "c");	//	Vector initialized to 3 strings.
-	b = ["one", "two", "three"];	//	Shortcut to create a vector with 3 strings.
-```
+You can put ANY type of value into a vector: integers, floats, strings, structs, other vectors etc.
 
-The vector is persistent so you *can* write elements to it, but you always get a *new* vector back - the original vector is unmodified:
+But all elements must be the same time.
+
+
+##### ASSIGNMENT AND EQUALITY
+
+- a = b
+- a == b
+- a <= b
+- a != b
+
+
+##### LOOKUP
+
+This lets you access a random element in the vector, using its integer position.
+
+	a = [10, 20, 30][1];
+	assert(a == 20)
+
+
+Notice: You cannot modify the vector using [], only read. Use update() to change an element.
+
+
+
+##### ADD / CONCATUNATING VECTORS
+
+You can append to vector together using the + operation.
+
+	a = [ 10, 20, 30 ] + [ 40, 50 ];
+	assert(a == [ 10, 20, 30, 40, 50 ]);
+
+
+
+##### SIZE()
+
+Returns the number of elements in the vector.
+number_of_elements = a.size()
+
+	assert(size([ 10, 20, 30, 40 ]) == 4)
+	assert(size([]) == 0)
+
+
+
+##### FIND()
+
+Finds first occurance, looking from start towards end of str.
+
+	pos = find(str, substr)
+
+pos = -1 if not found
+
+	assert(find("hello, world", "he"] == 0)
+	assert(find("hello, world", "e"] == 1)
+	assert(find("hello, world", "x"] == -1)
+
+
+##### SUBSET()
+
+Extracts a range of characters from a string.
+aka substr()
+
+str2 = subset(str1, start_pos, end_pos)
+
+start_pos: must be positive. It will be limited to the length of str1.
+end_pos: must be positive. It will be limited to the length of str1.
+
+	assert(subset("abc", 0, 3) == "abc");
+	assert(subset("abc", 1, 3) == "bc");
+	assert(subset("abc", 0, 0) == "");
+
+
+
+##### VECTOR DEFINITIONS
+
+You can make a new vector and specify its elements directly, like this:
+
+	a = [ 1, 2, 3];		//	Creates a vector of ints with 3 elements.
+
+You can also calculate elements:
+
+	a = [ calc_pi(4), 2.1, calc_bounds() ];
+
+
+
+##### UPDATE()
+
+The vector is persistent so you *can* write elements to it, but you always get a *new* vector back - the original vector is unmodified. You use the update() function for this.
 
 ```
 	a = ["one", "two", "three" ];
@@ -395,19 +506,11 @@ The vector is persistent so you *can* write elements to it, but you always get a
 	assert(a == ["one", "two", "three" ] && b == ["one", "zeei", "three" ]);
 ```
 
+##### FIND()
 
-### Vector Reference:
-
-```
-	a = [T][ 1, 2, 3, ... ];
-	c = a[0]
-	int s size(a)
-	a = [1, 2, 3] + [4, 5, 6] //	append
-	a = [1, 2, 3] + 4			 //	append
-	[T] subset([T] in, int start, int end);
-	[T] = replace([T], 4, 10, [T], 0, 2)
-	for(x: [1, 2, 3]){ print(x)	; }
-```
+	assert(find([1,2,3], 4) == -1)
+	assert(find([1,2,3], 1] == 0)
+	assert(find([1,2,2,2,3], 2] == 1)
 
 
 

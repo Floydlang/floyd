@@ -1223,23 +1223,32 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 
 
 
-QUARK_UNIT_TEST("vector", "size()", "string", "0"){
+QUARK_UNIT_TEST("string", "size()", "string", "0"){
 	const auto vm = run_global(R"(
 		assert(size("") == 0);
 	)");
 }
-QUARK_UNIT_TEST("vector", "size()", "string", "24"){
+QUARK_UNIT_TEST("string", "size()", "string", "24"){
 	const auto vm = run_global(R"(
 		assert(size("How long is this string?") == 24);
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "push_back()", "string", "correct final vector"){
+QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
 	const auto vm = run_global(R"(
 		a = push_back("one", "two");
 		assert(a == "onetwo");
 	)");
 }
+
+QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
+	const auto vm = run_global(R"(
+		assert(subset("abc", 0, 3) == "abc");
+		assert(subset("abc", 1, 3) == "bc");
+		assert(subset("abc", 0, 0) == "");
+	)");
+}
+
 
 
 //////////////////////////		VECTOR
@@ -1374,6 +1383,14 @@ QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
 		assert(find("hello, world", "he") == 0);
 		assert(find("hello, world", "e") == 1);
 		assert(find("hello, world", "x") == -1);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
+	const auto vm = run_global(R"(
+		assert(subset([10,20,30], 0, 3) == [10,20,30]);
+		assert(subset([10,20,30], 1, 3) == [20,30]);
+		assert(subset([10,20,30], 0, 0) == []);
 	)");
 }
 

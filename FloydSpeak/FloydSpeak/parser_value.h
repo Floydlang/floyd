@@ -313,7 +313,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(const typeid_t& type) :
+		public: explicit value_t(const typeid_t& type) :
 			_typeid(typeid_t::make_typeid(type))
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -321,7 +321,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(const typeid_t& struct_type, const std::shared_ptr<struct_instance_t>& instance) :
+		public: explicit value_t(const typeid_t& struct_type, const std::shared_ptr<struct_instance_t>& instance) :
 			_typeid(struct_type),
 			_struct(instance)
 		{
@@ -331,7 +331,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(const std::shared_ptr<vector_instance_t>& instance) :
+		public: explicit value_t(const std::shared_ptr<vector_instance_t>& instance) :
 			_typeid(typeid_t::make_vector(instance->_element_type)),
 			_vector(instance)
 		{
@@ -339,7 +339,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-		public: value_t(const std::shared_ptr<function_instance_t>& function_instance) :
+		public: explicit value_t(const std::shared_ptr<function_instance_t>& function_instance) :
 			_typeid(get_function_type(function_instance->_def)),
 			_function(function_instance)
 		{
