@@ -2749,12 +2749,13 @@ QUARK_UNIT_TEST("vector", "size()", "string", "24"){
 
 /*
 
-QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
+VIP_QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = [] + [];
 		assert(a == "[]);
 	)");
 }
+
 QUARK_UNIT_TEST("vector", "+()", "vectors", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = ["one"] + ["two"];

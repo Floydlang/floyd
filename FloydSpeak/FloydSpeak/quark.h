@@ -468,7 +468,7 @@ void set_runtime(runtime_i* iRuntime);
 		The defintion of a single unit test, including the function itself.
 	*/
 	struct unit_test_def {
-		unit_test_def(const std::string& source_file, int source_line, const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f)
+		unit_test_def(const std::string& source_file, int source_line, const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f, bool vip)
 		:
 			_source_file(source_file),
 			_source_line(source_line),
@@ -476,7 +476,8 @@ void set_runtime(runtime_i* iRuntime);
 			_function_under_test(p2),
 			_scenario(p3),
 			_expected_result(p4),
-			_test_f(f)
+			_test_f(f),
+			_vip(vip)
 		{
 		}
 
@@ -490,6 +491,7 @@ void set_runtime(runtime_i* iRuntime);
 			std::string _expected_result;
 
 			unit_test_function _test_f;
+			bool _vip;
 	};
 
 
@@ -507,8 +509,8 @@ void set_runtime(runtime_i* iRuntime);
 		This is part of an RAII-mechansim to register and unregister unit-tests.
 	*/
 	struct unit_test_rec {
-		unit_test_rec(const std::string& source_file, int source_line, const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f){
-			unit_test_def test(source_file, source_line, p1, p2, p3, p4, f);
+		unit_test_rec(const std::string& source_file, int source_line, const std::string& p1, const std::string& p2, const std::string& p3, const std::string& p4, unit_test_function f, bool vip){
+			unit_test_def test(source_file, source_line, p1, p2, p3, p4, f, vip);
 			if(!_registry_instance){
 				_registry_instance = new unit_test_registry();
 			}
@@ -535,8 +537,6 @@ void set_runtime(runtime_i* iRuntime);
 		It will handle tracing and exceptions etc.
 		On unit-test failure this function exits the executable.
 	*/
-	void run_tests();
-
 	void run_tests(const std::vector<std::string>& source_file_order);
 
 
@@ -546,17 +546,23 @@ void set_runtime(runtime_i* iRuntime);
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
 	#define QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
+		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+
+	//	When one or more of these exists, no non_VIP tests are run. Let's you iterate on a broken test quickly and let breakpoints in etc.
+	#define QUARK_UNIT_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
+		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), true); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 	#define QUARK_UNIT_TESTQ(function_under_test, scenario) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 	#define QUARK_UNIT_1(function_under_test, scenario, test_expression) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_)); \
+		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(){ if(test_expression){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); } }
 
 
