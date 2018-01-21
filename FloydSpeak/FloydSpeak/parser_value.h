@@ -83,19 +83,16 @@ namespace floyd {
 		public: bool operator==(const dict_instance_t& other) const;
 
 		public: dict_instance_t(
-			typeid_t key_type,
 			typeid_t value_type,
-			const std::map<value_t, value_t>& elements
+			const std::map<std::string, value_t>& elements
 		):
-			_key_type(key_type),
 			_value_type(value_type),
 			_elements(elements)
 		{
 		}
 
-		typeid_t _key_type;
 		typeid_t _value_type;
-		std::vector<value_t, value_t> _elements;
+		std::map<std::string, value_t> _elements;
 	};
 
 	std::string to_compact_string(const dict_instance_t& instance);
@@ -156,8 +153,6 @@ namespace floyd {
 
 
 	struct vector_def_t {
-//		public: static vector_def_t make2(const floyd::typeid_t& element_type);
-
 		public: vector_def_t(floyd::typeid_t element_type) :
 			_element_type(element_type)
 		{
@@ -178,10 +173,7 @@ namespace floyd {
 
 
 	struct dict_def_t {
-//		public: static dict_def_t make2(const floyd::typeid_t& element_type);
-
-		public: dict_def_t(floyd::typeid_t key_type, floyd::typeid_t value_type) :
-			_key_type(key_type),
+		public: dict_def_t(floyd::typeid_t value_type) :
 			_value_type(value_type)
 		{
 		}
@@ -190,7 +182,6 @@ namespace floyd {
 
 
 		/////////////////////////////		STATE
-		public: floyd::typeid_t _key_type;
 		public: floyd::typeid_t _value_type;
 	};
 
@@ -317,8 +308,7 @@ namespace floyd {
 				QUARK_ASSERT(_function == nullptr);
 
 				QUARK_ASSERT(_dict && _dict->check_invariant());
-				QUARK_ASSERT(_typeid.get_dict_key_type() == _dict->_key_type);
-				QUARK_ASSERT(_typeid.get_dict_key_value() == _dict->_key_value);
+				QUARK_ASSERT(_typeid.get_dict_value_type() == _dict->_value_type);
 			}
 			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(_bool == false);
@@ -413,7 +403,7 @@ namespace floyd {
 		}
 
 		public: explicit value_t(const std::shared_ptr<dict_instance_t>& instance) :
-			_typeid(typeid_t::make_dict(instance->_key_type, instance->_value_type)),
+			_typeid(typeid_t::make_dict(instance->_value_type)),
 			_dict(instance)
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
@@ -804,8 +794,8 @@ namespace floyd {
 		return value_t(f);
 	}
 
-	inline value_t make_dict_value(const typeid_t& key_type, const typeid_t& value_type, const std::map<value_t, value_t>& elements){
-		auto f = std::shared_ptr<vector_instance_t>(new vector_instance_t{element_type, elements});
+	inline value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& elements){
+		auto f = std::shared_ptr<dict_instance_t>(new dict_instance_t{value_type, elements});
 		return value_t(f);
 	}
 

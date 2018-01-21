@@ -105,11 +105,6 @@ const std::string keyword_t::k_mutable = "mutable";
 
 
 
-//??? Make separate constant strings for "@" etc and use them all over code instead of "@".
-
-//??? Use "f()" for functions.
-//??? Use "[n]" for lookups.
-
 static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_arithmetic_add__2, "+" },
 	{ expression_type::k_arithmetic_subtract__2, "-" },
@@ -231,13 +226,12 @@ expression_type token_to_expression_type(const string& op){
 			QUARK_ASSERT(_parts[0].check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_dict){
-			QUARK_ASSERT(_parts.size() == 2);
+			QUARK_ASSERT(_parts.size() == 1);
 			QUARK_ASSERT(_unique_type_id.empty() == true);
 			QUARK_ASSERT(_unknown_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
 			QUARK_ASSERT(_parts[0].check_invariant());
-			QUARK_ASSERT(_parts[1].check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_function){
 			QUARK_ASSERT(_parts.size() >= 1);
@@ -327,7 +321,7 @@ expression_type token_to_expression_type(const string& op){
 			});
 		}
 		else if(b == base_type::k_dict){
-???			const auto d = t.get_vector_element_type();
+			const auto d = t.get_dict_value_type();
 			return json_t::make_array({
 				json_t(basetype_str),
 				typeid_to_normalized_json(d)
@@ -395,8 +389,8 @@ expression_type token_to_expression_type(const string& op){
 				return typeid_t::make_vector(element_type);
 			}
 			else if(s == "dict"){
-???				const auto element_type = typeid_from_normalized_json(a[1]);
-				return typeid_t::make_vector(element_type);
+				const auto value_type = typeid_from_normalized_json(a[1]);
+				return typeid_t::make_dict(value_type);
 			}
 			else if(s == "function"){
 				const auto ret_type = typeid_from_normalized_json(a[1]);
@@ -440,8 +434,8 @@ expression_type token_to_expression_type(const string& op){
 			return "[" + typeid_to_compact_string(e) + "]";
 		}
 		else if(basetype == floyd::base_type::k_dict){
-???			const auto e = t.get_vector_element_type();
-			return "[" + typeid_to_compact_string(e) + "]";
+			const auto e = t.get_dict_value_type();
+			return "[string:" + typeid_to_compact_string(e) + "]";
 		}
 		else if(basetype == floyd::base_type::k_function){
 			const auto ret = t.get_function_return();
@@ -496,8 +490,8 @@ expression_type token_to_expression_type(const string& op){
 			},
 
 
-??? vector
-??? dict
+//??? vector
+//??? dict
 
 			//	Struct
 			{ s1, R"(["struct", ["file", []]])", "struct file {}" },

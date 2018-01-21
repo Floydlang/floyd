@@ -69,7 +69,7 @@ namespace floyd {
 		bool vector_instance_t::check_invariant() const{
 			for(const auto m: _elements){
 				QUARK_ASSERT(m.check_invariant());
-				//??? check type of member value is the same as in the type_def.
+				QUARK_ASSERT(m.get_type() == _element_type);
 			}
 			return true;
 		}
@@ -97,8 +97,8 @@ namespace floyd {
 
 bool dict_instance_t::check_invariant() const{
 	for(const auto m: _elements){
-		QUARK_ASSERT(m.check_invariant());
-		//??? check type of member value is the same as in the type_def.
+		QUARK_ASSERT(m.second.check_invariant());
+		QUARK_ASSERT(m.second.get_type() == _value_type);
 	}
 	return true;
 }
@@ -107,19 +107,19 @@ bool dict_instance_t::operator==(const dict_instance_t& other) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(other.check_invariant());
 
-	return _key_type == other._key_type && _value_type == other._value_type && _elements == other._elements;
+	return _value_type == other._value_type && _elements == other._elements;
 }
 
 
 std::string to_compact_string(const dict_instance_t& instance){
 	std::vector<std::string> elements;
 	for(const auto e: instance._elements){
-		const auto key_str = e.first.to_compact_string_quote_strings();
+		const auto key_str = e.first;
 		const auto value_str = e.second.to_compact_string_quote_strings();
 		const auto es = key_str + ":\t" + value_str;
 		elements.push_back(es);
 	}
-	return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
+	return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
 }
 
 
@@ -129,17 +129,6 @@ std::string to_compact_string(const dict_instance_t& instance){
 	//////////////////////////////////////		vector_def_t
 
 
-
-	vector_def_t vector_def_t::make2(
-		const floyd::typeid_t& element_type)
-	{
-		QUARK_ASSERT(!element_type.is_null() && element_type.check_invariant());
-
-		vector_def_t result(element_type);
-
-		QUARK_ASSERT(result.check_invariant());
-		return result;
-	}
 
 	bool vector_def_t::check_invariant() const{
 		QUARK_ASSERT(!_element_type.is_null() && _element_type.check_invariant());
@@ -172,8 +161,6 @@ std::string to_compact_string(const dict_instance_t& instance){
 
 
 	bool dict_def_t::check_invariant() const{
-		QUARK_ASSERT(_key_type.check_invariant());
-		QUARK_ASSERT(_key_type.is_null() == false);
 		QUARK_ASSERT(_value_type.check_invariant());
 		QUARK_ASSERT(_value_type.is_null() == false);
 		return true;
@@ -183,7 +170,7 @@ std::string to_compact_string(const dict_instance_t& instance){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		if(!(_key_type == other._key_type && _value_type == other._value_type)){
+		if(!(_value_type == other._value_type)){
 			return false;
 		}
 		return true;

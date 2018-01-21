@@ -333,8 +333,8 @@ namespace floyd {
 
 
 
-		public: static typeid_t make_dict(const typeid_t& key_type, const typeid_t& value_type){
-			return { floyd::base_type::k_dict, { key_type, value_type }, {}, {}, {} };
+		public: static typeid_t make_dict(const typeid_t& value_type){
+			return { floyd::base_type::k_dict, { value_type }, {}, {}, {} };
 		}
 
 		public: bool is_dict() const {
@@ -343,15 +343,10 @@ namespace floyd {
 			return _base_type == base_type::k_dict;
 		}
 
-		public: const typeid_t& get_dict_key_type() const{
-			QUARK_ASSERT(get_base_type() == base_type::k_dict);
-
-			return _parts[0];
-		}
 		public: const typeid_t& get_dict_value_type() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_dict);
 
-			return _parts[1];
+			return _parts[0];
 		}
 
 
@@ -475,7 +470,7 @@ namespace floyd {
 		struct red { int x;}		k_struct				struct_definition_t (name = "red", { "x", k_int })
 
 		[int]						k_vector				k_int
-		[string: int]				k_dict					k_string, k_int
+		[string: int]				k_dict					k_int
 
 		int ()						k_function				return = k_int, args = []
 
