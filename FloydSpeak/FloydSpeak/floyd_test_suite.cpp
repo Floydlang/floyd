@@ -1241,7 +1241,7 @@ QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("string", "update()", "string", "correct final string"){
+QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
 	const auto vm = run_global(R"(
 		a = update("hello", 1, "z");
 		assert(a == "hzllo");
@@ -1256,6 +1256,13 @@ QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
 		assert(subset("abc", 0, 0) == "");
 	)");
 }
+
+QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
+	const auto vm = run_global(R"(
+		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all");
+	)");
+}
+// ### test pos limiting and edge cases.
 
 
 
@@ -1401,6 +1408,14 @@ QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
 		assert(subset([10,20,30], 0, 0) == []);
 	)");
 }
+
+QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
+	const auto vm = run_global(R"(
+		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6]);
+	)");
+}
+// ### test pos limiting and edge cases.
+
 
 QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){
 	const auto vm = run_global(R"(

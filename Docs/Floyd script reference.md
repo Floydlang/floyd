@@ -412,6 +412,15 @@ end_pos: must be positive. It will be limited to the length of str1.
 	assert(subset("abc", 0, 0) == "");
 
 
+##### REPLACE()
+This function replace a range of a vector with another vector. This is very powerful since it allows you to:
+
+- replace a word with another word.
+- delete range of the vector, just supply empty replacement vector.
+- insert range into vector by using the same position for start and end.
+
+vector2 = replace(vector1, start_pos, end_pos, new_bit)
+
 
 # VECTOR
 
@@ -507,6 +516,17 @@ end_pos: must be positive. It will be limited to the length of str1.
 	assert(subset("abc", 0, 3) == "abc");
 	assert(subset("abc", 1, 3) == "bc");
 	assert(subset("abc", 0, 0) == "");
+
+
+##### REPLACE()
+
+This function replace a range of a vector with another vector. This is very powerful since it allows you to:
+
+- replace a word with another word.
+- delete range of the vector, just supply empty replacement vector.
+- insert range into vector by using the same position for start and end.
+
+vector2 = replace(vector1, start_pos, end_pos, new_bit)
 
 
 

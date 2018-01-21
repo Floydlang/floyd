@@ -1635,6 +1635,63 @@ std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const st
 
 
 
+//	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
+std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 4){
+		throw std::runtime_error("replace() requires 4 arguments");
+	}
+
+	const auto obj = args[0];
+
+	if(args[1].is_int() == false || args[2].is_int() == false){
+		throw std::runtime_error("replace() requires start and end to be integers.");
+	}
+
+	const auto start = args[1].get_int_value();
+	const auto end = args[2].get_int_value();
+	if(start < 0 || end < 0){
+		throw std::runtime_error("replace() requires start and end to be non-negative.");
+	}
+	if(args[3].get_type() != args[0].get_type()){
+		throw std::runtime_error("replace() requires 4th arg to be same as argument 0.");
+	}
+
+	if(obj.is_vector()){
+		const auto vec = obj.get_vector_value();
+		const auto start2 = std::min(start, static_cast<int>(vec->_elements.size()));
+		const auto end2 = std::min(end, static_cast<int>(vec->_elements.size()));
+		const auto new_bits = args[3].get_vector_value();
+
+
+		const auto string_left = vector<value_t>(vec->_elements.begin(), vec->_elements.begin() + start2);
+		const auto string_right = vector<value_t>(vec->_elements.begin() + end2, vec->_elements.end());
+
+		auto result = string_left;
+		result.insert(result.end(), new_bits->_elements.begin(), new_bits->_elements.end());
+		result.insert(result.end(), string_right.begin(), string_right.end());
+
+		const auto v = make_vector_value(vec->_element_type, result);
+		return {vm, v};
+	}
+	else if(obj.is_string()){
+		const auto str = obj.get_string_value();
+		const auto start2 = std::min(start, static_cast<int>(str.size()));
+		const auto end2 = std::min(end, static_cast<int>(str.size()));
+		const auto new_bits = args[3].get_string_value();
+
+		string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
+		const auto v = value_t(str2);
+		return {vm, v};
+	}
+	else{
+		throw std::runtime_error("Calling replace() on unsupported type of value.");
+	}
+}
+
+
+
 
 
 typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
@@ -1655,7 +1712,8 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {}) }
+	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {}) },
+	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {}) }
 };
 
 
