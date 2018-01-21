@@ -1388,9 +1388,6 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 	if(args.size() != 3){
 		throw std::runtime_error("update() needs 3 arguments.");
 	}
-	else if(obj.is_struct() == false && obj.is_vector() == false){
-		throw std::runtime_error("Can only update struct or vector.");
-	}
 	else{
 		if(obj.is_struct()){
 			if(lookup_key.is_string() == false){
@@ -1431,8 +1428,32 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 				}
 			}
 		}
-		else{
-			QUARK_ASSERT(false);
+		else if(obj.is_string()){
+			if(lookup_key.is_int() == false){
+				throw std::runtime_error("String lookup using integer index only.");
+			}
+			else{
+				const auto v = obj.get_string_value();
+
+				if((new_value.get_type().is_string() && new_value.get_string_value().size() == 1) == false){
+					throw std::runtime_error("Update element must be a 1-character string.");
+				}
+				else{
+					const int lookup_index = lookup_key.get_int_value();
+					if(lookup_index < 0 || lookup_index >= v.size()){
+						throw std::runtime_error("String lookup out of bounds.");
+					}
+					else{
+						string v2 = v;
+						v2[lookup_index] = new_value.get_string_value()[0];
+						const auto s2 = value_t(v2);
+						return {vm, s2 };
+					}
+				}
+			}
+		}
+		else {
+			throw std::runtime_error("Can only update struct, vector or string.");
 		}
 	}
 }
