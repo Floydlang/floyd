@@ -1499,6 +1499,10 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 		const auto size = obj.get_vector_value()->_elements.size();
 		return {vm, value_t(static_cast<int>(size))};
 	}
+	else if(obj.is_dict()){
+		const auto size = obj.get_dict_value()->_elements.size();
+		return {vm, value_t(static_cast<int>(size))};
+	}
 	else if(obj.is_string()){
 		const auto size = obj.get_string_value().size();
 		return {vm, value_t(static_cast<int>(size))};

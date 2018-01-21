@@ -409,10 +409,28 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_or_vector(const seq_t& s){
 		const auto pos2 = pos0.rest1();
 		const auto element_type_pos = read_required_type(pos2);
 		const auto pos3 = skip_whitespace(element_type_pos.second);
-		if(pos3.first1() != "]"){
+		if(pos3.first1() == ":"){
+			const auto pos4 = pos3.rest1();
+
+			if(element_type_pos.first.is_string() == false){
+				throw std::runtime_error("Dict only support string as key!");
+			}
+			else{
+				const auto element_type2_pos = read_required_type(pos3);
+				return {
+					make_shared<typeid_t>(
+						typeid_t::make_dict(element_type2_pos.first)
+					),
+					element_type2_pos.second.rest1()
+				};
+			}
+		}
+		else if(pos3.first1() == "]"){
+			return { make_shared<typeid_t>(typeid_t::make_vector(element_type_pos.first)), pos3.rest1() };
+		}
+		else{
 			throw std::runtime_error("unbalanced []");
 		}
-		return { make_shared<typeid_t>(typeid_t::make_vector(element_type_pos.first)), pos3.rest1() };
 	}
 	else {
 		//	Read basic type.
@@ -465,19 +483,25 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("string")).first == typeid_t::make_string());
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_UNIT_TEST("", "read_type()", "identifier", ""){
 	const auto r = read_type(seq_t("temp"));
 	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_unknown_identifier("temp"));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_UNIT_TEST("", "read_type()", "vector", ""){
 	const auto r = read_type(seq_t("[int]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_vector(typeid_t::make_int())		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type()", "", ""){
+QUARK_UNIT_TEST("", "read_type()", "vector", ""){
 	const auto r = read_type(seq_t("[[int]]"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_vector(typeid_t::make_vector(typeid_t::make_int()))		);
+	QUARK_TEST_VERIFY(r.second == seq_t(""));
+}
+
+QUARK_UNIT_TEST("", "read_type()", "dict", ""){
+	const auto r = read_type(seq_t("[string: int]"));
+	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_vector(typeid_t::make_dict(typeid_t::make_int()))		);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 

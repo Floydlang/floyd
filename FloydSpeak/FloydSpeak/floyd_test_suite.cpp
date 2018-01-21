@@ -1351,6 +1351,7 @@ QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
 	catch(...){
 	}
 }
+
 QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
 	const auto vm = run_global(R"(
 		[string] a = [];
@@ -1430,6 +1431,18 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 	}	));
 }
 
+
+
+//////////////////////////		DICT
+
+/*
+QUARK_UNIT_TEST_VIP("dict", "construct", "", ""){
+	const auto vm = run_global(R"(
+		[string: int] a = ["one": 1, "two": 2];
+		assert(size(a) == 3);
+	)");
+}
+*/
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
