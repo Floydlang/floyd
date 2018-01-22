@@ -169,6 +169,12 @@ struct constant_value_t {
 	{
 	}
 
+	explicit constant_value_t(const char value[]) :
+		_type(etype::k_string),
+		_string(std::string(value))
+	{
+	}
+
 	explicit constant_value_t(const std::string& value) :
 		_type(etype::k_string),
 		_string(value)

@@ -133,79 +133,147 @@ bool operator==(const collection_element_t& lhs, const collection_element_t& rhs
 	&& lhs._value == rhs._value;
 }
 
-std::pair<std::vector<collection_element_t>, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
+struct collection_def_t {
+	bool _has_keys;
+	vector<collection_element_t> _elements;
+};
+
+bool operator==(const collection_def_t& lhs, const collection_def_t& rhs){
+	return lhs._has_keys == rhs._has_keys
+	&& lhs._elements == rhs._elements;
+}
+
+std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
 	QUARK_ASSERT(s.check_invariant());
 	QUARK_ASSERT(s.first() == start_char);
+	QUARK_ASSERT(start_char.size() == 1);
+	QUARK_ASSERT(end_char.size() == 1);
 
 	auto pos = skip_expr_whitespace(s.rest1());
-
-	std::vector<collection_element_t> arg_exprs;
-	while(pos.first1() != end_char){
-		const auto expression_pos = parse_expression_int(pos, eoperator_precedence::k_super_weak);
-		arg_exprs.push_back({
-			nullptr,
-			expression_pos.first
-		});
-
-		const auto next_pos = skip_expr_whitespace(expression_pos.second);
-		const auto ch = next_pos.first1();
-		if(ch == ","){
-			pos = next_pos.rest1();
-		}
-		else if(ch == end_char){
-			pos = next_pos;
-		}
-		else{
-			throw std::runtime_error("Unexpected char");
-		}
+	if(pos.first1() == end_char){
+		return {
+			collection_def_t{ false, {} },
+			pos.rest1()
+		};
 	}
-	return { arg_exprs, pos.rest1() };
+	else if(pos.first1() == ":" && skip_expr_whitespace(pos.rest1()).first1() == end_char){
+		return {
+			collection_def_t{ true, {} },
+			skip_expr_whitespace(pos.rest1()).rest1()
+		};
+	}
+	else{
+		collection_def_t result{false, {}};
+		while(pos.first1() != end_char){
+			const auto expression_pos = parse_expression_int(pos, eoperator_precedence::k_super_weak);
+			const auto pos2 = skip_expr_whitespace(expression_pos.second);
+			const auto ch = pos2.first1();
+			if(ch == ","){
+				result._elements.push_back({ nullptr, expression_pos.first });
+				pos = pos2.rest1();
+			}
+			else if(ch == end_char){
+				result._elements.push_back({ nullptr, expression_pos.first });
+				pos = pos2;
+			}
+			else if(ch == ":"){
+				result._has_keys = true;
+
+				const auto pos3 = skip_expr_whitespace(pos2.rest1());
+				const auto expression2_pos = parse_expression_int(pos3, eoperator_precedence::k_super_weak);
+				const auto pos4 = skip_expr_whitespace(expression2_pos.second);
+				const auto ch2 = pos4.first1();
+				if(ch2 == ","){
+					result._elements.push_back({ make_shared<expr_t>(expression_pos.first), expression2_pos.first });
+					pos = pos4.rest1();
+				}
+				else if(ch2 == end_char){
+					result._elements.push_back({ make_shared<expr_t>(expression_pos.first), expression2_pos.first });
+					pos = pos4;
+				}
+				else{
+					throw std::runtime_error("Unexpected char");
+				}
+			}
+			else{
+				throw std::runtime_error("Unexpected char");
+			}
+		}
+		return { result, pos.rest1() };
+	}
 }
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
-	quark::ut_compare(parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<vector<collection_element_t>, seq_t>({}, seq_t("xyz")));
+	quark::ut_compare(parse_bounded_list(seq_t("(3)xyz"), "(", ")"), pair<collection_def_t, seq_t>({false, {
+		{ nullptr, maker__make_constant(constant_value_t{3}) }
+	}}, seq_t("xyz")));
+}
+
+
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+	quark::ut_compare(parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<collection_def_t, seq_t>({false, {}}, seq_t("xyz")));
 }
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 	quark::ut_compare(
 		parse_bounded_list(seq_t("[1,2]xyz"), "[", "]"),
-		pair<vector<collection_element_t>, seq_t>(
+		pair<collection_def_t, seq_t>(
 			{
-				{ nullptr, maker__make_constant(constant_value_t{1}) },
-				{ nullptr, maker__make_constant(constant_value_t{2}) }
+				false,
+				{
+					{ nullptr, maker__make_constant(constant_value_t{1}) },
+					{ nullptr, maker__make_constant(constant_value_t{2}) }
+				}
 			},
 			seq_t("xyz")
 		)
 	);
 }
 
-#if false
-QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "blank dict", ""){
 	quark::ut_compare(
-		parse_bounded_list(seq_t(R"(["one": 1, "two": 2]xyz)"), "[", "])"),
-		pair<vector<collection_element_t>, seq_t>(
+		parse_bounded_list(seq_t(R"([:]xyz)"), "[", "]"),
+		pair<collection_def_t, seq_t>(
 			{
-				{ nullptr, maker__make_constant(constant_value_t{1}) },
-				{ nullptr, maker__make_constant(constant_value_t{2}) }
+				true,
+				{}
 			},
 			seq_t("xyz")
 		)
 	);
 }
-#endif
+QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
+	quark::ut_compare(
+		parse_bounded_list(seq_t(R"(["one": 1, "two": 2]xyz)"), "[", "]"),
+		pair<collection_def_t, seq_t>(
+			{
+				true,
+				{
+					{ make_shared<expr_t>(maker__make_constant(constant_value_t("one"))), maker__make_constant(constant_value_t(1)) },
+					{ make_shared<expr_t>(maker__make_constant(constant_value_t("two"))), maker__make_constant(constant_value_t(2)) }
+				}
+			},
+			seq_t("xyz")
+		)
+	);
+}
 
-bool are_keys_used(const std::vector<collection_element_t>& c){
+bool are_keys_used(const collection_def_t& c){
+	return c._has_keys;
+/*
 	for(const auto e: c){
 		if(e._key != nullptr){
 			return true;
 		}
 	}
 	return false;
+*/
+
 }
 
-vector<expr_t> get_values(const std::vector<collection_element_t>& c){
+vector<expr_t> get_values(const collection_def_t& c){
 	vector<expr_t> result;
-	for(const auto e: c){
+	for(const auto e: c._elements){
 		result.push_back(e._value);
 	}
 	return result;
@@ -1151,11 +1219,13 @@ QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
 	" xxx"
 ));
 
-QUARK_UNIT_1("parse_expression()", "function call, one simple arg", test__parse_expression(
-	"f(3)",
-	R"(["call", ["@", "f"], [["k", "int", 3]]])",
-	""
-));
+QUARK_UNIT_1("parse_expression()", "function call, one simple arg",
+	test__parse_expression(
+		"f(3)",
+		R"(["call", ["@", "f"], [["k", "int", 3]]])",
+		""
+	)
+);
 
 QUARK_UNIT_1("parse_expression()", "call with expression-arg", test__parse_expression(
 	"f(x+10) xxx",
