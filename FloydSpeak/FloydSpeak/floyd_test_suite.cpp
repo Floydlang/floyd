@@ -1435,11 +1435,11 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 
 //////////////////////////		DICT
 
-#if false
-QUARK_UNIT_TEST("dict", "construct", "", ""){
+#if true
+QUARK_UNIT_TEST_VIP("dict", "construct", "", ""){
 	const auto vm = run_global(R"(
 		[string: int] a = ["one": 1, "two": 2];
-		assert(size(a) == 3);
+		assert(size(a) == 2);
 	)");
 }
 #endif

@@ -101,6 +101,9 @@ const expr_t maker__call(const expr_t& f, const std::vector<expr_t>& args){
 const expr_t maker_vector_definition(const std::string& element_type, const std::vector<expr_t>& elements){
 	return expr_t{ eoperation::k_1_vector_definition, elements, {}, element_type };
 }
+const expr_t maker_dict_definition(const std::string& value_type, const std::vector<expr_t>& elements){
+	return expr_t{ eoperation::k_1_dict_definition, elements, {}, value_type };
+}
 
 const expr_t maker__member_access(const expr_t& address, const std::string& member_name){
 	return expr_t{ eoperation::k_x_member_access, { address }, {}, member_name };
@@ -615,8 +618,22 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 	*/
 	else if(ch1 == '['){
 		const auto a = parse_bounded_list(p2, "[", "]");
-		const auto result = maker_vector_definition("", get_values(a.first));
-		return {result, a.second };
+		if(a.first._has_keys){
+			vector<expr_t> flat_dict;
+			for(const auto b: a.first._elements){
+				if(b._key == nullptr){
+					throw std::runtime_error("Dictionary definition misses element key(s)!");
+				}
+				flat_dict.push_back(*b._key);
+				flat_dict.push_back(b._value);
+			}
+			const auto result = maker_dict_definition("", flat_dict);
+			return {result, a.second };
+		}
+		else{
+			const auto result = maker_vector_definition("", get_values(a.first));
+			return {result, a.second };
+		}
 	}
 
 	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
@@ -631,12 +648,11 @@ QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
 	const auto a = parse_lhs_atom(seq_t("3"));
 	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
 }
-#if false
+
 QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
 	const auto a = parse_lhs_atom(seq_t("[3]"));
-	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
+	QUARK_UT_VERIFY(a.first == maker_vector_definition("", vector<expr_t>{maker__make_constant(constant_value_t(3))}));
 }
-#endif
 
 
 
@@ -806,6 +822,7 @@ std::string expr_to_string(const expr_t& e){
 	else if(e._op == eoperation::k_1_unary_minus){
 		return "[\"unary_minus\", " + expr_to_string(e._exprs[0]) + "]";
 	}
+
 	//	["vector-def", ELEMENT-TYPE, [ ELEMENT, ELEMENT, ...]]
 	else if(e._op == eoperation::k_1_vector_definition){
 		std::ostringstream ss;
@@ -820,6 +837,24 @@ std::string expr_to_string(const expr_t& e){
 		ss << "]]";
 		return ss.str();
 	}
+
+	//	["dict-def", VALUE-TYPE, [ [ EXPRESSION, EXPRESSION, [ EXPRESSION, EXPRESSION], ...]]
+	else if(e._op == eoperation::k_1_dict_definition){
+		std::ostringstream ss;
+		ss << "[\"dict-def\", " << "\"" << e._identifier + "\"" << ", [";
+		for(auto i = 0 ; i < e._exprs.size() ; i += 2){
+			const auto& key = expr_to_string(e._exprs[i + 0]);
+			const auto& value = expr_to_string(e._exprs[i + 1]);
+			ss << key  << ":" << value;
+
+			if(i != (e._exprs.size() - 2)){
+				ss << ", ";
+			}
+		}
+		ss << "]]";
+		return ss.str();
+	}
+
 	else{
 		QUARK_ASSERT(false)
 		return "";
@@ -1037,22 +1072,16 @@ QUARK_UNIT_TESTQ("run_main()", "vector"){
 
 //////////////////////////////////			DICT definition
 
-#if false
 QUARK_UNIT_TESTQ("run_main()", "dict"){
 	QUARK_UT_VERIFY(test__parse_expression("[:]", R"(["dict-def", "", []])", ""));
 }
 
 QUARK_UNIT_TEST("parser", "parge_expression()", "dict definition", ""){
-	QUARK_UT_VERIFY(test__parse_expression(R"(["one": 1, "two": 2, "three": 3])", R"(
-		"dict-def", "",
-		[
-			[["k", "string", "one"], ["k", "int", 1]],
-			[["k", "string", "two"], ["k", "int", 2]],
-			[["k", "string", "three"], ["k", "int", 3]]
-		]
-	)", ""));
+	QUARK_UT_VERIFY(test__parse_expression(
+		R"(["one": 1, "two": 2, "three": 3])",
+		R"(["dict-def", "", [["k", "string", "one"]:["k", "int", 1], ["k", "string", "two"]:["k", "int", 2], ["k", "string", "three"]:["k", "int", 3]]])", "")
+	);
 }
-#endif
 
 
 

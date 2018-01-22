@@ -533,6 +533,57 @@ namespace floyd {
 
 
 
+		////////////////////////////////			make_dict_definition()
+
+
+
+		public: struct dict_definition_exprt_t : public expr_base_t {
+			public: virtual ~dict_definition_exprt_t(){};
+
+			public: dict_definition_exprt_t(
+				const typeid_t& value_type,
+				const std::map<std::string, expression_t>& elements
+			)
+			:
+				_value_type(value_type),
+				_elements(elements)
+			{
+			}
+
+			public: virtual json_t expr_base__to_json() const {
+				return json_t::make_array({
+					"dict-def",
+					typeid_to_normalized_json(_value_type)
+//???					expressions_to_json(_elements)
+				});
+			}
+
+
+			const typeid_t _value_type;
+			const std::map<std::string, expression_t> _elements;
+		};
+
+		public: static expression_t make_dict_definition(
+			const typeid_t& value_type,
+			const std::map<std::string, expression_t>& elements
+		)
+		{
+			return expression_t{
+				expression_type::k_dict_definition,
+				std::make_shared<dict_definition_exprt_t>(
+					dict_definition_exprt_t{ value_type, elements }
+				)
+			};
+		}
+
+		public: const dict_definition_exprt_t* get_dict_definition() const {
+			return dynamic_cast<const dict_definition_exprt_t*>(_expr.get());
+		}
+
+
+
+
+
 
 		////////////////////////////////			OTHER
 
@@ -603,7 +654,13 @@ namespace floyd {
 	}
 	inline bool operator==(const expression_t::vector_definition_exprt_t& lhs, const expression_t::vector_definition_exprt_t& rhs){
 		return
-			lhs._element_type == rhs._element_type;
+			lhs._element_type == rhs._element_type
+			&& lhs._elements == rhs._elements;
+	}
+	inline bool operator==(const expression_t::dict_definition_exprt_t& lhs, const expression_t::dict_definition_exprt_t& rhs){
+		return
+			lhs._value_type == rhs._value_type
+			&& lhs._elements == rhs._elements;
 	}
 
 }	//	floyd

@@ -562,6 +562,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 
 			const auto element = element_expr.second.get_literal();
 
+			//??? Solved already,using improve_vector()?
 			//	Grab vector type from element(s). This is a little fuzzy. Should probably make sure all elements are the same type.
 			if(element_type.is_null()){
 				element_type = element.get_type();
@@ -576,6 +577,42 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			}
 		}
 		return {vm2, expression_t::make_literal(make_vector_value(element_type, elements2))};
+	}
+
+	else if(op == expression_type::k_dict_definition){
+		const auto expr = e.get_dict_definition();
+
+		const auto& elements = expr->_elements;
+		std::map<string, value_t> elements2;
+
+		typeid_t value_type = expr->_value_type;
+
+		for(const auto m: elements){
+			const auto element_expr = evaluate_expression(vm2, m.second);
+			vm2 = element_expr.first;
+
+			if(element_expr.second.is_literal() == false){
+				throw std::runtime_error("Cannot evaluate element of vector definition!");
+			}
+
+			const auto element = element_expr.second.get_literal();
+
+			//??? Solved already,using improve_vector()?
+			//	Grab vector type from element(s). This is a little fuzzy. Should probably make sure all elements are the same type.
+			if(value_type.is_null()){
+				value_type = element.get_type();
+			}
+
+			const string key_string = m.first;
+			elements2[key_string] = element;
+		}
+
+		for(const auto m: elements2){
+			if((m.second.get_type() == value_type) == false){
+				throw std::runtime_error("Vector can not hold elements of different type!");
+			}
+		}
+		return {vm2, expression_t::make_literal(make_dict_value(value_type, elements2))};
 	}
 
 	//	This can be desugared at compile time.

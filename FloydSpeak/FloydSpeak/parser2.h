@@ -138,7 +138,8 @@ enum class eoperation {
 
 //	k_0_identifier
 
-	k_1_vector_definition
+	k_1_vector_definition,
+	k_1_dict_definition
 };
 
 

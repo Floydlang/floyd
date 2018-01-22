@@ -182,6 +182,21 @@ expression_t parser_expression_to_ast(const json_t& e){
 
 		return expression_t::make_vector_definition(element_type, elements2);
 	}
+	else if(op == "dict-def"){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		const auto value_type = resolve_type_name(e.get_array_n(1));
+		const auto elements = e.get_array_n(2).get_array();
+		QUARK_ASSERT((elements.size() % 2) == 0);
+
+		std::map<string, expression_t> elements2;
+		for(int i = 0 ; i < elements.size() ; i += 2){
+			const expression_t key_expr = parser_expression_to_ast(elements[i + 0]);
+			const expression_t value_expr = parser_expression_to_ast(elements[i + 1]);
+			const auto key_string = key_expr.get_literal().get_string_value();
+			elements2.insert(pair<string, expression_t>(key_string, value_expr));
+		}
+		return expression_t::make_dict_definition(value_type, elements2);
+	}
 	else{
 		QUARK_ASSERT(false);
 	}

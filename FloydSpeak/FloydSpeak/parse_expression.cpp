@@ -155,6 +155,9 @@ json_t expr_to_json(const expr_t& e){
 	else if(e._op == eoperation::k_1_vector_definition){
 		return json_t::make_array({ json_t("vector-def"), e._identifier, expr_vector_to_json_array(e._exprs) });
 	}
+	else if(e._op == eoperation::k_1_dict_definition){
+		return json_t::make_array({ json_t("dict-def"), e._identifier, expr_vector_to_json_array(e._exprs) });
+	}
 	else{
 		QUARK_ASSERT(false)
 		return "";
