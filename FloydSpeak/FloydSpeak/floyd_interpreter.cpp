@@ -475,7 +475,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	const auto t = resolve_env_variable(vm, s);
 	if(t == nullptr){
-		throw std::runtime_error("Undefined variable \"" + s + "\"!");
+		throw std::runtime_error("Undefined indentifier \"" + s + "\"!");
 	}
 	return t->first;
 }
@@ -1715,6 +1715,33 @@ std::pair<interpreter_t, value_t> host__exists(const interpreter_t& vm, const st
 	}
 }
 
+std::pair<interpreter_t, value_t> host__erase(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 2){
+		throw std::runtime_error("find requires 2 arguments");
+	}
+
+	const auto obj = args[0];
+	const auto key = args[1];
+
+	if(obj.is_dict()){
+		if(key.get_type().is_string() == false){
+			throw std::runtime_error("Key must be string.");
+		}
+		const auto key_string = key.get_string_value();
+		const auto v = obj.get_dict_value();
+
+		std::map<string, value_t> elements2 = v->_elements;
+		elements2.erase(key_string);
+		const auto value2 = make_dict_value(obj.get_dict_value()->_value_type, elements2);
+		return { vm, value2 };
+	}
+	else{
+		throw std::runtime_error("Calling exist() on unsupported type of value.");
+	}
+}
+
 
 
 
@@ -1728,7 +1755,15 @@ std::pair<interpreter_t, value_t> host__push_back(const interpreter_t& vm, const
 
 	const auto obj = args[0];
 	const auto element = args[1];
-	if(obj.is_vector()){
+	if(obj.is_string()){
+		const auto str = obj.get_string_value();
+		const auto ch = element.get_string_value();
+
+		auto str2 = str + ch;
+		const auto v = value_t(str2);
+		return {vm, v};
+	}
+	else if(obj.is_vector()){
 		const auto vec = obj.get_vector_value();
 		if(element.get_type() != vec->_element_type){
 			throw std::runtime_error("Type mismatch.");
@@ -1736,14 +1771,6 @@ std::pair<interpreter_t, value_t> host__push_back(const interpreter_t& vm, const
 		auto elements2 = vec->_elements;
 		elements2.push_back(element);
 		const auto v = make_vector_value(vec->_element_type, elements2);
-		return {vm, v};
-	}
-	else if(obj.is_string()){
-		const auto str = obj.get_string_value();
-		const auto ch = element.get_string_value();
-
-		auto str2 = str + ch;
-		const auto v = value_t(str2);
 		return {vm, v};
 	}
 	else{
@@ -1771,18 +1798,7 @@ std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const st
 		throw std::runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	if(obj.is_vector()){
-		const auto vec = obj.get_vector_value();
-		const auto start2 = std::min(start, static_cast<int>(vec->_elements.size()));
-		const auto end2 = std::min(end, static_cast<int>(vec->_elements.size()));
-		vector<value_t> elements2;
-		for(int i = start2 ; i < end2 ; i++){
-			elements2.push_back(vec->_elements[i]);
-		}
-		const auto v = make_vector_value(vec->_element_type, elements2);
-		return {vm, v};
-	}
-	else if(obj.is_string()){
+	if(obj.is_string()){
 		const auto str = obj.get_string_value();
 		const auto start2 = std::min(start, static_cast<int>(str.size()));
 		const auto end2 = std::min(end, static_cast<int>(str.size()));
@@ -1792,6 +1808,17 @@ std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const st
 			str2.push_back(str[i]);
 		}
 		const auto v = value_t(str2);
+		return {vm, v};
+	}
+	else if(obj.is_vector()){
+		const auto vec = obj.get_vector_value();
+		const auto start2 = std::min(start, static_cast<int>(vec->_elements.size()));
+		const auto end2 = std::min(end, static_cast<int>(vec->_elements.size()));
+		vector<value_t> elements2;
+		for(int i = start2 ; i < end2 ; i++){
+			elements2.push_back(vec->_elements[i]);
+		}
+		const auto v = make_vector_value(vec->_element_type, elements2);
 		return {vm, v};
 	}
 	else{
@@ -1824,7 +1851,17 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 		throw std::runtime_error("replace() requires 4th arg to be same as argument 0.");
 	}
 
-	if(obj.is_vector()){
+	if(obj.is_string()){
+		const auto str = obj.get_string_value();
+		const auto start2 = std::min(start, static_cast<int>(str.size()));
+		const auto end2 = std::min(end, static_cast<int>(str.size()));
+		const auto new_bits = args[3].get_string_value();
+
+		string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
+		const auto v = value_t(str2);
+		return {vm, v};
+	}
+	else if(obj.is_vector()){
 		const auto vec = obj.get_vector_value();
 		const auto start2 = std::min(start, static_cast<int>(vec->_elements.size()));
 		const auto end2 = std::min(end, static_cast<int>(vec->_elements.size()));
@@ -1839,16 +1876,6 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 		result.insert(result.end(), string_right.begin(), string_right.end());
 
 		const auto v = make_vector_value(vec->_element_type, result);
-		return {vm, v};
-	}
-	else if(obj.is_string()){
-		const auto str = obj.get_string_value();
-		const auto start2 = std::min(start, static_cast<int>(str.size()));
-		const auto end2 = std::min(end, static_cast<int>(str.size()));
-		const auto new_bits = args[3].get_string_value();
-
-		string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
-		const auto v = value_t(str2);
 		return {vm, v};
 	}
 	else{
@@ -1878,6 +1905,7 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "exists", host__exists, typeid_t::make_function(typeid_t::make_bool(), {}) },
+	host_function_t{ "erase", host__erase, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {}) }

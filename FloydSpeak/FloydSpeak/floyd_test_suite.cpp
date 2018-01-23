@@ -1628,6 +1628,14 @@ QUARK_UNIT_TEST("dict", "exists()", "", ""){
 	)");
 }
 
+QUARK_UNIT_TEST("dict", "erase()", "", ""){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2, "three" : 3];
+		b = erase(a, "one");
+		assert(b == [ "two": 2, "three" : 3]);
+	)");
+}
+
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
