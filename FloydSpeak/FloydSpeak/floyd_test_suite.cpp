@@ -1496,7 +1496,6 @@ QUARK_UNIT_TEST("dict", "construct", "", ""){
 		assert(size(a) == 2);
 	)");
 }
-
 QUARK_UNIT_TEST("dict", "[]", "", ""){
 	const auto vm = run_global(R"(
 		[string: int] a = ["one": 1, "two": 2];
@@ -1506,6 +1505,28 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
 		"1",
 		"2"
+	}	));
+}
+
+
+QUARK_UNIT_TEST("dict", "[:]", "", ""){
+	const auto vm = run_global(R"(
+		a = [:];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:null]())",
+	}	));
+}
+
+
+QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
+	const auto vm = run_global(R"(
+		a = ["one": 1, "two": 2];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]("one": 1,"two": 2))",
 	}	));
 }
 
@@ -1534,6 +1555,23 @@ QUARK_UNIT_TEST("dict", "==", "", ""){
 		assert((["one": 1, "two": 1] < ["one": 1, "two": 2]) == true);
 	)");
 }
+
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+	const auto vm = run_global(R"(
+		assert(size([:]) == 0);
+	)");
+}
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+	const auto vm = run_global(R"(
+		assert(size(["one":1]) == 1);
+	)");
+}
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+	const auto vm = run_global(R"(
+		assert(size(["one":1, "two":2]) == 2);
+	)");
+}
+
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.

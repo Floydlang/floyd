@@ -24,6 +24,7 @@
 #include <thread>
 #include <chrono>
 #include <algorithm>
+#include <iostream>
 
 
 namespace floyd {
@@ -1883,6 +1884,12 @@ interpreter_t run_global(const string& source){
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+	if(vm._print_output.empty() == false){
+		std::cout << "print output:\n";
+		for(const auto line: vm._print_output){
+			std::cout << line << "\n";
+		}
+	}
 	return vm;
 }
 

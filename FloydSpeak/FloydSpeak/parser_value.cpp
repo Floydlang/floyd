@@ -114,9 +114,9 @@ bool dict_instance_t::operator==(const dict_instance_t& other) const{
 std::string to_compact_string(const dict_instance_t& instance){
 	std::vector<std::string> elements;
 	for(const auto e: instance._elements){
-		const auto key_str = e.first;
+		const auto key_str = quote(e.first);
 		const auto value_str = e.second.to_compact_string_quote_strings();
-		const auto es = key_str + ":\t" + value_str;
+		const auto es = key_str + ": " + value_str;
 		elements.push_back(es);
 	}
 	return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
