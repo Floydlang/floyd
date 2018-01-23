@@ -262,7 +262,7 @@ int compare_vector_true_deep(const vector_instance_t& left, const vector_instanc
 
 	const auto shared_count = std::min(left._elements.size(), right._elements.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		const auto element_result = value_t::compare_value_true_deep(left._elements[0], right._elements[0]);
+		const auto element_result = value_t::compare_value_true_deep(left._elements[i], right._elements[i]);
 		if(element_result != 0){
 			return element_result;
 		}

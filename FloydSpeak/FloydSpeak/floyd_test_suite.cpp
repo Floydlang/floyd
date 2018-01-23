@@ -1222,6 +1222,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 //////////////////////////		STRING
 
 
+//??? add tests for equality.
 
 QUARK_UNIT_TEST("string", "size()", "string", "0"){
 	const auto vm = run_global(R"(
@@ -1339,6 +1340,60 @@ QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vec
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
 }
 #endif
+
+
+QUARK_UNIT_TEST("vector", "=", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = ["one", "two"];
+		b = a;
+		assert(a == b);
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string]("one","two"))",
+		R"([string]("one","two"))"
+	}	));
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "two"] == ["one", "two"]) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert(([1,2,3,4] == [1,2,3,4]) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert(([] == []) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "three"] == ["one", "two"]) == false);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "<", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "two"] < ["one", "two"]) == false);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "<", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "a"] < ["one", "two"]) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "<", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "a"] < ["one", "two"]) == true);
+	)");
+}
+
+
 
 QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
 	try{
