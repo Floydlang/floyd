@@ -1509,7 +1509,6 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 	}	));
 }
 
-/*
 QUARK_UNIT_TEST("dict", "==", "", ""){
 	const auto vm = run_global(R"(
 		assert((["one": 1, "two": 2] == ["one": 1, "two": 2]) == true);
@@ -1525,7 +1524,16 @@ QUARK_UNIT_TEST("dict", "==", "", ""){
 		assert((["one": 2, "two": 2] == ["one": 1, "two": 2]) == false);
 	)");
 }
-*/
+QUARK_UNIT_TEST("dict", "==", "", ""){
+	const auto vm = run_global(R"(
+		assert((["one": 1, "two": 2] < ["one": 1, "two": 2]) == false);
+	)");
+}
+QUARK_UNIT_TEST("dict", "==", "", ""){
+	const auto vm = run_global(R"(
+		assert((["one": 1, "two": 1] < ["one": 1, "two": 2]) == true);
+	)");
+}
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.

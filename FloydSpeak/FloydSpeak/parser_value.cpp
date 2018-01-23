@@ -233,7 +233,7 @@ QUARK_UNIT_TESTQ("compare_string()", ""){
 
 
 
-int value_t::compare_value_true_deep(const struct_instance_t& left, const struct_instance_t& right){
+int value_t::compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -278,12 +278,55 @@ int compare_vector_true_deep(const vector_instance_t& left, const vector_instanc
 	}
 }
 
+template <typename Map>
+bool map_compare (Map const &lhs, Map const &rhs) {
+    // No predicate needed because there is operator== for pairs already.
+    return lhs.size() == rhs.size()
+        && std::equal(lhs.begin(), lhs.end(),
+                      rhs.begin());
+}
+
+
+
+
 int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
+	QUARK_ASSERT(left._value_type == right._value_type);
 
-//??? implement!
-	return -1;
+	
+	auto left_it = left._elements.begin();
+	auto left_end_it = left._elements.end();
+
+	auto right_it = right._elements.begin();
+	auto right_end_it = right._elements.end();
+
+	while(left_it != left_end_it && right_it != right_end_it && *left_it == *right_it){
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	else if(left_it != left_end_it && right_it != right_end_it){
+		int key_diff = compare_string(left_it->first, right_it->first);
+		if(key_diff != 0){
+			return key_diff;
+		}
+		else {
+			return value_t::compare_value_true_deep(left_it->second, right_it->second);
+		}
+	}
+	else{
+		QUARK_ASSERT(false)
+	}
 }
 
 
@@ -324,6 +367,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		return 0;
 	}
 	else if(type.is_struct()){
+		//	Make sure the EXACT struct types are the same -- not only that they are both structs
 		if(left.get_type() != right.get_type()){
 			throw std::runtime_error("Cannot compare structs of different type.");
 		}
@@ -333,11 +377,12 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 				return 0;
 			}
 			else{
-				return compare_value_true_deep(*left.get_struct_value(), *right.get_struct_value());
+				return compare_struct_true_deep(*left.get_struct_value(), *right.get_struct_value());
 			}
 		}
 	}
 	else if(type.is_vector()){
+		//	Make sure the EXACT types are the same -- not only that they are both vectors.
 		if(left.get_type() != right.get_type()){
 			throw std::runtime_error("Cannot compare structs of different type.");
 		}
@@ -348,6 +393,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		}
 	}
 	else if(type.is_dict()){
+		//	Make sure the EXACT types are the same -- not only that they are both dicts.
 		if(left.get_type() != right.get_type()){
 			throw std::runtime_error("Cannot compare dicts of different type.");
 		}

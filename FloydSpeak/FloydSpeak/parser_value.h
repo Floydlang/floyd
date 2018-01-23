@@ -760,7 +760,7 @@ namespace floyd {
 		}
 
 
-		private: static int compare_value_true_deep(const struct_instance_t& left, const struct_instance_t& right);
+		private: static int compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right);
 
 
 		////////////////		STATE
