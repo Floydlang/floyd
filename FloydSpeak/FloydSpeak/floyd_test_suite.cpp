@@ -1473,7 +1473,7 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 // ### test pos limiting and edge cases.
 
 
-QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without sideeffect on original vector"){
+QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without side effect on original vector"){
 	const auto vm = run_global(R"(
 		a = [ "one", "two", "three"];
 		b = update(a, 1, "zwei");
@@ -1561,6 +1561,14 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 		assert(size([:]) == 0);
 	)");
 }
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
+	const auto vm = run_global(R"(
+		print([:]);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:null]())",
+	}	));
+}
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	const auto vm = run_global(R"(
 		assert(size(["one":1]) == 1);
@@ -1571,6 +1579,47 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 		assert(size(["one":1, "two":2]) == 2);
 	)");
 }
+
+
+
+QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side effect on original dict"){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2];
+		b = update(a, "three", 3);
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]("one": 1,"two": 2))",
+		R"([string:int]("one": 1,"three": 3,"two": 2))"
+	}	));
+}
+
+QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2, "three" : 3];
+		b = update(a, "three", 333);
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]("one": 1,"three": 3,"two": 2))",
+		R"([string:int]("one": 1,"three": 333,"two": 2))"
+	}	));
+}
+
+
+QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
+	const auto vm = run_global(R"(
+		a = update([:], "one", 1);
+		b = update(a, "two", 2);
+		print(b);
+		assert(a == ["one": 1]);
+		assert(b == ["one": 1, "two": 2]);
+	)");
+}
+
+
 
 
 //??? test accessing array->struct->array.

@@ -46,20 +46,6 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 
 namespace {
 
-	//	WHen [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
-	bool is_vector_john_doe(const value_t& value){
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(value.is_vector());
-
-		const auto p = value.get_vector_value();
-		if(p->_element_type.is_null() && p->_elements.empty()){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-
 	// ### Make this built in into evaluate_expression()?
 	value_t improve_vector(const value_t& value){
 		QUARK_ASSERT(value.check_invariant());
@@ -90,10 +76,42 @@ namespace {
 			return value;
 		}
 	}
+	value_t improve_dict(const value_t& value){
+		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(value.is_dict());
+
+		const auto p = value.get_dict_value();
+
+		const auto value_type = p->_value_type;
+
+		//	Type == [string:null]?
+		if(value_type.is_null()){
+			if(p->_elements.empty()){
+				return value;
+			}
+			else{
+				//	Figure out the element type.
+				const auto value_type2 = p->_elements.begin()->second.get_type();
+				return improve_dict(make_dict_value(value_type2, p->_elements));
+			}
+		}
+		else{
+			//	Check that element types match vector type.
+			for(const auto e: p->_elements){
+				if(e.second.get_type() != value_type){
+					throw std::runtime_error("Dict element value of wrong type.");
+				}
+			}
+			return value;
+		}
+	}
 
 	value_t improve_value(const value_t& value){
 		if(value.is_vector()){
 			return improve_vector(value);
+		}
+		else if(value.is_dict()){
+			return improve_dict(value);
 		}
 		else{
 			return value;
@@ -101,12 +119,35 @@ namespace {
 	}
 
 	//	We know which type we need. If the value has not type, retype it.
-	value_t improve_value_type(const value_t& value, const typeid_t& expected_type){
-		QUARK_ASSERT(value.check_invariant());
+	value_t improve_value_type(const value_t& value0, const typeid_t& expected_type){
+		QUARK_ASSERT(value0.check_invariant());
 		QUARK_ASSERT(expected_type.check_invariant());
 
-		if(value.is_vector() && is_vector_john_doe(value) && expected_type.is_vector()){
-			return make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
+		const auto value = improve_value(value0);
+
+		if(value.is_vector()){
+			const auto v = value.get_vector_value();
+
+			//	When [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
+			if(v->_element_type.is_null() && v->_elements.empty()){
+				QUARK_ASSERT(expected_type.is_vector());
+				return make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
+			}
+			else{
+				return value;
+			}
+		}
+		else if(value.is_dict()){
+			const auto v = value.get_dict_value();
+
+			//	When [:] appears in an expression we know it's an empty dict but not which type. It can be used as any dict type.
+			if(v->_value_type.is_null() && v->_elements.empty()){
+				QUARK_ASSERT(expected_type.is_dict());
+				return make_dict_value(expected_type.get_dict_value_type(), {});
+			}
+			else{
+				return value;
+			}
 		}
 		else{
 			return value;
@@ -639,7 +680,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 
 		for(const auto m: elements2){
 			if((m.second.get_type() == value_type) == false){
-				throw std::runtime_error("Vector can not hold elements of different type!");
+				throw std::runtime_error("Dict can not hold elements of different type!");
 			}
 		}
 		return {vm2, expression_t::make_literal(make_dict_value(value_type, elements2))};
@@ -1448,58 +1489,20 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
-	const auto& obj = args[0];
+	const auto& obj1 = improve_value(args[0]);
 	const auto& lookup_key = args[1];
-	const auto& new_value = args[2];
+	const auto& new_value = improve_value(args[2]);
 
 	if(args.size() != 3){
 		throw std::runtime_error("update() needs 3 arguments.");
 	}
 	else{
-		if(obj.is_struct()){
-			if(lookup_key.is_string() == false){
-				throw std::runtime_error("You must specify structure member using string.");
-			}
-			else{
-				//### Does simple check for "." -- we should use vector of strings instead.
-				const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value()), ".");
-				if(nodes.empty()){
-					throw std::runtime_error("You must specify structure member using string.");
-				}
-
-				const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value);
-				return {vm, s2 };
-			}
-		}
-		else if(obj.is_vector()){
-			if(lookup_key.is_int() == false){
-				throw std::runtime_error("Vector lookup using integer index only.");
-			}
-			else{
-				const auto v = obj.get_vector_value();
-				auto v2 = v->_elements;
-
-				if((v->_element_type == new_value.get_type()) == false){
-					throw std::runtime_error("Update element must match vector type.");
-				}
-				else{
-					const int lookup_index = lookup_key.get_int_value();
-					if(lookup_index < 0 || lookup_index >= v->_elements.size()){
-						throw std::runtime_error("Vector lookup out of bounds.");
-					}
-					else{
-						v2[lookup_index] = new_value;
-						const auto s2 = make_vector_value(v->_element_type, v2);
-						return {vm, s2 };
-					}
-				}
-			}
-		}
-		else if(obj.is_string()){
+		if(obj1.is_string()){
 			if(lookup_key.is_int() == false){
 				throw std::runtime_error("String lookup using integer index only.");
 			}
 			else{
+				const auto obj = obj1;
 				const auto v = obj.get_string_value();
 
 				if((new_value.get_type().is_string() && new_value.get_string_value().size() == 1) == false){
@@ -1519,8 +1522,71 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 				}
 			}
 		}
+		else if(obj1.is_vector()){
+			if(lookup_key.is_int() == false){
+				throw std::runtime_error("Vector lookup using integer index only.");
+			}
+			else{
+				const auto obj = improve_value_type(obj1, typeid_t::make_vector(new_value.get_type()));
+				const auto v = obj.get_vector_value();
+				auto v2 = v->_elements;
+
+				if((v->_element_type == new_value.get_type()) == false){
+					throw std::runtime_error("Update element must match vector type.");
+				}
+				else{
+					const int lookup_index = lookup_key.get_int_value();
+					if(lookup_index < 0 || lookup_index >= v->_elements.size()){
+						throw std::runtime_error("Vector lookup out of bounds.");
+					}
+					else{
+						v2[lookup_index] = new_value;
+						const auto s2 = make_vector_value(v->_element_type, v2);
+						return {vm, s2 };
+					}
+				}
+			}
+		}
+		else if(obj1.is_dict()){
+			if(lookup_key.is_string() == false){
+				throw std::runtime_error("Dict lookup using string key only.");
+			}
+			else{
+				const auto obj = improve_value_type(obj1, typeid_t::make_dict(new_value.get_type()));
+				const auto v = obj.get_dict_value();
+				auto v2 = v->_elements;
+
+				if((v->_value_type == new_value.get_type()) == false){
+					throw std::runtime_error("Update element must match dict value type.");
+				}
+				else{
+					const string key = lookup_key.get_string_value();
+					auto elements2 = v->_elements;
+					elements2[key] = new_value;
+					const auto value2 = make_dict_value(obj.get_dict_value()->_value_type, elements2);
+					return { vm, value2 };
+				}
+			}
+		}
+		else if(obj1.is_struct()){
+			if(lookup_key.is_string() == false){
+				throw std::runtime_error("You must specify structure member using string.");
+			}
+			else{
+				const auto obj = obj1;
+
+				//### Does simple check for "." -- we should use vector of strings instead.
+				const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value()), ".");
+				if(nodes.empty()){
+					throw std::runtime_error("You must specify structure member using string.");
+				}
+
+				const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value);
+				return {vm, s2 };
+			}
+		}
 		else {
-			throw std::runtime_error("Can only update struct, vector or string.");
+			throw std::runtime_error("Can only update string, vector, dict or struct.");
 		}
 	}
 }
