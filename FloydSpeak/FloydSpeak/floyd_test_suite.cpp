@@ -1620,6 +1620,13 @@ QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 }
 
 
+QUARK_UNIT_TEST("dict", "exists()", "", ""){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2, "three" : 3];
+		assert(exists(a, "two") == true);
+		assert(exists(a, "four") == false);
+	)");
+}
 
 
 //??? test accessing array->struct->array.

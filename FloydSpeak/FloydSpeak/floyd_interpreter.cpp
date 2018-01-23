@@ -1654,7 +1654,20 @@ std::pair<interpreter_t, value_t> host__find(const interpreter_t& vm, const std:
 
 	const auto obj = args[0];
 	const auto wanted = args[1];
-	if(obj.is_vector()){
+
+	if(obj.is_string()){
+		const auto str = obj.get_string_value();
+		const auto wanted2 = wanted.get_string_value();
+
+		const auto r = str.find(wanted2);
+		if(r == std::string::npos){
+			return {vm, value_t(static_cast<int>(-1))};
+		}
+		else{
+			return {vm, value_t(static_cast<int>(r))};
+		}
+	}
+	else if(obj.is_vector()){
 		const auto vec = obj.get_vector_value();
 		if(wanted.get_type() != vec->_element_type){
 			throw std::runtime_error("Type mismatch.");
@@ -1671,22 +1684,38 @@ std::pair<interpreter_t, value_t> host__find(const interpreter_t& vm, const std:
 			return {vm, value_t(static_cast<int>(index))};
 		}
 	}
-	else if(obj.is_string()){
-		const auto str = obj.get_string_value();
-		const auto wanted2 = wanted.get_string_value();
-
-		const auto r = str.find(wanted2);
-		if(r == std::string::npos){
-			return {vm, value_t(static_cast<int>(-1))};
-		}
-		else{
-			return {vm, value_t(static_cast<int>(r))};
-		}
-	}
 	else{
 		throw std::runtime_error("Calling find() on unsupported type of value.");
 	}
 }
+
+std::pair<interpreter_t, value_t> host__exists(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 2){
+		throw std::runtime_error("find requires 2 arguments");
+	}
+
+	const auto obj = args[0];
+	const auto key = args[1];
+
+	if(obj.is_dict()){
+		if(key.get_type().is_string() == false){
+			throw std::runtime_error("Key must be string.");
+		}
+		const auto key_string = key.get_string_value();
+		const auto v = obj.get_dict_value();
+
+		const auto found_it = v->_elements.find(key_string);
+		const bool exists = found_it != v->_elements.end();
+		return {vm, value_t(exists)};
+	}
+	else{
+		throw std::runtime_error("Calling exist() on unsupported type of value.");
+	}
+}
+
+
 
 
 //	assert(push_back(["one","two"], "three") == ["one","two","three"])
@@ -1848,6 +1877,7 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) },
+	host_function_t{ "exists", host__exists, typeid_t::make_function(typeid_t::make_bool(), {}) },
 	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {}) }

@@ -540,6 +540,9 @@ A collection that maps a key to a value. Unsorted. Like a C++ map.
 lookup using [] throws exception is key not found. Use exists() first.
 
 
+exist()
+
+
 	a = [string: int]
 
 	//	Create a string -> int dictionary with three entries.
