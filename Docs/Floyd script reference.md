@@ -536,6 +536,10 @@ vector2 = replace(vector1, start_pos, end_pos, new_bit)
 A collection that maps a key to a value. Unsorted. Like a C++ map. 
 
 
+
+lookup using [] throws exception is key not found. Use exists() first.
+
+
 	a = [string: int]
 
 	//	Create a string -> int dictionary with three entries.
@@ -555,10 +559,11 @@ Dictionary Reference
 	V my_dict.at(K key)
 	V my_dict[K key]
 	my_dict[K key] = value
-	bool my_dict.empty()
+
 	size_t my_dict.size()
-	dict<K, V> my_dict.insert(K key, V value)
+
 	size_t my_dict.count()
+
 	dict<K, V> my_dict.erase(K key)
 
 

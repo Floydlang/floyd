@@ -484,26 +484,55 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 		const auto expr = e.get_lookup();
 		const auto parent_expr = evaluate_expression(vm2, *expr->_parent_address);
 		vm2 = parent_expr.first;
-		if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_vector() == false){
-			throw std::runtime_error("Can only lookup inside vectors using [].");
+
+		if(parent_expr.second.is_literal() == false){
+			throw std::runtime_error("Cannot compute lookup parent.");
 		}
 		else{
 			const auto key_expr = evaluate_expression(vm2, *expr->_lookup_key);
 			vm2 = key_expr.first;
 
-			if(key_expr.second.is_literal() && key_expr.second.get_literal().is_int() == false){
-				throw std::runtime_error("Lookup in vector by index-only.");
+			if(key_expr.second.is_literal() == false){
+				throw std::runtime_error("Cannot compute lookup key.");
 			}
 			else{
-				const auto vector_instance = parent_expr.second.get_literal().get_vector_value();
+				if(parent_expr.second.get_literal().is_vector()){
+					if(key_expr.second.get_literal().is_int() == false){
+						throw std::runtime_error("Lookup in vector by index-only.");
+					}
+					else{
+						const auto instance = parent_expr.second.get_literal().get_vector_value();
 
-				int lookup_index = key_expr.second.get_literal().get_int_value();
-				if(lookup_index < 0 || lookup_index >= vector_instance->_elements.size()){
-					throw std::runtime_error("Lookup in vector: out of bounds.");
+						int lookup_index = key_expr.second.get_literal().get_int_value();
+						if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
+							throw std::runtime_error("Lookup in vector: out of bounds.");
+						}
+						else{
+							const value_t value = instance->_elements[lookup_index];
+							return { vm2, expression_t::make_literal(value)};
+						}
+					}
 				}
-				else{
-					const value_t value = vector_instance->_elements[lookup_index];
-					return { vm2, expression_t::make_literal(value)};
+				else if(parent_expr.second.get_literal().is_dict()){
+					if(key_expr.second.get_literal().is_string() == false){
+						throw std::runtime_error("Lookup in dict by string-only.");
+					}
+					else{
+						const auto instance = parent_expr.second.get_literal().get_dict_value();
+						const string key = key_expr.second.get_literal().get_string_value();
+
+						const auto found_it = instance->_elements.find(key);
+						if(found_it == instance->_elements.end()){
+							throw std::runtime_error("Lookup in dict: key not found.");
+						}
+						else{
+							const value_t value = found_it->second;
+							return { vm2, expression_t::make_literal(value)};
+						}
+					}
+				}
+				else {
+					throw std::runtime_error("Can only lookup inside vectors and dicts using [].");
 				}
 			}
 		}

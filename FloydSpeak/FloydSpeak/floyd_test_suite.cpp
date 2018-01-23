@@ -1435,14 +1435,24 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 
 //////////////////////////		DICT
 
-#if true
-QUARK_UNIT_TEST_VIP("dict", "construct", "", ""){
+QUARK_UNIT_TEST("dict", "construct", "", ""){
 	const auto vm = run_global(R"(
 		[string: int] a = ["one": 1, "two": 2];
 		assert(size(a) == 2);
 	)");
 }
-#endif
+
+QUARK_UNIT_TEST("dict", "[]", "", ""){
+	const auto vm = run_global(R"(
+		[string: int] a = ["one": 1, "two": 2];
+		print(a["one"]);
+		print(a["two"]);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"1",
+		"2"
+	}	));
+}
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
