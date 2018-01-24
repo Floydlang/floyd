@@ -203,17 +203,6 @@ expression_t parser_expression_to_ast(const json_t& e){
 }
 
 
-
-
-/*
-	Input is an array of statements from parser.
-	A function has its own list of statements.
-
-	??? Split each statement into separate function.
-
-	### Support overloading the same symbol name with different types.
-	### Key symbols with their type too. Support function overloading & struct named as function.
-*/
 const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const json_t& p){
 	QUARK_SCOPED_TRACE("parser_statements_to_ast()");
 	QUARK_ASSERT(p.check_invariant());

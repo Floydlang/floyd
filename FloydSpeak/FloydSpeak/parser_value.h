@@ -806,6 +806,7 @@ namespace floyd {
 
 	void trace(const value_t& e);
 	json_t value_to_json(const value_t& v);
+	json_t value_and_type_to_json(const value_t& v);
 	value_t make_test_func();
 
 

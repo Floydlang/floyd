@@ -540,6 +540,13 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 }
 
 
+json_t value_and_type_to_json(const value_t& v){
+	return json_t::make_array({
+		typeid_to_normalized_json(v.get_type()),
+		value_to_json(v)
+	});
+}
+
 json_t value_to_json(const value_t& v){
 	if(v.is_null()){
 		return json_t();

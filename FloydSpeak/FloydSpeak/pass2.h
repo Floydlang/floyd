@@ -13,7 +13,12 @@
 
 namespace floyd {
 
-	floyd::ast_t run_pass2(const json_t& parse_tree);
+	/*
+		Input is an array of statements from parser.
+		A function has its own list of statements.
+	*/
+	const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const json_t& p);
 
+	floyd::ast_t run_pass2(const json_t& parse_tree);
 }
 #endif /* pass2_hpp */

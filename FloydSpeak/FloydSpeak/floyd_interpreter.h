@@ -92,6 +92,13 @@ namespace floyd {
 	);
 
 
+	/*
+		Return value:
+			null = statements were all executed through.
+			value = return statement returned a value.
+	*/
+	std::pair<interpreter_t, std::shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
+
 
 	//////////////////////////		run_main()
 

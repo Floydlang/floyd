@@ -155,7 +155,6 @@ namespace {
 	}
 
 
-	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements);
 
 /*
 	bool compare_float_approx(float value, float expected){
@@ -386,33 +385,29 @@ namespace {
 		}
 	}
 
-	/*
-		Return value:
-			null = statements were all executed through.
-			value = return statement returned a value.
-	*/
-	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
-		QUARK_ASSERT(vm.check_invariant());
-		for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
-
-		auto vm2 = vm;
-
-		int statement_index = 0;
-		while(statement_index < statements.size()){
-			const auto statement = statements[statement_index];
-			const auto& r = execute_statement(vm2, *statement);
-			vm2 = r.first;
-			if(r.second){
-				return { vm2, r.second };
-			}
-			statement_index++;
-		}
-		return { vm2, {}};
-	}
 
 
 }	//	unnamed
 
+
+std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
+	QUARK_ASSERT(vm.check_invariant());
+	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
+
+	auto vm2 = vm;
+
+	int statement_index = 0;
+	while(statement_index < statements.size()){
+		const auto statement = statements[statement_index];
+		const auto& r = execute_statement(vm2, *statement);
+		vm2 = r.first;
+		if(r.second){
+			return { vm2, r.second };
+		}
+		statement_index++;
+	}
+	return { vm2, {}};
+}
 
 value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1176,7 +1171,13 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		std::map<string, json_t> values;
 		for(const auto&v: e->_values){
 		//??? INlcude mutable-flag?
-			values[v.first] = value_to_json(v.second.first);
+			const auto a = value_and_type_to_json(v.second.first);
+			const auto b = make_array_skip_nulls({
+				a.get_array_n(0),
+				a.get_array_n(1),
+				v.second.second ? json_t("mutable") : json_t()
+			});
+			values[v.first] = b;
 		}
 
 		const auto& env = json_t::make_object({

@@ -7,11 +7,17 @@
 //
 
 #include <stdio.h>
+#include <iostream>
 
 #include "quark.h"
 #include "game_of_life1.h"
 #include "game_of_life2.h"
 #include "game_of_life3.h"
+
+#include "floyd_interpreter.h"
+#include "floyd_parser.h"
+#include "json_support.h"
+#include "pass2.h"
 
 //////////////////////////////////////////////////		main()
 
@@ -19,7 +25,7 @@
 
 int main(int argc, const char * argv[]) {
 	try {
-#if QUARK_UNIT_TESTS_ON
+#if false && QUARK_UNIT_TESTS_ON
 		quark::run_tests({
 			"quark.cpp",
 
@@ -81,5 +87,41 @@ int main(int argc, const char * argv[]) {
 		return -1;
 	}
 
-  return 0;
+
+	int print_pos = 0;
+	auto ast = floyd::program_to_ast2("");
+	auto vm = floyd::interpreter_t(ast);
+
+	std::cout << "Welcome to Floyd!" << std::endl;
+	while(true){
+		try {
+			std::cout << "floyd:";
+
+			std::string line;
+			std::getline (std::cin, line);
+
+			if(line == "vm"){
+				std::cout << json_to_pretty_string(floyd::interpreter_to_json(vm)) << std::endl;
+			}
+			else{
+				const auto ast_json_pos = floyd::parse_statement(seq_t(line));
+				const auto statements = floyd::parser_statements_to_ast(
+					json_t::make_array({ast_json_pos.first})
+				);
+				const auto b = floyd::execute_statements(vm, statements);
+				while(print_pos < vm._print_output.size()){
+					std::cout << vm._print_output[print_pos] << std::endl;
+					print_pos++;
+				}
+			}
+		}
+		catch(const std::runtime_error& e){
+			std::cout << "Runtime error: " << e.what() << std::endl;
+		}
+		catch(...){
+			std::cout << "Runtime error." << std::endl;
+		}
+	}
+
+	return 0;
 }
