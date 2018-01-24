@@ -25,7 +25,7 @@
 
 int main(int argc, const char * argv[]) {
 	try {
-#if false && QUARK_UNIT_TESTS_ON
+#if true && QUARK_UNIT_TESTS_ON
 		quark::run_tests({
 			"quark.cpp",
 
@@ -102,6 +102,8 @@ int main(int argc, const char * argv[]) {
 
 			if(line == "vm"){
 				std::cout << json_to_pretty_string(floyd::interpreter_to_json(vm)) << std::endl;
+			}
+			else if(line == ""){
 			}
 			else{
 				const auto ast_json_pos = floyd::parse_statement(seq_t(line));

@@ -123,34 +123,39 @@ namespace {
 		QUARK_ASSERT(value0.check_invariant());
 		QUARK_ASSERT(expected_type.check_invariant());
 
-		const auto value = improve_value(value0);
-
-		if(value.is_vector()){
-			const auto v = value.get_vector_value();
-
-			//	When [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
-			if(v->_element_type.is_null() && v->_elements.empty()){
-				QUARK_ASSERT(expected_type.is_vector());
-				return make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
-			}
-			else{
-				return value;
-			}
-		}
-		else if(value.is_dict()){
-			const auto v = value.get_dict_value();
-
-			//	When [:] appears in an expression we know it's an empty dict but not which type. It can be used as any dict type.
-			if(v->_value_type.is_null() && v->_elements.empty()){
-				QUARK_ASSERT(expected_type.is_dict());
-				return make_dict_value(expected_type.get_dict_value_type(), {});
-			}
-			else{
-				return value;
-			}
+		if(expected_type.is_null()){
+			return value0;
 		}
 		else{
-			return value;
+			const auto value = improve_value(value0);
+
+			if(value.is_vector()){
+				const auto v = value.get_vector_value();
+
+				//	When [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
+				if(v->_element_type.is_null() && v->_elements.empty()){
+					QUARK_ASSERT(expected_type.is_vector());
+					return make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
+				}
+				else{
+					return value;
+				}
+			}
+			else if(value.is_dict()){
+				const auto v = value.get_dict_value();
+
+				//	When [:] appears in an expression we know it's an empty dict but not which type. It can be used as any dict type.
+				if(v->_value_type.is_null() && v->_elements.empty()){
+					QUARK_ASSERT(expected_type.is_dict());
+					return make_dict_value(expected_type.get_dict_value_type(), {});
+				}
+				else{
+					return value;
+				}
+			}
+			else{
+				return value;
+			}
 		}
 	}
 
@@ -217,8 +222,6 @@ namespace {
 				const auto bind_statement_type = s->_bindtype;
 				const auto bind_statement_mutable_tag_flag = s->_bind_as_mutable_tag;
 
-				const auto new_value = result_value.get_literal();
-
 				//	If we have a type or we have the mutable-flag, then this statement is a bind.
 				bool is_bind = bind_statement_type.is_null() == false || bind_statement_mutable_tag_flag;
 
@@ -227,6 +230,7 @@ namespace {
 				//	mutable a = 10
 				//	mutable = 10
 				if(is_bind){
+					const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
 					const auto value_exists_in_env = vm2._call_stack.back()->_values.count(name) > 0;
 
 					if(value_exists_in_env){
@@ -235,17 +239,15 @@ namespace {
 
 					//	Deduced bind type -- use new value's type.
 					if(bind_statement_type.is_null()){
-						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, bind_statement_mutable_tag_flag);
+						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
 					}
 
 					//	Explicit bind-type -- make sure source + dest types match.
 					else{
-						const auto retyped_value = improve_value_type(new_value, bind_statement_type);
-
 						if(bind_statement_type != retyped_value.get_type()){
 							throw std::runtime_error("Types not compatible in bind.");
 						}
-						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, bind_statement_mutable_tag_flag);
+						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
 					}
 				}
 
@@ -255,14 +257,16 @@ namespace {
 					const auto existing_value_deep_ptr = resolve_env_variable(vm2, name);
 					const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
 
+
 					//	Mutate!
 					if(existing_value_deep_ptr){
 						if(existing_variable_is_mutable){
 							const auto existing_value_type = existing_value_deep_ptr->first.get_type();
-							if(existing_value_type != new_value.get_type()){
+							const auto retyped_value = improve_value_type(result_value.get_literal(), existing_value_type);
+							if(existing_value_type != retyped_value.get_type()){
 								throw std::runtime_error("Types not compatible in bind.");
 							}
-							*existing_value_deep_ptr = std::pair<value_t, bool>(new_value, existing_variable_is_mutable);
+							*existing_value_deep_ptr = std::pair<value_t, bool>(retyped_value, existing_variable_is_mutable);
 						}
 						else{
 							throw std::runtime_error("Cannot assign to immutable identifier.");
@@ -271,6 +275,7 @@ namespace {
 
 					//	Deduce type and bind it -- to local env.
 					else{
+						const auto new_value = result_value.get_literal();
 						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
 					}
 				}

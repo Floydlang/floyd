@@ -1126,7 +1126,7 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 		[string] a = [];
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([null]())"	}	));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]())"	}	));
 }
 
 #if false
@@ -1327,6 +1327,17 @@ QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
 		R"([string:int]("one": 1,"two": 2))",
+	}	));
+}
+
+QUARK_UNIT_TEST_VIP("dict", "[:]", "", ""){
+	const auto vm = run_global(R"(
+		mutable [string:int] a = [:];
+		a = [:];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]())",
 	}	));
 }
 
