@@ -746,15 +746,18 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 
 //////////////////////////		HOST FUNCTION - assert()
 
-/*
 QUARK_UNIT_TESTQ("run_global()", ""){
-	const auto r = run_global(
-		R"(
-			assert(1 == 2);
-			print("A");
-		)"
-	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Assertion failed.", "A" }));
+	try{
+		const auto r = run_global(
+			R"(
+				assert(1 == 2);
+			)"
+		);
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+//		QUARK_UT_VERIFY((r._print_output == vector<string>{ "Assertion failed.", "A" }));
+	}
 }
 
 QUARK_UNIT_TESTQ("run_global()", ""){
@@ -766,7 +769,6 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A" }));
 }
-*/
 
 
 //////////////////////////		HOST FUNCTION - get_time_of_day()
@@ -1015,6 +1017,425 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 }
 
 
+
+//////////////////////////		STRING
+
+
+
+//??? add tests for equality.
+
+QUARK_UNIT_TEST("string", "size()", "string", "0"){
+	const auto vm = run_global(R"(
+		assert(size("") == 0);
+	)");
+}
+QUARK_UNIT_TEST("string", "size()", "string", "24"){
+	const auto vm = run_global(R"(
+		assert(size("How long is this string?") == 24);
+	)");
+}
+
+QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
+	const auto vm = run_global(R"(
+		a = push_back("one", "two");
+		assert(a == "onetwo");
+	)");
+}
+
+QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
+	const auto vm = run_global(R"(
+		a = update("hello", 1, "z");
+		assert(a == "hzllo");
+	)");
+}
+
+
+QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
+	const auto vm = run_global(R"(
+		assert(subset("abc", 0, 3) == "abc");
+		assert(subset("abc", 1, 3) == "bc");
+		assert(subset("abc", 0, 0) == "");
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
+	const auto vm = run_global(R"(
+		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all");
+	)");
+}
+// ### test pos limiting and edge cases.
+
+
+
+//////////////////////////		VECTOR
+
+
+/*
+QUARK_UNIT_TEST("vector", "vector()", "ints", "valid vector"){
+	const auto vm = run_global(R"(
+		a = vector(int, 1, 2);
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"[int](1,2)"	}	));
+}
+
+QUARK_UNIT_TEST("vector", "[]", "ints", "valid readback"){
+	const auto vm = run_global(R"(
+		a = vector(int, 1, 2);
+		print(a[0]);
+		print(a[1]);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"1", "2"	}	));
+}
+
+QUARK_UNIT_TEST("vector", "vector()", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = vector(string, "one", "two");
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+}
+*/
+
+QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = ["one", "two"];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+}
+
+QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = [];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([null]())"	}	));
+}
+
+QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		[string] a = ["one", "two"];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+}
+
+QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
+	const auto vm = run_global(R"(
+		[string] a = [];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([null]())"	}	));
+}
+
+#if false
+//	[string]() -- requires TYPE(EXPRESSION) conversion expressions.
+QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = [string]("one", "two");
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
+}
+#endif
+
+
+QUARK_UNIT_TEST("vector", "=", "strings", "valid vector"){
+	const auto vm = run_global(R"(
+		a = ["one", "two"];
+		b = a;
+		assert(a == b);
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string]("one","two"))",
+		R"([string]("one","two"))"
+	}	));
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "two"] == ["one", "two"]) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert(([1,2,3,4] == [1,2,3,4]) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert(([] == []) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "==", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "three"] == ["one", "two"]) == false);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "<", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "two"] < ["one", "two"]) == false);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "<", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "a"] < ["one", "two"]) == true);
+	)");
+}
+QUARK_UNIT_TEST("vector", "<", "strings", ""){
+	const auto vm = run_global(R"(
+		assert((["one", "a"] < ["one", "two"]) == true);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
+	try{
+		const auto vm = run_global(R"(
+			[string] a = ["one", "two"];
+			assert(size(a) == 0);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
+	const auto vm = run_global(R"(
+		[string] a = [];
+		assert(size(a) == 0);
+	)");
+}
+QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
+	const auto vm = run_global(R"(
+		[string] a = ["one", "two"];
+		assert(size(a) == 2);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
+	const auto vm = run_global(R"(
+		[string] a = [] + [];
+		assert(a == []);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
+	const auto vm = run_global(R"(
+		[string] a = ["one"] + ["two"];
+		assert(a == ["one", "two"]);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
+	const auto vm = run_global(R"(
+		[string] a = push_back(["one"], "two");
+		assert(a == ["one", "two"]);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "find()", "vector", "correct return"){
+	const auto vm = run_global(R"(
+		assert(find([1,2,3], 4) == -1);
+		assert(find([1,2,3], 1) == 0);
+		assert(find([1,2,2,2,3], 2) == 1);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
+	const auto vm = run_global(R"(
+		assert(find("hello, world", "he") == 0);
+		assert(find("hello, world", "e") == 1);
+		assert(find("hello, world", "x") == -1);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
+	const auto vm = run_global(R"(
+		assert(subset([10,20,30], 0, 3) == [10,20,30]);
+		assert(subset([10,20,30], 1, 3) == [20,30]);
+		assert(subset([10,20,30], 0, 0) == []);
+	)");
+}
+
+QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
+	const auto vm = run_global(R"(
+		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6]);
+	)");
+}
+// ### test pos limiting and edge cases.
+
+
+QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without side effect on original vector"){
+	const auto vm = run_global(R"(
+		a = [ "one", "two", "three"];
+		b = update(a, 1, "zwei");
+		print(a);
+		print(b);
+		assert(a == ["one","two","three"]);
+		assert(b == ["one","zwei","three"]);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string]("one","two","three"))",
+		R"([string]("one","zwei","three"))"
+	}	));
+}
+
+
+//////////////////////////		DICT
+
+
+
+QUARK_UNIT_TEST("dict", "construct", "", ""){
+	const auto vm = run_global(R"(
+		[string: int] a = ["one": 1, "two": 2];
+		assert(size(a) == 2);
+	)");
+}
+QUARK_UNIT_TEST("dict", "[]", "", ""){
+	const auto vm = run_global(R"(
+		[string: int] a = ["one": 1, "two": 2];
+		print(a["one"]);
+		print(a["two"]);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		"1",
+		"2"
+	}	));
+}
+
+
+QUARK_UNIT_TEST("dict", "[:]", "", ""){
+	const auto vm = run_global(R"(
+		a = [:];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:null]())",
+	}	));
+}
+
+
+QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
+	const auto vm = run_global(R"(
+		a = ["one": 1, "two": 2];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]("one": 1,"two": 2))",
+	}	));
+}
+
+QUARK_UNIT_TEST("dict", "==", "", ""){
+	const auto vm = run_global(R"(
+		assert((["one": 1, "two": 2] == ["one": 1, "two": 2]) == true);
+	)");
+}
+QUARK_UNIT_TEST("dict", "==", "", ""){
+	const auto vm = run_global(R"(
+		assert((["one": 1, "two": 2] == ["two": 2]) == false);
+	)");
+}
+QUARK_UNIT_TEST("dict", "==", "", ""){
+	const auto vm = run_global(R"(
+		assert((["one": 2, "two": 2] == ["one": 1, "two": 2]) == false);
+	)");
+}
+QUARK_UNIT_TEST("dict", "==", "", ""){
+	const auto vm = run_global(R"(
+		assert((["one": 1, "two": 2] < ["one": 1, "two": 2]) == false);
+	)");
+}
+QUARK_UNIT_TEST("dict", "==", "", ""){
+	const auto vm = run_global(R"(
+		assert((["one": 1, "two": 1] < ["one": 1, "two": 2]) == true);
+	)");
+}
+
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+	const auto vm = run_global(R"(
+		assert(size([:]) == 0);
+	)");
+}
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
+	const auto vm = run_global(R"(
+		print([:]);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:null]())",
+	}	));
+}
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+	const auto vm = run_global(R"(
+		assert(size(["one":1]) == 1);
+	)");
+}
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+	const auto vm = run_global(R"(
+		assert(size(["one":1, "two":2]) == 2);
+	)");
+}
+
+QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side effect on original dict"){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2];
+		b = update(a, "three", 3);
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]("one": 1,"two": 2))",
+		R"([string:int]("one": 1,"three": 3,"two": 2))"
+	}	));
+}
+
+QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2, "three" : 3];
+		b = update(a, "three", 333);
+		print(a);
+		print(b);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]("one": 1,"three": 3,"two": 2))",
+		R"([string:int]("one": 1,"three": 333,"two": 2))"
+	}	));
+}
+
+
+QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
+	const auto vm = run_global(R"(
+		a = update([:], "one", 1);
+		b = update(a, "two", 2);
+		print(b);
+		assert(a == ["one": 1]);
+		assert(b == ["one": 1, "two": 2]);
+	)");
+}
+
+
+QUARK_UNIT_TEST("dict", "exists()", "", ""){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2, "three" : 3];
+		assert(exists(a, "two") == true);
+		assert(exists(a, "four") == false);
+	)");
+}
+
+QUARK_UNIT_TEST("dict", "erase()", "", ""){
+	const auto vm = run_global(R"(
+		a = [ "one": 1, "two": 2, "three" : 3];
+		b = erase(a, "one");
+		assert(b == [ "two": 2, "three" : 3]);
+	)");
+}
+
+
+
 //////////////////////////		STRUCTS
 
 
@@ -1096,7 +1517,6 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 	}	));
 }
 
-
 QUARK_UNIT_TESTQ("run_main()", "return struct from function"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
@@ -1110,8 +1530,6 @@ QUARK_UNIT_TESTQ("run_main()", "return struct from function"){
 		"struct color {int red=100,int green=101,int blue=102}",
 	}	));
 }
-
-
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 	const auto vm = run_global(R"(
@@ -1218,424 +1636,6 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 		"struct image {color back=struct color {int red=0,int green=100,int blue=200},color front=struct color {int red=0,int green=3,int blue=0}}"
 	}	));
 }
-
-//////////////////////////		STRING
-
-
-//??? add tests for equality.
-
-QUARK_UNIT_TEST("string", "size()", "string", "0"){
-	const auto vm = run_global(R"(
-		assert(size("") == 0);
-	)");
-}
-QUARK_UNIT_TEST("string", "size()", "string", "24"){
-	const auto vm = run_global(R"(
-		assert(size("How long is this string?") == 24);
-	)");
-}
-
-QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
-	const auto vm = run_global(R"(
-		a = push_back("one", "two");
-		assert(a == "onetwo");
-	)");
-}
-
-QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
-	const auto vm = run_global(R"(
-		a = update("hello", 1, "z");
-		assert(a == "hzllo");
-	)");
-}
-
-
-QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
-	const auto vm = run_global(R"(
-		assert(subset("abc", 0, 3) == "abc");
-		assert(subset("abc", 1, 3) == "bc");
-		assert(subset("abc", 0, 0) == "");
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
-	const auto vm = run_global(R"(
-		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all");
-	)");
-}
-// ### test pos limiting and edge cases.
-
-
-
-//////////////////////////		VECTOR
-
-
-
-QUARK_UNIT_TEST("vector", "vector()", "ints", "valid vector"){
-	const auto vm = run_global(R"(
-		a = vector(int, 1, 2);
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"[int](1,2)"	}	));
-}
-
-QUARK_UNIT_TEST("vector", "[]", "ints", "valid readback"){
-	const auto vm = run_global(R"(
-		a = vector(int, 1, 2);
-		print(a[0]);
-		print(a[1]);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"1", "2"	}	));
-}
-
-QUARK_UNIT_TEST("vector", "vector()", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		a = vector(string, "one", "two");
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
-}
-
-QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		a = ["one", "two"];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
-}
-
-/*
-QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		a = [];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
-}
-*/
-
-QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		[string] a = ["one", "two"];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
-}
-
-QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
-	const auto vm = run_global(R"(
-		[string] a = [];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([null]())"	}	));
-}
-
-#if false
-//	[string]() -- requires TYPE(EXPRESSION) conversion expressions.
-QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		a = [string]("one", "two");
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
-}
-#endif
-
-
-QUARK_UNIT_TEST("vector", "=", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		a = ["one", "two"];
-		b = a;
-		assert(a == b);
-		print(a);
-		print(b);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string]("one","two"))",
-		R"([string]("one","two"))"
-	}	));
-}
-QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
-		assert((["one", "two"] == ["one", "two"]) == true);
-	)");
-}
-QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
-		assert(([1,2,3,4] == [1,2,3,4]) == true);
-	)");
-}
-QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
-		assert(([] == []) == true);
-	)");
-}
-QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
-		assert((["one", "three"] == ["one", "two"]) == false);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "<", "strings", ""){
-	const auto vm = run_global(R"(
-		assert((["one", "two"] < ["one", "two"]) == false);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "<", "strings", ""){
-	const auto vm = run_global(R"(
-		assert((["one", "a"] < ["one", "two"]) == true);
-	)");
-}
-QUARK_UNIT_TEST("vector", "<", "strings", ""){
-	const auto vm = run_global(R"(
-		assert((["one", "a"] < ["one", "two"]) == true);
-	)");
-}
-
-
-
-QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
-	try{
-		const auto vm = run_global(R"(
-			[string] a = ["one", "two"];
-			assert(size(a) == 0);
-		)");
-		QUARK_UT_VERIFY(false);
-	}
-	catch(...){
-	}
-}
-
-QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
-	const auto vm = run_global(R"(
-		[string] a = [];
-		assert(size(a) == 0);
-	)");
-}
-QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
-	const auto vm = run_global(R"(
-		[string] a = ["one", "two"];
-		assert(size(a) == 2);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
-	const auto vm = run_global(R"(
-		[string] a = [] + [];
-		assert(a == []);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
-	const auto vm = run_global(R"(
-		[string] a = ["one"] + ["two"];
-		assert(a == ["one", "two"]);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
-	const auto vm = run_global(R"(
-		[string] a = push_back(["one"], "two");
-		assert(a == ["one", "two"]);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "find()", "vector", "correct return"){
-	const auto vm = run_global(R"(
-		assert(find([1,2,3], 4) == -1);
-		assert(find([1,2,3], 1) == 0);
-		assert(find([1,2,2,2,3], 2) == 1);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
-	const auto vm = run_global(R"(
-		assert(find("hello, world", "he") == 0);
-		assert(find("hello, world", "e") == 1);
-		assert(find("hello, world", "x") == -1);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
-	const auto vm = run_global(R"(
-		assert(subset([10,20,30], 0, 3) == [10,20,30]);
-		assert(subset([10,20,30], 1, 3) == [20,30]);
-		assert(subset([10,20,30], 0, 0) == []);
-	)");
-}
-
-QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
-	const auto vm = run_global(R"(
-		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6]);
-	)");
-}
-// ### test pos limiting and edge cases.
-
-
-QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without side effect on original vector"){
-	const auto vm = run_global(R"(
-		a = [ "one", "two", "three"];
-		b = update(a, 1, "zwei");
-		print(a);
-		print(b);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string]("one","two","three"))",
-		R"([string]("one","zwei","three"))"
-	}	));
-}
-
-
-
-//////////////////////////		DICT
-
-QUARK_UNIT_TEST("dict", "construct", "", ""){
-	const auto vm = run_global(R"(
-		[string: int] a = ["one": 1, "two": 2];
-		assert(size(a) == 2);
-	)");
-}
-QUARK_UNIT_TEST("dict", "[]", "", ""){
-	const auto vm = run_global(R"(
-		[string: int] a = ["one": 1, "two": 2];
-		print(a["one"]);
-		print(a["two"]);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"1",
-		"2"
-	}	));
-}
-
-
-QUARK_UNIT_TEST("dict", "[:]", "", ""){
-	const auto vm = run_global(R"(
-		a = [:];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string:null]())",
-	}	));
-}
-
-
-QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
-	const auto vm = run_global(R"(
-		a = ["one": 1, "two": 2];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string:int]("one": 1,"two": 2))",
-	}	));
-}
-
-QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 2] == ["one": 1, "two": 2]) == true);
-	)");
-}
-QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 2] == ["two": 2]) == false);
-	)");
-}
-QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
-		assert((["one": 2, "two": 2] == ["one": 1, "two": 2]) == false);
-	)");
-}
-QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 2] < ["one": 1, "two": 2]) == false);
-	)");
-}
-QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 1] < ["one": 1, "two": 2]) == true);
-	)");
-}
-
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
-	const auto vm = run_global(R"(
-		assert(size([:]) == 0);
-	)");
-}
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
-	const auto vm = run_global(R"(
-		print([:]);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string:null]())",
-	}	));
-}
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
-	const auto vm = run_global(R"(
-		assert(size(["one":1]) == 1);
-	)");
-}
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
-	const auto vm = run_global(R"(
-		assert(size(["one":1, "two":2]) == 2);
-	)");
-}
-
-
-
-QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side effect on original dict"){
-	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2];
-		b = update(a, "three", 3);
-		print(a);
-		print(b);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string:int]("one": 1,"two": 2))",
-		R"([string:int]("one": 1,"three": 3,"two": 2))"
-	}	));
-}
-
-QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
-	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2, "three" : 3];
-		b = update(a, "three", 333);
-		print(a);
-		print(b);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string:int]("one": 1,"three": 3,"two": 2))",
-		R"([string:int]("one": 1,"three": 333,"two": 2))"
-	}	));
-}
-
-
-QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
-	const auto vm = run_global(R"(
-		a = update([:], "one", 1);
-		b = update(a, "two", 2);
-		print(b);
-		assert(a == ["one": 1]);
-		assert(b == ["one": 1, "two": 2]);
-	)");
-}
-
-
-QUARK_UNIT_TEST("dict", "exists()", "", ""){
-	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2, "three" : 3];
-		assert(exists(a, "two") == true);
-		assert(exists(a, "four") == false);
-	)");
-}
-
-QUARK_UNIT_TEST("dict", "erase()", "", ""){
-	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2, "three" : 3];
-		b = erase(a, "one");
-		assert(b == [ "two": 2, "three" : 3]);
-	)");
-}
-
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.

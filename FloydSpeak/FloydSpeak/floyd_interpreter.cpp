@@ -1592,7 +1592,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 }
 
 
-
+/*
 //		vector(int)
 //		vector(int, 1, 2, 3)
 std::pair<interpreter_t, value_t> host__vector(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -1619,6 +1619,7 @@ std::pair<interpreter_t, value_t> host__vector(const interpreter_t& vm, const st
 	const auto v = make_vector_value(element_type, elements);
 	return {vm, v};
 }
+*/
 
 std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1901,7 +1902,7 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {}) },
 	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
+//	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
 	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "exists", host__exists, typeid_t::make_function(typeid_t::make_bool(), {}) },
