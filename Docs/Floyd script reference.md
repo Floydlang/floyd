@@ -1,16 +1,21 @@
-GOALS
+# GOALS
 
 1) Take best part of imperative and functional languages and destil it down to the most important mechanisms.
+
 2) Make it execute extremely quickly.
+
 3) Easy to learn for new programmers, easy to enjoy for experienced programmers.
+
 4) Have explict and sold way to do each thing - no need to reinvent basics or invent policies.
+
 5) Robustness.
+
 6) Composable: build huge programs (millions of lines of code).
 
 
 # Floyd Script Reference
 
-Floyd Script is a fast and modern C-like program language that tries to make writing correct programs simpler and faster than any other programming language.
+Floyd Script is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
 
 It's focus is composability, minimalism and proven programming techniques, like pure functions and immutability.
 
