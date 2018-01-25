@@ -1,0 +1,78 @@
+
+
+
+Base64
+
+
+
+========	markdown
+
+
+
+========	examples values
+
+white = pixel_t(255, 255, 255);
+gray50 = pixel_t(128, 128, 128);
+black = pixel_t(0, 0, 0);
+red = pixel_t(255, 0, 0);
+
+empty = image_t(0, 0, []);
+gradient = make_gradient(640, 480);
+
+//	Uses default JSON representation of image_t
+dog = unpack_json(
+	image_t,
+	{
+		"width": 4, "height": 3, "pixels": [
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0}
+		]
+	}
+)
+
+cat = unpack_json(unpack_base64(
+	"UmVwdWJsaWthbmVybmFzIGxlZGFyZSBpIHNlbmF0ZW4sIE1pdGNoIE1jQ29ubmVsbCwgdmlsbGUg
+	dGlkaWdhcmVs5GdnYSBvbXL2c3RuaW5nZW4gdGlsbCBzZW50IHDlIHP2bmRhZ3NrduRsbGVuLCBt
+	ZW4gZGV0IHNhdHRlIGRlbW9rcmF0aXNrZSBtaW5vcml0ZXRzbGVkYXJlbiBDaHVjayBTY2h1bWVy
+	IHN0b3BwIGb2ci4gU2NodW1lciBz5GdlciBhdHQgdHJvdHMgZvZyaGFuZGxpbmdhcm5hIJRoYXIg
+	dmkg5G5udSBhdHQgbuUgZW4g9nZlcmVuc2tvbW1lbHNlIHDlIGVuIHbkZyBzb20g5HIgYWNjZXB0
+	YWJlbCBm9nIgYuVkYSBzaWRvcpQuIJRIYW4ga2FsbGFyIGzkZ2V0IGb2ciBUcnVtcCBzaHV0ZG93
+	bpQgb2NoIFZpdGEgaHVzZXQga2FsbGFyIGRldCCUU2NodW1lciBzaHV0ZG93bpQuDQoNCg=="
+))
+
+========	scenarios
+
+{
+	function_under_test: make_filled()
+	scenario: Make even-width, even-height image
+	expected: Resulting image has exact dimensions
+	expression: make_filled(4, 2, pixel_t(255,255,0))
+	correct_result: image_t(4, 4, [pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0)])
+},
+{
+	function_under_test: make_filled()
+	scenario: Make even-width, even-height image
+	expression: make_filled(4, 2, pixel_t(255,255,0))
+	expected: image_t(4, 4, [pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0), pixel_t(255,255,0)])
+}
+
+========	implementation
+
+struct pixel_t {
+	int red;
+	int green;
+	int blue;
+};
+
+struct image_t {
+	int width;
+	int height;
+	[pixel_t] pixels;
+};
+
+
+pixel_t make_filled(int width, int height, pixel_t fill){
+	...
+}
