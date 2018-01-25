@@ -141,18 +141,6 @@ bool is_simple_expression__2(const std::string& op){
 
 
 
-
-
-
-void trace(const expression_t& e){
-	QUARK_ASSERT(e.check_invariant());
-	const auto json = expression_to_json(e);
-	const auto s = json_to_compact_string(json);
-	QUARK_TRACE(s);
-}
-
-
-
 ////////////////////////////////////////////		JSON SUPPORT
 
 

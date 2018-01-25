@@ -2012,7 +2012,7 @@ bool interpreter_t::check_invariant() const {
 ast_t program_to_ast2(const string& program){
 	const auto pass1 = floyd::parse_program2(program);
 	const auto pass2 = run_pass2(pass1);
-	trace(pass2);
+//	QUARK_TRACE(json_to_pretty_string(ast_to_json(pass2)));
 	return pass2;
 }
 

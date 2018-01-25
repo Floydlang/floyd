@@ -289,9 +289,6 @@ namespace floyd {
 
 	statement_t make__expression_statement(const expression_t& expression);
 
-
-	void trace(const statement_t& s);
-
 	json_t statement_to_json(const statement_t& e);
 	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
 

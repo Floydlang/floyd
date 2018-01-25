@@ -165,7 +165,6 @@ namespace floyd {
 		public: floyd::typeid_t _element_type;
 	};
 
-	void trace(const vector_def_t& e);
 	json_t vector_def_to_json(const vector_def_t& s);
 
 
@@ -185,7 +184,6 @@ namespace floyd {
 		public: floyd::typeid_t _value_type;
 	};
 
-	void trace(const dict_def_t& e);
 	json_t dict_def_to_json(const dict_def_t& s);
 
 
@@ -804,7 +802,6 @@ namespace floyd {
 		return value_t(f);
 	}
 
-	void trace(const value_t& e);
 	json_t value_to_normalized_json(const value_t& v);
 	json_t value_and_type_to_normalized_json(const value_t& v);
 	value_t make_test_func();

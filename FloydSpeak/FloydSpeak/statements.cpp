@@ -76,17 +76,6 @@ namespace floyd {
 
 
 
-	void trace(const statement_t& s){
-		if(s._return){
-			QUARK_SCOPED_TRACE("return_statement_t");
-			trace(s._return->_expression);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-
 
 	//////////////////////////////////////		statement_t
 

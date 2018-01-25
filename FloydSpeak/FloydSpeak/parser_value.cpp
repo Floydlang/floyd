@@ -145,13 +145,6 @@ std::string to_compact_string(const dict_instance_t& instance){
 		return true;
 	}
 
-//???delete
-	void trace(const vector_def_t& e){
-		QUARK_ASSERT(e.check_invariant());
-		QUARK_SCOPED_TRACE("vector_def_t");
-		QUARK_TRACE_SS("element_type: " << typeid_to_compact_string(e._element_type));
-	}
-
 
 
 
@@ -422,12 +415,6 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 
 	//////////////////////////////////////////////////		value_t
 
-
-void trace(const value_t& e){
-	QUARK_ASSERT(e.check_invariant());
-
-	QUARK_TRACE("value_t: " + e.value_and_type_to_string());
-}
 
 //??? swap(), operator=, copy-constructor.
 

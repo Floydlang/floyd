@@ -595,10 +595,6 @@ expression_type token_to_expression_type(const string& op){
 		return (_type == other._type) && (_name == other._name);
 	}
 
-	void trace(const member_t& member){
-		QUARK_TRACE("<member> type: <" + typeid_to_compact_string(member._type) + "> name: \"" + member._name + "\"");
-	}
-
 
 
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m){

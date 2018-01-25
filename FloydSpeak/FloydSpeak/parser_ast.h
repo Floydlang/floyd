@@ -42,19 +42,8 @@ namespace floyd {
 		std::vector<std::shared_ptr<statement_t> > _statements;
 	};
 
-	void trace(const ast_t& program);
 	json_t ast_to_json(const ast_t& ast);
 
-
-	//////////////////////////////////////////////////		trace_vec()
-
-
-	template<typename T> void trace_vec(const std::string& title, const std::vector<T>& v){
-		QUARK_SCOPED_TRACE(title);
-		for(const auto i: v){
-			trace(i);
-		}
-	}
 
 }	//	floyd
 

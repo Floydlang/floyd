@@ -523,8 +523,6 @@ namespace floyd {
 		public: std::string _name;
 	};
 
-	void trace(const member_t& member);
-
 
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 	json_t members_to_json(const std::vector<member_t>& members);

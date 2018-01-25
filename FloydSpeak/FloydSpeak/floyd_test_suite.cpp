@@ -1660,7 +1660,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 
 
 
-QUARK_UNIT_TEST_VIP("", "", "", ""){
+QUARK_UNIT_TEST("", "", "", ""){
 	const auto vm = run_global(R"(
 		start = get_time_of_day();
 		mutable b = 0;

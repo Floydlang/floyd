@@ -620,9 +620,6 @@ namespace floyd {
 	};
 
 
-
-	void trace(const expression_t& e);
-
 	/*
 		An expression is a json array where entries may be other json arrays.
 		["+", ["+", 1, 2], ["k", 10]]
