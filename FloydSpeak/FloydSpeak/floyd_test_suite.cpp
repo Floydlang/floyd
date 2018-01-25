@@ -1308,6 +1308,16 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 	}	));
 }
 
+QUARK_UNIT_TEST("dict", "", "", ""){
+	const auto vm = run_global(R"(
+		mutable a = [:];
+		a = ["hello": 1];
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+		R"([string:int]("hello": 1))",
+	}	));
+}
 
 QUARK_UNIT_TEST("dict", "[:]", "", ""){
 	const auto vm = run_global(R"(
@@ -1330,7 +1340,7 @@ QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
 	}	));
 }
 
-QUARK_UNIT_TEST_VIP("dict", "[:]", "", ""){
+QUARK_UNIT_TEST("dict", "[:]", "", ""){
 	const auto vm = run_global(R"(
 		mutable [string:int] a = [:];
 		a = [:];
@@ -1647,6 +1657,25 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 		"struct image {color back=struct color {int red=0,int green=100,int blue=200},color front=struct color {int red=0,int green=3,int blue=0}}"
 	}	));
 }
+
+
+
+QUARK_UNIT_TEST_VIP("", "", "", ""){
+	const auto vm = run_global(R"(
+		start = get_time_of_day();
+		mutable b = 0;
+		mutable t = [0];
+		for(i in 0...100){
+			b = b + 1;
+			t = push_back(t, b);
+		}
+		end = get_time_of_day();
+		print("Duration: " + to_string(end - start) + ", number = " + to_string(b));
+		print(t);
+	)");
+	QUARK_UT_VERIFY(true);
+}
+
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.

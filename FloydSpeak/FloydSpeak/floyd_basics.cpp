@@ -640,7 +640,7 @@ expression_type token_to_expression_type(const string& op){
 	json_t values_to_json_array(const std::vector<value_t>& values){
 		std::vector<json_t> r;
 		for(const auto i: values){
-			const auto j = value_to_json(i);
+			const auto j = value_to_normalized_json(i);
 			r.push_back(j);
 		}
 		return json_t::make_array(r);

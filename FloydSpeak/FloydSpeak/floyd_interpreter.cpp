@@ -261,12 +261,18 @@ namespace {
 					//	Mutate!
 					if(existing_value_deep_ptr){
 						if(existing_variable_is_mutable){
-							const auto existing_value_type = existing_value_deep_ptr->first.get_type();
-							const auto retyped_value = improve_value_type(result_value.get_literal(), existing_value_type);
-							if(existing_value_type != retyped_value.get_type()){
+							const auto existing_value = existing_value_deep_ptr->first;
+							const auto new_value = result_value.get_literal();
+
+							//	Let both existing & new values influence eachother to the exact type of the new variable.
+							//	Existing could be a [null]=[], or could new_value
+							const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
+							const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
+
+							if(existing_value2.get_type() != new_value2.get_type()){
 								throw std::runtime_error("Types not compatible in bind.");
 							}
-							*existing_value_deep_ptr = std::pair<value_t, bool>(retyped_value, existing_variable_is_mutable);
+							*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
 						}
 						else{
 							throw std::runtime_error("Cannot assign to immutable identifier.");
@@ -1176,7 +1182,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		std::map<string, json_t> values;
 		for(const auto&v: e->_values){
 		//??? INlcude mutable-flag?
-			const auto a = value_and_type_to_json(v.second.first);
+			const auto a = value_and_type_to_normalized_json(v.second.first);
 			const auto b = make_array_skip_nulls({
 				a.get_array_n(0),
 				a.get_array_n(1),

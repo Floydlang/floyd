@@ -540,14 +540,14 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 }
 
 
-json_t value_and_type_to_json(const value_t& v){
+json_t value_and_type_to_normalized_json(const value_t& v){
 	return json_t::make_array({
 		typeid_to_normalized_json(v.get_type()),
-		value_to_json(v)
+		value_to_normalized_json(v)
 	});
 }
 
-json_t value_to_json(const value_t& v){
+json_t value_to_normalized_json(const value_t& v){
 	if(v.is_null()){
 		return json_t();
 	}
@@ -575,21 +575,22 @@ json_t value_to_json(const value_t& v){
 		std::vector<json_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
 			const auto element_value = value->_elements[i];
-			result.push_back(value_to_json(element_value));
+			result.push_back(value_to_normalized_json(element_value));
 		}
 		return result;
 	}
 	else if(v.is_dict()){
-/*
-		const auto value = v.get_vector_value();
+		const auto value = v.get_dict_value();
 		std::vector<json_t> result;
-		for(int i = 0 ; i < value->_elements.size() ; i++){
-			const auto element_value = value->_elements[i];
-			result.push_back(value_to_json(element_value));
+		for(const auto e: value->_elements){
+			result.push_back(
+				json_t::make_array({
+					e.first,
+					value_to_normalized_json(e.second)
+				})
+			);
 		}
 		return result;
-*/
-//??? implement
 		return json_t("???");
 	}
 	else if(v.is_function()){
@@ -605,24 +606,24 @@ json_t value_to_json(const value_t& v){
 	}
 }
 
-QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t("hello")), json_t("hello"));
+QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
+	quark::ut_compare(value_to_normalized_json(value_t("hello")), json_t("hello"));
 }
 
-QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t(123)), json_t(123.0));
+QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
+	quark::ut_compare(value_to_normalized_json(value_t(123)), json_t(123.0));
 }
 
-QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t(true)), json_t(true));
+QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
+	quark::ut_compare(value_to_normalized_json(value_t(true)), json_t(true));
 }
 
-QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t(false)), json_t(false));
+QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
+	quark::ut_compare(value_to_normalized_json(value_t(false)), json_t(false));
 }
 
-QUARK_UNIT_TESTQ("value_to_json()", ""){
-	quark::ut_compare(value_to_json(value_t()), json_t());
+QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
+	quark::ut_compare(value_to_normalized_json(value_t()), json_t());
 }
 
 

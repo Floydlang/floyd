@@ -95,10 +95,13 @@ int main(int argc, const char * argv[]) {
 	std::cout << "Welcome to Floyd!" << std::endl;
 	while(true){
 		try {
-			std::cout << "floyd:";
+			std::cout << "floyd:" << std::flush;
 
 			std::string line;
-			std::getline (std::cin, line);
+			while(line == ""){
+				std::cin.clear();
+				std::getline (std::cin, line);
+			}
 
 			if(line == "vm"){
 				std::cout << json_to_pretty_string(floyd::interpreter_to_json(vm)) << std::endl;

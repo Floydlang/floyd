@@ -278,7 +278,7 @@ Closed range that starts with 1 and ends with 5.:
 
 ```
 	for (index in 1...5) {
-		print(index)
+		print(index);
 	}
 ```
 

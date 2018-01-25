@@ -61,7 +61,11 @@ namespace floyd {
 			}
 
 			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "k", value_to_json(_value), typeid_to_normalized_json(_value.get_type()) });
+				return json_t::make_array({
+					"k",
+					value_to_normalized_json(_value),
+					typeid_to_normalized_json(_value.get_type())
+				});
 			}
 
 

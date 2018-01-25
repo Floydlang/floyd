@@ -154,16 +154,6 @@ const string kProgram5 =
 	"	return 3;\n"
 	"}\n";
 
-const auto kProgram6 =
-	"struct pixel { string s; }"
-	"string main(){\n"
-	"	return \"\";"
-	"}\n";
-
-const auto kProgram7 =
-	"string main(){\n"
-	"	return p.s + a;"
-	"}\n";
 
 
 
