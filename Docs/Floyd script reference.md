@@ -416,7 +416,7 @@ You can append to vector together using the + operation.
 
 A collection that maps a key to a value. Unsorted. Like a C++ map. 
 
-You make a new dictionary and specify its elements liek this:
+You make a new dictionary and specify its elements like this:
 
 	[string: int] a = ["red": 0, "blue": 100,"green": 255];
 
@@ -424,7 +424,7 @@ or shorter:
 
 	b = ["red": 0, "blue": 100,"green": 255];
 
-Dictionarys always use string-keys. When you specify the type of dictionary you must always include "string".
+Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string".
 
 	struct test {
 		[string: int] _my_dict;
