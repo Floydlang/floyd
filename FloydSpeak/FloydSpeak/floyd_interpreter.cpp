@@ -2038,6 +2038,19 @@ std::pair<interpreter_t, floyd::value_t> run_main(const string& source, const ve
 	return { r.first, *r.second };
 }
 
+std::pair<interpreter_t, floyd::value_t> run_program(const ast_t& ast, const vector<floyd::value_t>& args){
+	auto vm = interpreter_t(ast);
+
+	const auto main_func = resolve_env_variable(vm, "main");
+	if(main_func == nullptr){
+		const auto r = call_function(vm, main_func->first, args);
+		return { r.first, *r.second };
+	}
+	else{
+		return { vm, value_t() };
+	}
+}
+
 
 
 

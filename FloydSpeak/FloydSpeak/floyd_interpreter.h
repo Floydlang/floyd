@@ -114,6 +114,8 @@ namespace floyd {
 		const std::vector<value_t>& args
 	);
 
+	std::pair<interpreter_t, floyd::value_t> run_program(const ast_t& ast, const std::vector<floyd::value_t>& args);
+
 	ast_t program_to_ast2(const std::string& program);
 
 
