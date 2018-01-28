@@ -21,6 +21,69 @@
 
 //////////////////////////////////////////////////		main()
 
+void run_repl(){
+	int print_pos = 0;
+	auto ast = floyd::program_to_ast2("");
+	auto vm = floyd::interpreter_t(ast);
+
+	std::cout << R"(Floyd 0.1 MIT.)" << std::endl;
+	std::cout << R"(Type "help", "copyight" or "license" for more informations!)" << std::endl;
+
+/*
+Python 2.7.10 (default, Jul 15 2017, 17:16:57)
+[GCC 4.2.1 Compatible Apple LLVM 9.0.0 (clang-900.0.31)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+*/
+
+
+	while(true){
+		try {
+			std::cout << "floyd:" << std::flush;
+
+			std::string line;
+			while(line == ""){
+				std::cin.clear();
+				std::getline (std::cin, line);
+			}
+
+			if(line == "vm"){
+				std::cout << json_to_pretty_string(floyd::interpreter_to_json(vm)) << std::endl;
+			}
+			else if(line == ""){
+			}
+			else if(line == "help"){
+				std::cout << "vm -- prints complete state of vm." << std::endl;
+			}
+			else if(line == "copyight"){
+				std::cout << "Copyright 2018 Marcus Zetterquist." << std::endl;
+			}
+			else if(line == "license"){
+				std::cout << "MIT license." << std::endl;
+			}
+			else{
+				const auto ast_json_pos = floyd::parse_statement(seq_t(line));
+				const auto statements = floyd::parser_statements_to_ast(
+					json_t::make_array({ast_json_pos.first})
+				);
+				const auto b = floyd::execute_statements(vm, statements);
+				while(print_pos < vm._print_output.size()){
+					std::cout << vm._print_output[print_pos] << std::endl;
+					print_pos++;
+				}
+			}
+		}
+		catch(const std::runtime_error& e){
+			std::cout << "Runtime error: " << e.what() << std::endl;
+		}
+		catch(...){
+			std::cout << "Runtime error." << std::endl;
+		}
+	}
+}
+
+void run_file(const std::string& source_file_rel_path){
+}
+
 
 
 int main(int argc, const char * argv[]) {
@@ -87,45 +150,11 @@ int main(int argc, const char * argv[]) {
 		return -1;
 	}
 
-
-	int print_pos = 0;
-	auto ast = floyd::program_to_ast2("");
-	auto vm = floyd::interpreter_t(ast);
-
-	std::cout << "Welcome to Floyd!" << std::endl;
-	while(true){
-		try {
-			std::cout << "floyd:" << std::flush;
-
-			std::string line;
-			while(line == ""){
-				std::cin.clear();
-				std::getline (std::cin, line);
-			}
-
-			if(line == "vm"){
-				std::cout << json_to_pretty_string(floyd::interpreter_to_json(vm)) << std::endl;
-			}
-			else if(line == ""){
-			}
-			else{
-				const auto ast_json_pos = floyd::parse_statement(seq_t(line));
-				const auto statements = floyd::parser_statements_to_ast(
-					json_t::make_array({ast_json_pos.first})
-				);
-				const auto b = floyd::execute_statements(vm, statements);
-				while(print_pos < vm._print_output.size()){
-					std::cout << vm._print_output[print_pos] << std::endl;
-					print_pos++;
-				}
-			}
-		}
-		catch(const std::runtime_error& e){
-			std::cout << "Runtime error: " << e.what() << std::endl;
-		}
-		catch(...){
-			std::cout << "Runtime error." << std::endl;
-		}
+	if(argc == 1){
+		run_repl();
+	}
+	else{
+		run_file(argv[1]);
 	}
 
 	return 0;
