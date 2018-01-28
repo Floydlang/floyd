@@ -43,6 +43,8 @@ namespace floyd {
 	//		- multiline comments withint /* ... */. Any number of nesting of comments allowed.
 	std::string skip_whitespace(const std::string& s);
 	seq_t skip_whitespace(const seq_t& s);
+	
+	std::pair<std::string, seq_t> skip_whitespace2(const seq_t& s);
 
 	//	Removes whitespace before AND AFTER.
 	std::string skip_whitespace_ends(const std::string& s);

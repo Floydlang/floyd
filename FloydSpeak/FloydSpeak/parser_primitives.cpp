@@ -39,7 +39,10 @@ using std::pair;
 
 
 std::string skip_whitespace(const string& s){
-	return skip_whitespace(seq_t(s)).str();
+	return skip_whitespace2(seq_t(s)).second.str();
+}
+seq_t skip_whitespace(const seq_t& s){
+	return skip_whitespace2(s).second;
 }
 
 //	Test where C++ lets you insert comments:
@@ -53,72 +56,114 @@ std::string skip_whitespace(const string& s){
 	/*xyz*/int my_global7 = 3;
 
 
-seq_t skip_whitespace(const seq_t& s){
-	string a;
-	seq_t p = s;
+std::pair<std::string, seq_t> while_multicomment(const seq_t& s){
+	QUARK_ASSERT(s.first(2) == "/*");
 
-	const auto wanted = whitespace_chars + "/";
-	while(!p.empty() && wanted.find(p.first1_char()) != string::npos){
-		const auto ch2 = p.first(2);
-		if(ch2 == "//"){
-			auto p2 = read_until(p.rest(2), "\n");
-			a = a + p2.first;
-			p = p2.second;
-		}
-		else if(ch2 == "/*"){
-			auto p2 = split_at(p.rest(2), "*/");
-			a = a + p2.first;
-			p = p2.second;
-		}
-		else{
+	auto p = s.rest(2);
+	string a = "";
+	while(!p.empty()){
+		//	Skip uninteresting chars.
+		while(!p.empty() && p.first(2) != "/*" && p.first(2) != "*/"){
 			a = a + p.first(1);
 			p = p.rest(1);
+		}
+
+		if(p.first(2) == "/*"){
+			const auto t = while_multicomment(p);
+			a = a + t.first;
+			p = t.second;
+		}
+		else if(p.first(2) == "*/"){
+			return { a, p.rest(2) };
+		}
+		else{
+			throw std::runtime_error("Unbalanaced comments /* ... */");
+		}
+	}
+	throw std::runtime_error("Unbalanaced comments /* ... */");
+}
+
+pair<string, seq_t> skip_whitespace2(const seq_t& s){
+	pair<string, seq_t> p = { "", s };
+
+	while(!p.second.empty()){
+		const auto ch2 = p.second.first(2);
+
+		//	Whitespace?
+		if(whitespace_chars.find(p.second.first1_char()) != string::npos){
+			p = { p.first + p.second.first(1), p.second.rest(1) };
+		}
+		else if(ch2 == "//"){
+			auto p2 = read_until(p.second.rest(2), "\n");
+			p = { p.first + p2.first, p2.second };
+		}
+		else if(ch2 == "/*"){
+			const auto px = while_multicomment(p.second);
+			p = { p.first + px.first, px.second };
+		}
+		else{
+			return p;
 		}
 	}
 
 	return p;
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("")) == seq_t(""));
+QUARK_UNIT_TEST("", "skip_whitespace2()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t(" ")) == seq_t(""));
+QUARK_UNIT_TEST("", "skip_whitespace2()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t(" ")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("\t")) == seq_t(""));
+QUARK_UNIT_TEST("", "skip_whitespace2(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("\t")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("int blob()")) == seq_t("int blob()"));
+QUARK_UNIT_TEST("", "skip_whitespace2(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("int blob()")).second == seq_t("int blob()"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("\t\t\t int blob()")) == seq_t("int blob()"));
-}
-
-
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("//xyz")) == seq_t(""));
-}
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("//xyz\nabc")) == seq_t("abc"));
-}
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("   \t//xyz \t\n\t abc")) == seq_t("abc"));
+QUARK_UNIT_TEST("", "skip_whitespace2(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("\t\t\t int blob()")).second == seq_t("int blob()"));
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("/**/xyz")) == seq_t("xyz"));
+
+QUARK_UNIT_TEST("", "skip_whitespace2()", "//", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("//xyz")).second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("/*abc*/xyz")) == seq_t("xyz"));
+QUARK_UNIT_TEST("", "skip_whitespace2()", "//", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("//xyz\nabc")).second == seq_t("abc"));
 }
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("/*abc*/xyz")) == seq_t("xyz"));
-}
-QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(seq_t("   \t/*a \tbc*/   \txyz")) == seq_t("xyz"));
+QUARK_UNIT_TEST("", "skip_whitespace2()", "//", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("   \t//xyz \t\n\t abc")).second == seq_t("abc"));
 }
 
+QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/**/xyz")).second == seq_t("xyz"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*abc*/xyz")).second == seq_t("xyz"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("   \t/*a \tbc*/   \txyz")).second == seq_t("xyz"));
+}
+
+QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
+	try {
+		QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*xyz")).second == seq_t(""));
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...) {
+	}
+}
+
+QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*/**/*/xyz")).second == seq_t("xyz"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
+	QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*xyz/*abc*/123*/789")).second == seq_t("789"));
+}
 
 
 
