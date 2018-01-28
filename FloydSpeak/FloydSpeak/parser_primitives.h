@@ -38,10 +38,9 @@ namespace floyd {
 	//////////////////////////////////////////////////		Text parsing primitives, Floyd specific
 
 
-	/*
-		first: skipped whitespaces
-		second: all / any text after whitespace.
-	*/
+	//	Also skips
+	//		- one-line comments starting with "//"
+	//		- multiline comments withint /* ... */. Any number of nesting of comments allowed.
 	std::string skip_whitespace(const std::string& s);
 	seq_t skip_whitespace(const seq_t& s);
 

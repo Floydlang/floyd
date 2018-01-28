@@ -39,29 +39,88 @@ using std::pair;
 
 
 std::string skip_whitespace(const string& s){
-	return read_while(seq_t(s), whitespace_chars).second.get_s();
+	return skip_whitespace(seq_t(s)).str();
 }
 
-QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace("") == "");
-}
-QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace(" ") == "");
-}
-QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace("\t") == "");
-}
-QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace("int blob()") == "int blob()");
-}
-QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
-	QUARK_TEST_VERIFY(skip_whitespace("\t\t\t int blob()") == "int blob()");
-}
+//	Test where C++ lets you insert comments:
+
+	int my_global1 = 3;/*xyz*/
+	int my_global2 = 3 /*xyz*/;
+	int my_global3 = /*xyz*/ 3;
+	int my_global4 /*xyz*/ = 3;
+	int /*xyz*/ my_global5 = 3;
+	int /*xyz*/ my_global6 = 3;
+	/*xyz*/int my_global7 = 3;
 
 
 seq_t skip_whitespace(const seq_t& s){
-	return read_while(s, whitespace_chars).second;
+	string a;
+	seq_t p = s;
+
+	const auto wanted = whitespace_chars + "/";
+	while(!p.empty() && wanted.find(p.first1_char()) != string::npos){
+		const auto ch2 = p.first(2);
+		if(ch2 == "//"){
+			auto p2 = read_until(p.rest(2), "\n");
+			a = a + p2.first;
+			p = p2.second;
+		}
+		else if(ch2 == "/*"){
+			auto p2 = split_at(p.rest(2), "*/");
+			a = a + p2.first;
+			p = p2.second;
+		}
+		else{
+			a = a + p.first(1);
+			p = p.rest(1);
+		}
+	}
+
+	return p;
 }
+
+QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("")) == seq_t(""));
+}
+QUARK_UNIT_TEST("", "skip_whitespace()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t(" ")) == seq_t(""));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("\t")) == seq_t(""));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("int blob()")) == seq_t("int blob()"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("\t\t\t int blob()")) == seq_t("int blob()"));
+}
+
+
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("//xyz")) == seq_t(""));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("//xyz\nabc")) == seq_t("abc"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("   \t//xyz \t\n\t abc")) == seq_t("abc"));
+}
+
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("/**/xyz")) == seq_t("xyz"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("/*abc*/xyz")) == seq_t("xyz"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("/*abc*/xyz")) == seq_t("xyz"));
+}
+QUARK_UNIT_TEST("", "skip_whitespace(seq_t()", "", ""){
+	QUARK_TEST_VERIFY(skip_whitespace(seq_t("   \t/*a \tbc*/   \txyz")) == seq_t("xyz"));
+}
+
+
+
 
 
 bool is_whitespace(char ch){

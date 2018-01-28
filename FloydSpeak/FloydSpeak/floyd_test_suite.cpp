@@ -1677,6 +1677,31 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+
+QUARK_UNIT_TESTQ("comments", "// on start of line"){
+	const auto vm = run_global(R"(
+		//	XYZ
+		print("Hello");
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello" } ))
+}
+
+QUARK_UNIT_TESTQ("comments", "// on start of line"){
+	const auto vm = run_global(R"(
+		print("Hello");		//	XYZ
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello" } ))
+}
+
+QUARK_UNIT_TESTQ("comments", "// on start of line"){
+	const auto vm = run_global(R"(
+		print("Hello");/* xyz */print("Bye");
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
+}
+
+
+
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
 
