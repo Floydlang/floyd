@@ -52,9 +52,7 @@ namespace floyd {
 
 
 	/*
-		let TYPE SYMBOL = EXPRESSION;
-		FUNC TYPE SYMBOL ( EXPRESSION-LIST ){ STATEMENTS }
-		let SYMBOL = EXPRESSION;
+		EXPRESSION
 
 		BIND					TYPE				SYMBOL		=		EXPRESSION;
 		BIND					int					x			=		10;

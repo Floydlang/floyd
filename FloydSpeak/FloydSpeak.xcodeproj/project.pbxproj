@@ -66,7 +66,7 @@
 		2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = floyd_test_suite.hpp; sourceTree = "<group>"; };
 		2C0AC17A1CADB26B00979C49 /* runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = runtime.cpp; sourceTree = "<group>"; };
 		2C0AC17B1CADB26B00979C49 /* runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = runtime.h; sourceTree = "<group>"; };
-		2C1D84DD1CA765A90042F0A8 /* FloydSpeak */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FloydSpeak; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C1D84E01CA765A90042F0A8 /* floyd_parser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_parser.cpp; sourceTree = "<group>"; };
 		2C1D84E81CA766470042F0A8 /* quark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = quark.cpp; path = ../quark.cpp; sourceTree = "<group>"; };
 		2C1D84E91CA766470042F0A8 /* quark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = quark.h; path = ../quark.h; sourceTree = "<group>"; };
@@ -171,7 +171,7 @@
 		2C1D84DE1CA765A90042F0A8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2C1D84DD1CA765A90042F0A8 /* FloydSpeak */,
+				2C1D84DD1CA765A90042F0A8 /* floyd */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -284,7 +284,7 @@
 			);
 			name = FloydSpeak;
 			productName = FloydSpeak;
-			productReference = 2C1D84DD1CA765A90042F0A8 /* FloydSpeak */;
+			productReference = 2C1D84DD1CA765A90042F0A8 /* floyd */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -466,14 +466,14 @@
 		2C1D84E51CA765A90042F0A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = floyd;
 			};
 			name = Debug;
 		};
 		2C1D84E61CA765A90042F0A8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = floyd;
 			};
 			name = Release;
 		};

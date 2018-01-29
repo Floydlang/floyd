@@ -187,7 +187,7 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 int main(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
 
-#if false && QUARK_UNIT_TESTS_ON
+#if true && QUARK_UNIT_TESTS_ON
 	try {
 		run_tests();
 	}
@@ -195,7 +195,7 @@ int main(int argc, const char * argv[]) {
 		QUARK_TRACE("Error");
 		return -1;
 	}
-#endif
+#else
 
 	if(argc == 1){
 		run_repl();
@@ -203,6 +203,7 @@ int main(int argc, const char * argv[]) {
 	else{
 		run_file(args);
 	}
+#endif
 
 	return 0;
 }
