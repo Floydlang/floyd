@@ -90,10 +90,10 @@ size_t find_parantheses_left__from_back(const seq_t& s){
 	Function definition or an expression?
 	int print(float a) { ... }					==	function definition
 	int print (float a) { ... }					==	function definition
-	print(3);							==	expression
-	print (3);							==	expression
-	3 + 4;								==	expression
-	hello + 3							==	expression
+	print(3);									==	expression
+	print (3);									==	expression
+	3 + 4;										==	expression
+	hello + 3									==	expression
 
 	TYPE<whitespace>IDENTIFIER "(" ARGUMENTS ")" "{" ... "}"
 */
@@ -153,7 +153,7 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s){
 
 		const auto pos2 = equal_sign_pos.second;
 		const auto s2 = pos2.str();
-if(false){
+if(true){
 		const auto split_pos = find_parantheses_left__from_back(pos2);
 
 		const auto pre_parantheses = s2.substr(0, split_pos);
@@ -319,6 +319,7 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("print(3);xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print(3)" }, seq_t("print(3);xyz") }	));
 }
 
+/*
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("3;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "3" }, seq_t("print(3);xyz") }	));
 }
@@ -328,7 +329,7 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("3 + f(1) + f(2);xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "3 + f(1) + f(2)" }, seq_t("3 + f(1) + f(2);xyz") }	));
 }
-
+*/
 
 
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "ASSIGN", ""){
