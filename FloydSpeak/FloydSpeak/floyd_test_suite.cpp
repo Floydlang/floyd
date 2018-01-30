@@ -27,6 +27,7 @@ using floyd::expression_t;
 using floyd::program_to_ast2;
 using floyd::interpreter_t;
 using floyd::find_global_symbol;
+using floyd::statement_result_t;
 
 
 
@@ -52,7 +53,7 @@ void test__run_init2(const std::string& program){
 void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
 	const auto result = run_main(program, args);
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_literal(result.second)),
+		expression_to_json(expression_t::make_literal(result.second._output)),
 		expression_to_json(expression_t::make_literal(expected_return))
 	);
 }
@@ -475,7 +476,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(*result.second == value_t(7));
+	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t(7)));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
@@ -487,7 +488,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(*result.second == value_t("123456"));
+	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t("123456")));
 }
 
 
@@ -505,7 +506,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(*result.second == value_t(15));
+	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t(15)));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
@@ -517,10 +518,10 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t("xyz") });
-	QUARK_TEST_VERIFY(*result.second == value_t("-xyz-"));
+	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t("-xyz-")));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t("Hello, world!") });
-	QUARK_TEST_VERIFY(*result2.second == value_t("-Hello, world!-"));
+	QUARK_TEST_VERIFY(result2.second == statement_result_t::make_return_unwind(value_t("-Hello, world!-")));
 }
 
 
@@ -537,10 +538,12 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t("xyz") });
-	QUARK_TEST_VERIFY(*result.second == value_t("--xyz<xyz>--"));
+//	QUARK_TEST_VERIFY(*result.second == value_t("--xyz<xyz>--"));
+	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t("--xyz<xyz>--")));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t("123") });
-	QUARK_TEST_VERIFY(*result2.second == value_t("--123<123>--"));
+//	QUARK_TEST_VERIFY(*result2.second == value_t("--123<123>--"));
+	QUARK_TEST_VERIFY(result2.second == statement_result_t::make_return_unwind(value_t("--123<123>--")));
 }
 
 
@@ -597,7 +600,37 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 	}
 }
 
-QUARK_UNIT_TESTQ("run_main()", "test mutating from a subscope"){
+		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+			const auto r = run_global(R"(
+				mutable a = 7;
+				a = 8;
+				{
+					print(a);
+				}
+			)");
+			QUARK_UT_VERIFY((r._print_output == vector<string>{ "8" }));
+		}
+
+		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+			const auto r = run_global(R"(
+				a = 7;
+				print(a);
+			)");
+			QUARK_UT_VERIFY((r._print_output == vector<string>{ "7" }));
+		}
+
+
+		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+			const auto r = run_global(R"(
+				a = 7;
+				{
+				}
+				print(a);
+			)");
+			QUARK_UT_VERIFY((r._print_output == vector<string>{ "7" }));
+		}
+
+QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 	const auto r = run_global(R"(
 		mutable a = 7;
 		{
@@ -711,7 +744,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 
 
 
-QUARK_UNIT_TESTQ("run_global()", "Print Hello, world!"){
+QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
 	const auto r = run_global(
 		R"(
 			print("Hello, World!");
@@ -721,7 +754,7 @@ QUARK_UNIT_TESTQ("run_global()", "Print Hello, world!"){
 }
 
 
-QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes block!"){
+QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!", "", ""){
 	const auto r = run_global(
 		R"(
 			{

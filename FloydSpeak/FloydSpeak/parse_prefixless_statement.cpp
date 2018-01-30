@@ -231,12 +231,12 @@ if(false){
 		}
 }
 else{
-	const auto r = skip_whitespace_ends(pos.first);
+	const auto a = skip_whitespace_ends(pos.first);
 	if(is_function_def(s)){
-		return { { "[FUNCTION-DEFINITION]", r }, s };
+		return { { "[FUNCTION-DEFINITION]", a }, s };
 	}
 	else{
-		const auto r2 = skip_whitespace_ends(string(r.begin(), r.end() - 1));
+		const auto r2 = skip_whitespace_ends(string(a.begin(), a.end() - 1));
 		return { { "[EXPRESSION-STATEMENT]", r2 }, s };
 	}
 }

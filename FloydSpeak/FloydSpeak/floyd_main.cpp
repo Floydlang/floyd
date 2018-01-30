@@ -76,8 +76,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 					std::cout << vm._print_output[print_pos] << std::endl;
 					print_pos++;
 				}
-				if(b.second){
-					std::cout << b.second->to_compact_string() << std::endl;
+				if(b.second._output.is_null() == false){
+					std::cout << b.second._output.to_compact_string() << std::endl;
 				}
 			}
 		}
@@ -112,11 +112,11 @@ void run_file(const std::vector<std::string>& args){
 	for(const auto e: args2){
 		args3.push_back(floyd::value_t(e));
 	}
-	std::pair<floyd::interpreter_t, floyd::value_t> result = floyd::run_program(ast, args3);
-	if(result.second.is_null()){
+	const auto result = floyd::run_program(ast, args3);
+	if(result.second._output.is_null()){
 	}
 	else{
-		std::cout << result.second.get_int_value() << std::endl;
+		std::cout << result.second._output.get_int_value() << std::endl;
 	}
 }
 

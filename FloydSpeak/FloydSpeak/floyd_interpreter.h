@@ -16,12 +16,57 @@
 #include <vector>
 #include <map>
 #include "parser_ast.h"
+#include "parser_value.h"
 
 namespace floyd {
 	struct expression_t;
 	struct value_t;
 	struct statement_t;
 	struct interpreter_t;
+
+
+	//////////////////////////////////////		statement_result_t
+
+
+	struct statement_result_t {
+		enum output_type {
+
+			//	_output != nullptr
+			k_return_unwind,
+
+			//	_output != nullptr
+			k_passive_expression_output,
+
+
+			//	_output == nullptr
+			k_none
+		};
+
+		public: static statement_result_t make_return_unwind(const value_t& return_value){
+			return { statement_result_t::k_return_unwind, return_value };
+		}
+		public: static statement_result_t make_passive_expression_output(const value_t& output_value){
+			return { statement_result_t::k_passive_expression_output, output_value };
+		}
+		public: static statement_result_t make_no_output(){
+			return { statement_result_t::k_passive_expression_output, value_t() };
+		}
+
+		private: statement_result_t(output_type type, const value_t& output) :
+			_type(type),
+			_output(output)
+		{
+		}
+
+		public: output_type _type;
+		public: value_t _output;
+	};
+
+	inline bool operator==(const statement_result_t& lhs, const statement_result_t& rhs){
+		return true
+			&& lhs._type == rhs._type
+			&& lhs._output == rhs._output;
+	}
 
 
 	//////////////////////////////////////		environment_t
@@ -57,7 +102,7 @@ namespace floyd {
 		public: const interpreter_t& operator=(const interpreter_t& other);
 		public: bool check_invariant() const;
 
-		public: std::pair<interpreter_t, value_t> call_host_function(int function_id, const std::vector<value_t> args) const;
+		public: std::pair<interpreter_t, statement_result_t> call_host_function(int function_id, const std::vector<value_t> args) const;
 
 
 		////////////////////////		STATE
@@ -85,7 +130,7 @@ namespace floyd {
 	*/
 	std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e);
 
-	std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(
+	std::pair<interpreter_t, statement_result_t> call_function(
 		const interpreter_t& vm,
 		const value_t& f,
 		const std::vector<value_t>& args
@@ -97,7 +142,7 @@ namespace floyd {
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	std::pair<interpreter_t, std::shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
+	std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
 
 
 	//////////////////////////		run_main()
@@ -109,12 +154,12 @@ namespace floyd {
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
-	std::pair<interpreter_t, value_t> run_main(
+	std::pair<interpreter_t, statement_result_t> run_main(
 		const std::string& source,
 		const std::vector<value_t>& args
 	);
 
-	std::pair<interpreter_t, floyd::value_t> run_program(const ast_t& ast, const std::vector<floyd::value_t>& args);
+	std::pair<interpreter_t, statement_result_t> run_program(const ast_t& ast, const std::vector<floyd::value_t>& args);
 
 	ast_t program_to_ast2(const std::string& program);
 

@@ -183,7 +183,7 @@ namespace {
 
 
 
-	std::pair<interpreter_t, shared_ptr<value_t>> execute_statements_in_env(
+	std::pair<interpreter_t, statement_result_t> execute_statements_in_env(
 		const interpreter_t& vm,
 		const std::vector<std::shared_ptr<statement_t>>& statements,
 		const std::map<std::string, std::pair<value_t, bool>>& values
@@ -201,7 +201,7 @@ namespace {
 	}
 
 	//	Output is the RETURN VALUE of the executed statement, if any.
-	std::pair<interpreter_t, shared_ptr<value_t>> execute_statement(const interpreter_t& vm0, const statement_t& statement){
+	std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm0, const statement_t& statement){
 		QUARK_ASSERT(vm0.check_invariant());
 		QUARK_ASSERT(statement.check_invariant());
 
@@ -286,7 +286,7 @@ namespace {
 					}
 				}
 			}
-			return { vm2, {}};
+			return { vm2, statement_result_t::make_no_output() };
 		}
 		else if(statement._block){
 			const auto& s = statement._block;
@@ -304,7 +304,10 @@ namespace {
 			}
 
 			//??? Check that return value's type matches function's return type.
-			return { vm2, make_shared<value_t>(result_value.get_literal()) };
+			return {
+				vm2,
+				statement_result_t::make_return_unwind(result_value.get_literal())
+			};
 		}
 
 
@@ -318,7 +321,7 @@ namespace {
 			}
 			const auto struct_typeid = typeid_t::make_struct(std::make_shared<struct_definition_t>(s->_def));
 			vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(make_typeid_value(struct_typeid), false);
-			return { vm2, {}};
+			return { vm2, statement_result_t::make_no_output() };
 		}
 
 		else if(statement._if){
@@ -354,11 +357,11 @@ namespace {
 				const auto result = execute_statements_in_env(vm2, s->_body, values);
 				vm2 = result.first;
 				const auto return_value = result.second;
-				if(return_value != nullptr){
+				if(return_value._type == statement_result_t::k_return_unwind){
 					return { vm2, return_value };
 				}
 			}
-			return { vm2, {} };
+			return { vm2, statement_result_t::make_no_output() };
 		}
 		else if(statement._while){
 			const auto& s = statement._while;
@@ -373,7 +376,7 @@ namespace {
 					const auto result = execute_statements_in_env(vm2, s->_body, {});
 					vm2 = result.first;
 					const auto return_value = result.second;
-					if(return_value != nullptr){
+				if(return_value._type == statement_result_t::k_return_unwind){
 						return { vm2, return_value };
 					}
 				}
@@ -381,7 +384,7 @@ namespace {
 					again = false;
 				}
 			}
-			return { vm2, {} };
+			return { vm2, statement_result_t::make_no_output() };
 		}
 		else if(statement._expression){
 			const auto& s = statement._expression;
@@ -389,8 +392,11 @@ namespace {
 			const auto result = evaluate_expression(vm2, s->_expression);
 			vm2 = result.first;
 			const auto result_value = result.second.get_literal();
-			return { vm2, {} };
-//			return { vm2, make_shared<value_t>(result_value) };
+//			return { vm2, statement_result_t::make_no_output() };
+			return {
+				vm2,
+				statement_result_t::make_passive_expression_output(result_value)
+			};
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -402,7 +408,7 @@ namespace {
 }	//	unnamed
 
 
-std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
+std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
@@ -413,12 +419,24 @@ std::pair<interpreter_t, shared_ptr<value_t>> execute_statements(const interpret
 		const auto statement = statements[statement_index];
 		const auto& r = execute_statement(vm2, *statement);
 		vm2 = r.first;
-		if(r.second){
+		if(r.second._type == statement_result_t::k_return_unwind){
 			return { vm2, r.second };
 		}
-		statement_index++;
+		else{
+
+			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
+			if(statement_index == (statements.size() - 1)){
+				if(r.second._type == statement_result_t::k_passive_expression_output){
+					return { vm2, r.second };
+				}
+			}
+			else{
+			}
+
+			statement_index++;
+		}
 	}
-	return { vm2, {}};
+	return { vm2, statement_result_t::make_no_output() };
 }
 
 value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
@@ -1024,7 +1042,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 }
 
 
-std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
@@ -1040,7 +1058,7 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 	const auto& function_def = f.get_function_value()->_def;
 	if(function_def._host_function != 0){
 		const auto r = vm2.call_host_function(function_def._host_function, args);
-		return { r.first, make_shared<value_t>(r.second) };
+		return { r.first, r.second };
 	}
 	else{
 
@@ -1066,7 +1084,7 @@ std::pair<interpreter_t, std::shared_ptr<value_t>> call_function(const interpret
 		vm2 = r.first;
 		vm2._call_stack.pop_back();
 
-		if(!r.second){
+		if(r.second._type != statement_result_t::k_return_unwind){
 			throw std::runtime_error("function missing return statement");
 		}
 		else{
@@ -1170,8 +1188,9 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		}
 
 		const auto& result = call_function(vm2, function_value, args3);
+		QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
 		vm2 = result.first;
-		return { vm2, expression_t::make_literal(*result.second)};
+		return { vm2, expression_t::make_literal(result.second._output)};
 	}
 }
 
@@ -1929,12 +1948,16 @@ const vector<host_function_t> k_host_functions {
 
 
 
-std::pair<interpreter_t, floyd::value_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd::value_t> args) const{
+std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd::value_t> args) const{
 	const int index = function_id - 1000;
 	QUARK_ASSERT(index >= 0 && index < k_host_functions.size())
 
 	const auto& host_function = k_host_functions[index];
-	return (host_function._function_ptr)(*this, args);
+	const auto result = (host_function._function_ptr)(*this, args);
+	return {
+		result.first,
+		statement_result_t::make_return_unwind(result.second)
+	};
 }
 
 
@@ -2033,24 +2056,24 @@ interpreter_t run_global(const string& source){
 	return vm;
 }
 
-std::pair<interpreter_t, floyd::value_t> run_main(const string& source, const vector<floyd::value_t>& args){
+std::pair<interpreter_t, statement_result_t> run_main(const string& source, const vector<floyd::value_t>& args){
 	auto ast = program_to_ast2(source);
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto r = call_function(vm, f, args);
-	return { r.first, *r.second };
+	return { r.first, r.second };
 }
 
-std::pair<interpreter_t, floyd::value_t> run_program(const ast_t& ast, const vector<floyd::value_t>& args){
+std::pair<interpreter_t, statement_result_t> run_program(const ast_t& ast, const vector<floyd::value_t>& args){
 	auto vm = interpreter_t(ast);
 
 	const auto main_func = resolve_env_variable(vm, "main");
 	if(main_func == nullptr){
 		const auto r = call_function(vm, main_func->first, args);
-		return { r.first, *r.second };
+		return { r.first, r.second };
 	}
 	else{
-		return { vm, value_t() };
+		return { vm, statement_result_t::make_no_output() };
 	}
 }
 
