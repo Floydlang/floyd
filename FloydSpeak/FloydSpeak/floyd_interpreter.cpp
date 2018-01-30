@@ -388,8 +388,9 @@ namespace {
 
 			const auto result = evaluate_expression(vm2, s->_expression);
 			vm2 = result.first;
-			const auto result_value = result.second;
-			return { vm2, {}};
+			const auto result_value = result.second.get_literal();
+			return { vm2, {} };
+//			return { vm2, make_shared<value_t>(result_value) };
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1969,9 +1970,11 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto r = execute_statements(*this, _ast._statements);
+/*
 	if(r.second){
 		throw std::runtime_error("Return statement illegal in global scope.");
 	}
+*/
 
 	_call_stack[0]->_values = r.first._call_stack[0]->_values;
 	_print_output = r.first._print_output;

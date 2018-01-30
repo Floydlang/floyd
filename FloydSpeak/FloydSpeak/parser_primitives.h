@@ -80,7 +80,7 @@ namespace floyd {
 		??? Use this is all places we scan.
 		Understands nested parantheses and brackets and skips those.
 		Does NOT skip leading whitespace.
-		If none are found, returns { "", s }
+		If none are found, returns { s.str(), seq_t("") }
 	*/
 	std::pair<std::string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars);
 

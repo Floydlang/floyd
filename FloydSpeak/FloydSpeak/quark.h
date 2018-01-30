@@ -572,6 +572,8 @@ void set_runtime(runtime_i* iRuntime);
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
 
 
+	#define QUARK_UT_VERIFY2(result, expected) ut_compare2((result), (expected), ::quark::source_code_location(__FILE__, __LINE__))
+
 
 template <typename T> void ut_compare(const T& result, const T& expected){
 	if(!(result == expected)){
@@ -579,6 +581,28 @@ template <typename T> void ut_compare(const T& result, const T& expected){
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),
 			QUARK_STRING(result) " != " QUARK_STRING(expect)
+		);
+	}
+}
+
+template <typename T> std::string to_debug_str(const T& v);
+
+template <typename T> void ut_compare2(const T& result, const T& expected, const source_code_location& code_location){
+	if(!(result == expected)){
+		const std::string result_str = to_debug_str(result);
+		const std::string expected_str = to_debug_str(expected);
+
+		QUARK_SCOPED_TRACE("Test failed");
+
+		QUARK_TRACE("Result:");
+		QUARK_TRACE(result_str);
+		QUARK_TRACE("Expected:");
+		QUARK_TRACE(expected_str);
+
+		::quark::on_unit_test_failed_hook(
+			::quark::get_runtime(),
+			code_location,
+			(result_str + " != " + expected_str).c_str()
 		);
 	}
 }

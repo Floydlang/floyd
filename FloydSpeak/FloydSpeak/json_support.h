@@ -355,6 +355,8 @@ json_t dissoc(const json_t& value, const json_t& key);
 //	Converts the value into a vector of strings.
 std::vector<std::string> to_string_vec(const json_t& json);
 
+json_t from_string_vec(const std::vector<std::string>& vec);
+
 
 
 #endif /* json_support_hpp */

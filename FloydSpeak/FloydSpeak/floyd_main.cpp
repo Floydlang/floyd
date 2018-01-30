@@ -76,6 +76,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 					std::cout << vm._print_output[print_pos] << std::endl;
 					print_pos++;
 				}
+				if(b.second){
+					std::cout << b.second->to_compact_string() << std::endl;
+				}
 			}
 		}
 		catch(const std::runtime_error& e){
@@ -132,6 +135,7 @@ void run_tests(){
 		"parser_statement.cpp",
 		"parser_struct.cpp",
 
+		"parse_prefixless_statement.cpp",
 		"floyd_parser.cpp",
 
 		"parse_statement.cpp",
@@ -195,7 +199,7 @@ int main(int argc, const char * argv[]) {
 		QUARK_TRACE("Error");
 		return -1;
 	}
-#else
+#endif
 
 	if(argc == 1){
 		run_repl();
@@ -203,7 +207,6 @@ int main(int argc, const char * argv[]) {
 	else{
 		run_file(args);
 	}
-#endif
 
 	return 0;
 }

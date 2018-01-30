@@ -385,7 +385,8 @@ std::pair<string, seq_t> read_until_toplevel_match(const seq_t& s, const std::st
 		}
 	}
 	if (pos.empty()){
-		return { "", s };
+		return { s.str(), seq_t("") };
+//		return { "", s };
 	}
 	else{
 		const auto r = get_range(s, pos);

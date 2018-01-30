@@ -796,3 +796,12 @@ std::vector<std::string> to_string_vec(const json_t& json){
 	return result;
 }
 
+json_t from_string_vec(const std::vector<std::string>& vec){
+	vector<json_t> str;
+	for(const auto e: vec){
+		str.push_back(e);
+	}
+	return json_t::make_array(str);
+}
+
+

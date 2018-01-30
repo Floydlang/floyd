@@ -25,6 +25,27 @@
 #include <iostream>
 #include <cmath>
 
+
+
+
+
+
+
+
+
+namespace quark {
+	template<> std::string to_debug_str<std::pair<std::vector<std::string>, seq_t>>(const std::pair<std::vector<std::string>, seq_t>& s){
+		return json_to_pretty_string(
+			json_t::make_array({
+				from_string_vec(s.first),
+				s.second.str().substr(0, 24)
+			})
+		);
+	}
+}
+
+
+
 namespace floyd {
 
 
@@ -98,6 +119,17 @@ size_t find_parantheses_left__from_back(const seq_t& s){
 	TYPE<whitespace>IDENTIFIER "(" ARGUMENTS ")" "{" ... "}"
 */
 bool is_function_def(const seq_t& pos){
+	const auto posx = read_until_toplevel_match(skip_whitespace(pos), ";{");
+
+	if(posx.second.first() == "{"){
+		return true;
+	}
+	else{
+		return false;
+	}
+
+/*
+
 //	const auto expression_pos = parse_expression_seq(pos);
 	const auto type_pos = read_type(pos);
 	if(type_pos.first){
@@ -124,7 +156,29 @@ bool is_function_def(const seq_t& pos){
 	else{
 		return false;
 	}
+*/
+
 }
+
+QUARK_UNIT_TEST("", "is_function_def()", "", ""){
+	QUARK_UT_VERIFY(is_function_def(seq_t("print(3);")) == false);
+	QUARK_UT_VERIFY(is_function_def(seq_t("print ( \"Hello, World!\" ) ;xyz")) == false);
+	QUARK_UT_VERIFY(is_function_def(seq_t("print(3);xyz")) == false);
+	QUARK_UT_VERIFY(is_function_def(seq_t("3;xyz")) == false);
+	QUARK_UT_VERIFY(is_function_def(seq_t("3 + 4;xyz")) == false);
+	QUARK_UT_VERIFY(is_function_def(seq_t("3 + f(1) + f(2);xyz")) == false);
+	QUARK_UT_VERIFY(is_function_def(seq_t("3")) == false);
+
+
+	QUARK_UT_VERIFY(is_function_def(seq_t(" int f ( ) { return 0 ; } xyz")) == true);
+	QUARK_UT_VERIFY(is_function_def(seq_t(" int f ( string name ) { return 13 ; }xyz")) == true);
+	QUARK_UT_VERIFY(is_function_def(seq_t(" int ( string a ) f ( string name ) { return 100 == 101 ; }xyz")) == true);
+}
+
+
+
+
+
 
 
 //	NOTICE: This function is very complex -- let's keep it FOCUSED just on figuring out the type of statement.
@@ -138,7 +192,7 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s){
 	const auto r = seq_t(pos.first);
 
 	const auto equal_sign_pos = read_until_toplevel_match(r, "=");
-	if(equal_sign_pos.first.empty()){
+	if(equal_sign_pos.second.empty()){
 		//	FUNCTION-DEFINITION:	TYPE<spaces or tabs>IDENTIFIER(TYPE IDENTIFIER, TYPE IDENTIFIER.*)
 		//	FUNCTION-DEFINITION:	int f(string name)
 		//	FUNCTION-DEFINITION:	int (string a) f(string name)
@@ -153,7 +207,7 @@ pair<vector<string>, seq_t> parse_implicit_statement(const seq_t& s){
 
 		const auto pos2 = equal_sign_pos.second;
 		const auto s2 = pos2.str();
-if(true){
+if(false){
 		const auto split_pos = find_parantheses_left__from_back(pos2);
 
 		const auto pre_parantheses = s2.substr(0, split_pos);
@@ -177,11 +231,13 @@ if(true){
 		}
 }
 else{
-	if(is_function_def(pos2)){
-		return { { "[FUNCTION-DEFINITION]", pos.first }, s };
+	const auto r = skip_whitespace_ends(pos.first);
+	if(is_function_def(s)){
+		return { { "[FUNCTION-DEFINITION]", r }, s };
 	}
 	else{
-		return { { "[EXPRESSION-STATEMENT]", pos.first }, s };
+		const auto r2 = skip_whitespace_ends(string(r.begin(), r.end() - 1));
+		return { { "[EXPRESSION-STATEMENT]", r2 }, s };
 	}
 }
 
@@ -278,6 +334,18 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "", ""){
 	//	QUARK_TRACE((test_split_line("MUTATE-LOCAL", seq_t("x <=== 11;xyz"))));
 }
 
+
+QUARK_UNIT_TEST("", "parse_implicit_statement()", "BIND", ""){
+	QUARK_UT_VERIFY2(
+		parse_implicit_statement(seq_t(" int x = 10 ; xyz")),
+		(pair<vector<string>, seq_t>{
+			vector<string>{ "[BIND]", "int", "x", "10" },
+			seq_t(" int x = 10 ; xyz")
+		})
+	);
+}
+
+
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "BIND", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" int x = 10 ; xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[BIND]", "int", "x", "10" }, seq_t(" int x = 10 ; xyz") }	));
 }
@@ -305,6 +373,9 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "FUNCTION-DEFINITION", ""){
 
 
 
+
+
+
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t(" print ( \"Hello, World!\" ) ;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print ( \"Hello, World!\" )" }, seq_t(" print ( \"Hello, World!\" ) ;xyz") }	));
 }
@@ -319,9 +390,11 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("print(3);xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "print(3)" }, seq_t("print(3);xyz") }	));
 }
 
-/*
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
-	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("3;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "3" }, seq_t("print(3);xyz") }	));
+	QUARK_UT_VERIFY2(
+		parse_implicit_statement(seq_t("3;xyz")),
+		(pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "3" }, seq_t("3;xyz") })
+	);
 }
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("3 + 4;xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "3 + 4" }, seq_t("3 + 4;xyz") }	));
@@ -329,7 +402,6 @@ QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "EXPRESSION-STATEMENT", ""){
 	QUARK_UT_VERIFY((	parse_implicit_statement(seq_t("3 + f(1) + f(2);xyz")) == pair<vector<string>, seq_t>{vector<string>{ "[EXPRESSION-STATEMENT]", "3 + f(1) + f(2)" }, seq_t("3 + f(1) + f(2);xyz") }	));
 }
-*/
 
 
 QUARK_UNIT_TEST("", "parse_implicit_statement()", "ASSIGN", ""){
