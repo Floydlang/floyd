@@ -33,6 +33,7 @@
 		2CA061CF1D4C34B70045AF86 /* parse_struct_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA061CD1D4C34B70045AF86 /* parse_struct_def.cpp */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
+		2CBF330D202143BD0030AE98 /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
 		2CC50E211CE485FF008D78C7 /* game_of_life1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC50E201CE485AF008D78C7 /* game_of_life1.cpp */; };
 		2CC50E251CE48748008D78C7 /* game_of_life2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC50E231CE48748008D78C7 /* game_of_life2.cpp */; };
 		2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC50E261CE49A4C008D78C7 /* game_of_life3.cpp */; };
@@ -110,6 +111,7 @@
 		2CBCA7DB1D569C6D000FAE81 /* sha1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1.h; sourceTree = "<group>"; };
 		2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1_class.cpp; sourceTree = "<group>"; };
 		2CBCA7DD1D569C6D000FAE81 /* sha1_class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1_class.h; sourceTree = "<group>"; };
+		2CBF330C202143BD0030AE98 /* libncurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libncurses.tbd; path = usr/lib/libncurses.tbd; sourceTree = SDKROOT; };
 		2CC50E201CE485AF008D78C7 /* game_of_life1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life1.cpp; sourceTree = "<group>"; };
 		2CC50E221CE48665008D78C7 /* game_of_life1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = game_of_life1.h; sourceTree = "<group>"; };
 		2CC50E231CE48748008D78C7 /* game_of_life2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life2.cpp; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2CBF330D202143BD0030AE98 /* libncurses.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +168,7 @@
 				2CC50E1F1CE485AF008D78C7 /* examples */,
 				2C1D84DF1CA765A90042F0A8 /* FloydSpeak */,
 				2C1D84DE1CA765A90042F0A8 /* Products */,
+				2CBF330B202143BC0030AE98 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -249,6 +253,14 @@
 				2CBCA7DB1D569C6D000FAE81 /* sha1.h */,
 			);
 			path = sha1;
+			sourceTree = "<group>";
+		};
+		2CBF330B202143BC0030AE98 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2CBF330C202143BD0030AE98 /* libncurses.tbd */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		2CC50E1F1CE485AF008D78C7 /* examples */ = {

@@ -24,10 +24,131 @@
 #include "pass2.h"
 
 
-
 //////////////////////////////////////////////////		main()
 
+#if true
+
+void init_terminal(){
+}
+std::string get_command(){
+	std::cout << ">>> " << std::flush;
+
+	std::string line;
+	while(line == ""){
+		std::cin.clear();
+		std::getline (std::cin, line);
+	}
+	return line;
+}
+#endif
+
+#if false
+
+std::string get_command(){
+	std::cout << ">>> " << std::flush;
+
+	std::string line;
+	bool done = false;
+	while(done == false){
+		int ch = getch();
+		std::cout << ch << std::endl;
+
+		if(ch == '\n'){
+			done = true;
+		}
+		else{
+			 line = line + std::string(1, ch);
+		}
+	}
+	return line;
+}
+#endif
+
+
+#if false
+
+#include <stdio.h>
+#include <unistd.h>
+#include <termios.h>
+#include <string.h>
+
+void init_terminal(){
+	struct termios oldt, newt;
+
+	/* tcgetattr gets the parameters of the current terminal
+	* STDIN_FILENO will tell tcgetattr that it should write the settings
+	* of stdin to oldt
+	*/
+	tcgetattr( STDIN_FILENO, &oldt);
+	/*now the settings will be copied*/
+	memcpy((void *)&newt, (void *)&oldt, sizeof(struct termios));
+
+	newt.c_lflag &= ~(ICANON);  // Reset ICANON so enter after char is not needed
+	newt.c_lflag &= ~(ECHO);    // Turn echo off
+
+	/*
+	*  Those new settings will be set to STDIN
+	*  TCSANOW tells tcsetattr to change attributes immediately.
+	*/
+	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+
+//	int option = getchar(); //this is where the getch is used
+	//printf("\nYour choice is: %c\n",option);
+
+	/*
+	*  Restore original settings
+	*/
+//	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+}
+#endif
+
+#if false
+
+#include<ncurses.h>
+
+void init_terminal(){
+             initscr(); cbreak(); noecho();
+
+//       Most programs would additionally use the sequence:
+
+             nonl();
+             intrflush(stdscr, FALSE);
+             keypad(stdscr, TRUE);
+}
+
+std::string get_command(){
+	std::cout << ">>> " << std::flush;
+
+	std::string line;
+	bool done = false;
+	while(done == false){
+		int ch_int = getch();
+		char ch = ch_int;
+//		std::cout << ch << std::flush;
+
+		if(ch == '\n'){
+			done = true;
+		}
+		else if(ch_int == 239){
+			std::cout << "UP" << std::flush;
+		}
+		else{
+			 line = line + std::string(1, ch);
+		}
+	}
+	return line;
+}
+
+#endif
+
+
+
+
+
+
 void run_repl(){
+	init_terminal();
+
 	int print_pos = 0;
 	auto ast = floyd::program_to_ast2("");
 	auto vm = floyd::interpreter_t(ast);
@@ -44,13 +165,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 	while(true){
 		try {
-			std::cout << ">>> " << std::flush;
-
-			std::string line;
-			while(line == ""){
-				std::cin.clear();
-				std::getline (std::cin, line);
-			}
+			const auto line = get_command();
 
 			if(line == "vm"){
 				std::cout << json_to_pretty_string(floyd::interpreter_to_json(vm)) << std::endl;
@@ -191,7 +306,7 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 int main(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
 
-#if true && QUARK_UNIT_TESTS_ON
+#if false && QUARK_UNIT_TESTS_ON
 	try {
 		run_tests();
 	}
