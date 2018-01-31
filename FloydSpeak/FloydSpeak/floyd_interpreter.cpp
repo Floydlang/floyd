@@ -239,7 +239,18 @@ namespace {
 
 					//	Deduced bind type -- use new value's type.
 					if(bind_statement_type.is_null()){
-						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
+
+
+						if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
+							throw std::runtime_error("Cannot deduce vector type.");
+						}
+						else if(retyped_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
+							throw std::runtime_error("Cannot deduce dictionary type.");
+						}
+						else{
+							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
+						}
+
 					}
 
 					//	Explicit bind-type -- make sure source + dest types match.
@@ -282,7 +293,17 @@ namespace {
 					//	Deduce type and bind it -- to local env.
 					else{
 						const auto new_value = result_value.get_literal();
-						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
+
+						//	Can we deduce type from the rhs value?
+						if(new_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
+							throw std::runtime_error("Cannot deduce vector type.");
+						}
+						else if(new_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
+							throw std::runtime_error("Cannot deduce dictionary type.");
+						}
+						else{
+							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
+						}
 					}
 				}
 			}

@@ -404,18 +404,14 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 
 
 
-
-
 int main(int argc, const char * argv[]) {
+	const auto prev_q = quark::get_runtime();
 	const auto args = args_to_vector(argc, argv);
 
-
 	floyd_quark_runtime q("");
-	const auto prev_q = quark::get_runtime();
 	quark::set_runtime(&q);
 
-
-#if false && QUARK_UNIT_TESTS_ON
+#if true && QUARK_UNIT_TESTS_ON
 	try {
 		run_tests();
 	}

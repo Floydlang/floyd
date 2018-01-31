@@ -1103,33 +1103,6 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 //////////////////////////		VECTOR
 
 
-/*
-QUARK_UNIT_TEST("vector", "vector()", "ints", "valid vector"){
-	const auto vm = run_global(R"(
-		a = vector(int, 1, 2);
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"[int](1,2)"	}	));
-}
-
-QUARK_UNIT_TEST("vector", "[]", "ints", "valid readback"){
-	const auto vm = run_global(R"(
-		a = vector(int, 1, 2);
-		print(a[0]);
-		print(a[1]);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"1", "2"	}	));
-}
-
-QUARK_UNIT_TEST("vector", "vector()", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		a = vector(string, "one", "two");
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
-}
-*/
-
 QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
 	const auto vm = run_global(R"(
 		a = ["one", "two"];
@@ -1138,12 +1111,16 @@ QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vec
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
 }
 
-QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
-	const auto vm = run_global(R"(
-		a = [];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([null]())"	}	));
+QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "cannot be deducted", "error"){
+	try{
+		const auto vm = run_global(R"(
+			a = [];
+			print(a);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
 }
 
 QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "valid vector"){
@@ -1342,24 +1319,28 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 }
 
 QUARK_UNIT_TEST("dict", "", "", ""){
-	const auto vm = run_global(R"(
-		mutable a = [:];
-		a = ["hello": 1];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string:int]("hello": 1))",
-	}	));
+	try{
+		const auto vm = run_global(R"(
+			mutable a = [:];
+			a = ["hello": 1];
+			print(a);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
 }
 
 QUARK_UNIT_TEST("dict", "[:]", "", ""){
-	const auto vm = run_global(R"(
-		a = [:];
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		R"([string:null]())",
-	}	));
+	try {
+		const auto vm = run_global(R"(
+			a = [:];
+			print(a);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
 }
 
 
