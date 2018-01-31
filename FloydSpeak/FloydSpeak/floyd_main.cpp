@@ -28,6 +28,36 @@
 
 #if true
 
+#include <editline/readline.h>
+
+void init_terminal(){
+}
+
+
+
+
+
+
+std::string get_command(){
+	std::string result;
+	while(result.empty()){
+		char* line_read = readline (">>>");
+		if(line_read != nullptr){
+			result = std::string(line_read);
+			std::free (line_read);
+			line_read = nullptr;
+		}
+	}
+	add_history (result.c_str());
+	return result;
+}
+
+
+#endif
+
+
+#if false
+
 void init_terminal(){
 }
 std::string get_command(){
@@ -209,7 +239,7 @@ void run_file(const std::vector<std::string>& args){
 	const auto source_path = args[1];
 	const std::vector<std::string> args2(args.begin() + 2, args.end());
 
-	std::cout << "Source file:" << source_path << std::endl;
+//	std::cout << "Source file:" << source_path << std::endl;
 
 	std::string source;
 	{
@@ -224,21 +254,20 @@ void run_file(const std::vector<std::string>& args){
 		f.close();
 	}
 
-	std::cout << "Source:" << source << std::endl;
+//	std::cout << "Source:" << source << std::endl;
 
-
-	std::cout << "Compiling..." << std::endl;
+//	std::cout << "Compiling..." << std::endl;
 	auto ast = floyd::program_to_ast2(source);
 
 
-	std::cout << "Preparing arguments..." << std::endl;
+//	std::cout << "Preparing arguments..." << std::endl;
 
 	std::vector<floyd::value_t> args3;
 	for(const auto e: args2){
 		args3.push_back(floyd::value_t(e));
 	}
 
-	std::cout << "Running..." << source << std::endl;
+//	std::cout << "Running..." << source << std::endl;
 
 
 	const auto result = floyd::run_program(ast, args3);
@@ -317,8 +346,74 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 }
 
 
+bool trace_on = true;
+
+struct floyd_quark_runtime : public quark::runtime_i {
+	floyd_quark_runtime(const std::string& test_data_root);
+
+	public: virtual void runtime_i__trace(const char s[]);
+	public: virtual void runtime_i__add_log_indent(long add);
+	public: virtual int runtime_i__get_log_indent() const;
+	public: virtual void runtime_i__on_assert(const quark::source_code_location& location, const char expression[]);
+	public: virtual void runtime_i__on_unit_test_failed(const quark::source_code_location& location, const char expression[]);
+
+
+	///////////////		State.
+		const std::string _test_data_root;
+		long _indent;
+};
+
+floyd_quark_runtime::floyd_quark_runtime(const std::string& test_data_root) :
+	_test_data_root(test_data_root),
+	_indent(0)
+{
+}
+
+void floyd_quark_runtime::runtime_i__trace(const char s[]){
+	if(trace_on){
+		for(long i = 0 ; i < _indent ; i++){
+			std::cout << "|\t";
+		}
+
+		std::cout << std::string(s);
+		std::cout << std::endl;
+	}
+}
+
+void floyd_quark_runtime::runtime_i__add_log_indent(long add){
+	_indent += add;
+}
+
+int floyd_quark_runtime::runtime_i__get_log_indent() const{
+	return static_cast<int>(_indent);
+}
+
+void floyd_quark_runtime::runtime_i__on_assert(const quark::source_code_location& location, const char expression[]){
+	QUARK_TRACE_SS(std::string("Assertion failed ") << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
+	perror("perror() says");
+	throw std::logic_error("assert");
+}
+
+void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_code_location& location, const char expression[]){
+	QUARK_TRACE_SS("Unit test failed " << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
+	perror("perror() says");
+
+	throw std::logic_error("Unit test failed");
+}
+
+
+
+
+
+
 int main(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
+
+
+	floyd_quark_runtime q("");
+	const auto prev_q = quark::get_runtime();
+	quark::set_runtime(&q);
+
 
 #if false && QUARK_UNIT_TESTS_ON
 	try {
@@ -339,11 +434,15 @@ int main(int argc, const char * argv[]) {
 		run_file(args2);
 #endif
 
+		trace_on = false;
 		run_repl();
 	}
 	else{
+		trace_on = false;
 		run_file(args);
 	}
+
+	quark::set_runtime(prev_q);
 
 	return 0;
 }
