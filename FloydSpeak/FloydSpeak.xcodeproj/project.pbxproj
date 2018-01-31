@@ -112,6 +112,7 @@
 		2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1_class.cpp; sourceTree = "<group>"; };
 		2CBCA7DD1D569C6D000FAE81 /* sha1_class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1_class.h; sourceTree = "<group>"; };
 		2CBF330C202143BD0030AE98 /* libncurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libncurses.tbd; path = usr/lib/libncurses.tbd; sourceTree = SDKROOT; };
+		2CBF330E202146390030AE98 /* test1.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = test1.floyd; sourceTree = "<group>"; };
 		2CC50E201CE485AF008D78C7 /* game_of_life1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life1.cpp; sourceTree = "<group>"; };
 		2CC50E221CE48665008D78C7 /* game_of_life1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = game_of_life1.h; sourceTree = "<group>"; };
 		2CC50E231CE48748008D78C7 /* game_of_life2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life2.cpp; sourceTree = "<group>"; };
@@ -274,6 +275,7 @@
 				2CC50E241CE48748008D78C7 /* game_of_life2.h */,
 				2CC50E261CE49A4C008D78C7 /* game_of_life3.cpp */,
 				2CC50E271CE49A4C008D78C7 /* game_of_life3.h */,
+				2CBF330E202146390030AE98 /* test1.floyd */,
 			);
 			name = examples;
 			path = ../examples;

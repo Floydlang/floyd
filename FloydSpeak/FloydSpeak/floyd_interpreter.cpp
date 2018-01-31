@@ -2068,7 +2068,7 @@ std::pair<interpreter_t, statement_result_t> run_program(const ast_t& ast, const
 	auto vm = interpreter_t(ast);
 
 	const auto main_func = resolve_env_variable(vm, "main");
-	if(main_func == nullptr){
+	if(main_func != nullptr){
 		const auto r = call_function(vm, main_func->first, args);
 		return { r.first, r.second };
 	}

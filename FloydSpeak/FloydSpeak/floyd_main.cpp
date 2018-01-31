@@ -209,24 +209,38 @@ void run_file(const std::vector<std::string>& args){
 	const auto source_path = args[1];
 	const std::vector<std::string> args2(args.begin() + 2, args.end());
 
+	std::cout << "Source file:" << source_path << std::endl;
+
 	std::string source;
 	{
 		std::ifstream f (source_path);
 		if (f.is_open() == false){
 			throw std::runtime_error("Cannot read source file.");
 		}
-		while ( f.good() ) {
-			const auto ch = f.get();
-			source.push_back(static_cast<char>(ch));
+		std::string line;
+		while ( getline(f, line) ) {
+			source.append(line + "\n");
 		}
 		f.close();
 	}
 
+	std::cout << "Source:" << source << std::endl;
+
+
+	std::cout << "Compiling..." << std::endl;
 	auto ast = floyd::program_to_ast2(source);
+
+
+	std::cout << "Preparing arguments..." << std::endl;
+
 	std::vector<floyd::value_t> args3;
 	for(const auto e: args2){
 		args3.push_back(floyd::value_t(e));
 	}
+
+	std::cout << "Running..." << source << std::endl;
+
+
 	const auto result = floyd::run_program(ast, args3);
 	if(result.second._output.is_null()){
 	}
@@ -317,6 +331,14 @@ int main(int argc, const char * argv[]) {
 #endif
 
 	if(argc == 1){
+#if false
+		const std::vector<std::string> args2 = {
+			"floyd-exe",
+			"/Users/marcus/Repositories/Floyd/examples/test1.floyd"
+		};
+		run_file(args2);
+#endif
+
 		run_repl();
 	}
 	else{
