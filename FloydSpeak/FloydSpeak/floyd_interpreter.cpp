@@ -324,7 +324,8 @@ namespace {
 				throw std::runtime_error("undefined");
 			}
 
-			//??? Check that return value's type matches function's return type.
+			//	Check that return value's type matches function's return type. Cannot be done here since we don't know who called us.
+			//	Instead calling code must check.
 			return {
 				vm2,
 				statement_result_t::make_return_unwind(result_value.get_literal())
@@ -413,7 +414,6 @@ namespace {
 			const auto result = evaluate_expression(vm2, s->_expression);
 			vm2 = result.first;
 			const auto result_value = result.second.get_literal();
-//			return { vm2, statement_result_t::make_no_output() };
 			return {
 				vm2,
 				statement_result_t::make_passive_expression_output(result_value)
@@ -458,38 +458,6 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 		}
 	}
 	return { vm2, statement_result_t::make_no_output() };
-}
-
-value_t make_default_value(const interpreter_t& vm, const typeid_t& t){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(t.check_invariant());
-
-	const auto type = t.get_base_type();
-	if(type == base_type::k_bool){
-		return value_t(false);
-	}
-	else if(type == base_type::k_int){
-		return value_t(0);
-	}
-	else if(type == base_type::k_float){
-		return value_t(0.0f);
-	}
-	else if(type == base_type::k_string){
-		return value_t("");
-	}
-	else if(type == base_type::k_struct){
-		QUARK_ASSERT(false);
-//		return make_struct_instance(vm, t);
-	}
-	else if(type == base_type::k_vector){
-		QUARK_ASSERT(false);
-	}
-	else if(type == base_type::k_function){
-		QUARK_ASSERT(false);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
@@ -565,7 +533,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			return { vm2, expression_t::make_literal(value)};
 		}
 		else{
-			throw std::runtime_error("Resolve member failed.");
+			throw std::runtime_error("Resolve struct member failed.");
 		}
 	}
 	else if(op == expression_type::k_lookup_element){
@@ -582,7 +550,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 
 			if(key_expr.second.is_literal() == false){
 				throw std::runtime_error("Cannot compute lookup key.");
-			}
+			}//??? add debug code to validate all collection values, struct members - are the correct type.
 			else{
 				if(parent_expr.second.get_literal().is_vector()){
 					if(key_expr.second.get_literal().is_int() == false){
@@ -619,8 +587,9 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 						}
 					}
 				}
+				//??? Add support for looking up characters in strings.
 				else {
-					throw std::runtime_error("Can only lookup inside vectors and dicts using [].");
+					throw std::runtime_error("Lookup using [] only works with vectors and dicts.");
 				}
 			}
 		}
@@ -633,7 +602,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			return {vm2, expression_t::make_literal(value->first)};
 		}
 		else{
-			//??? Hack to make "vector(int)" work.
+/*			//??? Hack to make "vector(int)" work.
 			if(expr->_variable == keyword_t::k_bool){
 				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_bool()))};
 			}
@@ -648,8 +617,9 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			}
 
 			else {
+*/
 				throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
-			}
+//			}
 		}
 	}
 
@@ -664,72 +634,71 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 
 	else if(op == expression_type::k_vector_definition){
 		const auto expr = e.get_vector_definition();
-
 		const std::vector<expression_t>& elements = expr->_elements;
-		std::vector<value_t> elements2;
+		const auto element_type = expr->_element_type;
 
-		typeid_t element_type = expr->_element_type;
-
-		for(const auto m: elements){
-			const auto element_expr = evaluate_expression(vm2, m);
-			vm2 = element_expr.first;
-			if(element_expr.second.is_literal() == false){
-				throw std::runtime_error("Cannot evaluate element of vector definition!");
-			}
-
-			const auto element = element_expr.second.get_literal();
-
-			//??? Solved already,using improve_vector()?
-			//	Grab vector type from element(s). This is a little fuzzy. Should probably make sure all elements are the same type.
-			if(element_type.is_null()){
-				element_type = element.get_type();
-			}
-
-			elements2.push_back(element);
+		if(elements.empty()){
+			return {vm2, expression_t::make_literal(make_vector_value(element_type, {}))};
 		}
+		else{
+			std::vector<value_t> elements2;
+			for(const auto m: elements){
+				const auto element_expr = evaluate_expression(vm2, m);
+				vm2 = element_expr.first;
+				if(element_expr.second.is_literal() == false){
+					throw std::runtime_error("Cannot evaluate element of vector definition!");
+				}
 
-		for(const auto m: elements2){
-			if((m.get_type() == element_type) == false){
-				throw std::runtime_error("Vector can not hold elements of different type!");
+				const auto element = element_expr.second.get_literal();
+				elements2.push_back(element);
 			}
+
+			//	If we don't have an explicit element type, deduct it from first element.
+			const auto element_type2 = element_type.is_null() ? elements2[0].get_type() : element_type;
+			for(const auto m: elements2){
+				if((m.get_type() == element_type2) == false){
+					throw std::runtime_error("Vector can not hold elements of different type!");
+				}
+			}
+			return {vm2, expression_t::make_literal(make_vector_value(element_type2, elements2))};
 		}
-		return {vm2, expression_t::make_literal(make_vector_value(element_type, elements2))};
 	}
 
 	else if(op == expression_type::k_dict_definition){
 		const auto expr = e.get_dict_definition();
 
 		const auto& elements = expr->_elements;
-		std::map<string, value_t> elements2;
-
 		typeid_t value_type = expr->_value_type;
 
-		for(const auto m: elements){
-			const auto element_expr = evaluate_expression(vm2, m.second);
-			vm2 = element_expr.first;
-
-			if(element_expr.second.is_literal() == false){
-				throw std::runtime_error("Cannot evaluate element of vector definition!");
-			}
-
-			const auto element = element_expr.second.get_literal();
-
-			//??? Solved already,using improve_vector()?
-			//	Grab vector type from element(s). This is a little fuzzy. Should probably make sure all elements are the same type.
-			if(value_type.is_null()){
-				value_type = element.get_type();
-			}
-
-			const string key_string = m.first;
-			elements2[key_string] = element;
+		if(elements.empty()){
+			return {vm2, expression_t::make_literal(make_dict_value(value_type, {}))};
 		}
+		else{
+			std::map<string, value_t> elements2;
+			for(const auto m: elements){
+				const auto element_expr = evaluate_expression(vm2, m.second);
+				vm2 = element_expr.first;
 
-		for(const auto m: elements2){
-			if((m.second.get_type() == value_type) == false){
-				throw std::runtime_error("Dict can not hold elements of different type!");
+				if(element_expr.second.is_literal() == false){
+					throw std::runtime_error("Cannot evaluate element of vector definition!");
+				}
+
+				const auto element = element_expr.second.get_literal();
+
+				const string key_string = m.first;
+				elements2[key_string] = element;
 			}
+
+			//	If we have no value-type, deduct it from first element.
+			const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
+
+			for(const auto m: elements2){
+				if((m.second.get_type() == value_type2) == false){
+					throw std::runtime_error("Dict can not hold elements of different type!");
+				}
+			}
+			return {vm2, expression_t::make_literal(make_dict_value(value_type2, elements2))};
 		}
-		return {vm2, expression_t::make_literal(make_dict_value(value_type, elements2))};
 	}
 
 	//	This can be desugared at compile time.
@@ -1070,8 +1039,6 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 	auto vm2 = vm;
 
-	///??? COMPARE arg count and types.
-
 	if(f.is_function() == false){
 		throw std::runtime_error("Cannot call non-function.");
 	}
@@ -1082,6 +1049,18 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		return { r.first, r.second };
 	}
 	else{
+		const auto return_type = f.get_type().get_function_return();
+		const auto arg_types = f.get_type().get_function_args();
+
+		//	arity
+		if(args.size() != arg_types.size()){
+			throw std::runtime_error("Wrong number of arguments to function.");
+		}
+		for(int i = 0 ; i < args.size() ; i++){
+			if(args[i].get_type() != arg_types[i]){
+				throw std::runtime_error("Function argument type do not match.");
+			}
+		}
 
 		//	Always use global scope.
 		//	Future: support closures by linking to function env where function is defined.
@@ -1106,8 +1085,14 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		vm2._call_stack.pop_back();
 
 		if(r.second._type != statement_result_t::k_return_unwind){
-			throw std::runtime_error("function missing return statement");
+			throw std::runtime_error("Function missing return statement");
 		}
+/*
+???
+		else if(r.second._output.get_type() != return_type){
+			throw std::runtime_error("Function return type wrong.");
+		}
+*/
 		else{
 			return {vm2, r.second };
 		}
@@ -1148,6 +1133,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
 
+//	May return a simplified expression instead of a value literal..
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1180,7 +1166,6 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		arg_values.push_back(v);
 	}
 
-
 	//	Get function value and arg values.
 	if(function_value.is_function() == false){
 		//	Attempting to call a TYPE? Then this may be a constructor call.
@@ -1203,12 +1188,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 
 	//	Call function-value.
 	else{
-		vector<value_t> args3;
-		for(const auto& i: args2){
-			args3.push_back(i.get_literal());
-		}
-
-		const auto& result = call_function(vm2, function_value, args3);
+		const auto& result = call_function(vm2, function_value, arg_values);
 		QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
 		vm2 = result.first;
 		return { vm2, expression_t::make_literal(result.second._output)};
@@ -1644,36 +1624,6 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 	}
 }
 
-
-/*
-//		vector(int)
-//		vector(int, 1, 2, 3)
-std::pair<interpreter_t, value_t> host__vector(const interpreter_t& vm, const std::vector<value_t>& args){
-	QUARK_ASSERT(vm.check_invariant());
-
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
-
-	if(args.size() == 0){
-		throw std::runtime_error("vector() requires minimum one argument.");
-	}
-
-	if(args[0].is_typeid() == false){
-		throw std::runtime_error("vector() first argument must be the type of elements in the vector.");
-	}
-	const auto element_type = args[0].get_typeid_value();
-
-	for(int i = 1 ; i < args.size() ; i++){
-		if((args[i].get_type() == element_type) == false){
-			throw std::runtime_error("vector() element wrong type.");
-		}
-	}
-
-	const auto elements = vector<value_t>(args.begin() + 1, args.end());
-	const auto v = make_vector_value(element_type, elements);
-	return {vm, v};
-}
-*/
-
 std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1950,30 +1900,35 @@ struct host_function_t {
 };
 
 const vector<host_function_t> k_host_functions {
-	host_function_t{ "print", host__print, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "assert", host__assert, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {}) },
+	host_function_t{ "print", host__print, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
+	host_function_t{ "assert", host__assert, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
+	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
-	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {}) },
-//	host_function_t{ "vector", host__vector, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {}) },
-	host_function_t{ "exists", host__exists, typeid_t::make_function(typeid_t::make_bool(), {}) },
-	host_function_t{ "erase", host__erase, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {}) },
-	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {}) }
+	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
+	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
+	host_function_t{ "find", host__find, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null(), typeid_t::make_null()}) },
+	host_function_t{ "exists", host__exists, typeid_t::make_function(typeid_t::make_bool(), {typeid_t::make_null(),typeid_t::make_null()}) },
+	host_function_t{ "erase", host__erase, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
+	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
+	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
+	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }
 };
 
 
 
 
-
+//	NOTICE: We do function overloading for the host functions: you can call them with any *type* of arguments and it gives any return type.
 std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd::value_t> args) const{
 	const int index = function_id - 1000;
 	QUARK_ASSERT(index >= 0 && index < k_host_functions.size())
 
 	const auto& host_function = k_host_functions[index];
+
+	//	arity
+	if(args.size() != host_function._function_type.get_function_args().size()){
+		throw std::runtime_error("Wrong number of arguments to host function.");
+	}
+
 	const auto result = (host_function._function_ptr)(*this, args);
 	return {
 		result.first,

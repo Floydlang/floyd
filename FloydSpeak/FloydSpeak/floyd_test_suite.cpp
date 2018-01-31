@@ -439,7 +439,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
 QUARK_UNIT_TESTQ("run_main", "Can make and read global int"){
 	test__run_main(
 		"int test = 123;"
-		"string main(){\n"
+		"int main(){\n"
 		"	return test;"
 		"}\n",
 		{},
