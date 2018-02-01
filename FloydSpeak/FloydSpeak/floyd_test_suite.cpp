@@ -1526,7 +1526,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel back; pixel front;}
+		struct image { color back; color front;}
 
 		c = color(128, 192, 255);
 		print(c);
@@ -1536,7 +1536,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
 		"struct color {int red=128,int green=192,int blue=255}",
-		"struct image {pixel back=struct color {int red=1,int green=2,int blue=3},pixel front=struct color {int red=200,int green=201,int blue=202}}"
+		"struct image {color back=struct color {int red=1,int green=2,int blue=3},color front=struct color {int red=200,int green=201,int blue=202}}"
 	}	));
 }
 
@@ -1552,7 +1552,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 	}	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "return struct from function"){
+QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { pixel back; pixel front;}

@@ -784,7 +784,9 @@ namespace floyd {
 		QUARK_ASSERT(def.check_invariant());
 
 		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
-		return value_t(struct_type, f);
+//		const auto t = typeid_t::make_unknown_identifier(struct_type.get_struct()._name);
+		const auto t = struct_type;
+		return value_t(t, f);
 	}
 
 	inline value_t make_vector_value(const typeid_t& element_type, const std::vector<value_t>& elements){

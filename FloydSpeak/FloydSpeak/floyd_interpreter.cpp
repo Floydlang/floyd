@@ -1087,12 +1087,9 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		if(r.second._type != statement_result_t::k_return_unwind){
 			throw std::runtime_error("Function missing return statement");
 		}
-/*
-???
-		else if(r.second._output.get_type() != return_type){
+		else if(r.second._output.get_type().is_struct() == false && r.second._output.get_type() != return_type){
 			throw std::runtime_error("Function return type wrong.");
 		}
-*/
 		else{
 			return {vm2, r.second };
 		}
@@ -1119,12 +1116,20 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 			 string() + "Calling constructor for \"" + def._name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
 		);
 	}
+	for(int i = 0 ; i < def._members.size() ; i++){
+		const auto v = values[i];
+		const auto a = def._members[i];
 
-	//??? check types of members.
+		QUARK_ASSERT(v.check_invariant());
+		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unknown_identifier);
 
-	for(const auto e: values){
-		QUARK_ASSERT(e.check_invariant());
-		QUARK_ASSERT(e.get_type().get_base_type() != base_type::k_unknown_identifier);
+		if(v.get_type() != a._type){
+/*
+??? wont work until we sorted out struct-types.
+			throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members");
+*/
+
+		}
 	}
 
 	const auto instance = make_struct_value(struct_type, def, values);
