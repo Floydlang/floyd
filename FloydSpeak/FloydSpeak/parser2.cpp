@@ -49,7 +49,7 @@ QUARK_UNIT_TESTQ("C++ enum class()", ""){
 
 
 bool is_valid_expr_chars(const std::string& s){
-	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[]().?:=!<>&,|#$";
+	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$";
 	for(auto i = 0 ; i < s.size() ; i++){
 		const char ch = s[i];
 		if(allowed.find(ch) == string::npos){
@@ -613,27 +613,34 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 	
 		OR
 
-		Dict definition: "[" EXPRESSION ":" EXPRESSION, EXPRESSION ":" EXPRESSION, ... "]"
-		 [ "one": 1, "two": 2, "three": 3 ]
+		Dict definition: "{" EXPRESSION ":" EXPRESSION, EXPRESSION ":" EXPRESSION, ... "}"
+			{ "one": 1, "two": 2, "three": 3 }
 	*/
 	else if(ch1 == '['){
 		const auto a = parse_bounded_list(p2, "[", "]");
 		if(a.first._has_keys){
-			vector<expr_t> flat_dict;
-			for(const auto b: a.first._elements){
-				if(b._key == nullptr){
-					throw std::runtime_error("Dictionary definition misses element key(s)!");
-				}
-				flat_dict.push_back(*b._key);
-				flat_dict.push_back(b._value);
-			}
-			const auto result = maker_dict_definition("", flat_dict);
-			return {result, a.second };
+			throw std::runtime_error("Illegal vector, use {} to make a dictionary!");
 		}
 		else{
 			const auto result = maker_vector_definition("", get_values(a.first));
 			return {result, a.second };
 		}
+	}
+	else if(ch1 == '{'){
+		const auto a = parse_bounded_list(p2, "{", "}");
+		if(a.first._elements.size() > 0 && a.first._has_keys == false){
+			throw std::runtime_error("Dictionary needs keys!");
+		}
+		vector<expr_t> flat_dict;
+		for(const auto b: a.first._elements){
+			if(b._key == nullptr){
+				throw std::runtime_error("Dictionary definition misses element key(s)!");
+			}
+			flat_dict.push_back(*b._key);
+			flat_dict.push_back(b._value);
+		}
+		const auto result = maker_dict_definition("", flat_dict);
+		return {result, a.second };
 	}
 
 	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
@@ -1073,12 +1080,15 @@ QUARK_UNIT_TESTQ("run_main()", "vector"){
 //////////////////////////////////			DICT definition
 
 QUARK_UNIT_TESTQ("run_main()", "dict"){
-	QUARK_UT_VERIFY(test__parse_expression("[:]", R"(["dict-def", "", []])", ""));
+	QUARK_UT_VERIFY(test__parse_expression("{:}", R"(["dict-def", "", []])", ""));
+}
+QUARK_UNIT_TEST("run_main()", "dict", "", ""){
+	QUARK_UT_VERIFY(test__parse_expression("{}", R"(["dict-def", "", []])", ""));
 }
 
 QUARK_UNIT_TEST("parser", "parge_expression()", "dict definition", ""){
 	QUARK_UT_VERIFY(test__parse_expression(
-		R"(["one": 1, "two": 2, "three": 3])",
+		R"({"one": 1, "two": 2, "three": 3})",
 		R"(["dict-def", "", [["k", "string", "one"]:["k", "int", 1], ["k", "string", "two"]:["k", "int", 2], ["k", "string", "three"]:["k", "int", 3]]])", "")
 	);
 }

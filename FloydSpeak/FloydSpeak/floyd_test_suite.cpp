@@ -665,7 +665,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 //////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
 
-QUARK_UNIT_TESTQ("call_function()", "return from middle of function"){
+QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 	auto r = run_global(
 		"string f(){"
 		"	print(\"A\");"
@@ -1330,13 +1330,13 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 
 QUARK_UNIT_TEST("dict", "construct", "", ""){
 	const auto vm = run_global(R"(
-		[string: int] a = ["one": 1, "two": 2];
+		[string: int] a = {"one": 1, "two": 2};
 		assert(size(a) == 2);
 	)");
 }
 QUARK_UNIT_TEST("dict", "[]", "", ""){
 	const auto vm = run_global(R"(
-		[string: int] a = ["one": 1, "two": 2];
+		[string: int] a = {"one": 1, "two": 2};
 		print(a["one"]);
 		print(a["two"]);
 	)");
@@ -1349,8 +1349,8 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 QUARK_UNIT_TEST("dict", "", "", ""){
 	try{
 		const auto vm = run_global(R"(
-			mutable a = [:];
-			a = ["hello": 1];
+			mutable a = {};
+			a = {"hello": 1};
 			print(a);
 		)");
 		QUARK_UT_VERIFY(false);
@@ -1362,7 +1362,7 @@ QUARK_UNIT_TEST("dict", "", "", ""){
 QUARK_UNIT_TEST("dict", "[:]", "", ""){
 	try {
 		const auto vm = run_global(R"(
-			a = [:];
+			a = {};
 			print(a);
 		)");
 		QUARK_UT_VERIFY(false);
@@ -1374,116 +1374,116 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 
 QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
 	const auto vm = run_global(R"(
-		a = ["one": 1, "two": 2];
+		a = {"one": 1, "two": 2};
 		print(a);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		R"([string:int]("one": 1,"two": 2))",
+		R"([string:int]{"one": 1,"two": 2})",
 	});
 }
 
-QUARK_UNIT_TEST("dict", "[:]", "", ""){
+QUARK_UNIT_TEST("dict", "{}", "", ""){
 	const auto vm = run_global(R"(
-		mutable [string:int] a = [:];
-		a = [:];
+		mutable [string:int] a = {};
+		a = {};
 		print(a);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		R"([string:int]())",
+		R"([string:int]{})",
 	});
 }
 
 QUARK_UNIT_TEST("dict", "==", "", ""){
 	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 2] == ["one": 1, "two": 2]) == true);
+		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
 	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 2] == ["two": 2]) == false);
+		assert(({"one": 1, "two": 2} == {"two": 2}) == false);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
 	const auto vm = run_global(R"(
-		assert((["one": 2, "two": 2] == ["one": 1, "two": 2]) == false);
+		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
 	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 2] < ["one": 1, "two": 2]) == false);
+		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
 	const auto vm = run_global(R"(
-		assert((["one": 1, "two": 1] < ["one": 1, "two": 2]) == true);
+		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true);
 	)");
 }
 
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	const auto vm = run_global(R"(
-		assert(size([:]) == 0);
+		assert(size({}) == 0);
 	)");
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 	const auto vm = run_global(R"(
-		print([:]);
+		print({});
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		R"([string:null]())",
+		R"([string:null]{})",
 	});
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	const auto vm = run_global(R"(
-		assert(size(["one":1]) == 1);
+		assert(size({"one":1}) == 1);
 	)");
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	const auto vm = run_global(R"(
-		assert(size(["one":1, "two":2]) == 2);
+		assert(size({"one":1, "two":2}) == 2);
 	)");
 }
 
 QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side effect on original dict"){
 	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2];
+		a = { "one": 1, "two": 2};
 		b = update(a, "three", 3);
 		print(a);
 		print(b);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		R"([string:int]("one": 1,"two": 2))",
-		R"([string:int]("one": 1,"three": 3,"two": 2))"
+		R"([string:int]{"one": 1,"two": 2})",
+		R"([string:int]{"one": 1,"three": 3,"two": 2})"
 	});
 }
 
 QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2, "three" : 3];
+		a = { "one": 1, "two": 2, "three" : 3};
 		b = update(a, "three", 333);
 		print(a);
 		print(b);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		R"([string:int]("one": 1,"three": 3,"two": 2))",
-		R"([string:int]("one": 1,"three": 333,"two": 2))"
+		R"([string:int]{"one": 1,"three": 3,"two": 2})",
+		R"([string:int]{"one": 1,"three": 333,"two": 2})"
 	});
 }
 
 
 QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 	const auto vm = run_global(R"(
-		a = update([:], "one", 1);
+		a = update({}, "one", 1);
 		b = update(a, "two", 2);
 		print(b);
-		assert(a == ["one": 1]);
-		assert(b == ["one": 1, "two": 2]);
+		assert(a == {"one": 1});
+		assert(b == {"one": 1, "two": 2});
 	)");
 }
 
 
 QUARK_UNIT_TEST("dict", "exists()", "", ""){
 	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2, "three" : 3];
+		a = { "one": 1, "two": 2, "three" : 3};
 		assert(exists(a, "two") == true);
 		assert(exists(a, "four") == false);
 	)");
@@ -1491,9 +1491,9 @@ QUARK_UNIT_TEST("dict", "exists()", "", ""){
 
 QUARK_UNIT_TEST("dict", "erase()", "", ""){
 	const auto vm = run_global(R"(
-		a = [ "one": 1, "two": 2, "three" : 3];
+		a = { "one": 1, "two": 2, "three" : 3};
 		b = erase(a, "one");
-		assert(b == [ "two": 2, "three" : 3]);
+		assert(b == { "two": 2, "three" : 3});
 	)");
 }
 

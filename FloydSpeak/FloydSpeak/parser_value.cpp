@@ -119,7 +119,7 @@ std::string to_compact_string(const dict_instance_t& instance){
 		const auto es = key_str + ": " + value_str;
 		elements.push_back(es);
 	}
-	return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
+	return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "{" + concat_strings_with_divider(elements, ",") + "}";
 }
 
 
