@@ -76,7 +76,7 @@ const std::string keyword_t::k_mutable = "mutable";
 		else if(t == base_type::k_function){
 			return "function";
 		}
-		else if(t == base_type::k_unknown_identifier){
+		else if(t == base_type::k_unresolved_type_identifier){
 			return "unknown-identifier";
 		}
 		else{
@@ -100,7 +100,7 @@ const std::string keyword_t::k_mutable = "mutable";
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "function");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_unknown_identifier) == "unknown-identifier");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_unresolved_type_identifier) == "unknown-identifier");
 	}
 
 
@@ -174,38 +174,38 @@ expression_type token_to_expression_type(const string& op){
 		if(_base_type == floyd::base_type::k_null){
 			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unique_type_id.empty());
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_bool){
 			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unique_type_id.empty());
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_int){
 			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unique_type_id.empty());
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_float){
 			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unique_type_id.empty());
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_string){
 			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unique_type_id.empty());
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
 			QUARK_ASSERT(_parts.size() == 1);
 			QUARK_ASSERT(_parts[0].check_invariant());
 			QUARK_ASSERT(_unique_type_id.empty());
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
 			QUARK_ASSERT(_parts[0].check_invariant());
@@ -213,14 +213,14 @@ expression_type token_to_expression_type(const string& op){
 		else if(_base_type == floyd::base_type::k_struct){
 			QUARK_ASSERT(_parts.empty() == true);
 //			QUARK_ASSERT(_unique_type_id.empty() == false);
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(_struct_def);
 			QUARK_ASSERT(_struct_def->check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_vector){
 			QUARK_ASSERT(_parts.size() == 1);
 			QUARK_ASSERT(_unique_type_id.empty() == true);
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
 			QUARK_ASSERT(_parts[0].check_invariant());
@@ -228,7 +228,7 @@ expression_type token_to_expression_type(const string& op){
 		else if(_base_type == floyd::base_type::k_dict){
 			QUARK_ASSERT(_parts.size() == 1);
 			QUARK_ASSERT(_unique_type_id.empty() == true);
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
 			QUARK_ASSERT(_parts[0].check_invariant());
@@ -236,17 +236,17 @@ expression_type token_to_expression_type(const string& op){
 		else if(_base_type == floyd::base_type::k_function){
 			QUARK_ASSERT(_parts.size() >= 1);
 			QUARK_ASSERT(_unique_type_id.empty() == true);
-			QUARK_ASSERT(_unknown_identifier.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
 			for(const auto e: _parts){
 				QUARK_ASSERT(e.check_invariant());
 			}
 		}
-		else if(_base_type == floyd::base_type::k_unknown_identifier){
+		else if(_base_type == floyd::base_type::k_unresolved_type_identifier){
 			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unique_type_id == "");
-			QUARK_ASSERT(_unknown_identifier.empty() == false);
+			QUARK_ASSERT(_unresolved_type_identifier.empty() == false);
 			QUARK_ASSERT(!_struct_def);
 		}
 		else{
@@ -263,7 +263,7 @@ expression_type token_to_expression_type(const string& op){
 		std::swap(_base_type, other._base_type);
 		_parts.swap(other._parts);
 		_unique_type_id.swap(other._unique_type_id);
-		_unknown_identifier.swap(other._unknown_identifier);
+		_unresolved_type_identifier.swap(other._unresolved_type_identifier);
 		_struct_def.swap(other._struct_def);
 
 		QUARK_ASSERT(other.check_invariant());
@@ -279,7 +279,7 @@ expression_type token_to_expression_type(const string& op){
 	}
 
 	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
-		QUARK_UT_VERIFY(typeid_t::make_unknown_identifier("hello").get_base_type() == base_type::k_unknown_identifier);
+		QUARK_UT_VERIFY(typeid_t::make_unresolved_type_identifier("hello").get_base_type() == base_type::k_unresolved_type_identifier);
 	}
 
 
@@ -334,8 +334,8 @@ expression_type token_to_expression_type(const string& op){
 				typeids_to_json_array(t.get_function_args())
 			});
 		}
-		else if(b == base_type::k_unknown_identifier){
-			return t.get_unknown_identifier();
+		else if(b == base_type::k_unresolved_type_identifier){
+			return t.get_unresolved_type_identifier();
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -364,7 +364,7 @@ expression_type token_to_expression_type(const string& op){
 				return typeid_t::make_string();
 			}
 			else{
-				return typeid_t::make_unknown_identifier(s);
+				return typeid_t::make_unresolved_type_identifier(s);
 			}
 		}
 		else if(t.is_array()){
@@ -418,8 +418,8 @@ expression_type token_to_expression_type(const string& op){
 
 		const auto basetype = t.get_base_type();
 
-		if(basetype == floyd::base_type::k_unknown_identifier){
-			return t.get_unknown_identifier();
+		if(basetype == floyd::base_type::k_unresolved_type_identifier){
+			return t.get_unresolved_type_identifier();
 		}
 		else if(basetype == floyd::base_type::k_typeid){
 			const auto t2 = t.get_typeid_typeid();
@@ -520,7 +520,7 @@ expression_type token_to_expression_type(const string& op){
 
 
 			//	unknown_identifier
-			{ typeid_t::make_unknown_identifier("hello"), "\"hello\"", "hello" }
+			{ typeid_t::make_unresolved_type_identifier("hello"), "\"hello\"", "hello" }
 		};
 		return tests;
 	}

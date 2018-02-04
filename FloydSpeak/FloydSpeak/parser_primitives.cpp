@@ -459,7 +459,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 		return { make_shared<typeid_t>(typeid_t::make_string()), pos1.second };
 	}
 	else{
-		return { make_shared<typeid_t>(typeid_t::make_unknown_identifier(pos1.first)), pos1.second };
+		return { make_shared<typeid_t>(typeid_t::make_unresolved_type_identifier(pos1.first)), pos1.second };
 	}
 }
 
@@ -596,7 +596,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 }
 QUARK_UNIT_TEST("", "read_type()", "identifier", ""){
 	const auto r = read_type(seq_t("temp"));
-	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_unknown_identifier("temp"));
+	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_unresolved_type_identifier("temp"));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_UNIT_TEST("", "read_type()", "vector", ""){

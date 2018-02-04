@@ -1121,7 +1121,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 		const auto a = def._members[i];
 
 		QUARK_ASSERT(v.check_invariant());
-		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unknown_identifier);
+		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
 
 		if(v.get_type() != a._type){
 /*
@@ -1437,8 +1437,8 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 //### add checking of function types when calling / returning from them. Also host functions.
 
 typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
-	if(type.get_base_type() == base_type::k_unknown_identifier){
-		const auto v = resolve_env_variable(vm, type.get_unknown_identifier());
+	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
+		const auto v = resolve_env_variable(vm, type.get_unresolved_type_identifier());
 		if(v){
 			if(v->first.is_typeid()){
 				return v->first.get_typeid_value();

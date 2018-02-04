@@ -1718,7 +1718,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 //////////////////////////		JSON
 
-
+/*
 QUARK_UNIT_TEST_VIP("json", "dogs", "", ""){
 	const auto vm = run_global(R"(
 
@@ -1763,7 +1763,7 @@ QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
 }
 
-
+*/
 
 
 

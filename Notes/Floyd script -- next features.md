@@ -11,6 +11,7 @@
 - statements vs expressions
 - JSON compatible primitives types.
 
+??? Make typeid a full blown thing. Allows you to design a new struct at runtime etc. Introspection.
 
 
 | Example										| Result |
@@ -64,6 +65,11 @@ TYPE
 		string: compile-time path of the type declaration -- to make two identical custom_types unique.
 		TYPE type-implementation.
 		In the future, intern this and use a string-id.
+
+
+When parsing code we support typenames were we don't know the actual type yet. Those typenames can be used to build more complex types out of.
+
+When executing program, all those typenames needs to be resolved. Idea: make special compiler types: unresolved_typeid_t and resolved_typeid_t.
 
 
 

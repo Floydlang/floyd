@@ -400,7 +400,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		QUARK_ASSERT(false);
 		return 0;
 	}
-	else if(type.is_unknown_identifier()){
+	else if(type.is_unresolved_type_identifier()){
 		QUARK_ASSERT(false);
 		return 0;
 	}

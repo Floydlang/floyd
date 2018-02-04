@@ -320,7 +320,7 @@ namespace floyd {
 
 				QUARK_ASSERT(_function && _function->check_invariant());
 			}
-			else if(base_type == base_type::k_unknown_identifier){
+			else if(base_type == base_type::k_unresolved_type_identifier){
 				//	 Cannot have a value of unknown type.
 				QUARK_ASSERT(false);
 			}
@@ -554,7 +554,7 @@ namespace floyd {
 			else if(base_type == base_type::k_function){
 				return floyd::typeid_to_compact_string(_typeid);
 			}
-			else if(base_type == base_type::k_unknown_identifier){
+			else if(base_type == base_type::k_unresolved_type_identifier){
 				QUARK_ASSERT(false);
 				return "";
 			}
@@ -780,11 +780,11 @@ namespace floyd {
 	}
 
 	inline value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values){
-		QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unknown_identifier);
+		QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved_type_identifier);
 		QUARK_ASSERT(def.check_invariant());
 
 		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
-//		const auto t = typeid_t::make_unknown_identifier(struct_type.get_struct()._name);
+//		const auto t = typeid_t::make_unresolved_type_identifier(struct_type.get_struct()._name);
 		const auto t = struct_type;
 		return value_t(t, f);
 	}

@@ -218,7 +218,7 @@ namespace floyd {
 		k_function,
 
 		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-		k_unknown_identifier
+		k_unresolved_type_identifier
 	};
 
 	std::string base_type_to_string(const base_type t);
@@ -379,20 +379,20 @@ namespace floyd {
 		}
 
 
-		public: static typeid_t make_unknown_identifier(const std::string& s){
-			return { floyd::base_type::k_unknown_identifier, {}, {}, s, {} };
+		public: static typeid_t make_unresolved_type_identifier(const std::string& s){
+			return { floyd::base_type::k_unresolved_type_identifier, {}, {}, s, {} };
 		}
 
-		public: bool is_unknown_identifier() const {
+		public: bool is_unresolved_type_identifier() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _base_type == base_type::k_unknown_identifier;
+			return _base_type == base_type::k_unresolved_type_identifier;
 		}
 
-		public: std::string get_unknown_identifier() const{
-			QUARK_ASSERT(get_base_type() == base_type::k_unknown_identifier);
+		public: std::string get_unresolved_type_identifier() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_unresolved_type_identifier);
 
-			return _unknown_identifier;
+			return _unresolved_type_identifier;
 		}
 
 
@@ -403,7 +403,7 @@ namespace floyd {
 				&& _base_type == other._base_type
 				&& _parts == other._parts
 				&& _unique_type_id == other._unique_type_id
-				&& _unknown_identifier == other._unknown_identifier
+				&& _unresolved_type_identifier == other._unresolved_type_identifier
 				&& compare_shared_values(_struct_def, other._struct_def);
 		}
 		public: bool operator!=(const typeid_t& other) const{ return !(*this == other);}
@@ -428,7 +428,7 @@ namespace floyd {
 			_base_type(base_type),
 			_parts(parts),
 			_unique_type_id(unique_type_id),
-			_unknown_identifier(unknown_identifier),
+			_unresolved_type_identifier(unknown_identifier),
 			_struct_def(struct_def)
 		{
 			_DEBUG = typeid_to_compact_string(*this);
@@ -441,8 +441,8 @@ namespace floyd {
 		private: std::vector<typeid_t> _parts;
 		private: std::string _unique_type_id;
 
-		//	Used for k_unknown_identifier.
-		private: std::string _unknown_identifier;
+		//	Used for k_unresolved_type_identifier.
+		private: std::string _unresolved_type_identifier;
 
 		//??? Add path to environment when struct was defined = make it unique.
 		private: std::shared_ptr<struct_definition_t> _struct_def;
@@ -476,8 +476,8 @@ namespace floyd {
 
 		int (float, [string])		k_function				return = k_int, args = [ k_float, typeid_t(k_vector, string) ]
 
-		randomize_player			k_unknown_identifier	"randomize_player"
-		- When parsing we find identifiers that we don't know what they mean. Stored as k_unknown_identifier with identifier
+		randomize_player			k_unresolved_type_identifier	"randomize_player"
+		- When parsing we find identifiers that we don't know what they mean. Stored as k_unresolved_type_identifier with identifier
 
 
 
@@ -494,7 +494,7 @@ namespace floyd {
 		Use read_required_type()
 
 
-		??? Remove concept of typeid_t make_unknown_identifier, instead use typeid_t OR identifier-string.
+		??? Remove concept of typeid_t make_unresolved_type_identifier, instead use typeid_t OR identifier-string.
 	*/
 
 	json_t typeid_to_normalized_json(const typeid_t& t);
