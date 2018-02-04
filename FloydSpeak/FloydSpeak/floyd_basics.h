@@ -402,7 +402,6 @@ namespace floyd {
 				_DEBUG == other._DEBUG
 				&& _base_type == other._base_type
 				&& _parts == other._parts
-				&& _unique_type_id == other._unique_type_id
 				&& _unresolved_type_identifier == other._unresolved_type_identifier
 				&& compare_shared_values(_struct_def, other._struct_def);
 		}
@@ -427,7 +426,6 @@ namespace floyd {
 		):
 			_base_type(base_type),
 			_parts(parts),
-			_unique_type_id(unique_type_id),
 			_unresolved_type_identifier(unknown_identifier),
 			_struct_def(struct_def)
 		{
@@ -439,7 +437,6 @@ namespace floyd {
 		private: std::string _DEBUG;
 		private: floyd::base_type _base_type;
 		private: std::vector<typeid_t> _parts;
-		private: std::string _unique_type_id;
 
 		//	Used for k_unresolved_type_identifier.
 		private: std::string _unresolved_type_identifier;

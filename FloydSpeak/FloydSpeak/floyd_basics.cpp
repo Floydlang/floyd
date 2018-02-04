@@ -173,38 +173,32 @@ expression_type token_to_expression_type(const string& op){
 
 		if(_base_type == floyd::base_type::k_null){
 			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unique_type_id.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_bool){
 			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unique_type_id.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_int){
 			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unique_type_id.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_float){
 			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unique_type_id.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_string){
 			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unique_type_id.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
 			QUARK_ASSERT(_parts.size() == 1);
 			QUARK_ASSERT(_parts[0].check_invariant());
-			QUARK_ASSERT(_unique_type_id.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
@@ -212,14 +206,12 @@ expression_type token_to_expression_type(const string& op){
 		}
 		else if(_base_type == floyd::base_type::k_struct){
 			QUARK_ASSERT(_parts.empty() == true);
-//			QUARK_ASSERT(_unique_type_id.empty() == false);
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(_struct_def);
 			QUARK_ASSERT(_struct_def->check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_vector){
 			QUARK_ASSERT(_parts.size() == 1);
-			QUARK_ASSERT(_unique_type_id.empty() == true);
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
@@ -227,7 +219,6 @@ expression_type token_to_expression_type(const string& op){
 		}
 		else if(_base_type == floyd::base_type::k_dict){
 			QUARK_ASSERT(_parts.size() == 1);
-			QUARK_ASSERT(_unique_type_id.empty() == true);
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
@@ -235,7 +226,6 @@ expression_type token_to_expression_type(const string& op){
 		}
 		else if(_base_type == floyd::base_type::k_function){
 			QUARK_ASSERT(_parts.size() >= 1);
-			QUARK_ASSERT(_unique_type_id.empty() == true);
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
@@ -245,7 +235,6 @@ expression_type token_to_expression_type(const string& op){
 		}
 		else if(_base_type == floyd::base_type::k_unresolved_type_identifier){
 			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unique_type_id == "");
 			QUARK_ASSERT(_unresolved_type_identifier.empty() == false);
 			QUARK_ASSERT(!_struct_def);
 		}
@@ -262,7 +251,6 @@ expression_type token_to_expression_type(const string& op){
 		std::swap(_DEBUG, other._DEBUG);
 		std::swap(_base_type, other._base_type);
 		_parts.swap(other._parts);
-		_unique_type_id.swap(other._unique_type_id);
 		_unresolved_type_identifier.swap(other._unresolved_type_identifier);
 		_struct_def.swap(other._struct_def);
 
