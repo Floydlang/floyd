@@ -1504,7 +1504,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		print(t);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"typeid(struct t {int a;})"
+		"typeid(struct {int a;})"
 	}	));
 }
 
@@ -1514,7 +1514,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		a = t(3);
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ R"(struct t {int a=3})" }		));
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ R"(struct {int a=3})" }		));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
@@ -1538,8 +1538,8 @@ QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
 		print(i);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct color {int red=128,int green=192,int blue=255}",
-		"struct image {color back=struct color {int red=1,int green=2,int blue=3},color front=struct color {int red=200,int green=201,int blue=202}}"
+		"struct {int red=128,int green=192,int blue=255}",
+		"struct {color back=struct {int red=1,int green=2,int blue=3},color front=struct {int red=200,int green=201,int blue=202}}"
 	}	));
 }
 
@@ -1565,7 +1565,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		print(make_color());
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct color {int red=100,int green=101,int blue=102}",
+		"struct {int red=100,int green=101,int blue=102}",
 	}	));
 }
 
@@ -1625,8 +1625,8 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 		print(b);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct color {int red=255,int green=128,int blue=128}",
-		"struct color {int red=255,int green=128,int blue=129}",
+		"struct {int red=255,int green=128,int blue=128}",
+		"struct {int red=255,int green=128,int blue=129}",
 	}	));
 }
 
@@ -1655,12 +1655,12 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 	)");
 
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct color {int red=255,int green=128,int blue=128}",
-		"struct color {int red=255,int green=3,int blue=128}",
+		"struct {int red=255,int green=128,int blue=128}",
+		"struct {int red=255,int green=3,int blue=128}",
 	}	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
+QUARK_UNIT_TEST_VIP("run_main()", "mutate nested member", "", ""){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -1670,8 +1670,8 @@ QUARK_UNIT_TESTQ("run_main()", "mutate nested member"){
 		print(b);
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct image {color back=struct color {int red=0,int green=100,int blue=200},color front=struct color {int red=0,int green=0,int blue=0}}",
-		"struct image {color back=struct color {int red=0,int green=100,int blue=200},color front=struct color {int red=0,int green=3,int blue=0}}"
+		"struct {back=struct {red=0,green=100,blue=200},front=struct {red=0,green=0,blue=0}}",
+		"struct {back=struct {red=0,green=100,blue=200},front=struct {red=0,green=3,blue=0}}"
 	}	));
 }
 

@@ -364,12 +364,12 @@ expression_type token_to_expression_type(const string& op){
 			}
 			else if(s == keyword_t::k_struct){
 				const auto struct_def_array = a[1].get_array();
-				const auto struct_name = struct_def_array[0].get_string();
-				const auto member_array = struct_def_array[1].get_array();
+//				const auto struct_name = struct_def_array[0].get_string();
+				const auto member_array = struct_def_array[0].get_array();
 
 				const vector<member_t> struct_members = members_from_json(member_array);
 				return typeid_t::make_struct(
-					std::make_shared<struct_definition_t>(struct_definition_t(struct_name, struct_members))
+					std::make_shared<struct_definition_t>(struct_definition_t(struct_members))
 				);
 			}
 			else if(s == "vector"){
@@ -453,7 +453,7 @@ expression_type token_to_expression_type(const string& op){
 
 	const vector<typeid_str_test_t> make_typeid_str_tests(){
 		const auto s1 = typeid_t::make_struct(
-			std::make_shared<struct_definition_t>(struct_definition_t("file", {}))
+			std::make_shared<struct_definition_t>(struct_definition_t({}))
 		);
 
 		const auto tests = vector<typeid_str_test_t>{
@@ -471,10 +471,10 @@ expression_type token_to_expression_type(const string& op){
 				R"(
 					[
 						"typeid",
-						["struct", ["file", []]]
+						["struct", [[]]]
 					]
 				)",
-				"typeid(struct file {})"
+				"typeid(struct {})"
 			},
 
 
@@ -482,19 +482,18 @@ expression_type token_to_expression_type(const string& op){
 //??? dict
 
 			//	Struct
-			{ s1, R"(["struct", ["file", []]])", "struct file {}" },
+			{ s1, R"(["struct", [[]]])", "struct {}" },
 			{
 				typeid_t::make_struct(
 					std::make_shared<struct_definition_t>(struct_definition_t(
-						"file",
 						vector<member_t>{
 							member_t(typeid_t::make_int(), "a"),
 							member_t(typeid_t::make_float(), "b")
 						}
 					))
 				),
-				R"(["struct", ["file", [{ "type": "int", "name": "a"}, {"type": "float", "name": "b"}]]])",
-				"struct file {int a;float b;}"
+				R"(["struct", [[{ "type": "int", "name": "a"}, {"type": "float", "name": "b"}]]])",
+				"struct {int a;float b;}"
 			},
 
 
@@ -517,6 +516,7 @@ expression_type token_to_expression_type(const string& op){
 	QUARK_UNIT_TESTQ("typeid_to_normalized_json()", ""){
 		const auto f = make_typeid_str_tests();
 		for(int i = 0 ; i < f.size() ; i++){
+			QUARK_TRACE(std::to_string(i));
 			const auto start_typeid = f[i]._typeid;
 			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
 
@@ -530,6 +530,7 @@ expression_type token_to_expression_type(const string& op){
 	QUARK_UNIT_TESTQ("typeid_from_normalized_json", ""){
 		const auto f = make_typeid_str_tests();
 		for(int i = 0 ; i < f.size() ; i++){
+			QUARK_TRACE(std::to_string(i));
 			const auto start_typeid = f[i]._typeid;
 			const auto expected_normalized_json = parse_json(seq_t(f[i]._normalized_json)).first;
 
@@ -544,6 +545,7 @@ expression_type token_to_expression_type(const string& op){
 	QUARK_UNIT_TESTQ("typeid_to_compact_string", ""){
 		const auto f = make_typeid_str_tests();
 		for(int i = 0 ; i < f.size() ; i++){
+			QUARK_TRACE(std::to_string(i));
 			const auto start_typeid = f[i]._typeid;
 
 			//	Test typeid_to_compact_string().
@@ -666,11 +668,11 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _name == other._name && _members == other._members;
+		return _members == other._members;
 	}
 
 	std::string to_compact_string(const struct_definition_t& v){
-		auto s = "struct " + v._name + " {";
+		auto s = string() + "struct {";
 		for(const auto e: v._members){
 			s = s + typeid_to_compact_string(e._type) + " " + e._name + ";";
 		}
@@ -682,7 +684,6 @@ expression_type token_to_expression_type(const string& op){
 		QUARK_ASSERT(v.check_invariant());
 
 		return json_t::make_array({
-			json_t(v._name),
 			members_to_json(v._members)
 		});
 	}

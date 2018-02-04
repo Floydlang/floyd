@@ -47,13 +47,13 @@ namespace floyd {
 			const auto& def = v._def._members[i];
 			const auto& value = v._member_values[i];
 
-			const auto m = typeid_to_compact_string(def._type) + " " + def._name + "=" + value.to_compact_string_quote_strings();
+			const auto m = /*typeid_to_compact_string(def._type) + " " +*/ def._name + "=" + value.to_compact_string_quote_strings();
 			members.push_back(m);
 		}
-		return "struct " + v._def._name + " {" + concat_strings_with_divider(members, ",") + "}";
+		return "struct {" + concat_strings_with_divider(members, ",") + "}";
 	}
 
-	json_t to_json(const struct_instance_t& t){
+	json_t to_normalized_json(const struct_instance_t& t){
 		return json_t::make_object(
 			{
 				{ "def", typeid_to_normalized_json(t._def) },
@@ -555,7 +555,7 @@ json_t value_to_normalized_json(const value_t& v){
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct_value();
-		return to_json(*value);
+		return to_normalized_json(*value);
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector_value();

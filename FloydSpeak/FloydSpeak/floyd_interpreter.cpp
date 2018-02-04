@@ -337,7 +337,7 @@ namespace {
 		else if(statement._def_struct){
 			const auto& s = statement._def_struct;
 
-			const auto name = s->_def._name;
+			const auto name = s->_name;
 			if(vm2._call_stack.back()->_values.count(name) > 0){
 				throw std::runtime_error("Name already used.");
 			}
@@ -1110,10 +1110,11 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	QUARK_SCOPED_TRACE("construct_struct()");
 	QUARK_TRACE("struct_type: " + typeid_to_compact_string(struct_type));
 
+	const string struct_type_name = "unnamed";
 	const auto& def = struct_type.get_struct();
 	if(values.size() != def._members.size()){
 		throw std::runtime_error(
-			 string() + "Calling constructor for \"" + def._name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
+			 string() + "Calling constructor for \"" + struct_type_name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
 		);
 	}
 	for(int i = 0 ; i < def._members.size() ; i++){

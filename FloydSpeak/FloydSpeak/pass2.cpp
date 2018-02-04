@@ -351,7 +351,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto members = struct_def.get_object_element("members").get_array();
 
 			const auto members2 = members_from_json(members);
-			const auto struct_def2 = struct_definition_t(name, members2);
+			const auto struct_def2 = struct_definition_t(members2);
 
 			const auto s = define_struct_statement_t{ name, struct_def2 };
 			statements2.push_back(make_shared<statement_t>(make__define_struct_statement(s)));

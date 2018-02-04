@@ -540,18 +540,15 @@ namespace floyd {
 
 
 	struct struct_definition_t {
-		public: struct_definition_t(const std::string& name, const std::vector<member_t>& members) :
-			_name(name),
+		public: struct_definition_t(const std::vector<member_t>& members) :
 			_members(members)
 		{
-			QUARK_ASSERT(name.size() > 0);
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_definition_t& other) const;
 
 
-		public: std::string _name;
 		public: std::vector<member_t> _members;
 	};
 

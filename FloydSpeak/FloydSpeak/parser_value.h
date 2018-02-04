@@ -48,7 +48,7 @@ namespace floyd {
 	};
 
 	std::string to_compact_string(const struct_instance_t& instance);
-	json_t to_json(const struct_instance_t& instance);
+	json_t to_normalized_json(const struct_instance_t& instance);
 
 
 	//////////////////////////////////////////////////		vector_instance_t
