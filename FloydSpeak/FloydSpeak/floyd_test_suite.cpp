@@ -1050,8 +1050,11 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 }
 
 
+//////////////////////////		TYPEID - TYPE
 
-//////////////////////////		STRING
+//	??? Test converting different types to jsons
+
+//////////////////////////		STRING - TYPE
 
 
 
@@ -1100,7 +1103,7 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 
 
 
-//////////////////////////		VECTOR
+//////////////////////////		VECTOR - TYPE
 
 
 QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
@@ -1296,7 +1299,7 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 }
 
 
-//////////////////////////		DICT
+//////////////////////////		DICT - TYPE
 
 
 
@@ -1471,7 +1474,7 @@ QUARK_UNIT_TEST("dict", "erase()", "", ""){
 
 
 
-//////////////////////////		STRUCTS
+//////////////////////////		STRUCT - TYPE
 
 
 
@@ -1716,7 +1719,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 
 
-//////////////////////////		JSON
+//////////////////////////		JSON - TYPE
 
 /*
 QUARK_UNIT_TEST_VIP("json", "dogs", "", ""){

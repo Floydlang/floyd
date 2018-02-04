@@ -81,23 +81,65 @@ Struct declaration statement:
 		[string: string] tags;
 	}
 
-Result is
-	typeid struct1 = [
+Result is equivalent to:
+
+	typeid struct1 = typeid[
 		"struct",
 		[
 			"struct1",
 			[
 				{ "type": "int", "name": "count" },
 				{ "type": "string", "name": "name" },
-				{ "type": "dict", "name": "tags" },
+				{ "type": ["dict", "string"], "name": "tags" }
 			]
 		]
 	]
 
-a = struct { int, int, string }( 4, 5, "six");
+
+Function declaration statement:
+
+
+	int test_xyz(float a, float b){ return a + b; }
+
+Result
+
+	["int", ["float", "float"] test_xyz = FUNCTION_LITERAL;
 
 
 
+Unnamed struct:
+
+	a = struct { int, string, string }( 4, "five", "six");
+
+
+Becomes:
+	typeid[
+		"struct",
+		[
+			"struct1",
+			[
+				{ "type": "int", "name": "" },
+				{ "type": "string", "name": "" },
+				{ "type": ["dict", "string"], "name": "" }
+			]
+		]
+	]
+
+	a = 
+	typeid[
+		"struct",
+		[
+			"struct1",
+			[
+				{ "type": "int", "name": "" },
+				{ "type": "string", "name": "" },
+				{ "type": ["dict", "string"], "name": "" }
+			]
+		]
+	](4, "five", "six");
+
+
+??? make struct definition into an expression instead of a type.
 
 
 int my_func(float a, float b){

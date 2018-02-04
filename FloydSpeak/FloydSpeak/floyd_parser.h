@@ -21,49 +21,62 @@ PEG
 https://en.wikipedia.org/wiki/Parsing_expression_grammar
 http://craftinginterpreters.com/representing-code.html
 
-	TYPES:
-		"null"
-		"bool"
-		"int"
-		"float"
-		"string"
-		"hello" -- unknown type.
-		"[" TYPE "]"
+# FLOYD SYNTAX
+	??? add chaining to more expressions
 
-		TYPE "(" TYPE "," TYPE "," ")"
+	TYPE:
+		NULL				"null"
+		BOOL				"bool"
+		INT					"int"
+		FLOAT				"float"
+		STRING				"string"
+		TYPEID				???
+		VECTOR				"[" TYPE "]"
+		DICTIONARY			"[" TYPE ":" TYPE" "]"
+		FUNCTION-TYPE		TYPE "(" ARGUMENT ","* ")" "{" BODY "}"
+			ARGUMENT		TYPE identifier
+		STRUCT-DEF			"struct" IDENTIFIER "{" MEMBER* "}"
+			MEMBER			 TYPE IDENTIFIER
+		UNNAMED-STRUCT		"struct" "{" TYPE* "}"
 
-	STATEMENTS:
-		BODY = "{" STATEMENTS "}"
-		BODY
+		UNRESOLVED-TYPE		IDENTIFIER-CHARS, like "hello"
 
-		return:							"return" EXPRESSION
-		def-struct:						"struct" IDENTIFIER "{" TYPE IDENTIFIER ";" TYPE IDENTIFIER ";" ... "}"
-		if:								"if" "(" EXPRESSION ")" BODY "else" BODY
-		if-else:						"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
-		for:							"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
-		while: 							"while" "(" EXPRESSOIN ")" BODY
+	EXPRESSION:
+		NUMERIC-LITERAL					"0123456789" +++
+		RESOLVE-IDENTIFIER				IDENTIFIER +++
 
- 		Bind:							TYPE IDENTIFIER "=" EXPRESSION
-		Function definition:		 	TYPE IDENTIFIER "(" EXPRESSION "," EXPRESSION... ")" BODY
-		Expression statement: 			EXPRESSION
- 		Assignment: 					SYMBOL = EXPRESSION
-
-	EXPRESSIONS:
-		Numberic literal:				"0123456789" +++
-		Resolve-identifier:				IDENTIFIER +++
-		Vector-definition:				"[" EXPRESSION "," EXPRESSION "," ... "]"
-		Dict-definition:				"[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" EXPRESSION "," ... "]"
-		Add:							EXPRESSION "+" EXPRESSION +++
-		Sub:							EXPRESSION "-" EXPRESSION +++
+		VECTOR-DEFINITION				"[" EXPRESSION "," EXPRESSION "," ... "]"
+tbd		VECTOR-DEFINITION				TYPE "[" EXPRESSION "," EXPRESSION "," ... "]"
+		DICT-DEFINITION					"[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" EXPRESSION "," ... "]"
+tbd		DICT-DEFINITION					TYPE "[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" EXPRESSION "," ... "]"
+		ADD								EXPRESSION "+" EXPRESSION +++
+		SUB								EXPRESSION "-" EXPRESSION +++
 										EXPRESSION "&&" EXPRESSION +++
-		Resolve-member:					EXPRESSION "." EXPRESSION +++
-		Group:							"(" EXPRESSION ")"" +++
-		Lookup []:						EXPRESSION "[" EXPRESSION "]"" +++
-		Call:							EXPRESSION "(" EXPRESSION "," EXPRESSION "," ...")"" +++
-		k_1_unary_minus:				"-" EXPRESSION
-										EXPRESSION ? EXPRESSION : EXPRESSION +++
+		RESOLVE-MEMBER					EXPRESSION "." EXPRESSION +++
+		GROUP							"(" EXPRESSION ")"" +++
+		LOOKUP							EXPRESSION "[" EXPRESSION "]"" +++
+		CALL							EXPRESSION "(" EXPRESSION "," EXPRESSION "," ...")" +++
+		UNARY-MINUS						"-" EXPRESSION
+		CONDITIONAL-OPERATOR			EXPRESSION ? EXPRESSION : EXPRESSION +++
 
-		Convert-to-type:				TYPE(EXPRESSION)
+tbd		Convert-to-type:				TYPE(EXPRESSION)
+
+
+	STATEMENT:
+		BODY = "{" STATEMENT* "}"
+
+		RETURN							"return" EXPRESSION
+		DEFINE-STRUCT					"struct" IDENTIFIER "{" TYPE IDENTIFIER ";" TYPE IDENTIFIER ";" ... "}"
+		IF								"if" "(" EXPRESSION ")" BODY "else" BODY
+		IF-ELSE							"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
+		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
+		WHILE 							"while" "(" EXPRESSOIN ")" BODY
+
+ 		BIND							TYPE IDENTIFIER "=" EXPRESSION
+		DEFINE-FUNCTION				 	TYPE IDENTIFIER "(" EXPRESSION "," EXPRESSION... ")" "{" BODY "}"
+		EXPRESSION-STATEMENT 			EXPRESSION
+ 		ASSIGNMENT	 					SYMBOL = EXPRESSION
+
 
 
 

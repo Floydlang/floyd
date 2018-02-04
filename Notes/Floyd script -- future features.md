@@ -581,7 +581,7 @@ x_ram
 x_socket
 x_persistent_storage
 
-#ddf
+# More about excpetions
 EXCEPTIONS vs normal program flow
 Where to draw the line?
 
