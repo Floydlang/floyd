@@ -58,6 +58,25 @@ void test__run_main(const std::string& program, const vector<floyd::value_t>& ar
 	);
 }
 
+void ut_compare_stringvects(const vector<string>& result, const vector<string>& expected){
+	if(result != expected){
+		if(result.size() != expected.size()){
+			QUARK_TRACE("Vector are different sizes!");
+		}
+		for(int i = 0 ; i < result.size() ; i++){
+			QUARK_SCOPED_TRACE(std::to_string(i));
+
+			quark::ut_compare(result[i], expected[i]);
+/*
+			if(result[i] != expected[i]){
+				QUARK_TRACE("  result: \"" + result[i] + "\"");
+				QUARK_TRACE("expected: \"" + expected[i] + "\"");
+			}
+*/
+
+		}
+	}
+}
 
 
 //////////////////////////		TEST GLOBAL CONSTANTS
@@ -1111,7 +1130,9 @@ QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vec
 		a = ["one", "two"];
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		R"([string]("one","two"))"
+	});
 }
 
 QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "cannot be deducted", "error"){
@@ -1131,7 +1152,9 @@ QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "val
 		[string] a = ["one", "two"];
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]("one","two"))"	}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		R"([string]("one","two"))"
+	});
 }
 
 QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
@@ -1139,7 +1162,9 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 		[string] a = [];
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	R"([string]())"	}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		R"([string]())"
+	});
 }
 
 #if false
@@ -1162,10 +1187,10 @@ QUARK_UNIT_TEST("vector", "=", "strings", "valid vector"){
 		print(a);
 		print(b);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		R"([string]("one","two"))",
 		R"([string]("one","two"))"
-	}	));
+	});
 }
 QUARK_UNIT_TEST("vector", "==", "strings", ""){
 	const auto vm = run_global(R"(
@@ -1292,10 +1317,10 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 		assert(a == ["one","two","three"]);
 		assert(b == ["one","zwei","three"]);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		R"([string]("one","two","three"))",
 		R"([string]("one","zwei","three"))"
-	}	));
+	});
 }
 
 
@@ -1315,10 +1340,10 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 		print(a["one"]);
 		print(a["two"]);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		"1",
 		"2"
-	}	));
+	});
 }
 
 QUARK_UNIT_TEST("dict", "", "", ""){
@@ -1352,9 +1377,9 @@ QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
 		a = ["one": 1, "two": 2];
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		R"([string:int]("one": 1,"two": 2))",
-	}	));
+	});
 }
 
 QUARK_UNIT_TEST("dict", "[:]", "", ""){
@@ -1363,9 +1388,9 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 		a = [:];
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		R"([string:int]())",
-	}	));
+	});
 }
 
 QUARK_UNIT_TEST("dict", "==", "", ""){
@@ -1403,9 +1428,9 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 	const auto vm = run_global(R"(
 		print([:]);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		R"([string:null]())",
-	}	));
+	});
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	const auto vm = run_global(R"(
@@ -1425,10 +1450,10 @@ QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side eff
 		print(a);
 		print(b);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		R"([string:int]("one": 1,"two": 2))",
 		R"([string:int]("one": 1,"three": 3,"two": 2))"
-	}	));
+	});
 }
 
 QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
@@ -1438,10 +1463,10 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 		print(a);
 		print(b);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		R"([string:int]("one": 1,"three": 3,"two": 2))",
 		R"([string:int]("one": 1,"three": 333,"two": 2))"
-	}	));
+	});
 }
 
 
@@ -1503,9 +1528,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		struct t { int a;}
 		print(t);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		"typeid(struct {int a;})"
-	}	));
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
@@ -1514,7 +1539,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		a = t(3);
 		print(a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ R"(struct {int a=3})" }		));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		 R"(struct {a=3})"
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
@@ -1523,7 +1550,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 		temp = t(4);
 		print(temp.a);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "4" }	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"4"
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
@@ -1537,10 +1566,10 @@ QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
 		i = image(color(1, 2, 3), color(200, 201, 202));
 		print(i);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct {int red=128,int green=192,int blue=255}",
-		"struct {color back=struct {int red=1,int green=2,int blue=3},color front=struct {int red=200,int green=201,int blue=202}}"
-	}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"struct {red=128,green=192,blue=255}",
+		"struct {back=struct {red=1,green=2,blue=3},front=struct {red=200,green=201,blue=202}}"
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
@@ -1550,9 +1579,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 		i = image(color(1, 2, 3), color(200, 201, 202));
 		print(i.front.green);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		"201"
-	}	));
+	});
 }
 
 QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
@@ -1564,9 +1593,9 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		}
 		print(make_color());
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct {int red=100,int green=101,int blue=102}",
-	}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"struct {red=100,green=101,blue=102}",
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
@@ -1574,7 +1603,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) == color(1, 2, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"true"
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
@@ -1582,7 +1613,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red; int green; int blue;}
 		print(color(9, 2, 3) == color(1, 2, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"false"		}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"false"
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
@@ -1603,7 +1636,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 2, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"false"		}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"false"
+	});
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
@@ -1611,8 +1646,11 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 4, 3));
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{		"true"		}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"true"
+	});
 }
+
 
 
 
@@ -1624,10 +1662,10 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 		print(a);
 		print(b);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct {int red=255,int green=128,int blue=128}",
-		"struct {int red=255,int green=128,int blue=129}",
-	}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"struct {red=255,green=128,blue=128}",
+		"struct {red=255,green=128,blue=129}"
+	});
 }
 
 
@@ -1654,13 +1692,13 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 		print(b);
 	)");
 
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
-		"struct {int red=255,int green=128,int blue=128}",
-		"struct {int red=255,int green=3,int blue=128}",
-	}	));
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"struct {red=255,green=128,blue=128}",
+		"struct {red=255,green=3,blue=128}",
+	});
 }
 
-QUARK_UNIT_TEST_VIP("run_main()", "mutate nested member", "", ""){
+QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -1669,10 +1707,10 @@ QUARK_UNIT_TEST_VIP("run_main()", "mutate nested member", "", ""){
 		print(a);
 		print(b);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{
+	ut_compare_stringvects(vm._print_output, vector<string>{
 		"struct {back=struct {red=0,green=100,blue=200},front=struct {red=0,green=0,blue=0}}",
 		"struct {back=struct {red=0,green=100,blue=200},front=struct {red=0,green=3,blue=0}}"
-	}	));
+	});
 }
 
 
@@ -1700,21 +1738,28 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 		//	XYZ
 		print("Hello");
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello" } ))
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"Hello"
+	});
 }
 
 QUARK_UNIT_TESTQ("comments", "// on start of line"){
 	const auto vm = run_global(R"(
 		print("Hello");		//	XYZ
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello" } ))
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"Hello"
+	});
 }
 
 QUARK_UNIT_TESTQ("comments", "// on start of line"){
 	const auto vm = run_global(R"(
 		print("Hello");/* xyz */print("Bye");
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"Hello",
+		"Bye"
+	});
 }
 
 

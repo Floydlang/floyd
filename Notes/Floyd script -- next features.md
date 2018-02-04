@@ -57,9 +57,10 @@ TYPE
 		TYPE return-value
 		[ARGUMENT] - function arguments
 		ARGUMENT: TYPE argument-name
-	unknown
+	unresolved_type_identifier
 		string: the identifier for the unknown type.
-		??? Don't use typeid_t to store these! This is not an id of a type, it an unresolved identifier
+		??? Don't use typeid_t to store these! This is not an id of a type, it an unresolved identifier.
+		Problem is that it can still be part of a complex typeid_t. 
 	custom_type
 		string: name-of-new-type, like "my_struct", "meters_t"
 		string: compile-time path of the type declaration -- to make two identical custom_types unique.
@@ -113,23 +114,22 @@ Unnamed struct:
 
 
 Becomes:
+	//	This is custom_type.
 	typeid[
-		"struct",
-		[
-			"struct1",
+		"custom_type_name": "struct1",
+		"implementation_type":
 			[
-				{ "type": "int", "name": "" },
-				{ "type": "string", "name": "" },
-				{ "type": ["dict", "string"], "name": "" }
+				[
+					{ "type": "int", "name": "" },
+					{ "type": "string", "name": "" },
+					{ "type": ["dict", "string"], "name": "" }
+				]
 			]
-		]
 	]
 
 	a = 
 	typeid[
-		"struct",
 		[
-			"struct1",
 			[
 				{ "type": "int", "name": "" },
 				{ "type": "string", "name": "" },
