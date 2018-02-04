@@ -1810,24 +1810,7 @@ QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
 }
-
 */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

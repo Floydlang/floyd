@@ -1968,7 +1968,7 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
 
-	host_function_t{ "json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
+	host_function_t{ "make_json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
 };
 
 
@@ -2019,6 +2019,41 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	//	Make the top-level environment = global scope.
 	shared_ptr<environment_t> empty_env;
 	auto global_env = environment_t::make_environment(*this, empty_env);
+
+/*
+	bool is_string(json_value v)
+	bool is_number(json_value v)
+	bool is_object(json_value v)
+	bool is_array(json_value v)
+	bool is_bool(json_value v)
+	bool is_null(json_value v)
+ 
+	string get_string(json_value v)
+	float get_number(json_value v)
+	[string: json_value] get_object(json_value v)
+	[json_value] get_array(json_value v)
+	string get_bool(json_value v)
+
+string
+number
+object
+array
+true
+false
+null*/
+
+	const vector<member_t> struct_members = {
+		member_t(typeid_t::make_bool(), "b"),
+		member_t(typeid_t::make_float(), "n"),
+		member_t(typeid_t::make_string(), "s"),
+		member_t(typeid_t::make_dict(typeid_t::make_unresolved_type_identifier("json_value")), "obj"),
+		member_t(typeid_t::make_vector(typeid_t::make_unresolved_type_identifier("json_value")), "array")
+	};
+	const auto host__json_value = typeid_t::make_struct(
+		std::make_shared<struct_definition_t>(struct_definition_t(struct_members))
+	);
+
+	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value, false };
 
 	_call_stack.push_back(global_env);
 
