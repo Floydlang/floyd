@@ -1,3 +1,234 @@
+
+
+
+
+
+
+
+# COMPLETE TYPE SYSTEM
+
+- construction
+- statements vs expressions
+- JSON compatible primitives types.
+
+
+
+| Example										| Result |
+|:--											| :--
+| int, string, float etc.						| IMPLEMENTED
+| struct										| IMPLEMENTED
+| function										| IMPLEMENTED
+| dictionary									| IMPLEMENTED
+| set											| FUTURE
+| tuple											| TBD, unnamed struct
+| enum											| TBD
+| tagged union									| TBD, ???
+| typedef										| TBD
+
+
+
+Floyd typeid:
+	int
+	int id: 4
+	[int]
+	struct id:3
+	struct def
+
+A typeid either directly specifies a basic type, a composite stype or a custom_type based on another typeid
+Two types are equal if they have the exact
+
+TYPE
+	bool
+	int
+	float
+	string
+	typeid
+		TYPE: held type
+	struct
+		[MEMBER]
+		MEMBER: TYPE member_name
+	vector
+		TYPE: element-type
+	dict
+		TYPE value-type
+		key is always a string
+	function
+		TYPE return-value
+		[ARGUMENT] - function arguments
+		ARGUMENT: TYPE argument-name
+	unknown
+		string: the identifier for the unknown type.
+		??? Don't use typeid_t to store these! This is not an id of a type, it an unresolved identifier
+	custom_type
+		string: name-of-new-type, like "my_struct", "meters_t"
+		string: compile-time path of the type declaration -- to make two identical custom_types unique.
+		TYPE type-implementation.
+		In the future, intern this and use a string-id.
+
+
+
+Struct declaration statement:
+
+	struct struct1 {
+		int count;
+		string name;
+		[string: string] tags;
+	}
+
+Result is
+	typeid struct1 = [
+		"struct",
+		[
+			"struct1",
+			[
+				{ "type": "int", "name": "count" },
+				{ "type": "string", "name": "name" },
+				{ "type": "dict", "name": "tags" },
+			]
+		]
+	]
+
+a = struct { int, int, string }( 4, 5, "six");
+
+
+
+
+
+int my_func(float a, float b){
+	return a * b; ??? ANY DECLRATIONS ETC GO HERE:
+}
+
+[string:int] example_dictionary = [ "one": 1, "two": 2];
+[string:int] example_dictionaryv2 = { "one": 1, "two": 2 };
+[string] example_vector = [ "one", "two", "three" ];
+
+
+struct1 example_struct1 = struct1{count: 4, name: "Kitty", ["red": "warning, "green": "no problemos"]};
+
+(string:int) example_tuple = ("one", 13);
+
+
+
+example_struct = struct
+
+typedef float meters;
+
+meters dist_home = 14
+meter dist_home = meter(14)
+
+
+
+
+
+
+	a = struct { int, int, string }( 4, 5, "six");
+
+
+lambdas
+
+
+
+### TYPEDEF
+A typedef makes a new, unique type, by copying another (often complex) type.
+	typedef [string, [bool]] book_list;
+	### You also add additional invariant. sample_rate is an integer, but can only be positive.
+
+
+
+
+### LAMBDAS
+
+Lambdas aka closures are unnamed function-expressions. You make a little function that can be called later, without going through the trouble of making a full blown function. Lambdas also supports accessing variables outside its definition which is very useful when you.
+
+**??? Lambdas are pure?!**
+
+Lambdas are often short snippets of code passed to a functions, like a compare function passed to a sort function.
+
+Function type X:
+
+	bool (string a, string b)
+
+Function implementation f1 of type X
+
+	bool f1(string a, string b){ return a < b ; }
+
+Variable of type X
+
+	bool (string a, string b) f2 = f1
+
+Example sort function that takes function as argument #2.
+
+	[string] sort([string] values, bool (string a, string b) equal)
+
+Equivalent calls to sort function:
+
+	s1 = sort([ "one", "two", "three" ], f1)
+	s2 = sort([ "one", "two", "three" ], bool (string a, string b){ return a < b; })
+	s3 = sort([ "one", "two", "three" ], (a, b){ return a < b; })
+
+	s4 = sort([ "one", "two", "three" ], { return $0 < $1; })
+
+
+s3 and s4 - the type of the function is inferred.
+
+s4: All functions can always access their argument using $0, $1 etc. We use this here since we didn't name the function arguments.
+
+
+- No trailing closure syntax
+- No implicit returns from single-expression closures
+
+You can use a lambda to do directly assign a value from an if-then-else:
+
+	string m = (int id){
+		float temp = 0
+		if (a == 1){
+			return "FIRST!";
+		}
+		else{
+			return "...more";
+		}
+	}(1)
+
+
+
+
+
+### STRUCTs: Unnamed struct members (tuples)
+All members also have number in the order they are listed in the struct, starting with 0. A second name for the same member.
+
+You can chose to not name members. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0".
+
+my_pixel[0] // allow clients to enumerate struct members as elements. If all members are the same type result is that type. If struct members are different types, result is a dyn<int, float>
+
+**??? How to block mutation of member variable? Some members makes no sense to write in isolation.**
+
+
+### STRUCTs: Unnnamed structs (tuples)
+You can access the members using indexes instead of their names, for use as a tuple. Also, there is no need to name a struct.
+
+	a = struct { int, int, string }( 4, 5, "six");
+	assert(a.0 == 4);
+	assert(a.1 == 5);
+	assert(a.2 == "six");
+	
+	b = struct { 4, 5, "six" };
+	assert(a.0 == 4);
+	assert(a.1 == 5);
+	assert(a.2 == "six");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # BASIC TYPES
 - **float32**				32 bit floating point
 - **float80**				80 bit floating point
@@ -9,8 +240,6 @@
 
 ### MORE TYPES
 
-- **dict**			look up values from a key. Localizable.
-- **vector**		look up values from a 0-based continous range of integer indexes.
 - **enum**		same as struct with only static constant data members
 
 # CORE TYPE FEATURES
@@ -70,16 +299,11 @@ This is used through out this document to demonstrate language features.
 
 
 
-# VALUES, VARIABLES AND CONSTANTS
-
 
 ??? Function arguments = a tuple -- all functions takes ONE argument. Hide via syntax.
 
 ??? Treat function local variables as member of a struct. Mutating a variable gives us a completely new local state -- the old one still exists.
 
-??? When do you need to mutate local variables?
-
-Insight: local variable mutation makes it easier to learn for imperative programmers.
 
 
 
@@ -108,6 +332,8 @@ Insight: local variable mutation makes it easier to learn for imperative program
 		}
 
 Use match for pattern matching? This syntax bloat is required since we have immutability.
+
+Check out rust-lang match-expressions.
 
 
 # LOOPS AND CONDITIONS
@@ -149,6 +375,7 @@ Python:
 	for num in range(10,20):     #to iterate between 10 to 20
 
 
+# Add better iteration / functional features
 
 x = foreach(seq) { statements } process all items in a seq, one by one. Execution order undefined.
 
@@ -285,7 +512,7 @@ Related:
 
 
 # ENUM
-Works like expected from C, but can be extended.
+Works like expected from C, but can be extended. Always represents an integer.
 
 enum preset_colo {
 	red = 2,
@@ -303,10 +530,6 @@ A fixed set of collections are built right into Floyd. They can store any Floyd 
 
 A unique feature in Floyd is that you cannot specify the exact implementation of the collection, only its basic type: vector or dictionary. The precise data structure is selected by the runtime according to your recommendations and the optimiser / profiler.
 
-The collections are typesafe - a string-vector can only hold strings etc.
-
-Every collection automatically support the core-type-features, like comparisons, serialization and hashing.
-
 
 # VECTOR COLLECTION
 If you read many continous elements it's faster to use a SEQ with the vector - it allows the runtime to keep an pointer to the current position in the vector.
@@ -319,61 +542,6 @@ The runtime has several types of backends for a vector and choses for each vecto
 2. A HAMT-based persistent vector. Medium-fast to make, read and write. Uses more memory.
 3. A function. Compact, potentially very fast / very slow. No write.
 
-### Vector Reference:
-
-Future: filter, map, fold, sort
-
-
-
-
-
-# AST
-The encoding of a Floyd program into a AST (abstrac syntax tree) is fully documented. You can generate, manipulate and run these programs from within your own program.s
-
-The tree is stored as standard JSON data. Each expression is a JSON-array where elements have defined meaning. You can nest expressions to any depth by specifying an expression instead of a constant.
-
-### STATEMENTS
-
-	[ "bind", identifier-string, expr ]
-	[ "defstruct", identifier-string, expr ]
-	[ "deffunc", identifier-string, expr ]
-	[ "return", expr ]
-
-
-### EXPRESSIONS
-This is how all expressions are encoded into JSON format. "expr" is a placehold for another expression array. 
-[ "k", expr, type ]
-
-[ "negate", expr, type ]
-
-[ "+", left_expr, right_expr, type ]
-[ "-", left_expr, right_expr, type ]
-[ "*", left_expr, right_expr, type ]
-[ "/", left_expr, right_expr, type ]
-[ "%", left_expr, right_expr, type ]
-
-[ "<", left_expr, right_expr, type ]
-[ "<=", left_expr, right_expr, type ]
-[ ">", left_expr, right_expr, type ]
-[ ">=", left_expr, right_expr, type ]
-
-[ "||", left_expr, right_expr, type ]
-[ "&&", left_expr, right_expr, type ]
-[ "==", left_expr, right_expr, type ]
-[ "!=", left_expr, right_expr, type ]
-
-[ "?:", conditional_expr, a_expr, b_expr, type ]
-
-[ "call", function_exp, [ arg_expr ], type ]
-
-Resolve free variable using static scope
-[ "@", string_name, type ]
-
-Resolve member
-[ "->", object_id_expr, string_member_name, type ]
-
-Lookup member
-[ "[-]", object_id_expr, key_expr, type ]
 
 
 # RESERVED KEYWORDS
@@ -722,28 +890,6 @@ Advances structs requires an invariant() function. It performs checks that the v
 When defining a data type (composite) you need to list 4 example instances. Can use functions to build them or just fill-in manually or a mix. These are used in example docs, example code and for unit testing this data types and *other* data types. You cannot change examples without breaking client tests higher up physical dependency graph.
 
 
-# STRUCTs: Unnamed struct members (tuples)
-All members also have number in the order they are listed in the struct, starting with 0. A second name for the same member.
-
-You can chose to not name members. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0".
-
-my_pixel[0] // allow clients to enumerate struct members as elements. If all members are the same type result is that type. If struct members are different types, result is a dyn<int, float>
-
-**??? How to block mutation of member variable? Some members makes no sense to write in isolation.**
-
-
-# STRUCTs: Unnnamed structs (tuples)
-You can access the members using indexes instead of their names, for use as a tuple. Also, there is no need to name a struct.
-
-	a = struct { int, int, string }( 4, 5, "six");
-	assert(a.0 == 4);
-	assert(a.1 == 5);
-	assert(a.2 == "six");
-	
-	b = struct { 4, 5, "six" };
-	assert(a.0 == 4);
-	assert(a.1 == 5);
-	assert(a.2 == "six");
 
 
 
@@ -772,55 +918,3 @@ You can access the members using indexes instead of their names, for use as a tu
 	bool f(string a, string b) = return $0 < $1;
 
 
-# LAMBDAS -- FUTURE
-
-Lambdas aka closures are unnamed function-expressions. You make a little function that can be called later, without going through the trouble of making a full blown function. Lambdas also supports accessing variables outside its definition which is very useful when you.
-
-**??? Lambdas are pure?!**
-
-Lambdas are often short snippets of code passed to a functions, like a compare function passed to a sort function.
-
-Function type X:
-
-	bool (string a, string b)
-
-Function implementation f1 of type X
-
-	bool f1(string a, string b){ return a < b ; }
-
-Variable of type X
-
-	bool (string a, string b) f2 = f1
-
-Example sort function that takes function as argument #2.
-
-	[string] sort([string] values, bool (string a, string b) equal)
-
-Equivalent calls to sort function:
-
-	s1 = sort([ "one", "two", "three" ], f1)
-	s2 = sort([ "one", "two", "three" ], bool (string a, string b){ return a < b; })
-	s3 = sort([ "one", "two", "three" ], (a, b){ return a < b; })
-
-	s4 = sort([ "one", "two", "three" ], { return $0 < $1; })
-
-
-s3 and s4 - the type of the function is inferred.
-
-s4: All functions can always access their argument using $0, $1 etc. We use this here since we didn't name the function arguments.
-
-
-- No trailing closure syntax
-- No implicit returns from single-expression closures
-
-You can use a lambda to do directly assign a value from an if-then-else:
-
-	string m = (int id){
-		float temp = 0
-		if (a == 1){
-			return "FIRST!";
-		}
-		else{
-			return "...more";
-		}
-	}(1)

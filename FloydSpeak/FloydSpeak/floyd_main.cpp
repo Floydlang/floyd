@@ -173,6 +173,7 @@ std::string get_command(){
 
 
 
+std::string floyd_version_string = "0.3";
 
 
 
@@ -183,7 +184,7 @@ void run_repl(){
 	auto ast = floyd::program_to_ast2("");
 	auto vm = floyd::interpreter_t(ast);
 
-	std::cout << R"(Floyd 0.1 MIT.)" << std::endl;
+	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;
 	std::cout << R"(Type "help", "copyright" or "license" for more informations!)" << std::endl;
 
 /*

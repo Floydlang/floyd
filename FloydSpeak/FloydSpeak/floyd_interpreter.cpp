@@ -1894,6 +1894,55 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 
 
 
+value_t primitive_floyd_value_to_json_value(const value_t& v){
+	if (v.is_bool()){
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else if (v.is_int()){
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else if (v.is_float()){
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else if(v.is_string()){
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else if(v.is_struct()){
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else if(v.is_vector()){
+		const auto v2 = v.get_vector_value();
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else if(v.is_dict()){
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else if(v.is_function()){
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	else{
+		//??? Add support for all json-compatible types.
+		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+	}
+	return value_t();
+}
+
+/*
+	Is this a function that recursively converts static JSON-data, expressed as simple Floyd values?
+	Or:
+	- Will it execute code?
+	- Will it convert non-json values, like custom structs, into json first?
+*/
+
+std::pair<interpreter_t, value_t> host__json_value(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("json_value() requires 1 argument");
+	}
+	const auto result = primitive_floyd_value_to_json_value(args[0]);
+	return {vm, result};
+}
 
 
 typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
@@ -1916,7 +1965,9 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "erase", host__erase, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }
+	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
+
+	host_function_t{ "json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
 };
 
 

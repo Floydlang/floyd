@@ -1716,6 +1716,74 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 
 
+//////////////////////////		JSON
+
+
+QUARK_UNIT_TEST_VIP("json", "dogs", "", ""){
+	const auto vm = run_global(R"(
+
+		test_json1 = json_value(["spotty", "stripey", "pluto" ]);
+		print(test_json1);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
+}
+
+QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
+	const auto vm = run_global(R"(
+
+		test_json1 = json_value({ "pigcount": 3, "pigcolor": "pink" });
+		print(test_json1);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
+}
+
+
+QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
+	const auto vm = run_global(R"(
+
+		a = {
+		  "CustomerId": "string",
+		  "PartnerOrderId": "string",
+		  "Items": [
+			{
+			  "Sku": "string",
+			  "DocumentReferenceUrl": "string",
+			  "Quantity": 0,
+			  "PartnerProductName": "string",
+			  "PartnerItemId": "string"
+			}
+		  ],
+		  "Metadata": "string",
+		  "DeliveryOptionId": "string"
+		};
+
+
+		print(a);
+	)");
+	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
 

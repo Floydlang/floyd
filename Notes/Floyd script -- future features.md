@@ -276,10 +276,6 @@ dyn<float, string> // one of these. Tagged union. a
 	assert(a.type != bool);
 
 
-# TYPEDEF
-A typedef makes a new, unique type, by copying another (often complex) type.
-	typedef [string, [bool]] book_list;
-	### You also add additional invariant. sample_rate is an integer, but can only be positive.
 
 
 # PATHS
@@ -289,7 +285,6 @@ You can make a path through nested data structures. The path is a built-in opaqu
 	### operations.
 	### show as a string / file path.
 
-See "JSON pointers" spec.
 
 
 # PROTOCOLS
@@ -509,136 +504,6 @@ Comments & docs is one concept, disabling code is another concept. All code is a
 		[ make_image(0,0).width, 0, "checks for empty image" ],
 		[ make_image(0,0).height, 0, "checks for empty image" ],
 	]
-
-
-
-# Embedded JSON
-Embedd json inside source code file. Simple / no escaping needed. Use to paste data, test values etc. Round trip.
-
-# SERIALIZATION
-
-- **json**		built-in type that models the JSON format. You can initialize it from a JSON literals -- pasted json files, like this:
-```
-			json_value default_preferences = { "wtitle": "hello", "warnings_on": false }
-```
-
-
-* string **serialize**(T a)					converts value T to json
-* T **T.deserialize**(string s)			makes a value T from a json string
-
-Serializing a value is a built in mechanism. It is based on the seq-type.
-It is always deep. ### Always shallow with interning when values are shared.
-
-The result is always a normalized JSON stream. ???
-
-??? De-duplication vs references vs equality vs diffing.
-	### Make reading and writing Floyd code simple, especially data definitions.
-//	Define serialised format of a type, usable as constant.
-
-An output stream is an abstract interface similar to a collection, where you can append values. You cannot unappend an output stream.
-
-
-## json keyword
-This keyword lets you put plain JSON scripts directly into your source code without any need to escape the string. The result is a string value, not any special data type. The json format is validated.
-??? how to generate json data / inject variables etc? Maybe better to just have raw-string support?
-
-	json { "age": 10, "last_name": "zoom" };
-	json [ "one", "two", "three" ];
-	json "one";
-	json {
-		"age": 10,
-		"last_name": "zoom"
-	};
-
-	assert(json { "age": 10, "last_name": "zoom" } == "{ \"age\": 10, \"last_name\": \"zoom\" }");	
-There are built in features to pack and unpack the JSON data:
-
-	my_json_string = json[
-		"+",
-		["load",["res_member", ["res_var", "p"], "s"]],
-		["load", ["res_var", "a"]]
-	];
-
-	my_obj = unpack_json(my_json_string);
-	assert(my_obj[0] == "+");
-	assert(my_obj[2][0] == "load");
-
-The returned value from unpack_json() is of type *dyn<string, number, vec<dyn>, dict<string,dyn>,bool>* and can hold any value returned.
-
-If you are reading data you can do this:
-
-	string expect_string_load = my_obj[0][2];
-	// This throws exception if the value cannot be found or is not of type string = very convenient when parsing files.
-
-	//	Here you get a default value if you cannot read the string.
-	string except_string_load2 = try{ my_obj[0][2], "default_string" };
-
-
-JSON AST -> script file convertion
-No preprocessor in floyd - use AST / JSON
-
-
-
-# JSON / SERIALIZATION
-
-JavaScript Object Notation (JSON) Pointer: https://tools.ietf.org/html/rfc6901
-
-c++ library -- cool: https://github.com/nlohmann/json
-
-
-print(a.red)
-print(a)	— round trip: JSON? ??? deep vs shallow?
-	red: 100
-	green: 200
-	blue: 210
-	alpha: 255
-
-json(a) -- output:
-	{
-		“red”: 100,
-		“green”: 200,
-		“blue”:210,
-		“alpha”: 255
-	}
-
-c = json(
-	“{
-		“red”: 100,
-		“green”: 200,
-		“blue”:210,
-		“alpha”: 255
-	}”
-
-
-	### Define format for source-as-JSON roundtrip. Normalized source code format. Goal for JSON is easy machine transformation.
-!!! JSON does not support multi-line strings.
-	### Encode using JSON! Easy to copy-paste, user JSON validators etc:
-
-	"hello[\"troll\"].kitty[10].cat" =>
-	"(@load (@res_member (@lookup (@res_member (@lookup (@res_var 'hello') (@k <string>'troll')) 'kitty') (@k <int>10)) 'cat'))"
-
-
-	["@res_member",
-		["@lookup",
-			["@res_member",
-				["@lookup",
-					["@res_member", "nullptr", "hello"],
-					["@k", "<string>", "troll"]
-				],
-				"kitty"
-			],
-			["@k", "<int>", "10"]
-		],
-		"cat"
-	]
-
-
-??? nest JSON? Expand or store as string constants?
-??? Can JSON be used to store and edit Floyd script?
-"Floyd speak"
-??? Can JSON be used to serialize all floyd data structures? De-duplication?
-??? Call stack and local variables and heap are also just state, just like all other values.
-
 
 
 

@@ -1,16 +1,26 @@
 # GOALS
 
-1) Take best part of imperative and functional languages and destil it down to the most important mechanisms.
+1. Be precisely the set of features needed to make excellent software. No more, no less.
+- Have one explict and solid way to do every important thing - no need for developer to invent basics.
+- Guide developer to designing great software, instead of struggling / tinkering with language stuff.
+- Remove everyday timesinks like threading, aliasing problems, sideffects, serializing data, boiler plate code, optimizing the wrong code.
+- Promote robust software and development practices.
+- Promote composable software and million-line-of-code products.
+- Make finished program execute extremely quickly.
+- Make it easy to pick up and use for smaller things, then be contagious.
+- Make language fun and easy to adopt for new developers, rather than existing developers.
 
-2) Make it execute extremely quickly.
 
-3) Easy to learn for new programmers, easy to enjoy for experienced programmers.
 
-4) Have explict and sold way to do each thing - no need to reinvent basics or invent policies.
+# NON-GOALS
 
-5) Robustness.
-
-6) Composable: build huge programs (millions of lines of code).
+1. Have neat and concenitnt features that do not improve final product.
+- Be multiparadigm.
+- Be a "real" functional language.
+- Be object oriented.
+- Provide choice and expressing yourself
+- Let programmer be 100% in control of the hardware.
+- Be interesting to master the language itself.
 
 
 # Floyd Script Reference
@@ -33,6 +43,23 @@ This makes those functions a risk. Have as little nonpure code as possible. Try 
 Here is hello world, as expected:
 
 	print("Hello, World!");
+
+
+Trying the floyd REPL:
+
+	marcus$ ./floyd 
+	Floyd 0.3 MIT.
+	Type "help", "copyright" or "license" for more informations!
+	>>>print("Hello, world!");
+	Hello, world!
+
+
+Executing a floyd program:
+
+	marcus$ floyd my_program.floyd file1.txt file2.txt
+
+This will runt the program my_program.floyd and call it's main(string args) with the arguments ["file1.txt", "file2.text"].
+
 
 
 
@@ -445,7 +472,7 @@ You copy dictionaries using = and all comparison expressions work.
 
 
 
-# STRUCTs - BASICS
+# STRUCTs - THE BASICS
 
 Structs are the central building block for composing data in Floyd. They are used in place of structs and classes in other programming languages. Structs are always values and immutable. They are still fast and compact: behind the curtains copied structs  shares state between them, even when partially modified.
 
@@ -540,6 +567,26 @@ This works with nested values too:
 	assert(a.size.width == 512);
 	assert(b.size.width == 100);
 ```
+
+
+# COMMENTS AND DOCUMENTATION
+
+
+Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
+
+Two types of comments:
+
+
+You can wrap many lines with "/*...*/" to make a big section of documentation or disable many lines of code. You can nest comments, for example wrap a lot of code with existing comments with /* ... */ to disable it.
+
+	/*	This is a comment */
+
+
+Everything between // and newline is a comment:
+
+	//	This is an end-of line comment
+	a = "hello"; //	This is an end of line comment.
+
 
 
 
@@ -712,3 +759,10 @@ Replaces a range of a collection with the contents of another collection.
 
 Notice: if you use an empty collection for *new*, you will actually erase the range.
 Notice: by specifying the same index in *start* and *length* you will **insert** the new collection into the existing collection.
+
+# ENCODING
+
+Floyd script files are always utf-8 files with no BOM.
+
+
+# 

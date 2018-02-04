@@ -186,6 +186,3 @@ motherboard {
 				[= clock =>]
 					[OS Clock]
 		
-## JSON
-
-
