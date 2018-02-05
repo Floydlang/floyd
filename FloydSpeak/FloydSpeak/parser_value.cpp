@@ -98,7 +98,7 @@ namespace floyd {
 bool dict_instance_t::check_invariant() const{
 	for(const auto m: _elements){
 		QUARK_ASSERT(m.second.check_invariant());
-		QUARK_ASSERT(m.second.get_type() == _value_type);
+//		QUARK_ASSERT(m.second.get_type() == _value_type);
 	}
 	return true;
 }

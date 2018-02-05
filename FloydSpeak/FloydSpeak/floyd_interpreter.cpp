@@ -37,7 +37,45 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
 
-using namespace floyd;
+
+
+
+/*
+	bool is_string(json_value v)
+	bool is_number(json_value v)
+	bool is_object(json_value v)
+	bool is_array(json_value v)
+	bool is_bool(json_value v)
+	bool is_null(json_value v)
+ 
+	string get_string(json_value v)
+	float get_number(json_value v)
+	[string: json_value] get_object(json_value v)
+	[json_value] get_array(json_value v)
+	string get_bool(json_value v)
+
+
+	string
+	number
+	object
+	array
+	true
+	false
+	null
+*/
+const vector<member_t> json_value__struct_members = {
+	member_t(typeid_t::make_string(), "type"),
+
+	member_t(typeid_t::make_bool(), "b"),
+	member_t(typeid_t::make_float(), "n"),
+	member_t(typeid_t::make_string(), "s"),
+	member_t(typeid_t::make_dict(typeid_t::make_unresolved_type_identifier("json_value")), "obj"),
+	member_t(typeid_t::make_vector(typeid_t::make_unresolved_type_identifier("json_value")), "array")
+};
+const auto json_value___struct_def = std::make_shared<struct_definition_t>(struct_definition_t(json_value__struct_members));
+
+const auto host__json_value_type = typeid_t::make_struct(json_value___struct_def);
+
 
 
 
@@ -1314,8 +1352,39 @@ bool environment_t::check_invariant() const {
 
 //////////////////////////		interpreter_t
 
+//??? This should not be top-level special case only.
+value_t json_value__to_value(const value_t& json_value){
+	QUARK_ASSERT(json_value.is_struct() && json_value.get_struct_value()->_def == *json_value___struct_def);
 
+	const auto struct_value = json_value.get_struct_value();
+	const auto type_string = struct_value->_member_values[0].get_string_value();
 
+	if (type_string == "bool-type"){
+		return struct_value->_member_values[1];
+	}
+	else if (type_string == "number-type"){
+		return struct_value->_member_values[2];
+	}
+	else if (type_string == "string-type"){
+		return struct_value->_member_values[3];
+	}
+	else if(type_string == "object-type"){
+		return struct_value->_member_values[4];
+	}
+	else if (type_string == "array-type"){
+		return struct_value->_member_values[5];
+	}
+	else{
+		assert(false);
+	}
+}
+
+std::string json_value__to_compact_string(const value_t& json_value){
+	QUARK_ASSERT(json_value.is_struct() && json_value.get_struct_value()->_def == *json_value___struct_def);
+
+	const auto value = json_value__to_value(json_value);
+	return value.to_compact_string();
+}
 
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -1327,10 +1396,17 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 
 	auto vm2 = vm;
 	const auto& value = args[0];
-	const auto s = value.to_compact_string();
-	printf("%s\n", s.c_str());
 
-	vm2._print_output.push_back(s);
+	if(value.is_struct() && value.get_struct_value()->_def == *json_value___struct_def){
+		const auto s = json_value__to_compact_string(value);
+		vm2._print_output.push_back(s);
+	}
+	else{
+		const auto s = value.to_compact_string();
+		printf("%s\n", s.c_str());
+		vm2._print_output.push_back(s);
+	}
+
 	return {vm2, value_t() };
 }
 
@@ -1894,29 +1970,81 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 }
 
 
-
-value_t primitive_floyd_value_to_json_value(const value_t& v){
+value_t primitive_floyd_value_to_json_value(const typeid_t& json_value_typeid, const value_t& v){
 	if (v.is_bool()){
 		throw std::runtime_error("Calling json_value() on unsupported type of value.");
 	}
 	else if (v.is_int()){
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+		return value_t(static_cast<float>(v.get_int_value()));
 	}
 	else if (v.is_float()){
 		throw std::runtime_error("Calling json_value() on unsupported type of value.");
 	}
 	else if(v.is_string()){
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+		const auto result = make_struct_value(
+			host__json_value_type,
+			host__json_value_type.get_struct(),
+			{
+				value_t("string-type"),
+				value_t(false),
+				value_t(0.0f),
+				v,
+				value_t(),
+				value_t()
+			}
+		);
+		return result;
 	}
 	else if(v.is_struct()){
 		throw std::runtime_error("Calling json_value() on unsupported type of value.");
 	}
 	else if(v.is_vector()){
 		const auto v2 = v.get_vector_value();
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+
+		vector<value_t> elements2;
+		for(const auto e: v2->_elements){
+			const auto e2 = primitive_floyd_value_to_json_value(json_value_typeid, e);
+			elements2.push_back(e2);
+		}
+		const auto v3 = make_vector_value(json_value_typeid, elements2);
+
+		const auto result = make_struct_value(
+			host__json_value_type,
+			host__json_value_type.get_struct(),
+			{
+				value_t("array-type"),
+				value_t(false),
+				value_t(0.0f),
+				value_t(""),
+				value_t(),
+				v3
+			}
+		);
+		return result;
 	}
 	else if(v.is_dict()){
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
+		const auto v2 = v.get_dict_value();
+
+		std::map<string,value_t> elements2;
+		for(const auto e: v2->_elements){
+			const auto e2 = primitive_floyd_value_to_json_value(json_value_typeid, e.second);
+			elements2[e.first] = e2;
+		}
+		const auto v3 = make_dict_value(json_value_typeid, elements2);
+
+		const auto result = make_struct_value(
+			host__json_value_type,
+			host__json_value_type.get_struct(),
+			{
+				value_t("object-type"),
+				value_t(false),
+				value_t(0.0f),
+				value_t(""),
+				v3,
+				value_t(),
+			}
+		);
+		return result;
 	}
 	else if(v.is_function()){
 		throw std::runtime_error("Calling json_value() on unsupported type of value.");
@@ -1925,7 +2053,6 @@ value_t primitive_floyd_value_to_json_value(const value_t& v){
 		//??? Add support for all json-compatible types.
 		throw std::runtime_error("Calling json_value() on unsupported type of value.");
 	}
-	return value_t();
 }
 
 /*
@@ -1941,7 +2068,13 @@ std::pair<interpreter_t, value_t> host__json_value(const interpreter_t& vm, cons
 	if(args.size() != 1){
 		throw std::runtime_error("json_value() requires 1 argument");
 	}
-	const auto result = primitive_floyd_value_to_json_value(args[0]);
+
+	const auto existing_value_deep_ptr = resolve_env_variable(vm, "json_value");
+	assert(existing_value_deep_ptr != nullptr);
+
+//	const auto json_value_typeid = typeid_t::make_unresolved_type_identifier("json_value");
+
+	const auto result = primitive_floyd_value_to_json_value(existing_value_deep_ptr->first.get_typeid_value(), args[0]);
 	return {vm, result};
 }
 
@@ -2020,40 +2153,8 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	shared_ptr<environment_t> empty_env;
 	auto global_env = environment_t::make_environment(*this, empty_env);
 
-/*
-	bool is_string(json_value v)
-	bool is_number(json_value v)
-	bool is_object(json_value v)
-	bool is_array(json_value v)
-	bool is_bool(json_value v)
-	bool is_null(json_value v)
- 
-	string get_string(json_value v)
-	float get_number(json_value v)
-	[string: json_value] get_object(json_value v)
-	[json_value] get_array(json_value v)
-	string get_bool(json_value v)
-
-string
-number
-object
-array
-true
-false
-null*/
-
-	const vector<member_t> struct_members = {
-		member_t(typeid_t::make_bool(), "b"),
-		member_t(typeid_t::make_float(), "n"),
-		member_t(typeid_t::make_string(), "s"),
-		member_t(typeid_t::make_dict(typeid_t::make_unresolved_type_identifier("json_value")), "obj"),
-		member_t(typeid_t::make_vector(typeid_t::make_unresolved_type_identifier("json_value")), "array")
-	};
-	const auto host__json_value = typeid_t::make_struct(
-		std::make_shared<struct_definition_t>(struct_definition_t(struct_members))
-	);
-
-	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value, false };
+	//	Register the struct type for json_value.
+	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value_type, false };
 
 	_call_stack.push_back(global_env);
 
