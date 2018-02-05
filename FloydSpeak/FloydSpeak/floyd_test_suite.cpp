@@ -1766,14 +1766,15 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 //////////////////////////		JSON - TYPE
 
-QUARK_UNIT_TEST_VIP("json", "dogs", "", ""){
+QUARK_UNIT_TEST("json", "dogs", "", ""){
 	const auto vm = run_global(R"(
 
 		test_json1 = make_json_value(["spotty", "stripey", "pluto" ]);
 		print(test_json1);
 	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
+//	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
 }
+/*
 
 //??? Floyd dict is stricter than JSON -- cannot have different types of values!
 QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
@@ -1784,7 +1785,6 @@ QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
 	)");
 	QUARK_UT_VERIFY((	vm._print_output == vector<string>{ "Hello", "Bye" } ))
 }
-/*
 QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
 	const auto vm = run_global(R"(
 
