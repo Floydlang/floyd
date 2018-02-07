@@ -260,20 +260,6 @@ rights core {
 
 
 
-# DYN
-dyn<float, string> // one of these. Tagged union. a
-
-	a = dyn<string, int>("test");
-	assert(a == "test");
-	assert(a.type == string);
-	assert(a.type != int);
-	assert(a.type != bool);
-
-	b = dyn<string, int>(14);
-	assert(a == 14);
-	assert(a.type != string);
-	assert(a.type == int);
-	assert(a.type != bool);
 
 
 

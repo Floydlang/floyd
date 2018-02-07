@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 # COMPLETE TYPE SYSTEM
 
 - construction
@@ -25,9 +21,10 @@
 | enum											| TBD
 | tagged union									| TBD, ???
 | typedef										| TBD
+| json_value									| IN PROGRESS
 
 
-
+### typeid and composite types
 Floyd typeid:
 	int
 	int id: 4
@@ -36,7 +33,7 @@ Floyd typeid:
 	struct def
 
 A typeid either directly specifies a basic type, a composite stype or a custom_type based on another typeid
-Two types are equal if they have the exact
+Two types are equal if they have the exact same typeid.
 
 TYPE
 	bool
@@ -67,12 +64,13 @@ TYPE
 		TYPE type-implementation.
 		In the future, intern this and use a string-id.
 
-
 When parsing code we support typenames were we don't know the actual type yet. Those typenames can be used to build more complex types out of.
 
 When executing program, all those typenames needs to be resolved. Idea: make special compiler types: unresolved_typeid_t and resolved_typeid_t.
 
 
+
+### Syntax vs typeid
 
 Struct declaration statement:
 
@@ -96,6 +94,8 @@ Result is equivalent to:
 		]
 	]
 
+a = struct { int, int, string }( 4, 5, "six");
+
 
 Function declaration statement:
 
@@ -105,7 +105,6 @@ Function declaration statement:
 Result
 
 	["int", ["float", "float"] test_xyz = FUNCTION_LITERAL;
-
 
 
 Unnamed struct:
@@ -157,29 +156,108 @@ struct1 example_struct1 = struct1{count: 4, name: "Kitty", ["red": "warning, "gr
 
 
 
-example_struct = struct
+### typedef
+A typedef makes a new, unique type, by copying another (often complex) type.
+
+	typedef [string, [bool]] book_list;
+
 
 typedef float meters;
-
 meters dist_home = 14
 meter dist_home = meter(14)
 
 
+	### You also add additional invariant. sample_rate is an integer, but can only be positive.
 
 
 
+
+### Tuples - Unnnamed structs with unnamed members
+All members also have number in the order they are listed in the struct, starting with 0. A second name for the same member.
+
+You can chose to not name members. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0".
+
+my_pixel[0] // allow clients to enumerate struct members as elements. If all members are the same type result is that type. If struct members are different types, result is a dyn<int, float>
+
+**??? How to block mutation of member variable? Some members makes no sense to write in isolation.**
+
+
+You can access the members using indexes instead of their names, for use as a tuple. Also, there is no need to name a struct.
 
 	a = struct { int, int, string }( 4, 5, "six");
+	assert(a.0 == 4);
+	assert(a.1 == 5);
+	assert(a.2 == "six");
+	
+	b = struct { 4, 5, "six" };
+	assert(a.0 == 4);
+	assert(a.1 == 5);
+	assert(a.2 == "six");
+
+??? what syntax for tuples?
+
+	return ("hello", 123);
+
+and
+
+	return struct{}
+
+??? Maybe better to have separate syntax for unnamed struct vs typle after all.
 
 
-lambdas
+
+# ENUM
+An enum is a type that can have exactly one of a number of named states, like a C enum. It's like a mode selector. Common use is to describe the type of something. north / east / south / west.
+
+	
+	enum direction {
+		north, east, south west
+	}
+
+
+Enum are stored internally as an integer but you can never control which integer or access it. It's purely internal.
+
+
+Each enum value can also store a value. Each enum value can have their own type of value. This is called a "variant" "sum type", "tagged union", "discriminated union" depending on language. In C there are "unions" which are parts of a Floyd enum is.
+
+
+	enum user_event {
+		mouse_click point_t,
+		keypress string,
+		quit,
+		redraw_window redraw_t
+	}
+
+
+	void handle_event(user_event e){
+		if(e == user_event.mouse_click){
+			click_pos = user_event.mouse_click.value
+		}
+		else if(e == user_event.keypress){
+			key = user_event.keypress.value
+		}
+		else if(e == user_event.quit){
+		}
+	}
+
+
+	handle_event(user_event.mouse_click(point_t(100, 100)))
+	handle_event(user_event.quit)
+	
 
 
 
-### TYPEDEF
-A typedef makes a new, unique type, by copying another (often complex) type.
-	typedef [string, [bool]] book_list;
-	### You also add additional invariant. sample_rate is an integer, but can only be positive.
+	### Need DRY-syntax to get value.
+
+Notice that you can only have *one* value for each enum value. If you want more stuff, use a struct.
+
+		### switch/case & pattern matching.
+
+
+
+
+
+
 
 
 
@@ -241,28 +319,9 @@ You can use a lambda to do directly assign a value from an if-then-else:
 
 
 
-### STRUCTs: Unnamed struct members (tuples)
-All members also have number in the order they are listed in the struct, starting with 0. A second name for the same member.
-
-You can chose to not name members. An unnamed member can be accessed using its position in the struct: first member is "0", second is called "1" etc. Access like: "my_pixel.0".
-
-my_pixel[0] // allow clients to enumerate struct members as elements. If all members are the same type result is that type. If struct members are different types, result is a dyn<int, float>
-
-**??? How to block mutation of member variable? Some members makes no sense to write in isolation.**
 
 
-### STRUCTs: Unnnamed structs (tuples)
-You can access the members using indexes instead of their names, for use as a tuple. Also, there is no need to name a struct.
 
-	a = struct { int, int, string }( 4, 5, "six");
-	assert(a.0 == 4);
-	assert(a.1 == 5);
-	assert(a.2 == "six");
-	
-	b = struct { 4, 5, "six" };
-	assert(a.0 == 4);
-	assert(a.1 == 5);
-	assert(a.2 == "six");
 
 
 
@@ -286,14 +345,23 @@ You can access the members using indexes instead of their names, for use as a tu
 - **int64**
 
 
-### MORE TYPES
 
-- **enum**		same as struct with only static constant data members
+
+
+
+
+
+
+
+
 
 # CORE TYPE FEATURES
 These are features built into every type: integer, string, struct, collections etc.
 
 - **hash hash(v)**							computes a true-deep hash of the value
+
+
+
 
 
 
@@ -559,18 +627,6 @@ Related:
 
 
 
-# ENUM
-Works like expected from C, but can be extended. Always represents an integer.
-
-enum preset_colo {
-	red = 2,
-	green,
-	blue
-}
-
-enum preset_color_ex : preset color {
-	yellow,
-}
 
 
 # ABOUT COLLECTIONS

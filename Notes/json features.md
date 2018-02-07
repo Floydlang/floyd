@@ -3,7 +3,7 @@
 
 # FLOYD JSON FEATURES
 
-JSON is very central to Floyd. It is built directly into the language as the defautl file format and protocol. It is also used by the compiler and language, logging and debugging features.
+JSON is very central to Floyd. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems. JSON format is also used by the compiler and language, logging and debugging features.
 
 
 - Floyd has built in support for JSON in the language. It has a a json-type called "json_value" and functions to pack & unpack strings / json files into the json-type.
