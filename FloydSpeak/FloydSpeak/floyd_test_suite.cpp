@@ -68,14 +68,13 @@ void ut_compare_stringvects(const vector<string>& result, const vector<string>& 
 			QUARK_SCOPED_TRACE(std::to_string(i));
 
 			quark::ut_compare(result[i], expected[i]);
-/*
-			if(result[i] != expected[i]){
-				QUARK_TRACE("  result: \"" + result[i] + "\"");
-				QUARK_TRACE("expected: \"" + expected[i] + "\"");
-			}
-*/
-
 		}
+
+		::quark::on_unit_test_failed_hook(
+			::quark::get_runtime(),
+			::quark::source_code_location(__FILE__, __LINE__),
+			""
+		);
 	}
 }
 
@@ -1857,8 +1856,8 @@ QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
 	});
 }
 
-
-QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
+//	Manually check that printout looks good.
+QUARK_UNIT_TEST("json", "pigcount", "", ""){
 	const auto vm = run_global(R"ABCD(
 		json_value a = {
 			"menu": {
@@ -1876,9 +1875,26 @@ QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
 		s = to_pretty_string(a);
 		print(s);
 	)ABCD");
+
+
+const auto expected = R"ABCD({
+	"menu": {
+		"id": "file",
+		"popup": {
+			"menuitem": [
+				{ "onclick": "CreateNewDoc()", "value": "New" },
+				{ "onclick": "OpenDoc()", "value": "Open" },
+				{ "onclick": "CloseDoc()", "value": "Close" }
+			]
+		},
+		"value": "File"
+	}
+})ABCD";
+
 	ut_compare_stringvects(vm._print_output, vector<string>{
-//		R"ABCD({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })ABCD"
+		expected
 	});
+
 }
 
 
