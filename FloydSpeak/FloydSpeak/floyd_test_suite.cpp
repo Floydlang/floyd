@@ -754,7 +754,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 		R"(
 			string result = to_string(3.1);
 		)",
-		value_t("3.100000")
+		value_t("3.1")
 	);
 }
 
@@ -1768,7 +1768,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 
 
-QUARK_UNIT_TEST("json", "", "", ""){
+QUARK_UNIT_TEST("json_value-string", "", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = "hello";
 		print(a);
@@ -1777,8 +1777,15 @@ QUARK_UNIT_TEST("json", "", "", ""){
 		"\"hello\""
 	});
 }
+QUARK_UNIT_TEST("json_value-string", "== string", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = "hello";
+		assert(a == "hello");
+	)");
+}
 
-QUARK_UNIT_TEST("json", "", "", ""){
+
+QUARK_UNIT_TEST("json_value-number", "", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = 13;
 		print(a);
@@ -1787,8 +1794,15 @@ QUARK_UNIT_TEST("json", "", "", ""){
 		"13"
 	});
 }
+QUARK_UNIT_TEST("json_value-number", "== number", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = 13;
+		assert(a == 13);
+	)");
+}
 
-QUARK_UNIT_TEST("json", "", "", ""){
+
+QUARK_UNIT_TEST("json_value-array", "def", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = ["hello", "bye"];
 		print(a);
@@ -1798,8 +1812,22 @@ QUARK_UNIT_TEST("json", "", "", ""){
 	});
 }
 
+QUARK_UNIT_TEST("json_value-array", "[]", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = ["hello", "bye"];
+		print(a[0]);
+		print(a[1]);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"hello",
+		"bye"
+	});
+}
+
+
+
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
-QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
+QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 	const auto vm = run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a);
@@ -1809,21 +1837,8 @@ QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
 	});
 }
 
-QUARK_UNIT_TEST("json", "", "", ""){
-	const auto vm = run_global(R"(
-		json_value a = "hello";
-		assert(a == "hello");
-	)");
-}
-
-QUARK_UNIT_TEST("json", "", "", ""){
-	const auto vm = run_global(R"(
-		json_value a = 13;
-		assert(a == 13);
-	)");
-}
 // JSON example snippets: http://json.org/example.html
-QUARK_UNIT_TEST("json", "pigcount", "", ""){
+QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 	const auto vm = run_global(R"ABCD(
 		json_value a = {
 			"menu": {
@@ -1845,8 +1860,7 @@ QUARK_UNIT_TEST("json", "pigcount", "", ""){
 	});
 }
 
-//	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
-QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
+QUARK_UNIT_TEST("json_value-object", "def", "expressions inside def", ""){
 	const auto vm = run_global(R"(
 		json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" };
 		print(a);
@@ -1856,8 +1870,29 @@ QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
 	});
 }
 
-//	Manually check that printout looks good.
-QUARK_UNIT_TEST("json", "pigcount", "", ""){
+QUARK_UNIT_TEST("", "print()", "3.0", ""){
+	const auto vm = run_global(R"(
+		print(3.0);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"3"
+	});
+}
+
+QUARK_UNIT_TEST("json_value-object", "[]", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = { "pigcount": 3, "pigcolor": "pink" };
+		print(a["pigcount"]);
+		print(a["pigcolor"]);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"3",
+		"pink"
+	});
+}
+
+
+QUARK_UNIT_TEST("json_value-object", "to_pretty_string()", "", ""){
 	const auto vm = run_global(R"ABCD(
 		json_value a = {
 			"menu": {

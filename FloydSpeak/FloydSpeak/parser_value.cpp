@@ -517,8 +517,8 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
 	QUARK_TEST_VERIFY(a != value_t(14.0f));
-	QUARK_TEST_VERIFY(a.to_compact_string() == "13.500000");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "float: 13.500000");
+	QUARK_TEST_VERIFY(a.to_compact_string() == "13.5");
+	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "float: 13.5");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "string"){
@@ -625,6 +625,48 @@ QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
 
 
 
+value_t value_from_normalized_json(const json_t& v){
+	QUARK_ASSERT(v);
+
+	if(v.is_object()){
+		const auto obj = v.get_object();
+		std::map<string, value_t> obj2;
+		for(const auto e: obj){
+			const auto key = e.first;
+			const auto value = e.second;
+			const auto value2 = make_json_value(value);
+			obj2[key] = value2;
+		}
+		return make_dict_value(typeid_t::make_json_value(), obj2);
+	}
+	else if(v.is_array()){
+		const auto elements = v.get_array();
+		std::vector<value_t> elements2;
+		for(const auto e: elements){
+			const auto e2 = make_json_value(e);
+			elements2.push_back(e2);
+		}
+		return make_vector_value(typeid_t::make_json_value(), elements2);
+	}
+	else if(v.is_string()){
+		return value_t(v.get_string());
+	}
+	else if(v.is_number()){
+		return value_t(static_cast<float>(v.get_number()));
+	}
+	else if(v.is_true()){
+		return value_t(true);
+	}
+	else if(v.is_false()){
+		return value_t(false);
+	}
+	else if(v.is_null()){
+		return value_t();
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
 
 
 

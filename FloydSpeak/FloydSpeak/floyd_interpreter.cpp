@@ -602,14 +602,71 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				throw std::runtime_error("Cannot compute lookup key.");
 			}//??? add debug code to validate all collection values, struct members - are the correct type.
 			else{
-				if(parent_expr.second.get_literal().is_vector()){
-					if(key_expr.second.get_literal().is_int() == false){
+				const auto parent_value = parent_expr.second.get_literal();
+				const auto key_value = key_expr.second.get_literal();
+
+				if(parent_value.is_string()){
+					if(key_value.is_int() == false){
+						throw std::runtime_error("Lookup in string by index-only.");
+					}
+					else{
+						const auto instance = parent_value.get_string_value();
+						int lookup_index = key_value.get_int_value();
+						if(lookup_index < 0 || lookup_index >= instance.size()){
+							throw std::runtime_error("Lookup in string: out of bounds.");
+						}
+						else{
+							const char ch = instance[lookup_index];
+							const auto value2 = string(1, ch);
+							return { vm2, expression_t::make_literal(value2)};
+						}
+					}
+				}
+				else if(parent_value.is_json_value()){
+					const auto parent_json_value = parent_value.get_json_value();
+					if(parent_json_value.is_object()){
+						if(key_value.is_string() == false){
+							throw std::runtime_error("Lookup in json_value object by string-key only.");
+						}
+						else{
+							const auto lookup_key = key_value.get_string_value();
+
+							//	get_object_element() throws if key can't be found.
+							const auto value = parent_json_value.get_object_element(lookup_key);
+							const auto value2 = value_from_normalized_json(value);
+							return { vm2, expression_t::make_literal(value2)};
+						}
+					}
+					else if(parent_json_value.is_array()){
+						if(key_value.is_int() == false){
+							throw std::runtime_error("Lookup in json_value array by integer index only.");
+						}
+						else{
+							const auto lookup_index = key_value.get_int_value();
+							const auto json_array = parent_json_value.get_array();
+
+							if(lookup_index < 0 || lookup_index >= json_array.size()){
+								throw std::runtime_error("Lookup in json_value array: out of bounds.");
+							}
+							else{
+								const auto value = json_array[lookup_index];
+								const auto value2 = value_from_normalized_json(value);
+								return { vm2, expression_t::make_literal(value2)};
+							}
+						}
+					}
+					else{
+						throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+					}
+				}
+				else if(parent_value.is_vector()){
+					if(key_value.is_int() == false){
 						throw std::runtime_error("Lookup in vector by index-only.");
 					}
 					else{
-						const auto instance = parent_expr.second.get_literal().get_vector_value();
+						const auto instance = parent_value.get_vector_value();
 
-						int lookup_index = key_expr.second.get_literal().get_int_value();
+						int lookup_index = key_value.get_int_value();
 						if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
 							throw std::runtime_error("Lookup in vector: out of bounds.");
 						}
@@ -619,13 +676,13 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 						}
 					}
 				}
-				else if(parent_expr.second.get_literal().is_dict()){
-					if(key_expr.second.get_literal().is_string() == false){
+				else if(parent_value.is_dict()){
+					if(key_value.is_string() == false){
 						throw std::runtime_error("Lookup in dict by string-only.");
 					}
 					else{
-						const auto instance = parent_expr.second.get_literal().get_dict_value();
-						const string key = key_expr.second.get_literal().get_string_value();
+						const auto instance = parent_value.get_dict_value();
+						const string key = key_value.get_string_value();
 
 						const auto found_it = instance->_elements.find(key);
 						if(found_it == instance->_elements.end()){
@@ -637,9 +694,8 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 						}
 					}
 				}
-				//??? Add support for looking up characters in strings.
 				else {
-					throw std::runtime_error("Lookup using [] only works with vectors and dicts.");
+					throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
 				}
 			}
 		}
@@ -1649,6 +1705,18 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 						return {vm, s2 };
 					}
 				}
+			}
+		}
+		else if(obj1.is_json_value()){
+			const auto json_value0 = obj1.get_json_value();
+			if(json_value0.is_array()){
+				assert(false);
+			}
+			else if(json_value0.is_object()){
+				assert(false);
+			}
+			else{
+				throw std::runtime_error("Can only update string, vector, dict or struct.");
 			}
 		}
 		else if(obj1.is_vector()){

@@ -16,6 +16,7 @@
 #include <map>
 
 #include "floyd_basics.h"
+#include "text_parser.h"
 
 namespace floyd {
 	struct statement_t;
@@ -568,9 +569,7 @@ namespace floyd {
 				return std::string(temp);
 			}
 			else if(base_type == base_type::k_float){
-				char temp[200 + 1];//### Use C++ function instead.
-				sprintf(temp, "%f", _float);
-				return std::string(temp);
+				return float_to_string(_float);
 			}
 			else if(base_type == base_type::k_string){
 				return _string;
@@ -868,6 +867,7 @@ namespace floyd {
 	}
 
 	json_t value_to_normalized_json(const value_t& v);
+	value_t value_from_normalized_json(const json_t& v);
 	json_t value_and_type_to_normalized_json(const value_t& v);
 	value_t make_test_func();
 

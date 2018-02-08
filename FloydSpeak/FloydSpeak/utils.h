@@ -50,4 +50,7 @@ template <typename T> std::vector<T> operator+(const std::vector<T>& lhs, const 
 }
 
 
+//std::string float_to_string_no_trailing_zeros(float v);
+
+
 #endif /* utils_hpp */

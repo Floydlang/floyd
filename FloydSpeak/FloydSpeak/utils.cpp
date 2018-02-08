@@ -7,9 +7,7 @@
 //
 
 #include "utils.h"
-
 #include "quark.h"
-
 #include <string>
 
 
@@ -37,3 +35,33 @@ QUARK_UNIT_TESTQ("compare_shared_values()", ""){
 
 
 
+#if 0
+std::string float_to_string_no_trailing_zeros(float v){
+    std::stringstream ss;
+    ss << v;
+    return ss.str();
+/*
+	char temp[200 + 1];//### Use C++ function instead.
+	sprintf(temp, "%f", _float);
+	return std::string(temp);
+*/
+}
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_ASSERT(float_to_string_no_trailing_zeros(0) == "0");
+}
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_ASSERT(float_to_string_no_trailing_zeros(123) == "123");
+}
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_ASSERT(float_to_string_no_trailing_zeros(1.123) == "1.123");
+}
+QUARK_UNIT_TEST("", "", "", ""){
+	QUARK_ASSERT(float_to_string_no_trailing_zeros(1.5) == "1.5");
+}
+#endif
+
+
+
+#include <sstream>
