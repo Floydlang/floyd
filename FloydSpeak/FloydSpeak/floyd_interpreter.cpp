@@ -39,7 +39,7 @@ using std::make_shared;
 
 
 
-
+#if 0
 /*
 	bool is_string(json_value v)
 	bool is_number(json_value v)
@@ -76,6 +76,7 @@ const auto json_value___struct_def = std::make_shared<struct_definition_t>(struc
 
 const auto host__json_value_type = typeid_t::make_struct(json_value___struct_def);
 
+#endif
 
 
 
@@ -85,7 +86,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 namespace {
 
 	// ### Make this built in into evaluate_expression()?
-	value_t improve_vector(const value_t& value){
+	value_t improve_vector2(const value_t& value){
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(value.is_vector());
 
@@ -101,7 +102,7 @@ namespace {
 			else{
 				//	Figure out the element type.
 				const auto element_type2 = p->_elements[0].get_type();
-				return improve_vector(make_vector_value(element_type2, p->_elements));
+				return improve_vector2(make_vector_value(element_type2, p->_elements));
 			}
 		}
 		else{
@@ -114,7 +115,7 @@ namespace {
 			return value;
 		}
 	}
-	value_t improve_dict(const value_t& value){
+	value_t improve_dict2(const value_t& value){
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(value.is_dict());
 
@@ -130,28 +131,18 @@ namespace {
 			else{
 				//	Figure out the element type.
 				const auto value_type2 = p->_elements.begin()->second.get_type();
-				return improve_dict(make_dict_value(value_type2, p->_elements));
+				return improve_dict2(make_dict_value(value_type2, p->_elements));
 			}
 		}
 		else{
+/*
 			//	Check that element types match vector type.
 			for(const auto e: p->_elements){
 				if(e.second.get_type() != value_type){
 					throw std::runtime_error("Dict element value of wrong type.");
 				}
 			}
-			return value;
-		}
-	}
-
-	value_t improve_value(const value_t& value){
-		if(value.is_vector()){
-			return improve_vector(value);
-		}
-		else if(value.is_dict()){
-			return improve_dict(value);
-		}
-		else{
+*/
 			return value;
 		}
 	}
@@ -164,8 +155,43 @@ namespace {
 		if(expected_type.is_null()){
 			return value0;
 		}
+		else if(expected_type.is_json_value()){
+
+/*
+			if(value0.is_bool()){
+				return make_json_value(json_t(value0.get_bool_value()));
+			}
+			else if(value0.is_int()){
+				return make_json_value(json_t((double)value0.get_int_value()));
+			}
+			else if(value0.is_float()){
+				return make_json_value(json_t(value0.get_float_value()));
+			}
+			else if(value0.is_string()){
+				return make_json_value(json_t(value0.get_string_value()));
+			}
+			//??? typeid
+
+			else if(value0.is_vector()){
+				vector<json_t> elements2;
+				const auto v = value0.get_vector_value();
+				for(const auto e: v->_elements){
+					const auto e2 = value_to_normalized_json(e);
+					elements2.push_back(e2);
+				}
+				return make_json_value(json_t::make_array(elements2));
+			}
+
+
+			else {
+				return value0;
+			}
+*/
+			const auto v2 = value_to_normalized_json(value0);
+			return make_json_value(v2);
+		}
 		else{
-			const auto value = improve_value(value0);
+			const auto value = value0;
 
 			if(value.is_vector()){
 				const auto v = value.get_vector_value();
@@ -277,8 +303,6 @@ namespace {
 
 					//	Deduced bind type -- use new value's type.
 					if(bind_statement_type.is_null()){
-
-
 						if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
 							throw std::runtime_error("Cannot deduce vector type.");
 						}
@@ -288,7 +312,6 @@ namespace {
 						else{
 							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
 						}
-
 					}
 
 					//	Explicit bind-type -- make sure source + dest types match.
@@ -532,19 +555,8 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	return t->first;
 }
 
-std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interpreter_t& vm, const expression_t& e);
 
 std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
-	const auto result = evaluate_expression_internal(vm, e);
-	if(result.second.is_literal()){
-		const auto value2 = improve_value(result.second.get_literal());
-		return { result.first, expression_t::make_literal(value2)};
-	}
-	else{
-		return result;
-	}
-}
-std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -640,24 +652,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			return {vm2, expression_t::make_literal(value->first)};
 		}
 		else{
-/*			//??? Hack to make "vector(int)" work.
-			if(expr->_variable == keyword_t::k_bool){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_bool()))};
-			}
-			else if(expr->_variable == keyword_t::k_int){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_int()))};
-			}
-			else if(expr->_variable == keyword_t::k_float){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_float()))};
-			}
-			else if(expr->_variable == keyword_t::k_string){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_string()))};
-			}
-
-			else {
-*/
-				throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
-//			}
+			throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
 		}
 	}
 
@@ -730,11 +725,13 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			//	If we have no value-type, deduct it from first element.
 			const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
 
+/*
 			for(const auto m: elements2){
 				if((m.second.get_type() == value_type2) == false){
 					throw std::runtime_error("Dict can not hold elements of different type!");
 				}
 			}
+*/
 			return {vm2, expression_t::make_literal(make_dict_value(value_type2, elements2))};
 		}
 	}
@@ -1349,7 +1346,7 @@ bool environment_t::check_invariant() const {
 }
 
 
-
+#if 0
 //////////////////////////		interpreter_t
 
 //??? This should not be top-level special case only.
@@ -1385,6 +1382,8 @@ std::string json_value__to_compact_string(const value_t& json_value){
 	const auto value = json_value__to_value(json_value);
 	return value.to_compact_string();
 }
+#endif
+
 
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -1397,11 +1396,14 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 	auto vm2 = vm;
 	const auto& value = args[0];
 
+#if 0
 	if(value.is_struct() && value.get_struct_value()->_def == *json_value___struct_def){
 		const auto s = json_value__to_compact_string(value);
 		vm2._print_output.push_back(s);
 	}
-	else{
+	else
+#endif
+	{
 		const auto s = value.to_compact_string();
 		printf("%s\n", s.c_str());
 		vm2._print_output.push_back(s);
@@ -1441,6 +1443,18 @@ std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const
 	const auto& value = args[0];
 	const auto a = value.to_compact_string();
 	return {vm, value_t(a) };
+}
+std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("to_pretty_string() requires 1 argument!");
+	}
+
+	const auto& value = args[0];
+	const auto json = value_to_normalized_json(value);
+	const auto s = json_to_pretty_string(json, 0, pretty_t{80, 4});
+	return {vm, value_t(s) };
 }
 
 
@@ -1604,9 +1618,9 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
-	const auto& obj1 = improve_value(args[0]);
+	const auto& obj1 = args[0];
 	const auto& lookup_key = args[1];
-	const auto& new_value = improve_value(args[2]);
+	const auto& new_value = args[2];
 
 	if(args.size() != 3){
 		throw std::runtime_error("update() needs 3 arguments.");
@@ -1969,7 +1983,7 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 	}
 }
 
-
+#if 0
 value_t primitive_floyd_value_to_json_value(const typeid_t& json_value_typeid, const value_t& v){
 	if (v.is_bool()){
 		throw std::runtime_error("Calling json_value() on unsupported type of value.");
@@ -2077,6 +2091,7 @@ std::pair<interpreter_t, value_t> host__json_value(const interpreter_t& vm, cons
 	const auto result = primitive_floyd_value_to_json_value(existing_value_deep_ptr->first.get_typeid_value(), args[0]);
 	return {vm, result};
 }
+#endif
 
 
 typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
@@ -2091,6 +2106,8 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "print", host__print, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
 	host_function_t{ "assert", host__assert, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
 	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+	host_function_t{ "to_pretty_string", host__to_pretty_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+
 	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
@@ -2099,9 +2116,9 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "erase", host__erase, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
+	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }
 
-	host_function_t{ "make_json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
+//	host_function_t{ "make_json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
 };
 
 
@@ -2130,7 +2147,12 @@ std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(i
 interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	std::vector<std::shared_ptr<statement_t>> init_statements;
+	_ast = ast_t(ast._statements);
+
+	//	Make the top-level environment = global scope.
+	shared_ptr<environment_t> empty_env;
+	auto global_env = environment_t::make_environment(*this, empty_env);
+
 
 	//	Insert built-in functions into AST.
 	for(auto i = 0 ; i < k_host_functions.size() ; i++){
@@ -2141,20 +2163,12 @@ interpreter_t::interpreter_t(const ast_t& ast){
 			hf._function_type.get_function_return()
 		);
 
-		init_statements.push_back(
-			make_shared<statement_t>(make_function_statement(hf._name, def))
-		);
+		const auto function_value = make_function_value(def);
+		global_env->_values[hf._name] = std::pair<value_t, bool>{function_value, false };
 	}
 
-	_ast = ast_t(init_statements + ast._statements);
-
-
-	//	Make the top-level environment = global scope.
-	shared_ptr<environment_t> empty_env;
-	auto global_env = environment_t::make_environment(*this, empty_env);
-
 	//	Register the struct type for json_value.
-	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value_type, false };
+//	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value_type, false };
 
 	_call_stack.push_back(global_env);
 

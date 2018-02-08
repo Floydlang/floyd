@@ -611,6 +611,15 @@ inline void ut_compare(const std::string& result, const std::string& expected){
 	if(result != expected){
 		QUARK_TRACE_SS("  result:" << result);
 		QUARK_TRACE_SS("expected:" << expected);
+
+		for(size_t pos = 0 ; pos < std::max(result.size(), expected.size()) ; pos++){
+			const int ach = pos < result.size() ? result[pos] : 1000;
+			const int bch = pos < expected.size() ? expected[pos] : 1000;
+			QUARK_TRACE_SS("" << pos << ": " << ach << " : " << bch << " " << (ach == bch ? "" : "DIFFERENT"))
+		}
+
+
+
 		::quark::on_unit_test_failed_hook(
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),

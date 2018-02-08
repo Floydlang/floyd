@@ -86,8 +86,13 @@ These are the primitive data types built into the language itself. The goals is 
 # COMPOSITE TYPES
 
 These are composites and collections of other types.
-- **struct**		like C struct or class or tuple.
-- **vector**		an a continous array of elements addressed via indexes.
+
+- **struct**		like C struct or classes or tuples.
+- **vector**		a continous array of elements addressed via indexes.
+- **dictionary**	lookup values using string keys.
+- **json_value**	a value that holds a json-compatible value, can be a big JSON tree.
+
+Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [] etc.
 
 # CORE TYPE FEATURES
 
@@ -162,9 +167,9 @@ Here you normally define functions, structs and global constants. The global sco
 
 # FUNCTIONS
 
-Functions in Floyd are by default pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at different times, like get_time().
+Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything - not global variables, not by calling another, unpure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is unpure.
 
-While a function executes, it percieves the outside world to stand still.
+While a function executes, it perceives the outside world to stand still.
 
 Functions always return exactly one value. Use a struct to return more values.
 
@@ -366,12 +371,13 @@ This is a pure 8-bit string type. It is immutable. You can compare with other st
 
 The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them. Or UTF-8 etc. You can also use them as fast arrays of bytes.
 
-This is the strings contents you enter into the script code. They look like "Hello".
-You cannot use any escape characters, like in the C-language.
+You can make string literals directly in the source code like this:
 
 	a = "Hello, world!";
 
-You can copy string using =. All comparison expressions work, like a == b, a < b, a >= b, a != b etc.
+Notice: You cannot use any escape characters, like in the C-language.
+
+All comparison expressions work, like a == b, a < b, a >= b, a != b etc.
 
 You can access a random character in the string, using its integer position.
 
@@ -396,6 +402,181 @@ You can append to strings together using the + operation.
 - **push_back()**: appends a character or string to the right side of the string.
 - **subset**: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
 - **replace()**: replaces a range of a string with another string. Can also be used to erase or insert.
+
+
+
+# JSON_VALUE
+
+JSON is very central to Floyd. JSON is a way to store composite values in a tree-shap in a simple and standardazied way. Since Floyd mainly works with values this is a perfect match for serialzing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
+
+JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
+
+- Floyd has built in support for JSON in the language. It has a a JSON type called **json_value** and functions to pack & unpack strings / json files into the json-type.
+
+- Floyd has support for json literals: you can put json data directly into a Floyd file. Great for copy-pasting snippets for tests etc.
+
+Read more about JSON here: www.json.org
+
+
+This value can contain any of the 6 JSON-compatible value:
+
+- string
+- number
+- object
+- array
+- true / false
+- null
+
+
+**json_value** 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
+
+Notice that json_value can contain an entire huge json file, with a big tree of json objects and arrays etc. A json_value can also also contain just a string or a number or a single json array of strings. The json_value is used for every node in the json_value tree.
+
+
+### JSON LITERALS
+
+Embedd json inside source code file. Simple / no escaping needed. Use to paste data, test values etc. Round trip.
+
+Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings etc. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown (TBD).
+
+This all means you can write Floyd code that generate all or parts of the JSON.
+Also: you can nest JSONs in eachother.
+
+Support pasting JSON directly into source file, including any escapes, UTF-8 etc.
+
+
+Example json:
+
+	json_value a = 13;
+	json_value b = "Hello!";
+	json_value c = ["hello": 1, "bye": 3 ];
+
+	//	Notice that json objects are more lax than Floyd: you can mix different types of values in the same object or array.
+	json_value d = { "pigcount": 3, "pigcolor": "pink" };
+
+	assert(a == 13);
+	assert(b == "Hello!");
+	assert(c["hello"] == 1);
+	assert(c["bye"] == 3);
+	assert(size(c) == 2);
+
+
+	test_json2 = json_value(
+		{
+			"one": 1,
+			"two": 2,
+			"three": "three",
+			"four": [ 1, 2, 3, 4 ],
+			"five": { "alpha": 1000, "beta": 2000 },
+			"six": true,
+			"seven": false,
+		}
+	)
+
+
+### QUERRYING AND MODIFYING JSON_VALUEs
+
+A json_value can contain different type of va
+
+json_value can contain one of 6 different types and you can query like this:
+
+	bool is_string(json_value v)
+	bool is_number(json_value v)
+	bool is_object(json_value v)
+	bool is_array(json_value v)
+	bool is_bool(json_value v)
+	bool is_null(json_value v)
+	
+	string get_string(json_value v)
+	float get_number(json_value v)
+	[string: json_value] get_object(json_value v)
+	[json_value] get_array(json_value v)
+	string get_bool(json_value v)
+	
+
+
+### SERIALIZATION / DESERIALIZATION
+
+Serializing a value is a built in mechanism. It is always deep. The result is always a normalized JSON text file in a Floyd string.
+
+There are two steps: converting your Floyd value to a json-value. Then converting the json-value to a text file.
+
+	string json_to_textfile(json v)
+	json textfile_to_json(string s)
+
+	T json_to_value(json, typeid)
+	json value_to_json(T value)
+
+
+### FLOYD TYPES VS JSON_VALUE
+
+Every single Floyd type can be converted to/from JSON, as a built-in behaviour. This is great for:
+
+1) Logging & debugging: you can always see the contents of any floyd value.
+
+2) You can copy-paste things directly from a log into you source code or a data file to keep it / use it.
+
+3) Simple to convert JSON to/from protocols like REST protocolls.
+
+4) Simple to load/save state to files.
+
+5) Creating test data.
+
+
+??? Make generic to_string() from_string() for all types, including json_value.
+
+
+
+### EXAMPLE USE OF JSON
+
+
+##### COPY - PASTE VALUE DIRECTLY INTO YOU TEST / SOURCE CODE
+
+Support pasting JSON directly into source file, including any escapes, UTF-8 etc.
+
+cat = unpack_json(unpack_base64(
+	"UmVwdWJsaWthbmVybmFzIGxlZGFyZSBpIHNlbmF0ZW4sIE1pdGNoIE1jQ29ubmVsbCwgdmlsbGUg
+	dGlkaWdhcmVs5GdnYSBvbXL2c3RuaW5nZW4gdGlsbCBzZW50IHDlIHP2bmRhZ3NrduRsbGVuLCBt
+	ZW4gZGV0IHNhdHRlIGRlbW9rcmF0aXNrZSBtaW5vcml0ZXRzbGVkYXJlbiBDaHVjayBTY2h1bWVy
+	IHN0b3BwIGb2ci4gU2NodW1lciBz5GdlciBhdHQgdHJvdHMgZvZyaGFuZGxpbmdhcm5hIJRoYXIg
+	dmkg5G5udSBhdHQgbuUgZW4g9nZlcmVuc2tvbW1lbHNlIHDlIGVuIHbkZyBzb20g5HIgYWNjZXB0
+	YWJlbCBm9nIgYuVkYSBzaWRvcpQuIJRIYW4ga2FsbGFyIGzkZ2V0IGb2ciBUcnVtcCBzaHV0ZG93
+	bpQgb2NoIFZpdGEgaHVzZXQga2FsbGFyIGRldCCUU2NodW1lciBzaHV0ZG93bpQuDQoNCg=="
+))
+
+
+##### Example how to add support for a JSON message:
+
+1) Copy example JSON from API docs into your source code.
+2) Make your code use that hardcoded JSON and make sure it works.
+3) Replace bits of the fixed JSON with expression, step by step.
+
+
+??? need sandbox-version of parser than cannot execute any code in the JSON.
+
+//  Copy JSON from docs or live system.
+
+
+
+//	Uses default JSON representation of image_t
+dog = unpack_json(
+	image_t,
+	{
+		"width": 4, "height": 3, "pixels": [
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
+			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0}
+		]
+	}
+)
+
+
+#### CORE FUNCTIONS
+
+- **pretty_string()**
+
+??? add all host function
 
 
 

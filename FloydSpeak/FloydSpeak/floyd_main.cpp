@@ -412,31 +412,32 @@ int main(int argc, const char * argv[]) {
 	floyd_quark_runtime q("");
 	quark::set_runtime(&q);
 
-#if true && QUARK_UNIT_TESTS_ON
-	try {
-		run_tests();
+	if(true && QUARK_UNIT_TESTS_ON){
+		try {
+			run_tests();
+		}
+		catch(...){
+			QUARK_TRACE("Error");
+			return -1;
+		}
 	}
-	catch(...){
-		QUARK_TRACE("Error");
-		return -1;
-	}
-#endif
 
-	if(argc == 1){
-#if false
-		const std::vector<std::string> args2 = {
-			"floyd-exe",
-			"/Users/marcus/Repositories/Floyd/examples/test1.floyd"
-		};
-		run_file(args2);
-#endif
-
-		trace_on = false;
-		run_repl();
-	}
-	else{
-		trace_on = false;
-		run_file(args);
+	if(false){
+		if(argc == 1){
+			if(false){
+				const std::vector<std::string> args2 = {
+					"floyd-exe",
+					"/Users/marcus/Repositories/Floyd/examples/test1.floyd"
+				};
+				run_file(args2);
+			}
+			trace_on = false;
+			run_repl();
+		}
+		else{
+			trace_on = false;
+			run_file(args);
+		}
 	}
 
 	quark::set_runtime(prev_q);

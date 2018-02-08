@@ -35,6 +35,7 @@ const std::string keyword_t::k_bool = "bool";
 const std::string keyword_t::k_int = "int";
 const std::string keyword_t::k_float = "float";
 const std::string keyword_t::k_string = "string";
+const std::string keyword_t::k_json_value = "json_value";
 const std::string keyword_t::k_struct = "struct";
 
 const std::string keyword_t::k_mutable = "mutable";
@@ -58,6 +59,9 @@ const std::string keyword_t::k_mutable = "mutable";
 		}
 		else if(t == base_type::k_string){
 			return keyword_t::k_string;
+		}
+		else if(t == base_type::k_json_value){
+			return keyword_t::k_json_value;
 		}
 
 		else if(t == base_type::k_typeid){
@@ -95,6 +99,7 @@ const std::string keyword_t::k_mutable = "mutable";
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == keyword_t::k_int);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == keyword_t::k_float);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == keyword_t::k_string);
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_json_value) == keyword_t::k_json_value);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
@@ -196,6 +201,11 @@ expression_type token_to_expression_type(const string& op){
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 		}
+		else if(_base_type == floyd::base_type::k_json_value){
+			QUARK_ASSERT(_parts.empty());
+			QUARK_ASSERT(_unresolved_type_identifier.empty());
+			QUARK_ASSERT(!_struct_def);
+		}
 		else if(_base_type == floyd::base_type::k_typeid){
 			QUARK_ASSERT(_parts.size() == 1);
 			QUARK_ASSERT(_parts[0].check_invariant());
@@ -284,7 +294,7 @@ expression_type token_to_expression_type(const string& op){
 		const auto b = t.get_base_type();
 		const auto basetype_str = base_type_to_string(b);
 
-		if(b == base_type::k_null || b == base_type::k_bool || b == base_type::k_int || b == base_type::k_float || b == base_type::k_string){
+		if(b == base_type::k_null || b == base_type::k_bool || b == base_type::k_int || b == base_type::k_float || b == base_type::k_string || b == base_type::k_json_value){
 			return basetype_str;
 		}
 		else if(b == base_type::k_typeid){
@@ -350,6 +360,9 @@ expression_type token_to_expression_type(const string& op){
 			}
 			else if(s == keyword_t::k_string){
 				return typeid_t::make_string();
+			}
+			else if(s == keyword_t::k_json_value){
+				return typeid_t::make_json_value();
 			}
 			else{
 				return typeid_t::make_unresolved_type_identifier(s);

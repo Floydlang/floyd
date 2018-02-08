@@ -324,6 +324,16 @@ int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& r
 
 
 
+int compare_json_values(const json_t& lhs, const json_t& rhs){
+	if(lhs == rhs){
+		return 0;
+	}
+	else{
+		// ??? implement compare.
+		assert(false);
+	}
+}
+
 int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
@@ -354,6 +364,9 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	}
 	else if(type.is_string()){
 		return compare_string(left.get_string_value(), right.get_string_value());
+	}
+	else if(type.is_json_value()){
+		return compare_json_values(left.get_json_value(), right.get_json_value());
 	}
 	else if(type.is_typeid()){
 		QUARK_ASSERT(false);
@@ -550,6 +563,9 @@ json_t value_to_normalized_json(const value_t& v){
 	else if(v.is_string()){
 		return json_t(v.get_string_value());
 	}
+	else if(v.is_json_value()){
+		return v.get_json_value();
+	}
 	else if(v.is_typeid()){
 		return typeid_to_normalized_json(v.get_typeid_value());
 	}
@@ -568,17 +584,11 @@ json_t value_to_normalized_json(const value_t& v){
 	}
 	else if(v.is_dict()){
 		const auto value = v.get_dict_value();
-		std::vector<json_t> result;
+		std::map<string, json_t> result;
 		for(const auto e: value->_elements){
-			result.push_back(
-				json_t::make_array({
-					e.first,
-					value_to_normalized_json(e.second)
-				})
-			);
+			result[e.first] = value_to_normalized_json(e.second);
 		}
 		return result;
-		return json_t("???");
 	}
 	else if(v.is_function()){
 		const auto value = v.get_function_value();

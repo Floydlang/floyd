@@ -254,6 +254,7 @@ Notice that you can only have *one* value for each enum value. If you want more 
 		### switch/case & pattern matching.
 
 
+Enums can contain themselves - recursive. Needed for making tree structures.
 
 
 

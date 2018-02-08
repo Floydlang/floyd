@@ -287,10 +287,9 @@ QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 }
 
 
-//??? Should not use quark::get_log_indent()!!!!
 std::string json_to_pretty_string(const json_t& v){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
-	return json_to_pretty_string(v, quark::get_log_indent(), pretty);
+	return json_to_pretty_string(v, 0, pretty);
 }
 
 
