@@ -617,7 +617,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 						}
 						else{
 							const char ch = instance[lookup_index];
-							const auto value2 = string(1, ch);
+							const auto value2 = value_t(string(1, ch));
 							return { vm2, expression_t::make_literal(value2)};
 						}
 					}
