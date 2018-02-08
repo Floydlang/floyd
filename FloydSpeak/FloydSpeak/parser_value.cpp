@@ -326,7 +326,7 @@ int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& r
 
 int compare_json_values(const json_t& lhs, const json_t& rhs){
 	if(lhs == rhs){
-		return true;
+		return 0;
 	}
 	else{
 		// ??? implement compare.
@@ -584,17 +584,11 @@ json_t value_to_normalized_json(const value_t& v){
 	}
 	else if(v.is_dict()){
 		const auto value = v.get_dict_value();
-		std::vector<json_t> result;
+		std::map<string, json_t> result;
 		for(const auto e: value->_elements){
-			result.push_back(
-				json_t::make_array({
-					e.first,
-					value_to_normalized_json(e.second)
-				})
-			);
+			result[e.first] = value_to_normalized_json(e.second);
 		}
 		return result;
-		return json_t("???");
 	}
 	else if(v.is_function()){
 		const auto value = v.get_function_value();
