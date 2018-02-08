@@ -564,7 +564,7 @@ json_t value_to_normalized_json(const value_t& v){
 		return json_t(v.get_string_value());
 	}
 	else if(v.is_json_value()){
-		return json_to_compact_string(v.get_json_value());
+		return v.get_json_value();
 	}
 	else if(v.is_typeid()){
 		return typeid_to_normalized_json(v.get_typeid_value());

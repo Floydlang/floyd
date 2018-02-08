@@ -1444,6 +1444,18 @@ std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const
 	const auto a = value.to_compact_string();
 	return {vm, value_t(a) };
 }
+std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("to_pretty_string() requires 1 argument!");
+	}
+
+	const auto& value = args[0];
+	const auto json = value_to_normalized_json(value);
+	const auto s = json_to_pretty_string(json, 0, pretty_t{80, 4});
+	return {vm, value_t(s) };
+}
 
 
 
@@ -2094,6 +2106,8 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "print", host__print, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
 	host_function_t{ "assert", host__assert, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
 	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+	host_function_t{ "to_pretty_string", host__to_pretty_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+
 	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },

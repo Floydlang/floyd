@@ -63,7 +63,8 @@ void ut_compare_stringvects(const vector<string>& result, const vector<string>& 
 		if(result.size() != expected.size()){
 			QUARK_TRACE("Vector are different sizes!");
 		}
-		for(int i = 0 ; i < result.size() ; i++){
+		const auto count = std::min(result.size(), expected.size());
+		for(int i = 0 ; i < count ; i++){
 			QUARK_SCOPED_TRACE(std::to_string(i));
 
 			quark::ut_compare(result[i], expected[i]);
@@ -1816,14 +1817,14 @@ QUARK_UNIT_TEST("json", "", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("json", "", "", ""){
+QUARK_UNIT_TEST("json", "", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = 13;
 		assert(a == 13);
 	)");
 }
-
-QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
+// JSON example snippets: http://json.org/example.html
+QUARK_UNIT_TEST("json", "pigcount", "", ""){
 	const auto vm = run_global(R"ABCD(
 		json_value a = {
 			"menu": {
@@ -1845,12 +1846,40 @@ QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
 	});
 }
 
+//	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
+QUARK_UNIT_TEST("json", "pigcount", "mix value-types in dict", ""){
+	const auto vm = run_global(R"(
+		json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" };
+		print(a);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		R"({ "pigcolor": "pink", "pigcount": 3 })"
+	});
+}
 
 
-//??? Test mixing JSON declration with expressions generating the data.
-//??? Test accessing fields
-//??? Add support for host toolbox to JSON
-
+QUARK_UNIT_TEST_VIP("json", "pigcount", "", ""){
+	const auto vm = run_global(R"ABCD(
+		json_value a = {
+			"menu": {
+			  "id": "file",
+			  "value": "File",
+			  "popup": {
+				"menuitem": [
+				  {"value": "New", "onclick": "CreateNewDoc()"},
+				  {"value": "Open", "onclick": "OpenDoc()"},
+				  {"value": "Close", "onclick": "CloseDoc()"}
+				]
+			  }
+			}
+		};
+		s = to_pretty_string(a);
+		print(s);
+	)ABCD");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+//		R"ABCD({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })ABCD"
+	});
+}
 
 
 //??? test accessing array->struct->array.
