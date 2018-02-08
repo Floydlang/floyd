@@ -86,9 +86,13 @@ These are the primitive data types built into the language itself. The goals is 
 # COMPOSITE TYPES
 
 These are composites and collections of other types.
-- **struct**		like C struct or class or tuple.
-- **vector**		an a continous array of elements addressed via indexes.
+
+- **struct**		like C struct or classes or tuples.
+- **vector**		a continous array of elements addressed via indexes.
+- **dictionary**	lookup values using string keys.
 - **json_value**	a value that holds a json-compatible value, can be a big JSON tree.
+
+Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [] etc.
 
 # CORE TYPE FEATURES
 
@@ -163,9 +167,9 @@ Here you normally define functions, structs and global constants. The global sco
 
 # FUNCTIONS
 
-Functions in Floyd are by default pure, or referential transparent. This means they can only read their input arguments and constants, never read or modify anything else that can change. It's not possible to call a function that returns different values at different times, like get_time().
+Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything - not global variables, not by calling another, unpure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is unpure.
 
-While a function executes, it percieves the outside world to stand still.
+While a function executes, it perceives the outside world to stand still.
 
 Functions always return exactly one value. Use a struct to return more values.
 
