@@ -39,7 +39,7 @@ using std::make_shared;
 
 
 
-
+#if 0
 /*
 	bool is_string(json_value v)
 	bool is_number(json_value v)
@@ -76,6 +76,7 @@ const auto json_value___struct_def = std::make_shared<struct_definition_t>(struc
 
 const auto host__json_value_type = typeid_t::make_struct(json_value___struct_def);
 
+#endif
 
 
 
@@ -277,8 +278,6 @@ namespace {
 
 					//	Deduced bind type -- use new value's type.
 					if(bind_statement_type.is_null()){
-
-
 						if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
 							throw std::runtime_error("Cannot deduce vector type.");
 						}
@@ -288,7 +287,6 @@ namespace {
 						else{
 							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
 						}
-
 					}
 
 					//	Explicit bind-type -- make sure source + dest types match.
@@ -640,24 +638,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			return {vm2, expression_t::make_literal(value->first)};
 		}
 		else{
-/*			//??? Hack to make "vector(int)" work.
-			if(expr->_variable == keyword_t::k_bool){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_bool()))};
-			}
-			else if(expr->_variable == keyword_t::k_int){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_int()))};
-			}
-			else if(expr->_variable == keyword_t::k_float){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_float()))};
-			}
-			else if(expr->_variable == keyword_t::k_string){
-				return {vm2, expression_t::make_literal(make_typeid_value(typeid_t::make_string()))};
-			}
-
-			else {
-*/
-				throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
-//			}
+			throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
 		}
 	}
 
@@ -1349,7 +1330,7 @@ bool environment_t::check_invariant() const {
 }
 
 
-
+#if 0
 //////////////////////////		interpreter_t
 
 //??? This should not be top-level special case only.
@@ -1385,6 +1366,8 @@ std::string json_value__to_compact_string(const value_t& json_value){
 	const auto value = json_value__to_value(json_value);
 	return value.to_compact_string();
 }
+#endif
+
 
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -1397,11 +1380,14 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 	auto vm2 = vm;
 	const auto& value = args[0];
 
+#if 0
 	if(value.is_struct() && value.get_struct_value()->_def == *json_value___struct_def){
 		const auto s = json_value__to_compact_string(value);
 		vm2._print_output.push_back(s);
 	}
-	else{
+	else
+#endif
+	{
 		const auto s = value.to_compact_string();
 		printf("%s\n", s.c_str());
 		vm2._print_output.push_back(s);
@@ -1969,7 +1955,7 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 	}
 }
 
-
+#if 0
 value_t primitive_floyd_value_to_json_value(const typeid_t& json_value_typeid, const value_t& v){
 	if (v.is_bool()){
 		throw std::runtime_error("Calling json_value() on unsupported type of value.");
@@ -2077,6 +2063,7 @@ std::pair<interpreter_t, value_t> host__json_value(const interpreter_t& vm, cons
 	const auto result = primitive_floyd_value_to_json_value(existing_value_deep_ptr->first.get_typeid_value(), args[0]);
 	return {vm, result};
 }
+#endif
 
 
 typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
@@ -2099,9 +2086,9 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "erase", host__erase, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
+	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }
 
-	host_function_t{ "make_json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
+//	host_function_t{ "make_json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
 };
 
 
@@ -2130,7 +2117,12 @@ std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(i
 interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	std::vector<std::shared_ptr<statement_t>> init_statements;
+	_ast = ast_t(ast._statements);
+
+	//	Make the top-level environment = global scope.
+	shared_ptr<environment_t> empty_env;
+	auto global_env = environment_t::make_environment(*this, empty_env);
+
 
 	//	Insert built-in functions into AST.
 	for(auto i = 0 ; i < k_host_functions.size() ; i++){
@@ -2141,20 +2133,12 @@ interpreter_t::interpreter_t(const ast_t& ast){
 			hf._function_type.get_function_return()
 		);
 
-		init_statements.push_back(
-			make_shared<statement_t>(make_function_statement(hf._name, def))
-		);
+		const auto function_value = make_function_value(def);
+		global_env->_values[hf._name] = std::pair<value_t, bool>{function_value, false };
 	}
 
-	_ast = ast_t(init_statements + ast._statements);
-
-
-	//	Make the top-level environment = global scope.
-	shared_ptr<environment_t> empty_env;
-	auto global_env = environment_t::make_environment(*this, empty_env);
-
 	//	Register the struct type for json_value.
-	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value_type, false };
+//	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value_type, false };
 
 	_call_stack.push_back(global_env);
 

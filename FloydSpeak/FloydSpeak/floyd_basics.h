@@ -36,6 +36,7 @@ namespace floyd {
 		static const std::string k_int;
 		static const std::string k_float;
 		static const std::string k_string;
+		static const std::string k_json_value;
 		static const std::string k_struct;
 
 		static const std::string k_mutable;
@@ -208,6 +209,7 @@ namespace floyd {
 		k_int,
 		k_float,
 		k_string,
+		k_json_value,
 
 		//	This is a type that specifies another type.
 		k_typeid,
@@ -280,6 +282,16 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 
 			return _base_type == base_type::k_string;
+		}
+
+		public: static typeid_t make_json_value(){
+			return { floyd::base_type::k_json_value, {}, {}, {}, {} };
+		}
+
+		public: bool is_json_value() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == base_type::k_json_value;
 		}
 
 		public: static typeid_t make_typeid(const typeid_t& type){
@@ -460,6 +472,7 @@ namespace floyd {
 		int							k_int
 		float						k_float
 		string						k_string
+		json_value					k_json_value
 
 
 		-							k_typeid				[target type id]
