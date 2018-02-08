@@ -371,12 +371,13 @@ This is a pure 8-bit string type. It is immutable. You can compare with other st
 
 The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them. Or UTF-8 etc. You can also use them as fast arrays of bytes.
 
-This is the strings contents you enter into the script code. They look like "Hello".
-You cannot use any escape characters, like in the C-language.
+You can make string literals directly in the source code like this:
 
 	a = "Hello, world!";
 
-You can copy string using =. All comparison expressions work, like a == b, a < b, a >= b, a != b etc.
+Notice: You cannot use any escape characters, like in the C-language.
+
+All comparison expressions work, like a == b, a < b, a >= b, a != b etc.
 
 You can access a random character in the string, using its integer position.
 
@@ -406,9 +407,9 @@ You can append to strings together using the + operation.
 
 # JSON_VALUE
 
-JSON is very central to Floyd. Floyd mainly works with values and JSON is a simple and standard way to convert Floyd values into text and back. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems.
+JSON is very central to Floyd. JSON is a way to store composite values in a tree-shap in a simple and standardazied way. Since Floyd mainly works with values this is a perfect match for serialzing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
 
-JSON format is also used by the compiler and language, logging and debugging features.
+JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
 
 - Floyd has built in support for JSON in the language. It has a a JSON type called **json_value** and functions to pack & unpack strings / json files into the json-type.
 
