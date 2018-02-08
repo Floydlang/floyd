@@ -86,7 +86,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 namespace {
 
 	// ### Make this built in into evaluate_expression()?
-	value_t improve_vector(const value_t& value){
+	value_t improve_vector2(const value_t& value){
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(value.is_vector());
 
@@ -102,7 +102,7 @@ namespace {
 			else{
 				//	Figure out the element type.
 				const auto element_type2 = p->_elements[0].get_type();
-				return improve_vector(make_vector_value(element_type2, p->_elements));
+				return improve_vector2(make_vector_value(element_type2, p->_elements));
 			}
 		}
 		else{
@@ -115,7 +115,7 @@ namespace {
 			return value;
 		}
 	}
-	value_t improve_dict(const value_t& value){
+	value_t improve_dict2(const value_t& value){
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(value.is_dict());
 
@@ -131,28 +131,18 @@ namespace {
 			else{
 				//	Figure out the element type.
 				const auto value_type2 = p->_elements.begin()->second.get_type();
-				return improve_dict(make_dict_value(value_type2, p->_elements));
+				return improve_dict2(make_dict_value(value_type2, p->_elements));
 			}
 		}
 		else{
+/*
 			//	Check that element types match vector type.
 			for(const auto e: p->_elements){
 				if(e.second.get_type() != value_type){
 					throw std::runtime_error("Dict element value of wrong type.");
 				}
 			}
-			return value;
-		}
-	}
-
-	value_t improve_value(const value_t& value){
-		if(value.is_vector()){
-			return improve_vector(value);
-		}
-		else if(value.is_dict()){
-			return improve_dict(value);
-		}
-		else{
+*/
 			return value;
 		}
 	}
@@ -165,8 +155,43 @@ namespace {
 		if(expected_type.is_null()){
 			return value0;
 		}
+		else if(expected_type.is_json_value()){
+
+/*
+			if(value0.is_bool()){
+				return make_json_value(json_t(value0.get_bool_value()));
+			}
+			else if(value0.is_int()){
+				return make_json_value(json_t((double)value0.get_int_value()));
+			}
+			else if(value0.is_float()){
+				return make_json_value(json_t(value0.get_float_value()));
+			}
+			else if(value0.is_string()){
+				return make_json_value(json_t(value0.get_string_value()));
+			}
+			//??? typeid
+
+			else if(value0.is_vector()){
+				vector<json_t> elements2;
+				const auto v = value0.get_vector_value();
+				for(const auto e: v->_elements){
+					const auto e2 = value_to_normalized_json(e);
+					elements2.push_back(e2);
+				}
+				return make_json_value(json_t::make_array(elements2));
+			}
+
+
+			else {
+				return value0;
+			}
+*/
+			const auto v2 = value_to_normalized_json(value0);
+			return make_json_value(v2);
+		}
 		else{
-			const auto value = improve_value(value0);
+			const auto value = value0;
 
 			if(value.is_vector()){
 				const auto v = value.get_vector_value();
@@ -530,19 +555,8 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	return t->first;
 }
 
-std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interpreter_t& vm, const expression_t& e);
 
 std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
-	const auto result = evaluate_expression_internal(vm, e);
-	if(result.second.is_literal()){
-		const auto value2 = improve_value(result.second.get_literal());
-		return { result.first, expression_t::make_literal(value2)};
-	}
-	else{
-		return result;
-	}
-}
-std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -711,11 +725,13 @@ std::pair<interpreter_t, expression_t> evaluate_expression_internal(const interp
 			//	If we have no value-type, deduct it from first element.
 			const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
 
+/*
 			for(const auto m: elements2){
 				if((m.second.get_type() == value_type2) == false){
 					throw std::runtime_error("Dict can not hold elements of different type!");
 				}
 			}
+*/
 			return {vm2, expression_t::make_literal(make_dict_value(value_type2, elements2))};
 		}
 	}
@@ -1590,9 +1606,9 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
-	const auto& obj1 = improve_value(args[0]);
+	const auto& obj1 = args[0];
 	const auto& lookup_key = args[1];
-	const auto& new_value = improve_value(args[2]);
+	const auto& new_value = args[2];
 
 	if(args.size() != 3){
 		throw std::runtime_error("update() needs 3 arguments.");

@@ -324,6 +324,16 @@ int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& r
 
 
 
+int compare_json_values(const json_t& lhs, const json_t& rhs){
+	if(lhs == rhs){
+		return true;
+	}
+	else{
+		// ??? implement compare.
+		assert(false);
+	}
+}
+
 int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
@@ -354,6 +364,9 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	}
 	else if(type.is_string()){
 		return compare_string(left.get_string_value(), right.get_string_value());
+	}
+	else if(type.is_json_value()){
+		return compare_json_values(left.get_json_value(), right.get_json_value());
 	}
 	else if(type.is_typeid()){
 		QUARK_ASSERT(false);
@@ -549,6 +562,9 @@ json_t value_to_normalized_json(const value_t& v){
 	}
 	else if(v.is_string()){
 		return json_t(v.get_string_value());
+	}
+	else if(v.is_json_value()){
+		return json_to_compact_string(v.get_json_value());
 	}
 	else if(v.is_typeid()){
 		return typeid_to_normalized_json(v.get_typeid_value());
