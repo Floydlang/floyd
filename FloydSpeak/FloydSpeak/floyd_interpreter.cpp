@@ -643,13 +643,12 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 						}
 						else{
 							const auto lookup_index = key_value.get_int_value();
-							const auto json_array = parent_json_value.get_array();
 
-							if(lookup_index < 0 || lookup_index >= json_array.size()){
+							if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
 								throw std::runtime_error("Lookup in json_value array: out of bounds.");
 							}
 							else{
-								const auto value = json_array[lookup_index];
+								const auto value = parent_json_value.get_array_n(lookup_index);
 								const auto value2 = value_from_normalized_json(value);
 								return { vm2, expression_t::make_literal(value2)};
 							}
@@ -1796,16 +1795,34 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 	}
 
 	const auto obj = args[0];
-	if(obj.is_vector()){
+	if(obj.is_string()){
+		const auto size = obj.get_string_value().size();
+		return {vm, value_t(static_cast<int>(size))};
+	}
+	else if(obj.is_json_value()){
+		const auto value = obj.get_json_value();
+		if(value.is_object()){
+			const auto size = value.get_object_size();
+			return {vm, value_t(static_cast<int>(size))};
+		}
+		else if(value.is_array()){
+			const auto size = value.get_array_size();
+			return {vm, value_t(static_cast<int>(size))};
+		}
+		else if(value.is_string()){
+			const auto size = value.get_string().size();
+			return {vm, value_t(static_cast<int>(size))};
+		}
+		else{
+			throw std::runtime_error("Calling size() on unsupported type of value.");
+		}
+	}
+	else if(obj.is_vector()){
 		const auto size = obj.get_vector_value()->_elements.size();
 		return {vm, value_t(static_cast<int>(size))};
 	}
 	else if(obj.is_dict()){
 		const auto size = obj.get_dict_value()->_elements.size();
-		return {vm, value_t(static_cast<int>(size))};
-	}
-	else if(obj.is_string()){
-		const auto size = obj.get_string_value().size();
 		return {vm, value_t(static_cast<int>(size))};
 	}
 	else{

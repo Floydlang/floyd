@@ -1,29 +1,5 @@
-# GOALS
 
-1. Be precisely the set of features needed to make excellent software. No more, no less.
-- Have one explict and solid way to do every important thing - no need for developer to invent basics.
-- Guide developer to designing great software, instead of struggling / tinkering with language stuff.
-- Remove everyday timesinks like threading, aliasing problems, sideffects, serializing data, boiler plate code, optimizing the wrong code.
-- Promote robust software and development practices.
-- Promote composable software and million-line-of-code products.
-- Make finished program execute extremely quickly.
-- Make it easy to pick up and use for smaller things, then be contagious.
-- Make language fun and easy to adopt for new developers, rather than existing developers.
-
-
-
-# NON-GOALS
-
-1. Have neat and concenitnt features that do not improve final product.
-- Be multiparadigm.
-- Be a "real" functional language.
-- Be object oriented.
-- Provide choice and expressing yourself
-- Let programmer be 100% in control of the hardware.
-- Be interesting to master the language itself.
-
-
-# Floyd Script Reference
+# FLOYD SCRIPT REFERENCE
 
 Floyd Script is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
 
@@ -61,9 +37,33 @@ Executing a floyd program:
 This will runt the program my_program.floyd and call it's main(string args) with the arguments ["file1.txt", "file2.text"].
 
 
+### GOALS
+
+1. Be precisely the set of features needed to make excellent software. No more, no less.
+- Have one explict and solid way to do every important thing - no need for developer to invent basics.
+- Guide developer to designing great software, instead of struggling / tinkering with language stuff.
+- Remove everyday timesinks like threading, aliasing problems, sideffects, serializing data, boiler plate code, optimizing the wrong code.
+- Promote robust software and development practices.
+- Promote composable software and million-line-of-code products.
+- Make finished program execute extremely quickly.
+- Make it easy to pick up and use for smaller things, then be contagious.
+- Make language fun and easy to adopt for new developers, rather than existing developers.
 
 
-# COMPOSABILITY
+
+### NON-GOALS
+
+1. Have neat and concenitnt features that do not improve final product.
+- Be multiparadigm.
+- Be a "real" functional language.
+- Be object oriented.
+- Provide choice and expressing yourself
+- Let programmer be 100% in control of the hardware.
+- Be interesting to master the language itself.
+
+
+
+### COMPOSABILITY
 
 Features that break composabiity is limited and carefully controlled in the language. Things like threading and synchronisation, error responses, file handling, optimization choices. Normal Floyd code lives free, outside of time and the real world and can be used in many contexts.
 
@@ -110,6 +110,12 @@ These are features built into every type: integer, string, struct, collections e
 True-deep is a Floyd term that means that all values and sub-values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment, for example.
 
 The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
+
+
+# ENCODING
+
+Floyd script files are always utf-8 files with no BOM.
+
 
 
 # VALUES, VARIABLES AND CONSTANTS
@@ -220,7 +226,7 @@ This is a function that returns a function value:
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep - they consider all members and also member structs and collections.
 
-#### Arithmetic Operators
+### Arithmetic Operators
 How to add and combine values:
 
 ```
@@ -243,7 +249,7 @@ Used to compare two values. The result is true or false:
 	a <= b
 ```
 
-#### Logical Operators
+### Logical Operators
 Used to compare two values. The result is true or false:
 
 ```
@@ -251,7 +257,7 @@ Used to compare two values. The result is true or false:
 	a || b
 ```
 
-#### Conditional Operator
+### Conditional Operator
 ```
 	condition ? a : b
 ```
@@ -311,7 +317,7 @@ In each body you can write any statements. There is no "break" keyword.
 
 For-loops are used to evaluate its body many times, with a range of input values. The entire condition expression is evaluated *before* the first time the body is called. This means the program already decided the number of loops to run before running the first time.
 
-Closed range that starts with 1 and ends with 5.:
+Closed range that starts with 1 and ends with 5:
 
 ```
 	for (index in 1...5) {
@@ -393,7 +399,7 @@ You can append to strings together using the + operation.
 	assert(a == "Hello, world!"
 
 
-#### CORE FUNCTIONS
+### CORE FUNCTIONS
 
 - **print()**: prints a string to the default output of the app.
 - **update()**: changes one character of the string and returns a new string.
@@ -449,7 +455,7 @@ Example json:
 
 	json_value a = 13;
 	json_value b = "Hello!";
-	json_value c = ["hello": 1, "bye": 3 ];
+	json_value c = {"hello": 1, "bye": 3};
 
 	//	Notice that json objects are more lax than Floyd: you can mix different types of values in the same object or array.
 	json_value d = { "pigcount": 3, "pigcolor": "pink" };
@@ -480,6 +486,8 @@ A json_value can contain different type of va
 
 json_value can contain one of 6 different types and you can query like this:
 
+
+??? TBD
 	bool is_string(json_value v)
 	bool is_number(json_value v)
 	bool is_object(json_value v)
@@ -492,7 +500,7 @@ json_value can contain one of 6 different types and you can query like this:
 	[string: json_value] get_object(json_value v)
 	[json_value] get_array(json_value v)
 	string get_bool(json_value v)
-	
+
 
 
 ### SERIALIZATION / DESERIALIZATION
@@ -572,11 +580,14 @@ dog = unpack_json(
 )
 
 
-#### CORE FUNCTIONS
+### CORE FUNCTIONS
+
+Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
 
 - **pretty_string()**
 
-??? add all host function
+
+
 
 
 
@@ -610,6 +621,8 @@ You can append to vector together using the + operation.
 	a = [ 10, 20, 30 ] + [ 40, 50 ];
 	assert(a == [ 10, 20, 30, 40, 50 ]);
 
+### CORE FUNCTIONS
+
 - **print()**: prints a vector to the default output of the app.
 - **update()**: changes one element of the vector and returns a new vector.
 - **size()**: returns the number of elements in the vector, as an integer.
@@ -626,16 +639,16 @@ A collection that maps a key to a value. Unsorted. Like a C++ map.
 
 You make a new dictionary and specify its elements like this:
 
-	[string: int] a = ["red": 0, "blue": 100,"green": 255];
+	[string: int] a = {"red": 0, "blue": 100,"green": 255};
 
 or shorter:
 
-	b = ["red": 0, "blue": 100,"green": 255];
+	b = {"red": 0, "blue": 100,"green": 255};
 
 Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string".
 
 	struct test {
-		[string: int] _my_dict;
+		{string: int} _my_dict;
 	}
 
 You can put any type of value into the dictionary (but not mix inside the same dictionary).
@@ -644,6 +657,8 @@ Use [] to look up elements using a key. It throws an exception is the key not fo
 
 You copy dictionaries using = and all comparison expressions work.
 
+
+### CORE FUNCTIONS
 
 - **print()**: prints a vector to the default output of the app.
 - **update()**: changes one element of the dictionary and returns a new dictionary
@@ -705,7 +720,7 @@ Example:
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
 
 
-#### UPDATE()
+### UPDATE()
 
 b = update(a, member, value);
 
@@ -776,7 +791,7 @@ Everything between // and newline is a comment:
 These are built in primitves you can always rely on being available.
 
 
-#### print()
+### print()
 
 This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
 
@@ -787,15 +802,25 @@ This outputs one line of text to the default output of the application. It can p
 |---											| ---
 | print(3)										| 3
 | print("shark")								| shark
-| print("Number four: " + to_string(4))		| Number four: 4
+| print("Number four: " + to_string(4))			| Number four: 4
 | print(int)									| int
 | print([int])									| [int]
-| print([string: float])						| [string:float]
-| print(["a": 1])								| [string:int]("a": 1)
+| print({string: float})						| {string:float}
+| print([7, 8, 9])								| [7, 8, 9]
+| print({"a": 1})								| {"a": 1}
+| print(json_value("b"))						| b
+| print(json_value(5.3))						| 5.3
+| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
+| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
+| print(json_value(true))						| true
+| print(json_value(false))						| false
+| print(json_value(null))						| null
 
 
 
-#### assert()
+
+
+### assert()
 
 Used this to check your code for programming errors, and check the inputs of your function for miss use by its callers.
 
@@ -805,7 +830,7 @@ Used this to check your code for programming errors, and check the inputs of you
 If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
 
 
-#### to_string()
+### to_string()
 
 Converts its input to a string. This works with all types of values. It also works with types, which is useful for debugging.
 
@@ -814,14 +839,14 @@ Converts its input to a string. This works with all types of values. It also wor
 You often use this function to convert numbers to strings.
 
 
-#### get_time_of_day()
+### get_time_of_day()
 
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
 
 	int get_time_of_day()
 
 
-#### update()
+### update()
 
 This is how you modify a field of a struct, an element in a vector or string or a dictionary. It replaces the value of the specified key and returns a completely new object. The original object (struct, vector etc) is unchanged.
 
@@ -831,35 +856,37 @@ This is how you modify a field of a struct, an element in a vector or string or 
 |Type		  	| Example						| Result |
 |---			|---							| ---
 | string		| update("hello", 3, "x")		| "helxo"
-| vector		| update([1,2,3,4], 2, 33]		| [1,2,33,4]
-| dict			| update(["a": 1, "b": 2, "c": 3], "a", 11] | ["a":11,"b":2,"c":3]
+| vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
+| dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
 | struct		| update(pixel,"red", 123)		| pixel(123,---,---)
-
-
+| json_value:array		| TBD???
+| json_value:object		| TBD???
 
 For dictionaries it can be used to add completely new elements too.
 
 |Type		  	| Example						| Result
 |---			|---							| ---
-| dict			| update(["a": 1], "b", 2] | ["a":1,"b":2]
+| dicttionary	| update({"a": 1}, "b", 2] | {"a":1,"b":2}
 
 
-#### size()
+### size()
 
 Returns the size of a collection -- the number of elements.
 
 	int size(obj)
 
-|Type		  	| Example						| Result |
-|---			|---							| ---
-| string		| size("hello")					| 5
-| vector		| size([1,2,3,4])				| 4
-| dict			| size(["a": 1, "b": 2])		| 2
-| struct		|								|
+|Type		  		| Example					| Result
+|---				|---						| ---
+| string			| size("hello")				| 5
+| vector			| size([1,2,3,4])			| 4
+| dictionary		| size({"a": 1, "b": })		| 2
+| struct			|							|
+| json_value:array	| size(json_value([1,2,3])	| 3
+| json_value:object	| size(json_value({"a": 9})	| 1
 
 
 
-#### find()
+### find()
 
 Searched for a value in a colletion and returns its index or -1.
 
@@ -870,18 +897,32 @@ Searched for a value in a colletion and returns its index or -1.
 | string		| find("hello", "o")			| 4
 | string		| find("hello", "x")			| -1
 | vector		| find([10,20,30,40], 30)		| 2
-| dict			| 								|
+| dictionary	| 								|
 | struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
 
 
-#### exists()
+### exists()
 
 Checks if the dictionary has an element with this key. Returns true or false.
 
 	bool exists(dict, string key)
 
+|Type		  	| Example						| Result |
+|---			|---							| ---
+| string		| 								|
+| vector		| 								|
+| dictionary	| exists({"a":1,"b":2,"c":3), "b")	| true
+| dictionary	| exists({"a":1,"b":2,"c":3), "f")	| false
+| struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
 
-#### erase()
+
+
+
+### erase()
 
 Erase an element in a dictionary, as specified using its key.
 
@@ -889,7 +930,7 @@ Erase an element in a dictionary, as specified using its key.
 	erase(dict, string key)
 
 
-#### push_back()
+### push_back()
 
 Appends an element to the end of a collection. A new collecton is returned, the original unaffected.
 
@@ -898,12 +939,14 @@ Appends an element to the end of a collection. A new collecton is returned, the 
 | string		| push_back("hello", "3")		| hello3
 | string		| push_back("hello", "!?")		| hello!?
 | vector		| push_back([1,2,3], 7)			| [1,2,3,7]
-| dict			| 								|
+| dictionary	| 								|
 | struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
 
 
 
-#### subset()
+### subset()
 
 This returns a range of elements from the collection.
 
@@ -918,11 +961,13 @@ end: 0 or larger. If it is larger than the collection, it will be clipped to the
 |---			|---							| ---
 | string		| subset("hello", 2, 4)			| ll
 | vector		| subset([10,20,30,40, 1, 3)	| [20,30]
-| dict			| 								|
+| dictionary	| 								|
 | struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
 
 
-#### replace()
+### replace()
 
 Replaces a range of a collection with the contents of another collection.
 
@@ -934,16 +979,12 @@ Replaces a range of a collection with the contents of another collection.
 |---			|---							| ---
 | string		|replace("hello", 0, 2, "bori")	| borillo
 | vector		|replace([1,2,3,4,5], 1,3, 8)	| [1,8,4,5]
-| dict			| 								|
+| dictionary	| 								|
 | struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
 
 
 Notice: if you use an empty collection for *new*, you will actually erase the range.
 Notice: by specifying the same index in *start* and *length* you will **insert** the new collection into the existing collection.
 
-# ENCODING
-
-Floyd script files are always utf-8 files with no BOM.
-
-
-# 

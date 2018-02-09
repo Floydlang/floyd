@@ -758,6 +758,16 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 	);
 }
 
+QUARK_UNIT_TESTQ("run_init()", ""){
+	test__run_init__check_result(
+		R"(
+			string result = to_string(3.0);
+		)",
+		value_t("3")
+	);
+}
+
+
 
 //////////////////////////		HOST FUNCTION - print()
 
@@ -1785,6 +1795,15 @@ QUARK_UNIT_TEST("json_value-string", "== string", "", ""){
 }
 
 
+QUARK_UNIT_TEST("json_value-string", "size()", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = "hello";
+		assert(size(a) == 5);
+	)");
+}
+//size() don't work on json_value:string.
+
+
 QUARK_UNIT_TEST("json_value-number", "", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = 13;
@@ -1800,6 +1819,7 @@ QUARK_UNIT_TEST("json_value-number", "== number", "", ""){
 		assert(a == 13);
 	)");
 }
+
 
 
 QUARK_UNIT_TEST("json_value-array", "def", "", ""){
@@ -1823,6 +1843,14 @@ QUARK_UNIT_TEST("json_value-array", "[]", "", ""){
 		"bye"
 	});
 }
+
+QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = ["a", "b", "c", "d"];
+		assert(size(a) == 4);
+	)");
+}
+
 
 
 
@@ -1870,15 +1898,6 @@ QUARK_UNIT_TEST("json_value-object", "def", "expressions inside def", ""){
 	});
 }
 
-QUARK_UNIT_TEST("", "print()", "3.0", ""){
-	const auto vm = run_global(R"(
-		print(3.0);
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"3"
-	});
-}
-
 QUARK_UNIT_TEST("json_value-object", "[]", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
@@ -1890,6 +1909,15 @@ QUARK_UNIT_TEST("json_value-object", "[]", "", ""){
 		"pink"
 	});
 }
+
+QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 };
+		assert(size(a) == 5);
+	)");
+}
+
+
 
 
 QUARK_UNIT_TEST("json_value-object", "to_pretty_string()", "", ""){
