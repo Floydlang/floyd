@@ -988,3 +988,26 @@ Replaces a range of a collection with the contents of another collection.
 Notice: if you use an empty collection for *new*, you will actually erase the range.
 Notice: by specifying the same index in *start* and *length* you will **insert** the new collection into the existing collection.
 
+
+
+
+### get_env_path()
+
+Returns user's home directory, like "/Volumes/Bob".
+
+	string get_env_path()
+
+
+### read_text_file()
+
+Reads a text file from the file system and returns it as a string.
+
+	string read_text_file(string path)
+
+
+### write_text_file()
+
+Write a string to the file system as a text file.
+
+	void write_text_file(string path, string data)
+

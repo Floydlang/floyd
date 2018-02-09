@@ -607,7 +607,7 @@ template <typename T> void ut_compare2(const T& result, const T& expected, const
 	}
 }
 
-inline void ut_compare(const std::string& result, const std::string& expected){
+inline void ut_compare_strings(const std::string& result, const std::string& expected){
 	if(result != expected){
 		QUARK_TRACE_SS("  result:" << result);
 		QUARK_TRACE_SS("expected:" << expected);

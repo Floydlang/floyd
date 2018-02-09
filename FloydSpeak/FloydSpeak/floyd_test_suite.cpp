@@ -67,7 +67,7 @@ void ut_compare_stringvects(const vector<string>& result, const vector<string>& 
 		for(int i = 0 ; i < count ; i++){
 			QUARK_SCOPED_TRACE(std::to_string(i));
 
-			quark::ut_compare(result[i], expected[i]);
+			quark::ut_compare_strings(result[i], expected[i]);
 		}
 
 		::quark::on_unit_test_failed_hook(
@@ -1958,6 +1958,35 @@ const auto expected = R"ABCD({
 		expected
 	});
 
+}
+
+
+
+QUARK_UNIT_TEST("", "get_env_path()", "", ""){
+	const auto vm = run_global(R"(
+		path = get_env_path();
+		print(path);
+	)");
+
+	quark::ut_compare_strings(vm._print_output[0].substr(0, 7), "/Users/");
+}
+
+QUARK_UNIT_TEST("", "read_text_file()", "", ""){
+	const auto vm = run_global(R"(
+		path = get_env_path();
+		a = read_text_file(path + "/Desktop/test1.json");
+		print(a);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		string() + R"({ "magic": 1234 })" + "\n"
+	});
+}
+
+QUARK_UNIT_TEST("", "write_text_file()", "", ""){
+	const auto vm = run_global(R"(
+		path = get_env_path();
+		write_text_file(path + "/Desktop/test_out.txt", "Floyd wrote this!");
+	)");
 }
 
 

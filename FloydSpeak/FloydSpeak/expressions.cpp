@@ -163,15 +163,15 @@ string expression_to_json_string(const expression_t& e){
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "literals"){
-	quark::ut_compare(expression_to_json_string(expression_t::make_literal_int(13)), R"(["k", 13, "int"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_literal_string("xyz")), R"(["k", "xyz", "string"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_literal_float(14.0f)), R"(["k", 14, "float"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_literal_bool(true)), R"(["k", true, "bool"])");
-	quark::ut_compare(expression_to_json_string(expression_t::make_literal_bool(false)), R"(["k", false, "bool"])");
+	quark::ut_compare_strings(expression_to_json_string(expression_t::make_literal_int(13)), R"(["k", 13, "int"])");
+	quark::ut_compare_strings(expression_to_json_string(expression_t::make_literal_string("xyz")), R"(["k", "xyz", "string"])");
+	quark::ut_compare_strings(expression_to_json_string(expression_t::make_literal_float(14.0f)), R"(["k", 14, "float"])");
+	quark::ut_compare_strings(expression_to_json_string(expression_t::make_literal_bool(true)), R"(["k", true, "bool"])");
+	quark::ut_compare_strings(expression_to_json_string(expression_t::make_literal_bool(false)), R"(["k", false, "bool"])");
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
-	quark::ut_compare(
+	quark::ut_compare_strings(
 		expression_to_json_string(
 			expression_t::make_simple_expression__2(
 				expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3))
@@ -181,7 +181,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "call"){
-	quark::ut_compare(
+	quark::ut_compare_strings(
 		expression_to_json_string(
 			expression_t::make_function_call(
 				expression_t::make_variable_expression("my_func"),
@@ -196,7 +196,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
-	quark::ut_compare(
+	quark::ut_compare_strings(
 		expression_to_json_string(
 			expression_t::make_lookup(
 				expression_t::make_variable_expression("hello"),

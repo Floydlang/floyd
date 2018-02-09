@@ -25,6 +25,7 @@
 #include <chrono>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 
 
 namespace floyd {
@@ -2179,6 +2180,77 @@ std::pair<interpreter_t, value_t> host__json_value(const interpreter_t& vm, cons
 #endif
 
 
+
+
+std::pair<interpreter_t, value_t> host__get_env_path(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 0){
+		throw std::runtime_error("get_env_path() requires 0 arguments!");
+	}
+
+    const char *homeDir = getenv("HOME");
+    const std::string env_path(homeDir);
+//	const std::string env_path = "~/Desktop/";
+
+	return {vm, value_t(env_path) };
+}
+
+std::pair<interpreter_t, value_t> host__read_text_file(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("read_text_file() requires 1 arguments!");
+	}
+	if(args[0].is_string() == false){
+		throw std::runtime_error("read_text_file() requires a file path as a string.");
+	}
+
+	const string source_path = args[0].get_string_value();
+	std::string file_contents;
+	{
+		std::ifstream f (source_path);
+		if (f.is_open() == false){
+			throw std::runtime_error("Cannot read source file.");
+		}
+		std::string line;
+		while ( getline(f, line) ) {
+			file_contents.append(line + "\n");
+		}
+		f.close();
+	}
+	return {vm, value_t(file_contents) };
+}
+
+std::pair<interpreter_t, value_t> host__write_text_file(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 2){
+		throw std::runtime_error("write_text_file() requires 2 arguments!");
+	}
+	else if(args[0].is_string() == false){
+		throw std::runtime_error("write_text_file() requires a file path as a string.");
+	}
+	else if(args[1].is_string() == false){
+		throw std::runtime_error("write_text_file() requires a file path as a string.");
+	}
+	else{
+		const string path = args[0].get_string_value();
+		const string file_contents = args[1].get_string_value();
+
+		std::ofstream outputFile;
+		outputFile.open(path);
+		outputFile << file_contents;
+		outputFile.close();
+		return {vm, value_t() };
+	}
+}
+
+
+
+
+
+
 typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
 
 struct host_function_t {
@@ -2201,9 +2273,11 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "erase", host__erase, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "push_back", host__push_back, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "subset", host__subset, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }
+	host_function_t{ "replace", host__replace, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
 
-//	host_function_t{ "make_json_value", host__json_value, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) }
+	host_function_t{ "get_env_path", host__get_env_path, typeid_t::make_function(typeid_t::make_string(), {}) },
+	host_function_t{ "read_text_file", host__read_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+	host_function_t{ "write_text_file", host__write_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null(), typeid_t::make_null()}) }
 };
 
 

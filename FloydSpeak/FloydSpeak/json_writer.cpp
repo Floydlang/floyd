@@ -55,31 +55,31 @@ Hello
 World
 )foo";
 
-	quark::ut_compare(s1, "\nHello\nWorld\n");
+	quark::ut_compare_strings(s1, "\nHello\nWorld\n");
 
 }
 
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
 	const auto test_cpp11_raw_string_literals = R"aaa({ "firstName": "John", "lastName": "Doe" })aaa";
-	quark::ut_compare(test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	quark::ut_compare_strings(test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
 }
 
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
-	quark::ut_compare(R"aaa(["version": 2])aaa", "[\"version\": 2]");
+	quark::ut_compare_strings(R"aaa(["version": 2])aaa", "[\"version\": 2]");
 }
 
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
-	quark::ut_compare(R"___(["version": 2])___", "[\"version\": 2]");
+	quark::ut_compare_strings(R"___(["version": 2])___", "[\"version\": 2]");
 }
 
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
-	quark::ut_compare(R"<>(["version": 2])<>", "[\"version\": 2]");
+	quark::ut_compare_strings(R"<>(["version": 2])<>", "[\"version\": 2]");
 }
 
 
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
 	const auto test_cpp11_raw_string_literals = R"aaa({ "firstName": "John", "lastName": "Doe" })aaa";
-	quark::ut_compare(test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	quark::ut_compare_strings(test_cpp11_raw_string_literals, "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
 }
 
 
@@ -89,7 +89,7 @@ const string compact_escaped = "{\"menu\": {\"id\": \"file\",\"popup\": {\"menui
 const string compact_raw_string = R"___({"menu": {"id": "file","popup": {"menuitem": [{"value": "New","onclick": "CreateNewDoc()"},{"value": "Close","onclick": "CloseDoc()"}]}}})___";
 
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
-	quark::ut_compare(compact_escaped, compact_raw_string);
+	quark::ut_compare_strings(compact_escaped, compact_raw_string);
 }
 
 
@@ -116,11 +116,11 @@ const string beautiful_raw_string = R"___({
 
 
 QUARK_UNIT_TESTQ("erase_linefeed()", ""){
-	quark::ut_compare(erase_linefeed("\raaa\rbbb\r"), "aaabbb");
+	quark::ut_compare_strings(erase_linefeed("\raaa\rbbb\r"), "aaabbb");
 }
 
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
-	quark::ut_compare(erase_linefeed(beautiful_escaped), beautiful_raw_string);
+	quark::ut_compare_strings(erase_linefeed(beautiful_escaped), beautiful_raw_string);
 }
 
 
@@ -150,11 +150,11 @@ std::string object_to_compact_string(const std::map<std::string, json_t>& object
 }
 
 QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
-	quark::ut_compare(object_to_compact_string(std::map<string, json_t>{}, true), "{}");
+	quark::ut_compare_strings(object_to_compact_string(std::map<string, json_t>{}, true), "{}");
 }
 
 QUARK_UNIT_TESTQ("object_to_compact_string()", ""){
-	quark::ut_compare(
+	quark::ut_compare_strings(
 		object_to_compact_string(std::map<string, json_t>{
 			{ "one", json_t("1") },
 			{ "two", json_t("2") }
@@ -188,15 +188,15 @@ std::string array_to_compact_string(const std::vector<json_t>& array, bool quote
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
-	quark::ut_compare(array_to_compact_string(std::vector<json_t>{}, true), "[]");
+	quark::ut_compare_strings(array_to_compact_string(std::vector<json_t>{}, true), "[]");
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
-	quark::ut_compare(array_to_compact_string(std::vector<json_t>{ json_t(13.4) }, true), "[13.4]");
+	quark::ut_compare_strings(array_to_compact_string(std::vector<json_t>{ json_t(13.4) }, true), "[13.4]");
 }
 
 QUARK_UNIT_TESTQ("array_to_compact_string()", ""){
-	quark::ut_compare(
+	quark::ut_compare_strings(
 		array_to_compact_string(vector<json_t>{
 			json_t("a"),
 			json_t("b")
@@ -246,12 +246,12 @@ QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
 		{ "firstName", json_t("John") },
 		{ "lastName", json_t("Doe") }
 	};
-	quark::ut_compare(json_to_compact_string(json_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
-	quark::ut_compare(json_to_compact_string(json_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
+	quark::ut_compare_strings(json_to_compact_string(json_t(a)), "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }");
+	quark::ut_compare_strings(json_to_compact_string(json_t(a)), R"aaa({ "firstName": "John", "lastName": "Doe" })aaa");
 }
 
 QUARK_UNIT_TESTQ("json_to_compact_string()", ""){
-	quark::ut_compare(
+	quark::ut_compare_strings(
 		json_to_compact_string(json_t(
 			vector<json_t>{
 				json_t("a"),

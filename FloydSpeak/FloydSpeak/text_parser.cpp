@@ -103,13 +103,13 @@ std::string concat_strings_with_divider(const std::vector<std::string>& v, const
 }
 
 QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
-	quark::ut_compare(concat_strings_with_divider({""},", "), "");
+	quark::ut_compare_strings(concat_strings_with_divider({""},", "), "");
 }
 QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
-	quark::ut_compare(concat_strings_with_divider({"one"},", "), "one");
+	quark::ut_compare_strings(concat_strings_with_divider({"one"},", "), "one");
 }
 QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
-	quark::ut_compare(concat_strings_with_divider({"one","two"},", "), "one, two");
+	quark::ut_compare_strings(concat_strings_with_divider({"one","two"},", "), "one, two");
 }
 
 
@@ -131,13 +131,13 @@ std::string float_to_string(float value){
 }
 
 QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare(float_to_string(0.0f), "0");
+	quark::ut_compare_strings(float_to_string(0.0f), "0");
 }
 QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare(float_to_string(13.0f), "13");
+	quark::ut_compare_strings(float_to_string(13.0f), "13");
 }
 QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare(float_to_string(13.5f), "13.5");
+	quark::ut_compare_strings(float_to_string(13.5f), "13.5");
 }
 
 
@@ -150,13 +150,13 @@ std::string double_to_string(double value){
 }
 
 QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare(float_to_string(0.0), "0");
+	quark::ut_compare_strings(float_to_string(0.0), "0");
 }
 QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare(float_to_string(13.0), "13");
+	quark::ut_compare_strings(float_to_string(13.0), "13");
 }
 QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare(float_to_string(13.5), "13.5");
+	quark::ut_compare_strings(float_to_string(13.5), "13.5");
 }
 
 
