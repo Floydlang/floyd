@@ -2246,6 +2246,40 @@ std::pair<interpreter_t, value_t> host__write_text_file(const interpreter_t& vm,
 	}
 }
 
+std::pair<interpreter_t, value_t> host__string_to_json_value(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("string_to_json_value() requires 2 argument!");
+	}
+	else if(args[0].is_string() == false){
+		throw std::runtime_error("string_to_json_value() requires string argument.");
+	}
+	else{
+		const string s = args[0].get_string_value();
+		std::pair<json_t, seq_t> result = parse_json(seq_t(s));
+		value_t json_value = make_json_value(result.first);
+		return {vm, json_value };
+	}
+}
+std::pair<interpreter_t, value_t> host__json_value_to_string(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("json_value_to_string() requires 1 argument!");
+	}
+	else if(args[0].is_json_value()== false){
+		throw std::runtime_error("json_value_to_string() requires argument to be json_value.");
+	}
+	else{
+		const auto value0 = args[0].get_json_value();
+		const string s = json_to_compact_string(value0);
+
+		return {vm, value_t(s) };
+	}
+}
+
+
 
 
 
@@ -2277,7 +2311,13 @@ const vector<host_function_t> k_host_functions {
 
 	host_function_t{ "get_env_path", host__get_env_path, typeid_t::make_function(typeid_t::make_string(), {}) },
 	host_function_t{ "read_text_file", host__read_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-	host_function_t{ "write_text_file", host__write_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null(), typeid_t::make_null()}) }
+	host_function_t{ "write_text_file", host__write_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null(), typeid_t::make_null()}) },
+
+
+	host_function_t{ "string_to_json", host__string_to_json_value, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+	host_function_t{ "json_to_string", host__json_value_to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+
+
 };
 
 

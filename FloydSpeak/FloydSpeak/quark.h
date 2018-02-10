@@ -618,8 +618,6 @@ inline void ut_compare_strings(const std::string& result, const std::string& exp
 			QUARK_TRACE_SS("" << pos << ": " << ach << " : " << bch << " " << (ach == bch ? "" : "DIFFERENT"))
 		}
 
-
-
 		::quark::on_unit_test_failed_hook(
 			::quark::get_runtime(),
 			::quark::source_code_location(__FILE__, __LINE__),

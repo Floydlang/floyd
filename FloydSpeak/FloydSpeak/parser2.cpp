@@ -49,7 +49,7 @@ QUARK_UNIT_TESTQ("C++ enum class()", ""){
 
 
 bool is_valid_expr_chars(const std::string& s){
-	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$";
+	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\";
 	for(auto i = 0 ; i < s.size() ; i++){
 		const char ch = s[i];
 		if(allowed.find(ch) == string::npos){
@@ -195,11 +195,11 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 					pos = pos4;
 				}
 				else{
-					throw std::runtime_error("Unexpected char");
+					throw std::runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
 				}
 			}
 			else{
-				throw std::runtime_error("Unexpected char");
+				throw std::runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
 			}
 		}
 		return { result, pos.rest1() };
@@ -283,14 +283,90 @@ vector<expr_t> get_values(const collection_def_t& c){
 }
 
 
+/*
 
-pair<std::string, seq_t> parse_string_literal(const seq_t& p){
-	QUARK_ASSERT(!p.empty());
-	QUARK_ASSERT(p.first1_char() == '\"');
+Escape sequence	Hex value in ASCII	Character represented
+\a	07	Alert (Beep, Bell) (added in C89)[1]
+\b	08	Backspace
+\f	0C	Formfeed
+\n	0A	Newline (Line Feed); see notes below
+\r	0D	Carriage Return
+\t	09	Horizontal Tab
+\v	0B	Vertical Tab
+\\	5C	Backslash
+\'	27	Single quotation mark
+\"	22	Double quotation mark
+\?	3F	Question mark (used to avoid trigraphs)
+\nnnnote 1	any	The byte whose numerical value is given by nnn interpreted as an octal number
+\xhh…	any	The byte whose numerical value is given by hh… interpreted as a hexadecimal number
+\enote 2	1B	escape character (some character sets)
+\Uhhhhhhhhnote 3	none	Unicode code point where h is a hexadecimal digit
+\uhhhhnote 4	none	Unicode code point below 10000 hexadecimal
+*/
 
-	const auto pos = p.rest();
-	const auto s = read_until(pos, "\"");
-	return { s.first, s.second.rest() };
+
+char expand_one_char_escape(const char ch2){
+	switch(ch2){
+		case 'a':
+			return 0x07;
+		case 'b':
+			return 0x08;
+		case 'f':
+			return 0x0c;
+		case 'n':
+			return 0x0a;
+		case 'r':
+			return 0x0d;
+		case 't':
+			return 0x09;
+		case 'v':
+			return 0x0b;
+		case '\\':
+			return 0xfc;
+		case '\'':
+			return 0x27;
+		case '"':
+			return 0x22;
+		case '?':
+			return 0x3f;
+		default:
+			return 0;
+	}
+}
+
+pair<std::string, seq_t> parse_string_literal(const seq_t& s){
+	QUARK_ASSERT(!s.empty());
+	QUARK_ASSERT(s.first1_char() == '\"');
+
+	auto pos = s.rest();
+	string result = "";
+	while(pos.empty() == false && pos.first() != "\""){
+		//	Look for escape char
+		if(pos.first1_char() == 0x5c){
+			if(pos.size() < 2){
+				throw std::runtime_error("Incomplete escape sequence in string literal: \"" + result + "\"!");
+			}
+			else{
+				const auto ch2 = pos.first(2)[1];
+				const char expanded_char = expand_one_char_escape(ch2);
+				if(expanded_char == 0x00){
+					throw std::runtime_error("Unknown escape character \"" + string(1, ch2) + "\" in string literal: \"" + result + "\"!");
+				}
+				else{
+					result += string(1, expanded_char);
+					pos = pos.rest(2);
+				}
+			}
+		}
+		else {
+			result += pos.first();
+			pos = pos.rest();
+		}
+	}
+	if(pos.first() != "\""){
+		throw std::runtime_error("Incomplete string literal -- missing ending \"-character in string literal: \"" + result + "\"!");
+	}
+	return { result, pos.rest() };
 }
 
 QUARK_UNIT_TESTQ("parse_string_literal()", ""){
@@ -303,6 +379,12 @@ QUARK_UNIT_TESTQ("parse_string_literal()", ""){
 
 QUARK_UNIT_TESTQ("parse_string_literal()", ""){
 	quark::ut_compare(parse_string_literal(seq_t("\".5\" xxx")), pair<std::string, seq_t>(".5", seq_t(" xxx")));
+}
+
+QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+	quark::ut_compare(parse_string_literal(seq_t(
+		R"abc("hello \"Bob\"!" xxx)abc"
+	)), pair<std::string, seq_t>("hello \"Bob\"!", seq_t(" xxx")));
 }
 
 
@@ -540,9 +622,9 @@ std::pair<expr_t, seq_t> parse_terminal(const seq_t& p0) {
 
 	//	String literal?
 	if(p.first1() == "\""){
-		const auto s = read_until(p.rest1(), "\"");
-		const auto result = maker__make_constant(constant_value_t(s.first));
-		return { result, s.second.rest1() };
+		const auto value_pos = parse_string_literal(p);
+		const auto result = maker__make_constant(constant_value_t(value_pos.first));
+		return { result, value_pos.second };
 	}
 
 	//	Number constant?

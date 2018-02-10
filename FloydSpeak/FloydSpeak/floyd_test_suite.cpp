@@ -1989,6 +1989,54 @@ QUARK_UNIT_TEST("", "write_text_file()", "", ""){
 	)");
 }
 
+QUARK_UNIT_TEST("", "string_to_json()", "", ""){
+	const auto vm = run_global(R"(
+		a = string_to_json("\"genelec\"");
+		print(a);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		R"("genelec")"
+	});
+}
+
+QUARK_UNIT_TEST("", "string_to_json()", "", ""){
+	const auto vm = run_global(R"(
+		a = string_to_json("{ \"magic\": 1234 }");
+		print(a);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		R"({ "magic": 1234 })"
+	});
+}
+
+
+
+QUARK_UNIT_TEST_VIP("", "json_to_string()", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = "cheat";
+		b = json_to_string(a);
+		print(b);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"\"cheat\""
+	});
+}
+
+
+QUARK_UNIT_TEST_VIP("", "json_to_string()", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = { "magic": 1234 };
+		b = json_to_string(a);
+		print(b);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"{ \"magic\": 1234 }"
+	});
+}
+
+
+
+
 
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
