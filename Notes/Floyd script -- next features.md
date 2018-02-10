@@ -366,57 +366,6 @@ These are features built into every type: integer, string, struct, collections e
 
 
 
-# PROOF & DOCS
-Floyd has serveral built in features to check code correctness. One of the core features is assert() which is a function that makes sure an expression is true or the program will be stopped. If the expression is false, the program is defect.
-
-This is used through out this document to demonstrate language features.
-
-
-
-		
-		# DOCS
-				"Short": Calculates area of various basic shapes",
-				"Features": "Squares, circles and dots",
-				"Inputs": [
-					"a": "a key that tells which shape to use."
-						a == "": default shape, a dot
-						a == "square": simple square, only size1 is used.
-					"b": The size of the shape. For squares, this is the side. For circles, this is the radius
-				],
-				"output": Returns the area
-			],
-			"tests": [
-				{
-					"Scenario": "Minimal inputs"
-					"Input": ["", 0]
-					"Output": 0
-				},
-				{
-					"Scenario": "Make sure the special case for PI works"
-					"Input": ["hello", 3.14]
-					"Output": 1
-				}
-			],
-			"examples": [
-				[
-					int r = my_func("circle", 10.0)
-					assert(r == 3.4)
-				],
-				[
-					int r = my_func("square", 30.0)
-					assert(r == 900.0)
-				]
-			]
-		]
-		
-		int my_func(string a, float b){
-		}
-	
-
-
-
-
-
 ??? Function arguments = a tuple -- all functions takes ONE argument. Hide via syntax.
 
 ??? Treat function local variables as member of a struct. Mutating a variable gives us a completely new local state -- the old one still exists.
@@ -990,10 +939,6 @@ Advances structs requires an invariant() function. It performs checks that the v
 	invariant(pixel_t this){
 		assert(this.red >= 0 && this.red <= 255)
 	}
-
-# STRUCTs EXAMPLES-FEATURE --- SOMEDAY MAYBE
-When defining a data type (composite) you need to list 4 example instances. Can use functions to build them or just fill-in manually or a mix. These are used in example docs, example code and for unit testing this data types and *other* data types. You cannot change examples without breaking client tests higher up physical dependency graph.
-
 
 
 

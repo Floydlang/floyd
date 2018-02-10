@@ -155,56 +155,6 @@ b = into([string][], a.rest);
 
 [string]
 
-
-# FUNCTION DOCUMENTATION
-How to add docs? Markdown. Tests, contracts etc.
-
-	### Idea: Source code is markdown, add code segments:
-		# This is my source file
-			int my_const = "hello";
-			int main(string args){
-				return
-			}
-
-
-# FUNCTION CONTRACTS
-Arguments and return values always specifies their contracts using an expression within []. You can use constants, function calls and all function arguments in the expressions.
-
-	int [_ >=0 && _ <= a] function test1(int a, int b){
-	}
-
-	function1 = function {
-		_: int [_ >= 0 && _ <= a]
-		a: a >= 0 && a < 100, "The minor flabbergast"
-	}
-	
-	### float< sin(float v<[_ >= 0.0f && _ <= 1.0f>);
-
-
-# FUNCTION TESTS
-	prove(function1) {
-		"Whenever flabbergast is 0, b don't matter) and result is 0
-		function1(0, 0) == 0
-		function1(0, 1) == 0
-		function1(0, 10000) == 0
-
-		function1(1, 0) == 0
-		function1(1, 1) == 8
-	}
-
-??? Freeze complex inputs to function and serialzie them for later exploration, adding proofs and keeping as regression tests.
-
-Special proof-construct (not a function but built in like "struct":
-		on / off
-		prove {
-			a = test_object1();
-			b = do_stuff
-			verify(a == b)
-
-		}
-		Better: make all tests lists of expression vs expected results as a JSON.
-
-
 # EQUIVALENCE: FUNCTIONS - DICTS - VECTORS
 ??? Explore functions vs vectors vs dicts. Integer keys vs float keys. sin(float a)?
 
