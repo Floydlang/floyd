@@ -46,9 +46,9 @@ This will runt the program my_program.floyd and call it's main(string args) with
 - Promote robust software and development practices.
 - Promote composable software and million-line-of-code products.
 - Make finished program execute extremely quickly.
-- Make it easy to pick up and use for smaller things, then be contagious.
+- Make it easy and fast to pick up and use for smaller things, then be contagious.
 - Make language fun and easy to adopt for new developers, rather than existing developers.
-
+- Make language minimal, small and focused - easy to master for a human.
 
 
 ### NON-GOALS
@@ -480,104 +480,17 @@ Example json:
 	)
 
 
-### QUERRYING AND MODIFYING JSON_VALUEs
-
-A json_value can contain different type of va
-
-json_value can contain one of 6 different types and you can query like this:
-
-
-??? TBD
-	bool is_string(json_value v)
-	bool is_number(json_value v)
-	bool is_object(json_value v)
-	bool is_array(json_value v)
-	bool is_bool(json_value v)
-	bool is_null(json_value v)
-	
-	string get_string(json_value v)
-	float get_number(json_value v)
-	[string: json_value] get_object(json_value v)
-	[json_value] get_array(json_value v)
-	string get_bool(json_value v)
-
-
-
 ### SERIALIZATION / DESERIALIZATION
 
-Serializing a value is a built in mechanism. It is always deep. The result is always a normalized JSON text file in a Floyd string.
-
-There are two steps: converting your Floyd value to a json-value. Then converting the json-value to a text file.
-
-	string json_to_textfile(json v)
-	json textfile_to_json(string s)
-
-	T json_to_value(json, typeid)
-	json value_to_json(T value)
+Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
 
 
-### FLOYD TYPES VS JSON_VALUE
+Converting a floyd_value to a json string and back. The json-string can be directly read or written to a text file, sent via a protocol etc.
 
-Every single Floyd type can be converted to/from JSON, as a built-in behaviour. This is great for:
-
-1) Logging & debugging: you can always see the contents of any floyd value.
-
-2) You can copy-paste things directly from a log into you source code or a data file to keep it / use it.
-
-3) Simple to convert JSON to/from protocols like REST protocolls.
-
-4) Simple to load/save state to files.
-
-5) Creating test data.
+	string json_to_string(json_value v)
+	json_value string_to_json(string s)
 
 
-??? Make generic to_string() from_string() for all types, including json_value.
-
-
-
-### EXAMPLE USE OF JSON
-
-
-##### COPY - PASTE VALUE DIRECTLY INTO YOU TEST / SOURCE CODE
-
-Support pasting JSON directly into source file, including any escapes, UTF-8 etc.
-
-cat = unpack_json(unpack_base64(
-	"UmVwdWJsaWthbmVybmFzIGxlZGFyZSBpIHNlbmF0ZW4sIE1pdGNoIE1jQ29ubmVsbCwgdmlsbGUg
-	dGlkaWdhcmVs5GdnYSBvbXL2c3RuaW5nZW4gdGlsbCBzZW50IHDlIHP2bmRhZ3NrduRsbGVuLCBt
-	ZW4gZGV0IHNhdHRlIGRlbW9rcmF0aXNrZSBtaW5vcml0ZXRzbGVkYXJlbiBDaHVjayBTY2h1bWVy
-	IHN0b3BwIGb2ci4gU2NodW1lciBz5GdlciBhdHQgdHJvdHMgZvZyaGFuZGxpbmdhcm5hIJRoYXIg
-	dmkg5G5udSBhdHQgbuUgZW4g9nZlcmVuc2tvbW1lbHNlIHDlIGVuIHbkZyBzb20g5HIgYWNjZXB0
-	YWJlbCBm9nIgYuVkYSBzaWRvcpQuIJRIYW4ga2FsbGFyIGzkZ2V0IGb2ciBUcnVtcCBzaHV0ZG93
-	bpQgb2NoIFZpdGEgaHVzZXQga2FsbGFyIGRldCCUU2NodW1lciBzaHV0ZG93bpQuDQoNCg=="
-))
-
-
-##### Example how to add support for a JSON message:
-
-1) Copy example JSON from API docs into your source code.
-2) Make your code use that hardcoded JSON and make sure it works.
-3) Replace bits of the fixed JSON with expression, step by step.
-
-
-??? need sandbox-version of parser than cannot execute any code in the JSON.
-
-//  Copy JSON from docs or live system.
-
-
-
-//	Uses default JSON representation of image_t
-dog = unpack_json(
-	image_t,
-	{
-		"width": 4, "height": 3, "pixels": [
-			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
-			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
-			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},
-			{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0},{"red": 0, "green": 0, "blue:" 0}, {"red": 0, "green": 0, "blue:" 0}
-		]
-	}
-)
 
 
 ### CORE FUNCTIONS
@@ -585,11 +498,8 @@ dog = unpack_json(
 Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
 
 - **pretty_string()**
-
-
-
-
-
+- **json_to_string()**
+- **string_to_json()**
 
 # VECTOR
 

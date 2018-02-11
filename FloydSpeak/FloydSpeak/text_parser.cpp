@@ -572,13 +572,13 @@ QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("(abc)"), k_test_brackets) == (std::pair<std::string, seq_t>("(abc)", seq_t(""))));
 }
 QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
-	QUARK_TEST_VERIFY(read_balanced2(seq_t("(abc)def"), k_test_brackets) == (std::pair<std::string, seq_t>("(abc)", seq_t("def"))));
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("(abc)xyz"), k_test_brackets) == (std::pair<std::string, seq_t>("(abc)", seq_t("xyz"))));
 }
 QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
-	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc))def"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc))", seq_t("def"))));
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc))xyz"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc))", seq_t("xyz"))));
 }
 QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
-	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc)[])def"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("def"))));
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("((abc)[])xyz"), k_test_brackets) == (std::pair<std::string, seq_t>("((abc)[])", seq_t("xyz"))));
 }
 QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("(return 4 < 5;)xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("(return 4 < 5;)", seq_t("xxx"))));
@@ -592,5 +592,5 @@ QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
 QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("{return 4 < 5;}xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 }
-//	QUARK_TEST_VERIFY(read_balanced2("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "def"));
+//	QUARK_TEST_VERIFY(read_balanced2("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "xyz"));
 
