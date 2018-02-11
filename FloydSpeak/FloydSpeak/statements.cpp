@@ -119,73 +119,73 @@ namespace floyd {
 	std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a){
 		vector<json_t> result;
 		for(const auto& e: a){
-			result.push_back(statement_to_json(*e));
+			result.push_back(statement_to_json(*e)._value);
 		}
 		return result;
 	}
 
-	json_t statement_to_json(const statement_t& e){
+	ast_json_t statement_to_json(const statement_t& e){
 		QUARK_ASSERT(e.check_invariant());
 
 		if(e._return){
-			return json_t::make_array({
+			return ast_json_t{json_t::make_array({
 				json_t(keyword_t::k_return),
-				expression_to_json(e._return->_expression)
-			});
+				expression_to_json(e._return->_expression)._value
+			})};
 		}
 		else if(e._def_struct){
-			return json_t::make_array({
+			return ast_json_t{json_t::make_array({
 				json_t("def-struct"),
 				json_t(e._def_struct->_name),
-				typeid_to_normalized_json(e._def_struct->_def)
-			});
+				typeid_to_normalized_json(e._def_struct->_def)._value
+			})};
 		}
 		else if(e._bind_or_assign){
 			const auto meta = (e._bind_or_assign->_bind_as_mutable_tag) ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
 
-			return make_array_skip_nulls({
+			return ast_json_t{make_array_skip_nulls({
 				json_t("bind"),
 				e._bind_or_assign->_new_variable_name,
-				typeid_to_normalized_json(e._bind_or_assign->_bindtype),
-				expression_to_json(e._bind_or_assign->_expression),
+				typeid_to_normalized_json(e._bind_or_assign->_bindtype)._value,
+				expression_to_json(e._bind_or_assign->_expression)._value,
 				meta
-			});
+			})};
 		}
 		else if(e._block){
-			return json_t::make_array({
+			return ast_json_t{json_t::make_array({
 				json_t("block"),
 				json_t::make_array(statements_shared_to_json(e._block->_statements))
-			});
+			})};
 		}
 		else if(e._if){
-			return json_t::make_array({
+			return ast_json_t{json_t::make_array({
 				json_t(keyword_t::k_if),
-				expression_to_json(e._if->_condition),
+				expression_to_json(e._if->_condition)._value,
 				json_t::make_array(statements_shared_to_json(e._if->_then_statements)),
 				json_t::make_array(statements_shared_to_json(e._if->_else_statements))
-			});
+			})};
 		}
 		else if(e._for){
-			return json_t::make_array({
+			return ast_json_t{json_t::make_array({
 				json_t(keyword_t::k_for),
 				json_t("open_range"),
-				expression_to_json(e._for->_start_expression),
-				expression_to_json(e._for->_end_expression),
+				expression_to_json(e._for->_start_expression)._value,
+				expression_to_json(e._for->_end_expression)._value,
 				statements_to_json(e._for->_body)
-			});
+			})};
 		}
 		else if(e._while){
-			return json_t::make_array({
+			return ast_json_t{json_t::make_array({
 				json_t(keyword_t::k_while),
-				expression_to_json(e._while->_condition),
+				expression_to_json(e._while->_condition)._value,
 				statements_to_json(e._while->_body)
-			});
+			})};
 		}
 		else if(e._expression){
-			return json_t::make_array({
+			return ast_json_t{json_t::make_array({
 				json_t("expression-statement"),
-				expression_to_json(e._expression->_expression)
-			});
+				expression_to_json(e._expression->_expression)._value
+			})};
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -195,7 +195,7 @@ namespace floyd {
 	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e){
 		std::vector<json_t> statements;
 		for(const auto& i: e){
-			statements.push_back(statement_to_json(*i));
+			statements.push_back(statement_to_json(*i)._value);
 		}
 		return json_t::make_array(statements);
 	}
@@ -204,19 +204,12 @@ namespace floyd {
 	QUARK_UNIT_TESTQ("statement_to_json", "return"){
 		quark::ut_compare_strings(
 			json_to_compact_string(
-				statement_to_json(make__return_statement(expression_t::make_literal_string("abc")))
+				statement_to_json(make__return_statement(expression_t::make_literal_string("abc")))._value
 			)
 			,
 			R"(["return", ["k", "abc", "string"]])"
 		);
 	}
-
-
-statement_t make_function_statement(const string name, const function_definition_t def){
-	const auto function_typeid = typeid_t::make_function(def._return_type, get_member_types(def._args));
-	const auto function_def_expr = expression_t::make_function_definition(def);
-	return make__bind_or_assign_statement(name, function_typeid, function_def_expr, false);
-}
 
 
 }	//	floyd

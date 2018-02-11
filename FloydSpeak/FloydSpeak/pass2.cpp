@@ -88,7 +88,7 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 */
 
 
-typeid_t resolve_type_name(const json_t& t){
+typeid_t resolve_type_name(const ast_json_t& t){
 	const auto t2 = typeid_from_normalized_json(t);
 	return t2;
 }
@@ -103,7 +103,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 
 		const auto value = e.get_array_n(1);
 		const auto type = e.get_array_n(2);
-		const auto type2 = resolve_type_name(type);
+		const auto type2 = resolve_type_name(ast_json_t{type});
 
 		if(type2.is_null()){
 			return expression_t::make_literal_null();
@@ -172,7 +172,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 	}
 	else if(op == "vector-def"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto element_type = resolve_type_name(e.get_array_n(1));
+		const auto element_type = resolve_type_name(ast_json_t{e.get_array_n(1)});
 		const auto elements = e.get_array_n(2).get_array();
 
 		std::vector<expression_t> elements2;
@@ -184,7 +184,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 	}
 	else if(op == "dict-def"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto value_type = resolve_type_name(e.get_array_n(1));
+		const auto value_type = resolve_type_name(ast_json_t{e.get_array_n(1)});
 		const auto elements = e.get_array_n(2).get_array();
 		QUARK_ASSERT((elements.size() % 2) == 0);
 
@@ -203,14 +203,14 @@ expression_t parser_expression_to_ast(const json_t& e){
 }
 
 
-const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const json_t& p){
+const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const ast_json_t& p){
 	QUARK_SCOPED_TRACE("parser_statements_to_ast()");
-	QUARK_ASSERT(p.check_invariant());
-	QUARK_ASSERT(p.is_array());
+	QUARK_ASSERT(p._value.check_invariant());
+	QUARK_ASSERT(p._value.is_array());
 
 	vector<shared_ptr<statement_t>> statements2;
 
-	for(const auto statement: p.get_array()){
+	for(const auto statement: p._value.get_array()){
 		const auto type = statement.get_array_n(0);
 
 		//	[ "return", [ "k", 3, "int" ] ]
@@ -229,7 +229,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto expr = statement.get_array_n(3);
 			const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
 
-			const auto bind_type2 = resolve_type_name(bind_type);
+			const auto bind_type2 = resolve_type_name(ast_json_t{bind_type});
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(expr);
 			bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
@@ -252,7 +252,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			QUARK_ASSERT(statement.get_array_size() == 2);
 
 			const auto statements = statement.get_array_n(1);
-			const auto r = parser_statements_to_ast(statements);
+			const auto r = parser_statements_to_ast(ast_json_t{statements});
 			//??? also include locals & objects
 			statements2.push_back(make_shared<statement_t>(make__block_statement(r)));
 		}
@@ -300,8 +300,8 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 			const auto name2 = name.get_string();
 			const auto args2 = members_from_json(args);
-			const auto fstatements2 = parser_statements_to_ast(fstatements);
-			const auto return_type2 = resolve_type_name(return_type);
+			const auto fstatements2 = parser_statements_to_ast(ast_json_t{fstatements});
+			const auto return_type2 = resolve_type_name(ast_json_t{return_type});
 
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
@@ -366,8 +366,8 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
 
 			const auto condition_expression2 = parser_expression_to_ast(condition_expression);
-			const auto& then_statements2 = parser_statements_to_ast(then_statements);
-			const auto& else_statements2 = parser_statements_to_ast(else_statements);
+			const auto& then_statements2 = parser_statements_to_ast(ast_json_t{then_statements});
+			const auto& else_statements2 = parser_statements_to_ast(ast_json_t{else_statements});
 
 			statements2.push_back(make_shared<statement_t>(
 				make__ifelse_statement(
@@ -387,7 +387,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 			const auto start_expression2 = parser_expression_to_ast(start_expression);
 			const auto end_expression2 = parser_expression_to_ast(end_expression);
-			const auto& body_statements2 = parser_statements_to_ast(body_statements);
+			const auto& body_statements2 = parser_statements_to_ast(ast_json_t{body_statements});
 
 			statements2.push_back(make_shared<statement_t>(
 				make__for_statement(
@@ -404,7 +404,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto body_statements = statement.get_array_n(2);
 
 			const auto expression2 = parser_expression_to_ast(expression);
-			const auto& body_statements2 = parser_statements_to_ast(body_statements);
+			const auto& body_statements2 = parser_statements_to_ast(ast_json_t{body_statements});
 
 			statements2.push_back(make_shared<statement_t>(
 				make__while_statement(expression2, body_statements2)
@@ -429,42 +429,8 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 
 
-
-
-
-
-bool has_unresolved_types(const json_t& obj){
-	if(obj.is_string()){
-		const auto s = obj.get_string();
-		if(s.size() > 2 && s[0] == '<' && s[s.size() - 1] == '>'){
-			return true;
-		}
-		return false;
-	}
-	else if(obj.is_object()){
-		for(const auto i: obj.get_object()){
-			if(has_unresolved_types(i.second)){
-				return true;
-			}
-		}
-		return false;
-	}
-	else if(obj.is_array()){
-		for(int i = 0 ; i < obj.get_array_size() ; i++){
-			if(has_unresolved_types(obj.get_array_n(i))){
-				return true;
-			}
-		}
-		return false;
-	}
-	else{
-		return false;
-	}
-}
-
-
-ast_t run_pass2(const json_t& parse_tree){
-	QUARK_TRACE(json_to_pretty_string(parse_tree));
+ast_t run_pass2(const ast_json_t& parse_tree){
+	QUARK_TRACE(json_to_pretty_string(parse_tree._value));
 
 	const auto program_body = parser_statements_to_ast(parse_tree);
 	return ast_t(program_body);
@@ -482,7 +448,7 @@ ast_t run_pass2(const json_t& parse_tree){
 */
 QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
 	const auto pass1 = parse_json(seq_t(floyd::k_test_program_0_parserout)).first;
-	const auto pass2 = run_pass2(pass1);
+	const auto pass2 = run_pass2(ast_json_t{pass1});
 	const auto pass2_output = parse_json(seq_t(floyd::k_test_program_0_pass2output)).first;
 	ut_compare_jsons(ast_to_json(pass2), pass2_output);
 }

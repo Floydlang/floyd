@@ -43,7 +43,7 @@ https://en.wikipedia.org/wiki/Parsing
 */
 
 
-std::pair<json_t, seq_t> parse_statement(const seq_t& s){
+std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
 	if(is_first(pos, "{")){
 		return parse_block(pos);
@@ -70,13 +70,13 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		parse_statement(seq_t("int x = 10;")).first,
+		parse_statement(seq_t("int x = 10;")).first._value,
 		parse_json(seq_t(R"(["bind", "int", "x", ["k", 10, "int"]])")).first
 	);
 }
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		parse_statement(seq_t("int f(string name){ return 13; }")).first,
+		parse_statement(seq_t("int f(string name){ return 13; }")).first._value,
 		parse_json(seq_t(R"(
 			[
 				"def-func",
@@ -95,27 +95,27 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		parse_statement(seq_t("int x = f(3);")).first,
+		parse_statement(seq_t("int x = f(3);")).first._value,
 		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
 	);
 }
 
 
 
-std::pair<json_t, seq_t> parse_statements(const seq_t& s){
+std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s){
 	vector<json_t> statements;
 	auto pos = skip_whitespace(s);
 	while(!pos.empty()){
 		const auto statement_pos = parse_statement(pos);
-		statements.push_back(statement_pos.first);
+		statements.push_back(statement_pos.first._value);
 		pos = skip_whitespace(statement_pos.second);
 	}
-	return { json_t::make_array(statements), pos };
+	return { ast_json_t{json_t::make_array(statements)}, pos };
 }
 
-json_t parse_program2(const string& program){
+ast_json_t parse_program2(const string& program){
 	const auto statements_pos = parse_statements(seq_t(program));
-	QUARK_TRACE(json_to_pretty_string(statements_pos.first));
+	QUARK_TRACE(json_to_pretty_string(statements_pos.first._value));
 	return statements_pos.first;
 }
 
@@ -160,21 +160,21 @@ const string kProgram5 =
 
 QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_0_source", ""){
 	ut_compare_jsons(
-		parse_program2(k_test_program_0_source),
+		parse_program2(k_test_program_0_source)._value,
 		parse_json(seq_t(k_test_program_0_parserout)).first
 	);
 }
 
 QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
 	ut_compare_jsons(
-		parse_program2(k_test_program_1_source),
+		parse_program2(k_test_program_1_source)._value,
 		parse_json(seq_t(k_test_program_1_parserout)).first
 	);
 }
 
 QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 	ut_compare_jsons(
-		parse_program2(k_test_program_100_source),
+		parse_program2(k_test_program_100_source)._value,
 		parse_json(seq_t(k_test_program_100_parserout)).first
 	);
 }

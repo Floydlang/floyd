@@ -49,7 +49,7 @@ namespace floyd {
 	};
 
 	std::string to_compact_string(const struct_instance_t& instance);
-	json_t to_normalized_json(const struct_instance_t& instance);
+	ast_json_t to_normalized_json(const struct_instance_t& instance);
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -118,7 +118,7 @@ namespace floyd {
 			int host_function,
 			const typeid_t& return_type
 		);
-		public: json_t to_json() const;
+		public: ast_json_t to_json() const;
 
 
 		const std::vector<member_t> _args;
@@ -166,7 +166,7 @@ namespace floyd {
 		public: floyd::typeid_t _element_type;
 	};
 
-	json_t vector_def_to_json(const vector_def_t& s);
+	ast_json_t vector_def_to_json(const vector_def_t& s);
 
 
 	//////////////////////////////////////		dict_def_t
@@ -185,7 +185,7 @@ namespace floyd {
 		public: floyd::typeid_t _value_type;
 	};
 
-	json_t dict_def_to_json(const dict_def_t& s);
+	ast_json_t dict_def_to_json(const dict_def_t& s);
 
 
 
@@ -866,11 +866,9 @@ namespace floyd {
 		return value_t(f);
 	}
 
-	json_t value_to_normalized_json(const value_t& v);
-	value_t value_from_normalized_json(const json_t& v);
-	json_t value_and_type_to_normalized_json(const value_t& v);
-	value_t make_test_func();
-
+	ast_json_t value_to_normalized_json(const value_t& v);
+	value_t value_from_normalized_json(const ast_json_t& v);
+	ast_json_t value_and_type_to_normalized_json(const value_t& v);
 
 }	//	floyd
 

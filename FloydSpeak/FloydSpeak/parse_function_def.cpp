@@ -24,7 +24,7 @@ namespace floyd {
 
 
 
-std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
+std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto return_type_pos = read_required_type(pos);
 	const auto function_name_pos = read_required_identifier(return_type_pos.second);
 	const auto args_pos = read_function_arg_parantheses(function_name_pos.second);
@@ -38,11 +38,11 @@ std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 		json_t::make_object({
 			{ "name", function_name },
 			{ "args", args },
-			{ "statements", body.first },
-			{ "return_type", typeid_to_normalized_json(return_type_pos.first) }
+			{ "statements", body.first._value },
+			{ "return_type", typeid_to_normalized_json(return_type_pos.first)._value }
 		})
 	});
-	return { function_def, body.second };
+	return { ast_json_t{function_def}, body.second };
 }
 
 struct test {
@@ -124,7 +124,7 @@ const std::vector<test> testsxyz = {
 QUARK_UNIT_TEST("", "parse_function_definition2()", "BATCH", "Correct output JSON"){
 	for(const auto e: testsxyz){
 		QUARK_SCOPED_TRACE(e.desc);
-		ut_compare_jsons(parse_function_definition2(seq_t(e.input)).first,parse_json(seq_t(e.output)).first);
+		ut_compare_jsons(parse_function_definition2(seq_t(e.input)).first._value, parse_json(seq_t(e.output)).first);
 	}
 }
 

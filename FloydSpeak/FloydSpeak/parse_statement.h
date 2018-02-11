@@ -12,11 +12,11 @@
 
 #include "quark.h"
 
-struct json_t;
 struct seq_t;
 
 namespace floyd {
 
+	struct ast_json_t;
 
 
 
@@ -35,7 +35,7 @@ namespace floyd {
 				...
 			]
 	*/
-	std::pair<json_t, seq_t> parse_statement_body(const seq_t& pos);
+	std::pair<ast_json_t, seq_t> parse_statement_body(const seq_t& pos);
 
 
 	/*
@@ -48,7 +48,7 @@ namespace floyd {
 		OUTPUT:
 			["block", [ STATEMENTS ] ]
 	*/
-	std::pair<json_t, seq_t> parse_block(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_block(const seq_t& s);
 
 
 	/*
@@ -62,7 +62,7 @@ namespace floyd {
 		OUTPUT:
 			["return", EXPRESSION ]
 	*/
-	std::pair<json_t, seq_t> parse_return_statement(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_return_statement(const seq_t& s);
 
 
 	/*
@@ -96,7 +96,7 @@ namespace floyd {
 			["if", EXPRESSION, THEN_STATEMENTS ]
 			["if", EXPRESSION, THEN_STATEMENTS, ELSE_STATEMENTS ]
 	*/
-	std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos);
+	std::pair<ast_json_t, seq_t> parse_if_statement(const seq_t& pos);
 
 
 	/*
@@ -109,7 +109,7 @@ namespace floyd {
 		OUTPUT
 			[ "for", "open_range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
 	*/
-	std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos);
+	std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos);
 
 
 	/*
@@ -123,7 +123,7 @@ namespace floyd {
 		OUTPUT
 			[ "while", "EXPRESSION, BODY ]
 	*/
-	std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos);
+	std::pair<ast_json_t, seq_t> parse_while_statement(const seq_t& pos);
 
 
 }	//	floyd

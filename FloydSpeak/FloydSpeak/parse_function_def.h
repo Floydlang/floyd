@@ -12,10 +12,11 @@
 #include "quark.h"
 #include <string>
 
-struct json_t;
 struct seq_t;
 
 namespace floyd {
+	struct ast_json_t;
+
 	/*
 		OUTPUT:
 			[
@@ -30,10 +31,10 @@ namespace floyd {
 				}
 			]
 	*/
-	std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos);
+	std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos);
 
 
-
+/*
 	//////////////////////////////////		Testing
 
 
@@ -48,6 +49,8 @@ namespace floyd {
 	json_t make_return5();
 
 	json_t make_return_hello();
+*/
+
 }
 
 

@@ -11,10 +11,11 @@
 
 #include "quark.h"
 
-struct json_t;
 struct seq_t;
 
 namespace floyd {
+
+struct ast_json_t;
 
 	/*
 		int a = 10;
@@ -34,7 +35,7 @@ namespace floyd {
 		OUTPUT:
 			[ "bind", "float", "x", EXPRESSION, { "mutable": true } ]
 	*/
-	std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s);
 
 	/*
 		x = expression:
@@ -42,13 +43,13 @@ namespace floyd {
 
 		x = 4
 	*/
-	std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s);
 
 
 	/*
 		print(13);
 	*/
-	std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s);
 
 
 	/*
@@ -76,7 +77,7 @@ namespace floyd {
 	*/
 
 	//	Main function: detects each of the other implicit statements and parses them.
-	std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 
 }
 

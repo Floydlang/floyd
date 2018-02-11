@@ -12,9 +12,9 @@
 #include "quark.h"
 
 struct seq_t;
-struct json_t;
 
 namespace floyd {
+	struct ast_json_t;
 
 	/*
 		Parses the expression string
@@ -53,9 +53,9 @@ namespace floyd {
 			"condition_expr ? result_true_expr : result_false_expr"
 			"a == 1 ? "one" : ”some other number""
 	*/
-	json_t parse_expression_all(const seq_t& expression);
+	ast_json_t parse_expression_all(const seq_t& expression);
 
-	std::pair<json_t, seq_t> parse_expression_seq(const seq_t& expression);
+	std::pair<ast_json_t, seq_t> parse_expression_seq(const seq_t& expression);
 
 }	//	floyd
 

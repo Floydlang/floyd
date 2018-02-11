@@ -145,21 +145,21 @@ bool is_simple_expression__2(const std::string& op){
 
 
 
-json_t expression_to_json(const expression_t& e){
+ast_json_t expression_to_json(const expression_t& e){
 	return e.get_expr()->expr_base__to_json();
 }
 
-json_t expressions_to_json(const std::vector<expression_t> v){
+ast_json_t expressions_to_json(const std::vector<expression_t> v){
 	vector<json_t> r;
 	for(const auto e: v){
-		r.push_back(expression_to_json(e));
+		r.push_back(expression_to_json(e)._value);
 	}
-	return json_t::make_array(r);
+	return ast_json_t{json_t::make_array(r)};
 }
 
 string expression_to_json_string(const expression_t& e){
 	const auto json = expression_to_json(e);
-	return json_to_compact_string(json);
+	return json_to_compact_string(json._value);
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "literals"){

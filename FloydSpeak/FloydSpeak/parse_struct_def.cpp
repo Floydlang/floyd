@@ -19,7 +19,7 @@ namespace floyd {
 	using std::pair;
 
 
-	std::pair<json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
+	std::pair<ast_json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
 		std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
 		QUARK_ASSERT(token_pos.first);
 
@@ -46,7 +46,7 @@ namespace floyd {
 				{ "members", members_to_json(members) }
 			})
 		});
-		return { r, skip_whitespace(body_pos.second) };
+		return { ast_json_t{r}, skip_whitespace(body_pos.second) };
 	}
 
 	const std::string k_test_struct0 = "struct a {int x; string y; float z;}";
@@ -68,7 +68,8 @@ namespace floyd {
 			})
 		});
 
-		QUARK_TEST_VERIFY(r == (std::pair<json_t, seq_t>(expected, seq_t(""))));
+		ut_compare_jsons(r.first._value, expected);
+		quark::ut_compare_strings(r.second.str(), "");
 	}
 
 

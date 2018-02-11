@@ -189,7 +189,7 @@ namespace {
 			}
 */
 			const auto v2 = value_to_normalized_json(value0);
-			return make_json_value(v2);
+			return make_json_value(v2._value);
 		}
 		else{
 			const auto value = value0;
@@ -634,7 +634,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 							//	get_object_element() throws if key can't be found.
 							const auto value = parent_json_value.get_object_element(lookup_key);
-							const auto value2 = value_from_normalized_json(value);
+							const auto value2 = value_from_normalized_json(ast_json_t{value});
 							return { vm2, expression_t::make_literal(value2)};
 						}
 					}
@@ -650,7 +650,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 							}
 							else{
 								const auto value = parent_json_value.get_array_n(lookup_index);
-								const auto value2 = value_from_normalized_json(value);
+								const auto value2 = value_from_normalized_json(ast_json_t{value});
 								return { vm2, expression_t::make_literal(value2)};
 							}
 						}
@@ -815,7 +815,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				);
 			}
 			else{
-				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_normalized_json(c.get_type())) + "\".");
+				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_normalized_json(c.get_type())._value) + "\".");
 			}
 		}
 		else{
@@ -1302,8 +1302,8 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		//??? INlcude mutable-flag?
 			const auto a = value_and_type_to_normalized_json(v.second.first);
 			const auto b = make_array_skip_nulls({
-				a.get_array_n(0),
-				a.get_array_n(1),
+				a._value.get_array_n(0),
+				a._value.get_array_n(1),
 				v.second.second ? json_t("mutable") : json_t()
 			});
 			values[v.first] = b;
@@ -1330,7 +1330,7 @@ void test__evaluate_expression(const expression_t& e, const expression_t& expect
 	const interpreter_t interpreter(ast);
 	const auto e3 = evaluate_expression(interpreter, e);
 
-	ut_compare_jsons(expression_to_json(e3.second), expression_to_json(expected));
+	ut_compare_jsons(expression_to_json(e3.second)._value, expression_to_json(expected)._value);
 }
 
 
@@ -1509,7 +1509,7 @@ std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm
 
 	const auto& value = args[0];
 	const auto json = value_to_normalized_json(value);
-	const auto s = json_to_pretty_string(json, 0, pretty_t{80, 4});
+	const auto s = json_to_pretty_string(json._value, 0, pretty_t{80, 4});
 	return {vm, value_t(s) };
 }
 

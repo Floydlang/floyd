@@ -41,8 +41,8 @@ void test__run_init__check_result(const std::string& program, const value_t& exp
 	const auto result = run_global(program);
 	const auto result_value = result._call_stack[0]->_values["result"];
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_literal(result_value.first)),
-		expression_to_json(expression_t::make_literal(expected_result))
+		expression_to_json(expression_t::make_literal(result_value.first))._value,
+		expression_to_json(expression_t::make_literal(expected_result))._value
 	);
 }
 void test__run_init2(const std::string& program){
@@ -53,8 +53,8 @@ void test__run_init2(const std::string& program){
 void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
 	const auto result = run_main(program, args);
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_literal(result.second._output)),
-		expression_to_json(expression_t::make_literal(expected_return))
+		expression_to_json(expression_t::make_literal(result.second._output))._value,
+		expression_to_json(expression_t::make_literal(expected_return))._value
 	);
 }
 

@@ -12,7 +12,6 @@
 #include "quark.h"
 #include <string>
 
-struct json_t;
 struct seq_t;
 
 
@@ -88,6 +87,7 @@ tbd		Convert-to-type:				TYPE(EXPRESSION)
 
 namespace floyd {
 
+struct ast_json_t;
 
 const std::string k_test_program_0_source = "int main(){ return 3; }";
 const std::string k_test_program_0_parserout = R"(
@@ -251,7 +251,7 @@ const char k_test_program_100_parserout[] = R"(
 		["define_function", FUNCTION_DEF ]
 	*/
 
-	std::pair<json_t, seq_t> parse_statement(const seq_t& pos0);
+	std::pair<ast_json_t, seq_t> parse_statement(const seq_t& pos0);
 
 
 
@@ -260,7 +260,7 @@ const char k_test_program_100_parserout[] = R"(
 			json_t statement_array;
 			std::string _rest;
 	*/
-	std::pair<json_t, seq_t> parse_statements(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s);
 
 	/*
 	{
@@ -294,7 +294,7 @@ const char k_test_program_100_parserout[] = R"(
 		]
 	}
 	*/
-	json_t parse_program2(const std::string& program);
+	ast_json_t parse_program2(const std::string& program);
 
 }	//	floyd
 

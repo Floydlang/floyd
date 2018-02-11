@@ -17,17 +17,16 @@
 #include "parser_ast.h"
 #include "parser_value.h"
 
-struct json_t;
 
 namespace floyd {
+	struct ast_json_t;
 	struct value_t;
 	struct statement_t;
 	struct expression_t;
 
 
-	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
-	json_t expression_to_json(const expression_t& e);
-	json_t expressions_to_json(const std::vector<expression_t> v);
+	ast_json_t expression_to_json(const expression_t& e);
+	ast_json_t expressions_to_json(const std::vector<expression_t> v);
 
 	//	"+", "<=", "&&" etc.
 	bool is_simple_expression__2(const std::string& op);
@@ -44,7 +43,7 @@ namespace floyd {
 		private: struct expr_base_t {
 			public: virtual ~expr_base_t(){};
 
-			public: virtual json_t expr_base__to_json() const{ return json_t(); };
+			public: virtual ast_json_t expr_base__to_json() const{ return ast_json_t(); };
 		};
 
 
@@ -60,12 +59,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
 					"k",
-					value_to_normalized_json(_value),
-					typeid_to_normalized_json(_value.get_type())
-				});
+					value_to_normalized_json(_value)._value,
+					typeid_to_normalized_json(_value.get_type())._value
+				})};
 			}
 
 
@@ -110,12 +109,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
 					expression_type_to_token(_op),
-					expression_to_json(*_left),
-					expression_to_json(*_right)
-				});
+					expression_to_json(*_left)._value,
+					expression_to_json(*_right)._value
+				})};
 			}
 
 
@@ -197,10 +196,10 @@ namespace floyd {
 			}
 
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({
-					expression_to_json(*_expr)
-				});
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
+					expression_to_json(*_expr)._value
+				})};
 			}
 
 
@@ -240,12 +239,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({
-					expression_to_json(*_condition),
-					expression_to_json(*_a),
-					expression_to_json(*_b),
-				});
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
+					expression_to_json(*_condition)._value,
+					expression_to_json(*_a)._value,
+					expression_to_json(*_b)._value,
+				})};
 			}
 
 
@@ -283,12 +282,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
 					"call",
-					expression_to_json(*_function),
-					expressions_to_json(_args)
-				});
+					expression_to_json(*_function)._value,
+					expressions_to_json(_args)._value
+				})};
 			}
 
 
@@ -316,7 +315,7 @@ namespace floyd {
 
 		////////////////////////////////			make_function_definition()
 
-
+//??? make better
 		public: struct function_definition_expr_t : public expr_base_t {
 			public: virtual ~function_definition_expr_t(){};
 
@@ -326,8 +325,8 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return _def.to_json();
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{_def.to_json()};
 			}
 
 
@@ -363,8 +362,8 @@ namespace floyd {
 			}
 
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "@", json_t(_variable) });
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({ "@", json_t(_variable) })};
 			}
 
 
@@ -408,8 +407,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "->", expression_to_json(*_parent_address), json_t(_member_name) });
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
+				 	"->",
+				 	expression_to_json(*_parent_address)._value,
+				 	json_t(_member_name)
+				})};
 			}
 
 
@@ -457,8 +460,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({ "[]", expression_to_json(*_parent_address), expression_to_json(*_lookup_key) });
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
+					"[]",
+					expression_to_json(*_parent_address)._value,
+					expression_to_json(*_lookup_key)._value
+				})};
 			}
 
 
@@ -505,12 +512,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
 					"vector-def",
-					typeid_to_normalized_json(_element_type),
-					expressions_to_json(_elements)
-				});
+					typeid_to_normalized_json(_element_type)._value,
+					expressions_to_json(_elements)._value
+				})};
 			}
 
 
@@ -554,12 +561,12 @@ namespace floyd {
 			{
 			}
 
-			public: virtual json_t expr_base__to_json() const {
-				return json_t::make_array({
+			public: virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
 					"dict-def",
-					typeid_to_normalized_json(_value_type)
+					typeid_to_normalized_json(_value_type)._value
 //???					expressions_to_json(_elements)
-				});
+				})};
 			}
 
 
@@ -624,9 +631,9 @@ namespace floyd {
 		An expression is a json array where entries may be other json arrays.
 		["+", ["+", 1, 2], ["k", 10]]
 	*/
-	json_t expression_to_json(const expression_t& e);
+	ast_json_t expression_to_json(const expression_t& e);
 
-	json_t expressions_to_json(const std::vector<expression_t> v);
+	ast_json_t expressions_to_json(const std::vector<expression_t> v);
 
 
 

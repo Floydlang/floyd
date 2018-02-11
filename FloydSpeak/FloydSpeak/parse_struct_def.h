@@ -13,11 +13,11 @@
 #include "quark.h"
 #include <string>
 
-struct json_t;
 struct seq_t;
 
 namespace floyd {
 
+	struct ast_json_t;
 
 	/*
 		INPUT
@@ -39,7 +39,7 @@ namespace floyd {
 			}
 		]
 	*/
-	std::pair<json_t, seq_t> parse_struct_definition(const seq_t& pos);
+	std::pair<ast_json_t, seq_t> parse_struct_definition(const seq_t& pos);
 }
 
 #endif /* parser_struct_hpp */

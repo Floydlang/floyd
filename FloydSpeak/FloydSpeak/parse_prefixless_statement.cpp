@@ -247,7 +247,7 @@ QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "dict", "ASSIGN"){
 //	BIND:			int x = 10;
 //	BIND:			int (string a) x = f(4 == 5);
 //	BIND:			mutable int x = 10;
-pair<json_t, seq_t> parse_bind_statement(const seq_t& s){
+pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 	auto pos = read_until_toplevel_match(skip_whitespace(s), ";");
 	if(pos.second.first1() == ";"){
 		pos.first.push_back(';');
@@ -291,15 +291,15 @@ pair<json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto expression = parse_expression_all(seq_t(expression_str));
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
-	const auto statement = make_array_skip_nulls({ "bind", typeid_to_normalized_json(type), identifier, expression, meta });
+	const auto statement = make_array_skip_nulls({ "bind", typeid_to_normalized_json(type)._value, identifier, expression._value, meta });
 
 	const auto x = read_until(s, ";");
-	return { statement, x.second.rest1() };
+	return { ast_json_t{statement}, x.second.rest1() };
 }
 
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("bool bb = true;")).first,
+		parse_bind_statement(seq_t("bool bb = true;")).first._value,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "bool", "bb", ["k", true, "bool"]]
@@ -309,7 +309,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 }
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("int hello = 3;")).first,
+		parse_bind_statement(seq_t("int hello = 3;")).first._value,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "int", "hello", ["k", 3, "int"]]
@@ -320,7 +320,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("mutable int a = 14;")).first,
+		parse_bind_statement(seq_t("mutable int a = 14;")).first._value,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "int", "a", ["k", 14, "int"], { "mutable": true }]
@@ -331,7 +331,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 
 QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("mutable hello = 3;")).first,
+		parse_bind_statement(seq_t("mutable hello = 3;")).first._value,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "null", "hello", ["k", 3, "int"], { "mutable": true }]
@@ -349,19 +349,19 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 //////////////////////////////////////////////////		parse_assign_statement()
 
 
-pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
+pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto variable_pos = read_identifier(s);
 	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-	const auto statement = json_t::make_array({ "assign", variable_pos.first, expression });
-	return { statement, expression_pos.second.rest1() };
+	const auto statement = json_t::make_array({ "assign", variable_pos.first, expression._value });
+	return { ast_json_t{statement}, expression_pos.second.rest1() };
 }
 
 QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 	ut_compare_jsons(
-		parse_assign_statement(seq_t("x = 10;")).first,
+		parse_assign_statement(seq_t("x = 10;")).first._value,
 		parse_json(seq_t(
 			R"(
 				["assign","x",["k",10,"int"]]
@@ -374,17 +374,17 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 //////////////////////////////////////////////////		parse_expression_statement()
 
 
-pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
+pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s){
 	const auto expression_pos = read_until(skip_whitespace(s), ";");
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-	const auto statement = json_t::make_array({ "expression-statement", expression });
-	return { statement, expression_pos.second.rest1() };
+	const auto statement = json_t::make_array({ "expression-statement", expression._value });
+	return { ast_json_t{statement}, expression_pos.second.rest1() };
 }
 
 QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 	ut_compare_jsons(
-		parse_expression_statement(seq_t("print(14);")).first,
+		parse_expression_statement(seq_t("print(14);")).first._value,
 		parse_json(seq_t(
 			R"(
 				[ "expression-statement", [ "call", ["@", "print"], [["k", 14, "int"]] ] ]
@@ -396,7 +396,7 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 
 
 
-std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
+std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
 	const auto implicit_type = detect_implicit_statement_lookahead(pos);
 	if(implicit_type == implicit_statement::k_bind){
@@ -418,7 +418,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 
 QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_compare_jsons(
-		parse_prefixless_statement(seq_t("int x = f(3);")).first,
+		parse_prefixless_statement(seq_t("int x = f(3);")).first._value,
 		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
 	);
 }

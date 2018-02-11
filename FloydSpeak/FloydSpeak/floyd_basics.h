@@ -21,6 +21,12 @@ namespace floyd {
 	struct typeid_t;
 	std::string typeid_to_compact_string(const typeid_t& t);
 
+
+	struct ast_json_t {
+		json_t _value;
+	};
+
+
 	//	Keywords in source code.
 	struct keyword_t {
 		static const std::string k_return;
@@ -507,8 +513,8 @@ namespace floyd {
 		??? Remove concept of typeid_t make_unresolved_type_identifier, instead use typeid_t OR identifier-string.
 	*/
 
-	json_t typeid_to_normalized_json(const typeid_t& t);
-	typeid_t typeid_from_normalized_json(const json_t& t);
+	ast_json_t typeid_to_normalized_json(const typeid_t& t);
+	typeid_t typeid_from_normalized_json(const ast_json_t& t);
 
 	std::string typeid_to_compact_string(const typeid_t& t);
 
@@ -566,7 +572,9 @@ namespace floyd {
 	};
 
 	std::string to_compact_string(const struct_definition_t& v);
-	json_t typeid_to_normalized_json(const struct_definition_t& v);
+
+	//??? better name
+	ast_json_t typeid_to_normalized_json(const struct_definition_t& v);
 
 	//	Returns -1 if not found.
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);
