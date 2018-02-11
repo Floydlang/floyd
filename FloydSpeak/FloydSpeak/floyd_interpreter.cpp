@@ -40,113 +40,12 @@ using std::make_shared;
 
 
 
-#if 0
-/*
-	bool is_string(json_value v)
-	bool is_number(json_value v)
-	bool is_object(json_value v)
-	bool is_array(json_value v)
-	bool is_bool(json_value v)
-	bool is_null(json_value v)
- 
-	string get_string(json_value v)
-	float get_number(json_value v)
-	[string: json_value] get_object(json_value v)
-	[json_value] get_array(json_value v)
-	string get_bool(json_value v)
-
-
-	string
-	number
-	object
-	array
-	true
-	false
-	null
-*/
-const vector<member_t> json_value__struct_members = {
-	member_t(typeid_t::make_string(), "type"),
-
-	member_t(typeid_t::make_bool(), "b"),
-	member_t(typeid_t::make_float(), "n"),
-	member_t(typeid_t::make_string(), "s"),
-	member_t(typeid_t::make_dict(typeid_t::make_unresolved_type_identifier("json_value")), "obj"),
-	member_t(typeid_t::make_vector(typeid_t::make_unresolved_type_identifier("json_value")), "array")
-};
-const auto json_value___struct_def = std::make_shared<struct_definition_t>(struct_definition_t(json_value__struct_members));
-
-const auto host__json_value_type = typeid_t::make_struct(json_value___struct_def);
-
-#endif
-
 
 
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 namespace {
-
-	// ### Make this built in into evaluate_expression()?
-	value_t improve_vector2(const value_t& value){
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(value.is_vector());
-
-		const auto p = value.get_vector_value();
-
-		const auto element_type = p->_element_type;//	.get_typeid_typeid().is_null()){
-
-		//	Type == vector[null]?
-		if(element_type.is_null()){
-			if(p->_elements.empty()){
-				return value;
-			}
-			else{
-				//	Figure out the element type.
-				const auto element_type2 = p->_elements[0].get_type();
-				return improve_vector2(make_vector_value(element_type2, p->_elements));
-			}
-		}
-		else{
-			//	Check that element types match vector type.
-			for(const auto e: p->_elements){
-				if(e.get_type() != element_type){
-					throw std::runtime_error("Vector element of wrong type.");
-				}
-			}
-			return value;
-		}
-	}
-	value_t improve_dict2(const value_t& value){
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(value.is_dict());
-
-		const auto p = value.get_dict_value();
-
-		const auto value_type = p->_value_type;
-
-		//	Type == [string:null]?
-		if(value_type.is_null()){
-			if(p->_elements.empty()){
-				return value;
-			}
-			else{
-				//	Figure out the element type.
-				const auto value_type2 = p->_elements.begin()->second.get_type();
-				return improve_dict2(make_dict_value(value_type2, p->_elements));
-			}
-		}
-		else{
-/*
-			//	Check that element types match vector type.
-			for(const auto e: p->_elements){
-				if(e.second.get_type() != value_type){
-					throw std::runtime_error("Dict element value of wrong type.");
-				}
-			}
-*/
-			return value;
-		}
-	}
 
 	//	We know which type we need. If the value has not type, retype it.
 	value_t improve_value_type(const value_t& value0, const typeid_t& expected_type){
@@ -157,37 +56,6 @@ namespace {
 			return value0;
 		}
 		else if(expected_type.is_json_value()){
-
-/*
-			if(value0.is_bool()){
-				return make_json_value(json_t(value0.get_bool_value()));
-			}
-			else if(value0.is_int()){
-				return make_json_value(json_t((double)value0.get_int_value()));
-			}
-			else if(value0.is_float()){
-				return make_json_value(json_t(value0.get_float_value()));
-			}
-			else if(value0.is_string()){
-				return make_json_value(json_t(value0.get_string_value()));
-			}
-			//??? typeid
-
-			else if(value0.is_vector()){
-				vector<json_t> elements2;
-				const auto v = value0.get_vector_value();
-				for(const auto e: v->_elements){
-					const auto e2 = value_to_normalized_json(e);
-					elements2.push_back(e2);
-				}
-				return make_json_value(json_t::make_array(elements2));
-			}
-
-
-			else {
-				return value0;
-			}
-*/
 			const auto v2 = value_to_normalized_json(value0);
 			return make_json_value(v2._value);
 		}
@@ -225,14 +93,6 @@ namespace {
 	}
 
 
-
-/*
-	bool compare_float_approx(float value, float expected){
-		float diff = static_cast<float>(fabs(value - expected));
-		return diff < 0.00001;
-	}
-*/
-
 	interpreter_t begin_subenv(const interpreter_t& vm){
 		QUARK_ASSERT(vm.check_invariant());
 
@@ -241,8 +101,6 @@ namespace {
 		auto parent_env = vm2._call_stack.back();
 		auto new_environment = environment_t::make_environment(vm2, parent_env);
 		vm2._call_stack.push_back(new_environment);
-
-//		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
 		return vm2;
 	}
 
@@ -1402,44 +1260,6 @@ bool environment_t::check_invariant() const {
 }
 
 
-#if 0
-//////////////////////////		interpreter_t
-
-//??? This should not be top-level special case only.
-value_t json_value__to_value(const value_t& json_value){
-	QUARK_ASSERT(json_value.is_struct() && json_value.get_struct_value()->_def == *json_value___struct_def);
-
-	const auto struct_value = json_value.get_struct_value();
-	const auto type_string = struct_value->_member_values[0].get_string_value();
-
-	if (type_string == "bool-type"){
-		return struct_value->_member_values[1];
-	}
-	else if (type_string == "number-type"){
-		return struct_value->_member_values[2];
-	}
-	else if (type_string == "string-type"){
-		return struct_value->_member_values[3];
-	}
-	else if(type_string == "object-type"){
-		return struct_value->_member_values[4];
-	}
-	else if (type_string == "array-type"){
-		return struct_value->_member_values[5];
-	}
-	else{
-		assert(false);
-	}
-}
-
-std::string json_value__to_compact_string(const value_t& json_value){
-	QUARK_ASSERT(json_value.is_struct() && json_value.get_struct_value()->_def == *json_value___struct_def);
-
-	const auto value = json_value__to_value(json_value);
-	return value.to_compact_string();
-}
-#endif
-
 
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -1513,40 +1333,6 @@ std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm
 	return {vm, value_t(s) };
 }
 
-
-
-/*
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    std::cout << "f(42) = " << fibonacci(42) << '\n';
-    end = std::chrono::system_clock::now();
- 
-    std::chrono::duration<double> elapsed_seconds = end-start;
-    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
- 
-    std::cout << "finished computation at " << std::ctime(&end_time)
-              << "elapsed time: " << elapsed_seconds.count() << "s\n";
-*/
-
-
-
-#if 0
-	uint64_t get_time_of_day_ms(){
-		std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double> elapsed_seconds = t - start;
-		std::time_t sec = std::chrono::high_resolution_clock::to_time_t(t);
-		return sec * 1000.0;
-/*
-		timeval time;
-		gettimeofday(&time, NULL);
-
-
-	//	QUARK_ASSERT(sizeof(int) == sizeof(int64_t));
-		int64_t ms = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-		return ms;
-*/
-	}
-#endif
 
 std::pair<interpreter_t, value_t> host__get_time_of_day(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
