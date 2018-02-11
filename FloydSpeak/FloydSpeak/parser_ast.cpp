@@ -8,27 +8,13 @@
 
 #include "parser_ast.h"
 
-#include "statements.h"
-#include "parser_value.h"
-#include "text_parser.h"
-#include "parser_primitives.h"
 
-#include <string>
-#include <memory>
-#include <map>
-#include <iostream>
-#include <cmath>
-#include "parts/sha1_class.h"
-#include "utils.h"
-#include "json_support.h"
-#include "json_writer.h"
+#include "floyd_basics.h"
+#include "statements.h"
 
 
 namespace floyd {
 	using std::vector;
-	using std::string;
-	using std::pair;
-	using std::make_shared;
 
 
 
@@ -50,14 +36,14 @@ namespace floyd {
 	}
 
 
-	json_t ast_to_json(const ast_t& ast){
+	ast_json_t ast_to_json(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
-		return json_t::make_object(
+		return ast_json_t{json_t::make_object(
 			{
-				{ "statements", statements_to_json(ast._statements) }
+				{ "statements", statements_to_json(ast._statements)._value }
 			}
-		);
+		)};
 	}
 
 

@@ -9,20 +9,12 @@
 #ifndef parser_ast_hpp
 #define parser_ast_hpp
 
-#include "quark.h"
-#include <string>
 #include <vector>
-#include <map>
-#include "json_support.h"
-#include "utils.h"
-#include "parser_primitives.h"
-#include "floyd_basics.h"
-
-struct json_t;
-
+#include "quark.h"
 
 namespace floyd {
 	struct statement_t;
+	struct ast_json_t;
 
 
 	//////////////////////////////////////////////////		ast_t
@@ -42,7 +34,7 @@ namespace floyd {
 		std::vector<std::shared_ptr<statement_t> > _statements;
 	};
 
-	json_t ast_to_json(const ast_t& ast);
+	ast_json_t ast_to_json(const ast_t& ast);
 
 
 }	//	floyd

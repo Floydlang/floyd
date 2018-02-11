@@ -1318,7 +1318,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	}
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(vm._ast) },
+		{ "ast", ast_to_json(vm._ast)._value },
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }

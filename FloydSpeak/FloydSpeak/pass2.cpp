@@ -450,7 +450,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
 	const auto pass1 = parse_json(seq_t(floyd::k_test_program_0_parserout)).first;
 	const auto pass2 = run_pass2(ast_json_t{pass1});
 	const auto pass2_output = parse_json(seq_t(floyd::k_test_program_0_pass2output)).first;
-	ut_compare_jsons(ast_to_json(pass2), pass2_output);
+	ut_compare_jsons(ast_to_json(pass2)._value, pass2_output);
 }
 
 /*

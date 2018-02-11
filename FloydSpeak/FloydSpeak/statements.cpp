@@ -171,14 +171,14 @@ namespace floyd {
 				json_t("open_range"),
 				expression_to_json(e._for->_start_expression)._value,
 				expression_to_json(e._for->_end_expression)._value,
-				statements_to_json(e._for->_body)
+				statements_to_json(e._for->_body)._value
 			})};
 		}
 		else if(e._while){
 			return ast_json_t{json_t::make_array({
 				json_t(keyword_t::k_while),
 				expression_to_json(e._while->_condition)._value,
-				statements_to_json(e._while->_body)
+				statements_to_json(e._while->_body)._value
 			})};
 		}
 		else if(e._expression){
@@ -192,12 +192,12 @@ namespace floyd {
 		}
 	}
 
-	json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e){
+	ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e){
 		std::vector<json_t> statements;
 		for(const auto& i: e){
 			statements.push_back(statement_to_json(*i)._value);
 		}
-		return json_t::make_array(statements);
+		return ast_json_t{json_t::make_array(statements)};
 	}
 
 

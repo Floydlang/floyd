@@ -709,7 +709,7 @@ value_t value_from_normalized_json(const ast_json_t& v2){
 			"func-def",
 			typeid_to_normalized_json(function_type)._value,
 			members_to_json(_args),
-			statements_to_json(_statements),
+			statements_to_json(_statements)._value,
 			typeid_to_normalized_json(_return_type)._value
 		})};
 	}
