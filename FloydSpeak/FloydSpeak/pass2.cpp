@@ -10,7 +10,7 @@
 
 #include "statement.h"
 #include "floyd_parser.h"
-#include "parser_value.h"
+#include "ast_value.h"
 #include "utils.h"
 #include "json_support.h"
 #include "json_parser.h"
@@ -439,6 +439,27 @@ ast_t run_pass2(const ast_json_t& parse_tree){
 
 
 ///////////////////////////////////////			TESTS
+
+
+
+const std::string k_test_program_0_parserout = R"(
+	[
+		[
+			"def-func",
+			{
+				"args": [],
+				"name": "main",
+				"return_type": "int",
+				"statements": [
+					[ "return", [ "k", 3, "int" ] ]
+				]
+			}
+		]
+	]
+)";
+const std::string k_test_program_0_pass2output = R"(
+	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int"]]], "int"]]] }
+)";
 
 
 /*

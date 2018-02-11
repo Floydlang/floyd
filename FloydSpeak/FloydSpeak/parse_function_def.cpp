@@ -14,6 +14,7 @@
 #include "parse_statement.h"
 #include "json_support.h"
 #include "json_parser.h"
+#include "ast_basics.h"
 
 #include <cmath>
 

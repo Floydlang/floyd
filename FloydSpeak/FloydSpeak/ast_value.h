@@ -14,9 +14,11 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "ast_basics.h"
 
 #include "floyd_basics.h"
 #include "text_parser.h"
+#include "ast_typeid.h"
 
 namespace floyd {
 	struct statement_t;

@@ -16,6 +16,7 @@
 #include "quark.h"
 #include "text_parser.h"
 #include "floyd_basics.h"
+#include "ast_typeid.h"
 
 #include <string>
 #include <vector>
@@ -83,9 +84,6 @@ namespace floyd {
 		If none are found, returns { s.str(), seq_t("") }
 	*/
 	std::pair<std::string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars);
-
-
-
 
 
 

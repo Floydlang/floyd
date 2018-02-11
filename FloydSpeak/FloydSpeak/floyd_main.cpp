@@ -19,9 +19,10 @@
 
 #include "floyd_interpreter.h"
 #include "floyd_parser.h"
-#include "parser_value.h"
+#include "ast_value.h"
 #include "json_support.h"
 #include "pass2.h"
+#include "ast_basics.h"
 
 
 //////////////////////////////////////////////////		main()

@@ -15,7 +15,7 @@ struct seq_t;
 
 namespace floyd {
 
-struct ast_json_t;
+	struct ast_json_t;
 
 	/*
 		int a = 10;

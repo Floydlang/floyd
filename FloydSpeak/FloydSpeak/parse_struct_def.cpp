@@ -6,6 +6,7 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
+#include "ast_basics.h"
 #include "parse_struct_def.h"
 
 #include "parse_expression.h"
