@@ -15,8 +15,8 @@
 #include <string>
 #include <map>
 
-#include "parser_ast.h"
-#include "expressions.h"
+#include "ast.h"
+#include "expression.h"
 #include "utils.h"
 
 struct json_t;

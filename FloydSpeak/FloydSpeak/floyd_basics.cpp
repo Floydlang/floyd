@@ -308,7 +308,7 @@ expression_type token_to_expression_type(const string& op){
 			const auto struct_def = t.get_struct();
 			return ast_json_t{json_t::make_array({
 				json_t(basetype_str),
-				typeid_to_normalized_json(struct_def)._value
+				struct_definition_to_normalized_json(struct_def)._value
 			})};
 		}
 		else if(b == base_type::k_vector){
@@ -696,7 +696,7 @@ expression_type token_to_expression_type(const string& op){
 		return s;
 	}
 
-	ast_json_t typeid_to_normalized_json(const struct_definition_t& v){
+	ast_json_t struct_definition_to_normalized_json(const struct_definition_t& v){
 		QUARK_ASSERT(v.check_invariant());
 
 		return ast_json_t{json_t::make_array({

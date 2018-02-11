@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "parser_ast.h"
+#include "ast.h"
 #include "parser_value.h"
 
 namespace floyd {

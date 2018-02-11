@@ -9,7 +9,7 @@
 #ifndef pass2_hpp
 #define pass2_hpp
 
-#include "parser_ast.h"
+#include "ast.h"
 
 namespace floyd {
 	struct ast_json_t;

@@ -6,9 +6,9 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "expressions.h"
+#include "expression.h"
 
-#include "statements.h"
+#include "statement.h"
 #include "parser_value.h"
 #include "json_writer.h"
 #include "utils.h"
@@ -27,19 +27,8 @@ using std::make_shared;
 
 string expression_to_json_string(const expression_t& e);
 
-/*
-QUARK_UNIT_TEST("", "math_operation2_expr_t==()", "", ""){
-	const auto a = expression_t::make_simple_expression__2(
-		expression_type::k_arithmetic_add__2,
-		expression_t::make_literal_int(3),
-		expression_t::make_literal_int(4));
-	const auto b = expression_t::make_simple_expression__2(
-		expression_type::k_arithmetic_add__2,
-		expression_t::make_literal_int(3),
-		expression_t::make_literal_int(4));
-	QUARK_TEST_VERIFY(a == b);
-}
-*/
+
+
 
 //////////////////////////////////////////////////		expression_t
 
@@ -70,13 +59,7 @@ bool expression_t::operator==(const expression_t& other) const {
 	QUARK_ASSERT(other.check_invariant());
 
 	if(_expr && other._expr){
-//		const auto& ta = typeid(_expr.get()).hash_code();
-//		const auto& tb = typeid(other._expr.get()).hash_code();
-
-//		if(ta != tb){
-//			return false;
-//		}
-
+		QUARK_ASSERT(false);
 /*
 		const auto lhs = dynamic_cast<const function_definition_expr_t*>(_expr.get());
 		const auto rhs = dynamic_cast<const function_definition_expr_t*>(other._expr.get());

@@ -6,11 +6,11 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "parser_ast.h"
+#include "ast.h"
 
 
 #include "floyd_basics.h"
-#include "statements.h"
+#include "statement.h"
 
 
 namespace floyd {

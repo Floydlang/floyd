@@ -6,9 +6,9 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "statements.h"
+#include "statement.h"
 
-#include "parser_ast.h"
+#include "ast.h"
 #include "parse_expression.h"
 #include "parse_function_def.h"
 #include "parse_struct_def.h"
@@ -137,7 +137,7 @@ namespace floyd {
 			return ast_json_t{json_t::make_array({
 				json_t("def-struct"),
 				json_t(e._def_struct->_name),
-				typeid_to_normalized_json(e._def_struct->_def)._value
+				struct_definition_to_normalized_json(e._def_struct->_def)._value
 			})};
 		}
 		else if(e._bind_or_assign){

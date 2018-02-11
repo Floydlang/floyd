@@ -8,7 +8,7 @@
 
 #include "parser_value.h"
 
-#include "statements.h"
+#include "statement.h"
 #include "parser_primitives.h"
 
 using std::string;
@@ -56,7 +56,7 @@ namespace floyd {
 	ast_json_t to_normalized_json(const struct_instance_t& t){
 		return ast_json_t{json_t::make_object(
 			{
-				{ "struct-def", typeid_to_normalized_json(t._def)._value },
+				{ "struct-def", struct_definition_to_normalized_json(t._def)._value },
 				{ "member_values", values_to_json_array(t._member_values) }
 			}
 		)};

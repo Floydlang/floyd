@@ -8,7 +8,7 @@
 
 #include "llvm_code_gen.h"
 
-#include "parser_ast.h"
+#include "ast.h"
 
 using namespace floyd;
 
