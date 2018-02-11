@@ -53,10 +53,10 @@ namespace floyd {
 		return "struct {" + concat_strings_with_divider(members, ",") + "}";
 	}
 
-	ast_json_t to_normalized_json(const struct_instance_t& t){
+	ast_json_t to_ast_json(const struct_instance_t& t){
 		return ast_json_t{json_t::make_object(
 			{
-				{ "struct-def", struct_definition_to_normalized_json(t._def)._value },
+				{ "struct-def", struct_definition_to_ast_json(t._def)._value },
 				{ "member_values", values_to_json_array(t._member_values) }
 			}
 		)};
@@ -540,14 +540,14 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 }
 
 
-ast_json_t value_and_type_to_normalized_json(const value_t& v){
+ast_json_t value_and_type_to_ast_json(const value_t& v){
 	return ast_json_t{json_t::make_array({
-		typeid_to_normalized_json(v.get_type())._value,
-		value_to_normalized_json(v)._value
+		typeid_to_ast_json(v.get_type())._value,
+		value_to_ast_json(v)._value
 	})};
 }
 
-ast_json_t value_to_normalized_json(const value_t& v){
+ast_json_t value_to_ast_json(const value_t& v){
 	if(v.is_null()){
 		return ast_json_t{json_t()};
 	}
@@ -567,18 +567,18 @@ ast_json_t value_to_normalized_json(const value_t& v){
 		return ast_json_t{v.get_json_value()};
 	}
 	else if(v.is_typeid()){
-		return typeid_to_normalized_json(v.get_typeid_value());
+		return typeid_to_ast_json(v.get_typeid_value());
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct_value();
-		return ast_json_t{to_normalized_json(*value)};
+		return ast_json_t{to_ast_json(*value)};
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector_value();
 		std::vector<json_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
 			const auto element_value = value->_elements[i];
-			result.push_back(value_to_normalized_json(element_value)._value);
+			result.push_back(value_to_ast_json(element_value)._value);
 		}
 		return ast_json_t{result};
 	}
@@ -586,7 +586,7 @@ ast_json_t value_to_normalized_json(const value_t& v){
 		const auto value = v.get_dict_value();
 		std::map<string, json_t> result;
 		for(const auto e: value->_elements){
-			result[e.first] = value_to_normalized_json(e.second)._value;
+			result[e.first] = value_to_ast_json(e.second)._value;
 		}
 		return ast_json_t{result};
 	}
@@ -594,7 +594,7 @@ ast_json_t value_to_normalized_json(const value_t& v){
 		const auto value = v.get_function_value();
 		return ast_json_t{json_t::make_object(
 			{
-				{ "function_type", typeid_to_normalized_json(get_function_type(value->_def))._value }
+				{ "function_type", typeid_to_ast_json(get_function_type(value->_def))._value }
 			}
 		)};
 	}
@@ -603,29 +603,29 @@ ast_json_t value_to_normalized_json(const value_t& v){
 	}
 }
 
-QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
-	quark::ut_compare(value_to_normalized_json(value_t("hello"))._value, json_t("hello"));
+QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+	quark::ut_compare(value_to_ast_json(value_t("hello"))._value, json_t("hello"));
 }
 
-QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
-	quark::ut_compare(value_to_normalized_json(value_t(123))._value, json_t(123.0));
+QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+	quark::ut_compare(value_to_ast_json(value_t(123))._value, json_t(123.0));
 }
 
-QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
-	quark::ut_compare(value_to_normalized_json(value_t(true))._value, json_t(true));
+QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+	quark::ut_compare(value_to_ast_json(value_t(true))._value, json_t(true));
 }
 
-QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
-	quark::ut_compare(value_to_normalized_json(value_t(false))._value, json_t(false));
+QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+	quark::ut_compare(value_to_ast_json(value_t(false))._value, json_t(false));
 }
 
-QUARK_UNIT_TESTQ("value_to_normalized_json()", ""){
-	quark::ut_compare(value_to_normalized_json(value_t())._value, json_t());
+QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
+	quark::ut_compare(value_to_ast_json(value_t())._value, json_t());
 }
 
 
 
-value_t value_from_normalized_json(const ast_json_t& v2){
+value_t value_from_ast_json(const ast_json_t& v2){
 	QUARK_ASSERT(v2._value.check_invariant());
 
 	const auto v = v2._value;
@@ -707,10 +707,10 @@ value_t value_from_normalized_json(const ast_json_t& v2){
 		typeid_t function_type = get_function_type(*this);
 		return ast_json_t{json_t::make_array({
 			"func-def",
-			typeid_to_normalized_json(function_type)._value,
+			typeid_to_ast_json(function_type)._value,
 			members_to_json(_args),
 			statements_to_json(_statements)._value,
-			typeid_to_normalized_json(_return_type)._value
+			typeid_to_ast_json(_return_type)._value
 		})};
 	}
 

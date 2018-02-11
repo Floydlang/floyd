@@ -292,7 +292,7 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto expression = parse_expression_all(seq_t(expression_str));
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
-	const auto statement = make_array_skip_nulls({ "bind", typeid_to_normalized_json(type)._value, identifier, expression._value, meta });
+	const auto statement = make_array_skip_nulls({ "bind", typeid_to_ast_json(type)._value, identifier, expression._value, meta });
 
 	const auto x = read_until(s, ";");
 	return { ast_json_t{statement}, x.second.rest1() };

@@ -51,7 +51,7 @@ namespace floyd {
 	};
 
 	std::string to_compact_string(const struct_instance_t& instance);
-	ast_json_t to_normalized_json(const struct_instance_t& instance);
+	ast_json_t to_ast_json(const struct_instance_t& instance);
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -868,9 +868,9 @@ namespace floyd {
 		return value_t(f);
 	}
 
-	ast_json_t value_to_normalized_json(const value_t& v);
-	value_t value_from_normalized_json(const ast_json_t& v);
-	ast_json_t value_and_type_to_normalized_json(const value_t& v);
+	ast_json_t value_to_ast_json(const value_t& v);
+	value_t value_from_ast_json(const ast_json_t& v);
+	ast_json_t value_and_type_to_ast_json(const value_t& v);
 
 }	//	floyd
 

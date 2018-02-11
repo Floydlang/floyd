@@ -137,7 +137,7 @@ namespace floyd {
 			return ast_json_t{json_t::make_array({
 				json_t("def-struct"),
 				json_t(e._def_struct->_name),
-				struct_definition_to_normalized_json(e._def_struct->_def)._value
+				struct_definition_to_ast_json(e._def_struct->_def)._value
 			})};
 		}
 		else if(e._bind_or_assign){
@@ -146,7 +146,7 @@ namespace floyd {
 			return ast_json_t{make_array_skip_nulls({
 				json_t("bind"),
 				e._bind_or_assign->_new_variable_name,
-				typeid_to_normalized_json(e._bind_or_assign->_bindtype)._value,
+				typeid_to_ast_json(e._bind_or_assign->_bindtype)._value,
 				expression_to_json(e._bind_or_assign->_expression)._value,
 				meta
 			})};

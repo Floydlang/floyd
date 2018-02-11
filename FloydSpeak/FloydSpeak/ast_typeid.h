@@ -318,9 +318,8 @@ namespace floyd {
 
 
 
-		NORMALIZED JSON
-		This is the JSON format we use to pass AST around. The normalized format means it supports roundtrip. Use
-				typeid_to_normalized_json() and typeid_from_normalized_json().
+		AST JSON
+		This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
 
 		COMPACT_STRING
 		This is a nice user-visible representation of the typeid_t. It may be lossy. It's for REPLs etc. UI.
@@ -333,8 +332,8 @@ namespace floyd {
 		??? Remove concept of typeid_t make_unresolved_type_identifier, instead use typeid_t OR identifier-string.
 	*/
 
-	ast_json_t typeid_to_normalized_json(const typeid_t& t);
-	typeid_t typeid_from_normalized_json(const ast_json_t& t);
+	ast_json_t typeid_to_ast_json(const typeid_t& t);
+	typeid_t typeid_from_ast_json(const ast_json_t& t);
 
 	std::string typeid_to_compact_string(const typeid_t& t);
 
@@ -363,7 +362,7 @@ namespace floyd {
 
 	std::string to_compact_string(const struct_definition_t& v);
 
-	ast_json_t struct_definition_to_normalized_json(const struct_definition_t& v);
+	ast_json_t struct_definition_to_ast_json(const struct_definition_t& v);
 
 	//	Returns -1 if not found.
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);

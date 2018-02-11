@@ -63,8 +63,8 @@ namespace floyd {
 			public: virtual ast_json_t expr_base__to_json() const {
 				return ast_json_t{json_t::make_array({
 					"k",
-					value_to_normalized_json(_value)._value,
-					typeid_to_normalized_json(_value.get_type())._value
+					value_to_ast_json(_value)._value,
+					typeid_to_ast_json(_value.get_type())._value
 				})};
 			}
 
@@ -516,7 +516,7 @@ namespace floyd {
 			public: virtual ast_json_t expr_base__to_json() const {
 				return ast_json_t{json_t::make_array({
 					"vector-def",
-					typeid_to_normalized_json(_element_type)._value,
+					typeid_to_ast_json(_element_type)._value,
 					expressions_to_json(_elements)._value
 				})};
 			}
@@ -565,7 +565,7 @@ namespace floyd {
 			public: virtual ast_json_t expr_base__to_json() const {
 				return ast_json_t{json_t::make_array({
 					"dict-def",
-					typeid_to_normalized_json(_value_type)._value
+					typeid_to_ast_json(_value_type)._value
 //???					expressions_to_json(_elements)
 				})};
 			}

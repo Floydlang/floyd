@@ -89,7 +89,7 @@ string make_path_string(const parser_path_t& path, const string& node_name){
 
 
 typeid_t resolve_type_name(const ast_json_t& t){
-	const auto t2 = typeid_from_normalized_json(t);
+	const auto t2 = typeid_from_ast_json(t);
 	return t2;
 }
 
