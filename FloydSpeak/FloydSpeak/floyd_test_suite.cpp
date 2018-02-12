@@ -2038,15 +2038,22 @@ QUARK_UNIT_TEST("", "json_to_string()", "", ""){
 
 
 
+QUARK_UNIT_TEST_VIP("", "any_to_json()", "", ""){
+	const auto vm = run_global(R"(
+		json_value a = [1,2,3];
+		print(a);
+	)");
+}
 
 
-QUARK_UNIT_TEST("", "any_to_json()", "", ""){
+QUARK_UNIT_TEST_VIP("", "any_to_json()", "", ""){
 	const auto vm = run_global(R"(
 		struct pixel_t { float x; float y; }
 		c = [pixel_t(100, 200), pixel_t(101, 201)];
 		json_value a = c;
 		print(a);
 	)");
+	
 /*
 	ut_compare_stringvects(vm._print_output, vector<string>{
 	});

@@ -9,15 +9,11 @@
 #include "ast_value.h"
 
 #include "statement.h"
-#include "parser_primitives.h"
 
 using std::string;
 using std::make_shared;
 
-
 namespace floyd {
-
-
 
 
 
@@ -40,20 +36,19 @@ namespace floyd {
 		return _def == other._def && _member_values == other._member_values;
 	}
 
-
 	std::string to_compact_string(const struct_instance_t& v){
 		std::vector<std::string> members;
 		for(int i = 0 ; i < v._def._members.size() ; i++){
 			const auto& def = v._def._members[i];
 			const auto& value = v._member_values[i];
 
-			const auto m = /*typeid_to_compact_string(def._type) + " " +*/ def._name + "=" + value.to_compact_string_quote_strings();
+			const auto m = /*typeid_to_compact_string(def._type) + " " +*/ def._name + "=" + to_compact_string_quote_strings(value);
 			members.push_back(m);
 		}
 		return "struct {" + concat_strings_with_divider(members, ",") + "}";
 	}
 
-	ast_json_t to_ast_json(const struct_instance_t& t){
+	ast_json_t struct_instance_to_ast_json(const struct_instance_t& t){
 		return ast_json_t{json_t::make_object(
 			{
 				{ "struct-def", struct_definition_to_ast_json(t._def)._value },
@@ -61,69 +56,6 @@ namespace floyd {
 			}
 		)};
 	}
-
-
-	//////////////////////////////////////////////////		vector_instance_t
-
-
-		bool vector_instance_t::check_invariant() const{
-			for(const auto m: _elements){
-				QUARK_ASSERT(m.check_invariant());
-				QUARK_ASSERT(m.get_type() == _element_type);
-			}
-			return true;
-		}
-
-		bool vector_instance_t::operator==(const vector_instance_t& other) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(other.check_invariant());
-
-			return _element_type == other._element_type && _elements == other._elements;
-		}
-
-
-		std::string to_compact_string(const vector_instance_t& instance){
-			std::vector<std::string> elements;
-			for(const auto e: instance._elements){
-				const auto es = e.to_compact_string_quote_strings();
-				elements.push_back(es);
-			}
-			return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
-		}
-
-
-//////////////////////////////////////////////////		dict_instance_t
-
-
-bool dict_instance_t::check_invariant() const{
-	for(const auto m: _elements){
-		QUARK_ASSERT(m.second.check_invariant());
-//		QUARK_ASSERT(m.second.get_type() == _value_type);
-	}
-	return true;
-}
-
-bool dict_instance_t::operator==(const dict_instance_t& other) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(other.check_invariant());
-
-	return _value_type == other._value_type && _elements == other._elements;
-}
-
-
-std::string to_compact_string(const dict_instance_t& instance){
-	std::vector<std::string> elements;
-	for(const auto e: instance._elements){
-		const auto key_str = quote(e.first);
-		const auto value_str = e.second.to_compact_string_quote_strings();
-		const auto es = key_str + ": " + value_str;
-		elements.push_back(es);
-	}
-	return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "{" + concat_strings_with_divider(elements, ",") + "}";
-}
-
-
-
 
 
 	//////////////////////////////////////		vector_def_t
@@ -146,6 +78,33 @@ std::string to_compact_string(const dict_instance_t& instance){
 	}
 
 
+	//////////////////////////////////////////////////		vector_instance_t
+
+
+	bool vector_instance_t::check_invariant() const{
+		for(const auto m: _elements){
+			QUARK_ASSERT(m.check_invariant());
+			QUARK_ASSERT(m.get_type() == _element_type);
+		}
+		return true;
+	}
+
+	bool vector_instance_t::operator==(const vector_instance_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return _element_type == other._element_type && _elements == other._elements;
+	}
+
+
+	std::string to_compact_string(const vector_instance_t& instance){
+		std::vector<std::string> elements;
+		for(const auto e: instance._elements){
+			const auto es = to_compact_string_quote_strings(e);
+			elements.push_back(es);
+		}
+		return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
+	}
 
 
 
@@ -171,7 +130,105 @@ std::string to_compact_string(const dict_instance_t& instance){
 
 
 
+	//////////////////////////////////////////////////		dict_instance_t
 
+
+	bool dict_instance_t::check_invariant() const{
+		for(const auto m: _elements){
+			QUARK_ASSERT(m.second.check_invariant());
+	//		QUARK_ASSERT(m.second.get_type() == _value_type);
+		}
+		return true;
+	}
+
+	bool dict_instance_t::operator==(const dict_instance_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return _value_type == other._value_type && _elements == other._elements;
+	}
+
+
+	std::string to_compact_string(const dict_instance_t& instance){
+		std::vector<std::string> elements;
+		for(const auto e: instance._elements){
+			const auto key_str = quote(e.first);
+			const auto value_str = to_compact_string_quote_strings(e.second);
+			const auto es = key_str + ": " + value_str;
+			elements.push_back(es);
+		}
+		return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "{" + concat_strings_with_divider(elements, ",") + "}";
+	}
+
+
+
+	//////////////////////////////////////////////////		function_definition_t
+
+
+	function_definition_t::function_definition_t(
+		const std::vector<member_t>& args,
+		const std::vector<std::shared_ptr<statement_t>> statements,
+		const typeid_t& return_type
+	)
+	:
+		_args(args),
+		_statements(statements),
+		_host_function(0),
+		_return_type(return_type)
+	{
+	}
+
+	function_definition_t::function_definition_t(
+		const std::vector<member_t>& args,
+		const int host_function,
+		const typeid_t& return_type
+	)
+	:
+		_args(args),
+		_host_function(host_function),
+		_return_type(return_type)
+	{
+	}
+
+	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
+		return
+			lhs._args == rhs._args
+			&& compare_shared_value_vectors(lhs._statements, rhs._statements)
+			&& lhs._host_function == rhs._host_function
+			&& lhs._return_type == rhs._return_type;
+	}
+
+	typeid_t get_function_type(const function_definition_t& f){
+		return typeid_t::make_function(f._return_type, get_member_types(f._args));
+	}
+
+	std::string to_string(const function_definition_t& v){
+		return "???missing impl for to_string(function_definition_t)";
+/*
+		auto s = _parts[0].to_string() + " (";
+
+		//??? doesn't work when size() == 2, that is ONE argument.
+		if(_parts.size() > 2){
+			for(int i = 1 ; i < _parts.size() - 1 ; i++){
+				s = s + _parts[i].to_string() + ",";
+			}
+			s = s + _parts[_parts.size() - 1].to_string();
+		}
+		s = s + ")";
+		return s;
+*/
+	}
+
+	ast_json_t function_def_to_ast_json(const function_definition_t& v) {
+		typeid_t function_type = get_function_type(v);
+		return ast_json_t{json_t::make_array({
+			"func-def",
+			typeid_to_ast_json(function_type)._value,
+			members_to_json(v._args),
+			statements_to_json(v._statements)._value,
+			typeid_to_ast_json(v._return_type)._value
+		})};
+	}
 
 
 
@@ -189,9 +246,6 @@ std::string to_compact_string(const dict_instance_t& instance){
 
 		return _def == other._def;
 	}
-
-
-
 
 
 
@@ -424,9 +478,78 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 
 
 
+std::string to_compact_string(const value_t& value) {
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto base_type = value.get_type().get_base_type();
+	if(base_type == base_type::k_null){
+		return "<null>";
+	}
+	else if(base_type == base_type::k_bool){
+		return value.get_bool_value() ? keyword_t::k_true : keyword_t::k_false;
+	}
+	else if(base_type == base_type::k_int){
+		char temp[200 + 1];//### Use C++ function instead.
+		sprintf(temp, "%d", value.get_int_value());
+		return std::string(temp);
+	}
+	else if(base_type == base_type::k_float){
+		return float_to_string(value.get_float_value());
+	}
+	else if(base_type == base_type::k_string){
+		return value.get_string_value();
+	}
+	else if(base_type == base_type::k_json_value){
+		return json_to_compact_string(value.get_json_value());
+	}
+
+	else if(base_type == base_type::k_typeid){
+		return floyd::typeid_to_compact_string(value.get_typeid_value());
+	}
+	else if(base_type == base_type::k_struct){
+		return floyd::to_compact_string(*value.get_struct_value());
+	}
+	else if(base_type == base_type::k_vector){
+		return floyd::to_compact_string(*value.get_vector_value());
+	}
+	else if(base_type == base_type::k_dict){
+		return floyd::to_compact_string(*value.get_dict_value());
+	}
+	else if(base_type == base_type::k_function){
+		return floyd::typeid_to_compact_string(value.get_type());
+	}
+	else if(base_type == base_type::k_unresolved_type_identifier){
+		QUARK_ASSERT(false);
+		return "";
+	}
+
+	else{
+		return "??";
+	}
+}
+
+std::string to_compact_string_quote_strings(const value_t& value) {
+	const auto s = to_compact_string(value);
+	if(value.is_string()){
+		return "\"" + s + "\"";
+	}
+	else{
+		return s;
+	}
+}
+
+std::string value_and_type_to_string(const value_t& value) {
+	QUARK_ASSERT(value.check_invariant());
+
+	if(value.is_null()){
+		return "<null>";
+	}
+	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
+	return type_string + ": " + to_compact_string_quote_strings(value);
+}
 
 
-	//////////////////////////////////////////////////		value_t
+
 
 
 //??? swap(), operator=, copy-constructor.
@@ -445,8 +568,8 @@ QUARK_UNIT_TESTQ("value_t()", "null"){
 
 	QUARK_TEST_VERIFY(a == value_t());
 	QUARK_TEST_VERIFY(a != value_t("test"));
-	QUARK_TEST_VERIFY(a.to_compact_string() == "<null>");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "<null>");
+	QUARK_TEST_VERIFY(to_compact_string(a) == "<null>");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "<null>");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "bool - true"){
@@ -463,8 +586,8 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 
 	QUARK_TEST_VERIFY(a == value_t(true));
 	QUARK_TEST_VERIFY(a != value_t(false));
-	QUARK_TEST_VERIFY(a.to_compact_string() == keyword_t::k_true);
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "bool: true");
+	QUARK_TEST_VERIFY(to_compact_string(a) == keyword_t::k_true);
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: true");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "bool - false"){
@@ -481,8 +604,8 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 
 	QUARK_TEST_VERIFY(a == value_t(false));
 	QUARK_TEST_VERIFY(a != value_t(true));
-	QUARK_TEST_VERIFY(a.to_compact_string() == keyword_t::k_false);
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "bool: false");
+	QUARK_TEST_VERIFY(to_compact_string(a) == keyword_t::k_false);
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: false");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "int"){
@@ -499,8 +622,8 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 
 	QUARK_TEST_VERIFY(a == value_t(13));
 	QUARK_TEST_VERIFY(a != value_t(14));
-	QUARK_TEST_VERIFY(a.to_compact_string() == "13");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "int: 13");
+	QUARK_TEST_VERIFY(to_compact_string(a) == "13");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "int: 13");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "float"){
@@ -517,8 +640,8 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 
 	QUARK_TEST_VERIFY(a == value_t(13.5f));
 	QUARK_TEST_VERIFY(a != value_t(14.0f));
-	QUARK_TEST_VERIFY(a.to_compact_string() == "13.5");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "float: 13.5");
+	QUARK_TEST_VERIFY(to_compact_string(a) == "13.5");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "float: 13.5");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "string"){
@@ -535,8 +658,8 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 
 	QUARK_TEST_VERIFY(a == value_t("xyz"));
 	QUARK_TEST_VERIFY(a != value_t("xyza"));
-	QUARK_TEST_VERIFY(a.to_compact_string() == "xyz");
-	QUARK_TEST_VERIFY(a.value_and_type_to_string() == "string: \"xyz\"");
+	QUARK_TEST_VERIFY(to_compact_string(a) == "xyz");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "string: \"xyz\"");
 }
 
 
@@ -571,7 +694,7 @@ ast_json_t value_to_ast_json(const value_t& v){
 	}
 	else if(v.is_struct()){
 		const auto value = v.get_struct_value();
-		return ast_json_t{to_ast_json(*value)};
+		return ast_json_t{struct_instance_to_ast_json(*value)};
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector_value();
@@ -624,7 +747,7 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 }
 
 
-
+//??? Extend to support all Floyd types, including structs!
 value_t value_from_ast_json(const ast_json_t& v2){
 	QUARK_ASSERT(v2._value.check_invariant());
 
@@ -669,79 +792,6 @@ value_t value_from_ast_json(const ast_json_t& v2){
 		QUARK_ASSERT(false);
 	}
 }
-
-
-
-
-
-
-	//////////////////////////////////////////////////		function_definition_t
-
-
-	function_definition_t::function_definition_t(
-		const std::vector<member_t>& args,
-		const std::vector<std::shared_ptr<statement_t>> statements,
-		const typeid_t& return_type
-	)
-	:
-		_args(args),
-		_statements(statements),
-		_host_function(0),
-		_return_type(return_type)
-	{
-	}
-
-	function_definition_t::function_definition_t(
-		const std::vector<member_t>& args,
-		const int host_function,
-		const typeid_t& return_type
-	)
-	:
-		_args(args),
-		_host_function(host_function),
-		_return_type(return_type)
-	{
-	}
-
-	ast_json_t function_definition_t::to_json() const {
-		typeid_t function_type = get_function_type(*this);
-		return ast_json_t{json_t::make_array({
-			"func-def",
-			typeid_to_ast_json(function_type)._value,
-			members_to_json(_args),
-			statements_to_json(_statements)._value,
-			typeid_to_ast_json(_return_type)._value
-		})};
-	}
-
-	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
-		return
-			lhs._args == rhs._args
-			&& compare_shared_value_vectors(lhs._statements, rhs._statements)
-			&& lhs._host_function == rhs._host_function
-			&& lhs._return_type == rhs._return_type;
-	}
-
-	typeid_t get_function_type(const function_definition_t& f){
-		return typeid_t::make_function(f._return_type, get_member_types(f._args));
-	}
-
-	std::string to_string(const function_definition_t& v){
-		return "???missing impl for to_string(function_definition_t)";
-/*
-		auto s = _parts[0].to_string() + " (";
-
-		//??? doesn't work when size() == 2, that is ONE argument.
-		if(_parts.size() > 2){
-			for(int i = 1 ; i < _parts.size() - 1 ; i++){
-				s = s + _parts[i].to_string() + ",";
-			}
-			s = s + _parts[_parts.size() - 1].to_string();
-		}
-		s = s + ")";
-		return s;
-*/
-	}
 
 
 }	//	floyd

@@ -327,7 +327,7 @@ namespace floyd {
 			}
 
 			public: virtual ast_json_t expr_base__to_json() const {
-				return ast_json_t{_def.to_json()};
+				return ast_json_t{function_def_to_ast_json(_def)};
 			}
 
 

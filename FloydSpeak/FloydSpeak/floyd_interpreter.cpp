@@ -1083,7 +1083,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	}
 
 	const auto instance = make_struct_value(struct_type, def, values);
-	QUARK_TRACE(instance.to_compact_string());
+	QUARK_TRACE(to_compact_string(instance));
 
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
@@ -1280,7 +1280,7 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 	else
 #endif
 	{
-		const auto s = value.to_compact_string();
+		const auto s = to_compact_string(value);
 		printf("%s\n", s.c_str());
 		vm2._print_output.push_back(s);
 	}
@@ -1317,7 +1317,7 @@ std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const
 	}
 
 	const auto& value = args[0];
-	const auto a = value.to_compact_string();
+	const auto a = to_compact_string(value);
 	return {vm, value_t(a) };
 }
 std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm, const std::vector<value_t>& args){

@@ -15,17 +15,14 @@
 #include <string>
 #include <map>
 #include "ast_basics.h"
+#include "ast_typeid.h"
 
 #include "floyd_basics.h"
 #include "text_parser.h"
-#include "ast_typeid.h"
 
 namespace floyd {
 	struct statement_t;
-	struct expression_t;
 	struct value_t;
-	struct interpreter_t;
-	struct function_definition_t;
 
 
 	//////////////////////////////////////////////////		struct_instance_t
@@ -51,7 +48,26 @@ namespace floyd {
 	};
 
 	std::string to_compact_string(const struct_instance_t& instance);
-	ast_json_t to_ast_json(const struct_instance_t& instance);
+	ast_json_t struct_instance_to_ast_json(const struct_instance_t& instance);
+
+
+	//////////////////////////////////////		vector_def_t
+
+
+	struct vector_def_t {
+		public: vector_def_t(floyd::typeid_t element_type) :
+			_element_type(element_type)
+		{
+		}
+		public: bool check_invariant() const;
+		public: bool operator==(const vector_def_t& other) const;
+
+
+		/////////////////////////////		STATE
+		public: floyd::typeid_t _element_type;
+	};
+
+	ast_json_t vector_def_to_ast_json(const vector_def_t& s);
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -75,6 +91,27 @@ namespace floyd {
 	};
 
 	std::string to_compact_string(const vector_instance_t& instance);
+
+
+
+
+	//////////////////////////////////////		dict_def_t
+
+
+	struct dict_def_t {
+		public: dict_def_t(floyd::typeid_t value_type) :
+			_value_type(value_type)
+		{
+		}
+		public: bool check_invariant() const;
+		public: bool operator==(const dict_def_t& other) const;
+
+
+		/////////////////////////////		STATE
+		public: floyd::typeid_t _value_type;
+	};
+
+	ast_json_t dict_def_to_ast_json(const dict_def_t& s);
 
 
 
@@ -103,8 +140,6 @@ namespace floyd {
 
 
 
-
-
 	//////////////////////////////////////////////////		function_definition_t
 
 
@@ -120,8 +155,6 @@ namespace floyd {
 			int host_function,
 			const typeid_t& return_type
 		);
-		public: ast_json_t to_json() const;
-
 
 		const std::vector<member_t> _args;
 		const std::vector<std::shared_ptr<statement_t>> _statements;
@@ -132,6 +165,7 @@ namespace floyd {
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
 	std::string to_string(const function_definition_t& v);
+	ast_json_t function_def_to_ast_json(const function_definition_t& v);
 
 	typeid_t get_function_type(const function_definition_t& f);
 
@@ -147,48 +181,6 @@ namespace floyd {
 
 		public: function_definition_t _def;
 	};
-
-
-
-
-
-	//////////////////////////////////////		vector_def_t
-
-
-	struct vector_def_t {
-		public: vector_def_t(floyd::typeid_t element_type) :
-			_element_type(element_type)
-		{
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const vector_def_t& other) const;
-
-
-		/////////////////////////////		STATE
-		public: floyd::typeid_t _element_type;
-	};
-
-	ast_json_t vector_def_to_json(const vector_def_t& s);
-
-
-	//////////////////////////////////////		dict_def_t
-
-
-	struct dict_def_t {
-		public: dict_def_t(floyd::typeid_t value_type) :
-			_value_type(value_type)
-		{
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const dict_def_t& other) const;
-
-
-		/////////////////////////////		STATE
-		public: floyd::typeid_t _value_type;
-	};
-
-	ast_json_t dict_def_to_json(const dict_def_t& s);
-
 
 
 
@@ -408,7 +400,6 @@ namespace floyd {
 
 
 
-
 		public: explicit value_t(const typeid_t& type) :
 			_typeid(typeid_t::make_typeid(type))
 		{
@@ -548,89 +539,6 @@ namespace floyd {
 			return !(*this == other);
 		}
 
-		/*
-			"true"
-			"0"
-			"1003"
-			"Hello, world"
-			Notice, strings don't get wrapped in "".
-		*/
-		std::string to_compact_string() const {
-			QUARK_ASSERT(check_invariant());
-
-			const auto base_type = _typeid.get_base_type();
-			if(base_type == base_type::k_null){
-				return "<null>";
-			}
-			else if(base_type == base_type::k_bool){
-				return _bool ? keyword_t::k_true : keyword_t::k_false;
-			}
-			else if(base_type == base_type::k_int){
-				char temp[200 + 1];//### Use C++ function instead.
-				sprintf(temp, "%d", _int);
-				return std::string(temp);
-			}
-			else if(base_type == base_type::k_float){
-				return float_to_string(_float);
-			}
-			else if(base_type == base_type::k_string){
-				return _string;
-			}
-			else if(base_type == base_type::k_json_value){
-				return json_to_compact_string(*_json_value);
-			}
-
-			else if(base_type == base_type::k_typeid){
-				return floyd::typeid_to_compact_string(_typeid);
-			}
-			else if(base_type == base_type::k_struct){
-				return floyd::to_compact_string(*_struct);
-			}
-			else if(base_type == base_type::k_vector){
-				return floyd::to_compact_string(*_vector);
-			}
-			else if(base_type == base_type::k_dict){
-				return floyd::to_compact_string(*_dict);
-			}
-			else if(base_type == base_type::k_function){
-				return floyd::typeid_to_compact_string(_typeid);
-			}
-			else if(base_type == base_type::k_unresolved_type_identifier){
-				QUARK_ASSERT(false);
-				return "";
-			}
-
-			else{
-				return "??";
-			}
-		}
-
-		//	Special handling of strings, we want to wrap in "".
-		std::string to_compact_string_quote_strings() const {
-			const auto s = to_compact_string();
-			if(is_string()){
-				return "\"" + s + "\"";
-			}
-			else{
-				return s;
-			}
-		}
-
-		/*
-			bool: "true"
-			int: "0"
-			string: "1003"
-			string: "Hello, world"
-		*/
-		std::string value_and_type_to_string() const {
-			QUARK_ASSERT(check_invariant());
-
-			if(is_null()){
-				return "<null>";
-			}
-			std::string type_string = floyd::typeid_to_compact_string(_typeid);
-			return type_string + ": " + to_compact_string_quote_strings();
-		}
 
 		public: typeid_t get_type() const{
 			QUARK_ASSERT(check_invariant());
@@ -831,6 +739,29 @@ namespace floyd {
 		private: std::shared_ptr<dict_instance_t> _dict;
 		private: std::shared_ptr<const function_instance_t> _function;
 	};
+
+
+
+
+	/*
+		"true"
+		"0"
+		"1003"
+		"Hello, world"
+		Notice, strings don't get wrapped in "".
+	*/
+	std::string to_compact_string(const value_t& value);
+
+	//	Special handling of strings, we want to wrap in "".
+	std::string to_compact_string_quote_strings(const value_t& value);
+
+	/*
+		bool: "true"
+		int: "0"
+		string: "1003"
+		string: "Hello, world"
+	*/
+	std::string value_and_type_to_string(const value_t& value);
 
 
 	inline value_t make_json_value(const json_t& v){

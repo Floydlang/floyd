@@ -189,7 +189,6 @@ namespace floyd {
 
 
 
-
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
 			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 			std::vector<typeid_t> parts = { ret };
@@ -285,7 +284,6 @@ namespace floyd {
 
 
 
-
 	//////////////////////////////////////		FORMATS
 
 	/*
@@ -343,7 +341,6 @@ namespace floyd {
 
 
 
-
 	//////////////////////////////////////////////////		struct_definition_t
 
 
@@ -370,7 +367,6 @@ namespace floyd {
 
 
 
-
 	//////////////////////////////////////		member_t
 
 	/*
@@ -393,9 +389,6 @@ namespace floyd {
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 	json_t members_to_json(const std::vector<member_t>& members);
 	std::vector<member_t> members_from_json(const json_t& members);
-
-
-
 
 }
 
