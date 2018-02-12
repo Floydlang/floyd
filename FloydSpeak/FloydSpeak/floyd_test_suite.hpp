@@ -9,6 +9,5 @@
 #ifndef floyd_test_suite_hpp
 #define floyd_test_suite_hpp
 
-#include <stdio.h>
 
 #endif /* floyd_test_suite_hpp */

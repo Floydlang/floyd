@@ -16,7 +16,6 @@ using std::make_shared;
 namespace floyd {
 
 
-
 	//////////////////////////////////////////////////		struct_instance_t
 
 
@@ -36,7 +35,7 @@ namespace floyd {
 		return _def == other._def && _member_values == other._member_values;
 	}
 
-	std::string to_compact_string(const struct_instance_t& v){
+	std::string struct_instance_to_compact_string(const struct_instance_t& v){
 		std::vector<std::string> members;
 		for(int i = 0 ; i < v._def._members.size() ; i++){
 			const auto& def = v._def._members[i];
@@ -48,14 +47,6 @@ namespace floyd {
 		return "struct {" + concat_strings_with_divider(members, ",") + "}";
 	}
 
-	ast_json_t struct_instance_to_ast_json(const struct_instance_t& t){
-		return ast_json_t{json_t::make_object(
-			{
-				{ "struct-def", struct_definition_to_ast_json(t._def)._value },
-				{ "member_values", values_to_json_array(t._member_values) }
-			}
-		)};
-	}
 
 
 	//////////////////////////////////////		vector_def_t
@@ -97,7 +88,7 @@ namespace floyd {
 	}
 
 
-	std::string to_compact_string(const vector_instance_t& instance){
+	std::string vector_instance_to_compact_string(const vector_instance_t& instance){
 		std::vector<std::string> elements;
 		for(const auto e: instance._elements){
 			const auto es = to_compact_string_quote_strings(e);
@@ -149,7 +140,7 @@ namespace floyd {
 	}
 
 
-	std::string to_compact_string(const dict_instance_t& instance){
+	std::string dict_instance_to_compact_string(const dict_instance_t& instance){
 		std::vector<std::string> elements;
 		for(const auto e: instance._elements){
 			const auto key_str = quote(e.first);
@@ -202,23 +193,6 @@ namespace floyd {
 		return typeid_t::make_function(f._return_type, get_member_types(f._args));
 	}
 
-	std::string to_string(const function_definition_t& v){
-		return "???missing impl for to_string(function_definition_t)";
-/*
-		auto s = _parts[0].to_string() + " (";
-
-		//??? doesn't work when size() == 2, that is ONE argument.
-		if(_parts.size() > 2){
-			for(int i = 1 ; i < _parts.size() - 1 ; i++){
-				s = s + _parts[i].to_string() + ",";
-			}
-			s = s + _parts[_parts.size() - 1].to_string();
-		}
-		s = s + ")";
-		return s;
-*/
-	}
-
 	ast_json_t function_def_to_ast_json(const function_definition_t& v) {
 		typeid_t function_type = get_function_type(v);
 		return ast_json_t{json_t::make_array({
@@ -246,9 +220,6 @@ namespace floyd {
 
 		return _def == other._def;
 	}
-
-
-
 
 
 int limit(int value, int min, int max){
@@ -279,7 +250,6 @@ QUARK_UNIT_TESTQ("compare_string()", ""){
 }
 
 
-
 int value_t::compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
@@ -298,7 +268,6 @@ int value_t::compare_struct_true_deep(const struct_instance_t& left, const struc
 	}
 	return 0;
 }
-
 
 //	Compare vector element by element.
 //	### Think more of equality when vectors have different size and shared elements are equal.
@@ -332,8 +301,6 @@ bool map_compare (Map const &lhs, Map const &rhs) {
         && std::equal(lhs.begin(), lhs.end(),
                       rhs.begin());
 }
-
-
 
 
 int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& right){
@@ -375,7 +342,6 @@ int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& r
 		QUARK_ASSERT(false)
 	}
 }
-
 
 
 int compare_json_values(const json_t& lhs, const json_t& rhs){
@@ -477,7 +443,6 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 }
 
 
-
 std::string to_compact_string(const value_t& value) {
 	QUARK_ASSERT(value.check_invariant());
 
@@ -507,13 +472,13 @@ std::string to_compact_string(const value_t& value) {
 		return floyd::typeid_to_compact_string(value.get_typeid_value());
 	}
 	else if(base_type == base_type::k_struct){
-		return floyd::to_compact_string(*value.get_struct_value());
+		return struct_instance_to_compact_string(*value.get_struct_value());
 	}
 	else if(base_type == base_type::k_vector){
-		return floyd::to_compact_string(*value.get_vector_value());
+		return vector_instance_to_compact_string(*value.get_vector_value());
 	}
 	else if(base_type == base_type::k_dict){
-		return floyd::to_compact_string(*value.get_dict_value());
+		return dict_instance_to_compact_string(*value.get_dict_value());
 	}
 	else if(base_type == base_type::k_function){
 		return floyd::typeid_to_compact_string(value.get_type());
@@ -547,7 +512,6 @@ std::string value_and_type_to_string(const value_t& value) {
 	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
 	return type_string + ": " + to_compact_string_quote_strings(value);
 }
-
 
 
 
@@ -693,8 +657,13 @@ ast_json_t value_to_ast_json(const value_t& v){
 		return typeid_to_ast_json(v.get_typeid_value());
 	}
 	else if(v.is_struct()){
-		const auto value = v.get_struct_value();
-		return ast_json_t{struct_instance_to_ast_json(*value)};
+		const auto i = v.get_struct_value();
+		return ast_json_t{json_t::make_object(
+			{
+				{ "struct-def", struct_definition_to_ast_json(i->_def)._value },
+				{ "member_values", values_to_json_array(i->_member_values) }
+			}
+		)};
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector_value();

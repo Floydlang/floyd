@@ -47,9 +47,6 @@ namespace floyd {
 		public: std::vector<value_t> _member_values;
 	};
 
-	std::string to_compact_string(const struct_instance_t& instance);
-	ast_json_t struct_instance_to_ast_json(const struct_instance_t& instance);
-
 
 	//////////////////////////////////////		vector_def_t
 
@@ -66,8 +63,6 @@ namespace floyd {
 		/////////////////////////////		STATE
 		public: floyd::typeid_t _element_type;
 	};
-
-	ast_json_t vector_def_to_ast_json(const vector_def_t& s);
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -90,10 +85,6 @@ namespace floyd {
 		std::vector<value_t> _elements;
 	};
 
-	std::string to_compact_string(const vector_instance_t& instance);
-
-
-
 
 	//////////////////////////////////////		dict_def_t
 
@@ -110,9 +101,6 @@ namespace floyd {
 		/////////////////////////////		STATE
 		public: floyd::typeid_t _value_type;
 	};
-
-	ast_json_t dict_def_to_ast_json(const dict_def_t& s);
-
 
 
 	//////////////////////////////////////////////////		dict_instance_t
@@ -134,9 +122,6 @@ namespace floyd {
 		typeid_t _value_type;
 		std::map<std::string, value_t> _elements;
 	};
-
-	std::string to_compact_string(const dict_instance_t& instance);
-
 
 
 
@@ -164,7 +149,7 @@ namespace floyd {
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
-	std::string to_string(const function_definition_t& v);
+	//??? lose this
 	ast_json_t function_def_to_ast_json(const function_definition_t& v);
 
 	typeid_t get_function_type(const function_definition_t& f);
