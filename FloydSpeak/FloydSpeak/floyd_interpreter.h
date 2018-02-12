@@ -49,7 +49,7 @@ namespace floyd {
 			return { statement_result_t::k_passive_expression_output, output_value };
 		}
 		public: static statement_result_t make_no_output(){
-			return { statement_result_t::k_passive_expression_output, value_t() };
+			return { statement_result_t::k_passive_expression_output, value_t::make_null() };
 		}
 
 		private: statement_result_t(output_type type, const value_t& output) :

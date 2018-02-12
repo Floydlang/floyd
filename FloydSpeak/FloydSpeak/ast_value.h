@@ -175,9 +175,9 @@ namespace floyd {
 
 		- Values of basic types like ints and strings
 		- Struct instances
-		- Function "pointers"
 		- Vector instances
 		- Dictionary instances
+		- Function "pointers"
 
 		NOTICE: Encoding is very inefficient at the moment.
 	*/
@@ -191,28 +191,28 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(bool value) :
+		private: explicit value_t(bool value) :
 			_typeid(typeid_t::make_bool()),
 			_bool(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(int value) :
+		private: explicit value_t(int value) :
 			_typeid(typeid_t::make_int()),
 			_int(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: value_t(float value) :
+		private: value_t(float value) :
 			_typeid(typeid_t::make_float()),
 			_float(value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(const char s[]) :
+		private: explicit value_t(const char s[]) :
 			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
@@ -221,14 +221,14 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(const std::string& s) :
+		private: explicit value_t(const std::string& s) :
 			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(const std::shared_ptr<json_t>& s) :
+		private: explicit value_t(const std::shared_ptr<json_t>& s) :
 			_typeid(typeid_t::make_json_value()),
 			_json_value(s)
 		{
@@ -237,7 +237,7 @@ namespace floyd {
 
 
 
-		public: explicit value_t(const typeid_t& type) :
+		private: explicit value_t(const typeid_t& type) :
 			_typeid(typeid_t::make_typeid(type))
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -245,7 +245,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(const typeid_t& struct_type, const std::shared_ptr<struct_instance_t>& instance) :
+		private: explicit value_t(const typeid_t& struct_type, const std::shared_ptr<struct_instance_t>& instance) :
 			_typeid(struct_type),
 			_struct(instance)
 		{
@@ -255,7 +255,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(const std::shared_ptr<vector_instance_t>& instance) :
+		private: explicit value_t(const std::shared_ptr<vector_instance_t>& instance) :
 			_typeid(typeid_t::make_vector(instance->_element_type)),
 			_vector(instance)
 		{
@@ -264,7 +264,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(const std::shared_ptr<dict_instance_t>& instance) :
+		private: explicit value_t(const std::shared_ptr<dict_instance_t>& instance) :
 			_typeid(typeid_t::make_dict(instance->_value_type)),
 			_dict(instance)
 		{
@@ -273,7 +273,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: explicit value_t(const std::shared_ptr<function_instance_t>& function_instance) :
+		private: explicit value_t(const std::shared_ptr<function_instance_t>& function_instance) :
 			_typeid(get_function_type(function_instance->_def)),
 			_function(function_instance)
 		{
@@ -282,7 +282,9 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_t(const value_t& other):
+
+
+		public: value_t(const value_t& other):
 			_typeid(other._typeid),
 
 			_bool(other._bool),
@@ -300,7 +302,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_t& operator=(const value_t& other){
+		public: value_t& operator=(const value_t& other){
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
 
@@ -360,6 +362,10 @@ namespace floyd {
 			}
 		}
 
+		public: bool operator!=(const value_t& other) const{
+			return !(*this == other);
+		}
+
 		/*
 			diff == 0: equal
 			diff == 1: left side is bigger
@@ -372,9 +378,6 @@ namespace floyd {
 		*/
 		public: static int compare_value_true_deep(const value_t& left, const value_t& right);
 
-		public: bool operator!=(const value_t& other) const{
-			return !(*this == other);
-		}
 
 
 		public: typeid_t get_type() const{
@@ -382,8 +385,6 @@ namespace floyd {
 
 			return _typeid;
 		}
-
-
 
 
 
@@ -426,6 +427,7 @@ namespace floyd {
 			return _int;
 		}
 
+		public: static value_t make_float(float value);
 		public: bool is_float() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -440,6 +442,10 @@ namespace floyd {
 			return _float;
 		}
 
+		public: static value_t make_string(const std::string& value);
+		public: static inline value_t make_string(const char value[]){
+			return make_string(std::string(value));
+		}
 		public: bool is_string() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -546,7 +552,6 @@ namespace floyd {
 
 
 
-
 		public: void swap(value_t& other){
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
@@ -570,7 +575,8 @@ namespace floyd {
 		private: static int compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right);
 
 
-		////////////////		STATE
+		////////////////////		STATE
+
 		private: typeid_t _typeid;
 
 		private: bool _bool = false;

@@ -87,19 +87,19 @@ expression_type expression_t::get_operation() const{
 
 
 expression_t expression_t::make_literal_null(){
-	return make_literal(value_t());
+	return make_literal(value_t::make_null());
 }
 expression_t expression_t::make_literal_int(const int i){
-	return make_literal(value_t(i));
+	return make_literal(value_t::make_int(i));
 }
 expression_t expression_t::make_literal_bool(const bool i){
-	return make_literal(value_t(i));
+	return make_literal(value_t::make_bool(i));
 }
 expression_t expression_t::make_literal_float(const float i){
-	return make_literal(value_t(i));
+	return make_literal(value_t::make_float(i));
 }
 expression_t expression_t::make_literal_string(const std::string& s){
-	return make_literal(value_t(s));
+	return make_literal(value_t::make_string(s));
 }
 
 

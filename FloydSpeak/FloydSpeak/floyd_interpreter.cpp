@@ -296,7 +296,7 @@ namespace {
 			const auto end_value = end_value0.second.get_literal().get_int_value();
 
 			for(int x = start_value ; x <= end_value ; x++){
-				const std::map<std::string, std::pair<value_t, bool>> values = { { s->_iterator_name, std::pair<value_t, bool>(value_t(x), false) } };
+				const std::map<std::string, std::pair<value_t, bool>> values = { { s->_iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
 				const auto result = execute_statements_in_env(vm2, s->_body, values);
 				vm2 = result.first;
 				const auto return_value = result.second;
@@ -477,7 +477,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 						}
 						else{
 							const char ch = instance[lookup_index];
-							const auto value2 = value_t(string(1, ch));
+							const auto value2 = value_t::make_string(string(1, ch));
 							return { vm2, expression_t::make_literal(value2)};
 						}
 					}
@@ -1286,7 +1286,7 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 		vm2._print_output.push_back(s);
 	}
 
-	return {vm2, value_t() };
+	return {vm2, value_t::make_null() };
 }
 
 std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -1306,7 +1306,7 @@ std::pair<interpreter_t, value_t> host__assert(const interpreter_t& vm, const st
 		vm2._print_output.push_back("Assertion failed.");
 		throw std::runtime_error("Floyd assertion failed.");
 	}
-	return {vm2, value_t() };
+	return {vm2, value_t::make_null() };
 }
 
 //	string to_string(value_t)
@@ -1319,7 +1319,7 @@ std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const
 
 	const auto& value = args[0];
 	const auto a = to_compact_string(value);
-	return {vm, value_t(a) };
+	return {vm, value_t::make_string(a) };
 }
 std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1331,7 +1331,7 @@ std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm
 	const auto& value = args[0];
 	const auto json = value_to_ast_json(value);
 	const auto s = json_to_pretty_string(json._value, 0, pretty_t{80, 4});
-	return {vm, value_t(s) };
+	return {vm, value_t::make_string(s) };
 }
 
 
@@ -1345,7 +1345,7 @@ std::pair<interpreter_t, value_t> host__get_time_of_day(const interpreter_t& vm,
 	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = t - vm._start_time;
 	const auto ms = elapsed_seconds.count() * 1000.0;
-	return {vm, value_t(int(ms)) };
+	return {vm, value_t::make_int(int(ms)) };
 }
 
 QUARK_UNIT_TESTQ("sizeof(int)", ""){
@@ -1488,7 +1488,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 					else{
 						string v2 = v;
 						v2[lookup_index] = new_value.get_string_value()[0];
-						const auto s2 = value_t(v2);
+						const auto s2 = value_t::make_string(v2);
 						return {vm, s2 };
 					}
 				}
@@ -1585,21 +1585,21 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 	const auto obj = args[0];
 	if(obj.is_string()){
 		const auto size = obj.get_string_value().size();
-		return {vm, value_t(static_cast<int>(size))};
+		return {vm, value_t::make_int(static_cast<int>(size))};
 	}
 	else if(obj.is_json_value()){
 		const auto value = obj.get_json_value();
 		if(value.is_object()){
 			const auto size = value.get_object_size();
-			return {vm, value_t(static_cast<int>(size))};
+			return {vm, value_t::make_int(static_cast<int>(size))};
 		}
 		else if(value.is_array()){
 			const auto size = value.get_array_size();
-			return {vm, value_t(static_cast<int>(size))};
+			return {vm, value_t::make_int(static_cast<int>(size))};
 		}
 		else if(value.is_string()){
 			const auto size = value.get_string().size();
-			return {vm, value_t(static_cast<int>(size))};
+			return {vm, value_t::make_int(static_cast<int>(size))};
 		}
 		else{
 			throw std::runtime_error("Calling size() on unsupported type of value.");
@@ -1607,11 +1607,11 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 	}
 	else if(obj.is_vector()){
 		const auto size = obj.get_vector_value()->_elements.size();
-		return {vm, value_t(static_cast<int>(size))};
+		return {vm, value_t::make_int(static_cast<int>(size))};
 	}
 	else if(obj.is_dict()){
 		const auto size = obj.get_dict_value()->_elements.size();
-		return {vm, value_t(static_cast<int>(size))};
+		return {vm, value_t::make_int(static_cast<int>(size))};
 	}
 	else{
 		throw std::runtime_error("Calling size() on unsupported type of value.");
@@ -1634,10 +1634,10 @@ std::pair<interpreter_t, value_t> host__find(const interpreter_t& vm, const std:
 
 		const auto r = str.find(wanted2);
 		if(r == std::string::npos){
-			return {vm, value_t(static_cast<int>(-1))};
+			return {vm, value_t::make_int(static_cast<int>(-1))};
 		}
 		else{
-			return {vm, value_t(static_cast<int>(r))};
+			return {vm, value_t::make_int(static_cast<int>(r))};
 		}
 	}
 	else if(obj.is_vector()){
@@ -1651,10 +1651,10 @@ std::pair<interpreter_t, value_t> host__find(const interpreter_t& vm, const std:
 			index++;
 		}
 		if(index == size){
-			return {vm, value_t(static_cast<int>(-1))};
+			return {vm, value_t::make_int(static_cast<int>(-1))};
 		}
 		else{
-			return {vm, value_t(static_cast<int>(index))};
+			return {vm, value_t::make_int(static_cast<int>(index))};
 		}
 	}
 	else{
@@ -1681,7 +1681,7 @@ std::pair<interpreter_t, value_t> host__exists(const interpreter_t& vm, const st
 
 		const auto found_it = v->_elements.find(key_string);
 		const bool exists = found_it != v->_elements.end();
-		return {vm, value_t(exists)};
+		return {vm, value_t::make_bool(exists)};
 	}
 	else{
 		throw std::runtime_error("Calling exist() on unsupported type of value.");
@@ -1733,7 +1733,7 @@ std::pair<interpreter_t, value_t> host__push_back(const interpreter_t& vm, const
 		const auto ch = element.get_string_value();
 
 		auto str2 = str + ch;
-		const auto v = value_t(str2);
+		const auto v = value_t::make_string(str2);
 		return {vm, v};
 	}
 	else if(obj.is_vector()){
@@ -1780,7 +1780,7 @@ std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const st
 		for(int i = start2 ; i < end2 ; i++){
 			str2.push_back(str[i]);
 		}
-		const auto v = value_t(str2);
+		const auto v = value_t::make_string(str2);
 		return {vm, v};
 	}
 	else if(obj.is_vector()){
@@ -1831,7 +1831,7 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 		const auto new_bits = args[3].get_string_value();
 
 		string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
-		const auto v = value_t(str2);
+		const auto v = value_t::make_string(str2);
 		return {vm, v};
 	}
 	else if(obj.is_vector()){
@@ -1873,7 +1873,7 @@ value_t primitive_floyd_value_to_json_value(const typeid_t& json_value_typeid, c
 			host__json_value_type.get_struct(),
 			{
 				value_t("string-type"),
-				value_t(false),
+				value_t::make_bool(false),
 				value_t(0.0f),
 				v,
 				value_t(),
@@ -1900,7 +1900,7 @@ value_t primitive_floyd_value_to_json_value(const typeid_t& json_value_typeid, c
 			host__json_value_type.get_struct(),
 			{
 				value_t("array-type"),
-				value_t(false),
+				value_t::make_bool(false),
 				value_t(0.0f),
 				value_t(""),
 				value_t(),
@@ -1924,7 +1924,7 @@ value_t primitive_floyd_value_to_json_value(const typeid_t& json_value_typeid, c
 			host__json_value_type.get_struct(),
 			{
 				value_t("object-type"),
-				value_t(false),
+				value_t::make_bool(false),
 				value_t(0.0f),
 				value_t(""),
 				v3,
@@ -1980,7 +1980,7 @@ std::pair<interpreter_t, value_t> host__get_env_path(const interpreter_t& vm, co
     const std::string env_path(homeDir);
 //	const std::string env_path = "~/Desktop/";
 
-	return {vm, value_t(env_path) };
+	return {vm, value_t::make_string(env_path) };
 }
 
 std::pair<interpreter_t, value_t> host__read_text_file(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -2006,7 +2006,7 @@ std::pair<interpreter_t, value_t> host__read_text_file(const interpreter_t& vm, 
 		}
 		f.close();
 	}
-	return {vm, value_t(file_contents) };
+	return {vm, value_t::make_string(file_contents) };
 }
 
 std::pair<interpreter_t, value_t> host__write_text_file(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -2062,7 +2062,7 @@ std::pair<interpreter_t, value_t> host__json_value_to_string(const interpreter_t
 		const auto value0 = args[0].get_json_value();
 		const string s = json_to_compact_string(value0);
 
-		return {vm, value_t(s) };
+		return {vm, value_t::make_string(s) };
 	}
 }
 

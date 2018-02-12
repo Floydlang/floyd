@@ -679,8 +679,8 @@ std::string value_and_type_to_string(const value_t& value) {
 
 //??? swap(), operator=, copy-constructor.
 
-QUARK_UNIT_TESTQ("value_t()", "null"){
-	const auto a = value_t();
+QUARK_UNIT_TESTQ("value_t::make_null()", "null"){
+	const auto a = value_t::make_null();
 	QUARK_TEST_VERIFY(a.is_null());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -691,14 +691,14 @@ QUARK_UNIT_TESTQ("value_t()", "null"){
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t());
-	QUARK_TEST_VERIFY(a != value_t("test"));
+	QUARK_TEST_VERIFY(a == value_t::make_null());
+	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
 	QUARK_TEST_VERIFY(to_compact_string(a) == "<null>");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "<null>");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "bool - true"){
-	const auto a = value_t(true);
+	const auto a = value_t::make_bool(true);
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -709,14 +709,14 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t(true));
-	QUARK_TEST_VERIFY(a != value_t(false));
+	QUARK_TEST_VERIFY(a == value_t::make_bool(true));
+	QUARK_TEST_VERIFY(a != value_t::make_bool(false));
 	QUARK_TEST_VERIFY(to_compact_string(a) == keyword_t::k_true);
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: true");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "bool - false"){
-	const auto a = value_t(false);
+	const auto a = value_t::make_bool(false);
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -727,14 +727,14 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t(false));
-	QUARK_TEST_VERIFY(a != value_t(true));
+	QUARK_TEST_VERIFY(a == value_t::make_bool(false));
+	QUARK_TEST_VERIFY(a != value_t::make_bool(true));
 	QUARK_TEST_VERIFY(to_compact_string(a) == keyword_t::k_false);
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: false");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "int"){
-	const auto a = value_t(13);
+	const auto a = value_t::make_int(13);
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(a.is_int());
@@ -745,14 +745,14 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t(13));
-	QUARK_TEST_VERIFY(a != value_t(14));
+	QUARK_TEST_VERIFY(a == value_t::make_int(13));
+	QUARK_TEST_VERIFY(a != value_t::make_int(14));
 	QUARK_TEST_VERIFY(to_compact_string(a) == "13");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "int: 13");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "float"){
-	const auto a = value_t(13.5f);
+	const auto a = value_t::make_float(13.5f);
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -763,14 +763,14 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t(13.5f));
-	QUARK_TEST_VERIFY(a != value_t(14.0f));
+	QUARK_TEST_VERIFY(a == value_t::make_float(13.5f));
+	QUARK_TEST_VERIFY(a != value_t::make_float(14.0f));
 	QUARK_TEST_VERIFY(to_compact_string(a) == "13.5");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "float: 13.5");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "string"){
-	const auto a = value_t("xyz");
+	const auto a = value_t::make_string("xyz");
 	QUARK_TEST_VERIFY(!a.is_null());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -781,8 +781,8 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t("xyz"));
-	QUARK_TEST_VERIFY(a != value_t("xyza"));
+	QUARK_TEST_VERIFY(a == value_t::make_string("xyz"));
+	QUARK_TEST_VERIFY(a != value_t::make_string("xyza"));
 	QUARK_TEST_VERIFY(to_compact_string(a) == "xyz");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "string: \"xyz\"");
 }
@@ -857,23 +857,23 @@ ast_json_t value_to_ast_json(const value_t& v){
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	quark::ut_compare(value_to_ast_json(value_t("hello"))._value, json_t("hello"));
+	quark::ut_compare(value_to_ast_json(value_t::make_string("hello"))._value, json_t("hello"));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	quark::ut_compare(value_to_ast_json(value_t(123))._value, json_t(123.0));
+	quark::ut_compare(value_to_ast_json(value_t::make_int(123))._value, json_t(123.0));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	quark::ut_compare(value_to_ast_json(value_t(true))._value, json_t(true));
+	quark::ut_compare(value_to_ast_json(value_t::make_bool(true))._value, json_t(true));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	quark::ut_compare(value_to_ast_json(value_t(false))._value, json_t(false));
+	quark::ut_compare(value_to_ast_json(value_t::make_bool(false))._value, json_t(false));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	quark::ut_compare(value_to_ast_json(value_t())._value, json_t());
+	quark::ut_compare(value_to_ast_json(value_t::make_null())._value, json_t());
 }
 
 
@@ -904,19 +904,19 @@ value_t value_from_ast_json(const ast_json_t& v2){
 		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);
 	}
 	else if(v.is_string()){
-		return value_t(v.get_string());
+		return value_t::make_string(v.get_string());
 	}
 	else if(v.is_number()){
-		return value_t(static_cast<float>(v.get_number()));
+		return value_t::make_float(static_cast<float>(v.get_number()));
 	}
 	else if(v.is_true()){
-		return value_t(true);
+		return value_t::make_bool(true);
 	}
 	else if(v.is_false()){
-		return value_t(false);
+		return value_t::make_bool(false);
 	}
 	else if(v.is_null()){
-		return value_t();
+		return value_t::make_null();
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -940,6 +940,14 @@ value_t value_t::make_bool(bool value){
 }
 
 value_t value_t::make_int(int value){
+	return value_t(value);
+}
+
+value_t value_t::make_float(float value){
+	return value_t(value);
+}
+
+value_t value_t::make_string(const std::string& value){
 	return value_t(value);
 }
 
