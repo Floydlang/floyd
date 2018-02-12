@@ -17,8 +17,6 @@
 #include "ast_basics.h"
 #include "ast_typeid.h"
 
-#include "floyd_basics.h"
-#include "text_parser.h"
 
 namespace floyd {
 	struct statement_t;
@@ -185,153 +183,7 @@ namespace floyd {
 	*/
 
 	struct value_t {
-		public: bool check_invariant() const{
-			QUARK_ASSERT(_typeid.check_invariant());
-
-			const auto base_type = _typeid.get_base_type();
-			if(base_type == base_type::k_null){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-			}
-			else if(base_type == base_type::k_bool){
-//				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-			}
-			else if(base_type == base_type::k_int){
-				QUARK_ASSERT(_bool == false);
-//				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-			}
-			else if(base_type == base_type::k_float){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-//				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-			}
-			else if(base_type == base_type::k_string){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-//				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-			}
-			else if(base_type == base_type::k_json_value){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value != nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-
-				QUARK_ASSERT(_json_value->check_invariant());
-			}
-
-			else if(base_type == base_type::k_typeid){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-			}
-			else if(base_type == base_type::k_struct){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct != nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-
-				QUARK_ASSERT(_struct && _struct->check_invariant());
-			}
-			else if(base_type == base_type::k_vector){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector != nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function == nullptr);
-
-				QUARK_ASSERT(_vector && _vector->check_invariant());
-				QUARK_ASSERT(_typeid.get_vector_element_type() == _vector->_element_type);
-			}
-			else if(base_type == base_type::k_dict){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict != nullptr);
-				QUARK_ASSERT(_function == nullptr);
-
-				QUARK_ASSERT(_dict && _dict->check_invariant());
-				QUARK_ASSERT(_typeid.get_dict_value_type() == _dict->_value_type);
-			}
-			else if(base_type == base_type::k_function){
-				QUARK_ASSERT(_bool == false);
-				QUARK_ASSERT(_int == 0);
-				QUARK_ASSERT(_float == 0.0f);
-				QUARK_ASSERT(_string == "");
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_struct == nullptr);
-				QUARK_ASSERT(_vector == nullptr);
-				QUARK_ASSERT(_dict == nullptr);
-				QUARK_ASSERT(_function != nullptr);
-
-				QUARK_ASSERT(_function && _function->check_invariant());
-			}
-			else if(base_type == base_type::k_unresolved_type_identifier){
-				//	 Cannot have a value of unknown type.
-				QUARK_ASSERT(false);
-			}
-			else {
-				QUARK_ASSERT(false);
-			}
-			return true;
-		}
+		public: bool check_invariant() const;
 
 		public: value_t() :
 			_typeid(typeid_t::make_null())
@@ -531,72 +383,25 @@ namespace floyd {
 			return _typeid;
 		}
 
+
+
+
+
+		public: static value_t make_null();
 		public: bool is_null() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid.get_base_type() == base_type::k_null;
 		}
 
+
+
+		public: static value_t make_bool(bool value);
 		public: bool is_bool() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid.get_base_type() == base_type::k_bool;
 		}
-
-		public: bool is_int() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_int;
-		}
-
-		public: bool is_float() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_float;
-		}
-
-		public: bool is_string() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_string;
-		}
-
-		public: bool is_json_value() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_json_value;
-		}
-
-		public: bool is_typeid() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_typeid;
-		}
-
-		public: bool is_struct() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_struct;
-		}
-
-		public: bool is_vector() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_vector;
-		}
-
-		public: bool is_dict() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_dict;
-		}
-
-		public: bool is_function() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _typeid.get_base_type() == base_type::k_function;
-		}
-
 		public: bool get_bool_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_bool()){
@@ -606,6 +411,12 @@ namespace floyd {
 			return _bool;
 		}
 
+		public: static value_t make_int(int value);
+		public: bool is_int() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_int;
+		}
 		public: int get_int_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_int()){
@@ -615,6 +426,11 @@ namespace floyd {
 			return _int;
 		}
 
+		public: bool is_float() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_float;
+		}
 		public: float get_float_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_float()){
@@ -624,6 +440,11 @@ namespace floyd {
 			return _float;
 		}
 
+		public: bool is_string() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_string;
+		}
 		public: std::string get_string_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_string()){
@@ -633,6 +454,12 @@ namespace floyd {
 			return _string;
 		}
 
+		public: static value_t make_json_value(const json_t& v);
+		public: bool is_json_value() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_json_value;
+		}
 		public: json_t get_json_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_json_value()){
@@ -642,6 +469,12 @@ namespace floyd {
 			return *_json_value;
 		}
 
+		public: static value_t make_typeid_value(const typeid_t& type_id);
+		public: bool is_typeid() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_typeid;
+		}
 		public: typeid_t get_typeid_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_typeid()){
@@ -651,6 +484,12 @@ namespace floyd {
 			return _typeid.get_typeid_typeid();
 		}
 
+		public: static value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values);
+		public: bool is_struct() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_struct;
+		}
 		public: std::shared_ptr<struct_instance_t> get_struct_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_struct()){
@@ -660,6 +499,12 @@ namespace floyd {
 			return _struct;
 		}
 
+		public: static value_t make_vector_value(const typeid_t& element_type, const std::vector<value_t>& elements);
+		public: bool is_vector() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_vector;
+		}
 		public: std::shared_ptr<vector_instance_t> get_vector_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_vector()){
@@ -669,6 +514,12 @@ namespace floyd {
 			return _vector;
 		}
 
+		public: static value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& elements);
+		public: bool is_dict() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_dict;
+		}
 		public: std::shared_ptr<dict_instance_t> get_dict_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_dict()){
@@ -678,6 +529,12 @@ namespace floyd {
 			return _dict;
 		}
 
+		public: static value_t make_function_value(const function_definition_t& def);
+		public: bool is_function() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _typeid.get_base_type() == base_type::k_function;
+		}
 		public: std::shared_ptr<const function_instance_t> get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
@@ -686,6 +543,9 @@ namespace floyd {
 
 			return _function;
 		}
+
+
+
 
 		public: void swap(value_t& other){
 			QUARK_ASSERT(other.check_invariant());
@@ -707,7 +567,6 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-
 		private: static int compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right);
 
 
@@ -724,8 +583,6 @@ namespace floyd {
 		private: std::shared_ptr<dict_instance_t> _dict;
 		private: std::shared_ptr<const function_instance_t> _function;
 	};
-
-
 
 
 	/*
@@ -748,41 +605,6 @@ namespace floyd {
 	*/
 	std::string value_and_type_to_string(const value_t& value);
 
-
-	inline value_t make_json_value(const json_t& v){
-		auto f = std::make_shared<json_t>(v);
-		return value_t(f);
-	}
-
-
-	inline value_t make_typeid_value(const typeid_t& type_id){
-		return value_t(type_id);
-	}
-
-	inline value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values){
-		QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved_type_identifier);
-		QUARK_ASSERT(def.check_invariant());
-
-		auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
-//		const auto t = typeid_t::make_unresolved_type_identifier(struct_type.get_struct()._name);
-		const auto t = struct_type;
-		return value_t(t, f);
-	}
-
-	inline value_t make_vector_value(const typeid_t& element_type, const std::vector<value_t>& elements){
-		auto f = std::shared_ptr<vector_instance_t>(new vector_instance_t{element_type, elements});
-		return value_t(f);
-	}
-
-	inline value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& elements){
-		auto f = std::shared_ptr<dict_instance_t>(new dict_instance_t{value_type, elements});
-		return value_t(f);
-	}
-
-	inline value_t make_function_value(const function_definition_t& def){
-		auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});
-		return value_t(f);
-	}
 
 	ast_json_t value_to_ast_json(const value_t& v);
 	value_t value_from_ast_json(const ast_json_t& v);

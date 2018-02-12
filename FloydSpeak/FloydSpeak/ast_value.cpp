@@ -9,11 +9,14 @@
 #include "ast_value.h"
 
 #include "statement.h"
+#include "text_parser.h"
 
 using std::string;
 using std::make_shared;
 
 namespace floyd {
+
+
 
 
 	//////////////////////////////////////////////////		struct_instance_t
@@ -443,6 +446,164 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 }
 
 
+
+
+
+
+bool value_t::check_invariant() const{
+	QUARK_ASSERT(_typeid.check_invariant());
+
+	const auto base_type = _typeid.get_base_type();
+	if(base_type == base_type::k_null){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+	}
+	else if(base_type == base_type::k_bool){
+//				QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+	}
+	else if(base_type == base_type::k_int){
+		QUARK_ASSERT(_bool == false);
+//				QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+	}
+	else if(base_type == base_type::k_float){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+//				QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+	}
+	else if(base_type == base_type::k_string){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+//				QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+	}
+	else if(base_type == base_type::k_json_value){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value != nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+
+		QUARK_ASSERT(_json_value->check_invariant());
+	}
+
+	else if(base_type == base_type::k_typeid){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+	}
+	else if(base_type == base_type::k_struct){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct != nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+
+		QUARK_ASSERT(_struct && _struct->check_invariant());
+	}
+	else if(base_type == base_type::k_vector){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector != nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function == nullptr);
+
+		QUARK_ASSERT(_vector && _vector->check_invariant());
+		QUARK_ASSERT(_typeid.get_vector_element_type() == _vector->_element_type);
+	}
+	else if(base_type == base_type::k_dict){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict != nullptr);
+		QUARK_ASSERT(_function == nullptr);
+
+		QUARK_ASSERT(_dict && _dict->check_invariant());
+		QUARK_ASSERT(_typeid.get_dict_value_type() == _dict->_value_type);
+	}
+	else if(base_type == base_type::k_function){
+		QUARK_ASSERT(_bool == false);
+		QUARK_ASSERT(_int == 0);
+		QUARK_ASSERT(_float == 0.0f);
+		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_struct == nullptr);
+		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_dict == nullptr);
+		QUARK_ASSERT(_function != nullptr);
+
+		QUARK_ASSERT(_function && _function->check_invariant());
+	}
+	else if(base_type == base_type::k_unresolved_type_identifier){
+		//	 Cannot have a value of unknown type.
+		QUARK_ASSERT(false);
+	}
+	else {
+		QUARK_ASSERT(false);
+	}
+	return true;
+}
+
+
+
+
+
+
+
 std::string to_compact_string(const value_t& value) {
 	QUARK_ASSERT(value.check_invariant());
 
@@ -469,7 +630,7 @@ std::string to_compact_string(const value_t& value) {
 	}
 
 	else if(base_type == base_type::k_typeid){
-		return floyd::typeid_to_compact_string(value.get_typeid_value());
+		return floyd::typeid_to_compact_string(value.get_type());
 	}
 	else if(base_type == base_type::k_struct){
 		return struct_instance_to_compact_string(*value.get_struct_value());
@@ -728,19 +889,19 @@ value_t value_from_ast_json(const ast_json_t& v2){
 		for(const auto e: obj){
 			const auto key = e.first;
 			const auto value = e.second;
-			const auto value2 = make_json_value(value);
+			const auto value2 = value_t::make_json_value(value);
 			obj2[key] = value2;
 		}
-		return make_dict_value(typeid_t::make_json_value(), obj2);
+		return value_t::make_dict_value(typeid_t::make_json_value(), obj2);
 	}
 	else if(v.is_array()){
 		const auto elements = v.get_array();
 		std::vector<value_t> elements2;
 		for(const auto e: elements){
-			const auto e2 = make_json_value(e);
+			const auto e2 = value_t::make_json_value(e);
 			elements2.push_back(e2);
 		}
-		return make_vector_value(typeid_t::make_json_value(), elements2);
+		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);
 	}
 	else if(v.is_string()){
 		return value_t(v.get_string());
@@ -761,6 +922,62 @@ value_t value_from_ast_json(const ast_json_t& v2){
 		QUARK_ASSERT(false);
 	}
 }
+
+
+
+
+
+
+
+
+value_t value_t::make_null(){
+	return value_t();
+}
+
+
+value_t value_t::make_bool(bool value){
+	return value_t(value);
+}
+
+value_t value_t::make_int(int value){
+	return value_t(value);
+}
+
+value_t value_t::make_json_value(const json_t& v){
+	auto f = std::make_shared<json_t>(v);
+	return value_t(f);
+}
+
+value_t value_t::make_typeid_value(const typeid_t& type_id){
+	return value_t(type_id);
+}
+
+value_t value_t::make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values){
+	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved_type_identifier);
+	QUARK_ASSERT(def.check_invariant());
+
+	auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
+//		const auto t = typeid_t::make_unresolved_type_identifier(struct_type.get_struct()._name);
+	const auto t = struct_type;
+	return value_t(t, f);
+}
+
+value_t value_t::make_vector_value(const typeid_t& element_type, const std::vector<value_t>& elements){
+	auto f = std::shared_ptr<vector_instance_t>(new vector_instance_t{element_type, elements});
+	return value_t(f);
+}
+
+value_t value_t::make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& elements){
+	auto f = std::shared_ptr<dict_instance_t>(new dict_instance_t{value_type, elements});
+	return value_t(f);
+}
+
+value_t value_t::make_function_value(const function_definition_t& def){
+	auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});
+	return value_t(f);
+}
+
+
 
 
 }	//	floyd

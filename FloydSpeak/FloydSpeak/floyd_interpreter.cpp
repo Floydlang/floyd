@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include "text_parser.h"
 
 
 namespace floyd {
@@ -57,7 +58,7 @@ namespace {
 		}
 		else if(expected_type.is_json_value()){
 			const auto v2 = value_to_ast_json(value0);
-			return make_json_value(v2._value);
+			return value_t::make_json_value(v2._value);
 		}
 		else{
 			const auto value = value0;
@@ -68,7 +69,7 @@ namespace {
 				//	When [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
 				if(v->_element_type.is_null() && v->_elements.empty()){
 					QUARK_ASSERT(expected_type.is_vector());
-					return make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
+					return value_t::make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
 				}
 				else{
 					return value;
@@ -80,7 +81,7 @@ namespace {
 				//	When [:] appears in an expression we know it's an empty dict but not which type. It can be used as any dict type.
 				if(v->_value_type.is_null() && v->_elements.empty()){
 					QUARK_ASSERT(expected_type.is_dict());
-					return make_dict_value(expected_type.get_dict_value_type(), {});
+					return value_t::make_dict_value(expected_type.get_dict_value_type(), {});
 				}
 				else{
 					return value;
@@ -262,7 +263,7 @@ namespace {
 				throw std::runtime_error("Name already used.");
 			}
 			const auto struct_typeid = typeid_t::make_struct(std::make_shared<struct_definition_t>(s->_def));
-			vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(make_typeid_value(struct_typeid), false);
+			vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(value_t::make_typeid_value(struct_typeid), false);
 			return { vm2, statement_result_t::make_no_output() };
 		}
 
@@ -576,7 +577,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
-		return {vm2, expression_t::make_literal(make_function_value(expr->_def))};
+		return {vm2, expression_t::make_literal(value_t::make_function_value(expr->_def))};
 	}
 
 	else if(op == expression_type::k_vector_definition){
@@ -585,7 +586,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		const auto element_type = expr->_element_type;
 
 		if(elements.empty()){
-			return {vm2, expression_t::make_literal(make_vector_value(element_type, {}))};
+			return {vm2, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
 		}
 		else{
 			std::vector<value_t> elements2;
@@ -607,7 +608,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 					throw std::runtime_error("Vector can not hold elements of different type!");
 				}
 			}
-			return {vm2, expression_t::make_literal(make_vector_value(element_type2, elements2))};
+			return {vm2, expression_t::make_literal(value_t::make_vector_value(element_type2, elements2))};
 		}
 	}
 
@@ -618,7 +619,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		typeid_t value_type = expr->_value_type;
 
 		if(elements.empty()){
-			return {vm2, expression_t::make_literal(make_dict_value(value_type, {}))};
+			return {vm2, expression_t::make_literal(value_t::make_dict_value(value_type, {}))};
 		}
 		else{
 			std::map<string, value_t> elements2;
@@ -646,7 +647,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				}
 			}
 */
-			return {vm2, expression_t::make_literal(make_dict_value(value_type2, elements2))};
+			return {vm2, expression_t::make_literal(value_t::make_dict_value(value_type2, elements2))};
 		}
 	}
 
@@ -936,7 +937,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 					auto elements2 = left_constant.get_vector_value()->_elements;
 					elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
 
-					const auto value2 = make_vector_value(element_type, elements2);
+					const auto value2 = value_t::make_vector_value(element_type, elements2);
 					return {vm2, expression_t::make_literal(value2)};
 				}
 
@@ -1082,7 +1083,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 		}
 	}
 
-	const auto instance = make_struct_value(struct_type, def, values);
+	const auto instance = value_t::make_struct_value(struct_type, def, values);
 	QUARK_TRACE(to_compact_string(instance));
 
 	return std::pair<interpreter_t, value_t>(vm, instance);
@@ -1421,7 +1422,7 @@ typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 		auto values2 = values;
 		values2[member_index] = new_value;
 
-		auto s2 = make_struct_value(struct_typeid, def, values2);
+		auto s2 = value_t::make_struct_value(struct_typeid, def, values2);
 		return s2;
 	}
 
@@ -1524,7 +1525,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 					}
 					else{
 						v2[lookup_index] = new_value;
-						const auto s2 = make_vector_value(v->_element_type, v2);
+						const auto s2 = value_t::make_vector_value(v->_element_type, v2);
 						return {vm, s2 };
 					}
 				}
@@ -1546,7 +1547,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 					const string key = lookup_key.get_string_value();
 					auto elements2 = v->_elements;
 					elements2[key] = new_value;
-					const auto value2 = make_dict_value(obj.get_dict_value()->_value_type, elements2);
+					const auto value2 = value_t::make_dict_value(obj.get_dict_value()->_value_type, elements2);
 					return { vm, value2 };
 				}
 			}
@@ -1706,7 +1707,7 @@ std::pair<interpreter_t, value_t> host__erase(const interpreter_t& vm, const std
 
 		std::map<string, value_t> elements2 = v->_elements;
 		elements2.erase(key_string);
-		const auto value2 = make_dict_value(obj.get_dict_value()->_value_type, elements2);
+		const auto value2 = value_t::make_dict_value(obj.get_dict_value()->_value_type, elements2);
 		return { vm, value2 };
 	}
 	else{
@@ -1742,7 +1743,7 @@ std::pair<interpreter_t, value_t> host__push_back(const interpreter_t& vm, const
 		}
 		auto elements2 = vec->_elements;
 		elements2.push_back(element);
-		const auto v = make_vector_value(vec->_element_type, elements2);
+		const auto v = value_t::make_vector_value(vec->_element_type, elements2);
 		return {vm, v};
 	}
 	else{
@@ -1790,7 +1791,7 @@ std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const st
 		for(int i = start2 ; i < end2 ; i++){
 			elements2.push_back(vec->_elements[i]);
 		}
-		const auto v = make_vector_value(vec->_element_type, elements2);
+		const auto v = value_t::make_vector_value(vec->_element_type, elements2);
 		return {vm, v};
 	}
 	else{
@@ -1847,7 +1848,7 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 		result.insert(result.end(), new_bits->_elements.begin(), new_bits->_elements.end());
 		result.insert(result.end(), string_right.begin(), string_right.end());
 
-		const auto v = make_vector_value(vec->_element_type, result);
+		const auto v = value_t::make_vector_value(vec->_element_type, result);
 		return {vm, v};
 	}
 	else{
@@ -2044,7 +2045,7 @@ std::pair<interpreter_t, value_t> host__string_to_json_value(const interpreter_t
 	else{
 		const string s = args[0].get_string_value();
 		std::pair<json_t, seq_t> result = parse_json(seq_t(s));
-		value_t json_value = make_json_value(result.first);
+		value_t json_value = value_t::make_json_value(result.first);
 		return {vm, json_value };
 	}
 }
@@ -2148,7 +2149,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 			hf._function_type.get_function_return()
 		);
 
-		const auto function_value = make_function_value(def);
+		const auto function_value = value_t::make_function_value(def);
 		global_env->_values[hf._name] = std::pair<value_t, bool>{function_value, false };
 	}
 

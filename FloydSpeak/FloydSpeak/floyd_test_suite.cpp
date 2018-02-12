@@ -1533,7 +1533,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
 	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].first.is_typeid()	));
 }
 
-QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
+QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 	const auto vm = run_global(R"(
 		struct t { int a;}
 		print(t);
@@ -2038,7 +2038,7 @@ QUARK_UNIT_TEST("", "json_to_string()", "", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("", "any_to_json()", "", ""){
+QUARK_UNIT_TEST("", "any_to_json()", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = [1,2,3];
 		print(a);
@@ -2046,7 +2046,7 @@ QUARK_UNIT_TEST_VIP("", "any_to_json()", "", ""){
 }
 
 
-QUARK_UNIT_TEST_VIP("", "any_to_json()", "", ""){
+QUARK_UNIT_TEST("", "any_to_json()", "", ""){
 	const auto vm = run_global(R"(
 		struct pixel_t { float x; float y; }
 		c = [pixel_t(100, 200), pixel_t(101, 201)];

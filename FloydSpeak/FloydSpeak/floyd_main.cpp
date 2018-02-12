@@ -23,6 +23,7 @@
 #include "json_support.h"
 #include "pass2.h"
 #include "ast_basics.h"
+#include "text_parser.h"
 
 
 //////////////////////////////////////////////////		main()
