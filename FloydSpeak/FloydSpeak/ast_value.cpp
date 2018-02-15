@@ -607,7 +607,7 @@ bool value_t::check_invariant() const{
 
 
 
-std::string to_compact_string(const value_t& value) {
+std::string to_compact_string2(const value_t& value) {
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto base_type = value.get_type().get_base_type();
@@ -658,7 +658,7 @@ std::string to_compact_string(const value_t& value) {
 }
 
 std::string to_compact_string_quote_strings(const value_t& value) {
-	const auto s = to_compact_string(value);
+	const auto s = to_compact_string2(value);
 	if(value.is_string()){
 		return "\"" + s + "\"";
 	}
@@ -696,7 +696,7 @@ QUARK_UNIT_TESTQ("value_t::make_null()", "null"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_null());
 	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string(a) == "<null>");
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "<null>");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "<null>");
 }
 
@@ -714,7 +714,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_bool(true));
 	QUARK_TEST_VERIFY(a != value_t::make_bool(false));
-	QUARK_TEST_VERIFY(to_compact_string(a) == keyword_t::k_true);
+	QUARK_TEST_VERIFY(to_compact_string2(a) == keyword_t::k_true);
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: true");
 }
 
@@ -732,7 +732,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_bool(false));
 	QUARK_TEST_VERIFY(a != value_t::make_bool(true));
-	QUARK_TEST_VERIFY(to_compact_string(a) == keyword_t::k_false);
+	QUARK_TEST_VERIFY(to_compact_string2(a) == keyword_t::k_false);
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: false");
 }
 
@@ -750,7 +750,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_int(13));
 	QUARK_TEST_VERIFY(a != value_t::make_int(14));
-	QUARK_TEST_VERIFY(to_compact_string(a) == "13");
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "13");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "int: 13");
 }
 
@@ -768,7 +768,7 @@ QUARK_UNIT_TESTQ("value_t()", "float"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_float(13.5f));
 	QUARK_TEST_VERIFY(a != value_t::make_float(14.0f));
-	QUARK_TEST_VERIFY(to_compact_string(a) == "13.5");
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "13.5");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "float: 13.5");
 }
 
@@ -786,7 +786,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_string("xyz"));
 	QUARK_TEST_VERIFY(a != value_t::make_string("xyza"));
-	QUARK_TEST_VERIFY(to_compact_string(a) == "xyz");
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "xyz");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "string: \"xyz\"");
 }
 
@@ -885,55 +885,6 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 	quark::ut_compare(value_to_ast_json(value_t::make_null())._value, json_t());
 }
-
-
-//??? Extend to support all Floyd types, including structs!
-value_t value_from_ast_json(const ast_json_t& v2){
-	QUARK_ASSERT(v2._value.check_invariant());
-
-	const auto v = v2._value;
-
-	if(v.is_object()){
-		const auto obj = v.get_object();
-		std::map<string, value_t> obj2;
-		for(const auto e: obj){
-			const auto key = e.first;
-			const auto value = e.second;
-			const auto value2 = value_t::make_json_value(value);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
-			obj2[key] = value2;
-		}
-		return value_t::make_dict_value(typeid_t::make_json_value(), obj2);
-	}
-	else if(v.is_array()){
-		const auto elements = v.get_array();
-		std::vector<value_t> elements2;
-		for(const auto e: elements){
-			const auto e2 = value_t::make_json_value(e);
-			elements2.push_back(e2);
-		}
-		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
-	}
-	else if(v.is_string()){
-		return value_t::make_string(v.get_string());
-	}
-	else if(v.is_number()){
-		return value_t::make_float(static_cast<float>(v.get_number()));
-	}
-	else if(v.is_true()){
-		return value_t::make_bool(true);
-	}
-	else if(v.is_false()){
-		return value_t::make_bool(false);
-	}
-	else if(v.is_null()){
-		return value_t::make_null();
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
 
 
 

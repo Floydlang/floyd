@@ -46,6 +46,55 @@ using std::make_shared;
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
+
+
+//??? Extend to support all Floyd types, including structs!
+value_t unflatten_json_to_specific_type(const json_t& v){
+	QUARK_ASSERT(v.check_invariant());
+
+	if(v.is_object()){
+		const auto obj = v.get_object();
+		std::map<string, value_t> obj2;
+		for(const auto e: obj){
+			const auto key = e.first;
+			const auto value = e.second;
+			const auto value2 = value_t::make_json_value(value);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
+			obj2[key] = value2;
+		}
+		return value_t::make_dict_value(typeid_t::make_json_value(), obj2);
+	}
+	else if(v.is_array()){
+		const auto elements = v.get_array();
+		std::vector<value_t> elements2;
+		for(const auto e: elements){
+			const auto e2 = value_t::make_json_value(e);
+			elements2.push_back(e2);
+		}
+		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
+	}
+	else if(v.is_string()){
+		return value_t::make_string(v.get_string());
+	}
+	else if(v.is_number()){
+		return value_t::make_float(static_cast<float>(v.get_number()));
+	}
+	else if(v.is_true()){
+		return value_t::make_bool(true);
+	}
+	else if(v.is_false()){
+		return value_t::make_bool(false);
+	}
+	else if(v.is_null()){
+		return value_t::make_null();
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+
+
 namespace {
 
 	//	We know which type we need. If the value has not type, retype it.
@@ -493,7 +542,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 							//	get_object_element() throws if key can't be found.
 							const auto value = parent_json_value.get_object_element(lookup_key);
-							const auto value2 = value_from_ast_json(ast_json_t{value});
+							const auto value2 = value_t::make_json_value(value);
 							return { vm2, expression_t::make_literal(value2)};
 						}
 					}
@@ -509,7 +558,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 							}
 							else{
 								const auto value = parent_json_value.get_array_n(lookup_index);
-								const auto value2 = value_from_ast_json(ast_json_t{value});
+								const auto value2 = value_t::make_json_value(value);
 								return { vm2, expression_t::make_literal(value2)};
 							}
 						}
@@ -1084,7 +1133,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	}
 
 	const auto instance = value_t::make_struct_value(struct_type, def, values);
-	QUARK_TRACE(to_compact_string(instance));
+	QUARK_TRACE(to_compact_string2(instance));
 
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
@@ -1281,7 +1330,7 @@ std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std
 	else
 #endif
 	{
-		const auto s = to_compact_string(value);
+		const auto s = to_compact_string2(value);
 		printf("%s\n", s.c_str());
 		vm2._print_output.push_back(s);
 	}
@@ -1318,7 +1367,7 @@ std::pair<interpreter_t, value_t> host__to_string(const interpreter_t& vm, const
 	}
 
 	const auto& value = args[0];
-	const auto a = to_compact_string(value);
+	const auto a = to_compact_string2(value);
 	return {vm, value_t::make_string(a) };
 }
 std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm, const std::vector<value_t>& args){
@@ -2049,6 +2098,9 @@ std::pair<interpreter_t, value_t> host__string_to_json_value(const interpreter_t
 		return {vm, json_value };
 	}
 }
+
+//??? Why not just use to_string()?
+//??? remove compact-string concept, go for json_t instead.
 std::pair<interpreter_t, value_t> host__json_value_to_string(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -2087,6 +2139,7 @@ std::pair<interpreter_t, value_t> host__value_to_json(const interpreter_t& vm, c
 	}
 }
 
+//??? why neeed? input json_value is already a value_t!? Use to unflatten?
 std::pair<interpreter_t, value_t> host__json_to_value(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -2098,8 +2151,7 @@ std::pair<interpreter_t, value_t> host__json_to_value(const interpreter_t& vm, c
 	}
 	else{
 		const auto json_value = args[0].get_json_value();
-		const auto ast_json = ast_json_t{json_value};	//	NOTICE: This requires json to be ast-compatible.
-		const auto value = value_from_ast_json(ast_json);
+		const auto value = value_t::make_json_value(json_value);
 		return {vm, value };
 	}
 }

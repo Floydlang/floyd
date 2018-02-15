@@ -1839,8 +1839,8 @@ QUARK_UNIT_TEST("json_value-array", "[]", "", ""){
 		print(a[1]);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		"hello",
-		"bye"
+		"\"hello\"",
+		"\"bye\""
 	});
 }
 
@@ -1906,7 +1906,7 @@ QUARK_UNIT_TEST("json_value-object", "[]", "", ""){
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
 		"3",
-		"pink"
+		"\"pink\""
 	});
 }
 
@@ -2062,7 +2062,7 @@ QUARK_UNIT_TEST("", "json_to_value()", "string", ""){
 		print(json_to_value(value_to_json("cola")));
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		"cola"
+		"\"cola\""
 	});
 }
 QUARK_UNIT_TEST("", "json_to_value()", "[]", ""){

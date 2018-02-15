@@ -25,6 +25,9 @@ namespace floyd {
 	struct interpreter_t;
 
 
+	value_t unflatten_json_to_specific_type(const json_t& v);
+
+
 	//////////////////////////////////////		statement_result_t
 
 

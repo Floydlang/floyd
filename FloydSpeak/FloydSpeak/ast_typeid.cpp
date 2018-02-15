@@ -215,6 +215,46 @@ namespace floyd {
 
 
 
+	std::string typeid_to_compact_string(const typeid_t& t){
+//		QUARK_ASSERT(t.check_invariant());
+
+		const auto basetype = t.get_base_type();
+
+		if(basetype == floyd::base_type::k_unresolved_type_identifier){
+			return t.get_unresolved_type_identifier();
+		}
+		else if(basetype == floyd::base_type::k_typeid){
+			const auto t2 = t.get_typeid_typeid();
+			return "typeid(" + typeid_to_compact_string(t2) + ")";
+		}
+		else if(basetype == floyd::base_type::k_struct){
+			const auto struct_def = t.get_struct();
+			return floyd::to_compact_string(struct_def);
+		}
+		else if(basetype == floyd::base_type::k_vector){
+			const auto e = t.get_vector_element_type();
+			return "[" + typeid_to_compact_string(e) + "]";
+		}
+		else if(basetype == floyd::base_type::k_dict){
+			const auto e = t.get_dict_value_type();
+			return "[string:" + typeid_to_compact_string(e) + "]";
+		}
+		else if(basetype == floyd::base_type::k_function){
+			const auto ret = t.get_function_return();
+			const auto args = t.get_function_args();
+
+			vector<string> args_str;
+			for(const auto a: args){
+				args_str.push_back(typeid_to_compact_string(a));
+			}
+
+			return string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ")";
+		}
+		else{
+			return base_type_to_string(basetype);
+		}
+	}
+
 	ast_json_t typeid_to_ast_json(const typeid_t& t){
 		QUARK_ASSERT(t.check_invariant());
 
@@ -344,45 +384,6 @@ namespace floyd {
 		}
 	}
 
-	std::string typeid_to_compact_string(const typeid_t& t){
-//		QUARK_ASSERT(t.check_invariant());
-
-		const auto basetype = t.get_base_type();
-
-		if(basetype == floyd::base_type::k_unresolved_type_identifier){
-			return t.get_unresolved_type_identifier();
-		}
-		else if(basetype == floyd::base_type::k_typeid){
-			const auto t2 = t.get_typeid_typeid();
-			return "typeid(" + typeid_to_compact_string(t2) + ")";
-		}
-		else if(basetype == floyd::base_type::k_struct){
-			const auto struct_def = t.get_struct();
-			return floyd::to_compact_string(struct_def);
-		}
-		else if(basetype == floyd::base_type::k_vector){
-			const auto e = t.get_vector_element_type();
-			return "[" + typeid_to_compact_string(e) + "]";
-		}
-		else if(basetype == floyd::base_type::k_dict){
-			const auto e = t.get_dict_value_type();
-			return "[string:" + typeid_to_compact_string(e) + "]";
-		}
-		else if(basetype == floyd::base_type::k_function){
-			const auto ret = t.get_function_return();
-			const auto args = t.get_function_args();
-
-			vector<string> args_str;
-			for(const auto a: args){
-				args_str.push_back(typeid_to_compact_string(a));
-			}
-
-			return string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ")";
-		}
-		else{
-			return base_type_to_string(basetype);
-		}
-	}
 
 
 

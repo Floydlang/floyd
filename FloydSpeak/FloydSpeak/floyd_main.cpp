@@ -225,7 +225,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 					print_pos++;
 				}
 				if(b.second._output.is_null() == false){
-					std::cout << to_compact_string(b.second._output) << std::endl;
+					std::cout << to_compact_string2(b.second._output) << std::endl;
 				}
 			}
 		}
