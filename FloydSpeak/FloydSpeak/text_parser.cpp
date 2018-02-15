@@ -15,6 +15,7 @@
 #include <map>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 using std::vector;
 using std::string;
@@ -166,13 +167,19 @@ QUARK_UNIT_TESTQ("double_to_string()", ""){
 ///////////////////////////////		seq_t
 
 
+std::string make_debug_str(const std::string& internal_string, size_t pos){
+	const auto pre_count = std::min(pos, (size_t)10);
 
+	const auto pre_str = internal_string.substr(pos - pre_count, pos);
+	const auto post_str = internal_string.substr(pos, 100);
+	return pre_str + "•••" + post_str;
+}
 
 seq_t::seq_t(const std::string& s) :
 	_str(make_shared<string>(s)),
 	_pos(0)
 {
-	FIRST_debug = _str->c_str() + _pos + 0;
+	FIRST_debug = make_debug_str(*_str, _pos);
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -206,7 +213,7 @@ seq_t::seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos) :
 	QUARK_ASSERT(str);
 	QUARK_ASSERT(pos <= str->size());
 
-	FIRST_debug = _str->c_str() + _pos + 0;
+	FIRST_debug = make_debug_str(*_str, _pos);
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -529,24 +536,29 @@ std::pair<std::string, seq_t> read_balanced2(const seq_t& s, const std::string& 
 	const auto open_close = deinterleave_string(open_close_pairs);
 
 	//	What is the opening character? Search for its matching close-character.
-	const auto f1 = open_close.first.find(s.first1_char());
-	QUARK_ASSERT(f1 != string::npos);
+	const auto closing_index = open_close.first.find(s.first1_char());
+	QUARK_ASSERT(closing_index != string::npos);
 
 	string result = s.first1();
 	auto pos = s.rest1();
-	while(pos.empty() == false && open_close.second.find(pos.first1_char()) != f1){
+	while(pos.empty() == false && open_close.second.find(pos.first1_char()) != closing_index){
+		const auto ch = pos.first1_char();
+
 		//	Unexpected close-character?
-		const auto f3 = open_close.second.find(pos.first1_char());
-		if(f3 != string::npos){
+		if(open_close.second.find(ch) != string::npos){
 			return { "", s };
 		}
 
 		//	Is this another opening-character?
-		const auto f2 = open_close.first.find(pos.first1_char());
-		if(f2 != string::npos){
+		else if(open_close.first.find(ch) != string::npos){
 			const auto r2 = read_balanced2(pos, open_close_pairs);
-			result = result + r2.first;
-			pos = r2.second;
+			if(r2 == std::pair<std::string, seq_t>{"", pos}){
+				return {"", s};
+			}
+			else{
+				result = result + r2.first;
+				pos = r2.second;
+			}
 		}
 		else {
 			result = result + pos.first1();
@@ -557,9 +569,7 @@ std::pair<std::string, seq_t> read_balanced2(const seq_t& s, const std::string& 
 		return { "", s };
 	}
 	else{
-		result = result + pos.first1();
-		pos = pos.rest1();
-		return { result, pos };
+		return { result + pos.first1(), pos.rest1() };
 	}
 }
 
@@ -593,4 +603,10 @@ QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("{return 4 < 5;}xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 }
 //	QUARK_TEST_VERIFY(read_balanced2("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "xyz"));
+
+
+
+QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
+	QUARK_TEST_VERIFY(read_balanced2(seq_t("(a(b(c(d));\n\t"), "(){}[]") == (std::pair<std::string, seq_t>("", seq_t("(a(b(c(d));\n\t"))));
+}
 

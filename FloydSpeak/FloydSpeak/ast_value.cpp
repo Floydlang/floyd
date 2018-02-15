@@ -47,7 +47,8 @@ namespace floyd {
 			const auto m = /*typeid_to_compact_string(def._type) + " " +*/ def._name + "=" + to_compact_string_quote_strings(value);
 			members.push_back(m);
 		}
-		return "struct {" + concat_strings_with_divider(members, ",") + "}";
+//		return "struct {" + concat_strings_with_divider(members, ", ") + "}";
+		return "{" + concat_strings_with_divider(members, ", ") + "}";
 	}
 
 
@@ -97,7 +98,8 @@ namespace floyd {
 			const auto es = to_compact_string_quote_strings(e);
 			elements.push_back(es);
 		}
-		return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
+//		return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
+		return "[" + concat_strings_with_divider(elements, ", ") + "]";
 	}
 
 
@@ -151,7 +153,8 @@ namespace floyd {
 			const auto es = key_str + ": " + value_str;
 			elements.push_back(es);
 		}
-		return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "{" + concat_strings_with_divider(elements, ",") + "}";
+//		return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "{" + concat_strings_with_divider(elements, ",") + "}";
+		return "{" + concat_strings_with_divider(elements, ", ") + "}";
 	}
 
 
@@ -818,22 +821,29 @@ ast_json_t value_to_ast_json(const value_t& v){
 		return typeid_to_ast_json(v.get_typeid_value());
 	}
 	else if(v.is_struct()){
-		const auto i = v.get_struct_value();
+		const auto value = v.get_struct_value();
+/*
 		return ast_json_t{json_t::make_object(
 			{
 				{ "struct-def", struct_definition_to_ast_json(i->_def)._value },
 				{ "member_values", values_to_json_array(i->_member_values) }
 			}
 		)};
+*/
+		return ast_json_t{ values_to_json_array(value->_member_values) 	};
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector_value();
+		return ast_json_t{ values_to_json_array(value->_elements) 	};
+/*
 		std::vector<json_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
 			const auto element_value = value->_elements[i];
 			result.push_back(value_to_ast_json(element_value)._value);
 		}
 		return ast_json_t{result};
+*/
+
 	}
 	else if(v.is_dict()){
 		const auto value = v.get_dict_value();
@@ -889,7 +899,7 @@ value_t value_from_ast_json(const ast_json_t& v2){
 		for(const auto e: obj){
 			const auto key = e.first;
 			const auto value = e.second;
-			const auto value2 = value_t::make_json_value(value);
+			const auto value2 = value_t::make_json_value(value);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
 			obj2[key] = value2;
 		}
 		return value_t::make_dict_value(typeid_t::make_json_value(), obj2);
@@ -901,7 +911,7 @@ value_t value_from_ast_json(const ast_json_t& v2){
 			const auto e2 = value_t::make_json_value(e);
 			elements2.push_back(e2);
 		}
-		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);
+		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
 	}
 	else if(v.is_string()){
 		return value_t::make_string(v.get_string());

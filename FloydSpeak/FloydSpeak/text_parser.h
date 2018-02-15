@@ -98,14 +98,13 @@ struct seq_t {
 	public: bool operator==(const seq_t& other) const;
 	public: bool operator!=(const seq_t& other) const { return !(*this == other); }
 
-	//	Returns pointer to entire string.
+	//	Returns pointer to entire string *following* the current pos. Never characters *before* current read pos.
 	const char* c_str() const;
 
 
 
 	/////////////		STATE
-	private: const char* FIRST_debug = nullptr;
-//	private: const char* REST_debug = nullptr;
+	private: std::string FIRST_debug;
 	private: std::shared_ptr<const std::string> _str;
 	private: std::size_t _pos;
 };
@@ -138,6 +137,8 @@ seq_t read_required_char(const seq_t& s, char ch);
 seq_t read_required(const seq_t& s, const std::string& req);
 
 std::pair<bool, seq_t> read_optional_char(const seq_t& s, char ch);
+
+std::pair<std::string, std::string> deinterleave_string(const std::string& s);
 
 //	If string is unbalanced, returns: { "", s }
 //	Recursively matches all brackets.

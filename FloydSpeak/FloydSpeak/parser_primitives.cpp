@@ -215,105 +215,11 @@ QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
 
 
 
-bool is_start_char(char c){
-	return c == '(' || c == '[' || c == '{';
-}
-
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(is_start_char('('));
-}
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(is_start_char('['));
-}
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(is_start_char('{'));
-}
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_start_char('<'));
-}
-
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_start_char(')'));
-}
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_start_char(']'));
-}
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_start_char('}'));
-}
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_start_char('>'));
-}
-QUARK_UNIT_TEST("", "is_start_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_start_char(' '));
-}
-
-
-bool is_end_char(char c){
-	return c == ')' || c == ']' || c == '}';
-}
-
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_end_char('('));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_end_char('['));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_end_char('{'));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_end_char('<'));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(is_end_char(')'));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(is_end_char(']'));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(is_end_char('}'));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_end_char('>'));
-}
-QUARK_UNIT_TEST("", "is_end_char()", "", ""){
-	QUARK_TEST_VERIFY(!is_end_char(' '));
-}
-
-
-
-char start_char_to_end_char(char start_char){
-	QUARK_ASSERT(is_start_char(start_char));
-
-	if(start_char == '('){
-		return ')';
-	}
-	else if(start_char == '['){
-		return ']';
-	}
-	else if(start_char == '{'){
-		return '}';
-	}
-	else {
-		QUARK_ASSERT(false);
-	}
-}
-
-QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
-	QUARK_TEST_VERIFY(start_char_to_end_char('(') == ')');
-}
-QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
-	QUARK_TEST_VERIFY(start_char_to_end_char('[') == ']');
-}
-QUARK_UNIT_TEST("", "start_char_to_end_char()", "", ""){
-	QUARK_TEST_VERIFY(start_char_to_end_char('{') == '}');
-}
 
 std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto r = read_balanced2(s, brackets);
+	const auto r = read_balanced2(s, bracket_pairs);
 	if(r.first == ""){
 		throw std::runtime_error("unbalanced ([{< >}])");
 	}
@@ -370,12 +276,14 @@ QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
 
 
 
+const auto open_close2 = deinterleave_string(bracket_pairs);
 
 
 std::pair<string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars){
 	auto pos = s;
 	while(pos.empty() == false && match_chars.find(pos.first1()) == string::npos){
-		if(is_start_char(pos.first()[0])){
+		const auto ch = pos.first();
+		if(open_close2.first.find(ch) != string::npos){
 			const auto end = get_balanced(pos).second;
 			pos = end;
 		}
@@ -390,6 +298,15 @@ std::pair<string, seq_t> read_until_toplevel_match(const seq_t& s, const std::st
 	else{
 		const auto r = get_range(s, pos);
 		return { r, pos };
+	}
+}
+
+QUARK_UNIT_TEST("", "read_until_toplevel_match()", "", ""){
+	try {
+		read_until_toplevel_match(seq_t("print(json_to_string(json_to_value(value_to_json(\"cola\"));\n\t"), ";{");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(...){
 	}
 }
 
@@ -499,7 +416,7 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
 std::pair<vector<member_t>, seq_t> read_function_arg_parantheses(const seq_t& s){
 	QUARK_ASSERT(s.first1() == "(");
 
-	std::pair<std::string, seq_t> args_pos = read_balanced2(s, brackets);
+	std::pair<std::string, seq_t> args_pos = read_balanced2(s, bracket_pairs);
 	if(args_pos.first.empty()){
 		throw std::runtime_error("unbalanced ()");
 	}

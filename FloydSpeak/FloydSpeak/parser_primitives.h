@@ -29,11 +29,7 @@ namespace floyd {
 
 	const std::string whitespace_chars = " \n\t";
 	const std::string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-	const std::string brackets = "(){}[]";
-	const std::string open_brackets = "({[";
-	const std::string type_chars = identifier_chars;
-	const std::string number_chars = "0123456789.";
-	const std::string operator_chars = "+-*/.";
+	const std::string bracket_pairs = "(){}[]";
 
 
 	//////////////////////////////////////////////////		Text parsing primitives, Floyd specific
@@ -54,11 +50,6 @@ namespace floyd {
 
 
 	//////////////////////////////////////////////////		BALANCING PARANTHESES, BRACKETS
-
-
-	bool is_start_char(char c);
-	bool is_end_char(char c);
-	char start_char_to_end_char(char start_char);
 
 
 	/*

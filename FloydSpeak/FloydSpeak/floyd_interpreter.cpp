@@ -2037,7 +2037,7 @@ std::pair<interpreter_t, value_t> host__string_to_json_value(const interpreter_t
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(args.size() != 1){
-		throw std::runtime_error("string_to_json_value() requires 2 argument!");
+		throw std::runtime_error("string_to_json_value() requires 1 argument!");
 	}
 	else if(args[0].is_string() == false){
 		throw std::runtime_error("string_to_json_value() requires string argument.");
@@ -2065,6 +2065,45 @@ std::pair<interpreter_t, value_t> host__json_value_to_string(const interpreter_t
 		return {vm, value_t::make_string(s) };
 	}
 }
+
+
+
+std::pair<interpreter_t, value_t> host__value_to_json(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("value_to_json() requires 1 argument!");
+	}
+/*
+	else if(args[0].is_string() == false){
+		throw std::runtime_error("value_to_json() requires string argument.");
+	}
+*/
+	else{
+		const auto value = args[0];
+		const auto j = value_to_ast_json(value);
+		value_t json_value = value_t::make_json_value(j._value);
+		return {vm, json_value };
+	}
+}
+
+std::pair<interpreter_t, value_t> host__json_to_value(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("json_to_value() requires 1 argument!");
+	}
+	else if(args[0].is_json_value() == false){
+		throw std::runtime_error("json_to_value() requires string argument.");
+	}
+	else{
+		const auto json_value = args[0].get_json_value();
+		const auto ast_json = ast_json_t{json_value};	//	NOTICE: This requires json to be ast-compatible.
+		const auto value = value_from_ast_json(ast_json);
+		return {vm, value };
+	}
+}
+
 
 
 
@@ -2104,7 +2143,8 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "string_to_json", host__string_to_json_value, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 	host_function_t{ "json_to_string", host__json_value_to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 
-
+	host_function_t{ "value_to_json", host__value_to_json, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
+	host_function_t{ "json_to_value", host__json_to_value, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_json_value()}) }
 };
 
 

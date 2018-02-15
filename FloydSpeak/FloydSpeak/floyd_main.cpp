@@ -285,6 +285,16 @@ void run_tests(){
 	quark::run_tests({
 		"quark.cpp",
 
+		"text_parser.cpp",
+		"steady_vector.cpp",
+		"unused_bits.cpp",
+		"sha1_class.cpp",
+		"sha1.cpp",
+		"json_parser.cpp",
+		"json_support.cpp",
+		"json_writer.cpp",
+
+
 		"floyd_basics.cpp",
 
 		"parser2.cpp",
@@ -304,36 +314,18 @@ void run_tests(){
 
 		//	Core libs
 /*
-		"steady_vector.cpp",
-		"text_parser.cpp",
-		"unused_bits.cpp",
-		"sha1_class.cpp",
-		"sha1.cpp",
-		"json_parser.cpp",
-		"json_support.cpp",
-		"json_writer.cpp",
-
 		"pass2.cpp",
-
 		"parser_ast.cpp",
 		"ast_utils.cpp",
 		"experimental_runtime.cpp",
 		"expressions.cpp",
-
 		"llvm_code_gen.cpp",
-
-
 		"runtime_core.cpp",
 		"runtime_value.cpp",
 		"runtime.cpp",
-
 		"utils.cpp",
-
-
 		"pass3.cpp",
-
 		"floyd_interpreter.cpp",
-
 		"floyd_main.cpp",
 */
 	});

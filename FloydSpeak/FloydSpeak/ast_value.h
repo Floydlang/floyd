@@ -613,7 +613,12 @@ namespace floyd {
 
 
 	ast_json_t value_to_ast_json(const value_t& v);
+
+	//	Returns a value_t::json_value with json data in it.
+	//	No other conversion to value_t:s for sub objects, like vector elements etc.
 	value_t value_from_ast_json(const ast_json_t& v);
+
+
 	ast_json_t value_and_type_to_ast_json(const value_t& v);
 
 }	//	floyd
