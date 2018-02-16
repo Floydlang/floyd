@@ -73,7 +73,7 @@ void ut_compare_stringvects(const vector<string>& result, const vector<string>& 
 }
 
 
-//////////////////////////		TEST GLOBAL CONSTANTS
+//////////////////////////////////////////		TEST GLOBAL CONSTANTS
 
 
 QUARK_UNIT_TESTQ("Floyd test suite", "Global int variable"){
@@ -100,7 +100,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "string constant expression"){
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS
+//////////////////////////////////////////		BASIC EXPRESSIONS
 
 
 QUARK_UNIT_TESTQ("Floyd test suite", "+") {
@@ -130,7 +130,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
+//////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
 QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
@@ -150,7 +150,7 @@ QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - PARANTHESES
+//////////////////////////////////////////		BASIC EXPRESSIONS - PARANTHESES
 
 
 
@@ -172,7 +172,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parentheses") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - SPACES
+//////////////////////////////////////////		BASIC EXPRESSIONS - SPACES
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
@@ -186,7 +186,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - FLOAT
+//////////////////////////////////////////		BASIC EXPRESSIONS - FLOAT
 
 
 
@@ -209,7 +209,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
 	test__run_init__check_result("float result = .25 / 2.0 * .5;", value_t::make_float(0.0625f));
 }
 
-//////////////////////////		BASIC EXPRESSIONS - EDGE CASES
+//////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
@@ -226,7 +226,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - BOOL
+//////////////////////////////////////////		BASIC EXPRESSIONS - BOOL
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
@@ -237,7 +237,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
+//////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
 
@@ -264,7 +264,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - OPERATOR ==
+//////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ==
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
@@ -284,7 +284,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - OPERATOR <
+//////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR <
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
@@ -306,7 +306,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
 	test__run_init__check_result("bool result = \"boat\" < \"adwark\";", value_t::make_bool(false));
 }
 
-//////////////////////////		BASIC EXPRESSIONS - OPERATOR &&
+//////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR &&
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	test__run_init__check_result("bool result = false && false;", value_t::make_bool(false));
@@ -343,7 +343,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
 	test__run_init__check_result("bool result = true && true && true;", value_t::make_bool(true));
 }
 
-//////////////////////////		BASIC EXPRESSIONS - OPERATOR ||
+//////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ||
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 	test__run_init__check_result("bool result = false || false;", value_t::make_bool(false));
@@ -385,7 +385,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 }
 
 
-//////////////////////////		BASIC EXPRESSIONS - ERRORS
+//////////////////////////////////////////		BASIC EXPRESSIONS - ERRORS
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Type mismatch") {
@@ -445,7 +445,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
 
 
 
-//////////////////////////		MINIMAL PROGRAMS
+//////////////////////////////////////////		MINIMAL PROGRAMS
 
 
 
@@ -506,7 +506,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 
 
 
-//////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
+//////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
 
 
 QUARK_UNIT_TEST("", "bool()", "", ""){
@@ -637,7 +637,7 @@ QUARK_UNIT_TEST_VIP("", "[[string: int]]()", "", ""){
 */
 
 
-//////////////////////////		CALL FUNCTIONS
+//////////////////////////////////////////		CALL FUNCTIONS
 
 
 
@@ -670,7 +670,7 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 }
 
 
-//////////////////////////		USE LOCAL VARIABLES IN FUNCTION
+//////////////////////////////////////////		USE LOCAL VARIABLES IN FUNCTION
 
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
@@ -693,7 +693,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 
-//////////////////////////		MUTATE VARIABLES
+//////////////////////////////////////////		MUTATE VARIABLES
 
 
 
@@ -788,7 +788,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 
 
 
-//////////////////////////		RETURN STATEMENT - ADVANCED USAGE
+//////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
 
 QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
@@ -863,7 +863,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 
 
 
-//////////////////////////		HOST FUNCTION - to_string()
+//////////////////////////////////////////		HOST FUNCTION - to_string()
 
 
 
@@ -895,7 +895,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 
 
 
-//////////////////////////		HOST FUNCTION - print()
+//////////////////////////////////////////		HOST FUNCTION - print()
 
 
 
@@ -932,7 +932,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 }
 
 
-//////////////////////////		HOST FUNCTION - assert()
+//////////////////////////////////////////		HOST FUNCTION - assert()
 
 QUARK_UNIT_TESTQ("run_global()", ""){
 	try{
@@ -959,7 +959,7 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 }
 
 
-//////////////////////////		HOST FUNCTION - get_time_of_day()
+//////////////////////////////////////////		HOST FUNCTION - get_time_of_day()
 
 
 
@@ -975,7 +975,7 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 }
 
 
-//////////////////////////		BLOCKS AND SCOPING
+//////////////////////////////////////////		BLOCKS AND SCOPING
 
 
 
@@ -1010,7 +1010,7 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 
 
 
-//////////////////////////		IF STATEMENT
+//////////////////////////////////////////		IF STATEMENT
 
 
 
@@ -1149,7 +1149,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 
 
 
-//////////////////////////		FOR STATEMENT
+//////////////////////////////////////////		FOR STATEMENT
 
 
 
@@ -1188,7 +1188,7 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 }
 
 
-//////////////////////////		WHILE STATEMENT
+//////////////////////////////////////////		WHILE STATEMENT
 
 
 QUARK_UNIT_TESTQ("run_init()", "for"){
@@ -1205,11 +1205,11 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 }
 
 
-//////////////////////////		TYPEID - TYPE
+//////////////////////////////////////////		TYPEID - TYPE
 
 //	??? Test converting different types to jsons
 
-//////////////////////////		STRING - TYPE
+//////////////////////////////////////////		STRING - TYPE
 
 
 
@@ -1258,7 +1258,7 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 
 
 
-//////////////////////////		VECTOR - TYPE
+//////////////////////////////////////////		VECTOR - TYPE
 
 
 QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
@@ -1460,7 +1460,7 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 }
 
 
-//////////////////////////		DICT - TYPE
+//////////////////////////////////////////		DICT - TYPE
 
 
 
@@ -1635,7 +1635,7 @@ QUARK_UNIT_TEST("dict", "erase()", "", ""){
 
 
 
-//////////////////////////		STRUCT - TYPE
+//////////////////////////////////////////		STRUCT - TYPE
 
 
 
@@ -1900,7 +1900,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 
 
-//////////////////////////		JSON - TYPE
+//////////////////////////////////////////		JSON - TYPE
 
 
 
