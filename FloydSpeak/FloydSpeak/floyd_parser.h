@@ -30,7 +30,7 @@ http://craftinginterpreters.com/representing-code.html
 		STRING				"string"
 		TYPEID				???
 		VECTOR				"[" TYPE "]"
-		DICTIONARY			"[" TYPE ":" TYPE" "]"
+		DICTIONARY			"{" TYPE ":" TYPE" "}"
 		FUNCTION-TYPE		TYPE "(" ARGUMENT ","* ")" "{" BODY "}"
 			ARGUMENT		TYPE identifier
 		STRUCT-DEF			"struct" IDENTIFIER "{" MEMBER* "}"
@@ -43,10 +43,10 @@ http://craftinginterpreters.com/representing-code.html
 		NUMERIC-LITERAL					"0123456789" +++
 		RESOLVE-IDENTIFIER				IDENTIFIER +++
 
-		VECTOR-DEFINITION				"[" EXPRESSION "," EXPRESSION "," ... "]"
-tbd		VECTOR-DEFINITION				TYPE "[" EXPRESSION "," EXPRESSION "," ... "]"
-		DICT-DEFINITION					"[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" EXPRESSION "," ... "]"
-tbd		DICT-DEFINITION					TYPE "[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" EXPRESSION "," ... "]"
+		CONSTRUCTOR-CALL				TYPE "(" EXPRESSION "," EXPRESSION "," ... ")" +++
+
+		VECTOR-DEFINITION				"[" EXPRESSION "," EXPRESSION "," ... "]" +++
+		DICT-DEFINITION					"[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" EXPRESSION "," ... "]" +++
 		ADD								EXPRESSION "+" EXPRESSION +++
 		SUB								EXPRESSION "-" EXPRESSION +++
 										EXPRESSION "&&" EXPRESSION +++
@@ -56,8 +56,6 @@ tbd		DICT-DEFINITION					TYPE "[" EXPRESSION ":" EXPRESSION "," EXPRESSION ":" E
 		CALL							EXPRESSION "(" EXPRESSION "," EXPRESSION "," ...")" +++
 		UNARY-MINUS						"-" EXPRESSION
 		CONDITIONAL-OPERATOR			EXPRESSION ? EXPRESSION : EXPRESSION +++
-
-tbd		Convert-to-type:				TYPE(EXPRESSION)
 
 
 	STATEMENT:
