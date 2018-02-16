@@ -98,7 +98,7 @@ enum class implicit_statement {
 
 /*
 	FUNCTION-DEFINITION			TYPE IDENTIFIER "(" ARGUMENTS ")" "{" ... "}"
-		int print(float a) { ... }
+		int print(float a) { ... }
 		int print (float a) { ... }
 		int f(string name)
 		int (string a) f(string name)

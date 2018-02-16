@@ -1132,11 +1132,66 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 		}
 	}
 
-	const auto instance = value_t::make_struct_value(struct_type, def, values);
+	const auto instance = value_t::make_struct_value(struct_type, values);
 	QUARK_TRACE(to_compact_string2(instance));
 
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
+
+std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
+
+/*
+	enum class base_type {
+		k_null,
+		k_bool,
+		k_int,
+		k_float,
+		k_string,
+		k_json_value,
+
+		//	This is a type that specifies another type.
+		k_typeid,
+
+		k_struct,
+		k_vector,
+		k_dict,
+		k_function,
+
+		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
+		k_unresolved_type_identifier
+	};
+*/
+	if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_json_value() || type.is_typeid()){
+		if(arg_values.size() != 1){
+			throw std::runtime_error("Constructor requires 1 argument");
+		}
+		const auto value = improve_value_type(arg_values[0], type);
+		if(value.get_type() != type){
+			throw std::runtime_error("Constructor requires 1 argument");
+		}
+		return {vm, value };
+	}
+	else if(type.is_struct()){
+		//	Constructor.
+		const auto result = construct_struct(vm, type, arg_values);
+		return { result.first, result.second };
+	}
+	else if(type.is_vector()){
+	}
+	else if(type.is_dict()){
+	}
+	else if(type.is_function()){
+	}
+	else if(type.is_unresolved_type_identifier()){
+	}
+	else{
+	}
+
+	throw std::runtime_error("Cannot call non-function.");
+}
+
+
+
 
 //	May return a simplified expression instead of a value literal..
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
@@ -1175,16 +1230,17 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 	if(function_value.is_function() == false){
 		//	Attempting to call a TYPE? Then this may be a constructor call.
 		if(function_value.is_typeid()){
-			const auto typeid_contained_type = function_value.get_typeid_value();
-			if(typeid_contained_type.get_base_type() == base_type::k_struct){
-				//	Constructor.
-				const auto result = construct_struct(vm2, typeid_contained_type, arg_values);
-				vm2 = result.first;
-				return { vm2, expression_t::make_literal(result.second)};
-			}
-			else{
-				throw std::runtime_error("Cannot call non-function.");
-			}
+			const auto result = construct_value_from_typeid(vm2, function_value.get_typeid_value(), arg_values);
+			vm2 = result.first;
+			return { vm2, expression_t::make_literal(result.second)};
+		}
+		else if(function_value.is_vector()){
+			const auto element_type = function_value.get_type();
+
+			const auto type2 = typeid_t::make_vector(element_type);
+			const auto result = construct_value_from_typeid(vm2, type2, arg_values);
+			vm2 = result.first;
+			return { vm2, expression_t::make_literal(result.second)};
 		}
 		else{
 			throw std::runtime_error("Cannot call non-function.");
@@ -1471,7 +1527,7 @@ typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 		auto values2 = values;
 		values2[member_index] = new_value;
 
-		auto s2 = value_t::make_struct_value(struct_typeid, def, values2);
+		auto s2 = value_t::make_struct_value(struct_typeid, values2);
 		return s2;
 	}
 
@@ -2244,6 +2300,12 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		const auto function_value = value_t::make_function_value(def);
 		global_env->_values[hf._name] = std::pair<value_t, bool>{function_value, false };
 	}
+	global_env->_values["bool"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
+	global_env->_values["int"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
+	global_env->_values["float"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
+	global_env->_values["string"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
+	global_env->_values["json_value"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
+
 
 	//	Register the struct type for json_value.
 //	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value_type, false };

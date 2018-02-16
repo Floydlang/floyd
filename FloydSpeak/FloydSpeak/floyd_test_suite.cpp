@@ -21,13 +21,7 @@
 using std::vector;
 using std::string;
 
-using floyd::value_t;
-using floyd::run_global;
-using floyd::expression_t;
-using floyd::program_to_ast2;
-using floyd::interpreter_t;
-using floyd::find_global_symbol;
-using floyd::statement_result_t;
+using namespace floyd;
 
 
 
@@ -509,6 +503,75 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t::make_string("123456")));
 }
+
+
+
+//////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
+
+
+QUARK_UNIT_TEST("", "bool()", "", ""){
+	test__run_init__check_result("result = bool(false);", value_t::make_bool(false));
+}
+QUARK_UNIT_TEST("", "bool()", "", ""){
+	test__run_init__check_result("result = bool(true);", value_t::make_bool(true));
+}
+QUARK_UNIT_TEST("", "int()", "", ""){
+	test__run_init__check_result("result = int(123);", value_t::make_int(123));
+}
+QUARK_UNIT_TEST("", "float()", "", ""){
+	test__run_init__check_result("result = float(0.0);", value_t::make_float(0.0));
+}
+QUARK_UNIT_TEST("", "float()", "", ""){
+	test__run_init__check_result("result = float(123.456);", value_t::make_float(123.456f));
+}
+/*
+QUARK_UNIT_TEST("", "string()", "", ""){
+	test__run_init__check_result("result = string();", value_t::make_string(""));
+}
+*/
+QUARK_UNIT_TEST("", "string()", "", ""){
+	test__run_init__check_result("result = string(\"ABCD\");", value_t::make_string("ABCD"));
+}
+
+QUARK_UNIT_TEST("", "json_value()", "", ""){
+	test__run_init__check_result("result = json_value(123);", value_t::make_json_value(json_t(123.0)));
+}
+QUARK_UNIT_TEST("", "json_value()", "", ""){
+	test__run_init__check_result("result = json_value(\"hello\");", value_t::make_json_value(json_t("hello")));
+}
+QUARK_UNIT_TEST("", "json_value()", "", ""){
+	test__run_init__check_result("result = json_value([1,2,3]);", value_t::make_json_value(json_t::make_array({1,2,3})));
+}
+QUARK_UNIT_TEST("", "pixel_t()", "", ""){
+	const auto pixel_t__def = std::make_shared<floyd::struct_definition_t>(
+		std::vector<member_t>{
+			member_t(typeid_t::make_int(), "red"),
+			member_t(typeid_t::make_int(), "green"),
+			member_t(typeid_t::make_int(), "blue")
+		}
+	);
+
+	test__run_init__check_result(
+		"struct pixel_t { int red; int green; int blue; } result = pixel_t(1,2,3);",
+		value_t::make_struct_value(typeid_t::make_struct(pixel_t__def), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
+	);
+}
+
+//??? typeid()
+
+/*
+QUARK_UNIT_TEST("", "json_value()", "", ""){
+	test__run_init__check_result(
+		"result = [int](1,2,3);",
+		value_t::make_vector_value(typeid_t::make_int(), {
+			value_t::make_int(1),
+			value_t::make_int(2),
+			value_t::make_int(3)
+		})
+	);
+}
+*/
+
 
 
 //////////////////////////		CALL FUNCTIONS

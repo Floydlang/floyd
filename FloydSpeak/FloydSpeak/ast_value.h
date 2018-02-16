@@ -490,7 +490,7 @@ namespace floyd {
 			return _typeid.get_typeid_typeid();
 		}
 
-		public: static value_t make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values);
+		public: static value_t make_struct_value(const typeid_t& struct_type, const std::vector<value_t>& values);
 		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 

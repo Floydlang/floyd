@@ -921,14 +921,12 @@ value_t value_t::make_typeid_value(const typeid_t& type_id){
 	return value_t(type_id);
 }
 
-value_t value_t::make_struct_value(const typeid_t& struct_type, const struct_definition_t& def, const std::vector<value_t>& values){
+value_t value_t::make_struct_value(const typeid_t& struct_type, const std::vector<value_t>& values){
+	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved_type_identifier);
-	QUARK_ASSERT(def.check_invariant());
 
-	auto f = std::shared_ptr<struct_instance_t>(new struct_instance_t{def, values});
-//		const auto t = typeid_t::make_unresolved_type_identifier(struct_type.get_struct()._name);
-	const auto t = struct_type;
-	return value_t(t, f);
+	auto instance = std::shared_ptr<struct_instance_t>(new struct_instance_t{struct_type.get_struct(), values});
+	return value_t(struct_type, instance);
 }
 
 value_t value_t::make_vector_value(const typeid_t& element_type, const std::vector<value_t>& elements){

@@ -121,7 +121,7 @@ enum class eoperation {
 	//	a && b
 	k_2_logical_and,
 
-	//	a || b
+	//	a || b
 	k_2_logical_or,
 
 	//	cond ? a : b
