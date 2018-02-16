@@ -559,8 +559,7 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 
 //??? typeid()
 
-/*
-QUARK_UNIT_TEST("", "json_value()", "", ""){
+QUARK_UNIT_TEST("", "[int]()", "", ""){
 	test__run_init__check_result(
 		"result = [int](1,2,3);",
 		value_t::make_vector_value(typeid_t::make_int(), {
@@ -570,9 +569,72 @@ QUARK_UNIT_TEST("", "json_value()", "", ""){
 		})
 	);
 }
+
+QUARK_UNIT_TEST("", "[[int]]()", "", ""){
+	test__run_init__check_result(
+		"result = [[int]]([1,2,3], [4,5,6]);",
+		value_t::make_vector_value(
+			typeid_t::make_vector(typeid_t::make_int()),
+			{
+				value_t::make_vector_value(typeid_t::make_int(), {
+					value_t::make_int(1),
+					value_t::make_int(2),
+					value_t::make_int(3)
+				}),
+				value_t::make_vector_value(typeid_t::make_int(), {
+					value_t::make_int(4),
+					value_t::make_int(5),
+					value_t::make_int(6)
+				})
+			}
+		)
+	);
+}
+
+QUARK_UNIT_TEST("", "[pixel_t]()", "", ""){
+	const auto pixel_t__def = std::make_shared<floyd::struct_definition_t>(
+		std::vector<member_t>{
+			member_t(typeid_t::make_int(), "red"),
+			member_t(typeid_t::make_int(), "green"),
+			member_t(typeid_t::make_int(), "blue")
+		}
+	);
+	const auto pixel_t_typeid = typeid_t::make_struct(pixel_t__def);
+
+	test__run_init__check_result(
+		"struct pixel_t { int red; int green; int blue; } result = [pixel_t](pixel_t(1,2,3),pixel_t(4,5,6));",
+		value_t::make_vector_value(
+			pixel_t_typeid,
+			{
+				value_t::make_struct_value(pixel_t_typeid, vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)}),
+				value_t::make_struct_value(pixel_t_typeid, vector<value_t>{value_t::make_int(4), value_t::make_int(5), value_t::make_int(6)})
+			}
+		)
+	);
+}
+
+/*
+QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
+	test__run_init__check_result(
+		R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
+		value_t::make_vector_value(
+			typeid_t::make_vector(typeid_t::make_int()),
+			{
+				value_t::make_vector_value(typeid_t::make_int(), {
+					value_t::make_int(1),
+					value_t::make_int(2),
+					value_t::make_int(3)
+				}),
+				value_t::make_vector_value(typeid_t::make_int(), {
+					value_t::make_int(4),
+					value_t::make_int(5),
+					value_t::make_int(6)
+				})
+			}
+		)
+	);
+}
 */
-
-
 
 //////////////////////////		CALL FUNCTIONS
 
@@ -1982,14 +2044,14 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 
 
 
-
+/*
 QUARK_UNIT_TEST("json_value-object", "to_pretty_string()", "", ""){
 	const auto vm = run_global(R"ABCD(
 		json_value a = {
 			"menu": {
 			  "id": "file",
 			  "value": "File",
-			  "popup": {
+			  "popup": {_VIP
 				"menuitem": [
 				  {"value": "New", "onclick": "CreateNewDoc()"},
 				  {"value": "Open", "onclick": "OpenDoc()"},
@@ -2022,7 +2084,7 @@ const auto expected = R"ABCD({
 	});
 
 }
-
+*/
 
 
 QUARK_UNIT_TEST("", "get_env_path()", "", ""){

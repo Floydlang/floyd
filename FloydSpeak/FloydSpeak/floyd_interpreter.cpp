@@ -1138,6 +1138,7 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
 
+
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 
 /*
@@ -1177,6 +1178,19 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		return { result.first, result.second };
 	}
 	else if(type.is_vector()){
+		const auto element_type = type.get_vector_element_type();
+		vector<value_t> elements2;
+		if(element_type.is_vector()){
+			for(const auto e: arg_values){
+				const auto result2 = construct_value_from_typeid(vm, element_type, e.get_vector_value()->_elements);
+				elements2.push_back(result2.second);
+			}
+		}
+		else{
+			elements2 = arg_values;
+		}
+		const auto result = value_t::make_vector_value(element_type, elements2);
+		return {vm, result };
 	}
 	else if(type.is_dict()){
 	}
@@ -1190,8 +1204,25 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	throw std::runtime_error("Cannot call non-function.");
 }
 
-
-
+typeid_t cleanup_vector_constructor_type(const typeid_t& type){
+	if(type.is_vector()){
+		const auto element_type = type.get_vector_element_type();
+		if(element_type.is_vector()){
+			const auto c = cleanup_vector_constructor_type(element_type);
+			return typeid_t::make_vector(c);
+		}
+		else{
+			assert(element_type.is_typeid());
+			return typeid_t::make_vector(element_type.get_typeid_typeid());
+		}
+	}
+	else if(type.is_dict()){
+		return type;
+	}
+	else{
+		return type;
+	}
+}
 
 //	May return a simplified expression instead of a value literal..
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
@@ -1235,10 +1266,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 			return { vm2, expression_t::make_literal(result.second)};
 		}
 		else if(function_value.is_vector()){
-			const auto element_type = function_value.get_type();
-
-			const auto type2 = typeid_t::make_vector(element_type);
-			const auto result = construct_value_from_typeid(vm2, type2, arg_values);
+			const auto result = construct_value_from_typeid(vm2, cleanup_vector_constructor_type(function_value.get_type()), arg_values);
 			vm2 = result.first;
 			return { vm2, expression_t::make_literal(result.second)};
 		}

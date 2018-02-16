@@ -23,6 +23,34 @@ namespace floyd {
 	struct value_t;
 
 
+
+	/*
+		"true"
+		"0"
+		"1003"
+		"Hello, world"
+		Notice, strings don't get wrapped in "".
+	*/
+	std::string to_compact_string2(const value_t& value);
+
+	//	Special handling of strings, we want to wrap in "".
+	std::string to_compact_string_quote_strings(const value_t& value);
+
+	/*
+		bool: "true"
+		int: "0"
+		string: "1003"
+		string: "Hello, world"
+	*/
+	std::string value_and_type_to_string(const value_t& value);
+
+
+	ast_json_t value_to_ast_json(const value_t& v);
+
+	ast_json_t value_and_type_to_ast_json(const value_t& v);
+
+
+
 	//////////////////////////////////////////////////		struct_instance_t
 
 	/*
@@ -188,6 +216,8 @@ namespace floyd {
 		public: value_t() :
 			_typeid(typeid_t::make_null())
 		{
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -195,6 +225,8 @@ namespace floyd {
 			_typeid(typeid_t::make_bool()),
 			_bool(value)
 		{
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -202,6 +234,8 @@ namespace floyd {
 			_typeid(typeid_t::make_int()),
 			_int(value)
 		{
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -209,6 +243,8 @@ namespace floyd {
 			_typeid(typeid_t::make_float()),
 			_float(value)
 		{
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -218,6 +254,8 @@ namespace floyd {
 		{
 			QUARK_ASSERT(s != nullptr);
 
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -225,6 +263,8 @@ namespace floyd {
 			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -232,6 +272,9 @@ namespace floyd {
 			_typeid(typeid_t::make_json_value()),
 			_json_value(s)
 		{
+			QUARK_ASSERT(s != nullptr && s->check_invariant());
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -241,6 +284,8 @@ namespace floyd {
 			_typeid(typeid_t::make_typeid(type))
 		{
 			QUARK_ASSERT(type.check_invariant());
+
+			DEBUG_STR = value_and_type_to_string(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -252,6 +297,8 @@ namespace floyd {
 			QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
 			QUARK_ASSERT(instance && instance->check_invariant());
 
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -260,6 +307,8 @@ namespace floyd {
 			_vector(instance)
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
+
+			DEBUG_STR = value_and_type_to_string(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -270,6 +319,8 @@ namespace floyd {
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
 
+			DEBUG_STR = value_and_type_to_string(*this);
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -278,6 +329,8 @@ namespace floyd {
 			_function(function_instance)
 		{
 			QUARK_ASSERT(function_instance && function_instance->check_invariant());
+
+			DEBUG_STR = value_and_type_to_string(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -298,6 +351,8 @@ namespace floyd {
 			_function(other._function)
 		{
 			QUARK_ASSERT(other.check_invariant());
+
+			DEBUG_STR = value_and_type_to_string(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -556,6 +611,8 @@ namespace floyd {
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
 
+			std::swap(DEBUG_STR, other.DEBUG_STR);
+
 			_typeid.swap(other._typeid);
 
 			std::swap(_bool, other._bool);
@@ -577,6 +634,7 @@ namespace floyd {
 
 		////////////////////		STATE
 
+		private: std::string DEBUG_STR;
 		private: typeid_t _typeid;
 
 		private: bool _bool = false;
@@ -590,31 +648,6 @@ namespace floyd {
 		private: std::shared_ptr<const function_instance_t> _function;
 	};
 
-
-	/*
-		"true"
-		"0"
-		"1003"
-		"Hello, world"
-		Notice, strings don't get wrapped in "".
-	*/
-	std::string to_compact_string2(const value_t& value);
-
-	//	Special handling of strings, we want to wrap in "".
-	std::string to_compact_string_quote_strings(const value_t& value);
-
-	/*
-		bool: "true"
-		int: "0"
-		string: "1003"
-		string: "Hello, world"
-	*/
-	std::string value_and_type_to_string(const value_t& value);
-
-
-	ast_json_t value_to_ast_json(const value_t& v);
-
-	ast_json_t value_and_type_to_ast_json(const value_t& v);
 
 }	//	floyd
 
