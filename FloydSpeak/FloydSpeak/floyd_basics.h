@@ -33,7 +33,6 @@ namespace floyd {
 		static const std::string k_false;
 		static const std::string k_true;
 		static const std::string k_bool;
-
 		static const std::string k_int;
 		static const std::string k_float;
 		static const std::string k_string;
@@ -42,6 +41,14 @@ namespace floyd {
 		static const std::string k_struct;
 
 		static const std::string k_mutable;
+
+		static const std::string k_json_object;
+		static const std::string k_json_array;
+		static const std::string k_json_string;
+		static const std::string k_json_number;
+		static const std::string k_json_true;
+		static const std::string k_json_false;
+		static const std::string k_json_null;
 
 		//	"null" is not a keyword, since it can be used in source code.
 /*

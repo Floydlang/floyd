@@ -2029,65 +2029,62 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 
 QUARK_UNIT_TEST("json_value-string", "deduce json_value::string", "", ""){
-	const auto vm = run_global(R"(
+	const auto result = run_return_result(R"(
+		json_value result = "hello";
+	)", {});
+	ut_compare_values(result, value_t::make_json_value("hello"));
+}
+
+QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
+	const auto result = run_return_result(R"(
 		json_value a = "hello";
-		print(a);
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"\"hello\""
-	});
-}
-QUARK_UNIT_TEST("json_value-string", "== string", "", ""){
-	const auto vm = run_global(R"(
-		json_value a = "hello";
-		assert(a == "hello");
-	)");
+		result = size(a);
+	)", {});
+	ut_compare_values(result, value_t::make_int(5));
 }
 
-
-QUARK_UNIT_TEST("json_value-string", "size()", "", ""){
-	const auto vm = run_global(R"(
-		json_value a = "hello";
-		assert(size(a) == 5);
-	)");
+QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
+	const auto result = run_return_result(R"(
+		json_value result = 13;
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(13));
 }
 
-QUARK_UNIT_TEST("json_value-number", "== number", "", ""){
-	const auto vm = run_global(R"(
-		json_value a = 13;
-		assert(a == 13);
-	)");
+QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
+	const auto result = run_return_result(R"(
+		json_value result = ["hello", "bye"];
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t::make_array(vector<json_t>{"hello", "bye"})));
 }
 
-
-
-QUARK_UNIT_TEST("json_value-array", "def", "", ""){
-	const auto vm = run_global(R"(
+QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+	const auto result = run_return_result(R"(
 		json_value a = ["hello", "bye"];
-		print(a);
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"[\"hello\", \"bye\"]"
-	});
+		result = string(a[0]) + string(a[1]);
+	)", {});
+	ut_compare_values(result, value_t::make_string("hellobye"));
 }
-
-QUARK_UNIT_TEST("json_value-array", "[]", "", ""){
-	const auto vm = run_global(R"(
+QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+	const auto result = run_return_result(R"(
 		json_value a = ["hello", "bye"];
-		print(a[0]);
-		print(a[1]);
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"\"hello\"",
-		"\"bye\""
-	});
+		result = a[0];
+	)", {});
+	ut_compare_values(result, value_t::make_json_value("hello"));
+}
+QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+	const auto result = run_return_result(R"(
+		json_value a = ["hello", "bye"];
+		result = a[1];
+	)", {});
+	ut_compare_values(result, value_t::make_json_value("bye"));
 }
 
 QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
-	const auto vm = run_global(R"(
+	const auto result = run_return_result(R"(
 		json_value a = ["a", "b", "c", "d"];
-		assert(size(a) == 4);
-	)");
+		result = size(a)
+	)", {});
+	ut_compare_values(result, value_t::make_int(4));
 }
 
 
@@ -2201,6 +2198,95 @@ const auto expected = R"ABCD({
 */
 
 
+//////////////////////////////////////////		json_value features
+
+
+QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
+	const auto result = run_return_result(R"(
+		result = get_json_type(json_value({}))
+	)", {});
+	ut_compare_values(result, value_t::make_int(1));
+}
+QUARK_UNIT_TEST("", "get_json_type()", "[]", ""){
+	const auto result = run_return_result(R"(
+		result = get_json_type(json_value([]))
+	)", {});
+	ut_compare_values(result, value_t::make_int(2));
+}
+QUARK_UNIT_TEST("", "get_json_type()", "string", ""){
+	const auto result = run_return_result(R"(
+		result = get_json_type(json_value("hello"))
+	)", {});
+	ut_compare_values(result, value_t::make_int(3));
+}
+QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
+	const auto result = run_return_result(R"(
+		result = get_json_type(json_value(13))
+	)", {});
+	ut_compare_values(result, value_t::make_int(4));
+}
+QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
+	const auto result = run_return_result(R"(
+		result = get_json_type(json_value(true))
+	)", {});
+	ut_compare_values(result, value_t::make_int(5));
+}
+QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
+	const auto result = run_return_result(R"(
+		result = get_json_type(json_value(false))
+	)", {});
+	ut_compare_values(result, value_t::make_int(6));
+}
+//??? add null-keyword for json to work.
+/*
+QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
+	const auto result = run_return_result(R"(
+		result = get_json_type(json_value(null))
+	)", {});
+	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_bool()));
+}
+*/
+
+QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
+	const auto vm = run_global(R"ABCD(
+		string get_name(json_value value){
+			t = get_json_type(value);
+			if(t == json_object){
+				return "json_object";
+			}
+			else if(t == json_array){
+				return "json_array";
+			}
+			else if(t == json_string){
+				return "json_string";
+			}
+			else if(t == json_number){
+				return "json_number";
+			}
+			else if(t == json_true){
+				return "json_true";
+			}
+			else if(t == json_false){
+				return "json_false";
+			}
+			else if(t == json_null){
+				return "json_null";
+			}
+			else {
+				assert(false);
+			}
+		}
+
+		assert(get_name(json_value({"a": 1, "b": 2})) == "json_object");
+		assert(get_name(json_value([1,2,3])) == "json_array");
+		assert(get_name(json_value("crash")) == "json_string");
+		assert(get_name(json_value(0.125)) == "json_number");
+		assert(get_name(json_value(true)) == "json_true");
+		assert(get_name(json_value(false)) == "json_false");
+	)ABCD");
+}
+
+
 
 //////////////////////////////////////////		decode_json()
 
@@ -2298,7 +2384,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "string", ""){
 	ut_compare_values(result, value_t::make_json_value(json_t("fanta")));
 }
 
-QUARK_UNIT_TEST_VIP("", "flatten_to_json()", "typeid", ""){
+QUARK_UNIT_TEST("", "flatten_to_json()", "typeid", ""){
 	const auto result = run_return_result(R"(
 		result = flatten_to_json(typeof([2,2,3]));
 	)", {});
@@ -2391,7 +2477,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 
 /// Makes no sense to unflatten a json_value from json.
 
-QUARK_UNIT_TEST_VIP("", "unflatten_from_json()", "typeid", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "typeid", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(typeof([3])), typeid);
 	)", {});

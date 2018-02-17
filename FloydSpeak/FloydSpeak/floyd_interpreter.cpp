@@ -42,7 +42,8 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 
-
+	//??? add conversions.
+	//??? This is builing block for promoting values / casting.
 	//	We know which type we need. If the value has not type, retype it.
 	value_t improve_value_type(const value_t& value0, const typeid_t& expected_type){
 		QUARK_ASSERT(value0.check_invariant());
@@ -50,6 +51,33 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 
 		if(expected_type.is_null()){
 			return value0;
+		}
+		else if(expected_type.is_bool()){
+			if(value0.is_json_value() && value0.get_json_value().is_true()){
+				return value_t::make_bool(true);
+			}
+			if(value0.is_json_value() && value0.get_json_value().is_false()){
+				return value_t::make_bool(false);
+			}
+			else{
+				return value0;
+			}
+		}
+		else if(expected_type.is_float()){
+			if(value0.is_json_value() && value0.get_json_value().is_number()){
+				return value_t::make_float((float)value0.get_json_value().get_number());
+			}
+			else{
+				return value0;
+			}
+		}
+		else if(expected_type.is_string()){
+			if(value0.is_json_value() && value0.get_json_value().is_string()){
+				return value_t::make_string(value0.get_json_value().get_string());
+			}
+			else{
+				return value0;
+			}
 		}
 		else if(expected_type.is_json_value()){
 			const auto v2 = value_to_ast_json(value0);
@@ -123,27 +151,6 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
 
-/*
-	enum class base_type {
-		k_null,
-		k_bool,
-		k_int,
-		k_float,
-		k_string,
-		k_json_value,
-
-		//	This is a type that specifies another type.
-		k_typeid,
-
-		k_struct,
-		k_vector,
-		k_dict,
-		k_function,
-
-		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-		k_unresolved_type_identifier
-	};
-*/
 
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 
@@ -2265,10 +2272,51 @@ std::pair<interpreter_t, value_t> host__unflatten_from_json(const interpreter_t&
 }
 
 
+std::pair<interpreter_t, value_t> host__get_json_type(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
 
+	if(args.size() != 1){
+		throw std::runtime_error("get_json_type() requires 1 argument!");
+	}
+	else if(args[0].is_json_value() == false){
+		throw std::runtime_error("get_json_type() requires json_value argument.");
+	}
+	else{
+		const auto json_value = args[0].get_json_value();
 
-
-
+		if(json_value.is_object()){
+			return { vm, value_t::make_int(1) };
+//			return { vm, value_t::make_typeid_value(typeid_t::make_dict(typeid_t::make_json_value())) };
+		}
+		else if(json_value.is_array()){
+			return { vm, value_t::make_int(2) };
+//			return { vm, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_json_value())) };
+		}
+		else if(json_value.is_string()){
+			return { vm, value_t::make_int(3) };
+//			return { vm, value_t::make_typeid_value(typeid_t::make_string()) };
+		}
+		else if(json_value.is_number()){
+			return { vm, value_t::make_int(4) };
+//			return { vm, value_t::make_typeid_value(typeid_t::make_float()) };
+		}
+		else if(json_value.is_true()){
+			return { vm, value_t::make_int(5) };
+//			return { vm, value_t::make_typeid_value(typeid_t::make_bool()) };
+		}
+		else if(json_value.is_false()){
+			return { vm, value_t::make_int(6) };
+//			return { vm, value_t::make_typeid_value(typeid_t::make_bool()) };
+		}
+		else if(json_value.is_null()){
+			return { vm, value_t::make_int(7) };
+//			return { vm, value_t::make_typeid_value(typeid_t::make_null()) };
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
 
 
 typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
@@ -2286,8 +2334,6 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "to_pretty_string", host__to_pretty_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 	host_function_t{ "typeof", host__typeof, typeid_t::make_function(typeid_t::make_typeid(), {typeid_t::make_null()}) },
 
-
-
 	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
 	host_function_t{ "size", host__size, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
@@ -2302,12 +2348,13 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "read_text_file", host__read_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 	host_function_t{ "write_text_file", host__write_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null(), typeid_t::make_null()}) },
 
-
 	host_function_t{ "decode_json", host__decode_json, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 	host_function_t{ "encode_json", host__encode_json, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 
 	host_function_t{ "flatten_to_json", host__flatten_to_json, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
-	host_function_t{ "unflatten_from_json", host__unflatten_from_json, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) }
+	host_function_t{ "unflatten_from_json", host__unflatten_from_json, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },
+
+	host_function_t{ "get_json_type", host__get_json_type, typeid_t::make_function(typeid_t::make_typeid(), {typeid_t::make_json_value()}) }
 };
 
 
@@ -2332,7 +2379,6 @@ std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(i
 	};
 }
 
-
 interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
@@ -2355,12 +2401,20 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		const auto function_value = value_t::make_function_value(def);
 		global_env->_values[hf._name] = std::pair<value_t, bool>{function_value, false };
 	}
-	global_env->_values["bool"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
-	global_env->_values["int"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
-	global_env->_values["float"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
-	global_env->_values["string"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
-	global_env->_values["typeid"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid()), false };
-	global_env->_values["json_value"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
+	global_env->_values[keyword_t::k_bool] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
+	global_env->_values[keyword_t::k_int] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
+	global_env->_values[keyword_t::k_float] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
+	global_env->_values[keyword_t::k_string] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
+	global_env->_values[keyword_t::k_typeid] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid()), false };
+	global_env->_values[keyword_t::k_json_value] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
+
+	global_env->_values[keyword_t::k_json_object] = std::pair<value_t, bool>{value_t::make_int(1), false };
+	global_env->_values[keyword_t::k_json_array] = std::pair<value_t, bool>{value_t::make_int(2), false };
+	global_env->_values[keyword_t::k_json_string] = std::pair<value_t, bool>{value_t::make_int(3), false };
+	global_env->_values[keyword_t::k_json_number] = std::pair<value_t, bool>{value_t::make_int(4), false };
+	global_env->_values[keyword_t::k_json_true] = std::pair<value_t, bool>{value_t::make_int(5), false };
+	global_env->_values[keyword_t::k_json_false] = std::pair<value_t, bool>{value_t::make_int(6), false };
+	global_env->_values[keyword_t::k_json_null] = std::pair<value_t, bool>{value_t::make_int(7), false };
 
 	_call_stack.push_back(global_env);
 

@@ -396,8 +396,12 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	}
 	else if(type.is_typeid()){
 	//???
-		QUARK_ASSERT(false);
-		return 0;
+		if(left.get_typeid_value() == right.get_typeid_value()){
+			return 0;
+		}
+		else{
+			return -1;//??? Hack -- should return +1 depending on values.
+		}
 	}
 	else if(type.is_struct()){
 		//	Make sure the EXACT struct types are the same -- not only that they are both structs

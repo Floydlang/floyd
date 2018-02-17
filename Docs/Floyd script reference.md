@@ -451,7 +451,7 @@ This value can contain any of the 6 JSON-compatible value:
 - null
 
 
-__json_value__ 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
+__json_value__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
 
 Notice that json_value can contain an entire huge json file, with a big tree of json objects and arrays etc. A json_value can also also contain just a string or a number or a single json array of strings. The json_value is used for every node in the json_value tree.
 
@@ -499,13 +499,77 @@ Example json:
 	)
 
 
+
+### __get\_json\_type()__:
+
+Returns the actual type of this value stores inside the json_value. It can be one of the types supported by JSON.
+
+	typeid get_json_type(json_value v)
+
+This is how you check the type of json value and reads their different values.
+
+|Input						| Result 		| Int
+|---						| ---			|---
+| json_value({"a": 1})		| json_object	| 1
+| json_value([1, 2, 3])		| json_array	| 2
+| json_value("hi")			| json_string	| 3
+| json_value(13)			| json_number	| 4
+| json_value(true)			| json_true		| 5
+| json_value(false)			| json_false	| 6
+| ???						| json_null		| 7
+
+
+Demo snippet, that checks type of a json_value:
+
+```
+	string get_name(json_value value){
+		t = get_json_type(value);
+		if(t == json_object){
+			return "json_object";
+		}
+		else if(t == json_array){
+			return "json_array";
+		}
+		else if(t == json_string){
+			return "json_string";
+		}
+		else if(t == json_number){
+			return "json_number";
+		}
+		else if(t == json_true){
+			return "json_true";
+		}
+		else if(t == json_false){
+			return "json_false";
+		}
+		else if(t == json_null){
+			return "json_null";
+		}
+		else {
+			assert(false);
+		}
+	}
+	
+	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object");
+	assert(get_name(json_value([1,2,3])) == "json_array");
+	assert(get_name(json_value("crash")) == "json_string");
+	assert(get_name(json_value(0.125)) == "json_number");
+	assert(get_name(json_value(true)) == "json_true");
+	assert(get_name(json_value(false)) == "json_false");
+```
+
+
+
 ### CORE FUNCTIONS
 
 Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
 
 - __pretty_string()__
+- __size()__
 - __encode_json()__
 - __decode_json()__
+- __flatten\_to\_json()__
+- __unflatten\_from\_json()__
 
 
 
@@ -819,7 +883,7 @@ For dictionaries it can be used to add completely new elements too.
 
 |Type		  	| Example						| Result
 |---			|---							| ---
-| dicttionary	| update({"a": 1}, "b", 2] | {"a":1,"b":2}
+| dictionary	| update({"a": 1}, "b", 2] | {"a":1,"b":2}
 
 
 ### size()
