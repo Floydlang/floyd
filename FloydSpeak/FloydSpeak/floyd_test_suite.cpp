@@ -79,6 +79,11 @@ void ut_compare_stringvects(const vector<string>& result, const vector<string>& 
 
 void ut_compare_values(const value_t& result, const value_t& expected){
 	if(result != expected){
+		QUARK_TRACE("result:");
+		QUARK_TRACE(json_to_pretty_string(value_and_type_to_ast_json(result)._value));
+		QUARK_TRACE("expected:");
+		QUARK_TRACE(json_to_pretty_string(value_and_type_to_ast_json(expected)._value));
+
 		QUARK_UT_VERIFY(false);
 	}
 }
@@ -2293,6 +2298,13 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "string", ""){
 	ut_compare_values(result, value_t::make_json_value(json_t("fanta")));
 }
 
+QUARK_UNIT_TEST_VIP("", "flatten_to_json()", "typeid", ""){
+	const auto result = run_return_result(R"(
+		result = flatten_to_json(typeof([2,2,3]));
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t::make_array(vector<json_t>{ "vector", "int"})));
+}
+
 QUARK_UNIT_TEST("", "flatten_to_json()", "[]", ""){
 	const auto result = run_return_result(R"(
 		result = flatten_to_json([1,2,3]);
@@ -2333,15 +2345,57 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 
 
 
-//////////////////////////////////////////		unflatten_from_json()
+//////////////////////////////////////////		flatten_to_json() -> unflatten_from_json() roundtrip
 
 
+QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json(true), bool);
+	)", {});
+	ut_compare_values(result, value_t::make_bool(true));
+}
+QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json(false), bool);
+	)", {});
+	ut_compare_values(result, value_t::make_bool(false));
+}
+
+QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json(91), int);
+	)", {});
+	ut_compare_values(result, value_t::make_int(91));
+}
+
+QUARK_UNIT_TEST("", "unflatten_from_json()", "float", ""){
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json(-0.125), float);
+	)", {});
+	ut_compare_values(result, value_t::make_float(-0.125));
+}
+
+QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json(""), string);
+	)", {});
+	ut_compare_values(result, value_t::make_string(""));
+}
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json("cola"), string);
 	)", {});
 	ut_compare_values(result, value_t::make_string("cola"));
+}
+
+/// Makes no sense to unflatten a json_value from json.
+
+QUARK_UNIT_TEST_VIP("", "unflatten_from_json()", "typeid", ""){
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json(typeof([3])), typeid);
+	)", {});
+	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
 }
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
@@ -2364,10 +2418,9 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 	);
 	const auto result = run_return_result(R"(
 		struct point_t { float x; float y; }
-		json_value j = [1, 2];
-		result = unflatten_from_json(j, point_t);
+		result = unflatten_from_json(flatten_to_json(point_t(1,3)), point_t);
 	)", {});
-	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_float(1), value_t::make_float(2)}));
+	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_float(1), value_t::make_float(3)}));
 }
 
 

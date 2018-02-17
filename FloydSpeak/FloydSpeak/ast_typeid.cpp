@@ -371,8 +371,7 @@ namespace floyd {
 			}
 		}
 		else{
-			QUARK_ASSERT(false);
-			return typeid_t::make_null();
+			throw std::runtime_error("Invalid typeid-json.");
 		}
 	}
 

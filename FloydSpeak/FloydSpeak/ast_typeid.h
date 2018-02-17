@@ -324,6 +324,10 @@ namespace floyd {
 		??? Remove concept of typeid_t make_unresolved_type_identifier, instead use typeid_t OR identifier-string.
 	*/
 
+	/*
+		int -> "int"
+		[int] -> [ "vector", "int" ]
+	*/
 	ast_json_t typeid_to_ast_json(const typeid_t& t);
 	typeid_t typeid_from_ast_json(const ast_json_t& t);
 
