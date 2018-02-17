@@ -570,6 +570,8 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 
 //??? typeid()
 
+/*
+unsupported syntax
 QUARK_UNIT_TEST("", "[int]()", "", ""){
 	test__run_init__check_result(
 		"result = [int](1,2,3);",
@@ -581,6 +583,7 @@ QUARK_UNIT_TEST("", "[int]()", "", ""){
 	);
 }
 
+unsupported syntax
 QUARK_UNIT_TEST("", "[[int]]()", "", ""){
 	test__run_init__check_result(
 		"result = [[int]]([1,2,3], [4,5,6]);",
@@ -602,6 +605,7 @@ QUARK_UNIT_TEST("", "[[int]]()", "", ""){
 	);
 }
 
+unsupported syntax
 QUARK_UNIT_TEST("", "[pixel_t]()", "", ""){
 	const auto pixel_t__def = std::make_shared<floyd::struct_definition_t>(
 		std::vector<member_t>{
@@ -623,6 +627,7 @@ QUARK_UNIT_TEST("", "[pixel_t]()", "", ""){
 		)
 	);
 }
+*/
 
 /*
 QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){

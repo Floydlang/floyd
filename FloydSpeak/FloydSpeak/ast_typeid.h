@@ -120,8 +120,8 @@ namespace floyd {
 			return _base_type == base_type::k_json_value;
 		}
 
-		public: static typeid_t make_typeid(const typeid_t& type){
-			return { floyd::base_type::k_typeid, { type }, {}, {}, {} };
+		public: static typeid_t make_typeid(){
+			return { floyd::base_type::k_typeid, {}, {}, {}, {} };
 		}
 
 		public: bool is_typeid() const {
@@ -129,12 +129,6 @@ namespace floyd {
 
 			return _base_type == base_type::k_typeid;
 		}
-
-		public: const typeid_t& get_typeid_typeid() const{
-			QUARK_ASSERT(get_base_type() == base_type::k_typeid);
-			return _parts[0];
-		}
-
 
 		public: static typeid_t make_struct(const std::shared_ptr<struct_definition_t>& def){
 			return { floyd::base_type::k_struct, {}, {}, {}, def };

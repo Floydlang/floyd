@@ -70,7 +70,6 @@ namespace floyd {
 
 
 
-
 	//////////////////////////////////////		base_type_to_string(base_type)
 
 
@@ -90,13 +89,7 @@ namespace floyd {
 
 
 
-
-
-
-
-
 	//////////////////////////////////////////////////		typeid_t
-
 
 
 
@@ -134,12 +127,12 @@ namespace floyd {
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
-			QUARK_ASSERT(_parts.size() == 1);
-			QUARK_ASSERT(_parts[0].check_invariant());
+			QUARK_ASSERT(_parts.size() == 0);
+//			QUARK_ASSERT(_parts[0].check_invariant());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
 
-			QUARK_ASSERT(_parts[0].check_invariant());
+//			QUARK_ASSERT(_parts[0].check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_struct){
 			QUARK_ASSERT(_parts.empty() == true);
@@ -213,8 +206,6 @@ namespace floyd {
 
 
 
-
-
 	std::string typeid_to_compact_string(const typeid_t& t){
 //		QUARK_ASSERT(t.check_invariant());
 
@@ -263,15 +254,8 @@ namespace floyd {
 		const auto b = t.get_base_type();
 		const auto basetype_str = base_type_to_string(b);
 
-		if(b == base_type::k_null || b == base_type::k_bool || b == base_type::k_int || b == base_type::k_float || b == base_type::k_string || b == base_type::k_json_value){
+		if(b == base_type::k_null || b == base_type::k_bool || b == base_type::k_int || b == base_type::k_float || b == base_type::k_string || b == base_type::k_json_value || b == base_type::k_typeid){
 			return ast_json_t{basetype_str};
-		}
-		else if(b == base_type::k_typeid){
-			const auto typeid2 = t.get_typeid_typeid();
-			return ast_json_t{json_t::make_array({
-				json_t(basetype_str),
-				typeid_to_ast_json(typeid2)._value
-			})};
 		}
 		else if(b == base_type::k_struct){
 			const auto struct_def = t.get_struct();
@@ -333,6 +317,9 @@ namespace floyd {
 			else if(s == keyword_t::k_string){
 				return typeid_t::make_string();
 			}
+			else if(s == keyword_t::k_typeid){
+				return typeid_t::make_typeid();
+			}
 			else if(s == keyword_t::k_json_value){
 				return typeid_t::make_json_value();
 			}
@@ -343,11 +330,14 @@ namespace floyd {
 		else if(t.is_array()){
 			const auto a = t.get_array();
 			const auto s = a[0].get_string();
+/*
 			if(s == "typeid"){
 				const auto t3 = typeid_from_ast_json(ast_json_t{a[1]});
 				return typeid_t::make_typeid(t3);
 			}
-			else if(s == keyword_t::k_struct){
+			else
+*/
+			if(s == keyword_t::k_struct){
 				const auto struct_def_array = a[1].get_array();
 //				const auto struct_name = struct_def_array[0].get_string();
 				const auto member_array = struct_def_array[0].get_array();
@@ -410,18 +400,8 @@ namespace floyd {
 			{ typeid_t::make_string(), "\"string\"", "string" },
 
 			//	Typeid
-			{ typeid_t::make_typeid(typeid_t::make_float()), R"([ "typeid" , "float"])", "typeid" },
-			{ typeid_t::make_typeid(typeid_t::make_string()), R"([ "typeid" , "string"])", "typeid" },
-			{
-				typeid_t::make_typeid(s1),
-				R"(
-					[
-						"typeid",
-						["struct", [[]]]
-					]
-				)",
-				"typeid"
-			},
+			{ typeid_t::make_typeid(), R"("typeid")", "typeid" },
+			{ typeid_t::make_typeid(), R"("typeid")", "typeid" },
 
 
 //??? vector

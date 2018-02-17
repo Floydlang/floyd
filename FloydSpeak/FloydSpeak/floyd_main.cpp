@@ -294,7 +294,6 @@ void run_tests(){
 		"json_support.cpp",
 		"json_writer.cpp",
 
-
 		"floyd_basics.cpp",
 
 		"parser2.cpp",
@@ -305,9 +304,10 @@ void run_tests(){
 		"parser_function.cpp",
 		"parser_statement.cpp",
 		"parser_struct.cpp",
-
 		"parse_prefixless_statement.cpp",
 		"floyd_parser.cpp",
+
+		"ast_typeid.cpp",
 
 		"parse_statement.cpp",
 		"floyd_interpreter.cpp",

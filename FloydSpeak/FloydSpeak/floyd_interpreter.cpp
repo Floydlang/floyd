@@ -198,7 +198,8 @@ typeid_t cleanup_vector_constructor_type(const typeid_t& type){
 		}
 		else{
 			assert(element_type.is_typeid());
-			return typeid_t::make_vector(element_type.get_typeid_typeid());
+			return type;
+//???			return typeid_t::make_vector(element_type.get_typeid_typeid());
 		}
 	}
 	else if(type.is_dict()){
@@ -1271,11 +1272,13 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 			vm2 = result.first;
 			return { vm2, expression_t::make_literal(result.second)};
 		}
+/*
 		else if(function_value.is_vector()){
 			const auto result = construct_value_from_typeid(vm2, cleanup_vector_constructor_type(function_value.get_type()), arg_values);
 			vm2 = result.first;
 			return { vm2, expression_t::make_literal(result.second)};
 		}
+*/
 		else{
 			throw std::runtime_error("Cannot call non-function.");
 		}
@@ -2169,7 +2172,7 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "assert", host__assert, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
 	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 	host_function_t{ "to_pretty_string", host__to_pretty_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-	host_function_t{ "typeof", host__typeof, typeid_t::make_function(typeid_t::make_typeid(typeid_t::make_null()), {typeid_t::make_null()}) },
+	host_function_t{ "typeof", host__typeof, typeid_t::make_function(typeid_t::make_typeid(), {typeid_t::make_null()}) },
 
 
 
@@ -2244,7 +2247,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	global_env->_values["int"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
 	global_env->_values["float"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
 	global_env->_values["string"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
-	global_env->_values["typeid"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid(typeid_t::make_null())), false };
+	global_env->_values["typeid"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid()), false };
 	global_env->_values["json_value"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
 
 	_call_stack.push_back(global_env);

@@ -278,11 +278,9 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-
-
-
 		private: explicit value_t(const typeid_t& type) :
-			_typeid(typeid_t::make_typeid(type))
+			_typeid(typeid_t::make_typeid()),
+			_typeid_value(type)
 		{
 			QUARK_ASSERT(type.check_invariant());
 
@@ -346,6 +344,7 @@ namespace floyd {
 			_float(other._float),
 			_string(other._string),
 			_json_value(other._json_value),
+			_typeid_value(other._typeid_value),
 			_struct(other._struct),
 			_vector(other._vector),
 			_dict(other._dict),
@@ -397,9 +396,8 @@ namespace floyd {
 			else if(base_type == base_type::k_json_value){
 				return *_json_value == *other._json_value;
 			}
-
 			else if(base_type == base_type::k_typeid){
-				return true;
+				return _typeid_value == other._typeid_value;
 			}
 			else if(base_type == base_type::k_struct){
 				return *_struct == *other._struct;
@@ -543,7 +541,7 @@ namespace floyd {
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _typeid.get_typeid_typeid();
+			return _typeid_value;
 		}
 
 		public: static value_t make_struct_value(const typeid_t& struct_type, const std::vector<value_t>& values);
@@ -621,6 +619,7 @@ namespace floyd {
 			std::swap(_float, other._float);
 			std::swap(_string, other._string);
 			std::swap(_json_value, other._json_value);
+			std::swap(_typeid_value, other._typeid_value);
 			std::swap(_struct, other._struct);
 			std::swap(_vector, other._vector);
 			std::swap(_dict, other._dict);
@@ -643,6 +642,7 @@ namespace floyd {
 		private: float _float = 0.0f;
 		private: std::string _string = "";
 		private: std::shared_ptr<json_t> _json_value;
+		private: typeid_t _typeid_value = typeid_t::make_null();
 		private: std::shared_ptr<struct_instance_t> _struct;
 		private: std::shared_ptr<vector_instance_t> _vector;
 		private: std::shared_ptr<dict_instance_t> _dict;

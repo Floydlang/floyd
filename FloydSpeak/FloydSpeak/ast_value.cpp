@@ -395,6 +395,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		return compare_json_values(left.get_json_value(), right.get_json_value());
 	}
 	else if(type.is_typeid()){
+	//???
 		QUARK_ASSERT(false);
 		return 0;
 	}
@@ -463,6 +464,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -474,6 +476,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -485,6 +488,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -496,6 +500,7 @@ bool value_t::check_invariant() const{
 //				QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -507,6 +512,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 //				QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -518,6 +524,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value != nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -532,6 +539,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value != typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -543,6 +551,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct != nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -556,6 +565,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector != nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -570,6 +580,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict != nullptr);
@@ -584,6 +595,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);
@@ -631,7 +643,6 @@ std::string to_compact_string2(const value_t& value) {
 	else if(base_type == base_type::k_json_value){
 		return json_to_compact_string(value.get_json_value());
 	}
-
 	else if(base_type == base_type::k_typeid){
 		return floyd::typeid_to_compact_string(value.get_typeid_value());
 	}

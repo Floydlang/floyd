@@ -37,6 +37,7 @@ namespace floyd {
 		static const std::string k_int;
 		static const std::string k_float;
 		static const std::string k_string;
+		static const std::string k_typeid;
 		static const std::string k_json_value;
 		static const std::string k_struct;
 
