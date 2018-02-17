@@ -543,7 +543,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
-		QUARK_ASSERT(_typeid_value != typeid_t::make_null());
+//		QUARK_ASSERT(_typeid_value != typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
 		QUARK_ASSERT(_vector == nullptr);
 		QUARK_ASSERT(_dict == nullptr);

@@ -22,6 +22,7 @@ const std::string keyword_t::k_for = "for";
 const std::string keyword_t::k_if = "if";
 const std::string keyword_t::k_else = "else";
 
+const std::string keyword_t::k_null = "null";
 const std::string keyword_t::k_false = "false";
 const std::string keyword_t::k_true = "true";
 const std::string keyword_t::k_bool = "bool";

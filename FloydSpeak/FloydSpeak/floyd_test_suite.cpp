@@ -1332,6 +1332,23 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 
 
 
+//////////////////////////////////////////		NULL - TYPE
+
+
+
+
+QUARK_UNIT_TEST_VIP("null", "", "", "0"){
+	try{
+		const auto result = run_return_result(R"(
+			result = null;
+		)", {});
+//		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+
 //////////////////////////////////////////		STRING - TYPE
 
 
@@ -2023,7 +2040,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 
 
-//////////////////////////////////////////		JSON - TYPE
+//////////////////////////////////////////		json_value - TYPE
 
 
 
@@ -2048,6 +2065,19 @@ QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
 		json_value result = 13;
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(13));
+}
+
+QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
+	const auto result = run_return_result(R"(
+		json_value result = true;
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(true));
+}
+QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
+	const auto result = run_return_result(R"(
+		json_value result = false;
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(false));
 }
 
 QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
@@ -2086,9 +2116,6 @@ QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
 	)", {});
 	ut_compare_values(result, value_t::make_int(4));
 }
-
-
-
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
 QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
@@ -2153,52 +2180,18 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 	)");
 }
 
-
-
-/*
-QUARK_UNIT_TEST("json_value-object", "to_pretty_string()", "", ""){
-	const auto vm = run_global(R"ABCD(
-		json_value a = {
-			"menu": {
-			  "id": "file",
-			  "value": "File",
-			  "popup": {_VIP
-				"menuitem": [
-				  {"value": "New", "onclick": "CreateNewDoc()"},
-				  {"value": "Open", "onclick": "OpenDoc()"},
-				  {"value": "Close", "onclick": "CloseDoc()"}
-				]
-			  }
-			}
-		};
-		s = to_pretty_string(a);
-		print(s);
-	)ABCD");
-
-
-const auto expected = R"ABCD({
-	"menu": {
-		"id": "file",
-		"popup": {
-			"menuitem": [
-				{ "onclick": "CreateNewDoc()", "value": "New" },
-				{ "onclick": "OpenDoc()", "value": "Open" },
-				{ "onclick": "CloseDoc()", "value": "Close" }
-			]
-		},
-		"value": "File"
-	}
-})ABCD";
-
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		expected
-	});
-
+QUARK_UNIT_TEST_VIP("json_value-null", "construct null", "", ""){
+	const auto result = run_return_result(R"(
+		json_value result = null;
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t()));
 }
-*/
+
+
 
 
 //////////////////////////////////////////		json_value features
+
 
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
@@ -2237,15 +2230,13 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	)", {});
 	ut_compare_values(result, value_t::make_int(6));
 }
-//??? add null-keyword for json to work.
-/*
+
 QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value(null))
 	)", {});
-	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_bool()));
+	ut_compare_values(result, value_t::make_null());
 }
-*/
 
 QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 	const auto vm = run_global(R"ABCD(

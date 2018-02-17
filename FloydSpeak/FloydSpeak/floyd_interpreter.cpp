@@ -2409,6 +2409,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		const auto function_value = value_t::make_function_value(def);
 		global_env->_values[hf._name] = std::pair<value_t, bool>{function_value, false };
 	}
+	global_env->_values[keyword_t::k_null] = std::pair<value_t, bool>{value_t::make_null(), false };
 	global_env->_values[keyword_t::k_bool] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
 	global_env->_values[keyword_t::k_int] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
 	global_env->_values[keyword_t::k_float] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
