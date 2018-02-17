@@ -137,11 +137,8 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
 
 		if(v.get_type() != a._type){
-/*
-??? wont work until we sorted out struct-types.
+//??? wont work until we sorted out struct-types.
 			throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members");
-*/
-
 		}
 	}
 
@@ -561,7 +558,18 @@ namespace {
 			if(vm2._call_stack.back()->_values.count(name) > 0){
 				throw std::runtime_error("Name already used.");
 			}
-			const auto struct_typeid = typeid_t::make_struct(std::make_shared<struct_definition_t>(s->_def));
+
+			//	Resolve member types in this scope.
+			std::vector<member_t> members2;
+			for(const auto e: s->_def._members){
+				const auto name = e._name;
+				const auto type = e._type;
+				const auto type2 = resolve_type_using_env(vm2, type);
+				const auto e2 = member_t(type2, name);
+				members2.push_back(e2);
+			}
+			const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
+			const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
 			vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(value_t::make_typeid_value(struct_typeid), false);
 			return { vm2, statement_result_t::make_no_output() };
 		}

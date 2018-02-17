@@ -1814,7 +1814,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 	});
 }
 
-QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
+QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -1834,7 +1834,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - instantiate nested structs"){
 QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel back; pixel front;}
+		struct image { color back; color front;}
 		i = image(color(1, 2, 3), color(200, 201, 202));
 		print(i.front.green);
 	)");
@@ -1846,7 +1846,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 	const auto vm = run_global(R"(
 		struct color { int red; int green; int blue;}
-		struct image { pixel back; pixel front;}
+		struct image { color back; color front;}
 		color make_color(){
 			return color(100, 101, 102);
 		}
@@ -2287,6 +2287,24 @@ QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 }
 
 
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto result = run_return_result(R"(
+		struct pixel_t { float x; float y; }
+		a = pixel_t(100.0, 200.0);
+		result = a.x;
+	)", {});
+	ut_compare_values(result, value_t::make_float(100.0));
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto result = run_return_result(R"(
+		struct pixel_t { float x; float y; }
+		c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] };
+		result = c["image"][1].y
+	)", {});
+	ut_compare_values(result, value_t::make_float(201.0));
+}
+
 
 //////////////////////////////////////////		decode_json()
 
@@ -2412,7 +2430,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "{}", ""){
 QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
 	const auto result = run_return_result(R"(
 		struct pixel_t { float x; float y; }
-		c = pixel_t(100, 200);
+		c = pixel_t(100.0, 200.0);
 		a = flatten_to_json(c);
 		result = encode_json(a);
 	)", {});
@@ -2422,7 +2440,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
 QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 	const auto result = run_return_result(R"(
 		struct pixel_t { float x; float y; }
-		c = [pixel_t(100, 200), pixel_t(101, 201)];
+		c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)];
 		a = flatten_to_json(c);
 		result = encode_json(a);
 	)", {});
@@ -2504,7 +2522,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 	);
 	const auto result = run_return_result(R"(
 		struct point_t { float x; float y; }
-		result = unflatten_from_json(flatten_to_json(point_t(1,3)), point_t);
+		result = unflatten_from_json(flatten_to_json(point_t(1.0, 3.0)), point_t);
 	)", {});
 	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_float(1), value_t::make_float(3)}));
 }

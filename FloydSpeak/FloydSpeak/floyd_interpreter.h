@@ -154,6 +154,8 @@ namespace floyd {
 
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
 
+	typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type);
+
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
