@@ -628,7 +628,7 @@ std::string to_compact_string2(const value_t& value) {
 
 	const auto base_type = value.get_type().get_base_type();
 	if(base_type == base_type::k_null){
-		return "<null>";
+		return keyword_t::k_null;
 	}
 	else if(base_type == base_type::k_bool){
 		return value.get_bool_value() ? keyword_t::k_true : keyword_t::k_false;
@@ -685,10 +685,10 @@ std::string to_compact_string_quote_strings(const value_t& value) {
 std::string value_and_type_to_string(const value_t& value) {
 	QUARK_ASSERT(value.check_invariant());
 
-	if(value.is_null()){
-		return "<null>";
-	}
 	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
+	if(value.is_null()){
+		return type_string;
+	}
 	return type_string + ": " + to_compact_string_quote_strings(value);
 }
 
@@ -711,8 +711,8 @@ QUARK_UNIT_TESTQ("value_t::make_null()", "null"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_null());
 	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(a) == "<null>");
-	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "<null>");
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "null");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "null");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "bool - true"){
@@ -816,9 +816,6 @@ ast_json_t value_and_type_to_ast_json(const value_t& v){
 std::string make_value_debug_str(const value_t& value){
 //	return value_and_type_to_string(v);
 
-	if(value.is_null()){
-		return "<null>";
-	}
 	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
 	return type_string;
 }

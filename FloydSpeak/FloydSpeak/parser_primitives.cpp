@@ -359,7 +359,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	if(pos1.first.empty()){
 		return { nullptr, pos1.second };
 	}
-	else if(pos1.first == "null"){
+	else if(pos1.first == keyword_t::k_null){
 		return { make_shared<typeid_t>(typeid_t::make_null()), pos1.second };
 	}
 	else if(pos1.first == keyword_t::k_bool){
@@ -371,6 +371,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	else if(pos1.first == keyword_t::k_float){
 		return { make_shared<typeid_t>(typeid_t::make_float()), pos1.second };
 	}
+	//??? typeid_t
 	else if(pos1.first == keyword_t::k_string){
 		return { make_shared<typeid_t>(typeid_t::make_string()), pos1.second };
 	}

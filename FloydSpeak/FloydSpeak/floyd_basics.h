@@ -51,10 +51,7 @@ namespace floyd {
 		static const std::string k_json_false;
 		static const std::string k_json_null;
 
-		//	"null" is not a keyword, since it can be used in source code.
 /*
-		"typeid",
-
 		"assert",
 		"print",
 		"to_string",

@@ -26,7 +26,7 @@ namespace floyd {
 
 	string base_type_to_string(const base_type t){
 		if(t == base_type::k_null){
-			return "null";
+			return keyword_t::k_null;
 		}
 		else if(t == base_type::k_bool){
 			return keyword_t::k_bool;
@@ -45,7 +45,7 @@ namespace floyd {
 		}
 
 		else if(t == base_type::k_typeid){
-			return "typeid";
+			return keyword_t::k_typeid;
 		}
 
 		else if(t == base_type::k_struct){
@@ -302,7 +302,7 @@ namespace floyd {
 			if(s == ""){
 				return typeid_t::make_null();
 			}
-			else if(s == "null"){
+			else if(s == keyword_t::k_null){
 				return typeid_t::make_null();
 			}
 			else if(s == keyword_t::k_bool){
@@ -392,15 +392,15 @@ namespace floyd {
 		);
 
 		const auto tests = vector<typeid_str_test_t>{
-			{ typeid_t::make_null(), "\"null\"", "null" },
+			{ typeid_t::make_null(), quote(keyword_t::k_null), keyword_t::k_null },
 			{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
 			{ typeid_t::make_int(), quote(keyword_t::k_int), keyword_t::k_int },
 			{ typeid_t::make_float(), quote(keyword_t::k_float), keyword_t::k_float },
-			{ typeid_t::make_string(), "\"string\"", "string" },
+			{ typeid_t::make_string(), quote(keyword_t::k_string), keyword_t::k_string},
 
 			//	Typeid
-			{ typeid_t::make_typeid(), R"("typeid")", "typeid" },
-			{ typeid_t::make_typeid(), R"("typeid")", "typeid" },
+			{ typeid_t::make_typeid(), quote(keyword_t::k_typeid), keyword_t::k_typeid },
+			{ typeid_t::make_typeid(), quote(keyword_t::k_typeid), keyword_t::k_typeid },
 
 
 //??? vector
