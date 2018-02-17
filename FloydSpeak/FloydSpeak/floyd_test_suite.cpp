@@ -2218,7 +2218,9 @@ QUARK_UNIT_TEST("", "decode_json()", "", ""){
 	});
 }
 
+
 //////////////////////////////////////////		encode_json()
+
 
 
 QUARK_UNIT_TEST("", "encode_json()", "", ""){
@@ -2245,21 +2247,68 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 }
 
 
+
 //////////////////////////////////////////		flatten_to_json()
 
 
 
+QUARK_UNIT_TEST("", "flatten_to_json()", "bool", ""){
+	const auto result = run_return_result(R"(
+		result = flatten_to_json(true);
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t(true)));
+}
+QUARK_UNIT_TEST("", "flatten_to_json()", "bool", ""){
+	const auto result = run_return_result(R"(
+		result = flatten_to_json(false);
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t(false)));
+}
+
+QUARK_UNIT_TEST("", "flatten_to_json()", "int", ""){
+	const auto result = run_return_result(R"(
+		result = flatten_to_json(789);
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t(789.0)));
+}
+QUARK_UNIT_TEST("", "flatten_to_json()", "int", ""){
+	const auto result = run_return_result(R"(
+		result = flatten_to_json(-987);
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t(-987.0)));
+}
+
+QUARK_UNIT_TEST("", "flatten_to_json()", "float", ""){
+	const auto result = run_return_result(R"(
+		result = flatten_to_json(-0.125);
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t(-0.125)));
+}
+
+
 QUARK_UNIT_TEST("", "flatten_to_json()", "string", ""){
 	const auto result = run_return_result(R"(
-		result = encode_json(flatten_to_json("fanta"));
+		result = flatten_to_json("fanta");
 	)", {});
-	ut_compare_values(result, value_t::make_string("\"fanta\""));
+	ut_compare_values(result, value_t::make_json_value(json_t("fanta")));
 }
+
 QUARK_UNIT_TEST("", "flatten_to_json()", "[]", ""){
 	const auto result = run_return_result(R"(
-		result = encode_json(flatten_to_json([1,2,3]));
+		result = flatten_to_json([1,2,3]);
 	)", {});
-	ut_compare_values(result, value_t::make_string("[1, 2, 3]"));
+	ut_compare_values(result, value_t::make_json_value(
+		json_t::make_array(vector<json_t>{1,2,3})
+	));
+}
+
+QUARK_UNIT_TEST("", "flatten_to_json()", "{}", ""){
+	const auto result = run_return_result(R"(
+		result = flatten_to_json({"ten": 10, "eleven": 11});
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(
+		json_t::make_object(std::map<string,json_t>{{"ten", 10},{"eleven", 11}})
+	));
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
@@ -2269,7 +2318,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
 		a = flatten_to_json(c);
 		result = encode_json(a);
 	)", {});
-	ut_compare_values(result, value_t::make_string("[100, 200]"));
+	ut_compare_values(result, value_t::make_string("{ \"x\": 100, \"y\": 200 }"));
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
@@ -2279,11 +2328,13 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 		a = flatten_to_json(c);
 		result = encode_json(a);
 	)", {});
-	ut_compare_values(result, value_t::make_string("[[100, 200], [101, 201]]"));
+	ut_compare_values(result, value_t::make_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]"));
 }
 
 
+
 //////////////////////////////////////////		unflatten_from_json()
+
 
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
@@ -2294,16 +2345,17 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 }
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
-	const auto vm = run_global(R"(
-		print(unflatten_from_json(flatten_to_json([1,2,3]), typeof("")));
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"[1, 2, 3]"
-	});
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json([1,2,3]), typeof([1]));
+	)", {});
+	ut_compare_values(
+		result,
+		value_t::make_vector_value(typeid_t::make_int(), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
+	);
 }
 
 
-QUARK_UNIT_TEST_VIP("", "unflatten_from_json()", "point_t", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 	const auto point_t_def = std::make_shared<floyd::struct_definition_t>(
 		std::vector<member_t>{
 			member_t(typeid_t::make_float(), "x"),

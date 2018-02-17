@@ -248,7 +248,12 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		}
 	}
 	else if(target_type.is_string()){
-		QUARK_ASSERT(false);
+		if(v.is_string()){
+			return value_t::make_string(v.get_string());
+		}
+		else{
+			throw std::runtime_error("Invalid json schema, expected string.");
+		}
 	}
 	else if(target_type.is_json_value()){
 		QUARK_ASSERT(false);
@@ -290,7 +295,20 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		}
 	}
 	else if(target_type.is_vector()){
-		QUARK_ASSERT(false);
+		if(v.is_array()){
+			const auto target_element_type = target_type.get_vector_element_type();
+			vector<value_t> elements2;
+			for(int i = 0 ; i < v.get_array_size() ; i++){
+				const auto member_value0 = v.get_array_n(i);
+				const auto member_value1 = unflatten_json_to_specific_type(member_value0, target_element_type);
+				elements2.push_back(member_value1);
+			}
+			const auto result = value_t::make_vector_value(target_element_type, elements2);
+			return result;
+		}
+		else{
+			throw std::runtime_error("Invalid json schema, expected array.");
+		}
 	}
 	else if(target_type.is_dict()){
 		QUARK_ASSERT(false);
@@ -2382,7 +2400,6 @@ bool interpreter_t::check_invariant() const {
 ast_t program_to_ast2(const string& program){
 	const auto pass1 = floyd::parse_program2(program);
 	const auto pass2 = run_pass2(pass1);
-//	QUARK_TRACE(json_to_pretty_string(ast_to_json(pass2)));
 	return pass2;
 }
 

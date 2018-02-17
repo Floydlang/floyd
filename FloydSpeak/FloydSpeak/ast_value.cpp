@@ -809,8 +809,14 @@ ast_json_t value_and_type_to_ast_json(const value_t& v){
 	})};
 }
 
-std::string make_value_debug_str(const value_t& v){
-	return value_and_type_to_string(v);
+std::string make_value_debug_str(const value_t& value){
+//	return value_and_type_to_string(v);
+
+	if(value.is_null()){
+		return "<null>";
+	}
+	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
+	return type_string;
 }
 
 
@@ -837,8 +843,20 @@ ast_json_t value_to_ast_json(const value_t& v){
 		return typeid_to_ast_json(v.get_typeid_value());
 	}
 	else if(v.is_struct()){
-		const auto value = v.get_struct_value();
+		const auto struct_value = v.get_struct_value();
+		std::map<string, json_t> obj2;
+		for(int i = 0 ; i < struct_value->_def._members.size() ; i++){
+			const auto member = struct_value->_def._members[i];
+			const auto key = member._name;
+			const auto type = member._type;
+			const auto value = struct_value->_member_values[i];
+			const auto value2 = value_to_ast_json(value);
+			obj2[key] = value2._value;
+		}
+		return ast_json_t{json_t::make_object(obj2)};
 /*
+
+ }
 		return ast_json_t{json_t::make_object(
 			{
 				{ "struct-def", struct_definition_to_ast_json(i->_def)._value },
@@ -846,7 +864,7 @@ ast_json_t value_to_ast_json(const value_t& v){
 			}
 		)};
 */
-		return ast_json_t{ values_to_json_array(value->_member_values) 	};
+//		return ast_json_t{ values_to_json_array(value->_member_values) 	};
 	}
 	else if(v.is_vector()){
 		const auto value = v.get_vector_value();
