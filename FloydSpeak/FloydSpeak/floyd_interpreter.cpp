@@ -212,10 +212,100 @@ typeid_t cleanup_vector_constructor_type(const typeid_t& type){
 
 
 
+//??? encode type.
+//??? encode version number?
+value_t flatten_to_json(const value_t& value){
+	const auto j = value_to_ast_json(value);
+	value_t json_value = value_t::make_json_value(j._value);
+	return json_value;
+}
+
+//??? encode structs using key-value instead of array?
 //??? Extend to support all Floyd types, including structs!
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
 	QUARK_ASSERT(v.check_invariant());
 
+	if(target_type.is_null()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_bool()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_int()){
+		if(v.is_number()){
+			return value_t::make_int((int)v.get_number());
+		}
+		else{
+			throw std::runtime_error("Invalid json schema, expected number.");
+		}
+	}
+	else if(target_type.is_float()){
+		if(v.is_number()){
+			return value_t::make_float((float)v.get_number());
+		}
+		else{
+			throw std::runtime_error("Invalid json schema, expected number.");
+		}
+	}
+	else if(target_type.is_string()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_json_value()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_typeid()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_struct()){
+/*
+		if(v.is_object()){
+			const auto struct_def = target_type.get_struct();
+
+			vector<value_t> members2;
+			for(const auto member: struct_def._members){
+				const auto member_value0 = v.get_object_element(member._name);
+				const auto member_value1 = unflatten_json_to_specific_type(member_value0, member._type);
+				members2.push_back(member_value1);
+			}
+
+			const auto result = value_t::make_struct_value(target_type, members2);
+			return result;
+		}
+*/
+		if(v.is_array()){
+			const auto struct_def = target_type.get_struct();
+			vector<value_t> members2;
+			for(int i = 0 ; i < struct_def._members.size() ; i++){
+				const auto member = struct_def._members[i];
+				const auto member_value0 = v.get_array_n(i);
+				const auto member_value1 = unflatten_json_to_specific_type(member_value0, member._type);
+				members2.push_back(member_value1);
+			}
+
+			const auto result = value_t::make_struct_value(target_type, members2);
+			return result;
+		}
+		else{
+			throw std::runtime_error("Invalid json schema, expected struct.");
+		}
+	}
+	else if(target_type.is_vector()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_dict()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_function()){
+		QUARK_ASSERT(false);
+	}
+	else if(target_type.is_unresolved_type_identifier()){
+		QUARK_ASSERT(false);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+
+/*
 	if(v.is_object()){
 		const auto obj = v.get_object();
 		std::map<string, value_t> obj2;
@@ -254,7 +344,9 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 	else{
 		QUARK_ASSERT(false);
 	}
-}
+*/
+
+ }
 
 
 
@@ -2119,16 +2211,10 @@ std::pair<interpreter_t, value_t> host__flatten_to_json(const interpreter_t& vm,
 	if(args.size() != 1){
 		throw std::runtime_error("flatten_to_json() requires 1 argument!");
 	}
-/*
-	else if(args[0].is_string() == false){
-		throw std::runtime_error("flatten_to_json() requires string argument.");
-	}
-*/
 	else{
 		const auto value = args[0];
-		const auto j = value_to_ast_json(value);
-		value_t json_value = value_t::make_json_value(j._value);
-		return {vm, json_value };
+		const auto result = flatten_to_json(value);
+		return {vm, result };
 	}
 }
 

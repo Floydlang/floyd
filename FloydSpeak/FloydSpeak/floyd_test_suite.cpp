@@ -2288,7 +2288,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 	const auto result = run_return_result(R"(
-		result = unflatten_from_json(flatten_to_json("cola"), typeof(""));
+		result = unflatten_from_json(flatten_to_json("cola"), string);
 	)", {});
 	ut_compare_values(result, value_t::make_string("cola"));
 }
@@ -2303,18 +2303,19 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 }
 
 
-//??? I want to get a pixel_t!
-QUARK_UNIT_TEST("", "unflatten_from_json()", "pixel_t", ""){
-	const auto vm = run_global(R"(
-		struct pixel_t { float x; float y; }
+QUARK_UNIT_TEST_VIP("", "unflatten_from_json()", "point_t", ""){
+	const auto point_t_def = std::make_shared<floyd::struct_definition_t>(
+		std::vector<member_t>{
+			member_t(typeid_t::make_float(), "x"),
+			member_t(typeid_t::make_float(), "y")
+		}
+	);
+	const auto result = run_return_result(R"(
+		struct point_t { float x; float y; }
 		json_value j = [1, 2];
-		a = unflatten_from_json(j, string);
-		print(a);
-	)");
-	
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"[1, 2]"
-	});
+		result = unflatten_from_json(j, point_t);
+	)", {});
+	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_float(1), value_t::make_float(2)}));
 }
 
 
