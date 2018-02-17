@@ -1,4 +1,3 @@
-
 //
 //  parser_evaluator.cpp
 //  FloydSpeak
@@ -28,9 +27,7 @@
 #include <fstream>
 #include "text_parser.h"
 
-
 namespace floyd {
-
 
 using std::vector;
 using std::string;
@@ -41,61 +38,10 @@ using std::make_shared;
 
 
 
-
-
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 
-
-//??? Extend to support all Floyd types, including structs!
-value_t unflatten_json_to_specific_type(const json_t& v){
-	QUARK_ASSERT(v.check_invariant());
-
-	if(v.is_object()){
-		const auto obj = v.get_object();
-		std::map<string, value_t> obj2;
-		for(const auto e: obj){
-			const auto key = e.first;
-			const auto value = e.second;
-			const auto value2 = value_t::make_json_value(value);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
-			obj2[key] = value2;
-		}
-		return value_t::make_dict_value(typeid_t::make_json_value(), obj2);
-	}
-	else if(v.is_array()){
-		const auto elements = v.get_array();
-		std::vector<value_t> elements2;
-		for(const auto e: elements){
-			const auto e2 = value_t::make_json_value(e);
-			elements2.push_back(e2);
-		}
-		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
-	}
-	else if(v.is_string()){
-		return value_t::make_string(v.get_string());
-	}
-	else if(v.is_number()){
-		return value_t::make_float(static_cast<float>(v.get_number()));
-	}
-	else if(v.is_true()){
-		return value_t::make_bool(true);
-	}
-	else if(v.is_false()){
-		return value_t::make_bool(false);
-	}
-	else if(v.is_null()){
-		return value_t::make_null();
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-
-
-
-
-namespace {
 
 	//	We know which type we need. If the value has not type, retype it.
 	value_t improve_value_type(const value_t& value0, const typeid_t& expected_type){
@@ -141,6 +87,184 @@ namespace {
 			}
 		}
 	}
+
+
+std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
+	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
+	QUARK_SCOPED_TRACE("construct_struct()");
+	QUARK_TRACE("struct_type: " + typeid_to_compact_string(struct_type));
+
+	const string struct_type_name = "unnamed";
+	const auto& def = struct_type.get_struct();
+	if(values.size() != def._members.size()){
+		throw std::runtime_error(
+			 string() + "Calling constructor for \"" + struct_type_name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
+		);
+	}
+	for(int i = 0 ; i < def._members.size() ; i++){
+		const auto v = values[i];
+		const auto a = def._members[i];
+
+		QUARK_ASSERT(v.check_invariant());
+		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
+
+		if(v.get_type() != a._type){
+/*
+??? wont work until we sorted out struct-types.
+			throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members");
+*/
+
+		}
+	}
+
+	const auto instance = value_t::make_struct_value(struct_type, values);
+	QUARK_TRACE(to_compact_string2(instance));
+
+	return std::pair<interpreter_t, value_t>(vm, instance);
+}
+
+/*
+	enum class base_type {
+		k_null,
+		k_bool,
+		k_int,
+		k_float,
+		k_string,
+		k_json_value,
+
+		//	This is a type that specifies another type.
+		k_typeid,
+
+		k_struct,
+		k_vector,
+		k_dict,
+		k_function,
+
+		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
+		k_unresolved_type_identifier
+	};
+*/
+
+std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
+
+	if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_json_value() || type.is_typeid()){
+		if(arg_values.size() != 1){
+			throw std::runtime_error("Constructor requires 1 argument");
+		}
+		const auto value = improve_value_type(arg_values[0], type);
+		if(value.get_type() != type){
+			throw std::runtime_error("Constructor requires 1 argument");
+		}
+		return {vm, value };
+	}
+	else if(type.is_struct()){
+		//	Constructor.
+		const auto result = construct_struct(vm, type, arg_values);
+		return { result.first, result.second };
+	}
+	else if(type.is_vector()){
+		const auto element_type = type.get_vector_element_type();
+		vector<value_t> elements2;
+		if(element_type.is_vector()){
+			for(const auto e: arg_values){
+				const auto result2 = construct_value_from_typeid(vm, element_type, e.get_vector_value()->_elements);
+				elements2.push_back(result2.second);
+			}
+		}
+		else{
+			elements2 = arg_values;
+		}
+		const auto result = value_t::make_vector_value(element_type, elements2);
+		return {vm, result };
+	}
+	else if(type.is_dict()){
+	}
+	else if(type.is_function()){
+	}
+	else if(type.is_unresolved_type_identifier()){
+	}
+	else{
+	}
+
+	throw std::runtime_error("Cannot call non-function.");
+}
+
+typeid_t cleanup_vector_constructor_type(const typeid_t& type){
+	if(type.is_vector()){
+		const auto element_type = type.get_vector_element_type();
+		if(element_type.is_vector()){
+			const auto c = cleanup_vector_constructor_type(element_type);
+			return typeid_t::make_vector(c);
+		}
+		else{
+			assert(element_type.is_typeid());
+			return typeid_t::make_vector(element_type.get_typeid_typeid());
+		}
+	}
+	else if(type.is_dict()){
+		return type;
+	}
+	else{
+		return type;
+	}
+}
+
+
+
+//??? Extend to support all Floyd types, including structs!
+value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
+	QUARK_ASSERT(v.check_invariant());
+
+	if(v.is_object()){
+		const auto obj = v.get_object();
+		std::map<string, value_t> obj2;
+		for(const auto e: obj){
+			const auto key = e.first;
+			const auto value = e.second;
+			const auto value2 = value_t::make_json_value(value);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
+			obj2[key] = value2;
+		}
+		return value_t::make_dict_value(typeid_t::make_json_value(), obj2);
+	}
+	else if(v.is_array()){
+		const auto elements = v.get_array();
+		std::vector<value_t> elements2;
+		for(const auto e: elements){
+			const auto e2 = value_t::make_json_value(e);
+			elements2.push_back(e2);
+		}
+		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
+	}
+	else if(v.is_string()){
+		return value_t::make_string(v.get_string());
+	}
+	else if(v.is_number()){
+		return value_t::make_float(static_cast<float>(v.get_number()));
+	}
+	else if(v.is_true()){
+		return value_t::make_bool(true);
+	}
+	else if(v.is_false()){
+		return value_t::make_bool(false);
+	}
+	else if(v.is_null()){
+		return value_t::make_null();
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+namespace {
 
 
 	interpreter_t begin_subenv(const interpreter_t& vm){
@@ -1104,125 +1228,7 @@ bool all_literals(const vector<expression_t>& e){
 	return true;
 }
 
-std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
-	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
-	QUARK_SCOPED_TRACE("construct_struct()");
-	QUARK_TRACE("struct_type: " + typeid_to_compact_string(struct_type));
 
-	const string struct_type_name = "unnamed";
-	const auto& def = struct_type.get_struct();
-	if(values.size() != def._members.size()){
-		throw std::runtime_error(
-			 string() + "Calling constructor for \"" + struct_type_name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
-		);
-	}
-	for(int i = 0 ; i < def._members.size() ; i++){
-		const auto v = values[i];
-		const auto a = def._members[i];
-
-		QUARK_ASSERT(v.check_invariant());
-		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
-
-		if(v.get_type() != a._type){
-/*
-??? wont work until we sorted out struct-types.
-			throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members");
-*/
-
-		}
-	}
-
-	const auto instance = value_t::make_struct_value(struct_type, values);
-	QUARK_TRACE(to_compact_string2(instance));
-
-	return std::pair<interpreter_t, value_t>(vm, instance);
-}
-
-
-std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
-
-/*
-	enum class base_type {
-		k_null,
-		k_bool,
-		k_int,
-		k_float,
-		k_string,
-		k_json_value,
-
-		//	This is a type that specifies another type.
-		k_typeid,
-
-		k_struct,
-		k_vector,
-		k_dict,
-		k_function,
-
-		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-		k_unresolved_type_identifier
-	};
-*/
-	if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_json_value() || type.is_typeid()){
-		if(arg_values.size() != 1){
-			throw std::runtime_error("Constructor requires 1 argument");
-		}
-		const auto value = improve_value_type(arg_values[0], type);
-		if(value.get_type() != type){
-			throw std::runtime_error("Constructor requires 1 argument");
-		}
-		return {vm, value };
-	}
-	else if(type.is_struct()){
-		//	Constructor.
-		const auto result = construct_struct(vm, type, arg_values);
-		return { result.first, result.second };
-	}
-	else if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
-		vector<value_t> elements2;
-		if(element_type.is_vector()){
-			for(const auto e: arg_values){
-				const auto result2 = construct_value_from_typeid(vm, element_type, e.get_vector_value()->_elements);
-				elements2.push_back(result2.second);
-			}
-		}
-		else{
-			elements2 = arg_values;
-		}
-		const auto result = value_t::make_vector_value(element_type, elements2);
-		return {vm, result };
-	}
-	else if(type.is_dict()){
-	}
-	else if(type.is_function()){
-	}
-	else if(type.is_unresolved_type_identifier()){
-	}
-	else{
-	}
-
-	throw std::runtime_error("Cannot call non-function.");
-}
-
-typeid_t cleanup_vector_constructor_type(const typeid_t& type){
-	if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
-		if(element_type.is_vector()){
-			const auto c = cleanup_vector_constructor_type(element_type);
-			return typeid_t::make_vector(c);
-		}
-		else{
-			assert(element_type.is_typeid());
-			return typeid_t::make_vector(element_type.get_typeid_typeid());
-		}
-	}
-	else if(type.is_dict()){
-		return type;
-	}
-	else{
-		return type;
-	}
-}
 
 //	May return a simplified expression instead of a value literal..
 std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
@@ -1467,6 +1473,18 @@ std::pair<interpreter_t, value_t> host__to_pretty_string(const interpreter_t& vm
 	return {vm, value_t::make_string(s) };
 }
 
+std::pair<interpreter_t, value_t> host__typeof(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() != 1){
+		throw std::runtime_error("typeof() requires 1 argument!");
+	}
+
+	const auto& value = args[0];
+	const auto type = value.get_type();
+	const auto result = value_t::make_typeid_value(type);
+	return {vm, result };
+}
 
 std::pair<interpreter_t, value_t> host__get_time_of_day(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1989,119 +2007,6 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 	}
 }
 
-#if 0
-value_t primitive_floyd_value_to_json_value(const typeid_t& json_value_typeid, const value_t& v){
-	if (v.is_bool()){
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
-	}
-	else if (v.is_int()){
-		return value_t(static_cast<float>(v.get_int_value()));
-	}
-	else if (v.is_float()){
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
-	}
-	else if(v.is_string()){
-		const auto result = make_struct_value(
-			host__json_value_type,
-			host__json_value_type.get_struct(),
-			{
-				value_t("string-type"),
-				value_t::make_bool(false),
-				value_t(0.0f),
-				v,
-				value_t(),
-				value_t()
-			}
-		);
-		return result;
-	}
-	else if(v.is_struct()){
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
-	}
-	else if(v.is_vector()){
-		const auto v2 = v.get_vector_value();
-
-		vector<value_t> elements2;
-		for(const auto e: v2->_elements){
-			const auto e2 = primitive_floyd_value_to_json_value(json_value_typeid, e);
-			elements2.push_back(e2);
-		}
-		const auto v3 = make_vector_value(json_value_typeid, elements2);
-
-		const auto result = make_struct_value(
-			host__json_value_type,
-			host__json_value_type.get_struct(),
-			{
-				value_t("array-type"),
-				value_t::make_bool(false),
-				value_t(0.0f),
-				value_t(""),
-				value_t(),
-				v3
-			}
-		);
-		return result;
-	}
-	else if(v.is_dict()){
-		const auto v2 = v.get_dict_value();
-
-		std::map<string,value_t> elements2;
-		for(const auto e: v2->_elements){
-			const auto e2 = primitive_floyd_value_to_json_value(json_value_typeid, e.second);
-			elements2[e.first] = e2;
-		}
-		const auto v3 = make_dict_value(json_value_typeid, elements2);
-
-		const auto result = make_struct_value(
-			host__json_value_type,
-			host__json_value_type.get_struct(),
-			{
-				value_t("object-type"),
-				value_t::make_bool(false),
-				value_t(0.0f),
-				value_t(""),
-				v3,
-				value_t(),
-			}
-		);
-		return result;
-	}
-	else if(v.is_function()){
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
-	}
-	else{
-		//??? Add support for all json-compatible types.
-		throw std::runtime_error("Calling json_value() on unsupported type of value.");
-	}
-}
-
-/*
-	Is this a function that recursively converts static JSON-data, expressed as simple Floyd values?
-	Or:
-	- Will it execute code?
-	- Will it convert non-json values, like custom structs, into json first?
-*/
-
-std::pair<interpreter_t, value_t> host__json_value(const interpreter_t& vm, const std::vector<value_t>& args){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(args.size() != 1){
-		throw std::runtime_error("json_value() requires 1 argument");
-	}
-
-	const auto existing_value_deep_ptr = resolve_env_variable(vm, "json_value");
-	assert(existing_value_deep_ptr != nullptr);
-
-//	const auto json_value_typeid = typeid_t::make_unresolved_type_identifier("json_value");
-
-	const auto result = primitive_floyd_value_to_json_value(existing_value_deep_ptr->first.get_typeid_value(), args[0]);
-	return {vm, result};
-}
-#endif
-
-
-
-
 std::pair<interpreter_t, value_t> host__get_env_path(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -2166,14 +2071,17 @@ std::pair<interpreter_t, value_t> host__write_text_file(const interpreter_t& vm,
 	}
 }
 
-std::pair<interpreter_t, value_t> host__string_to_json_value(const interpreter_t& vm, const std::vector<value_t>& args){
+/*
+	Reads json from a text string, returning an unpacked json_value.
+*/
+std::pair<interpreter_t, value_t> host__decode_json(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(args.size() != 1){
-		throw std::runtime_error("string_to_json_value() requires 1 argument!");
+		throw std::runtime_error("decode_json_value() requires 1 argument!");
 	}
 	else if(args[0].is_string() == false){
-		throw std::runtime_error("string_to_json_value() requires string argument.");
+		throw std::runtime_error("decode_json_value() requires string argument.");
 	}
 	else{
 		const string s = args[0].get_string_value();
@@ -2183,16 +2091,14 @@ std::pair<interpreter_t, value_t> host__string_to_json_value(const interpreter_t
 	}
 }
 
-//??? Why not just use to_string()?
-//??? remove compact-string concept, go for json_t instead.
-std::pair<interpreter_t, value_t> host__json_value_to_string(const interpreter_t& vm, const std::vector<value_t>& args){
+std::pair<interpreter_t, value_t> host__encode_json(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(args.size() != 1){
-		throw std::runtime_error("json_value_to_string() requires 1 argument!");
+		throw std::runtime_error("encode_json() requires 1 argument!");
 	}
 	else if(args[0].is_json_value()== false){
-		throw std::runtime_error("json_value_to_string() requires argument to be json_value.");
+		throw std::runtime_error("encode_json() requires argument to be json_value.");
 	}
 	else{
 		const auto value0 = args[0].get_json_value();
@@ -2204,15 +2110,15 @@ std::pair<interpreter_t, value_t> host__json_value_to_string(const interpreter_t
 
 
 
-std::pair<interpreter_t, value_t> host__value_to_json(const interpreter_t& vm, const std::vector<value_t>& args){
+std::pair<interpreter_t, value_t> host__flatten_to_json(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(args.size() != 1){
-		throw std::runtime_error("value_to_json() requires 1 argument!");
+		throw std::runtime_error("flatten_to_json() requires 1 argument!");
 	}
 /*
 	else if(args[0].is_string() == false){
-		throw std::runtime_error("value_to_json() requires string argument.");
+		throw std::runtime_error("flatten_to_json() requires string argument.");
 	}
 */
 	else{
@@ -2223,19 +2129,22 @@ std::pair<interpreter_t, value_t> host__value_to_json(const interpreter_t& vm, c
 	}
 }
 
-//??? why neeed? input json_value is already a value_t!? Use to unflatten?
-std::pair<interpreter_t, value_t> host__json_to_value(const interpreter_t& vm, const std::vector<value_t>& args){
+std::pair<interpreter_t, value_t> host__unflatten_from_json(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
-		throw std::runtime_error("json_to_value() requires 1 argument!");
+	if(args.size() != 2){
+		throw std::runtime_error("unflatten_from_json() requires 2 argument!");
 	}
 	else if(args[0].is_json_value() == false){
-		throw std::runtime_error("json_to_value() requires string argument.");
+		throw std::runtime_error("unflatten_from_json() requires string argument.");
+	}
+	else if(args[1].is_typeid()== false){
+		throw std::runtime_error("unflatten_from_json() requires string argument.");
 	}
 	else{
 		const auto json_value = args[0].get_json_value();
-		const auto value = value_t::make_json_value(json_value);
+		const auto target_type = args[1].get_typeid_value();
+		const auto value = unflatten_json_to_specific_type(json_value, target_type);
 		return {vm, value };
 	}
 }
@@ -2260,6 +2169,9 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "assert", host__assert, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
 	host_function_t{ "to_string", host__to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 	host_function_t{ "to_pretty_string", host__to_pretty_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+	host_function_t{ "typeof", host__typeof, typeid_t::make_function(typeid_t::make_typeid(typeid_t::make_null()), {typeid_t::make_null()}) },
+
+
 
 	host_function_t{ "get_time_of_day", host__get_time_of_day, typeid_t::make_function(typeid_t::make_int(), {}) },
 	host_function_t{ "update", host__update, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
@@ -2276,11 +2188,11 @@ const vector<host_function_t> k_host_functions {
 	host_function_t{ "write_text_file", host__write_text_file, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null(), typeid_t::make_null()}) },
 
 
-	host_function_t{ "string_to_json", host__string_to_json_value, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-	host_function_t{ "json_to_string", host__json_value_to_string, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+	host_function_t{ "decode_json", host__decode_json, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+	host_function_t{ "encode_json", host__encode_json, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
 
-	host_function_t{ "value_to_json", host__value_to_json, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
-	host_function_t{ "json_to_value", host__json_to_value, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_json_value()}) }
+	host_function_t{ "flatten_to_json", host__flatten_to_json, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
+	host_function_t{ "unflatten_from_json", host__unflatten_from_json, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) }
 };
 
 
@@ -2332,11 +2244,8 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	global_env->_values["int"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
 	global_env->_values["float"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
 	global_env->_values["string"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
+	global_env->_values["typeid"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid(typeid_t::make_null())), false };
 	global_env->_values["json_value"] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
-
-
-	//	Register the struct type for json_value.
-//	global_env->_values["json_value"] = std::pair<value_t, bool>{host__json_value_type, false };
 
 	_call_stack.push_back(global_env);
 
@@ -2344,11 +2253,6 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto r = execute_statements(*this, _ast._statements);
-/*
-	if(r.second){
-		throw std::runtime_error("Return statement illegal in global scope.");
-	}
-*/
 
 	_call_stack[0]->_values = r.first._call_stack[0]->_values;
 	_print_output = r.first._print_output;
@@ -2393,26 +2297,38 @@ ast_t program_to_ast2(const string& program){
 	return pass2;
 }
 
-
-interpreter_t run_global(const string& source){
-	auto ast = program_to_ast2(source);
-	auto vm = interpreter_t(ast);
-//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+void print_vm_printlog(const interpreter_t& vm){
 	if(vm._print_output.empty() == false){
 		std::cout << "print output:\n";
 		for(const auto line: vm._print_output){
 			std::cout << line << "\n";
 		}
 	}
+}
+
+
+interpreter_t run_global(const string& source){
+	auto ast = program_to_ast2(source);
+	auto vm = interpreter_t(ast);
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+	print_vm_printlog(vm);
 	return vm;
 }
 
 std::pair<interpreter_t, statement_result_t> run_main(const string& source, const vector<floyd::value_t>& args){
 	auto ast = program_to_ast2(source);
+
+	//	Runs global code.
 	auto vm = interpreter_t(ast);
-	const auto f = find_global_symbol(vm, "main");
-	const auto r = call_function(vm, f, args);
-	return { r.first, r.second };
+
+	const auto main_function = resolve_env_variable(vm, "main");
+	if(main_function != nullptr){
+		const auto result = call_function(vm, main_function->first, args);
+		return { result.first, result.second };
+	}
+	else{
+		return {vm, statement_result_t::make_no_output()};
+	}
 }
 
 std::pair<interpreter_t, statement_result_t> run_program(const ast_t& ast, const vector<floyd::value_t>& args){
@@ -2428,6 +2344,10 @@ std::pair<interpreter_t, statement_result_t> run_program(const ast_t& ast, const
 	}
 }
 
+value_t get_global(const interpreter_t& vm, const std::string& name){
+	const auto entry = vm._call_stack[0]->_values[name];
+	return entry.first;
+}
 
 
 

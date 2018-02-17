@@ -223,10 +223,12 @@ namespace floyd {
 		if(basetype == floyd::base_type::k_unresolved_type_identifier){
 			return t.get_unresolved_type_identifier();
 		}
+/*
 		else if(basetype == floyd::base_type::k_typeid){
 			const auto t2 = t.get_typeid_typeid();
 			return "typeid(" + typeid_to_compact_string(t2) + ")";
 		}
+*/
 		else if(basetype == floyd::base_type::k_struct){
 			const auto struct_def = t.get_struct();
 			return floyd::to_compact_string(struct_def);
@@ -408,8 +410,8 @@ namespace floyd {
 			{ typeid_t::make_string(), "\"string\"", "string" },
 
 			//	Typeid
-			{ typeid_t::make_typeid(typeid_t::make_float()), R"([ "typeid" , "float"])", "typeid(float)" },
-			{ typeid_t::make_typeid(typeid_t::make_string()), R"([ "typeid" , "string"])", "typeid(string)" },
+			{ typeid_t::make_typeid(typeid_t::make_float()), R"([ "typeid" , "float"])", "typeid" },
+			{ typeid_t::make_typeid(typeid_t::make_string()), R"([ "typeid" , "string"])", "typeid" },
 			{
 				typeid_t::make_typeid(s1),
 				R"(
@@ -418,7 +420,7 @@ namespace floyd {
 						["struct", [[]]]
 					]
 				)",
-				"typeid(struct {})"
+				"typeid"
 			},
 
 

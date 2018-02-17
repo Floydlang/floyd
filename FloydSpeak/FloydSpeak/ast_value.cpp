@@ -633,7 +633,7 @@ std::string to_compact_string2(const value_t& value) {
 	}
 
 	else if(base_type == base_type::k_typeid){
-		return floyd::typeid_to_compact_string(value.get_type());
+		return floyd::typeid_to_compact_string(value.get_typeid_value());
 	}
 	else if(base_type == base_type::k_struct){
 		return struct_instance_to_compact_string(*value.get_struct_value());
@@ -797,6 +797,11 @@ ast_json_t value_and_type_to_ast_json(const value_t& v){
 		value_to_ast_json(v)._value
 	})};
 }
+
+std::string make_value_debug_str(const value_t& v){
+	return value_and_type_to_string(v);
+}
+
 
 ast_json_t value_to_ast_json(const value_t& v){
 	if(v.is_null()){

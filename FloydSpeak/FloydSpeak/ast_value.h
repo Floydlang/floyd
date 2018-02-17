@@ -49,6 +49,7 @@ namespace floyd {
 
 	ast_json_t value_and_type_to_ast_json(const value_t& v);
 
+	std::string make_value_debug_str(const value_t& v);
 
 
 	//////////////////////////////////////////////////		struct_instance_t
@@ -216,7 +217,7 @@ namespace floyd {
 		public: value_t() :
 			_typeid(typeid_t::make_null())
 		{
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -225,7 +226,7 @@ namespace floyd {
 			_typeid(typeid_t::make_bool()),
 			_bool(value)
 		{
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -234,7 +235,7 @@ namespace floyd {
 			_typeid(typeid_t::make_int()),
 			_int(value)
 		{
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -243,7 +244,7 @@ namespace floyd {
 			_typeid(typeid_t::make_float()),
 			_float(value)
 		{
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -254,7 +255,7 @@ namespace floyd {
 		{
 			QUARK_ASSERT(s != nullptr);
 
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -263,7 +264,7 @@ namespace floyd {
 			_typeid(typeid_t::make_string()),
 			_string(s)
 		{
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -273,7 +274,7 @@ namespace floyd {
 			_json_value(s)
 		{
 			QUARK_ASSERT(s != nullptr && s->check_invariant());
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -285,7 +286,7 @@ namespace floyd {
 		{
 			QUARK_ASSERT(type.check_invariant());
 
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -297,7 +298,7 @@ namespace floyd {
 			QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
 			QUARK_ASSERT(instance && instance->check_invariant());
 
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -308,7 +309,7 @@ namespace floyd {
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
 
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -319,7 +320,7 @@ namespace floyd {
 		{
 			QUARK_ASSERT(instance && instance->check_invariant());
 
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -330,7 +331,7 @@ namespace floyd {
 		{
 			QUARK_ASSERT(function_instance && function_instance->check_invariant());
 
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -352,7 +353,7 @@ namespace floyd {
 		{
 			QUARK_ASSERT(other.check_invariant());
 
-			DEBUG_STR = value_and_type_to_string(*this);
+			DEBUG_STR = make_value_debug_str(*this);
 
 			QUARK_ASSERT(check_invariant());
 		}

@@ -168,7 +168,9 @@ namespace floyd {
 
 
 	interpreter_t run_global(const std::string& source);
+	value_t get_global(const interpreter_t& vm, const std::string& name);
 
+	void print_vm_printlog(const interpreter_t& vm);
 
 } //	floyd
 

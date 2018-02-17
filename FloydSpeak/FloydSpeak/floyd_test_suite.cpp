@@ -30,12 +30,17 @@ using namespace floyd;
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
+value_t run_return_result(const std::string& program, const std::vector<value_t>& args){
+	const auto r = run_main(program, args);
+	print_vm_printlog(r.first);
+	const auto result = get_global(r.first, "result");
+	return result;
+}
 
 void test__run_init__check_result(const std::string& program, const value_t& expected_result){
-	const auto result = run_global(program);
-	const auto result_value = result._call_stack[0]->_values["result"];
+	const auto result = run_return_result(program, {});
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_literal(result_value.first))._value,
+		expression_to_json(expression_t::make_literal(result))._value,
 		expression_to_json(expression_t::make_literal(expected_result))._value
 	);
 }
@@ -69,6 +74,12 @@ void ut_compare_stringvects(const vector<string>& result, const vector<string>& 
 			::quark::source_code_location(__FILE__, __LINE__),
 			""
 		);
+	}
+}
+
+void ut_compare_values(const value_t& result, const value_t& expected){
+	if(result != expected){
+		QUARK_UT_VERIFY(false);
 	}
 }
 
@@ -614,7 +625,7 @@ QUARK_UNIT_TEST("", "[pixel_t]()", "", ""){
 }
 
 /*
-QUARK_UNIT_TEST_VIP("", "[[string: int]]()", "", ""){
+QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
 	test__run_init__check_result(
 		R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
 		value_t::make_vector_value(
@@ -895,6 +906,64 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 
 
 
+//////////////////////////////////////////		HOST FUNCTION - typeof()
+
+
+
+QUARK_UNIT_TEST("", "typeof()", "", ""){
+	const auto result = run_return_result(
+		R"(
+			result = typeof(145);
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_int()));
+}
+QUARK_UNIT_TEST("", "typeof()", "", ""){
+	const auto result = run_return_result(
+		R"(
+			result = to_string(typeof(145));
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_string("int"));
+}
+
+QUARK_UNIT_TEST("", "typeof()", "", ""){
+	const auto result = run_return_result(
+		R"(
+			result = typeof("hello");
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_string()));
+}
+
+QUARK_UNIT_TEST("", "typeof()", "", ""){
+	const auto result = run_return_result(
+		R"(
+			result = to_string(typeof("hello"));
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_string("string"));
+}
+
+QUARK_UNIT_TEST("", "typeof()", "", ""){
+	const auto result = run_return_result(
+		R"(
+			result = typeof([1,2,3]);
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
+}
+QUARK_UNIT_TEST("", "typeof()", "", ""){
+	const auto result = run_return_result(
+		R"(
+			result = to_string(typeof([1,2,3]));
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_string("[int]"));
+}
+
+
+
 //////////////////////////////////////////		HOST FUNCTION - print()
 
 
@@ -973,6 +1042,47 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 		)"
 	);
 }
+
+
+//////////////////////////////////////////		HOST FUNCTION - get_env_path()
+
+
+QUARK_UNIT_TEST("", "get_env_path()", "", ""){
+	const auto vm = run_global(R"(
+		path = get_env_path();
+		print(path);
+	)");
+
+	quark::ut_compare_strings(vm._print_output[0].substr(0, 7), "/Users/");
+}
+
+//////////////////////////////////////////		HOST FUNCTION - read_text_file()
+
+/*
+QUARK_UNIT_TEST("", "read_text_file()", "", ""){
+	const auto vm = run_global(R"(
+		path = get_env_path();
+		a = read_text_file(path + "/Desktop/test1.json");
+		print(a);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		string() + R"({ "magic": 1234 })" + "\n"
+	});
+}
+*/
+
+
+//////////////////////////////////////////		HOST FUNCTION - write_text_file()
+
+
+QUARK_UNIT_TEST("", "write_text_file()", "", ""){
+	const auto vm = run_global(R"(
+		path = get_env_path();
+		write_text_file(path + "/Desktop/test_out.txt", "Floyd wrote this!");
+	)");
+}
+
+
 
 
 //////////////////////////////////////////		BLOCKS AND SCOPING
@@ -1208,6 +1318,9 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 //////////////////////////////////////////		TYPEID - TYPE
 
 //	??? Test converting different types to jsons
+
+
+
 
 //////////////////////////////////////////		STRING - TYPE
 
@@ -1665,7 +1778,7 @@ QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 		print(t);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		"typeid(struct {int a;})"
+		"struct {int a;}"
 	});
 }
 
@@ -1904,7 +2017,8 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 
 
 
-QUARK_UNIT_TEST("json_value-string", "", "", ""){
+
+QUARK_UNIT_TEST("json_value-string", "deduce json_value::string", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = "hello";
 		print(a);
@@ -1927,18 +2041,7 @@ QUARK_UNIT_TEST("json_value-string", "size()", "", ""){
 		assert(size(a) == 5);
 	)");
 }
-//size() don't work on json_value:string.
 
-
-QUARK_UNIT_TEST("json_value-number", "", "", ""){
-	const auto vm = run_global(R"(
-		json_value a = 13;
-		print(a);
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"13"
-	});
-}
 QUARK_UNIT_TEST("json_value-number", "== number", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = 13;
@@ -2014,7 +2117,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 	});
 }
 
-QUARK_UNIT_TEST("json_value-object", "def", "expressions inside def", ""){
+QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 	const auto vm = run_global(R"(
 		json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" };
 		print(a);
@@ -2024,7 +2127,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "expressions inside def", ""){
 	});
 }
 
-QUARK_UNIT_TEST("json_value-object", "[]", "", ""){
+QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a["pigcount"]);
@@ -2088,48 +2191,21 @@ const auto expected = R"ABCD({
 */
 
 
-QUARK_UNIT_TEST("", "get_env_path()", "", ""){
-	const auto vm = run_global(R"(
-		path = get_env_path();
-		print(path);
-	)");
 
-	quark::ut_compare_strings(vm._print_output[0].substr(0, 7), "/Users/");
+//////////////////////////////////////////		decode_json()
+
+
+
+QUARK_UNIT_TEST("", "decode_json()", "", ""){
+	const auto result = run_return_result(R"(
+		result = decode_json("\"genelec\"");
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t("genelec")));
 }
 
-/*
-QUARK_UNIT_TEST("", "read_text_file()", "", ""){
+QUARK_UNIT_TEST("", "decode_json()", "", ""){
 	const auto vm = run_global(R"(
-		path = get_env_path();
-		a = read_text_file(path + "/Desktop/test1.json");
-		print(a);
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		string() + R"({ "magic": 1234 })" + "\n"
-	});
-}
-*/
-
-QUARK_UNIT_TEST("", "write_text_file()", "", ""){
-	const auto vm = run_global(R"(
-		path = get_env_path();
-		write_text_file(path + "/Desktop/test_out.txt", "Floyd wrote this!");
-	)");
-}
-
-QUARK_UNIT_TEST("", "string_to_json()", "", ""){
-	const auto vm = run_global(R"(
-		a = string_to_json("\"genelec\"");
-		print(a);
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		R"("genelec")"
-	});
-}
-
-QUARK_UNIT_TEST("", "string_to_json()", "", ""){
-	const auto vm = run_global(R"(
-		a = string_to_json("{ \"magic\": 1234 }");
+		a = decode_json("{ \"magic\": 1234 }");
 		print(a);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
@@ -2137,12 +2213,13 @@ QUARK_UNIT_TEST("", "string_to_json()", "", ""){
 	});
 }
 
+//////////////////////////////////////////		encode_json()
 
 
-QUARK_UNIT_TEST("", "json_to_string()", "", ""){
+QUARK_UNIT_TEST("", "encode_json()", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = "cheat";
-		b = json_to_string(a);
+		b = encode_json(a);
 		print(b);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
@@ -2151,10 +2228,10 @@ QUARK_UNIT_TEST("", "json_to_string()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "json_to_string()", "", ""){
+QUARK_UNIT_TEST("", "encode_json()", "", ""){
 	const auto vm = run_global(R"(
 		json_value a = { "magic": 1234 };
-		b = json_to_string(a);
+		b = encode_json(a);
 		print(b);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
@@ -2163,63 +2240,70 @@ QUARK_UNIT_TEST("", "json_to_string()", "", ""){
 }
 
 
+//////////////////////////////////////////		flatten_to_json()
 
 
 
-QUARK_UNIT_TEST("", "value_to_json()", "string", ""){
-	const auto vm = run_global(R"(
-		print(json_to_string(value_to_json("fanta")));
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"\"fanta\""
-	});
+QUARK_UNIT_TEST("", "flatten_to_json()", "string", ""){
+	const auto result = run_return_result(R"(
+		result = encode_json(flatten_to_json("fanta"));
+	)", {});
+	ut_compare_values(result, value_t::make_string("\"fanta\""));
 }
-QUARK_UNIT_TEST("", "value_to_json()", "[]", ""){
-	const auto vm = run_global(R"(
-		print(json_to_string(value_to_json([1,2,3])));
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"[1, 2, 3]"
-	});
+QUARK_UNIT_TEST("", "flatten_to_json()", "[]", ""){
+	const auto result = run_return_result(R"(
+		result = encode_json(flatten_to_json([1,2,3]));
+	)", {});
+	ut_compare_values(result, value_t::make_string("[1, 2, 3]"));
 }
 
-QUARK_UNIT_TEST("", "json_to_value()", "string", ""){
-	const auto vm = run_global(R"(
-		print(json_to_value(value_to_json("cola")));
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"\"cola\""
-	});
-}
-QUARK_UNIT_TEST("", "json_to_value()", "[]", ""){
-	const auto vm = run_global(R"(
-		print(json_to_value(value_to_json([1,2,3])));
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"[1, 2, 3]"
-	});
-}
-
-
-
-QUARK_UNIT_TEST("", "value_to_json()", "pixel_t", ""){
-	const auto vm = run_global(R"(
+QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
+	const auto result = run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		c = pixel_t(100, 200);
-		a = value_to_json(c);
-		print(json_to_string(a));
+		a = flatten_to_json(c);
+		result = encode_json(a);
+	)", {});
+	ut_compare_values(result, value_t::make_string("[100, 200]"));
+}
+
+QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
+	const auto result = run_return_result(R"(
+		struct pixel_t { float x; float y; }
+		c = [pixel_t(100, 200), pixel_t(101, 201)];
+		a = flatten_to_json(c);
+		result = encode_json(a);
+	)", {});
+	ut_compare_values(result, value_t::make_string("[[100, 200], [101, 201]]"));
+}
+
+
+//////////////////////////////////////////		unflatten_from_json()
+
+
+QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+	const auto result = run_return_result(R"(
+		result = unflatten_from_json(flatten_to_json("cola"), typeof(""));
+	)", {});
+	ut_compare_values(result, value_t::make_string("cola"));
+}
+
+QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
+	const auto vm = run_global(R"(
+		print(unflatten_from_json(flatten_to_json([1,2,3]), typeof("")));
 	)");
-	
 	ut_compare_stringvects(vm._print_output, vector<string>{
-		"[100, 200]"
+		"[1, 2, 3]"
 	});
 }
 
-QUARK_UNIT_TEST("", "json_to_value()", "pixel_t", ""){
+
+//??? I want to get a pixel_t!
+QUARK_UNIT_TEST("", "unflatten_from_json()", "pixel_t", ""){
 	const auto vm = run_global(R"(
 		struct pixel_t { float x; float y; }
 		json_value j = [1, 2];
-		a = json_to_value(j);
+		a = unflatten_from_json(j, string);
 		print(a);
 	)");
 	
@@ -2227,21 +2311,6 @@ QUARK_UNIT_TEST("", "json_to_value()", "pixel_t", ""){
 		"[1, 2]"
 	});
 }
-
-QUARK_UNIT_TEST("", "value_to_json()", "[pixel_t]", ""){
-	const auto vm = run_global(R"(
-		struct pixel_t { float x; float y; }
-		c = [pixel_t(100, 200), pixel_t(101, 201)];
-		a = value_to_json(c);
-		print(json_to_string(a));
-	)");
-	
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"[[100, 200], [101, 201]]"
-	});
-}
-
-
 
 
 

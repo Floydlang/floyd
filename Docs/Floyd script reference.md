@@ -74,23 +74,23 @@ To easy composability, the basic wiring between libraries and subsystems is buil
 
 These are the primitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
-- **int**			Same as int64
-- **bool**			**true** or **false**
-- **string**		built-in string type. 8bit pure (supports embedded nulls).
+- __bool__			__true__ or __false__
+- __int__			Same as int64
+- __float__			32-bit floating point number
+- __string__		built-in string type. 8bit pure (supports embedded nulls).
 					Use for machine strings, basic UI. Not localizable.
-- **float**			32-bit floating point number
-
-- **function**		A function value. Functions can be Floyd functions or C functions. They are callable.
+- __typeid__		Describes the *type* of a value.
+- __function__		A function value. Functions can be Floyd functions or C functions. They are callable.
 
 
 # COMPOSITE TYPES
 
 These are composites and collections of other types.
 
-- **struct**		like C struct or classes or tuples.
-- **vector**		a continous array of elements addressed via indexes.
-- **dictionary**	lookup values using string keys.
-- **json_value**	a value that holds a json-compatible value, can be a big JSON tree.
+- __struct__		like C struct or classes or tuples.
+- __vector__		a continous array of elements addressed via indexes.
+- __dictionary__	lookup values using string keys.
+- __json_value__	a value that holds a json-compatible value, can be a big JSON tree.
 
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [] etc.
 
@@ -98,11 +98,11 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 These are features built into every type: integer, string, struct, collections etc.
 
-- **a = b** 							This true-deep copies the value b to the new name a.
-- **a == b**							Compares the two values, deeply.
-- **a != b**							Derivated of a == b.
-- **a < b**								Tests all member data in the order they appear in the struct.
-- **a <= b**, **a > b**, **a >= b**	These are derivated of a < b
+- __a = b__ 							This true-deep copies the value b to the new name a.
+- __a == b__							Compares the two values, deeply.
+- __a != b__							Derivated of a == b.
+- __a < b__								Tests all member data in the order they appear in the struct.
+- __a <= b__, __a > b__, __a >= b__	These are derivated of a < b
 
 
 # TRUE DEEP
@@ -168,7 +168,7 @@ You can use "mutable" to make a local variable changeable.
 Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start, before main() is called. You don't even need a main function if you don't want it.
 
 
-**main()** This function is called by the host when program starts. You get the input arguments from the outside world (command line arguments etc) and you can return an integer to the outside.
+__main()__ This function is called by the host when program starts. You get the input arguments from the outside world (command line arguments etc) and you can return an integer to the outside.
 
 
 # FUNCTIONS
@@ -241,7 +241,7 @@ How to add and combine values:
 Used to compare two values. The result is true or false:
 
 ```
-**a == b**				true if a and b have the same value
+	a == b					true if a and b have the same value
 	a != b				true if a and b have different values
 	a > b				true if the value of a is greater than the value of b
 	a < b				true if the value of a is smaller than the value of b
@@ -401,13 +401,30 @@ You can append to strings together using the + operation.
 
 ### CORE FUNCTIONS
 
-- **print()**: prints a string to the default output of the app.
-- **update()**: changes one character of the string and returns a new string.
-- **size()**: returns the number of characters in the string, as an integer.
-- **find()**: searches from left to right after a substring and returns its index or -1
-- **push_back()**: appends a character or string to the right side of the string.
-- **subset**: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
-- **replace()**: replaces a range of a string with another string. Can also be used to erase or insert.
+- __print()__: prints a string to the default output of the app.
+- __update()__: changes one character of the string and returns a new string.
+- __size()__: returns the number of characters in the string, as an integer.
+- __find()__: searches from left to right after a substring and returns its index or -1
+- __push_back()__: appends a character or string to the right side of the string.
+- __subset__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
+- __replace()__: replaces a range of a string with another string. Can also be used to erase or insert.
+
+
+# TYPEID
+
+A typeid is tells the type of a value.
+
+When you reference one of the built in primitve types by name, you are accessing a variable of type typeid.
+
+- bool
+- int
+- float
+- string
+
+	assert(typeid("hello") == string);
+	assert(to_string(typeid([1,2,3])) == "[int]");
+
+A typeid is a propery Floyd value - you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
 
 
 
@@ -417,7 +434,7 @@ JSON is very central to Floyd. JSON is a way to store composite values in a tree
 
 JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
 
-- Floyd has built in support for JSON in the language. It has a a JSON type called **json_value** and functions to pack & unpack strings / json files into the json-type.
+- Floyd has built in support for JSON in the language. It has a a JSON type called __json_value__ and functions to pack & unpack strings / json files into the json-type.
 
 - Floyd has support for json literals: you can put json data directly into a Floyd file. Great for copy-pasting snippets for tests etc.
 
@@ -434,7 +451,7 @@ This value can contain any of the 6 JSON-compatible value:
 - null
 
 
-**json_value** 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
+__json_value__ 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
 
 Notice that json_value can contain an entire huge json file, with a big tree of json objects and arrays etc. A json_value can also also contain just a string or a number or a single json array of strings. The json_value is used for every node in the json_value tree.
 
@@ -457,7 +474,9 @@ Example json:
 	json_value b = "Hello!";
 	json_value c = {"hello": 1, "bye": 3};
 
-	//	Notice that json objects are more lax than Floyd: you can mix different types of values in the same object or array.
+	//	Notice that json objects are more lax than Floyd: you can
+	//	mix different types of values in the same object or array. Floyd hold one value-type only.
+
 	json_value d = { "pigcount": 3, "pigcolor": "pink" };
 
 	assert(a == 13);
@@ -480,26 +499,39 @@ Example json:
 	)
 
 
-### SERIALIZATION / DESERIALIZATION
-
-Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
-
-
-Converting a floyd_value to a json string and back. The json-string can be directly read or written to a text file, sent via a protocol etc.
-
-	string json_to_string(json_value v)
-	json_value string_to_json(string s)
-
-
-
-
 ### CORE FUNCTIONS
 
 Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
 
-- **pretty_string()**
-- **json_to_string()**
-- **string_to_json()**
+- __pretty_string()__
+- __encode_json()__
+- __decode_json()__
+
+
+
+# JSON_VALUE, SERIALIZATION / DESERIALIZATION
+
+Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
+
+
+Converting a floyd json_value to a json string and back. The json-string can be directly read or written to a text file, sent via a protocol etc.
+
+	string encode_json(json_value v)
+	json_value decode_json(string s)
+
+
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json_value, using unflatten_from_json().
+
+	json_value flatten_to_json(any v)
+	any unflatten_from_json(json_value v)
+
+
+- __encode_json()__
+- __decode_json()__
+- __flatten\_to\_json()__
+- __unflatten\_from\_json()__
+
+
 
 # VECTOR
 
@@ -533,13 +565,13 @@ You can append to vector together using the + operation.
 
 ### CORE FUNCTIONS
 
-- **print()**: prints a vector to the default output of the app.
-- **update()**: changes one element of the vector and returns a new vector.
-- **size()**: returns the number of elements in the vector, as an integer.
-- **find()**: searches from left to right after a subvector and returns its index or -1
-- **push_back()**: appends an element to the right side of the vector.
-- **subset**: extracts a range of elements from the vector, as specified by start and end indexes.
-- **replace()**: replaces a range of a vector with another vector. Can also be used to erase or insert.
+- __print()__: prints a vector to the default output of the app.
+- __update()__: changes one element of the vector and returns a new vector.
+- __size()__: returns the number of elements in the vector, as an integer.
+- __find()__: searches from left to right after a subvector and returns its index or -1
+- __push_back()__: appends an element to the right side of the vector.
+- __subset__: extracts a range of elements from the vector, as specified by start and end indexes.
+- __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert.
 
 
 
@@ -570,11 +602,11 @@ You copy dictionaries using = and all comparison expressions work.
 
 ### CORE FUNCTIONS
 
-- **print()**: prints a vector to the default output of the app.
-- **update()**: changes one element of the dictionary and returns a new dictionary
-- **size()**: returns the number of elements in the dictionary, as an integer.
-- **exists()**: checks to see if the dictionary holds a specific key
-- **erase()**: erase a specific key from the dictionar and returns a new dictionary
+- __print()__: prints a vector to the default output of the app.
+- __update()__: changes one element of the dictionary and returns a new dictionary
+- __size()__: returns the number of elements in the dictionary, as an integer.
+- __exists()__: checks to see if the dictionary holds a specific key
+- __erase()__: erase a specific key from the dictionar and returns a new dictionary
 
 
 
@@ -742,14 +774,25 @@ If the expression evaluates to false, the program will log to the output, then b
 
 ### to_string()
 
-Converts its input to a string. This works with all types of values. It also works with types, which is useful for debugging.
+Converts its input to a string. This works with any type of values. It also works with types, which is useful for debugging.
 
 	string to_string(any)
 
 You often use this function to convert numbers to strings.
 
 
-### get_time_of_day()
+### to_pretty_string()
+
+Converts its input to a string of json data that is formatted nicely with indentations. It works with any Floyd value.
+
+
+#### typeof()
+Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared etc.
+
+	typeid typeof(any)
+
+
+### get\_time\_of\_day()
 
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
 
@@ -896,26 +939,26 @@ Replaces a range of a collection with the contents of another collection.
 
 
 Notice: if you use an empty collection for *new*, you will actually erase the range.
-Notice: by specifying the same index in *start* and *length* you will **insert** the new collection into the existing collection.
+Notice: by specifying the same index in *start* and *length* you will __insert__ the new collection into the existing collection.
 
 
 
 
-### get_env_path()
+### get\_env\_path()
 
 Returns user's home directory, like "/Volumes/Bob".
 
 	string get_env_path()
 
 
-### read_text_file()
+### read\_text\_file()
 
 Reads a text file from the file system and returns it as a string.
 
 	string read_text_file(string path)
 
 
-### write_text_file()
+### write\_text\_file()
 
 Write a string to the file system as a text file.
 
