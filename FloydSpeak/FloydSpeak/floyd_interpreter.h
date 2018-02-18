@@ -105,15 +105,12 @@ namespace floyd {
 		public: const interpreter_t& operator=(const interpreter_t& other);
 		public: bool check_invariant() const;
 
-		public: std::pair<interpreter_t, statement_result_t> call_host_function(int function_id, const std::vector<value_t> args) const;
-
-
 		////////////////////////		STATE
 		public: std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 
 
 		//	Constant!
-		public: ast_t _ast;
+		public: std::shared_ptr<const ast_t> _ast;
 
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
@@ -122,6 +119,8 @@ namespace floyd {
 		public: std::vector<std::string> _print_output;
 	};
 
+
+	std::pair<interpreter_t, statement_result_t> call_host_function(const interpreter_t& vm, int function_id, const std::vector<value_t> args);
 
 	json_t interpreter_to_json(const interpreter_t& vm);
 

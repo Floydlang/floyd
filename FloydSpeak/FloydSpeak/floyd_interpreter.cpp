@@ -420,6 +420,137 @@ namespace {
 		return { vm2, r.second };
 	}
 
+
+
+
+
+std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interpreter_t& vm, const bind_or_assign_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm2 = vm;
+	const auto s = &statement;
+	const auto name = s->_new_variable_name;
+
+	const auto result = evaluate_expression(vm2, s->_expression);
+	vm2 = result.first;
+
+	const auto result_value = result.second;
+	if(result_value.is_literal() == false){
+		throw std::runtime_error("Cannot evaluate expression.");
+	}
+	else{
+		const auto bind_statement_type = s->_bindtype;
+		const auto bind_statement_mutable_tag_flag = s->_bind_as_mutable_tag;
+
+		//	If we have a type or we have the mutable-flag, then this statement is a bind.
+		bool is_bind = bind_statement_type.is_null() == false || bind_statement_mutable_tag_flag;
+
+		//	Bind.
+		//	int a = 10
+		//	mutable a = 10
+		//	mutable = 10
+		if(is_bind){
+			const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
+			const auto value_exists_in_env = vm2._call_stack.back()->_values.count(name) > 0;
+
+			if(value_exists_in_env){
+				throw std::runtime_error("Local identifier already exists.");
+			}
+
+			//	Deduced bind type -- use new value's type.
+			if(bind_statement_type.is_null()){
+				if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
+					throw std::runtime_error("Cannot deduce vector type.");
+				}
+				else if(retyped_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
+					throw std::runtime_error("Cannot deduce dictionary type.");
+				}
+				else{
+					vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
+				}
+			}
+
+			//	Explicit bind-type -- make sure source + dest types match.
+			else{
+				if(bind_statement_type != retyped_value.get_type()){
+					throw std::runtime_error("Types not compatible in bind.");
+				}
+				vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
+			}
+		}
+
+		//	Assign
+		//	a = 10
+		else{
+			const auto existing_value_deep_ptr = resolve_env_variable(vm2, name);
+			const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
+
+			//	Mutate!
+			if(existing_value_deep_ptr){
+				if(existing_variable_is_mutable){
+					const auto existing_value = existing_value_deep_ptr->first;
+					const auto new_value = result_value.get_literal();
+
+					//	Let both existing & new values influence eachother to the exact type of the new variable.
+					//	Existing could be a [null]=[], or could new_value
+					const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
+					const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
+
+					if(existing_value2.get_type() != new_value2.get_type()){
+						throw std::runtime_error("Types not compatible in bind.");
+					}
+					*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
+				}
+				else{
+					throw std::runtime_error("Cannot assign to immutable identifier.");
+				}
+			}
+
+			//	Deduce type and bind it -- to local env.
+			else{
+				const auto new_value = result_value.get_literal();
+
+				//	Can we deduce type from the rhs value?
+				if(new_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
+					throw std::runtime_error("Cannot deduce vector type.");
+				}
+				else if(new_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
+					throw std::runtime_error("Cannot deduce dictionary type.");
+				}
+				else{
+					vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
+				}
+			}
+		}
+	}
+	return { vm2, statement_result_t::make_no_output() };
+}
+
+
+std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const return_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm2 = vm;
+
+	const auto& s = &statement;
+	const auto expr = s->_expression;
+	const auto result = evaluate_expression(vm2, expr);
+	vm2 = result.first;
+	const auto result_value = result.second;
+
+	if(!result_value.is_literal()){
+		throw std::runtime_error("undefined");
+	}
+
+	//	Check that return value's type matches function's return type. Cannot be done here since we don't know who called us.
+	//	Instead calling code must check.
+	return {
+		vm2,
+		statement_result_t::make_return_unwind(result_value.get_literal())
+	};
+}
+
+
 	//	Output is the RETURN VALUE of the executed statement, if any.
 	std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm0, const statement_t& statement){
 		QUARK_ASSERT(vm0.check_invariant());
@@ -428,125 +559,14 @@ namespace {
 		auto vm2 = vm0;
 
 		if(statement._bind_or_assign){
-			const auto& s = statement._bind_or_assign;
-			const auto name = s->_new_variable_name;
-
-			const auto result = evaluate_expression(vm2, s->_expression);
-			vm2 = result.first;
-			const auto result_value = result.second;
-
-			if(result_value.is_literal() == false){
-				throw std::runtime_error("Cannot evaluate expression.");
-			}
-			else{
-				const auto bind_statement_type = s->_bindtype;
-				const auto bind_statement_mutable_tag_flag = s->_bind_as_mutable_tag;
-
-				//	If we have a type or we have the mutable-flag, then this statement is a bind.
-				bool is_bind = bind_statement_type.is_null() == false || bind_statement_mutable_tag_flag;
-
-				//	Bind.
-				//	int a = 10
-				//	mutable a = 10
-				//	mutable = 10
-				if(is_bind){
-					const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
-					const auto value_exists_in_env = vm2._call_stack.back()->_values.count(name) > 0;
-
-					if(value_exists_in_env){
-						throw std::runtime_error("Local identifier already exists.");
-					}
-
-					//	Deduced bind type -- use new value's type.
-					if(bind_statement_type.is_null()){
-						if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
-							throw std::runtime_error("Cannot deduce vector type.");
-						}
-						else if(retyped_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
-							throw std::runtime_error("Cannot deduce dictionary type.");
-						}
-						else{
-							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
-						}
-					}
-
-					//	Explicit bind-type -- make sure source + dest types match.
-					else{
-						if(bind_statement_type != retyped_value.get_type()){
-							throw std::runtime_error("Types not compatible in bind.");
-						}
-						vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
-					}
-				}
-
-				//	Assign
-				//	a = 10
-				else{
-					const auto existing_value_deep_ptr = resolve_env_variable(vm2, name);
-					const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
-
-
-					//	Mutate!
-					if(existing_value_deep_ptr){
-						if(existing_variable_is_mutable){
-							const auto existing_value = existing_value_deep_ptr->first;
-							const auto new_value = result_value.get_literal();
-
-							//	Let both existing & new values influence eachother to the exact type of the new variable.
-							//	Existing could be a [null]=[], or could new_value
-							const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
-							const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
-
-							if(existing_value2.get_type() != new_value2.get_type()){
-								throw std::runtime_error("Types not compatible in bind.");
-							}
-							*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
-						}
-						else{
-							throw std::runtime_error("Cannot assign to immutable identifier.");
-						}
-					}
-
-					//	Deduce type and bind it -- to local env.
-					else{
-						const auto new_value = result_value.get_literal();
-
-						//	Can we deduce type from the rhs value?
-						if(new_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
-							throw std::runtime_error("Cannot deduce vector type.");
-						}
-						else if(new_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
-							throw std::runtime_error("Cannot deduce dictionary type.");
-						}
-						else{
-							vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
-						}
-					}
-				}
-			}
-			return { vm2, statement_result_t::make_no_output() };
+			return execute_bind_statement(vm0, *statement._bind_or_assign);
 		}
 		else if(statement._block){
 			const auto& s = statement._block;
 			return execute_statements_in_env(vm2, s->_statements, {});
 		}
 		else if(statement._return){
-			const auto& s = statement._return;
-			const auto expr = s->_expression;
-			const auto result = evaluate_expression(vm2, expr);
-			vm2 = result.first;
-			const auto result_value = result.second;
-
-			if(!result_value.is_literal()){
-				throw std::runtime_error("undefined");
-			}
-
-			//	Check that return value's type matches function's return type. Cannot be done here since we don't know who called us.
-			//	Instead calling code must check.
-			return {
-				vm2,
-				statement_result_t::make_return_unwind(result_value.get_literal())
-			};
+			return execute_return_statement(vm2, *statement._return);
 		}
 
 
@@ -1302,7 +1322,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 	const auto& function_def = f.get_function_value()->_def;
 	if(function_def._host_function != 0){
-		const auto r = vm2.call_host_function(function_def._host_function, args);
+		const auto r = call_host_function(vm2, function_def._host_function, args);
 		return { r.first, r.second };
 	}
 	else{
@@ -1452,7 +1472,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	}
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(vm._ast)._value },
+		{ "ast", ast_to_json(*vm._ast)._value },
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
@@ -2369,7 +2389,7 @@ const vector<host_function_t> k_host_functions {
 
 
 //	NOTICE: We do function overloading for the host functions: you can call them with any *type* of arguments and it gives any return type.
-std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(int function_id, const std::vector<floyd::value_t> args) const{
+std::pair<interpreter_t, statement_result_t> call_host_function(const interpreter_t& vm, int function_id, const std::vector<floyd::value_t> args){
 	const int index = function_id - 1000;
 	QUARK_ASSERT(index >= 0 && index < k_host_functions.size())
 
@@ -2380,7 +2400,7 @@ std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(i
 		throw std::runtime_error("Wrong number of arguments to host function.");
 	}
 
-	const auto result = (host_function._function_ptr)(*this, args);
+	const auto result = (host_function._function_ptr)(vm, args);
 	return {
 		result.first,
 		statement_result_t::make_return_unwind(result.second)
@@ -2390,7 +2410,7 @@ std::pair<interpreter_t, statement_result_t> interpreter_t::call_host_function(i
 interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	_ast = ast_t(ast._statements);
+	_ast = make_shared<ast_t>(ast);
 
 	//	Make the top-level environment = global scope.
 	shared_ptr<environment_t> empty_env;
@@ -2430,7 +2450,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_start_time = std::chrono::high_resolution_clock::now();
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _ast._statements);
+	const auto r = execute_statements(*this, _ast->_statements);
 
 	_call_stack[0]->_values = r.first._call_stack[0]->_values;
 	_print_output = r.first._print_output;
@@ -2459,7 +2479,7 @@ const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 
 
 bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_ast.check_invariant());
+	QUARK_ASSERT(_ast->check_invariant());
 	return true;
 }
 
