@@ -424,6 +424,8 @@ namespace {
 
 
 
+
+
 std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interpreter_t& vm, const bind_or_assign_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -526,7 +528,6 @@ std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interp
 	return { vm2, statement_result_t::make_no_output() };
 }
 
-
 std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -550,127 +551,156 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	};
 }
 
+//??? make structs unique even though they share layout and name. USer unique-ID-generator?
+std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm0, const define_struct_statement_t& statement){
+	QUARK_ASSERT(vm0.check_invariant());
 
-	//	Output is the RETURN VALUE of the executed statement, if any.
-	std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm0, const statement_t& statement){
-		QUARK_ASSERT(vm0.check_invariant());
-		QUARK_ASSERT(statement.check_invariant());
+	auto vm2 = vm0;
+	const auto& s = &statement;
 
-		auto vm2 = vm0;
+	const auto name = s->_name;
+	if(vm2._call_stack.back()->_values.count(name) > 0){
+		throw std::runtime_error("Name already used.");
+	}
 
-		if(statement._bind_or_assign){
-			return execute_bind_statement(vm0, *statement._bind_or_assign);
-		}
-		else if(statement._block){
-			const auto& s = statement._block;
-			return execute_statements_in_env(vm2, s->_statements, {});
-		}
-		else if(statement._return){
-			return execute_return_statement(vm2, *statement._return);
-		}
+	//	Resolve member types in this scope.
+	std::vector<member_t> members2;
+	for(const auto e: s->_def._members){
+		const auto name = e._name;
+		const auto type = e._type;
+		const auto type2 = resolve_type_using_env(vm2, type);
+		const auto e2 = member_t(type2, name);
+		members2.push_back(e2);
+	}
+	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
+	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
+	vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(value_t::make_typeid_value(struct_typeid), false);
+	return { vm2, statement_result_t::make_no_output() };
+}
 
+std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm0, const ifelse_statement_t& statement){
+	QUARK_ASSERT(vm0.check_invariant());
 
-		//??? make structs unique even though they share layout and name. USer unique-ID-generator?
-		else if(statement._def_struct){
-			const auto& s = statement._def_struct;
+	auto vm2 = vm0;
 
-			const auto name = s->_name;
-			if(vm2._call_stack.back()->_values.count(name) > 0){
-				throw std::runtime_error("Name already used.");
-			}
+	const auto& s = &statement;
+	const auto condition_result = evaluate_expression(vm2, s->_condition);
+	vm2 = condition_result.first;
+	const auto condition_result_value = condition_result.second;
+	if(!condition_result_value.is_literal() || !condition_result_value.get_literal().is_bool()){
+		throw std::runtime_error("Boolean condition required.");
+	}
 
-			//	Resolve member types in this scope.
-			std::vector<member_t> members2;
-			for(const auto e: s->_def._members){
-				const auto name = e._name;
-				const auto type = e._type;
-				const auto type2 = resolve_type_using_env(vm2, type);
-				const auto e2 = member_t(type2, name);
-				members2.push_back(e2);
-			}
-			const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
-			const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
-			vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(value_t::make_typeid_value(struct_typeid), false);
-			return { vm2, statement_result_t::make_no_output() };
-		}
+	bool r = condition_result_value.get_literal().get_bool_value();
+	if(r){
+		return execute_statements_in_env(vm2, s->_then_statements, {});
+	}
+	else{
+		return execute_statements_in_env(vm2, s->_else_statements, {});
+	}
+}
 
-		else if(statement._if){
-			const auto& s = statement._if;
-			const auto condition_result = evaluate_expression(vm2, s->_condition);
-			vm2 = condition_result.first;
-			const auto condition_result_value = condition_result.second;
-			if(!condition_result_value.is_literal() || !condition_result_value.get_literal().is_bool()){
-				throw std::runtime_error("Boolean condition required.");
-			}
+std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpreter_t& vm0, const for_statement_t& statement){
+	QUARK_ASSERT(vm0.check_invariant());
 
-			bool r = condition_result_value.get_literal().get_bool_value();
-			if(r){
-				return execute_statements_in_env(vm2, s->_then_statements, {});
-			}
-			else{
-				return execute_statements_in_env(vm2, s->_else_statements, {});
-			}
-		}
-		else if(statement._for){
-			const auto& s = statement._for;
+	auto vm2 = vm0;
+	const auto& s = &statement;
 
-			const auto start_value0 = evaluate_expression(vm2, s->_start_expression);
-			vm2 = start_value0.first;
-			const auto start_value = start_value0.second.get_literal().get_int_value();
+	const auto start_value0 = evaluate_expression(vm2, s->_start_expression);
+	vm2 = start_value0.first;
+	const auto start_value = start_value0.second.get_literal().get_int_value();
 
-			const auto end_value0 = evaluate_expression(vm2, s->_end_expression);
-			vm2 = end_value0.first;
-			const auto end_value = end_value0.second.get_literal().get_int_value();
+	const auto end_value0 = evaluate_expression(vm2, s->_end_expression);
+	vm2 = end_value0.first;
+	const auto end_value = end_value0.second.get_literal().get_int_value();
 
-			for(int x = start_value ; x <= end_value ; x++){
-				const std::map<std::string, std::pair<value_t, bool>> values = { { s->_iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
-				const auto result = execute_statements_in_env(vm2, s->_body, values);
-				vm2 = result.first;
-				const auto return_value = result.second;
-				if(return_value._type == statement_result_t::k_return_unwind){
-					return { vm2, return_value };
-				}
-			}
-			return { vm2, statement_result_t::make_no_output() };
-		}
-		else if(statement._while){
-			const auto& s = statement._while;
-
-			bool again = true;
-			while(again){
-				const auto condition_value_expr = evaluate_expression(vm2, s->_condition);
-				vm2 = condition_value_expr.first;
-				const auto condition_value = condition_value_expr.second.get_literal().get_bool_value();
-
-				if(condition_value){
-					const auto result = execute_statements_in_env(vm2, s->_body, {});
-					vm2 = result.first;
-					const auto return_value = result.second;
-				if(return_value._type == statement_result_t::k_return_unwind){
-						return { vm2, return_value };
-					}
-				}
-				else{
-					again = false;
-				}
-			}
-			return { vm2, statement_result_t::make_no_output() };
-		}
-		else if(statement._expression){
-			const auto& s = statement._expression;
-
-			const auto result = evaluate_expression(vm2, s->_expression);
-			vm2 = result.first;
-			const auto result_value = result.second.get_literal();
-			return {
-				vm2,
-				statement_result_t::make_passive_expression_output(result_value)
-			};
-		}
-		else{
-			QUARK_ASSERT(false);
+	for(int x = start_value ; x <= end_value ; x++){
+		const std::map<std::string, std::pair<value_t, bool>> values = { { s->_iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
+		const auto result = execute_statements_in_env(vm2, s->_body, values);
+		vm2 = result.first;
+		const auto return_value = result.second;
+		if(return_value._type == statement_result_t::k_return_unwind){
+			return { vm2, return_value };
 		}
 	}
+	return { vm2, statement_result_t::make_no_output() };
+}
+
+std::pair<interpreter_t, statement_result_t> execute_while_statement(const interpreter_t& vm0, const while_statement_t& statement){
+	QUARK_ASSERT(vm0.check_invariant());
+
+	auto vm2 = vm0;
+
+	const auto& s = &statement;
+	bool again = true;
+	while(again){
+		const auto condition_value_expr = evaluate_expression(vm2, s->_condition);
+		vm2 = condition_value_expr.first;
+		const auto condition_value = condition_value_expr.second.get_literal().get_bool_value();
+
+		if(condition_value){
+			const auto result = execute_statements_in_env(vm2, s->_body, {});
+			vm2 = result.first;
+			const auto return_value = result.second;
+		if(return_value._type == statement_result_t::k_return_unwind){
+				return { vm2, return_value };
+			}
+		}
+		else{
+			again = false;
+		}
+	}
+	return { vm2, statement_result_t::make_no_output() };
+}
+
+std::pair<interpreter_t, statement_result_t> execute_expression_statement(const interpreter_t& vm0, const expression_statement_t& statement){
+	QUARK_ASSERT(vm0.check_invariant());
+
+	auto vm2 = vm0;
+	const auto& s = &statement;
+	const auto result = evaluate_expression(vm2, s->_expression);
+	vm2 = result.first;
+	const auto result_value = result.second.get_literal();
+	return {
+		vm2,
+		statement_result_t::make_passive_expression_output(result_value)
+	};
+}
+
+
+//	Output is the RETURN VALUE of the executed statement, if any.
+std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm, const statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(statement.check_invariant());
+
+	if(statement._bind_or_assign){
+		return execute_bind_statement(vm, *statement._bind_or_assign);
+	}
+	else if(statement._block){
+		return execute_statements_in_env(vm, statement._block->_statements, {});
+	}
+	else if(statement._return){
+		return execute_return_statement(vm, *statement._return);
+	}
+	else if(statement._def_struct){
+		return execute_def_struct_statement(vm, *statement._def_struct);
+	}
+	else if(statement._if){
+		return execute_ifelse_statement(vm, *statement._if);
+	}
+	else if(statement._for){
+		return execute_for_statement(vm, *statement._for);
+	}
+	else if(statement._while){
+		return execute_while_statement(vm, *statement._while);
+	}
+	else if(statement._expression){
+		return execute_expression_statement(vm, *statement._expression);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
 
 
 
