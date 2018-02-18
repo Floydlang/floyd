@@ -83,6 +83,7 @@ ast_json_t expr_to_json(const expr_t& e){
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else if(e._op == eoperation::k_0_resolve){

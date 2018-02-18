@@ -103,7 +103,9 @@ namespace floyd {
 		public: interpreter_t(const ast_t& ast);
 		public: interpreter_t(const interpreter_t& other);
 		public: const interpreter_t& operator=(const interpreter_t& other);
+#if DEBUG
 		public: bool check_invariant() const;
+#endif
 
 		////////////////////////		STATE
 		public: std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;

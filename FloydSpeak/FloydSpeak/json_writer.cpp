@@ -230,6 +230,7 @@ std::string json_to_compact_string2(const json_t& v, bool quote_fields){
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -438,6 +439,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

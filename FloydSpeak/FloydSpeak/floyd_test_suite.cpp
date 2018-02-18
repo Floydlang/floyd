@@ -15,6 +15,7 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 
 
 
@@ -2545,6 +2546,7 @@ QUARK_UNIT_TEST_VIP("", "test basic performance", "", ""){
 	auto duration2 = std::chrono::duration_cast<std::chrono::seconds>(end - start);
 
 	QUARK_TRACE_SS("duration:" << duration1.count() << "\n");
+	std::cout << "duration..." << duration1.count() << std::endl;
 }
 
 

@@ -38,11 +38,15 @@ expression_t::expression_t(
 	const std::shared_ptr<const expr_base_t>& expr
 )
 :
+#if DEBUG
 	_debug(""),
+#endif
 	_operation(operation),
 	_expr(expr)
 {
+#if DEBUG
 	_debug = expression_to_json_string(*this);
+#endif
 
 	QUARK_ASSERT(check_invariant());
 }

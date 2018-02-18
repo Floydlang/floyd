@@ -171,9 +171,11 @@ namespace floyd {
 				|| op == expression_type::k_define_function)
 			{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 
@@ -622,7 +624,9 @@ namespace floyd {
 
 //??? make const
 		//////////////////////////		STATE
+#if DEBUG
 		private: std::string _debug;
+#endif
 		private: expression_type _operation;
 		private: std::shared_ptr<const expr_base_t> _expr;
 	};

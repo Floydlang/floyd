@@ -329,10 +329,12 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 	}
 	else if(target_type.is_unresolved_type_identifier()){
 		QUARK_ASSERT(false);
+		throw std::exception();
 //		throw std::runtime_error("Invalid json schema, cannot unflatten functions.");
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 
 /*
@@ -675,6 +677,7 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -1110,6 +1113,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 
@@ -1148,6 +1152,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 
@@ -1184,6 +1189,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 
@@ -1218,6 +1224,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 
@@ -1255,6 +1262,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 
@@ -1296,6 +1304,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 				}
 				else{
 					QUARK_ASSERT(false);
+					throw std::exception();
 				}
 			}
 		}
@@ -2348,6 +2357,7 @@ std::pair<interpreter_t, value_t> host__get_json_type(const interpreter_t& vm, c
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 }
@@ -2483,11 +2493,12 @@ const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 	return *this;
 }
 
-
+#if DEBUG
 bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_ast->check_invariant());
 	return true;
 }
+#endif
 
 
 

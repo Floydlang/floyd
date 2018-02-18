@@ -8,9 +8,6 @@
 
 #include "runtime.h"
 
-#define QUARK_ASSERT_ON true
-#define QUARK_TRACE_ON true
-#define QUARK_UNIT_TESTS_ON true
 
 #include "quark.h"
 #include "steady_vector.h"

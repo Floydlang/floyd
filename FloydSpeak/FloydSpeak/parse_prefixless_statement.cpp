@@ -414,6 +414,7 @@ std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

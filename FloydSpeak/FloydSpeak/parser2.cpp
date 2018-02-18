@@ -832,9 +832,11 @@ std::string expr_to_string(const expr_t& e){
 		else if(value._type == constant_value_t::etype::k_string){
 			//	 Use k_0_string_literal!
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else if(e._op == eoperation::k_0_resolve){

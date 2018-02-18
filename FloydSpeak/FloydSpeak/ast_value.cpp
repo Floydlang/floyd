@@ -346,6 +346,7 @@ int compare_dict_true_deep(const dict_instance_t& left, const dict_instance_t& r
 	}
 	else{
 		QUARK_ASSERT(false)
+		throw std::exception();
 	}
 }
 
@@ -450,6 +451,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -813,12 +815,14 @@ ast_json_t value_and_type_to_ast_json(const value_t& v){
 	})};
 }
 
+#if DEBUG
 std::string make_value_debug_str(const value_t& value){
 //	return value_and_type_to_string(v);
 
 	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
 	return type_string;
 }
+#endif
 
 
 ast_json_t value_to_ast_json(const value_t& v){
@@ -898,6 +902,7 @@ ast_json_t value_to_ast_json(const value_t& v){
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

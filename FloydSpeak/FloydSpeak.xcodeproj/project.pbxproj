@@ -494,6 +494,12 @@
 		2C1D84E51CA765A90042F0A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"QUARK_ASSERT_ON=1",
+					"QUARK_TRACE_ON=1",
+					"DEBUG=1",
+					"$(inherited)",
+				);
 				PRODUCT_NAME = floyd;
 			};
 			name = Debug;
@@ -501,6 +507,10 @@
 		2C1D84E61CA765A90042F0A8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"QUARK_ASSERT_ON=0",
+					"QUARK_TRACE_ON=0",
+				);
 				PRODUCT_NAME = floyd;
 			};
 			name = Release;

@@ -122,6 +122,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else if(op == "unary_minus"){
@@ -199,6 +200,7 @@ expression_t parser_expression_to_ast(const json_t& e){
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

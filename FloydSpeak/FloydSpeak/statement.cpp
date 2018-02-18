@@ -189,6 +189,7 @@ namespace floyd {
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 

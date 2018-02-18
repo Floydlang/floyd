@@ -385,6 +385,7 @@ bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else if(parent.is_array()){
@@ -402,6 +403,7 @@ bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else{
@@ -465,6 +467,7 @@ json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else if(parent.is_array()){
@@ -482,6 +485,7 @@ json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else{
@@ -692,6 +696,7 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else if(parent.is_array()){
@@ -717,10 +722,12 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
