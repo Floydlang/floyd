@@ -1044,24 +1044,23 @@ std::pair<interpreter_t, expression_t> evaluate_conditional_operator_expression(
 
 
 
-std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
 
 	auto vm_acc = vm;
 
-	const auto op = e.get_operation();
-
 	//	First evaluate all inputs to our operation.
-	const auto simple2_expr = e.get_simple__2();
-	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr->_left);
+	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr._left);
 	vm_acc = left_expr.first;
-	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr->_right);
+
+	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr._right);
 	vm_acc = right_expr.first;
 
-
 	//	Both left and right are constants, replace the math_operation with a constant!
-	if(left_expr.second.is_literal() && right_expr.second.is_literal()) {
+	if(left_expr.second.is_literal() == false || right_expr.second.is_literal() == false) {
+		throw std::runtime_error("Left and right expressions must be same type!");
+	}
+	else{
 
 		//	Perform math operation on the two constants => new constant.
 		const auto left_constant = left_expr.second.get_literal();
@@ -1072,9 +1071,8 @@ std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const inte
 		if(!(left_constant.get_type()== right_constant.get_type())){
 			throw std::runtime_error("Left and right expressions must be same type!");
 		}
-
-		//	Do generic functionalliy, independant on types?
-		{
+		else{
+			//	Do generic functionallity, independant on type.
 			if(op == expression_type::k_comparison_smaller_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm_acc, expression_t::make_literal_bool(diff <= 0)};
@@ -1092,7 +1090,6 @@ std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const inte
 				return {vm_acc, expression_t::make_literal_bool(diff > 0)};
 			}
 
-
 			else if(op == expression_type::k_logical_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 				return {vm_acc, expression_t::make_literal_bool(diff == 0)};
@@ -1107,308 +1104,297 @@ std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const inte
 			}
 		}
 	}
-	else{
-		throw std::runtime_error("Left and right expressions must be same type!");
-	}
 }
 
-std::pair<interpreter_t, expression_t> evaluate_simple2_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
 
 	auto vm_acc = vm;
 
-	const auto op = e.get_operation();
-
 	//	First evaluate all inputs to our operation.
-	const auto simple2_expr = e.get_simple__2();
-	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr->_left);
+	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr._left);
 	vm_acc = left_expr.first;
-	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr->_right);
+
+	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr._right);
 	vm_acc = right_expr.first;
 
-
 	//	Both left and right are constants, replace the math_operation with a constant!
-	if(left_expr.second.is_literal() && right_expr.second.is_literal()) {
-
+	if(left_expr.second.is_literal() == false || right_expr.second.is_literal() == false) {
+		throw std::runtime_error("Cannot compute arguments to operation.");
+	}
+	else{
 		//	Perform math operation on the two constants => new constant.
 		const auto left_constant = left_expr.second.get_literal();
 
 		//	Make rhs match left if needed/possible.
 		const auto right_constant = improve_value_type(right_expr.second.get_literal(), left_constant.get_type());
 
-		if(!(left_constant.get_type()== right_constant.get_type())){
+		if(left_constant.get_type() != right_constant.get_type()){
 			throw std::runtime_error("Left and right expressions must be same type!");
 		}
 
-		//	bool
-		if(left_constant.is_bool() && right_constant.is_bool()){
-			const bool left = left_constant.get_bool_value();
-			const bool right = right_constant.get_bool_value();
+		else{
+			const auto type_mode = left_constant.get_type();
 
-			if(op == expression_type::k_arithmetic_add__2
-			|| op == expression_type::k_arithmetic_subtract__2
-			|| op == expression_type::k_arithmetic_multiply__2
-			|| op == expression_type::k_arithmetic_divide__2
-			|| op == expression_type::k_arithmetic_remainder__2
-			){
-				throw std::runtime_error("Arithmetics on bool not allowed.");
-			}
+			//	bool
+			if(type_mode.is_bool()){
+				const bool left = left_constant.get_bool_value();
+				const bool right = right_constant.get_bool_value();
 
-			else if(op == expression_type::k_logical_and__2){
-				return {vm_acc, expression_t::make_literal_bool(left && right)};
-			}
-			else if(op == expression_type::k_logical_or__2){
-				return {vm_acc, expression_t::make_literal_bool(left || right)};
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-		}
-
-		//	int
-		else if(left_constant.is_int() && right_constant.is_int()){
-			const int left = left_constant.get_int_value();
-			const int right = right_constant.get_int_value();
-
-			if(op == expression_type::k_arithmetic_add__2){
-				return {vm_acc, expression_t::make_literal_int(left + right)};
-			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
-				return {vm_acc, expression_t::make_literal_int(left - right)};
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-				return {vm_acc, expression_t::make_literal_int(left * right)};
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-				if(right == 0){
-					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+				if(false
+				|| op == expression_type::k_arithmetic_add__2
+				|| op == expression_type::k_arithmetic_subtract__2
+				|| op == expression_type::k_arithmetic_multiply__2
+				|| op == expression_type::k_arithmetic_divide__2
+				|| op == expression_type::k_arithmetic_remainder__2
+				){
+					throw std::runtime_error("Arithmetics on bool not allowed.");
 				}
-				return {vm_acc, expression_t::make_literal_int(left / right)};
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-				if(right == 0){
-					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-				}
-				return {vm_acc, expression_t::make_literal_int(left % right)};
-			}
-
-			else if(op == expression_type::k_logical_and__2){
-				return {vm_acc, expression_t::make_literal_bool((left != 0) && (right != 0))};
-			}
-			else if(op == expression_type::k_logical_or__2){
-				return {vm_acc, expression_t::make_literal_bool((left != 0) || (right != 0))};
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-		}
-
-		//	float
-		else if(left_constant.is_float() && right_constant.is_float()){
-			const float left = left_constant.get_float_value();
-			const float right = right_constant.get_float_value();
-
-			if(op == expression_type::k_arithmetic_add__2){
-				return {vm_acc, expression_t::make_literal_float(left + right)};
-			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
-				return {vm_acc, expression_t::make_literal_float(left - right)};
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-				return {vm_acc, expression_t::make_literal_float(left * right)};
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-				if(right == 0.0f){
-					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-				}
-				return {vm_acc, expression_t::make_literal_float(left / right)};
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw std::runtime_error("Modulo operation on float not allowed.");
-			}
-
-
-			else if(op == expression_type::k_logical_and__2){
-				return {vm_acc, expression_t::make_literal_bool((left != 0.0f) && (right != 0.0f))};
-			}
-			else if(op == expression_type::k_logical_or__2){
-				return {vm_acc, expression_t::make_literal_bool((left != 0.0f) || (right != 0.0f))};
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-		}
-
-		//	string
-		else if(left_constant.is_string() && right_constant.is_string()){
-			const auto left = left_constant.get_string_value();
-			const auto right = right_constant.get_string_value();
-
-			if(op == expression_type::k_arithmetic_add__2){
-				return {vm_acc, expression_t::make_literal_string(left + right)};
-			}
-
-			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw std::runtime_error("Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw std::runtime_error("Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-				throw std::runtime_error("Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw std::runtime_error("Operation not allowed on string.");
-			}
-
-
-			else if(op == expression_type::k_logical_and__2){
-				throw std::runtime_error("Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_logical_or__2){
-				throw std::runtime_error("Operation not allowed on string.");
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-		}
-
-		//	struct
-		else if(left_constant.is_struct() && right_constant.is_struct()){
-			const auto left = left_constant.get_struct_value();
-			const auto right = right_constant.get_struct_value();
-
-			//	Structs mue be exactly the same type to match.
-			if(left_constant.get_typeid_value() == right_constant.get_typeid_value()){
-				throw std::runtime_error("Struct type mismatch.");
-			}
-
-			if(op == expression_type::k_arithmetic_add__2){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-
-			else if(op == expression_type::k_logical_and__2){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-			else if(op == expression_type::k_logical_or__2){
-				throw std::runtime_error("Operation not allowed on struct.");
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-		}
-
-		else if(left_constant.is_vector() && right_constant.is_vector()){
-			//	Improves vectors before using them.
-			const auto element_type = left_constant.get_type().get_vector_element_type();
-
-			if(!(left_constant.get_type() == right_constant.get_type())){
-				throw std::runtime_error("Vector types don't match.");
-			}
-			else{
-				if(op == expression_type::k_arithmetic_add__2){
-					auto elements2 = left_constant.get_vector_value()->_elements;
-					elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
-
-					const auto value2 = value_t::make_vector_value(element_type, elements2);
-					return {vm_acc, expression_t::make_literal(value2)};
-				}
-
-				else if(op == expression_type::k_arithmetic_subtract__2){
-					throw std::runtime_error("Operation not allowed on vectors.");
-				}
-				else if(op == expression_type::k_arithmetic_multiply__2){
-					throw std::runtime_error("Operation not allowed on vectors.");
-				}
-				else if(op == expression_type::k_arithmetic_divide__2){
-					throw std::runtime_error("Operation not allowed on vectors.");
-				}
-				else if(op == expression_type::k_arithmetic_remainder__2){
-					throw std::runtime_error("Operation not allowed on vectors.");
-				}
-
 
 				else if(op == expression_type::k_logical_and__2){
-					throw std::runtime_error("Operation not allowed on vectors.");
+					return {vm_acc, expression_t::make_literal_bool(left && right)};
 				}
 				else if(op == expression_type::k_logical_or__2){
-					throw std::runtime_error("Operation not allowed on vectors.");
+					return {vm_acc, expression_t::make_literal_bool(left || right)};
 				}
 				else{
 					QUARK_ASSERT(false);
 					throw std::exception();
 				}
 			}
-		}
-		else if(left_constant.is_function() && right_constant.is_function()){
-			throw std::runtime_error("Cannot perform operations on two function values.");
-		}
-		else{
-			throw std::runtime_error("Arithmetics failed.");
-		}
-	}
 
-	//	Else use a math_operation expression to perform the calculation later.
-	//	We make a NEW math_operation since sub-nodes may have been evaluated.
-	else{
-		return {vm_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second)};
+			//	int
+			else if(type_mode.is_int()){
+				const int left = left_constant.get_int_value();
+				const int right = right_constant.get_int_value();
+
+				if(op == expression_type::k_arithmetic_add__2){
+					return {vm_acc, expression_t::make_literal_int(left + right)};
+				}
+				else if(op == expression_type::k_arithmetic_subtract__2){
+					return {vm_acc, expression_t::make_literal_int(left - right)};
+				}
+				else if(op == expression_type::k_arithmetic_multiply__2){
+					return {vm_acc, expression_t::make_literal_int(left * right)};
+				}
+				else if(op == expression_type::k_arithmetic_divide__2){
+					if(right == 0){
+						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+					}
+					return {vm_acc, expression_t::make_literal_int(left / right)};
+				}
+				else if(op == expression_type::k_arithmetic_remainder__2){
+					if(right == 0){
+						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+					}
+					return {vm_acc, expression_t::make_literal_int(left % right)};
+				}
+
+				else if(op == expression_type::k_logical_and__2){
+					return {vm_acc, expression_t::make_literal_bool((left != 0) && (right != 0))};
+				}
+				else if(op == expression_type::k_logical_or__2){
+					return {vm_acc, expression_t::make_literal_bool((left != 0) || (right != 0))};
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+			}
+
+			//	float
+			else if(type_mode.is_float()){
+				const float left = left_constant.get_float_value();
+				const float right = right_constant.get_float_value();
+
+				if(op == expression_type::k_arithmetic_add__2){
+					return {vm_acc, expression_t::make_literal_float(left + right)};
+				}
+				else if(op == expression_type::k_arithmetic_subtract__2){
+					return {vm_acc, expression_t::make_literal_float(left - right)};
+				}
+				else if(op == expression_type::k_arithmetic_multiply__2){
+					return {vm_acc, expression_t::make_literal_float(left * right)};
+				}
+				else if(op == expression_type::k_arithmetic_divide__2){
+					if(right == 0.0f){
+						throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+					}
+					return {vm_acc, expression_t::make_literal_float(left / right)};
+				}
+				else if(op == expression_type::k_arithmetic_remainder__2){
+					throw std::runtime_error("Modulo operation on float not allowed.");
+				}
+
+
+				else if(op == expression_type::k_logical_and__2){
+					return {vm_acc, expression_t::make_literal_bool((left != 0.0f) && (right != 0.0f))};
+				}
+				else if(op == expression_type::k_logical_or__2){
+					return {vm_acc, expression_t::make_literal_bool((left != 0.0f) || (right != 0.0f))};
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+			}
+
+			//	string
+			else if(type_mode.is_string()){
+				const auto left = left_constant.get_string_value();
+				const auto right = right_constant.get_string_value();
+
+				if(op == expression_type::k_arithmetic_add__2){
+					return {vm_acc, expression_t::make_literal_string(left + right)};
+				}
+
+				else if(op == expression_type::k_arithmetic_subtract__2){
+					throw std::runtime_error("Operation not allowed on string.");
+				}
+				else if(op == expression_type::k_arithmetic_multiply__2){
+					throw std::runtime_error("Operation not allowed on string.");
+				}
+				else if(op == expression_type::k_arithmetic_divide__2){
+					throw std::runtime_error("Operation not allowed on string.");
+				}
+				else if(op == expression_type::k_arithmetic_remainder__2){
+					throw std::runtime_error("Operation not allowed on string.");
+				}
+
+
+				else if(op == expression_type::k_logical_and__2){
+					throw std::runtime_error("Operation not allowed on string.");
+				}
+				else if(op == expression_type::k_logical_or__2){
+					throw std::runtime_error("Operation not allowed on string.");
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+			}
+
+			//	struct
+			else if(type_mode.is_struct()){
+				const auto left = left_constant.get_struct_value();
+				const auto right = right_constant.get_struct_value();
+
+				//	Structs mue be exactly the same type to match.
+				if(left_constant.get_typeid_value() == right_constant.get_typeid_value()){
+					throw std::runtime_error("Struct type mismatch.");
+				}
+
+				if(op == expression_type::k_arithmetic_add__2){
+					throw std::runtime_error("Operation not allowed on struct.");
+				}
+				else if(op == expression_type::k_arithmetic_subtract__2){
+					throw std::runtime_error("Operation not allowed on struct.");
+				}
+				else if(op == expression_type::k_arithmetic_multiply__2){
+					throw std::runtime_error("Operation not allowed on struct.");
+				}
+				else if(op == expression_type::k_arithmetic_divide__2){
+					throw std::runtime_error("Operation not allowed on struct.");
+				}
+				else if(op == expression_type::k_arithmetic_remainder__2){
+					throw std::runtime_error("Operation not allowed on struct.");
+				}
+
+				else if(op == expression_type::k_logical_and__2){
+					throw std::runtime_error("Operation not allowed on struct.");
+				}
+				else if(op == expression_type::k_logical_or__2){
+					throw std::runtime_error("Operation not allowed on struct.");
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+			}
+
+			else if(type_mode.is_vector()){
+				//	Improves vectors before using them.
+				const auto element_type = left_constant.get_type().get_vector_element_type();
+
+				if(!(left_constant.get_type() == right_constant.get_type())){
+					throw std::runtime_error("Vector types don't match.");
+				}
+				else{
+					if(op == expression_type::k_arithmetic_add__2){
+						auto elements2 = left_constant.get_vector_value()->_elements;
+						elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
+
+						const auto value2 = value_t::make_vector_value(element_type, elements2);
+						return {vm_acc, expression_t::make_literal(value2)};
+					}
+
+					else if(op == expression_type::k_arithmetic_subtract__2){
+						throw std::runtime_error("Operation not allowed on vectors.");
+					}
+					else if(op == expression_type::k_arithmetic_multiply__2){
+						throw std::runtime_error("Operation not allowed on vectors.");
+					}
+					else if(op == expression_type::k_arithmetic_divide__2){
+						throw std::runtime_error("Operation not allowed on vectors.");
+					}
+					else if(op == expression_type::k_arithmetic_remainder__2){
+						throw std::runtime_error("Operation not allowed on vectors.");
+					}
+
+
+					else if(op == expression_type::k_logical_and__2){
+						throw std::runtime_error("Operation not allowed on vectors.");
+					}
+					else if(op == expression_type::k_logical_or__2){
+						throw std::runtime_error("Operation not allowed on vectors.");
+					}
+					else{
+						QUARK_ASSERT(false);
+						throw std::exception();
+					}
+				}
+			}
+			else if(type_mode.is_function()){
+				throw std::runtime_error("Cannot perform operations on two function values.");
+			}
+			else{
+				throw std::runtime_error("Arithmetics failed.");
+			}
+		}
 	}
 }
-
-
 
 
 std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto vm_acc = vm;
-
-	if(e.is_literal()){
-		return {vm_acc, e};
-	}
-
 	const auto op = e.get_operation();
 
-	if(op == expression_type::k_resolve_member){
-		return evaluate_resolve_member_expression(vm_acc, *e.get_resolve_member());
+	if(op == expression_type::k_literal){
+		return { vm, e };
+	}
+	else if(op == expression_type::k_resolve_member){
+		return evaluate_resolve_member_expression(vm, *e.get_resolve_member());
 	}
 	else if(op == expression_type::k_lookup_element){
-		return evaluate_lookup_element_expression(vm_acc, *e.get_lookup());
+		return evaluate_lookup_element_expression(vm, *e.get_lookup());
 	}
 	else if(op == expression_type::k_variable){
-		return evaluate_variabele_expression(vm_acc, *e.get_variable());
+		return evaluate_variabele_expression(vm, *e.get_variable());
 	}
 
 	else if(op == expression_type::k_call){
-		return evaluate_call_expression(vm_acc, *e.get_function_call());
+		return evaluate_call_expression(vm, *e.get_function_call());
 	}
 
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
-		return {vm_acc, expression_t::make_literal(value_t::make_function_value(expr->_def))};
+		return {vm, expression_t::make_literal(value_t::make_function_value(expr->_def))};
 	}
 
 	else if(op == expression_type::k_vector_definition){
-		return evaluate_vector_definition_expression(vm_acc, *e.get_vector_definition());
+		return evaluate_vector_definition_expression(vm, *e.get_vector_definition());
 	}
 
 	else if(op == expression_type::k_dict_definition){
@@ -1417,12 +1403,12 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 	//	This can be desugared at compile time.
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return evaluate_arithmetic_unary_minus_expression(vm_acc, *e.get_unary_minus());
+		return evaluate_arithmetic_unary_minus_expression(vm, *e.get_unary_minus());
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == expression_type::k_conditional_operator3){
-		return evaluate_conditional_operator_expression(vm_acc, *e.get_conditional());
+		return evaluate_conditional_operator_expression(vm, *e.get_conditional());
 	}
 	else if (false
 		|| op == expression_type::k_comparison_smaller_or_equal__2
@@ -1433,7 +1419,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		|| op == expression_type::k_logical_equal__2
 		|| op == expression_type::k_logical_nonequal__2
 	){
-		return evaluate_comparison_expression(vm_acc, e);
+		return evaluate_comparison_expression(vm, op, *e.get_simple__2());
 	}
 	else if (false
 		|| op == expression_type::k_arithmetic_add__2
@@ -1441,10 +1427,11 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		|| op == expression_type::k_arithmetic_multiply__2
 		|| op == expression_type::k_arithmetic_divide__2
 		|| op == expression_type::k_arithmetic_remainder__2
+
 		|| op == expression_type::k_logical_and__2
 		|| op == expression_type::k_logical_or__2
 	){
-		return evaluate_simple2_expression(vm_acc, e);
+		return evaluate_arithmetic_expression(vm, op, *e.get_simple__2());
 	}
 	else{
 		QUARK_ASSERT(false);
