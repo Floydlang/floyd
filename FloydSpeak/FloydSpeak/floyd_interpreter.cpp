@@ -38,7 +38,7 @@ using std::make_shared;
 
 
 
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
+std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::function_call_expr_t& e);
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 
@@ -752,300 +752,312 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 }
 
 
-std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
+
+
+
+std::pair<interpreter_t, expression_t> evaluate_resolve_member_expression(const interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
+	vm_acc = parent_expr.first;
+	if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
+		const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
+
+		int index = find_struct_member_index(struct_instance->_def, expr._member_name);
+		if(index == -1){
+			throw std::runtime_error("Unknown struct member \"" + expr._member_name + "\".");
+		}
+		const value_t value = struct_instance->_member_values[index];
+		return { vm_acc, expression_t::make_literal(value)};
+	}
+	else{
+		throw std::runtime_error("Resolve struct member failed.");
+	}
+}
+
+std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const interpreter_t& vm, const expression_t::lookup_expr_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
+	vm_acc = parent_expr.first;
+
+	if(parent_expr.second.is_literal() == false){
+		throw std::runtime_error("Cannot compute lookup parent.");
+	}
+	else{
+		const auto key_expr = evaluate_expression(vm_acc, *expr._lookup_key);
+		vm_acc = key_expr.first;
+
+		if(key_expr.second.is_literal() == false){
+			throw std::runtime_error("Cannot compute lookup key.");
+		}//??? add debug code to validate all collection values, struct members - are the correct type.
+		else{
+			const auto parent_value = parent_expr.second.get_literal();
+			const auto key_value = key_expr.second.get_literal();
+
+			if(parent_value.is_string()){
+				if(key_value.is_int() == false){
+					throw std::runtime_error("Lookup in string by index-only.");
+				}
+				else{
+					const auto instance = parent_value.get_string_value();
+					int lookup_index = key_value.get_int_value();
+					if(lookup_index < 0 || lookup_index >= instance.size()){
+						throw std::runtime_error("Lookup in string: out of bounds.");
+					}
+					else{
+						const char ch = instance[lookup_index];
+						const auto value2 = value_t::make_string(string(1, ch));
+						return { vm_acc, expression_t::make_literal(value2)};
+					}
+				}
+			}
+			else if(parent_value.is_json_value()){
+				const auto parent_json_value = parent_value.get_json_value();
+				if(parent_json_value.is_object()){
+					if(key_value.is_string() == false){
+						throw std::runtime_error("Lookup in json_value object by string-key only.");
+					}
+					else{
+						const auto lookup_key = key_value.get_string_value();
+
+						//	get_object_element() throws if key can't be found.
+						const auto value = parent_json_value.get_object_element(lookup_key);
+						const auto value2 = value_t::make_json_value(value);
+						return { vm_acc, expression_t::make_literal(value2)};
+					}
+				}
+				else if(parent_json_value.is_array()){
+					if(key_value.is_int() == false){
+						throw std::runtime_error("Lookup in json_value array by integer index only.");
+					}
+					else{
+						const auto lookup_index = key_value.get_int_value();
+
+						if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
+							throw std::runtime_error("Lookup in json_value array: out of bounds.");
+						}
+						else{
+							const auto value = parent_json_value.get_array_n(lookup_index);
+							const auto value2 = value_t::make_json_value(value);
+							return { vm_acc, expression_t::make_literal(value2)};
+						}
+					}
+				}
+				else{
+					throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+				}
+			}
+			else if(parent_value.is_vector()){
+				if(key_value.is_int() == false){
+					throw std::runtime_error("Lookup in vector by index-only.");
+				}
+				else{
+					const auto instance = parent_value.get_vector_value();
+
+					int lookup_index = key_value.get_int_value();
+					if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
+						throw std::runtime_error("Lookup in vector: out of bounds.");
+					}
+					else{
+						const value_t value = instance->_elements[lookup_index];
+						return { vm_acc, expression_t::make_literal(value)};
+					}
+				}
+			}
+			else if(parent_value.is_dict()){
+				if(key_value.is_string() == false){
+					throw std::runtime_error("Lookup in dict by string-only.");
+				}
+				else{
+					const auto instance = parent_value.get_dict_value();
+					const string key = key_value.get_string_value();
+
+					const auto found_it = instance->_elements.find(key);
+					if(found_it == instance->_elements.end()){
+						throw std::runtime_error("Lookup in dict: key not found.");
+					}
+					else{
+						const value_t value = found_it->second;
+						return { vm_acc, expression_t::make_literal(value)};
+					}
+				}
+			}
+			else {
+				throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
+			}
+		}
+	}
+}
+
+std::pair<interpreter_t, expression_t> evaluate_variabele_expression(const interpreter_t& vm, const expression_t::variable_expr_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+	const auto value = resolve_env_variable(vm_acc, expr._variable);
+	if(value != nullptr){
+		return {vm_acc, expression_t::make_literal(value->first)};
+	}
+	else{
+		throw std::runtime_error("Undefined variable \"" + expr._variable + "\"!");
+	}
+}
+
+
+std::pair<interpreter_t, expression_t> evaluate_vector_definition_expression(const interpreter_t& vm, const expression_t::vector_definition_exprt_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+	const std::vector<expression_t>& elements = expr._elements;
+	const auto element_type = expr._element_type;
+
+	if(elements.empty()){
+		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
+	}
+	else{
+		std::vector<value_t> elements2;
+		for(const auto m: elements){
+			const auto element_expr = evaluate_expression(vm_acc, m);
+			vm_acc = element_expr.first;
+			if(element_expr.second.is_literal() == false){
+				throw std::runtime_error("Cannot evaluate element of vector definition!");
+			}
+
+			const auto element = element_expr.second.get_literal();
+			elements2.push_back(element);
+		}
+
+		//	If we don't have an explicit element type, deduct it from first element.
+		const auto element_type2 = element_type.is_null() ? elements2[0].get_type() : element_type;
+		for(const auto m: elements2){
+			if((m.get_type() == element_type2) == false){
+				throw std::runtime_error("Vector can not hold elements of different type!");
+			}
+		}
+		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type2, elements2))};
+	}
+}
+
+
+
+std::pair<interpreter_t, expression_t> evaluate_dict_definition_expression(const interpreter_t& vm, const expression_t::dict_definition_exprt_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+
+	const auto& elements = expr._elements;
+	typeid_t value_type = expr._value_type;
+
+	if(elements.empty()){
+		return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type, {}))};
+	}
+	else{
+		std::map<string, value_t> elements2;
+		for(const auto m: elements){
+			const auto element_expr = evaluate_expression(vm_acc, m.second);
+			vm_acc = element_expr.first;
+
+			if(element_expr.second.is_literal() == false){
+				throw std::runtime_error("Cannot evaluate element of vector definition!");
+			}
+
+			const auto element = element_expr.second.get_literal();
+
+			const string key_string = m.first;
+			elements2[key_string] = element;
+		}
+
+		//	If we have no value-type, deduct it from first element.
+		const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
+
+/*
+		for(const auto m: elements2){
+			if((m.second.get_type() == value_type2) == false){
+				throw std::runtime_error("Dict can not hold elements of different type!");
+			}
+		}
+*/
+		return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type2, elements2))};
+	}
+}
+	
+std::pair<interpreter_t, expression_t> evaluate_arithmetic_unary_minus_expression(const interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+	const auto& expr2 = evaluate_expression(vm_acc, *expr._expr);
+	vm_acc = expr2.first;
+
+	if(expr2.second.is_literal()){
+		const auto& c = expr2.second.get_literal();
+		vm_acc = expr2.first;
+
+		if(c.is_int()){
+			return evaluate_expression(
+				vm_acc,
+				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second)
+			);
+		}
+		else if(c.is_float()){
+			return evaluate_expression(
+				vm_acc,
+				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second)
+			);
+		}
+		else{
+			throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_ast_json(c.get_type())._value) + "\".");
+		}
+	}
+	else{
+		throw std::runtime_error("Could not evaluate condition in conditional expression.");
+	}
+}
+
+
+std::pair<interpreter_t, expression_t> evaluate_conditional_operator_expression(const interpreter_t& vm, const expression_t::conditional_expr_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+
+	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
+	const auto cond_result = evaluate_expression(vm_acc, *expr._condition);
+	vm_acc = cond_result.first;
+
+	if(cond_result.second.is_literal() && cond_result.second.get_literal().is_bool()){
+		const bool cond_flag = cond_result.second.get_literal().get_bool_value();
+
+		//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
+		if(cond_flag){
+			return evaluate_expression(vm_acc, *expr._a);
+		}
+		else{
+			return evaluate_expression(vm_acc, *expr._b);
+		}
+	}
+	else{
+		throw std::runtime_error("Could not evaluate condition in conditional expression.");
+	}
+}
+
+
+
+
+std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto vm2 = vm;
-
-	if(e.is_literal()){
-		return {vm2, e};
-	}
+	auto vm_acc = vm;
 
 	const auto op = e.get_operation();
 
-	if(op == expression_type::k_resolve_member){
-		const auto expr = e.get_resolve_member();
-		const auto parent_expr = evaluate_expression(vm2, *expr->_parent_address);
-		vm2 = parent_expr.first;
-		if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
-			const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
-
-			int index = find_struct_member_index(struct_instance->_def, expr->_member_name);
-			if(index == -1){
-				throw std::runtime_error("Unknown struct member \"" + expr->_member_name + "\".");
-			}
-			const value_t value = struct_instance->_member_values[index];
-			return { vm2, expression_t::make_literal(value)};
-		}
-		else{
-			throw std::runtime_error("Resolve struct member failed.");
-		}
-	}
-	else if(op == expression_type::k_lookup_element){
-		const auto expr = e.get_lookup();
-		const auto parent_expr = evaluate_expression(vm2, *expr->_parent_address);
-		vm2 = parent_expr.first;
-
-		if(parent_expr.second.is_literal() == false){
-			throw std::runtime_error("Cannot compute lookup parent.");
-		}
-		else{
-			const auto key_expr = evaluate_expression(vm2, *expr->_lookup_key);
-			vm2 = key_expr.first;
-
-			if(key_expr.second.is_literal() == false){
-				throw std::runtime_error("Cannot compute lookup key.");
-			}//??? add debug code to validate all collection values, struct members - are the correct type.
-			else{
-				const auto parent_value = parent_expr.second.get_literal();
-				const auto key_value = key_expr.second.get_literal();
-
-				if(parent_value.is_string()){
-					if(key_value.is_int() == false){
-						throw std::runtime_error("Lookup in string by index-only.");
-					}
-					else{
-						const auto instance = parent_value.get_string_value();
-						int lookup_index = key_value.get_int_value();
-						if(lookup_index < 0 || lookup_index >= instance.size()){
-							throw std::runtime_error("Lookup in string: out of bounds.");
-						}
-						else{
-							const char ch = instance[lookup_index];
-							const auto value2 = value_t::make_string(string(1, ch));
-							return { vm2, expression_t::make_literal(value2)};
-						}
-					}
-				}
-				else if(parent_value.is_json_value()){
-					const auto parent_json_value = parent_value.get_json_value();
-					if(parent_json_value.is_object()){
-						if(key_value.is_string() == false){
-							throw std::runtime_error("Lookup in json_value object by string-key only.");
-						}
-						else{
-							const auto lookup_key = key_value.get_string_value();
-
-							//	get_object_element() throws if key can't be found.
-							const auto value = parent_json_value.get_object_element(lookup_key);
-							const auto value2 = value_t::make_json_value(value);
-							return { vm2, expression_t::make_literal(value2)};
-						}
-					}
-					else if(parent_json_value.is_array()){
-						if(key_value.is_int() == false){
-							throw std::runtime_error("Lookup in json_value array by integer index only.");
-						}
-						else{
-							const auto lookup_index = key_value.get_int_value();
-
-							if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
-								throw std::runtime_error("Lookup in json_value array: out of bounds.");
-							}
-							else{
-								const auto value = parent_json_value.get_array_n(lookup_index);
-								const auto value2 = value_t::make_json_value(value);
-								return { vm2, expression_t::make_literal(value2)};
-							}
-						}
-					}
-					else{
-						throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
-					}
-				}
-				else if(parent_value.is_vector()){
-					if(key_value.is_int() == false){
-						throw std::runtime_error("Lookup in vector by index-only.");
-					}
-					else{
-						const auto instance = parent_value.get_vector_value();
-
-						int lookup_index = key_value.get_int_value();
-						if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
-							throw std::runtime_error("Lookup in vector: out of bounds.");
-						}
-						else{
-							const value_t value = instance->_elements[lookup_index];
-							return { vm2, expression_t::make_literal(value)};
-						}
-					}
-				}
-				else if(parent_value.is_dict()){
-					if(key_value.is_string() == false){
-						throw std::runtime_error("Lookup in dict by string-only.");
-					}
-					else{
-						const auto instance = parent_value.get_dict_value();
-						const string key = key_value.get_string_value();
-
-						const auto found_it = instance->_elements.find(key);
-						if(found_it == instance->_elements.end()){
-							throw std::runtime_error("Lookup in dict: key not found.");
-						}
-						else{
-							const value_t value = found_it->second;
-							return { vm2, expression_t::make_literal(value)};
-						}
-					}
-				}
-				else {
-					throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
-				}
-			}
-		}
-	}
-	else if(op == expression_type::k_variable){
-		const auto expr = e.get_variable();
-
-		const auto value = resolve_env_variable(vm2, expr->_variable);
-		if(value != nullptr){
-			return {vm2, expression_t::make_literal(value->first)};
-		}
-		else{
-			throw std::runtime_error("Undefined variable \"" + expr->_variable + "\"!");
-		}
-	}
-
-	else if(op == expression_type::k_call){
-		return evaluate_call_expression(vm2, e);
-	}
-
-	else if(op == expression_type::k_define_function){
-		const auto expr = e.get_function_definition();
-		return {vm2, expression_t::make_literal(value_t::make_function_value(expr->_def))};
-	}
-
-	else if(op == expression_type::k_vector_definition){
-		const auto expr = e.get_vector_definition();
-		const std::vector<expression_t>& elements = expr->_elements;
-		const auto element_type = expr->_element_type;
-
-		if(elements.empty()){
-			return {vm2, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
-		}
-		else{
-			std::vector<value_t> elements2;
-			for(const auto m: elements){
-				const auto element_expr = evaluate_expression(vm2, m);
-				vm2 = element_expr.first;
-				if(element_expr.second.is_literal() == false){
-					throw std::runtime_error("Cannot evaluate element of vector definition!");
-				}
-
-				const auto element = element_expr.second.get_literal();
-				elements2.push_back(element);
-			}
-
-			//	If we don't have an explicit element type, deduct it from first element.
-			const auto element_type2 = element_type.is_null() ? elements2[0].get_type() : element_type;
-			for(const auto m: elements2){
-				if((m.get_type() == element_type2) == false){
-					throw std::runtime_error("Vector can not hold elements of different type!");
-				}
-			}
-			return {vm2, expression_t::make_literal(value_t::make_vector_value(element_type2, elements2))};
-		}
-	}
-
-	else if(op == expression_type::k_dict_definition){
-		const auto expr = e.get_dict_definition();
-
-		const auto& elements = expr->_elements;
-		typeid_t value_type = expr->_value_type;
-
-		if(elements.empty()){
-			return {vm2, expression_t::make_literal(value_t::make_dict_value(value_type, {}))};
-		}
-		else{
-			std::map<string, value_t> elements2;
-			for(const auto m: elements){
-				const auto element_expr = evaluate_expression(vm2, m.second);
-				vm2 = element_expr.first;
-
-				if(element_expr.second.is_literal() == false){
-					throw std::runtime_error("Cannot evaluate element of vector definition!");
-				}
-
-				const auto element = element_expr.second.get_literal();
-
-				const string key_string = m.first;
-				elements2[key_string] = element;
-			}
-
-			//	If we have no value-type, deduct it from first element.
-			const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
-
-/*
-			for(const auto m: elements2){
-				if((m.second.get_type() == value_type2) == false){
-					throw std::runtime_error("Dict can not hold elements of different type!");
-				}
-			}
-*/
-			return {vm2, expression_t::make_literal(value_t::make_dict_value(value_type2, elements2))};
-		}
-	}
-
-	//	This can be desugared at compile time.
-	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		const auto expr = e.get_unary_minus();
-		const auto& expr2 = evaluate_expression(vm2, *expr->_expr);
-		vm2 = expr2.first;
-
-		if(expr2.second.is_literal()){
-			const auto& c = expr2.second.get_literal();
-			vm2 = expr2.first;
-
-			if(c.is_int()){
-				return evaluate_expression(
-					vm2,
-					expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second)
-				);
-			}
-			else if(c.is_float()){
-				return evaluate_expression(
-					vm2,
-					expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second)
-				);
-			}
-			else{
-				throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_ast_json(c.get_type())._value) + "\".");
-			}
-		}
-		else{
-			throw std::runtime_error("Could not evaluate condition in conditional expression.");
-		}
-	}
-
-	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	else if(op == expression_type::k_conditional_operator3){
-		const auto expr = e.get_conditional();
-		const auto cond_result = evaluate_expression(vm2, *expr->_condition);
-		vm2 = cond_result.first;
-
-		if(cond_result.second.is_literal() && cond_result.second.get_literal().is_bool()){
-			const bool cond_flag = cond_result.second.get_literal().get_bool_value();
-
-			//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
-			if(cond_flag){
-				return evaluate_expression(vm2, *expr->_a);
-			}
-			else{
-				return evaluate_expression(vm2, *expr->_b);
-			}
-		}
-		else{
-			throw std::runtime_error("Could not evaluate condition in conditional expression.");
-		}
-	}
-
 	//	First evaluate all inputs to our operation.
 	const auto simple2_expr = e.get_simple__2();
-	const auto left_expr = evaluate_expression(vm2, *simple2_expr->_left);
-	vm2 = left_expr.first;
-	const auto right_expr = evaluate_expression(vm2, *simple2_expr->_right);
-	vm2 = right_expr.first;
+	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr->_left);
+	vm_acc = left_expr.first;
+	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr->_right);
+	vm_acc = right_expr.first;
 
 
 	//	Both left and right are constants, replace the math_operation with a constant!
@@ -1065,30 +1077,68 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		{
 			if(op == expression_type::k_comparison_smaller_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm2, expression_t::make_literal_bool(diff <= 0)};
+				return {vm_acc, expression_t::make_literal_bool(diff <= 0)};
 			}
 			else if(op == expression_type::k_comparison_smaller__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm2, expression_t::make_literal_bool(diff < 0)};
+				return {vm_acc, expression_t::make_literal_bool(diff < 0)};
 			}
 			else if(op == expression_type::k_comparison_larger_or_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm2, expression_t::make_literal_bool(diff >= 0)};
+				return {vm_acc, expression_t::make_literal_bool(diff >= 0)};
 			}
 			else if(op == expression_type::k_comparison_larger__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm2, expression_t::make_literal_bool(diff > 0)};
+				return {vm_acc, expression_t::make_literal_bool(diff > 0)};
 			}
 
 
 			else if(op == expression_type::k_logical_equal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm2, expression_t::make_literal_bool(diff == 0)};
+				return {vm_acc, expression_t::make_literal_bool(diff == 0)};
 			}
 			else if(op == expression_type::k_logical_nonequal__2){
 				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm2, expression_t::make_literal_bool(diff != 0)};
+				return {vm_acc, expression_t::make_literal_bool(diff != 0)};
 			}
+			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
+			}
+		}
+	}
+	else{
+		throw std::runtime_error("Left and right expressions must be same type!");
+	}
+}
+
+std::pair<interpreter_t, expression_t> evaluate_simple2_expression(const interpreter_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto vm_acc = vm;
+
+	const auto op = e.get_operation();
+
+	//	First evaluate all inputs to our operation.
+	const auto simple2_expr = e.get_simple__2();
+	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr->_left);
+	vm_acc = left_expr.first;
+	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr->_right);
+	vm_acc = right_expr.first;
+
+
+	//	Both left and right are constants, replace the math_operation with a constant!
+	if(left_expr.second.is_literal() && right_expr.second.is_literal()) {
+
+		//	Perform math operation on the two constants => new constant.
+		const auto left_constant = left_expr.second.get_literal();
+
+		//	Make rhs match left if needed/possible.
+		const auto right_constant = improve_value_type(right_expr.second.get_literal(), left_constant.get_type());
+
+		if(!(left_constant.get_type()== right_constant.get_type())){
+			throw std::runtime_error("Left and right expressions must be same type!");
 		}
 
 		//	bool
@@ -1106,10 +1156,10 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			}
 
 			else if(op == expression_type::k_logical_and__2){
-				return {vm2, expression_t::make_literal_bool(left && right)};
+				return {vm_acc, expression_t::make_literal_bool(left && right)};
 			}
 			else if(op == expression_type::k_logical_or__2){
-				return {vm2, expression_t::make_literal_bool(left || right)};
+				return {vm_acc, expression_t::make_literal_bool(left || right)};
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1123,32 +1173,32 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const int right = right_constant.get_int_value();
 
 			if(op == expression_type::k_arithmetic_add__2){
-				return {vm2, expression_t::make_literal_int(left + right)};
+				return {vm_acc, expression_t::make_literal_int(left + right)};
 			}
 			else if(op == expression_type::k_arithmetic_subtract__2){
-				return {vm2, expression_t::make_literal_int(left - right)};
+				return {vm_acc, expression_t::make_literal_int(left - right)};
 			}
 			else if(op == expression_type::k_arithmetic_multiply__2){
-				return {vm2, expression_t::make_literal_int(left * right)};
+				return {vm_acc, expression_t::make_literal_int(left * right)};
 			}
 			else if(op == expression_type::k_arithmetic_divide__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return {vm2, expression_t::make_literal_int(left / right)};
+				return {vm_acc, expression_t::make_literal_int(left / right)};
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
 				if(right == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return {vm2, expression_t::make_literal_int(left % right)};
+				return {vm_acc, expression_t::make_literal_int(left % right)};
 			}
 
 			else if(op == expression_type::k_logical_and__2){
-				return {vm2, expression_t::make_literal_bool((left != 0) && (right != 0))};
+				return {vm_acc, expression_t::make_literal_bool((left != 0) && (right != 0))};
 			}
 			else if(op == expression_type::k_logical_or__2){
-				return {vm2, expression_t::make_literal_bool((left != 0) || (right != 0))};
+				return {vm_acc, expression_t::make_literal_bool((left != 0) || (right != 0))};
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1162,19 +1212,19 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const float right = right_constant.get_float_value();
 
 			if(op == expression_type::k_arithmetic_add__2){
-				return {vm2, expression_t::make_literal_float(left + right)};
+				return {vm_acc, expression_t::make_literal_float(left + right)};
 			}
 			else if(op == expression_type::k_arithmetic_subtract__2){
-				return {vm2, expression_t::make_literal_float(left - right)};
+				return {vm_acc, expression_t::make_literal_float(left - right)};
 			}
 			else if(op == expression_type::k_arithmetic_multiply__2){
-				return {vm2, expression_t::make_literal_float(left * right)};
+				return {vm_acc, expression_t::make_literal_float(left * right)};
 			}
 			else if(op == expression_type::k_arithmetic_divide__2){
 				if(right == 0.0f){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return {vm2, expression_t::make_literal_float(left / right)};
+				return {vm_acc, expression_t::make_literal_float(left / right)};
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
 				throw std::runtime_error("Modulo operation on float not allowed.");
@@ -1182,10 +1232,10 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 
 			else if(op == expression_type::k_logical_and__2){
-				return {vm2, expression_t::make_literal_bool((left != 0.0f) && (right != 0.0f))};
+				return {vm_acc, expression_t::make_literal_bool((left != 0.0f) && (right != 0.0f))};
 			}
 			else if(op == expression_type::k_logical_or__2){
-				return {vm2, expression_t::make_literal_bool((left != 0.0f) || (right != 0.0f))};
+				return {vm_acc, expression_t::make_literal_bool((left != 0.0f) || (right != 0.0f))};
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1199,7 +1249,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 			const auto right = right_constant.get_string_value();
 
 			if(op == expression_type::k_arithmetic_add__2){
-				return {vm2, expression_t::make_literal_string(left + right)};
+				return {vm_acc, expression_t::make_literal_string(left + right)};
 			}
 
 			else if(op == expression_type::k_arithmetic_subtract__2){
@@ -1279,7 +1329,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 					elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
 
 					const auto value2 = value_t::make_vector_value(element_type, elements2);
-					return {vm2, expression_t::make_literal(value2)};
+					return {vm_acc, expression_t::make_literal(value2)};
 				}
 
 				else if(op == expression_type::k_arithmetic_subtract__2){
@@ -1319,7 +1369,86 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	//	Else use a math_operation expression to perform the calculation later.
 	//	We make a NEW math_operation since sub-nodes may have been evaluated.
 	else{
-		return {vm2, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second)};
+		return {vm_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second)};
+	}
+}
+
+
+
+
+std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto vm_acc = vm;
+
+	if(e.is_literal()){
+		return {vm_acc, e};
+	}
+
+	const auto op = e.get_operation();
+
+	if(op == expression_type::k_resolve_member){
+		return evaluate_resolve_member_expression(vm_acc, *e.get_resolve_member());
+	}
+	else if(op == expression_type::k_lookup_element){
+		return evaluate_lookup_element_expression(vm_acc, *e.get_lookup());
+	}
+	else if(op == expression_type::k_variable){
+		return evaluate_variabele_expression(vm_acc, *e.get_variable());
+	}
+
+	else if(op == expression_type::k_call){
+		return evaluate_call_expression(vm_acc, *e.get_function_call());
+	}
+
+	else if(op == expression_type::k_define_function){
+		const auto expr = e.get_function_definition();
+		return {vm_acc, expression_t::make_literal(value_t::make_function_value(expr->_def))};
+	}
+
+	else if(op == expression_type::k_vector_definition){
+		return evaluate_vector_definition_expression(vm_acc, *e.get_vector_definition());
+	}
+
+	else if(op == expression_type::k_dict_definition){
+		return evaluate_dict_definition_expression(vm, *e.get_dict_definition());
+	}
+
+	//	This can be desugared at compile time.
+	else if(op == expression_type::k_arithmetic_unary_minus__1){
+		return evaluate_arithmetic_unary_minus_expression(vm_acc, *e.get_unary_minus());
+	}
+
+	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
+	else if(op == expression_type::k_conditional_operator3){
+		return evaluate_conditional_operator_expression(vm_acc, *e.get_conditional());
+	}
+	else if (false
+		|| op == expression_type::k_comparison_smaller_or_equal__2
+		|| op == expression_type::k_comparison_smaller__2
+		|| op == expression_type::k_comparison_larger_or_equal__2
+		|| op == expression_type::k_comparison_larger__2
+
+		|| op == expression_type::k_logical_equal__2
+		|| op == expression_type::k_logical_nonequal__2
+	){
+		return evaluate_comparison_expression(vm_acc, e);
+	}
+	else if (false
+		|| op == expression_type::k_arithmetic_add__2
+		|| op == expression_type::k_arithmetic_subtract__2
+		|| op == expression_type::k_arithmetic_multiply__2
+		|| op == expression_type::k_arithmetic_divide__2
+		|| op == expression_type::k_arithmetic_remainder__2
+		|| op == expression_type::k_logical_and__2
+		|| op == expression_type::k_logical_or__2
+	){
+		return evaluate_simple2_expression(vm_acc, e);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -1329,7 +1458,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
 
-	auto vm2 = vm;
+	auto vm_acc = vm;
 
 	if(f.is_function() == false){
 		throw std::runtime_error("Cannot call non-function.");
@@ -1337,7 +1466,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 	const auto& function_def = f.get_function_value()->_def;
 	if(function_def._host_function != 0){
-		const auto r = call_host_function(vm2, function_def._host_function, args);
+		const auto r = call_host_function(vm_acc, function_def._host_function, args);
 		return { r.first, r.second };
 	}
 	else{
@@ -1356,8 +1485,8 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 		//	Always use global scope.
 		//	Future: support closures by linking to function env where function is defined.
-		auto parent_env = vm2._call_stack[0];
-		auto new_environment = environment_t::make_environment(vm2, parent_env);
+		auto parent_env = vm_acc._call_stack[0];
+		auto new_environment = environment_t::make_environment(vm_acc, parent_env);
 
 		//	Copy input arguments to the function scope.
 		for(int i = 0 ; i < function_def._args.size() ; i++){
@@ -1367,14 +1496,14 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 			//	Function arguments are immutable while executing the function body.
 			new_environment->_values[arg_name] = std::pair<value_t, bool>(arg_value, false);
 		}
-		vm2._call_stack.push_back(new_environment);
+		vm_acc._call_stack.push_back(new_environment);
 
-//		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm2)));
+//		QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm_acc)));
 
-		const auto r = execute_statements(vm2, function_def._statements);
+		const auto r = execute_statements(vm_acc, function_def._statements);
 
-		vm2 = r.first;
-		vm2._call_stack.pop_back();
+		vm_acc = r.first;
+		vm_acc._call_stack.pop_back();
 
 		if(r.second._type != statement_result_t::k_return_unwind){
 			throw std::runtime_error("Function missing return statement");
@@ -1383,7 +1512,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 			throw std::runtime_error("Function return type wrong.");
 		}
 		else{
-			return {vm2, r.second };
+			return {vm_acc, r.second };
 		}
 	}
 }
@@ -1400,28 +1529,24 @@ bool all_literals(const vector<expression_t>& e){
 
 
 //	May return a simplified expression instead of a value literal..
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::function_call_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(e.get_operation() == expression_type::k_call);
 
-	auto vm2 = vm;
-	const auto call = e.get_function_call();
-	QUARK_ASSERT(call);
+	auto vm_acc = vm;
 
 	//	Simplify each input expression: expression[0]: which function to call, expression[1]: first argument if any.
-	const auto function = evaluate_expression(vm2, *call->_function);
-	vm2 = function.first;
+	const auto function = evaluate_expression(vm_acc, *expr._function);
+	vm_acc = function.first;
 	vector<expression_t> args2;
-	for(int i = 0 ; i < call->_args.size() ; i++){
-		const auto t = evaluate_expression(vm2, call->_args[i]);
-		vm2 = t.first;
+	for(int i = 0 ; i < expr._args.size() ; i++){
+		const auto t = evaluate_expression(vm_acc, expr._args[i]);
+		vm_acc = t.first;
 		args2.push_back(t.second);
 	}
 
 	//	If not all input expressions could be evaluated, return a (maybe simplified) expression.
 	if(function.second.is_literal() == false || all_literals(args2) == false){
-		return {vm2, expression_t::make_function_call(function.second, args2)};
+		return {vm_acc, expression_t::make_function_call(function.second, args2)};
 	}
 
 	//	Convert to values.
@@ -1436,15 +1561,15 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 	if(function_value.is_function() == false){
 		//	Attempting to call a TYPE? Then this may be a constructor call.
 		if(function_value.is_typeid()){
-			const auto result = construct_value_from_typeid(vm2, function_value.get_typeid_value(), arg_values);
-			vm2 = result.first;
-			return { vm2, expression_t::make_literal(result.second)};
+			const auto result = construct_value_from_typeid(vm_acc, function_value.get_typeid_value(), arg_values);
+			vm_acc = result.first;
+			return { vm_acc, expression_t::make_literal(result.second)};
 		}
 /*
 		else if(function_value.is_vector()){
-			const auto result = construct_value_from_typeid(vm2, cleanup_vector_constructor_type(function_value.get_type()), arg_values);
-			vm2 = result.first;
-			return { vm2, expression_t::make_literal(result.second)};
+			const auto result = construct_value_from_typeid(vm_acc, cleanup_vector_constructor_type(function_value.get_type()), arg_values);
+			vm_acc = result.first;
+			return { vm_acc, expression_t::make_literal(result.second)};
 		}
 */
 		else{
@@ -1454,10 +1579,10 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 
 	//	Call function-value.
 	else{
-		const auto& result = call_function(vm2, function_value, arg_values);
+		const auto& result = call_function(vm_acc, function_value, arg_values);
 		QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
-		vm2 = result.first;
-		return { vm2, expression_t::make_literal(result.second._output)};
+		vm_acc = result.first;
+		return { vm_acc, expression_t::make_literal(result.second._output)};
 	}
 }
 
