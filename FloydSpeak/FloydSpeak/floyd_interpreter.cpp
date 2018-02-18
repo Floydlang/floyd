@@ -376,73 +376,56 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 	}
 */
 
- }
-
-
-
-
-
-
-
-
+}
 
 
 namespace {
 
+interpreter_t begin_subenv(const interpreter_t& vm){
+	QUARK_ASSERT(vm.check_invariant());
 
-	interpreter_t begin_subenv(const interpreter_t& vm){
-		QUARK_ASSERT(vm.check_invariant());
+	auto vm2 = vm;
 
-		auto vm2 = vm;
+	auto parent_env = vm2._call_stack.back();
+	auto new_environment = environment_t::make_environment(vm2, parent_env);
+	vm2._call_stack.push_back(new_environment);
+	return vm2;
+}
 
-		auto parent_env = vm2._call_stack.back();
-		auto new_environment = environment_t::make_environment(vm2, parent_env);
-		vm2._call_stack.push_back(new_environment);
-		return vm2;
-	}
+std::pair<interpreter_t, statement_result_t> execute_statements_in_env(
+	const interpreter_t& vm,
+	const std::vector<std::shared_ptr<statement_t>>& statements,
+	const std::map<std::string, std::pair<value_t, bool>>& values
+){
+	QUARK_ASSERT(vm.check_invariant());
 
+	auto vm2 = begin_subenv(vm);
 
+	vm2._call_stack.back()->_values.insert(values.begin(), values.end());
 
-	std::pair<interpreter_t, statement_result_t> execute_statements_in_env(
-		const interpreter_t& vm,
-		const std::vector<std::shared_ptr<statement_t>>& statements,
-		const std::map<std::string, std::pair<value_t, bool>>& values
-	){
-		QUARK_ASSERT(vm.check_invariant());
-
-		auto vm2 = begin_subenv(vm);
-
-		vm2._call_stack.back()->_values.insert(values.begin(), values.end());
-
-		const auto r = execute_statements(vm2, statements);
-		vm2 = r.first;
-		vm2._call_stack.pop_back();
-		return { vm2, r.second };
-	}
-
-
-
-
-
+	const auto r = execute_statements(vm2, statements);
+	vm2 = r.first;
+	vm2._call_stack.pop_back();
+	return { vm2, r.second };
+}
 
 
 std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interpreter_t& vm, const bind_or_assign_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = vm;
-	const auto s = &statement;
-	const auto name = s->_new_variable_name;
+	auto vm_acc = vm;
+	const auto name = statement._new_variable_name;
 
-	const auto result = evaluate_expression(vm2, s->_expression);
-	vm2 = result.first;
+	const auto result = evaluate_expression(vm_acc, statement._expression);
+	vm_acc = result.first;
 
 	const auto result_value = result.second;
 	if(result_value.is_literal() == false){
 		throw std::runtime_error("Cannot evaluate expression.");
 	}
 	else{
-		const auto bind_statement_type = s->_bindtype;
-		const auto bind_statement_mutable_tag_flag = s->_bind_as_mutable_tag;
+		const auto bind_statement_type = statement._bindtype;
+		const auto bind_statement_mutable_tag_flag = statement._bind_as_mutable_tag;
 
 		//	If we have a type or we have the mutable-flag, then this statement is a bind.
 		bool is_bind = bind_statement_type.is_null() == false || bind_statement_mutable_tag_flag;
@@ -453,7 +436,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interp
 		//	mutable = 10
 		if(is_bind){
 			const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
-			const auto value_exists_in_env = vm2._call_stack.back()->_values.count(name) > 0;
+			const auto value_exists_in_env = vm_acc._call_stack.back()->_values.count(name) > 0;
 
 			if(value_exists_in_env){
 				throw std::runtime_error("Local identifier already exists.");
@@ -468,7 +451,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interp
 					throw std::runtime_error("Cannot deduce dictionary type.");
 				}
 				else{
-					vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
+					vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
 				}
 			}
 
@@ -477,14 +460,14 @@ std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interp
 				if(bind_statement_type != retyped_value.get_type()){
 					throw std::runtime_error("Types not compatible in bind.");
 				}
-				vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
+				vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
 			}
 		}
 
 		//	Assign
 		//	a = 10
 		else{
-			const auto existing_value_deep_ptr = resolve_env_variable(vm2, name);
+			const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, name);
 			const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
 
 			//	Mutate!
@@ -520,23 +503,22 @@ std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interp
 					throw std::runtime_error("Cannot deduce dictionary type.");
 				}
 				else{
-					vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
+					vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
 				}
 			}
 		}
 	}
-	return { vm2, statement_result_t::make_no_output() };
+	return { vm_acc, statement_result_t::make_no_output() };
 }
 
 std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = vm;
+	auto vm_acc = vm;
+	const auto expr = statement._expression;
+	const auto result = evaluate_expression(vm_acc, expr);
+	vm_acc = result.first;
 
-	const auto& s = &statement;
-	const auto expr = s->_expression;
-	const auto result = evaluate_expression(vm2, expr);
-	vm2 = result.first;
 	const auto result_value = result.second;
 
 	if(!result_value.is_literal()){
@@ -546,46 +528,43 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	//	Check that return value's type matches function's return type. Cannot be done here since we don't know who called us.
 	//	Instead calling code must check.
 	return {
-		vm2,
+		vm_acc,
 		statement_result_t::make_return_unwind(result_value.get_literal())
 	};
 }
 
 //??? make structs unique even though they share layout and name. USer unique-ID-generator?
-std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm0, const define_struct_statement_t& statement){
-	QUARK_ASSERT(vm0.check_invariant());
+std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const define_struct_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = vm0;
-	const auto& s = &statement;
-
-	const auto name = s->_name;
-	if(vm2._call_stack.back()->_values.count(name) > 0){
+	auto vm_acc = vm;
+	const auto struct_name = statement._name;
+	if(vm_acc._call_stack.back()->_values.count(struct_name) > 0){
 		throw std::runtime_error("Name already used.");
 	}
 
 	//	Resolve member types in this scope.
 	std::vector<member_t> members2;
-	for(const auto e: s->_def._members){
+	for(const auto e: statement._def._members){
 		const auto name = e._name;
 		const auto type = e._type;
-		const auto type2 = resolve_type_using_env(vm2, type);
+		const auto type2 = resolve_type_using_env(vm_acc, type);
 		const auto e2 = member_t(type2, name);
 		members2.push_back(e2);
 	}
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
-	vm2._call_stack.back()->_values[name] = std::pair<value_t, bool>(value_t::make_typeid_value(struct_typeid), false);
-	return { vm2, statement_result_t::make_no_output() };
+	vm_acc._call_stack.back()->_values[struct_name] = std::pair<value_t, bool>(value_t::make_typeid_value(struct_typeid), false);
+	return { vm_acc, statement_result_t::make_no_output() };
 }
 
-std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm0, const ifelse_statement_t& statement){
-	QUARK_ASSERT(vm0.check_invariant());
+std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const ifelse_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = vm0;
+	auto vm_acc = vm;
 
-	const auto& s = &statement;
-	const auto condition_result = evaluate_expression(vm2, s->_condition);
-	vm2 = condition_result.first;
+	const auto condition_result = evaluate_expression(vm_acc, statement._condition);
+	vm_acc = condition_result.first;
 	const auto condition_result_value = condition_result.second;
 	if(!condition_result_value.is_literal() || !condition_result_value.get_literal().is_bool()){
 		throw std::runtime_error("Boolean condition required.");
@@ -593,76 +572,73 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 
 	bool r = condition_result_value.get_literal().get_bool_value();
 	if(r){
-		return execute_statements_in_env(vm2, s->_then_statements, {});
+		return execute_statements_in_env(vm_acc, statement._then_statements, {});
 	}
 	else{
-		return execute_statements_in_env(vm2, s->_else_statements, {});
+		return execute_statements_in_env(vm_acc, statement._else_statements, {});
 	}
 }
 
-std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpreter_t& vm0, const for_statement_t& statement){
-	QUARK_ASSERT(vm0.check_invariant());
+std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpreter_t& vm, const for_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = vm0;
-	const auto& s = &statement;
+	auto vm_acc = vm;
 
-	const auto start_value0 = evaluate_expression(vm2, s->_start_expression);
-	vm2 = start_value0.first;
+	const auto start_value0 = evaluate_expression(vm_acc, statement._start_expression);
+	vm_acc = start_value0.first;
 	const auto start_value = start_value0.second.get_literal().get_int_value();
 
-	const auto end_value0 = evaluate_expression(vm2, s->_end_expression);
-	vm2 = end_value0.first;
+	const auto end_value0 = evaluate_expression(vm_acc, statement._end_expression);
+	vm_acc = end_value0.first;
 	const auto end_value = end_value0.second.get_literal().get_int_value();
 
 	for(int x = start_value ; x <= end_value ; x++){
-		const std::map<std::string, std::pair<value_t, bool>> values = { { s->_iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
-		const auto result = execute_statements_in_env(vm2, s->_body, values);
-		vm2 = result.first;
+		const std::map<std::string, std::pair<value_t, bool>> values = { { statement._iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
+		const auto result = execute_statements_in_env(vm_acc, statement._body, values);
+		vm_acc = result.first;
 		const auto return_value = result.second;
 		if(return_value._type == statement_result_t::k_return_unwind){
-			return { vm2, return_value };
+			return { vm_acc, return_value };
 		}
 	}
-	return { vm2, statement_result_t::make_no_output() };
+	return { vm_acc, statement_result_t::make_no_output() };
 }
 
-std::pair<interpreter_t, statement_result_t> execute_while_statement(const interpreter_t& vm0, const while_statement_t& statement){
-	QUARK_ASSERT(vm0.check_invariant());
+std::pair<interpreter_t, statement_result_t> execute_while_statement(const interpreter_t& vm, const while_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = vm0;
+	auto vm_acc = vm;
 
-	const auto& s = &statement;
 	bool again = true;
 	while(again){
-		const auto condition_value_expr = evaluate_expression(vm2, s->_condition);
-		vm2 = condition_value_expr.first;
+		const auto condition_value_expr = evaluate_expression(vm_acc, statement._condition);
+		vm_acc = condition_value_expr.first;
 		const auto condition_value = condition_value_expr.second.get_literal().get_bool_value();
 
 		if(condition_value){
-			const auto result = execute_statements_in_env(vm2, s->_body, {});
-			vm2 = result.first;
+			const auto result = execute_statements_in_env(vm_acc, statement._body, {});
+			vm_acc = result.first;
 			const auto return_value = result.second;
-		if(return_value._type == statement_result_t::k_return_unwind){
-				return { vm2, return_value };
+			if(return_value._type == statement_result_t::k_return_unwind){
+				return { vm_acc, return_value };
 			}
 		}
 		else{
 			again = false;
 		}
 	}
-	return { vm2, statement_result_t::make_no_output() };
+	return { vm_acc, statement_result_t::make_no_output() };
 }
 
-std::pair<interpreter_t, statement_result_t> execute_expression_statement(const interpreter_t& vm0, const expression_statement_t& statement){
-	QUARK_ASSERT(vm0.check_invariant());
+std::pair<interpreter_t, statement_result_t> execute_expression_statement(const interpreter_t& vm, const expression_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = vm0;
-	const auto& s = &statement;
-	const auto result = evaluate_expression(vm2, s->_expression);
-	vm2 = result.first;
+	auto vm_acc = vm;
+	const auto result = evaluate_expression(vm_acc, statement._expression);
+	vm_acc = result.first;
 	const auto result_value = result.second.get_literal();
 	return {
-		vm2,
+		vm_acc,
 		statement_result_t::make_passive_expression_output(result_value)
 	};
 }
@@ -711,22 +687,22 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
-	auto vm2 = vm;
+	auto vm_acc = vm;
 
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
-		const auto& r = execute_statement(vm2, *statement);
-		vm2 = r.first;
+		const auto& r = execute_statement(vm_acc, *statement);
+		vm_acc = r.first;
 		if(r.second._type == statement_result_t::k_return_unwind){
-			return { vm2, r.second };
+			return { vm_acc, r.second };
 		}
 		else{
 
 			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
 			if(statement_index == (statements.size() - 1)){
 				if(r.second._type == statement_result_t::k_passive_expression_output){
-					return { vm2, r.second };
+					return { vm_acc, r.second };
 				}
 			}
 			else{
@@ -735,7 +711,7 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 			statement_index++;
 		}
 	}
-	return { vm2, statement_result_t::make_no_output() };
+	return { vm_acc, statement_result_t::make_no_output() };
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.

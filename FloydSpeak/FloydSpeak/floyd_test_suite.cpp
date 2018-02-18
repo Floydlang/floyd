@@ -2526,7 +2526,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 
 
 
-QUARK_UNIT_TEST("", "test basic performance", "", ""){
+QUARK_UNIT_TEST_VIP("", "test basic performance", "", ""){
 	auto start = std::chrono::system_clock::now();
 
 	const auto vm = run_global(R"(
