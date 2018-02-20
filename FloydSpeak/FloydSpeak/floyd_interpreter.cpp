@@ -43,6 +43,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 
+
 	//??? add conversions.
 	//??? This is builing block for promoting values / casting.
 	//	We know which type we need. If the value has not type, retype it.
@@ -138,7 +139,6 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
 
 		if(v.get_type() != a._type){
-//??? wont work until we sorted out struct-types.
 			throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members");
 		}
 	}
@@ -217,16 +217,12 @@ typeid_t cleanup_vector_constructor_type(const typeid_t& type){
 
 
 
-//??? encode type.
-//??? encode version number?
 value_t flatten_to_json(const value_t& value){
 	const auto j = value_to_ast_json(value);
 	value_t json_value = value_t::make_json_value(j._value);
 	return json_value;
 }
 
-//??? encode structs using key-value instead of array?
-//??? Extend to support all Floyd types, including structs!
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
 	QUARK_ASSERT(v.check_invariant());
 
@@ -337,48 +333,6 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-
-/*
-	if(v.is_object()){
-		const auto obj = v.get_object();
-		std::map<string, value_t> obj2;
-		for(const auto e: obj){
-			const auto key = e.first;
-			const auto value = e.second;
-			const auto value2 = value_t::make_json_value(value);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
-			obj2[key] = value2;
-		}
-		return value_t::make_dict_value(typeid_t::make_json_value(), obj2);
-	}
-	else if(v.is_array()){
-		const auto elements = v.get_array();
-		std::vector<value_t> elements2;
-		for(const auto e: elements){
-			const auto e2 = value_t::make_json_value(e);
-			elements2.push_back(e2);
-		}
-		return value_t::make_vector_value(typeid_t::make_json_value(), elements2);	//??? value_from_ast_json() but Floyd vector are homogenous, json arrays are not.
-	}
-	else if(v.is_string()){
-		return value_t::make_string(v.get_string());
-	}
-	else if(v.is_number()){
-		return value_t::make_float(static_cast<float>(v.get_number()));
-	}
-	else if(v.is_true()){
-		return value_t::make_bool(true);
-	}
-	else if(v.is_false()){
-		return value_t::make_bool(false);
-	}
-	else if(v.is_null()){
-		return value_t::make_null();
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-*/
-
 }
 
 
