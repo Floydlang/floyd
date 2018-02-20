@@ -72,26 +72,6 @@ void set_runtime(runtime_i* iRuntime){
 
 #if QUARK_UNIT_TESTS_ON
 
-//	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
-
-void on_unit_test_failed_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
-	on_problem___put_breakpoint_here();
-
-	assert(runtime != nullptr);
-	assert(expression != nullptr);
-
-	runtime->runtime_i__on_unit_test_failed(location, expression);
-}
-
-
-
-std::string path_to_name(const std::string& path){
-	size_t pos = path.size();
-	while(pos > 0 && path[pos - 1] != '/'){
-		pos--;
-	}
-	return path.substr(pos);
-}
 
 QUARK_UNIT_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("/Users/marcus/Repositories/Floyd/examples/game_of_life2.cpp") == "game_of_life2.cpp");
@@ -101,107 +81,6 @@ QUARK_UNIT_TESTQ("path_to_name()", ""){
 }
 QUARK_UNIT_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("") == "");
-}
-
-
-int run_test_list(const std::vector<unit_test_def>& tests){
-	int fail_count = 0;
-	for(std::size_t i = 0 ; i < tests.size() ; i++){
-		const unit_test_def& test = tests[i];
-
-		std::stringstream testInfo;
-		testInfo << test._source_file << ":" << std::to_string(test._source_line) << " Test #" << i
-			<< " " << test._class_under_test
-			<< " | " << test._function_under_test
-			<< " | " << test._scenario
-			<< " | " << test._expected_result;
-
-		try{
-			QUARK_SCOPED_TRACE(testInfo.str());
-			test._test_f();
-		}
-		catch(const std::exception& e){
-			QUARK_TRACE("FAILURE: " + testInfo.str());
-			QUARK_TRACE(typeid(e).name());
-			QUARK_TRACE(e.what());
-			fail_count++;
-			on_problem___put_breakpoint_here();
-		}
-		catch(...){
-			QUARK_TRACE("FAILURE: " + testInfo.str());
-			fail_count++;
-			on_problem___put_breakpoint_here();
-		}
-	}
-	return fail_count;
-}
-
-
-
-std::vector<unit_test_def> prepare_test_list(const std::vector<unit_test_def>& tests, const std::vector<std::string>& source_file_order){
-	std::vector<unit_test_def> vip_tests;
-	for(const auto e: tests){
-		if(e._vip){
-			vip_tests.push_back(e);
-		}
-		else{
-		}
-	}
-	if(vip_tests.empty() == false){
-		return vip_tests;
-	}
-
-	else{
-		std::vector<unit_test_def> ordered_tests;
-		std::vector<unit_test_def> remaining_tests = tests;
-		
-		for(const auto f: source_file_order){
-
-			//	Make list of all tests for this source file.
-			auto it = remaining_tests.begin();
-			while(it != remaining_tests.end()){
-
-				//	If this test belongs to our source file, MOVE it to file_tests.
-				const std::string file = path_to_name(it->_source_file);
-				if(file == f){
-					ordered_tests.push_back(*it);
-					it = remaining_tests.erase(it);
-				}
-				else{
-					it++;
-				}
-			}
-		}
-		auto result = ordered_tests;
-		result.insert(result.end(), remaining_tests.begin(), remaining_tests.end());
-		return result;
-	}
-}
-
-
-void run_tests(const unit_test_registry& registry, const std::vector<std::string>& source_file_order){
-	QUARK_SCOPED_TRACE(__FUNCTION__);
-
-	const auto filtered_tests = prepare_test_list(registry._tests, source_file_order);
-
-	std::size_t test_count = registry._tests.size();
-	std::size_t fail_count = 0;
-	QUARK_TRACE_SS("Running " << test_count << " tests...");
-
-	fail_count += run_test_list(filtered_tests);
-
-	if(fail_count == 0){
-		QUARK_TRACE_SS("SUCCESS " << test_count << " tests!");
-	}
-	else{
-		QUARK_TRACE_SS("FAILED " << fail_count << " out of " << test_count << " tests!");
-		exit(-1);
-	}
-}
-
-void run_tests(const std::vector<std::string>& source_file_order){
-	QUARK_ASSERT(unit_test_rec::_registry_instance != nullptr);
-	run_tests(*unit_test_rec::_registry_instance, source_file_order);
 }
 
 #endif
