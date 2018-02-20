@@ -491,6 +491,8 @@ inline void set_trace(const trace_i* v){
 
 ////////////////////////////		trace_context_t
 
+//	Notice: this is CONST but has hidden side effects. I decided this is OK.
+
 
 struct trace_context_t {
 	public: bool _verbose;
@@ -509,10 +511,10 @@ struct trace_context_t {
 		}
 	}
 	public: void open_scope(const char s[]) const{
-		_tracer->trace_i__open_scope(s);
+		_tracer->trace_i__open_scope(_verbose ? s : "");
 	}
 	public: void close_scope(const char s[]) const{
-		return _tracer->trace_i__close_scope(s);
+		_tracer->trace_i__close_scope(_verbose ? s : "");
 	}
 };
 
@@ -583,38 +585,29 @@ inline trace_context_t make_default_tracer(){
 	inline void quark_trace_func(const std::string& s, const trace_context_t* tracer){
 		quark_trace_func(s.c_str(), tracer);
 	}
-
-	inline void quark_trace_func_ss(const std::stringstream& s, const trace_context_t* tracer){
-		if(tracer == nullptr){
-			const auto def = make_default_tracer();
-			::quark::quark_trace_func_ss(s, &def);
-		}
-		else{
-			::quark::on_trace_hook(s.str().c_str(), *tracer);
-		}
+	inline void quark_trace_func(const std::stringstream& s, const trace_context_t* tracer){
+		quark_trace_func(s.str().c_str(), tracer);
 	}
 
 	#define QUARK_TRACE(s) ::quark::quark_trace_func(s, nullptr)
-	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func_ss(ss, nullptr);}
+	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, nullptr);}
 	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, nullptr)
 
 	#define QUARK_CONTEXT_TRACE(context, s) ::quark::quark_trace_func(s, &context)
-	#define QUARK_CONTEXT_TRACE_SS(context, x) {std::stringstream ss; ss << x; ::quark::quark_trace_func_ss(ss, &context);}
+	#define QUARK_CONTEXT_TRACE_SS(context, x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, &context);}
 	#define QUARK_CONTEXT_SCOPED_TRACE(context, s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, &context)
-
 #else
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)
 	#define QUARK_SCOPED_TRACE(s)
-
 #endif
+
+
+
 
 	inline int get_log_indent(){
 		return 0;
 	}
-
-
-
 
 
 
