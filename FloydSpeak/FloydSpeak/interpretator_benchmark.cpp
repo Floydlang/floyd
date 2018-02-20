@@ -19,12 +19,19 @@ using std::string;
 
 using namespace floyd;
 
+#if 0
+
+interpreter_context_t make_test_context(){
+	const auto t = quark::trace_context_t(false, quark::get_trace());
+	interpreter_context_t context{ t };
+	return context;
+}
 
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
+QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 	auto start = std::chrono::system_clock::now();
 
-	interpreter_context_t context{ quark::make_default_tracer() };
+	interpreter_context_t context = make_test_context();
 
 	const auto vm = run_global(context,
 	R"(
@@ -84,10 +91,10 @@ QUARK_UNIT_TEST("C++", "fibonacci", "", ""){
 	std::cout << "duration..." << duration1.count() << std::endl;
 }
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
 	auto start = std::chrono::system_clock::now();
 
-	interpreter_context_t context{ quark::make_default_tracer() };
+	interpreter_context_t context = make_test_context();
 	const auto vm = run_global(context,
 		"int fibonacci(int n) {"
 		"	if (n <= 1){"
@@ -107,3 +114,6 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 //	QUARK_TRACE_SS("duration:" << duration1.count() << "\n");
 	std::cout << "duration..." << duration1.count() << std::endl;
 }
+
+#endif
+

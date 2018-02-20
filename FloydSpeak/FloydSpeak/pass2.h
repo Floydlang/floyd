@@ -18,8 +18,8 @@ namespace floyd {
 		Input is an array of statements from parser.
 		A function has its own list of statements.
 	*/
-	const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const ast_json_t& p);
+	const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const quark::trace_context_t& tracer, const ast_json_t& p);
 
-	floyd::ast_t run_pass2(const ast_json_t& parse_tree);
+	floyd::ast_t run_pass2(const quark::trace_context_t& tracer, const ast_json_t& parse_tree);
 }
 #endif /* pass2_hpp */

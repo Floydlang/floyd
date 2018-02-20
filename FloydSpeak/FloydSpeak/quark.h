@@ -440,12 +440,14 @@ inline default_tracer_t::default_tracer_t() :
 }
 
 inline void default_tracer_t::trace_i__trace(const char s[]) const{
-	for(long i = 0 ; i < _indent ; i++){
-		std::cout << "|\t";
-	}
+	if(strlen(s) > 0){
+		for(long i = 0 ; i < _indent ; i++){
+			std::cout << "|\t";
+		}
 
-	std::cout << std::string(s);
-	std::cout << std::endl;
+		std::cout << std::string(s);
+		std::cout << std::endl;
+	}
 }
 inline void default_tracer_t::trace_i__open_scope(const char s[]) const{
 	trace_i__trace(s);
@@ -506,7 +508,7 @@ struct trace_context_t {
 	}
 
 	public: void trace(const char s[]) const{
-		if(_verbose){
+		if(_verbose && strlen(s) > 0){
 			_tracer->trace_i__trace(s);
 		}
 	}

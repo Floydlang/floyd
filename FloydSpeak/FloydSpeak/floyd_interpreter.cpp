@@ -2620,12 +2620,12 @@ bool interpreter_t::check_invariant() const {
 
 
 ast_t program_to_ast2(const interpreter_context_t& context, const string& program){
-	parser_context_t context2{ quark::trace_context_t(true, context._tracer._tracer) };
+	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
 //	parser_context_t context{ quark::make_default_tracer() };
 //	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
 
 	const auto pass1 = floyd::parse_program2(context2, program);
-	const auto pass2 = run_pass2(pass1);
+	const auto pass2 = run_pass2(context2._tracer, pass1);
 	return pass2;
 }
 
@@ -2640,7 +2640,7 @@ void print_vm_printlog(const interpreter_t& vm){
 
 
 interpreter_t run_global(const interpreter_context_t& context, const string& source){
-	parser_context_t context2{ quark::trace_context_t(true, context._tracer._tracer) };
+	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
 
 	auto ast = program_to_ast2(context, source);
 	auto vm = interpreter_t(ast);
@@ -2650,7 +2650,7 @@ interpreter_t run_global(const interpreter_context_t& context, const string& sou
 }
 
 std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
-	parser_context_t context2{ quark::trace_context_t(true, context._tracer._tracer) };
+	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
 
 	auto ast = program_to_ast2(context, source);
 

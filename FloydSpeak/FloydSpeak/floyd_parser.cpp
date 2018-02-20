@@ -106,7 +106,7 @@ std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s){
 
 ast_json_t parse_program2(const parser_context_t& context, const string& program){
 	const auto statements_pos = parse_statements(seq_t(program));
-	QUARK_TRACE(json_to_pretty_string(statements_pos.first._value));
+	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	return statements_pos.first;
 }
 
