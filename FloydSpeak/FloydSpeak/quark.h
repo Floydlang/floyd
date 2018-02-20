@@ -372,12 +372,10 @@ void set_runtime(runtime_i* iRuntime);
 
 
 
-
-#if QUARK_ASSERT_ON
-
 inline void on_problem___put_breakpoint_here(){
 }
 
+#if QUARK_ASSERT_ON
 
 //	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
 
@@ -533,33 +531,36 @@ inline trace_context_t make_default_tracer(){
 */
 
 
-
+#if QUARK_TRACE_ON
 	struct scoped_trace {
 		scoped_trace(const std::string& s, const trace_context_t* tracer) :
 			_tracer(tracer == nullptr ? make_default_tracer() : *tracer),
 			_trace_brackets(true)
 		{
-#if QUARK_TRACE_ON
 			_tracer.open_scope((s + " {").c_str());
-#endif
 		}
 
 		~scoped_trace(){
-#if QUARK_TRACE_ON
 			if(_trace_brackets){
 				_tracer.close_scope("}");
 			}
 			else{
 				_tracer.close_scope("");
 			}
-#endif
 		}
 
-#if QUARK_TRACE_ON
 		private: const trace_context_t _tracer;
 		private: bool _trace_brackets = true;
-#endif
 	};
+#else
+	struct scoped_trace {
+		scoped_trace(const std::string& s, const trace_context_t* tracer){
+		}
+
+		~scoped_trace(){
+		}
+	};
+#endif
 
 
 
@@ -602,6 +603,10 @@ inline trace_context_t make_default_tracer(){
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)
 	#define QUARK_SCOPED_TRACE(s)
+
+	#define QUARK_CONTEXT_TRACE(context, s)
+	#define QUARK_CONTEXT_TRACE_SS(context, s)
+	#define QUARK_CONTEXT_SCOPED_TRACE(context, s)
 #endif
 
 

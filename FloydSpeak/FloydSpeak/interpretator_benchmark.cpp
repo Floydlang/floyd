@@ -31,7 +31,7 @@ interpreter_context_t make_test_context(){
 
 
 //	Returns time in milliseconds
-std::int64_t measure_execution_time(std::function<void (void)> func){
+std::int64_t measure_execution_time_ms(std::function<void (void)> func){
 	func();
 
 	auto t0 = std::chrono::system_clock::now();
@@ -60,8 +60,8 @@ std::int64_t measure_execution_time(std::function<void (void)> func){
 	return duration_ms;
 }
 
-QUARK_UNIT_TEST_VIP("", "measure_execution_time()", "", ""){
-	const auto ms = measure_execution_time(
+QUARK_UNIT_TEST("", "measure_execution_time_ms()", "", ""){
+	const auto ms = measure_execution_time_ms(
 		[] { std::cout << "Hello, my Greek friends"; }
 	);
 	std::cout << "duration2..." << ms << std::endl;
@@ -73,30 +73,39 @@ QUARK_UNIT_TEST_VIP("", "measure_execution_time()", "", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("C++", "for-loop", "", ""){
-	measure_execution_time(
+QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
+	const int64_t cpp_iterations = (10000LL * 50000LL);
+	const int64_t floyd_iterations = 200000LL;
+
+	const auto cpp_ms = measure_execution_time_ms(
 		[&] {
-			int count = 0;
-			for (auto i = 0 ; i <= (10000 * 50000) ; i++) {
-		count = count + 1;
+			volatile int64_t count = 0;
+			for (int64_t i = 0 ; i < cpp_iterations ; i++) {
+				count = count + 1;
 			}
+//			std::cout << "C++ count:" << count << std::endl;
 		}
 	);
-}
-QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
-	interpreter_context_t context = make_test_context();
 
-	measure_execution_time(
+	interpreter_context_t context = make_test_context();
+	const auto floyd_ms = measure_execution_time_ms(
 		[&] {
 			const auto vm = run_global(context,
 			R"(
 				mutable int count = 0;
-				for (index in 1...10000) {
+				for (index in 1...200000) {
 					count = count + 1;
 				}
+//				print("Floyd count:" + to_string(count));
 			)");
 		}
 	);
+
+	double cpp_iteration_time = (double)cpp_ms / (double)cpp_iterations;
+	double floyd_iteration_time = (double)floyd_ms / (double)floyd_iterations;
+	double k = cpp_iteration_time / floyd_iteration_time;
+
+	std::cout << "Floyd performace: " << k << std::endl;
 }
 
 
@@ -106,8 +115,8 @@ int fibonacci(int n) {
 	}
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
-QUARK_UNIT_TEST_VIP("C++", "fibonacci", "", ""){
-	measure_execution_time(
+QUARK_UNIT_TEST("C++", "fibonacci", "", ""){
+	measure_execution_time_ms(
 		[&] {
 			int sum = 0;
 			for (auto i = 0 ; i <= (20 + 5) ; i++) {
@@ -117,10 +126,10 @@ QUARK_UNIT_TEST_VIP("C++", "fibonacci", "", ""){
 		}
 	);
 }
-QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
 	interpreter_context_t context = make_test_context();
 
-	measure_execution_time(
+	measure_execution_time_ms(
 		[&] {
 			const auto vm = run_global(context,
 
