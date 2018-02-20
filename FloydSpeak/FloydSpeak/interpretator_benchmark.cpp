@@ -30,8 +30,8 @@ interpreter_context_t make_test_context(){
 }
 
 
-//	Returns time in milliseconds
-std::int64_t measure_execution_time_ms(std::function<void (void)> func){
+//	Returns time in nanoseconds
+std::int64_t measure_execution_time_ns(const std::string& test_name, std::function<void (void)> func){
 	func();
 
 	auto t0 = std::chrono::system_clock::now();
@@ -46,25 +46,26 @@ std::int64_t measure_execution_time_ms(std::function<void (void)> func){
 	func();
 	auto t5 = std::chrono::system_clock::now();
 
-	auto d0 = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
-	auto d1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-	auto d2 = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2);
-	auto d3 = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3);
-	auto d4 = std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4);
+	auto d0 = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0);
+	auto d1 = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
+	auto d2 = std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2);
+	auto d3 = std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3);
+	auto d4 = std::chrono::duration_cast<std::chrono::nanoseconds>(t5 - t4);
 
 	const auto average = (d0 + d1 + d2 + d3 + d4) / 5.0;
-	auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(average);
+	auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(average);
 
-	int64_t duration_ms = duration1.count();
-	std::cout << "Execution time (ms): " << duration_ms << std::endl;
-	return duration_ms;
+	int64_t duration = duration1.count();
+	std::cout << test_name << " execution time (ns): " << duration << std::endl;
+	return duration;
 }
 
-QUARK_UNIT_TEST("", "measure_execution_time_ms()", "", ""){
-	const auto ms = measure_execution_time_ms(
+QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
+	const auto t = measure_execution_time_ns(
+		"test",
 		[] { std::cout << "Hello, my Greek friends"; }
 	);
-	std::cout << "duration2..." << ms << std::endl;
+	std::cout << "duration2..." << t << std::endl;
 }
 
 
@@ -73,11 +74,12 @@ QUARK_UNIT_TEST("", "measure_execution_time_ms()", "", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
+QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 	const int64_t cpp_iterations = (10000LL * 50000LL);
 	const int64_t floyd_iterations = 200000LL;
 
-	const auto cpp_ms = measure_execution_time_ms(
+	const auto cpp_ns = measure_execution_time_ns(
+		"For-loop C++",
 		[&] {
 			volatile int64_t count = 0;
 			for (int64_t i = 0 ; i < cpp_iterations ; i++) {
@@ -88,7 +90,8 @@ QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
 	);
 
 	interpreter_context_t context = make_test_context();
-	const auto floyd_ms = measure_execution_time_ms(
+	const auto floyd_ns = measure_execution_time_ns(
+		"For-loop Floyd",
 		[&] {
 			const auto vm = run_global(context,
 			R"(
@@ -101,12 +104,12 @@ QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
 		}
 	);
 
-	double cpp_iteration_time = (double)cpp_ms / (double)cpp_iterations;
-	double floyd_iteration_time = (double)floyd_ms / (double)floyd_iterations;
+	double cpp_iteration_time = (double)cpp_ns / (double)cpp_iterations;
+	double floyd_iteration_time = (double)floyd_ns / (double)floyd_iterations;
 	double k = cpp_iteration_time / floyd_iteration_time;
-
 	std::cout << "Floyd performace: " << k << std::endl;
 }
+
 
 
 int fibonacci(int n) {
@@ -115,39 +118,45 @@ int fibonacci(int n) {
 	}
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
-QUARK_UNIT_TEST("C++", "fibonacci", "", ""){
-	measure_execution_time_ms(
+
+QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+	const int64_t cpp_iterations = (22);
+	const int64_t floyd_iterations = 22LL;
+
+	const auto cpp_ns = measure_execution_time_ns(
+		"fibonacci C++",
 		[&] {
-			int sum = 0;
-			for (auto i = 0 ; i <= (20 + 5) ; i++) {
+			volatile int sum = 0;
+			for (auto i = 0 ; i < cpp_iterations ; i++) {
 				const auto a = fibonacci(i);
 				sum = sum + a;
 			}
 		}
 	);
-}
-QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
-	interpreter_context_t context = make_test_context();
 
-	measure_execution_time_ms(
+	interpreter_context_t context = make_test_context();
+	const auto floyd_ns = measure_execution_time_ns(
+		"fibonacci Floyd",
 		[&] {
 			const auto vm = run_global(context,
+			R"(
+				int fibonacci(int n) {
+					if (n <= 1){
+						return n;
+					}
+					return fibonacci(n - 2) + fibonacci(n - 1);
+				}
 
-				"int fibonacci(int n) {"
-				"	if (n <= 1){"
-				"		return n;"
-				"	}"
-				"	return fibonacci(n - 2) + fibonacci(n - 1);"
-				"}"
-
-				"for (i in 0...10) {"
-				"	a = fibonacci(i);"
-				"}"
-
+				for (i in 0...22) {
+					a = fibonacci(i);
+				}
+			)"
 			);
 		}
 	);
 
+	double k = (double)cpp_ns / (double)floyd_ns;
+	std::cout << "Floyd performace: " << k << std::endl;
 }
 
 #endif
