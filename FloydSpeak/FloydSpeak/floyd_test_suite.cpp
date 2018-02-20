@@ -2526,29 +2526,3 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 //??? test structs in vectors.
 
 
-
-QUARK_UNIT_TEST("", "test basic performance", "", ""){
-	auto start = std::chrono::system_clock::now();
-
-	const auto vm = run_global(R"(
-		mutable int count = 0;
-		for (index in 1...1000) {
-			count = count + 1;
-		}
-	)");
-
-	const auto end = std::chrono::system_clock::now();
-
-	// this constructs a duration object using milliseconds
-	auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-	// this constructs a duration object using seconds
-	auto duration2 = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-
-	QUARK_TRACE_SS("duration:" << duration1.count() << "\n");
-	std::cout << "duration..." << duration1.count() << std::endl;
-}
-
-
-
-

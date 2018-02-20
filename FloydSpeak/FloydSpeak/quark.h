@@ -639,6 +639,8 @@ inline void ut_compare_strings(const std::string& result, const std::string& exp
 #endif
 
 
+	#define OFF_QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
+		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 
 //	Default implementation
