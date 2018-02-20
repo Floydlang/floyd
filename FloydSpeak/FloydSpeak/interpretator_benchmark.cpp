@@ -21,10 +21,13 @@ using namespace floyd;
 
 
 
-OFF_QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
 	auto start = std::chrono::system_clock::now();
 
-	const auto vm = run_global(R"(
+	interpreter_context_t context{ quark::trace_context_t(false, quark::get_runtime()) };
+
+	const auto vm = run_global(context,
+	R"(
 		mutable int count = 0;
 		for (index in 1...100000) {
 			count = count + 1;
@@ -39,7 +42,7 @@ OFF_QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 }
 
 
-OFF_QUARK_UNIT_TEST("C++", "for-loop", "", ""){
+QUARK_UNIT_TEST("C++", "for-loop", "", ""){
 	auto start = std::chrono::system_clock::now();
 
 	int count = 0;
@@ -64,7 +67,7 @@ int fibonacci(int n) {
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-OFF_QUARK_UNIT_TEST("C++", "fibonacci", "", ""){
+QUARK_UNIT_TEST("C++", "fibonacci", "", ""){
 	auto start = std::chrono::system_clock::now();
 
 	int sum = 0;
@@ -81,10 +84,11 @@ OFF_QUARK_UNIT_TEST("C++", "fibonacci", "", ""){
 	std::cout << "duration..." << duration1.count() << std::endl;
 }
 
-OFF_QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	auto start = std::chrono::system_clock::now();
 
-	const auto vm = run_global(
+	interpreter_context_t context{ quark::trace_context_t(false, quark::get_runtime()) };
+	const auto vm = run_global(context,
 		"int fibonacci(int n) {"
 		"	if (n <= 1){"
 		"		return n;"

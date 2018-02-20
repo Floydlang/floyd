@@ -31,6 +31,15 @@ namespace floyd {
 	//////////////////////////////////////		statement_result_t
 
 
+
+	struct interpreter_context_t {
+		public: quark::trace_context_t _tracer;
+	};
+
+
+	//////////////////////////////////////		statement_result_t
+
+
 	struct statement_result_t {
 		enum output_type {
 
@@ -161,16 +170,17 @@ namespace floyd {
 		Quickie that compiles a program and calls its main() with the args.
 	*/
 	std::pair<interpreter_t, statement_result_t> run_main(
+		const interpreter_context_t& context,
 		const std::string& source,
 		const std::vector<value_t>& args
 	);
 
-	std::pair<interpreter_t, statement_result_t> run_program(const ast_t& ast, const std::vector<floyd::value_t>& args);
+	std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const ast_t& ast, const std::vector<floyd::value_t>& args);
 
-	ast_t program_to_ast2(const std::string& program);
+	ast_t program_to_ast2(const interpreter_context_t& context, const std::string& program);
 
 
-	interpreter_t run_global(const std::string& source);
+	interpreter_t run_global(const interpreter_context_t& context, const std::string& source);
 	value_t get_global(const interpreter_t& vm, const std::string& name);
 
 	void print_vm_printlog(const interpreter_t& vm);

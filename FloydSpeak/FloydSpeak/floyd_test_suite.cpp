@@ -25,6 +25,10 @@ using std::string;
 using namespace floyd;
 
 
+interpreter_context_t make_test_interpreter_context(){
+	return interpreter_context_t{ quark::trace_context_t(true, quark::get_runtime()) };
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //	FLOYD LANGUAGE TEST SUITE
@@ -32,7 +36,9 @@ using namespace floyd;
 
 
 value_t run_return_result(const std::string& program, const std::vector<value_t>& args){
-	const auto r = run_main(program, args);
+	const auto context = make_test_interpreter_context();
+
+	const auto r = run_main(context, program, args);
 	print_vm_printlog(r.first);
 	const auto result = get_global(r.first, "result");
 	return result;
@@ -45,13 +51,18 @@ void test__run_init__check_result(const std::string& program, const value_t& exp
 		expression_to_json(expression_t::make_literal(expected_result))._value
 	);
 }
-void test__run_init2(const std::string& program){
-	const auto result = run_global(program);
+interpreter_t test__run_global(const std::string& program){
+	const auto context = make_test_interpreter_context();
+
+	const auto result = run_global(context, program);
+	return result;
 }
 
 
 void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
-	const auto result = run_main(program, args);
+	const auto context = make_test_interpreter_context();
+
+	const auto result = run_main(context, program, args);
 	ut_compare_jsons(
 		expression_to_json(expression_t::make_literal(result.second._output))._value,
 		expression_to_json(expression_t::make_literal(expected_return))._value
@@ -137,12 +148,12 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 //??? test all types, like [int] etc.
 
 QUARK_UNIT_TESTQ("Floyd test suite", "Expression statement") {
-	const auto r = run_global("print(5);");
+	const auto r = test__run_global("print(5);");
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "5" }));
 }
 
 QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
-	const auto r = run_global("a = 10;print(a);");
+	const auto r = test__run_global("a = 10;print(a);");
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "10" }));
 }
 
@@ -498,7 +509,8 @@ QUARK_UNIT_TESTQ("run_main()", ""){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
-	auto ast = program_to_ast2(
+	const auto context = make_test_interpreter_context();
+	auto ast = program_to_ast2(context,
 		"int main(string args){\n"
 		"	return 3 + 4;\n"
 		"}\n"
@@ -510,7 +522,8 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
-	auto ast = program_to_ast2(
+	const auto context = make_test_interpreter_context();
+	auto ast = program_to_ast2(context,
 		"string main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n"
@@ -664,7 +677,8 @@ QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
 
 
 QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
-	auto ast = program_to_ast2(
+	const auto context = make_test_interpreter_context();
+	auto ast = program_to_ast2(context,
 		"int myfunc(){ return 5; }\n"
 		"int main(string args){\n"
 		"	return myfunc() + myfunc() * 2;\n"
@@ -677,7 +691,8 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 }
 
 QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
-	auto ast = program_to_ast2(
+	const auto context = make_test_interpreter_context();
+	auto ast = program_to_ast2(context,
 		"string main(string args){\n"
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
@@ -696,7 +711,8 @@ QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
 
 
 QUARK_UNIT_TESTQ("call_function()", "use local variables"){
-	auto ast = program_to_ast2(
+	const auto context = make_test_interpreter_context();
+	auto ast = program_to_ast2(context,
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
 		"string main(string args){\n"
 		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
@@ -720,7 +736,7 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 
 
 QUARK_UNIT_TESTQ("call_function()", "mutate local"){
-	auto r = run_global(
+	auto r = test__run_global(
 		R"(
 			mutable a = 1;
 			a = 2;
@@ -731,7 +747,7 @@ QUARK_UNIT_TESTQ("call_function()", "mutate local"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			mutable a = 1000;
 			a = a + 1;
@@ -743,7 +759,7 @@ QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
 
 QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
 	try {
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			a = 3;
 			a = 4;
 		)");
@@ -755,7 +771,7 @@ QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
 
 QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 	try {
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			int f(int x){
 				x = 6;
 			}
@@ -768,7 +784,7 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 }
 
 		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-			const auto r = run_global(R"(
+			const auto r = test__run_global(R"(
 				mutable a = 7;
 				a = 8;
 				{
@@ -779,7 +795,7 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 		}
 
 		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-			const auto r = run_global(R"(
+			const auto r = test__run_global(R"(
 				a = 7;
 				print(a);
 			)");
@@ -788,7 +804,7 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 
 
 		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-			const auto r = run_global(R"(
+			const auto r = test__run_global(R"(
 				a = 7;
 				{
 				}
@@ -798,7 +814,7 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 		}
 
 QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-	const auto r = run_global(R"(
+	const auto r = test__run_global(R"(
 		mutable a = 7;
 		{
 			a = 8;
@@ -814,7 +830,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 
 
 QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
-	auto r = run_global(
+	auto r = test__run_global(
 		"string f(){"
 		"	print(\"A\");"
 		"	return \"B\";"
@@ -828,7 +844,7 @@ QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
-	auto r = run_global(
+	auto r = test__run_global(
 		"string f(){"
 		"	if(true){"
 		"		print(\"A\");"
@@ -845,7 +861,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
-	auto r = run_global(
+	auto r = test__run_global(
 		"string f(){"
 		"	for(e in 0...3){"
 		"		print(\"A\");"
@@ -864,7 +880,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
 // ??? add test for: return from ELSE
 
 QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
-	auto r = run_global(
+	auto r = test__run_global(
 		"string f(){"
 		"	{"
 		"		print(\"A\");"
@@ -980,7 +996,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 
 
 QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			print("Hello, World!");
 		)"
@@ -990,7 +1006,7 @@ QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
 
 
 QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!", "", ""){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			{
 				print("Hello, World!");
@@ -1001,7 +1017,7 @@ QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!",
 }
 
 QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(true){
 				print("Hello, World!");
@@ -1016,7 +1032,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 
 QUARK_UNIT_TESTQ("run_global()", ""){
 	try{
-		const auto r = run_global(
+		const auto r = test__run_global(
 			R"(
 				assert(1 == 2);
 			)"
@@ -1029,7 +1045,7 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 }
 
 QUARK_UNIT_TESTQ("run_global()", ""){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			assert(1 == 1);
 			print("A");
@@ -1044,7 +1060,7 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 
 
 QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
-	test__run_init2(
+	test__run_global(
 		R"(
 			int a = get_time_of_day();
 			int b = get_time_of_day();
@@ -1059,7 +1075,7 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 
 
 QUARK_UNIT_TEST("", "get_env_path()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		path = get_env_path();
 		print(path);
 	)");
@@ -1071,7 +1087,7 @@ QUARK_UNIT_TEST("", "get_env_path()", "", ""){
 
 /*
 QUARK_UNIT_TEST("", "read_text_file()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		path = get_env_path();
 		a = read_text_file(path + "/Desktop/test1.json");
 		print(a);
@@ -1087,7 +1103,7 @@ QUARK_UNIT_TEST("", "read_text_file()", "", ""){
 
 
 QUARK_UNIT_TEST("", "write_text_file()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		path = get_env_path();
 		write_text_file(path + "/Desktop/test_out.txt", "Floyd wrote this!");
 	)");
@@ -1101,19 +1117,19 @@ QUARK_UNIT_TEST("", "write_text_file()", "", ""){
 
 
 QUARK_UNIT_TESTQ("run_init()", "Empty block"){
-	test__run_init2(
+	test__run_global(
 		"{}"
 	);
 }
 
 QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
-	test__run_init2(
+	test__run_global(
 		"{ int x = 4; }"
 	);
 }
 
 QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			int x = 3;
 			print("B:" + to_string(x));
@@ -1136,7 +1152,7 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 
 
 QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(true){
 				print("Hello!");
@@ -1148,7 +1164,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(false){
 				print("Hello!");
@@ -1160,7 +1176,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(true){
 				print("Hello!");
@@ -1174,7 +1190,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(false){
 				print("Hello!");
@@ -1188,7 +1204,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(1 == 1){
 				print("one");
@@ -1208,7 +1224,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(1 == 0){
 				print("one");
@@ -1228,7 +1244,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(1 == 0){
 				print("one");
@@ -1248,7 +1264,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			if(1 == 0){
 				print("one");
@@ -1276,7 +1292,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 
 
 QUARK_UNIT_TESTQ("run_init()", "for"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			for (i in 0...2) {
 				print("Iteration: " + to_string(i));
@@ -1287,7 +1303,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 }
 
 QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
-	const auto vm = run_global(
+	const auto vm = test__run_global(
 		"int fibonacci(int n) {"
 		"	if (n <= 1){"
 		"		return n;"
@@ -1313,7 +1329,7 @@ QUARK_UNIT_TESTQ("run_init()", "fibonacci"){
 
 
 QUARK_UNIT_TESTQ("run_init()", "for"){
-	const auto r = run_global(
+	const auto r = test__run_global(
 		R"(
 			mutable a = 100;
 			while(a < 105){
@@ -1357,25 +1373,25 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 //??? add tests for equality.
 
 QUARK_UNIT_TEST("string", "size()", "string", "0"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(size("") == 0);
 	)");
 }
 QUARK_UNIT_TEST("string", "size()", "string", "24"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(size("How long is this string?") == 24);
 	)");
 }
 
 QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = push_back("one", "two");
 		assert(a == "onetwo");
 	)");
 }
 
 QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = update("hello", 1, "z");
 		assert(a == "hzllo");
 	)");
@@ -1383,7 +1399,7 @@ QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
 
 
 QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(subset("abc", 0, 3) == "abc");
 		assert(subset("abc", 1, 3) == "bc");
 		assert(subset("abc", 0, 0) == "");
@@ -1391,7 +1407,7 @@ QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
 }
 
 QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all");
 	)");
 }
@@ -1403,7 +1419,7 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 
 
 QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = ["one", "two"];
 		print(a);
 	)");
@@ -1414,7 +1430,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vec
 
 QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "cannot be deducted", "error"){
 	try{
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			a = [];
 			print(a);
 		)");
@@ -1425,7 +1441,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "cannot be deducted",
 }
 
 QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "valid vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string] a = ["one", "two"];
 		print(a);
 	)");
@@ -1435,7 +1451,7 @@ QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "val
 }
 
 QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string] a = [];
 		print(a);
 	)");
@@ -1447,7 +1463,7 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 #if false
 //	[string]() -- requires TYPE(EXPRESSION) conversion expressions.
 QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = [string]("one", "two");
 		print(a);
 	)");
@@ -1457,7 +1473,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vec
 
 
 QUARK_UNIT_TEST("vector", "=", "strings", "valid vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = ["one", "two"];
 		b = a;
 		assert(a == b);
@@ -1470,46 +1486,46 @@ QUARK_UNIT_TEST("vector", "=", "strings", "valid vector"){
 	});
 }
 QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert((["one", "two"] == ["one", "two"]) == true);
 	)");
 }
 QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(([1,2,3,4] == [1,2,3,4]) == true);
 	)");
 }
 QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(([] == []) == true);
 	)");
 }
 QUARK_UNIT_TEST("vector", "==", "strings", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert((["one", "three"] == ["one", "two"]) == false);
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "<", "strings", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert((["one", "two"] < ["one", "two"]) == false);
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "<", "strings", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert((["one", "a"] < ["one", "two"]) == true);
 	)");
 }
 QUARK_UNIT_TEST("vector", "<", "strings", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert((["one", "a"] < ["one", "two"]) == true);
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
 	try{
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			[string] a = ["one", "two"];
 			assert(size(a) == 0);
 		)");
@@ -1520,41 +1536,41 @@ QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
 }
 
 QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string] a = [];
 		assert(size(a) == 0);
 	)");
 }
 QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string] a = ["one", "two"];
 		assert(size(a) == 2);
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string] a = [] + [];
 		assert(a == []);
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string] a = ["one"] + ["two"];
 		assert(a == ["one", "two"]);
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string] a = push_back(["one"], "two");
 		assert(a == ["one", "two"]);
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "find()", "vector", "correct return"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(find([1,2,3], 4) == -1);
 		assert(find([1,2,3], 1) == 0);
 		assert(find([1,2,2,2,3], 2) == 1);
@@ -1562,7 +1578,7 @@ QUARK_UNIT_TEST("vector", "find()", "vector", "correct return"){
 }
 
 QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(find("hello, world", "he") == 0);
 		assert(find("hello, world", "e") == 1);
 		assert(find("hello, world", "x") == -1);
@@ -1570,7 +1586,7 @@ QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
 }
 
 QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(subset([10,20,30], 0, 3) == [10,20,30]);
 		assert(subset([10,20,30], 1, 3) == [20,30]);
 		assert(subset([10,20,30], 0, 0) == []);
@@ -1578,7 +1594,7 @@ QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
 }
 
 QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6]);
 	)");
 }
@@ -1586,7 +1602,7 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 
 
 QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without side effect on original vector"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = [ "one", "two", "three"];
 		b = update(a, 1, "zwei");
 		print(a);
@@ -1606,13 +1622,13 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 
 
 QUARK_UNIT_TEST("dict", "construct", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string: int] a = {"one": 1, "two": 2};
 		assert(size(a) == 2);
 	)");
 }
 QUARK_UNIT_TEST("dict", "[]", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		[string: int] a = {"one": 1, "two": 2};
 		print(a["one"]);
 		print(a["two"]);
@@ -1625,7 +1641,7 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 
 QUARK_UNIT_TEST("dict", "", "", ""){
 	try{
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			mutable a = {};
 			a = {"hello": 1};
 			print(a);
@@ -1638,7 +1654,7 @@ QUARK_UNIT_TEST("dict", "", "", ""){
 
 QUARK_UNIT_TEST("dict", "[:]", "", ""){
 	try {
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			a = {};
 			print(a);
 		)");
@@ -1650,7 +1666,7 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 
 
 QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = {"one": 1, "two": 2};
 		print(a);
 	)");
@@ -1660,7 +1676,7 @@ QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
 }
 
 QUARK_UNIT_TEST("dict", "{}", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		mutable [string:int] a = {};
 		a = {};
 		print(a);
@@ -1671,38 +1687,38 @@ QUARK_UNIT_TEST("dict", "{}", "", ""){
 }
 
 QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(({"one": 1, "two": 2} == {"two": 2}) == false);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false);
 	)");
 }
 QUARK_UNIT_TEST("dict", "==", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true);
 	)");
 }
 
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(size({}) == 0);
 	)");
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		print({});
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
@@ -1710,18 +1726,18 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 	});
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(size({"one":1}) == 1);
 	)");
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		assert(size({"one":1, "two":2}) == 2);
 	)");
 }
 
 QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side effect on original dict"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = { "one": 1, "two": 2};
 		b = update(a, "three", 3);
 		print(a);
@@ -1734,7 +1750,7 @@ QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side eff
 }
 
 QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = { "one": 1, "two": 2, "three" : 3};
 		b = update(a, "three", 333);
 		print(a);
@@ -1748,7 +1764,7 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 
 
 QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = update({}, "one", 1);
 		b = update(a, "two", 2);
 		print(b);
@@ -1759,7 +1775,7 @@ QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 
 
 QUARK_UNIT_TEST("dict", "exists()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = { "one": 1, "two": 2, "three" : 3};
 		assert(exists(a, "two") == true);
 		assert(exists(a, "four") == false);
@@ -1767,7 +1783,7 @@ QUARK_UNIT_TEST("dict", "exists()", "", ""){
 }
 
 QUARK_UNIT_TEST("dict", "erase()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = { "one": 1, "two": 2, "three" : 3};
 		b = erase(a, "one");
 		assert(b == { "two": 2, "three" : 3});
@@ -1781,19 +1797,19 @@ QUARK_UNIT_TEST("dict", "erase()", "", ""){
 
 
 QUARK_UNIT_TESTQ("run_main()", "struct"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct t {}
 	)");
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct t { int a;}
 	)");
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct t { int a;}
 		t(3);
 	)");
@@ -1801,7 +1817,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct t { int a;}
 		print(t);
 	)");
@@ -1811,7 +1827,7 @@ QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct t { int a;}
 		a = t(3);
 		print(a);
@@ -1822,7 +1838,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct t { int a;}
 		temp = t(4);
 		print(temp.a);
@@ -1833,7 +1849,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
 
@@ -1850,7 +1866,7 @@ QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
 		i = image(color(1, 2, 3), color(200, 201, 202));
@@ -1862,7 +1878,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 }
 
 QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
 		color make_color(){
@@ -1876,7 +1892,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) == color(1, 2, 3));
 	)");
@@ -1886,7 +1902,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		print(color(9, 2, 3) == color(1, 2, 3));
 	)");
@@ -1897,7 +1913,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 	try {
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			struct color { int red; int green; int blue;}
 			struct file { int id;}
 			print(color(1, 2, 3) == file(404));
@@ -1909,7 +1925,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 2, 3));
 	)");
@@ -1919,7 +1935,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 4, 3));
 	)");
@@ -1932,7 +1948,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 
 
 QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		a = color(255, 128, 128);
 		b = color(a.red, a.green, 129);
@@ -1948,7 +1964,7 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 
 QUARK_UNIT_TESTQ("run_main()", "mutate struct member using = won't work"){
 	try {
-		const auto vm = run_global(R"(
+		const auto vm = test__run_global(R"(
 			struct color { int red; int green; int blue;}
 			a = color(255,128,128);
 			b = a.green = 3;
@@ -1961,7 +1977,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using = won't work"){
 }
 
 QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		a = color(255,128,128);
 		b = update(a, "green", 3);
@@ -1976,7 +1992,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 }
 
 QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
 		a = image(color(0,100,200), color(0,0,0));
@@ -1993,7 +2009,7 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		start = get_time_of_day();
 		mutable b = 0;
 		mutable t = [0];
@@ -2011,7 +2027,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TESTQ("comments", "// on start of line"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		//	XYZ
 		print("Hello");
 	)");
@@ -2021,7 +2037,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 }
 
 QUARK_UNIT_TESTQ("comments", "// on start of line"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		print("Hello");		//	XYZ
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
@@ -2030,7 +2046,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 }
 
 QUARK_UNIT_TESTQ("comments", "// on start of line"){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		print("Hello");/* xyz */print("Bye");
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
@@ -2120,7 +2136,7 @@ QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
 QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a);
 	)");
@@ -2131,7 +2147,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 
 // JSON example snippets: http://json.org/example.html
 QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
-	const auto vm = run_global(R"ABCD(
+	const auto vm = test__run_global(R"ABCD(
 		json_value a = {
 			"menu": {
 			  "id": "file",
@@ -2153,7 +2169,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 }
 
 QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" };
 		print(a);
 	)");
@@ -2163,7 +2179,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 }
 
 QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a["pigcount"]);
 		print(a["pigcolor"]);
@@ -2175,7 +2191,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		json_value a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 };
 		assert(size(a) == 5);
 	)");
@@ -2240,7 +2256,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
-	const auto vm = run_global(R"ABCD(
+	const auto vm = test__run_global(R"ABCD(
 		string get_name(json_value value){
 			t = get_json_type(value);
 			if(t == json_object){
@@ -2310,7 +2326,7 @@ QUARK_UNIT_TEST("", "decode_json()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "decode_json()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		a = decode_json("{ \"magic\": 1234 }");
 		print(a);
 	)");
@@ -2325,7 +2341,7 @@ QUARK_UNIT_TEST("", "decode_json()", "", ""){
 
 
 QUARK_UNIT_TEST("", "encode_json()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		json_value a = "cheat";
 		b = encode_json(a);
 		print(b);
@@ -2337,7 +2353,7 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 
 
 QUARK_UNIT_TEST("", "encode_json()", "", ""){
-	const auto vm = run_global(R"(
+	const auto vm = test__run_global(R"(
 		json_value a = { "magic": 1234 };
 		b = encode_json(a);
 		print(b);

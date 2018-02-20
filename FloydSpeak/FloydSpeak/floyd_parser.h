@@ -81,9 +81,53 @@ http://craftinginterpreters.com/representing-code.html
  		ASSIGNMENT	 					SYMBOL = EXPRESSION
 */
 
+
+/*
+Found this in sep file. Redundant?
+
+PROGRAM = STATEMENT ";" +
+STATEMENT = BIND | RETURN | DEFINE_STRUCT | DEFINE_FUNCTION
+
+IDENTIFIER = ["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"]
+
+BIND = TYPE IDENTIFIER "=" EXPRESSION
+RETURN = "return" EXPRESSION
+DEFINE_FUNCTION = TYPE IDENTIFIER "(" ARGUMENT [, ARGUMENT] ")" "{" [STATEMENT ";"]+ "}"
+DEFINE_STRUCT = "struct" IDENTIFIER "{" [STRUCT_MEMBER ";"]+ "}
+ARGUMENT = TYPE IDENTIFIER
+
+EXPRESSION
+	CALL = $name "(" EXPRESSION + ["," EXPRESSION] ")"
+	EQUAL = EXPRESSION "==" EXPRESSION
+	LESS = EXPRESSION "<" EXPRESSION
+	LARGER = EXPRESSION ">" EXPRESSION
+	LESS_OR_EQUAL = EXPRESSION "<=" EXPRESSION
+	LARGER_OR_EQUAL = EXPRESSION ">=" EXPRESSION
+
+	COMPARE_OPERATOR = EXPRESSION ? EXPRESSION : EXPRESSION
+	AND = EXPRESSION "&&" EXPRESSION
+	OR = EXPRESSION "||" EXPRESSION
+
+	CONSTANT
+		STRING = "+any+"
+		INTEGER [0123456789]
+		FLOAT [0123456789.]
+
+		VARIABLE = IDENTIFIER_CHARS
+
+
+
+
+		int myfunc(string a, int b){
+			...
+			return b + 1;
+		}
+*/
+ 
+
 namespace floyd {
 	struct ast_json_t;
-
+	struct parser_context_t;
 
 	//////////////////////////////////////////////////		read_statement()
 
@@ -143,7 +187,7 @@ namespace floyd {
 	std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s);
 
 	//	returns json-array of statements.
-	ast_json_t parse_program2(const std::string& program);
+	ast_json_t parse_program2(const parser_context_t& context, const std::string& program);
 
 }	//	floyd
 

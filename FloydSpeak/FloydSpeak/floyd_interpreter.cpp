@@ -8,6 +8,7 @@
 
 #include "floyd_interpreter.h"
 
+#include "parser_primitives.h"
 #include "parse_expression.h"
 #include "parse_statement.h"
 #include "statement.h"
@@ -2617,8 +2618,13 @@ bool interpreter_t::check_invariant() const {
 
 
 
-ast_t program_to_ast2(const string& program){
-	const auto pass1 = floyd::parse_program2(program);
+
+ast_t program_to_ast2(const interpreter_context_t& context, const string& program){
+	parser_context_t context2{ quark::trace_context_t(true, context._tracer._tracer) };
+//	parser_context_t context{ quark::trace_context_t(true, quark::get_runtime()) };
+//	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
+
+	const auto pass1 = floyd::parse_program2(context2, program);
 	const auto pass2 = run_pass2(pass1);
 	return pass2;
 }
@@ -2633,16 +2639,20 @@ void print_vm_printlog(const interpreter_t& vm){
 }
 
 
-interpreter_t run_global(const string& source){
-	auto ast = program_to_ast2(source);
+interpreter_t run_global(const interpreter_context_t& context, const string& source){
+	parser_context_t context2{ quark::trace_context_t(true, context._tracer._tracer) };
+
+	auto ast = program_to_ast2(context, source);
 	auto vm = interpreter_t(ast);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	print_vm_printlog(vm);
 	return vm;
 }
 
-std::pair<interpreter_t, statement_result_t> run_main(const string& source, const vector<floyd::value_t>& args){
-	auto ast = program_to_ast2(source);
+std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
+	parser_context_t context2{ quark::trace_context_t(true, context._tracer._tracer) };
+
+	auto ast = program_to_ast2(context, source);
 
 	//	Runs global code.
 	auto vm = interpreter_t(ast);
@@ -2657,7 +2667,7 @@ std::pair<interpreter_t, statement_result_t> run_main(const string& source, cons
 	}
 }
 
-std::pair<interpreter_t, statement_result_t> run_program(const ast_t& ast, const vector<floyd::value_t>& args){
+std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const ast_t& ast, const vector<floyd::value_t>& args){
 	auto vm = interpreter_t(ast);
 
 	const auto main_func = resolve_env_variable(vm, "main");

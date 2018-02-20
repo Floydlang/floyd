@@ -483,10 +483,9 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_100"){
 	const auto pass2_output = parse_json(seq_t("[12344]")).first;
 	ut_compare_jsons(pass2, pass2_output);
 }
-*/
 
 void test_error(const string& program, const string& error_string){
-	const auto pass1 = floyd::parse_program2(program);
+	const auto pass1 = floyd::parse_program2(context, program);
 	try{
 		const auto pass2 = run_pass2(pass1);
 		QUARK_UT_VERIFY(false);
@@ -498,8 +497,6 @@ void test_error(const string& program, const string& error_string){
 		}
 	}
 }
-
-/*
 
 QUARK_UNIT_TESTQ("run_pass2()", "1001"){
 	test_error(

@@ -182,8 +182,10 @@ std::string floyd_version_string = "0.3";
 void run_repl(){
 	init_terminal();
 
+	floyd::interpreter_context_t context{ quark::trace_context_t(true, quark::get_runtime()) };
+
 	int print_pos = 0;
-	auto ast = floyd::program_to_ast2("");
+	auto ast = floyd::program_to_ast2(context, "");
 	auto vm = floyd::interpreter_t(ast);
 
 	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;
@@ -259,8 +261,10 @@ void run_file(const std::vector<std::string>& args){
 
 //	std::cout << "Source:" << source << std::endl;
 
+
 //	std::cout << "Compiling..." << std::endl;
-	auto ast = floyd::program_to_ast2(source);
+	floyd::interpreter_context_t context{ quark::trace_context_t(true, quark::get_runtime()) };
+	auto ast = floyd::program_to_ast2(context, source);
 
 
 //	std::cout << "Preparing arguments..." << std::endl;
@@ -273,7 +277,7 @@ void run_file(const std::vector<std::string>& args){
 //	std::cout << "Running..." << source << std::endl;
 
 
-	const auto result = floyd::run_program(ast, args3);
+	const auto result = floyd::run_program(context, ast, args3);
 	if(result.second._output.is_null()){
 	}
 	else{

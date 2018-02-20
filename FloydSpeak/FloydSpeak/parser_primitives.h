@@ -49,6 +49,19 @@ namespace floyd {
 	bool is_whitespace(char ch);
 
 
+
+	//////////////////////////////////////////////////		parser_context_t
+
+
+
+
+
+	struct parser_context_t {
+		public: quark::trace_context_t _tracer;
+	};
+
+
+
 	//////////////////////////////////////////////////		BALANCING PARANTHESES, BRACKETS
 
 

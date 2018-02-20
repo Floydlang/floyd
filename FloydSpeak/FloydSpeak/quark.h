@@ -302,6 +302,20 @@ struct source_code_location {
 };
 
 
+////////////////////////////		trace_i
+
+
+struct trace_i {
+	public: virtual ~trace_i(){};
+	public: virtual void trace_i__trace(const char s[]) = 0;
+	public: virtual void trace_i__add_log_indent(long add) = 0;
+	public: virtual int trace_i__get_log_indent() const = 0;
+};
+
+
+
+
+
 ////////////////////////////		runtime_i
 
 /*
@@ -318,6 +332,7 @@ class runtime_i {
 };
 
 
+
 ////////////////////////////		get_runtime() and set_runtime()
 
 /*
@@ -327,6 +342,40 @@ class runtime_i {
 
 runtime_i* get_runtime();
 void set_runtime(runtime_i* iRuntime);
+
+
+
+
+////////////////////////////		trace_context_t
+
+
+
+struct trace_context_t : private quark::trace_i {
+	public: bool _verbose;
+	public: runtime_i* _tracer;
+
+	public: int _indent;
+
+	public: trace_context_t(bool verbose, runtime_i* tracer) :
+		_verbose(verbose),
+		_tracer(tracer)
+	{
+	}
+
+	public: virtual void trace_i__trace(const char s[]){
+		if(_verbose){
+//			_tracer->runtime_i__add_log_indent(_indent);
+			_tracer->runtime_i__trace(s);
+//			_tracer->runtime_i__add_log_indent(-_indent);
+		}
+	}
+	public: virtual void trace_i__add_log_indent(long add){
+		_tracer->runtime_i__add_log_indent(add);
+	}
+	public: virtual int trace_i__get_log_indent() const{
+		return _tracer->runtime_i__get_log_indent();
+	}
+};
 
 
 
@@ -359,7 +408,6 @@ void set_runtime(runtime_i* iRuntime);
 		void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]) __dead2;
 	#endif
 
-
 	#define QUARK_ASSERT(x) if(x){}else {::quark::on_assert_hook(::quark::get_runtime(), quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(x)); }
 
 #else
@@ -381,43 +429,63 @@ void set_runtime(runtime_i* iRuntime);
 	Part of internal mechanism to get stack / scoped-based RAII working for indented tracing.
 */
 
-	struct scoped_trace {
-		scoped_trace(const char s[]){
-#if QUARK_TRACE_ON
-			const char append[] = " {";
-			size_t app_size = strlen(append);
-			char temp[128 + 1];
-			strlcpy(temp, s, sizeof(temp) - app_size);
-			strlcat(temp, append, sizeof(temp));
 
-			runtime_i* r = get_runtime();
-			r->runtime_i__trace(temp);
-			r->runtime_i__add_log_indent(1);
+	inline void open_scoped_trace(const char s[], runtime_i* runtime, trace_context_t* tracer){
+		const char append[] = " {";
+		size_t app_size = strlen(append);
+		char temp[128 + 1];
+		strlcpy(temp, s, sizeof(temp) - app_size);
+		strlcat(temp, append, sizeof(temp));
+
+		runtime->runtime_i__trace(temp);
+		runtime->runtime_i__add_log_indent(1);
+	}
+
+	inline void open_scoped_trace(const std::string& s, runtime_i* runtime, trace_context_t* tracer){
+		runtime->runtime_i__trace((s + " {").c_str());
+		runtime->runtime_i__add_log_indent(1);
+	}
+
+	inline void close_scoped_trace(runtime_i* runtime, trace_context_t* tracer, bool trace_brackets){
+		runtime->runtime_i__add_log_indent(-1);
+		if(trace_brackets){
+			runtime->runtime_i__trace("}");
+		}
+	}
+
+
+	struct scoped_trace {
+		scoped_trace(const char s[], runtime_i* runtime, trace_context_t* tracer):
+			_runtime(runtime),
+			_tracer(tracer)
+		{
+#if QUARK_TRACE_ON
+			open_scoped_trace(s, _runtime, _tracer);
 #endif
 		}
 
-		scoped_trace(const std::string& s){
+		scoped_trace(const std::string& s, runtime_i* runtime, trace_context_t* tracer) :
+			_runtime(runtime),
+			_tracer(tracer)
+		{
 #if QUARK_TRACE_ON
-			runtime_i* r = get_runtime();
-			r->runtime_i__trace((s + " {").c_str());
-			r->runtime_i__add_log_indent(1);
+			open_scoped_trace(s, _runtime, _tracer);
 #endif
 		}
 
 		~scoped_trace(){
 #if QUARK_TRACE_ON
-			runtime_i* r = get_runtime();
-			r->runtime_i__add_log_indent(-1);
-			if(_trace_brackets){
-				r->runtime_i__trace("}");
-			}
+			close_scoped_trace(_runtime, _tracer, _trace_brackets);
 #endif
 		}
 
 #if QUARK_TRACE_ON
+		private: runtime_i* _runtime;
+		private: trace_context_t* _tracer;
 		private: bool _trace_brackets = true;
 #endif
 	};
+
 
 
 #if QUARK_TRACE_ON
@@ -425,25 +493,40 @@ void set_runtime(runtime_i* iRuntime);
 	////////////////////////////		Hook functions.
 	/*
 		These functions are called by the macros and they in turn call the runtime_i.
+	 Use only trace_context_t, runtime_i should contain a tracer.
 	*/
-	void on_trace_hook(runtime_i* runtime, const char s[]);
-	void on_trace_hook(runtime_i* runtime, const std::string& s);
-	void on_trace_hook(runtime_i* runtime, const std::stringstream& s);
+	void on_trace_hook(runtime_i* runtime, const char s[], trace_context_t* tracer);
+	void on_trace_hook(runtime_i* runtime, const std::string& s, trace_context_t* tracer);
+	void on_trace_hook(runtime_i* runtime, const std::stringstream& s, trace_context_t* tracer);
+
+
+	inline void quark_trace_func(const char s[], trace_context_t* tracer){
+		::quark::on_trace_hook(::quark::get_runtime(), s, nullptr);
+	}
+
+	//	### Use runtime as explicit argument instead?
+	#define QUARK_TRACE(s) ::quark::on_trace_hook(::quark::get_runtime(), s, nullptr)
+	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::on_trace_hook(::quark::get_runtime(), ss, nullptr);}
+	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, ::quark::get_runtime(), nullptr)
+	#define QUARK_TRACE_FUNCTION() ::quark::scoped_trace QUARK_UNIQUE_LABEL(trace_function) (__FUNCTION__, ::quark::get_runtime(), nullptr)
+
+
 
 
 	//	### Use runtime as explicit argument instead?
-	#define QUARK_TRACE(s) ::quark::on_trace_hook(::quark::get_runtime(), s)
-	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::on_trace_hook(::quark::get_runtime(), ss);}
+	#define QUARK_TRACE(s) ::quark::on_trace_hook(::quark::get_runtime(), s, nullptr)
+	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::on_trace_hook(::quark::get_runtime(), ss, nullptr);}
+	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, ::quark::get_runtime(), nullptr)
+	#define QUARK_TRACE_FUNCTION() ::quark::scoped_trace QUARK_UNIQUE_LABEL(trace_function) (__FUNCTION__, ::quark::get_runtime(), nullptr)
 
-	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s)
-
-	#define QUARK_TRACE_FUNCTION() ::quark::scoped_trace QUARK_UNIQUE_LABEL(trace_function) (__FUNCTION__)
+	#define QUARK_CONTEXT_TRACE(context, s) ::quark::on_trace_hook(nullptr, s, &context)
+	#define QUARK_CONTEXT_TRACE_SS(context, x) {std::stringstream ss; ss << x; ::quark::on_trace_hook(nullptr, ss, &context);}
+	#define QUARK_CONTEXT_SCOPED_TRACE(context, s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, nullptr, &context)
+	#define QUARK_CONTEXT_TRACE_FUNCTION(context) ::quark::scoped_trace QUARK_UNIQUE_LABEL(trace_function) (__FUNCTION__, nullptr, &context)
 
 #else
-
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)
-
 	#define QUARK_SCOPED_TRACE(s)
 	#define QUARK_TRACE_FUNCTION()
 
@@ -640,6 +723,8 @@ inline void ut_compare_strings(const std::string& result, const std::string& exp
 
 
 	#define OFF_QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
+		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+	#define OFF_QUARK_UNIT_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
 		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 

@@ -92,27 +92,50 @@ void on_assert_hook(runtime_i* runtime, const source_code_location& location, co
 //	TRACE
 //	====================================================================================================================
 
-
+	
 
 #if QUARK_TRACE_ON
 
-void on_trace_hook(runtime_i* runtime, const char s[]){
-	assert(runtime != nullptr);
-	assert(s != nullptr);
+void on_trace_hook(runtime_i* runtime, const char s[], trace_context_t* tracer){
+	//Make sure runtime OR tracer is provided.
+	assert((runtime == nullptr || tracer == nullptr) && (runtime != nullptr || tracer != nullptr));
 
-	runtime->runtime_i__trace(s);
+	if(tracer != nullptr){
+		tracer->trace_i__trace(s);
+	}
+	else{
+		assert(runtime != nullptr);
+		assert(s != nullptr);
+		runtime->runtime_i__trace(s);
+	}
 }
 
-void on_trace_hook(runtime_i* runtime, const std::string& s){
-	assert(runtime != nullptr);
+void on_trace_hook(runtime_i* runtime, const std::string& s, trace_context_t* tracer){
+	//Make sure runtime OR tracer is provided.
+	assert((runtime == nullptr || tracer == nullptr) && (runtime != nullptr || tracer != nullptr));
 
-	runtime->runtime_i__trace(s.c_str());
+	if(tracer != nullptr){
+		tracer->trace_i__trace(s.c_str());
+	}
+	else{
+		assert(runtime != nullptr);
+		runtime->runtime_i__trace(s.c_str());
+	}
 }
 
-void on_trace_hook(runtime_i* runtime, const std::stringstream& s){
-	assert(runtime != nullptr);
+void on_trace_hook(runtime_i* runtime, const std::stringstream& s, trace_context_t* tracer){
+	//Make sure runtime OR tracer is provided.
+	assert((runtime == nullptr || tracer == nullptr) && (runtime != nullptr || tracer != nullptr));
 
-	runtime->runtime_i__trace(s.str().c_str());
+	if(tracer != nullptr){
+		QUARK_ASSERT(runtime == nullptr);
+		tracer->trace_i__trace(s.str().c_str());
+	}
+	else{
+		assert(runtime != nullptr);
+
+		runtime->runtime_i__trace(s.str().c_str());
+	}
 }
 
 #endif
