@@ -31,7 +31,7 @@ https://en.wikipedia.org/wiki/Parsing_expression_grammar
 https://en.wikipedia.org/wiki/Parsing
 */
 
-const parser_context_t test_context{ quark::trace_context_t(true, quark::get_runtime()) };
+const parser_context_t test_context{ quark::make_default_tracer() };
 
 
 std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){

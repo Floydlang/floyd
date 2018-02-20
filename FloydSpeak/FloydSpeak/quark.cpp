@@ -99,26 +99,8 @@ QUARK_UNIT_TESTQ("path_to_name()", ""){
 
 
 default_runtime::default_runtime(const std::string& test_data_root) :
-	_test_data_root(test_data_root),
-	_indent(0)
+	_test_data_root(test_data_root)
 {
-}
-
-void default_runtime::runtime_i__trace(const char s[]){
-	for(long i = 0 ; i < _indent ; i++){
-		std::cout << "|\t";
-	}
-
-	std::cout << std::string(s);
-	std::cout << std::endl;
-}
-
-void default_runtime::runtime_i__add_log_indent(long add){
-	_indent += add;
-}
-
-int default_runtime::runtime_i__get_log_indent() const{
-	return static_cast<int>(_indent);
 }
 
 void default_runtime::runtime_i__on_assert(const source_code_location& location, const char expression[]){

@@ -182,7 +182,7 @@ std::string floyd_version_string = "0.3";
 void run_repl(){
 	init_terminal();
 
-	floyd::interpreter_context_t context{ quark::trace_context_t(true, quark::get_runtime()) };
+	floyd::interpreter_context_t context{ quark::make_default_tracer() };
 
 	int print_pos = 0;
 	auto ast = floyd::program_to_ast2(context, "");
@@ -263,7 +263,7 @@ void run_file(const std::vector<std::string>& args){
 
 
 //	std::cout << "Compiling..." << std::endl;
-	floyd::interpreter_context_t context{ quark::trace_context_t(true, quark::get_runtime()) };
+	floyd::interpreter_context_t context{ quark::make_default_tracer() };
 	auto ast = floyd::program_to_ast2(context, source);
 
 
@@ -347,12 +347,45 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 
 bool trace_on = true;
 
+
+//??? Only exists so we cn control tracing on/off. Delete and use new trace_context_t instead.
+struct floyd_tracer : public quark::trace_i {
+	public: floyd_tracer();
+
+	public: virtual void trace_i__trace(const char s[]) const;
+	public: virtual void trace_i__open_scope(const char s[]) const;
+	public: virtual void trace_i__close_scope(const char s[]) const;
+
+
+	///////////////		State.
+	public: quark::default_tracer_t def;
+};
+
+
+void floyd_tracer::trace_i__trace(const char s[]) const {
+	if(trace_on){
+		def.trace_i__trace(s);
+	}
+}
+
+void floyd_tracer::trace_i__open_scope(const char s[]) const {
+	def.trace_i__open_scope(s);
+}
+
+void floyd_tracer::trace_i__close_scope(const char s[]) const{
+	def.trace_i__close_scope(s);
+}
+
+
+
+
+
+
+
+
 struct floyd_quark_runtime : public quark::runtime_i {
 	floyd_quark_runtime(const std::string& test_data_root);
 
-	public: virtual void runtime_i__trace(const char s[]);
-	public: virtual void runtime_i__add_log_indent(long add);
-	public: virtual int runtime_i__get_log_indent() const;
 	public: virtual void runtime_i__on_assert(const quark::source_code_location& location, const char expression[]);
 	public: virtual void runtime_i__on_unit_test_failed(const quark::source_code_location& location, const char expression[]);
 
@@ -366,25 +399,6 @@ floyd_quark_runtime::floyd_quark_runtime(const std::string& test_data_root) :
 	_test_data_root(test_data_root),
 	_indent(0)
 {
-}
-
-void floyd_quark_runtime::runtime_i__trace(const char s[]){
-	if(trace_on){
-		for(long i = 0 ; i < _indent ; i++){
-			std::cout << "|\t";
-		}
-
-		std::cout << std::string(s);
-		std::cout << std::endl;
-	}
-}
-
-void floyd_quark_runtime::runtime_i__add_log_indent(long add){
-	_indent += add;
-}
-
-int floyd_quark_runtime::runtime_i__get_log_indent() const{
-	return static_cast<int>(_indent);
 }
 
 void floyd_quark_runtime::runtime_i__on_assert(const quark::source_code_location& location, const char expression[]){

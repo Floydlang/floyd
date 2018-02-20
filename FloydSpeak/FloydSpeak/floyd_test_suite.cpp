@@ -26,7 +26,7 @@ using namespace floyd;
 
 
 interpreter_context_t make_test_interpreter_context(){
-	return interpreter_context_t{ quark::trace_context_t(true, quark::get_runtime()) };
+	return interpreter_context_t{ quark::make_default_tracer() };
 }
 
 

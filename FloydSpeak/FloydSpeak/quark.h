@@ -257,6 +257,7 @@ Add mechanism for unit tests to get to test files.
 #include <string>
 #include <sstream>
 #include <cstring>
+#include <iostream>
 
 
 #ifndef QUARK_ASSERT_ON
@@ -313,9 +314,6 @@ struct source_code_location {
 
 class runtime_i {
 	public: virtual ~runtime_i(){};
-	public: virtual void runtime_i__trace(const char s[]) = 0;
-	public: virtual void runtime_i__add_log_indent(long add) = 0;
-	public: virtual int runtime_i__get_log_indent() const = 0;
 	public: virtual void runtime_i__on_assert(const source_code_location& location, const char expression[]) = 0;
 	public: virtual void runtime_i__on_unit_test_failed(const source_code_location& location, const char s[]) = 0;
 };
@@ -407,44 +405,122 @@ inline void on_assert_hook(runtime_i* runtime, const source_code_location& locat
 
 
 
+
 ////////////////////////////		trace_i
 
 
 struct trace_i {
 	public: virtual ~trace_i(){};
-	public: virtual void trace_i__trace(const char s[]) = 0;
-	public: virtual void trace_i__add_log_indent(long add) = 0;
-	public: virtual int trace_i__get_log_indent() const = 0;
+	public: virtual void trace_i__trace(const char s[]) const = 0;
+	public: virtual void trace_i__open_scope(const char s[]) const = 0;
+	public: virtual void trace_i__close_scope(const char s[]) const = 0;
 };
+
+
+//////////////////////////////////			default_tracer_t
+/*
+	It uses cout.
+*/
+
+struct default_tracer_t : public trace_i {
+	public: default_tracer_t();
+
+	public: virtual void trace_i__trace(const char s[]) const;
+	public: virtual void trace_i__open_scope(const char s[]) const;
+	public: virtual void trace_i__close_scope(const char s[]) const;
+
+
+	///////////////		State.
+	public: long mutable _indent;
+};
+
+inline default_tracer_t::default_tracer_t() :
+	_indent(0)
+{
+}
+
+inline void default_tracer_t::trace_i__trace(const char s[]) const{
+	for(long i = 0 ; i < _indent ; i++){
+		std::cout << "|\t";
+	}
+
+	std::cout << std::string(s);
+	std::cout << std::endl;
+}
+inline void default_tracer_t::trace_i__open_scope(const char s[]) const{
+	trace_i__trace(s);
+	_indent++;
+}
+inline void default_tracer_t::trace_i__close_scope(const char s[]) const{
+	_indent--;
+	trace_i__trace(s);
+}
+
+
+struct trace_globals_t {
+	trace_globals_t() :
+		_current(nullptr)
+	{
+	}
+	public: const default_tracer_t _default_tracer;
+	public: const trace_i* _current;
+};
+
+inline trace_globals_t* get_global_data(){
+	static trace_globals_t globals;
+	globals._current = & globals._default_tracer;
+
+	return &globals;
+}
+
+
+inline const trace_i* get_trace(){
+	const auto g = get_global_data();
+
+	const auto result = g->_current;
+	assert(result);
+	return result;
+}
+
+inline void set_trace(const trace_i* v){
+	const auto g = get_global_data();
+	g->_current = v;
+}
+
 
 
 ////////////////////////////		trace_context_t
 
 
-struct trace_context_t : private quark::trace_i {
+struct trace_context_t {
 	public: bool _verbose;
-	public: runtime_i* _tracer;
+	public: const trace_i* _tracer;
 
-	public: int _indent;
 
-	public: trace_context_t(bool verbose, runtime_i* tracer) :
+	public: trace_context_t(bool verbose, const trace_i* tracer) :
 		_verbose(verbose),
 		_tracer(tracer)
 	{
 	}
 
-	public: virtual void trace_i__trace(const char s[]){
+	public: void trace(const char s[]) const{
 		if(_verbose){
-			_tracer->runtime_i__trace(s);
+			_tracer->trace_i__trace(s);
 		}
 	}
-	public: virtual void trace_i__add_log_indent(long add){
-		_tracer->runtime_i__add_log_indent(add);
+	public: void open_scope(const char s[]) const{
+		_tracer->trace_i__open_scope(s);
 	}
-	public: virtual int trace_i__get_log_indent() const{
-		return _tracer->runtime_i__get_log_indent();
+	public: void close_scope(const char s[]) const{
+		return _tracer->trace_i__close_scope(s);
 	}
 };
+
+
+
+inline trace_context_t make_default_tracer(){
+	return trace_context_t(true, get_trace());
+}
 
 
 ////////////////////////////		scoped_trace
@@ -453,58 +529,30 @@ struct trace_context_t : private quark::trace_i {
 */
 
 
-	inline void open_scoped_trace(const char s[], runtime_i* runtime, trace_context_t* tracer){
-		const char append[] = " {";
-		size_t app_size = strlen(append);
-		char temp[128 + 1];
-		strlcpy(temp, s, sizeof(temp) - app_size);
-		strlcat(temp, append, sizeof(temp));
-
-		runtime->runtime_i__trace(temp);
-		runtime->runtime_i__add_log_indent(1);
-	}
-
-	inline void open_scoped_trace(const std::string& s, runtime_i* runtime, trace_context_t* tracer){
-		runtime->runtime_i__trace((s + " {").c_str());
-		runtime->runtime_i__add_log_indent(1);
-	}
-
-	inline void close_scoped_trace(runtime_i* runtime, trace_context_t* tracer, bool trace_brackets){
-		runtime->runtime_i__add_log_indent(-1);
-		if(trace_brackets){
-			runtime->runtime_i__trace("}");
-		}
-	}
-
 
 	struct scoped_trace {
-		scoped_trace(const char s[], trace_context_t* tracer):
-			_runtime(tracer == nullptr ? ::quark::get_runtime() : nullptr),
-			_tracer(tracer)
+		scoped_trace(const std::string& s, const trace_context_t* tracer) :
+			_tracer(tracer == nullptr ? make_default_tracer() : *tracer),
+			_trace_brackets(true)
 		{
 #if QUARK_TRACE_ON
-			open_scoped_trace(s, _runtime, _tracer);
-#endif
-		}
-
-		scoped_trace(const std::string& s, trace_context_t* tracer) :
-			_runtime(tracer == nullptr ? ::quark::get_runtime() : nullptr),
-			_tracer(tracer)
-		{
-#if QUARK_TRACE_ON
-			open_scoped_trace(s, _runtime, _tracer);
+			_tracer.open_scope((s + " {").c_str());
 #endif
 		}
 
 		~scoped_trace(){
 #if QUARK_TRACE_ON
-			close_scoped_trace(_runtime, _tracer, _trace_brackets);
+			if(_trace_brackets){
+				_tracer.close_scope("}");
+			}
+			else{
+				_tracer.close_scope("");
+			}
 #endif
 		}
 
 #if QUARK_TRACE_ON
-		private: runtime_i* _runtime;
-		private: trace_context_t* _tracer;
+		private: const trace_context_t _tracer;
 		private: bool _trace_brackets = true;
 #endif
 	};
@@ -518,51 +566,31 @@ struct trace_context_t : private quark::trace_i {
 		These functions are called by the macros and they in turn call the runtime_i.
 		TODO: Use only trace_context_t, runtime_i should contain a tracer.
 	*/
-	inline void on_trace_hook(runtime_i* runtime, const char s[], trace_context_t* tracer){
-		//Make sure runtime OR tracer is provided.
-		assert((runtime == nullptr || tracer == nullptr) && (runtime != nullptr || tracer != nullptr));
-
-		if(tracer != nullptr){
-			tracer->trace_i__trace(s);
-		}
-		else{
-			assert(runtime != nullptr);
-			assert(s != nullptr);
-			runtime->runtime_i__trace(s);
-		}
+	inline void on_trace_hook(const char s[], const trace_context_t& tracer){
+		tracer.trace(s);
 	}
 
-	inline trace_context_t make_default_tracer(){
-		const auto result = trace_context_t { true, get_runtime() };
-		return result;
-	}
-
-	inline void quark_trace_func(const char s[], trace_context_t* tracer){
+	//	Overloaded for char[] and std::string.
+	inline void quark_trace_func(const char s[], const trace_context_t* tracer){
 		if(tracer == nullptr){
-			auto temp = make_default_tracer();
-			quark_trace_func(s, &temp);
+			const auto def = make_default_tracer();
+			return quark_trace_func(s, &def);
 		}
 		else{
-			::quark::on_trace_hook(nullptr, s, tracer);
+			::quark::on_trace_hook(s, *tracer);
 		}
 	}
-	inline void quark_trace_func(const std::string& s, trace_context_t* tracer){
-		if(tracer == nullptr){
-			auto temp = make_default_tracer();
-			quark_trace_func(s, &temp);
-		}
-		else{
-			::quark::on_trace_hook(nullptr, s.c_str(), tracer);
-		}
+	inline void quark_trace_func(const std::string& s, const trace_context_t* tracer){
+		quark_trace_func(s.c_str(), tracer);
 	}
 
-	inline void quark_trace_func_ss(const std::stringstream& s, trace_context_t* tracer){
+	inline void quark_trace_func_ss(const std::stringstream& s, const trace_context_t* tracer){
 		if(tracer == nullptr){
-			auto temp = make_default_tracer();
-			quark_trace_func_ss(s, &temp);
+			const auto def = make_default_tracer();
+			::quark::quark_trace_func_ss(s, &def);
 		}
 		else{
-			::quark::on_trace_hook(nullptr, s.str().c_str(), tracer);
+			::quark::on_trace_hook(s.str().c_str(), *tracer);
 		}
 	}
 
@@ -582,7 +610,7 @@ struct trace_context_t : private quark::trace_i {
 #endif
 
 	inline int get_log_indent(){
-		return get_runtime()->runtime_i__get_log_indent();
+		return 0;
 	}
 
 
@@ -936,16 +964,12 @@ inline void run_tests(const std::vector<std::string>& source_file_order){
 struct default_runtime : public runtime_i {
 	default_runtime(const std::string& test_data_root);
 
-	public: virtual void runtime_i__trace(const char s[]);
-	public: virtual void runtime_i__add_log_indent(long add);
-	public: virtual int runtime_i__get_log_indent() const;
 	public: virtual void runtime_i__on_assert(const source_code_location& location, const char expression[]);
 	public: virtual void runtime_i__on_unit_test_failed(const source_code_location& location, const char expression[]);
 
 
 	///////////////		State.
 		const std::string _test_data_root;
-		long _indent;
 };
 
 
