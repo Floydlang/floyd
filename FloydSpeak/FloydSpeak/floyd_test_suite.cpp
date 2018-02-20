@@ -26,7 +26,7 @@ using namespace floyd;
 
 
 interpreter_context_t make_test_interpreter_context(){
-	const auto t = quark::trace_context_t(false, quark::get_trace());
+	const auto t = quark::trace_context_t(true, quark::get_trace());
 	interpreter_context_t context{ t };
 	return context;
 }

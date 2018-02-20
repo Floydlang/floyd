@@ -19,7 +19,7 @@ using std::string;
 
 using namespace floyd;
 
-#if 1
+#if 0
 
 //////////////////////////////////////////		HELPERS
 
@@ -119,7 +119,7 @@ int fibonacci(int n) {
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
 	const int64_t cpp_iterations = (22);
 	const int64_t floyd_iterations = 22LL;
 

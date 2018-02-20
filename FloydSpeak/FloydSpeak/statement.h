@@ -26,10 +26,6 @@ namespace floyd {
 	struct expression_t;
 
 
-
-	//////////////////////////////////////		return_statement_t
-
-
 	struct return_statement_t {
 		bool operator==(const return_statement_t& other) const {
 			return _expression == other._expression;
@@ -37,8 +33,6 @@ namespace floyd {
 
 		const expression_t _expression;
 	};
-	//////////////////////////////////////		define_struct_statement_t
-
 
 	struct define_struct_statement_t {
 		bool operator==(const define_struct_statement_t& other) const {
@@ -48,9 +42,6 @@ namespace floyd {
 		const std::string _name;
 		const struct_definition_t _def;
 	};
-
-
-	//////////////////////////////////////		bind_or_assign_statement_t
 
 	//	FYI: We don't know until runtime if a = 10 is a deduced bind or a mutation.
 	struct bind_or_assign_statement_t {
@@ -67,10 +58,6 @@ namespace floyd {
 		const bool _bind_as_mutable_tag;
 	};
 
-
-	//////////////////////////////////////		block_statement_t
-
-
 	struct block_statement_t {
 		bool operator==(const block_statement_t& other) const {
 			return compare_shared_value_vectors(_statements, other._statements);
@@ -78,48 +65,6 @@ namespace floyd {
 
 		const std::vector<std::shared_ptr<statement_t>> _statements;
 	};
-
-
-
-	//////////////////////////////////////		ifelse_statement_t
-
-
-	/*
-		# sugar: if then else:
-
-		if(a){
-			a
-		}
-		else if(b){
-			b
-		}
-		else if(c){
-			c
-		}
-		else{
-			d
-		}
-
-
-		# de-sugared
-		if(a){
-			a
-		}
-		else{
-			if(b){
-				b
-			}
-			else{
-				if(c){
-					c
-				}
-				else{
-					d
-				}
-			}
-		}
-	*/
-
 
 	struct ifelse_statement_t {
 		bool operator==(const ifelse_statement_t& other) const {
@@ -136,11 +81,6 @@ namespace floyd {
 		const std::vector<std::shared_ptr<statement_t>> _else_statements;
 	};
 
-
-
-	//////////////////////////////////////		for_statement_t
-
-
 	struct for_statement_t {
 		bool operator==(const for_statement_t& other) const {
 			return
@@ -156,10 +96,6 @@ namespace floyd {
 		const std::vector<std::shared_ptr<statement_t>> _body;
 	};
 
-
-	//////////////////////////////////////		while_statement_t
-
-
 	struct while_statement_t {
 		bool operator==(const while_statement_t& other) const {
 			return
@@ -171,10 +107,6 @@ namespace floyd {
 		const std::vector<std::shared_ptr<statement_t>> _body;
 	};
 
-
-	//////////////////////////////////////		expression_statement_t
-
-
 	struct expression_statement_t {
 		bool operator==(const expression_statement_t& other) const {
 			return _expression == other._expression;
@@ -182,6 +114,7 @@ namespace floyd {
 
 		const expression_t _expression;
 	};
+
 
 
 	//////////////////////////////////////		statement_t
@@ -252,7 +185,6 @@ namespace floyd {
 			}
 		}
 
-
 		//	Only *one* of these are used for each instance.
 		public: const std::shared_ptr<return_statement_t> _return;
 		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
@@ -291,6 +223,175 @@ namespace floyd {
 
 	ast_json_t statement_to_json(const statement_t& e);
 	ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
+
+
+
+	inline statement_t make__return_statement(const return_statement_t& value){
+		return statement_t(value);
+	}
+
+	inline statement_t make__return_statement(const expression_t& expression){
+		return statement_t(return_statement_t{ expression });
+	}
+
+	inline statement_t make__define_struct_statement(const define_struct_statement_t& value){
+		return statement_t(value);
+	}
+
+	inline statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bool bind_as_mutable_tag){
+		return statement_t(bind_or_assign_statement_t{ new_variable_name, bindtype, expression, bind_as_mutable_tag });
+	}
+	inline statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
+		return statement_t(block_statement_t{ statements });
+	}
+
+	inline statement_t make__ifelse_statement(
+		const expression_t& condition,
+		std::vector<std::shared_ptr<statement_t>> then_statements,
+		std::vector<std::shared_ptr<statement_t>> else_statements
+	){
+		return statement_t(ifelse_statement_t{ condition, then_statements, else_statements });
+	}
+
+
+	inline statement_t make__for_statement(
+		const std::string iterator_name,
+		const expression_t& start_expression,
+		const expression_t& end_expression,
+		const std::vector<std::shared_ptr<statement_t>> body
+	){
+		return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
+	}
+
+	inline statement_t make__while_statement(
+		const expression_t& condition,
+		const std::vector<std::shared_ptr<statement_t>> body
+	){
+		return statement_t(while_statement_t{ condition, body });
+	}
+
+	inline statement_t make__expression_statement(const expression_t& expression){
+		return statement_t(expression_statement_t{ expression });
+	}
+
+	inline bool statement_t::check_invariant() const {
+		int count = 0;
+		count = count + (_return != nullptr ? 1 : 0);
+		count = count + (_def_struct != nullptr ? 1 : 0);
+		count = count + (_bind_or_assign != nullptr ? 1 : 0);
+		count = count + (_block != nullptr ? 1 : 0);
+		count = count + (_if != nullptr ? 1 : 0);
+		count = count + (_for != nullptr ? 1 : 0);
+		count = count + (_while != nullptr ? 1 : 0);
+		count = count + (_expression != nullptr ? 1 : 0);
+		QUARK_ASSERT(count == 1);
+
+		if(_return != nullptr){
+		}
+		else if(_def_struct != nullptr){
+		}
+		else if(_bind_or_assign){
+		}
+		else if(_block){
+		}
+		else if(_if){
+		}
+		else if(_for){
+		}
+		else if(_while){
+		}
+		else if(_expression){
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+		return true;
+	}
+
+	inline std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a){
+		std::vector<json_t> result;
+		for(const auto& e: a){
+			result.push_back(statement_to_json(*e)._value);
+		}
+		return result;
+	}
+
+	inline ast_json_t statement_to_json(const statement_t& e){
+		QUARK_ASSERT(e.check_invariant());
+
+		if(e._return){
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_return),
+				expression_to_json(e._return->_expression)._value
+			})};
+		}
+		else if(e._def_struct){
+			return ast_json_t{json_t::make_array({
+				json_t("def-struct"),
+				json_t(e._def_struct->_name),
+				struct_definition_to_ast_json(e._def_struct->_def)._value
+			})};
+		}
+		else if(e._bind_or_assign){
+			const auto meta = (e._bind_or_assign->_bind_as_mutable_tag) ? (json_t::make_object({std::pair<std::string,json_t>{"mutable", true}})) : json_t();
+
+			return ast_json_t{make_array_skip_nulls({
+				json_t("bind"),
+				e._bind_or_assign->_new_variable_name,
+				typeid_to_ast_json(e._bind_or_assign->_bindtype)._value,
+				expression_to_json(e._bind_or_assign->_expression)._value,
+				meta
+			})};
+		}
+		else if(e._block){
+			return ast_json_t{json_t::make_array({
+				json_t("block"),
+				json_t::make_array(statements_shared_to_json(e._block->_statements))
+			})};
+		}
+		else if(e._if){
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_if),
+				expression_to_json(e._if->_condition)._value,
+				json_t::make_array(statements_shared_to_json(e._if->_then_statements)),
+				json_t::make_array(statements_shared_to_json(e._if->_else_statements))
+			})};
+		}
+		else if(e._for){
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_for),
+				json_t("open_range"),
+				expression_to_json(e._for->_start_expression)._value,
+				expression_to_json(e._for->_end_expression)._value,
+				statements_to_json(e._for->_body)._value
+			})};
+		}
+		else if(e._while){
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_while),
+				expression_to_json(e._while->_condition)._value,
+				statements_to_json(e._while->_body)._value
+			})};
+		}
+		else if(e._expression){
+			return ast_json_t{json_t::make_array({
+				json_t("expression-statement"),
+				expression_to_json(e._expression->_expression)._value
+			})};
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+
+	inline ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e){
+		std::vector<json_t> statements;
+		for(const auto& i: e){
+			statements.push_back(statement_to_json(*i)._value);
+		}
+		return ast_json_t{json_t::make_array(statements)};
+	}
 
 }	//	floyd
 

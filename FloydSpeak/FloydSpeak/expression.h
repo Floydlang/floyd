@@ -52,9 +52,7 @@ namespace floyd {
 		//### Not really "literals". "Terminal values" maybe better term?
 
 		public: struct literal_expr_t : public expr_base_t {
-			public: virtual ~literal_expr_t(){};
-
-			public: literal_expr_t(const value_t& value) 
+			public: literal_expr_t(const value_t& value)
 			:
 				_value(value)
 			{
@@ -96,8 +94,6 @@ namespace floyd {
 
 
 		public: struct simple_expr__2_t : public expr_base_t {
-			public: virtual ~simple_expr__2_t(){};
-
 			public: simple_expr__2_t(
 				expression_type op,
 				const expression_t& left,
@@ -188,8 +184,6 @@ namespace floyd {
 
 
 		public: struct unary_minus_expr_t : public expr_base_t {
-			public: virtual ~unary_minus_expr_t(){};
-
 			public: unary_minus_expr_t(
 				const expression_t& expr
 			)
@@ -228,8 +222,6 @@ namespace floyd {
 
 
 		public: struct conditional_expr_t : public expr_base_t {
-			public: virtual ~conditional_expr_t(){};
-
 			public: conditional_expr_t(
 				const expression_t& condition,
 				const expression_t& a,
@@ -273,7 +265,6 @@ namespace floyd {
 
 
 		public: struct function_call_expr_t : public expr_base_t {
-			public: virtual ~function_call_expr_t(){};
 
 			public: function_call_expr_t(
 				const expression_t& function,
@@ -320,8 +311,6 @@ namespace floyd {
 
 //??? make better
 		public: struct function_definition_expr_t : public expr_base_t {
-			public: virtual ~function_definition_expr_t(){};
-
 			public: function_definition_expr_t(const function_definition_t & def)
 			:
 				_def(def)
@@ -354,8 +343,6 @@ namespace floyd {
 
 
 		public: struct variable_expr_t : public expr_base_t {
-			public: virtual ~variable_expr_t(){};
-
 			public: variable_expr_t(
 				std::string variable
 			)
@@ -398,8 +385,6 @@ namespace floyd {
 
 
 		public: struct resolve_member_expr_t : public expr_base_t {
-			public: virtual ~resolve_member_expr_t(){};
-
 			public: resolve_member_expr_t(
 				const expression_t& parent_address,
 				std::string member_name
@@ -451,8 +436,6 @@ namespace floyd {
 		*/
 
 		public: struct lookup_expr_t : public expr_base_t {
-			public: virtual ~lookup_expr_t(){};
-
 			public: lookup_expr_t(
 				const expression_t& parent_address,
 				const expression_t& lookup_key
@@ -503,7 +486,6 @@ namespace floyd {
 
 
 		public: struct vector_definition_exprt_t : public expr_base_t {
-			public: virtual ~vector_definition_exprt_t(){};
 
 			public: vector_definition_exprt_t(
 				const typeid_t& element_type,
@@ -552,8 +534,6 @@ namespace floyd {
 
 
 		public: struct dict_definition_exprt_t : public expr_base_t {
-			public: virtual ~dict_definition_exprt_t(){};
-
 			public: dict_definition_exprt_t(
 				const typeid_t& value_type,
 				const std::map<std::string, expression_t>& elements
@@ -674,6 +654,126 @@ namespace floyd {
 		return
 			lhs._value_type == rhs._value_type
 			&& lhs._elements == rhs._elements;
+	}
+
+
+
+
+	ast_json_t expression_to_json(const expression_t& e);
+	ast_json_t expressions_to_json(const std::vector<expression_t> v);
+	inline std::string expression_to_json_string(const expression_t& e);
+
+
+
+	inline expression_t::expression_t(
+		const expression_type operation,
+		const std::shared_ptr<const expr_base_t>& expr
+	)
+	:
+	#if DEBUG
+		_debug(""),
+	#endif
+		_operation(operation),
+		_expr(expr)
+	{
+	#if DEBUG
+		_debug = expression_to_json_string(*this);
+	#endif
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+	inline bool expression_t::check_invariant() const{
+	//	QUARK_ASSERT(_debug.size() > 0);
+
+	//	QUARK_ASSERT(_result_type._base_type != base_type::k_null && _result_type.check_invariant());
+		return true;
+	}
+
+	inline bool expression_t::operator==(const expression_t& other) const {
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		if(_expr && other._expr){
+			QUARK_ASSERT(false);
+	/*
+			const auto lhs = dynamic_cast<const function_definition_expr_t*>(_expr.get());
+			const auto rhs = dynamic_cast<const function_definition_expr_t*>(other._expr.get());
+			if(lhs && rhs && *lhs == *rhs){
+				return true;
+			}
+	*/
+			return false;
+		}
+		else if((_expr && !other._expr) || (!_expr && other._expr)){
+			return false;
+		}
+		else{
+			return
+				(_operation == other._operation);
+		}
+	}
+
+	inline expression_type expression_t::get_operation() const{
+		QUARK_ASSERT(check_invariant());
+
+		return _operation;
+	}
+
+
+
+	inline expression_t expression_t::make_literal_null(){
+		return make_literal(value_t::make_null());
+	}
+	inline expression_t expression_t::make_literal_int(const int i){
+		return make_literal(value_t::make_int(i));
+	}
+	inline expression_t expression_t::make_literal_bool(const bool i){
+		return make_literal(value_t::make_bool(i));
+	}
+	inline expression_t expression_t::make_literal_float(const float i){
+		return make_literal(value_t::make_float(i));
+	}
+	inline expression_t expression_t::make_literal_string(const std::string& s){
+		return make_literal(value_t::make_string(s));
+	}
+
+
+
+	inline bool expression_t::is_literal() const{
+		return dynamic_cast<const literal_expr_t*>(_expr.get()) != nullptr;
+	}
+
+	inline const value_t& expression_t::get_literal() const{
+		QUARK_ASSERT(is_literal())
+
+		return dynamic_cast<const literal_expr_t*>(_expr.get())->_value;
+	}
+
+	inline bool is_simple_expression__2(const std::string& op){
+		return
+			op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
+			|| op == "<=" || op == "<" || op == ">=" || op == ">"
+			|| op == "==" || op == "!=" || op == "&&" || op == "||";
+	}
+
+
+
+	inline ast_json_t expression_to_json(const expression_t& e){
+		return e.get_expr()->expr_base__to_json();
+	}
+
+	inline ast_json_t expressions_to_json(const std::vector<expression_t> v){
+		std::vector<json_t> r;
+		for(const auto e: v){
+			r.push_back(expression_to_json(e)._value);
+		}
+		return ast_json_t{json_t::make_array(r)};
+	}
+
+	inline std::string expression_to_json_string(const expression_t& e){
+		const auto json = expression_to_json(e);
+		return json_to_compact_string(json._value);
 	}
 
 }	//	floyd

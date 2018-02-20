@@ -2604,7 +2604,6 @@ interpreter_t run_global(const interpreter_context_t& context, const string& sou
 }
 
 std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
-	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
 
 	auto ast = program_to_ast2(context, source);
 
