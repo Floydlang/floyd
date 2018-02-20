@@ -36,8 +36,6 @@ bool trace_on = QUARK_TRACE_ON;
 bool unit_tests_on = QUARK_UNIT_TESTS_ON;
 
 
-void on_problem___put_breakpoint_here(){
-}
 
 
 
@@ -61,84 +59,6 @@ void set_runtime(runtime_i* iRuntime){
 }
 
 
-
-
-//	ASSERT SUPPORT
-//	====================================================================================================================
-
-
-
-
-
-#if QUARK_ASSERT_ON
-
-//	!!!! SET A BREAK POINT HERE USING YOUR DEBUGGER TO INSPECT ANY ASSERTS
-
-void on_assert_hook(runtime_i* runtime, const source_code_location& location, const char expression[]){
-	on_problem___put_breakpoint_here();
-
-	assert(runtime != nullptr);
-	assert(expression != nullptr);
-
-	runtime->runtime_i__on_assert(location, expression);
-	exit(-1);
-}
-
-#endif
-
-
-
-
-//	TRACE
-//	====================================================================================================================
-
-	
-
-#if QUARK_TRACE_ON
-
-void on_trace_hook(runtime_i* runtime, const char s[], trace_context_t* tracer){
-	//Make sure runtime OR tracer is provided.
-	assert((runtime == nullptr || tracer == nullptr) && (runtime != nullptr || tracer != nullptr));
-
-	if(tracer != nullptr){
-		tracer->trace_i__trace(s);
-	}
-	else{
-		assert(runtime != nullptr);
-		assert(s != nullptr);
-		runtime->runtime_i__trace(s);
-	}
-}
-
-void on_trace_hook(runtime_i* runtime, const std::string& s, trace_context_t* tracer){
-	//Make sure runtime OR tracer is provided.
-	assert((runtime == nullptr || tracer == nullptr) && (runtime != nullptr || tracer != nullptr));
-
-	if(tracer != nullptr){
-		tracer->trace_i__trace(s.c_str());
-	}
-	else{
-		assert(runtime != nullptr);
-		runtime->runtime_i__trace(s.c_str());
-	}
-}
-
-void on_trace_hook(runtime_i* runtime, const std::stringstream& s, trace_context_t* tracer){
-	//Make sure runtime OR tracer is provided.
-	assert((runtime == nullptr || tracer == nullptr) && (runtime != nullptr || tracer != nullptr));
-
-	if(tracer != nullptr){
-		QUARK_ASSERT(runtime == nullptr);
-		tracer->trace_i__trace(s.str().c_str());
-	}
-	else{
-		assert(runtime != nullptr);
-
-		runtime->runtime_i__trace(s.str().c_str());
-	}
-}
-
-#endif
 
 
 
@@ -260,7 +180,7 @@ std::vector<unit_test_def> prepare_test_list(const std::vector<unit_test_def>& t
 
 
 void run_tests(const unit_test_registry& registry, const std::vector<std::string>& source_file_order){
-	QUARK_TRACE_FUNCTION();
+	QUARK_SCOPED_TRACE(__FUNCTION__);
 
 	const auto filtered_tests = prepare_test_list(registry._tests, source_file_order);
 
@@ -353,7 +273,6 @@ void test_macros(){
 	QUARK_TRACE_SS("hello" << 1234);
 	QUARK_SCOPED_TRACE("");
 	QUARK_SCOPED_TRACE(std::string("scoped trace") + "std::string version");
-	QUARK_TRACE_FUNCTION();
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
