@@ -13,11 +13,8 @@
 #include "quark.h"
 #include <vector>
 #include <string>
-#include <map>
 
-#include "ast.h"
 #include "expression.h"
-#include "utils.h"
 
 
 namespace floyd {
