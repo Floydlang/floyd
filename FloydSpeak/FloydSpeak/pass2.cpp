@@ -20,74 +20,6 @@ namespace floyd {
 using namespace std;
 
 
-/*
-//////////////////////////////////////////////////		parser_path_t
-
-//	Traversal of parse tree, one level of static scope at a time.
-
-struct parser_path_t {
-	//	Returns a scope_def in json format.
-	public: json_t get_leaf() const;
-
-	public: bool check_invariant() const;
-
-
-	public: std::vector<json_t> _scopes;
-};
-
-json_t parser_path_t::get_leaf() const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(!_scopes.empty());
-
-	return _scopes.back();
-}
-
-bool parser_path_t::check_invariant() const {
-	for(const auto i: _scopes){
-		QUARK_ASSERT(i.check_invariant());
-	}
-	return true;
-};
-
-parser_path_t make_parser_path(const json_t& scope){
-	parser_path_t path;
-	path._scopes.push_back(scope);
-	return path;
-}
-
-parser_path_t go_down(const parser_path_t& path, const json_t& child){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(child.check_invariant());
-
-	auto result = path;
-	result._scopes.push_back(child);
-	return result;
-}
-
-parser_path_t replace_leaf(const parser_path_t& path, const json_t& leaf){
-	vector<json_t> temp(path._scopes.begin(), path._scopes.end() - 1);
-	temp.push_back(leaf);
-
-	parser_path_t temp2;
-	temp2._scopes.swap(temp);
-	return temp2;
-}
-
-string make_path_string(const parser_path_t& path, const string& node_name){
-	QUARK_ASSERT(path.check_invariant());
-	QUARK_ASSERT(node_name.size() > 0);
-
-	string result;
-	for(int i = 0 ; i < path._scopes.size() ; i++){
-		const auto name = path._scopes[i].get_object_element("name").get_string();
-		result = result + name + "/";
-	}
-	result = result + node_name;
-	return result;
-}
-*/
-
-
 typeid_t resolve_type_name(const ast_json_t& t){
 	const auto t2 = typeid_from_ast_json(t);
 	return t2;
@@ -428,11 +360,6 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 	return statements2;
 }
-
-
-
-
-
 
 
 
