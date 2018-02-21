@@ -15,6 +15,7 @@
 #include "floyd_parser.h"
 #include "ast_value.h"
 #include "pass2.h"
+#include "pass3.h"
 #include "json_support.h"
 #include "json_parser.h"
 
@@ -2580,7 +2581,8 @@ ast_t program_to_ast2(const interpreter_context_t& context, const string& progra
 
 	const auto pass1 = floyd::parse_program2(context2, program);
 	const auto pass2 = run_pass2(context2._tracer, pass1);
-	return pass2;
+	const auto pass3 = run_pass3(context2._tracer, pass2);
+	return pass3;
 }
 
 void print_vm_printlog(const interpreter_t& vm){
