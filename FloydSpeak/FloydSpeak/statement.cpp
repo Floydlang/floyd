@@ -14,15 +14,5 @@ namespace floyd {
 	using namespace std;
 
 
-	QUARK_UNIT_TESTQ("statement_to_json", "return"){
-		quark::ut_compare_strings(
-			json_to_compact_string(
-				statement_to_json(make__return_statement(expression_t::make_literal_string("abc")))._value
-			)
-			,
-			R"(["return", ["k", "abc", "string"]])"
-		);
-	}
-
 
 }	//	floyd

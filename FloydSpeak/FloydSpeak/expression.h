@@ -26,8 +26,17 @@ namespace floyd {
 	struct expression_t;
 
 
-	ast_json_t expression_to_json(const expression_t& e);
 	ast_json_t expressions_to_json(const std::vector<expression_t> v);
+
+	/*
+		An expression is a json array where entries may be other json arrays.
+		["+", ["+", 1, 2], ["k", 10]]
+	*/
+	ast_json_t expression_to_json(const expression_t& e);
+
+	std::string expression_to_json_string(const expression_t& e);
+
+
 
 	//	"+", "<=", "&&" etc.
 	bool is_simple_expression__2(const std::string& op);
@@ -48,7 +57,9 @@ namespace floyd {
 		};
 
 
-		////////////////////////////////			make_literal()
+		////////////////////////////////			literal_expr_t
+
+
 		//### Not really "literals". "Terminal values" maybe better term?
 
 		public: struct literal_expr_t : public expr_base_t {
@@ -80,17 +91,35 @@ namespace floyd {
 			};
 		}
 
-		public: static expression_t make_literal_null();
-		public: static expression_t make_literal_int(const int i);
-		public: static expression_t make_literal_bool(const bool i);
-		public: static expression_t make_literal_float(const float i);
-		public: static expression_t make_literal_string(const std::string& s);
+		public: static expression_t make_literal_null(){
+			return make_literal(value_t::make_null());
+		}
+		public: static expression_t make_literal_int(const int i){
+			return make_literal(value_t::make_int(i));
+		}
+		public: static expression_t make_literal_bool(const bool i){
+			return make_literal(value_t::make_bool(i));
+		}
+		public: static expression_t make_literal_float(const float i){
+			return make_literal(value_t::make_float(i));
+		}
+		public: static expression_t make_literal_string(const std::string& s){
+			return make_literal(value_t::make_string(s));
+		}
 
-		public: bool is_literal() const;
-		public: const value_t& get_literal() const;
+		inline bool is_literal() const{
+			return dynamic_cast<const literal_expr_t*>(_expr.get()) != nullptr;
+		}
+
+		inline const value_t& get_literal() const{
+			QUARK_ASSERT(is_literal())
+
+			return dynamic_cast<const literal_expr_t*>(_expr.get())->_value;
+		}
 
 
-		////////////////////////////////			make_simple_expression__2()
+
+		////////////////////////////////			simple_expr__2_t
 
 
 		public: struct simple_expr__2_t : public expr_base_t {
@@ -180,7 +209,7 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			make_unary_minus()
+		////////////////////////////////			unary_minus_expr_t
 
 
 		public: struct unary_minus_expr_t : public expr_base_t {
@@ -218,7 +247,7 @@ namespace floyd {
 
 
 
-		////////////////////////////////			make_conditional_operator()
+		////////////////////////////////			conditional_expr_t
 
 
 		public: struct conditional_expr_t : public expr_base_t {
@@ -261,7 +290,8 @@ namespace floyd {
 			return dynamic_cast<const conditional_expr_t*>(_expr.get());
 		}
 
-		////////////////////////////////			make_function_call()
+
+		////////////////////////////////			function_call_expr_t
 
 
 		public: struct function_call_expr_t : public expr_base_t {
@@ -307,7 +337,8 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			make_function_definition()
+		////////////////////////////////			function_definition_expr_t
+
 
 //??? make better
 		public: struct function_definition_expr_t : public expr_base_t {
@@ -339,7 +370,7 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			make_variable_expression()
+		////////////////////////////////			variable_expr_t
 
 
 		public: struct variable_expr_t : public expr_base_t {
@@ -381,7 +412,7 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			make_resolve_member()
+		////////////////////////////////			resolve_member_expr_t
 
 
 		public: struct resolve_member_expr_t : public expr_base_t {
@@ -429,7 +460,7 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			make_lookup()
+		////////////////////////////////			lookup_expr_t
 
 		/*
 			Looks up using a key. They key can be a sub-expression. Can be any type: index, string etc.
@@ -481,7 +512,7 @@ namespace floyd {
 
 
 
-		////////////////////////////////			make_vector_definition()
+		////////////////////////////////			vector_definition_exprt_t
 
 
 
@@ -529,7 +560,7 @@ namespace floyd {
 
 
 
-		////////////////////////////////			make_dict_definition()
+		////////////////////////////////			dict_definition_exprt_t
 
 
 
@@ -548,7 +579,6 @@ namespace floyd {
 				return ast_json_t{json_t::make_array({
 					"dict-def",
 					typeid_to_ast_json(_value_type)._value
-//???					expressions_to_json(_elements)
 				})};
 			}
 
@@ -576,22 +606,47 @@ namespace floyd {
 
 
 
+		////////////////////////////////			expression_t-stuff
 
 
 
-		////////////////////////////////			OTHER
+		public: bool check_invariant() const{
+			//	QUARK_ASSERT(_debug.size() > 0);
+			//	QUARK_ASSERT(_result_type._base_type != base_type::k_null && _result_type.check_invariant());
+			return true;
+		}
+		public: bool operator==(const expression_t& other) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
 
+			if(_expr && other._expr){
+				QUARK_ASSERT(false);
+		/*
+				const auto lhs = dynamic_cast<const function_definition_expr_t*>(_expr.get());
+				const auto rhs = dynamic_cast<const function_definition_expr_t*>(other._expr.get());
+				if(lhs && rhs && *lhs == *rhs){
+					return true;
+				}
+		*/
+				return false;
+			}
+			else if((_expr && !other._expr) || (!_expr && other._expr)){
+				return false;
+			}
+			else{
+				return
+					(_operation == other._operation);
+			}
+		}
+		public: expression_type get_operation() const{
+			QUARK_ASSERT(check_invariant());
 
-		public: bool check_invariant() const;
-
-		public: bool operator==(const expression_t& other) const;
-
-
-		public: expression_type get_operation() const;
-
+			return _operation;
+		}
 		public: const expr_base_t* get_expr() const{
 			return _expr.get();
 		}
+
 
 
 		//////////////////////////		INTERNALS
@@ -600,7 +655,21 @@ namespace floyd {
 		private: expression_t(
 			const expression_type operation,
 			const std::shared_ptr<const expr_base_t>& expr
-		);
+		)
+		:
+		#if DEBUG
+			_debug(""),
+		#endif
+			_operation(operation),
+			_expr(expr)
+		{
+		#if DEBUG
+			_debug = expression_to_json_string(*this);
+		#endif
+
+			QUARK_ASSERT(check_invariant());
+		}
+
 
 //??? make const
 		//////////////////////////		STATE
@@ -610,15 +679,6 @@ namespace floyd {
 		private: expression_type _operation;
 		private: std::shared_ptr<const expr_base_t> _expr;
 	};
-
-
-	/*
-		An expression is a json array where entries may be other json arrays.
-		["+", ["+", 1, 2], ["k", 10]]
-	*/
-	ast_json_t expression_to_json(const expression_t& e);
-
-	ast_json_t expressions_to_json(const std::vector<expression_t> v);
 
 
 
@@ -656,108 +716,12 @@ namespace floyd {
 			&& lhs._elements == rhs._elements;
 	}
 
-
-
-
-	ast_json_t expression_to_json(const expression_t& e);
-	ast_json_t expressions_to_json(const std::vector<expression_t> v);
-	inline std::string expression_to_json_string(const expression_t& e);
-
-
-
-	inline expression_t::expression_t(
-		const expression_type operation,
-		const std::shared_ptr<const expr_base_t>& expr
-	)
-	:
-	#if DEBUG
-		_debug(""),
-	#endif
-		_operation(operation),
-		_expr(expr)
-	{
-	#if DEBUG
-		_debug = expression_to_json_string(*this);
-	#endif
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	inline bool expression_t::check_invariant() const{
-	//	QUARK_ASSERT(_debug.size() > 0);
-
-	//	QUARK_ASSERT(_result_type._base_type != base_type::k_null && _result_type.check_invariant());
-		return true;
-	}
-
-	inline bool expression_t::operator==(const expression_t& other) const {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(_expr && other._expr){
-			QUARK_ASSERT(false);
-	/*
-			const auto lhs = dynamic_cast<const function_definition_expr_t*>(_expr.get());
-			const auto rhs = dynamic_cast<const function_definition_expr_t*>(other._expr.get());
-			if(lhs && rhs && *lhs == *rhs){
-				return true;
-			}
-	*/
-			return false;
-		}
-		else if((_expr && !other._expr) || (!_expr && other._expr)){
-			return false;
-		}
-		else{
-			return
-				(_operation == other._operation);
-		}
-	}
-
-	inline expression_type expression_t::get_operation() const{
-		QUARK_ASSERT(check_invariant());
-
-		return _operation;
-	}
-
-
-
-	inline expression_t expression_t::make_literal_null(){
-		return make_literal(value_t::make_null());
-	}
-	inline expression_t expression_t::make_literal_int(const int i){
-		return make_literal(value_t::make_int(i));
-	}
-	inline expression_t expression_t::make_literal_bool(const bool i){
-		return make_literal(value_t::make_bool(i));
-	}
-	inline expression_t expression_t::make_literal_float(const float i){
-		return make_literal(value_t::make_float(i));
-	}
-	inline expression_t expression_t::make_literal_string(const std::string& s){
-		return make_literal(value_t::make_string(s));
-	}
-
-
-
-	inline bool expression_t::is_literal() const{
-		return dynamic_cast<const literal_expr_t*>(_expr.get()) != nullptr;
-	}
-
-	inline const value_t& expression_t::get_literal() const{
-		QUARK_ASSERT(is_literal())
-
-		return dynamic_cast<const literal_expr_t*>(_expr.get())->_value;
-	}
-
 	inline bool is_simple_expression__2(const std::string& op){
 		return
 			op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
 			|| op == "<=" || op == "<" || op == ">=" || op == ">"
 			|| op == "==" || op == "!=" || op == "&&" || op == "||";
 	}
-
-
 
 	inline ast_json_t expression_to_json(const expression_t& e){
 		return e.get_expr()->expr_base__to_json();

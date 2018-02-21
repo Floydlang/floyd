@@ -367,7 +367,7 @@ std::pair<interpreter_t, statement_result_t> execute_statements_in_env(
 }
 
 
-std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interpreter_t& vm, const bind_or_assign_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interpreter_t& vm, const statement_t::bind_or_assign_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -468,7 +468,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interp
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
-std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const return_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const statement_t::return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -491,7 +491,7 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 }
 
 //??? make structs unique even though they share layout and name. USer unique-ID-generator?
-std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const define_struct_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -515,7 +515,7 @@ std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const 
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
-std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const ifelse_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -536,7 +536,7 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 	}
 }
 
-std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpreter_t& vm, const for_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpreter_t& vm, const statement_t::for_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -561,7 +561,7 @@ std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpr
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
-std::pair<interpreter_t, statement_result_t> execute_while_statement(const interpreter_t& vm, const while_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_while_statement(const interpreter_t& vm, const statement_t::while_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -587,7 +587,7 @@ std::pair<interpreter_t, statement_result_t> execute_while_statement(const inter
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
-std::pair<interpreter_t, statement_result_t> execute_expression_statement(const interpreter_t& vm, const expression_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_expression_statement(const interpreter_t& vm, const statement_t::expression_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;

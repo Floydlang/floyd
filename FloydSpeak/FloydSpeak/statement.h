@@ -26,97 +26,6 @@ namespace floyd {
 	struct expression_t;
 
 
-	struct return_statement_t {
-		bool operator==(const return_statement_t& other) const {
-			return _expression == other._expression;
-		}
-
-		const expression_t _expression;
-	};
-
-	struct define_struct_statement_t {
-		bool operator==(const define_struct_statement_t& other) const {
-			return _name == other._name && _def == other._def;
-		}
-
-		const std::string _name;
-		const struct_definition_t _def;
-	};
-
-	//	FYI: We don't know until runtime if a = 10 is a deduced bind or a mutation.
-	struct bind_or_assign_statement_t {
-		bool operator==(const bind_or_assign_statement_t& other) const {
-			return _new_variable_name == other._new_variable_name
-				&& _bindtype == other._bindtype
-				&& _expression == other._expression
-				&& _bind_as_mutable_tag == other._bind_as_mutable_tag;
-		}
-
-		const std::string _new_variable_name;
-		const typeid_t _bindtype;
-		const expression_t _expression;
-		const bool _bind_as_mutable_tag;
-	};
-
-	struct block_statement_t {
-		bool operator==(const block_statement_t& other) const {
-			return compare_shared_value_vectors(_statements, other._statements);
-		}
-
-		const std::vector<std::shared_ptr<statement_t>> _statements;
-	};
-
-	struct ifelse_statement_t {
-		bool operator==(const ifelse_statement_t& other) const {
-			return
-				_condition == other._condition
-				&& _condition == other._condition
-				&& compare_shared_value_vectors(_then_statements, other._then_statements)
-				&& compare_shared_value_vectors(_else_statements, other._else_statements)
-				;
-		}
-
-		const expression_t _condition;
-		const std::vector<std::shared_ptr<statement_t>> _then_statements;
-		const std::vector<std::shared_ptr<statement_t>> _else_statements;
-	};
-
-	struct for_statement_t {
-		bool operator==(const for_statement_t& other) const {
-			return
-				_iterator_name == other._iterator_name
-				&& _start_expression == other._start_expression
-				&& _end_expression == other._end_expression
-				&& compare_shared_value_vectors(_body, other._body);
-		}
-
-		const std::string _iterator_name;
-		const expression_t _start_expression;
-		const expression_t _end_expression;
-		const std::vector<std::shared_ptr<statement_t>> _body;
-	};
-
-	struct while_statement_t {
-		bool operator==(const while_statement_t& other) const {
-			return
-				_condition == other._condition
-				&& compare_shared_value_vectors(_body, other._body);
-		}
-
-		const expression_t _condition;
-		const std::vector<std::shared_ptr<statement_t>> _body;
-	};
-
-	struct expression_statement_t {
-		bool operator==(const expression_statement_t& other) const {
-			return _expression == other._expression;
-		}
-
-		const expression_t _expression;
-	};
-
-
-
 	//////////////////////////////////////		statement_t
 
 	/*
@@ -126,42 +35,182 @@ namespace floyd {
 	struct statement_t {
 		public: statement_t(const statement_t& other) = default;
 		public: statement_t& operator=(const statement_t& other) = default;
-		public: bool check_invariant() const;
 
-		//??? Remove constructor, make static member makers.
 
+
+		struct return_statement_t {
+			bool operator==(const return_statement_t& other) const {
+				return _expression == other._expression;
+			}
+
+			const expression_t _expression;
+		};
         public: statement_t(const return_statement_t& value) :
 			_return(std::make_shared<return_statement_t>(value))
 		{
 		}
+		public: static statement_t make__return_statement(const expression_t& expression){
+			return statement_t(return_statement_t{ expression });
+		}
+
+
+
+		struct define_struct_statement_t {
+			bool operator==(const define_struct_statement_t& other) const {
+				return _name == other._name && _def == other._def;
+			}
+
+			const std::string _name;
+			const struct_definition_t _def;
+		};
         public: statement_t(const define_struct_statement_t& value) :
 			_def_struct(std::make_shared<define_struct_statement_t>(value))
 		{
 		}
+		public: static statement_t make__define_struct_statement(const define_struct_statement_t& value){
+			return statement_t(value);
+		}
+
+
+
+		//	FYI: We don't know until runtime if a = 10 is a deduced bind or a mutation.
+		struct bind_or_assign_statement_t {
+			bool operator==(const bind_or_assign_statement_t& other) const {
+				return _new_variable_name == other._new_variable_name
+					&& _bindtype == other._bindtype
+					&& _expression == other._expression
+					&& _bind_as_mutable_tag == other._bind_as_mutable_tag;
+			}
+
+			const std::string _new_variable_name;
+			const typeid_t _bindtype;
+			const expression_t _expression;
+			const bool _bind_as_mutable_tag;
+		};
         public: statement_t(const bind_or_assign_statement_t& value) :
 			_bind_or_assign(std::make_shared<bind_or_assign_statement_t>(value))
 		{
 		}
+		public: static statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bool bind_as_mutable_tag){
+			return statement_t(bind_or_assign_statement_t{ new_variable_name, bindtype, expression, bind_as_mutable_tag });
+		}
+
+
+
+		struct block_statement_t {
+			bool operator==(const block_statement_t& other) const {
+				return compare_shared_value_vectors(_statements, other._statements);
+			}
+
+			const std::vector<std::shared_ptr<statement_t>> _statements;
+		};
         public: statement_t(const block_statement_t& value) :
 			_block(std::make_shared<block_statement_t>(value))
 		{
 		}
+
+		public: static statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
+			return statement_t(block_statement_t{ statements });
+		}
+
+
+
+		struct ifelse_statement_t {
+			bool operator==(const ifelse_statement_t& other) const {
+				return
+					_condition == other._condition
+					&& _condition == other._condition
+					&& compare_shared_value_vectors(_then_statements, other._then_statements)
+					&& compare_shared_value_vectors(_else_statements, other._else_statements)
+					;
+			}
+
+			const expression_t _condition;
+			const std::vector<std::shared_ptr<statement_t>> _then_statements;
+			const std::vector<std::shared_ptr<statement_t>> _else_statements;
+		};
         public: statement_t(const ifelse_statement_t& value) :
 			_if(std::make_shared<ifelse_statement_t>(value))
 		{
 		}
+		public: static statement_t make__ifelse_statement(
+			const expression_t& condition,
+			std::vector<std::shared_ptr<statement_t>> then_statements,
+			std::vector<std::shared_ptr<statement_t>> else_statements
+		){
+			return statement_t(ifelse_statement_t{ condition, then_statements, else_statements });
+		}
+
+
+
+		struct for_statement_t {
+			bool operator==(const for_statement_t& other) const {
+				return
+					_iterator_name == other._iterator_name
+					&& _start_expression == other._start_expression
+					&& _end_expression == other._end_expression
+					&& compare_shared_value_vectors(_body, other._body);
+			}
+
+			const std::string _iterator_name;
+			const expression_t _start_expression;
+			const expression_t _end_expression;
+			const std::vector<std::shared_ptr<statement_t>> _body;
+		};
         public: statement_t(const for_statement_t& value) :
 			_for(std::make_shared<for_statement_t>(value))
 		{
 		}
+		public: static statement_t make__for_statement(
+			const std::string iterator_name,
+			const expression_t& start_expression,
+			const expression_t& end_expression,
+			const std::vector<std::shared_ptr<statement_t>> body
+		){
+			return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
+		}
+
+
+		struct while_statement_t {
+			bool operator==(const while_statement_t& other) const {
+				return
+					_condition == other._condition
+					&& compare_shared_value_vectors(_body, other._body);
+			}
+
+			const expression_t _condition;
+			const std::vector<std::shared_ptr<statement_t>> _body;
+		};
+
         public: statement_t(const while_statement_t& value) :
 			_while(std::make_shared<while_statement_t>(value))
 		{
 		}
+		public: static statement_t make__while_statement(
+			const expression_t& condition,
+			const std::vector<std::shared_ptr<statement_t>> body
+		){
+			return statement_t(while_statement_t{ condition, body });
+		}
+
+
+
+
+		struct expression_statement_t {
+			bool operator==(const expression_statement_t& other) const {
+				return _expression == other._expression;
+			}
+
+			const expression_t _expression;
+		};
         public: statement_t(const expression_statement_t& value) :
 			_expression(std::make_shared<expression_statement_t>(value))
 		{
 		}
+		public: static statement_t make__expression_statement(const expression_t& expression){
+			return statement_t(expression_statement_t{ expression });
+		}
+
 
 		public: bool operator==(const statement_t& other) const {
 			if(_return){
@@ -185,6 +234,40 @@ namespace floyd {
 			}
 		}
 
+		bool check_invariant() const {
+			int count = 0;
+			count = count + (_return != nullptr ? 1 : 0);
+			count = count + (_def_struct != nullptr ? 1 : 0);
+			count = count + (_bind_or_assign != nullptr ? 1 : 0);
+			count = count + (_block != nullptr ? 1 : 0);
+			count = count + (_if != nullptr ? 1 : 0);
+			count = count + (_for != nullptr ? 1 : 0);
+			count = count + (_while != nullptr ? 1 : 0);
+			count = count + (_expression != nullptr ? 1 : 0);
+			QUARK_ASSERT(count == 1);
+
+			if(_return != nullptr){
+			}
+			else if(_def_struct != nullptr){
+			}
+			else if(_bind_or_assign){
+			}
+			else if(_block){
+			}
+			else if(_if){
+			}
+			else if(_for){
+			}
+			else if(_while){
+			}
+			else if(_expression){
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+			return true;
+		}
+
 		//	Only *one* of these are used for each instance.
 		public: const std::shared_ptr<return_statement_t> _return;
 		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
@@ -197,116 +280,9 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////		Makers
-
-
-
-	statement_t make__return_statement(const return_statement_t& value);
-	statement_t make__return_statement(const expression_t& expression);
-	statement_t make__define_struct_statement(const define_struct_statement_t& value);
-	statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bool bind_as_mutable_tag);
-	statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements);
-	statement_t make__ifelse_statement(
-		const expression_t& condition,
-		std::vector<std::shared_ptr<statement_t>> then_statements,
-		std::vector<std::shared_ptr<statement_t>> else_statements
-	);
-	statement_t make__for_statement(
-		const std::string iterator_name,
-		const expression_t& start_expression,
-		const expression_t& end_expression,
-		const std::vector<std::shared_ptr<statement_t>> body
-	);
-	statement_t make__while_statement(const expression_t& condition, const std::vector<std::shared_ptr<statement_t>> body);
-
-	statement_t make__expression_statement(const expression_t& expression);
-
 	ast_json_t statement_to_json(const statement_t& e);
+	std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a);
 	ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
-
-
-
-	inline statement_t make__return_statement(const return_statement_t& value){
-		return statement_t(value);
-	}
-
-	inline statement_t make__return_statement(const expression_t& expression){
-		return statement_t(return_statement_t{ expression });
-	}
-
-	inline statement_t make__define_struct_statement(const define_struct_statement_t& value){
-		return statement_t(value);
-	}
-
-	inline statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bool bind_as_mutable_tag){
-		return statement_t(bind_or_assign_statement_t{ new_variable_name, bindtype, expression, bind_as_mutable_tag });
-	}
-	inline statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
-		return statement_t(block_statement_t{ statements });
-	}
-
-	inline statement_t make__ifelse_statement(
-		const expression_t& condition,
-		std::vector<std::shared_ptr<statement_t>> then_statements,
-		std::vector<std::shared_ptr<statement_t>> else_statements
-	){
-		return statement_t(ifelse_statement_t{ condition, then_statements, else_statements });
-	}
-
-
-	inline statement_t make__for_statement(
-		const std::string iterator_name,
-		const expression_t& start_expression,
-		const expression_t& end_expression,
-		const std::vector<std::shared_ptr<statement_t>> body
-	){
-		return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
-	}
-
-	inline statement_t make__while_statement(
-		const expression_t& condition,
-		const std::vector<std::shared_ptr<statement_t>> body
-	){
-		return statement_t(while_statement_t{ condition, body });
-	}
-
-	inline statement_t make__expression_statement(const expression_t& expression){
-		return statement_t(expression_statement_t{ expression });
-	}
-
-	inline bool statement_t::check_invariant() const {
-		int count = 0;
-		count = count + (_return != nullptr ? 1 : 0);
-		count = count + (_def_struct != nullptr ? 1 : 0);
-		count = count + (_bind_or_assign != nullptr ? 1 : 0);
-		count = count + (_block != nullptr ? 1 : 0);
-		count = count + (_if != nullptr ? 1 : 0);
-		count = count + (_for != nullptr ? 1 : 0);
-		count = count + (_while != nullptr ? 1 : 0);
-		count = count + (_expression != nullptr ? 1 : 0);
-		QUARK_ASSERT(count == 1);
-
-		if(_return != nullptr){
-		}
-		else if(_def_struct != nullptr){
-		}
-		else if(_bind_or_assign){
-		}
-		else if(_block){
-		}
-		else if(_if){
-		}
-		else if(_for){
-		}
-		else if(_while){
-		}
-		else if(_expression){
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-		return true;
-	}
 
 	inline std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a){
 		std::vector<json_t> result;
