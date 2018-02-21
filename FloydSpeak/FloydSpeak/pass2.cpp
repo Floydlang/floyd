@@ -84,7 +84,7 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 		for(const auto& arg: args.get_array()){
 			args2.push_back(parser_expression_to_ast(tracer, arg));
 		}
-		return expression_t::make_function_call(function_expr, args2);
+		return expression_t::make_call(function_expr, args2);
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);

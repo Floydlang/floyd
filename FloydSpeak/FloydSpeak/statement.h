@@ -270,6 +270,64 @@ namespace floyd {
 			return true;
 		}
 
+		public: static bool is_annotated_deep(const std::vector<std::shared_ptr<statement_t>>& s){
+			for(const auto e: s){
+				if(e->is_annotated_deep() == false){
+					return false;
+				}
+			}
+			return true;
+		}
+
+		//??? save code all over by introducing non-return-block and return-block and use for all nested blocks/scopes.
+		public: bool is_annotated_deep() const{
+			QUARK_ASSERT(check_invariant());
+
+			if(_return != nullptr){
+				return _return->_expression.is_annotated_deep();
+			}
+			else if(_def_struct != nullptr){
+				return true;
+			}
+			else if(_bind_or_assign){
+				return _return->_expression.is_annotated_deep();
+			}
+			else if(_block){
+				return is_annotated_deep(_block->_statements);
+			}
+			else if(_if){
+				if(_if->_condition.is_annotated_deep()){
+					return is_annotated_deep(_if->_then_statements) && is_annotated_deep(_if->_else_statements);
+				}
+				else{
+					return false;
+				}
+			}
+			else if(_for){
+				if(_for->_start_expression.is_annotated_deep() && _for->_end_expression.is_annotated_deep()){
+					return is_annotated_deep(_for->_body);
+				}
+				else{
+					return false;
+				}
+			}
+			else if(_while){
+				if(_while->_condition.is_annotated_deep()){
+					return is_annotated_deep(_while->_body);
+				}
+				else{
+					return false;
+				}
+			}
+			else if(_expression){
+				return _expression->_expression.is_annotated_deep();
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+
+
 		//	Only *one* of these are used for each instance.
 		public: const std::shared_ptr<return_statement_t> _return;
 		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
@@ -280,6 +338,9 @@ namespace floyd {
 		public: const std::shared_ptr<while_statement_t> _while;
 		public: const std::shared_ptr<expression_statement_t> _expression;
 	};
+
+
+
 
 }	//	floyd
 

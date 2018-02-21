@@ -95,7 +95,7 @@ namespace floyd {
 
 
 	bool typeid_t::check_invariant() const{
-		QUARK_ASSERT(_DEBUG != "");
+//		QUARK_ASSERT(_DEBUG != "");
 
 		if(_base_type == floyd::base_type::k_null){
 			QUARK_ASSERT(_parts.empty());

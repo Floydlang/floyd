@@ -106,7 +106,7 @@ void ut_compare_values(const value_t& result, const value_t& expected){
 //////////////////////////////////////////		TEST GLOBAL CONSTANTS
 
 
-QUARK_UNIT_TESTQ("Floyd test suite", "Global int variable"){
+QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
 	test__run_init__check_result("int result = 123;", value_t::make_int(123));
 }
 

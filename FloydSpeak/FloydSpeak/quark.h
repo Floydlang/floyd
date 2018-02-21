@@ -703,14 +703,6 @@ inline trace_context_t make_default_tracer(){
 	void on_unit_test_failed_hook(runtime_i* runtime, const source_code_location& location, const char expression[]);
 
 
-	////////////////////////////		run_tests()
-	/*
-		Client application calls this function run all unit tests.
-		It will handle tracing and exceptions etc.
-		On unit-test failure this function exits the executable.
-	*/
-	void run_tests(const std::vector<std::string>& source_file_order);
-
 
 	////////////////////////////		Macros used by client code
 
@@ -912,6 +904,12 @@ inline std::vector<unit_test_def> prepare_test_list(const std::vector<unit_test_
 }
 
 
+////////////////////////////		run_tests()
+/*
+	Client application calls this function run all unit tests.
+	It will handle tracing and exceptions etc.
+	On unit-test failure this function exits the executable.
+*/
 inline void run_tests(const unit_test_registry& registry, const std::vector<std::string>& source_file_order){
 	QUARK_SCOPED_TRACE(__FUNCTION__);
 

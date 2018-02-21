@@ -40,7 +40,7 @@ using std::make_shared;
 
 
 
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::function_call_expr_t& e);
+std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::call_expr_t& e);
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 
@@ -1341,7 +1341,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	}
 
 	else if(op == expression_type::k_call){
-		return evaluate_call_expression(vm, *e.get_function_call());
+		return evaluate_call_expression(vm, *e.get_call());
 	}
 
 	else if(op == expression_type::k_define_function){
@@ -1472,13 +1472,13 @@ bool all_literals(const vector<expression_t>& e){
 
 
 //	May return a simplified expression instead of a value literal..
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::function_call_expr_t& expr){
+std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::call_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
 
 	//	Simplify each input expression: expression[0]: which function to call, expression[1]: first argument if any.
-	const auto function = evaluate_expression(vm_acc, *expr._function);
+	const auto function = evaluate_expression(vm_acc, *expr._callee);
 	vm_acc = function.first;
 	vector<expression_t> args2;
 	for(int i = 0 ; i < expr._args.size() ; i++){
@@ -1489,7 +1489,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 
 	//	If not all input expressions could be evaluated, return a (maybe simplified) expression.
 	if(function.second.is_literal() == false || all_literals(args2) == false){
-		return {vm_acc, expression_t::make_function_call(function.second, args2)};
+		return {vm_acc, expression_t::make_call(function.second, args2)};
 	}
 
 	//	Convert to values.
@@ -2581,7 +2581,7 @@ ast_t program_to_ast2(const interpreter_context_t& context, const string& progra
 
 	const auto pass1 = floyd::parse_program2(context2, program);
 	const auto pass2 = run_pass2(context2._tracer, pass1);
-	const auto pass3 = run_pass3(context2._tracer, pass2);
+	const auto pass3 = floyd_pass3::run_pass3(context2._tracer, pass2);
 	return pass3;
 }
 

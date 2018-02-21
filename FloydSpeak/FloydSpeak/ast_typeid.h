@@ -24,6 +24,34 @@ namespace floyd {
 	struct member_t;
 	std::string typeid_to_compact_string(const typeid_t& t);
 
+
+	//////////////////////////////////////////////////		struct_definition_t
+
+
+	struct struct_definition_t {
+		public: struct_definition_t(const std::vector<member_t>& members) :
+			_members(members)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+		public: bool check_invariant() const;
+		public: bool operator==(const struct_definition_t& other) const;
+
+
+		public: std::vector<member_t> _members;
+	};
+
+	std::string to_compact_string(const struct_definition_t& v);
+
+	ast_json_t struct_definition_to_ast_json(const struct_definition_t& v);
+
+	//	Returns -1 if not found.
+	int find_struct_member_index(const struct_definition_t& def, const std::string& name);
+
+
+
+
+
 	//////////////////////////////////////		base_type
 
 	/*
@@ -202,6 +230,7 @@ namespace floyd {
 			return _parts[0];
 		}
 		public: std::vector<typeid_t> get_function_args() const{
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(get_base_type() == base_type::k_function);
 
 			auto r = _parts;
@@ -221,6 +250,7 @@ namespace floyd {
 		}
 
 		public: std::string get_unresolved_type_identifier() const{
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(get_base_type() == base_type::k_unresolved_type_identifier);
 
 			return _unresolved_type_identifier;
@@ -229,6 +259,9 @@ namespace floyd {
 
 
 		public: bool operator==(const typeid_t& other) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
 			return
 				_DEBUG == other._DEBUG
 				&& _base_type == other._base_type
@@ -260,7 +293,12 @@ namespace floyd {
 			_unresolved_type_identifier(unknown_identifier),
 			_struct_def(struct_def)
 		{
+			for(const auto e: parts){ QUARK_ASSERT(e.check_invariant()); }
+			QUARK_ASSERT(struct_def == nullptr || struct_def->check_invariant());
+
 			_DEBUG = typeid_to_compact_string(*this);
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 
@@ -337,30 +375,6 @@ namespace floyd {
 	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m);
 	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
 
-
-
-	//////////////////////////////////////////////////		struct_definition_t
-
-
-	struct struct_definition_t {
-		public: struct_definition_t(const std::vector<member_t>& members) :
-			_members(members)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const struct_definition_t& other) const;
-
-
-		public: std::vector<member_t> _members;
-	};
-
-	std::string to_compact_string(const struct_definition_t& v);
-
-	ast_json_t struct_definition_to_ast_json(const struct_definition_t& v);
-
-	//	Returns -1 if not found.
-	int find_struct_member_index(const struct_definition_t& def, const std::string& name);
 
 
 

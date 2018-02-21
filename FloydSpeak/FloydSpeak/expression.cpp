@@ -40,7 +40,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare_strings(
 		expression_to_json_string(
-			expression_t::make_function_call(
+			expression_t::make_call(
 				expression_t::make_variable_expression("my_func"),
 				{
 					expression_t::make_literal_string("xyz"),

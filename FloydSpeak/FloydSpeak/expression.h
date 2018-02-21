@@ -43,7 +43,6 @@ namespace floyd {
 			virtual ast_json_t expr_base__to_json() const{ return ast_json_t(); };
 		};
 
-
 		////////////////////////////////			literal_expr_t
 
 
@@ -74,7 +73,8 @@ namespace floyd {
 				expression_type::k_literal,
 				std::make_shared<literal_expr_t>(
 					literal_expr_t{ value }
-				)
+				),
+				std::make_shared<typeid_t>(value.get_type())
 			};
 		}
 
@@ -136,7 +136,7 @@ namespace floyd {
 			const std::shared_ptr<expression_t> _right;
 		};
 
-		public: static expression_t make_simple_expression__2(expression_type op, const expression_t& left, const expression_t& right){
+		public: static expression_t make_simple_expression__2(expression_type op, const expression_t& left, const expression_t& right, const std::shared_ptr<typeid_t>& annotated_type = nullptr){
 			if(
 				op == expression_type::k_arithmetic_add__2
 				|| op == expression_type::k_arithmetic_subtract__2
@@ -149,7 +149,8 @@ namespace floyd {
 					op,
 					std::make_shared<simple_expr__2_t>(
 						simple_expr__2_t{ op, left, right }
-					)
+					),
+					annotated_type
 				};
 			}
 			else if(
@@ -169,7 +170,8 @@ namespace floyd {
 					op,
 					std::make_shared<simple_expr__2_t>(
 						simple_expr__2_t{ op, left, right }
-					)
+					),
+					annotated_type
 				};
 			}
 			else if(
@@ -219,12 +221,13 @@ namespace floyd {
 			const std::shared_ptr<expression_t> _expr;
 		};
 
-		public: static expression_t make_unary_minus(const expression_t expr){
+		public: static expression_t make_unary_minus(const expression_t expr, const std::shared_ptr<typeid_t>& annotated_type = nullptr){
 			return expression_t{
 				expression_type::k_arithmetic_unary_minus__1,
 				std::make_shared<unary_minus_expr_t>(
 					unary_minus_expr_t{ expr }
-				)
+				),
+				annotated_type
 			};
 		}
 
@@ -264,12 +267,13 @@ namespace floyd {
 			const std::shared_ptr<expression_t> _b;
 		};
 
-		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b){
+		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const std::shared_ptr<typeid_t>& annotated_type = nullptr){
 			return expression_t{
 				expression_type::k_conditional_operator3,
 				std::make_shared<conditional_expr_t>(
 					conditional_expr_t{ condition, a, b }
-				)
+				),
+				annotated_type
 			};
 		}
 
@@ -278,17 +282,16 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			function_call_expr_t
+		////////////////////////////////			call_expr_t
 
 
-		public: struct function_call_expr_t : public expr_base_t {
-
-			function_call_expr_t(
-				const expression_t& function,
+		public: struct call_expr_t : public expr_base_t {
+			call_expr_t(
+				const expression_t& callee,
 				std::vector<expression_t> args
 			)
 			:
-				_function(std::make_shared<expression_t>(function)),
+				_callee(std::make_shared<expression_t>(callee)),
 				_args(args)
 			{
 			}
@@ -296,31 +299,33 @@ namespace floyd {
 			virtual ast_json_t expr_base__to_json() const {
 				return ast_json_t{json_t::make_array({
 					"call",
-					expression_to_json(*_function)._value,
+					expression_to_json(*_callee)._value,
 					expressions_to_json(_args)._value
 				})};
 			}
 
 
-			const std::shared_ptr<expression_t> _function;
+			const std::shared_ptr<expression_t> _callee;
 			const std::vector<expression_t> _args;
 		};
 
-		public: static expression_t make_function_call(
-			const expression_t& function,
-			const std::vector<expression_t>& args
+		public: static expression_t make_call(
+			const expression_t& callee,
+			const std::vector<expression_t>& args,
+			const std::shared_ptr<typeid_t>& annotated_type = nullptr
 		)
 		{
 			return expression_t{
 				expression_type::k_call,
-				std::make_shared<function_call_expr_t>(
-					function_call_expr_t{ function, args }
-				)
+				std::make_shared<call_expr_t>(
+					call_expr_t{ callee, args }
+				),
+				annotated_type
 			};
 		}
 
-		public: const function_call_expr_t* get_function_call() const {
-			return dynamic_cast<const function_call_expr_t*>(_expr.get());
+		public: const call_expr_t* get_call() const {
+			return dynamic_cast<const call_expr_t*>(_expr.get());
 		}
 
 
@@ -347,7 +352,8 @@ namespace floyd {
 				expression_type::k_define_function,
 				std::make_shared<function_definition_expr_t>(
 					function_definition_expr_t{ function_definition_t(def) }
-				)
+				),
+				std::make_shared<typeid_t>(def._return_type)
 			};
 		}
 
@@ -377,19 +383,19 @@ namespace floyd {
 			const std::string _variable;
 		};
 
+
 		/*
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 		*/
-		public: static expression_t make_variable_expression(
-			const std::string& variable
-		)
+		public: static expression_t make_variable_expression(const std::string& variable, const std::shared_ptr<typeid_t>& annotated_type = nullptr)
 		{
 			return expression_t{
 				expression_type::k_variable,
 				std::make_shared<variable_expr_t>(
 					variable_expr_t{ variable }
-				)
+				),
+				annotated_type
 			};
 		}
 
@@ -430,14 +436,16 @@ namespace floyd {
 		*/
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
-			const std::string& member_name
+			const std::string& member_name,
+			const std::shared_ptr<typeid_t>& annotated_type = nullptr
 		)
 		{
 			return expression_t{
 				expression_type::k_resolve_member,
 				std::make_shared<resolve_member_expr_t>(
 					resolve_member_expr_t{ parent_address, member_name }
-				)
+				),
+				annotated_type
 			};
 		}
 
@@ -481,14 +489,16 @@ namespace floyd {
 		*/
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
-			const expression_t& lookup_key
+			const expression_t& lookup_key,
+			const std::shared_ptr<typeid_t>& annotated_type = nullptr
 		)
 		{
 			return expression_t{
 				expression_type::k_lookup_element,
 				std::make_shared<lookup_expr_t>(
 					lookup_expr_t{ parent_address, lookup_key }
-				)
+				),
+				annotated_type
 			};
 		}
 
@@ -536,10 +546,12 @@ namespace floyd {
 				expression_type::k_vector_definition,
 				std::make_shared<vector_definition_exprt_t>(
 					vector_definition_exprt_t{ element_type, elements }
-				)
+				),
+				std::make_shared<typeid_t>(typeid_t::make_vector(element_type))
 			};
 		}
 
+		//???rename vector_definition_expr!
 		public: const vector_definition_exprt_t* get_vector_definition() const {
 			return dynamic_cast<const vector_definition_exprt_t*>(_expr.get());
 		}
@@ -582,13 +594,15 @@ namespace floyd {
 				expression_type::k_dict_definition,
 				std::make_shared<dict_definition_exprt_t>(
 					dict_definition_exprt_t{ value_type, elements }
-				)
+				),
+				std::make_shared<typeid_t>(typeid_t::make_dict(value_type))
 			};
 		}
 
 		public: const dict_definition_exprt_t* get_dict_definition() const {
 			return dynamic_cast<const dict_definition_exprt_t*>(_expr.get());
 		}
+
 
 
 
@@ -635,27 +649,135 @@ namespace floyd {
 			return _expr.get();
 		}
 
-		public: const std::shared_ptr<const expr_base_t> get_expr2() const{
-			QUARK_ASSERT(check_invariant());
 
-			return _expr;
+
+		public: typeid_t get_annotated_type() const {
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(_annotated_type != nullptr);
+
+			return *_annotated_type;
 		}
 
-
-
-		public: std::shared_ptr<typeid_t> get_annotated_type() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _annotated_type;
-		}
-
-
-		public: expression_t annotate(const expression_t& e, const typeid_t& annotated_type){
+/*
+		public: expression_t annotate(const typeid_t& annotated_type) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(annotated_type.check_invariant());
-			const auto result = expression_t(e.get_operation(), e.get_expr2(), std::make_shared<typeid_t>(annotated_type));
+
+			const auto result = expression_t(_operation, _expr, std::make_shared<typeid_t>(annotated_type));
+
 			QUARK_ASSERT(result.check_invariant());
+			QUARK_ASSERT(result.is_annotated_deep());
 			return result;
+		}
+*/
+
+		public: bool is_annotated_deep() const{
+			QUARK_ASSERT(check_invariant());
+			if(_annotated_type == nullptr){
+				return false;
+			}
+
+			//	Annotated OK, now check input expressions too.
+			else{
+				const auto op = get_operation();
+
+				if(op == expression_type::k_literal){
+					return true;
+				}
+				else if(op == expression_type::k_resolve_member){
+					const auto e = *get_resolve_member();
+					return e._parent_address->is_annotated_deep();
+				}
+				else if(op == expression_type::k_lookup_element){
+					const auto e = *get_lookup();
+					return e._parent_address->is_annotated_deep() && e._lookup_key;
+				}
+				else if(op == expression_type::k_variable){
+					return true;
+				}
+				else if(op == expression_type::k_call){
+					const auto e = *get_call();
+					if(e._callee->is_annotated_deep() == false){
+						return false;
+					}
+					else{
+						for(const auto a: e._args){
+							if(a.is_annotated_deep() == false){
+								return false;
+							}
+						}
+						return true;
+					}
+				}
+
+				else if(op == expression_type::k_define_function){
+					//??? check functions statements too.
+					const auto e = *get_function_definition();
+					return true;
+				}
+
+				else if(op == expression_type::k_vector_definition){
+					const auto e = *get_vector_definition();
+					for(const auto a: e._elements){
+						if(a.is_annotated_deep() == false){
+							return false;
+						}
+					}
+					return true;
+				}
+
+				else if(op == expression_type::k_dict_definition){
+					const auto e = *get_dict_definition();
+					for(const auto kv: e._elements){
+						if(kv.second.is_annotated_deep() == false){
+							return false;
+						}
+					}
+					return true;
+				}
+
+				//	This can be desugared at compile time.
+				else if(op == expression_type::k_arithmetic_unary_minus__1){
+					const auto e = *get_unary_minus();
+					return e._expr->is_annotated_deep();
+				}
+
+				//	Special-case since it uses 3 expressions & uses shortcut evaluation.
+				else if(op == expression_type::k_conditional_operator3){
+					const auto e = *get_conditional();
+					return e._condition->is_annotated_deep() && e._a->is_annotated_deep() && e._b->is_annotated_deep();
+				}
+				else if (false
+					|| op == expression_type::k_comparison_smaller_or_equal__2
+					|| op == expression_type::k_comparison_smaller__2
+					|| op == expression_type::k_comparison_larger_or_equal__2
+					|| op == expression_type::k_comparison_larger__2
+
+					|| op == expression_type::k_logical_equal__2
+					|| op == expression_type::k_logical_nonequal__2
+				){
+					const auto e = *get_simple__2();
+					return e._left->is_annotated_deep() && e._right->is_annotated_deep();
+				}
+				else if (false
+					|| op == expression_type::k_arithmetic_add__2
+					|| op == expression_type::k_arithmetic_subtract__2
+					|| op == expression_type::k_arithmetic_multiply__2
+					|| op == expression_type::k_arithmetic_divide__2
+					|| op == expression_type::k_arithmetic_remainder__2
+
+					|| op == expression_type::k_logical_and__2
+					|| op == expression_type::k_logical_or__2
+				){
+					const auto e = *get_simple__2();
+					return e._left->is_annotated_deep() && e._right->is_annotated_deep();
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+			}
+
 		}
 
 
@@ -666,7 +788,7 @@ namespace floyd {
 		public: expression_t(
 			const expression_type operation,
 			const std::shared_ptr<const expr_base_t>& expr,
-			const std::shared_ptr<typeid_t> annotated_type = nullptr
+			const std::shared_ptr<typeid_t> annotated_type
 		)
 		:
 		#if DEBUG
@@ -716,9 +838,9 @@ namespace floyd {
 		return lhs._def == rhs._def;
 	}
 
-	inline bool operator==(const expression_t::function_call_expr_t& lhs, const expression_t::function_call_expr_t& rhs){
+	inline bool operator==(const expression_t::call_expr_t& lhs, const expression_t::call_expr_t& rhs){
 		return
-			lhs._function == rhs._function
+			lhs._callee == rhs._callee
 			&& lhs._args == rhs._args;
 	}
 	inline bool operator==(const expression_t::vector_definition_exprt_t& lhs, const expression_t::vector_definition_exprt_t& rhs){
