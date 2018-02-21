@@ -1,3 +1,5 @@
+#TERMINOLOGY & REFS
+
 A basic block is a maximal sequence of
 instructions with:
 – no labels (except at the first instruction), and
@@ -28,7 +30,7 @@ AST -> Semantic Analysis -> SYMBOL TABLE + annotated AST
 	Symbol management
 
 
-
+# HOW TO MAKE SUM-TYPE IN C++
 
 expression_t
 	type
@@ -62,3 +64,49 @@ test_t {
 	union {
 	}
 }
+
+# BYTE CODE
+
+	struct symbol_t {
+		string _name;
+	}
+	struct env_symbol_table_t {
+		vector<symbol_t> _elements;
+	}
+
+
+	//??? Have a block-type operand that holds a list of instructions.
+
+	struct bc_statement {
+		enum {
+
+			//	return operand1
+			k_return = 1,
+
+			//	operand1 = operand2
+			k_mutate,
+
+			//	operand1 = operand2
+			k_bind_new_mutable_variable,
+
+			//	operand1 = operand2
+			k_bind_new_immutable_variable,
+
+
+			//	operand1: value == 0, operand2 = 
+			k_branch_if_zero,
+			k_branch_if_nonzero,
+
+			k_call,
+		}
+
+		long _opcode;
+
+		//	Index into variable set.
+		long _operand1_index;
+		long _operand1_type;
+
+		long _operand2_index;
+		long _operand2_type;
+	};
+
