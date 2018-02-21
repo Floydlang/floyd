@@ -599,6 +599,7 @@ namespace floyd {
 		public: bool check_invariant() const{
 			//	QUARK_ASSERT(_debug.size() > 0);
 			//	QUARK_ASSERT(_result_type._base_type != base_type::k_null && _result_type.check_invariant());
+			QUARK_ASSERT(_annotated_type == nullptr || _annotated_type->check_invariant());
 			return true;
 		}
 		public: bool operator==(const expression_t& other) const{
@@ -630,23 +631,54 @@ namespace floyd {
 			return _operation;
 		}
 		public: const expr_base_t* get_expr() const{
+			QUARK_ASSERT(check_invariant());
 			return _expr.get();
 		}
+
+		public: const std::shared_ptr<const expr_base_t> get_expr2() const{
+			QUARK_ASSERT(check_invariant());
+
+			return _expr;
+		}
+
+
+
+		public: std::shared_ptr<typeid_t> get_annotated_type() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _annotated_type;
+		}
+
+
+		public: expression_t annotate(const expression_t& e, const typeid_t& annotated_type){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(annotated_type.check_invariant());
+			const auto result = expression_t(e.get_operation(), e.get_expr2(), std::make_shared<typeid_t>(annotated_type));
+			QUARK_ASSERT(result.check_invariant());
+			return result;
+		}
+
+
 
 		//////////////////////////		INTERNALS
 
 
-		private: expression_t(
+		public: expression_t(
 			const expression_type operation,
-			const std::shared_ptr<const expr_base_t>& expr
+			const std::shared_ptr<const expr_base_t>& expr,
+			const std::shared_ptr<typeid_t> annotated_type = nullptr
 		)
 		:
 		#if DEBUG
 			_debug(""),
 		#endif
 			_operation(operation),
-			_expr(expr)
+			_expr(expr),
+			_annotated_type(annotated_type)
 		{
+			QUARK_ASSERT(expr != nullptr);
+			QUARK_ASSERT(annotated_type == nullptr || annotated_type->check_invariant());
+
 		#if DEBUG
 			_debug = expression_to_json_string(*this);
 		#endif
@@ -655,13 +687,14 @@ namespace floyd {
 		}
 
 
-//??? make const
+		//??? make const
 		//////////////////////////		STATE
 #if DEBUG
 		private: std::string _debug;
 #endif
 		private: expression_type _operation;
 		private: std::shared_ptr<const expr_base_t> _expr;
+		private: std::shared_ptr<typeid_t> _annotated_type;
 	};
 
 
