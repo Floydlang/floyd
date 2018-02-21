@@ -214,19 +214,25 @@ namespace floyd {
 
 		public: bool operator==(const statement_t& other) const {
 			if(_return){
-				return other._return && *_return == *other._return;
+				return compare_shared_values(_return, other._return);
+			}
+			else if(_def_struct){
+				return compare_shared_values(_def_struct, other._def_struct);
 			}
 			else if(_bind_or_assign){
-				return other._bind_or_assign && *_bind_or_assign == *other._bind_or_assign;
+				return compare_shared_values(_bind_or_assign, other._bind_or_assign);
 			}
 			else if(_block){
-				return other._block && *_block == *other._block;
+				return compare_shared_values(_block, other._block);
+			}
+			else if(_if){
+				return compare_shared_values(_if, other._if);
 			}
 			else if(_for){
-				return other._for && *_for == *other._for;
+				return compare_shared_values(_for, other._for);
 			}
 			else if(_while){
-				return other._while && *_while == *other._while;
+				return compare_shared_values(_while, other._while);
 			}
 			else{
 				QUARK_ASSERT(false);
