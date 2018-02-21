@@ -9,10 +9,3 @@
 #include "statement.h"
 
 
-namespace floyd {
-
-	using namespace std;
-
-
-
-}	//	floyd

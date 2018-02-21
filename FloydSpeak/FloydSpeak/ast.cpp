@@ -11,6 +11,7 @@
 
 #include "floyd_basics.h"
 #include "statement.h"
+#include "pass2.h"
 
 
 namespace floyd {

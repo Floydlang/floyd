@@ -19,7 +19,6 @@
 #include "expression.h"
 #include "utils.h"
 
-struct json_t;
 
 namespace floyd {
 	struct statement_t;
@@ -284,96 +283,6 @@ namespace floyd {
 		public: const std::shared_ptr<while_statement_t> _while;
 		public: const std::shared_ptr<expression_statement_t> _expression;
 	};
-
-
-	ast_json_t statement_to_json(const statement_t& e);
-	std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a);
-	ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
-
-	inline std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a){
-		std::vector<json_t> result;
-		for(const auto& e: a){
-			result.push_back(statement_to_json(*e)._value);
-		}
-		return result;
-	}
-
-	inline ast_json_t statement_to_json(const statement_t& e){
-		QUARK_ASSERT(e.check_invariant());
-
-		if(e._return){
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_return),
-				expression_to_json(e._return->_expression)._value
-			})};
-		}
-		else if(e._def_struct){
-			return ast_json_t{json_t::make_array({
-				json_t("def-struct"),
-				json_t(e._def_struct->_name),
-				struct_definition_to_ast_json(e._def_struct->_def)._value
-			})};
-		}
-		else if(e._bind_or_assign){
-			const auto meta = (e._bind_or_assign->_bind_as_mutable_tag) ? (json_t::make_object({std::pair<std::string,json_t>{"mutable", true}})) : json_t();
-
-			return ast_json_t{make_array_skip_nulls({
-				json_t("bind"),
-				e._bind_or_assign->_new_variable_name,
-				typeid_to_ast_json(e._bind_or_assign->_bindtype)._value,
-				expression_to_json(e._bind_or_assign->_expression)._value,
-				meta
-			})};
-		}
-		else if(e._block){
-			return ast_json_t{json_t::make_array({
-				json_t("block"),
-				json_t::make_array(statements_shared_to_json(e._block->_statements))
-			})};
-		}
-		else if(e._if){
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_if),
-				expression_to_json(e._if->_condition)._value,
-				json_t::make_array(statements_shared_to_json(e._if->_then_statements)),
-				json_t::make_array(statements_shared_to_json(e._if->_else_statements))
-			})};
-		}
-		else if(e._for){
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_for),
-				json_t("open_range"),
-				expression_to_json(e._for->_start_expression)._value,
-				expression_to_json(e._for->_end_expression)._value,
-				statements_to_json(e._for->_body)._value
-			})};
-		}
-		else if(e._while){
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_while),
-				expression_to_json(e._while->_condition)._value,
-				statements_to_json(e._while->_body)._value
-			})};
-		}
-		else if(e._expression){
-			return ast_json_t{json_t::make_array({
-				json_t("expression-statement"),
-				expression_to_json(e._expression->_expression)._value
-			})};
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-
-	inline ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e){
-		std::vector<json_t> statements;
-		for(const auto& i: e){
-			statements.push_back(statement_to_json(*i)._value);
-		}
-		return ast_json_t{json_t::make_array(statements)};
-	}
 
 }	//	floyd
 

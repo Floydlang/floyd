@@ -10,6 +10,7 @@
 
 #include "statement.h"
 #include "text_parser.h"
+#include "pass2.h"
 
 using std::string;
 using std::make_shared;

@@ -17,6 +17,7 @@
 #include "ast.h"
 #include "ast_value.h"
 #include "ast_basics.h"
+#include "pass2.h"
 
 
 namespace floyd {
@@ -24,18 +25,6 @@ namespace floyd {
 	struct value_t;
 	struct statement_t;
 	struct expression_t;
-
-
-	ast_json_t expressions_to_json(const std::vector<expression_t> v);
-
-	/*
-		An expression is a json array where entries may be other json arrays.
-		["+", ["+", 1, 2], ["k", 10]]
-	*/
-	ast_json_t expression_to_json(const expression_t& e);
-
-	std::string expression_to_json_string(const expression_t& e);
-
 
 
 	//	"+", "<=", "&&" etc.
@@ -682,7 +671,6 @@ namespace floyd {
 
 
 
-
 	inline bool operator==(const expression_t::literal_expr_t& lhs, const expression_t::literal_expr_t& rhs){
 		return lhs._value == rhs._value;
 	}
@@ -723,22 +711,6 @@ namespace floyd {
 			|| op == "==" || op == "!=" || op == "&&" || op == "||";
 	}
 
-	inline ast_json_t expression_to_json(const expression_t& e){
-		return e.get_expr()->expr_base__to_json();
-	}
-
-	inline ast_json_t expressions_to_json(const std::vector<expression_t> v){
-		std::vector<json_t> r;
-		for(const auto e: v){
-			r.push_back(expression_to_json(e)._value);
-		}
-		return ast_json_t{json_t::make_array(r)};
-	}
-
-	inline std::string expression_to_json_string(const expression_t& e){
-		const auto json = expression_to_json(e);
-		return json_to_compact_string(json._value);
-	}
 
 }	//	floyd
 
