@@ -564,6 +564,7 @@ Demo snippet, that checks type of a json_value:
 
 Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
 
+- __get\_json\_type()__
 - __pretty_string()__
 - __size()__
 - __encode_json()__
@@ -717,10 +718,10 @@ Example:
 	b = rect(0, 3);
 	c = rect(1, 3);
 
-	asset(a == a)
-	asset(a == b)
-	asset(a != c)
-	asset(c > a)
+	asset(a == a);
+	asset(a == b);
+	asset(a != c);
+	asset(c > a);
 ```
 
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
@@ -742,15 +743,15 @@ b = update(a, member, value);
 	a = rect(0, 3);
 
 	//	Nothing happens! Setting width to 100 returns us a new rect but we we don't keep it.
-	update(a,"width", 100)
-	assert(a.width == 0)
+	update(a,"width", 100);
+	assert(a.width == 0);
 
 	//	Modifying a member creates a new instance, we assign it to b
-	b = update(a,"width", 100)
+	b = update(a,"width", 100);
 
 	//	Now we have the original, unmodified a and the new, updated b.
-	assert(a.width == 0)
-	assert(b.width == 100)
+	assert(a.width == 0);
+	assert(b.width == 100);
 ```
 
 This works with nested values too:
@@ -995,7 +996,7 @@ Replaces a range of a collection with the contents of another collection.
 |Type		  	| Example						| Result |
 |---			|---							| ---
 | string		|replace("hello", 0, 2, "bori")	| borillo
-| vector		|replace([1,2,3,4,5], 1,3, 8)	| [1,8,4,5]
+| vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,45]
 | dictionary	| 								|
 | struct		|								|
 | json_value:array	|							|
