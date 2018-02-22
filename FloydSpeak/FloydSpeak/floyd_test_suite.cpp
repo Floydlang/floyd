@@ -2553,7 +2553,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 
 
 
-QUARK_UNIT_TEST("Edge case", "+", "non-empty vectors", "correct final vector"){
+QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
 	try{
 		const auto result = run_return_result(R"(
 			if("not a bool"){
@@ -2568,3 +2568,29 @@ QUARK_UNIT_TEST("Edge case", "+", "non-empty vectors", "correct final vector"){
 		QUARK_TEST_VERIFY(string(e.what()) == "Boolean condition required.");
 	}
 }
+
+QUARK_UNIT_TEST("Edge case", "", "assign to immutable local", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			int a = 10;
+			int a = 11;
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Local identifier already exists.");
+	}
+}
+QUARK_UNIT_TEST("Edge case", "", "Define struct with colliding name", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			int a = 10;
+			struct a { int x; }
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Name already used.");
+	}
+}
+

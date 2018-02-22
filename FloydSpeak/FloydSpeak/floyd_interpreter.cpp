@@ -392,11 +392,8 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 		//	mutable a = 10
 		//	mutable = 10
 		const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
-		const auto value_exists_in_env = vm_acc._call_stack.back()->_values.count(name) > 0;
 
-		if(value_exists_in_env){
-			throw std::runtime_error("Local identifier already exists.");
-		}
+		QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
 
 		//	Deduced bind type -- use new value's type.
 		if(bind_statement_type.is_null()){
@@ -432,29 +429,26 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	vm_acc = result.first;
 
 	const auto result_value = result.second;
-	if(result_value.is_literal() == false){
-		throw std::runtime_error("Cannot evaluate expression.");
+	QUARK_ASSERT(result_value.is_literal());
+
+	const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, name);
+	const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
+
+	QUARK_ASSERT(existing_value_deep_ptr != nullptr);
+	QUARK_ASSERT(existing_variable_is_mutable);
+
+	const auto existing_value = existing_value_deep_ptr->first;
+	const auto new_value = result_value.get_literal();
+
+	//	Let both existing & new values influence eachother to the exact type of the new variable.
+	//	Existing could be a [null]=[], or could new_value
+	const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
+	const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
+
+	if(existing_value2.get_type() != new_value2.get_type()){
+		throw std::runtime_error("Types not compatible in bind.");
 	}
-	else{
-		const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, name);
-		const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
-
-		QUARK_ASSERT(existing_value_deep_ptr != nullptr);
-		QUARK_ASSERT(existing_variable_is_mutable);
-
-		const auto existing_value = existing_value_deep_ptr->first;
-		const auto new_value = result_value.get_literal();
-
-		//	Let both existing & new values influence eachother to the exact type of the new variable.
-		//	Existing could be a [null]=[], or could new_value
-		const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
-		const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
-
-		if(existing_value2.get_type() != new_value2.get_type()){
-			throw std::runtime_error("Types not compatible in bind.");
-		}
-		*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
-	}
+	*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
@@ -467,10 +461,8 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	vm_acc = result.first;
 
 	const auto result_value = result.second;
+	QUARK_ASSERT(result_value.is_literal());
 
-	if(!result_value.is_literal()){
-		throw std::runtime_error("undefined");
-	}
 	return {
 		vm_acc,
 		statement_result_t::make_return_unwind(result_value.get_literal())
@@ -483,9 +475,8 @@ std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const 
 
 	auto vm_acc = vm;
 	const auto struct_name = statement._name;
-	if(vm_acc._call_stack.back()->_values.count(struct_name) > 0){
-		throw std::runtime_error("Name already used.");
-	}
+
+	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(struct_name) == 0);
 
 	//	Resolve member types in this scope.
 	std::vector<member_t> members2;
@@ -510,10 +501,7 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 	const auto condition_result = evaluate_expression(vm_acc, statement._condition);
 	vm_acc = condition_result.first;
 	const auto condition_result_value = condition_result.second;
-	if(!condition_result_value.is_literal()){
-		throw std::runtime_error("Boolean condition required.");
-	}
-
+	QUARK_ASSERT(condition_result_value.is_literal());
 	QUARK_ASSERT(condition_result_value.get_literal().is_bool());
 
 	bool r = condition_result_value.get_literal().get_bool_value();
@@ -1757,6 +1745,8 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
+//		QUARK_ASSERT(false);
+
 		const auto v = resolve_env_variable(vm, type.get_unresolved_type_identifier());
 		if(v){
 			if(v->first.is_typeid()){
