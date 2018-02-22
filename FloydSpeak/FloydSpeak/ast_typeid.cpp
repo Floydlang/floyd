@@ -564,14 +564,14 @@ namespace floyd {
 		_type(type),
 		_name(name)
 	{
-		QUARK_ASSERT(!type.is_null() && type.check_invariant());
+		QUARK_ASSERT(type.check_invariant());
 		QUARK_ASSERT(name.size() > 0);
 
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bool member_t::check_invariant() const{
-		QUARK_ASSERT(!_type.is_null() && _type.check_invariant());
+		QUARK_ASSERT(_type.check_invariant());
 		QUARK_ASSERT(_name.size() > 0);
 		return true;
 	}

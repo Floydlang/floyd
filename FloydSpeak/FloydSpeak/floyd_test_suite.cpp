@@ -133,7 +133,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "string constant expression"){
 //////////////////////////////////////////		BASIC EXPRESSIONS
 
 
-QUARK_UNIT_TESTQ("Floyd test suite", "+") {
+QUARK_UNIT_TEST("Floyd test suite", "+", "", "") {
 	test__run_init__check_result("int result = 1 + 2;", value_t::make_int(3));
 }
 QUARK_UNIT_TESTQ("Floyd test suite", "+") {
@@ -149,7 +149,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 
 //??? test all types, like [int] etc.
 
-QUARK_UNIT_TESTQ("Floyd test suite", "Expression statement") {
+QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", "") {
 	const auto r = test__run_global("print(5);");
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "5" }));
 }

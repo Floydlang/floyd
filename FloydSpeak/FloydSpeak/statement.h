@@ -71,6 +71,11 @@ namespace floyd {
 
 		//	FYI: We don't know until runtime if a = 10 is a deduced bind or a mutation.
 		struct bind_or_assign_statement_t {
+			enum mutable_mode {
+				k_mutable = 2,
+				k_immutable
+			};
+
 			bool operator==(const bind_or_assign_statement_t& other) const {
 				return _new_variable_name == other._new_variable_name
 					&& _bindtype == other._bindtype
@@ -81,13 +86,13 @@ namespace floyd {
 			const std::string _new_variable_name;
 			const typeid_t _bindtype;
 			const expression_t _expression;
-			const bool _bind_as_mutable_tag;
+			const mutable_mode _bind_as_mutable_tag;	//	Make explicit enum -- I keep setting to true when I mean immutable.
 		};
         public: statement_t(const bind_or_assign_statement_t& value) :
 			_bind_or_assign(std::make_shared<bind_or_assign_statement_t>(value))
 		{
 		}
-		public: static statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bool bind_as_mutable_tag){
+		public: static statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bind_or_assign_statement_t::mutable_mode bind_as_mutable_tag){
 			return statement_t(bind_or_assign_statement_t{ new_variable_name, bindtype, expression, bind_as_mutable_tag });
 		}
 
@@ -290,7 +295,7 @@ namespace floyd {
 				return true;
 			}
 			else if(_bind_or_assign){
-				return _return->_expression.is_annotated_deep();
+				return _bind_or_assign->_expression.is_annotated_deep();
 			}
 			else if(_block){
 				return is_annotated_deep(_block->_statements);

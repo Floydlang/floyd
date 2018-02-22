@@ -32,8 +32,7 @@ namespace floyd_pass3 {
 	floyd::value_t unflatten_json_to_specific_type(const json_t& v);
 
 
-	//////////////////////////////////////		statement_result_t
-
+	//////////////////////////////////////		interpreter_context_t
 
 
 	struct interpreter_context_t {
@@ -41,51 +40,7 @@ namespace floyd_pass3 {
 	};
 
 
-	//////////////////////////////////////		statement_result_t
-
-
-	struct statement_result_t {
-		enum output_type {
-
-			//	_output != nullptr
-			k_return_unwind,
-
-			//	_output != nullptr
-			k_passive_expression_output,
-
-
-			//	_output == nullptr
-			k_none
-		};
-
-		public: static statement_result_t make_return_unwind(const floyd::value_t& return_value){
-			return { statement_result_t::k_return_unwind, return_value };
-		}
-		public: static statement_result_t make_passive_expression_output(const floyd::value_t& output_value){
-			return { statement_result_t::k_passive_expression_output, output_value };
-		}
-		public: static statement_result_t make_no_output(){
-			return { statement_result_t::k_passive_expression_output, floyd::value_t::make_null() };
-		}
-
-		private: statement_result_t(output_type type, const floyd::value_t& output) :
-			_type(type),
-			_output(output)
-		{
-		}
-
-		public: output_type _type;
-		public: floyd::value_t _output;
-	};
-
-	inline bool operator==(const statement_result_t& lhs, const statement_result_t& rhs){
-		return true
-			&& lhs._type == rhs._type
-			&& lhs._output == rhs._output;
-	}
-
-
-	//////////////////////////////////////		environment_t
+	//////////////////////////////////////		symbol_t
 
 	/*
 		Runtime scope, similar to a stack frame.
@@ -123,6 +78,7 @@ namespace floyd_pass3 {
 			return _value_type;
 		}
 
+		//??? This really "reserves" the local.
 		public: static symbol_t make_immutable_local(const floyd::typeid_t value_type)
 		{
 			return symbol_t{ type::immutable_local, value_type, {} };
@@ -138,26 +94,37 @@ namespace floyd_pass3 {
 			return symbol_t{ type::immutable_local, value.get_type(), value };
 		}
 
+		public: static symbol_t make_type(const floyd::typeid_t& t)
+		{
+			return symbol_t{
+				type::immutable_local,
+				floyd::typeid_t::make_typeid(),
+				floyd::value_t::make_typeid_value(t)
+			};
+		}
+
 /*
 		public: static symbol_t make_struct_def(const floyd::typeid_t& struct_typeid)
 		{
 			return symbol_t{ type::struct_definition, struct_typeid, {} };
 		}
 */
-
 	};
 
 
-	struct environment_t {
-		public: std::shared_ptr<environment_t> _parent_env;
+	//////////////////////////////////////		lexical_scope_t
+
+
+	struct lexical_scope_t {
+		public: std::shared_ptr<lexical_scope_t> _parent_env;
 		public: std::map<std::string, symbol_t> _symbols;
 
 
 		public: bool check_invariant() const;
 
-		public: static std::shared_ptr<environment_t> make_environment(
+		public: static std::shared_ptr<lexical_scope_t> make_environment(
 			const analyser_t& vm,
-			std::shared_ptr<environment_t>& parent_env
+			std::shared_ptr<lexical_scope_t>& parent_env
 		);
 	};
 
@@ -177,22 +144,17 @@ namespace floyd_pass3 {
 		public: bool check_invariant() const;
 #endif
 
+
 		////////////////////////		STATE
-		public: std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 
-
-		//	Constant!
 		public: std::shared_ptr<const floyd::ast_t> _ast;
 
-
 		//	Non-constant. Last scope is the current one. First scope is the root.
-		public: std::vector<std::shared_ptr<environment_t>> _call_stack;
-
-		public: std::vector<std::string> _print_output;
+		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;
 	};
 
+	floyd::ast_t analyse(const analyser_t& a);
 
-	std::pair<analyser_t, statement_result_t> call_host_function(const analyser_t& vm, int function_id, const std::vector<floyd::value_t> args);
 
 	json_t analyser_to_json(const analyser_t& vm);
 
@@ -204,11 +166,6 @@ namespace floyd_pass3 {
 	*/
 	std::pair<analyser_t, floyd::expression_t> analyse_expression(const analyser_t& vm, const floyd::expression_t& e);
 
-	std::pair<analyser_t, statement_result_t> call_function(
-		const analyser_t& vm,
-		const floyd::value_t& f,
-		const std::vector<floyd::value_t>& args
-	);
 
 
 	/*
@@ -216,15 +173,13 @@ namespace floyd_pass3 {
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	std::pair<analyser_t, statement_result_t> analyse_statements(const analyser_t& vm, const std::vector<std::shared_ptr<floyd::statement_t>>& statements);
+	std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& vm, const std::vector<std::shared_ptr<floyd::statement_t>>& statements);
 
 
 
 	symbol_t find_global_symbol(const analyser_t& vm, const std::string& s);
 
 	floyd::typeid_t resolve_type_using_env(const analyser_t& vm, const floyd::typeid_t& type);
-
-
 
 
 	/*

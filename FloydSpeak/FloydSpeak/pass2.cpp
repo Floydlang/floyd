@@ -60,21 +60,21 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 	else if(op == "unary_minus"){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto expr = parser_expression_to_ast(tracer, e.get_array_n(1));
-		return expression_t::make_unary_minus(expr);
+		return expression_t::make_unary_minus(expr, nullptr);
 	}
 	else if(is_simple_expression__2(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto op2 = token_to_expression_type(op);
 		const auto lhs_expr = parser_expression_to_ast(tracer, e.get_array_n(1));
 		const auto rhs_expr = parser_expression_to_ast(tracer, e.get_array_n(2));
-		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr);
+		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr, nullptr);
 	}
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 4);
 		const auto condition_expr = parser_expression_to_ast(tracer, e.get_array_n(1));
 		const auto a_expr = parser_expression_to_ast(tracer, e.get_array_n(2));
 		const auto b_expr = parser_expression_to_ast(tracer, e.get_array_n(3));
-		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr);
+		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, nullptr);
 	}
 	else if(op == "call"){
 		QUARK_ASSERT(e.get_array_size() == 3);
@@ -84,24 +84,24 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 		for(const auto& arg: args.get_array()){
 			args2.push_back(parser_expression_to_ast(tracer, arg));
 		}
-		return expression_t::make_call(function_expr, args2);
+		return expression_t::make_call(function_expr, args2, nullptr);
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto base_expr = parser_expression_to_ast(tracer, e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
-		return expression_t::make_resolve_member(base_expr, member);
+		return expression_t::make_resolve_member(base_expr, member, nullptr);
 	}
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_variable_expression(variable_symbol);
+		return expression_t::make_variable_expression(variable_symbol, nullptr);
 	}
 	else if(op == "[]"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto parent_address_expr = parser_expression_to_ast(tracer, e.get_array_n(1));
 		const auto lookup_key_expr = parser_expression_to_ast(tracer, e.get_array_n(2));
-		return expression_t::make_lookup(parent_address_expr, lookup_key_expr);
+		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, nullptr);
 	}
 	else if(op == "vector-def"){
 		QUARK_ASSERT(e.get_array_size() == 3);
@@ -167,7 +167,8 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(tracer, expr);
 			bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
-			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(name2, bind_type2, expr2, mutable_flag)));
+			const auto mutable_mode = mutable_flag ? statement_t::bind_or_assign_statement_t::mutable_mode::k_mutable : statement_t::bind_or_assign_statement_t::mutable_mode::k_immutable;
+			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(name2, bind_type2, expr2, mutable_mode)));
 		}
 
 		//	[ "assign", "x", EXPRESSION ]
@@ -178,7 +179,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 			const auto name2 = name.get_string();
 			const auto expr2 = parser_expression_to_ast(tracer, expr);
-			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(name2, typeid_t::make_null(), expr2, false)));
+			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(name2, typeid_t::make_null(), expr2, statement_t::bind_or_assign_statement_t::mutable_mode::k_immutable)));
 		}
 
 		//	[ "block", [ STATEMENTS ] ]
@@ -240,7 +241,11 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
-			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(name2, function_typeid, function_def_expr, false)));
+			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(
+				name2,
+				function_typeid,
+				function_def_expr, statement_t::bind_or_assign_statement_t::mutable_mode::k_immutable
+			)));
 		}
 
 		/*
@@ -389,7 +394,10 @@ ast_json_t statement_to_json(const statement_t& e){
 		})};
 	}
 	else if(e._bind_or_assign){
-		const auto meta = (e._bind_or_assign->_bind_as_mutable_tag) ? (json_t::make_object({std::pair<std::string,json_t>{"mutable", true}})) : json_t();
+		const auto meta = e._bind_or_assign->_bind_as_mutable_tag ==
+			statement_t::bind_or_assign_statement_t::mutable_mode::k_mutable
+			? (json_t::make_object({std::pair<std::string,json_t>{"mutable", true}}))
+			: json_t();
 
 		return ast_json_t{make_array_skip_nulls({
 			json_t("bind"),
@@ -453,7 +461,18 @@ ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e
 
 
 ast_json_t expression_to_json(const expression_t& e){
-	return e.get_expr()->expr_base__to_json();
+	const auto a = e.get_expr()->expr_base__to_json();
+
+	if(e.is_annotated_shallow()){
+		const auto t = e.get_annotated_type();
+		auto a2 = a._value.get_array();
+		const auto type_json = typeid_to_ast_json(t);
+		a2.push_back(type_json._value);
+		return ast_json_t{ json_t::make_array(a2) };
+	}
+	else{
+		return a;
+	}
 }
 
 ast_json_t expressions_to_json(const std::vector<expression_t> v){

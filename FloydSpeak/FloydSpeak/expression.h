@@ -136,7 +136,7 @@ namespace floyd {
 			const std::shared_ptr<expression_t> _right;
 		};
 
-		public: static expression_t make_simple_expression__2(expression_type op, const expression_t& left, const expression_t& right, const std::shared_ptr<typeid_t>& annotated_type = nullptr){
+		public: static expression_t make_simple_expression__2(expression_type op, const expression_t& left, const expression_t& right, const std::shared_ptr<typeid_t>& annotated_type){
 			if(
 				op == expression_type::k_arithmetic_add__2
 				|| op == expression_type::k_arithmetic_subtract__2
@@ -221,7 +221,7 @@ namespace floyd {
 			const std::shared_ptr<expression_t> _expr;
 		};
 
-		public: static expression_t make_unary_minus(const expression_t expr, const std::shared_ptr<typeid_t>& annotated_type = nullptr){
+		public: static expression_t make_unary_minus(const expression_t expr, const std::shared_ptr<typeid_t>& annotated_type){
 			return expression_t{
 				expression_type::k_arithmetic_unary_minus__1,
 				std::make_shared<unary_minus_expr_t>(
@@ -255,6 +255,7 @@ namespace floyd {
 
 			virtual ast_json_t expr_base__to_json() const {
 				return ast_json_t{json_t::make_array({
+					"?:",
 					expression_to_json(*_condition)._value,
 					expression_to_json(*_a)._value,
 					expression_to_json(*_b)._value,
@@ -267,7 +268,7 @@ namespace floyd {
 			const std::shared_ptr<expression_t> _b;
 		};
 
-		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const std::shared_ptr<typeid_t>& annotated_type = nullptr){
+		public: static expression_t make_conditional_operator(const expression_t& condition, const expression_t& a, const expression_t& b, const std::shared_ptr<typeid_t>& annotated_type){
 			return expression_t{
 				expression_type::k_conditional_operator3,
 				std::make_shared<conditional_expr_t>(
@@ -312,7 +313,7 @@ namespace floyd {
 		public: static expression_t make_call(
 			const expression_t& callee,
 			const std::vector<expression_t>& args,
-			const std::shared_ptr<typeid_t>& annotated_type = nullptr
+			const std::shared_ptr<typeid_t>& annotated_type
 		)
 		{
 			return expression_t{
@@ -388,7 +389,7 @@ namespace floyd {
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 		*/
-		public: static expression_t make_variable_expression(const std::string& variable, const std::shared_ptr<typeid_t>& annotated_type = nullptr)
+		public: static expression_t make_variable_expression(const std::string& variable, const std::shared_ptr<typeid_t>& annotated_type)
 		{
 			return expression_t{
 				expression_type::k_variable,
@@ -437,7 +438,7 @@ namespace floyd {
 		public: static expression_t make_resolve_member(
 			const expression_t& parent_address,
 			const std::string& member_name,
-			const std::shared_ptr<typeid_t>& annotated_type = nullptr
+			const std::shared_ptr<typeid_t>& annotated_type
 		)
 		{
 			return expression_t{
@@ -490,7 +491,7 @@ namespace floyd {
 		public: static expression_t make_lookup(
 			const expression_t& parent_address,
 			const expression_t& lookup_key,
-			const std::shared_ptr<typeid_t>& annotated_type = nullptr
+			const std::shared_ptr<typeid_t>& annotated_type
 		)
 		{
 			return expression_t{
@@ -657,6 +658,12 @@ namespace floyd {
 
 			return *_annotated_type;
 		}
+		public: std::shared_ptr<typeid_t> get_annotated_type2() const {
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(_annotated_type != nullptr);
+
+			return _annotated_type;
+		}
 
 /*
 		public: expression_t annotate(const typeid_t& annotated_type) const{
@@ -670,6 +677,12 @@ namespace floyd {
 			return result;
 		}
 */
+
+		public: bool is_annotated_shallow() const{
+			QUARK_ASSERT(check_invariant());
+
+			return _annotated_type != nullptr;
+		}
 
 		public: bool is_annotated_deep() const{
 			QUARK_ASSERT(check_invariant());

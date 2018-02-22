@@ -953,13 +953,13 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_unary_minus_expressio
 		if(c.is_int()){
 			return evaluate_expression(
 				vm_acc,
-				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second)
+				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second, make_shared<typeid_t>(c.get_type()))
 			);
 		}
 		else if(c.is_float()){
 			return evaluate_expression(
 				vm_acc,
-				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second)
+				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second, make_shared<typeid_t>(c.get_type()))
 			);
 		}
 		else{
@@ -1489,7 +1489,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 
 	//	If not all input expressions could be evaluated, return a (maybe simplified) expression.
 	if(function.second.is_literal() == false || all_literals(args2) == false){
-		return {vm_acc, expression_t::make_call(function.second, args2)};
+		return {vm_acc, expression_t::make_call(function.second, args2, function.second.get_annotated_type2())};
 	}
 
 	//	Convert to values.
@@ -1583,7 +1583,8 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_add__2,
 			expression_t::make_literal_int(1),
-			expression_t::make_literal_int(2)
+			expression_t::make_literal_int(2),
+			make_shared<typeid_t>(typeid_t::make_int())
 		),
 		expression_t::make_literal_int(3)
 	);
@@ -1595,7 +1596,8 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_multiply__2,
 			expression_t::make_literal_int(3),
-			expression_t::make_literal_int(4)
+			expression_t::make_literal_int(4),
+			make_shared<typeid_t>(typeid_t::make_int())
 		),
 		expression_t::make_literal_int(12)
 	);
@@ -1608,9 +1610,11 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 			expression_t::make_simple_expression__2(
 				expression_type::k_arithmetic_multiply__2,
 				expression_t::make_literal_int(3),
-				expression_t::make_literal_int(4)
+				expression_t::make_literal_int(4),
+				make_shared<typeid_t>(typeid_t::make_int())
 			),
-			expression_t::make_literal_int(5)
+			expression_t::make_literal_int(5),
+			make_shared<typeid_t>(typeid_t::make_int())
 		),
 		expression_t::make_literal_int(60)
 	);

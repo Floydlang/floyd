@@ -35,6 +35,36 @@ QUARK_UNIT_TESTQ("compare_shared_values()", ""){
 
 
 
+
+
+auto lambda_echo = [](int i ) { QUARK_TRACE_SS(i); };
+
+std::vector<int> test_collection{20,24,37,42,23,45,37};
+
+QUARK_UNIT_TEST("", "lambda_echo()", "", "") {
+	for_each(test_collection,lambda_echo);
+}
+
+auto addOne = [](int i) { return i+1;};
+
+QUARK_UNIT_TEST("", "mapf()", "", "") {
+	auto returnCol = mapf(test_collection, addOne);
+	for_each(returnCol,lambda_echo);
+}
+
+
+
+QUARK_UNIT_TEST("", "filter()", "", "") {
+	auto filteredCol = filter(test_collection,[](int value){ return value > 30;});
+	for_each(filteredCol,lambda_echo);
+}
+
+
+
+
+
+
+
 #if 0
 std::string float_to_string_no_trailing_zeros(float v){
     std::stringstream ss;

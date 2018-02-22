@@ -9,6 +9,7 @@
 #ifndef utils_hpp
 #define utils_hpp
 
+#include "quark.h"
 #include <memory>
 #include <vector>
 
@@ -47,6 +48,35 @@ template <typename T> std::vector<T> operator+(const std::vector<T>& lhs, const 
 	std::vector<T> temp = lhs;
 	temp.push_back(rhs);
 	return temp;
+}
+
+
+
+
+template <typename Collection,typename unop>
+void for_each(Collection col, unop op){
+	std::for_each(col.begin(),col.end(),op);
+}
+
+template <typename Collection,typename unop>
+Collection mapf(Collection col, unop op) {
+	Collection result;
+	std::transform(col.begin(),col.end(),result.begin(),op);
+	return result;
+}
+
+template <typename Collection,typename Predicate>
+Collection filterNot(Collection col,Predicate predicate ) {
+	auto returnIterator = std::remove_if(col.begin(),col.end(),predicate);
+	col.erase(returnIterator,std::end(col));
+	return col;
+}
+
+template <typename Collection,typename Predicate>
+Collection filter(Collection col,Predicate predicate) {
+	//capture the predicate in order to be used inside function
+	auto fnCol = filterNot(col,[predicate](typename Collection::value_type i) { return !predicate(i);});
+	return fnCol;
 }
 
 
