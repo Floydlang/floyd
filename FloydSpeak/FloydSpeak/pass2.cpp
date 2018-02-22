@@ -508,7 +508,7 @@ ast_json_t statement_to_json(const statement_t& e){
 	else if(e._store_local){
 		return ast_json_t{make_array_skip_nulls({
 			json_t("assign"),
-			e._store_local->_new_variable_name,
+			e._store_local->_local_name,
 			expression_to_json(e._store_local->_expression)._value
 		})};
 	}

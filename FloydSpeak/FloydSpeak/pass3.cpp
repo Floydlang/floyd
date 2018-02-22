@@ -121,105 +121,6 @@ symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s);
 
 	}
 
-
-#if 0
-std::pair<analyser_t, value_t> construct_struct(const analyser_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
-	QUARK_ASSERT(struct_type.get_base_type() == floyd::base_type::k_struct);
-	QUARK_SCOPED_TRACE("construct_struct()");
-	QUARK_TRACE("struct_type: " + typeid_to_compact_string(struct_type));
-
-	const string struct_type_name = "unnamed";
-	const auto& def = struct_type.get_struct();
-	if(values.size() != def._members.size()){
-		throw std::runtime_error(
-			 string() + "Calling constructor for \"" + struct_type_name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
-		);
-	}
-	for(int i = 0 ; i < def._members.size() ; i++){
-		const auto v = values[i];
-		const auto a = def._members[i];
-
-		QUARK_ASSERT(v.check_invariant());
-		QUARK_ASSERT(v.get_type().get_base_type() != floyd::base_type::k_unresolved_type_identifier);
-
-		if(v.get_type() != a._type){
-			throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members");
-		}
-	}
-
-	const auto instance = value_t::make_struct_value(struct_type, values);
-	QUARK_TRACE(to_compact_string2(instance));
-
-	return std::pair<analyser_t, value_t>(vm, instance);
-}
-
-
-std::pair<analyser_t, value_t> analyze_construct_value_from_typeid(const analyser_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
-	if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_json_value() || type.is_typeid()){
-		if(arg_values.size() != 1){
-			throw std::runtime_error("Constructor requires 1 argument");
-		}
-		const auto value = improve_value_type(arg_values[0], type);
-		if(value.get_type() != type){
-			throw std::runtime_error("Constructor requires 1 argument");
-		}
-		return {vm, value };
-	}
-	else if(type.is_struct()){
-		//	Constructor.
-		const auto result = construct_struct(vm, type, arg_values);
-		return { result.first, result.second };
-	}
-	else if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
-		vector<value_t> elements2;
-		if(element_type.is_vector()){
-			for(const auto e: arg_values){
-				const auto result2 = analyze_construct_value_from_typeid(vm, element_type, e.get_vector_value()->_elements);
-				elements2.push_back(result2.second);
-			}
-		}
-		else{
-			elements2 = arg_values;
-		}
-		const auto result = value_t::make_vector_value(element_type, elements2);
-		return {vm, result };
-	}
-	else if(type.is_dict()){
-	}
-	else if(type.is_function()){
-	}
-	else if(type.is_unresolved_type_identifier()){
-	}
-	else{
-	}
-
-	throw std::runtime_error("Cannot call non-function.");
-}
-
-typeid_t cleanup_vector_constructor_type(const typeid_t& type){
-	if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
-		if(element_type.is_vector()){
-			const auto c = cleanup_vector_constructor_type(element_type);
-			return typeid_t::make_vector(c);
-		}
-		else{
-			assert(element_type.is_typeid());
-			return type;
-//???			return typeid_t::make_vector(element_type.get_typeid_typeid());
-		}
-	}
-	else if(type.is_dict()){
-		return type;
-	}
-	else{
-		return type;
-	}
-}
-#endif
-
-
 analyser_t begin_subenv(const analyser_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -247,21 +148,6 @@ std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse
 
 
 /*
-Parser today:
-
-	ASSIGN						IDENTIFIER = EXPRESSION;
-		x = 10;
-		x = "hello";
-		x = f(3) == 2;
-		mutable x = 10;
-
-	BIND						TYPE IDENTIFIER = EXPRESSION;
-		int x = {"a": 1, "b": 2};
-		int x = 10;
-		int (string a) x = f(4 == 5);
-		mutable int x = 10;
-
-BETTER:
 	SIMPLE_ASSIGN						IDENTIFIER = EXPRESSION;
 		x = 10;
 		x = "hello";
@@ -289,7 +175,7 @@ std::pair<analyser_t, statement_t> analyse_statement_as_simple_assign(const anal
 
 	auto vm_acc = vm;
 
-	const auto bind_name = statement._new_variable_name;//??? rename to .variable_name.
+	const auto bind_name = statement._local_name;//??? rename to .variable_name.
 
 	const auto expr2 = analyse_expression(vm_acc, statement._expression);
 	vm_acc = expr2.first;
@@ -1276,7 +1162,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 				//	arity
 				if(call_expr_args.size() != 1){
 					throw std::runtime_error(
-						 string() + "Calling constructor for struct with " + std::to_string(call_expr_args.size()) + " arguments, " + std::to_string(1) + " + required."
+						 string() + "Calling constructor for basic-type with " + std::to_string(call_expr_args.size()) + " arguments, " + std::to_string(1) + " required."
 					);
 				}
 

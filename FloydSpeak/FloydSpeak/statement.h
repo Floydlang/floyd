@@ -127,19 +127,19 @@ namespace floyd {
 
 		struct store_local_t {
 			bool operator==(const store_local_t& other) const {
-				return _new_variable_name == other._new_variable_name
+				return _local_name == other._local_name
 					&& _expression == other._expression;
 			}
 
-			const std::string _new_variable_name;
+			const std::string _local_name;
 			const expression_t _expression;
 		};
         public: statement_t(const store_local_t& value) :
 			_store_local(std::make_shared<store_local_t>(value))
 		{
 		}
-		public: static statement_t make__store_local(const std::string& new_variable_name, const expression_t& expression){
-			return statement_t(store_local_t{ new_variable_name, expression });
+		public: static statement_t make__store_local(const std::string& local_name, const expression_t& expression){
+			return statement_t(store_local_t{ local_name, expression });
 		}
 
 

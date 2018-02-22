@@ -2698,7 +2698,19 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor"
 	}
 }
 
-QUARK_UNIT_TEST_VIP("Edge case", "", "Call non-function, non-struct, non-typeid", "exception"){
+QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = int();
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Calling constructor for basic-type with 0 arguments, 1 required.");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "exception"){
 	try{
 		const auto result = run_return_result(R"(
 			a = 3();

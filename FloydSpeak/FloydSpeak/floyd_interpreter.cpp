@@ -149,9 +149,8 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 
 	if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_json_value() || type.is_typeid()){
-		if(arg_values.size() != 1){
-			throw std::runtime_error("Constructor requires 1 argument");
-		}
+		QUARK_ASSERT(arg_values.size() == 1);
+
 		const auto value = improve_value_type(arg_values[0], type);
 		if(value.get_type() != type){
 			throw std::runtime_error("Constructor requires 1 argument");
@@ -164,6 +163,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		return { result.first, result.second };
 	}
 	else if(type.is_vector()){
+/*
 		const auto element_type = type.get_vector_element_type();
 		vector<value_t> elements2;
 		if(element_type.is_vector()){
@@ -177,6 +177,8 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		}
 		const auto result = value_t::make_vector_value(element_type, elements2);
 		return {vm, result };
+*/
+
 	}
 	else if(type.is_dict()){
 	}
@@ -189,29 +191,6 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 
 	throw std::runtime_error("Cannot call non-function.");
 }
-
-typeid_t cleanup_vector_constructor_type(const typeid_t& type){
-	if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
-		if(element_type.is_vector()){
-			const auto c = cleanup_vector_constructor_type(element_type);
-			return typeid_t::make_vector(c);
-		}
-		else{
-			assert(element_type.is_typeid());
-			return type;
-//???			return typeid_t::make_vector(element_type.get_typeid_typeid());
-		}
-	}
-	else if(type.is_dict()){
-		return type;
-	}
-	else{
-		return type;
-	}
-}
-
-
 
 value_t flatten_to_json(const value_t& value){
 	const auto j = value_to_ast_json(value);
@@ -332,8 +311,6 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 }
 
 
-namespace {
-
 interpreter_t begin_subenv(const interpreter_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -373,43 +350,32 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	vm_acc = result.first;
 
 	const auto result_value = result.second;
-	if(result_value.is_literal() == false){
-		throw std::runtime_error("Cannot evaluate expression.");
+	QUARK_ASSERT(result_value.is_literal());
+
+	const auto bind_statement_type = statement._bindtype;
+	const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
+
+	const auto mutable_flag = bind_statement_mutable_mode == statement_t::bind_local_t::k_mutable;
+
+	//	Bind.
+	//	int a = 10
+	//	mutable a = 10
+	//	mutable = 10
+	const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
+
+	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
+
+	//	Deduced bind type -- use new value's type.
+	if(bind_statement_type.is_null()){
+		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
 	}
+
+	//	Explicit bind-type -- make sure source + dest types match.
 	else{
-		const auto bind_statement_type = statement._bindtype;
-		const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
-
-		const auto mutable_flag = bind_statement_mutable_mode == statement_t::bind_local_t::k_mutable;
-
-		//	Bind.
-		//	int a = 10
-		//	mutable a = 10
-		//	mutable = 10
-		const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
-
-		QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
-
-		//	Deduced bind type -- use new value's type.
-		if(bind_statement_type.is_null()){
-			if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
-				throw std::runtime_error("Cannot deduce vector type.");
-			}
-			else if(retyped_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
-				throw std::runtime_error("Cannot deduce dictionary type.");
-			}
-			else{
-				vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
-			}
+		if(bind_statement_type != retyped_value.get_type()){
+			throw std::runtime_error("Types not compatible in bind.");
 		}
-
-		//	Explicit bind-type -- make sure source + dest types match.
-		else{
-			if(bind_statement_type != retyped_value.get_type()){
-				throw std::runtime_error("Types not compatible in bind.");
-			}
-			vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
-		}
+		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
 	}
 	return { vm_acc, statement_result_t::make_no_output() };
 }
@@ -418,7 +384,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const auto name = statement._new_variable_name;
+	const auto local_name = statement._local_name;
 
 	const auto result = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = result.first;
@@ -426,7 +392,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	const auto result_value = result.second;
 	QUARK_ASSERT(result_value.is_literal());
 
-	const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, name);
+	const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
 	const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
 
 	QUARK_ASSERT(existing_value_deep_ptr != nullptr);
@@ -611,9 +577,6 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	}
 }
 
-
-
-}	//	unnamed
 
 
 std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
