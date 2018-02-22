@@ -2672,6 +2672,20 @@ QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
 	}
 }
 
+QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			int f(int a){ return a + 1; }
+			a = f(1, 2);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Wrong number of arguments in function call.");
+	}
+}
+
+
 QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructor", "exception"){
 	try{
 		const auto result = run_return_result(R"(
@@ -2719,6 +2733,55 @@ QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "e
 	}
 	catch(const std::runtime_error& e){
 		QUARK_TEST_VERIFY(string(e.what()) == "Cannot call non-function.");
+	}
+}
+
+//??? check dict too
+QUARK_UNIT_TEST("Edge case", "", "Vector can not hold elements of different types.", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = [3, bool];
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Vector can not hold elements of different types.");
+	}
+}
+
+
+QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = 3 < "hello";
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Comparison: Left and right expressions must be same type!");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = 3 * 3.2;
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Artithmetics: Left and right expressions must be same type!");
+	}
+}
+QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = false + true;
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Artithmetics: bool not allowed.");
 	}
 }
 

@@ -48,7 +48,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 	//??? add conversions.
 	//??? This is builing block for promoting values / casting.
 	//	We know which type we need. If the value has not type, retype it.
-	value_t improve_value_type(const value_t& value0, const typeid_t& expected_type){
+	value_t improve_value_type__TODO_move_to_pass3(const value_t& value0, const typeid_t& expected_type){
 		QUARK_ASSERT(value0.check_invariant());
 		QUARK_ASSERT(expected_type.check_invariant());
 
@@ -151,7 +151,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_json_value() || type.is_typeid()){
 		QUARK_ASSERT(arg_values.size() == 1);
 
-		const auto value = improve_value_type(arg_values[0], type);
+		const auto value = improve_value_type__TODO_move_to_pass3(arg_values[0], type);
 		if(value.get_type() != type){
 			throw std::runtime_error("Constructor requires 1 argument");
 		}
@@ -361,7 +361,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	//	int a = 10
 	//	mutable a = 10
 	//	mutable = 10
-	const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
+	const auto retyped_value = improve_value_type__TODO_move_to_pass3(result_value.get_literal(), bind_statement_type);
 
 	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
 
@@ -403,8 +403,8 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 
 	//	Let both existing & new values influence eachother to the exact type of the new variable.
 	//	Existing could be a [null]=[], or could new_value
-	const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
-	const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
+	const auto new_value2 = improve_value_type__TODO_move_to_pass3(new_value, existing_value.get_type());
+	const auto existing_value2 = improve_value_type__TODO_move_to_pass3(existing_value, new_value2.get_type());
 
 	if(existing_value2.get_type() != new_value2.get_type()){
 		throw std::runtime_error("Types not compatible in bind.");
@@ -784,31 +784,27 @@ std::pair<interpreter_t, expression_t> evaluate_vector_definition_expression(con
 	const std::vector<expression_t>& elements = expr._elements;
 	const auto element_type = expr._element_type;
 
-	if(elements.empty()){
-		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
-	}
-	else{
-		std::vector<value_t> elements2;
-		for(const auto m: elements){
-			const auto element_expr = evaluate_expression(vm_acc, m);
-			vm_acc = element_expr.first;
-			if(element_expr.second.is_literal() == false){
-				throw std::runtime_error("Cannot evaluate element of vector definition!");
-			}
+	//	An empty vector is encoded as a constant value, not a vector-definition-expression.
+	QUARK_ASSERT(elements.empty() == false);
 
-			const auto element = element_expr.second.get_literal();
-			elements2.push_back(element);
-		}
+	std::vector<value_t> elements2;
+	for(const auto m: elements){
+		const auto element_expr = evaluate_expression(vm_acc, m);
+		vm_acc = element_expr.first;
+		QUARK_ASSERT(element_expr.second.is_literal());
 
-		//	If we don't have an explicit element type, deduct it from first element.
-		const auto element_type2 = element_type.is_null() ? elements2[0].get_type() : element_type;
-		for(const auto m: elements2){
-			if((m.get_type() == element_type2) == false){
-				throw std::runtime_error("Vector can not hold elements of different type!");
-			}
-		}
-		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type2, elements2))};
+		const auto element = element_expr.second.get_literal();
+		elements2.push_back(element);
 	}
+
+	//	If we don't have an explicit element type, deduct it from first element.
+	const auto element_type2 = element_type.is_null() ? elements2[0].get_type() : element_type;
+#if DEBUG
+	for(const auto m: elements2){
+		QUARK_ASSERT(m.get_type() == element_type2);
+	}
+#endif
+	return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type2, elements2))};
 }
 
 
@@ -821,37 +817,33 @@ std::pair<interpreter_t, expression_t> evaluate_dict_definition_expression(const
 	const auto& elements = expr._elements;
 	typeid_t value_type = expr._value_type;
 
-	if(elements.empty()){
-		return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type, {}))};
+	//	An empty dict is encoded as a constant value, not a dict-definition-expression.
+	QUARK_ASSERT(elements.empty() == false);
+
+	std::map<string, value_t> elements2;
+	for(const auto m: elements){
+		const auto element_expr = evaluate_expression(vm_acc, m.second);
+		vm_acc = element_expr.first;
+
+		QUARK_ASSERT(element_expr.second.is_literal());
+
+		const auto element = element_expr.second.get_literal();
+
+		const string key_string = m.first;
+		elements2[key_string] = element;
 	}
-	else{
-		std::map<string, value_t> elements2;
-		for(const auto m: elements){
-			const auto element_expr = evaluate_expression(vm_acc, m.second);
-			vm_acc = element_expr.first;
 
-			if(element_expr.second.is_literal() == false){
-				throw std::runtime_error("Cannot evaluate element of vector definition!");
-			}
-
-			const auto element = element_expr.second.get_literal();
-
-			const string key_string = m.first;
-			elements2[key_string] = element;
-		}
-
-		//	If we have no value-type, deduct it from first element.
-		const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
+	//	If we have no value-type, deduct it from first element.
+	const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
 
 /*
-		for(const auto m: elements2){
-			if((m.second.get_type() == value_type2) == false){
-				throw std::runtime_error("Dict can not hold elements of different type!");
-			}
+	for(const auto m: elements2){
+		if((m.second.get_type() == value_type2) == false){
+			throw std::runtime_error("Dict can not hold elements of different type!");
 		}
-*/
-		return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type2, elements2))};
 	}
+*/
+	return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type2, elements2))};
 }
 	
 std::pair<interpreter_t, expression_t> evaluate_arithmetic_unary_minus_expression(const interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
@@ -861,28 +853,25 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_unary_minus_expressio
 	const auto& expr2 = evaluate_expression(vm_acc, *expr._expr);
 	vm_acc = expr2.first;
 
-	if(expr2.second.is_literal()){
-		const auto& c = expr2.second.get_literal();
-		vm_acc = expr2.first;
+	QUARK_ASSERT(expr2.second.is_literal());
 
-		if(c.is_int()){
-			return evaluate_expression(
-				vm_acc,
-				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second, make_shared<typeid_t>(c.get_type()))
-			);
-		}
-		else if(c.is_float()){
-			return evaluate_expression(
-				vm_acc,
-				expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second, make_shared<typeid_t>(c.get_type()))
-			);
-		}
-		else{
-			throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_ast_json(c.get_type())._value) + "\".");
-		}
+	const auto& c = expr2.second.get_literal();
+	vm_acc = expr2.first;
+
+	if(c.is_int()){
+		return evaluate_expression(
+			vm_acc,
+			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second, make_shared<typeid_t>(c.get_type()))
+		);
+	}
+	else if(c.is_float()){
+		return evaluate_expression(
+			vm_acc,
+			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second, make_shared<typeid_t>(c.get_type()))
+		);
 	}
 	else{
-		throw std::runtime_error("Could not evaluate condition in conditional expression.");
+		throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_ast_json(c.get_type())._value) + "\".");
 	}
 }
 
@@ -896,23 +885,19 @@ std::pair<interpreter_t, expression_t> evaluate_conditional_operator_expression(
 	const auto cond_result = evaluate_expression(vm_acc, *expr._condition);
 	vm_acc = cond_result.first;
 
-	if(cond_result.second.is_literal() && cond_result.second.get_literal().is_bool()){
-		const bool cond_flag = cond_result.second.get_literal().get_bool_value();
+	QUARK_ASSERT(cond_result.second.is_literal());
+	QUARK_ASSERT(cond_result.second.get_literal().is_bool());
 
-		//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
-		if(cond_flag){
-			return evaluate_expression(vm_acc, *expr._a);
-		}
-		else{
-			return evaluate_expression(vm_acc, *expr._b);
-		}
+	const bool cond_flag = cond_result.second.get_literal().get_bool_value();
+
+	//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
+	if(cond_flag){
+		return evaluate_expression(vm_acc, *expr._a);
 	}
 	else{
-		throw std::runtime_error("Could not evaluate condition in conditional expression.");
+		return evaluate_expression(vm_acc, *expr._b);
 	}
 }
-
-
 
 
 std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
@@ -927,52 +912,49 @@ std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const inte
 	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr._right);
 	vm_acc = right_expr.first;
 
-	//	Both left and right are constants, replace the math_operation with a constant!
-	if(left_expr.second.is_literal() == false || right_expr.second.is_literal() == false) {
-		throw std::runtime_error("Left and right expressions must be same type!");
+	QUARK_ASSERT(left_expr.second.is_literal());
+	QUARK_ASSERT(right_expr.second.is_literal());
+
+
+	//	Perform math operation on the two constants => new constant.
+	const auto left_constant = left_expr.second.get_literal();
+
+	//	Make rhs match left if needed/possible.
+	const auto right_constant = improve_value_type__TODO_move_to_pass3(right_expr.second.get_literal(), left_constant.get_type());
+
+	if(!(left_constant.get_type()== right_constant.get_type())){
+		throw std::runtime_error("Comparison: Left and right expressions must be same type!");
 	}
 	else{
+		//	Do generic functionallity, independant on type.
+		if(op == expression_type::k_comparison_smaller_or_equal__2){
+			long diff = value_t::compare_value_true_deep(left_constant, right_constant);
+			return {vm_acc, expression_t::make_literal_bool(diff <= 0)};
+		}
+		else if(op == expression_type::k_comparison_smaller__2){
+			long diff = value_t::compare_value_true_deep(left_constant, right_constant);
+			return {vm_acc, expression_t::make_literal_bool(diff < 0)};
+		}
+		else if(op == expression_type::k_comparison_larger_or_equal__2){
+			long diff = value_t::compare_value_true_deep(left_constant, right_constant);
+			return {vm_acc, expression_t::make_literal_bool(diff >= 0)};
+		}
+		else if(op == expression_type::k_comparison_larger__2){
+			long diff = value_t::compare_value_true_deep(left_constant, right_constant);
+			return {vm_acc, expression_t::make_literal_bool(diff > 0)};
+		}
 
-		//	Perform math operation on the two constants => new constant.
-		const auto left_constant = left_expr.second.get_literal();
-
-		//	Make rhs match left if needed/possible.
-		const auto right_constant = improve_value_type(right_expr.second.get_literal(), left_constant.get_type());
-
-		if(!(left_constant.get_type()== right_constant.get_type())){
-			throw std::runtime_error("Left and right expressions must be same type!");
+		else if(op == expression_type::k_logical_equal__2){
+			long diff = value_t::compare_value_true_deep(left_constant, right_constant);
+			return {vm_acc, expression_t::make_literal_bool(diff == 0)};
+		}
+		else if(op == expression_type::k_logical_nonequal__2){
+			long diff = value_t::compare_value_true_deep(left_constant, right_constant);
+			return {vm_acc, expression_t::make_literal_bool(diff != 0)};
 		}
 		else{
-			//	Do generic functionallity, independant on type.
-			if(op == expression_type::k_comparison_smaller_or_equal__2){
-				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm_acc, expression_t::make_literal_bool(diff <= 0)};
-			}
-			else if(op == expression_type::k_comparison_smaller__2){
-				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm_acc, expression_t::make_literal_bool(diff < 0)};
-			}
-			else if(op == expression_type::k_comparison_larger_or_equal__2){
-				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm_acc, expression_t::make_literal_bool(diff >= 0)};
-			}
-			else if(op == expression_type::k_comparison_larger__2){
-				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm_acc, expression_t::make_literal_bool(diff > 0)};
-			}
-
-			else if(op == expression_type::k_logical_equal__2){
-				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm_acc, expression_t::make_literal_bool(diff == 0)};
-			}
-			else if(op == expression_type::k_logical_nonequal__2){
-				long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-				return {vm_acc, expression_t::make_literal_bool(diff != 0)};
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
+			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 }
@@ -998,10 +980,10 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 		const auto left_constant = left_expr.second.get_literal();
 
 		//	Make rhs match left if needed/possible.
-		const auto right_constant = improve_value_type(right_expr.second.get_literal(), left_constant.get_type());
+		const auto right_constant = improve_value_type__TODO_move_to_pass3(right_expr.second.get_literal(), left_constant.get_type());
 
 		if(left_constant.get_type() != right_constant.get_type()){
-			throw std::runtime_error("Left and right expressions must be same type!");
+			throw std::runtime_error("Artithmetics: Left and right expressions must be same type!");
 		}
 
 		else{
@@ -1019,7 +1001,7 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 				|| op == expression_type::k_arithmetic_divide__2
 				|| op == expression_type::k_arithmetic_remainder__2
 				){
-					throw std::runtime_error("Arithmetics on bool not allowed.");
+					throw std::runtime_error("Artithmetics: bool not allowed.");
 				}
 
 				else if(op == expression_type::k_logical_and__2){
@@ -1332,9 +1314,9 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		const auto arg_types = f.get_type().get_function_args();
 
 		//	arity
-		if(args.size() != arg_types.size()){
-			throw std::runtime_error("Wrong number of arguments to function.");
-		}
+		QUARK_ASSERT(args.size() == arg_types.size());
+
+		//??? Cannote remove until we have got rid of improve_value_type__TODO_move_to_pass3().
 		for(int i = 0 ; i < args.size() ; i++){
 			if(args[i].get_type() != arg_types[i]){
 				throw std::runtime_error("Function argument type do not match.");
@@ -1810,7 +1792,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 				throw std::runtime_error("Vector lookup using integer index only.");
 			}
 			else{
-				const auto obj = improve_value_type(obj1, typeid_t::make_vector(new_value.get_type()));
+				const auto obj = improve_value_type__TODO_move_to_pass3(obj1, typeid_t::make_vector(new_value.get_type()));
 				const auto v = obj.get_vector_value();
 				auto v2 = v->_elements;
 
@@ -1835,7 +1817,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 				throw std::runtime_error("Dict lookup using string key only.");
 			}
 			else{
-				const auto obj = improve_value_type(obj1, typeid_t::make_dict(new_value.get_type()));
+				const auto obj = improve_value_type__TODO_move_to_pass3(obj1, typeid_t::make_dict(new_value.get_type()));
 				const auto v = obj.get_dict_value();
 				auto v2 = v->_elements;
 

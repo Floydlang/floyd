@@ -649,7 +649,7 @@ std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const a
 		const auto element_type2 = element_type.is_null() ? elements2[0].get_annotated_type(): element_type;
 		for(const auto m: elements2){
 			if(m.get_annotated_type() != element_type2){
-				throw std::runtime_error("Vector can not hold elements of different type!");
+				throw std::runtime_error("Vector can not hold elements of different types.");
 			}
 		}
 		return { vm_acc, expression_t::make_vector_definition(element_type2, elements2) };
@@ -760,7 +760,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 
 	// ??? we don't have all types yet.
 	if(left_type != right_type && left_type.is_null() == false && right_type.is_null() == false){
-		throw std::runtime_error("Left and right expressions must be same type!");
+		throw std::runtime_error("Comparison: Left and right expressions must be same type!");
 	}
 	else{
 		const auto final_type = left_type;
@@ -805,7 +805,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	const auto right_type = improve_value_type(right_expr.second.get_annotated_type(), left_type);
 
 	if(left_type != right_type){
-		throw std::runtime_error("Left and right expressions must be same type!");
+		throw std::runtime_error("Artithmetics: Left and right expressions must be same type!");
 	}
 	else{
 		const auto shared_type = left_type;
@@ -819,7 +819,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			|| op == expression_type::k_arithmetic_divide__2
 			|| op == expression_type::k_arithmetic_remainder__2
 			){
-				throw std::runtime_error("Arithmetics on bool not allowed.");
+				throw std::runtime_error("Artithmetics: bool not allowed.");
 			}
 			else if(op == expression_type::k_logical_and__2){
 			}
