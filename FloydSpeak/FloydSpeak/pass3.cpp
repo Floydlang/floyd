@@ -1240,15 +1240,61 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 		const auto variable_expr = *callee_expr.get_variable();
 		const auto variable_name = variable_expr._variable;
 		const symbol_t* symbol = resolve_env_symbol2(vm_acc, variable_name);
-		if(symbol == nullptr){
-			throw std::runtime_error("Cannot resolve callee.");
-		}
-		else if(symbol->_symbol_type != symbol_t::type::immutable_local && symbol->_symbol_type != symbol_t::type::mutable_local){
+		QUARK_ASSERT(symbol != nullptr);
+
+		if(symbol->_symbol_type != symbol_t::type::immutable_local){
 			throw std::runtime_error("Cannot resolve callee.");
 		}
 		else{
 			const auto type = symbol->_default_value.get_typeid_value();
-			return { vm_acc, expression_t::make_call(callee_expr, call_expr_args, make_shared<typeid_t>(type)) };
+			if(type.is_struct()){
+				const auto& def = type.get_struct();
+
+				//	arity
+				if(call_expr_args.size() != def._members.size()){
+					throw std::runtime_error(
+						 string() + "Calling constructor for struct with " + std::to_string(call_expr_args.size()) + " arguments, " + std::to_string(def._members.size()) + " required."
+					);
+				}
+
+				for(int i = 0 ; i < call_expr_args.size() ; i++){
+					const auto arg_lhs = def._members[i]._type;
+					const auto arg_rhs = call_expr_args[i].get_annotated_type();
+
+					//	null means "any" right now...###
+					if(arg_lhs.is_null() || arg_lhs == arg_rhs){
+					}
+					else{
+						throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members.");
+					}
+				}
+				return { vm_acc, expression_t::make_call(callee_expr, call_expr_args, make_shared<typeid_t>(type)) };
+			}
+
+			//	One argument for these.
+			else{
+				//	arity
+				if(call_expr_args.size() != 1){
+					throw std::runtime_error(
+						 string() + "Calling constructor for struct with " + std::to_string(call_expr_args.size()) + " arguments, " + std::to_string(1) + " + required."
+					);
+				}
+
+				const auto arg_lhs = type;
+				const auto arg_rhs = call_expr_args[0].get_annotated_type();
+
+/*
+??? how to support json_value(13) ?
+				//	null means "any" right now...###
+				if(arg_lhs.is_null() || arg_lhs == arg_rhs){
+				}
+				else{
+					throw std::runtime_error("Argument type mismatch.");
+				}
+*/
+
+				return { vm_acc, expression_t::make_call(callee_expr, call_expr_args, make_shared<typeid_t>(type)) };
+			}
 		}
 	}
 	else{

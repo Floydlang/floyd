@@ -2672,3 +2672,29 @@ QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
 	}
 }
 
+QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructor", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			struct pos { float x; float y;}
+			a = pos(3);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Calling constructor for struct with 1 arguments, 2 required.");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			struct pos { float x; float y;}
+			a = pos(3, "hello");
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Constructor needs an arguement exactly matching type and order of struct members.");
+	}
+}
+

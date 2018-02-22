@@ -127,22 +127,17 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 
 	const string struct_type_name = "unnamed";
 	const auto& def = struct_type.get_struct();
-	if(values.size() != def._members.size()){
-		throw std::runtime_error(
-			 string() + "Calling constructor for \"" + struct_type_name + "\" with " + std::to_string(values.size()) + " arguments, " + std::to_string(def._members.size()) + " + required."
-		);
-	}
+	QUARK_ASSERT(values.size() == def._members.size());
+
+#if DEBUG
 	for(int i = 0 ; i < def._members.size() ; i++){
 		const auto v = values[i];
 		const auto a = def._members[i];
-
 		QUARK_ASSERT(v.check_invariant());
 		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
-
-		if(v.get_type() != a._type){
-			throw std::runtime_error("Constructor needs an arguement exactly matching type and order of struct members");
-		}
+		QUARK_ASSERT(v.get_type() == a._type);
 	}
+#endif
 
 	const auto instance = value_t::make_struct_value(struct_type, values);
 	QUARK_TRACE(to_compact_string2(instance));
