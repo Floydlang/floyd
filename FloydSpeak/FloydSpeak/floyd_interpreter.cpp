@@ -1439,10 +1439,8 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		args2.push_back(t.second);
 	}
 
-	//	If not all input expressions could be evaluated, return a (maybe simplified) expression.
-	if(function.second.is_literal() == false || all_literals(args2) == false){
-		return {vm_acc, expression_t::make_call(function.second, args2, function.second.get_annotated_type2())};
-	}
+	QUARK_ASSERT(function.second.is_literal());
+	QUARK_ASSERT(all_literals(args2));
 
 	//	Convert to values.
 	const auto& function_value = function.second.get_literal();
@@ -1452,32 +1450,22 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		arg_values.push_back(v);
 	}
 
-	//	Get function value and arg values.
-	if(function_value.is_function() == false){
-		//	Attempting to call a TYPE? Then this may be a constructor call.
-		if(function_value.is_typeid()){
-			const auto result = construct_value_from_typeid(vm_acc, function_value.get_typeid_value(), arg_values);
-			vm_acc = result.first;
-			return { vm_acc, expression_t::make_literal(result.second)};
-		}
-/*
-		else if(function_value.is_vector()){
-			const auto result = construct_value_from_typeid(vm_acc, cleanup_vector_constructor_type(function_value.get_type()), arg_values);
-			vm_acc = result.first;
-			return { vm_acc, expression_t::make_literal(result.second)};
-		}
-*/
-		else{
-			throw std::runtime_error("Cannot call non-function.");
-		}
-	}
-
 	//	Call function-value.
-	else{
+	if(function_value.is_function()){
 		const auto& result = call_function(vm_acc, function_value, arg_values);
 		QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
 		vm_acc = result.first;
 		return { vm_acc, expression_t::make_literal(result.second._output)};
+	}
+
+	//	Attempting to call a TYPE? Then this may be a constructor call.
+	else if(function_value.is_typeid()){
+		const auto result = construct_value_from_typeid(vm_acc, function_value.get_typeid_value(), arg_values);
+		vm_acc = result.first;
+		return { vm_acc, expression_t::make_literal(result.second)};
+	}
+	else{
+		QUARK_ASSERT(false);
 	}
 }
 

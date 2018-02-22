@@ -2698,3 +2698,15 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor"
 	}
 }
 
+QUARK_UNIT_TEST_VIP("Edge case", "", "Call non-function, non-struct, non-typeid", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = 3();
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot call non-function.");
+	}
+}
+
