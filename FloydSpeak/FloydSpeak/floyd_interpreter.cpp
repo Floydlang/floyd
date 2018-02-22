@@ -696,19 +696,16 @@ std::pair<interpreter_t, expression_t> evaluate_resolve_member_expression(const 
 	auto vm_acc = vm;
 	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
-	if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
-		const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
+	QUARK_ASSERT(parent_expr.second.is_literal());
+	QUARK_ASSERT(parent_expr.second.get_literal().is_struct());
 
-		int index = find_struct_member_index(struct_instance->_def, expr._member_name);
-		if(index == -1){
-			throw std::runtime_error("Unknown struct member \"" + expr._member_name + "\".");
-		}
-		const value_t value = struct_instance->_member_values[index];
-		return { vm_acc, expression_t::make_literal(value)};
-	}
-	else{
-		throw std::runtime_error("Resolve struct member failed.");
-	}
+	const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
+
+	int index = find_struct_member_index(struct_instance->_def, expr._member_name);
+	QUARK_ASSERT(index != -1);
+
+	const value_t value = struct_instance->_member_values[index];
+	return { vm_acc, expression_t::make_literal(value)};
 }
 
 std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const interpreter_t& vm, const expression_t::lookup_expr_t& expr){
@@ -718,112 +715,97 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
 
-	if(parent_expr.second.is_literal() == false){
-		throw std::runtime_error("Cannot compute lookup parent.");
-	}
-	else{
-		const auto key_expr = evaluate_expression(vm_acc, *expr._lookup_key);
-		vm_acc = key_expr.first;
+	QUARK_ASSERT(parent_expr.second.is_literal());
 
-		if(key_expr.second.is_literal() == false){
-			throw std::runtime_error("Cannot compute lookup key.");
-		}//??? add debug code to validate all collection values, struct members - are the correct type.
+	const auto key_expr = evaluate_expression(vm_acc, *expr._lookup_key);
+	vm_acc = key_expr.first;
+
+	QUARK_ASSERT(key_expr.second.is_literal());
+
+	const auto parent_value = parent_expr.second.get_literal();
+	const auto key_value = key_expr.second.get_literal();
+
+	if(parent_value.is_string()){
+		QUARK_ASSERT(key_value.is_int());
+
+		const auto instance = parent_value.get_string_value();
+		int lookup_index = key_value.get_int_value();
+		if(lookup_index < 0 || lookup_index >= instance.size()){
+			throw std::runtime_error("Lookup in string: out of bounds.");
+		}
 		else{
-			const auto parent_value = parent_expr.second.get_literal();
-			const auto key_value = key_expr.second.get_literal();
-
-			if(parent_value.is_string()){
-				if(key_value.is_int() == false){
-					throw std::runtime_error("Lookup in string by index-only.");
-				}
-				else{
-					const auto instance = parent_value.get_string_value();
-					int lookup_index = key_value.get_int_value();
-					if(lookup_index < 0 || lookup_index >= instance.size()){
-						throw std::runtime_error("Lookup in string: out of bounds.");
-					}
-					else{
-						const char ch = instance[lookup_index];
-						const auto value2 = value_t::make_string(string(1, ch));
-						return { vm_acc, expression_t::make_literal(value2)};
-					}
-				}
+			const char ch = instance[lookup_index];
+			const auto value2 = value_t::make_string(string(1, ch));
+			return { vm_acc, expression_t::make_literal(value2)};
+		}
+	}
+	else if(parent_value.is_json_value()){
+		const auto parent_json_value = parent_value.get_json_value();
+		if(parent_json_value.is_object()){
+			if(key_value.is_string() == false){
+				throw std::runtime_error("Lookup in json_value object by string-key only.");
 			}
-			else if(parent_value.is_json_value()){
-				const auto parent_json_value = parent_value.get_json_value();
-				if(parent_json_value.is_object()){
-					if(key_value.is_string() == false){
-						throw std::runtime_error("Lookup in json_value object by string-key only.");
-					}
-					else{
-						const auto lookup_key = key_value.get_string_value();
+			else{
+				const auto lookup_key = key_value.get_string_value();
 
-						//	get_object_element() throws if key can't be found.
-						const auto value = parent_json_value.get_object_element(lookup_key);
-						const auto value2 = value_t::make_json_value(value);
-						return { vm_acc, expression_t::make_literal(value2)};
-					}
-				}
-				else if(parent_json_value.is_array()){
-					if(key_value.is_int() == false){
-						throw std::runtime_error("Lookup in json_value array by integer index only.");
-					}
-					else{
-						const auto lookup_index = key_value.get_int_value();
-
-						if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
-							throw std::runtime_error("Lookup in json_value array: out of bounds.");
-						}
-						else{
-							const auto value = parent_json_value.get_array_n(lookup_index);
-							const auto value2 = value_t::make_json_value(value);
-							return { vm_acc, expression_t::make_literal(value2)};
-						}
-					}
-				}
-				else{
-					throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
-				}
-			}
-			else if(parent_value.is_vector()){
-				if(key_value.is_int() == false){
-					throw std::runtime_error("Lookup in vector by index-only.");
-				}
-				else{
-					const auto instance = parent_value.get_vector_value();
-
-					int lookup_index = key_value.get_int_value();
-					if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
-						throw std::runtime_error("Lookup in vector: out of bounds.");
-					}
-					else{
-						const value_t value = instance->_elements[lookup_index];
-						return { vm_acc, expression_t::make_literal(value)};
-					}
-				}
-			}
-			else if(parent_value.is_dict()){
-				if(key_value.is_string() == false){
-					throw std::runtime_error("Lookup in dict by string-only.");
-				}
-				else{
-					const auto instance = parent_value.get_dict_value();
-					const string key = key_value.get_string_value();
-
-					const auto found_it = instance->_elements.find(key);
-					if(found_it == instance->_elements.end()){
-						throw std::runtime_error("Lookup in dict: key not found.");
-					}
-					else{
-						const value_t value = found_it->second;
-						return { vm_acc, expression_t::make_literal(value)};
-					}
-				}
-			}
-			else {
-				throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
+				//	get_object_element() throws if key can't be found.
+				const auto value = parent_json_value.get_object_element(lookup_key);
+				const auto value2 = value_t::make_json_value(value);
+				return { vm_acc, expression_t::make_literal(value2)};
 			}
 		}
+		else if(parent_json_value.is_array()){
+			if(key_value.is_int() == false){
+				throw std::runtime_error("Lookup in json_value array by integer index only.");
+			}
+			else{
+				const auto lookup_index = key_value.get_int_value();
+
+				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
+					throw std::runtime_error("Lookup in json_value array: out of bounds.");
+				}
+				else{
+					const auto value = parent_json_value.get_array_n(lookup_index);
+					const auto value2 = value_t::make_json_value(value);
+					return { vm_acc, expression_t::make_literal(value2)};
+				}
+			}
+		}
+		else{
+			throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+		}
+	}
+	else if(parent_value.is_vector()){
+		QUARK_ASSERT(key_value.is_int());
+
+		const auto instance = parent_value.get_vector_value();
+
+		int lookup_index = key_value.get_int_value();
+		if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
+			throw std::runtime_error("Lookup in vector: out of bounds.");
+		}
+		else{
+			const value_t value = instance->_elements[lookup_index];
+			return { vm_acc, expression_t::make_literal(value)};
+		}
+	}
+	else if(parent_value.is_dict()){
+		QUARK_ASSERT(key_value.is_string());
+
+		const auto instance = parent_value.get_dict_value();
+		const string key = key_value.get_string_value();
+
+		const auto found_it = instance->_elements.find(key);
+		if(found_it == instance->_elements.end()){
+			throw std::runtime_error("Lookup in dict: key not found.");
+		}
+		else{
+			const value_t value = found_it->second;
+			return { vm_acc, expression_t::make_literal(value)};
+		}
+	}
+	else {
+		throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
 	}
 }
 
@@ -832,12 +814,8 @@ std::pair<interpreter_t, expression_t> evaluate_variabele_expression(const inter
 
 	auto vm_acc = vm;
 	const auto value = resolve_env_variable(vm_acc, expr._variable);
-	if(value != nullptr){
-		return {vm_acc, expression_t::make_literal(value->first)};
-	}
-	else{
-		throw std::runtime_error("Undefined variable \"" + expr._variable + "\"!");
-	}
+	QUARK_ASSERT(value != nullptr);
+	return {vm_acc, expression_t::make_literal(value->first)};
 }
 
 

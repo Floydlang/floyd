@@ -737,7 +737,7 @@ std::pair<analyser_t, expression_t> analyse_variable_expression(const analyser_t
 		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(value->_value_type)) };
 	}
 	else{
-		throw std::runtime_error("Undefined variable \"" + expr._variable + "\"!");
+		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
 	}
 }
 

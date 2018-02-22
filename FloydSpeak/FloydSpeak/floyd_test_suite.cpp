@@ -2594,3 +2594,81 @@ QUARK_UNIT_TEST("Edge case", "", "Define struct with colliding name", "exception
 	}
 }
 
+QUARK_UNIT_TEST("Edge case", "", "Access unknown struct member", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			struct a { int x; }
+			b = a(13);
+			print(b.y);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Unknown struct member \"y\".");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", "Access unknown member in non-struct", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = 10;
+			print(a.y);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Resolve struct member failed.");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", "Lookup in string using non-int", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			string a = "test string";
+			print(a["not an integer"]);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Lookup in string by index-only.");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", "Lookup in vector using non-int", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			[string] a = ["one", "two", "three"];
+			print(a["not an integer"]);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Lookup in vector by index-only.");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", "Lookup in dict using non-string key", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = { "one": 1, "two": 2 };
+			print(a[3]);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Lookup in dict by string-only.");
+	}
+}
+
+QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			print(a);
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Undefined variable \"a\".");
+	}
+}
+
