@@ -301,6 +301,7 @@ void run_tests(){
 
 		"floyd_basics.cpp",
 
+
 		"parser2.cpp",
 		"parser_value.cpp",
 		"parser_primitives.cpp",
@@ -312,25 +313,26 @@ void run_tests(){
 		"parse_prefixless_statement.cpp",
 		"floyd_parser.cpp",
 
+		"floyd_test_suite.cpp",
+		"interpretator_benchmark.cpp",
+
 		"ast_typeid.cpp",
+
+		"pass2.cpp",
+		"pass3.cpp",
 
 		"parse_statement.cpp",
 		"floyd_interpreter.cpp",
 
 		//	Core libs
 /*
-		"pass2.cpp",
 		"parser_ast.cpp",
 		"ast_utils.cpp",
 		"experimental_runtime.cpp",
 		"expressions.cpp",
 		"llvm_code_gen.cpp",
-		"runtime_core.cpp",
-		"runtime_value.cpp",
-		"runtime.cpp",
 		"utils.cpp",
 		"pass3.cpp",
-		"floyd_interpreter.cpp",
 		"floyd_main.cpp",
 */
 	});

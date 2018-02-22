@@ -436,8 +436,6 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 		throw std::runtime_error("Cannot evaluate expression.");
 	}
 	else{
-		const auto bind_statement_type = statement._bindtype;
-
 		const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, name);
 		const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
 

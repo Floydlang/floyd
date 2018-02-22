@@ -180,7 +180,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 		const auto name2 = name.get_string();
 		const auto expr2 = parser_expression_to_ast(tracer, expr);
-		return statement_t::make__store_local(name2, typeid_t::make_null(), expr2);
+		return statement_t::make__store_local(name2, expr2);
 	}
 
 	//	[ "block", [ STATEMENTS ] ]
@@ -491,9 +491,11 @@ ast_json_t statement_to_json(const statement_t& e){
 	}
 	else if(e._bind_local){
 		bool mutable_flag = e._bind_local->_locals_mutable_mode == statement_t::bind_local_t::k_mutable;
-		const auto meta = json_t::make_object({
-			std::pair<std::string,json_t>{"mutable", mutable_flag}
-		});
+		const auto meta = mutable_flag
+			? json_t::make_object({
+				std::pair<std::string,json_t>{"mutable", mutable_flag}
+			})
+			: json_t();
 
 		return ast_json_t{make_array_skip_nulls({
 			json_t("bind"),
@@ -507,7 +509,6 @@ ast_json_t statement_to_json(const statement_t& e){
 		return ast_json_t{make_array_skip_nulls({
 			json_t("assign"),
 			e._store_local->_new_variable_name,
-			typeid_to_ast_json(e._store_local->_bindtype)._value,
 			expression_to_json(e._store_local->_expression)._value
 		})};
 	}
@@ -567,7 +568,7 @@ ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e
 ast_json_t expression_to_json(const expression_t& e){
 	const auto a = e.get_expr()->expr_base__to_json();
 
-	if(e.is_annotated_shallow()){
+	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
 		const auto t = e.get_annotated_type();
 		auto a2 = a._value.get_array();
 		const auto type_json = typeid_to_ast_json(t);
@@ -626,6 +627,9 @@ const std::string k_test_program_0_parserout = R"(
 )";
 const std::string k_test_program_0_pass2output = R"(
 	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int"]]], "int"]]] }
+
+
+//	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int", "int"]]], "int", ["function", "int", []]]]] }
 )";
 
 

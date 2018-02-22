@@ -290,7 +290,6 @@ std::pair<analyser_t, statement_t> analyse_statement_as_simple_assign(const anal
 	auto vm_acc = vm;
 
 	const auto bind_name = statement._new_variable_name;//??? rename to .variable_name.
-	const auto bind_statement_type = statement._bindtype;
 
 	const auto expr2 = analyse_expression(vm_acc, statement._expression);
 	vm_acc = expr2.first;
@@ -313,11 +312,12 @@ std::pair<analyser_t, statement_t> analyse_statement_as_simple_assign(const anal
 			const auto rhs_type2 = improve_value_type(rhs_type, lhs_type);
 			const auto lhs_type2 = improve_value_type(lhs_type, rhs_type2);
 
-			if(lhs_type != rhs_type2){
+			//??? we don't have type when calling push_back().
+			if(rhs_type2 != lhs_type2 && rhs_type.is_null() == false){
 				throw std::runtime_error("Types not compatible in bind.");
 			}
 			else{
-				return { vm_acc, statement_t::make__store_local(bind_name, lhs_type2, rhs_expr3) };
+				return { vm_acc, statement_t::make__store_local(bind_name, rhs_expr3) };
 			}
 		}
 	}
@@ -660,15 +660,18 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	auto vm_acc = vm;
 	const auto parent_expr = analyse_expression(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
-	if(parent_expr.second.is_literal() && parent_expr.second.get_literal().is_struct()){
-		const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
 
-		int index = find_struct_member_index(struct_instance->_def, expr._member_name);
+	const auto parent_type = parent_expr.second.get_annotated_type();
+
+	if(parent_type.is_struct()){
+		const auto struct_def = parent_type.get_struct();
+
+		int index = find_struct_member_index(struct_def, expr._member_name);
 		if(index == -1){
 			throw std::runtime_error("Unknown struct member \"" + expr._member_name + "\".");
 		}
-		const value_t value = struct_instance->_member_values[index];
-		return { vm_acc, expression_t::make_literal(value)};
+		const auto member_type = struct_def._members[index]._type;
+		return { vm_acc, expression_t::make_resolve_member(parent_expr.second, expr._member_name, make_shared<typeid_t>(member_type))};
 	}
 	else{
 		throw std::runtime_error("Resolve struct member failed.");
@@ -698,44 +701,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_string())) };
 	}
 	else if(parent_type.is_json_value()){
-		QUARK_ASSERT(false);
-
-/*
-		const auto parent_json_value = parent_value.get_json_value();
-		if(parent_json_value.is_object()){
-			if(key_type.is_string() == false){
-				throw std::runtime_error("Lookup in json_value object by string-key only.");
-			}
-			else{
-				const auto lookup_key = key_type.get_string_value();
-
-				//	get_object_element() throws if key can't be found.
-				const auto value = parent_json_value.get_object_element(lookup_key);
-				const auto value2 = value_t::make_json_value(value);
-				return { vm_acc, expression_t::make_literal(value2)};
-			}
-		}
-		else if(parent_json_value.is_array()){
-			if(key_type.is_int() == false){
-				throw std::runtime_error("Lookup in json_value array by integer index only.");
-			}
-			else{
-				const auto lookup_index = key_type.get_int_value();
-
-				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
-					throw std::runtime_error("Lookup in json_value array: out of bounds.");
-				}
-				else{
-					const auto value = parent_json_value.get_array_n(lookup_index);
-					const auto value2 = value_t::make_json_value(value);
-					return { vm_acc, expression_t::make_literal(value2)};
-				}
-			}
-		}
-		else{
-			throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
-		}
-	*/
+		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_json_value())) };
 	}
 	else if(parent_type.is_vector()){
 		if(key_type.is_int() == false){
@@ -786,26 +752,21 @@ std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const a
 		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
 	}
 	else{
-		std::vector<value_t> elements2;
+		std::vector<expression_t> elements2;
 		for(const auto m: elements){
 			const auto element_expr = analyse_expression(vm_acc, m);
 			vm_acc = element_expr.first;
-			if(element_expr.second.is_literal() == false){
-				throw std::runtime_error("Cannot analyse element of vector definition!");
-			}
-
-			const auto element = element_expr.second.get_literal();//??????????????????
-			elements2.push_back(element);
+			elements2.push_back(element_expr.second);
 		}
 
 		//	If we don't have an explicit element type, deduct it from first element.
-		const auto element_type2 = element_type.is_null() ? elements2[0].get_type() : element_type;
+		const auto element_type2 = element_type.is_null() ? elements2[0].get_annotated_type(): element_type;
 		for(const auto m: elements2){
-			if((m.get_type() == element_type2) == false){
+			if(m.get_annotated_type() != element_type2){
 				throw std::runtime_error("Vector can not hold elements of different type!");
 			}
 		}
-		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type2, elements2))};
+		return { vm_acc, expression_t::make_vector_definition(element_type2, elements2) };
 	}
 }
 
@@ -837,7 +798,8 @@ std::pair<analyser_t, expression_t> analyse_dict_definition_expression(const ana
 		for(const auto m_kv: elements2){
 			const auto element_type = m_kv.second.get_annotated_type();
 			if(element_type != element_type2){
-				throw std::runtime_error("Dict can not hold elements of different type!");
+//??? dict-def needs to hold mixed values to allow json_value to type object to work.
+//???				throw std::runtime_error("Dict can not hold elements of different type!");
 			}
 		}
 
@@ -1391,7 +1353,7 @@ QUARK_UNIT_TESTQ("analyse_expression()", "1 + 2 == 3") {
 
 	ut_compare_jsons(
 		expression_to_json(e3.second)._value,
-		parse_json(seq_t(R"(   ["+", ["k", 1, "int", "int"], ["k", 2, "int", "int"], "int"]   )")).first
+		parse_json(seq_t(R"(   ["+", ["k", 1, "int"], ["k", 2, "int"], "int"]   )")).first
 	);
 }
 
@@ -1497,7 +1459,7 @@ ast_t analyse(const analyser_t& a0){
 		host_function_t{ "flatten_to_json", 1019, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
 		host_function_t{ "unflatten_from_json", 1020, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },
 
-		host_function_t{ "get_json_type", 10121, typeid_t::make_function(typeid_t::make_typeid(), {typeid_t::make_json_value()}) }
+		host_function_t{ "get_json_type", 10121, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }
 	};
 
 	//	Insert built-in functions into AST.

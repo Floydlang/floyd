@@ -27,6 +27,9 @@ namespace floyd {
 
 	//	"+", "<=", "&&" etc.
 	bool is_simple_expression__2(const std::string& op);
+	json_t annotate_json(const json_t& j, const expression_t& e);
+
+
 
 
 
@@ -123,11 +126,13 @@ namespace floyd {
 			}
 
 			virtual ast_json_t expr_base__to_json() const {
-				return ast_json_t{json_t::make_array({
-					expression_type_to_token(_op),
-					expression_to_json(*_left)._value,
-					expression_to_json(*_right)._value
-				})};
+				return ast_json_t{
+					json_t::make_array({
+						expression_type_to_token(_op),
+						expression_to_json(*_left)._value,
+						expression_to_json(*_right)._value
+					})
+				};
 			}
 
 
@@ -678,6 +683,22 @@ namespace floyd {
 		}
 */
 
+		public: bool has_builtin_type() const {
+			QUARK_ASSERT(check_invariant());
+
+			if(false
+			|| _operation == expression_type::k_literal
+			|| _operation == expression_type::k_define_function
+			|| _operation == expression_type::k_vector_definition
+			|| _operation == expression_type::k_dict_definition
+			){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
+
 		public: bool is_annotated_shallow() const{
 			QUARK_ASSERT(check_invariant());
 
@@ -831,7 +852,6 @@ namespace floyd {
 		private: std::shared_ptr<const expr_base_t> _expr;
 		private: std::shared_ptr<typeid_t> _annotated_type;
 	};
-
 
 
 	inline bool operator==(const expression_t::literal_expr_t& lhs, const expression_t::literal_expr_t& rhs){

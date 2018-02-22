@@ -1462,21 +1462,19 @@ OFF_QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 	});
 }
 
-#if false
-//	[string]() -- requires TYPE(EXPRESSION) conversion expressions.
-QUARK_UNIT_TEST("vector", "[]-constructor, explicit type", "strings", "valid vector"){
-	const auto vm = test__run_global(R"(
-		a = [string]("one", "two");
-		print(a);
-	)");
-	QUARK_UT_VERIFY((	vm._print_output == vector<string>{	"one", "two"	}	));
-}
-#endif
-
-
 QUARK_UNIT_TEST("vector", "[]", "strings", ""){
 	const auto vm = test__run_global(R"(
 		[string] a = ["alpha", "beta"];
+		assert(a[0] == "alpha");
+		assert(a[1] == "beta");
+	)");
+}
+
+
+QUARK_UNIT_TEST("vector", "computed element", "strings", ""){
+	const auto vm = test__run_global(R"(
+		string get_beta(){ return "beta"; }
+		[string] a = ["alpha", get_beta()];
 		assert(a[0] == "alpha");
 		assert(a[1] == "beta");
 	)");
