@@ -368,7 +368,7 @@ std::pair<interpreter_t, statement_result_t> execute_statements_in_env(
 }
 
 
-std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interpreter_t& vm, const statement_t::bind_or_assign_statement_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const interpreter_t& vm, const statement_t::bind_local_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -383,87 +383,82 @@ std::pair<interpreter_t, statement_result_t> execute_bind_statement(const interp
 	}
 	else{
 		const auto bind_statement_type = statement._bindtype;
-		const auto bind_statement_mutable_tag_flag = statement._bind_as_mutable_tag;
+		const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
 
-		//	If we have a type or we have the mutable-flag, then this statement is a bind.
-		bool is_bind = bind_statement_type.is_null() == false || bind_statement_mutable_tag_flag;
+		const auto mutable_flag = bind_statement_mutable_mode == statement_t::bind_local_t::k_mutable;
 
 		//	Bind.
 		//	int a = 10
 		//	mutable a = 10
 		//	mutable = 10
-		if(is_bind){
-			const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
-			const auto value_exists_in_env = vm_acc._call_stack.back()->_values.count(name) > 0;
+		const auto retyped_value = improve_value_type(result_value.get_literal(), bind_statement_type);
+		const auto value_exists_in_env = vm_acc._call_stack.back()->_values.count(name) > 0;
 
-			if(value_exists_in_env){
-				throw std::runtime_error("Local identifier already exists.");
+		if(value_exists_in_env){
+			throw std::runtime_error("Local identifier already exists.");
+		}
+
+		//	Deduced bind type -- use new value's type.
+		if(bind_statement_type.is_null()){
+			if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
+				throw std::runtime_error("Cannot deduce vector type.");
 			}
-
-			//	Deduced bind type -- use new value's type.
-			if(bind_statement_type.is_null()){
-				if(retyped_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
-					throw std::runtime_error("Cannot deduce vector type.");
-				}
-				else if(retyped_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
-					throw std::runtime_error("Cannot deduce dictionary type.");
-				}
-				else{
-					vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
-				}
+			else if(retyped_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
+				throw std::runtime_error("Cannot deduce dictionary type.");
 			}
-
-			//	Explicit bind-type -- make sure source + dest types match.
 			else{
-				if(bind_statement_type != retyped_value.get_type()){
-					throw std::runtime_error("Types not compatible in bind.");
-				}
-				vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, bind_statement_mutable_tag_flag);
+				vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
 			}
 		}
 
-		//	Assign
-		//	a = 10
+		//	Explicit bind-type -- make sure source + dest types match.
 		else{
-			const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, name);
-			const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
-
-			//	Mutate!
-			if(existing_value_deep_ptr){
-				if(existing_variable_is_mutable){
-					const auto existing_value = existing_value_deep_ptr->first;
-					const auto new_value = result_value.get_literal();
-
-					//	Let both existing & new values influence eachother to the exact type of the new variable.
-					//	Existing could be a [null]=[], or could new_value
-					const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
-					const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
-
-					if(existing_value2.get_type() != new_value2.get_type()){
-						throw std::runtime_error("Types not compatible in bind.");
-					}
-					*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
-				}
-				else{
-					throw std::runtime_error("Cannot assign to immutable identifier.");
-				}
+			if(bind_statement_type != retyped_value.get_type()){
+				throw std::runtime_error("Types not compatible in bind.");
 			}
+			vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
+		}
+	}
+	return { vm_acc, statement_result_t::make_no_output() };
+}
 
-			//	Deduce type and bind it -- to local env.
-			else{
-				const auto new_value = result_value.get_literal();
+std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const interpreter_t& vm, const statement_t::store_local_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
 
-				//	Can we deduce type from the rhs value?
-				if(new_value.get_type() == typeid_t::make_vector(typeid_t::make_null())){
-					throw std::runtime_error("Cannot deduce vector type.");
-				}
-				else if(new_value.get_type() == typeid_t::make_dict(typeid_t::make_null())){
-					throw std::runtime_error("Cannot deduce dictionary type.");
-				}
-				else{
-					vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(new_value, false);
-				}
+	auto vm_acc = vm;
+	const auto name = statement._new_variable_name;
+
+	const auto result = evaluate_expression(vm_acc, statement._expression);
+	vm_acc = result.first;
+
+	const auto result_value = result.second;
+	if(result_value.is_literal() == false){
+		throw std::runtime_error("Cannot evaluate expression.");
+	}
+	else{
+		const auto bind_statement_type = statement._bindtype;
+
+		const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, name);
+		const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
+
+		QUARK_ASSERT(existing_value_deep_ptr != nullptr);
+
+		if(existing_variable_is_mutable){
+			const auto existing_value = existing_value_deep_ptr->first;
+			const auto new_value = result_value.get_literal();
+
+			//	Let both existing & new values influence eachother to the exact type of the new variable.
+			//	Existing could be a [null]=[], or could new_value
+			const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
+			const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
+
+			if(existing_value2.get_type() != new_value2.get_type()){
+				throw std::runtime_error("Types not compatible in bind.");
 			}
+			*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
+		}
+		else{
+			throw std::runtime_error("Cannot assign to immutable identifier.");
 		}
 	}
 	return { vm_acc, statement_result_t::make_no_output() };
@@ -607,8 +602,11 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
-	if(statement._bind_or_assign){
-		return execute_bind_statement(vm, *statement._bind_or_assign);
+	if(statement._bind_local){
+		return execute_bind_local_statement(vm, *statement._bind_local);
+	}
+	else if(statement._store_local){
+		return execute_store_local_statement(vm, *statement._store_local);
 	}
 	else if(statement._block){
 		return execute_statements_in_env(vm, statement._block->_statements, {});

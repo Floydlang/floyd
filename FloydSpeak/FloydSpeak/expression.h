@@ -354,7 +354,7 @@ namespace floyd {
 				std::make_shared<function_definition_expr_t>(
 					function_definition_expr_t{ function_definition_t(def) }
 				),
-				std::make_shared<typeid_t>(def._return_type)
+				std::make_shared<typeid_t>(get_function_type(def))
 			};
 		}
 

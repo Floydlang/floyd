@@ -20,9 +20,12 @@ namespace floyd {
 
 	/*
 		Input is an array of statements from parser.
-		A function has its own list of statements.
+		WARNING: Will convert the JSON to other types of data.
 	*/
-	const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const quark::trace_context_t& tracer, const ast_json_t& p);
+	const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast__lossy(const quark::trace_context_t& tracer, const ast_json_t& p);
+
+
+	const std::vector<std::shared_ptr<statement_t> > statements_to_ast__nonlossy(const quark::trace_context_t& tracer, const ast_json_t& p);
 
 
 	ast_json_t statement_to_json(const statement_t& e);

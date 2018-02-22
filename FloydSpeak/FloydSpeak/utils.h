@@ -51,7 +51,7 @@ template <typename T> std::vector<T> operator+(const std::vector<T>& lhs, const 
 }
 
 
-
+// BETTER WAY: https://yongweiwu.wordpress.com/2014/12/07/study-notes-functional-programming-with-cplusplus/
 
 template <typename Collection,typename unop>
 void for_each(Collection col, unop op){

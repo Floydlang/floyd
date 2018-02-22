@@ -37,6 +37,7 @@ namespace floyd_pass3 {
 
 
 
+std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e, const std::string& function_name);
 
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm, const expression_t& e);
 symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s);
@@ -266,7 +267,7 @@ BETTER:
 		x = "hello";
 		x = f(3) == 2;
 
-	BIND						TYPE IDENTIFIER = EXPRESSION;
+	BIND_NEW						TYPE IDENTIFIER = EXPRESSION;
 		int x = {"a": 1, "b": 2};
 		int x = 10;
 		int (string a) x = f(4 == 5);
@@ -275,18 +276,21 @@ BETTER:
 */
 // ???rename this equal_statement, the make specific statements for mutate vs bind.
 
+/*
+	Simple assign
 
-
-
-std::pair<analyser_t, statement_t> analyse_bind_statement(const analyser_t& vm, const statement_t::bind_or_assign_statement_t& statement){
+	- Can update an existing local (if local is mutable).
+	- Can implicitly create a new local
+*/
+std::pair<analyser_t, statement_t> analyse_statement_as_simple_assign(const analyser_t& vm, const statement_t& s){
 	QUARK_ASSERT(vm.check_invariant());
+
+	const auto statement = *s._store_local;
 
 	auto vm_acc = vm;
 
 	const auto bind_name = statement._new_variable_name;//??? rename to .variable_name.
 	const auto bind_statement_type = statement._bindtype;
-	const auto bind_statement_mutable_mode = statement._bind_as_mutable_tag;
-	const auto bind_statement_mutable_tag_flag = bind_statement_mutable_mode == statement_t::bind_or_assign_statement_t::k_mutable;
 
 	const auto expr2 = analyse_expression(vm_acc, statement._expression);
 	vm_acc = expr2.first;
@@ -294,92 +298,112 @@ std::pair<analyser_t, statement_t> analyse_bind_statement(const analyser_t& vm, 
 	const auto rhs_expr3 = expr2.second;
 	const auto rhs_type = rhs_expr3.get_annotated_type();
 
-
 	const auto existing_value_deep_ptr = resolve_env_symbol2(vm_acc, bind_name);
 
-
-	//	If we have a type or we have the mutable-flag, then this statement is a bind.
-	bool is_simple_assign = bind_statement_type.is_null() == true && bind_statement_mutable_mode == statement_t::bind_or_assign_statement_t::k_mutable;
-
-	//	Assign with target type info.
-	//	int a = 10
-	//	mutable a = 10
-	//	mutable = 10
-	if(is_simple_assign == false){
-		const auto lhs_type = bind_statement_type;
-		const auto rhs_type2 = improve_value_type(rhs_type, lhs_type);
-		const auto value_exists_in_env = vm_acc._call_stack.back()->_symbols.count(bind_name) > 0;
-
-		if(value_exists_in_env){
-			throw std::runtime_error("Local identifier already exists.");
+	//	Attempt to mutate existing value!
+	if(existing_value_deep_ptr != nullptr){
+		if(existing_value_deep_ptr->_symbol_type != symbol_t::mutable_local){
+			throw std::runtime_error("Cannot assign to immutable identifier.");
 		}
-
-		//	Deduced bind type -- use new value's type.
-		if(lhs_type.is_null()){
-			if(rhs_type2 == typeid_t::make_vector(typeid_t::make_null())){
-				throw std::runtime_error("Cannot deduce vector type.");
-			}
-			else if(rhs_type2 == typeid_t::make_dict(typeid_t::make_null())){
-				throw std::runtime_error("Cannot deduce dictionary type.");
-			}
-			else{
-				vm_acc._call_stack.back()->_symbols[bind_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(rhs_type2) : symbol_t::make_immutable_local(rhs_type2);
-				return { vm_acc, statement_t::make__bind_or_assign_statement(bind_name, rhs_type2, rhs_expr3, bind_statement_mutable_mode) };
-			}
-		}
-
-		//	Explicit bind-type -- make sure source + dest types match.
 		else{
+			const auto lhs_type = existing_value_deep_ptr->get_type();
+
+			//	Let both existing & new values influence eachother to the exact type of the new variable.
+			//	Existing could be a [null]=[], or could rhs_type
+			const auto rhs_type2 = improve_value_type(rhs_type, lhs_type);
+			const auto lhs_type2 = improve_value_type(lhs_type, rhs_type2);
+
 			if(lhs_type != rhs_type2){
 				throw std::runtime_error("Types not compatible in bind.");
 			}
-			vm_acc._call_stack.back()->_symbols[bind_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(rhs_type2) : symbol_t::make_immutable_local(rhs_type2);
-			return { vm_acc, statement_t::make__bind_or_assign_statement(bind_name, rhs_type2, rhs_expr3, bind_statement_mutable_mode) };
+			else{
+				return { vm_acc, statement_t::make__store_local(bind_name, lhs_type2, rhs_expr3) };
+			}
 		}
 	}
 
-	//	Simple assign
-	//	a = 10
+	//	Deduce type and bind it -- to local env.
 	else{
-
-		//	Mutate!
-		if(existing_value_deep_ptr != nullptr){
-			if(existing_value_deep_ptr->_symbol_type != symbol_t::immutable_local){
-				throw std::runtime_error("Cannot assign to immutable identifier.");
-			}
-			else{
-				const auto lhs_type = existing_value_deep_ptr->get_type();
-
-				//	Let both existing & new values influence eachother to the exact type of the new variable.
-				//	Existing could be a [null]=[], or could rhs_type
-				const auto rhs_type2 = improve_value_type(rhs_type, lhs_type);
-				const auto lhs_type2 = improve_value_type(lhs_type, rhs_type2);
-
-				if(lhs_type != rhs_type2){
-					throw std::runtime_error("Types not compatible in bind.");
-				}
-				else{
-					return { vm_acc, statement_t::make__bind_or_assign_statement(bind_name, lhs_type2, rhs_expr3, statement_t::bind_or_assign_statement_t::k_immutable) };
-				}
-			}
+		//	Can we deduce type from the rhs value?
+		if(rhs_type == typeid_t::make_vector(typeid_t::make_null())){
+			throw std::runtime_error("Cannot deduce vector type.");
 		}
-
-		//	Deduce type and bind it -- to local env.
+		else if(rhs_type == typeid_t::make_dict(typeid_t::make_null())){
+			throw std::runtime_error("Cannot deduce dictionary type.");
+		}
 		else{
-			//	Can we deduce type from the rhs value?
-			if(rhs_type == typeid_t::make_vector(typeid_t::make_null())){
-				throw std::runtime_error("Cannot deduce vector type.");
-			}
-			else if(rhs_type == typeid_t::make_dict(typeid_t::make_null())){
-				throw std::runtime_error("Cannot deduce dictionary type.");
-			}
-			else{
-				vm_acc._call_stack.back()->_symbols[bind_name] = symbol_t::make_immutable_local(rhs_type);
-				return { vm_acc, statement_t::make__bind_or_assign_statement(bind_name, rhs_type, rhs_expr3, statement_t::bind_or_assign_statement_t::k_immutable) };
-			}
+			vm_acc._call_stack.back()->_symbols[bind_name] = symbol_t::make_immutable_local(rhs_type);
+			return { vm_acc, statement_t::make__bind_local(bind_name, rhs_type, rhs_expr3, statement_t::bind_local_t::k_immutable) };
 		}
 	}
 }
+
+/*
+Assign with target type info.
+- Always creates a new local.
+
+Ex:
+	int a = 10
+	mutable a = 10
+	mutable = 10
+*/
+std::pair<analyser_t, statement_t> analyse_statement_as_bindnew(const analyser_t& vm, const statement_t& s){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto statement = *s._bind_local;
+	auto vm_acc = vm;
+
+	const auto bind_name = statement._new_variable_name;//??? rename to .variable_name.
+	const auto bind_statement_type = statement._bindtype;
+	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
+
+	const auto value_exists_in_env = vm_acc._call_stack.back()->_symbols.count(bind_name) > 0;
+	if(value_exists_in_env){
+		throw std::runtime_error("Local identifier already exists.");
+	}
+
+	//	Important: the expression may reference the symbol we are binding (this happens when recursive function definitions, like fibonacci).
+	//	We need to insert symbol before analysing the expression.
+
+	const auto rhs_expr2_pair = analyse_expression(vm_acc, statement._expression);
+	vm_acc = rhs_expr2_pair.first;
+
+	const auto rhs_expr3 = rhs_expr2_pair.second;
+	const auto rhs_type = rhs_expr3.get_annotated_type();
+
+	const auto lhs_type = bind_statement_type;
+	const auto rhs_type2 = improve_value_type(rhs_type, lhs_type);
+
+	//	Deduced bind type -- use new value's type.
+	if(lhs_type.is_null()){
+		if(rhs_type2 == typeid_t::make_vector(typeid_t::make_null())){
+			throw std::runtime_error("Cannot deduce vector type.");
+		}
+		else if(rhs_type2 == typeid_t::make_dict(typeid_t::make_null())){
+			throw std::runtime_error("Cannot deduce dictionary type.");
+		}
+		else{
+			vm_acc._call_stack.back()->_symbols[bind_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(rhs_type2) : symbol_t::make_immutable_local(rhs_type2);
+			return {
+				vm_acc,
+				statement_t::make__bind_local(bind_name, rhs_type2, rhs_expr3, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
+			};
+		}
+	}
+
+	//	Explicit bind-type -- make sure source + dest types match.
+	else{
+		if(lhs_type != rhs_type2){
+//???			throw std::runtime_error("Types not compatible in bind.");
+		}
+		vm_acc._call_stack.back()->_symbols[bind_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type);
+		return {
+			vm_acc,
+			statement_t::make__bind_local(bind_name, lhs_type, rhs_expr3, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
+		};
+	}
+}
+
 
 std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& vm, const statement_t::block_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -499,14 +523,36 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 	return { vm_acc, statement_t::make__expression_statement(expr2.second) };
 }
 
+/*
+std::pair<analyser_t, statement_t> analyse_bind_statement(const analyser_t& vm, const statement_t::bind_or_assign_statement_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto bind_statement_type = statement._bindtype;
+	const auto bind_statement_mutable_mode = statement._bind_as_mutable_tag;
+
+	//	If we have a type or we have the mutable-flag, then this statement is a bindnew, else it's a simple-assign.
+	bool bindnew_mode = bind_statement_type.is_null() == false || bind_statement_mutable_mode == statement_t::bind_or_assign_statement_t::k_has_mutable_tag;
+	if(bindnew_mode){
+		return analyse_statement_as_bindnew(vm, statement);
+	}
+	else{
+		return analyse_statement_as_simple_assign(vm, statement);
+	}
+}
+*/
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
 std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
-	if(statement._bind_or_assign){
-		const auto e = analyse_bind_statement(vm, *statement._bind_or_assign);
+	if(statement._bind_local){
+		const auto e = analyse_statement_as_bindnew(vm, statement);
+		QUARK_ASSERT(e.second.is_annotated_deep());
+		return e;
+	}
+	else if(statement._store_local){
+		const auto e = analyse_statement_as_simple_assign(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
 		return e;
 	}
@@ -629,6 +675,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
+//??? Convert all these mechamisms into a built-lookup-function.
 std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& vm, const expression_t::lookup_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -636,115 +683,84 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	const auto parent_expr = analyse_expression(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
 
-	if(parent_expr.second.is_literal() == false){
-		throw std::runtime_error("Cannot compute lookup parent.");
-	}
-	else{
-		const auto key_expr = analyse_expression(vm_acc, *expr._lookup_key);
-		vm_acc = key_expr.first;
+	const auto key_expr = analyse_expression(vm_acc, *expr._lookup_key);
+	vm_acc = key_expr.first;
 
-		if(key_expr.second.is_literal() == false){
-			throw std::runtime_error("Cannot compute lookup key.");
-		}//??? add debug code to validate all collection values, struct members - are the correct type.
+	const auto parent_type = parent_expr.second.get_annotated_type();
+	const auto key_type = key_expr.second.get_annotated_type();
+
+	if(parent_type.is_string()){
+		if(key_type.is_int() == false){
+			throw std::runtime_error("Lookup in string by index-only.");
+		}
 		else{
-			const auto parent_value = parent_expr.second.get_literal();
-			const auto key_value = key_expr.second.get_literal();
+		}
+		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_string())) };
+	}
+	else if(parent_type.is_json_value()){
+		QUARK_ASSERT(false);
 
-			if(parent_value.is_string()){
-				if(key_value.is_int() == false){
-					throw std::runtime_error("Lookup in string by index-only.");
-				}
-				else{
-					const auto instance = parent_value.get_string_value();
-					int lookup_index = key_value.get_int_value();
-					if(lookup_index < 0 || lookup_index >= instance.size()){
-						throw std::runtime_error("Lookup in string: out of bounds.");
-					}
-					else{
-						const char ch = instance[lookup_index];
-						const auto value2 = value_t::make_string(string(1, ch));
-						return { vm_acc, expression_t::make_literal(value2)};
-					}
-				}
+/*
+		const auto parent_json_value = parent_value.get_json_value();
+		if(parent_json_value.is_object()){
+			if(key_type.is_string() == false){
+				throw std::runtime_error("Lookup in json_value object by string-key only.");
 			}
-			else if(parent_value.is_json_value()){
-				const auto parent_json_value = parent_value.get_json_value();
-				if(parent_json_value.is_object()){
-					if(key_value.is_string() == false){
-						throw std::runtime_error("Lookup in json_value object by string-key only.");
-					}
-					else{
-						const auto lookup_key = key_value.get_string_value();
+			else{
+				const auto lookup_key = key_type.get_string_value();
 
-						//	get_object_element() throws if key can't be found.
-						const auto value = parent_json_value.get_object_element(lookup_key);
-						const auto value2 = value_t::make_json_value(value);
-						return { vm_acc, expression_t::make_literal(value2)};
-					}
-				}
-				else if(parent_json_value.is_array()){
-					if(key_value.is_int() == false){
-						throw std::runtime_error("Lookup in json_value array by integer index only.");
-					}
-					else{
-						const auto lookup_index = key_value.get_int_value();
-
-						if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
-							throw std::runtime_error("Lookup in json_value array: out of bounds.");
-						}
-						else{
-							const auto value = parent_json_value.get_array_n(lookup_index);
-							const auto value2 = value_t::make_json_value(value);
-							return { vm_acc, expression_t::make_literal(value2)};
-						}
-					}
-				}
-				else{
-					throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
-				}
-			}
-			else if(parent_value.is_vector()){
-				if(key_value.is_int() == false){
-					throw std::runtime_error("Lookup in vector by index-only.");
-				}
-				else{
-					const auto instance = parent_value.get_vector_value();
-
-					int lookup_index = key_value.get_int_value();
-					if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
-						throw std::runtime_error("Lookup in vector: out of bounds.");
-					}
-					else{
-						const value_t value = instance->_elements[lookup_index];
-						return { vm_acc, expression_t::make_literal(value)};
-					}
-				}
-			}
-			else if(parent_value.is_dict()){
-				if(key_value.is_string() == false){
-					throw std::runtime_error("Lookup in dict by string-only.");
-				}
-				else{
-					const auto instance = parent_value.get_dict_value();
-					const string key = key_value.get_string_value();
-
-					const auto found_it = instance->_elements.find(key);
-					if(found_it == instance->_elements.end()){
-						throw std::runtime_error("Lookup in dict: key not found.");
-					}
-					else{
-						const value_t value = found_it->second;
-						return { vm_acc, expression_t::make_literal(value)};
-					}
-				}
-			}
-			else {
-				throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
+				//	get_object_element() throws if key can't be found.
+				const auto value = parent_json_value.get_object_element(lookup_key);
+				const auto value2 = value_t::make_json_value(value);
+				return { vm_acc, expression_t::make_literal(value2)};
 			}
 		}
+		else if(parent_json_value.is_array()){
+			if(key_type.is_int() == false){
+				throw std::runtime_error("Lookup in json_value array by integer index only.");
+			}
+			else{
+				const auto lookup_index = key_type.get_int_value();
+
+				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
+					throw std::runtime_error("Lookup in json_value array: out of bounds.");
+				}
+				else{
+					const auto value = parent_json_value.get_array_n(lookup_index);
+					const auto value2 = value_t::make_json_value(value);
+					return { vm_acc, expression_t::make_literal(value2)};
+				}
+			}
+		}
+		else{
+			throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+		}
+	*/
+	}
+	else if(parent_type.is_vector()){
+		if(key_type.is_int() == false){
+			throw std::runtime_error("Lookup in vector by index-only.");
+		}
+		else{
+		}
+		//??? maybe use annotated type here!??
+		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_vector_element_type())) };
+	}
+	else if(parent_type.is_dict()){
+		if(key_type.is_string() == false){
+			throw std::runtime_error("Lookup in dict by string-only.");
+		}
+		else{
+		}
+		//??? maybe use annotated type here!??
+		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_dict_value_type())) };
+	}
+	else {
+		throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
 	}
 }
-std::pair<analyser_t, expression_t> analyse_variabele_expression(const analyser_t& vm, const expression_t& e){
+
+std::pair<analyser_t, expression_t> analyse_variable_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_variable();
@@ -778,7 +794,7 @@ std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const a
 				throw std::runtime_error("Cannot analyse element of vector definition!");
 			}
 
-			const auto element = element_expr.second.get_literal();
+			const auto element = element_expr.second.get_literal();//??????????????????
 			elements2.push_back(element);
 		}
 
@@ -800,38 +816,32 @@ std::pair<analyser_t, expression_t> analyse_dict_definition_expression(const ana
 	auto vm_acc = vm;
 
 	const auto& elements = expr._elements;
-	typeid_t value_type = expr._value_type;
+	const typeid_t value_type = expr._value_type;
 
 	if(elements.empty()){
 		return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type, {}))};
 	}
 	else{
-		std::map<string, value_t> elements2;
-		for(const auto m: elements){
-			const auto element_expr = analyse_expression(vm_acc, m.second);
+		map<string, expression_t> elements2;
+		for(const auto m_kv: elements){
+			const auto element_expr = analyse_expression(vm_acc, m_kv.second);
 			vm_acc = element_expr.first;
 
-			if(element_expr.second.is_literal() == false){
-				throw std::runtime_error("Cannot analyse element of vector definition!");
-			}
-
-			const auto element = element_expr.second.get_literal();
-
-			const string key_string = m.first;
-			elements2[key_string] = element;
+			elements2.insert(make_pair(m_kv.first, element_expr.second));
 		}
 
-		//	If we have no value-type, deduct it from first element.
-		const auto value_type2 = value_type.is_null() ? elements2.begin()->second.get_type() : value_type;
+		//	Deduce type of dictionary.
+		const auto element_type2 = value_type.is_null() == false ? value_type : elements2.begin()->second.get_annotated_type();
 
-/*
-		for(const auto m: elements2){
-			if((m.second.get_type() == value_type2) == false){
+		//	Make sure all elements have the correct type.
+		for(const auto m_kv: elements2){
+			const auto element_type = m_kv.second.get_annotated_type();
+			if(element_type != element_type2){
 				throw std::runtime_error("Dict can not hold elements of different type!");
 			}
 		}
-*/
-		return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type2, elements2))};
+
+		return {vm_acc, expression_t::make_dict_definition(element_type2, elements2)};
 	}
 }
 
@@ -900,7 +910,8 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	//	Make rhs match left if needed/possible.
 	const auto right_type = improve_value_type(right_expr.second.get_annotated_type(), left_type);
 
-	if(left_type != right_type){
+	// ??? we don't have all types yet.
+	if(left_type != right_type && left_type.is_null() == false && right_type.is_null() == false){
 		throw std::runtime_error("Left and right expressions must be same type!");
 	}
 	else{
@@ -1140,7 +1151,7 @@ std::pair<analyser_t, expression_t> analyse_expression(const analyser_t& vm, con
 		return analyse_lookup_element_expression(vm, *e.get_lookup());
 	}
 	else if(op == expression_type::k_variable){
-		return analyse_variabele_expression(vm, e);
+		return analyse_variable_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_call){
@@ -1148,8 +1159,7 @@ std::pair<analyser_t, expression_t> analyse_expression(const analyser_t& vm, con
 	}
 
 	else if(op == expression_type::k_define_function){
-		const auto expr = e.get_function_definition();
-		return {vm, expression_t::make_literal(value_t::make_function_value(expr->_def))};
+		return analyse_function_definition_expression(vm, e, "");
 	}
 
 	else if(op == expression_type::k_vector_definition){
@@ -1284,6 +1294,38 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	}
 }
 
+
+
+
+
+std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e, const std::string& function_name){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto function_def_expr = *e.get_function_definition();
+	const auto def = function_def_expr._def;
+	const auto function_type = get_function_type(def);
+
+	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
+	const std::map<std::string, symbol_t> symbols =
+		[&](){
+			std::map<std::string, symbol_t> result;
+			for(const auto e: def._args){
+				result[e._name] = symbol_t::make_immutable_local(e._type);
+			}
+			return result;
+		}();
+
+	auto symbols2 = symbols;
+	if(function_name.empty() == false){
+		symbols2[function_name] = symbol_t::make_immutable_local(function_type);
+	}
+
+	const auto function_body_pair = analyse_statements_in_env(vm, def._statements, symbols);
+	auto vm_acc = function_body_pair.first;
+
+	const auto def2 = function_definition_t(def._args, function_body_pair.second, def._return_type);
+	return {vm_acc, expression_t::make_function_definition(def2) };
+}
 
 
 json_t analyser_to_json(const analyser_t& vm){
@@ -1437,7 +1479,7 @@ ast_t analyse(const analyser_t& a0){
 
 		host_function_t{ "get_time_of_day", 1005, typeid_t::make_function(typeid_t::make_int(), {}) },
 		host_function_t{ "update", 1006, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_t{ "size", 1007, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
+		host_function_t{ "size", 1007, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) },
 		host_function_t{ "find", 1008, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null(), typeid_t::make_null()}) },
 		host_function_t{ "exists", 1009, typeid_t::make_function(typeid_t::make_bool(), {typeid_t::make_null(),typeid_t::make_null()}) },
 		host_function_t{ "erase", 1010, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
@@ -1447,10 +1489,10 @@ ast_t analyse(const analyser_t& a0){
 
 		host_function_t{ "get_env_path", 1014, typeid_t::make_function(typeid_t::make_string(), {}) },
 		host_function_t{ "read_text_file", 1015, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_t{ "write_text_file", 1016, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null(), typeid_t::make_null()}) },
+		host_function_t{ "write_text_file", 1016, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },
 
-		host_function_t{ "decode_json", 1017, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_t{ "encode_json", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
+		host_function_t{ "decode_json", 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}) },
+		host_function_t{ "encode_json", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}) },
 
 		host_function_t{ "flatten_to_json", 1019, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
 		host_function_t{ "unflatten_from_json", 1020, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },

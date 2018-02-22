@@ -218,7 +218,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 			}
 			else{
 				const auto ast_json_pos = floyd::parse_statement(seq_t(line));
-				const auto statements = floyd::parser_statements_to_ast(
+				const auto statements = floyd::parser_statements_to_ast__lossy(
 					context._tracer,
 					floyd::ast_json_t{json_t::make_array({ast_json_pos.first._value})}
 				);

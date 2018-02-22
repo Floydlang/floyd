@@ -89,6 +89,7 @@ namespace floyd {
 
 	struct environment_t {
 		public: std::shared_ptr<environment_t> _parent_env;
+		//	Bool says if value is MUTABLE. Which is rare.
 		public: std::map<std::string, std::pair<value_t, bool> > _values;
 
 

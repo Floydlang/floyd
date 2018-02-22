@@ -137,7 +137,241 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 }
 
 
-const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const quark::trace_context_t& tracer, const ast_json_t& p){
+
+
+
+statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer, const ast_json_t& statement0){
+	QUARK_CONTEXT_SCOPED_TRACE(tracer, "astjson_to_statement__nonlossy()");
+	QUARK_ASSERT(statement0._value.check_invariant());
+	QUARK_ASSERT(statement0._value.is_array());
+
+	const auto statement = statement0._value;
+	const auto type = statement.get_array_n(0);
+
+	//	[ "return", [ "k", 3, "int" ] ]
+	if(type == "return"){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+		const auto expr = parser_expression_to_ast(tracer, statement.get_array_n(1));
+		return statement_t::make__return_statement(expr);
+	}
+
+	//	[ "bind", "float", "x", EXPRESSION, {} ]
+	//	Last element is a list of meta info, like "mutable" etc.
+	else if(type == "bind"){
+		QUARK_ASSERT(statement.get_array_size() == 4 || statement.get_array_size() == 5);
+		const auto bind_type = statement.get_array_n(1);
+		const auto name = statement.get_array_n(2);
+		const auto expr = statement.get_array_n(3);
+		const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
+
+		const auto bind_type2 = resolve_type_name(ast_json_t{bind_type});
+		const auto name2 = name.get_string();
+		const auto expr2 = parser_expression_to_ast(tracer, expr);
+		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
+		const auto mutable_mode = mutable_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable;
+		return statement_t::make__bind_local(name2, bind_type2, expr2, mutable_mode);
+	}
+
+	//	[ "assign", "x", EXPRESSION ]
+	else if(type == "assign"){
+		QUARK_ASSERT(statement.get_array_size() == 3);
+		const auto name = statement.get_array_n(1);
+		const auto expr = statement.get_array_n(2);
+
+		const auto name2 = name.get_string();
+		const auto expr2 = parser_expression_to_ast(tracer, expr);
+		return statement_t::make__store_local(name2, typeid_t::make_null(), expr2);
+	}
+
+	//	[ "block", [ STATEMENTS ] ]
+	else if(type == "block"){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+
+		const auto statements = statement.get_array_n(1);
+		const auto r = parser_statements_to_ast__lossy(tracer, ast_json_t{statements});
+
+		return statement_t::make__block_statement(r);
+	}
+
+	/*
+		INPUT:
+			[
+				"def-func",
+				{
+					"args": [
+
+					],
+					"name": "main",
+					"return_type": "int",
+					"statements": [
+						[ "return", [ "k", 3, "int" ] ]
+					]
+				}
+			]
+
+		OUTPUT:
+			"main": [
+				{
+					"base_type": "function",
+					"scope_def": {
+						"args": [],
+						"locals": [],
+						"members": [],
+						"name": "main",
+						"return_type": "int",
+						"statements": [???],
+						"type": "function",
+						"types": {}
+					}
+				}
+			]
+	*/
+/*
+	else if(type == "def-func"){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+		const auto def = statement.get_array_n(1);
+		const auto name = def.get_object_element("name");
+		const auto args = def.get_object_element("args");
+		const auto fstatements = def.get_object_element("statements");
+		const auto return_type = def.get_object_element("return_type");
+
+		const auto name2 = name.get_string();
+		const auto args2 = members_from_json(args);
+		const auto fstatements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{fstatements});
+		const auto return_type2 = resolve_type_name(ast_json_t{return_type});
+
+		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
+		const auto function_def = function_definition_t(args2, fstatements2, return_type2);
+		const auto function_def_expr = expression_t::make_function_definition(function_def);
+
+
+		const auto s = statement_t::define_struct_statement_t{ name, struct_def2 };
+		return statement_t::make__define_struct_statement(s);
+
+//??? use bind-local instead of bind_or_assign_statement_t
+//??? current code makes round-trip lossy.
+		statements2.push_back(make_shared<statement_t>(statement_t::make__bind"bind"_statement(
+			name2,
+			function_typeid,
+			function_def_expr, statement_t::bind_or_assign_statement_t::mutable_mode::k_no_mutable_tag
+		)));
+*/
+
+
+	/*
+		INPUT:
+			[
+				"def-struct",
+				{
+					"members": [
+						{ "name": "red", "type": "float" },
+						{ "name": "green", "type": "float" },
+						{ "name": "blue", "type": "float" }
+					],
+					"name": "pixel"
+				}
+			],
+
+		OUTPUT:
+			"pixel": [
+				{
+					"base_type": "struct",
+					"scope_def": {
+						"args": [],
+						"locals": [],
+						"members": [
+							{ "name": "red", "type": "float" },
+							{ "name": "green", "type": "float" },
+							{ "name": "blue", "type": "float" }
+						],
+						"name": "pixel",
+						"return_type": "",
+						"statements": [],
+						"type": "struct",
+						"types": {}
+					}
+				}
+			]
+	*/
+	else if(type == "def-struct"){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+		const auto struct_def = statement.get_array_n(1);
+		const auto name = struct_def.get_object_element("name").get_string();
+		const auto members = struct_def.get_object_element("members").get_array();
+
+		const auto members2 = members_from_json(members);
+		const auto struct_def2 = struct_definition_t(members2);
+
+		const auto s = statement_t::define_struct_statement_t{ name, struct_def2 };
+		return statement_t::make__define_struct_statement(s);
+	}
+
+	//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]
+	//	Else is optional.
+	else if(type == keyword_t::k_if){
+		QUARK_ASSERT(statement.get_array_size() == 3 || statement.get_array_size() == 4);
+		const auto condition_expression = statement.get_array_n(1);
+		const auto then_statements = statement.get_array_n(2);
+		const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
+
+		const auto condition_expression2 = parser_expression_to_ast(tracer, condition_expression);
+		const auto& then_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{then_statements});
+		const auto& else_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{else_statements});
+
+		return statement_t::make__ifelse_statement(
+			condition_expression2,
+			then_statements2,
+			else_statements2
+		);
+	}
+	else if(type == keyword_t::k_for){
+		QUARK_ASSERT(statement.get_array_size() == 6);
+		const auto for_mode = statement.get_array_n(1);
+		const auto iterator_name = statement.get_array_n(2);
+		const auto start_expression = statement.get_array_n(3);
+		const auto end_expression = statement.get_array_n(4);
+		const auto body_statements = statement.get_array_n(5);
+
+		const auto start_expression2 = parser_expression_to_ast(tracer, start_expression);
+		const auto end_expression2 = parser_expression_to_ast(tracer, end_expression);
+		const auto& body_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{body_statements});
+
+		return statement_t::make__for_statement(
+			iterator_name.get_string(),
+			start_expression2,
+			end_expression2,
+			body_statements2
+		);
+	}
+	else if(type == keyword_t::k_while){
+		QUARK_ASSERT(statement.get_array_size() == 3);
+		const auto expression = statement.get_array_n(1);
+		const auto body_statements = statement.get_array_n(2);
+
+		const auto expression2 = parser_expression_to_ast(tracer, expression);
+		const auto& body_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{body_statements});
+
+		return statement_t::make__while_statement(expression2, body_statements2);
+	}
+
+	//	[ "expression-statement", EXPRESSION ]
+	else if(type == "expression-statement"){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+		const auto expr = statement.get_array_n(1);
+		const auto expr2 = parser_expression_to_ast(tracer, expr);
+		return statement_t::make__expression_statement(expr2);
+	}
+
+	else{
+		throw std::runtime_error("Illegal statement.");
+	}
+}
+
+
+
+
+
+const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast__lossy(const quark::trace_context_t& tracer, const ast_json_t& p){
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "parser_statements_to_ast()");
 	QUARK_ASSERT(p._value.check_invariant());
 	QUARK_ASSERT(p._value.is_array());
@@ -147,51 +381,8 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 	for(const auto statement: p._value.get_array()){
 		const auto type = statement.get_array_n(0);
 
-		//	[ "return", [ "k", 3, "int" ] ]
-		if(type == "return"){
-			QUARK_ASSERT(statement.get_array_size() == 2);
-			const auto expr = parser_expression_to_ast(tracer, statement.get_array_n(1));
-			statements2.push_back(make_shared<statement_t>(statement_t::make__return_statement(expr)));
-		}
-
-		//	[ "bind", "float", "x", EXPRESSION, {} ]
-		//	Last element is a list of meta info, like "mutable" etc.
-		else if(type == "bind"){
-			QUARK_ASSERT(statement.get_array_size() == 4 || statement.get_array_size() == 5);
-			const auto bind_type = statement.get_array_n(1);
-			const auto name = statement.get_array_n(2);
-			const auto expr = statement.get_array_n(3);
-			const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
-
-			const auto bind_type2 = resolve_type_name(ast_json_t{bind_type});
-			const auto name2 = name.get_string();
-			const auto expr2 = parser_expression_to_ast(tracer, expr);
-			bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
-			const auto mutable_mode = mutable_flag ? statement_t::bind_or_assign_statement_t::mutable_mode::k_mutable : statement_t::bind_or_assign_statement_t::mutable_mode::k_immutable;
-			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(name2, bind_type2, expr2, mutable_mode)));
-		}
-
-		//	[ "assign", "x", EXPRESSION ]
-		else if(type == "assign"){
-			QUARK_ASSERT(statement.get_array_size() == 3);
-			const auto name = statement.get_array_n(1);
-			const auto expr = statement.get_array_n(2);
-
-			const auto name2 = name.get_string();
-			const auto expr2 = parser_expression_to_ast(tracer, expr);
-			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(name2, typeid_t::make_null(), expr2, statement_t::bind_or_assign_statement_t::mutable_mode::k_immutable)));
-		}
-
-		//	[ "block", [ STATEMENTS ] ]
-		else if(type == "block"){
-			QUARK_ASSERT(statement.get_array_size() == 2);
-
-			const auto statements = statement.get_array_n(1);
-			const auto r = parser_statements_to_ast(tracer, ast_json_t{statements});
-			//??? also include locals & objects
-			statements2.push_back(make_shared<statement_t>(statement_t::make__block_statement(r)));
-		}
-
+		//	SPECIAL HANDLING
+		//	Convertd parsers function-definition statement to bind + function-def expression.
 		/*
 			INPUT:
 				[
@@ -225,7 +416,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 					}
 				]
 		*/
-		else if(type == "def-func"){
+		if(type == "def-func"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 			const auto def = statement.get_array_n(1);
 			const auto name = def.get_object_element("name");
@@ -235,139 +426,44 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast(const 
 
 			const auto name2 = name.get_string();
 			const auto args2 = members_from_json(args);
-			const auto fstatements2 = parser_statements_to_ast(tracer, ast_json_t{fstatements});
+			const auto fstatements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{fstatements});
 			const auto return_type2 = resolve_type_name(ast_json_t{return_type});
-
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto function_def = function_definition_t(args2, fstatements2, return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
-			statements2.push_back(make_shared<statement_t>(statement_t::make__bind_or_assign_statement(
-				name2,
-				function_typeid,
-				function_def_expr, statement_t::bind_or_assign_statement_t::mutable_mode::k_immutable
-			)));
-		}
 
-		/*
-			INPUT:
-				[
-					"def-struct",
-					{
-						"members": [
-							{ "name": "red", "type": "float" },
-							{ "name": "green", "type": "float" },
-							{ "name": "blue", "type": "float" }
-						],
-						"name": "pixel"
-					}
-				],
-
-			OUTPUT:
-				"pixel": [
-					{
-						"base_type": "struct",
-						"scope_def": {
-							"args": [],
-							"locals": [],
-							"members": [
-								{ "name": "red", "type": "float" },
-								{ "name": "green", "type": "float" },
-								{ "name": "blue", "type": "float" }
-							],
-							"name": "pixel",
-							"return_type": "",
-							"statements": [],
-							"type": "struct",
-							"types": {}
-						}
-					}
-				]
-		*/
-		else if(type == "def-struct"){
-			QUARK_ASSERT(statement.get_array_size() == 2);
-			const auto struct_def = statement.get_array_n(1);
-			const auto name = struct_def.get_object_element("name").get_string();
-			const auto members = struct_def.get_object_element("members").get_array();
-
-			const auto members2 = members_from_json(members);
-			const auto struct_def2 = struct_definition_t(members2);
-
-			const auto s = statement_t::define_struct_statement_t{ name, struct_def2 };
-			statements2.push_back(make_shared<statement_t>(statement_t::make__define_struct_statement(s)));
-		}
-
-		//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]
-		//	Else is optional.
-		else if(type == keyword_t::k_if){
-			QUARK_ASSERT(statement.get_array_size() == 3 || statement.get_array_size() == 4);
-			const auto condition_expression = statement.get_array_n(1);
-			const auto then_statements = statement.get_array_n(2);
-			const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
-
-			const auto condition_expression2 = parser_expression_to_ast(tracer, condition_expression);
-			const auto& then_statements2 = parser_statements_to_ast(tracer, ast_json_t{then_statements});
-			const auto& else_statements2 = parser_statements_to_ast(tracer, ast_json_t{else_statements});
-
+			//??? use bind-local instead of bind_or_assign_statement_t?
 			statements2.push_back(make_shared<statement_t>(
-				statement_t::make__ifelse_statement(
-					condition_expression2,
-					then_statements2,
-					else_statements2
-				)
-			));
-		}
-		else if(type == keyword_t::k_for){
-			QUARK_ASSERT(statement.get_array_size() == 6);
-			const auto for_mode = statement.get_array_n(1);
-			const auto iterator_name = statement.get_array_n(2);
-			const auto start_expression = statement.get_array_n(3);
-			const auto end_expression = statement.get_array_n(4);
-			const auto body_statements = statement.get_array_n(5);
-
-			const auto start_expression2 = parser_expression_to_ast(tracer, start_expression);
-			const auto end_expression2 = parser_expression_to_ast(tracer, end_expression);
-			const auto& body_statements2 = parser_statements_to_ast(tracer, ast_json_t{body_statements});
-
-			statements2.push_back(make_shared<statement_t>(
-				statement_t::make__for_statement(
-					iterator_name.get_string(),
-					start_expression2,
-					end_expression2,
-					body_statements2
-				)
-			));
-		}
-		else if(type == keyword_t::k_while){
-			QUARK_ASSERT(statement.get_array_size() == 3);
-			const auto expression = statement.get_array_n(1);
-			const auto body_statements = statement.get_array_n(2);
-
-			const auto expression2 = parser_expression_to_ast(tracer, expression);
-			const auto& body_statements2 = parser_statements_to_ast(tracer, ast_json_t{body_statements});
-
-			statements2.push_back(make_shared<statement_t>(
-				statement_t::make__while_statement(expression2, body_statements2)
-			));
+				statement_t::make__bind_local(
+					name2,
+					function_typeid,
+					function_def_expr, statement_t::bind_local_t::k_immutable
+				))
+			);
 		}
 
-		//	[ "expression-statement", EXPRESSION ]
-		else if(type == "expression-statement"){
-			QUARK_ASSERT(statement.get_array_size() == 2);
-			const auto expr = statement.get_array_n(1);
-			const auto expr2 = parser_expression_to_ast(tracer, expr);
-			statements2.push_back(make_shared<statement_t>(statement_t::make__expression_statement(expr2)));
-		}
-
-		else{
-			throw std::runtime_error("Illegal statement.");
+		else {
+			const auto s2 = astjson_to_statement__nonlossy(tracer, ast_json_t{ statement });
+			statements2.push_back(make_shared<statement_t>(s2));
 		}
 	}
 
 	return statements2;
 }
 
+const std::vector<std::shared_ptr<statement_t> > statements_to_ast__nonlossy(const quark::trace_context_t& tracer, const ast_json_t& p){
+	QUARK_CONTEXT_SCOPED_TRACE(tracer, "statements_to_ast__nonlossy()");
+	QUARK_ASSERT(p._value.check_invariant());
+	QUARK_ASSERT(p._value.is_array());
 
-
+	vector<shared_ptr<statement_t>> statements2;
+	for(const auto statement: p._value.get_array()){
+		const auto type = statement.get_array_n(0);
+		const auto s2 = astjson_to_statement__nonlossy(tracer, ast_json_t{ statement });
+		statements2.push_back(make_shared<statement_t>(s2));
+	}
+	return statements2;
+}
 
 std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a){
 	std::vector<json_t> result;
@@ -393,18 +489,26 @@ ast_json_t statement_to_json(const statement_t& e){
 			struct_definition_to_ast_json(e._def_struct->_def)._value
 		})};
 	}
-	else if(e._bind_or_assign){
-		const auto meta = e._bind_or_assign->_bind_as_mutable_tag ==
-			statement_t::bind_or_assign_statement_t::mutable_mode::k_mutable
-			? (json_t::make_object({std::pair<std::string,json_t>{"mutable", true}}))
-			: json_t();
+	else if(e._bind_local){
+		bool mutable_flag = e._bind_local->_locals_mutable_mode == statement_t::bind_local_t::k_mutable;
+		const auto meta = json_t::make_object({
+			std::pair<std::string,json_t>{"mutable", mutable_flag}
+		});
 
 		return ast_json_t{make_array_skip_nulls({
 			json_t("bind"),
-			e._bind_or_assign->_new_variable_name,
-			typeid_to_ast_json(e._bind_or_assign->_bindtype)._value,
-			expression_to_json(e._bind_or_assign->_expression)._value,
+			e._bind_local->_new_variable_name,
+			typeid_to_ast_json(e._bind_local->_bindtype)._value,
+			expression_to_json(e._bind_local->_expression)._value,
 			meta
+		})};
+	}
+	else if(e._store_local){
+		return ast_json_t{make_array_skip_nulls({
+			json_t("assign"),
+			e._store_local->_new_variable_name,
+			typeid_to_ast_json(e._store_local->_bindtype)._value,
+			expression_to_json(e._store_local->_expression)._value
 		})};
 	}
 	else if(e._block){
@@ -494,7 +598,7 @@ std::string expression_to_json_string(const expression_t& e){
 ast_t run_pass2(const quark::trace_context_t& tracer, const ast_json_t& parse_tree){
 	QUARK_CONTEXT_TRACE(tracer, json_to_pretty_string(parse_tree._value));
 
-	const auto program_body = parser_statements_to_ast(tracer, parse_tree);
+	const auto program_body = parser_statements_to_ast__lossy(tracer, parse_tree);
 	return ast_t(program_body);
 }
 
