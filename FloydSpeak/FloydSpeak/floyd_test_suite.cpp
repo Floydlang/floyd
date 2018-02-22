@@ -2551,3 +2551,20 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 //??? test structs in vectors.
 
 
+
+
+QUARK_UNIT_TEST("Edge case", "+", "non-empty vectors", "correct final vector"){
+	try{
+		const auto result = run_return_result(R"(
+			if("not a bool"){
+			}
+			else{
+				assert(false);
+			}
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Boolean condition required.");
+	}
+}

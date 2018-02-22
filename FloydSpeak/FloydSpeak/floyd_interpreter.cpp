@@ -440,24 +440,20 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 		const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
 
 		QUARK_ASSERT(existing_value_deep_ptr != nullptr);
+		QUARK_ASSERT(existing_variable_is_mutable);
 
-		if(existing_variable_is_mutable){
-			const auto existing_value = existing_value_deep_ptr->first;
-			const auto new_value = result_value.get_literal();
+		const auto existing_value = existing_value_deep_ptr->first;
+		const auto new_value = result_value.get_literal();
 
-			//	Let both existing & new values influence eachother to the exact type of the new variable.
-			//	Existing could be a [null]=[], or could new_value
-			const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
-			const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
+		//	Let both existing & new values influence eachother to the exact type of the new variable.
+		//	Existing could be a [null]=[], or could new_value
+		const auto new_value2 = improve_value_type(new_value, existing_value.get_type());
+		const auto existing_value2 = improve_value_type(existing_value, new_value2.get_type());
 
-			if(existing_value2.get_type() != new_value2.get_type()){
-				throw std::runtime_error("Types not compatible in bind.");
-			}
-			*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
+		if(existing_value2.get_type() != new_value2.get_type()){
+			throw std::runtime_error("Types not compatible in bind.");
 		}
-		else{
-			throw std::runtime_error("Cannot assign to immutable identifier.");
-		}
+		*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
 	}
 	return { vm_acc, statement_result_t::make_no_output() };
 }
@@ -475,9 +471,6 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	if(!result_value.is_literal()){
 		throw std::runtime_error("undefined");
 	}
-
-	//	Check that return value's type matches function's return type. Cannot be done here since we don't know who called us.
-	//	Instead calling code must check.
 	return {
 		vm_acc,
 		statement_result_t::make_return_unwind(result_value.get_literal())
@@ -517,9 +510,11 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 	const auto condition_result = evaluate_expression(vm_acc, statement._condition);
 	vm_acc = condition_result.first;
 	const auto condition_result_value = condition_result.second;
-	if(!condition_result_value.is_literal() || !condition_result_value.get_literal().is_bool()){
+	if(!condition_result_value.is_literal()){
 		throw std::runtime_error("Boolean condition required.");
 	}
+
+	QUARK_ASSERT(condition_result_value.get_literal().is_bool());
 
 	bool r = condition_result_value.get_literal().get_bool_value();
 	if(r){
