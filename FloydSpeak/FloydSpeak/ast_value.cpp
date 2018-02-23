@@ -902,7 +902,6 @@ ast_json_t value_to_ast_json(const value_t& v){
 		)};
 	}
 	else{
-		QUARK_ASSERT(false);
 		throw std::exception();
 	}
 }

@@ -254,7 +254,7 @@ expression_t deduce_expression_type_from_contents(const expression_t& e){
 			return e;
 		}
 		else if(wanted_type.is_json_value()){
-			if(e_type.is_int() || e_type.is_float() || e_type.is_string() || e_type.is_bool() || e_type.is_dict() || e_type.is_vector()){
+			if(e_type.is_null() || e_type.is_int() || e_type.is_float() || e_type.is_string() || e_type.is_bool() || e_type.is_dict() || e_type.is_vector()){
 				const auto t = typeid_t::make_json_value();
 				return expression_t::make_call(
 					expression_t::make_literal(value_t::make_typeid_value(t)),
@@ -1616,7 +1616,7 @@ ast_t analyse(const analyser_t& a0){
 		const auto function_value = value_t::make_function_value(def);
 		global_env->_symbols[hf._name] = symbol_t::make_constant(function_value);
 	}
-	global_env->_symbols[keyword_t::k_null] = symbol_t::make_type(typeid_t::make_null());
+	global_env->_symbols[keyword_t::k_null] = symbol_t::make_constant(value_t::make_null());
 	global_env->_symbols[keyword_t::k_bool] = symbol_t::make_type(typeid_t::make_bool());
 	global_env->_symbols[keyword_t::k_int] = symbol_t::make_type(typeid_t::make_int());
 	global_env->_symbols[keyword_t::k_float] = symbol_t::make_type(typeid_t::make_float());

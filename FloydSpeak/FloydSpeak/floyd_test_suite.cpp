@@ -2293,7 +2293,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	ut_compare_values(result, value_t::make_int(6));
 }
 
-OFF_QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
+QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value(null))
 	)", {});

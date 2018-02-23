@@ -51,7 +51,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 	value_t improve_value_type__TODO_move_to_pass3(const value_t& value0, const typeid_t& expected_type){
 		QUARK_ASSERT(value0.check_invariant());
 		QUARK_ASSERT(expected_type.check_invariant());
-
+		return value0;
 		if(expected_type.is_null()){
 			return value0;
 		}
@@ -147,15 +147,21 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 
 
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
-
-	if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_json_value() || type.is_typeid()){
+	if(type.is_json_value()){
 		QUARK_ASSERT(arg_values.size() == 1);
 
-		const auto value = improve_value_type__TODO_move_to_pass3(arg_values[0], type);
-		if(value.get_type() != type){
-			throw std::runtime_error("Constructor requires 1 argument");
+		const auto arg = arg_values[0];
+		const auto value = value_to_ast_json(arg);
+		return {vm, value_t::make_json_value(value._value)};
+	}
+	else if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_typeid()){
+		QUARK_ASSERT(arg_values.size() == 1);
+
+		const auto arg = arg_values[0];
+		if(arg.get_type() != type){
+			throw std::runtime_error("xxx");
 		}
-		return {vm, value };
+		return {vm, arg };
 	}
 	else if(type.is_struct()){
 		//	Constructor.
