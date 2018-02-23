@@ -846,7 +846,7 @@ Converts its input to a string. This works with any type of values. It also work
 You often use this function to convert numbers to strings.
 
 
-### to_pretty_string()
+### to\_pretty\_string()
 
 Converts its input to a string of json data that is formatted nicely with indentations. It works with any Floyd value.
 
