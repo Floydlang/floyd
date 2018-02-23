@@ -389,8 +389,8 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	const auto result = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = result.first;
 
-	const auto result_value = result.second;
-	QUARK_ASSERT(result_value.is_literal());
+	QUARK_ASSERT(result.second.is_literal());
+	const auto rhs_value = result.second.get_literal();
 
 	const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
 	const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
@@ -399,17 +399,11 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	QUARK_ASSERT(existing_variable_is_mutable);
 
 	const auto existing_value = existing_value_deep_ptr->first;
-	const auto new_value = result_value.get_literal();
 
-	//	Let both existing & new values influence eachother to the exact type of the new variable.
-	//	Existing could be a [null]=[], or could new_value
-	const auto new_value2 = improve_value_type__TODO_move_to_pass3(new_value, existing_value.get_type());
-	const auto existing_value2 = improve_value_type__TODO_move_to_pass3(existing_value, new_value2.get_type());
-
-	if(existing_value2.get_type() != new_value2.get_type()){
+	if(existing_value.get_type() != rhs_value.get_type()){
 		throw std::runtime_error("Types not compatible in bind.");
 	}
-	*existing_value_deep_ptr = std::pair<value_t, bool>(new_value2, existing_variable_is_mutable);
+	*existing_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
@@ -2487,8 +2481,6 @@ void print_vm_printlog(const interpreter_t& vm){
 
 
 interpreter_t run_global(const interpreter_context_t& context, const string& source){
-	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
-
 	auto ast = program_to_ast2(context, source);
 	auto vm = interpreter_t(ast);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));

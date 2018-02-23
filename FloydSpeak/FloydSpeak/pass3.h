@@ -165,6 +165,8 @@ namespace floyd_pass3 {
 		return == _constant == nullptr: the expression was partially analyse.
 	*/
 	std::pair<analyser_t, floyd::expression_t> analyse_expression(const analyser_t& vm, const floyd::expression_t& e);
+	std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& vm, const floyd::expression_t& e, const floyd::typeid_t& target_type);
+	std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& vm, const floyd::expression_t& e);
 
 
 

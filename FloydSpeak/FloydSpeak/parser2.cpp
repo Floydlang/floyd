@@ -662,7 +662,7 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 
     const auto p2 = skip_expr_whitespace(p);
 	if(p2.empty()){
-		throw std::runtime_error("Unexpected end of string");
+		throw std::runtime_error("Unexpected end of string.");
 	}
 
 	const char ch1 = p2.first1_char();
@@ -1052,7 +1052,8 @@ QUARK_UNIT_TESTQ("parse_expression()", ""){
 		test__parse_expression("", "", "");
 		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Unexpected end of string.");
 	}
 }
 
@@ -1531,10 +1532,10 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Wrong position of an operator") {
 }
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Wrong position of an operator") {
-	test__parse_expression__throw("2+", "Unexpected end of string");
+	test__parse_expression__throw("2+", "Unexpected end of string.");
 }
 QUARK_UNIT_TESTQ("evaluate_expression()", "Wrong position of an operator") {
-	test__parse_expression__throw("2*", "Unexpected end of string");
+	test__parse_expression__throw("2*", "Unexpected end of string.");
 }
 
 
@@ -1554,7 +1555,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Invalid characters") {
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "Invalid characters") {
-	test__parse_expression__throw("2/", "Unexpected end of string");
+	test__parse_expression__throw("2/", "Unexpected end of string.");
 }
 
 

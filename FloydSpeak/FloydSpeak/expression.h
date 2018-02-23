@@ -699,6 +699,29 @@ namespace floyd {
 			}
 		}
 
+/*
+		//	Notice that some expression types has built-in types. ??? refactor this.
+		public: expression_t annotate_type(const typeid_t& type) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(type.check_invariant());
+
+			if(_operation == expression_type::k_literal){
+				return expression_t(_operation, literal_expr_t(get_literal()->_value), type);
+			}
+			else if(_operation == expression_type::k_literal){
+			}
+			else if(_operation == expression_type::k_define_function){
+			}
+			else if(_operation == expression_type::k_vector_definition){
+			}
+			else if(_operation == expression_type::k_dict_definition){
+			}
+			else{
+				return expression_t(_operation, _expr, std::make_shared<typeid_t>(type));
+			}
+		}
+*/
+
 		public: bool is_annotated_shallow() const{
 			QUARK_ASSERT(check_invariant());
 

@@ -424,7 +424,7 @@ QUARK_UNIT_TEST("evaluate_expression()", "Type mismatch", "", "") {
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Types not compatible in bind.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
 	}
 }
 
@@ -1363,7 +1363,8 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 		)", {});
 //		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Types not compatible in bind.");
 	}
 }
 
@@ -1438,7 +1439,8 @@ QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "cannot be deducted",
 		)");
 		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot fully resolve type.");
 	}
 }
 
@@ -1452,7 +1454,7 @@ QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "val
 	});
 }
 
-OFF_QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
+QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 	const auto vm = test__run_global(R"(
 		[string] a = [];
 		print(a);
@@ -1504,7 +1506,9 @@ QUARK_UNIT_TEST("vector", "==", "strings", ""){
 		assert(([1,2,3,4] == [1,2,3,4]) == true);
 	)");
 }
-QUARK_UNIT_TEST("vector", "==", "strings", ""){
+
+//	We could support this if we had special type for empty-vector and empty-dict.
+OFF_QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 	const auto vm = test__run_global(R"(
 		assert(([] == []) == true);
 	)");
@@ -1544,7 +1548,7 @@ QUARK_UNIT_TEST("vector", "size()", "", "correct size"){
 	}
 }
 
-OFF_QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
+QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
 	const auto vm = test__run_global(R"(
 		[string] a = [];
 		assert(size(a) == 0);
@@ -1594,7 +1598,7 @@ QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
+OFF_QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
 	const auto vm = test__run_global(R"(
 		assert(subset([10,20,30], 0, 3) == [10,20,30]);
 		assert(subset([10,20,30], 1, 3) == [20,30]);
@@ -1684,7 +1688,7 @@ QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
 	});
 }
 
-OFF_QUARK_UNIT_TEST("dict", "{}", "", ""){
+QUARK_UNIT_TEST("dict", "{}", "", ""){
 	const auto vm = test__run_global(R"(
 		mutable [string:int] a = {};
 		a = {};
@@ -1721,12 +1725,12 @@ QUARK_UNIT_TEST("dict", "==", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+OFF_QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	const auto vm = test__run_global(R"(
 		assert(size({}) == 0);
 	)");
 }
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
+OFF_QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 	const auto vm = test__run_global(R"(
 		print({});
 	)");
@@ -1772,7 +1776,7 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 }
 
 
-QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
+OFF_QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 	const auto vm = test__run_global(R"(
 		a = update({}, "one", 1);
 		b = update(a, "two", 2);
@@ -1929,7 +1933,8 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 		)");
 		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Comparison: Left and right expressions must be same type!");
 	}
 }
 
@@ -2017,7 +2022,7 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
+OFF_QUARK_UNIT_TEST("", "", "", ""){
 	const auto vm = test__run_global(R"(
 		start = get_time_of_day();
 		mutable b = 0;
@@ -2113,7 +2118,7 @@ QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
 	ut_compare_values(result, value_t::make_json_value(json_t::make_array(vector<json_t>{"hello", "bye"})));
 }
 
-QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+OFF_QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 	const auto result = run_return_result(R"(
 		json_value a = ["hello", "bye"];
 		result = string(a[0]) + string(a[1]);
@@ -2206,7 +2211,7 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
+OFF_QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 	const auto result = run_return_result(R"(
 		json_value result = null;
 	)", {});
@@ -2257,7 +2262,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	ut_compare_values(result, value_t::make_int(6));
 }
 
-QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
+OFF_QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value(null))
 	)", {});
@@ -2695,7 +2700,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructo
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Calling constructor for struct with 1 arguments, 2 required.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Wrong number of arguments in function call.");
 	}
 }
 
@@ -2708,7 +2713,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor"
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Constructor needs an arguement exactly matching type and order of struct members.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
 	}
 }
 
@@ -2720,7 +2725,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor",
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Calling constructor for basic-type with 0 arguments, 1 required.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Wrong number of arguments in function call.");
 	}
 }
 

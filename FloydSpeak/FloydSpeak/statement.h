@@ -339,7 +339,7 @@ namespace floyd {
 			return true;
 		}
 
-		public: static bool is_annotated_deep(const std::vector<std::shared_ptr<statement_t>>& s){
+ 		public: static bool is_annotated_deep(const std::vector<std::shared_ptr<statement_t>>& s){
 			for(const auto e: s){
 				if(e->is_annotated_deep() == false){
 					return false;

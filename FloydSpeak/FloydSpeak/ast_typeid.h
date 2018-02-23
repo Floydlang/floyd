@@ -364,7 +364,7 @@ namespace floyd {
 
 	/*
 		int -> "int"
-		[int] -> [ "vector", "int" ]
+		[int] -> [ "vector", "int" ]
 	*/
 	ast_json_t typeid_to_ast_json(const typeid_t& t);
 	typeid_t typeid_from_ast_json(const ast_json_t& t);
