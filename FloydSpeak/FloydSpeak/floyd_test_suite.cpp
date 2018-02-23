@@ -556,11 +556,17 @@ QUARK_UNIT_TEST("", "float()", "", ""){
 QUARK_UNIT_TEST("", "float()", "", ""){
 	test__run_init__check_result("result = float(123.456);", value_t::make_float(123.456f));
 }
-/*
+
 QUARK_UNIT_TEST("", "string()", "", ""){
-	test__run_init__check_result("result = string();", value_t::make_string(""));
+	try{
+		test__run_init__check_result("result = string();", value_t::make_string(""));
+		QUARK_UT_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Wrong number of arguments in function call.");
+	}
 }
-*/
+
 QUARK_UNIT_TEST("", "string()", "", ""){
 	test__run_init__check_result("result = string(\"ABCD\");", value_t::make_string("ABCD"));
 }
@@ -1508,11 +1514,19 @@ QUARK_UNIT_TEST("vector", "==", "strings", ""){
 }
 
 //	We could support this if we had special type for empty-vector and empty-dict.
-OFF_QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
-	const auto vm = test__run_global(R"(
-		assert(([] == []) == true);
-	)");
+
+QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
+	try{
+		const auto vm = test__run_global(R"(
+			assert(([] == []) == true);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+	}
 }
+
 QUARK_UNIT_TEST("vector", "==", "strings", ""){
 	const auto vm = test__run_global(R"(
 		assert((["one", "three"] == ["one", "two"]) == false);
@@ -1561,11 +1575,17 @@ QUARK_UNIT_TEST("vector", "size()", "[]", "correct size"){
 	)");
 }
 
-OFF_QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
-	const auto vm = test__run_global(R"(
-		[string] a = [] + [];
-		assert(a == []);
-	)");
+QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
+	try{
+		const auto vm = test__run_global(R"(
+			[string] a = [] + [];
+			assert(a == []);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+	}
 }
 
 QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
@@ -1725,19 +1745,30 @@ QUARK_UNIT_TEST("dict", "==", "", ""){
 	)");
 }
 
-OFF_QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
-	const auto vm = test__run_global(R"(
-		assert(size({}) == 0);
-	)");
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+	try{
+		const auto vm = test__run_global(R"(
+			assert(size({}) == 0);
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+	}
 }
-OFF_QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
-	const auto vm = test__run_global(R"(
-		print({});
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		R"({})",
-	});
+
+QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
+	try{
+		const auto vm = test__run_global(R"(
+			print({});
+		)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+	}
 }
+
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	const auto vm = test__run_global(R"(
 		assert(size({"one":1}) == 1);
