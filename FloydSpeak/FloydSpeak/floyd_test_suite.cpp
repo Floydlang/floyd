@@ -2242,7 +2242,7 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 	)");
 }
 
-OFF_QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
+QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 	const auto result = run_return_result(R"(
 		json_value result = null;
 	)", {});
