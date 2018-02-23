@@ -415,14 +415,14 @@ std::pair<analyser_t, statement_t> analyse_statement_as_bindnew(const analyser_t
 	const auto rhs_type = rhs_expr_pair.second.get_annotated_type();
 	const auto lhs_type2 = lhs_type.is_null() ? rhs_type : lhs_type;
 
-	if(lhs_type2 != rhs_type){
+	if(lhs_type2 != lhs_type2){
 		throw std::runtime_error("Types not compatible in bind.");
 	}
 	else{
-		vm_acc._call_stack.back()->_symbols[bind_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(rhs_type) : symbol_t::make_immutable_local(rhs_type);
+		vm_acc._call_stack.back()->_symbols[bind_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2);
 		return {
 			vm_acc,
-			statement_t::make__bind_local(bind_name, rhs_type, rhs_expr_pair.second, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
+			statement_t::make__bind_local(bind_name, lhs_type2, rhs_expr_pair.second, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
 		};
 	}
 }
