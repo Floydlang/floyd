@@ -2149,7 +2149,7 @@ QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
 	ut_compare_values(result, value_t::make_json_value(json_t::make_array(vector<json_t>{"hello", "bye"})));
 }
 
-OFF_QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 	const auto result = run_return_result(R"(
 		json_value a = ["hello", "bye"];
 		result = string(a[0]) + string(a[1]);

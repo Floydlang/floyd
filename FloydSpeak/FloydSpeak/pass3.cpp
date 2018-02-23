@@ -253,6 +253,21 @@ expression_t deduce_expression_type_from_contents(const expression_t& e){
 		if(wanted_type.is_null()){
 			return e;
 		}
+		else if(wanted_type.is_string()){
+			if(e_type.is_json_value()){
+
+				const auto t = typeid_t::make_string();
+				return expression_t::make_call(
+					expression_t::make_literal(value_t::make_typeid_value(t)),
+					std::vector<expression_t> {e},
+					make_shared<typeid_t>(t)
+				);
+
+			}
+			else{
+				return e;
+			}
+		}
 		else if(wanted_type.is_json_value()){
 			if(e_type.is_null() || e_type.is_int() || e_type.is_float() || e_type.is_string() || e_type.is_bool() || e_type.is_dict() || e_type.is_vector()){
 				const auto t = typeid_t::make_json_value();

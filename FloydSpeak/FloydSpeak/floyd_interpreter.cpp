@@ -158,8 +158,16 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		QUARK_ASSERT(arg_values.size() == 1);
 
 		const auto arg = arg_values[0];
-		if(arg.get_type() != type){
-			throw std::runtime_error("xxx");
+		if(type.is_string()){
+			if(arg.is_json_value() && arg.get_json_value().is_string()){
+				return {vm, value_t::make_string(arg.get_json_value().get_string())};
+			}
+			else if(arg.is_string()){
+			}
+		}
+		else{
+			if(arg.get_type() != type){
+			}
 		}
 		return {vm, arg };
 	}
