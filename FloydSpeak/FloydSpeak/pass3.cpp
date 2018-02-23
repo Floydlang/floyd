@@ -108,85 +108,6 @@ bool check_type_fully_defined(const expression_t& e){
 }
 
 
-	//??? add conversions. When we say we support a conversion, we should also create AST to make the conversion. AST output should be type-matched.
-	//??? This is builing block for promoting values / casting.
-	//	We know which type we need. If the value has not type, retype it.
-	floyd::typeid_t improve_value_type(const floyd::typeid_t& value0, const floyd::typeid_t& expected_type){
-		QUARK_ASSERT(value0.check_invariant());
-		QUARK_ASSERT(expected_type.check_invariant());
-
-		return value0;
-/*		if(expected_type.is_null()){
-			return value0;
-		}
-		else if(expected_type.is_bool()){
-			if(value0.is_json_value() && value0.get_json_value().is_true()){
-				return value_t::make_bool(true);
-			}
-			if(value0.is_json_value() && value0.get_json_value().is_false()){
-				return value_t::make_bool(false);
-			}
-			else{
-				return value0;
-			}
-		}
-		else if(expected_type.is_float()){
-			if(value0.is_json_value() && value0.get_json_value().is_number()){
-				return value_t::make_float((float)value0.get_json_value().get_number());
-			}
-			else{
-				return value0;
-			}
-		}
-		else if(expected_type.is_string()){
-			if(value0.is_json_value() && value0.get_json_value().is_string()){
-				return value_t::make_string(value0.get_json_value().get_string());
-			}
-			else{
-				return value0;
-			}
-		}
-		else if(expected_type.is_json_value()){
-			const auto v2 = value_to_ast_json(value0);
-			return value_t::make_json_value(v2._value);
-		}
-		else{
-			const auto value = value0;
-
-			if(value.is_vector()){
-				const auto v = value.get_vector_value();
-
-				//	When [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
-				if(v->_element_type.is_null() && v->_elements.empty()){
-					QUARK_ASSERT(expected_type.is_vector());
-					return value_t::make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
-				}
-				else{
-					return value;
-				}
-			}
-			else if(value.is_dict()){
-				const auto v = value.get_dict_value();
-
-				//	When [:] appears in an expression we know it's an empty dict but not which type. It can be used as any dict type.
-				if(v->_value_type.is_null() && v->_elements.empty()){
-					QUARK_ASSERT(expected_type.is_dict());
-					return value_t::make_dict_value(expected_type.get_dict_value_type(), {});
-				}
-				else{
-					return value;
-				}
-			}
-			else{
-				return value;
-			}
-		}
-*/
-
-	}
-
-
-
 //??? Make this deep?
 expression_t deduce_vector_definition_type___from_contents(const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
@@ -947,21 +868,19 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	const auto left_expr = analyse_expression(vm_acc, *simple2_expr._left);
 	vm_acc = left_expr.first;
 
-	const auto right_expr = analyse_expression(vm_acc, *simple2_expr._right);
-	vm_acc = right_expr.first;
-
-	//	Perform math operation on the two constants => new constant.
-	const auto left_type = left_expr.second.get_annotated_type();
+	const auto lhs_type = left_expr.second.get_annotated_type();
 
 	//	Make rhs match left if needed/possible.
-	const auto right_type = improve_value_type(right_expr.second.get_annotated_type(), left_type);
+	const auto right_expr = analyse_expression_to_target(vm_acc, *simple2_expr._right, lhs_type);
+	vm_acc = right_expr.first;
+	const auto rhs_type = right_expr.second.get_annotated_type();
 
 	// ??? we don't have all types yet.
-	if(left_type != right_type && left_type.is_null() == false && right_type.is_null() == false){
+	if(lhs_type != rhs_type && lhs_type.is_null() == false && rhs_type.is_null() == false){
 		throw std::runtime_error("Comparison: Left and right expressions must be same type!");
 	}
 	else{
-		const auto final_type = left_type;
+		const auto shared_type = lhs_type;
 
 		if(op == expression_type::k_comparison_smaller_or_equal__2){
 		}
@@ -993,20 +912,20 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	const auto left_expr = analyse_expression(vm_acc, *simple2_expr._left);
 	vm_acc = left_expr.first;
 
-	const auto right_expr = analyse_expression(vm_acc, *simple2_expr._right);
-	vm_acc = right_expr.first;
-
-
-	const auto left_type = left_expr.second.get_annotated_type();
+	const auto lhs_type = left_expr.second.get_annotated_type();
 
 	//	Make rhs match lhs if needed/possible.
-	const auto right_type = improve_value_type(right_expr.second.get_annotated_type(), left_type);
+	const auto right_expr = analyse_expression_to_target(vm_acc, *simple2_expr._right, lhs_type);
+	vm_acc = right_expr.first;
 
-	if(left_type != right_type){
+	const auto rhs_type = right_expr.second.get_annotated_type();
+
+
+	if(lhs_type != rhs_type){
 		throw std::runtime_error("Artithmetics: Left and right expressions must be same type!");
 	}
 	else{
-		const auto shared_type = left_type;
+		const auto shared_type = lhs_type;
 
 		//	bool
 		if(shared_type.is_bool()){
@@ -1142,7 +1061,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		}
 
 		else if(shared_type.is_vector()){
-			const auto element_type = left_type.get_vector_element_type();
+			const auto element_type = shared_type.get_vector_element_type();
 			if(op == expression_type::k_arithmetic_add__2){
 			}
 

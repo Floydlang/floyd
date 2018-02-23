@@ -699,7 +699,7 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 	}
 }
 
-std::pair<interpreter_t, expression_t> evaluate_variabele_expression(const interpreter_t& vm, const expression_t::variable_expr_t& expr){
+std::pair<interpreter_t, expression_t> evaluate_variable_expression(const interpreter_t& vm, const expression_t::variable_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -768,7 +768,7 @@ std::pair<interpreter_t, expression_t> evaluate_dict_definition_expression(const
 
 	return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type, elements2))};
 }
-	
+
 std::pair<interpreter_t, expression_t> evaluate_arithmetic_unary_minus_expression(const interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1164,7 +1164,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		return evaluate_lookup_element_expression(vm, *e.get_lookup());
 	}
 	else if(op == expression_type::k_variable){
-		return evaluate_variabele_expression(vm, *e.get_variable());
+		return evaluate_variable_expression(vm, *e.get_variable());
 	}
 
 	else if(op == expression_type::k_call){

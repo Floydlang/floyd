@@ -1965,7 +1965,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Comparison: Left and right expressions must be same type!");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
 	}
 }
 
@@ -2794,7 +2794,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Comparison: Left and right expressions must be same type!");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
 	}
 }
 
@@ -2806,7 +2806,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Artithmetics: Left and right expressions must be same type!");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
 	}
 }
 QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
