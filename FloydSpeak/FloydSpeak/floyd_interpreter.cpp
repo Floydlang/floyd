@@ -1341,6 +1341,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
