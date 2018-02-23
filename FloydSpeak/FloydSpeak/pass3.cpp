@@ -16,6 +16,7 @@
 #include "json_support.h"
 #include "json_parser.h"
 #include "parser_primitives.h"
+#include "host_functions.hpp"
 #include <fstream>
 
 namespace floyd_pass3 {
@@ -1213,29 +1214,6 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 	return analyse_expression_to_target(vm, e, typeid_t::make_null());
 }
 
-/*
-//	NOTICE: We do function overloading for the host functions: you can call them with any *type* of arguments and it gives any return type.
-std::pair<analyser_t, statement_result_t> call_host_function(const analyser_t& vm, int function_id, const std::vector<floyd::value_t> args){
-	const int index = function_id - 1000;
-	QUARK_ASSERT(index >= 0 && index < k_host_functions.size())
-
-	const auto& host_function = k_host_functions[index];
-
-	//	arity
-	if(args.size() != host_function._function_type.get_function_args().size()){
-		throw std::runtime_error("Wrong number of arguments to host function.");
-	}
-
-	const auto result = (host_function._function_ptr)(vm, args);
-	return {
-		result.first,
-		statement_result_t::make_return_unwind(result.second)
-	};
-}
-*/
-
-
-
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& vm, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
 	//	arity
 	if(call_args.size() != callee_args.size()){
@@ -1476,17 +1454,14 @@ typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
 }
 
 
-struct host_function_t {
-	std::string _name;
-	int _function_id;
-	typeid_t _function_type;
-};
 
 analyser_t::analyser_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	_ast = make_shared<ast_t>(ast);
 }
+
+
 
 ast_t analyse(const analyser_t& a0){
 	QUARK_ASSERT(a0.check_invariant());
@@ -1497,41 +1472,11 @@ ast_t analyse(const analyser_t& a0){
 	shared_ptr<lexical_scope_t> empty_env;
 	auto global_env = lexical_scope_t::make_environment(a, empty_env);
 
-
-	//	??? Had problem having this a global constant: keyword_t::k_null had not be statically initialized.
-	const vector<host_function_t> k_host_functions {
-		host_function_t{ "print", 1000, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
-		host_function_t{ "assert", 1001, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
-		host_function_t{ "to_string", 1002, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_t{ "to_pretty_string", 1003, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_t{ "typeof", 1004, typeid_t::make_function(typeid_t::make_typeid(), {typeid_t::make_null()}) },
-
-		host_function_t{ "get_time_of_day", 1005, typeid_t::make_function(typeid_t::make_int(), {}) },
-		host_function_t{ "update", 1006, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_t{ "size", 1007, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) },
-		host_function_t{ "find", 1008, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null(), typeid_t::make_null()}) },
-		host_function_t{ "exists", 1009, typeid_t::make_function(typeid_t::make_bool(), {typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_t{ "erase", 1010, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_t{ "push_back", 1011, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_t{ "subset", 1012, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_t{ "replace", 1013, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-
-		host_function_t{ "get_env_path", 1014, typeid_t::make_function(typeid_t::make_string(), {}) },
-		host_function_t{ "read_text_file", 1015, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_t{ "write_text_file", 1016, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },
-
-		host_function_t{ "decode_json", 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}) },
-		host_function_t{ "encode_json", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}) },
-
-		host_function_t{ "flatten_to_json", 1019, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
-		host_function_t{ "unflatten_from_json", 1020, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },
-
-		host_function_t{ "get_json_type", 10121, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }
-	};
+	const auto host_functions = get_host_function_signatures();
 
 	//	Insert built-in functions into AST.
-	for(auto i = 0 ; i < k_host_functions.size() ; i++){
-		const auto& hf = k_host_functions[i];
+	for(auto i = 0 ; i < host_functions.size() ; i++){
+		const auto& hf = host_functions[i];
 
 		const auto aaaaa = [&](){
 			vector<member_t> result;

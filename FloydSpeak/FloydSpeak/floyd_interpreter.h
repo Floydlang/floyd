@@ -101,6 +101,18 @@ namespace floyd {
 	};
 
 
+
+typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
+
+struct host_function_t {
+	std::string _name;
+	HOST_FUNCTION_PTR _function_ptr;
+	typeid_t _function_type;
+};
+
+
+
+
 	//////////////////////////////////////		interpreter_t
 
 	/*
@@ -118,6 +130,9 @@ namespace floyd {
 
 		////////////////////////		STATE
 		public: std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
+
+
+		public: std::vector<host_function_t> _host_functions;
 
 
 		//	Constant!

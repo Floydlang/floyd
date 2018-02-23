@@ -26,15 +26,20 @@ namespace floyd {
 
 	std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args);
 
-typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
 
-struct host_function_t {
-	std::string _name;
-	HOST_FUNCTION_PTR _function_ptr;
-	typeid_t _function_type;
-};
 
-	extern const std::vector<host_function_t> k_host_functions;
+	//////////////////////////////////////		host_function_signatures_t
+
+
+	struct host_function_signatures_t {
+		std::string _name;
+		int _function_id;
+		floyd::typeid_t _function_type;
+	};
+
+	std::vector<host_function_signatures_t> get_host_function_signatures();
+
+
 
 }
 
