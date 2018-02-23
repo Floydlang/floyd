@@ -45,80 +45,6 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 
 
 
-	//??? add conversions.
-	//??? This is builing block for promoting values / casting.
-	//	We know which type we need. If the value has not type, retype it.
-	value_t improve_value_type__TODO_move_to_pass3(const value_t& value0, const typeid_t& expected_type){
-		QUARK_ASSERT(value0.check_invariant());
-		QUARK_ASSERT(expected_type.check_invariant());
-		return value0;
-		if(expected_type.is_null()){
-			return value0;
-		}
-		else if(expected_type.is_bool()){
-			if(value0.is_json_value() && value0.get_json_value().is_true()){
-				return value_t::make_bool(true);
-			}
-			if(value0.is_json_value() && value0.get_json_value().is_false()){
-				return value_t::make_bool(false);
-			}
-			else{
-				return value0;
-			}
-		}
-		else if(expected_type.is_float()){
-			if(value0.is_json_value() && value0.get_json_value().is_number()){
-				return value_t::make_float((float)value0.get_json_value().get_number());
-			}
-			else{
-				return value0;
-			}
-		}
-		else if(expected_type.is_string()){
-			if(value0.is_json_value() && value0.get_json_value().is_string()){
-				return value_t::make_string(value0.get_json_value().get_string());
-			}
-			else{
-				return value0;
-			}
-		}
-		else if(expected_type.is_json_value()){
-			const auto v2 = value_to_ast_json(value0);
-			return value_t::make_json_value(v2._value);
-		}
-		else{
-			const auto value = value0;
-
-			if(value.is_vector()){
-				const auto v = value.get_vector_value();
-
-				//	When [] appears in an expression we know it's an empty vector but not which type. It can be used as any vector type.
-				if(v->_element_type.is_null() && v->_elements.empty()){
-					QUARK_ASSERT(expected_type.is_vector());
-					return value_t::make_vector_value(expected_type.get_vector_element_type(), value.get_vector_value()->_elements);
-				}
-				else{
-					return value;
-				}
-			}
-			else if(value.is_dict()){
-				const auto v = value.get_dict_value();
-
-				//	When [:] appears in an expression we know it's an empty dict but not which type. It can be used as any dict type.
-				if(v->_value_type.is_null() && v->_elements.empty()){
-					QUARK_ASSERT(expected_type.is_dict());
-					return value_t::make_dict_value(expected_type.get_dict_value_type(), {});
-				}
-				else{
-					return value;
-				}
-			}
-			else{
-				return value;
-			}
-		}
-	}
-
 
 std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
 	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
@@ -375,7 +301,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	//	int a = 10
 	//	mutable a = 10
 	//	mutable = 10
-	const auto retyped_value = improve_value_type__TODO_move_to_pass3(result_value.get_literal(), bind_statement_type);
+	const auto retyped_value = result_value.get_literal();
 
 	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
 
@@ -928,7 +854,7 @@ std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const inte
 	const auto left_constant = left_expr.second.get_literal();
 
 	//	Make rhs match left if needed/possible.
-	const auto right_constant = improve_value_type__TODO_move_to_pass3(right_expr.second.get_literal(), left_constant.get_type());
+	const auto right_constant = right_expr.second.get_literal();
 
 	if(!(left_constant.get_type()== right_constant.get_type())){
 		throw std::runtime_error("Comparison: Left and right expressions must be same type!");
@@ -988,7 +914,7 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 		const auto left_constant = left_expr.second.get_literal();
 
 		//	Make rhs match left if needed/possible.
-		const auto right_constant = improve_value_type__TODO_move_to_pass3(right_expr.second.get_literal(), left_constant.get_type());
+		const auto right_constant = right_expr.second.get_literal();
 
 		if(left_constant.get_type() != right_constant.get_type()){
 			throw std::runtime_error("Artithmetics: Left and right expressions must be same type!");
@@ -1324,12 +1250,13 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		//	arity
 		QUARK_ASSERT(args.size() == arg_types.size());
 
-		//??? Cannote remove until we have got rid of improve_value_type__TODO_move_to_pass3().
+#if DEBUG
 		for(int i = 0 ; i < args.size() ; i++){
 			if(args[i].get_type() != arg_types[i]){
-				throw std::runtime_error("Function argument type do not match.");
+				QUARK_ASSERT(false);
 			}
 		}
+#endif
 
 		//	Always use global scope.
 		//	Future: support closures by linking to function env where function is defined.
@@ -1800,7 +1727,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 				throw std::runtime_error("Vector lookup using integer index only.");
 			}
 			else{
-				const auto obj = improve_value_type__TODO_move_to_pass3(obj1, typeid_t::make_vector(new_value.get_type()));
+				const auto obj = obj1;
 				const auto v = obj.get_vector_value();
 				auto v2 = v->_elements;
 
@@ -1825,7 +1752,7 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 				throw std::runtime_error("Dict lookup using string key only.");
 			}
 			else{
-				const auto obj = improve_value_type__TODO_move_to_pass3(obj1, typeid_t::make_dict(new_value.get_type()));
+				const auto obj = obj1;
 				const auto v = obj.get_dict_value();
 				auto v2 = v->_elements;
 
