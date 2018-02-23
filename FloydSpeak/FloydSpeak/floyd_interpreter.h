@@ -25,7 +25,6 @@ namespace floyd {
 	struct interpreter_t;
 
 
-	value_t unflatten_json_to_specific_type(const json_t& v);
 
 
 	//////////////////////////////////////		statement_result_t
@@ -164,8 +163,8 @@ namespace floyd {
 
 
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
-
 	typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type);
+	std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.
