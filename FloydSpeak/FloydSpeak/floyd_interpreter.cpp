@@ -286,37 +286,31 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	auto vm_acc = vm;
 	const auto name = statement._new_variable_name;
 
-	const auto result = evaluate_expression(vm_acc, statement._expression);
-	vm_acc = result.first;
+	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
+	vm_acc = rhs_expr_pair.first;
 
-	const auto result_value = result.second;
-	QUARK_ASSERT(result_value.is_literal());
+	QUARK_ASSERT(rhs_expr_pair.second.is_literal());
+
+	const auto rhs_value = rhs_expr_pair.second.get_literal();
 
 	const auto bind_statement_type = statement._bindtype;
 	const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
-
 	const auto mutable_flag = bind_statement_mutable_mode == statement_t::bind_local_t::k_mutable;
-
-	//	Bind.
-	//	int a = 10
-	//	mutable a = 10
-	//	mutable = 10
-	const auto retyped_value = result_value.get_literal();
 
 	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
 
 	//	Deduced bind type -- use new value's type.
 	//??? Should not be needed in interpreter. Move to pass3.
 	if(bind_statement_type.is_null()){
-		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
+		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
 	}
 
 	//	Explicit bind-type -- make sure source + dest types match.
 	else{
-		if(bind_statement_type != retyped_value.get_type()){
+		if(bind_statement_type != rhs_value.get_type()){
 			throw std::runtime_error("Types not compatible in bind.");
 		}
-		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(retyped_value, mutable_flag);
+		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
 	}
 	return { vm_acc, statement_result_t::make_no_output() };
 }
@@ -327,22 +321,22 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	auto vm_acc = vm;
 	const auto local_name = statement._local_name;
 
-	const auto result = evaluate_expression(vm_acc, statement._expression);
-	vm_acc = result.first;
+	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
+	vm_acc = rhs_expr_pair.first;
 
-	QUARK_ASSERT(result.second.is_literal());
-	const auto rhs_value = result.second.get_literal();
+	QUARK_ASSERT(rhs_expr_pair.second.is_literal());
+	const auto rhs_value = rhs_expr_pair.second.get_literal();
 
-	const auto existing_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
-	const bool existing_variable_is_mutable = existing_value_deep_ptr && existing_value_deep_ptr->second;
+	const auto lhs_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
+	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
 
-	QUARK_ASSERT(existing_value_deep_ptr != nullptr);
-	QUARK_ASSERT(existing_variable_is_mutable);
+	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
+	QUARK_ASSERT(lhs_value_is_mutable);
 
-	const auto existing_value = existing_value_deep_ptr->first;
-	QUARK_ASSERT(existing_value.get_type() == rhs_value.get_type());
+	const auto lhs_value = lhs_value_deep_ptr->first;
+	QUARK_ASSERT(lhs_value.get_type() == rhs_value.get_type());
 
-	*existing_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
+	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
@@ -354,12 +348,12 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	const auto result = evaluate_expression(vm_acc, expr);
 	vm_acc = result.first;
 
-	const auto result_value = result.second;
-	QUARK_ASSERT(result_value.is_literal());
+	QUARK_ASSERT(result.second.is_literal());
 
+	const auto rhs_value = result.second.get_literal();
 	return {
 		vm_acc,
-		statement_result_t::make_return_unwind(result_value.get_literal())
+		statement_result_t::make_return_unwind(rhs_value)
 	};
 }
 
@@ -394,11 +388,11 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 
 	const auto condition_result = evaluate_expression(vm_acc, statement._condition);
 	vm_acc = condition_result.first;
-	const auto condition_result_value = condition_result.second;
-	QUARK_ASSERT(condition_result_value.is_literal());
-	QUARK_ASSERT(condition_result_value.get_literal().is_bool());
+	QUARK_ASSERT(condition_result.second.is_literal());
+	QUARK_ASSERT(condition_result.second.get_literal().is_bool());
 
-	bool r = condition_result_value.get_literal().get_bool_value();
+	const auto condition_result_value = condition_result.second.get_literal();
+	bool r = condition_result_value.get_bool_value();
 	if(r){
 		return execute_statements_in_env(vm_acc, statement._then_statements, {});
 	}
@@ -414,13 +408,13 @@ std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpr
 
 	const auto start_value0 = evaluate_expression(vm_acc, statement._start_expression);
 	vm_acc = start_value0.first;
-	const auto start_value = start_value0.second.get_literal().get_int_value();
+	const auto start_value_int = start_value0.second.get_literal().get_int_value();
 
 	const auto end_value0 = evaluate_expression(vm_acc, statement._end_expression);
 	vm_acc = end_value0.first;
-	const auto end_value = end_value0.second.get_literal().get_int_value();
+	const auto end_value_int = end_value0.second.get_literal().get_int_value();
 
-	for(int x = start_value ; x <= end_value ; x++){
+	for(int x = start_value_int ; x <= end_value_int ; x++){
 		const std::map<std::string, std::pair<value_t, bool>> values = { { statement._iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
 		const auto result = execute_statements_in_env(vm_acc, statement._body, values);
 		vm_acc = result.first;
@@ -465,10 +459,10 @@ std::pair<interpreter_t, statement_result_t> execute_expression_statement(const 
 	auto vm_acc = vm;
 	const auto result = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = result.first;
-	const auto result_value = result.second.get_literal();
+	const auto rhs_value = result.second.get_literal();
 	return {
 		vm_acc,
-		statement_result_t::make_passive_expression_output(result_value)
+		statement_result_t::make_passive_expression_output(rhs_value)
 	};
 }
 
