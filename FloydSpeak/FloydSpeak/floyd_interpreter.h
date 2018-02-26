@@ -17,6 +17,7 @@
 #include <map>
 #include "ast.h"
 #include "ast_value.h"
+#include "host_functions.hpp"
 
 namespace floyd {
 	struct expression_t;
@@ -102,16 +103,6 @@ namespace floyd {
 
 
 
-typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
-
-struct host_function_t {
-	std::string _name;
-	HOST_FUNCTION_PTR _function_ptr;
-	typeid_t _function_type;
-};
-
-
-
 
 	//////////////////////////////////////		interpreter_t
 
@@ -131,12 +122,8 @@ struct host_function_t {
 		////////////////////////		STATE
 		public: std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 
-
-		public: std::vector<host_function_t> _host_functions;
-
-
-		//	Constant!
 		public: std::shared_ptr<const ast_t> _ast;
+		public: std::map<int, HOST_FUNCTION_PTR> _host_functions;
 
 
 		//	Non-constant. Last scope is the current one. First scope is the root.

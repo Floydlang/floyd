@@ -8,8 +8,6 @@
 
 #include "host_functions.hpp"
 
-
-
 #include "parser_primitives.h"
 #include "parse_expression.h"
 #include "parse_statement.h"
@@ -43,16 +41,11 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-
-
-
 value_t flatten_to_json(const value_t& value){
 	const auto j = value_to_ast_json(value);
 	value_t json_value = value_t::make_json_value(j._value);
 	return json_value;
 }
-
-
 
 
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
@@ -169,8 +162,6 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 
 
 
-
-
 //	Records all output to interpreter
 std::pair<interpreter_t, value_t> host__print(const interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -284,7 +275,6 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 	QUARK_UT_VERIFY(ms >= 7)
 }
-
 
 
 
@@ -941,41 +931,112 @@ std::pair<interpreter_t, value_t> host__get_json_type(const interpreter_t& vm, c
 
 
 
+std::map<std::string, host_function_signature_t> get_host_function_signatures(){
+	const std::map<std::string, host_function_signature_t> temp {
+		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(typeid_t::make_null(), { typeid_t::make_null()}) } },
+		{ "assert", host_function_signature_t{ 1001, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) } },
+		{ "to_string", host_function_signature_t{ 1002, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) } },
+		{ "to_pretty_string", host_function_signature_t{ 1003, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) }},
+		{ "typeof", host_function_signature_t{1004, typeid_t::make_function(typeid_t::make_typeid(), {typeid_t::make_null()}) } },
+		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}) }},
 
+		{ "update", host_function_signature_t{ 1006, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }},
+		{ "size", host_function_signature_t{ 1007, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) } },
+		{ "find", host_function_signature_t{ 1008, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null(), typeid_t::make_null()}) }},
+		{ "exists", host_function_signature_t{ 1009, typeid_t::make_function(typeid_t::make_bool(), {typeid_t::make_null(),typeid_t::make_null()}) }},
+		{ "erase", host_function_signature_t{ 1010, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) } },
+		{ "push_back", host_function_signature_t{ 1011, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) }},
+		{ "subset", host_function_signature_t{ 1012, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }},
+		{ "replace", host_function_signature_t{ 1013, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) }},
 
-vector<host_function_signatures_t> get_host_function_signatures(){
+		{ "get_env_path", host_function_signature_t{ 1014, typeid_t::make_function(typeid_t::make_string(), {}) }},
+		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) }},
+		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) }},
 
-	//	??? Had problem having this a global constant: keyword_t::k_null had not be statically initialized.
-	const vector<host_function_signatures_t> k_host_functions {
-		host_function_signatures_t{ "print", 1000, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
-		host_function_signatures_t{ "assert", 1001, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) },
-		host_function_signatures_t{ "to_string", 1002, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_signatures_t{ "to_pretty_string", 1003, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_signatures_t{ "typeof", 1004, typeid_t::make_function(typeid_t::make_typeid(), {typeid_t::make_null()}) },
-
-		host_function_signatures_t{ "get_time_of_day", 1005, typeid_t::make_function(typeid_t::make_int(), {}) },
-		host_function_signatures_t{ "update", 1006, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_signatures_t{ "size", 1007, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null()}) },
-		host_function_signatures_t{ "find", 1008, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_null(), typeid_t::make_null()}) },
-		host_function_signatures_t{ "exists", 1009, typeid_t::make_function(typeid_t::make_bool(), {typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_signatures_t{ "erase", 1010, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_signatures_t{ "push_back", 1011, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_signatures_t{ "subset", 1012, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-		host_function_signatures_t{ "replace", 1013, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null(),typeid_t::make_null()}) },
-
-		host_function_signatures_t{ "get_env_path", 1014, typeid_t::make_function(typeid_t::make_string(), {}) },
-		host_function_signatures_t{ "read_text_file", 1015, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_null()}) },
-		host_function_signatures_t{ "write_text_file", 1016, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },
-
-		host_function_signatures_t{ "decode_json", 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}) },
-		host_function_signatures_t{ "encode_json", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}) },
-
-		host_function_signatures_t{ "flatten_to_json", 1019, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) },
-		host_function_signatures_t{ "unflatten_from_json", 1020, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) },
-
-		host_function_signatures_t{ "get_json_type", 10121, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }
+		{ "decode_json", host_function_signature_t{ 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}) }},
+		{ "encode_json", host_function_signature_t{ 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}) }},
+		{ "flatten_to_json", host_function_signature_t{ 1019, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) }},
+		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) }},
+		{ "get_json_type", host_function_signature_t{ 10121, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }}
 	};
-	return k_host_functions;
+	return temp;
 }
+
+
+/*
+	struct host_function_t {
+		host_function_signature_t _signature;
+		HOST_FUNCTION_PTR _f;
+	}
+*/
+
+
+
+std::map<int,  host_function_t> get_host_functions(){
+	const auto host_functions = get_host_function_signatures();
+
+	const std::map<string, HOST_FUNCTION_PTR> lookup0 = {
+		{ "print", host__print },
+		{ "assert", host__assert },
+		{ "to_string", host__to_string },
+		{ "to_pretty_string", host__to_pretty_string },
+		{ "typeof", host__typeof },
+		{ "get_time_of_day", host__get_time_of_day },
+
+		{ "update", host__update },
+		{ "size", host__size },
+		{ "find", host__find },
+		{ "exists", host__exists },
+		{ "erase", host__erase },
+		{ "push_back", host__push_back },
+		{ "subset", host__subset },
+		{ "replace", host__replace },
+
+		{ "get_env_path", host__get_env_path },
+		{ "read_text_file", host__read_text_file },
+		{ "write_text_file", host__write_text_file },
+
+		{ "decode_json", host__decode_json },
+		{ "encode_json", host__encode_json },
+		{ "flatten_to_json", host__flatten_to_json },
+		{ "unflatten_from_json", host__unflatten_from_json },
+		{ "get_json_type", host__get_json_type }
+	};
+
+	const auto lookup = [&](){
+		std::map<int,  host_function_t> result;
+		for(const auto e: lookup0){
+			const auto function_name = e.first;
+			const auto f_ptr = e.second;
+			const auto hf = host_functions.at(function_name);
+			const host_function_t hf2 = { hf, function_name, f_ptr };
+			result.insert({ hf._function_id, hf2});
+		}
+		return result;
+	}();
+
+	return lookup;
+}
+
+
+floyd::value_t make_host_function_value(const host_function_signature_t& signature){
+	const auto args = [&](){
+		vector<member_t> result;
+		for(const auto e: signature._function_type.get_function_args()){
+			result.push_back(member_t(e, "dummy"));
+		}
+		return result;
+	}();
+
+	const auto def = function_definition_t(
+		args,
+		signature._function_id,
+		signature._function_type.get_function_return()
+	);
+
+	const auto function_value = value_t::make_function_value(def);
+	return function_value;
+}
+
 
 }

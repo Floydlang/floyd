@@ -1365,17 +1365,19 @@ bool environment_t::check_invariant() const {
 
 //	NOTICE: We do function overloading for the host functions: you can call them with any *type* of arguments and it gives any return type.
 std::pair<interpreter_t, statement_result_t> call_host_function(const interpreter_t& vm, int function_id, const std::vector<floyd::value_t> args){
-	const int index = function_id - 1000;
-	QUARK_ASSERT(index >= 0 /*&& index < k_host_functions.size()*/);
+//	const int index = function_id - 1000;
+//	QUARK_ASSERT(index >= 0 /*&& index < k_host_functions.size()*/);
 
-	const auto& host_function = vm._host_functions[index];
+	const auto& host_function = vm._host_functions.at(function_id);
 
+/*
 	//	arity
 	if(args.size() != host_function._function_type.get_function_args().size()){
 		throw std::runtime_error("Wrong number of arguments to host function.");
 	}
+*/
 
-	const auto result = (host_function._function_ptr)(vm, args);
+	const auto result = (host_function)(vm, args);
 	return {
 		result.first,
 		statement_result_t::make_return_unwind(result.second)
@@ -1391,22 +1393,18 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	shared_ptr<environment_t> empty_env;
 	auto global_env = environment_t::make_environment(*this, empty_env);
 
-	const auto host_functions = get_host_function_signatures();
+	const auto host_functions = get_host_functions();
+	for(auto hf_kv: host_functions){
+		const auto& function_name = hf_kv.second._name;
+		const auto function_value = make_host_function_value(hf_kv.second._signature);
+		const auto value_entry = std::pair<value_t, bool>{ function_value, false };
+		global_env->_values.insert({ function_name, value_entry });
 
-	//	Insert built-in functions into AST.
-	for(auto i = 0 ; i < host_functions.size() ; i++){
-		const auto& hf = host_functions[i];
-		const auto def = function_definition_t(
-			{},
-			i + 1000,
-			hf._function_type.get_function_return()
-		);
-
-		const auto function_value = value_t::make_function_value(def);
-		global_env->_values[hf._name] = std::pair<value_t, bool>{function_value, false };
-
-		_host_functions.push_back(host_function_t{ hf._name, nullptr, });
+		const auto function_id = hf_kv.second._signature._function_id;
+		const auto function_ptr = hf_kv.second._f;
+		_host_functions.insert({ function_id, function_ptr });
 	}
+
 	global_env->_values[keyword_t::k_null] = std::pair<value_t, bool>{value_t::make_null(), false };
 	global_env->_values[keyword_t::k_bool] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
 	global_env->_values[keyword_t::k_int] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
@@ -1438,6 +1436,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 interpreter_t::interpreter_t(const interpreter_t& other) :
 	_start_time(other._start_time),
 	_ast(other._ast),
+	_host_functions(other._host_functions),
 	_call_stack(other._call_stack),
 	_print_output(other._print_output)
 {
@@ -1450,6 +1449,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 	_start_time = other._start_time;
 	_ast = other._ast;
+	_host_functions = other._host_functions;
 	_call_stack = other._call_stack;
 	_print_output = other._print_output;
 	return *this;

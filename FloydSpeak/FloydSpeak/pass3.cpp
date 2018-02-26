@@ -1472,29 +1472,14 @@ ast_t analyse(const analyser_t& a0){
 	shared_ptr<lexical_scope_t> empty_env;
 	auto global_env = lexical_scope_t::make_environment(a, empty_env);
 
-	const auto host_functions = get_host_function_signatures();
-
 	//	Insert built-in functions into AST.
-	for(auto i = 0 ; i < host_functions.size() ; i++){
-		const auto& hf = host_functions[i];
-
-		const auto aaaaa = [&](){
-			vector<member_t> result;
-			for(const auto e: hf._function_type.get_function_args()){
-				result.push_back(member_t(e, "dummy"));
-			}
-			return result;
-		}();
-
-		const auto def = function_definition_t(
-			aaaaa,
-			i + 1000,
-			hf._function_type.get_function_return()
-		);
-
-		const auto function_value = value_t::make_function_value(def);
-		global_env->_symbols[hf._name] = symbol_t::make_constant(function_value);
+	const auto host_functions = floyd::get_host_function_signatures();
+	for(auto hf_kv: host_functions){
+		const auto& function_name = hf_kv.first;
+		const auto function_value = make_host_function_value(hf_kv.second);
+		global_env->_symbols[function_name] = symbol_t::make_constant(function_value);
 	}
+
 	global_env->_symbols[keyword_t::k_null] = symbol_t::make_constant(value_t::make_null());
 	global_env->_symbols[keyword_t::k_bool] = symbol_t::make_type(typeid_t::make_bool());
 	global_env->_symbols[keyword_t::k_int] = symbol_t::make_type(typeid_t::make_int());
