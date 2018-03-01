@@ -342,7 +342,7 @@ std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse
 	- Can update an existing local (if local is mutable).
 	- Can implicitly create a new local
 */
-std::pair<analyser_t, statement_t> analyse_statement_as_simple_assign(const analyser_t& vm, const statement_t& s){
+std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_t& vm, const statement_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -394,7 +394,7 @@ Ex:
 	mutable a = 10
 	mutable = 10
 */
-std::pair<analyser_t, statement_t> analyse_statement_as_bindnew(const analyser_t& vm, const statement_t& s){
+std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t& vm, const statement_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto statement = *s._bind_local;
@@ -553,12 +553,12 @@ std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const
 	QUARK_ASSERT(statement.check_invariant());
 
 	if(statement._bind_local){
-		const auto e = analyse_statement_as_bindnew(vm, statement);
+		const auto e = analyse_bind_local_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
 		return e;
 	}
 	else if(statement._store_local){
-		const auto e = analyse_statement_as_simple_assign(vm, statement);
+		const auto e = analyse_store_local_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
 		return e;
 	}

@@ -1595,7 +1595,7 @@ QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
 	)");
 }
 
-OFF_QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
+OFF_QUARK_UNIT_TEST_VIP("vector", "push_back()", "vector", "correct final vector"){
 	const auto vm = test__run_global(R"(
 		[string] a = push_back(["one"], "two");
 		assert(a == ["one", "two"]);
