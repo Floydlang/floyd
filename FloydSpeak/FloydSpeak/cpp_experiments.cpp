@@ -44,3 +44,10 @@ QUARK_UNIT_TESTQ("C++ bool", ""){
 	QUARK_UT_VERIFY(y == false);
 }
 
+QUARK_UNIT_TEST("","", "", ""){
+	const auto size = sizeof(std::make_shared<int>(13));
+	QUARK_UT_VERIFY(size == 16);
+}
+
+
+
