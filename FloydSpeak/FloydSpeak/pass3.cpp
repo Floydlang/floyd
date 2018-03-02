@@ -207,6 +207,18 @@ expression_t deduce_expression_type_from_contents(const expression_t& e){
 			if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_null(), {})){
 				return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
 			}
+			else if(e.get_operation() == expression_type::k_call){
+				const auto call = e.get_call();
+				const auto callee_type = call->_callee->get_annotated_type2();
+				QUARK_ASSERT(callee_type);
+				if(callee_type->is_function() && callee_type->get_function_return().is_null()){
+					return expression_t::make_call(*call->_callee, call->_args, make_shared<typeid_t>(wanted_type));
+	//				return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
+				}
+				else{
+					return e;
+				}
+			}
 			else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_vector_definition){
 				QUARK_ASSERT(false);
 				return expression_t::make_vector_definition(wanted_type, e.get_vector_definition()->_elements);
@@ -441,7 +453,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm
 
 	auto vm_acc = vm;
 	const auto expr = statement._expression;
-	const auto result = analyse_expression(vm_acc, expr);
+	const auto result = analyse_expression_no_target(vm_acc, expr);
 	vm_acc = result.first;
 
 	const auto result_value = result.second;
@@ -482,7 +494,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm
 
 	auto vm_acc = vm;
 
-	const auto condition2 = analyse_expression(vm_acc, statement._condition);
+	const auto condition2 = analyse_expression_no_target(vm_acc, statement._condition);
 	vm_acc = condition2.first;
 
 	const auto condition_type = condition2.second.get_annotated_type();
@@ -500,14 +512,14 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, c
 
 	auto vm_acc = vm;
 
-	const auto start_expr2 = analyse_expression(vm_acc, statement._start_expression);
+	const auto start_expr2 = analyse_expression_no_target(vm_acc, statement._start_expression);
 	vm_acc = start_expr2.first;
 
 	if(start_expr2.second.get_annotated_type().is_int() == false){
 		throw std::runtime_error("For-loop requires integer iterator.");
 	}
 
-	const auto end_expr2 = analyse_expression(vm_acc, statement._end_expression);
+	const auto end_expr2 = analyse_expression_no_target(vm_acc, statement._end_expression);
 	vm_acc = end_expr2.first;
 
 	if(end_expr2.second.get_annotated_type().is_int() == false){
@@ -528,7 +540,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm,
 
 	auto vm_acc = vm;
 
-	const auto condition2_expr = analyse_expression(vm_acc, statement._condition);
+	const auto condition2_expr = analyse_expression_no_target(vm_acc, statement._condition);
 	vm_acc = condition2_expr.first;
 
 	const auto result = analyse_statements_in_env(vm_acc, statement._body, {});
@@ -541,7 +553,7 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const auto expr2 = analyse_expression(vm_acc, statement._expression);
+	const auto expr2 = analyse_expression_no_target(vm_acc, statement._expression);
 	vm_acc = expr2.first;
 
 	return { vm_acc, statement_t::make__expression_statement(expr2.second) };
@@ -664,7 +676,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const auto parent_expr = analyse_expression(vm_acc, *expr._parent_address);
+	const auto parent_expr = analyse_expression_no_target(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
 
 	const auto parent_type = parent_expr.second.get_annotated_type();
@@ -689,10 +701,10 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const auto parent_expr = analyse_expression(vm_acc, *expr._parent_address);
+	const auto parent_expr = analyse_expression_no_target(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
 
-	const auto key_expr = analyse_expression(vm_acc, *expr._lookup_key);
+	const auto key_expr = analyse_expression_no_target(vm_acc, *expr._lookup_key);
 	vm_acc = key_expr.first;
 
 	const auto parent_type = parent_expr.second.get_annotated_type();
@@ -760,7 +772,7 @@ std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const a
 	else{
 		std::vector<expression_t> elements2;
 		for(const auto m: elements){
-			const auto element_expr = analyse_expression(vm_acc, m);
+			const auto element_expr = analyse_expression_no_target(vm_acc, m);
 			vm_acc = element_expr.first;
 			elements2.push_back(element_expr.second);
 		}
@@ -791,7 +803,7 @@ std::pair<analyser_t, expression_t> analyse_dict_definition_expression(const ana
 	else{
 		map<string, expression_t> elements2;
 		for(const auto m_kv: elements){
-			const auto element_expr = analyse_expression(vm_acc, m_kv.second);
+			const auto element_expr = analyse_expression_no_target(vm_acc, m_kv.second);
 			vm_acc = element_expr.first;
 
 			elements2.insert(make_pair(m_kv.first, element_expr.second));
@@ -817,7 +829,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const auto& expr2 = analyse_expression(vm_acc, *expr._expr);
+	const auto& expr2 = analyse_expression_no_target(vm_acc, *expr._expr);
 	vm_acc = expr2.first;
 
 	//??? We could simplify here and return [ "-", 0, expr]
@@ -836,13 +848,13 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	auto vm_acc = vm;
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto cond_result = analyse_expression(vm_acc, *expr._condition);
+	const auto cond_result = analyse_expression_no_target(vm_acc, *expr._condition);
 	vm_acc = cond_result.first;
 
-	const auto a = analyse_expression(vm_acc, *expr._a);
+	const auto a = analyse_expression_no_target(vm_acc, *expr._a);
 	vm_acc = a.first;
 
-	const auto b = analyse_expression(vm_acc, *expr._b);
+	const auto b = analyse_expression_no_target(vm_acc, *expr._b);
 	vm_acc = b.first;
 
 	const auto type = cond_result.second.get_annotated_type();
@@ -866,7 +878,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	auto vm_acc = vm;
 
 	//	First analyse all inputs to our operation.
-	const auto left_expr = analyse_expression(vm_acc, *simple2_expr._left);
+	const auto left_expr = analyse_expression_no_target(vm_acc, *simple2_expr._left);
 	vm_acc = left_expr.first;
 
 	const auto lhs_type = left_expr.second.get_annotated_type();
@@ -910,7 +922,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	auto vm_acc = vm;
 
 	//	First analyse both inputs to our operation.
-	const auto left_expr = analyse_expression(vm_acc, *simple2_expr._left);
+	const auto left_expr = analyse_expression_no_target(vm_acc, *simple2_expr._left);
 	vm_acc = left_expr.first;
 
 	const auto lhs_type = left_expr.second.get_annotated_type();
@@ -1176,10 +1188,6 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_expression(const analyser_t& vm, const expression_t& e){
-	return analyse_expression_no_target(vm, e);
-}
-
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& vm, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1192,22 +1200,20 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	const auto e3 = deduce_expression_type_from_wanted_type(e2, target_type);
 
 	if(e3.get_annotated_type() == target_type){
+		if(check_type_fully_defined(e3) == false){
+			throw std::runtime_error("Cannot resolve type.");
+		}
 	}
 	else if(target_type.is_null()){
+		assert(true);
 	}
 	else if(e3.get_annotated_type().is_null()){
+		throw std::runtime_error("Expression type mismatch.");
 	}
 	else{
 		throw std::runtime_error("Expression type mismatch.");
 	}
 
-	if(check_type_fully_defined(e3) == false){
-		throw std::runtime_error("Cannot resolve type.");
-	}
-
-
-	QUARK_ASSERT(target_type.is_null() || e3.get_annotated_type().is_null() || e3.get_annotated_type() == target_type);
-	QUARK_ASSERT(check_type_fully_defined(e3));
 	return { vm_acc, e3 };
 }
 
@@ -1215,7 +1221,18 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return analyse_expression_to_target(vm, e, typeid_t::make_null());
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto vm_acc = vm;
+	const auto e1_pair = analyse_expression__op_specific(vm_acc, e);
+	vm_acc = e1_pair.first;
+
+	const auto e2 = deduce_expression_type_from_contents(e1_pair.second);
+	if(check_type_fully_defined(e2) == false){
+		throw std::runtime_error("Cannot resolve type.");
+	}
+	return { vm_acc, e2 };
 }
 
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& vm, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
@@ -1248,7 +1265,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	const auto expr = *e.get_call();
 	auto vm_acc = vm;
 
-	const auto callee_expr0 = analyse_expression(vm_acc, *expr._callee);
+	const auto callee_expr0 = analyse_expression_no_target(vm_acc, *expr._callee);
 	vm_acc = callee_expr0.first;
 	const auto callee_expr = callee_expr0.second;
 
@@ -1371,25 +1388,25 @@ json_t analyser_to_json(const analyser_t& vm){
 void test__analyse_expression(const expression_t& e, const expression_t& expected){
 	const ast_t ast;
 	const analyser_t interpreter(ast);
-	const auto e3 = analyse_expression(interpreter, e);
+	const auto e3 = analyse_expression_no_target(interpreter, e);
 
 	ut_compare_jsons(expression_to_json(e3.second)._value, expression_to_json(expected)._value);
 }
 
 
-QUARK_UNIT_TEST("analyse_expression()", "literal 1234 == 1234", "", "") {
+QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
 	test__analyse_expression(
 		expression_t::make_literal_int(1234),
 		expression_t::make_literal_int(1234)
 	);
 }
 
-QUARK_UNIT_TESTQ("analyse_expression()", "1 + 2 == 3") {
+QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
 
 
 	const ast_t ast;
 	const analyser_t interpreter(ast);
-	const auto e3 = analyse_expression(interpreter,
+	const auto e3 = analyse_expression_no_target(interpreter,
 
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_add__2,

@@ -1446,7 +1446,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "cannot be deducted",
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
 
@@ -1523,7 +1523,7 @@ QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
 
@@ -1584,7 +1584,7 @@ QUARK_UNIT_TEST("vector", "+", "add empty vectors", "correct final vector"){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
 
@@ -1595,7 +1595,7 @@ QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("vector", "push_back()", "vector", "correct final vector"){
+QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
 	const auto vm = test__run_global(R"(
 		[string] a = push_back(["one"], "two");
 		assert(a == ["one", "two"]);
@@ -1618,15 +1618,28 @@ QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
+QUARK_UNIT_TEST("vector", "subset()", "", ""){
 	const auto vm = test__run_global(R"(
 		assert(subset([10,20,30], 0, 3) == [10,20,30]);
+	)");
+}
+QUARK_UNIT_TEST("vector", "subset()", "", ""){
+	const auto vm = test__run_global(R"(
 		assert(subset([10,20,30], 1, 3) == [20,30]);
+	)");
+}
+OFF_QUARK_UNIT_TEST_VIP("vector", "subset()", "", ""){
+	const auto vm = test__run_global(R"(
+		result = (subset([10,20,30], 0, 0) == []);
+	)");
+}
+OFF_QUARK_UNIT_TEST_VIP("vector", "subset()", "", ""){
+	const auto vm = test__run_global(R"(
 		assert(subset([10,20,30], 0, 0) == []);
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
+QUARK_UNIT_TEST("vector", "replace()", "", ""){
 	const auto vm = test__run_global(R"(
 		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6]);
 	)");
@@ -1750,10 +1763,10 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 		const auto vm = test__run_global(R"(
 			assert(size({}) == 0);
 		)");
-		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+		QUARK_UT_VERIFY(false);
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
 
@@ -1762,10 +1775,10 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 		const auto vm = test__run_global(R"(
 			print({});
 		)");
-		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot fully resolve type.");
+		QUARK_UT_VERIFY(false);
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
 
@@ -1806,8 +1819,8 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 	});
 }
 
-
-QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
+/*
+QUARK_UNIT_TEST_VIP("dict", "update()", "dest is empty dict", ""){
 	const auto vm = test__run_global(R"(
 		a = update({}, "one", 1);
 		b = update(a, "two", 2);
@@ -1816,7 +1829,7 @@ QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 		assert(b == {"one": 1, "two": 2});
 	)");
 }
-
+*/
 
 QUARK_UNIT_TEST("dict", "exists()", "", ""){
 	const auto vm = test__run_global(R"(

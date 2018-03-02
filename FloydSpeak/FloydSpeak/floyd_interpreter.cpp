@@ -41,7 +41,7 @@ using std::make_shared;
 
 
 
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::call_expr_t& e);
+std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 
 
 
@@ -1069,7 +1069,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	}
 
 	else if(op == expression_type::k_call){
-		return evaluate_call_expression(vm, *e.get_call());
+		return evaluate_call_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_define_function){
@@ -1197,11 +1197,13 @@ bool all_literals(const vector<expression_t>& e){
 	return true;
 }
 
-
+//??? all evalute_* should return a value, not an expression!
 
 //	May return a simplified expression instead of a value literal..
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t::call_expr_t& expr){
+std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+
+	const auto expr = *e.get_call();
 
 	auto vm_acc = vm;
 

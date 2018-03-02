@@ -645,7 +645,7 @@ std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const st
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(args.size() != 3){
-		throw std::runtime_error("subset() requires 2 arguments");
+		throw std::runtime_error("subset() requires 3 arguments");
 	}
 
 	const auto obj = args[0];
