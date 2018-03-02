@@ -23,12 +23,12 @@ namespace floyd {
 	struct expression_t;
 	struct value_t;
 	struct statement_t;
+	struct host_function_signature_t;
 }
 
 
 namespace floyd_pass3 {
 	struct analyser_t;
-
 	floyd::value_t unflatten_json_to_specific_type(const json_t& v);
 
 
@@ -137,6 +137,11 @@ namespace floyd_pass3 {
 		MUTABLE
 	*/
 
+	struct analyzer_imm_t {
+		public: floyd::ast_t _ast;
+		public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
+	};
+
 	struct analyser_t {
 		public: analyser_t(const floyd::ast_t& ast);
 		public: analyser_t(const analyser_t& other);
@@ -148,7 +153,10 @@ namespace floyd_pass3 {
 
 		////////////////////////		STATE
 
-		public: std::shared_ptr<const floyd::ast_t> _ast;
+		public: std::shared_ptr<const analyzer_imm_t> _imm;
+
+		public: std::shared_ptr<std::map<std::string, floyd::host_function_signature_t>> _host_functions;
+
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;

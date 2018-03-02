@@ -110,6 +110,7 @@ bool check_type_fully_defined(const expression_t& e){
 
 
 //??? Make this deep?
+//??? Make this for dict too?
 expression_t deduce_vector_definition_type___from_contents(const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
@@ -159,8 +160,14 @@ expression_t deduce_expression_type_from_contents(const expression_t& e){
 }
 
 
+/*
+??? cleanup deduce functions:
+analyse_vector_definition_expression()
+deduce_vector_definition_type___from_contents()
+deduce_expression_type_from_wanted_type()
 
 
+*/
 
 
 	/*
@@ -206,18 +213,6 @@ expression_t deduce_expression_type_from_contents(const expression_t& e){
 		else if(wanted_type.is_vector()){
 			if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_null(), {})){
 				return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
-			}
-			else if(e.get_operation() == expression_type::k_call){
-				const auto call = e.get_call();
-				const auto callee_type = call->_callee->get_annotated_type2();
-				QUARK_ASSERT(callee_type);
-				if(callee_type->is_function() && callee_type->get_function_return().is_null()){
-					return expression_t::make_call(*call->_callee, call->_args, make_shared<typeid_t>(wanted_type));
-	//				return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
-				}
-				else{
-					return e;
-				}
 			}
 			else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_vector_definition){
 				QUARK_ASSERT(false);
@@ -412,7 +407,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	const auto statement = *s._bind_local;
 	auto vm_acc = vm;
 
-	const auto bind_name = statement._new_variable_name;//??? rename to .variable_name.
+	const auto bind_name = statement._new_variable_name;
 	const auto bind_statement_type = statement._bindtype;
 	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -1253,6 +1248,25 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 	return { vm_acc, call_args2 };
 }
 
+//??? support all host functions.
+//??? Don't assumt return is same as argument 1.
+bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr){
+	if(callee_expr.get_operation() == expression_type::k_variable && callee_expr.get_variable()){
+		const auto function_name = callee_expr.get_variable()->_variable;
+		if(function_name == "subset"){
+			return true;
+		}
+		else if(function_name == "push_back"){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	else{
+		return false;
+	}
+}
 
 /*
 	callee(callee_args)		== function def: int(
@@ -1273,20 +1287,15 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	const auto callee_type = callee_expr.get_annotated_type();
 	if(callee_type.is_function()){
 //??? SPECIAL CASE FOR subset().
-		if(callee_expr.get_operation() == expression_type::k_variable && callee_expr.get_variable() && callee_expr.get_variable()->_variable == "subset")
-		{
-			const auto callee_args = callee_type.get_function_args();
-			const auto callee_return_value = callee_type.get_function_return();
-			const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
-			vm_acc = call_args_pair.first;
+		const auto callee_args = callee_type.get_function_args();
+		const auto callee_return_value = callee_type.get_function_return();
+		const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
+		vm_acc = call_args_pair.first;
+		if(is_host_function_call(vm, callee_expr)){
 			const auto return_type = call_args_pair.second[0].get_annotated_type();
 			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(return_type)) };
 		}
 		else{
-			const auto callee_args = callee_type.get_function_args();
-			const auto callee_return_value = callee_type.get_function_return();
-			const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
-			vm_acc = call_args_pair.first;
 			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_return_value)) };
 		}
 	}
@@ -1390,7 +1399,8 @@ json_t analyser_to_json(const analyser_t& vm){
 	}
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(*vm._ast)._value },
+		{ "ast", ast_to_json(vm._imm->_ast)._value },
+		{ "host_functions", json_t("dummy1234") },
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
@@ -1491,7 +1501,8 @@ typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
 analyser_t::analyser_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	_ast = make_shared<ast_t>(ast);
+	const auto host_functions = floyd::get_host_function_signatures();
+	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ast, host_functions});
 }
 
 
@@ -1506,8 +1517,7 @@ ast_t analyse(const analyser_t& a0){
 	auto global_env = lexical_scope_t::make_environment(a, empty_env);
 
 	//	Insert built-in functions into AST.
-	const auto host_functions = floyd::get_host_function_signatures();
-	for(auto hf_kv: host_functions){
+	for(auto hf_kv: a0._imm->_host_functions){
 		const auto& function_name = hf_kv.first;
 		const auto function_value = make_host_function_value(hf_kv.second);
 		global_env->_symbols[function_name] = symbol_t::make_constant(function_value);
@@ -1532,7 +1542,7 @@ ast_t analyse(const analyser_t& a0){
 	a._call_stack.push_back(global_env);
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto result = analyse_statements(a, a._ast->_statements);
+	const auto result = analyse_statements(a, a._imm->_ast._statements);
 
 	a._call_stack[0]->_symbols = result.first._call_stack[0]->_symbols;
 
@@ -1543,7 +1553,7 @@ ast_t analyse(const analyser_t& a0){
 }
 
 analyser_t::analyser_t(const analyser_t& other) :
-	_ast(other._ast),
+	_imm(other._imm),
 	_call_stack(other._call_stack)
 {
 	QUARK_ASSERT(other.check_invariant());
@@ -1553,14 +1563,14 @@ analyser_t::analyser_t(const analyser_t& other) :
 
 	//??? make proper operator=(). Exception safety etc.
 const analyser_t& analyser_t::operator=(const analyser_t& other){
-	_ast = other._ast;
+	_imm = other._imm;
 	_call_stack = other._call_stack;
 	return *this;
 }
 
 #if DEBUG
 bool analyser_t::check_invariant() const {
-	QUARK_ASSERT(_ast->check_invariant());
+	QUARK_ASSERT(_imm->_ast.check_invariant());
 	return true;
 }
 #endif

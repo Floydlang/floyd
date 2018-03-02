@@ -1598,6 +1598,12 @@ QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
 QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
 	const auto vm = test__run_global(R"(
 		[string] a = push_back(["one"], "two");
+		result = a;
+	)");
+}
+QUARK_UNIT_TEST("vector", "push_back()", "vector", "correct final vector"){
+	const auto vm = test__run_global(R"(
+		[string] a = push_back(["one"], "two");
 		assert(a == ["one", "two"]);
 	)");
 }
@@ -1820,7 +1826,7 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 }
 
 /*
-QUARK_UNIT_TEST_VIP("dict", "update()", "dest is empty dict", ""){
+QUARK_UNIT_TEST<("dict", "update()", "dest is empty dict", ""){
 	const auto vm = test__run_global(R"(
 		a = update({}, "one", 1);
 		b = update(a, "two", 2);
