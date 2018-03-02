@@ -67,36 +67,6 @@ namespace floyd {
 			return statement_t(value);
 		}
 
-
-/*
-		struct bind_or_assign_statement_t {
-			enum mutable_mode {
-				k_has_mutable_tag = 2,
-				k_no_mutable_tag
-			};
-
-			bool operator==(const bind_or_assign_statement_t& other) const {
-				return _new_variable_name == other._new_variable_name
-					&& _bindtype == other._bindtype
-					&& _expression == other._expression
-					&& _bind_as_mutable_tag == other._bind_as_mutable_tag;
-			}
-
-			const std::string _new_variable_name;
-			const typeid_t _bindtype;
-			const expression_t _expression;
-			const mutable_mode _bind_as_mutable_tag;
-		};
-        public: statement_t(const bind_or_assign_statement_t& value) :
-			_bind_or_assign(std::make_shared<bind_or_assign_statement_t>(value))
-		{
-		}
-		public: static statement_t make__bind_or_assign_statement(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bind_or_assign_statement_t::mutable_mode bind_as_mutable_tag){
-			return statement_t(bind_or_assign_statement_t{ new_variable_name, bindtype, expression, bind_as_mutable_tag });
-		}
-*/
-
-
 		struct bind_local_t {
 			enum mutable_mode {
 				k_mutable = 2,
@@ -104,13 +74,13 @@ namespace floyd {
 			};
 
 			bool operator==(const bind_local_t& other) const {
-				return _new_variable_name == other._new_variable_name
+				return _new_local_name == other._new_local_name
 					&& _bindtype == other._bindtype
 					&& _expression == other._expression
 					&& _locals_mutable_mode == other._locals_mutable_mode;
 			}
 
-			const std::string _new_variable_name;
+			const std::string _new_local_name;
 			const typeid_t _bindtype;
 			const expression_t _expression;
 			const mutable_mode _locals_mutable_mode;
@@ -119,8 +89,8 @@ namespace floyd {
 			_bind_local(std::make_shared<bind_local_t>(value))
 		{
 		}
-		public: static statement_t make__bind_local(const std::string& new_variable_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
-			return statement_t(bind_local_t{ new_variable_name, bindtype, expression, locals_mutable_mode });
+		public: static statement_t make__bind_local(const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
+			return statement_t(bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode });
 		}
 
 
@@ -268,11 +238,6 @@ namespace floyd {
 			else if(_def_struct){
 				return compare_shared_values(_def_struct, other._def_struct);
 			}
-/*
-			else if(_bind_or_assign){
-				return compare_shared_values(_bind_or_assign, other._bind_or_assign);
-			}
-*/
 			else if(_bind_local){
 				return compare_shared_values(_bind_local, other._bind_local);
 			}
@@ -301,7 +266,6 @@ namespace floyd {
 			int count = 0;
 			count = count + (_return != nullptr ? 1 : 0);
 			count = count + (_def_struct != nullptr ? 1 : 0);
-//			count = count + (_bind_or_assign != nullptr ? 1 : 0);
 			count = count + (_bind_local != nullptr ? 1 : 0);
 			count = count + (_store_local != nullptr ? 1 : 0);
 			count = count + (_block != nullptr ? 1 : 0);
@@ -315,10 +279,6 @@ namespace floyd {
 			}
 			else if(_def_struct != nullptr){
 			}
-/*
-			else if(_bind_or_assign){
-			}
-*/
 			else if(_bind_local){
 			}
 			else if(_store_local){
@@ -358,11 +318,6 @@ namespace floyd {
 			else if(_def_struct != nullptr){
 				return true;
 			}
-/*
-			else if(_bind_or_assign){
-				return _bind_or_assign->_expression.is_annotated_deep();
-			}
-*/
 			else if(_bind_local){
 				return _bind_local->_expression.is_annotated_deep();
 			}
@@ -409,7 +364,6 @@ namespace floyd {
 		//	Only *one* of these are used for each instance.
 		public: const std::shared_ptr<return_statement_t> _return;
 		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
-//		public: const std::shared_ptr<bind_or_assign_statement_t> _bind_or_assign;
 		public: const std::shared_ptr<bind_local_t> _bind_local;
 		public: const std::shared_ptr<store_local_t> _store_local;
 		public: const std::shared_ptr<block_statement_t> _block;

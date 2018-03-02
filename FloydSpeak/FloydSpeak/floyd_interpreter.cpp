@@ -190,7 +190,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const auto name = statement._new_variable_name;
+	const auto name = statement._new_local_name;
 
 	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = rhs_expr_pair.first;

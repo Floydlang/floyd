@@ -1769,9 +1769,9 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 		const auto vm = test__run_global(R"(
 			assert(size({}) == 0);
 		)");
+		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(false);
 		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
@@ -1781,9 +1781,9 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 		const auto vm = test__run_global(R"(
 			print({});
 		)");
+		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(false);
 		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }

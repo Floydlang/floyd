@@ -499,7 +499,7 @@ ast_json_t statement_to_json(const statement_t& e){
 
 		return ast_json_t{make_array_skip_nulls({
 			json_t("bind"),
-			e._bind_local->_new_variable_name,
+			e._bind_local->_new_local_name,
 			typeid_to_ast_json(e._bind_local->_bindtype)._value,
 			expression_to_json(e._bind_local->_expression)._value,
 			meta

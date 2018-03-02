@@ -407,7 +407,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	const auto statement = *s._bind_local;
 	auto vm_acc = vm;
 
-	const auto bind_name = statement._new_variable_name;
+	const auto bind_name = statement._new_local_name;
 	const auto bind_statement_type = statement._bindtype;
 	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
@@ -1200,7 +1200,9 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 		}
 	}
 	else if(target_type.is_null()){
-		assert(true);
+		if(check_type_fully_defined(e3) == false){
+			throw std::runtime_error("Cannot resolve type.");
+		}
 	}
 	else if(e3.get_annotated_type().is_null()){
 		throw std::runtime_error("Expression type mismatch.");
