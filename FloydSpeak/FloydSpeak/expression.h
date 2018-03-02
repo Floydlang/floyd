@@ -580,9 +580,17 @@ namespace floyd {
 			}
 
 			virtual ast_json_t expr_base__to_json() const {
+				std::map<std::string, json_t> dict_contents;
+				for(const auto e: _elements){
+					const auto key = e.first;
+					const auto value = e.second;
+					const auto e2 = std::pair<std::string, json_t>{ key, expression_to_json(value)._value};
+					dict_contents.insert(e2);
+				}
 				return ast_json_t{json_t::make_array({
 					"dict-def",
-					typeid_to_ast_json(_value_type)._value
+					typeid_to_ast_json(_value_type)._value,
+					dict_contents
 				})};
 			}
 

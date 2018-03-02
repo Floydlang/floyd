@@ -108,7 +108,7 @@ bool check_type_fully_defined(const expression_t& e){
 	}
 }
 
-
+#if 0
 //??? Make this deep?
 //??? Make this for dict too?
 expression_t deduce_vector_definition_type___from_contents(const expression_t& e){
@@ -141,6 +141,37 @@ expression_t deduce_vector_definition_type___from_contents(const expression_t& e
 		return e;
 	}
 }
+expression_t deduce_dictionary_definition_type___from_contents(const expression_t& e){
+	QUARK_ASSERT(e.check_invariant());
+
+	const auto expr = *e.get_dict_definition();
+
+	if(expr._elements.empty()){
+//		if(expr._element_type.is_null()){
+	//		throw std::runtime_error("Vector can not hold elements of different types.");
+//		}
+//		else{
+			return expression_t::make_literal(value_t::make_dict_value(expr._value_type, {}));
+//		}
+	}
+	else if(expr._value_type.is_null()){
+		//	If we don't have an explicit element type, deduct it from first element.
+		const auto element_type2 = expr._elements.begin()->second.get_annotated_type();
+
+		vector<expression_t> elements2;
+
+		for(const auto element: expr._elements){
+			const auto m = element.second;
+			if(m.get_annotated_type() != element_type2){
+				throw std::runtime_error("Vector can not hold elements of different types.");
+			}
+		}
+		return expression_t::make_vector_definition(element_type2, elements2);
+	}
+	else{
+		return e;
+	}
+}
 
 /*
 	Examine the expression and setup its type if it's unclear.
@@ -154,10 +185,14 @@ expression_t deduce_expression_type_from_contents(const expression_t& e){
 	else if(op == expression_type::k_vector_definition){
 		return deduce_vector_definition_type___from_contents(e);
 	}
+	else if(op == expression_type::k_dict_definition){
+		return deduce_dictionary_definition_type___from_contents(e);
+	}
 	else{
 		return e;
 	}
 }
+#endif
 
 
 /*
@@ -165,8 +200,6 @@ expression_t deduce_expression_type_from_contents(const expression_t& e){
 analyse_vector_definition_expression()
 deduce_vector_definition_type___from_contents()
 deduce_expression_type_from_wanted_type()
-
-
 */
 
 
@@ -1191,7 +1224,8 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	const auto e1_pair = analyse_expression__op_specific(vm_acc, e);
 	vm_acc = e1_pair.first;
 
-	const auto e2 = deduce_expression_type_from_contents(e1_pair.second);
+//	const auto e2 = deduce_expression_type_from_contents(e1_pair.second);
+	const auto e2 = e1_pair.second;
 	const auto e3 = deduce_expression_type_from_wanted_type(e2, target_type);
 
 	if(e3.get_annotated_type() == target_type){
@@ -1225,7 +1259,9 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 	const auto e1_pair = analyse_expression__op_specific(vm_acc, e);
 	vm_acc = e1_pair.first;
 
-	const auto e2 = deduce_expression_type_from_contents(e1_pair.second);
+	QUARK_ASSERT(e1_pair.second.get_annotated_type2() != nullptr);
+	const auto e2 = e1_pair.second;
+
 	if(check_type_fully_defined(e2) == false){
 		throw std::runtime_error("Cannot resolve type.");
 	}
@@ -1259,6 +1295,9 @@ bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr
 			return true;
 		}
 		else if(function_name == "push_back"){
+			return true;
+		}
+		else if(function_name == "update"){
 			return true;
 		}
 		else{

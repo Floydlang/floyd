@@ -1825,17 +1825,22 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 	});
 }
 
-/*
-QUARK_UNIT_TEST<("dict", "update()", "dest is empty dict", ""){
-	const auto vm = test__run_global(R"(
-		a = update({}, "one", 1);
-		b = update(a, "two", 2);
-		print(b);
-		assert(a == {"one": 1});
-		assert(b == {"one": 1, "two": 2});
-	)");
+QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
+	try{
+		const auto vm = test__run_global(R"(
+			a = update({}, "one", 1);
+			b = update(a, "two", 2);
+			print(b);
+			assert(a == {"one": 1});
+			assert(b == {"one": 1, "two": 2});
+		)");
+
+		QUARK_UT_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
+	}
 }
-*/
 
 QUARK_UNIT_TEST("dict", "exists()", "", ""){
 	const auto vm = test__run_global(R"(
