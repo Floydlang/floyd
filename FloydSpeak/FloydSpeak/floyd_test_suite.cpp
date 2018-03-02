@@ -1628,12 +1628,12 @@ QUARK_UNIT_TEST("vector", "subset()", "", ""){
 		assert(subset([10,20,30], 1, 3) == [20,30]);
 	)");
 }
-OFF_QUARK_UNIT_TEST_VIP("vector", "subset()", "", ""){
+QUARK_UNIT_TEST("vector", "subset()", "", ""){
 	const auto vm = test__run_global(R"(
 		result = (subset([10,20,30], 0, 0) == []);
 	)");
 }
-OFF_QUARK_UNIT_TEST_VIP("vector", "subset()", "", ""){
+QUARK_UNIT_TEST("vector", "subset()", "", ""){
 	const auto vm = test__run_global(R"(
 		assert(subset([10,20,30], 0, 0) == []);
 	)");

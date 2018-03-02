@@ -1272,11 +1272,23 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	//	This is a call to a function-value. Callee is a function-type.
 	const auto callee_type = callee_expr.get_annotated_type();
 	if(callee_type.is_function()){
-		const auto callee_args = callee_type.get_function_args();
-		const auto callee_return_value = callee_type.get_function_return();
-		const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
-		vm_acc = call_args_pair.first;
-		return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_return_value)) };
+//??? SPECIAL CASE FOR subset().
+		if(callee_expr.get_operation() == expression_type::k_variable && callee_expr.get_variable() && callee_expr.get_variable()->_variable == "subset")
+		{
+			const auto callee_args = callee_type.get_function_args();
+			const auto callee_return_value = callee_type.get_function_return();
+			const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
+			vm_acc = call_args_pair.first;
+			const auto return_type = call_args_pair.second[0].get_annotated_type();
+			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(return_type)) };
+		}
+		else{
+			const auto callee_args = callee_type.get_function_args();
+			const auto callee_return_value = callee_type.get_function_return();
+			const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
+			vm_acc = call_args_pair.first;
+			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_return_value)) };
+		}
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
