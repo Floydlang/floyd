@@ -1191,18 +1191,22 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	const auto e2 = deduce_expression_type_from_contents(e1_pair.second);
 	const auto e3 = deduce_expression_type_from_wanted_type(e2, target_type);
 
-	if(target_type.is_null() || e3.get_annotated_type() == target_type){
+	if(e3.get_annotated_type() == target_type){
+	}
+	else if(target_type.is_null()){
+	}
+	else if(e3.get_annotated_type().is_null()){
 	}
 	else{
 		throw std::runtime_error("Expression type mismatch.");
 	}
 
 	if(check_type_fully_defined(e3) == false){
-		throw std::runtime_error("Cannot fully resolve type.");
+		throw std::runtime_error("Cannot resolve type.");
 	}
 
 
-	QUARK_ASSERT(target_type.is_null() || e3.get_annotated_type() == target_type);
+	QUARK_ASSERT(target_type.is_null() || e3.get_annotated_type().is_null() || e3.get_annotated_type() == target_type);
 	QUARK_ASSERT(check_type_fully_defined(e3));
 	return { vm_acc, e3 };
 }

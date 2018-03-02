@@ -1595,7 +1595,7 @@ QUARK_UNIT_TEST("vector", "+", "non-empty vectors", "correct final vector"){
 	)");
 }
 
-OFF_QUARK_UNIT_TEST_VIP("vector", "push_back()", "vector", "correct final vector"){
+QUARK_UNIT_TEST_VIP("vector", "push_back()", "vector", "correct final vector"){
 	const auto vm = test__run_global(R"(
 		[string] a = push_back(["one"], "two");
 		assert(a == ["one", "two"]);
@@ -1618,7 +1618,7 @@ QUARK_UNIT_TEST("vector", "find()", "string", "correct return"){
 	)");
 }
 
-OFF_QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
+QUARK_UNIT_TEST("vector", "subset()", "combo", ""){
 	const auto vm = test__run_global(R"(
 		assert(subset([10,20,30], 0, 3) == [10,20,30]);
 		assert(subset([10,20,30], 1, 3) == [20,30]);
@@ -1807,7 +1807,7 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 }
 
 
-OFF_QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
+QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 	const auto vm = test__run_global(R"(
 		a = update({}, "one", 1);
 		b = update(a, "two", 2);
@@ -2053,7 +2053,7 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 
 
 
-OFF_QUARK_UNIT_TEST("", "", "", ""){
+QUARK_UNIT_TEST("", "", "", ""){
 	const auto vm = test__run_global(R"(
 		start = get_time_of_day();
 		mutable b = 0;
