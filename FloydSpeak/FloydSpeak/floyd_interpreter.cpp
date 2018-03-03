@@ -185,6 +185,16 @@ std::pair<interpreter_t, statement_result_t> execute_statements_in_env(
 	return { vm2, r.second };
 }
 
+std::pair<interpreter_t, statement_result_t> execute_body(
+	const interpreter_t& vm,
+	const body_t& body,
+	const std::map<std::string, std::pair<value_t, bool>>& values
+){
+	QUARK_ASSERT(vm.check_invariant());
+
+	return execute_statements_in_env(vm, body._statements, values);
+}
+
 
 std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const interpreter_t& vm, const statement_t::bind_local_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -386,8 +396,7 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 		return execute_store_local_statement(vm, *statement._store_local);
 	}
 	else if(statement._block){
-		//??? rename to "execute_body".
-		return execute_statements_in_env(vm, statement._block->_body._statements, {});
+		return execute_body(vm, statement._block->_body, {});
 	}
 	else if(statement._return){
 		return execute_return_statement(vm, *statement._return);
@@ -1172,7 +1181,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 			new_environment->_values[arg_name] = std::pair<value_t, bool>(arg_value, false);
 		}
 		vm_acc._call_stack.push_back(new_environment);
-		const auto r = execute_statements(vm_acc, function_def._statements);
+		const auto r = execute_statements(vm_acc, function_def._body->_statements);
 		vm_acc = r.first;
 		vm_acc._call_stack.pop_back();
 

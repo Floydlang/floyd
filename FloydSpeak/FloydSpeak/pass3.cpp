@@ -1254,7 +1254,6 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto def = function_def_expr._def;
 	const auto function_type = get_function_type(def);
 
-//	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
 	const std::map<std::string, symbol_t> symbols =
 		[&](){
 			std::map<std::string, symbol_t> result;
@@ -1264,17 +1263,11 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			return result;
 		}();
 
-/*
-	auto symbols2 = symbols;
-	if(function_name.empty() == false){
-		symbols2[function_name] = symbol_t::make_immutable_local(function_type);
-	}
-*/
-
-	const auto function_body_pair = analyse_statements_in_env(vm, def._statements, symbols);
+	const auto function_body_pair = analyse_statements_in_env(vm, def._body->_statements, symbols);
 	auto vm_acc = function_body_pair.first;
 
-	const auto def2 = function_definition_t(def._args, function_body_pair.second, def._return_type);
+	const auto body = floyd::body_t{function_body_pair.second};
+	const auto def2 = function_definition_t(def._args, make_shared<floyd::body_t>(body), def._return_type);
 	return {vm_acc, expression_t::make_function_definition(def2) };
 }
 

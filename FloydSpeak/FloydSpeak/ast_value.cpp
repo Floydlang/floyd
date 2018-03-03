@@ -165,12 +165,12 @@ namespace floyd {
 
 	function_definition_t::function_definition_t(
 		const std::vector<member_t>& args,
-		const std::vector<std::shared_ptr<statement_t>> statements,
+		const std::shared_ptr<body_t>& body,
 		const typeid_t& return_type
 	)
 	:
 		_args(args),
-		_statements(statements),
+		_body(body),
 		_host_function(0),
 		_return_type(return_type)
 	{
@@ -191,7 +191,7 @@ namespace floyd {
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
 		return
 			lhs._args == rhs._args
-			&& compare_shared_value_vectors(lhs._statements, rhs._statements)
+			&& compare_shared_values(lhs._body, rhs._body)
 			&& lhs._host_function == rhs._host_function
 			&& lhs._return_type == rhs._return_type;
 	}
@@ -206,7 +206,7 @@ namespace floyd {
 			"func-def",
 			typeid_to_ast_json(function_type)._value,
 			members_to_json(v._args),
-			statements_to_json(v._statements)._value,
+			statements_to_json(v._body->_statements)._value,
 			typeid_to_ast_json(v._return_type)._value
 		})};
 	}

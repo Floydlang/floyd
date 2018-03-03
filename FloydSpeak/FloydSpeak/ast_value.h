@@ -20,6 +20,7 @@
 
 namespace floyd {
 	struct statement_t;
+	struct body_t;
 	struct value_t;
 
 
@@ -161,7 +162,7 @@ namespace floyd {
 	struct function_definition_t {
 		public: function_definition_t(
 			const std::vector<member_t>& args,
-			const std::vector<std::shared_ptr<statement_t>> statements,
+			const std::shared_ptr<body_t>& body,
 			const typeid_t& return_type
 		);
 		public: function_definition_t(
@@ -171,7 +172,7 @@ namespace floyd {
 		);
 
 		const std::vector<member_t> _args;
-		const std::vector<std::shared_ptr<statement_t>> _statements;
+		const std::shared_ptr<body_t> _body;
 		const int _host_function;
 		const typeid_t _return_type;
 	};
