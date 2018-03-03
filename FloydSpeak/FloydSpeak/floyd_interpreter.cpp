@@ -205,6 +205,9 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 	const auto r = execute_statements(vm_acc, body._statements);
 	vm_acc = r.first;
 	vm_acc._call_stack.pop_back();
+
+	QUARK_ASSERT(r.first._call_stack.back()->_values.size() == body._symbols.size());
+
 	return { vm_acc, r.second };
 }
 
@@ -1150,21 +1153,18 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 		//	Always use global scope.
 		//	Future: support closures by linking to function env where function is defined.
-		auto parent_env = vm_acc._call_stack[0];
-		auto new_environment = environment_t::make_environment(vm_acc, parent_env);
 
 		//	Copy input arguments to the function scope.
+		std::map<string, std::pair<value_t, bool>> args2;
 		for(int i = 0 ; i < function_def._args.size() ; i++){
 			const auto& arg_name = function_def._args[i]._name;
 			const auto& arg_value = args[i];
 
 			//	Function arguments are immutable while executing the function body.
-			new_environment->_values[arg_name] = std::pair<value_t, bool>(arg_value, false);
+			args2[arg_name] = std::pair<value_t, bool>(arg_value, false);
 		}
-		vm_acc._call_stack.push_back(new_environment);
-		const auto r = execute_body(vm_acc, *function_def._body, {});
+		const auto r = execute_body(vm_acc, *function_def._body, args2);
 		vm_acc = r.first;
-		vm_acc._call_stack.pop_back();
 
 		// ??? move this check to pass3.
 		if(r.second._type != statement_result_t::k_return_unwind){
