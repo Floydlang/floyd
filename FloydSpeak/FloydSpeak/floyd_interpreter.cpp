@@ -168,23 +168,6 @@ interpreter_t begin_subenv(const interpreter_t& vm){
 	return vm2;
 }
 
-std::pair<interpreter_t, statement_result_t> execute_statements_in_env(
-	const interpreter_t& vm,
-	const std::vector<std::shared_ptr<statement_t>>& statements,
-	const std::map<std::string, std::pair<value_t, bool>>& values
-){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm2 = begin_subenv(vm);
-
-	vm2._call_stack.back()->_values.insert(values.begin(), values.end());
-
-	const auto r = execute_statements(vm2, statements);
-	vm2 = r.first;
-	vm2._call_stack.pop_back();
-	return { vm2, r.second };
-}
-
 std::pair<interpreter_t, statement_result_t> execute_body(
 	const interpreter_t& vm,
 	const body_t& body,
@@ -192,7 +175,12 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 ){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return execute_statements_in_env(vm, body._statements, values);
+	auto vm2 = begin_subenv(vm);
+	vm2._call_stack.back()->_values.insert(values.begin(), values.end());
+	const auto r = execute_statements(vm2, body._statements);
+	vm2 = r.first;
+	vm2._call_stack.pop_back();
+	return { vm2, r.second };
 }
 
 
@@ -311,10 +299,10 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 	const auto condition_result_value = condition_result.second.get_literal();
 	bool r = condition_result_value.get_bool_value();
 	if(r){
-		return execute_statements_in_env(vm_acc, statement._then_statements._statements, {});
+		return execute_body(vm_acc, statement._then_body, {});
 	}
 	else{
-		return execute_statements_in_env(vm_acc, statement._else_statements._statements, {});
+		return execute_body(vm_acc, statement._else_body, {});
 	}
 }
 
@@ -333,7 +321,7 @@ std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpr
 
 	for(int x = start_value_int ; x <= end_value_int ; x++){
 		const std::map<std::string, std::pair<value_t, bool>> values = { { statement._iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
-		const auto result = execute_statements_in_env(vm_acc, statement._body, values);
+		const auto result = execute_body(vm_acc, statement._body, values);
 		vm_acc = result.first;
 
 		const auto return_value = result.second;
@@ -356,7 +344,7 @@ std::pair<interpreter_t, statement_result_t> execute_while_statement(const inter
 		const auto condition_value = condition_value_expr.second.get_literal().get_bool_value();
 
 		if(condition_value){
-			const auto result = execute_statements_in_env(vm_acc, statement._body, {});
+			const auto result = execute_body(vm_acc, statement._body, {});
 			vm_acc = result.first;
 			const auto return_value = result.second;
 			if(return_value._type == statement_result_t::k_return_unwind){

@@ -341,7 +341,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 			iterator_name.get_string(),
 			start_expression2,
 			end_expression2,
-			body_statements2
+			body_t{body_statements2}
 		);
 	}
 	else if(type == keyword_t::k_while){
@@ -352,7 +352,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto expression2 = parser_expression_to_ast(tracer, expression);
 		const auto& body_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{body_statements});
 
-		return statement_t::make__while_statement(expression2, body_statements2);
+		return statement_t::make__while_statement(expression2, body_t{body_statements2});
 	}
 
 	//	[ "expression-statement", EXPRESSION ]
@@ -524,8 +524,8 @@ ast_json_t statement_to_json(const statement_t& e){
 		return ast_json_t{json_t::make_array({
 			json_t(keyword_t::k_if),
 			expression_to_json(e._if->_condition)._value,
-			json_t::make_array(statements_shared_to_json(e._if->_then_statements._statements)),
-			json_t::make_array(statements_shared_to_json(e._if->_else_statements._statements))
+			json_t::make_array(statements_shared_to_json(e._if->_then_body._statements)),
+			json_t::make_array(statements_shared_to_json(e._if->_else_body._statements))
 		})};
 	}
 	else if(e._for){
@@ -534,14 +534,15 @@ ast_json_t statement_to_json(const statement_t& e){
 			json_t("open_range"),
 			expression_to_json(e._for->_start_expression)._value,
 			expression_to_json(e._for->_end_expression)._value,
-			statements_to_json(e._for->_body)._value
+			//??? make body_to_json()
+			statements_to_json(e._for->_body._statements)._value
 		})};
 	}
 	else if(e._while){
 		return ast_json_t{json_t::make_array({
 			json_t(keyword_t::k_while),
 			expression_to_json(e._while->_condition)._value,
-			statements_to_json(e._while->_body)._value
+			statements_to_json(e._while->_body._statements)._value
 		})};
 	}
 	else if(e._expression){

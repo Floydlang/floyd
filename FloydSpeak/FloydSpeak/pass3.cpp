@@ -371,8 +371,8 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm
 		throw std::runtime_error("Boolean condition required.");
 	}
 
-	const auto then2 = analyse_statements_in_env(vm_acc, statement._then_statements._statements, {});
-	const auto else2 = analyse_statements_in_env(vm_acc, statement._else_statements._statements, {});
+	const auto then2 = analyse_statements_in_env(vm_acc, statement._then_body._statements, {});
+	const auto else2 = analyse_statements_in_env(vm_acc, statement._else_body._statements, {});
 	return { vm_acc, statement_t::make__ifelse_statement(condition2.second, floyd::body_t{then2.second}, floyd::body_t{else2.second}) };
 }
 
@@ -398,10 +398,10 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, c
 	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
 	const std::map<std::string, symbol_t> symbols = { { statement._iterator_name, iterator_symbol} };
 
-	const auto result = analyse_statements_in_env(vm_acc, statement._body, symbols);
+	const auto result = analyse_statements_in_env(vm_acc, statement._body._statements, symbols);
 	vm_acc = result.first;
 
-	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second) };
+	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, floyd::body_t{result.second}) };
 }
 
 std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm, const statement_t::while_statement_t& statement){
@@ -412,10 +412,10 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm,
 	const auto condition2_expr = analyse_expression_no_target(vm_acc, statement._condition);
 	vm_acc = condition2_expr.first;
 
-	const auto result = analyse_statements_in_env(vm_acc, statement._body, {});
+	const auto result = analyse_statements_in_env(vm_acc, statement._body._statements, {});
 	vm_acc = result.first;
 
-	return { vm_acc, statement_t::make__while_statement(condition2_expr.second, result.second) };
+	return { vm_acc, statement_t::make__while_statement(condition2_expr.second, floyd::body_t{result.second}) };
 }
 
 std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t& vm, const statement_t::expression_statement_t& statement){

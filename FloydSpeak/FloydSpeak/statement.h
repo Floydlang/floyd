@@ -162,14 +162,14 @@ namespace floyd {
 				return
 					_condition == other._condition
 					&& _condition == other._condition
-					&& _then_statements == other._then_statements
-					&& _else_statements == other._else_statements
+					&& _then_body == other._then_body
+					&& _else_body == other._else_body
 					;
 			}
 
 			const expression_t _condition;
-			const body_t _then_statements;
-			const body_t _else_statements;
+			const body_t _then_body;
+			const body_t _else_body;
 		};
         public: statement_t(const ifelse_statement_t& value) :
 			_if(std::make_shared<ifelse_statement_t>(value))
@@ -177,10 +177,10 @@ namespace floyd {
 		}
 		public: static statement_t make__ifelse_statement(
 			const expression_t& condition,
-			const body_t& then_statements,
-			const body_t& else_statements
+			const body_t& then_body,
+			const body_t& else_body
 		){
-			return statement_t(ifelse_statement_t{ condition, then_statements, else_statements });
+			return statement_t(ifelse_statement_t{ condition, then_body, else_body });
 		}
 
 
@@ -193,13 +193,13 @@ namespace floyd {
 					_iterator_name == other._iterator_name
 					&& _start_expression == other._start_expression
 					&& _end_expression == other._end_expression
-					&& compare_shared_value_vectors(_body, other._body);
+					&& _body == other._body;
 			}
 
 			const std::string _iterator_name;
 			const expression_t _start_expression;
 			const expression_t _end_expression;
-			const std::vector<std::shared_ptr<statement_t>> _body;
+			const body_t _body;
 		};
         public: statement_t(const for_statement_t& value) :
 			_for(std::make_shared<for_statement_t>(value))
@@ -209,7 +209,7 @@ namespace floyd {
 			const std::string iterator_name,
 			const expression_t& start_expression,
 			const expression_t& end_expression,
-			const std::vector<std::shared_ptr<statement_t>> body
+			const body_t body
 		){
 			return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
 		}
@@ -222,11 +222,11 @@ namespace floyd {
 			bool operator==(const while_statement_t& other) const {
 				return
 					_condition == other._condition
-					&& compare_shared_value_vectors(_body, other._body);
+					&& _body == other._body;
 			}
 
 			const expression_t _condition;
-			const std::vector<std::shared_ptr<statement_t>> _body;
+			const body_t _body;
 		};
 
         public: statement_t(const while_statement_t& value) :
@@ -235,7 +235,7 @@ namespace floyd {
 		}
 		public: static statement_t make__while_statement(
 			const expression_t& condition,
-			const std::vector<std::shared_ptr<statement_t>> body
+			const body_t& body
 		){
 			return statement_t(while_statement_t{ condition, body });
 		}
@@ -361,7 +361,7 @@ namespace floyd {
 			}
 			else if(_if){
 				if(_if->_condition.is_annotated_deep()){
-					return is_annotated_deep2(_if->_then_statements) && is_annotated_deep2(_if->_else_statements);
+					return is_annotated_deep2(_if->_then_body) && is_annotated_deep2(_if->_else_body);
 				}
 				else{
 					return false;
@@ -369,7 +369,7 @@ namespace floyd {
 			}
 			else if(_for){
 				if(_for->_start_expression.is_annotated_deep() && _for->_end_expression.is_annotated_deep()){
-					return is_annotated_deep(_for->_body);
+					return is_annotated_deep2(_for->_body);
 				}
 				else{
 					return false;
@@ -377,7 +377,7 @@ namespace floyd {
 			}
 			else if(_while){
 				if(_while->_condition.is_annotated_deep()){
-					return is_annotated_deep(_while->_body);
+					return is_annotated_deep2(_while->_body);
 				}
 				else{
 					return false;
