@@ -35,7 +35,7 @@ namespace floyd_pass3 {
 	using floyd::function_definition_t;
 	using floyd::keyword_t;
 	using floyd::parser_context_t;
-
+	using floyd::symbol_t;
 
 
 std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e);
