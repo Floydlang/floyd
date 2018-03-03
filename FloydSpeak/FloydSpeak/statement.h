@@ -48,6 +48,8 @@ namespace floyd {
 		public: statement_t& operator=(const statement_t& other) = default;
 
 
+		//////////////////////////////////////		return_statement_t
+
 
 		struct return_statement_t {
 			bool operator==(const return_statement_t& other) const {
@@ -64,6 +66,8 @@ namespace floyd {
 			return statement_t(return_statement_t{ expression });
 		}
 
+
+		//////////////////////////////////////		define_struct_statement_t
 
 
 		struct define_struct_statement_t {
@@ -109,6 +113,8 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		store_local_t
+
 
 		struct store_local_t {
 			bool operator==(const store_local_t& other) const {
@@ -128,7 +134,7 @@ namespace floyd {
 		}
 
 
-
+		//////////////////////////////////////		block_statement_t
 
 
 		struct block_statement_t {
@@ -147,6 +153,8 @@ namespace floyd {
 			return statement_t(block_statement_t{ body });
 		}
 
+
+		//////////////////////////////////////		ifelse_statement_t
 
 
 		struct ifelse_statement_t {
@@ -175,6 +183,8 @@ namespace floyd {
 			return statement_t(ifelse_statement_t{ condition, then_statements, else_statements });
 		}
 
+
+		//////////////////////////////////////		for_statement_t
 
 
 		struct for_statement_t {
@@ -205,6 +215,9 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		while_statement_t
+
+
 		struct while_statement_t {
 			bool operator==(const while_statement_t& other) const {
 				return
@@ -228,6 +241,7 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		expression_statement_t
 
 
 		struct expression_statement_t {
@@ -244,6 +258,9 @@ namespace floyd {
 		public: static statement_t make__expression_statement(const expression_t& expression){
 			return statement_t(expression_statement_t{ expression });
 		}
+
+
+		//////////////////////////////////////		statement_t
 
 
 		public: bool operator==(const statement_t& other) const {
@@ -374,6 +391,9 @@ namespace floyd {
 				throw std::exception();
 			}
 		}
+
+
+		//////////////////////////////////////		STATE
 
 
 		//	Only *one* of these are used for each instance.
