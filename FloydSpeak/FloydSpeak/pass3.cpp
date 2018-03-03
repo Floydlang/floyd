@@ -38,7 +38,7 @@ namespace floyd_pass3 {
 
 
 
-std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e, const std::string& function_name);
+std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e);
 
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm, const expression_t& e);
 symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s);
@@ -113,7 +113,7 @@ bool check_type_fully_defined(const expression_t& e){
 	/*
 		If e doesn't have a fully-formed type, attempt to give it one.
 	*/
-	expression_t deduce_expression_type_from_wanted_type(const expression_t& e, const floyd::typeid_t& wanted_type){
+	expression_t improve_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
 		QUARK_ASSERT(e.check_invariant());
 		QUARK_ASSERT(wanted_type.check_invariant());
 
@@ -214,8 +214,8 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 
 	auto vm_acc = vm;
 	const auto statement = *s._store_local;
-	const auto bind_name = statement._local_name;//??? rename to .variable_name.
-	const auto existing_value_deep_ptr = resolve_env_symbol2(vm_acc, bind_name);
+	const auto local_name = statement._local_name;
+	const auto existing_value_deep_ptr = resolve_env_symbol2(vm_acc, local_name);
 
 	//	Attempt to mutate existing value!
 	if(existing_value_deep_ptr != nullptr){
@@ -235,20 +235,19 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 				throw std::runtime_error("Types not compatible in bind.");
 			}
 			else{
-				return { vm_acc, statement_t::make__store_local(bind_name, rhs_expr3) };
+				return { vm_acc, statement_t::make__store_local(local_name, rhs_expr3) };
 			}
 		}
 	}
 
-//??? break out implmenetation and share with *as_bindnew().
 	//	Bind new value -- deduce type.
 	else{
 		const auto rhs_expr2 = analyse_expression_no_target(vm_acc, statement._expression);
 		vm_acc = rhs_expr2.first;
 		const auto rhs_expr2_type = rhs_expr2.second.get_annotated_type();
 
-		vm_acc._call_stack.back()->_symbols[bind_name] = symbol_t::make_immutable_local(rhs_expr2_type);
-		return { vm_acc, statement_t::make__bind_local(bind_name, rhs_expr2_type, rhs_expr2.second, statement_t::bind_local_t::k_immutable) };
+		vm_acc._call_stack.back()->_symbols[local_name] = symbol_t::make_immutable_local(rhs_expr2_type);
+		return { vm_acc, statement_t::make__bind_local(local_name, rhs_expr2_type, rhs_expr2.second, statement_t::bind_local_t::k_immutable) };
 	}
 }
 
@@ -267,31 +266,45 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	const auto statement = *s._bind_local;
 	auto vm_acc = vm;
 
-	const auto bind_name = statement._new_local_name;
-	const auto bind_statement_type = statement._bindtype;
+	const auto new_local_name = statement._new_local_name;
+	const auto lhs_type = statement._bindtype;
 	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
-	const auto value_exists_in_env = vm_acc._call_stack.back()->_symbols.count(bind_name) > 0;
+	const auto value_exists_in_env = vm_acc._call_stack.back()->_symbols.count(new_local_name) > 0;
 	if(value_exists_in_env){
 		throw std::runtime_error("Local identifier already exists.");
 	}
-	const auto lhs_type = bind_statement_type;
 
-	const auto rhs_expr_pair = lhs_type.is_null() ? analyse_expression_no_target(vm_acc, statement._expression) : analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
-	vm_acc = rhs_expr_pair.first;
+	//	Setup temporary simply so function definition can find itself = recursive.
+	//	Notice: the final type may not be correct yet, but for function defintions it is.
+	//	This logicl should be available for deduced binds too, in analyse_store_local_statement().
+	vm_acc._call_stack.back()->_symbols[new_local_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type);
 
-	const auto rhs_type = rhs_expr_pair.second.get_annotated_type();
-	const auto lhs_type2 = lhs_type.is_null() ? rhs_type : lhs_type;
+	try {
+		const auto rhs_expr_pair = lhs_type.is_null()? analyse_expression_no_target(vm_acc, statement._expression) : analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
+		vm_acc = rhs_expr_pair.first;
 
-	if(lhs_type2 != lhs_type2){
-		throw std::runtime_error("Types not compatible in bind.");
+
+		const auto rhs_type = rhs_expr_pair.second.get_annotated_type();
+		const auto lhs_type2 = lhs_type.is_null() ? rhs_type : lhs_type;
+
+		if(lhs_type2 != lhs_type2){
+			throw std::runtime_error("Types not compatible in bind.");
+		}
+		else{
+			vm_acc._call_stack.back()->_symbols[new_local_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2);
+			return {
+				vm_acc,
+				statement_t::make__bind_local(new_local_name, lhs_type2, rhs_expr_pair.second, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
+			};
+		}
 	}
-	else{
-		vm_acc._call_stack.back()->_symbols[bind_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2);
-		return {
-			vm_acc,
-			statement_t::make__bind_local(bind_name, lhs_type2, rhs_expr_pair.second, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
-		};
+	catch(...){
+
+		//	Erase temporary symbol.
+		vm_acc._call_stack.back()->_symbols.erase(new_local_name);
+
+		throw;
 	}
 }
 
@@ -993,7 +1006,7 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	}
 
 	else if(op == expression_type::k_define_function){
-		return analyse_function_definition_expression(vm, e, "");
+		return analyse_function_definition_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_vector_definition){
@@ -1050,7 +1063,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	const auto e1_pair = analyse_expression__op_specific(vm_acc, e);
 	vm_acc = e1_pair.first;
 
-	const auto e3 = deduce_expression_type_from_wanted_type(e1_pair.second, target_type);
+	const auto e3 = improve_expression_type(e1_pair.second, target_type);
 
 	if(e3.get_annotated_type() == target_type){
 		if(check_type_fully_defined(e3) == false){
@@ -1110,36 +1123,17 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 	return { vm_acc, call_args2 };
 }
 
-//??? support all host functions.
-//??? Don't assume return is same as argument 1.
 bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr){
 	if(callee_expr.get_operation() == expression_type::k_variable && callee_expr.get_variable()){
 		const auto function_name = callee_expr.get_variable()->_variable;
 
 		const auto find_it = vm._imm->_host_functions.find(function_name);
 		return find_it != vm._imm->_host_functions.end();
-
-/*
-		if(function_name == "subset"){
-			return true;
-		}
-		else if(function_name == "push_back"){
-			return true;
-		}
-		else if(function_name == "update"){
-			return true;
-		}
-		else{
-			return false;
-		}
-*/
-
 	}
 	else{
 		return false;
 	}
 }
-
 
 typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t& callee_expr, const vector<expression_t>& args){
 	const auto function_name = callee_expr.get_variable()->_variable;
@@ -1252,14 +1246,14 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 
 
 
-std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e, const std::string& function_name){
+std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto function_def_expr = *e.get_function_definition();
 	const auto def = function_def_expr._def;
 	const auto function_type = get_function_type(def);
 
-	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
+//	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
 	const std::map<std::string, symbol_t> symbols =
 		[&](){
 			std::map<std::string, symbol_t> result;
@@ -1269,10 +1263,12 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			return result;
 		}();
 
+/*
 	auto symbols2 = symbols;
 	if(function_name.empty() == false){
 		symbols2[function_name] = symbol_t::make_immutable_local(function_type);
 	}
+*/
 
 	const auto function_body_pair = analyse_statements_in_env(vm, def._statements, symbols);
 	auto vm_acc = function_body_pair.first;
@@ -1329,19 +1325,15 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", ""
 }
 
 QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
-
-
 	const ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(interpreter,
-
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_add__2,
 			expression_t::make_literal_int(1),
 			expression_t::make_literal_int(2),
 			nullptr
 		)
-
 	);
 
 	ut_compare_jsons(

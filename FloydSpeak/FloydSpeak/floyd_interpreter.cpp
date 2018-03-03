@@ -208,6 +208,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	//	Deduced bind type -- use new value's type.
 	//??? Should not be needed in interpreter. Move to pass3.
 	if(bind_statement_type.is_null()){
+//		QUARK_ASSERT(false);
 		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
 	}
 

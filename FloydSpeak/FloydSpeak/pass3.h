@@ -59,6 +59,8 @@ namespace floyd_pass3 {
 		floyd::typeid_t _value_type;
 		floyd::value_t _default_value;
 
+
+
 		//	Requires to use symbol_t as value in std::map() and use its [].
 		public: symbol_t() :
 			_value_type(floyd::typeid_t::make_unresolved_type_identifier("xyz"))

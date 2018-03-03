@@ -1292,7 +1292,15 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 }
 
 
-
+QUARK_UNIT_TEST("", "function calling itself by name", "", ""){
+	const auto vm = test__run_global(
+		R"(
+			int fx(int a){
+				return fx(a + 1);
+			}
+		)"
+	);
+}
 
 //////////////////////////////////////////		FOR STATEMENT
 
@@ -1310,7 +1318,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
 }
 
-OFF_QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
+QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
 	const auto vm = test__run_global(
 		"int fibonacci(int n) {"
 		"	if (n <= 1){"
