@@ -190,7 +190,8 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto statements = statement.get_array_n(1);
 		const auto r = parser_statements_to_ast__lossy(tracer, ast_json_t{statements});
 
-		return statement_t::make__block_statement(r);
+		const auto body = body_t{r};
+		return statement_t::make__block_statement(body);
 	}
 
 	/*
@@ -515,7 +516,7 @@ ast_json_t statement_to_json(const statement_t& e){
 	else if(e._block){
 		return ast_json_t{json_t::make_array({
 			json_t("block"),
-			json_t::make_array(statements_shared_to_json(e._block->_statements))
+			json_t::make_array(statements_shared_to_json(e._block->_body._statements))
 		})};
 	}
 	else if(e._if){

@@ -386,7 +386,8 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 		return execute_store_local_statement(vm, *statement._store_local);
 	}
 	else if(statement._block){
-		return execute_statements_in_env(vm, statement._block->_statements, {});
+		//??? rename to "execute_body".
+		return execute_statements_in_env(vm, statement._block->_body._statements, {});
 	}
 	else if(statement._return){
 		return execute_return_statement(vm, *statement._return);

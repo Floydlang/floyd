@@ -308,12 +308,13 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	}
 }
 
-
+//??? break out body_t-related stuff into shared util functions.
 std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& vm, const statement_t::block_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto e = analyse_statements_in_env(vm, statement._statements, {});
-	return {e.first, statement_t::make__block_statement(e.second)};
+	const auto e = analyse_statements_in_env(vm, statement._body._statements, {});
+	const auto body = floyd::body_t{e.second};
+	return {e.first, statement_t::make__block_statement(body)};
 }
 
 std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm, const statement_t::return_statement_t& statement){

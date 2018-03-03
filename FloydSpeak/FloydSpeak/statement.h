@@ -22,6 +22,21 @@ namespace floyd {
 	struct expression_t;
 
 
+
+
+	struct body_t {
+		const std::vector<std::shared_ptr<statement_t>> _statements;
+	};
+
+	inline bool operator==(const body_t& lhs, const body_t& rhs){
+		return compare_shared_value_vectors(lhs._statements, rhs._statements);
+	}
+
+	inline bool is_annotated_deep2(const body_t& body);
+
+
+
+	
 	//////////////////////////////////////		statement_t
 
 	/*
@@ -118,18 +133,18 @@ namespace floyd {
 
 		struct block_statement_t {
 			bool operator==(const block_statement_t& other) const {
-				return compare_shared_value_vectors(_statements, other._statements);
+				return _body == other._body;
 			}
 
-			const std::vector<std::shared_ptr<statement_t>> _statements;
+			const body_t _body;
 		};
         public: statement_t(const block_statement_t& value) :
 			_block(std::make_shared<block_statement_t>(value))
 		{
 		}
 
-		public: static statement_t make__block_statement(const std::vector<std::shared_ptr<statement_t>>& statements){
-			return statement_t(block_statement_t{ statements });
+		public: static statement_t make__block_statement(const body_t& body){
+			return statement_t(block_statement_t{ body });
 		}
 
 
@@ -325,7 +340,7 @@ namespace floyd {
 				return _store_local->_expression.is_annotated_deep();
 			}
 			else if(_block){
-				return is_annotated_deep(_block->_statements);
+				return is_annotated_deep2(_block->_body);
 			}
 			else if(_if){
 				if(_if->_condition.is_annotated_deep()){
@@ -373,6 +388,14 @@ namespace floyd {
 		public: const std::shared_ptr<expression_statement_t> _expression;
 	};
 
+	inline bool is_annotated_deep2(const body_t& body){
+		for(const auto e: body._statements){
+			if(e->is_annotated_deep() == false){
+				return false;
+			}
+		}
+		return true;
+	}
 
 
 
