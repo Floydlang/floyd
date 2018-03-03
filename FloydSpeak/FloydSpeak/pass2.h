@@ -9,14 +9,18 @@
 #ifndef pass2_hpp
 #define pass2_hpp
 
-#include "ast.h"
-
+#include "quark.h"
+#include <vector>
+#include <memory>
 
 struct json_t;
 
 namespace floyd {
 	struct ast_json_t;
+	struct ast_t;
 	struct expression_t;
+	struct body_t;
+	struct statement_t;
 
 	/*
 		Input is an array of statements from parser.
@@ -30,7 +34,7 @@ namespace floyd {
 
 	ast_json_t statement_to_json(const statement_t& e);
 	std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a);
-	ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e);
+	ast_json_t body_to_json(const body_t& e);
 
 
 

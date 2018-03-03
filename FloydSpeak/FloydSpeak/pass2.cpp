@@ -15,6 +15,7 @@
 #include "json_support.h"
 #include "json_parser.h"
 #include "parser_primitives.h"
+#include "ast.h"
 
 namespace floyd {
 using namespace std;
@@ -534,15 +535,14 @@ ast_json_t statement_to_json(const statement_t& e){
 			json_t("open_range"),
 			expression_to_json(e._for->_start_expression)._value,
 			expression_to_json(e._for->_end_expression)._value,
-			//??? make body_to_json()
-			statements_to_json(e._for->_body._statements)._value
+			body_to_json(e._for->_body)._value
 		})};
 	}
 	else if(e._while){
 		return ast_json_t{json_t::make_array({
 			json_t(keyword_t::k_while),
 			expression_to_json(e._while->_condition)._value,
-			statements_to_json(e._while->_body._statements)._value
+			body_to_json(e._while->_body)._value
 		})};
 	}
 	else if(e._expression){
@@ -557,9 +557,9 @@ ast_json_t statement_to_json(const statement_t& e){
 	}
 }
 
-ast_json_t statements_to_json(const std::vector<std::shared_ptr<statement_t>>& e){
+ast_json_t body_to_json(const body_t& e){
 	std::vector<json_t> statements;
-	for(const auto& i: e){
+	for(const auto& i: e._statements){
 		statements.push_back(statement_to_json(*i)._value);
 	}
 	return ast_json_t{json_t::make_array(statements)};
@@ -603,7 +603,7 @@ ast_t run_pass2(const quark::trace_context_t& tracer, const ast_json_t& parse_tr
 	QUARK_CONTEXT_TRACE(tracer, json_to_pretty_string(parse_tree._value));
 
 	const auto program_body = parser_statements_to_ast__lossy(tracer, parse_tree);
-	return ast_t(program_body);
+	return ast_t(body_t{program_body});
 }
 
 

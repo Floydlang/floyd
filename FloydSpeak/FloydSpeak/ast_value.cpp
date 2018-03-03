@@ -206,7 +206,7 @@ namespace floyd {
 			"func-def",
 			typeid_to_ast_json(function_type)._value,
 			members_to_json(v._args),
-			statements_to_json(v._body->_statements)._value,
+			body_to_json(*v._body)._value,
 			typeid_to_ast_json(v._return_type)._value
 		})};
 	}

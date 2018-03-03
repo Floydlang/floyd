@@ -26,8 +26,8 @@ namespace floyd {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	ast_t::ast_t(std::vector<std::shared_ptr<statement_t> > statements) :
-		_statements(statements)
+	ast_t::ast_t(const body_t& globals) :
+		_globals(globals)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -42,7 +42,7 @@ namespace floyd {
 
 		return ast_json_t{json_t::make_object(
 			{
-				{ "statements", statements_to_json(ast._statements)._value }
+				{ "globals", body_to_json(ast._globals)._value }
 			}
 		)};
 	}

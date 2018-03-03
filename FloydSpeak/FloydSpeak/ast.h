@@ -11,9 +11,9 @@
 
 #include <vector>
 #include "quark.h"
+#include "statement.h"
 
 namespace floyd {
-	struct statement_t;
 	struct ast_json_t;
 
 
@@ -26,12 +26,12 @@ namespace floyd {
 	*/
 	struct ast_t {
 		public: ast_t();
-		public: explicit ast_t(const std::vector<std::shared_ptr<statement_t> > statements);
+		public: explicit ast_t(const body_t& globals);
 		public: bool check_invariant() const;
 
 
 		/////////////////////////////		STATE
-		std::vector<std::shared_ptr<statement_t> > _statements;
+		public: const body_t _globals;
 	};
 
 	ast_json_t ast_to_json(const ast_t& ast);

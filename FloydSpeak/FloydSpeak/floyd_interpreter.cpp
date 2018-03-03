@@ -167,7 +167,36 @@ interpreter_t begin_subenv(const interpreter_t& vm){
 	vm2._call_stack.push_back(new_environment);
 	return vm2;
 }
+std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
+	QUARK_ASSERT(vm.check_invariant());
+	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
+	auto vm_acc = vm;
+
+	int statement_index = 0;
+	while(statement_index < statements.size()){
+		const auto statement = statements[statement_index];
+		const auto& r = execute_statement(vm_acc, *statement);
+		vm_acc = r.first;
+		if(r.second._type == statement_result_t::k_return_unwind){
+			return { vm_acc, r.second };
+		}
+		else{
+
+			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
+			if(statement_index == (statements.size() - 1)){
+				if(r.second._type == statement_result_t::k_passive_expression_output){
+					return { vm_acc, r.second };
+				}
+			}
+			else{
+			}
+
+			statement_index++;
+		}
+	}
+	return { vm_acc, statement_result_t::make_no_output() };
+}
 std::pair<interpreter_t, statement_result_t> execute_body(
 	const interpreter_t& vm,
 	const body_t& body,
@@ -372,7 +401,6 @@ std::pair<interpreter_t, statement_result_t> execute_expression_statement(const 
 }
 
 
-//	Output is the RETURN VALUE of the executed statement, if any.
 std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm, const statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
@@ -411,37 +439,6 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 }
 
 
-
-std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
-	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
-
-	auto vm_acc = vm;
-
-	int statement_index = 0;
-	while(statement_index < statements.size()){
-		const auto statement = statements[statement_index];
-		const auto& r = execute_statement(vm_acc, *statement);
-		vm_acc = r.first;
-		if(r.second._type == statement_result_t::k_return_unwind){
-			return { vm_acc, r.second };
-		}
-		else{
-
-			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
-			if(statement_index == (statements.size() - 1)){
-				if(r.second._type == statement_result_t::k_passive_expression_output){
-					return { vm_acc, r.second };
-				}
-			}
-			else{
-			}
-
-			statement_index++;
-		}
-	}
-	return { vm_acc, statement_result_t::make_no_output() };
-}
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
@@ -1169,7 +1166,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 			new_environment->_values[arg_name] = std::pair<value_t, bool>(arg_value, false);
 		}
 		vm_acc._call_stack.push_back(new_environment);
-		const auto r = execute_statements(vm_acc, function_def._body->_statements);
+		const auto r = execute_body(vm_acc, *function_def._body, {});
 		vm_acc = r.first;
 		vm_acc._call_stack.pop_back();
 
@@ -1427,7 +1424,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_start_time = std::chrono::high_resolution_clock::now();
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _ast->_statements);
+	const auto r = execute_statements(*this, _ast->_globals._statements);
 
 	_call_stack[0]->_values = r.first._call_stack[0]->_values;
 	_print_output = r.first._print_output;

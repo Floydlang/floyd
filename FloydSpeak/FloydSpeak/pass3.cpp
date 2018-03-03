@@ -1433,11 +1433,11 @@ ast_t analyse(const analyser_t& a0){
 	a._call_stack.push_back(global_env);
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto result = analyse_statements(a, a._imm->_ast._statements);
+	const auto result = analyse_statements(a, a._imm->_ast._globals._statements);
 
 	a._call_stack[0]->_symbols = result.first._call_stack[0]->_symbols;
 
-	const auto result_ast = ast_t(result.second);
+	const auto result_ast = ast_t(floyd::body_t{result.second});
 
 	QUARK_ASSERT(result_ast.check_invariant());
 	return result_ast;
@@ -1480,7 +1480,7 @@ floyd::ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t&
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(pass3_result)._value));
 
-	QUARK_ASSERT(statement_t::is_annotated_deep(pass3_result._statements));
+	QUARK_ASSERT(statement_t::is_annotated_deep(pass3_result._globals._statements));
 	return pass3_result;
 }
 

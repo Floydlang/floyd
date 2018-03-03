@@ -159,6 +159,17 @@ namespace floyd {
 	*/
 	std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
 
+	std::pair<interpreter_t, statement_result_t> execute_body(
+		const interpreter_t& vm,
+		const body_t& body,
+		const std::map<std::string, std::pair<value_t, bool>>& values
+	);
+
+
+	//	Output is the RETURN VALUE of the executed statement, if any.
+	std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm, const statement_t& statement);
+
+
 
 	//////////////////////////		run_main()
 
