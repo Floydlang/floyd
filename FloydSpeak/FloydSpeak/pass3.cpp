@@ -36,6 +36,7 @@ namespace floyd_pass3 {
 	using floyd::keyword_t;
 	using floyd::parser_context_t;
 	using floyd::symbol_t;
+	using floyd::body_t;
 
 std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const statement_t& statement);
 
@@ -62,7 +63,7 @@ std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const 
 	return { vm_acc, statements2 };
 }
 
-std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_body(
+std::pair<analyser_t, body_t > analyse_body(
 	const analyser_t& vm,
 	const floyd::body_t& body,
 	const std::map<std::string, symbol_t>& symbols
@@ -77,8 +78,20 @@ std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse
 	vm_acc._call_stack.back()->_symbols.insert(symbols.begin(), symbols.end());
 	const auto result = analyse_statements(vm_acc, body._statements);
 	vm_acc = result.first;
+
+	const body_t body2 =
+		[&](){
+			std::vector<std::pair<std::string, symbol_t>> symbols;
+			for(const auto e: result.first._call_stack.back()->_symbols){
+				const auto e2 = std::pair<std::string, symbol_t>{ e.first, e.second };
+				symbols.push_back(e2);
+			}
+			return body_t{result.second, symbols};
+		}();
+
+
 	vm_acc._call_stack.pop_back();
-	return { vm_acc, result.second };
+	return { vm_acc, body2 };
 }
 
 
@@ -293,8 +306,7 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& vm,
 
 	const auto statement = *s._block;
 	const auto e = analyse_body(vm, statement._body, {});
-	const auto body = floyd::body_t{e.second};
-	return {e.first, statement_t::make__block_statement(body)};
+	return {e.first, statement_t::make__block_statement(e.second)};
 }
 
 std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm, const statement_t& s){
@@ -354,7 +366,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm
 
 	const auto then2 = analyse_body(vm_acc, statement._then_body, {});
 	const auto else2 = analyse_body(vm_acc, statement._else_body, {});
-	return { vm_acc, statement_t::make__ifelse_statement(condition2.second, floyd::body_t{then2.second}, floyd::body_t{else2.second}) };
+	return { vm_acc, statement_t::make__ifelse_statement(condition2.second, then2.second, else2.second) };
 }
 
 std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, const statement_t::for_statement_t& statement){
@@ -382,7 +394,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, c
 	const auto result = analyse_body(vm_acc, statement._body, symbols);
 	vm_acc = result.first;
 
-	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, floyd::body_t{result.second}) };
+	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second) };
 }
 
 std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm, const statement_t::while_statement_t& statement){
@@ -396,7 +408,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm,
 	const auto result = analyse_body(vm_acc, statement._body, {});
 	vm_acc = result.first;
 
-	return { vm_acc, statement_t::make__while_statement(condition2_expr.second, floyd::body_t{result.second}) };
+	return { vm_acc, statement_t::make__while_statement(condition2_expr.second, result.second) };
 }
 
 std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t& vm, const statement_t::expression_statement_t& statement){
@@ -1147,8 +1159,8 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto function_body_pair = analyse_body(vm, *def._body, symbols);
 	auto vm_acc = function_body_pair.first;
 
-	const auto body = floyd::body_t{function_body_pair.second};
-	const auto def2 = function_definition_t(def._args, make_shared<floyd::body_t>(body), def._return_type);
+	const auto body = function_body_pair.second;
+	const auto def2 = function_definition_t(def._args, make_shared<body_t>(body), def._return_type);
 	return {vm_acc, expression_t::make_function_definition(def2) };
 }
 
@@ -1443,7 +1455,7 @@ ast_t analyse(const analyser_t& a0){
 
 	a._call_stack[0]->_symbols = result.first._call_stack[0]->_symbols;
 
-	const auto result_ast = ast_t(floyd::body_t{result.second});
+	const auto result_ast = ast_t(body_t{result.second});
 
 	QUARK_ASSERT(result_ast.check_invariant());
 	return result_ast;

@@ -95,7 +95,7 @@ namespace floyd {
 
 	struct body_t {
 		const std::vector<std::shared_ptr<statement_t>> _statements;
-		const std::map<std::string, symbol_t> _symbols;
+		const std::vector<std::pair<std::string, symbol_t>> _symbols;
 	};
 
 	inline bool operator==(const body_t& lhs, const body_t& rhs){
