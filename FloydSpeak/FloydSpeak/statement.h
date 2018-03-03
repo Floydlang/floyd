@@ -162,14 +162,14 @@ namespace floyd {
 				return
 					_condition == other._condition
 					&& _condition == other._condition
-					&& compare_shared_value_vectors(_then_statements, other._then_statements)
-					&& compare_shared_value_vectors(_else_statements, other._else_statements)
+					&& _then_statements == other._then_statements
+					&& _else_statements == other._else_statements
 					;
 			}
 
 			const expression_t _condition;
-			const std::vector<std::shared_ptr<statement_t>> _then_statements;
-			const std::vector<std::shared_ptr<statement_t>> _else_statements;
+			const body_t _then_statements;
+			const body_t _else_statements;
 		};
         public: statement_t(const ifelse_statement_t& value) :
 			_if(std::make_shared<ifelse_statement_t>(value))
@@ -177,8 +177,8 @@ namespace floyd {
 		}
 		public: static statement_t make__ifelse_statement(
 			const expression_t& condition,
-			std::vector<std::shared_ptr<statement_t>> then_statements,
-			std::vector<std::shared_ptr<statement_t>> else_statements
+			const body_t& then_statements,
+			const body_t& else_statements
 		){
 			return statement_t(ifelse_statement_t{ condition, then_statements, else_statements });
 		}
@@ -361,7 +361,7 @@ namespace floyd {
 			}
 			else if(_if){
 				if(_if->_condition.is_annotated_deep()){
-					return is_annotated_deep(_if->_then_statements) && is_annotated_deep(_if->_else_statements);
+					return is_annotated_deep2(_if->_then_statements) && is_annotated_deep2(_if->_else_statements);
 				}
 				else{
 					return false;

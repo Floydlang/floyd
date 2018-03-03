@@ -371,9 +371,9 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm
 		throw std::runtime_error("Boolean condition required.");
 	}
 
-	const auto then2 = analyse_statements_in_env(vm_acc, statement._then_statements, {});
-	const auto else2 = analyse_statements_in_env(vm_acc, statement._else_statements, {});
-	return { vm_acc, statement_t::make__ifelse_statement(condition2.second, then2.second, else2.second) };
+	const auto then2 = analyse_statements_in_env(vm_acc, statement._then_statements._statements, {});
+	const auto else2 = analyse_statements_in_env(vm_acc, statement._else_statements._statements, {});
+	return { vm_acc, statement_t::make__ifelse_statement(condition2.second, floyd::body_t{then2.second}, floyd::body_t{else2.second}) };
 }
 
 std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, const statement_t::for_statement_t& statement){

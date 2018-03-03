@@ -321,8 +321,8 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 		return statement_t::make__ifelse_statement(
 			condition_expression2,
-			then_statements2,
-			else_statements2
+			body_t{then_statements2},
+			body_t{else_statements2}
 		);
 	}
 	else if(type == keyword_t::k_for){
@@ -524,8 +524,8 @@ ast_json_t statement_to_json(const statement_t& e){
 		return ast_json_t{json_t::make_array({
 			json_t(keyword_t::k_if),
 			expression_to_json(e._if->_condition)._value,
-			json_t::make_array(statements_shared_to_json(e._if->_then_statements)),
-			json_t::make_array(statements_shared_to_json(e._if->_else_statements))
+			json_t::make_array(statements_shared_to_json(e._if->_then_statements._statements)),
+			json_t::make_array(statements_shared_to_json(e._if->_else_statements._statements))
 		})};
 	}
 	else if(e._for){

@@ -311,10 +311,10 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 	const auto condition_result_value = condition_result.second.get_literal();
 	bool r = condition_result_value.get_bool_value();
 	if(r){
-		return execute_statements_in_env(vm_acc, statement._then_statements, {});
+		return execute_statements_in_env(vm_acc, statement._then_statements._statements, {});
 	}
 	else{
-		return execute_statements_in_env(vm_acc, statement._else_statements, {});
+		return execute_statements_in_env(vm_acc, statement._else_statements._statements, {});
 	}
 }
 
