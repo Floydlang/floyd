@@ -37,11 +37,88 @@ namespace floyd_pass3 {
 	using floyd::parser_context_t;
 	using floyd::symbol_t;
 
+std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const statement_t& statement);
 
-std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e);
 
-std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm, const expression_t& e);
-symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s);
+
+
+std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
+	QUARK_ASSERT(vm.check_invariant());
+	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
+
+	auto vm_acc = vm;
+
+	vector<shared_ptr<statement_t>> statements2;
+	int statement_index = 0;
+	while(statement_index < statements.size()){
+		const auto statement = statements[statement_index];
+		const auto& r = analyse_statement(vm_acc, *statement);
+		QUARK_ASSERT(r.second.is_annotated_deep());
+
+		vm_acc = r.first;
+		statements2.push_back(make_shared<statement_t>(r.second));
+		statement_index++;
+	}
+	return { vm_acc, statements2 };
+}
+
+std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_body(
+	const analyser_t& vm,
+	const floyd::body_t& body,
+	const std::map<std::string, symbol_t>& symbols
+){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+	auto parent_env = vm_acc._call_stack.back();
+	auto new_environment = lexical_scope_t::make_environment(vm_acc, parent_env);
+	vm_acc._call_stack.push_back(new_environment);
+
+	vm_acc._call_stack.back()->_symbols.insert(symbols.begin(), symbols.end());
+	const auto result = analyse_statements(vm_acc, body._statements);
+	vm_acc = result.first;
+	vm_acc._call_stack.pop_back();
+	return { vm_acc, result.second };
+}
+
+
+
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+symbol_t* resolve_env_variable_deep(const analyser_t& vm, const shared_ptr<lexical_scope_t>& env, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(env && env->check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto it = env->_symbols.find(s);
+	if(it != env->_symbols.end()){
+		return &it->second;
+	}
+	else if(env->_parent_env){
+		return resolve_env_variable_deep(vm, env->_parent_env, s);
+	}
+	else{
+		return nullptr;
+	}
+}
+
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	return resolve_env_variable_deep(vm, vm._call_stack.back(), s);
+}
+
+symbol_t find_global_symbol(const analyser_t& vm, const string& s){
+	const auto t = resolve_env_symbol2(vm, s);
+	if(t == nullptr){
+		throw std::runtime_error("Undefined indentifier \"" + s + "\"!");
+	}
+	return *t;
+}
+
+
+
 
 
 
@@ -98,103 +175,12 @@ bool check_type_fully_defined(const typeid_t& type){
 	}
 }
 
-//?? check all types of expressions. Time for visitor-pattern?
-bool check_type_fully_defined(const expression_t& e){
-	if(check_type_fully_defined(e.get_annotated_type()) == false){
-		return false;
-	}
-	else{
-		const auto op = e.get_operation();
-		return true;
-	}
-}
-
-
-	/*
-		If e doesn't have a fully-formed type, attempt to give it one.
-	*/
-	expression_t improve_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
-		QUARK_ASSERT(e.check_invariant());
-		QUARK_ASSERT(wanted_type.check_invariant());
-
-		const auto e_type = e.get_annotated_type();
-
-		if(wanted_type.is_null()){
-			return e;
-		}
-		else if(wanted_type.is_string()){
-			if(e_type.is_json_value()){
-
-				const auto t = typeid_t::make_string();
-				return expression_t::make_call(
-					expression_t::make_literal(value_t::make_typeid_value(t)),
-					std::vector<expression_t> {e},
-					make_shared<typeid_t>(t)
-				);
-
-			}
-			else{
-				return e;
-			}
-		}
-		else if(wanted_type.is_json_value()){
-			if(e_type.is_null() || e_type.is_int() || e_type.is_float() || e_type.is_string() || e_type.is_bool() || e_type.is_dict() || e_type.is_vector()){
-				const auto t = typeid_t::make_json_value();
-				return expression_t::make_call(
-					expression_t::make_literal(value_t::make_typeid_value(t)),
-					std::vector<expression_t> {e},
-					make_shared<typeid_t>(t)
-				);
-			}
-			else{
-				return e;
-			}
-		}
-		else if(wanted_type.is_vector()){
-			if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_null(), {})){
-				return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
-			}
-			else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_vector_definition){
-				QUARK_ASSERT(false);
-				return expression_t::make_vector_definition(wanted_type, e.get_vector_definition()->_elements);
-			}
-			else{
-				return e;
-			}
-		}
-		else if(wanted_type.is_dict()){
-			if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_dict_value(typeid_t::make_null(), {})){
-				return expression_t::make_literal(value_t::make_dict_value(wanted_type.get_dict_value_type(), {}));
-			}
-			else{
-				return e;
-			}
-		}
-		else{
-			return e;
-		}
-	}
 
 
 
-std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_body(
-	const analyser_t& vm,
-	const floyd::body_t& body,
-	const std::map<std::string, symbol_t>& symbols
-){
-	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-	auto parent_env = vm_acc._call_stack.back();
-	auto new_environment = lexical_scope_t::make_environment(vm_acc, parent_env);
-	vm_acc._call_stack.push_back(new_environment);
+/////////////////////////////////////////			STATEMENTS
 
-	vm_acc._call_stack.back()->_symbols.insert(symbols.begin(), symbols.end());
-	const auto result = analyse_statements(vm_acc, body._statements);
-	vm_acc = result.first;
-	vm_acc._call_stack.pop_back();
-	return { vm_acc, result.second };
-}
 
 
 /*
@@ -480,59 +466,90 @@ std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const
 }
 
 
-std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
-	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
-	auto vm_acc = vm;
 
-	vector<shared_ptr<statement_t>> statements2;
-	int statement_index = 0;
-	while(statement_index < statements.size()){
-		const auto statement = statements[statement_index];
-		const auto& r = analyse_statement(vm_acc, *statement);
-		QUARK_ASSERT(r.second.is_annotated_deep());
+/////////////////////////////////////////			EXPRESSIONS
 
-		vm_acc = r.first;
-		statements2.push_back(make_shared<statement_t>(r.second));
-		statement_index++;
-	}
-	return { vm_acc, statements2 };
-}
 
-//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-symbol_t* resolve_env_variable_deep(const analyser_t& vm, const shared_ptr<lexical_scope_t>& env, const std::string& s){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(env && env->check_invariant());
-	QUARK_ASSERT(s.size() > 0);
 
-	const auto it = env->_symbols.find(s);
-	if(it != env->_symbols.end()){
-		return &it->second;
-	}
-	else if(env->_parent_env){
-		return resolve_env_variable_deep(vm, env->_parent_env, s);
+
+//?? check all types of expressions. Time for visitor-pattern?
+bool check_type_fully_defined(const expression_t& e){
+	if(check_type_fully_defined(e.get_annotated_type()) == false){
+		return false;
 	}
 	else{
-		return nullptr;
+		const auto op = e.get_operation();
+		return true;
 	}
 }
 
-//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_env_variable_deep(vm, vm._call_stack.back(), s);
-}
+/*
+	If e doesn't have a fully-formed type, attempt to give it one.
+*/
+expression_t improve_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(wanted_type.check_invariant());
 
-symbol_t find_global_symbol(const analyser_t& vm, const string& s){
-	const auto t = resolve_env_symbol2(vm, s);
-	if(t == nullptr){
-		throw std::runtime_error("Undefined indentifier \"" + s + "\"!");
+	const auto e_type = e.get_annotated_type();
+
+	if(wanted_type.is_null()){
+		return e;
 	}
-	return *t;
+	else if(wanted_type.is_string()){
+		if(e_type.is_json_value()){
+
+			const auto t = typeid_t::make_string();
+			return expression_t::make_call(
+				expression_t::make_literal(value_t::make_typeid_value(t)),
+				std::vector<expression_t> {e},
+				make_shared<typeid_t>(t)
+			);
+
+		}
+		else{
+			return e;
+		}
+	}
+	else if(wanted_type.is_json_value()){
+		if(e_type.is_null() || e_type.is_int() || e_type.is_float() || e_type.is_string() || e_type.is_bool() || e_type.is_dict() || e_type.is_vector()){
+			const auto t = typeid_t::make_json_value();
+			return expression_t::make_call(
+				expression_t::make_literal(value_t::make_typeid_value(t)),
+				std::vector<expression_t> {e},
+				make_shared<typeid_t>(t)
+			);
+		}
+		else{
+			return e;
+		}
+	}
+	else if(wanted_type.is_vector()){
+		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_null(), {})){
+			return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
+		}
+		else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_vector_definition){
+			QUARK_ASSERT(false);
+			return expression_t::make_vector_definition(wanted_type, e.get_vector_definition()->_elements);
+		}
+		else{
+			return e;
+		}
+	}
+	else if(wanted_type.is_dict()){
+		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_dict_value(typeid_t::make_null(), {})){
+			return expression_t::make_literal(value_t::make_dict_value(wanted_type.get_dict_value_type(), {}));
+		}
+		else{
+			return e;
+		}
+	}
+	else{
+		return e;
+	}
 }
+
 
 
 
@@ -977,6 +994,165 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 }
 
 
+std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& vm, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
+	//	arity
+	if(call_args.size() != callee_args.size()){
+		throw std::runtime_error("Wrong number of arguments in function call.");
+	}
+
+	auto vm_acc = vm;
+	vector<expression_t> call_args2;
+	for(int i = 0 ; i < callee_args.size() ; i++){
+		const auto callee_arg = callee_args[i];
+
+		const auto call_arg_pair = analyse_expression_to_target(vm_acc, call_args[i], callee_arg);
+		vm_acc = call_arg_pair.first;
+		call_args2.push_back(call_arg_pair.second);
+	}
+	return { vm_acc, call_args2 };
+}
+
+bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr){
+	if(callee_expr.get_operation() == expression_type::k_variable && callee_expr.get_variable()){
+		const auto function_name = callee_expr.get_variable()->_variable;
+
+		const auto find_it = vm._imm->_host_functions.find(function_name);
+		return find_it != vm._imm->_host_functions.end();
+	}
+	else{
+		return false;
+	}
+}
+
+typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t& callee_expr, const vector<expression_t>& args){
+	const auto function_name = callee_expr.get_variable()->_variable;
+	const auto find_it = vm._imm->_host_functions.find(function_name);
+	QUARK_ASSERT(find_it != vm._imm->_host_functions.end());
+
+	if(function_name == "update"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "erase"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "push_back"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "subset"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "replace"){
+		return args[0].get_annotated_type();
+	}
+/*
+		else if(function_name == "unflatten_from_json"){
+			return args[0].get_annotated_type();
+		}
+*/
+	else{
+		return callee_expr.get_annotated_type().get_function_return();
+	}
+}
+
+/*
+	callee(callee_args)		== function def: int(
+	a = my_func(x, 13, "cat");
+	a = json_value(1 + 3);
+*/
+std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto expr = *e.get_call();
+	auto vm_acc = vm;
+
+	const auto callee_expr0 = analyse_expression_no_target(vm_acc, *expr._callee);
+	vm_acc = callee_expr0.first;
+	const auto callee_expr = callee_expr0.second;
+
+	//	This is a call to a function-value. Callee is a function-type.
+	const auto callee_type = callee_expr.get_annotated_type();
+	if(callee_type.is_function()){
+		const auto callee_args = callee_type.get_function_args();
+		const auto callee_return_value = callee_type.get_function_return();
+		const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
+		vm_acc = call_args_pair.first;
+		if(is_host_function_call(vm, callee_expr)){
+			const auto return_type = get_host_function_return_type(vm, callee_expr, call_args_pair.second);
+			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(return_type)) };
+		}
+		else{
+			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_return_value)) };
+		}
+	}
+
+	//	Attempting to call a TYPE? Then this may be a constructor call.
+	else if(callee_type.is_typeid() && callee_expr.get_operation() == expression_type::k_variable){
+		const auto variable_expr = *callee_expr.get_variable();
+		const auto variable_name = variable_expr._variable;
+		const symbol_t* symbol = resolve_env_symbol2(vm_acc, variable_name);
+		QUARK_ASSERT(symbol != nullptr);
+
+		if(symbol->_symbol_type != symbol_t::type::immutable_local){
+			throw std::runtime_error("Cannot resolve callee.");
+		}
+		else{
+			const auto callee_type2 = symbol->_default_value.get_typeid_value();
+			if(callee_type2.is_struct()){
+				const auto& def = callee_type2.get_struct();
+				const auto callee_args = get_member_types(def._members);
+				const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
+				vm_acc = call_args_pair.first;
+				return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_type2)) };
+			}
+
+			//	One argument for these.
+			else{
+				const auto callee_args = vector<typeid_t>{ callee_type2 };
+				const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
+				vm_acc = call_args_pair.first;
+				return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_type2)) };
+/*
+??? how to support json_value(13) ?
+				//	null means "any" right now...###
+				if(arg_lhs.is_null() || arg_lhs == arg_rhs){
+				}
+				else{
+					throw std::runtime_error("Argument type mismatch.");
+				}
+*/
+			}
+		}
+	}
+	else{
+		throw std::runtime_error("Cannot call non-function.");
+	}
+}
+
+std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto function_def_expr = *e.get_function_definition();
+	const auto def = function_def_expr._def;
+	const auto function_type = get_function_type(def);
+
+	const std::map<std::string, symbol_t> symbols =
+		[&](){
+			std::map<std::string, symbol_t> result;
+			for(const auto e: def._args){
+				result[e._name] = symbol_t::make_immutable_local(e._type);
+			}
+			return result;
+		}();
+
+	const auto function_body_pair = analyse_body(vm, *def._body, symbols);
+	auto vm_acc = function_body_pair.first;
+
+	const auto body = floyd::body_t{function_body_pair.second};
+	const auto def2 = function_definition_t(def._args, make_shared<floyd::body_t>(body), def._return_type);
+	return {vm_acc, expression_t::make_function_definition(def2) };
+}
+
+
 
 std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1099,171 +1275,6 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 		throw std::runtime_error("Cannot resolve type.");
 	}
 	return { vm_acc, e2 };
-}
-
-std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& vm, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
-	//	arity
-	if(call_args.size() != callee_args.size()){
-		throw std::runtime_error("Wrong number of arguments in function call.");
-	}
-
-	auto vm_acc = vm;
-	vector<expression_t> call_args2;
-	for(int i = 0 ; i < callee_args.size() ; i++){
-		const auto callee_arg = callee_args[i];
-
-		const auto call_arg_pair = analyse_expression_to_target(vm_acc, call_args[i], callee_arg);
-		vm_acc = call_arg_pair.first;
-		call_args2.push_back(call_arg_pair.second);
-	}
-	return { vm_acc, call_args2 };
-}
-
-bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr){
-	if(callee_expr.get_operation() == expression_type::k_variable && callee_expr.get_variable()){
-		const auto function_name = callee_expr.get_variable()->_variable;
-
-		const auto find_it = vm._imm->_host_functions.find(function_name);
-		return find_it != vm._imm->_host_functions.end();
-	}
-	else{
-		return false;
-	}
-}
-
-typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t& callee_expr, const vector<expression_t>& args){
-	const auto function_name = callee_expr.get_variable()->_variable;
-	const auto find_it = vm._imm->_host_functions.find(function_name);
-	QUARK_ASSERT(find_it != vm._imm->_host_functions.end());
-
-	if(function_name == "update"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "erase"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "push_back"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "subset"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "replace"){
-		return args[0].get_annotated_type();
-	}
-/*
-		else if(function_name == "unflatten_from_json"){
-			return args[0].get_annotated_type();
-		}
-*/
-	else{
-		return callee_expr.get_annotated_type().get_function_return();
-	}
-}
-
-
-
-
-/*
-	callee(callee_args)		== function def: int(
-	a = my_func(x, 13, "cat");
-	a = json_value(1 + 3);
-*/
-std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto expr = *e.get_call();
-	auto vm_acc = vm;
-
-	const auto callee_expr0 = analyse_expression_no_target(vm_acc, *expr._callee);
-	vm_acc = callee_expr0.first;
-	const auto callee_expr = callee_expr0.second;
-
-	//	This is a call to a function-value. Callee is a function-type.
-	const auto callee_type = callee_expr.get_annotated_type();
-	if(callee_type.is_function()){
-		const auto callee_args = callee_type.get_function_args();
-		const auto callee_return_value = callee_type.get_function_return();
-		const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
-		vm_acc = call_args_pair.first;
-		if(is_host_function_call(vm, callee_expr)){
-			const auto return_type = get_host_function_return_type(vm, callee_expr, call_args_pair.second);
-			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(return_type)) };
-		}
-		else{
-			return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_return_value)) };
-		}
-	}
-
-	//	Attempting to call a TYPE? Then this may be a constructor call.
-	else if(callee_type.is_typeid() && callee_expr.get_operation() == expression_type::k_variable){
-		const auto variable_expr = *callee_expr.get_variable();
-		const auto variable_name = variable_expr._variable;
-		const symbol_t* symbol = resolve_env_symbol2(vm_acc, variable_name);
-		QUARK_ASSERT(symbol != nullptr);
-
-		if(symbol->_symbol_type != symbol_t::type::immutable_local){
-			throw std::runtime_error("Cannot resolve callee.");
-		}
-		else{
-			const auto callee_type2 = symbol->_default_value.get_typeid_value();
-			if(callee_type2.is_struct()){
-				const auto& def = callee_type2.get_struct();
-				const auto callee_args = get_member_types(def._members);
-				const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
-				vm_acc = call_args_pair.first;
-				return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_type2)) };
-			}
-
-			//	One argument for these.
-			else{
-				const auto callee_args = vector<typeid_t>{ callee_type2 };
-				const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
-				vm_acc = call_args_pair.first;
-				return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_type2)) };
-/*
-??? how to support json_value(13) ?
-				//	null means "any" right now...###
-				if(arg_lhs.is_null() || arg_lhs == arg_rhs){
-				}
-				else{
-					throw std::runtime_error("Argument type mismatch.");
-				}
-*/
-			}
-		}
-	}
-	else{
-		throw std::runtime_error("Cannot call non-function.");
-	}
-}
-
-
-
-
-
-std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto function_def_expr = *e.get_function_definition();
-	const auto def = function_def_expr._def;
-	const auto function_type = get_function_type(def);
-
-	const std::map<std::string, symbol_t> symbols =
-		[&](){
-			std::map<std::string, symbol_t> result;
-			for(const auto e: def._args){
-				result[e._name] = symbol_t::make_immutable_local(e._type);
-			}
-			return result;
-		}();
-
-	const auto function_body_pair = analyse_body(vm, *def._body, symbols);
-	auto vm_acc = function_body_pair.first;
-
-	const auto body = floyd::body_t{function_body_pair.second};
-	const auto def2 = function_definition_t(def._args, make_shared<floyd::body_t>(body), def._return_type);
-	return {vm_acc, expression_t::make_function_definition(def2) };
 }
 
 
