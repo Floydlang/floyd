@@ -177,29 +177,23 @@ bool check_type_fully_defined(const expression_t& e){
 
 
 
-analyser_t begin_subenv(const analyser_t& vm){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm2 = vm;
-	auto parent_env = vm2._call_stack.back();
-	auto new_environment = lexical_scope_t::make_environment(vm2, parent_env);
-	vm2._call_stack.push_back(new_environment);
-	return vm2;
-}
-
-std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements_in_env(
+std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_body(
 	const analyser_t& vm,
-	const std::vector<std::shared_ptr<statement_t>>& statements,
+	const floyd::body_t& body,
 	const std::map<std::string, symbol_t>& symbols
 ){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = begin_subenv(vm);
-	vm2._call_stack.back()->_symbols.insert(symbols.begin(), symbols.end());
-	const auto result = analyse_statements(vm2, statements);
-	vm2 = result.first;
-	vm2._call_stack.pop_back();
-	return { vm2, result.second };
+	auto vm_acc = vm;
+	auto parent_env = vm_acc._call_stack.back();
+	auto new_environment = lexical_scope_t::make_environment(vm_acc, parent_env);
+	vm_acc._call_stack.push_back(new_environment);
+
+	vm_acc._call_stack.back()->_symbols.insert(symbols.begin(), symbols.end());
+	const auto result = analyse_statements(vm_acc, body._statements);
+	vm_acc = result.first;
+	vm_acc._call_stack.pop_back();
+	return { vm_acc, result.second };
 }
 
 
@@ -308,18 +302,19 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	}
 }
 
-//??? break out body_t-related stuff into shared util functions.
-std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& vm, const statement_t::block_statement_t& statement){
+std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& vm, const statement_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto e = analyse_statements_in_env(vm, statement._body._statements, {});
+	const auto statement = *s._block;
+	const auto e = analyse_body(vm, statement._body, {});
 	const auto body = floyd::body_t{e.second};
 	return {e.first, statement_t::make__block_statement(body)};
 }
 
-std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm, const statement_t::return_statement_t& statement){
+std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm, const statement_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
+	const auto statement = *s._return;
 	auto vm_acc = vm;
 	const auto expr = statement._expression;
 	const auto result = analyse_expression_no_target(vm_acc, expr);
@@ -371,8 +366,8 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm
 		throw std::runtime_error("Boolean condition required.");
 	}
 
-	const auto then2 = analyse_statements_in_env(vm_acc, statement._then_body._statements, {});
-	const auto else2 = analyse_statements_in_env(vm_acc, statement._else_body._statements, {});
+	const auto then2 = analyse_body(vm_acc, statement._then_body, {});
+	const auto else2 = analyse_body(vm_acc, statement._else_body, {});
 	return { vm_acc, statement_t::make__ifelse_statement(condition2.second, floyd::body_t{then2.second}, floyd::body_t{else2.second}) };
 }
 
@@ -398,7 +393,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, c
 	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
 	const std::map<std::string, symbol_t> symbols = { { statement._iterator_name, iterator_symbol} };
 
-	const auto result = analyse_statements_in_env(vm_acc, statement._body._statements, symbols);
+	const auto result = analyse_body(vm_acc, statement._body, symbols);
 	vm_acc = result.first;
 
 	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, floyd::body_t{result.second}) };
@@ -412,7 +407,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm,
 	const auto condition2_expr = analyse_expression_no_target(vm_acc, statement._condition);
 	vm_acc = condition2_expr.first;
 
-	const auto result = analyse_statements_in_env(vm_acc, statement._body._statements, {});
+	const auto result = analyse_body(vm_acc, statement._body, {});
 	vm_acc = result.first;
 
 	return { vm_acc, statement_t::make__while_statement(condition2_expr.second, floyd::body_t{result.second}) };
@@ -444,12 +439,12 @@ std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const
 		return e;
 	}
 	else if(statement._block){
-		const auto e = analyse_block_statement(vm, *statement._block);
+		const auto e = analyse_block_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
 		return e;
 	}
 	else if(statement._return){
-		const auto e = analyse_return_statement(vm, *statement._return);
+		const auto e = analyse_return_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
 		return e;
 	}
@@ -1263,7 +1258,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			return result;
 		}();
 
-	const auto function_body_pair = analyse_statements_in_env(vm, def._body->_statements, symbols);
+	const auto function_body_pair = analyse_body(vm, *def._body, symbols);
 	auto vm_acc = function_body_pair.first;
 
 	const auto body = floyd::body_t{function_body_pair.second};
