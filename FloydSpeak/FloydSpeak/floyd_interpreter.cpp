@@ -157,16 +157,6 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 }
 
 
-interpreter_t begin_subenv(const interpreter_t& vm){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm2 = vm;
-
-	auto parent_env = vm2._call_stack.back();
-	auto new_environment = environment_t::make_environment(vm2, parent_env);
-	vm2._call_stack.push_back(new_environment);
-	return vm2;
-}
 std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
@@ -201,15 +191,21 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 	const interpreter_t& vm,
 	const body_t& body,
 	const std::map<std::string, std::pair<value_t, bool>>& values
-){
+)
+{
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm2 = begin_subenv(vm);
-	vm2._call_stack.back()->_values.insert(values.begin(), values.end());
-	const auto r = execute_statements(vm2, body._statements);
-	vm2 = r.first;
-	vm2._call_stack.pop_back();
-	return { vm2, r.second };
+	auto vm_acc = vm;
+
+	auto parent_env = vm_acc._call_stack.back();
+	auto new_environment = environment_t::make_environment(vm_acc, parent_env);
+	vm_acc._call_stack.push_back(new_environment);
+
+	vm_acc._call_stack.back()->_values.insert(values.begin(), values.end());
+	const auto r = execute_statements(vm_acc, body._statements);
+	vm_acc = r.first;
+	vm_acc._call_stack.pop_back();
+	return { vm_acc, r.second };
 }
 
 
@@ -233,6 +229,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
 
 	//	Deduced bind type -- use new value's type.
+
 	//??? Should not be needed in interpreter. Move to pass3.
 	if(bind_statement_type.is_null()){
 //		QUARK_ASSERT(false);
@@ -291,7 +288,6 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	};
 }
 
-//??? make structs unique even though they share layout and name. USer unique-ID-generator?
 std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1170,11 +1166,12 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		vm_acc = r.first;
 		vm_acc._call_stack.pop_back();
 
-//??? move this check to pass3.
+		// ??? move this check to pass3.
 		if(r.second._type != statement_result_t::k_return_unwind){
 			throw std::runtime_error("Function missing return statement");
 		}
-//??? move this check to pass3.
+
+		// ??? move this check to pass3.
 		else if(r.second._output.get_type().is_struct() == false && r.second._output.get_type() != return_type){
 			throw std::runtime_error("Function return type wrong.");
 		}
@@ -1251,7 +1248,8 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	for(const auto& e: vm._call_stack){
 		std::map<string, json_t> values;
 		for(const auto&v: e->_values){
-		//??? INlcude mutable-flag?
+
+			//??? INlcude mutable-flag?
 			const auto a = value_and_type_to_ast_json(v.second.first);
 			const auto b = make_array_skip_nulls({
 				a._value.get_array_n(0),
@@ -1443,7 +1441,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 }
 
 
-	//??? make proper operator=(). Exception safety etc.
+//??? make proper operator=(). Exception safety etc.
 const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 	_start_time = other._start_time;
 	_ast = other._ast;
