@@ -317,8 +317,8 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
 
 		const auto condition_expression2 = parser_expression_to_ast(tracer, condition_expression);
-		const auto& then_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{then_statements});
-		const auto& else_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{else_statements});
+		const auto then_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{then_statements});
+		const auto else_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{else_statements});
 
 		return statement_t::make__ifelse_statement(
 			condition_expression2,
@@ -336,7 +336,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 		const auto start_expression2 = parser_expression_to_ast(tracer, start_expression);
 		const auto end_expression2 = parser_expression_to_ast(tracer, end_expression);
-		const auto& body_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{body_statements});
+		const auto body_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{body_statements});
 
 		return statement_t::make__for_statement(
 			iterator_name.get_string(),
@@ -351,7 +351,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto body_statements = statement.get_array_n(2);
 
 		const auto expression2 = parser_expression_to_ast(tracer, expression);
-		const auto& body_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{body_statements});
+		const auto body_statements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{body_statements});
 
 		return statement_t::make__while_statement(expression2, body_t{body_statements2});
 	}
@@ -468,12 +468,12 @@ const std::vector<std::shared_ptr<statement_t> > statements_to_ast__nonlossy(con
 	return statements2;
 }
 
-std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a){
-	std::vector<json_t> result;
-	for(const auto& e: a){
-		result.push_back(statement_to_json(*e)._value);
+ast_json_t body_to_json(const body_t& e){
+	std::vector<json_t> statements;
+	for(const auto& i: e._statements){
+		statements.push_back(statement_to_json(*i)._value);
 	}
-	return result;
+	return ast_json_t{json_t::make_array(statements)};
 }
 
 ast_json_t statement_to_json(const statement_t& e){
@@ -518,15 +518,15 @@ ast_json_t statement_to_json(const statement_t& e){
 	else if(e._block){
 		return ast_json_t{json_t::make_array({
 			json_t("block"),
-			json_t::make_array(statements_shared_to_json(e._block->_body._statements))
+			body_to_json(e._block->_body)._value
 		})};
 	}
 	else if(e._if){
 		return ast_json_t{json_t::make_array({
 			json_t(keyword_t::k_if),
 			expression_to_json(e._if->_condition)._value,
-			json_t::make_array(statements_shared_to_json(e._if->_then_body._statements)),
-			json_t::make_array(statements_shared_to_json(e._if->_else_body._statements))
+			body_to_json(e._if->_then_body)._value,
+			body_to_json(e._if->_else_body)._value
 		})};
 	}
 	else if(e._for){
@@ -555,14 +555,6 @@ ast_json_t statement_to_json(const statement_t& e){
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-}
-
-ast_json_t body_to_json(const body_t& e){
-	std::vector<json_t> statements;
-	for(const auto& i: e._statements){
-		statements.push_back(statement_to_json(*i)._value);
-	}
-	return ast_json_t{json_t::make_array(statements)};
 }
 
 
@@ -629,7 +621,7 @@ const std::string k_test_program_0_parserout = R"(
 	]
 )";
 const std::string k_test_program_0_pass2output = R"(
-	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int"]]], "int"]]] }
+	{ "globals": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int"]]], "int"]]] }
 
 
 //	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int", "int"]]], "int", ["function", "int", []]]]] }

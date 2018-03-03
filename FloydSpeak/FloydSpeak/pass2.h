@@ -33,7 +33,6 @@ namespace floyd {
 
 
 	ast_json_t statement_to_json(const statement_t& e);
-	std::vector<json_t> statements_shared_to_json(const std::vector<std::shared_ptr<statement_t>>& a);
 	ast_json_t body_to_json(const body_t& e);
 
 

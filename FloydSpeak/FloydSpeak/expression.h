@@ -776,7 +776,7 @@ namespace floyd {
 				}
 
 				else if(op == expression_type::k_define_function){
-					//??? check functions statements too.
+					//??? check function's statements too.
 					const auto e = *get_function_definition();
 					return true;
 				}
