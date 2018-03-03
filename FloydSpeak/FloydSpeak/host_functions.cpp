@@ -957,7 +957,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "encode_json", host_function_signature_t{ 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}) }},
 		{ "flatten_to_json", host_function_signature_t{ 1019, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) }},
 		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) }},
-		{ "get_json_type", host_function_signature_t{ 10121, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }}
+		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }}
 	};
 	return temp;
 }

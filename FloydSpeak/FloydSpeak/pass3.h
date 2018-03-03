@@ -155,8 +155,6 @@ namespace floyd_pass3 {
 
 		public: std::shared_ptr<const analyzer_imm_t> _imm;
 
-		public: std::shared_ptr<std::map<std::string, floyd::host_function_signature_t>> _host_functions;
-
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;
