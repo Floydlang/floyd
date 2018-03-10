@@ -41,7 +41,7 @@ namespace floyd {
 
 		type _symbol_type;
 		floyd::typeid_t _value_type;
-		floyd::value_t _default_value;
+		floyd::value_t _const_value;
 
 
 		//	Requires to use symbol_t as value in std::map() and use its [].
@@ -50,10 +50,10 @@ namespace floyd {
 		{
 		}
 
-		public: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& default_value) :
+		public: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
 			_symbol_type(symbol_type),
 			_value_type(value_type),
-			_default_value(default_value)
+			_const_value(const_value)
 		{
 		}
 

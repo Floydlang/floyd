@@ -473,8 +473,38 @@ ast_json_t body_to_json(const body_t& e){
 	for(const auto& i: e._statements){
 		statements.push_back(statement_to_json(*i)._value);
 	}
-	return ast_json_t{json_t::make_array(statements)};
+
+	std::vector<json_t> symbols;
+	for(const auto& i: e._symbols){
+		const auto e2 = json_t::make_object({
+			{ "name", i.first },
+			{ "symbol", symbol_to_json(i.second)._value }
+		});
+		symbols.push_back(e2);
+	}
+
+	return ast_json_t{
+		json_t::make_object({
+			std::pair<std::string, json_t>{ "statements", json_t::make_array(statements) },
+			std::pair<std::string, json_t>{ "symbols", json_t::make_array(symbols) }
+		})
+	};
 }
+
+
+
+ast_json_t symbol_to_json(const symbol_t& e){
+	const auto symbol_type_str = e._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+
+	return ast_json_t{
+		json_t::make_object({
+			{ "type", symbol_type_str },
+			{ "value_type", typeid_to_ast_json(e._value_type)._value },
+			{ "const_value", value_to_ast_json(e._const_value)._value }
+		})
+	};
+}
+
 
 ast_json_t statement_to_json(const statement_t& e){
 	QUARK_ASSERT(e.check_invariant());
@@ -496,7 +526,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		bool mutable_flag = e._bind_local->_locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 		const auto meta = mutable_flag
 			? json_t::make_object({
-				std::pair<std::string,json_t>{"mutable", mutable_flag}
+				std::pair<std::string, json_t>{"mutable", mutable_flag}
 			})
 			: json_t();
 
@@ -621,7 +651,34 @@ const std::string k_test_program_0_parserout = R"(
 	]
 )";
 const std::string k_test_program_0_pass2output = R"(
-	{ "globals": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int"]]], "int"]]] }
+	{
+		"globals": {
+			"statements": [
+				[
+					"bind",
+					"main",
+					[ "function", "int", [] ],
+					[
+						"func-def",
+						[ "function", "int", [] ],
+						[],
+						{
+							"statements": [
+								[
+									"return", [ "k", 3, "int" ]
+								]
+							],
+							"symbols": [
+							]
+						},
+						"int"
+					]
+				]
+			],
+			"symbols": [
+			]
+		}
+	}
 
 
 //	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int", "int"]]], "int", ["function", "int", []]]]] }

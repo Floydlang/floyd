@@ -21,6 +21,7 @@ namespace floyd {
 	struct expression_t;
 	struct body_t;
 	struct statement_t;
+	struct symbol_t;
 
 	/*
 		Input is an array of statements from parser.
@@ -35,6 +36,7 @@ namespace floyd {
 	ast_json_t statement_to_json(const statement_t& e);
 	ast_json_t body_to_json(const body_t& e);
 
+	ast_json_t symbol_to_json(const symbol_t& e);
 
 
 	ast_json_t expressions_to_json(const std::vector<expression_t> v);

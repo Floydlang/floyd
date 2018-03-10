@@ -1108,7 +1108,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 			throw std::runtime_error("Cannot resolve callee.");
 		}
 		else{
-			const auto callee_type2 = symbol->_default_value.get_typeid_value();
+			const auto callee_type2 = symbol->_const_value.get_typeid_value();
 			if(callee_type2.is_struct()){
 				const auto& def = callee_type2.get_struct();
 				const auto callee_args = get_member_types(def._members);
@@ -1298,7 +1298,7 @@ json_t analyser_to_json(const analyser_t& vm){
 			const auto b = json_t::make_array({
 				json_t((int)symbol_kv.second._symbol_type),
 				typeid_to_ast_json(symbol_kv.second._value_type)._value,
-				value_to_ast_json(symbol_kv.second._default_value)._value
+				value_to_ast_json(symbol_kv.second._const_value)._value
 			});
 			values[symbol_kv.first] = b;
 		}
@@ -1390,7 +1390,7 @@ typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
 		const auto v = resolve_env_symbol2(vm, type.get_unresolved_type_identifier());
 		if(v){
 			if(v->_value_type.is_typeid()){
-				return v->_default_value.get_typeid_value();
+				return v->_const_value.get_typeid_value();
 			}
 			else{
 				return typeid_t::make_null();
