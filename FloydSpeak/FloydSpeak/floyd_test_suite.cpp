@@ -1136,7 +1136,8 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	);
 }
 
-QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
+/*
+QUARK_UNIT_TEST_VIP("run_init()", "Block with local variable, no shadowing", "", ""){
 	const auto r = test__run_global(
 		R"(
 			int x = 3;
@@ -1151,7 +1152,7 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
 }
-
+*/
 
 
 

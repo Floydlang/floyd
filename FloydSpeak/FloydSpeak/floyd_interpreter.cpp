@@ -48,6 +48,7 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 
 //### add checking of function types when calling / returning from them. Also host functions.
 
+//??? not needed now?
 typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
 //		QUARK_ASSERT(false);
@@ -128,6 +129,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	}
 	else if(type.is_vector()){
 /*
+???
 		const auto element_type = type.get_vector_element_type();
 		vector<value_t> elements2;
 		if(element_type.is_vector()){
@@ -157,15 +159,15 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 }
 
 
-std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const body_t& body){
+std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: body._statements){ QUARK_ASSERT(i->check_invariant()); };
+	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
 	auto vm_acc = vm;
 
 	int statement_index = 0;
-	while(statement_index < body._statements.size()){
-		const auto statement = body._statements[statement_index];
+	while(statement_index < statements.size()){
+		const auto statement = statements[statement_index];
 		const auto& r = execute_statement(vm_acc, *statement);
 		vm_acc = r.first;
 		if(r.second._type == statement_result_t::k_return_unwind){
@@ -174,7 +176,7 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 		else{
 
 			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
-			if(statement_index == (body._statements.size() - 1)){
+			if(statement_index == (statements.size() - 1)){
 				if(r.second._type == statement_result_t::k_passive_expression_output){
 					return { vm_acc, r.second };
 				}
@@ -190,14 +192,14 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 std::pair<interpreter_t, statement_result_t> execute_body(
 	const interpreter_t& vm,
 	const body_t& body,
-	const std::map<std::string, std::pair<value_t, bool>>& input_values
+	const std::map<std::string, std::pair<value_t, bool>>& init_values
 )
 {
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
 
-	auto new_environment = environment_t::make_environment(&body, input_values);
+	auto new_environment = environment_t::make_environment(&body, init_values);
 	vm_acc._call_stack.push_back(new_environment);
 
 	const auto r = execute_statements(vm_acc, body._statements);
@@ -227,7 +229,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
 	const auto mutable_flag = bind_statement_mutable_mode == statement_t::bind_local_t::k_mutable;
 
-	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 0);
+	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 1);
 
 	//	Deduced bind type -- use new value's type.
 
@@ -295,7 +297,7 @@ std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const 
 	auto vm_acc = vm;
 	const auto struct_name = statement._name;
 
-	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(struct_name) == 0);
+	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(struct_name) == 1);
 
 	//	Resolve member types in this scope.
 	std::vector<member_t> members2;
@@ -1338,13 +1340,35 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 
 
-std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& input_values){
+//??? just vector of values, no bool!
+std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& init_values){
 	QUARK_ASSERT(body_ptr != nullptr);
 
-	std::map<std::string, std::pair<value_t, bool> > values = input_values;
+	std::map<std::string, std::pair<value_t, bool> > values;
+	for(const auto e: body_ptr->_symbols){
+		if(e.second._symbol_type == symbol_t::immutable_local){
+			const std::pair<std::string, std::pair<value_t, bool>> val = {e.first, { e.second._const_value, false } };
+			values.insert(val);
+		}
+		else if(e.second._symbol_type == symbol_t::mutable_local){
+			const std::pair<std::string, std::pair<value_t, bool>> val = {e.first, { e.second._const_value, true } };
+			values.insert(val);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+	for(const auto e: init_values){
+		auto found_it = values.find(e.first);
+		QUARK_ASSERT(found_it != values.end());
+
+		found_it->second.first = e.second.first;
+	}
+
 	const auto temp = environment_t{
 		body_ptr,
-		input_values
+		values
 	};
 	return make_shared<environment_t>(temp);
 }
@@ -1383,46 +1407,27 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	_ast = make_shared<ast_t>(ast);
 
-	std::map<std::string, std::pair<value_t, bool>> input_values;
-
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto host_functions = get_host_functions();
 	for(auto hf_kv: host_functions){
-		const auto& function_name = hf_kv.second._name;
-		const auto function_value = make_host_function_value(hf_kv.second._signature);
-		const auto value_entry = std::pair<value_t, bool>{ function_value, false };
-		input_values.insert({ function_name, value_entry });
+//		const auto& function_name = hf_kv.second._name;
+//		const auto function_value = make_host_function_value(hf_kv.second._signature);
+//		const auto value_entry = std::pair<value_t, bool>{ function_value, false };
 
 		const auto function_id = hf_kv.second._signature._function_id;
 		const auto function_ptr = hf_kv.second._f;
 		_host_functions.insert({ function_id, function_ptr });
 	}
 
-	input_values[keyword_t::k_null] = std::pair<value_t, bool>{value_t::make_null(), false };
-	input_values[keyword_t::k_bool] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
-	input_values[keyword_t::k_int] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
-	input_values[keyword_t::k_float] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
-	input_values[keyword_t::k_string] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
-	input_values[keyword_t::k_typeid] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid()), false };
-	input_values[keyword_t::k_json_value] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
-
-	input_values[keyword_t::k_json_object] = std::pair<value_t, bool>{value_t::make_int(1), false };
-	input_values[keyword_t::k_json_array] = std::pair<value_t, bool>{value_t::make_int(2), false };
-	input_values[keyword_t::k_json_string] = std::pair<value_t, bool>{value_t::make_int(3), false };
-	input_values[keyword_t::k_json_number] = std::pair<value_t, bool>{value_t::make_int(4), false };
-	input_values[keyword_t::k_json_true] = std::pair<value_t, bool>{value_t::make_int(5), false };
-	input_values[keyword_t::k_json_false] = std::pair<value_t, bool>{value_t::make_int(6), false };
-	input_values[keyword_t::k_json_null] = std::pair<value_t, bool>{value_t::make_int(7), false };
-
 	//	Make the top-level environment = global scope.
-	auto global_env = environment_t::make_environment(&_ast->_globals, input_values);
+	auto global_env = environment_t::make_environment(&_ast->_globals, {});
 
 	_call_stack.push_back(global_env);
 
 	_start_time = std::chrono::high_resolution_clock::now();
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _ast->_globals);
+	const auto r = execute_statements(*this, _ast->_globals._statements);
 
 	_print_output = r.first._print_output;
 	QUARK_ASSERT(check_invariant());
