@@ -197,10 +197,9 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 
 	auto vm_acc = vm;
 
-	auto new_environment = environment_t::make_environment(vm_acc);
+	auto new_environment = environment_t::make_environment(&body, input_values);
 	vm_acc._call_stack.push_back(new_environment);
 
-	vm_acc._call_stack.back()->_values.insert(input_values.begin(), input_values.end());
 	const auto r = execute_statements(vm_acc, body._statements);
 	vm_acc = r.first;
 	vm_acc._call_stack.pop_back();
@@ -1339,11 +1338,15 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 
 
-std::shared_ptr<environment_t> environment_t::make_environment(const interpreter_t& vm){
-	QUARK_ASSERT(vm.check_invariant());
+std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& input_values){
+	QUARK_ASSERT(body_ptr != nullptr);
 
-	auto f = environment_t{ {} };
-	return make_shared<environment_t>(f);
+	std::map<std::string, std::pair<value_t, bool> > values = input_values;
+	const auto temp = environment_t{
+		body_ptr,
+		input_values
+	};
+	return make_shared<environment_t>(temp);
 }
 
 bool environment_t::check_invariant() const {
@@ -1380,8 +1383,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	_ast = make_shared<ast_t>(ast);
 
-	//	Make the top-level environment = global scope.
-	auto global_env = environment_t::make_environment(*this);
+	std::map<std::string, std::pair<value_t, bool>> input_values;
 
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto host_functions = get_host_functions();
@@ -1389,28 +1391,31 @@ interpreter_t::interpreter_t(const ast_t& ast){
 		const auto& function_name = hf_kv.second._name;
 		const auto function_value = make_host_function_value(hf_kv.second._signature);
 		const auto value_entry = std::pair<value_t, bool>{ function_value, false };
-		global_env->_values.insert({ function_name, value_entry });
+		input_values.insert({ function_name, value_entry });
 
 		const auto function_id = hf_kv.second._signature._function_id;
 		const auto function_ptr = hf_kv.second._f;
 		_host_functions.insert({ function_id, function_ptr });
 	}
 
-	global_env->_values[keyword_t::k_null] = std::pair<value_t, bool>{value_t::make_null(), false };
-	global_env->_values[keyword_t::k_bool] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
-	global_env->_values[keyword_t::k_int] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
-	global_env->_values[keyword_t::k_float] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
-	global_env->_values[keyword_t::k_string] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
-	global_env->_values[keyword_t::k_typeid] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid()), false };
-	global_env->_values[keyword_t::k_json_value] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
+	input_values[keyword_t::k_null] = std::pair<value_t, bool>{value_t::make_null(), false };
+	input_values[keyword_t::k_bool] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_bool()), false };
+	input_values[keyword_t::k_int] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_int()), false };
+	input_values[keyword_t::k_float] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_float()), false };
+	input_values[keyword_t::k_string] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_string()), false };
+	input_values[keyword_t::k_typeid] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_typeid()), false };
+	input_values[keyword_t::k_json_value] = std::pair<value_t, bool>{value_t::make_typeid_value(typeid_t::make_json_value()), false };
 
-	global_env->_values[keyword_t::k_json_object] = std::pair<value_t, bool>{value_t::make_int(1), false };
-	global_env->_values[keyword_t::k_json_array] = std::pair<value_t, bool>{value_t::make_int(2), false };
-	global_env->_values[keyword_t::k_json_string] = std::pair<value_t, bool>{value_t::make_int(3), false };
-	global_env->_values[keyword_t::k_json_number] = std::pair<value_t, bool>{value_t::make_int(4), false };
-	global_env->_values[keyword_t::k_json_true] = std::pair<value_t, bool>{value_t::make_int(5), false };
-	global_env->_values[keyword_t::k_json_false] = std::pair<value_t, bool>{value_t::make_int(6), false };
-	global_env->_values[keyword_t::k_json_null] = std::pair<value_t, bool>{value_t::make_int(7), false };
+	input_values[keyword_t::k_json_object] = std::pair<value_t, bool>{value_t::make_int(1), false };
+	input_values[keyword_t::k_json_array] = std::pair<value_t, bool>{value_t::make_int(2), false };
+	input_values[keyword_t::k_json_string] = std::pair<value_t, bool>{value_t::make_int(3), false };
+	input_values[keyword_t::k_json_number] = std::pair<value_t, bool>{value_t::make_int(4), false };
+	input_values[keyword_t::k_json_true] = std::pair<value_t, bool>{value_t::make_int(5), false };
+	input_values[keyword_t::k_json_false] = std::pair<value_t, bool>{value_t::make_int(6), false };
+	input_values[keyword_t::k_json_null] = std::pair<value_t, bool>{value_t::make_int(7), false };
+
+	//	Make the top-level environment = global scope.
+	auto global_env = environment_t::make_environment(&_ast->_globals, input_values);
 
 	_call_stack.push_back(global_env);
 

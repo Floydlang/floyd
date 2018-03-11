@@ -88,13 +88,15 @@ namespace floyd {
 	*/
 
 	struct environment_t {
+		public: const body_t* _body_ptr;
+
 		//	Bool says if value is MUTABLE. Which is rare.
 		public: std::map<std::string, std::pair<value_t, bool> > _values;
 
 
 		public: bool check_invariant() const;
 
-		public: static std::shared_ptr<environment_t> make_environment(const interpreter_t& vm);
+		public: static std::shared_ptr<environment_t> make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& input_values);
 	};
 
 
