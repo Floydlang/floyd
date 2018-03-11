@@ -479,7 +479,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
 
 
 
-QUARK_UNIT_TESTQ("run_main", "Can make and read global int"){
+QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
 	test__run_main(
 		"int test = 123;"
 		"int main(){\n"
@@ -698,7 +698,7 @@ QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several
 	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t::make_int(15)));
 }
 
-QUARK_UNIT_TESTQ("call_function()", "use function inputs"){
+QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	const auto context = make_test_interpreter_context();
 	auto ast = program_to_ast2(context,
 		"string main(string args){\n"

@@ -205,7 +205,7 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 	vm_acc = r.first;
 	vm_acc._call_stack.pop_back();
 
-	QUARK_ASSERT(r.first._call_stack.back()->_values.size() == body._symbols.size());
+//	QUARK_ASSERT(r.first._call_stack.back()->_values.size() == body._symbols.size());
 
 	return { vm_acc, r.second };
 }

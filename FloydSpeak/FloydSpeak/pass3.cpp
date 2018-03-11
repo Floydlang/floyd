@@ -43,6 +43,16 @@ std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const
 
 
 
+const std::map<std::string, symbol_t> symbol_vec_to_map(const std::vector<std::pair<std::string, symbol_t>>& symbols){
+	std::map<std::string, symbol_t> result;
+	for(const auto e: symbols){
+		result[e.first] = e.second;
+	}
+	return result;
+}
+
+
+
 std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
@@ -63,19 +73,14 @@ std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const 
 	return { vm_acc, statements2 };
 }
 
-std::pair<analyser_t, body_t > analyse_body(
-	const analyser_t& vm,
-	const floyd::body_t& body,
-	const std::map<std::string, symbol_t>& symbols
-){
+std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	auto parent_env = vm_acc._call_stack.back();
-	auto new_environment = lexical_scope_t::make_environment(vm_acc);
-	vm_acc._call_stack.push_back(new_environment);
 
-	vm_acc._call_stack.back()->_symbols.insert(symbols.begin(), symbols.end());
+	const std::map<std::string, symbol_t> symbol_map = symbol_vec_to_map(body._symbols);
+	auto new_environment = lexical_scope_t{ symbol_map };
+	vm_acc._call_stack.push_back(make_shared<lexical_scope_t>(new_environment));
 	const auto result = analyse_statements(vm_acc, body._statements);
 	vm_acc = result.first;
 
@@ -305,7 +310,7 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& vm,
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto statement = *s._block;
-	const auto e = analyse_body(vm, statement._body, {});
+	const auto e = analyse_body(vm, statement._body);
 	return {e.first, statement_t::make__block_statement(e.second)};
 }
 
@@ -364,8 +369,8 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm
 		throw std::runtime_error("Boolean condition required.");
 	}
 
-	const auto then2 = analyse_body(vm_acc, statement._then_body, {});
-	const auto else2 = analyse_body(vm_acc, statement._else_body, {});
+	const auto then2 = analyse_body(vm_acc, statement._then_body);
+	const auto else2 = analyse_body(vm_acc, statement._else_body);
 	return { vm_acc, statement_t::make__ifelse_statement(condition2.second, then2.second, else2.second) };
 }
 
@@ -389,9 +394,12 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, c
 	}
 
 	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
-	const std::map<std::string, symbol_t> symbols = { { statement._iterator_name, iterator_symbol} };
 
-	const auto result = analyse_body(vm_acc, statement._body, symbols);
+	//	Add the iterator as a symbol to the body of the for-loop.
+	auto symbols = statement._body._symbols;
+	symbols.push_back({ statement._iterator_name, iterator_symbol});
+	const auto body_injected = body_t(statement._body._statements, symbols);
+	const auto result = analyse_body(vm_acc, body_injected);
 	vm_acc = result.first;
 
 	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second) };
@@ -405,7 +413,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm,
 	const auto condition2_expr = analyse_expression_no_target(vm_acc, statement._condition);
 	vm_acc = condition2_expr.first;
 
-	const auto result = analyse_body(vm_acc, statement._body, {});
+	const auto result = analyse_body(vm_acc, statement._body);
 	vm_acc = result.first;
 
 	return { vm_acc, statement_t::make__while_statement(condition2_expr.second, result.second) };
@@ -1147,16 +1155,14 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto def = function_def_expr._def;
 	const auto function_type = get_function_type(def);
 
-	const std::map<std::string, symbol_t> symbols =
-		[&](){
-			std::map<std::string, symbol_t> result;
-			for(const auto e: def._args){
-				result[e._name] = symbol_t::make_immutable_local(e._type);
-			}
-			return result;
-		}();
+	//	Make function body with arguments injected as local symbols.
+	auto symbol_vec = def._body->_symbols;
+	for(const auto x: def._args){
+		symbol_vec.push_back({x._name , symbol_t::make_immutable_local(x._type)});
+	}
+	const auto injected_body = body_t(def._body->_statements, symbol_vec);
 
-	const auto function_body_pair = analyse_body(vm, *def._body, symbols);
+	const auto function_body_pair = analyse_body(vm, injected_body);
 	auto vm_acc = function_body_pair.first;
 
 	const auto body = function_body_pair.second;
@@ -1447,8 +1453,6 @@ ast_t analyse(const analyser_t& a0){
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto result = analyse_statements(a, a._imm->_ast._globals._statements);
-
-	a._call_stack[0]->_symbols = result.first._call_stack[0]->_symbols;
 
 	const auto result_ast = ast_t(body_t{result.second, {}});
 
