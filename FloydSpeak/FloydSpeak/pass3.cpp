@@ -72,7 +72,7 @@ std::pair<analyser_t, body_t > analyse_body(
 
 	auto vm_acc = vm;
 	auto parent_env = vm_acc._call_stack.back();
-	auto new_environment = lexical_scope_t::make_environment(vm_acc, parent_env);
+	auto new_environment = lexical_scope_t::make_environment(vm_acc);
 	vm_acc._call_stack.push_back(new_environment);
 
 	vm_acc._call_stack.back()->_symbols.insert(symbols.begin(), symbols.end());
@@ -97,17 +97,17 @@ std::pair<analyser_t, body_t > analyse_body(
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-symbol_t* resolve_env_variable_deep(const analyser_t& vm, const shared_ptr<lexical_scope_t>& env, const std::string& s){
+symbol_t* resolve_env_variable_deep(const analyser_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(env && env->check_invariant());
+	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto it = env->_symbols.find(s);
-	if(it != env->_symbols.end()){
+	const auto it = vm._call_stack[depth]->_symbols.find(s);
+	if(it != vm._call_stack[depth]->_symbols.end()){
 		return &it->second;
 	}
-	else if(env->_parent_env){
-		return resolve_env_variable_deep(vm, env->_parent_env, s);
+	else if(depth > 0){
+		return resolve_env_variable_deep(vm, depth - 1, s);
 	}
 	else{
 		return nullptr;
@@ -119,7 +119,7 @@ symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_env_variable_deep(vm, vm._call_stack.back(), s);
+	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
 }
 
 symbol_t find_global_symbol(const analyser_t& vm, const string& s){
@@ -1364,14 +1364,10 @@ QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
 
 
 
-std::shared_ptr<lexical_scope_t> lexical_scope_t::make_environment(
-	const analyser_t& vm,
-	std::shared_ptr<lexical_scope_t>& parent_env
-)
-{
+std::shared_ptr<lexical_scope_t> lexical_scope_t::make_environment(const analyser_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto f = lexical_scope_t{ parent_env, {} };
+	auto f = lexical_scope_t{ {} };
 	return make_shared<lexical_scope_t>(f);
 }
 
@@ -1422,8 +1418,7 @@ ast_t analyse(const analyser_t& a0){
 	auto a = a0;
 
 	//	Make the top-level environment = global scope.
-	shared_ptr<lexical_scope_t> empty_env;
-	auto global_env = lexical_scope_t::make_environment(a, empty_env);
+	auto global_env = lexical_scope_t::make_environment(a);
 
 	//	Insert built-in functions into AST.
 	for(auto hf_kv: a0._imm->_host_functions){

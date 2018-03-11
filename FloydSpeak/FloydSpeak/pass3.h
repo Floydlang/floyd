@@ -46,16 +46,12 @@ namespace floyd_pass3 {
 
 
 	struct lexical_scope_t {
-		public: std::shared_ptr<lexical_scope_t> _parent_env;
 		public: std::map<std::string, floyd::symbol_t> _symbols;
 
 
 		public: bool check_invariant() const;
 
-		public: static std::shared_ptr<lexical_scope_t> make_environment(
-			const analyser_t& vm,
-			std::shared_ptr<lexical_scope_t>& parent_env
-		);
+		public: static std::shared_ptr<lexical_scope_t> make_environment(const analyser_t& vm);
 	};
 
 
