@@ -190,7 +190,7 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 std::pair<interpreter_t, statement_result_t> execute_body(
 	const interpreter_t& vm,
 	const body_t& body,
-	const std::map<std::string, std::pair<value_t, bool>>& values
+	const std::map<std::string, std::pair<value_t, bool>>& input_values
 )
 {
 	QUARK_ASSERT(vm.check_invariant());
@@ -200,7 +200,7 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 	auto new_environment = environment_t::make_environment(vm_acc);
 	vm_acc._call_stack.push_back(new_environment);
 
-	vm_acc._call_stack.back()->_values.insert(values.begin(), values.end());
+	vm_acc._call_stack.back()->_values.insert(input_values.begin(), input_values.end());
 	const auto r = execute_statements(vm_acc, body._statements);
 	vm_acc = r.first;
 	vm_acc._call_stack.pop_back();
@@ -1381,9 +1381,9 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_ast = make_shared<ast_t>(ast);
 
 	//	Make the top-level environment = global scope.
-	shared_ptr<environment_t> empty_env;
 	auto global_env = environment_t::make_environment(*this);
 
+	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto host_functions = get_host_functions();
 	for(auto hf_kv: host_functions){
 		const auto& function_name = hf_kv.second._name;
@@ -1419,7 +1419,6 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto r = execute_statements(*this, _ast->_globals._statements);
 
-	_call_stack[0]->_values = r.first._call_stack[0]->_values;
 	_print_output = r.first._print_output;
 	QUARK_ASSERT(check_invariant());
 }

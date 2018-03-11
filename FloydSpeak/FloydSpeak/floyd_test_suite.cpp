@@ -684,7 +684,7 @@ QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
 
 
 
-QUARK_UNIT_TESTQ("call_function()", "define additional function, call it several times"){
+QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
 	const auto context = make_test_interpreter_context();
 	auto ast = program_to_ast2(context,
 		"int myfunc(){ return 5; }\n"
