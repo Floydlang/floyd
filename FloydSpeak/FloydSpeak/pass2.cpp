@@ -191,7 +191,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto statements = statement.get_array_n(1);
 		const auto r = parser_statements_to_ast__lossy(tracer, ast_json_t{statements});
 
-		const auto body = body_t{r};
+		const auto body = body_t(r);
 		return statement_t::make__block_statement(body);
 	}
 

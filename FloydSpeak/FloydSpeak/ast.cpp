@@ -22,7 +22,9 @@ namespace floyd {
 	////////////////////////			ast_t
 
 
-	ast_t::ast_t(){
+	ast_t::ast_t() :
+		_globals({})
+	{
 		QUARK_ASSERT(check_invariant());
 	}
 

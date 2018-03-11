@@ -86,7 +86,7 @@ std::pair<analyser_t, body_t > analyse_body(
 				const auto e2 = std::pair<std::string, symbol_t>{ e.first, e.second };
 				symbols.push_back(e2);
 			}
-			return body_t{result.second, symbols};
+			return body_t(result.second, symbols);
 		}();
 
 
@@ -1450,7 +1450,7 @@ ast_t analyse(const analyser_t& a0){
 
 	a._call_stack[0]->_symbols = result.first._call_stack[0]->_symbols;
 
-	const auto result_ast = ast_t(body_t{result.second});
+	const auto result_ast = ast_t(body_t{result.second, {}});
 
 	QUARK_ASSERT(result_ast.check_invariant());
 	return result_ast;
