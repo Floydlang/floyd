@@ -47,11 +47,6 @@ namespace floyd_pass3 {
 
 	struct lexical_scope_t {
 		public: std::map<std::string, floyd::symbol_t> _symbols;
-
-
-		public: bool check_invariant() const;
-
-		public: static std::shared_ptr<lexical_scope_t> make_environment(const analyser_t& vm);
 	};
 
 

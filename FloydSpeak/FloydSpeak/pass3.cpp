@@ -43,10 +43,17 @@ std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const
 
 
 
-const std::map<std::string, symbol_t> symbol_vec_to_map(const std::vector<std::pair<std::string, symbol_t>>& symbols){
+std::map<std::string, symbol_t> symbol_vec_to_map(const std::vector<std::pair<std::string, symbol_t>>& symbols){
 	std::map<std::string, symbol_t> result;
 	for(const auto e: symbols){
 		result[e.first] = e.second;
+	}
+	return result;
+}
+std::vector<std::pair<std::string, symbol_t>> symbol_map_to_vec(const std::map<std::string, symbol_t>& symbols){
+	std::vector<std::pair<std::string, symbol_t>> result;
+	for(const auto e: symbols){
+		result.push_back({e.first, e.second});
 	}
 	return result;
 }
@@ -84,16 +91,7 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::b
 	const auto result = analyse_statements(vm_acc, body._statements);
 	vm_acc = result.first;
 
-	const body_t body2 =
-		[&](){
-			std::vector<std::pair<std::string, symbol_t>> symbols;
-			for(const auto e: result.first._call_stack.back()->_symbols){
-				const auto e2 = std::pair<std::string, symbol_t>{ e.first, e.second };
-				symbols.push_back(e2);
-			}
-			return body_t(result.second, symbols);
-		}();
-
+	const auto body2 = body_t(result.second, symbol_map_to_vec(result.first._call_stack.back()->_symbols));
 
 	vm_acc._call_stack.pop_back();
 	return { vm_acc, body2 };
@@ -1366,25 +1364,6 @@ QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
 
 
 
-//////////////////////////		lexical_scope_t
-
-
-
-std::shared_ptr<lexical_scope_t> lexical_scope_t::make_environment(const analyser_t& vm){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto f = lexical_scope_t{ {} };
-	return make_shared<lexical_scope_t>(f);
-}
-
-bool lexical_scope_t::check_invariant() const {
-	return true;
-}
-
-
-
-
-
 //### add checking of function types when calling / returning from them. Also host functions.
 
 typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
@@ -1418,43 +1397,40 @@ analyser_t::analyser_t(const ast_t& ast){
 
 
 
-ast_t analyse(const analyser_t& a0){
-	QUARK_ASSERT(a0.check_invariant());
+ast_t analyse(const analyser_t& a){
+	QUARK_ASSERT(a.check_invariant());
 
-	auto a = a0;
-
-	//	Make the top-level environment = global scope.
-	auto global_env = lexical_scope_t::make_environment(a);
+	/*
+		Create built-in globla symbol map: built in data types, built-in functions (host functions).
+	*/
+	std::map<std::string, symbol_t> symbol_map;
 
 	//	Insert built-in functions into AST.
-	for(auto hf_kv: a0._imm->_host_functions){
+	for(auto hf_kv: a._imm->_host_functions){
 		const auto& function_name = hf_kv.first;
 		const auto function_value = make_host_function_value(hf_kv.second);
-		global_env->_symbols[function_name] = symbol_t::make_constant(function_value);
+		symbol_map[function_name] = symbol_t::make_constant(function_value);
 	}
 
-	global_env->_symbols[keyword_t::k_null] = symbol_t::make_constant(value_t::make_null());
-	global_env->_symbols[keyword_t::k_bool] = symbol_t::make_type(typeid_t::make_bool());
-	global_env->_symbols[keyword_t::k_int] = symbol_t::make_type(typeid_t::make_int());
-	global_env->_symbols[keyword_t::k_float] = symbol_t::make_type(typeid_t::make_float());
-	global_env->_symbols[keyword_t::k_string] = symbol_t::make_type(typeid_t::make_string());
-	global_env->_symbols[keyword_t::k_typeid] = symbol_t::make_type(typeid_t::make_typeid());
-	global_env->_symbols[keyword_t::k_json_value] = symbol_t::make_type(typeid_t::make_json_value());
+	symbol_map[keyword_t::k_null] = symbol_t::make_constant(value_t::make_null());
+	symbol_map[keyword_t::k_bool] = symbol_t::make_type(typeid_t::make_bool());
+	symbol_map[keyword_t::k_int] = symbol_t::make_type(typeid_t::make_int());
+	symbol_map[keyword_t::k_float] = symbol_t::make_type(typeid_t::make_float());
+	symbol_map[keyword_t::k_string] = symbol_t::make_type(typeid_t::make_string());
+	symbol_map[keyword_t::k_typeid] = symbol_t::make_type(typeid_t::make_typeid());
+	symbol_map[keyword_t::k_json_value] = symbol_t::make_type(typeid_t::make_json_value());
 
-	global_env->_symbols[keyword_t::k_json_object] = symbol_t::make_constant(value_t::make_int(1));
-	global_env->_symbols[keyword_t::k_json_array] = symbol_t::make_constant(value_t::make_int(2));
-	global_env->_symbols[keyword_t::k_json_string] = symbol_t::make_constant(value_t::make_int(3));
-	global_env->_symbols[keyword_t::k_json_number] = symbol_t::make_constant(value_t::make_int(4));
-	global_env->_symbols[keyword_t::k_json_true] = symbol_t::make_constant(value_t::make_int(5));
-	global_env->_symbols[keyword_t::k_json_false] = symbol_t::make_constant(value_t::make_int(6));
-	global_env->_symbols[keyword_t::k_json_null] = symbol_t::make_constant(value_t::make_int(7));
+	symbol_map[keyword_t::k_json_object] = symbol_t::make_constant(value_t::make_int(1));
+	symbol_map[keyword_t::k_json_array] = symbol_t::make_constant(value_t::make_int(2));
+	symbol_map[keyword_t::k_json_string] = symbol_t::make_constant(value_t::make_int(3));
+	symbol_map[keyword_t::k_json_number] = symbol_t::make_constant(value_t::make_int(4));
+	symbol_map[keyword_t::k_json_true] = symbol_t::make_constant(value_t::make_int(5));
+	symbol_map[keyword_t::k_json_false] = symbol_t::make_constant(value_t::make_int(6));
+	symbol_map[keyword_t::k_json_null] = symbol_t::make_constant(value_t::make_int(7));
 
-	a._call_stack.push_back(global_env);
-
-	//	Run static intialization (basically run global statements before calling main()).
-	const auto result = analyse_statements(a, a._imm->_ast._globals._statements);
-
-	const auto result_ast = ast_t(body_t{result.second, {}});
+	const auto body = body_t(a._imm->_ast._globals._statements, symbol_map_to_vec(symbol_map));
+	const auto result = analyse_body(a, body);
+	const auto result_ast = ast_t(result.second);
 
 	QUARK_ASSERT(result_ast.check_invariant());
 	return result_ast;
