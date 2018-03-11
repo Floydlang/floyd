@@ -157,15 +157,15 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 }
 
 
-std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const vector<shared_ptr<statement_t>>& statements){
+std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
+	for(const auto i: body._statements){ QUARK_ASSERT(i->check_invariant()); };
 
 	auto vm_acc = vm;
 
 	int statement_index = 0;
-	while(statement_index < statements.size()){
-		const auto statement = statements[statement_index];
+	while(statement_index < body._statements.size()){
+		const auto statement = body._statements[statement_index];
 		const auto& r = execute_statement(vm_acc, *statement);
 		vm_acc = r.first;
 		if(r.second._type == statement_result_t::k_return_unwind){
@@ -174,7 +174,7 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 		else{
 
 			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
-			if(statement_index == (statements.size() - 1)){
+			if(statement_index == (body._statements.size() - 1)){
 				if(r.second._type == statement_result_t::k_passive_expression_output){
 					return { vm_acc, r.second };
 				}
@@ -1417,7 +1417,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_start_time = std::chrono::high_resolution_clock::now();
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _ast->_globals._statements);
+	const auto r = execute_statements(*this, _ast->_globals);
 
 	_print_output = r.first._print_output;
 	QUARK_ASSERT(check_invariant());
