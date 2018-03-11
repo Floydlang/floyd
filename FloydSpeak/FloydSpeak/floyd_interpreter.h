@@ -88,17 +88,13 @@ namespace floyd {
 	*/
 
 	struct environment_t {
-		public: std::shared_ptr<environment_t> _parent_env;
 		//	Bool says if value is MUTABLE. Which is rare.
 		public: std::map<std::string, std::pair<value_t, bool> > _values;
 
 
 		public: bool check_invariant() const;
 
-		public: static std::shared_ptr<environment_t> make_environment(
-			const interpreter_t& vm,
-			std::shared_ptr<environment_t>& parent_env
-		);
+		public: static std::shared_ptr<environment_t> make_environment(const interpreter_t& vm);
 	};
 
 

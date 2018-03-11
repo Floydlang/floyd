@@ -197,8 +197,7 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 
 	auto vm_acc = vm;
 
-	auto parent_env = vm_acc._call_stack.back();
-	auto new_environment = environment_t::make_environment(vm_acc, parent_env);
+	auto new_environment = environment_t::make_environment(vm_acc);
 	vm_acc._call_stack.push_back(new_environment);
 
 	vm_acc._call_stack.back()->_values.insert(values.begin(), values.end());
@@ -440,17 +439,17 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& vm, const shared_ptr<environment_t>& env, const std::string& s){
+std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(env && env->check_invariant());
+	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto it = env->_values.find(s);
-	if(it != env->_values.end()){
+	const auto it = vm._call_stack[depth]->_values.find(s);
+	if(it != vm._call_stack[depth]->_values.end()){
 		return &it->second;
 	}
-	else if(env->_parent_env){
-		return resolve_env_variable_deep(vm, env->_parent_env, s);
+	else if(depth > 0){
+		return resolve_env_variable_deep(vm, depth - 1, s);
 	}
 	else{
 		return nullptr;
@@ -462,7 +461,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_env_variable_deep(vm, vm._call_stack.back(), s);
+	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
 }
 
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
@@ -1340,14 +1339,10 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 
 
-std::shared_ptr<environment_t> environment_t::make_environment(
-	const interpreter_t& vm,
-	std::shared_ptr<environment_t>& parent_env
-)
-{
+std::shared_ptr<environment_t> environment_t::make_environment(const interpreter_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto f = environment_t{ parent_env, {} };
+	auto f = environment_t{ {} };
 	return make_shared<environment_t>(f);
 }
 
@@ -1387,7 +1382,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	//	Make the top-level environment = global scope.
 	shared_ptr<environment_t> empty_env;
-	auto global_env = environment_t::make_environment(*this, empty_env);
+	auto global_env = environment_t::make_environment(*this);
 
 	const auto host_functions = get_host_functions();
 	for(auto hf_kv: host_functions){
