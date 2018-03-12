@@ -370,7 +370,7 @@ namespace floyd {
 
 
 		////////////////////////////////			variable_expr_t
-
+		//??? rename to "load_variable".
 
 		public: struct variable_expr_t : public expr_base_t {
 			variable_expr_t(std::string variable) :

@@ -302,7 +302,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	const auto rhs_value = rhs_expr_pair.second.get_literal();
 
 	const auto lhs_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
-	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
+//	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
 
 	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
 //	QUARK_ASSERT(lhs_value_is_mutable);
