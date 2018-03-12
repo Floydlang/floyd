@@ -657,6 +657,21 @@ std::pair<analyser_t, expression_t> analyse_variable_expression(const analyser_t
 	}
 }
 
+std::pair<analyser_t, expression_t> analyse_variable_access_expression(const analyser_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto expr = *e.get_variable();
+
+	auto vm_acc = vm;
+	const auto value = resolve_env_symbol2(vm_acc, expr._variable);
+	if(value != nullptr){
+		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(value->_value_type)) };
+	}
+	else{
+		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
+	}
+}
+
 std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const analyser_t& vm, const expression_t::vector_definition_exprt_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1104,7 +1119,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
-	else if(callee_type.is_typeid() && callee_expr.get_operation() == expression_type::k_variable){
+	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_variable || callee_expr.get_operation() == expression_type::k_variable)){
 		const auto variable_expr = *callee_expr.get_variable();
 		const auto variable_name = variable_expr._variable;
 		const symbol_t* symbol = resolve_env_symbol2(vm_acc, variable_name);
@@ -1187,6 +1202,9 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	}
 	else if(op == expression_type::k_variable){
 		return analyse_variable_expression(vm, e);
+	}
+	else if(op == expression_type::k_variable_access){
+		return analyse_variable_access_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_call){

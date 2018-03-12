@@ -93,6 +93,9 @@ namespace floyd {
 		//	c99: a				token: "@"
 		k_variable,
 
+		//	c99: a				token: "@i"
+		k_variable_access,
+
 		//	c99: a.b			token: "->"
 		k_resolve_member,
 

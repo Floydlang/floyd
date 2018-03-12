@@ -595,13 +595,31 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 	}
 }
 
-std::pair<interpreter_t, expression_t> evaluate_variable_expression(const interpreter_t& vm, const expression_t::variable_expr_t& expr){
+//??? return value_t instead of expression!
+std::pair<interpreter_t, expression_t> evaluate_variable_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+
+	const auto expr = *e.get_variable();
 
 	auto vm_acc = vm;
 	const auto value = resolve_env_variable(vm_acc, expr._variable);
 	QUARK_ASSERT(value != nullptr);
 	return {vm_acc, expression_t::make_literal(value->first)};
+}
+
+std::pair<interpreter_t, expression_t> evaluate_variable_access_expression(const interpreter_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto expr = *e.get_variable_access();
+
+	auto vm_acc = vm;
+
+	QUARK_ASSERT(expr._parent_steps == 0);
+
+	//??? We need to store values in vector so we can index them.
+	const auto value = vm._call_stack.back()->_values.begin()->second.first;
+
+	return {vm_acc, expression_t::make_literal(value)};
 }
 
 
@@ -1060,7 +1078,10 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		return evaluate_lookup_element_expression(vm, *e.get_lookup());
 	}
 	else if(op == expression_type::k_variable){
-		return evaluate_variable_expression(vm, *e.get_variable());
+		return evaluate_variable_expression(vm, e);
+	}
+	else if(op == expression_type::k_variable_access){
+		return evaluate_variable_access_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_call){

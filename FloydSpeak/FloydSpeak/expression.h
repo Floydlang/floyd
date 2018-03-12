@@ -185,6 +185,7 @@ namespace floyd {
 				|| op == expression_type::k_conditional_operator3
 				|| op == expression_type::k_call
 				|| op == expression_type::k_variable
+				|| op == expression_type::k_variable_access
 				|| op == expression_type::k_resolve_member
 				|| op == expression_type::k_lookup_element
 				|| op == expression_type::k_define_function)
@@ -372,10 +373,7 @@ namespace floyd {
 
 
 		public: struct variable_expr_t : public expr_base_t {
-			variable_expr_t(
-				std::string variable
-			)
-			:
+			variable_expr_t(std::string variable) :
 				_variable(variable)
 			{
 			}
@@ -407,6 +405,48 @@ namespace floyd {
 
 		public: const variable_expr_t* get_variable() const {
 			return dynamic_cast<const variable_expr_t*>(_expr.get());
+		}
+
+
+		////////////////////////////////			variable_access_expr_t
+
+
+		public: struct variable_access_expr_t : public expr_base_t {
+			variable_access_expr_t(int parent_steps, int index)
+			:
+				_parent_steps(parent_steps),
+				_index(index)
+			{
+			}
+
+
+			virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({ "@i", json_t(_parent_steps), json_t(_index) })};
+			}
+
+
+			const int _parent_steps;
+			const int _index;
+		};
+
+
+		/*
+			Specify free variables.
+			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
+		*/
+		public: static expression_t make_variable_access_expression(int parent_steps, int index, const std::shared_ptr<typeid_t>& annotated_type)
+		{
+			return expression_t{
+				expression_type::k_variable_access,
+				std::make_shared<variable_access_expr_t>(
+					variable_access_expr_t{ parent_steps, index }
+				),
+				annotated_type
+			};
+		}
+
+		public: const variable_access_expr_t* get_variable_access() const {
+			return dynamic_cast<const variable_access_expr_t*>(_expr.get());
 		}
 
 
@@ -760,6 +800,9 @@ namespace floyd {
 				else if(op == expression_type::k_variable){
 					return true;
 				}
+				else if(op == expression_type::k_variable_access){
+					return true;
+				}
 				else if(op == expression_type::k_call){
 					const auto e = *get_call();
 					if(e._callee->is_annotated_deep() == false){
@@ -891,6 +934,10 @@ namespace floyd {
 
 	inline bool operator==(const expression_t::variable_expr_t& lhs, const expression_t::variable_expr_t& rhs){
 		return lhs._variable == rhs._variable;
+	}
+
+	inline bool operator==(const expression_t::variable_access_expr_t& lhs, const expression_t::variable_access_expr_t& rhs){
+		return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
 	}
 
 	inline bool operator==(const expression_t::resolve_member_expr_t& lhs, const expression_t::resolve_member_expr_t& rhs){

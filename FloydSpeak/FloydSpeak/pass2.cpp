@@ -98,6 +98,12 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 		const auto variable_symbol = e.get_array_n(1).get_string();
 		return expression_t::make_variable_expression(variable_symbol, nullptr);
 	}
+	else if(op == "@i"){
+		QUARK_ASSERT(e.get_array_size() == 3);
+		const auto parent_step = (int)e.get_array_n(1).get_number();
+		const auto index = (int)e.get_array_n(2).get_number();
+		return expression_t::make_variable_access_expression(parent_step, index, nullptr);
+	}
 	else if(op == "[]"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto parent_address_expr = parser_expression_to_ast(tracer, e.get_array_n(1));
