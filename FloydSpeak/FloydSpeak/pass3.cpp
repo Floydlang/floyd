@@ -242,7 +242,7 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 		const auto rhs_expr2_type = rhs_expr2.second.get_annotated_type();
 
 		vm_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
-		return { vm_acc, statement_t::make__bind_local(local_name, rhs_expr2_type, rhs_expr2.second, statement_t::bind_local_t::k_immutable) };
+		return { vm_acc, statement_t::make__store_local(local_name, rhs_expr2.second) };
 	}
 }
 
@@ -298,7 +298,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			vm_acc._call_stack.back()->_symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
 			return {
 				vm_acc,
-				statement_t::make__bind_local(new_local_name, lhs_type2, rhs_expr_pair.second, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
+				statement_t::make__store_local(new_local_name, rhs_expr_pair.second)
 			};
 		}
 	}

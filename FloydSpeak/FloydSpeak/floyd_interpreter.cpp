@@ -305,10 +305,10 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
 
 	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
-	QUARK_ASSERT(lhs_value_is_mutable);
+//	QUARK_ASSERT(lhs_value_is_mutable);
 
 	const auto lhs_value = lhs_value_deep_ptr->first;
-	QUARK_ASSERT(lhs_value.get_type() == rhs_value.get_type());
+//	QUARK_ASSERT(lhs_value.get_type() == rhs_value.get_type());
 
 	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
 	return { vm_acc, statement_result_t::make_no_output() };
@@ -447,6 +447,8 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	QUARK_ASSERT(statement.check_invariant());
 
 	if(statement._bind_local){
+		//	Bind is converted to symbol table + store-local in pass3.
+		QUARK_ASSERT(false);
 		return execute_bind_local_statement(vm, *statement._bind_local);
 	}
 	else if(statement._store_local){
