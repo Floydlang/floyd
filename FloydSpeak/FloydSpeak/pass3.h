@@ -46,7 +46,7 @@ namespace floyd_pass3 {
 
 
 	struct lexical_scope_t {
-		public: std::map<std::string, floyd::symbol_t> _symbols;
+		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
 	};
 
 

@@ -85,13 +85,12 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::b
 
 	auto vm_acc = vm;
 
-	const std::map<std::string, symbol_t> symbol_map = symbol_vec_to_map(body._symbols);
-	auto new_environment = lexical_scope_t{ symbol_map };
+	auto new_environment = lexical_scope_t{ body._symbols };
 	vm_acc._call_stack.push_back(make_shared<lexical_scope_t>(new_environment));
 	const auto result = analyse_statements(vm_acc, body._statements);
 	vm_acc = result.first;
 
-	const auto body2 = body_t(result.second, symbol_map_to_vec(result.first._call_stack.back()->_symbols));
+	const auto body2 = body_t(result.second, result.first._call_stack.back()->_symbols);
 
 	vm_acc._call_stack.pop_back();
 	return { vm_acc, body2 };
@@ -105,7 +104,7 @@ symbol_t* resolve_env_variable_deep(const analyser_t& vm, int depth, const std::
 	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto it = vm._call_stack[depth]->_symbols.find(s);
+    const auto it = std::find_if(vm._call_stack[depth]->_symbols.begin(), vm._call_stack[depth]->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
 	if(it != vm._call_stack[depth]->_symbols.end()){
 		return &it->second;
 	}
@@ -242,10 +241,16 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 		vm_acc = rhs_expr2.first;
 		const auto rhs_expr2_type = rhs_expr2.second.get_annotated_type();
 
-		vm_acc._call_stack.back()->_symbols[local_name] = symbol_t::make_immutable_local(rhs_expr2_type);
+		vm_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
 		return { vm_acc, statement_t::make__bind_local(local_name, rhs_expr2_type, rhs_expr2.second, statement_t::bind_local_t::k_immutable) };
 	}
 }
+
+bool does_symbol_exist_shallow(const analyser_t& vm, const std::string& symbol_name){
+    const auto it = std::find_if(vm._call_stack.back()->_symbols.begin(), vm._call_stack.back()->_symbols.end(),  [&symbol_name](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == symbol_name; });
+	return it != vm._call_stack.back()->_symbols.end();
+}
+
 
 /*
 Assign with target type info.
@@ -266,7 +271,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	const auto lhs_type = statement._bindtype;
 	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
-	const auto value_exists_in_env = vm_acc._call_stack.back()->_symbols.count(new_local_name) > 0;
+	const auto value_exists_in_env = does_symbol_exist_shallow(vm_acc, new_local_name);
 	if(value_exists_in_env){
 		throw std::runtime_error("Local identifier already exists.");
 	}
@@ -274,7 +279,8 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	//	Setup temporary simply so function definition can find itself = recursive.
 	//	Notice: the final type may not be correct yet, but for function defintions it is.
 	//	This logicl should be available for deduced binds too, in analyse_store_local_statement().
-	vm_acc._call_stack.back()->_symbols[new_local_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type);
+	vm_acc._call_stack.back()->_symbols.push_back({new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type)});
+	const auto local_name_index = vm_acc._call_stack.back()->_symbols.size() - 1;
 
 	try {
 		const auto rhs_expr_pair = lhs_type.is_null()? analyse_expression_no_target(vm_acc, statement._expression) : analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
@@ -288,7 +294,8 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			throw std::runtime_error("Types not compatible in bind.");
 		}
 		else{
-			vm_acc._call_stack.back()->_symbols[new_local_name] = bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2);
+			//	Updated the symbol with the real function defintion.
+			vm_acc._call_stack.back()->_symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
 			return {
 				vm_acc,
 				statement_t::make__bind_local(new_local_name, lhs_type2, rhs_expr_pair.second, bind_statement_mutable_tag_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable)
@@ -298,7 +305,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	catch(...){
 
 		//	Erase temporary symbol.
-		vm_acc._call_stack.back()->_symbols.erase(new_local_name);
+		vm_acc._call_stack.back()->_symbols.pop_back();
 
 		throw;
 	}
@@ -334,7 +341,7 @@ std::pair<analyser_t, statement_t> analyse_def_struct_statement(const analyser_t
 
 	auto vm_acc = vm;
 	const auto struct_name = statement._name;
-	if(vm_acc._call_stack.back()->_symbols.count(struct_name) > 0){
+	if(does_symbol_exist_shallow(vm_acc, struct_name)){
 		throw std::runtime_error("Name already used.");
 	}
 
@@ -350,7 +357,7 @@ std::pair<analyser_t, statement_t> analyse_def_struct_statement(const analyser_t
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid);
-	vm_acc._call_stack.back()->_symbols[struct_name] = symbol_t::make_constant(struct_typeid_value);
+	vm_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
 	return { vm_acc, statement };
 }
 
