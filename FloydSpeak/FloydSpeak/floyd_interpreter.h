@@ -91,7 +91,7 @@ namespace floyd {
 		public: const body_t* _body_ptr;
 
 		//	Bool says if value is MUTABLE. Which is rare.
-		public: std::map<std::string, std::pair<value_t, bool> > _values;
+		public: std::vector<std::pair<std::string, std::pair<value_t, bool>> > _values;
 
 
 		public: bool check_invariant() const;

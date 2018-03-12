@@ -1885,6 +1885,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 	)");
 }
 
+/*
 QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
 	const auto vm = test__run_global(R"(
 		struct t { int a;}
@@ -1892,6 +1893,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
 	)");
 	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].first.is_typeid()	));
 }
+*/
 
 QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 	const auto vm = test__run_global(R"(

@@ -211,6 +211,44 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 	return { vm_acc, r.second };
 }
 
+bool does_symbol_exist_shallow(const interpreter_t& vm, const std::string& symbol){
+//	return vm._call_stack.back()->_values.count(symbol) == 1);
+
+    const auto it = std::find_if(
+    	vm._call_stack.back()->_values.begin(),
+    	vm._call_stack.back()->_values.end(),
+    	[&symbol](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == symbol; }
+	);
+	return it != vm._call_stack.back()->_values.end();
+}
+
+
+interpreter_t store(const interpreter_t& vm, const std::string& name, const value_t& value){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+
+	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, name) == true);
+//	vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
+
+    const auto it = std::find_if(
+    	vm._call_stack.back()->_values.begin(),
+    	vm._call_stack.back()->_values.end(),
+    	[&name](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == name; }
+	);
+	if(it != vm._call_stack.back()->_values.end()){
+
+		//	Store value in the vm.
+		it->second.first = value;
+		return vm_acc;
+	}
+	QUARK_ASSERT(false);
+}
+
+
+
+
+
 
 std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const interpreter_t& vm, const statement_t::bind_local_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -229,22 +267,24 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
 	const auto mutable_flag = bind_statement_mutable_mode == statement_t::bind_local_t::k_mutable;
 
-	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(name) == 1);
+	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, name) == true);
 
 	//	Deduced bind type -- use new value's type.
 
+	//??? THere should be no BIND in interpreter!?
 	//??? Should not be needed in interpreter. Move to pass3.
 	if(bind_statement_type.is_null()){
-//		QUARK_ASSERT(false);
-		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
+		vm_acc = store(vm_acc, name, rhs_value);
 	}
 
 	//	Explicit bind-type -- make sure source + dest types match.
 	else{
+		//??? Should not be needed in interpreter. Move to pass3.
 		if(bind_statement_type != rhs_value.get_type()){
 			throw std::runtime_error("Types not compatible in bind.");
 		}
-		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
+//		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
+		vm_acc = store(vm_acc, name, rhs_value);
 	}
 	return { vm_acc, statement_result_t::make_no_output() };
 }
@@ -297,7 +337,7 @@ std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const 
 	auto vm_acc = vm;
 	const auto struct_name = statement._name;
 
-	QUARK_ASSERT(vm_acc._call_stack.back()->_values.count(struct_name) == 1);
+	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, struct_name) == true);
 
 	//	Resolve member types in this scope.
 	std::vector<member_t> members2;
@@ -310,7 +350,9 @@ std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const 
 	}
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
-	vm_acc._call_stack.back()->_values[struct_name] = std::pair<value_t, bool>(value_t::make_typeid_value(struct_typeid), false);
+	const auto value = value_t::make_typeid_value(struct_typeid);
+//	vm_acc._call_stack.back()->_values[struct_name] = std::pair<value_t, bool>(value, false);
+	vm_acc = store(vm_acc, struct_name, value);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
@@ -445,7 +487,12 @@ std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& 
 	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto it = vm._call_stack[depth]->_values.find(s);
+
+    const auto it = std::find_if(
+    	vm._call_stack[depth]->_values.begin(),
+    	vm._call_stack[depth]->_values.end(),
+    	[&s](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == s; }
+	);
 	if(it != vm._call_stack[depth]->_values.end()){
 		return &it->second;
 	}
@@ -1387,10 +1434,13 @@ std::shared_ptr<environment_t> environment_t::make_environment(const body_t* bod
 		found_it->second.first = e.second.first;
 	}
 
-	const auto temp = environment_t{
-		body_ptr,
-		values
-	};
+
+	vector<std::pair<std::string, std::pair<value_t, bool>>> values2;
+	for(const auto e: values){
+		values2.push_back({e.first, e.second});
+	}
+
+	const auto temp = environment_t{ body_ptr, values2 };
 	return make_shared<environment_t>(temp);
 }
 
@@ -1549,8 +1599,16 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 }
 
 value_t get_global(const interpreter_t& vm, const std::string& name){
-	const auto entry = vm._call_stack[0]->_values[name];
-	return entry.first;
+
+    const auto it = std::find_if(
+    	vm._call_stack.front()->_values.begin(),
+    	vm._call_stack.front()->_values.end(),
+    	[&name](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == name; }
+	);
+	if(it != vm._call_stack.front()->_values.end()){
+		return it->second.first;
+	}
+	throw std::runtime_error("Cannot find global.");
 }
 
 
