@@ -473,7 +473,7 @@ std::pair<interpreter_t, value_t> evaluate_resolve_member_expression(const inter
 
 	const auto struct_instance = parent_expr.second.get_struct_value();
 
-	int index = find_struct_member_index(struct_instance->_def, expr._member_name);
+	int index = find_struct_member_index(*struct_instance->_def, expr._member_name);
 	QUARK_ASSERT(index != -1);
 
 	const value_t value = struct_instance->_member_values[index];

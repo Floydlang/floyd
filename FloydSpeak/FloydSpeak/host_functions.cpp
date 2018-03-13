@@ -288,7 +288,7 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 		const auto s = obj.get_struct_value();
 		const auto def = s->_def;
 
-		int member_index = find_struct_member_index(def, member_name);
+		int member_index = find_struct_member_index(*def, member_name);
 		if(member_index == -1){
 			throw std::runtime_error("Unknown member.");
 		}
@@ -298,9 +298,9 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 		QUARK_TRACE(typeid_to_compact_string(new_value.get_type()));
-		QUARK_TRACE(typeid_to_compact_string(def._members[member_index]._type));
+		QUARK_TRACE(typeid_to_compact_string(def->_members[member_index]._type));
 
-		const auto dest_member_entry = def._members[member_index];
+		const auto dest_member_entry = def->_members[member_index];
 		auto dest_member_resolved_type = dest_member_entry._type;
 		dest_member_resolved_type = resolve_type_using_env(vm, dest_member_entry._type);
 
@@ -329,7 +329,7 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 			const auto s = obj.get_struct_value();
 			const auto def = s->_def;
-			int member_index = find_struct_member_index(def, path[0]);
+			int member_index = find_struct_member_index(*def, path[0]);
 			if(member_index == -1){
 				throw std::runtime_error("Unknown member.");
 			}

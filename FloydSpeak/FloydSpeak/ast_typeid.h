@@ -173,6 +173,11 @@ namespace floyd {
 
 			return *_struct_def;
 		}
+		public: const std::shared_ptr<struct_definition_t>& get_struct_ref() const{
+			QUARK_ASSERT(get_base_type() == base_type::k_struct);
+
+			return _struct_def;
+		}
 
 
 		public: static typeid_t make_vector(const typeid_t& element_type){

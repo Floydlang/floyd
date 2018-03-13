@@ -61,11 +61,11 @@ namespace floyd {
 		An instance of a struct-type = a value of this struct.
 	*/
 	struct struct_instance_t {
-		public: struct_instance_t(const struct_definition_t& def, const std::vector<value_t>& member_values) :
+		public: struct_instance_t(const std::shared_ptr<struct_definition_t>& def, const std::vector<value_t>& member_values) :
 			_def(def),
 			_member_values(member_values)
 		{
-			QUARK_ASSERT(_def.check_invariant());
+			QUARK_ASSERT(_def && _def->check_invariant());
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -73,7 +73,7 @@ namespace floyd {
 		public: bool operator==(const struct_instance_t& other) const;
 
 
-		public: struct_definition_t _def;
+		public: std::shared_ptr<struct_definition_t> _def;
 		public: std::vector<value_t> _member_values;
 	};
 

@@ -24,7 +24,7 @@ namespace floyd {
 
 
 	bool struct_instance_t::check_invariant() const{
-		QUARK_ASSERT(_def.check_invariant());
+		QUARK_ASSERT(_def && _def->check_invariant());
 
 		for(const auto m: _member_values){
 			QUARK_ASSERT(m.check_invariant());
@@ -36,13 +36,13 @@ namespace floyd {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
-		return _def == other._def && _member_values == other._member_values;
+		return *_def == *other._def && _member_values == other._member_values;
 	}
 
 	std::string struct_instance_to_compact_string(const struct_instance_t& v){
 		std::vector<std::string> members;
-		for(int i = 0 ; i < v._def._members.size() ; i++){
-			const auto& def = v._def._members[i];
+		for(int i = 0 ; i < v._def->_members.size() ; i++){
+			const auto& def = v._def->_members[i];
 			const auto& value = v._member_values[i];
 
 			const auto m = /*typeid_to_compact_string(def._type) + " " +*/ def._name + "=" + to_compact_string_quote_strings(value);
@@ -851,8 +851,8 @@ ast_json_t value_to_ast_json(const value_t& v){
 	else if(v.is_struct()){
 		const auto struct_value = v.get_struct_value();
 		std::map<string, json_t> obj2;
-		for(int i = 0 ; i < struct_value->_def._members.size() ; i++){
-			const auto member = struct_value->_def._members[i];
+		for(int i = 0 ; i < struct_value->_def->_members.size() ; i++){
+			const auto member = struct_value->_def->_members[i];
 			const auto key = member._name;
 			const auto type = member._type;
 			const auto value = struct_value->_member_values[i];
@@ -965,7 +965,7 @@ value_t value_t::make_struct_value(const typeid_t& struct_type, const std::vecto
 	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved_type_identifier);
 
-	auto instance = std::shared_ptr<struct_instance_t>(new struct_instance_t{struct_type.get_struct(), values});
+	auto instance = std::shared_ptr<struct_instance_t>(new struct_instance_t{struct_type.get_struct_ref(), values});
 	return value_t(struct_type, instance);
 }
 
