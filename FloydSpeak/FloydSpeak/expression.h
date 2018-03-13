@@ -188,8 +188,9 @@ namespace floyd {
 				|| op == expression_type::k_load2
 				|| op == expression_type::k_resolve_member
 				|| op == expression_type::k_lookup_element
-				|| op == expression_type::k_define_function)
-			{
+				|| op == expression_type::k_define_struct
+				|| op == expression_type::k_define_function
+			){
 				QUARK_ASSERT(false);
 				throw std::exception();
 			}
@@ -334,6 +335,43 @@ namespace floyd {
 		public: const call_expr_t* get_call() const {
 			return dynamic_cast<const call_expr_t*>(_expr.get());
 		}
+
+
+
+		////////////////////////////////			struct_definition_expr_t
+
+
+		public: struct struct_definition_expr_t : public expr_base_t {
+			struct_definition_expr_t(const std::shared_ptr<const struct_definition_t>& def)
+			:
+				_def(def)
+			{
+			}
+
+			virtual ast_json_t expr_base__to_json() const {
+				return ast_json_t{json_t::make_array({
+					"def-struct",
+					struct_definition_to_ast_json(*_def)._value
+				})};
+			}
+
+
+			const std::shared_ptr<const struct_definition_t> _def;
+		};
+
+		public: static expression_t make_struct_definition(const std::shared_ptr<const struct_definition_t>& def){
+			return expression_t{
+				expression_type::k_define_struct,
+				std::make_shared<struct_definition_expr_t>(struct_definition_expr_t{ def }),
+				std::make_shared<typeid_t>(typeid_t::make_struct(def))
+			};
+		}
+
+		public: const struct_definition_expr_t* get_struct_def() const {
+			return dynamic_cast<const struct_definition_expr_t*>(_expr.get());
+		}
+
+
 
 
 		////////////////////////////////			function_definition_expr_t
@@ -730,6 +768,7 @@ namespace floyd {
 
 			if(false
 			|| _operation == expression_type::k_literal
+			|| _operation == expression_type::k_define_struct
 			|| _operation == expression_type::k_define_function
 			|| _operation == expression_type::k_vector_definition
 			|| _operation == expression_type::k_dict_definition
@@ -810,6 +849,12 @@ namespace floyd {
 						}
 						return true;
 					}
+				}
+
+				else if(op == expression_type::k_define_struct){
+					//??? check function's statements too.
+					const auto e = *get_struct_def();
+					return true;
 				}
 
 				else if(op == expression_type::k_define_function){
@@ -939,6 +984,9 @@ namespace floyd {
 			&& lhs._member_name == rhs._member_name;
 	}
 
+	inline bool operator==(const expression_t::struct_definition_expr_t& lhs, const expression_t::struct_definition_expr_t& rhs){
+		return lhs._def == rhs._def;
+	}
 	inline bool operator==(const expression_t::function_definition_expr_t& lhs, const expression_t::function_definition_expr_t& rhs){
 		return lhs._def == rhs._def;
 	}

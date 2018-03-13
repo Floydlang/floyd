@@ -1043,6 +1043,12 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	}
 
 	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
+	else if(op == expression_type::k_define_struct){
+		QUARK_ASSERT(false);
+		const auto expr = e.get_function_definition();
+		return {vm, value_t::make_function_value(expr->_def)};
+	}
+	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
 		return {vm, value_t::make_function_value(expr->_def)};

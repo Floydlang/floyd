@@ -131,6 +131,8 @@ namespace floyd {
 		//	c99: a[b]			token: "[]"
 		k_lookup_element,
 
+		k_define_struct,
+
 		//???	use k_literal for function values?
 		k_define_function,
 

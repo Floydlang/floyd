@@ -1228,6 +1228,29 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	}
 }
 
+std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& vm, const expression_t& e0){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+	const auto expr = *e0.get_struct_def();
+
+	//	Resolve member types in this scope.
+	std::vector<member_t> members2;
+	for(const auto e: expr._def->_members){
+		const auto name = e._name;
+		const auto type = e._type;
+		const auto type2 = resolve_type_using_env(vm_acc, type);
+
+		QUARK_ASSERT(type2.get_base_type() != base_type::k_unresolved_type_identifier);
+
+		const auto e2 = member_t(type2, name);
+		members2.push_back(e2);
+	}
+	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
+	return {vm_acc, expression_t::make_struct_definition(resolved_struct_def) };
+}
+
+
 std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1276,6 +1299,10 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 
 	else if(op == expression_type::k_call){
 		return analyse_call_expression(vm, e);
+	}
+
+	else if(op == expression_type::k_define_struct){
+		return analyse_struct_definition_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_define_function){

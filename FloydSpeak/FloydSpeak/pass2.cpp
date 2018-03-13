@@ -215,71 +215,6 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 	/*
 		INPUT:
 			[
-				"def-func",
-				{
-					"args": [
-
-					],
-					"name": "main",
-					"return_type": "int",
-					"statements": [
-						[ "return", [ "k", 3, "int" ] ]
-					]
-				}
-			]
-
-		OUTPUT:
-			"main": [
-				{
-					"base_type": "function",
-					"scope_def": {
-						"args": [],
-						"locals": [],
-						"members": [],
-						"name": "main",
-						"return_type": "int",
-						"statements": [???],
-						"type": "function",
-						"types": {}
-					}
-				}
-			]
-	*/
-/*
-	else if(type == "def-func"){
-		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto def = statement.get_array_n(1);
-		const auto name = def.get_object_element("name");
-		const auto args = def.get_object_element("args");
-		const auto fstatements = def.get_object_element("statements");
-		const auto return_type = def.get_object_element("return_type");
-
-		const auto name2 = name.get_string();
-		const auto args2 = members_from_json(args);
-		const auto fstatements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{fstatements});
-		const auto return_type2 = resolve_type_name(ast_json_t{return_type});
-
-		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
-		const auto function_def = function_definition_t(args2, fstatements2, return_type2);
-		const auto function_def_expr = expression_t::make_function_definition(function_def);
-
-
-		const auto s = statement_t::define_struct_statement_t{ name, struct_def2 };
-		return statement_t::make__define_struct_statement(s);
-
-//??? use bind-local instead of bind_or_assign_statement_t
-//??? current code makes round-trip lossy.
-		statements2.push_back(make_shared<statement_t>(statement_t::make__bind"bind"_statement(
-			name2,
-			function_typeid,
-			function_def_expr, statement_t::bind_or_assign_statement_t::mutable_mode::k_no_mutable_tag
-		)));
-*/
-
-
-	/*
-		INPUT:
-			[
 				"def-struct",
 				{
 					"members": [
@@ -452,12 +387,31 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast__lossy
 			const auto function_def = function_definition_t(args2, make_shared<body_t>(body), return_type2);
 			const auto function_def_expr = expression_t::make_function_definition(function_def);
 
-			//??? use bind-local instead of bind_or_assign_statement_t?
 			statements2.push_back(make_shared<statement_t>(
 				statement_t::make__bind_local(
 					name2,
 					function_typeid,
 					function_def_expr, statement_t::bind_local_t::k_immutable
+				))
+			);
+		}
+		else if(false && type == "def-struct"){
+			QUARK_ASSERT(statement.get_array_size() == 2);
+			const auto struct_def = statement.get_array_n(1);
+			const auto name = struct_def.get_object_element("name").get_string();
+			const auto members = struct_def.get_object_element("members").get_array();
+
+			const auto members2 = members_from_json(members);
+			const auto struct_def2 = std::make_shared<struct_definition_t>(members2);
+			const auto struct_typeid = typeid_t::make_struct(struct_def2);
+
+			const auto struct_def_expression = expression_t::make_struct_definition(struct_def2);
+			statements2.push_back(make_shared<statement_t>(
+				statement_t::make__bind_local(
+					name,
+					typeid_t::make_typeid(),
+					struct_def_expression,
+					statement_t::bind_local_t::k_immutable
 				))
 			);
 		}

@@ -1144,7 +1144,7 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 }
 
 /*
-QUARK_UNIT_TEST_VIP("run_init()", "Block with local variable, no shadowing", "", ""){
+QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", ""){
 	const auto r = test__run_global(
 		R"(
 			int x = 3;
@@ -2063,6 +2063,20 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 	});
 }
 
+
+
+
+/*
+QUARK_UNIT_TESTQ("run_main()", "struct - anonymous <"){
+	const auto vm = test__run_global(R"(
+		struct { int red; int green; int blue;}
+		print(color(1, 2, 3) < color(1, 4, 3));
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"true"
+	});
+}
+*/
 
 
 
