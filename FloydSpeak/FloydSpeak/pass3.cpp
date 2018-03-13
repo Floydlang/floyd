@@ -42,14 +42,6 @@ std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const
 
 
 
-
-std::map<std::string, symbol_t> symbol_vec_to_map(const std::vector<std::pair<std::string, symbol_t>>& symbols){
-	std::map<std::string, symbol_t> result;
-	for(const auto e: symbols){
-		result[e.first] = e.second;
-	}
-	return result;
-}
 std::vector<std::pair<std::string, symbol_t>> symbol_map_to_vec(const std::map<std::string, symbol_t>& symbols){
 	std::vector<std::pair<std::string, symbol_t>> result;
 	for(const auto e: symbols){
@@ -57,7 +49,6 @@ std::vector<std::pair<std::string, symbol_t>> symbol_map_to_vec(const std::map<s
 	}
 	return result;
 }
-
 
 
 std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
@@ -97,9 +88,6 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::b
 }
 
 
-
-
-
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::pair<symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const analyser_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -120,15 +108,20 @@ std::pair<symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const 
 	}
 }
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<symbol_t*, floyd::variable_address_t> resolve_env_symbol2(const analyser_t& vm, const std::string& s){
+std::pair<symbol_t*, floyd::variable_address_t> find_symbol_by_name(const analyser_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
 	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
 }
 
+bool does_symbol_exist_shallow(const analyser_t& vm, const std::string& s){
+    const auto it = std::find_if(vm._call_stack.back()->_symbols.begin(), vm._call_stack.back()->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
+	return it != vm._call_stack.back()->_symbols.end();
+}
+
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-symbol_t* resolve_env_variable3(const analyser_t& vm, const floyd::variable_address_t& s){
+symbol_t* resolve_symbol_by_address(const analyser_t& vm, const floyd::variable_address_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto env_index = s._parent_steps == -1 ? 0 : vm._call_stack.size() - s._parent_steps - 1;
@@ -136,19 +129,13 @@ symbol_t* resolve_env_variable3(const analyser_t& vm, const floyd::variable_addr
 	return &env->_symbols[s._index].second;
 }
 
-
-
 symbol_t find_global_symbol(const analyser_t& vm, const string& s){
-	const auto t = resolve_env_symbol2(vm, s);
+	const auto t = find_symbol_by_name(vm, s);
 	if(t.first == nullptr){
 		throw std::runtime_error("Undefined indentifier \"" + s + "\"!");
 	}
 	return *t.first;
 }
-
-
-
-
 
 
 //	Make sure there is no null or [null] or [string: null] etc. inside type.
@@ -206,8 +193,6 @@ bool check_type_fully_defined(const typeid_t& type){
 
 
 
-
-
 /////////////////////////////////////////			STATEMENTS
 
 
@@ -224,7 +209,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& vm,
 	auto vm_acc = vm;
 	const auto statement = *s._store;
 	const auto local_name = statement._local_name;
-	const auto existing_value_deep_ptr = resolve_env_symbol2(vm_acc, local_name);
+	const auto existing_value_deep_ptr = find_symbol_by_name(vm_acc, local_name);
 
 	//	Attempt to mutate existing value!
 	if(existing_value_deep_ptr.first != nullptr){
@@ -260,12 +245,6 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& vm,
 		return { vm_acc, statement_t::make__store2(floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
 	}
 }
-
-bool does_symbol_exist_shallow(const analyser_t& vm, const std::string& symbol_name){
-    const auto it = std::find_if(vm._call_stack.back()->_symbols.begin(), vm._call_stack.back()->_symbols.end(),  [&symbol_name](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == symbol_name; });
-	return it != vm._call_stack.back()->_symbols.end();
-}
-
 
 /*
 Assign with target type info.
@@ -350,6 +329,29 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm
 	return { vm_acc, statement_t::make__return_statement(result.second) };
 }
 
+
+//??? move here from interpreter. INterpreter should have ready-made struct to instantiate.
+typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
+	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
+		const auto found = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
+		if(found.first != nullptr){
+			if(found.first->_value_type.is_typeid()){
+				return found.first->_const_value.get_typeid_value();
+			}
+			else{
+				return typeid_t::make_null();
+			}
+		}
+		else{
+			return typeid_t::make_null();
+		}
+	}
+	else{
+		return type;
+	}
+}
+
+//??? move here from interpreter. INterpreter should have ready-made struct to instantiate.
 //	TODO: When symbol tables are kept with pass3, this function returns a NOP-statement.
 std::pair<analyser_t, statement_t> analyse_def_struct_statement(const analyser_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -670,7 +672,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& vm, const exp
 	const auto expr = *e.get_load();
 
 	auto vm_acc = vm;
-	const auto found = resolve_env_symbol2(vm_acc, expr._variable);
+	const auto found = find_symbol_by_name(vm_acc, expr._variable);
 	if(found.first != nullptr){
 //		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
 		return {vm_acc, expression_t::make_load2(found.second, make_shared<typeid_t>(found.first->_value_type)) };
@@ -686,7 +688,7 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const ex
 	const auto expr = *e.get_load();
 
 	auto vm_acc = vm;
-	const auto found = resolve_env_symbol2(vm_acc, expr._variable);
+	const auto found = find_symbol_by_name(vm_acc, expr._variable);
 	if(found.first != nullptr){
 		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
 	}
@@ -1076,7 +1078,7 @@ bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr
 		return find_it != vm._imm->_host_functions.end();
 	}
 	else if(callee_expr.get_operation() == expression_type::k_load2){
-		const auto callee = resolve_env_variable3(vm, callee_expr.get_load2()->_address);
+		const auto callee = resolve_symbol_by_address(vm, callee_expr.get_load2()->_address);
 		QUARK_ASSERT(callee != nullptr);
 
 		if(callee->_const_value.is_function()){
@@ -1091,42 +1093,11 @@ bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr
 	}
 }
 
-#if false
-typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t& callee_expr, const vector<expression_t>& args){
-	const auto function_name = callee_expr.get_variable()->_variable;
-	const auto find_it = vm._imm->_host_functions.find(function_name);
-	QUARK_ASSERT(find_it != vm._imm->_host_functions.end());
-
-	if(function_name == "update"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "erase"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "push_back"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "subset"){
-		return args[0].get_annotated_type();
-	}
-	else if(function_name == "replace"){
-		return args[0].get_annotated_type();
-	}
-/*
-		else if(function_name == "unflatten_from_json"){
-			return args[0].get_annotated_type();
-		}
-*/
-	else{
-		return callee_expr.get_annotated_type().get_function_return();
-	}
-}
-#endif
 typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t& callee_expr, const vector<expression_t>& args){
 	QUARK_ASSERT(is_host_function_call(vm, callee_expr));
 	QUARK_ASSERT(callee_expr.get_operation() == expression_type::k_load2);
 
-	const auto callee = resolve_env_variable3(vm, callee_expr.get_load2()->_address);
+	const auto callee = resolve_symbol_by_address(vm, callee_expr.get_load2()->_address);
 	QUARK_ASSERT(callee != nullptr);
 	const auto host_function_id = callee->_const_value.get_function_value()->_def._host_function;
 
@@ -1160,8 +1131,6 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 		return callee_expr.get_annotated_type().get_function_return();
 	}
 }
-
-
 
 
 /*
@@ -1198,14 +1167,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	//	Attempting to call a TYPE? Then this may be a constructor call.
 	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_load || callee_expr.get_operation() == expression_type::k_load2)){
 		QUARK_ASSERT(callee_expr.get_operation() != expression_type::k_load);
-
-/*
-		const auto variable_expr = *callee_expr.get_variable();
-		const auto variable_name = variable_expr._variable;
-		const auto found_symbol = resolve_env_symbol2(vm_acc, variable_name);
-		QUARK_ASSERT(found_symbol.first != nullptr);
-*/
-		const auto found_symbol_ptr = resolve_env_variable3(vm_acc, callee_expr.get_load2()->_address);
+		const auto found_symbol_ptr = resolve_symbol_by_address(vm_acc, callee_expr.get_load2()->_address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
 
@@ -1460,44 +1422,12 @@ QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
 	);
 }
 
-
-
-
-
-
-
-//### add checking of function types when calling / returning from them. Also host functions.
-
-typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
-	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
-		const auto found = resolve_env_symbol2(vm, type.get_unresolved_type_identifier());
-		if(found.first != nullptr){
-			if(found.first->_value_type.is_typeid()){
-				return found.first->_const_value.get_typeid_value();
-			}
-			else{
-				return typeid_t::make_null();
-			}
-		}
-		else{
-			return typeid_t::make_null();
-		}
-	}
-	else{
-		return type;
-	}
-}
-
-
-
 analyser_t::analyser_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto host_functions = floyd::get_host_function_signatures();
 	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ast, host_functions});
 }
-
-
 
 ast_t analyse(const analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
@@ -1547,7 +1477,7 @@ analyser_t::analyser_t(const analyser_t& other) :
 }
 
 
-	//??? make proper operator=(). Exception safety etc.
+//??? make proper operator=(). Exception safety etc.
 const analyser_t& analyser_t::operator=(const analyser_t& other){
 	_imm = other._imm;
 	_call_stack = other._call_stack;
@@ -1561,8 +1491,6 @@ bool analyser_t::check_invariant() const {
 }
 #endif
 
-
-#if 1
 
 floyd::ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2){
 	QUARK_ASSERT(ast_pass2.check_invariant());
@@ -1579,15 +1507,5 @@ floyd::ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t&
 	return pass3_result;
 }
 
-#else
-
-floyd::ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2){
-	return ast_pass2;
-}
-
-#endif
-
-
 
 }	//	floyd
-

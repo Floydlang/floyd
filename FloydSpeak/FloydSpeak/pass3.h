@@ -104,12 +104,7 @@ namespace floyd_pass3 {
 	*/
 	std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& vm, const std::vector<std::shared_ptr<floyd::statement_t>>& statements);
 
-
-
 	floyd::symbol_t find_global_symbol(const analyser_t& vm, const std::string& s);
-
-	floyd::typeid_t resolve_type_using_env(const analyser_t& vm, const floyd::typeid_t& type);
-
 
 	/*
 		Semantic Analysis -> SYMBOL TABLE + annotated AST
