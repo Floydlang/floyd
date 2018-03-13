@@ -42,7 +42,7 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_call, "call" },
 
 	{ expression_type::k_variable, "@" },
-	{ expression_type::k_variable_access, "@i" },
+	{ expression_type::k_load, "@i" },
 	{ expression_type::k_resolve_member, "->" },
 
 	{ expression_type::k_lookup_element, "[]" }

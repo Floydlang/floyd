@@ -1210,7 +1210,7 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	else if(op == expression_type::k_variable){
 		return analyse_variable_expression(vm, e);
 	}
-	else if(op == expression_type::k_variable_access){
+	else if(op == expression_type::k_load){
 		return analyse_variable_access_expression(vm, e);
 	}
 

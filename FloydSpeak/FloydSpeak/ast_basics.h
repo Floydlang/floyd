@@ -24,6 +24,20 @@ namespace floyd {
 	};
 
 
+
+	//////////////////////////////////////		variable_address_t
+
+
+	struct variable_address_t {
+		const int _parent_steps;
+		const int _index;
+	};
+
+	inline bool operator==(const variable_address_t& lhs, const variable_address_t& rhs){
+		return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
+	}
+
+
 	//////////////////////////////////////		expression_type
 
 
@@ -94,7 +108,7 @@ namespace floyd {
 		k_variable,
 
 		//	c99: a				token: "@i"
-		k_variable_access,
+		k_load,
 
 		//	c99: a.b			token: "->"
 		k_resolve_member,

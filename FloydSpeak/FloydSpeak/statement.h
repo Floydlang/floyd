@@ -216,6 +216,28 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		store_local2_t
+
+
+		struct store_local2_t {
+			bool operator==(const store_local2_t& other) const {
+				return _dest_variable == other._dest_variable
+					&& _expression == other._expression;
+			}
+
+			const variable_address_t _dest_variable;
+			const expression_t _expression;
+		};
+
+        public: statement_t(const store_local2_t& value) :
+			_store_local2(std::make_shared<store_local2_t>(value))
+		{
+		}
+		public: static statement_t make__store_local2(const variable_address_t& dest_variable, const expression_t& expression){
+			return statement_t(store_local2_t{ dest_variable, expression });
+		}
+
+
 		//////////////////////////////////////		block_statement_t
 
 
@@ -483,6 +505,7 @@ namespace floyd {
 		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
 		public: const std::shared_ptr<bind_local_t> _bind_local;
 		public: const std::shared_ptr<store_local_t> _store_local;
+		public: const std::shared_ptr<store_local2_t> _store_local2;
 		public: const std::shared_ptr<block_statement_t> _block;
 		public: const std::shared_ptr<ifelse_statement_t> _if;
 		public: const std::shared_ptr<for_statement_t> _for;

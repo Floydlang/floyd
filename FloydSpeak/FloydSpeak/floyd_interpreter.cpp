@@ -314,6 +314,35 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	return { vm_acc, statement_result_t::make_no_output() };
 }
 
+std::pair<interpreter_t, statement_result_t> execute_store_local2_statement(const interpreter_t& vm, const statement_t::store_local2_t& statement){
+	QUARK_ASSERT(vm.check_invariant());
+
+	QUARK_ASSERT(false);
+/*
+	auto vm_acc = vm;
+	const auto local_name = statement._local_name;
+
+	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
+	vm_acc = rhs_expr_pair.first;
+
+	QUARK_ASSERT(rhs_expr_pair.second.is_literal());
+	const auto rhs_value = rhs_expr_pair.second.get_literal();
+
+	const auto lhs_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
+//	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
+
+	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
+//	QUARK_ASSERT(lhs_value_is_mutable);
+
+	const auto lhs_value = lhs_value_deep_ptr->first;
+//	QUARK_ASSERT(lhs_value.get_type() == rhs_value.get_type());
+
+	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
+	return { vm_acc, statement_result_t::make_no_output() };
+*/
+
+}
+
 std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const statement_t::return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -453,6 +482,9 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	}
 	else if(statement._store_local){
 		return execute_store_local_statement(vm, *statement._store_local);
+	}
+	else if(statement._store_local2){
+		return execute_store_local2_statement(vm, *statement._store_local2);
 	}
 	else if(statement._block){
 		return execute_body(vm, statement._block->_body, {});
@@ -659,11 +691,11 @@ std::pair<interpreter_t, expression_t> evaluate_variable_expression(const interp
 std::pair<interpreter_t, expression_t> evaluate_variable_access_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_variable_access();
+	const auto expr = *e.get_load();
 
 	auto vm_acc = vm;
 
-	QUARK_ASSERT(expr._parent_steps == 0);
+	QUARK_ASSERT(expr._address._parent_steps == 0);
 
 	//??? We need to store values in vector so we can index them.
 	const auto value = vm._call_stack.back()->_values.begin()->second.first;
@@ -1129,7 +1161,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 	else if(op == expression_type::k_variable){
 		return evaluate_variable_expression(vm, e);
 	}
-	else if(op == expression_type::k_variable_access){
+	else if(op == expression_type::k_load){
 		return evaluate_variable_access_expression(vm, e);
 	}
 
