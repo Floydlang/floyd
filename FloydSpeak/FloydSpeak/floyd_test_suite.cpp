@@ -2897,16 +2897,23 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
 	}
 }
-QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
-	try{
-		const auto result = run_return_result(R"(
-			a = false + true;
-		)", {});
-		QUARK_TEST_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Artithmetics: bool not allowed.");
-	}
+QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
+	const auto result = run_return_result(R"(
+		result = false + true;
+	)", {});
+	QUARK_ASSERT(result.get_bool_value() == true);
+}
+QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
+	const auto result = run_return_result(R"(
+		result = false + false;
+	)", {});
+	QUARK_ASSERT(result.get_bool_value() == false);
+}
+QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
+	const auto result = run_return_result(R"(
+		result = true + true;
+	)", {});
+	QUARK_ASSERT(result.get_bool_value() == true);
 }
 
 QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
