@@ -48,20 +48,18 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 	QUARK_SCOPED_TRACE("construct_struct()");
 	QUARK_TRACE("struct_type: " + typeid_to_compact_string(struct_type));
 
-	const string struct_type_name = "unnamed";
-	const auto& def = struct_type.get_struct();
-	QUARK_ASSERT(values.size() == def._members.size());
-
 #if DEBUG
-	for(int i = 0 ; i < def._members.size() ; i++){
+	const auto def = struct_type.get_struct_ref();
+	QUARK_ASSERT(values.size() == def->_members.size());
+
+	for(int i = 0 ; i < def->_members.size() ; i++){
 		const auto v = values[i];
-		const auto a = def._members[i];
+		const auto a = def->_members[i];
 		QUARK_ASSERT(v.check_invariant());
 		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
 		QUARK_ASSERT(v.get_type() == a._type);
 	}
 #endif
-
 	const auto instance = value_t::make_struct_value(struct_type, values);
 	QUARK_TRACE(to_compact_string2(instance));
 
