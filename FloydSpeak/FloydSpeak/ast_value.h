@@ -61,7 +61,7 @@ namespace floyd {
 		An instance of a struct-type = a value of this struct.
 	*/
 	struct struct_instance_t {
-		public: struct_instance_t(const std::shared_ptr<struct_definition_t>& def, const std::vector<value_t>& member_values) :
+		public: struct_instance_t(const std::shared_ptr<const struct_definition_t>& def, const std::vector<value_t>& member_values) :
 			_def(def),
 			_member_values(member_values)
 		{

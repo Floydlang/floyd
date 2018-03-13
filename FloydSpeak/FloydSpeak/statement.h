@@ -158,7 +158,7 @@ namespace floyd {
 			}
 
 			const std::string _name;
-			const struct_definition_t _def;
+			const std::shared_ptr<const struct_definition_t> _def;
 		};
         public: statement_t(const define_struct_statement_t& value) :
 			_def_struct(std::make_shared<define_struct_statement_t>(value))
@@ -167,6 +167,10 @@ namespace floyd {
 		public: static statement_t make__define_struct_statement(const define_struct_statement_t& value){
 			return statement_t(value);
 		}
+
+
+		//////////////////////////////////////		bind_local_t
+
 
 		struct bind_local_t {
 			enum mutable_mode {

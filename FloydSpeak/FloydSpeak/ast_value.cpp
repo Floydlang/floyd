@@ -965,7 +965,7 @@ value_t value_t::make_struct_value(const typeid_t& struct_type, const std::vecto
 	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved_type_identifier);
 
-	auto instance = std::shared_ptr<struct_instance_t>(new struct_instance_t{struct_type.get_struct_ref(), values});
+	auto instance = std::make_shared<struct_instance_t>(struct_instance_t{struct_type.get_struct_ref(), values});
 	return value_t(struct_type, instance);
 }
 

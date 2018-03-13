@@ -321,7 +321,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto members2 = members_from_json(members);
 		const auto struct_def2 = struct_definition_t(members2);
 
-		const auto s = statement_t::define_struct_statement_t{ name, struct_def2 };
+		const auto s = statement_t::define_struct_statement_t{ name, std::make_shared<struct_definition_t>(struct_def2) };
 		return statement_t::make__define_struct_statement(s);
 	}
 
@@ -536,7 +536,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		return ast_json_t{json_t::make_array({
 			json_t("def-struct"),
 			json_t(e._def_struct->_name),
-			struct_definition_to_ast_json(e._def_struct->_def)._value
+			struct_definition_to_ast_json(*e._def_struct->_def)._value
 		})};
 	}
 	else if(e._bind_local){

@@ -329,8 +329,6 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm
 	return { vm_acc, statement_t::make__return_statement(result.second) };
 }
 
-
-//??? move here from interpreter. INterpreter should have ready-made struct to instantiate.
 typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
 		const auto found = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
@@ -351,7 +349,6 @@ typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
 	}
 }
 
-//??? move here from interpreter. INterpreter should have ready-made struct to instantiate.
 //	TODO: When symbol tables are kept with pass3, this function returns a NOP-statement.
 std::pair<analyser_t, statement_t> analyse_def_struct_statement(const analyser_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -364,18 +361,41 @@ std::pair<analyser_t, statement_t> analyse_def_struct_statement(const analyser_t
 
 	//	Resolve member types in this scope.
 	std::vector<member_t> members2;
-	for(const auto e: statement._def._members){
+	for(const auto e: statement._def->_members){
 		const auto name = e._name;
 		const auto type = e._type;
 		const auto type2 = resolve_type_using_env(vm_acc, type);
+
+		QUARK_ASSERT(type2.get_base_type() != base_type::k_unresolved_type_identifier);
+
 		const auto e2 = member_t(type2, name);
 		members2.push_back(e2);
 	}
+
+/*
+#if DEBUG
+	const auto def = struct_type.get_struct_ref();
+	QUARK_ASSERT(values.size() == def->_members.size());
+
+	for(int i = 0 ; i < def->_members.size() ; i++){
+		const auto v = values[i];
+		const auto a = def->_members[i];
+		QUARK_ASSERT(v.check_invariant());
+		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
+		QUARK_ASSERT(v.get_type() == a._type);
+	}
+#endif
+*/
+
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid);
 	vm_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
-	return { vm_acc, statement };
+
+	const auto s = statement_t::define_struct_statement_t{ struct_name, resolved_struct_def };
+	const auto statement2 = statement_t::make__define_struct_statement(s);
+
+	return { vm_acc, statement2  };
 }
 
 std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm, const statement_t::ifelse_statement_t& statement){

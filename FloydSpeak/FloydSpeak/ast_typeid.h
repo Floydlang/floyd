@@ -158,7 +158,7 @@ namespace floyd {
 			return _base_type == base_type::k_typeid;
 		}
 
-		public: static typeid_t make_struct(const std::shared_ptr<struct_definition_t>& def){
+		public: static typeid_t make_struct(const std::shared_ptr<const struct_definition_t>& def){
 			return { floyd::base_type::k_struct, {}, {}, {}, def };
 		}
 
@@ -173,7 +173,7 @@ namespace floyd {
 
 			return *_struct_def;
 		}
-		public: const std::shared_ptr<struct_definition_t>& get_struct_ref() const{
+		public: const std::shared_ptr<const struct_definition_t>& get_struct_ref() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_struct);
 
 			return _struct_def;
@@ -291,7 +291,7 @@ namespace floyd {
 			const std::vector<typeid_t>& parts,
 			const std::string& unique_type_id,
 			const std::string& unknown_identifier,
-			const std::shared_ptr<struct_definition_t>& struct_def
+			const std::shared_ptr<const struct_definition_t>& struct_def
 		):
 			_base_type(base_type),
 			_parts(parts),
@@ -315,8 +315,7 @@ namespace floyd {
 		//	Used for k_unresolved_type_identifier.
 		private: std::string _unresolved_type_identifier;
 
-		//??? Add path to environment when struct was defined = make it unique.
-		private: std::shared_ptr<struct_definition_t> _struct_def;
+		private: std::shared_ptr<const struct_definition_t> _struct_def;
 	};
 
 

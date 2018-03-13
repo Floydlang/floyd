@@ -250,8 +250,6 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 
 typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
-//		QUARK_ASSERT(false);
-
 		const auto v = resolve_env_variable(vm, type.get_unresolved_type_identifier());
 		if(v){
 			if(v->first.is_typeid()){
@@ -269,32 +267,20 @@ typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 		return type;
 	}
 }
-//	??? build structs in pass3 instead!
+
+//??? Isn't struct def already in symbol table? No need to emit any def_struct-statement at all!
 std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
 	const auto struct_name = statement._name;
-
 	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, struct_name) == true);
 
-	//	Resolve member types in this scope.
-	std::vector<member_t> members2;
-	for(const auto e: statement._def._members){
-		const auto name = e._name;
-		const auto type = e._type;
-		const auto type2 = resolve_type_using_env(vm_acc, type);
-		const auto e2 = member_t(type2, name);
-		members2.push_back(e2);
-	}
-	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
-	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
+	const auto struct_typeid = typeid_t::make_struct(statement._def);
 	const auto value = value_t::make_typeid_value(struct_typeid);
 	vm_acc = store(vm_acc, struct_name, value);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
-
-
 
 std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1052,15 +1038,18 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 		return evaluate_call_expression(vm, e);
 	}
 
+	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
 		return {vm, value_t::make_function_value(expr->_def)};
 	}
 
+	//	??? Rename to vector_instantiator -- it doesn't define a type, it instantiates a vector.
 	else if(op == expression_type::k_vector_definition){
 		return evaluate_vector_definition_expression(vm, *e.get_vector_definition());
 	}
 
+	//	??? Rename to vector_instantiator -- it doesn't define a type, it instantiates a vector.
 	else if(op == expression_type::k_dict_definition){
 		return evaluate_dict_definition_expression(vm, *e.get_dict_definition());
 	}
