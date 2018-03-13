@@ -680,7 +680,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 std::pair<interpreter_t, value_t> evaluate_variable_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_variable();
+	const auto expr = *e.get_load();
 
 	auto vm_acc = vm;
 	const auto value = resolve_env_variable(vm_acc, expr._variable);
@@ -1151,7 +1151,7 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	else if(op == expression_type::k_lookup_element){
 		return evaluate_lookup_element_expression(vm, *e.get_lookup());
 	}
-	else if(op == expression_type::k_variable){
+	else if(op == expression_type::k_load){
 		QUARK_ASSERT(false);
 		return evaluate_variable_expression(vm, e);
 	}

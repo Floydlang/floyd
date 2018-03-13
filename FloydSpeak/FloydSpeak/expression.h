@@ -184,7 +184,7 @@ namespace floyd {
 				|| op == expression_type::k_arithmetic_unary_minus__1
 				|| op == expression_type::k_conditional_operator3
 				|| op == expression_type::k_call
-				|| op == expression_type::k_variable
+				|| op == expression_type::k_load
 				|| op == expression_type::k_load2
 				|| op == expression_type::k_resolve_member
 				|| op == expression_type::k_lookup_element
@@ -369,11 +369,11 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			variable_expr_t
-		//??? rename to "load_variable".
+		////////////////////////////////			load_expr_t
 
-		public: struct variable_expr_t : public expr_base_t {
-			variable_expr_t(std::string variable) :
+
+		public: struct load_expr_t : public expr_base_t {
+			load_expr_t(std::string variable) :
 				_variable(variable)
 			{
 			}
@@ -395,16 +395,14 @@ namespace floyd {
 		public: static expression_t make_variable_expression(const std::string& variable, const std::shared_ptr<typeid_t>& annotated_type)
 		{
 			return expression_t{
-				expression_type::k_variable,
-				std::make_shared<variable_expr_t>(
-					variable_expr_t{ variable }
-				),
+				expression_type::k_load,
+				std::make_shared<load_expr_t>(load_expr_t{ variable }),
 				annotated_type
 			};
 		}
 
-		public: const variable_expr_t* get_variable() const {
-			return dynamic_cast<const variable_expr_t*>(_expr.get());
+		public: const load_expr_t* get_load() const {
+			return dynamic_cast<const load_expr_t*>(_expr.get());
 		}
 
 
@@ -793,7 +791,7 @@ namespace floyd {
 					const auto e = *get_lookup();
 					return e._parent_address->is_annotated_deep() && e._lookup_key;
 				}
-				else if(op == expression_type::k_variable){
+				else if(op == expression_type::k_load){
 					return true;
 				}
 				else if(op == expression_type::k_load2){
@@ -928,7 +926,7 @@ namespace floyd {
 		return lhs._value == rhs._value;
 	}
 
-	inline bool operator==(const expression_t::variable_expr_t& lhs, const expression_t::variable_expr_t& rhs){
+	inline bool operator==(const expression_t::load_expr_t& lhs, const expression_t::load_expr_t& rhs){
 		return lhs._variable == rhs._variable;
 	}
 

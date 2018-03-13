@@ -41,7 +41,7 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_conditional_operator3, "?:" },
 	{ expression_type::k_call, "call" },
 
-	{ expression_type::k_variable, "@" },
+	{ expression_type::k_load, "@" },
 	{ expression_type::k_load2, "@2" },
 	{ expression_type::k_resolve_member, "->" },
 

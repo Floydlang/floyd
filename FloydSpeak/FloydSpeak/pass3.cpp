@@ -664,10 +664,10 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_variable_expression(const analyser_t& vm, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_load(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_variable();
+	const auto expr = *e.get_load();
 
 	auto vm_acc = vm;
 	const auto found = resolve_env_symbol2(vm_acc, expr._variable);
@@ -680,10 +680,10 @@ std::pair<analyser_t, expression_t> analyse_variable_expression(const analyser_t
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_variable_access_expression(const analyser_t& vm, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_variable();
+	const auto expr = *e.get_load();
 
 	auto vm_acc = vm;
 	const auto found = resolve_env_symbol2(vm_acc, expr._variable);
@@ -1069,8 +1069,8 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 }
 
 bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr){
-	if(callee_expr.get_operation() == expression_type::k_variable){
-		const auto function_name = callee_expr.get_variable()->_variable;
+	if(callee_expr.get_operation() == expression_type::k_load){
+		const auto function_name = callee_expr.get_load()->_variable;
 
 		const auto find_it = vm._imm->_host_functions.find(function_name);
 		return find_it != vm._imm->_host_functions.end();
@@ -1196,8 +1196,8 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
-	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_variable || callee_expr.get_operation() == expression_type::k_load2)){
-		QUARK_ASSERT(callee_expr.get_operation() != expression_type::k_variable);
+	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_load || callee_expr.get_operation() == expression_type::k_load2)){
+		QUARK_ASSERT(callee_expr.get_operation() != expression_type::k_load);
 
 /*
 		const auto variable_expr = *callee_expr.get_variable();
@@ -1284,11 +1284,11 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	else if(op == expression_type::k_lookup_element){
 		return analyse_lookup_element_expression(vm, *e.get_lookup());
 	}
-	else if(op == expression_type::k_variable){
-		return analyse_variable_expression(vm, e);
+	else if(op == expression_type::k_load){
+		return analyse_load(vm, e);
 	}
 	else if(op == expression_type::k_load2){
-		return analyse_variable_access_expression(vm, e);
+		return analyse_load2(vm, e);
 	}
 
 	else if(op == expression_type::k_call){

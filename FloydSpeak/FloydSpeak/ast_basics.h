@@ -120,7 +120,7 @@ namespace floyd {
 		k_call,
 
 		//	c99: a				token: "@"
-		k_variable,
+		k_load,
 
 		//	c99: a				token: "@i"
 		k_load2,
