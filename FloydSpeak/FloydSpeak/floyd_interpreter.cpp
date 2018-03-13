@@ -387,7 +387,8 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 		return execute_return_statement(vm, *statement._return);
 	}
 	else if(statement._def_struct){
-		return execute_def_struct_statement(vm, *statement._def_struct);
+//		return execute_def_struct_statement(vm, *statement._def_struct);
+		return { vm, statement_result_t::make_no_output() };
 	}
 	else if(statement._if){
 		return execute_ifelse_statement(vm, *statement._if);
