@@ -1303,6 +1303,38 @@ QUARK_UNIT_TEST("", "function calling itself by name", "", ""){
 	);
 }
 
+
+
+
+OFF_QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independent on how it's called in callstack", "", ""){
+	const auto vm = test__run_global(
+		R"(
+			int x = 13;
+
+			int add(bool t){
+				if(t == false){
+					return x + 1;
+				}
+				else{
+					return add(false) + 1000;
+				}
+			}
+
+			print(x);
+			print(add(false));
+			print(add(true));
+		)"
+	);
+	QUARK_UT_VERIFY((
+		vm._print_output == vector<string>{
+			"13", "14", "1014"
+		})
+	);
+}
+
+
+
+
 //////////////////////////////////////////		FOR STATEMENT
 
 
@@ -1319,7 +1351,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
 }
 
-QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
+OFF_QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
 	const auto vm = test__run_global(
 		"int fibonacci(int n) {"
 		"	if (n <= 1){"

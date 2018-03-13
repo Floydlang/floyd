@@ -477,6 +477,7 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 		return execute_bind_local_statement(vm, *statement._bind_local);
 	}
 	else if(statement._store_local){
+		QUARK_ASSERT(false);
 		return execute_store_local_statement(vm, *statement._store_local);
 	}
 	else if(statement._store_local2){
@@ -697,17 +698,22 @@ std::pair<interpreter_t, expression_t> evaluate_variable_expression(const interp
 	return {vm_acc, expression_t::make_literal(value->first)};
 }
 
-std::pair<interpreter_t, expression_t> evaluate_variable_access_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, expression_t> evaluate_load_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_load();
 
 	auto vm_acc = vm;
 
-	QUARK_ASSERT(expr._address._parent_steps == 0);
+	const auto env_index = vm._call_stack.size() - expr._address._parent_steps - 1;
+	QUARK_ASSERT(env_index >= 0 && env_index < vm._call_stack.size());
 
-	//??? We need to store values in vector so we can index them.
-	const auto value = vm._call_stack.back()->_values.begin()->second.first;
+	const auto env = vm._call_stack[env_index];
+
+	QUARK_ASSERT(expr._address._index >= 0 && expr._address._index < env->_values.size());
+	const auto value = env->_values[expr._address._index].second.first;
+
+	QUARK_ASSERT(value.get_type() == e.get_annotated_type());
 
 	return {vm_acc, expression_t::make_literal(value)};
 }
@@ -1168,10 +1174,11 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 		return evaluate_lookup_element_expression(vm, *e.get_lookup());
 	}
 	else if(op == expression_type::k_variable){
+		QUARK_ASSERT(false);
 		return evaluate_variable_expression(vm, e);
 	}
 	else if(op == expression_type::k_load){
-		return evaluate_variable_access_expression(vm, e);
+		return evaluate_load_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_call){

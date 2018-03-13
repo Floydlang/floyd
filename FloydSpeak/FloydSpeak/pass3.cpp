@@ -127,6 +127,15 @@ std::pair<symbol_t*, floyd::variable_address_t> resolve_env_symbol2(const analys
 	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
 }
 
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+symbol_t* resolve_env_variable3(const analyser_t& vm, const floyd::variable_address_t& s){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto env_index = vm._call_stack.size() - s._parent_steps - 1;
+	auto& env = vm._call_stack[env_index];
+	return &env->_symbols[s._index].second;
+}
+
 
 
 symbol_t find_global_symbol(const analyser_t& vm, const string& s){
@@ -663,7 +672,8 @@ std::pair<analyser_t, expression_t> analyse_variable_expression(const analyser_t
 	auto vm_acc = vm;
 	const auto found = resolve_env_symbol2(vm_acc, expr._variable);
 	if(found.first != nullptr){
-		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
+//		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
+		return {vm_acc, expression_t::make_load_expression(found.second, make_shared<typeid_t>(found.first->_value_type)) };
 	}
 	else{
 		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
@@ -1059,17 +1069,29 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 }
 
 bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr){
-	if(callee_expr.get_operation() == expression_type::k_variable && callee_expr.get_variable()){
+	if(callee_expr.get_operation() == expression_type::k_variable){
 		const auto function_name = callee_expr.get_variable()->_variable;
 
 		const auto find_it = vm._imm->_host_functions.find(function_name);
 		return find_it != vm._imm->_host_functions.end();
+	}
+	else if(callee_expr.get_operation() == expression_type::k_load){
+		const auto callee = resolve_env_variable3(vm, callee_expr.get_load()->_address);
+		QUARK_ASSERT(callee != nullptr);
+
+		if(callee->_const_value.is_function()){
+			return callee->_const_value.get_function_value()->_def._host_function != 0;
+		}
+		else{
+			return false;
+		}
 	}
 	else{
 		return false;
 	}
 }
 
+#if false
 typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t& callee_expr, const vector<expression_t>& args){
 	const auto function_name = callee_expr.get_variable()->_variable;
 	const auto find_it = vm._imm->_host_functions.find(function_name);
@@ -1099,6 +1121,48 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 		return callee_expr.get_annotated_type().get_function_return();
 	}
 }
+#endif
+typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t& callee_expr, const vector<expression_t>& args){
+	QUARK_ASSERT(is_host_function_call(vm, callee_expr));
+	QUARK_ASSERT(callee_expr.get_operation() == expression_type::k_load);
+
+	const auto callee = resolve_env_variable3(vm, callee_expr.get_load()->_address);
+	QUARK_ASSERT(callee != nullptr);
+	const auto host_function_id = callee->_const_value.get_function_value()->_def._host_function;
+
+	const auto& host_functions = vm._imm->_host_functions;
+	const auto found_it = find_if(host_functions.begin(), host_functions.end(), [&](const std::pair<std::string, floyd::host_function_signature_t>& kv){ return kv.second._function_id == host_function_id; });
+	QUARK_ASSERT(found_it != host_functions.end());
+
+	const auto function_name = found_it->first;
+
+	if(function_name == "update"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "erase"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "push_back"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "subset"){
+		return args[0].get_annotated_type();
+	}
+	else if(function_name == "replace"){
+		return args[0].get_annotated_type();
+	}
+/*
+		else if(function_name == "unflatten_from_json"){
+			return args[0].get_annotated_type();
+		}
+*/
+	else{
+		return callee_expr.get_annotated_type().get_function_return();
+	}
+}
+
+
+
 
 /*
 	callee(callee_args)		== function def: int(
@@ -1132,17 +1196,24 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
-	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_variable || callee_expr.get_operation() == expression_type::k_variable)){
+	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_variable || callee_expr.get_operation() == expression_type::k_load)){
+		QUARK_ASSERT(callee_expr.get_operation() != expression_type::k_variable);
+
+/*
 		const auto variable_expr = *callee_expr.get_variable();
 		const auto variable_name = variable_expr._variable;
 		const auto found_symbol = resolve_env_symbol2(vm_acc, variable_name);
 		QUARK_ASSERT(found_symbol.first != nullptr);
+*/
+		const auto found_symbol_ptr = resolve_env_variable3(vm_acc, callee_expr.get_load()->_address);
+		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
-		if(found_symbol.first->_symbol_type != symbol_t::type::immutable_local){
+
+		if(found_symbol_ptr->_symbol_type != symbol_t::type::immutable_local){
 			throw std::runtime_error("Cannot resolve callee.");
 		}
 		else{
-			const auto callee_type2 = found_symbol.first->_const_value.get_typeid_value();
+			const auto callee_type2 = found_symbol_ptr->_const_value.get_typeid_value();
 			if(callee_type2.is_struct()){
 				const auto& def = callee_type2.get_struct();
 				const auto callee_args = get_member_types(def._members);
