@@ -73,7 +73,7 @@ namespace floyd {
 		public: bool operator==(const struct_instance_t& other) const;
 
 
-		public: std::shared_ptr<struct_definition_t> _def;
+		public: const std::shared_ptr<const struct_definition_t> _def;
 		public: std::vector<value_t> _member_values;
 	};
 
