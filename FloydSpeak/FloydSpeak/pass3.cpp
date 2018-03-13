@@ -98,38 +98,43 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::b
 
 
 
+
+
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-symbol_t* resolve_env_variable_deep(const analyser_t& vm, int depth, const std::string& s){
+std::pair<symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const analyser_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
 
     const auto it = std::find_if(vm._call_stack[depth]->_symbols.begin(), vm._call_stack[depth]->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
 	if(it != vm._call_stack[depth]->_symbols.end()){
-		return &it->second;
+		const auto parent_index = (int)(vm._call_stack.size() - depth - 1);
+		const auto variable_index = (int)(it - vm._call_stack[depth]->_symbols.begin());
+		return { &it->second, {parent_index, variable_index} };
 	}
 	else if(depth > 0){
 		return resolve_env_variable_deep(vm, depth - 1, s);
 	}
 	else{
-		return nullptr;
+		return { nullptr, {0,0} };
 	}
 }
-
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-symbol_t* resolve_env_symbol2(const analyser_t& vm, const std::string& s){
+std::pair<symbol_t*, floyd::variable_address_t> resolve_env_symbol2(const analyser_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
 	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
 }
 
+
+
 symbol_t find_global_symbol(const analyser_t& vm, const string& s){
 	const auto t = resolve_env_symbol2(vm, s);
-	if(t == nullptr){
+	if(t.first == nullptr){
 		throw std::runtime_error("Undefined indentifier \"" + s + "\"!");
 	}
-	return *t;
+	return *t.first;
 }
 
 
@@ -213,12 +218,12 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 	const auto existing_value_deep_ptr = resolve_env_symbol2(vm_acc, local_name);
 
 	//	Attempt to mutate existing value!
-	if(existing_value_deep_ptr != nullptr){
-		if(existing_value_deep_ptr->_symbol_type != symbol_t::mutable_local){
+	if(existing_value_deep_ptr.first != nullptr){
+		if(existing_value_deep_ptr.first->_symbol_type != symbol_t::mutable_local){
 			throw std::runtime_error("Cannot assign to immutable identifier.");
 		}
 		else{
-			const auto lhs_type = existing_value_deep_ptr->get_type();
+			const auto lhs_type = existing_value_deep_ptr.first->get_type();
 			QUARK_ASSERT(check_type_fully_defined(lhs_type));
 
 			const auto rhs_expr2 = analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
@@ -655,9 +660,9 @@ std::pair<analyser_t, expression_t> analyse_variable_expression(const analyser_t
 	const auto expr = *e.get_variable();
 
 	auto vm_acc = vm;
-	const auto value = resolve_env_symbol2(vm_acc, expr._variable);
-	if(value != nullptr){
-		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(value->_value_type)) };
+	const auto found = resolve_env_symbol2(vm_acc, expr._variable);
+	if(found.first != nullptr){
+		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
 	}
 	else{
 		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
@@ -670,9 +675,9 @@ std::pair<analyser_t, expression_t> analyse_variable_access_expression(const ana
 	const auto expr = *e.get_variable();
 
 	auto vm_acc = vm;
-	const auto value = resolve_env_symbol2(vm_acc, expr._variable);
-	if(value != nullptr){
-		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(value->_value_type)) };
+	const auto found = resolve_env_symbol2(vm_acc, expr._variable);
+	if(found.first != nullptr){
+		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
 	}
 	else{
 		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
@@ -1129,14 +1134,14 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_variable || callee_expr.get_operation() == expression_type::k_variable)){
 		const auto variable_expr = *callee_expr.get_variable();
 		const auto variable_name = variable_expr._variable;
-		const symbol_t* symbol = resolve_env_symbol2(vm_acc, variable_name);
-		QUARK_ASSERT(symbol != nullptr);
+		const auto found_symbol = resolve_env_symbol2(vm_acc, variable_name);
+		QUARK_ASSERT(found_symbol.first != nullptr);
 
-		if(symbol->_symbol_type != symbol_t::type::immutable_local){
+		if(found_symbol.first->_symbol_type != symbol_t::type::immutable_local){
 			throw std::runtime_error("Cannot resolve callee.");
 		}
 		else{
-			const auto callee_type2 = symbol->_const_value.get_typeid_value();
+			const auto callee_type2 = found_symbol.first->_const_value.get_typeid_value();
 			if(callee_type2.is_struct()){
 				const auto& def = callee_type2.get_struct();
 				const auto callee_args = get_member_types(def._members);
@@ -1393,10 +1398,10 @@ QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
 
 typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
-		const auto v = resolve_env_symbol2(vm, type.get_unresolved_type_identifier());
-		if(v){
-			if(v->_value_type.is_typeid()){
-				return v->_const_value.get_typeid_value();
+		const auto found = resolve_env_symbol2(vm, type.get_unresolved_type_identifier());
+		if(found.first != nullptr){
+			if(found.first->_value_type.is_typeid()){
+				return found.first->_const_value.get_typeid_value();
 			}
 			else{
 				return typeid_t::make_null();
