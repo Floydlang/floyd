@@ -154,7 +154,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", "") {
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "5" }));
 }
 
-QUARK_UNIT_TESTQ("Floyd test suite", "Deduced bind") {
+QUARK_UNIT_TEST("Floyd test suite", "Deduced bind", "", "") {
 	const auto r = test__run_global("a = 10;print(a);");
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "10" }));
 }

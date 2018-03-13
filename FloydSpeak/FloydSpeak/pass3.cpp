@@ -235,7 +235,7 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 				throw std::runtime_error("Types not compatible in bind.");
 			}
 			else{
-				return { vm_acc, statement_t::make__store_local(local_name, rhs_expr3) };
+				return { vm_acc, statement_t::make__store_local2(existing_value_deep_ptr.second, rhs_expr3) };
 			}
 		}
 	}
@@ -247,7 +247,8 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 		const auto rhs_expr2_type = rhs_expr2.second.get_annotated_type();
 
 		vm_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
-		return { vm_acc, statement_t::make__store_local(local_name, rhs_expr2.second) };
+		int variable_index = (int)(vm_acc._call_stack.back()->_symbols.size() - 1);
+		return { vm_acc, statement_t::make__store_local2({0, variable_index}, rhs_expr2.second) };
 	}
 }
 
@@ -303,7 +304,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			vm_acc._call_stack.back()->_symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
 			return {
 				vm_acc,
-				statement_t::make__store_local(new_local_name, rhs_expr_pair.second)
+				statement_t::make__store_local2({0, (int)local_name_index}, rhs_expr_pair.second)
 			};
 		}
 	}

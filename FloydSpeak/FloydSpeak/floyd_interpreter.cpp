@@ -317,10 +317,8 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 std::pair<interpreter_t, statement_result_t> execute_store_local2_statement(const interpreter_t& vm, const statement_t::store_local2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	QUARK_ASSERT(false);
-/*
 	auto vm_acc = vm;
-	const auto local_name = statement._local_name;
+	const auto address = statement._dest_variable;
 
 	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = rhs_expr_pair.first;
@@ -328,7 +326,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local2_statement(cons
 	QUARK_ASSERT(rhs_expr_pair.second.is_literal());
 	const auto rhs_value = rhs_expr_pair.second.get_literal();
 
-	const auto lhs_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
+	const auto lhs_value_deep_ptr = resolve_env_variable2(vm_acc, address);
 //	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
 
 	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
@@ -339,8 +337,6 @@ std::pair<interpreter_t, statement_result_t> execute_store_local2_statement(cons
 
 	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
 	return { vm_acc, statement_result_t::make_no_output() };
-*/
-
 }
 
 std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const statement_t::return_statement_t& statement){
@@ -537,7 +533,6 @@ std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& 
 		return nullptr;
 	}
 }
-
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -545,6 +540,20 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 
 	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
 }
+
+
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+std::pair<floyd::value_t, bool>* resolve_env_variable2(const interpreter_t& vm, const variable_address_t& s){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto env_index = vm._call_stack.size() - s._parent_steps - 1;
+	auto& env = vm._call_stack[env_index];
+	return &env->_values[s._index].second;
+}
+
+
+
+
 
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	const auto t = resolve_env_variable(vm, s);
@@ -1446,15 +1455,15 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& init_values){
 	QUARK_ASSERT(body_ptr != nullptr);
 
-	std::map<std::string, std::pair<value_t, bool> > values;
+	vector<std::pair<std::string, std::pair<value_t, bool>>> values;
 	for(const auto e: body_ptr->_symbols){
 		if(e.second._symbol_type == symbol_t::immutable_local){
 			const std::pair<std::string, std::pair<value_t, bool>> val = {e.first, { e.second._const_value, false } };
-			values.insert(val);
+			values.push_back(val);
 		}
 		else if(e.second._symbol_type == symbol_t::mutable_local){
 			const std::pair<std::string, std::pair<value_t, bool>> val = {e.first, { e.second._const_value, true } };
-			values.insert(val);
+			values.push_back(val);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1462,19 +1471,13 @@ std::shared_ptr<environment_t> environment_t::make_environment(const body_t* bod
 	}
 
 	for(const auto e: init_values){
-		auto found_it = values.find(e.first);
+		auto found_it = std::find_if(values.begin(), values.end(), [&](const std::pair<std::string, std::pair<value_t, bool>>& v){ return v.first == e.first; });
 		QUARK_ASSERT(found_it != values.end());
 
 		found_it->second.first = e.second.first;
 	}
 
-
-	vector<std::pair<std::string, std::pair<value_t, bool>>> values2;
-	for(const auto e: values){
-		values2.push_back({e.first, e.second});
-	}
-
-	const auto temp = environment_t{ body_ptr, values2 };
+	const auto temp = environment_t{ body_ptr, values };
 	return make_shared<environment_t>(temp);
 }
 

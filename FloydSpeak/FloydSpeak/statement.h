@@ -380,6 +380,9 @@ namespace floyd {
 			else if(_store_local){
 				return compare_shared_values(_store_local, other._store_local);
 			}
+			else if(_store_local2){
+				return compare_shared_values(_store_local2, other._store_local2);
+			}
 			else if(_block){
 				return compare_shared_values(_block, other._block);
 			}
@@ -404,6 +407,7 @@ namespace floyd {
 			count = count + (_def_struct != nullptr ? 1 : 0);
 			count = count + (_bind_local != nullptr ? 1 : 0);
 			count = count + (_store_local != nullptr ? 1 : 0);
+			count = count + (_store_local2 != nullptr ? 1 : 0);
 			count = count + (_block != nullptr ? 1 : 0);
 			count = count + (_if != nullptr ? 1 : 0);
 			count = count + (_for != nullptr ? 1 : 0);
@@ -418,6 +422,8 @@ namespace floyd {
 			else if(_bind_local){
 			}
 			else if(_store_local){
+			}
+			else if(_store_local2){
 			}
 			else if(_block){
 			}
@@ -459,6 +465,9 @@ namespace floyd {
 			}
 			else if(_store_local){
 				return _store_local->_expression.is_annotated_deep();
+			}
+			else if(_store_local2){
+				return _store_local2->_expression.is_annotated_deep();
 			}
 			else if(_block){
 				return is_annotated_deep2(_block->_body);

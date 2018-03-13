@@ -567,7 +567,7 @@ ast_json_t statement_to_json(const statement_t& e){
 			json_t("store-local2"),
 			e._store_local2->_dest_variable._parent_steps,
 			e._store_local2->_dest_variable._index,
-			expression_to_json(e._store_local->_expression)._value
+			expression_to_json(e._store_local2->_expression)._value
 		})};
 	}
 	else if(e._block){
