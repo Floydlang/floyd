@@ -470,8 +470,15 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
 
 
 
-
-
+QUARK_UNIT_TEST("evaluate_expression()", "-true", "", "") {
+	try{
+		test__run_init__check_result("int result = -true;", value_t::make_int(0));
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Unary minus won't work on expressions of type \"\"bool\"\".");
+	}
+}
 
 
 

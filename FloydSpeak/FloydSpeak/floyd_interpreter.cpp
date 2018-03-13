@@ -40,36 +40,8 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-
 std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 
-
-
-
-//### add checking of function types when calling / returning from them. Also host functions.
-
-//??? not needed now?
-typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
-	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
-//		QUARK_ASSERT(false);
-
-		const auto v = resolve_env_variable(vm, type.get_unresolved_type_identifier());
-		if(v){
-			if(v->first.is_typeid()){
-				return v->first.get_typeid_value();
-			}
-			else{
-				return typeid_t::make_null();
-			}
-		}
-		else{
-			return typeid_t::make_null();
-		}
-	}
-	else{
-		return type;
-	}
-}
 
 std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
 	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
@@ -95,7 +67,6 @@ std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, cons
 
 	return std::pair<interpreter_t, value_t>(vm, instance);
 }
-
 
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 	if(type.is_json_value()){
@@ -158,7 +129,6 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	throw std::runtime_error("Cannot call non-function.");
 }
 
-
 std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
@@ -189,6 +159,7 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 	}
 	return { vm_acc, statement_result_t::make_no_output() };
 }
+
 std::pair<interpreter_t, statement_result_t> execute_body(
 	const interpreter_t& vm,
 	const body_t& body,
@@ -206,8 +177,6 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 	vm_acc = r.first;
 	vm_acc._call_stack.pop_back();
 
-//	QUARK_ASSERT(r.first._call_stack.back()->_values.size() == body._symbols.size());
-
 	return { vm_acc, r.second };
 }
 
@@ -222,14 +191,13 @@ bool does_symbol_exist_shallow(const interpreter_t& vm, const std::string& symbo
 	return it != vm._call_stack.back()->_values.end();
 }
 
-
+//	??? build structs in pass3 instead!
 interpreter_t store(const interpreter_t& vm, const std::string& name, const value_t& value){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
 
 	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, name) == true);
-//	vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
 
     const auto it = std::find_if(
     	vm._call_stack.back()->_values.begin(),
@@ -245,75 +213,6 @@ interpreter_t store(const interpreter_t& vm, const std::string& name, const valu
 	QUARK_ASSERT(false);
 }
 
-
-
-
-
-/*
-std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const interpreter_t& vm, const statement_t::bind_local_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm_acc = vm;
-	const auto name = statement._new_local_name;
-
-	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
-	vm_acc = rhs_expr_pair.first;
-
-	const auto rhs_value = rhs_expr_pair.second;
-
-	const auto bind_statement_type = statement._bindtype;
-	const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
-	const auto mutable_flag = bind_statement_mutable_mode == statement_t::bind_local_t::k_mutable;
-
-	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, name) == true);
-
-	//	Deduced bind type -- use new value's type.
-
-	//??? THere should be no BIND in interpreter!?
-	//??? Should not be needed in interpreter. Move to pass3.
-	if(bind_statement_type.is_null()){
-		vm_acc = store(vm_acc, name, rhs_value);
-	}
-
-	//	Explicit bind-type -- make sure source + dest types match.
-	else{
-		//??? Should not be needed in interpreter. Move to pass3.
-		if(bind_statement_type != rhs_value.get_type()){
-			throw std::runtime_error("Types not compatible in bind.");
-		}
-//		vm_acc._call_stack.back()->_values[name] = std::pair<value_t, bool>(rhs_value, mutable_flag);
-		vm_acc = store(vm_acc, name, rhs_value);
-	}
-	return { vm_acc, statement_result_t::make_no_output() };
-}
-*/
-
-/*
-std::pair<interpreter_t, statement_result_t> execute_store_statement(const interpreter_t& vm, const statement_t::store_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm_acc = vm;
-	const auto local_name = statement._local_name;
-
-	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
-	vm_acc = rhs_expr_pair.first;
-
-	const auto rhs_value = rhs_expr_pair.second;
-
-	const auto lhs_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
-//	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
-
-	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
-//	QUARK_ASSERT(lhs_value_is_mutable);
-
-	const auto lhs_value = lhs_value_deep_ptr->first;
-//	QUARK_ASSERT(lhs_value.get_type() == rhs_value.get_type());
-
-	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
-	return { vm_acc, statement_result_t::make_no_output() };
-}
-*/
-
 std::pair<interpreter_t, statement_result_t> execute_store2_statement(const interpreter_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -322,17 +221,14 @@ std::pair<interpreter_t, statement_result_t> execute_store2_statement(const inte
 
 	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = rhs_expr_pair.first;
-
 	const auto rhs_value = rhs_expr_pair.second;
 
-	const auto lhs_value_deep_ptr = resolve_env_variable2(vm_acc, address);
-//	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
-
+	const auto env_index = address._parent_steps == -1 ? 0: vm._call_stack.size() - address._parent_steps - 1;
+	auto& env = vm._call_stack[env_index];
+	const auto lhs_value_deep_ptr = &env->_values[address._index].second;
 	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
-//	QUARK_ASSERT(lhs_value_is_mutable);
 
 	const auto lhs_value = lhs_value_deep_ptr->first;
-//	QUARK_ASSERT(lhs_value.get_type() == rhs_value.get_type());
 
 	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
 	return { vm_acc, statement_result_t::make_no_output() };
@@ -353,6 +249,29 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	};
 }
 
+
+typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
+	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
+//		QUARK_ASSERT(false);
+
+		const auto v = resolve_env_variable(vm, type.get_unresolved_type_identifier());
+		if(v){
+			if(v->first.is_typeid()){
+				return v->first.get_typeid_value();
+			}
+			else{
+				return typeid_t::make_null();
+			}
+		}
+		else{
+			return typeid_t::make_null();
+		}
+	}
+	else{
+		return type;
+	}
+}
+//	??? build structs in pass3 instead!
 std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -373,10 +292,11 @@ std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const 
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
 	const auto value = value_t::make_typeid_value(struct_typeid);
-//	vm_acc._call_stack.back()->_values[struct_name] = std::pair<value_t, bool>(value, false);
 	vm_acc = store(vm_acc, struct_name, value);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
+
+
 
 std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -462,7 +382,6 @@ std::pair<interpreter_t, statement_result_t> execute_expression_statement(const 
 	};
 }
 
-
 std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm, const statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
@@ -470,11 +389,9 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	if(statement._bind_local){
 		//	Bind is converted to symbol table + store-local in pass3.
 		QUARK_ASSERT(false);
-//		return execute_bind_local_statement(vm, *statement._bind_local);
 	}
 	else if(statement._store){
 		QUARK_ASSERT(false);
-//		return execute_store_statement(vm, *statement._store);
 	}
 	else if(statement._store2){
 		return execute_store2_statement(vm, *statement._store2);
@@ -506,8 +423,6 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	}
 }
 
-
-
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -530,6 +445,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& 
 		return nullptr;
 	}
 }
+
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -537,20 +453,6 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 
 	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
 }
-
-
-//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<floyd::value_t, bool>* resolve_env_variable2(const interpreter_t& vm, const variable_address_t& s){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto env_index = s._parent_steps == -1 ? 0: vm._call_stack.size() - s._parent_steps - 1;
-	auto& env = vm._call_stack[env_index];
-	return &env->_values[s._index].second;
-}
-
-
-
-
 
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	const auto t = resolve_env_variable(vm, s);
@@ -560,8 +462,6 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	}
 	return t->first;
 }
-
-
 
 std::pair<interpreter_t, value_t> evaluate_resolve_member_expression(const interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -677,18 +577,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 	}
 }
 
-std::pair<interpreter_t, value_t> evaluate_variable_expression(const interpreter_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto expr = *e.get_load();
-
-	auto vm_acc = vm;
-	const auto value = resolve_env_variable(vm_acc, expr._variable);
-	QUARK_ASSERT(value != nullptr);
-	return {vm_acc, value->first};
-}
-
-std::pair<interpreter_t, value_t> evaluate_load_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, value_t> evaluate_load2_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_load2();
@@ -707,7 +596,6 @@ std::pair<interpreter_t, value_t> evaluate_load_expression(const interpreter_t& 
 
 	return {vm_acc, value};
 }
-
 
 std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const interpreter_t& vm, const expression_t::vector_definition_exprt_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -737,8 +625,6 @@ std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const in
 #endif
 	return {vm_acc, value_t::make_vector_value(element_type2, elements2)};
 }
-
-
 
 std::pair<interpreter_t, value_t> evaluate_dict_definition_expression(const interpreter_t& vm, const expression_t::dict_definition_exprt_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -779,20 +665,29 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_unary_minus_expression(con
 	if(c.is_int()){
 		return evaluate_expression(
 			vm_acc,
-			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expression_t::make_literal(expr2.second), make_shared<typeid_t>(c.get_type()))
+			expression_t::make_simple_expression__2(
+				expression_type::k_arithmetic_subtract__2,
+				expression_t::make_literal_int(0),
+				expression_t::make_literal(expr2.second),
+				make_shared<typeid_t>(c.get_type())
+			)
 		);
 	}
 	else if(c.is_float()){
 		return evaluate_expression(
 			vm_acc,
-			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expression_t::make_literal(expr2.second), make_shared<typeid_t>(c.get_type()))
+			expression_t::make_simple_expression__2(
+				expression_type::k_arithmetic_subtract__2,
+				expression_t::make_literal_float(0.0f),
+				expression_t::make_literal(expr2.second),
+				make_shared<typeid_t>(c.get_type())
+			)
 		);
 	}
 	else{
-		throw std::runtime_error("Unary minus won't work on expressions of type \"" + json_to_compact_string(typeid_to_ast_json(c.get_type())._value) + "\".");
+		QUARK_ASSERT(false);
 	}
 }
-
 
 std::pair<interpreter_t, value_t> evaluate_conditional_operator_expression(const interpreter_t& vm, const expression_t::conditional_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -807,7 +702,7 @@ std::pair<interpreter_t, value_t> evaluate_conditional_operator_expression(const
 
 	const bool cond_flag = cond_result.second.get_bool_value();
 
-	//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
+	//	!!! Only evaluate the CHOSEN expression. Not that important since functions are pure.
 	if(cond_flag){
 		return evaluate_expression(vm_acc, *expr._a);
 	}
@@ -815,7 +710,6 @@ std::pair<interpreter_t, value_t> evaluate_conditional_operator_expression(const
 		return evaluate_expression(vm_acc, *expr._b);
 	}
 }
-
 
 std::pair<interpreter_t, value_t> evaluate_comparison_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -976,7 +870,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 			throw std::runtime_error("Modulo operation on float not allowed.");
 		}
 
-
 		else if(op == expression_type::k_logical_and__2){
 			return {vm_acc, value_t::make_bool((left != 0.0f) && (right != 0.0f))};
 		}
@@ -1135,7 +1028,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 	}
 }
 
-
 std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1153,10 +1045,9 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	}
 	else if(op == expression_type::k_load){
 		QUARK_ASSERT(false);
-		return evaluate_variable_expression(vm, e);
 	}
 	else if(op == expression_type::k_load2){
-		return evaluate_load_expression(vm, e);
+		return evaluate_load2_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_call){
@@ -1213,7 +1104,6 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 		throw std::exception();
 	}
 }
-
 
 std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1318,8 +1208,6 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 	}
 }
 
-
-
 json_t interpreter_to_json(const interpreter_t& vm){
 	vector<json_t> callstack;
 	for(const auto& e: vm._call_stack){
@@ -1336,8 +1224,6 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		}
 
 		const auto& env = json_t::make_object({
-//			{ "parent_env", e->_parent_env ? e->_parent_env->_object_id : json_t() },
-//			{ "object_id", json_t(double(e->_object_id)) },
 			{ "values", values }
 		});
 		callstack.push_back(env);
@@ -1348,8 +1234,6 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
-
-
 
 void test__evaluate_expression(const expression_t& e, const value_t& expected_value){
 	const ast_t ast;
@@ -1416,7 +1300,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 
 
-//### just vector of values, no bool!
+
 std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& init_values){
 	QUARK_ASSERT(body_ptr != nullptr);
 
@@ -1450,23 +1334,13 @@ bool environment_t::check_invariant() const {
 	return true;
 }
 
-
-
-
-
-//	NOTICE: We do function overloading for the host functions: you can call them with any *type* of arguments and it gives any return type.
 std::pair<interpreter_t, statement_result_t> call_host_function(const interpreter_t& vm, int function_id, const std::vector<floyd::value_t> args){
-//	const int index = function_id - 1000;
-//	QUARK_ASSERT(index >= 0 /*&& index < k_host_functions.size()*/);
+	QUARK_ASSERT(function_id >= 0);
 
 	const auto& host_function = vm._host_functions.at(function_id);
 
-/*
 	//	arity
-	if(args.size() != host_function._function_type.get_function_args().size()){
-		throw std::runtime_error("Wrong number of arguments to host function.");
-	}
-*/
+//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
 	const auto result = (host_function)(vm, args);
 	return {
@@ -1483,10 +1357,6 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto host_functions = get_host_functions();
 	for(auto hf_kv: host_functions){
-//		const auto& function_name = hf_kv.second._name;
-//		const auto function_value = make_host_function_value(hf_kv.second._signature);
-//		const auto value_entry = std::pair<value_t, bool>{ function_value, false };
-
 		const auto function_id = hf_kv.second._signature._function_id;
 		const auto function_ptr = hf_kv.second._f;
 		_host_functions.insert({ function_id, function_ptr });
@@ -1494,7 +1364,6 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	//	Make the top-level environment = global scope.
 	auto global_env = environment_t::make_environment(&_ast->_globals, {});
-
 	_call_stack.push_back(global_env);
 
 	_start_time = std::chrono::high_resolution_clock::now();
@@ -1517,7 +1386,6 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 	QUARK_ASSERT(check_invariant());
 }
 
-
 //??? make proper operator=(). Exception safety etc.
 const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 	_start_time = other._start_time;
@@ -1534,11 +1402,6 @@ bool interpreter_t::check_invariant() const {
 	return true;
 }
 #endif
-
-
-
-
-
 
 
 ast_t program_to_ast2(const interpreter_context_t& context, const string& program){
@@ -1561,7 +1424,6 @@ void print_vm_printlog(const interpreter_t& vm){
 	}
 }
 
-
 interpreter_t run_global(const interpreter_context_t& context, const string& source){
 	auto ast = program_to_ast2(context, source);
 	auto vm = interpreter_t(ast);
@@ -1571,7 +1433,6 @@ interpreter_t run_global(const interpreter_context_t& context, const string& sou
 }
 
 std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
-
 	auto ast = program_to_ast2(context, source);
 
 	//	Runs global code.
@@ -1601,7 +1462,6 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 }
 
 value_t get_global(const interpreter_t& vm, const std::string& name){
-
     const auto it = std::find_if(
     	vm._call_stack.front()->_values.begin(),
     	vm._call_stack.front()->_values.end(),
@@ -1614,6 +1474,4 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 }
 
 
-
 }	//	floyd
-

@@ -176,7 +176,6 @@ namespace floyd {
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
 	typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type);
 	std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s);
-	std::pair<floyd::value_t, bool>* resolve_env_variable2(const interpreter_t& vm, const variable_address_t& s);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.
