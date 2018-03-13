@@ -268,6 +268,7 @@ typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
 	}
 }
 
+/*
 //??? Isn't struct def already in symbol table? No need to emit any def_struct-statement at all!
 std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -281,6 +282,7 @@ std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const 
 	vm_acc = store(vm_acc, struct_name, value);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
+*/
 
 std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -387,8 +389,9 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 		return execute_return_statement(vm, *statement._return);
 	}
 	else if(statement._def_struct){
+		QUARK_ASSERT(false);
 //		return execute_def_struct_statement(vm, *statement._def_struct);
-		return { vm, statement_result_t::make_no_output() };
+//		return { vm, statement_result_t::make_no_output() };
 	}
 	else if(statement._if){
 		return execute_ifelse_statement(vm, *statement._if);

@@ -38,7 +38,7 @@ namespace floyd_pass3 {
 	using floyd::symbol_t;
 	using floyd::body_t;
 
-std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const statement_t& statement);
+std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& vm, const statement_t& statement);
 
 
 
@@ -62,10 +62,12 @@ std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const 
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
 		const auto& r = analyse_statement(vm_acc, *statement);
-		QUARK_ASSERT(r.second.is_annotated_deep());
-
 		vm_acc = r.first;
-		statements2.push_back(make_shared<statement_t>(r.second));
+
+		if(r.second){
+			QUARK_ASSERT(r.second->is_annotated_deep());
+			statements2.push_back(r.second);
+		}
 		statement_index++;
 	}
 	return { vm_acc, statements2 };
@@ -350,7 +352,7 @@ typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
 }
 
 //	TODO: When symbol tables are kept with pass3, this function returns a NOP-statement.
-std::pair<analyser_t, statement_t> analyse_def_struct_statement(const analyser_t& vm, const statement_t::define_struct_statement_t& statement){
+analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -395,7 +397,7 @@ std::pair<analyser_t, statement_t> analyse_def_struct_statement(const analyser_t
 	const auto s = statement_t::define_struct_statement_t{ struct_name, resolved_struct_def };
 	const auto statement2 = statement_t::make__define_struct_statement(s);
 
-	return { vm_acc, statement2  };
+	return vm_acc;
 }
 
 std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm, const statement_t::ifelse_statement_t& statement){
@@ -472,54 +474,53 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 }
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
-std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const statement_t& statement){
+std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& vm, const statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
 	if(statement._bind_local){
 		const auto e = analyse_bind_local_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._store){
 		const auto e = analyse_store_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._block){
 		const auto e = analyse_block_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._return){
 		const auto e = analyse_return_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._def_struct){
 		const auto e = analyse_def_struct_statement(vm, *statement._def_struct);
-		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e, {} };
 	}
 	else if(statement._if){
 		const auto e = analyse_ifelse_statement(vm, *statement._if);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._for){
 		const auto e = analyse_for_statement(vm, *statement._for);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._while){
 		const auto e = analyse_while_statement(vm, *statement._while);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._expression){
 		const auto e = analyse_expression_statement(vm, *statement._expression);
 		QUARK_ASSERT(e.second.is_annotated_deep());
-		return e;
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else{
 		QUARK_ASSERT(false);
