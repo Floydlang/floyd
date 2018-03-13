@@ -282,6 +282,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 		const auto rhs_expr_pair = lhs_type.is_null()? analyse_expression_no_target(vm_acc, statement._expression) : analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
 		vm_acc = rhs_expr_pair.first;
 
+//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no store-statement!
 
 		const auto rhs_type = rhs_expr_pair.second.get_annotated_type();
 		const auto lhs_type2 = lhs_type.is_null() ? rhs_type : lhs_type;
@@ -331,7 +332,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm
 	return { vm_acc, statement_t::make__return_statement(result.second) };
 }
 
-typeid_t resolve_type_using_env(const analyser_t& vm, const typeid_t& type){
+typeid_t find_type_by_name(const analyser_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
 		const auto found = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
 		if(found.first != nullptr){
@@ -366,7 +367,7 @@ analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t:
 	for(const auto e: statement._def->_members){
 		const auto name = e._name;
 		const auto type = e._type;
-		const auto type2 = resolve_type_using_env(vm_acc, type);
+		const auto type2 = find_type_by_name(vm_acc, type);
 
 		QUARK_ASSERT(type2.get_base_type() != base_type::k_unresolved_type_identifier);
 
@@ -901,15 +902,21 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	bool
 		if(shared_type.is_bool()){
-			if(false
-			|| op == expression_type::k_arithmetic_add__2
-			|| op == expression_type::k_arithmetic_subtract__2
-			|| op == expression_type::k_arithmetic_multiply__2
-			|| op == expression_type::k_arithmetic_divide__2
-			|| op == expression_type::k_arithmetic_remainder__2
-			){
-				throw std::runtime_error("Artithmetics: bool not allowed.");
+			if(op == expression_type::k_arithmetic_add__2){
 			}
+			else if(op == expression_type::k_arithmetic_subtract__2){
+				throw std::runtime_error("Operation not allowed on bool.");
+			}
+			else if(op == expression_type::k_arithmetic_multiply__2){
+				throw std::runtime_error("Operation not allowed on bool.");
+			}
+			else if(op == expression_type::k_arithmetic_divide__2){
+				throw std::runtime_error("Operation not allowed on bool.");
+			}
+			else if(op == expression_type::k_arithmetic_remainder__2){
+				throw std::runtime_error("Operation not allowed on bool.");
+			}
+
 			else if(op == expression_type::k_logical_and__2){
 			}
 			else if(op == expression_type::k_logical_or__2){
@@ -958,6 +965,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			else if(op == expression_type::k_arithmetic_divide__2){
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
+				throw std::runtime_error("Modulo operation on float not allowed.");
 			}
 
 			else if(op == expression_type::k_logical_and__2){
@@ -978,17 +986,23 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 
 			else if(op == expression_type::k_arithmetic_subtract__2){
+				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_arithmetic_multiply__2){
+				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_arithmetic_divide__2){
+				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
+				throw std::runtime_error("Operation not allowed on string.");
 			}
 
 			else if(op == expression_type::k_logical_and__2){
+				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_logical_or__2){
+				throw std::runtime_error("Operation not allowed on string.");
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1239,7 +1253,7 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 	for(const auto e: expr._def->_members){
 		const auto name = e._name;
 		const auto type = e._type;
-		const auto type2 = resolve_type_using_env(vm_acc, type);
+		const auto type2 = find_type_by_name(vm_acc, type);
 
 		QUARK_ASSERT(type2.get_base_type() != base_type::k_unresolved_type_identifier);
 
@@ -1249,7 +1263,15 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	return {vm_acc, expression_t::make_struct_definition(resolved_struct_def) };
 }
+/*
+	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
+	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
+	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid);
+	vm_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
 
+	const auto s = statement_t::define_struct_statement_t{ struct_name, resolved_struct_def };
+	const auto statement2 = statement_t::make__define_struct_statement(s);
+*/
 
 std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());

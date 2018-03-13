@@ -304,7 +304,7 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 		auto dest_member_resolved_type = dest_member_entry._type;
 
 		//?? why is runtime resolve needed?
-		dest_member_resolved_type = resolve_type_using_env(vm, dest_member_entry._type);
+		dest_member_resolved_type = find_type_by_name(vm, dest_member_entry._type);
 
 		if(!(new_value.get_type() == dest_member_resolved_type)){
 			throw std::runtime_error("Value type not matching struct member type.");

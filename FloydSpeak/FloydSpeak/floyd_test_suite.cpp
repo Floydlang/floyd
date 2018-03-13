@@ -2909,3 +2909,18 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 	}
 }
 
+QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
+	try{
+		const auto result = run_return_result(R"(
+			a = 3[0];
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Lookup using [] only works with strings, vectors, dicts and json_value.");
+	}
+}
+
+
+
+

@@ -124,7 +124,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	else{
 	}
 
-	throw std::runtime_error("Cannot call non-function.");
+	QUARK_ASSERT(false);
 }
 
 std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
@@ -189,28 +189,6 @@ bool does_symbol_exist_shallow(const interpreter_t& vm, const std::string& symbo
 	return it != vm._call_stack.back()->_values.end();
 }
 
-//	??? build structs in pass3 instead!
-interpreter_t store(const interpreter_t& vm, const std::string& name, const value_t& value){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm_acc = vm;
-
-	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, name) == true);
-
-    const auto it = std::find_if(
-    	vm._call_stack.back()->_values.begin(),
-    	vm._call_stack.back()->_values.end(),
-    	[&name](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == name; }
-	);
-	if(it != vm._call_stack.back()->_values.end()){
-
-		//	Store value in the vm.
-		it->second.first = value;
-		return vm_acc;
-	}
-	QUARK_ASSERT(false);
-}
-
 std::pair<interpreter_t, statement_result_t> execute_store2_statement(const interpreter_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -247,10 +225,9 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	};
 }
 
-
-typeid_t resolve_type_using_env(const interpreter_t& vm, const typeid_t& type){
+typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
-		const auto v = resolve_env_variable(vm, type.get_unresolved_type_identifier());
+		const auto v = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
 		if(v){
 			if(v->first.is_typeid()){
 				return v->first.get_typeid_value();
@@ -407,7 +384,6 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
 	}
 }
 
@@ -435,7 +411,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& 
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, const std::string& s){
+std::pair<floyd::value_t, bool>* find_symbol_by_name(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
@@ -443,10 +419,9 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 }
 
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
-	const auto t = resolve_env_variable(vm, s);
+	const auto t = find_symbol_by_name(vm, s);
 	if(t == nullptr){
 		QUARK_ASSERT(false);
-		throw std::runtime_error("Undefined indentifier \"" + s + "\"!");
 	}
 	return t->first;
 }
@@ -496,35 +471,28 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 		}
 	}
 	else if(parent_value.is_json_value()){
+		//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
 		const auto parent_json_value = parent_value.get_json_value();
 		if(parent_json_value.is_object()){
-			if(key_value.is_string() == false){
-				throw std::runtime_error("Lookup in json_value object by string-key only.");
-			}
-			else{
-				const auto lookup_key = key_value.get_string_value();
+			QUARK_ASSERT(key_value.is_string());
+			const auto lookup_key = key_value.get_string_value();
 
-				//	get_object_element() throws if key can't be found.
-				const auto value = parent_json_value.get_object_element(lookup_key);
-				const auto value2 = value_t::make_json_value(value);
-				return { vm_acc, value2};
-			}
+			//	get_object_element() throws if key can't be found.
+			const auto value = parent_json_value.get_object_element(lookup_key);
+			const auto value2 = value_t::make_json_value(value);
+			return { vm_acc, value2};
 		}
 		else if(parent_json_value.is_array()){
-			if(key_value.is_int() == false){
-				throw std::runtime_error("Lookup in json_value array by integer index only.");
+			QUARK_ASSERT(key_value.is_int());
+			const auto lookup_index = key_value.get_int_value();
+
+			if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
+				throw std::runtime_error("Lookup in json_value array: out of bounds.");
 			}
 			else{
-				const auto lookup_index = key_value.get_int_value();
-
-				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
-					throw std::runtime_error("Lookup in json_value array: out of bounds.");
-				}
-				else{
-					const auto value = parent_json_value.get_array_n(lookup_index);
-					const auto value2 = value_t::make_json_value(value);
-					return { vm_acc, value2};
-				}
+				const auto value = parent_json_value.get_array_n(lookup_index);
+				const auto value2 = value_t::make_json_value(value);
+				return { vm_acc, value2};
 			}
 		}
 		else{
@@ -561,7 +529,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 		}
 	}
 	else {
-		throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
+		QUARK_ASSERT(false);
 	}
 }
 
@@ -744,7 +712,6 @@ std::pair<interpreter_t, value_t> evaluate_comparison_expression(const interpret
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
 	}
 }
 
@@ -772,15 +739,20 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		const bool left = left_constant.get_bool_value();
 		const bool right = right_constant.get_bool_value();
 
-		if(false
-		|| op == expression_type::k_arithmetic_add__2
-		|| op == expression_type::k_arithmetic_subtract__2
-		|| op == expression_type::k_arithmetic_multiply__2
-		|| op == expression_type::k_arithmetic_divide__2
-		|| op == expression_type::k_arithmetic_remainder__2
-		){
+		if(op == expression_type::k_arithmetic_add__2){
+			return {vm_acc, value_t::make_bool(left + right)};
+		}
+		else if(op == expression_type::k_arithmetic_subtract__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Artithmetics: bool not allowed.");
+		}
+		else if(op == expression_type::k_arithmetic_multiply__2){
+			QUARK_ASSERT(false);
+		}
+		else if(op == expression_type::k_arithmetic_divide__2){
+			QUARK_ASSERT(false);
+		}
+		else if(op == expression_type::k_arithmetic_remainder__2){
+			QUARK_ASSERT(false);
 		}
 
 		else if(op == expression_type::k_logical_and__2){
@@ -791,7 +763,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
 		}
 	}
 
@@ -822,6 +793,7 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 			return {vm_acc, value_t::make_int(left % right)};
 		}
 
+		//??? Could be replaced by feture to convert any value to bool -- they use a generic comparison for && and ||
 		else if(op == expression_type::k_logical_and__2){
 			return {vm_acc, value_t::make_bool((left != 0) && (right != 0))};
 		}
@@ -830,7 +802,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
 		}
 	}
 
@@ -855,7 +826,7 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 			return {vm_acc, value_t::make_float(left / right)};
 		}
 		else if(op == expression_type::k_arithmetic_remainder__2){
-			throw std::runtime_error("Modulo operation on float not allowed.");
+			QUARK_ASSERT(false);
 		}
 
 		else if(op == expression_type::k_logical_and__2){
@@ -866,7 +837,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
 		}
 	}
 
@@ -881,138 +851,75 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 
 		else if(op == expression_type::k_arithmetic_subtract__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on string.");
 		}
 		else if(op == expression_type::k_arithmetic_multiply__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on string.");
 		}
 		else if(op == expression_type::k_arithmetic_divide__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on string.");
 		}
 		else if(op == expression_type::k_arithmetic_remainder__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on string.");
 		}
-
 
 		else if(op == expression_type::k_logical_and__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on string.");
 		}
 		else if(op == expression_type::k_logical_or__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on string.");
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
 		}
 	}
 
 	//	struct
 	else if(type_mode.is_struct()){
-		const auto left = left_constant.get_struct_value();
-		const auto right = right_constant.get_struct_value();
-
-		//	Structs mue be exactly the same type to match.
-		if(left_constant.get_typeid_value() == right_constant.get_typeid_value()){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Struct type mismatch.");
-		}
-
-		if(op == expression_type::k_arithmetic_add__2){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on struct.");
-		}
-		else if(op == expression_type::k_arithmetic_subtract__2){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on struct.");
-		}
-		else if(op == expression_type::k_arithmetic_multiply__2){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on struct.");
-		}
-		else if(op == expression_type::k_arithmetic_divide__2){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on struct.");
-		}
-		else if(op == expression_type::k_arithmetic_remainder__2){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on struct.");
-		}
-
-		else if(op == expression_type::k_logical_and__2){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on struct.");
-		}
-		else if(op == expression_type::k_logical_or__2){
-			QUARK_ASSERT(false);
-			throw std::runtime_error("Operation not allowed on struct.");
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
+		QUARK_ASSERT(false);
 	}
 
+	//	vector
 	else if(type_mode.is_vector()){
 		//	Improves vectors before using them.
 		const auto element_type = left_constant.get_type().get_vector_element_type();
 
-		if(!(left_constant.get_type() == right_constant.get_type())){
+		if(op == expression_type::k_arithmetic_add__2){
+			auto elements2 = left_constant.get_vector_value()->_elements;
+			elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
+
+			const auto value2 = value_t::make_vector_value(element_type, elements2);
+			return {vm_acc, value2};
+		}
+
+		else if(op == expression_type::k_arithmetic_subtract__2){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Vector types don't match.");
+		}
+		else if(op == expression_type::k_arithmetic_multiply__2){
+			QUARK_ASSERT(false);
+		}
+		else if(op == expression_type::k_arithmetic_divide__2){
+			QUARK_ASSERT(false);
+		}
+		else if(op == expression_type::k_arithmetic_remainder__2){
+			QUARK_ASSERT(false);
+		}
+
+
+		else if(op == expression_type::k_logical_and__2){
+			QUARK_ASSERT(false);
+		}
+		else if(op == expression_type::k_logical_or__2){
+			QUARK_ASSERT(false);
 		}
 		else{
-			if(op == expression_type::k_arithmetic_add__2){
-				auto elements2 = left_constant.get_vector_value()->_elements;
-				elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
-
-				const auto value2 = value_t::make_vector_value(element_type, elements2);
-				return {vm_acc, value2};
-			}
-
-			else if(op == expression_type::k_arithmetic_subtract__2){
 			QUARK_ASSERT(false);
-				throw std::runtime_error("Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-			QUARK_ASSERT(false);
-				throw std::runtime_error("Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-			QUARK_ASSERT(false);
-				throw std::runtime_error("Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-			QUARK_ASSERT(false);
-				throw std::runtime_error("Operation not allowed on vectors.");
-			}
-
-
-			else if(op == expression_type::k_logical_and__2){
-			QUARK_ASSERT(false);
-				throw std::runtime_error("Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_logical_or__2){
-			QUARK_ASSERT(false);
-				throw std::runtime_error("Operation not allowed on vectors.");
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
 		}
 	}
 	else if(type_mode.is_function()){
 		QUARK_ASSERT(false);
-		throw std::runtime_error("Cannot perform operations on two function values.");
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::runtime_error("Arithmetics failed.");
 	}
 }
 
@@ -1045,8 +952,7 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_struct){
 		QUARK_ASSERT(false);
-		const auto expr = e.get_function_definition();
-		return {vm, value_t::make_function_value(expr->_def)};
+		return {vm, value_t::make_null()};
 	}
 	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
@@ -1098,7 +1004,6 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
 	}
 }
 
@@ -1111,7 +1016,6 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 	if(f.is_function() == false){
 		QUARK_ASSERT(false);
-		throw std::runtime_error("Cannot call non-function.");
 	}
 
 	const auto& function_def = f.get_function_value()->_def;
@@ -1201,7 +1105,6 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
 	}
 }
 
@@ -1435,7 +1338,7 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 	//	Runs global code.
 	auto vm = interpreter_t(ast);
 
-	const auto main_function = resolve_env_variable(vm, "main");
+	const auto main_function = find_symbol_by_name(vm, "main");
 	if(main_function != nullptr){
 		const auto result = call_function(vm, main_function->first, args);
 		return { result.first, result.second };
@@ -1448,7 +1351,7 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const ast_t& ast, const vector<floyd::value_t>& args){
 	auto vm = interpreter_t(ast);
 
-	const auto main_func = resolve_env_variable(vm, "main");
+	const auto main_func = find_symbol_by_name(vm, "main");
 	if(main_func != nullptr){
 		const auto r = call_function(vm, main_func->first, args);
 		return { r.first, r.second };
