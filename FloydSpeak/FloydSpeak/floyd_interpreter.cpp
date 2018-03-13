@@ -43,29 +43,6 @@ using std::make_shared;
 std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 
 
-std::pair<interpreter_t, value_t> construct_struct(const interpreter_t& vm, const typeid_t& struct_type, const vector<value_t>& values){
-	QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
-	QUARK_SCOPED_TRACE("construct_struct()");
-	QUARK_TRACE("struct_type: " + typeid_to_compact_string(struct_type));
-
-#if DEBUG
-	const auto def = struct_type.get_struct_ref();
-	QUARK_ASSERT(values.size() == def->_members.size());
-
-	for(int i = 0 ; i < def->_members.size() ; i++){
-		const auto v = values[i];
-		const auto a = def->_members[i];
-		QUARK_ASSERT(v.check_invariant());
-		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
-		QUARK_ASSERT(v.get_type() == a._type);
-	}
-#endif
-	const auto instance = value_t::make_struct_value(struct_type, values);
-	QUARK_TRACE(to_compact_string2(instance));
-
-	return std::pair<interpreter_t, value_t>(vm, instance);
-}
-
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 	if(type.is_json_value()){
 		QUARK_ASSERT(arg_values.size() == 1);
@@ -92,28 +69,28 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		return {vm, arg };
 	}
 	else if(type.is_struct()){
-		//	Constructor.
-		const auto result = construct_struct(vm, type, arg_values);
-		return { result.first, result.second };
-	}
-	else if(type.is_vector()){
-/*
-???
-		const auto element_type = type.get_vector_element_type();
-		vector<value_t> elements2;
-		if(element_type.is_vector()){
-			for(const auto e: arg_values){
-				const auto result2 = construct_value_from_typeid(vm, element_type, e.get_vector_value()->_elements);
-				elements2.push_back(result2.second);
-			}
-		}
-		else{
-			elements2 = arg_values;
-		}
-		const auto result = value_t::make_vector_value(element_type, elements2);
-		return {vm, result };
-*/
+//		QUARK_SCOPED_TRACE("construct_struct()");
+//		QUARK_TRACE("type: " + typeid_to_compact_string(struct_type));
 
+	#if DEBUG
+		const auto def = type.get_struct_ref();
+		QUARK_ASSERT(arg_values.size() == def->_members.size());
+
+		for(int i = 0 ; i < def->_members.size() ; i++){
+			const auto v = arg_values[i];
+			const auto a = def->_members[i];
+			QUARK_ASSERT(v.check_invariant());
+			QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
+			QUARK_ASSERT(v.get_type() == a._type);
+		}
+	#endif
+		const auto instance = value_t::make_struct_value(type, arg_values);
+		QUARK_TRACE(to_compact_string2(instance));
+
+		return { vm, instance };
+	}
+
+	else if(type.is_vector()){
 	}
 	else if(type.is_dict()){
 	}
@@ -178,9 +155,8 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 	return { vm_acc, r.second };
 }
 
+/*
 bool does_symbol_exist_shallow(const interpreter_t& vm, const std::string& symbol){
-//	return vm._call_stack.back()->_values.count(symbol) == 1);
-
     const auto it = std::find_if(
     	vm._call_stack.back()->_values.begin(),
     	vm._call_stack.back()->_values.end(),
@@ -188,6 +164,7 @@ bool does_symbol_exist_shallow(const interpreter_t& vm, const std::string& symbo
 	);
 	return it != vm._call_stack.back()->_values.end();
 }
+*/
 
 std::pair<interpreter_t, statement_result_t> execute_store2_statement(const interpreter_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -244,22 +221,6 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 		return type;
 	}
 }
-
-/*
-//??? Isn't struct def already in symbol table? No need to emit any def_struct-statement at all!
-std::pair<interpreter_t, statement_result_t> execute_def_struct_statement(const interpreter_t& vm, const statement_t::define_struct_statement_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm_acc = vm;
-	const auto struct_name = statement._name;
-	QUARK_ASSERT(does_symbol_exist_shallow(vm_acc, struct_name) == true);
-
-	const auto struct_typeid = typeid_t::make_struct(statement._def);
-	const auto value = value_t::make_typeid_value(struct_typeid);
-	vm_acc = store(vm_acc, struct_name, value);
-	return { vm_acc, statement_result_t::make_no_output() };
-}
-*/
 
 std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -742,19 +703,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		if(op == expression_type::k_arithmetic_add__2){
 			return {vm_acc, value_t::make_bool(left + right)};
 		}
-		else if(op == expression_type::k_arithmetic_subtract__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_multiply__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_divide__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_remainder__2){
-			QUARK_ASSERT(false);
-		}
-
 		else if(op == expression_type::k_logical_and__2){
 			return {vm_acc, value_t::make_bool(left && right)};
 		}
@@ -825,9 +773,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 			}
 			return {vm_acc, value_t::make_float(left / right)};
 		}
-		else if(op == expression_type::k_arithmetic_remainder__2){
-			QUARK_ASSERT(false);
-		}
 
 		else if(op == expression_type::k_logical_and__2){
 			return {vm_acc, value_t::make_bool((left != 0.0f) && (right != 0.0f))};
@@ -847,26 +792,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 
 		if(op == expression_type::k_arithmetic_add__2){
 			return {vm_acc, value_t::make_string(left + right)};
-		}
-
-		else if(op == expression_type::k_arithmetic_subtract__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_multiply__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_divide__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_remainder__2){
-			QUARK_ASSERT(false);
-		}
-
-		else if(op == expression_type::k_logical_and__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_logical_or__2){
-			QUARK_ASSERT(false);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -889,27 +814,6 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 
 			const auto value2 = value_t::make_vector_value(element_type, elements2);
 			return {vm_acc, value2};
-		}
-
-		else if(op == expression_type::k_arithmetic_subtract__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_multiply__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_divide__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_arithmetic_remainder__2){
-			QUARK_ASSERT(false);
-		}
-
-
-		else if(op == expression_type::k_logical_and__2){
-			QUARK_ASSERT(false);
-		}
-		else if(op == expression_type::k_logical_or__2){
-			QUARK_ASSERT(false);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1200,7 +1104,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 
 
-
+//??? For each init-value, keep the index where to store it in environment values vector.
 std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& init_values){
 	QUARK_ASSERT(body_ptr != nullptr);
 
