@@ -141,7 +141,7 @@ namespace floyd {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e);
+	std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, const expression_t& e);
 
 	std::pair<interpreter_t, statement_result_t> call_function(
 		const interpreter_t& vm,

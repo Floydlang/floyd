@@ -41,7 +41,7 @@ using std::make_shared;
 
 
 
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
+std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 
 
 
@@ -249,7 +249,7 @@ interpreter_t store(const interpreter_t& vm, const std::string& name, const valu
 
 
 
-
+/*
 std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const interpreter_t& vm, const statement_t::bind_local_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -259,9 +259,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = rhs_expr_pair.first;
 
-	QUARK_ASSERT(rhs_expr_pair.second.is_literal());
-
-	const auto rhs_value = rhs_expr_pair.second.get_literal();
+	const auto rhs_value = rhs_expr_pair.second;
 
 	const auto bind_statement_type = statement._bindtype;
 	const auto bind_statement_mutable_mode = statement._locals_mutable_mode;
@@ -288,7 +286,9 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 	}
 	return { vm_acc, statement_result_t::make_no_output() };
 }
+*/
 
+/*
 std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const interpreter_t& vm, const statement_t::store_local_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -298,8 +298,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = rhs_expr_pair.first;
 
-	QUARK_ASSERT(rhs_expr_pair.second.is_literal());
-	const auto rhs_value = rhs_expr_pair.second.get_literal();
+	const auto rhs_value = rhs_expr_pair.second;
 
 	const auto lhs_value_deep_ptr = resolve_env_variable(vm_acc, local_name);
 //	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
@@ -313,6 +312,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
 	return { vm_acc, statement_result_t::make_no_output() };
 }
+*/
 
 std::pair<interpreter_t, statement_result_t> execute_store_local2_statement(const interpreter_t& vm, const statement_t::store_local2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -323,8 +323,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local2_statement(cons
 	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = rhs_expr_pair.first;
 
-	QUARK_ASSERT(rhs_expr_pair.second.is_literal());
-	const auto rhs_value = rhs_expr_pair.second.get_literal();
+	const auto rhs_value = rhs_expr_pair.second;
 
 	const auto lhs_value_deep_ptr = resolve_env_variable2(vm_acc, address);
 //	const bool lhs_value_is_mutable = lhs_value_deep_ptr && lhs_value_deep_ptr->second;
@@ -347,9 +346,7 @@ std::pair<interpreter_t, statement_result_t> execute_return_statement(const inte
 	const auto result = evaluate_expression(vm_acc, expr);
 	vm_acc = result.first;
 
-	QUARK_ASSERT(result.second.is_literal());
-
-	const auto rhs_value = result.second.get_literal();
+	const auto rhs_value = result.second;
 	return {
 		vm_acc,
 		statement_result_t::make_return_unwind(rhs_value)
@@ -388,10 +385,9 @@ std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const inte
 
 	const auto condition_result = evaluate_expression(vm_acc, statement._condition);
 	vm_acc = condition_result.first;
-	QUARK_ASSERT(condition_result.second.is_literal());
-	QUARK_ASSERT(condition_result.second.get_literal().is_bool());
+	QUARK_ASSERT(condition_result.second.is_bool());
 
-	const auto condition_result_value = condition_result.second.get_literal();
+	const auto condition_result_value = condition_result.second;
 	bool r = condition_result_value.get_bool_value();
 	if(r){
 		return execute_body(vm_acc, statement._then_body, {});
@@ -408,11 +404,11 @@ std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpr
 
 	const auto start_value0 = evaluate_expression(vm_acc, statement._start_expression);
 	vm_acc = start_value0.first;
-	const auto start_value_int = start_value0.second.get_literal().get_int_value();
+	const auto start_value_int = start_value0.second.get_int_value();
 
 	const auto end_value0 = evaluate_expression(vm_acc, statement._end_expression);
 	vm_acc = end_value0.first;
-	const auto end_value_int = end_value0.second.get_literal().get_int_value();
+	const auto end_value_int = end_value0.second.get_int_value();
 
 	for(int x = start_value_int ; x <= end_value_int ; x++){
 		const std::map<std::string, std::pair<value_t, bool>> values = { { statement._iterator_name, std::pair<value_t, bool>(value_t::make_int(x), false) } };
@@ -436,7 +432,7 @@ std::pair<interpreter_t, statement_result_t> execute_while_statement(const inter
 	while(again){
 		const auto condition_value_expr = evaluate_expression(vm_acc, statement._condition);
 		vm_acc = condition_value_expr.first;
-		const auto condition_value = condition_value_expr.second.get_literal().get_bool_value();
+		const auto condition_value = condition_value_expr.second.get_bool_value();
 
 		if(condition_value){
 			const auto result = execute_body(vm_acc, statement._body, {});
@@ -459,7 +455,7 @@ std::pair<interpreter_t, statement_result_t> execute_expression_statement(const 
 	auto vm_acc = vm;
 	const auto result = evaluate_expression(vm_acc, statement._expression);
 	vm_acc = result.first;
-	const auto rhs_value = result.second.get_literal();
+	const auto rhs_value = result.second;
 	return {
 		vm_acc,
 		statement_result_t::make_passive_expression_output(rhs_value)
@@ -474,11 +470,11 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	if(statement._bind_local){
 		//	Bind is converted to symbol table + store-local in pass3.
 		QUARK_ASSERT(false);
-		return execute_bind_local_statement(vm, *statement._bind_local);
+//		return execute_bind_local_statement(vm, *statement._bind_local);
 	}
 	else if(statement._store_local){
 		QUARK_ASSERT(false);
-		return execute_store_local_statement(vm, *statement._store_local);
+//		return execute_store_local_statement(vm, *statement._store_local);
 	}
 	else if(statement._store_local2){
 		return execute_store_local2_statement(vm, *statement._store_local2);
@@ -567,40 +563,35 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 
 
 
-std::pair<interpreter_t, expression_t> evaluate_resolve_member_expression(const interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
+std::pair<interpreter_t, value_t> evaluate_resolve_member_expression(const interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
 	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
-	QUARK_ASSERT(parent_expr.second.is_literal());
-	QUARK_ASSERT(parent_expr.second.get_literal().is_struct());
+	QUARK_ASSERT(parent_expr.second.is_struct());
 
-	const auto struct_instance = parent_expr.second.get_literal().get_struct_value();
+	const auto struct_instance = parent_expr.second.get_struct_value();
 
 	int index = find_struct_member_index(struct_instance->_def, expr._member_name);
 	QUARK_ASSERT(index != -1);
 
 	const value_t value = struct_instance->_member_values[index];
-	return { vm_acc, expression_t::make_literal(value)};
+	return { vm_acc, value};
 }
 
-std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const interpreter_t& vm, const expression_t::lookup_expr_t& expr){
+std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const interpreter_t& vm, const expression_t::lookup_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
 	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
 	vm_acc = parent_expr.first;
 
-	QUARK_ASSERT(parent_expr.second.is_literal());
-
 	const auto key_expr = evaluate_expression(vm_acc, *expr._lookup_key);
 	vm_acc = key_expr.first;
 
-	QUARK_ASSERT(key_expr.second.is_literal());
-
-	const auto parent_value = parent_expr.second.get_literal();
-	const auto key_value = key_expr.second.get_literal();
+	const auto parent_value = parent_expr.second;
+	const auto key_value = key_expr.second;
 
 	if(parent_value.is_string()){
 		QUARK_ASSERT(key_value.is_int());
@@ -613,7 +604,7 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 		else{
 			const char ch = instance[lookup_index];
 			const auto value2 = value_t::make_string(string(1, ch));
-			return { vm_acc, expression_t::make_literal(value2)};
+			return { vm_acc, value2};
 		}
 	}
 	else if(parent_value.is_json_value()){
@@ -628,7 +619,7 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 				//	get_object_element() throws if key can't be found.
 				const auto value = parent_json_value.get_object_element(lookup_key);
 				const auto value2 = value_t::make_json_value(value);
-				return { vm_acc, expression_t::make_literal(value2)};
+				return { vm_acc, value2};
 			}
 		}
 		else if(parent_json_value.is_array()){
@@ -644,7 +635,7 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 				else{
 					const auto value = parent_json_value.get_array_n(lookup_index);
 					const auto value2 = value_t::make_json_value(value);
-					return { vm_acc, expression_t::make_literal(value2)};
+					return { vm_acc, value2};
 				}
 			}
 		}
@@ -663,7 +654,7 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 		}
 		else{
 			const value_t value = instance->_elements[lookup_index];
-			return { vm_acc, expression_t::make_literal(value)};
+			return { vm_acc, value};
 		}
 	}
 	else if(parent_value.is_dict()){
@@ -678,7 +669,7 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 		}
 		else{
 			const value_t value = found_it->second;
-			return { vm_acc, expression_t::make_literal(value)};
+			return { vm_acc, value};
 		}
 	}
 	else {
@@ -686,8 +677,7 @@ std::pair<interpreter_t, expression_t> evaluate_lookup_element_expression(const 
 	}
 }
 
-//??? return value_t instead of expression!
-std::pair<interpreter_t, expression_t> evaluate_variable_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, value_t> evaluate_variable_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_variable();
@@ -695,10 +685,10 @@ std::pair<interpreter_t, expression_t> evaluate_variable_expression(const interp
 	auto vm_acc = vm;
 	const auto value = resolve_env_variable(vm_acc, expr._variable);
 	QUARK_ASSERT(value != nullptr);
-	return {vm_acc, expression_t::make_literal(value->first)};
+	return {vm_acc, value->first};
 }
 
-std::pair<interpreter_t, expression_t> evaluate_load_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, value_t> evaluate_load_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_load();
@@ -715,11 +705,11 @@ std::pair<interpreter_t, expression_t> evaluate_load_expression(const interprete
 
 	QUARK_ASSERT(value.get_type() == e.get_annotated_type());
 
-	return {vm_acc, expression_t::make_literal(value)};
+	return {vm_acc, value};
 }
 
 
-std::pair<interpreter_t, expression_t> evaluate_vector_definition_expression(const interpreter_t& vm, const expression_t::vector_definition_exprt_t& expr){
+std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const interpreter_t& vm, const expression_t::vector_definition_exprt_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -733,9 +723,8 @@ std::pair<interpreter_t, expression_t> evaluate_vector_definition_expression(con
 	for(const auto m: elements){
 		const auto element_expr = evaluate_expression(vm_acc, m);
 		vm_acc = element_expr.first;
-		QUARK_ASSERT(element_expr.second.is_literal());
 
-		const auto element = element_expr.second.get_literal();
+		const auto element = element_expr.second;
 		elements2.push_back(element);
 	}
 
@@ -746,12 +735,12 @@ std::pair<interpreter_t, expression_t> evaluate_vector_definition_expression(con
 		QUARK_ASSERT(m.get_type() == element_type2);
 	}
 #endif
-	return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type2, elements2))};
+	return {vm_acc, value_t::make_vector_value(element_type2, elements2)};
 }
 
 
 
-std::pair<interpreter_t, expression_t> evaluate_dict_definition_expression(const interpreter_t& vm, const expression_t::dict_definition_exprt_t& expr){
+std::pair<interpreter_t, value_t> evaluate_dict_definition_expression(const interpreter_t& vm, const expression_t::dict_definition_exprt_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -767,40 +756,36 @@ std::pair<interpreter_t, expression_t> evaluate_dict_definition_expression(const
 		const auto element_expr = evaluate_expression(vm_acc, m.second);
 		vm_acc = element_expr.first;
 
-		QUARK_ASSERT(element_expr.second.is_literal());
-
-		const auto element = element_expr.second.get_literal();
+		const auto element = element_expr.second;
 
 		const string key_string = m.first;
 		elements2[key_string] = element;
 	}
 	QUARK_ASSERT(value_type.is_null() == false);
 
-	return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type, elements2))};
+	return {vm_acc, value_t::make_dict_value(value_type, elements2)};
 }
 
-std::pair<interpreter_t, expression_t> evaluate_arithmetic_unary_minus_expression(const interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
+std::pair<interpreter_t, value_t> evaluate_arithmetic_unary_minus_expression(const interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
 	const auto& expr2 = evaluate_expression(vm_acc, *expr._expr);
 	vm_acc = expr2.first;
 
-	QUARK_ASSERT(expr2.second.is_literal());
-
-	const auto& c = expr2.second.get_literal();
+	const auto& c = expr2.second;
 	vm_acc = expr2.first;
 
 	if(c.is_int()){
 		return evaluate_expression(
 			vm_acc,
-			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expr2.second, make_shared<typeid_t>(c.get_type()))
+			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), expression_t::make_literal(expr2.second), make_shared<typeid_t>(c.get_type()))
 		);
 	}
 	else if(c.is_float()){
 		return evaluate_expression(
 			vm_acc,
-			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expr2.second, make_shared<typeid_t>(c.get_type()))
+			expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0.0f), expression_t::make_literal(expr2.second), make_shared<typeid_t>(c.get_type()))
 		);
 	}
 	else{
@@ -809,7 +794,7 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_unary_minus_expressio
 }
 
 
-std::pair<interpreter_t, expression_t> evaluate_conditional_operator_expression(const interpreter_t& vm, const expression_t::conditional_expr_t& expr){
+std::pair<interpreter_t, value_t> evaluate_conditional_operator_expression(const interpreter_t& vm, const expression_t::conditional_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -818,10 +803,9 @@ std::pair<interpreter_t, expression_t> evaluate_conditional_operator_expression(
 	const auto cond_result = evaluate_expression(vm_acc, *expr._condition);
 	vm_acc = cond_result.first;
 
-	QUARK_ASSERT(cond_result.second.is_literal());
-	QUARK_ASSERT(cond_result.second.get_literal().is_bool());
+	QUARK_ASSERT(cond_result.second.is_bool());
 
-	const bool cond_flag = cond_result.second.get_literal().get_bool_value();
+	const bool cond_flag = cond_result.second.get_bool_value();
 
 	//	!!! Only evaluate the CHOSEN expression. Not that importan since functions are pure.
 	if(cond_flag){
@@ -833,7 +817,7 @@ std::pair<interpreter_t, expression_t> evaluate_conditional_operator_expression(
 }
 
 
-std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+std::pair<interpreter_t, value_t> evaluate_comparison_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -845,39 +829,36 @@ std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const inte
 	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr._right);
 	vm_acc = right_expr.first;
 
-	QUARK_ASSERT(left_expr.second.is_literal());
-	QUARK_ASSERT(right_expr.second.is_literal());
-
 	//	Perform math operation on the two constants => new constant.
-	const auto left_constant = left_expr.second.get_literal();
-	const auto right_constant = right_expr.second.get_literal();
+	const auto left_constant = left_expr.second;
+	const auto right_constant = right_expr.second;
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
 	//	Do generic functionallity, independant on type.
 	if(op == expression_type::k_comparison_smaller_or_equal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, expression_t::make_literal_bool(diff <= 0)};
+		return {vm_acc, value_t::make_bool(diff <= 0)};
 	}
 	else if(op == expression_type::k_comparison_smaller__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, expression_t::make_literal_bool(diff < 0)};
+		return {vm_acc, value_t::make_bool(diff < 0)};
 	}
 	else if(op == expression_type::k_comparison_larger_or_equal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, expression_t::make_literal_bool(diff >= 0)};
+		return {vm_acc, value_t::make_bool(diff >= 0)};
 	}
 	else if(op == expression_type::k_comparison_larger__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, expression_t::make_literal_bool(diff > 0)};
+		return {vm_acc, value_t::make_bool(diff > 0)};
 	}
 
 	else if(op == expression_type::k_logical_equal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, expression_t::make_literal_bool(diff == 0)};
+		return {vm_acc, value_t::make_bool(diff == 0)};
 	}
 	else if(op == expression_type::k_logical_nonequal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, expression_t::make_literal_bool(diff != 0)};
+		return {vm_acc, value_t::make_bool(diff != 0)};
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -885,7 +866,7 @@ std::pair<interpreter_t, expression_t> evaluate_comparison_expression(const inte
 	}
 }
 
-std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -897,12 +878,9 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr._right);
 	vm_acc = right_expr.first;
 
-	//	Both left and right are constants, replace the math_operation with a constant!
-	QUARK_ASSERT(left_expr.second.is_literal() != false && right_expr.second.is_literal() != false);
-
 	//	Perform math operation on the two constants => new constant.
-	const auto left_constant = left_expr.second.get_literal();
-	const auto right_constant = right_expr.second.get_literal();
+	const auto left_constant = left_expr.second;
+	const auto right_constant = right_expr.second;
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
 	const auto type_mode = left_constant.get_type();
@@ -924,10 +902,10 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 		}
 
 		else if(op == expression_type::k_logical_and__2){
-			return {vm_acc, expression_t::make_literal_bool(left && right)};
+			return {vm_acc, value_t::make_bool(left && right)};
 		}
 		else if(op == expression_type::k_logical_or__2){
-			return {vm_acc, expression_t::make_literal_bool(left || right)};
+			return {vm_acc, value_t::make_bool(left || right)};
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -941,32 +919,32 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 		const int right = right_constant.get_int_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			return {vm_acc, expression_t::make_literal_int(left + right)};
+			return {vm_acc, value_t::make_int(left + right)};
 		}
 		else if(op == expression_type::k_arithmetic_subtract__2){
-			return {vm_acc, expression_t::make_literal_int(left - right)};
+			return {vm_acc, value_t::make_int(left - right)};
 		}
 		else if(op == expression_type::k_arithmetic_multiply__2){
-			return {vm_acc, expression_t::make_literal_int(left * right)};
+			return {vm_acc, value_t::make_int(left * right)};
 		}
 		else if(op == expression_type::k_arithmetic_divide__2){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return {vm_acc, expression_t::make_literal_int(left / right)};
+			return {vm_acc, value_t::make_int(left / right)};
 		}
 		else if(op == expression_type::k_arithmetic_remainder__2){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return {vm_acc, expression_t::make_literal_int(left % right)};
+			return {vm_acc, value_t::make_int(left % right)};
 		}
 
 		else if(op == expression_type::k_logical_and__2){
-			return {vm_acc, expression_t::make_literal_bool((left != 0) && (right != 0))};
+			return {vm_acc, value_t::make_bool((left != 0) && (right != 0))};
 		}
 		else if(op == expression_type::k_logical_or__2){
-			return {vm_acc, expression_t::make_literal_bool((left != 0) || (right != 0))};
+			return {vm_acc, value_t::make_bool((left != 0) || (right != 0))};
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -980,19 +958,19 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 		const float right = right_constant.get_float_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			return {vm_acc, expression_t::make_literal_float(left + right)};
+			return {vm_acc, value_t::make_float(left + right)};
 		}
 		else if(op == expression_type::k_arithmetic_subtract__2){
-			return {vm_acc, expression_t::make_literal_float(left - right)};
+			return {vm_acc, value_t::make_float(left - right)};
 		}
 		else if(op == expression_type::k_arithmetic_multiply__2){
-			return {vm_acc, expression_t::make_literal_float(left * right)};
+			return {vm_acc, value_t::make_float(left * right)};
 		}
 		else if(op == expression_type::k_arithmetic_divide__2){
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return {vm_acc, expression_t::make_literal_float(left / right)};
+			return {vm_acc, value_t::make_float(left / right)};
 		}
 		else if(op == expression_type::k_arithmetic_remainder__2){
 			throw std::runtime_error("Modulo operation on float not allowed.");
@@ -1000,10 +978,10 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 
 
 		else if(op == expression_type::k_logical_and__2){
-			return {vm_acc, expression_t::make_literal_bool((left != 0.0f) && (right != 0.0f))};
+			return {vm_acc, value_t::make_bool((left != 0.0f) && (right != 0.0f))};
 		}
 		else if(op == expression_type::k_logical_or__2){
-			return {vm_acc, expression_t::make_literal_bool((left != 0.0f) || (right != 0.0f))};
+			return {vm_acc, value_t::make_bool((left != 0.0f) || (right != 0.0f))};
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1017,7 +995,7 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 		const auto right = right_constant.get_string_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			return {vm_acc, expression_t::make_literal_string(left + right)};
+			return {vm_acc, value_t::make_string(left + right)};
 		}
 
 		else if(op == expression_type::k_arithmetic_subtract__2){
@@ -1112,7 +1090,7 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 				elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
 
 				const auto value2 = value_t::make_vector_value(element_type, elements2);
-				return {vm_acc, expression_t::make_literal(value2)};
+				return {vm_acc, value2};
 			}
 
 			else if(op == expression_type::k_arithmetic_subtract__2){
@@ -1158,14 +1136,14 @@ std::pair<interpreter_t, expression_t> evaluate_arithmetic_expression(const inte
 }
 
 
-std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto op = e.get_operation();
 
 	if(op == expression_type::k_literal){
-		return { vm, e };
+		return { vm, e.get_literal() };
 	}
 	else if(op == expression_type::k_resolve_member){
 		return evaluate_resolve_member_expression(vm, *e.get_resolve_member());
@@ -1187,7 +1165,7 @@ std::pair<interpreter_t, expression_t> evaluate_expression(const interpreter_t& 
 
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
-		return {vm, expression_t::make_literal(value_t::make_function_value(expr->_def))};
+		return {vm, value_t::make_function_value(expr->_def)};
 	}
 
 	else if(op == expression_type::k_vector_definition){
@@ -1299,19 +1277,8 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 	}
 }
 
-bool all_literals(const vector<expression_t>& e){
-	for(const auto& i: e){
-		if(!i.is_literal()){
-			return false;
-		}
-	}
-	return true;
-}
-
-//??? all evalute_* should return a value, not an expression!
-
 //	May return a simplified expression instead of a value literal..
-std::pair<interpreter_t, expression_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
+std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_call();
@@ -1321,22 +1288,14 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 	//	Simplify each input expression: expression[0]: which function to call, expression[1]: first argument if any.
 	const auto function = evaluate_expression(vm_acc, *expr._callee);
 	vm_acc = function.first;
-	vector<expression_t> args2;
+
+	const auto& function_value = function.second;
+
+	vector<value_t> arg_values;
 	for(int i = 0 ; i < expr._args.size() ; i++){
 		const auto t = evaluate_expression(vm_acc, expr._args[i]);
 		vm_acc = t.first;
-		args2.push_back(t.second);
-	}
-
-	QUARK_ASSERT(function.second.is_literal());
-	QUARK_ASSERT(all_literals(args2));
-
-	//	Convert to values.
-	const auto& function_value = function.second.get_literal();
-	vector<value_t> arg_values;
-	for(int i = 0 ; i < args2.size() ; i++){
-		const auto& v = args2[i].get_literal();
-		arg_values.push_back(v);
+		arg_values.push_back(t.second);
 	}
 
 	//	Call function-value.
@@ -1344,14 +1303,14 @@ std::pair<interpreter_t, expression_t> evaluate_call_expression(const interprete
 		const auto& result = call_function(vm_acc, function_value, arg_values);
 		QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
 		vm_acc = result.first;
-		return { vm_acc, expression_t::make_literal(result.second._output)};
+		return { vm_acc, result.second._output};
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
 	else if(function_value.is_typeid()){
 		const auto result = construct_value_from_typeid(vm_acc, function_value.get_typeid_value(), arg_values);
 		vm_acc = result.first;
-		return { vm_acc, expression_t::make_literal(result.second)};
+		return { vm_acc, result.second};
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1367,7 +1326,6 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		std::map<string, json_t> values;
 		for(const auto&v: e->_values){
 
-			//??? INlcude mutable-flag?
 			const auto a = value_and_type_to_ast_json(v.second.first);
 			const auto b = make_array_skip_nulls({
 				a._value.get_array_n(0),
@@ -1393,19 +1351,19 @@ json_t interpreter_to_json(const interpreter_t& vm){
 
 
 
-void test__evaluate_expression(const expression_t& e, const expression_t& expected){
+void test__evaluate_expression(const expression_t& e, const value_t& expected_value){
 	const ast_t ast;
 	const interpreter_t interpreter(ast);
 	const auto e3 = evaluate_expression(interpreter, e);
 
-	ut_compare_jsons(expression_to_json(e3.second)._value, expression_to_json(expected)._value);
+	ut_compare_jsons(value_to_ast_json(e3.second)._value, value_to_ast_json(expected_value)._value);
 }
 
 
 QUARK_UNIT_TESTQ("evaluate_expression()", "literal 1234 == 1234") {
 	test__evaluate_expression(
 		expression_t::make_literal_int(1234),
-		expression_t::make_literal_int(1234)
+		value_t::make_int(1234)
 	);
 }
 
@@ -1417,7 +1375,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 			expression_t::make_literal_int(2),
 			make_shared<typeid_t>(typeid_t::make_int())
 		),
-		expression_t::make_literal_int(3)
+		value_t::make_int(3)
 	);
 }
 
@@ -1430,7 +1388,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 			expression_t::make_literal_int(4),
 			make_shared<typeid_t>(typeid_t::make_int())
 		),
-		expression_t::make_literal_int(12)
+		value_t::make_int(12)
 	);
 }
 
@@ -1447,7 +1405,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 			expression_t::make_literal_int(5),
 			make_shared<typeid_t>(typeid_t::make_int())
 		),
-		expression_t::make_literal_int(60)
+		value_t::make_int(60)
 	);
 }
 
@@ -1458,7 +1416,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 
 
-//??? just vector of values, no bool!
+//### just vector of values, no bool!
 std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& init_values){
 	QUARK_ASSERT(body_ptr != nullptr);
 
