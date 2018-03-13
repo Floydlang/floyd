@@ -289,7 +289,7 @@ std::pair<interpreter_t, statement_result_t> execute_bind_local_statement(const 
 */
 
 /*
-std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const interpreter_t& vm, const statement_t::store_local_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_store_statement(const interpreter_t& vm, const statement_t::store_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -314,7 +314,7 @@ std::pair<interpreter_t, statement_result_t> execute_store_local_statement(const
 }
 */
 
-std::pair<interpreter_t, statement_result_t> execute_store_local2_statement(const interpreter_t& vm, const statement_t::store_local2_t& statement){
+std::pair<interpreter_t, statement_result_t> execute_store2_statement(const interpreter_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -472,12 +472,12 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 		QUARK_ASSERT(false);
 //		return execute_bind_local_statement(vm, *statement._bind_local);
 	}
-	else if(statement._store_local){
+	else if(statement._store){
 		QUARK_ASSERT(false);
-//		return execute_store_local_statement(vm, *statement._store_local);
+//		return execute_store_statement(vm, *statement._store);
 	}
-	else if(statement._store_local2){
-		return execute_store_local2_statement(vm, *statement._store_local2);
+	else if(statement._store2){
+		return execute_store2_statement(vm, *statement._store2);
 	}
 	else if(statement._block){
 		return execute_body(vm, statement._block->_body, {});

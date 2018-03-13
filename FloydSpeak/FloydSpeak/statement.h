@@ -195,11 +195,11 @@ namespace floyd {
 		}
 
 
-		//////////////////////////////////////		store_local_t
+		//////////////////////////////////////		store_t
 
 
-		struct store_local_t {
-			bool operator==(const store_local_t& other) const {
+		struct store_t {
+			bool operator==(const store_t& other) const {
 				return _local_name == other._local_name
 					&& _expression == other._expression;
 			}
@@ -207,20 +207,20 @@ namespace floyd {
 			const std::string _local_name;
 			const expression_t _expression;
 		};
-        public: statement_t(const store_local_t& value) :
-			_store_local(std::make_shared<store_local_t>(value))
+        public: statement_t(const store_t& value) :
+			_store(std::make_shared<store_t>(value))
 		{
 		}
-		public: static statement_t make__store_local(const std::string& local_name, const expression_t& expression){
-			return statement_t(store_local_t{ local_name, expression });
+		public: static statement_t make__store(const std::string& local_name, const expression_t& expression){
+			return statement_t(store_t{ local_name, expression });
 		}
 
 
-		//////////////////////////////////////		store_local2_t
+		//////////////////////////////////////		store2_t
 
 
-		struct store_local2_t {
-			bool operator==(const store_local2_t& other) const {
+		struct store2_t {
+			bool operator==(const store2_t& other) const {
 				return _dest_variable == other._dest_variable
 					&& _expression == other._expression;
 			}
@@ -229,12 +229,12 @@ namespace floyd {
 			const expression_t _expression;
 		};
 
-        public: statement_t(const store_local2_t& value) :
-			_store_local2(std::make_shared<store_local2_t>(value))
+        public: statement_t(const store2_t& value) :
+			_store2(std::make_shared<store2_t>(value))
 		{
 		}
-		public: static statement_t make__store_local2(const variable_address_t& dest_variable, const expression_t& expression){
-			return statement_t(store_local2_t{ dest_variable, expression });
+		public: static statement_t make__store2(const variable_address_t& dest_variable, const expression_t& expression){
+			return statement_t(store2_t{ dest_variable, expression });
 		}
 
 
@@ -377,11 +377,11 @@ namespace floyd {
 			else if(_bind_local){
 				return compare_shared_values(_bind_local, other._bind_local);
 			}
-			else if(_store_local){
-				return compare_shared_values(_store_local, other._store_local);
+			else if(_store){
+				return compare_shared_values(_store, other._store);
 			}
-			else if(_store_local2){
-				return compare_shared_values(_store_local2, other._store_local2);
+			else if(_store2){
+				return compare_shared_values(_store2, other._store2);
 			}
 			else if(_block){
 				return compare_shared_values(_block, other._block);
@@ -406,8 +406,8 @@ namespace floyd {
 			count = count + (_return != nullptr ? 1 : 0);
 			count = count + (_def_struct != nullptr ? 1 : 0);
 			count = count + (_bind_local != nullptr ? 1 : 0);
-			count = count + (_store_local != nullptr ? 1 : 0);
-			count = count + (_store_local2 != nullptr ? 1 : 0);
+			count = count + (_store != nullptr ? 1 : 0);
+			count = count + (_store2 != nullptr ? 1 : 0);
 			count = count + (_block != nullptr ? 1 : 0);
 			count = count + (_if != nullptr ? 1 : 0);
 			count = count + (_for != nullptr ? 1 : 0);
@@ -421,9 +421,9 @@ namespace floyd {
 			}
 			else if(_bind_local){
 			}
-			else if(_store_local){
+			else if(_store){
 			}
-			else if(_store_local2){
+			else if(_store2){
 			}
 			else if(_block){
 			}
@@ -463,11 +463,11 @@ namespace floyd {
 			else if(_bind_local){
 				return _bind_local->_expression.is_annotated_deep();
 			}
-			else if(_store_local){
-				return _store_local->_expression.is_annotated_deep();
+			else if(_store){
+				return _store->_expression.is_annotated_deep();
 			}
-			else if(_store_local2){
-				return _store_local2->_expression.is_annotated_deep();
+			else if(_store2){
+				return _store2->_expression.is_annotated_deep();
 			}
 			else if(_block){
 				return is_annotated_deep2(_block->_body);
@@ -513,8 +513,8 @@ namespace floyd {
 		public: const std::shared_ptr<return_statement_t> _return;
 		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
 		public: const std::shared_ptr<bind_local_t> _bind_local;
-		public: const std::shared_ptr<store_local_t> _store_local;
-		public: const std::shared_ptr<store_local2_t> _store_local2;
+		public: const std::shared_ptr<store_t> _store;
+		public: const std::shared_ptr<store2_t> _store2;
 		public: const std::shared_ptr<block_statement_t> _block;
 		public: const std::shared_ptr<ifelse_statement_t> _if;
 		public: const std::shared_ptr<for_statement_t> _for;

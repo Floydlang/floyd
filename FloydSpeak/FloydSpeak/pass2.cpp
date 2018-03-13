@@ -187,18 +187,18 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 		const auto name2 = name.get_string();
 		const auto expr2 = parser_expression_to_ast(tracer, expr);
-		return statement_t::make__store_local(name2, expr2);
+		return statement_t::make__store(name2, expr2);
 	}
 
-	//	[ "store-local2", parent_index, variable_index, EXPRESSION ]
-	else if(type == "store-local2"){
+	//	[ "store2", parent_index, variable_index, EXPRESSION ]
+	else if(type == "store2"){
 		QUARK_ASSERT(statement.get_array_size() == 4);
 		const auto parent_index = (int)statement.get_array_n(1).get_number();
 		const auto variable_index = (int)statement.get_array_n(2).get_number();
 		const auto expr = statement.get_array_n(3);
 
 		const auto expr2 = parser_expression_to_ast(tracer, expr);
-		return statement_t::make__store_local2(variable_address_t::make_variable_address(parent_index, variable_index), expr2);
+		return statement_t::make__store2(variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
 	//	[ "block", [ STATEMENTS ] ]
@@ -555,19 +555,19 @@ ast_json_t statement_to_json(const statement_t& e){
 			meta
 		})};
 	}
-	else if(e._store_local){
+	else if(e._store){
 		return ast_json_t{make_array_skip_nulls({
 			json_t("store"),
-			e._store_local->_local_name,
-			expression_to_json(e._store_local->_expression)._value
+			e._store->_local_name,
+			expression_to_json(e._store->_expression)._value
 		})};
 	}
-	else if(e._store_local2){
+	else if(e._store2){
 		return ast_json_t{make_array_skip_nulls({
-			json_t("store-local2"),
-			e._store_local2->_dest_variable._parent_steps,
-			e._store_local2->_dest_variable._index,
-			expression_to_json(e._store_local2->_expression)._value
+			json_t("store2"),
+			e._store2->_dest_variable._parent_steps,
+			e._store2->_dest_variable._index,
+			expression_to_json(e._store2->_expression)._value
 		})};
 	}
 	else if(e._block){

@@ -218,11 +218,11 @@ bool check_type_fully_defined(const typeid_t& type){
 	- Can update an existing local (if local is mutable).
 	- Can implicitly create a new local
 */
-std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_t& vm, const statement_t& s){
+std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& vm, const statement_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const auto statement = *s._store_local;
+	const auto statement = *s._store;
 	const auto local_name = statement._local_name;
 	const auto existing_value_deep_ptr = resolve_env_symbol2(vm_acc, local_name);
 
@@ -244,7 +244,7 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 				throw std::runtime_error("Types not compatible in bind.");
 			}
 			else{
-				return { vm_acc, statement_t::make__store_local2(existing_value_deep_ptr.second, rhs_expr3) };
+				return { vm_acc, statement_t::make__store2(existing_value_deep_ptr.second, rhs_expr3) };
 			}
 		}
 	}
@@ -257,7 +257,7 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 
 		vm_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
 		int variable_index = (int)(vm_acc._call_stack.back()->_symbols.size() - 1);
-		return { vm_acc, statement_t::make__store_local2(floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
+		return { vm_acc, statement_t::make__store2(floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
 	}
 }
 
@@ -293,7 +293,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 
 	//	Setup temporary simply so function definition can find itself = recursive.
 	//	Notice: the final type may not be correct yet, but for function defintions it is.
-	//	This logicl should be available for deduced binds too, in analyse_store_local_statement().
+	//	This logicl should be available for deduced binds too, in analyse_store_statement().
 	vm_acc._call_stack.back()->_symbols.push_back({new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type)});
 	const auto local_name_index = vm_acc._call_stack.back()->_symbols.size() - 1;
 
@@ -313,7 +313,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			vm_acc._call_stack.back()->_symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
 			return {
 				vm_acc,
-				statement_t::make__store_local2(floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
+				statement_t::make__store2(floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
 			};
 		}
 	}
@@ -459,8 +459,8 @@ std::pair<analyser_t, statement_t> analyse_statement(const analyser_t& vm, const
 		QUARK_ASSERT(e.second.is_annotated_deep());
 		return e;
 	}
-	else if(statement._store_local){
-		const auto e = analyse_store_local_statement(vm, statement);
+	else if(statement._store){
+		const auto e = analyse_store_statement(vm, statement);
 		QUARK_ASSERT(e.second.is_annotated_deep());
 		return e;
 	}
