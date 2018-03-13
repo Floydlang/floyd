@@ -102,7 +102,7 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto parent_step = (int)e.get_array_n(1).get_number();
 		const auto index = (int)e.get_array_n(2).get_number();
-		return expression_t::make_load_expression({ parent_step, index }, nullptr);
+		return expression_t::make_load_expression(variable_address_t::make_variable_address(parent_step, index), nullptr);
 	}
 	else if(op == "[]"){
 		QUARK_ASSERT(e.get_array_size() == 3);
@@ -198,7 +198,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto expr = statement.get_array_n(3);
 
 		const auto expr2 = parser_expression_to_ast(tracer, expr);
-		return statement_t::make__store_local2({parent_index, variable_index}, expr2);
+		return statement_t::make__store_local2(variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
 	//	[ "block", [ STATEMENTS ] ]

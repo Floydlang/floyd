@@ -29,8 +29,23 @@ namespace floyd {
 
 
 	struct variable_address_t {
-		const int _parent_steps;
-		const int _index;
+		public: static variable_address_t make_variable_address(int parent_steps, int index){
+			return variable_address_t(parent_steps, index);
+		}
+		private: variable_address_t(int parent_steps, int index) :
+			_parent_steps(parent_steps),
+			_index(index)
+		{
+		}
+
+		/*
+			0: current stack frame
+			1: previous stack frame
+			2: previous-previous stack frame
+			-1: global stack frame
+		*/
+		public: const int _parent_steps;
+		public: const int _index;
 	};
 
 	inline bool operator==(const variable_address_t& lhs, const variable_address_t& rhs){

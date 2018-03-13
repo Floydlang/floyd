@@ -108,15 +108,15 @@ std::pair<symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const 
 
     const auto it = std::find_if(vm._call_stack[depth]->_symbols.begin(), vm._call_stack[depth]->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
 	if(it != vm._call_stack[depth]->_symbols.end()){
-		const auto parent_index = (int)(vm._call_stack.size() - depth - 1);
+		const auto parent_index = depth == 0 ? -1 : (int)(vm._call_stack.size() - depth - 1);
 		const auto variable_index = (int)(it - vm._call_stack[depth]->_symbols.begin());
-		return { &it->second, {parent_index, variable_index} };
+		return { &it->second, floyd::variable_address_t::make_variable_address(parent_index, variable_index) };
 	}
 	else if(depth > 0){
 		return resolve_env_variable_deep(vm, depth - 1, s);
 	}
 	else{
-		return { nullptr, {0,0} };
+		return { nullptr, floyd::variable_address_t::make_variable_address(0, 0) };
 	}
 }
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
@@ -131,7 +131,7 @@ std::pair<symbol_t*, floyd::variable_address_t> resolve_env_symbol2(const analys
 symbol_t* resolve_env_variable3(const analyser_t& vm, const floyd::variable_address_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto env_index = vm._call_stack.size() - s._parent_steps - 1;
+	const auto env_index = s._parent_steps == -1 ? 0 : vm._call_stack.size() - s._parent_steps - 1;
 	auto& env = vm._call_stack[env_index];
 	return &env->_symbols[s._index].second;
 }
@@ -257,7 +257,7 @@ std::pair<analyser_t, statement_t> analyse_store_local_statement(const analyser_
 
 		vm_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
 		int variable_index = (int)(vm_acc._call_stack.back()->_symbols.size() - 1);
-		return { vm_acc, statement_t::make__store_local2({0, variable_index}, rhs_expr2.second) };
+		return { vm_acc, statement_t::make__store_local2(floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
 	}
 }
 
@@ -313,7 +313,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			vm_acc._call_stack.back()->_symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
 			return {
 				vm_acc,
-				statement_t::make__store_local2({0, (int)local_name_index}, rhs_expr_pair.second)
+				statement_t::make__store_local2(floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
 			};
 		}
 	}

@@ -547,7 +547,7 @@ std::pair<floyd::value_t, bool>* resolve_env_variable(const interpreter_t& vm, c
 std::pair<floyd::value_t, bool>* resolve_env_variable2(const interpreter_t& vm, const variable_address_t& s){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto env_index = vm._call_stack.size() - s._parent_steps - 1;
+	const auto env_index = s._parent_steps == -1 ? 0: vm._call_stack.size() - s._parent_steps - 1;
 	auto& env = vm._call_stack[env_index];
 	return &env->_values[s._index].second;
 }
@@ -705,7 +705,7 @@ std::pair<interpreter_t, expression_t> evaluate_load_expression(const interprete
 
 	auto vm_acc = vm;
 
-	const auto env_index = vm._call_stack.size() - expr._address._parent_steps - 1;
+	const auto env_index = expr._address._parent_steps == -1 ? 0 : vm._call_stack.size() - expr._address._parent_steps - 1;
 	QUARK_ASSERT(env_index >= 0 && env_index < vm._call_stack.size());
 
 	const auto env = vm._call_stack[env_index];
