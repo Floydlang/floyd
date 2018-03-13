@@ -102,7 +102,7 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto parent_step = (int)e.get_array_n(1).get_number();
 		const auto index = (int)e.get_array_n(2).get_number();
-		return expression_t::make_load_expression(variable_address_t::make_variable_address(parent_step, index), nullptr);
+		return expression_t::make_load2(variable_address_t::make_variable_address(parent_step, index), nullptr);
 	}
 	else if(op == "[]"){
 		QUARK_ASSERT(e.get_array_size() == 3);
@@ -179,8 +179,8 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		return statement_t::make__bind_local(name2, bind_type2, expr2, mutable_mode);
 	}
 
-	//	[ "assign", "x", EXPRESSION ]
-	else if(type == "assign"){
+	//	[ "store", "x", EXPRESSION ]
+	else if(type == "store"){
 		QUARK_ASSERT(statement.get_array_size() == 3);
 		const auto name = statement.get_array_n(1);
 		const auto expr = statement.get_array_n(2);
@@ -557,7 +557,7 @@ ast_json_t statement_to_json(const statement_t& e){
 	}
 	else if(e._store_local){
 		return ast_json_t{make_array_skip_nulls({
-			json_t("assign"),
+			json_t("store"),
 			e._store_local->_local_name,
 			expression_to_json(e._store_local->_expression)._value
 		})};

@@ -222,19 +222,19 @@ QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STA
 }
 
 
-QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "", "ASSIGN"){
+QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "", "store"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = 10 ;xyz")) == implicit_statement::k_assign);
 }
-QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "", "ASSIGN"){
+QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "", "store"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = \"hello\" ;xyz")) == implicit_statement::k_assign);
 }
-QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "", "ASSIGN"){
+QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "", "store"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = f ( 3 ) == 2 ;xyz")) == implicit_statement::k_assign);
 }
-QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "vector", "ASSIGN"){
+QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "vector", "store"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("a = [1,2,3];xyz")) == implicit_statement::k_assign);
 }
-QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "dict", "ASSIGN"){
+QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "dict", "store"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(a = {"uno": 1, "duo": 2};xyz)")) == implicit_statement::k_assign);
 }
 
@@ -356,7 +356,7 @@ pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
-	const auto statement = json_t::make_array({ "assign", variable_pos.first, expression._value });
+	const auto statement = json_t::make_array({ "store", variable_pos.first, expression._value });
 	return { ast_json_t{statement}, expression_pos.second.rest1() };
 }
 
@@ -365,7 +365,7 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 		parse_assign_statement(seq_t("x = 10;")).first._value,
 		parse_json(seq_t(
 			R"(
-				["assign","x",["k",10,"int"]]
+				["store","x",["k",10,"int"]]
 			)"
 		)).first
 	);

@@ -185,7 +185,7 @@ namespace floyd {
 				|| op == expression_type::k_conditional_operator3
 				|| op == expression_type::k_call
 				|| op == expression_type::k_variable
-				|| op == expression_type::k_load
+				|| op == expression_type::k_load2
 				|| op == expression_type::k_resolve_member
 				|| op == expression_type::k_lookup_element
 				|| op == expression_type::k_define_function)
@@ -408,11 +408,11 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////			load_expr_t
+		////////////////////////////////			load2_expr_t
 
 
-		public: struct load_expr_t : public expr_base_t {
-			load_expr_t(const variable_address_t&  a)
+		public: struct load2_expr_t : public expr_base_t {
+			load2_expr_t(const variable_address_t&  a)
 			:
 				_address(a)
 			{
@@ -432,17 +432,17 @@ namespace floyd {
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 		*/
-		public: static expression_t make_load_expression(const variable_address_t& address, const std::shared_ptr<typeid_t>& annotated_type)
+		public: static expression_t make_load2(const variable_address_t& address, const std::shared_ptr<typeid_t>& annotated_type)
 		{
 			return expression_t{
-				expression_type::k_load,
-				std::make_shared<load_expr_t>(load_expr_t{ address }),
+				expression_type::k_load2,
+				std::make_shared<load2_expr_t>(load2_expr_t{ address }),
 				annotated_type
 			};
 		}
 
-		public: const load_expr_t* get_load() const {
-			return dynamic_cast<const load_expr_t*>(_expr.get());
+		public: const load2_expr_t* get_load2() const {
+			return dynamic_cast<const load2_expr_t*>(_expr.get());
 		}
 
 
@@ -796,7 +796,7 @@ namespace floyd {
 				else if(op == expression_type::k_variable){
 					return true;
 				}
-				else if(op == expression_type::k_load){
+				else if(op == expression_type::k_load2){
 					return true;
 				}
 				else if(op == expression_type::k_call){
@@ -932,7 +932,7 @@ namespace floyd {
 		return lhs._variable == rhs._variable;
 	}
 
-	inline bool operator==(const expression_t::load_expr_t& lhs, const expression_t::load_expr_t& rhs){
+	inline bool operator==(const expression_t::load2_expr_t& lhs, const expression_t::load2_expr_t& rhs){
 		return lhs._address == rhs._address;
 	}
 

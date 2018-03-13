@@ -691,7 +691,7 @@ std::pair<interpreter_t, value_t> evaluate_variable_expression(const interpreter
 std::pair<interpreter_t, value_t> evaluate_load_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_load();
+	const auto expr = *e.get_load2();
 
 	auto vm_acc = vm;
 
@@ -1155,7 +1155,7 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 		QUARK_ASSERT(false);
 		return evaluate_variable_expression(vm, e);
 	}
-	else if(op == expression_type::k_load){
+	else if(op == expression_type::k_load2){
 		return evaluate_load_expression(vm, e);
 	}
 

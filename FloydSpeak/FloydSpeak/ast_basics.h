@@ -123,7 +123,7 @@ namespace floyd {
 		k_variable,
 
 		//	c99: a				token: "@i"
-		k_load,
+		k_load2,
 
 		//	c99: a.b			token: "->"
 		k_resolve_member,
