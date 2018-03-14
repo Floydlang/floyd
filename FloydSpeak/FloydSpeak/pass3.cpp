@@ -352,7 +352,6 @@ typeid_t find_type_by_name(const analyser_t& vm, const typeid_t& type){
 	}
 }
 
-//	TODO: When symbol tables are kept with pass3, this function returns a NOP-statement.
 analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -375,28 +374,10 @@ analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t:
 		members2.push_back(e2);
 	}
 
-/*
-#if DEBUG
-	const auto def = struct_type.get_struct_ref();
-	QUARK_ASSERT(values.size() == def->_members.size());
-
-	for(int i = 0 ; i < def->_members.size() ; i++){
-		const auto v = values[i];
-		const auto a = def->_members[i];
-		QUARK_ASSERT(v.check_invariant());
-		QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
-		QUARK_ASSERT(v.get_type() == a._type);
-	}
-#endif
-*/
-
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid);
 	vm_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
-
-	const auto s = statement_t::define_struct_statement_t{ struct_name, resolved_struct_def };
-	const auto statement2 = statement_t::make__define_struct_statement(s);
 
 	return vm_acc;
 }

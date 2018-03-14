@@ -601,7 +601,7 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 		value_t::make_struct_value(typeid_t::make_struct(pixel_t__def), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
 	);
 }
-//??? require ; after closing bracket of struct def, like C-lang!
+
 //??? typeid()
 
 /*
