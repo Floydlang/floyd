@@ -1177,6 +1177,30 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 	}
 }
 
+/*
+const symbol_t* find_host_function_by_id(const analyser_t& vm, int host_function_id){
+    const auto it = std::find_if(vm._call_stack[0]->_symbols.begin(), vm._call_stack[0]->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.second. == s; });
+
+	const auto find_it = vm._imm->_host_functions.find(function_name);
+	return find_it != vm._imm->_host_functions.end();
+	}
+	else if(callee_expr.get_operation() == expression_type::k_load2){
+		const auto callee = resolve_symbol_by_address(vm, callee_expr.get_load2()->_address);
+		QUARK_ASSERT(callee != nullptr);
+
+		if(callee->_const_value.is_function()){
+			return callee->_const_value.get_function_value()->_def._host_function != 0;
+		}
+		else{
+			return false;
+		}
+	}
+	else{
+		return false;
+	}
+}
+*/
+
 
 /*
 	callee(callee_args)		== function def: int(
@@ -1210,13 +1234,16 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
-	else if(callee_type.is_typeid() && (callee_expr.get_operation() == expression_type::k_load || callee_expr.get_operation() == expression_type::k_load2)){
-		QUARK_ASSERT(callee_expr.get_operation() != expression_type::k_load);
+	else if(callee_type.is_typeid() && callee_expr.get_operation() == expression_type::k_load2){
 		const auto found_symbol_ptr = resolve_symbol_by_address(vm_acc, callee_expr.get_load2()->_address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
 
-		if(found_symbol_ptr->_symbol_type != symbol_t::type::immutable_local){
+///??? alternatively: introduce new instantiate_expression.
+//	Generate an explicit function call to instantiate_from_typeid()
+//		const auto instantiate_from_typeid_function =
+
+		if(found_symbol_ptr->_const_value.is_null()){
 			throw std::runtime_error("Cannot resolve callee.");
 		}
 		else{
