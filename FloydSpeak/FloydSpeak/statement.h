@@ -27,16 +27,35 @@ namespace floyd {
 	//////////////////////////////////////		symbol_t
 
 	/*
-		Runtime scope, similar to a stack frame.
+		This is an entry in the symbol table, kept for each environment/stack frame.
+		When you make a local variable it gets an entry in symbol table, with a type and name but no value. Like a reservered slot.
+		You can also add constants directly to the symbol table.
+
+
+		# Host functions
+		Host functions are added as constant values, with the propery _value_type (function signature) and _const_value (function value to that host function ID).
+
+
+		# Functions
+		These are stored as local variable reservations of correct function-signature-type. They are inited during execution, not const-values in symbol table. Function calls needs to evaluate callee expression.
+		??? TODO: make functions const-values when possible.
+
+
+		# Structs
+		These are const-values in symbol table.
+
+		struct pixel_t { int red; int green; int blue; }
+
+		- needs to become a const variable "pixel_t" so print(pixel_t) etc works.
+		- pixel_t variable =
+			type: typeid_t = struct{ int red; int green; int blue; }
+			const: value_t::typeid_value =
 	*/
 
 	struct symbol_t {
 		enum type {
 			immutable_local = 10,
 			mutable_local
-//			,
-//			function_definition,
-//			struct_definition
 		};
 
 		type _symbol_type;
@@ -50,7 +69,7 @@ namespace floyd {
 		{
 		}
 
-		public: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
+		private: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
 			_symbol_type(symbol_type),
 			_value_type(value_type),
 			_const_value(const_value)
@@ -61,24 +80,19 @@ namespace floyd {
 			return _value_type;
 		}
 
-		//??? This really "reserves" the local.
-		public: static symbol_t make_immutable_local(const floyd::typeid_t value_type)
-		{
+		public: static symbol_t make_immutable_local(const floyd::typeid_t value_type){
 			return symbol_t{ type::immutable_local, value_type, {} };
 		}
 
-		public: static symbol_t make_mutable_local(const floyd::typeid_t value_type)
-		{
+		public: static symbol_t make_mutable_local(const floyd::typeid_t value_type){
 			return symbol_t{ type::mutable_local, value_type, {} };
 		}
 
-		public: static symbol_t make_constant(const floyd::value_t& value)
-		{
+		public: static symbol_t make_constant(const floyd::value_t& value){
 			return symbol_t{ type::immutable_local, value.get_type(), value };
 		}
 
-		public: static symbol_t make_type(const floyd::typeid_t& t)
-		{
+		public: static symbol_t make_type(const floyd::typeid_t& t){
 			return symbol_t{
 				type::immutable_local,
 				floyd::typeid_t::make_typeid(),
