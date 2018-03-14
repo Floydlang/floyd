@@ -26,6 +26,7 @@ namespace floyd {
 	struct interpreter_t;
 
 
+std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
 
 
 	//////////////////////////////////////		statement_result_t

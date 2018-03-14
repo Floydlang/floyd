@@ -932,6 +932,28 @@ std::pair<interpreter_t, value_t> host__get_json_type(const interpreter_t& vm, c
 }
 
 
+/*
+	o: typeid,
+	1... -- arguments to constructor.
+*/
+std::pair<interpreter_t, value_t> host__instantiate_from_typeid(const interpreter_t& vm, const std::vector<value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(args.size() == 0){
+		throw std::runtime_error("instantiate_from_typeid() requires 1 argument or more!");
+	}
+	else if(args[0].is_typeid() == false){
+		throw std::runtime_error("instantiate_from_typeid() requires argument 1 to be the typeid of type to instantiate!");
+	}
+	else{
+		const auto type_to_construct = args[0].get_typeid_value();
+		const std::vector<value_t> init_args(args.begin() + 1, args.end());
+		const auto result = construct_value_from_typeid(vm, type_to_construct, init_args);
+		return {result.first, result.second };
+	}
+}
+
+
 
 std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	const std::map<std::string, host_function_signature_t> temp {
@@ -959,7 +981,10 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "encode_json", host_function_signature_t{ 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}) }},
 		{ "flatten_to_json", host_function_signature_t{ 1019, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_null()}) }},
 		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null(), typeid_t::make_null()}) }},
-		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }}
+		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }},
+
+		{ "instantiate_from_typeid", host_function_signature_t{ 1022, typeid_t::make_function(typeid_t::make_null(), {typeid_t::make_null()}) }}
+
 	};
 	return temp;
 }
@@ -1002,7 +1027,8 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "encode_json", host__encode_json },
 		{ "flatten_to_json", host__flatten_to_json },
 		{ "unflatten_from_json", host__unflatten_from_json },
-		{ "get_json_type", host__get_json_type }
+		{ "get_json_type", host__get_json_type },
+		{ "instantiate_from_typeid", host__instantiate_from_typeid }
 	};
 
 	const auto lookup = [&](){

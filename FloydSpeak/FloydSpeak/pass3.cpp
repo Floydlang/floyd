@@ -1067,23 +1067,38 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	}
 }
 
-
+/*
+	Magic: a function taking ONE argument of type NULL: variable arguments count of any type. Like c-lang (...).
+*/
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& vm, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
-	//	arity
-	if(call_args.size() != callee_args.size()){
-		throw std::runtime_error("Wrong number of arguments in function call.");
-	}
 
-	auto vm_acc = vm;
-	vector<expression_t> call_args2;
-	for(int i = 0 ; i < callee_args.size() ; i++){
-		const auto callee_arg = callee_args[i];
-
-		const auto call_arg_pair = analyse_expression_to_target(vm_acc, call_args[i], callee_arg);
-		vm_acc = call_arg_pair.first;
-		call_args2.push_back(call_arg_pair.second);
+	if(callee_args.size() == 1 && callee_args[0].is_null()){
+		auto vm_acc = vm;
+		vector<expression_t> call_args2;
+		for(int i = 0 ; i < call_args.size() ; i++){
+			const auto call_arg_pair = analyse_expression_no_target(vm_acc, call_args[i]);
+			vm_acc = call_arg_pair.first;
+			call_args2.push_back(call_arg_pair.second);
+		}
+		return { vm_acc, call_args2 };
 	}
-	return { vm_acc, call_args2 };
+	else{
+		//	arity
+		if(call_args.size() != callee_args.size()){
+			throw std::runtime_error("Wrong number of arguments in function call.");
+		}
+
+		auto vm_acc = vm;
+		vector<expression_t> call_args2;
+		for(int i = 0 ; i < callee_args.size() ; i++){
+			const auto callee_arg = callee_args[i];
+
+			const auto call_arg_pair = analyse_expression_to_target(vm_acc, call_args[i], callee_arg);
+			vm_acc = call_arg_pair.first;
+			call_args2.push_back(call_arg_pair.second);
+		}
+		return { vm_acc, call_args2 };
+	}
 }
 
 bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr){
@@ -1137,6 +1152,20 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 	}
 	else if(function_name == "replace"){
 		return args[0].get_annotated_type();
+	}
+	else if(function_name == "instantiate_from_typeid"){
+		if(args[0].get_operation() == expression_type::k_load2){
+			const auto symbol = resolve_symbol_by_address(vm, args[0].get_load2()->_address);
+			if(symbol != nullptr && symbol->_const_value.is_null() == false){
+				return symbol->_const_value.get_typeid_value();
+			}
+			else{
+				throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+			}
+		}
+		else{
+			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+		}
 	}
 /*
 		else if(function_name == "unflatten_from_json"){

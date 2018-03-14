@@ -1004,6 +1004,17 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_compare_values(result, value_t::make_string("[int]"));
 }
 
+/*
+//??? add support for typeof(int)
+QUARK_UNIT_TEST_VIP("", "typeof()", "", ""){
+	const auto result = run_return_result(
+		R"(
+			result = typeof(int);
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_string("int"));
+}
+*/
 
 
 //////////////////////////////////////////		HOST FUNCTION - print()
@@ -1122,6 +1133,41 @@ QUARK_UNIT_TEST("", "write_text_file()", "", ""){
 		path = get_env_path();
 		write_text_file(path + "/Desktop/test_out.txt", "Floyd wrote this!");
 	)");
+}
+
+//////////////////////////////////////////		HOST FUNCTION - instantiate_from_typeid()
+
+//	instantiate_from_typeid() only works for const-symbols right now.
+/*
+??? Support when we can make "t = typeof(1234)" a const-symbol
+QUARK_UNIT_TEST("run_global()", "", "", ""){
+	const auto result = run_return_result(
+		R"(
+			t = typeof(1234);
+			result = instantiate_from_typeid(t, 3);
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_int(3));
+}
+
+QUARK_UNIT_TEST("run_global()", "", "", ""){
+	const auto r = test__run_global(
+		R"(
+			a = instantiate_from_typeid(typeof(123), 3);
+			assert(to_string(typeof(a)) == "int");
+			assert(a == 3);
+		)"
+	);
+}
+*/
+
+QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it works too", ""){
+	const auto result = run_return_result(R"(
+		struct pos_t { float x; float y; }
+		a = instantiate_from_typeid(pos_t, 100.0, 3.0);
+		result = a.x + a.y;
+	)", {});
+	ut_compare_values(result, value_t::make_float(103.0f));
 }
 
 

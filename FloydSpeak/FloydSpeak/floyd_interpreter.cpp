@@ -509,7 +509,7 @@ std::pair<interpreter_t, value_t> evaluate_load2_expression(const interpreter_t&
 	QUARK_ASSERT(expr._address._index >= 0 && expr._address._index < env->_values.size());
 	const auto value = env->_values[expr._address._index].second.first;
 
-	QUARK_ASSERT(value.get_type() == e.get_annotated_type());
+	QUARK_ASSERT(value.get_type() == e.get_annotated_type() /*|| e.get_annotated_type().is_null()*/);
 
 	return {vm_acc, value};
 }
