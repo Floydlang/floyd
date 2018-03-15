@@ -120,7 +120,7 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 			elements2.push_back(parser_expression_to_ast(tracer, m));
 		}
 
-		return expression_t::make_vector_definition(element_type, elements2);
+		return expression_t::make_construct_value_expr(typeid_t::make_vector(element_type), elements2);
 	}
 	else if(op == "dict-def"){
 		QUARK_ASSERT(e.get_array_size() == 3);

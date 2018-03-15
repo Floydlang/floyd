@@ -576,7 +576,7 @@ expression_t improve_expression_type(const expression_t& e, const floyd::typeid_
 		}
 		else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_construct_value){
 			QUARK_ASSERT(false);
-			return expression_t::make_vector_definition(wanted_type, e.get_construct_value()->_args);
+			return expression_t::make_construct_value_expr(typeid_t::make_vector(wanted_type), e.get_construct_value()->_args);
 		}
 		else{
 			return e;
@@ -705,7 +705,8 @@ std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const a
 
 	auto vm_acc = vm;
 	const std::vector<expression_t>& elements = expr._args;
-	const auto element_type = expr._value_type;
+	QUARK_ASSERT(expr._value_type2.is_vector());
+	const auto element_type = expr._value_type2.get_vector_element_type();
 
 	if(elements.empty()){
 		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
@@ -725,7 +726,7 @@ std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const a
 				throw std::runtime_error("Vector can not hold elements of different types.");
 			}
 		}
-		return { vm_acc, expression_t::make_vector_definition(element_type2, elements2) };
+		return { vm_acc, expression_t::make_construct_value_expr(typeid_t::make_vector(element_type2), elements2) };
 	}
 }
 

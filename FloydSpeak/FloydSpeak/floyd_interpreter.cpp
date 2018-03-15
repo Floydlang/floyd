@@ -519,7 +519,8 @@ std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const in
 
 	auto vm_acc = vm;
 	const std::vector<expression_t>& elements = expr._args;
-	const auto element_type = expr._value_type;
+	QUARK_ASSERT(expr._value_type2.is_vector());
+	const auto element_type = expr._value_type2.get_vector_element_type();
 
 	//	An empty vector is encoded as a constant value, not a vector-definition-expression.
 	QUARK_ASSERT(elements.empty() == false);

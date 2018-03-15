@@ -596,35 +596,40 @@ namespace floyd {
 				const std::vector<expression_t>& args
 			)
 			:
-				_value_type(value_type),
+				_value_type2(value_type),
 				_args(args)
 			{
+				QUARK_ASSERT(value_type.is_vector());
 			}
 
 			virtual ast_json_t expr_base__to_json() const {
+				QUARK_ASSERT(_value_type2.is_vector());
+
 				return ast_json_t{json_t::make_array({
 					"construct-value",
-					typeid_to_ast_json(_value_type)._value,
+					typeid_to_ast_json(_value_type2)._value,
 					expressions_to_json(_args)._value
 				})};
 			}
 
 
-			const typeid_t _value_type;
+			const typeid_t _value_type2;
 			const std::vector<expression_t> _args;
 		};
 
-		public: static expression_t make_vector_definition(
+		public: static expression_t make_construct_value_expr(
 			const typeid_t& value_type,
 			const std::vector<expression_t>& args
 		)
 		{
+			QUARK_ASSERT(value_type.is_vector());
+
 			return expression_t{
 				expression_type::k_construct_value,
 				std::make_shared<construct_value_expr_t>(
 					construct_value_expr_t{ value_type, args }
 				),
-				std::make_shared<typeid_t>(typeid_t::make_vector(value_type))
+				std::make_shared<typeid_t>(value_type)
 			};
 		}
 
@@ -996,7 +1001,7 @@ namespace floyd {
 	}
 	inline bool operator==(const expression_t::construct_value_expr_t& lhs, const expression_t::construct_value_expr_t& rhs){
 		return
-			lhs._value_type == rhs._value_type
+			lhs._value_type2 == rhs._value_type2
 			&& lhs._args == rhs._args;
 	}
 	inline bool operator==(const expression_t::dict_definition_exprt_t& lhs, const expression_t::dict_definition_exprt_t& rhs){
