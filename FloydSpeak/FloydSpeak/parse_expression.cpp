@@ -154,7 +154,7 @@ ast_json_t expr_to_json(const expr_t& e){
 		return ast_json_t{make_array_skip_nulls({ json_t("unary_minus"), json_t(), expr_to_json(e._exprs[0])._value })};
 	}
 	else if(e._op == eoperation::k_1_vector_definition){
-		return ast_json_t{json_t::make_array({ json_t("vector-def"), e._identifier, expr_vector_to_json_array(e._exprs)._value })};
+		return ast_json_t{json_t::make_array({ json_t("construct-value"), e._identifier, expr_vector_to_json_array(e._exprs)._value })};
 	}
 	else if(e._op == eoperation::k_1_dict_definition){
 		return ast_json_t{json_t::make_array({ json_t("dict-def"), e._identifier, expr_vector_to_json_array(e._exprs)._value })};

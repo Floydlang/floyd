@@ -914,10 +914,10 @@ std::string expr_to_string(const expr_t& e){
 		return "[\"unary_minus\", " + expr_to_string(e._exprs[0]) + "]";
 	}
 
-	//	["vector-def", ELEMENT-TYPE, [ ELEMENT, ELEMENT, ...]]
+	//	["construct-value", ELEMENT-TYPE, [ ELEMENT, ELEMENT, ...]]
 	else if(e._op == eoperation::k_1_vector_definition){
 		std::ostringstream ss;
-		ss << "[\"vector-def\", " << "\"" << e._identifier + "\"" << ", [";
+		ss << "[\"construct-value\", " << "\"" << e._identifier + "\"" << ", [";
 		for(auto i = 0 ; i < e._exprs.size() ; i++){
 			const auto& arg = expr_to_string(e._exprs[i]);
 			ss << arg;
@@ -1153,11 +1153,11 @@ QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression(
 
 
 QUARK_UNIT_TESTQ("run_main()", "vector"){
-	QUARK_UT_VERIFY(test__parse_expression("[]", R"(["vector-def", "", []])", ""));
+	QUARK_UT_VERIFY(test__parse_expression("[]", R"(["construct-value", "", []])", ""));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "vector"){
-	QUARK_UT_VERIFY(test__parse_expression("[1,2,3]", R"(["vector-def", "", [["k", "int", 1], ["k", "int", 2], ["k", "int", 3]]])", ""));
+	QUARK_UT_VERIFY(test__parse_expression("[1,2,3]", R"(["construct-value", "", [["k", "int", 1], ["k", "int", 2], ["k", "int", 3]]])", ""));
 }
 
 

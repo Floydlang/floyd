@@ -514,12 +514,12 @@ std::pair<interpreter_t, value_t> evaluate_load2_expression(const interpreter_t&
 	return {vm_acc, value};
 }
 
-std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const interpreter_t& vm, const expression_t::vector_definition_exprt_t& expr){
+std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const interpreter_t& vm, const expression_t::construct_value_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const std::vector<expression_t>& elements = expr._elements;
-	const auto element_type = expr._element_type;
+	const std::vector<expression_t>& elements = expr._args;
+	const auto element_type = expr._value_type;
 
 	//	An empty vector is encoded as a constant value, not a vector-definition-expression.
 	QUARK_ASSERT(elements.empty() == false);
@@ -865,8 +865,8 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	}
 
 	//	??? Rename to vector_instantiator -- it doesn't define a type, it instantiates a vector.
-	else if(op == expression_type::k_vector_definition){
-		return evaluate_vector_definition_expression(vm, *e.get_vector_definition());
+	else if(op == expression_type::k_construct_value){
+		return evaluate_vector_definition_expression(vm, *e.get_construct_value());
 	}
 
 	//	??? Rename to vector_instantiator -- it doesn't define a type, it instantiates a vector.

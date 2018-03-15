@@ -110,7 +110,7 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 		const auto lookup_key_expr = parser_expression_to_ast(tracer, e.get_array_n(2));
 		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, nullptr);
 	}
-	else if(op == "vector-def"){
+	else if(op == "construct-value"){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto element_type = resolve_type_name(ast_json_t{e.get_array_n(1)});
 		const auto elements = e.get_array_n(2).get_array();

@@ -586,52 +586,50 @@ namespace floyd {
 
 
 
-		////////////////////////////////			vector_definition_exprt_t
+		////////////////////////////////			construct_value_expr_t
 
 
 
-		public: struct vector_definition_exprt_t : public expr_base_t {
-
-			vector_definition_exprt_t(
-				const typeid_t& element_type,
-				const std::vector<expression_t>& elements
+		public: struct construct_value_expr_t : public expr_base_t {
+			construct_value_expr_t(
+				const typeid_t& value_type,
+				const std::vector<expression_t>& args
 			)
 			:
-				_element_type(element_type),
-				_elements(elements)
+				_value_type(value_type),
+				_args(args)
 			{
 			}
 
 			virtual ast_json_t expr_base__to_json() const {
 				return ast_json_t{json_t::make_array({
-					"vector-def",
-					typeid_to_ast_json(_element_type)._value,
-					expressions_to_json(_elements)._value
+					"construct-value",
+					typeid_to_ast_json(_value_type)._value,
+					expressions_to_json(_args)._value
 				})};
 			}
 
 
-			const typeid_t _element_type;
-			const std::vector<expression_t> _elements;
+			const typeid_t _value_type;
+			const std::vector<expression_t> _args;
 		};
 
 		public: static expression_t make_vector_definition(
-			const typeid_t& element_type,
-			const std::vector<expression_t>& elements
+			const typeid_t& value_type,
+			const std::vector<expression_t>& args
 		)
 		{
 			return expression_t{
-				expression_type::k_vector_definition,
-				std::make_shared<vector_definition_exprt_t>(
-					vector_definition_exprt_t{ element_type, elements }
+				expression_type::k_construct_value,
+				std::make_shared<construct_value_expr_t>(
+					construct_value_expr_t{ value_type, args }
 				),
-				std::make_shared<typeid_t>(typeid_t::make_vector(element_type))
+				std::make_shared<typeid_t>(typeid_t::make_vector(value_type))
 			};
 		}
 
-		//???rename vector_definition_expr!
-		public: const vector_definition_exprt_t* get_vector_definition() const {
-			return dynamic_cast<const vector_definition_exprt_t*>(_expr.get());
+		public: const construct_value_expr_t* get_construct_value() const {
+			return dynamic_cast<const construct_value_expr_t*>(_expr.get());
 		}
 
 
@@ -770,7 +768,7 @@ namespace floyd {
 			|| _operation == expression_type::k_literal
 			|| _operation == expression_type::k_define_struct
 			|| _operation == expression_type::k_define_function
-			|| _operation == expression_type::k_vector_definition
+			|| _operation == expression_type::k_construct_value
 			|| _operation == expression_type::k_dict_definition
 			){
 				return true;
@@ -793,7 +791,7 @@ namespace floyd {
 			}
 			else if(_operation == expression_type::k_define_function){
 			}
-			else if(_operation == expression_type::k_vector_definition){
+			else if(_operation == expression_type::k_construct_value){
 			}
 			else if(_operation == expression_type::k_dict_definition){
 			}
@@ -863,9 +861,9 @@ namespace floyd {
 					return true;
 				}
 
-				else if(op == expression_type::k_vector_definition){
-					const auto e = *get_vector_definition();
-					for(const auto a: e._elements){
+				else if(op == expression_type::k_construct_value){
+					const auto e = *get_construct_value();
+					for(const auto a: e._args){
 						if(a.is_annotated_deep() == false){
 							return false;
 						}
@@ -996,10 +994,10 @@ namespace floyd {
 			lhs._callee == rhs._callee
 			&& lhs._args == rhs._args;
 	}
-	inline bool operator==(const expression_t::vector_definition_exprt_t& lhs, const expression_t::vector_definition_exprt_t& rhs){
+	inline bool operator==(const expression_t::construct_value_expr_t& lhs, const expression_t::construct_value_expr_t& rhs){
 		return
-			lhs._element_type == rhs._element_type
-			&& lhs._elements == rhs._elements;
+			lhs._value_type == rhs._value_type
+			&& lhs._args == rhs._args;
 	}
 	inline bool operator==(const expression_t::dict_definition_exprt_t& lhs, const expression_t::dict_definition_exprt_t& rhs){
 		return

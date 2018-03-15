@@ -136,7 +136,7 @@ namespace floyd {
 		//???	use k_literal for function values?
 		k_define_function,
 
-		k_vector_definition,
+		k_construct_value,
 		k_dict_definition
 	};
 

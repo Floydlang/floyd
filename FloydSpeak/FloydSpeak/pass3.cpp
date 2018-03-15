@@ -574,9 +574,9 @@ expression_t improve_expression_type(const expression_t& e, const floyd::typeid_
 		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_null(), {})){
 			return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
 		}
-		else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_vector_definition){
+		else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_construct_value){
 			QUARK_ASSERT(false);
-			return expression_t::make_vector_definition(wanted_type, e.get_vector_definition()->_elements);
+			return expression_t::make_vector_definition(wanted_type, e.get_construct_value()->_args);
 		}
 		else{
 			return e;
@@ -700,12 +700,12 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const ex
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const analyser_t& vm, const expression_t::vector_definition_exprt_t& expr){
+std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const analyser_t& vm, const expression_t::construct_value_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const std::vector<expression_t>& elements = expr._elements;
-	const auto element_type = expr._element_type;
+	const std::vector<expression_t>& elements = expr._args;
+	const auto element_type = expr._value_type;
 
 	if(elements.empty()){
 		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
@@ -1368,8 +1368,8 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 		return analyse_function_definition_expression(vm, e);
 	}
 
-	else if(op == expression_type::k_vector_definition){
-		return analyse_vector_definition_expression(vm, *e.get_vector_definition());
+	else if(op == expression_type::k_construct_value){
+		return analyse_vector_definition_expression(vm, *e.get_construct_value());
 	}
 
 	else if(op == expression_type::k_dict_definition){
