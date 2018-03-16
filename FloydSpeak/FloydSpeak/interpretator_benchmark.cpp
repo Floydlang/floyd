@@ -79,7 +79,7 @@ QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 	const int64_t floyd_iterations = 20000LL;
 
 	const auto cpp_ns = measure_execution_time_ns(
-		"For-loop C++",
+		"C++: For-loop",
 		[&] {
 			volatile int64_t count = 0;
 			for (int64_t i = 0 ; i < cpp_iterations ; i++) {
@@ -91,7 +91,7 @@ QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 
 	interpreter_context_t context = make_test_context();
 	const auto floyd_ns = measure_execution_time_ns(
-		"For-loop Floyd",
+		"Floyd: For-loop",
 		[&] {
 			const auto vm = run_global(context,
 			R"(
@@ -119,12 +119,11 @@ int fibonacci(int n) {
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
-	const int64_t cpp_iterations = (22);
-	const int64_t floyd_iterations = 22LL;
+QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+	const int64_t cpp_iterations = (18);
 
 	const auto cpp_ns = measure_execution_time_ns(
-		"fibonacci C++",
+		"C++: Fibonacci",
 		[&] {
 			volatile int sum = 0;
 			for (auto i = 0 ; i < cpp_iterations ; i++) {
@@ -136,7 +135,7 @@ QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
 
 	interpreter_context_t context = make_test_context();
 	const auto floyd_ns = measure_execution_time_ns(
-		"fibonacci Floyd",
+		"Floyd: Fibonacci",
 		[&] {
 			const auto vm = run_global(context,
 			R"(
@@ -147,7 +146,7 @@ QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
 					return fibonacci(n - 2) + fibonacci(n - 1);
 				}
 
-				for (i in 0...22) {
+				for (i in 0...18) {
 					a = fibonacci(i);
 				}
 			)"
@@ -156,7 +155,7 @@ QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
 	);
 
 	double k = (double)cpp_ns / (double)floyd_ns;
-	std::cout << "Floyd performace: " << k << std::endl;
+	std::cout << "Floyd performace percentage of C++: " << (k * 100.0) << std::endl;
 }
 
 #endif

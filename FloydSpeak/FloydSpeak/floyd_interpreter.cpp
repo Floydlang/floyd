@@ -118,6 +118,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	}
 
 	QUARK_ASSERT(false);
+	throw std::exception();
 }
 
 std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
@@ -360,6 +361,7 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	else{
 		QUARK_ASSERT(false);
 	}
+	throw std::exception();
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
@@ -504,6 +506,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 	}
 	else {
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -642,6 +645,7 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_unary_minus_expression(con
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -712,6 +716,7 @@ std::pair<interpreter_t, value_t> evaluate_comparison_expression(const interpret
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -864,6 +869,7 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 	else{
 		QUARK_ASSERT(false);
 	}
+	throw std::exception();
 }
 
 std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
@@ -942,6 +948,7 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	else{
 		QUARK_ASSERT(false);
 	}
+	throw std::exception();
 }
 
 std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){

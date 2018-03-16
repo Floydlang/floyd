@@ -758,6 +758,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	else{
 		QUARK_ASSERT(false);
 	}
+	throw std::exception();
 }
 
 std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& vm, const expression_t::unary_minus_expr_t& expr){
