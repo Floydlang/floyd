@@ -700,72 +700,84 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const ex
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_vector_definition_expression(const analyser_t& vm, const expression_t::construct_value_expr_t& expr){
+std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
-	const std::vector<expression_t>& elements = expr._args;
-	QUARK_ASSERT(expr._value_type2.is_vector());
-	const auto element_type = expr._value_type2.get_vector_element_type();
+	const auto expr = *e.get_construct_value();
 
-	if(elements.empty()){
-		return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
+	if(expr._value_type2.is_vector()){
+		const std::vector<expression_t>& elements = expr._args;
+		QUARK_ASSERT(expr._value_type2.is_vector());
+		const auto element_type = expr._value_type2.get_vector_element_type();
+
+		if(elements.empty()){
+			return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
+		}
+		else{
+			std::vector<expression_t> elements2;
+			for(const auto m: elements){
+				const auto element_expr = analyse_expression_no_target(vm_acc, m);
+				vm_acc = element_expr.first;
+				elements2.push_back(element_expr.second);
+			}
+
+			//	If we don't have an explicit element type, deduct it from first element.
+			const auto element_type2 = element_type.is_null() ? elements2[0].get_annotated_type(): element_type;
+			for(const auto m: elements2){
+				if(m.get_annotated_type() != element_type2){
+					throw std::runtime_error("Vector can not hold elements of different types.");
+				}
+			}
+			return { vm_acc, expression_t::make_construct_value_expr(typeid_t::make_vector(element_type2), elements2) };
+		}
+	}
+
+	//??? Make we make a json_value::object if we find mixed values in dict?
+
+	//	Dicts uses pairs of (string,value). This is stored in _args as interleaved expression: string0, value0, string1, value1.
+	else if(expr._value_type2.is_dict()){
+		const auto& elements = expr._args;
+		QUARK_ASSERT(elements.size() % 2 == 0);
+
+		const auto element_type = expr._value_type2.get_dict_value_type();
+
+		if(elements.empty()){
+			return {vm_acc, expression_t::make_literal(value_t::make_dict_value(element_type, {}))};
+		}
+		else{
+			std::vector<expression_t> elements2;
+			for(int i = 0 ; i < elements.size() / 2 ; i++){
+				const auto& key = elements[i * 2 + 0].get_literal().get_string_value();
+				const auto& value = elements[i * 2 + 1];
+				const auto element_expr = analyse_expression_no_target(vm_acc, value);
+				vm_acc = element_expr.first;
+				elements2.push_back(expression_t::make_literal_string(key));
+				elements2.push_back(element_expr.second);
+			}
+
+			//	Deduce type of dictionary based on first value.
+			const auto element_type2 = element_type.is_null() == false ? element_type : elements2[0 * 2 + 1].get_annotated_type();
+
+			//	Make sure all elements have the correct type.
+			for(int i = 0 ; i < elements2.size() / 2 ; i++){
+				const auto element_type0 = elements2[i * 2 + 1].get_annotated_type();
+				if(element_type0 != element_type2){
+	//??? dict-def needs to hold mixed values to allow json_value to type object to work.
+	//???				throw std::runtime_error("Dict can not hold elements of different type!");
+				}
+			}
+
+			return {vm_acc, expression_t::make_construct_value_expr(typeid_t::make_dict(element_type2), elements2)};
+		}
+
 	}
 	else{
-		std::vector<expression_t> elements2;
-		for(const auto m: elements){
-			const auto element_expr = analyse_expression_no_target(vm_acc, m);
-			vm_acc = element_expr.first;
-			elements2.push_back(element_expr.second);
-		}
-
-		//	If we don't have an explicit element type, deduct it from first element.
-		const auto element_type2 = element_type.is_null() ? elements2[0].get_annotated_type(): element_type;
-		for(const auto m: elements2){
-			if(m.get_annotated_type() != element_type2){
-				throw std::runtime_error("Vector can not hold elements of different types.");
-			}
-		}
-		return { vm_acc, expression_t::make_construct_value_expr(typeid_t::make_vector(element_type2), elements2) };
+		QUARK_ASSERT(false);
 	}
 }
 
 
-std::pair<analyser_t, expression_t> analyse_dict_definition_expression(const analyser_t& vm, const expression_t::dict_definition_exprt_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm_acc = vm;
-
-	const auto& elements = expr._elements;
-	const typeid_t value_type = expr._value_type;
-
-	if(elements.empty()){
-		return {vm_acc, expression_t::make_literal(value_t::make_dict_value(value_type, {}))};
-	}
-	else{
-		map<string, expression_t> elements2;
-		for(const auto m_kv: elements){
-			const auto element_expr = analyse_expression_no_target(vm_acc, m_kv.second);
-			vm_acc = element_expr.first;
-
-			elements2.insert(make_pair(m_kv.first, element_expr.second));
-		}
-
-		//	Deduce type of dictionary.
-		const auto element_type2 = value_type.is_null() == false ? value_type : elements2.begin()->second.get_annotated_type();
-
-		//	Make sure all elements have the correct type.
-		for(const auto m_kv: elements2){
-			const auto element_type = m_kv.second.get_annotated_type();
-			if(element_type != element_type2){
-//??? dict-def needs to hold mixed values to allow json_value to type object to work.
-//???				throw std::runtime_error("Dict can not hold elements of different type!");
-			}
-		}
-
-		return {vm_acc, expression_t::make_dict_definition(element_type2, elements2)};
-	}
-}
 
 std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& vm, const expression_t::unary_minus_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1370,11 +1382,7 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	}
 
 	else if(op == expression_type::k_construct_value){
-		return analyse_vector_definition_expression(vm, *e.get_construct_value());
-	}
-
-	else if(op == expression_type::k_dict_definition){
-		return analyse_dict_definition_expression(vm, *e.get_dict_definition());
+		return analyse_construct_value_expression(vm, e);
 	}
 
 	//	This can be desugared at compile time. ???

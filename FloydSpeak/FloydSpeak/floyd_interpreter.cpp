@@ -44,6 +44,9 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 
 
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(vm.check_invariant());
+
 	if(type.is_json_value()){
 		QUARK_ASSERT(arg_values.size() == 1);
 
@@ -91,8 +94,10 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	}
 
 	else if(type.is_vector()){
+		QUARK_ASSERT(false);
 	}
 	else if(type.is_dict()){
+		QUARK_ASSERT(false);
 	}
 	else if(type.is_function()){
 	}
@@ -514,7 +519,75 @@ std::pair<interpreter_t, value_t> evaluate_load2_expression(const interpreter_t&
 	return {vm_acc, value};
 }
 
-std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const interpreter_t& vm, const expression_t::construct_value_expr_t& expr){
+
+//??? Should support any type including structs and int.
+std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const interpreter_t& vm, const expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto expr = *e.get_construct_value();
+	auto vm_acc = vm;
+
+	if(expr._value_type2.is_vector()){
+		const std::vector<expression_t>& elements = expr._args;
+		const auto root_value_type = expr._value_type2;
+		const auto element_type = root_value_type.get_vector_element_type();
+
+		//	An empty vector is encoded as a constant value by pass3, not a vector-definition-expression.
+		QUARK_ASSERT(elements.empty() == false);
+
+		QUARK_ASSERT(root_value_type.is_null() == false);
+		QUARK_ASSERT(element_type.is_null() == false);
+
+		std::vector<value_t> elements2;
+		for(const auto m: elements){
+			const auto element_expr = evaluate_expression(vm_acc, m);
+			vm_acc = element_expr.first;
+
+			const auto element = element_expr.second;
+			elements2.push_back(element);
+		}
+
+		//??? this must be old logic!??? We should know type after pass3!?
+		QUARK_ASSERT(element_type.is_null() == false);
+		//	If we don't have an explicit element type, deduct it from first element.
+		const auto element_type2 = element_type.is_null() ? elements2[0].get_type() : element_type;
+	#if DEBUG
+		for(const auto m: elements2){
+			QUARK_ASSERT(m.get_type() == element_type2);
+		}
+	#endif
+		return {vm_acc, value_t::make_vector_value(element_type2, elements2)};
+	}
+	else if(expr._value_type2.is_dict()){
+		const auto& elements = expr._args;
+		const auto root_value_type = expr._value_type2;
+		const auto element_type = root_value_type.get_dict_value_type();
+
+		//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
+		QUARK_ASSERT(elements.empty() == false);
+
+		QUARK_ASSERT(root_value_type.is_null() == false);
+		QUARK_ASSERT(element_type.is_null() == false);
+
+		std::map<string, value_t> elements2;
+		for(auto i = 0 ; i < elements.size() / 2 ; i++){
+			const auto key_expr = elements[i * 2 + 0];
+			const auto value_expr = elements[i * 2 + 1];
+			const auto element_expr = evaluate_expression(vm_acc, value_expr);
+			vm_acc = element_expr.first;
+
+			const auto element = element_expr.second;
+			const string key_string = key_expr.get_literal().get_string_value();
+			elements2[key_string] = element;
+		}
+
+		return {vm_acc, value_t::make_dict_value(element_type, elements2)};
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+/*std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const interpreter_t& vm, const expression_t::construct_value_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	auto vm_acc = vm;
@@ -522,7 +595,7 @@ std::pair<interpreter_t, value_t> evaluate_vector_definition_expression(const in
 	QUARK_ASSERT(expr._value_type2.is_vector());
 	const auto element_type = expr._value_type2.get_vector_element_type();
 
-	//	An empty vector is encoded as a constant value, not a vector-definition-expression.
+	//	An empty vector is encoded as a constant value by pass3, not a vector-definition-expression.
 	QUARK_ASSERT(elements.empty() == false);
 
 	std::vector<value_t> elements2;
@@ -552,7 +625,7 @@ std::pair<interpreter_t, value_t> evaluate_dict_definition_expression(const inte
 	const auto& elements = expr._elements;
 	typeid_t value_type = expr._value_type;
 
-	//	An empty dict is encoded as a constant value, not a dict-definition-expression.
+	//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
 	QUARK_ASSERT(elements.empty() == false);
 
 	std::map<string, value_t> elements2;
@@ -569,6 +642,8 @@ std::pair<interpreter_t, value_t> evaluate_dict_definition_expression(const inte
 
 	return {vm_acc, value_t::make_dict_value(value_type, elements2)};
 }
+*/
+
 
 std::pair<interpreter_t, value_t> evaluate_arithmetic_unary_minus_expression(const interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -865,14 +940,8 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 		return {vm, value_t::make_function_value(expr->_def)};
 	}
 
-	//	??? Rename to vector_instantiator -- it doesn't define a type, it instantiates a vector.
 	else if(op == expression_type::k_construct_value){
-		return evaluate_vector_definition_expression(vm, *e.get_construct_value());
-	}
-
-	//	??? Rename to vector_instantiator -- it doesn't define a type, it instantiates a vector.
-	else if(op == expression_type::k_dict_definition){
-		return evaluate_dict_definition_expression(vm, *e.get_dict_definition());
+		return evaluate_construct_value_expression(vm, e);
 	}
 
 	//	This can be desugared at compile time.

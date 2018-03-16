@@ -137,7 +137,6 @@ namespace floyd {
 		k_define_function,
 
 		k_construct_value,
-		k_dict_definition
 	};
 
 	expression_type token_to_expression_type(const std::string& op);

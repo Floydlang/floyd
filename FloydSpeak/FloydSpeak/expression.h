@@ -599,12 +599,9 @@ namespace floyd {
 				_value_type2(value_type),
 				_args(args)
 			{
-				QUARK_ASSERT(value_type.is_vector());
 			}
 
 			virtual ast_json_t expr_base__to_json() const {
-				QUARK_ASSERT(_value_type2.is_vector());
-
 				return ast_json_t{json_t::make_array({
 					"construct-value",
 					typeid_to_ast_json(_value_type2)._value,
@@ -622,8 +619,6 @@ namespace floyd {
 			const std::vector<expression_t>& args
 		)
 		{
-			QUARK_ASSERT(value_type.is_vector());
-
 			return expression_t{
 				expression_type::k_construct_value,
 				std::make_shared<construct_value_expr_t>(
@@ -635,61 +630,6 @@ namespace floyd {
 
 		public: const construct_value_expr_t* get_construct_value() const {
 			return dynamic_cast<const construct_value_expr_t*>(_expr.get());
-		}
-
-
-
-		////////////////////////////////			dict_definition_exprt_t
-
-
-
-		public: struct dict_definition_exprt_t : public expr_base_t {
-			dict_definition_exprt_t(
-				const typeid_t& value_type,
-				const std::map<std::string, expression_t>& elements
-			)
-			:
-				_value_type(value_type),
-				_elements(elements)
-			{
-			}
-
-			virtual ast_json_t expr_base__to_json() const {
-				std::map<std::string, json_t> dict_contents;
-				for(const auto e: _elements){
-					const auto key = e.first;
-					const auto value = e.second;
-					const auto e2 = std::pair<std::string, json_t>{ key, expression_to_json(value)._value};
-					dict_contents.insert(e2);
-				}
-				return ast_json_t{json_t::make_array({
-					"dict-def",
-					typeid_to_ast_json(_value_type)._value,
-					dict_contents
-				})};
-			}
-
-
-			const typeid_t _value_type;
-			const std::map<std::string, expression_t> _elements;
-		};
-
-		public: static expression_t make_dict_definition(
-			const typeid_t& value_type,
-			const std::map<std::string, expression_t>& elements
-		)
-		{
-			return expression_t{
-				expression_type::k_dict_definition,
-				std::make_shared<dict_definition_exprt_t>(
-					dict_definition_exprt_t{ value_type, elements }
-				),
-				std::make_shared<typeid_t>(typeid_t::make_dict(value_type))
-			};
-		}
-
-		public: const dict_definition_exprt_t* get_dict_definition() const {
-			return dynamic_cast<const dict_definition_exprt_t*>(_expr.get());
 		}
 
 
@@ -774,7 +714,6 @@ namespace floyd {
 			|| _operation == expression_type::k_define_struct
 			|| _operation == expression_type::k_define_function
 			|| _operation == expression_type::k_construct_value
-			|| _operation == expression_type::k_dict_definition
 			){
 				return true;
 			}
@@ -797,8 +736,6 @@ namespace floyd {
 			else if(_operation == expression_type::k_define_function){
 			}
 			else if(_operation == expression_type::k_construct_value){
-			}
-			else if(_operation == expression_type::k_dict_definition){
 			}
 			else{
 				return expression_t(_operation, _expr, std::make_shared<typeid_t>(type));
@@ -870,16 +807,6 @@ namespace floyd {
 					const auto e = *get_construct_value();
 					for(const auto a: e._args){
 						if(a.is_annotated_deep() == false){
-							return false;
-						}
-					}
-					return true;
-				}
-
-				else if(op == expression_type::k_dict_definition){
-					const auto e = *get_dict_definition();
-					for(const auto kv: e._elements){
-						if(kv.second.is_annotated_deep() == false){
 							return false;
 						}
 					}
@@ -1003,11 +930,6 @@ namespace floyd {
 		return
 			lhs._value_type2 == rhs._value_type2
 			&& lhs._args == rhs._args;
-	}
-	inline bool operator==(const expression_t::dict_definition_exprt_t& lhs, const expression_t::dict_definition_exprt_t& rhs){
-		return
-			lhs._value_type == rhs._value_type
-			&& lhs._elements == rhs._elements;
 	}
 
 	inline bool is_simple_expression__2(const std::string& op){

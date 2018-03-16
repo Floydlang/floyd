@@ -916,6 +916,8 @@ std::string expr_to_string(const expr_t& e){
 
 	//	["construct-value", ELEMENT-TYPE, [ ELEMENT, ELEMENT, ...]]
 	else if(e._op == eoperation::k_1_vector_definition){
+		QUARK_ASSERT(e._identifier == "");
+
 		std::ostringstream ss;
 		ss << "[\"construct-value\", " << "\"" << e._identifier + "\"" << ", [";
 		for(auto i = 0 ; i < e._exprs.size() ; i++){
@@ -931,6 +933,8 @@ std::string expr_to_string(const expr_t& e){
 
 	//	["dict-def", VALUE-TYPE, [ [ EXPRESSION, EXPRESSION, [ EXPRESSION, EXPRESSION], ...]]
 	else if(e._op == eoperation::k_1_dict_definition){
+		QUARK_ASSERT(e._identifier == "");
+
 		std::ostringstream ss;
 		ss << "[\"dict-def\", " << "\"" << e._identifier + "\"" << ", [";
 		for(auto i = 0 ; i < e._exprs.size() ; i += 2){

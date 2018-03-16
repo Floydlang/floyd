@@ -2224,7 +2224,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 	});
 }
 
-QUARK_UNIT_TESTQ("comments", "// on start of line"){
+QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 	const auto vm = test__run_global(R"(
 		print("Hello");/* xyz */print("Bye");
 	)");
@@ -2483,7 +2483,27 @@ QUARK_UNIT_TEST("", "", "", ""){
 	ut_compare_values(result, value_t::make_float(100.0));
 }
 
+
 QUARK_UNIT_TEST("", "", "", ""){
+	const auto result = run_return_result(R"(
+		struct pixel_t { float x; float y; }
+		c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)];
+		result = c[1].y
+	)", {});
+	ut_compare_values(result, value_t::make_float(201.0));
+}
+
+/*
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto result = run_return_result(R"(
+		struct pixel_t { float x; float y; }
+		c = { "version": "1.0", "image": 100 };
+		result = c["image"][1].y
+	)", {});
+	ut_compare_values(result, value_t::make_float(201.0));
+}
+
+QUARK_UNIT_TEST_VIP("", "", "", ""){
 	const auto result = run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] };
@@ -2491,6 +2511,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 	)", {});
 	ut_compare_values(result, value_t::make_float(201.0));
 }
+*/
+
 
 
 //////////////////////////////////////////		decode_json()

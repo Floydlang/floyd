@@ -11,6 +11,7 @@
 #include "floyd_basics.h"
 #include "parser2.h"
 #include "json_support.h"
+#include "ast_typeid.h"
 
 namespace floyd {
 
@@ -154,10 +155,27 @@ ast_json_t expr_to_json(const expr_t& e){
 		return ast_json_t{make_array_skip_nulls({ json_t("unary_minus"), json_t(), expr_to_json(e._exprs[0])._value })};
 	}
 	else if(e._op == eoperation::k_1_vector_definition){
-		return ast_json_t{json_t::make_array({ json_t("construct-value"), e._identifier, expr_vector_to_json_array(e._exprs)._value })};
+		//??? what is _identifier?
+		QUARK_ASSERT(e._identifier == "");
+
+		return ast_json_t{json_t::make_array({
+			json_t("construct-value"),
+			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_null()))._value,
+			expr_vector_to_json_array(e._exprs)._value
+		})};
 	}
 	else if(e._op == eoperation::k_1_dict_definition){
-		return ast_json_t{json_t::make_array({ json_t("dict-def"), e._identifier, expr_vector_to_json_array(e._exprs)._value })};
+		//??? what is _identifier?
+		QUARK_ASSERT(e._identifier == "");
+
+		return ast_json_t{json_t::make_array({
+			json_t("construct-value"),
+			typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_null()))._value,
+			expr_vector_to_json_array(e._exprs)._value
+		})};
+
+		//??? need to encode that this is a dict.
+//		return ast_json_t{json_t::make_array({ json_t("construct-value"), "{string:null}", expr_vector_to_json_array(e._exprs)._value })};
 	}
 	else{
 		QUARK_ASSERT(false)

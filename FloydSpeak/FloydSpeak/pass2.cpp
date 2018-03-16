@@ -112,30 +112,15 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 	}
 	else if(op == "construct-value"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto element_type = resolve_type_name(ast_json_t{e.get_array_n(1)});
-		const auto elements = e.get_array_n(2).get_array();
-
-		std::vector<expression_t> elements2;
-		for(const auto m: elements){
-			elements2.push_back(parser_expression_to_ast(tracer, m));
-		}
-
-		return expression_t::make_construct_value_expr(typeid_t::make_vector(element_type), elements2);
-	}
-	else if(op == "dict-def"){
-		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto value_type = resolve_type_name(ast_json_t{e.get_array_n(1)});
-		const auto elements = e.get_array_n(2).get_array();
-		QUARK_ASSERT((elements.size() % 2) == 0);
+		const auto args = e.get_array_n(2).get_array();
 
-		std::map<string, expression_t> elements2;
-		for(int i = 0 ; i < elements.size() ; i += 2){
-			const expression_t key_expr = parser_expression_to_ast(tracer, elements[i + 0]);
-			const expression_t value_expr = parser_expression_to_ast(tracer, elements[i + 1]);
-			const auto key_string = key_expr.get_literal().get_string_value();
-			elements2.insert(pair<string, expression_t>(key_string, value_expr));
+		std::vector<expression_t> args2;
+		for(const auto m: args){
+			args2.push_back(parser_expression_to_ast(tracer, m));
 		}
-		return expression_t::make_dict_definition(value_type, elements2);
+
+		return expression_t::make_construct_value_expr(value_type, args2);
 	}
 	else{
 		QUARK_ASSERT(false);
