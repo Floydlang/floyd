@@ -111,7 +111,7 @@ namespace floyd {
 	*/
 
 	struct interpreter_t {
-		public: interpreter_t(const ast_t& ast);
+		public: explicit interpreter_t(const ast_t& ast);
 		public: interpreter_t(const interpreter_t& other);
 		public: const interpreter_t& operator=(const interpreter_t& other);
 #if DEBUG

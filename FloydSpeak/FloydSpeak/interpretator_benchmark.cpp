@@ -19,7 +19,7 @@ using std::string;
 
 using namespace floyd;
 
-#if 0
+#if 1
 
 //////////////////////////////////////////		HELPERS
 
@@ -60,7 +60,7 @@ std::int64_t measure_execution_time_ns(const std::string& test_name, std::functi
 	return duration;
 }
 
-QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
+OFF_QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
 	const auto t = measure_execution_time_ns(
 		"test",
 		[] { std::cout << "Hello, my Greek friends"; }
@@ -74,7 +74,7 @@ QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
 
 
 
-QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
+OFF_QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 	const int64_t cpp_iterations = (10000LL * 50000LL);
 	const int64_t floyd_iterations = 20000LL;
 
@@ -134,23 +134,32 @@ QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	);
 
 	interpreter_context_t context = make_test_context();
-	const auto floyd_ns = measure_execution_time_ns(
-		"Floyd: Fibonacci",
-		[&] {
-			const auto vm = run_global(context,
-			R"(
-				int fibonacci(int n) {
-					if (n <= 1){
-						return n;
-					}
-					return fibonacci(n - 2) + fibonacci(n - 1);
+	const auto ast = program_to_ast2(
+		context,
+		R"(
+			int fibonacci(int n) {
+				if (n <= 1){
+					return n;
 				}
+				return fibonacci(n - 2) + fibonacci(n - 1);
+			}
 
+			int f(){
 				for (i in 0...18) {
 					a = fibonacci(i);
 				}
-			)"
-			);
+				return 8;
+			}
+		)"
+	);
+	interpreter_t vm(ast);
+	const auto f = find_symbol_by_name(vm, "f");
+	QUARK_ASSERT(f != nullptr);
+
+	const auto floyd_ns = measure_execution_time_ns(
+		"Floyd: Fibonacci",
+		[&] {
+			const auto result = call_function(vm, f->first, {});
 		}
 	);
 
