@@ -45,7 +45,6 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(vm.check_invariant());
 
 	if(type.is_json_value()){
 		QUARK_ASSERT(arg_values.size() == 1);
@@ -590,6 +589,17 @@ std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const inte
 			elements2.push_back(value);
 		}
 		return construct_value_from_typeid(vm, typeid_t::make_dict(element_type), elements2);
+	}
+	else if(expr._value_type2.is_struct()){
+		std::vector<value_t> elements2;
+		for(const auto m: expr._args){
+			const auto element_expr = evaluate_expression(vm_acc, m);
+			vm_acc = element_expr.first;
+
+			const auto element = element_expr.second;
+			elements2.push_back(element);
+		}
+		return construct_value_from_typeid(vm, expr._value_type2, elements2);
 	}
 	else{
 		QUARK_ASSERT(false);

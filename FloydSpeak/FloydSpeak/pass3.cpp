@@ -1261,12 +1261,15 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 		}
 		else{
 			const auto callee_type2 = found_symbol_ptr->_const_value.get_typeid_value();
+
+			//	Convert calls to struct-type into construct-value expression.
 			if(callee_type2.is_struct()){
 				const auto& def = callee_type2.get_struct();
 				const auto callee_args = get_member_types(def._members);
 				const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
 				vm_acc = call_args_pair.first;
-				return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_type2)) };
+
+				return { vm_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
 			}
 
 			//	One argument for these.
