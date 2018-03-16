@@ -15,6 +15,8 @@
 #include <map>
 #include "text_parser.h"
 #include "floyd_basics.h"
+#include "ast_basics.h"
+#include "parse_struct_def.h"
 
 
 #include "parser2.h"
@@ -688,6 +690,11 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 		return { a.first, p3.rest() };
 	}
 
+	else if(is_first(p2, keyword_t::k_struct)){
+		throw std::runtime_error("No support for struct definition expressions!");
+//		const auto result = floyd::parse_struct_definition_body(p2, "");
+	}
+
 	/*
 		Vector definition: "[" EXPRESSION "," EXPRESSION... "]"
 		 	[ 1, 2, 3 ]
@@ -743,7 +750,16 @@ QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
 	QUARK_UT_VERIFY(a.first == maker_vector_definition("", vector<expr_t>{maker__make_constant(constant_value_t(3))}));
 }
 
-
+/*
+QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
+	const auto a = parse_lhs_atom(seq_t("struct {}"));
+	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
+}
+QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
+	const auto a = parse_lhs_atom(seq_t("struct {int a; int b;}"));
+	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
+}
+*/
 
 
 std::pair<expr_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence){

@@ -40,6 +40,9 @@ namespace floyd {
 		]
 	*/
 	std::pair<ast_json_t, seq_t> parse_struct_definition(const seq_t& pos);
+
+
+	std::pair<ast_json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name);
 }
 
 #endif /* parser_struct_hpp */

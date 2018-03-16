@@ -353,7 +353,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto variable_pos = read_identifier(s);
 	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
-	const auto expression_pos = read_until(skip_whitespace(equal_pos), ";");
+	const auto expression_pos = read_until_toplevel_match(skip_whitespace(equal_pos), ";");
 	const auto expression = parse_expression_all(seq_t(expression_pos.first));
 
 	const auto statement = json_t::make_array({ "store", variable_pos.first, expression._value });

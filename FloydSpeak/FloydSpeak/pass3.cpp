@@ -1233,15 +1233,6 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 				const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
 				vm_acc = call_args_pair.first;
 				return { vm_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
-/*
-??? how to support json_value(13) ?
-				//	null means "any" right now...###
-				if(arg_lhs.is_null() || arg_lhs == arg_rhs){
-				}
-				else{
-					throw std::runtime_error("Argument type mismatch.");
-				}
-*/
 			}
 		}
 	}

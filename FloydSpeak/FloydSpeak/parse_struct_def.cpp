@@ -20,13 +20,8 @@ namespace floyd {
 	using std::pair;
 
 
-	std::pair<ast_json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
-		std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
-		QUARK_ASSERT(token_pos.first);
-
-		const auto struct_name_pos = read_required_identifier(token_pos.second);
-
-		const auto s2 = skip_whitespace(struct_name_pos.second);
+	std::pair<ast_json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name){
+		const auto s2 = skip_whitespace(p);
 		read_required_char(s2, '{');
 		const auto body_pos = get_balanced(s2);
 
@@ -43,11 +38,21 @@ namespace floyd {
 		const auto r = json_t::make_array({
 			"def-struct",
 			json_t::make_object({
-				{ "name", json_t(struct_name_pos.first) },
+				{ "name", name },
 				{ "members", members_to_json(members) }
 			})
 		});
 		return { ast_json_t{r}, skip_whitespace(body_pos.second) };
+	}
+
+	std::pair<ast_json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
+		std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
+		QUARK_ASSERT(token_pos.first);
+
+		const auto struct_name_pos = read_required_identifier(token_pos.second);
+
+		const auto s2 = skip_whitespace(struct_name_pos.second);
+		return parse_struct_definition_body(s2, struct_name_pos.first);
 	}
 
 	const std::string k_test_struct0 = "struct a {int x; string y; float z;}";

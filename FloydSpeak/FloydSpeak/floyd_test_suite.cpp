@@ -2186,6 +2186,27 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 }
 
 
+/*
+QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
+	const auto vm = test__run_global(R"(
+		color = struct { int red; int green; int blue;};
+		a = color(255, 128, 128);
+		b = color(a.red, a.green, 129);
+		print(a);
+		print(b);
+	)");
+	ut_compare_stringvects(vm._print_output, vector<string>{
+		"{red=255, green=128, blue=128}",
+		"{red=255, green=128, blue=129}"
+	});
+}
+*/
+
+
+
+//////////////////////////////////////////
+
+
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto vm = test__run_global(R"(
@@ -2203,6 +2224,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(true);
 }
 
+//////////////////////////////////////////		Comments
 
 
 QUARK_UNIT_TESTQ("comments", "// on start of line"){
@@ -2233,6 +2255,9 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 		"Bye"
 	});
 }
+
+
+
 
 
 
