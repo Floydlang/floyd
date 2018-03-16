@@ -621,9 +621,7 @@ namespace floyd {
 		{
 			return expression_t{
 				expression_type::k_construct_value,
-				std::make_shared<construct_value_expr_t>(
-					construct_value_expr_t{ value_type, args }
-				),
+				std::make_shared<construct_value_expr_t>(construct_value_expr_t{ value_type, args }),
 				std::make_shared<typeid_t>(value_type)
 			};
 		}
@@ -693,18 +691,6 @@ namespace floyd {
 			return _annotated_type;
 		}
 
-/*
-		public: expression_t annotate(const typeid_t& annotated_type) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(annotated_type.check_invariant());
-
-			const auto result = expression_t(_operation, _expr, std::make_shared<typeid_t>(annotated_type));
-
-			QUARK_ASSERT(result.check_invariant());
-			QUARK_ASSERT(result.is_annotated_deep());
-			return result;
-		}
-*/
 
 		public: bool has_builtin_type() const {
 			QUARK_ASSERT(check_invariant());
@@ -721,27 +707,6 @@ namespace floyd {
 				return false;
 			}
 		}
-
-/*
-		//	Notice that some expression types has built-in types. ??? refactor this.
-		public: expression_t annotate_type(const typeid_t& type) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(type.check_invariant());
-
-			if(_operation == expression_type::k_literal){
-				return expression_t(_operation, literal_expr_t(get_literal()->_value), type);
-			}
-			else if(_operation == expression_type::k_literal){
-			}
-			else if(_operation == expression_type::k_define_function){
-			}
-			else if(_operation == expression_type::k_construct_value){
-			}
-			else{
-				return expression_t(_operation, _expr, std::make_shared<typeid_t>(type));
-			}
-		}
-*/
 
 		public: bool is_annotated_shallow() const{
 			QUARK_ASSERT(check_invariant());

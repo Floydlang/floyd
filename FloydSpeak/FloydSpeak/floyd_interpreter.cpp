@@ -344,8 +344,6 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 	}
 	else if(statement._def_struct){
 		QUARK_ASSERT(false);
-//		return execute_def_struct_statement(vm, *statement._def_struct);
-//		return { vm, statement_result_t::make_no_output() };
 	}
 	else if(statement._if){
 		return execute_ifelse_statement(vm, *statement._if);
@@ -529,7 +527,6 @@ std::pair<interpreter_t, value_t> evaluate_load2_expression(const interpreter_t&
 	return {vm_acc, value};
 }
 
-//??? Should support any type including structs and int.
 std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
