@@ -975,9 +975,6 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		}
 #endif
 
-		//	Always use global scope.
-		//	Future: support closures by linking to function env where function is defined.
-
 		//	Copy input arguments to the function scope.
 		std::map<string, std::pair<value_t, bool>> args2;
 		for(int i = 0 ; i < function_def._args.size() ; i++){

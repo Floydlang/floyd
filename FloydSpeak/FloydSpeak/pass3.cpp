@@ -628,8 +628,8 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			throw std::runtime_error("Lookup in string by index-only.");
 		}
 		else{
+			return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_string())) };
 		}
-		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_string())) };
 	}
 	else if(parent_type.is_json_value()){
 		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_json_value())) };
@@ -639,18 +639,16 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			throw std::runtime_error("Lookup in vector by index-only.");
 		}
 		else{
+			return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_vector_element_type())) };
 		}
-		//??? maybe use annotated type here!??
-		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_vector_element_type())) };
 	}
 	else if(parent_type.is_dict()){
 		if(key_type.is_string() == false){
 			throw std::runtime_error("Lookup in dict by string-only.");
 		}
 		else{
+			return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_dict_value_type())) };
 		}
-		//??? maybe use annotated type here!??
-		return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_dict_value_type())) };
 	}
 	else {
 		throw std::runtime_error("Lookup using [] only works with strings, vectors, dicts and json_value.");
@@ -665,7 +663,6 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& vm, const exp
 	auto vm_acc = vm;
 	const auto found = find_symbol_by_name(vm_acc, expr._variable);
 	if(found.first != nullptr){
-//		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
 		return {vm_acc, expression_t::make_load2(found.second, make_shared<typeid_t>(found.first->_value_type)) };
 	}
 	else{
@@ -763,7 +760,6 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	}
 }
 
-
 std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& vm, const expression_t::unary_minus_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -826,7 +822,6 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	vm_acc = right_expr.first;
 	const auto rhs_type = right_expr.second.get_annotated_type();
 
-	// ??? we don't have all types yet.
 	if(lhs_type != rhs_type && lhs_type.is_null() == false && rhs_type.is_null() == false){
 		throw std::runtime_error("Comparison: Left and right expressions must be same type!");
 	}
