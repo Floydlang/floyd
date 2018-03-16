@@ -544,14 +544,7 @@ expression_t improve_expression_type(const expression_t& e, const floyd::typeid_
 	}
 	else if(wanted_type.is_string()){
 		if(e_type.is_json_value()){
-
-			const auto t = typeid_t::make_string();
-			return expression_t::make_call(
-				expression_t::make_literal(value_t::make_typeid_value(t)),
-				std::vector<expression_t> {e},
-				make_shared<typeid_t>(t)
-			);
-
+			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else{
 			return e;
@@ -559,12 +552,7 @@ expression_t improve_expression_type(const expression_t& e, const floyd::typeid_
 	}
 	else if(wanted_type.is_json_value()){
 		if(e_type.is_null() || e_type.is_int() || e_type.is_float() || e_type.is_string() || e_type.is_bool() || e_type.is_dict() || e_type.is_vector()){
-			const auto t = typeid_t::make_json_value();
-			return expression_t::make_call(
-				expression_t::make_literal(value_t::make_typeid_value(t)),
-				std::vector<expression_t> {e},
-				make_shared<typeid_t>(t)
-			);
+			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else{
 			return e;
@@ -733,8 +721,6 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		}
 	}
 
-	//??? Make we make a json_value::object if we find mixed values in dict?
-
 	//	Dicts uses pairs of (string,value). This is stored in _args as interleaved expression: string0, value0, string1, value1.
 	else if(expr._value_type2.is_dict()){
 		const auto& elements = expr._args;
@@ -763,20 +749,19 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
 				const auto element_type0 = elements2[i * 2 + 1].get_annotated_type();
 				if(element_type0 != element_type2){
-	//??? dict-def needs to hold mixed values to allow json_value to type object to work.
-	//???				throw std::runtime_error("Dict can not hold elements of different type!");
+
+				//??? Make we make a json_value::object if we find mixed values in dict?
+				//??? dict-def needs to hold mixed values to allow json_value to type object to work.
+				//???				throw std::runtime_error("Dict can not hold elements of different type!");
 				}
 			}
-
 			return {vm_acc, expression_t::make_construct_value_expr(typeid_t::make_dict(element_type2), elements2)};
 		}
-
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
 }
-
 
 
 std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& vm, const expression_t::unary_minus_expr_t& expr){
@@ -823,7 +808,6 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 		return {vm_acc, expression_t::make_conditional_operator(cond_result.second, a.second, b.second, make_shared<typeid_t>(final_expression_type))  };
 	}
 }
-
 
 std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1191,31 +1175,6 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 }
 
 /*
-const symbol_t* find_host_function_by_id(const analyser_t& vm, int host_function_id){
-    const auto it = std::find_if(vm._call_stack[0]->_symbols.begin(), vm._call_stack[0]->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.second. == s; });
-
-	const auto find_it = vm._imm->_host_functions.find(function_name);
-	return find_it != vm._imm->_host_functions.end();
-	}
-	else if(callee_expr.get_operation() == expression_type::k_load2){
-		const auto callee = resolve_symbol_by_address(vm, callee_expr.get_load2()->_address);
-		QUARK_ASSERT(callee != nullptr);
-
-		if(callee->_const_value.is_function()){
-			return callee->_const_value.get_function_value()->_def._host_function != 0;
-		}
-		else{
-			return false;
-		}
-	}
-	else{
-		return false;
-	}
-}
-*/
-
-
-/*
 	callee(callee_args)		== function def: int(
 	a = my_func(x, 13, "cat");
 	a = json_value(1 + 3);
@@ -1247,14 +1206,10 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
+	//	Converts these calls to construct-value-expressions.
 	else if(callee_type.is_typeid() && callee_expr.get_operation() == expression_type::k_load2){
 		const auto found_symbol_ptr = resolve_symbol_by_address(vm_acc, callee_expr.get_load2()->_address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
-
-
-///??? alternatively: introduce new instantiate_expression.
-//	Generate an explicit function call to instantiate_from_typeid()
-//		const auto instantiate_from_typeid_function =
 
 		if(found_symbol_ptr->_const_value.is_null()){
 			throw std::runtime_error("Cannot resolve callee.");
@@ -1272,12 +1227,12 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 				return { vm_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
 			}
 
-			//	One argument for these.
+			//	One argument for primitive types.
 			else{
 				const auto callee_args = vector<typeid_t>{ callee_type2 };
 				const auto call_args_pair = analyze_call_args(vm_acc, expr._args, callee_args);
 				vm_acc = call_args_pair.first;
-				return { vm_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_type2)) };
+				return { vm_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
 /*
 ??? how to support json_value(13) ?
 				//	null means "any" right now...###
@@ -1316,15 +1271,6 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
 	return {vm_acc, expression_t::make_struct_definition(resolved_struct_def) };
 }
-/*
-	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
-	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
-	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid);
-	vm_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
-
-	const auto s = statement_t::define_struct_statement_t{ struct_name, resolved_struct_def };
-	const auto statement2 = statement_t::make__define_struct_statement(s);
-*/
 
 std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());

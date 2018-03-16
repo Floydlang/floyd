@@ -602,7 +602,12 @@ std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const inte
 		return construct_value_from_typeid(vm, expr._value_type2, elements2);
 	}
 	else{
-		QUARK_ASSERT(false);
+		QUARK_ASSERT(expr._args.size() == 1);
+
+		const auto element_expr = evaluate_expression(vm_acc, expr._args[0]);
+		vm_acc = element_expr.first;
+
+		return construct_value_from_typeid(vm, expr._value_type2, { element_expr.second });
 	}
 }
 
@@ -1003,7 +1008,6 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 	}
 }
 
-//	May return a simplified expression instead of a value literal..
 std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1011,11 +1015,11 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 
 	auto vm_acc = vm;
 
-	//	Simplify each input expression: expression[0]: which function to call, expression[1]: first argument if any.
 	const auto function = evaluate_expression(vm_acc, *expr._callee);
 	vm_acc = function.first;
 
 	const auto& function_value = function.second;
+	QUARK_ASSERT(function_value.is_function());
 
 	vector<value_t> arg_values;
 	for(int i = 0 ; i < expr._args.size() ; i++){
@@ -1024,23 +1028,10 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 		arg_values.push_back(t.second);
 	}
 
-	//	Call function-value.
-	if(function_value.is_function()){
-		const auto& result = call_function(vm_acc, function_value, arg_values);
-		QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
-		vm_acc = result.first;
-		return { vm_acc, result.second._output};
-	}
-
-	//	Attempting to call a TYPE? Then this may be a constructor call.
-	else if(function_value.is_typeid()){
-		const auto result = construct_value_from_typeid(vm_acc, function_value.get_typeid_value(), arg_values);
-		vm_acc = result.first;
-		return { vm_acc, result.second};
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
+	const auto& result = call_function(vm_acc, function_value, arg_values);
+	QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
+	vm_acc = result.first;
+	return { vm_acc, result.second._output};
 }
 
 json_t interpreter_to_json(const interpreter_t& vm){
