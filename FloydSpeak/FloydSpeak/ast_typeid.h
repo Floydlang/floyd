@@ -83,16 +83,31 @@ namespace floyd {
 	std::string base_type_to_string(const base_type t);
 
 
+	struct struct_definition_t;
+
+	struct typeid_ext_imm_t {
+		public: bool operator==(const typeid_ext_imm_t& other) const{
+			return _parts == other._parts && _unresolved_type_identifier == other._unresolved_type_identifier && compare_shared_values(_struct_def, other._struct_def);
+		}
+
+
+		public: const std::vector<typeid_t> _parts;
+
+		//	Used for k_unresolved_type_identifier.
+		public: const std::string _unresolved_type_identifier;
+
+		public: const std::shared_ptr<const struct_definition_t> _struct_def;
+	};
+
 
 	//////////////////////////////////////		typeid_t
 
 
-	struct struct_definition_t;
 
 	struct typeid_t {
 
 		public: static typeid_t make_null(){
-			return { floyd::base_type::k_null, {}, {}, {}, {} };
+			return { floyd::base_type::k_null, {} };
 		}
 
 		public: bool is_null() const {
@@ -102,7 +117,7 @@ namespace floyd {
 		}
 
 		public: static typeid_t make_bool(){
-			return { floyd::base_type::k_bool, {}, {}, {}, {} };
+			return { floyd::base_type::k_bool, {} };
 		}
 
 		public: bool is_bool() const {
@@ -112,7 +127,7 @@ namespace floyd {
 		}
 
 		public: static typeid_t make_int(){
-			return { floyd::base_type::k_int, {}, {}, {}, {} };
+			return { floyd::base_type::k_int, {} };
 		}
 
 		public: bool is_int() const {
@@ -122,7 +137,7 @@ namespace floyd {
 		}
 
 		public: static typeid_t make_float(){
-			return { floyd::base_type::k_float, {}, {}, {}, {} };
+			return { floyd::base_type::k_float, {} };
 		}
 
 		public: bool is_float() const {
@@ -132,7 +147,7 @@ namespace floyd {
 		}
 
 		public: static typeid_t make_string(){
-			return { floyd::base_type::k_string, {}, {}, {}, {} };
+			return { floyd::base_type::k_string, {} };
 		}
 
 		public: bool is_string() const {
@@ -142,7 +157,7 @@ namespace floyd {
 		}
 
 		public: static typeid_t make_json_value(){
-			return { floyd::base_type::k_json_value, {}, {}, {}, {} };
+			return { floyd::base_type::k_json_value, {} };
 		}
 
 		public: bool is_json_value() const {
@@ -152,7 +167,7 @@ namespace floyd {
 		}
 
 		public: static typeid_t make_typeid(){
-			return { floyd::base_type::k_typeid, {}, {}, {}, {} };
+			return { floyd::base_type::k_typeid, {} };
 		}
 
 		public: bool is_typeid() const {
@@ -162,7 +177,8 @@ namespace floyd {
 		}
 
 		public: static typeid_t make_struct(const std::shared_ptr<const struct_definition_t>& def){
-			return { floyd::base_type::k_struct, {}, {}, {}, def };
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def });
+			return { floyd::base_type::k_struct, ext };
 		}
 
 		public: bool is_struct() const {
@@ -174,17 +190,18 @@ namespace floyd {
 		public: const struct_definition_t& get_struct() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_struct);
 
-			return *_struct_def;
+			return *_ext->_struct_def;
 		}
 		public: const std::shared_ptr<const struct_definition_t>& get_struct_ref() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_struct);
 
-			return _struct_def;
+			return _ext->_struct_def;
 		}
 
 
 		public: static typeid_t make_vector(const typeid_t& element_type){
-			return { floyd::base_type::k_vector, { element_type }, {}, {}, {} };
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { element_type }, "", {} });
+			return { floyd::base_type::k_vector, ext };
 		}
 
 		public: bool is_vector() const {
@@ -196,13 +213,14 @@ namespace floyd {
 		public: const typeid_t& get_vector_element_type() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_vector);
 
-			return _parts[0];
+			return _ext->_parts[0];
 		}
 
 
 
 		public: static typeid_t make_dict(const typeid_t& value_type){
-			return { floyd::base_type::k_dict, { value_type }, {}, {}, {} };
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { value_type }, "", {} });
+			return { floyd::base_type::k_dict, ext };
 		}
 
 		public: bool is_dict() const {
@@ -214,16 +232,17 @@ namespace floyd {
 		public: const typeid_t& get_dict_value_type() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_dict);
 
-			return _parts[0];
+			return _ext->_parts[0];
 		}
-
 
 
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
 			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 			std::vector<typeid_t> parts = { ret };
 			parts.insert(parts.end(), args.begin(), args.end());
-			return { floyd::base_type::k_function, parts, {}, {}, {} };
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ parts, "", {} });
+
+			return { floyd::base_type::k_function, ext };
 		}
 
 		public: bool is_function() const {
@@ -235,19 +254,20 @@ namespace floyd {
 		public: typeid_t get_function_return() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_function);
 
-			return _parts[0];
+			return _ext->_parts[0];
 		}
 		public: std::vector<typeid_t> get_function_args() const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(get_base_type() == base_type::k_function);
 
-			auto r = _parts;
+			auto r = _ext->_parts;
 			r.erase(r.begin());
 			return r;
 		}
 
 		public: static typeid_t make_unresolved_type_identifier(const std::string& s){
-			return { floyd::base_type::k_unresolved_type_identifier, {}, {}, s, {} };
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, s, {} });
+			return { floyd::base_type::k_unresolved_type_identifier, ext };
 		}
 
 		public: bool is_unresolved_type_identifier() const {
@@ -260,8 +280,23 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(get_base_type() == base_type::k_unresolved_type_identifier);
 
-			return _unresolved_type_identifier;
+			return _ext->_unresolved_type_identifier;
 		}
+
+/*
+		public: typeid_t(const typeid_t& other) :
+			_DEBUG(other._DEBUG),
+			_base_type(other._base_type),
+			_ext(other._ext)
+		{
+//			for(const auto e: parts){ QUARK_ASSERT(e.check_invariant()); }
+//			QUARK_ASSERT(struct_def == nullptr || struct_def->check_invariant());
+
+			_DEBUG = typeid_to_compact_string(*this);
+
+			QUARK_ASSERT(check_invariant());
+		}
+*/
 
 
 
@@ -269,12 +304,12 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			return
-				_DEBUG == other._DEBUG
+			return true
+#if DEBUG
+				&& _DEBUG == other._DEBUG
+#endif
 				&& _base_type == other._base_type
-				&& _parts == other._parts
-				&& _unresolved_type_identifier == other._unresolved_type_identifier
-				&& compare_shared_values(_struct_def, other._struct_def);
+				&& compare_shared_values(_ext, other._ext);
 		}
 		public: bool operator!=(const typeid_t& other) const{ return !(*this == other);}
 
@@ -287,37 +322,28 @@ namespace floyd {
 			return _base_type;
 		}
 
-		private: typeid_t(
-			floyd::base_type base_type,
-			const std::vector<typeid_t>& parts,
-			const std::string& unique_type_id,
-			const std::string& unknown_identifier,
-			const std::shared_ptr<const struct_definition_t>& struct_def
-		):
+		private: typeid_t(floyd::base_type base_type, const std::shared_ptr<const typeid_ext_imm_t>& ext) :
 			_base_type(base_type),
-			_parts(parts),
-			_unresolved_type_identifier(unknown_identifier),
-			_struct_def(struct_def)
+			_ext(ext)
 		{
-			for(const auto e: parts){ QUARK_ASSERT(e.check_invariant()); }
-			QUARK_ASSERT(struct_def == nullptr || struct_def->check_invariant());
+//			for(const auto e: parts){ QUARK_ASSERT(e.check_invariant()); }
+//			QUARK_ASSERT(struct_def == nullptr || struct_def->check_invariant());
 
+#if DEBUG
 			_DEBUG = typeid_to_compact_string(*this);
-
+#endif
 			QUARK_ASSERT(check_invariant());
 		}
 
 
 		/////////////////////////////		STATE
+#if DEBUG
 		private: std::string _DEBUG;
+#endif
 		private: floyd::base_type _base_type;
-		private: std::vector<typeid_t> _parts;
-
-		//	Used for k_unresolved_type_identifier.
-		private: std::string _unresolved_type_identifier;
-
-		private: std::shared_ptr<const struct_definition_t> _struct_def;
+		private: std::shared_ptr<const typeid_ext_imm_t> _ext;
 	};
+
 
 
 	//////////////////////////////////////		FORMATS

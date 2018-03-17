@@ -98,73 +98,64 @@ namespace floyd {
 //		QUARK_ASSERT(_DEBUG != "");
 
 		if(_base_type == floyd::base_type::k_null){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_bool){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_int){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_float){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_string){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_json_value){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_struct){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(_struct_def);
-			QUARK_ASSERT(_struct_def->check_invariant());
+			QUARK_ASSERT(_ext);
+			QUARK_ASSERT(_ext->_parts.empty());
+			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
+			QUARK_ASSERT(_ext->_struct_def);
+			QUARK_ASSERT(_ext->_struct_def->check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_vector){
-			QUARK_ASSERT(_parts.size() == 1);
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(_ext);
+			QUARK_ASSERT(_ext->_parts.size() == 1);
+			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
+			QUARK_ASSERT(!_ext->_struct_def);
 
-			QUARK_ASSERT(_parts[0].check_invariant());
+			QUARK_ASSERT(_ext->_parts[0].check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_dict){
-			QUARK_ASSERT(_parts.size() == 1);
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(_ext);
+			QUARK_ASSERT(_ext->_parts.size() == 1);
+			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
+			QUARK_ASSERT(!_ext->_struct_def);
 
-			QUARK_ASSERT(_parts[0].check_invariant());
+			QUARK_ASSERT(_ext->_parts[0].check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_function){
-			QUARK_ASSERT(_parts.size() >= 1);
-			QUARK_ASSERT(_unresolved_type_identifier.empty());
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(_ext);
+			QUARK_ASSERT(_ext->_parts.size() >= 1);
+			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
+			QUARK_ASSERT(!_ext->_struct_def);
 
-			for(const auto e: _parts){
+			for(const auto e: _ext->_parts){
 				QUARK_ASSERT(e.check_invariant());
 			}
 		}
 		else if(_base_type == floyd::base_type::k_unresolved_type_identifier){
-			QUARK_ASSERT(_parts.empty());
-			QUARK_ASSERT(_unresolved_type_identifier.empty() == false);
-			QUARK_ASSERT(!_struct_def);
+			QUARK_ASSERT(_ext);
+			QUARK_ASSERT(_ext->_parts.empty());
+			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty() == false);
+			QUARK_ASSERT(!_ext->_struct_def);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -176,11 +167,11 @@ namespace floyd {
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
 
+#if DEBUG
 		std::swap(_DEBUG, other._DEBUG);
+#endif
 		std::swap(_base_type, other._base_type);
-		_parts.swap(other._parts);
-		_unresolved_type_identifier.swap(other._unresolved_type_identifier);
-		_struct_def.swap(other._struct_def);
+		_ext.swap(other._ext);
 
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
