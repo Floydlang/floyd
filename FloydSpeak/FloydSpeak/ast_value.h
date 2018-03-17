@@ -45,11 +45,8 @@ namespace floyd {
 	*/
 	std::string value_and_type_to_string(const value_t& value);
 
-
 	ast_json_t value_to_ast_json(const value_t& v);
-
 	ast_json_t value_and_type_to_ast_json(const value_t& v);
-
 #if DEBUG
 	std::string make_value_debug_str(const value_t& v);
 #endif
@@ -77,27 +74,6 @@ namespace floyd {
 		public: std::vector<value_t> _member_values;
 	};
 
-
-
-	//////////////////////////////////////////////////		dict_instance_t
-
-
-	struct dict_instance_t {
-		public: bool check_invariant() const;
-		public: bool operator==(const dict_instance_t& other) const;
-
-		public: dict_instance_t(
-			typeid_t value_type,
-			const std::map<std::string, value_t>& elements
-		):
-			_value_type(value_type),
-			_elements(elements)
-		{
-		}
-
-		typeid_t _value_type;
-		std::map<std::string, value_t> _elements;
-	};
 
 
 
@@ -279,12 +255,10 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: explicit value_t(const std::shared_ptr<dict_instance_t>& instance) :
-			_typeid(typeid_t::make_dict(instance->_value_type)),
-			_dict(instance)
+		private: explicit value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries) :
+			_typeid(typeid_t::make_dict(value_type)),
+			_dict_entries(entries)
 		{
-			QUARK_ASSERT(instance && instance->check_invariant());
-
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -315,7 +289,7 @@ namespace floyd {
 			_typeid_value(other._typeid_value),
 			_struct(other._struct),
 			_vector_elements(other._vector_elements),
-			_dict(other._dict),
+			_dict_entries(other._dict_entries),
 			_function(other._function)
 		{
 			QUARK_ASSERT(other.check_invariant());
@@ -376,7 +350,7 @@ namespace floyd {
 				return _vector_elements == other._vector_elements;
 			}
 			else if(base_type == base_type::k_dict){
-				return *_dict == *other._dict;
+				return _dict_entries == other._dict_entries;
 			}
 			else if(base_type == base_type::k_function){
 				return *_function == *other._function;
@@ -545,19 +519,19 @@ namespace floyd {
 			return _vector_elements;
 		}
 
-		public: static value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& elements);
+		public: static value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& entries);
 		public: bool is_dict() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid.get_base_type() == base_type::k_dict;
 		}
-		public: std::shared_ptr<dict_instance_t> get_dict_value() const{
+		public: const std::map<std::string, value_t>& get_dict_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_dict()){
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _dict;
+			return _dict_entries;
 		}
 
 		public: static value_t make_function_value(const function_definition_t& def);
@@ -593,7 +567,7 @@ namespace floyd {
 			std::swap(_typeid_value, other._typeid_value);
 			std::swap(_struct, other._struct);
 			std::swap(_vector_elements, other._vector_elements);
-			std::swap(_dict, other._dict);
+			std::swap(_dict_entries, other._dict_entries);
 			std::swap(_function, other._function);
 
 			QUARK_ASSERT(other.check_invariant());
@@ -623,7 +597,7 @@ namespace floyd {
 		private: typeid_t _typeid_value = typeid_t::make_null();
 		private: std::shared_ptr<struct_instance_t> _struct;
 		private: std::vector<value_t> _vector_elements;
-		private: std::shared_ptr<dict_instance_t> _dict;
+		private: std::map<std::string, value_t> _dict_entries;
 		private: std::shared_ptr<const function_instance_t> _function;
 	};
 

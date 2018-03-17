@@ -428,17 +428,16 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 			}
 			else{
 				const auto obj = obj1;
-				const auto v = obj.get_dict_value();
-				auto v2 = v->_elements;
-
-				if((v->_value_type == new_value.get_type()) == false){
+				const auto entries = obj.get_dict_value();
+				const auto value_type = obj.get_type().get_dict_value_type();
+				if(value_type != new_value.get_type()){
 					throw std::runtime_error("Update element must match dict value type.");
 				}
 				else{
 					const string key = lookup_key.get_string_value();
-					auto elements2 = v->_elements;
-					elements2[key] = new_value;
-					const auto value2 = value_t::make_dict_value(obj.get_dict_value()->_value_type, elements2);
+					auto entries2 = entries;
+					entries2[key] = new_value;
+					const auto value2 = value_t::make_dict_value(value_type, entries2);
 					return { vm, value2 };
 				}
 			}
@@ -501,7 +500,7 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 		return {vm, value_t::make_int(static_cast<int>(size))};
 	}
 	else if(obj.is_dict()){
-		const auto size = obj.get_dict_value()->_elements.size();
+		const auto size = obj.get_dict_value().size();
 		return {vm, value_t::make_int(static_cast<int>(size))};
 	}
 	else{
@@ -569,10 +568,10 @@ std::pair<interpreter_t, value_t> host__exists(const interpreter_t& vm, const st
 			throw std::runtime_error("Key must be string.");
 		}
 		const auto key_string = key.get_string_value();
-		const auto v = obj.get_dict_value();
+		const auto entries = obj.get_dict_value();
 
-		const auto found_it = v->_elements.find(key_string);
-		const bool exists = found_it != v->_elements.end();
+		const auto found_it = entries.find(key_string);
+		const bool exists = found_it != entries.end();
 		return {vm, value_t::make_bool(exists)};
 	}
 	else{
@@ -595,11 +594,12 @@ std::pair<interpreter_t, value_t> host__erase(const interpreter_t& vm, const std
 			throw std::runtime_error("Key must be string.");
 		}
 		const auto key_string = key.get_string_value();
-		const auto v = obj.get_dict_value();
+		const auto entries = obj.get_dict_value();
 
-		std::map<string, value_t> elements2 = v->_elements;
-		elements2.erase(key_string);
-		const auto value2 = value_t::make_dict_value(obj.get_dict_value()->_value_type, elements2);
+		std::map<string, value_t> entries2 = entries;
+		entries2.erase(key_string);
+		const auto value_type = obj.get_type().get_dict_value_type();
+		const auto value2 = value_t::make_dict_value(value_type, entries2);
 		return { vm, value2 };
 	}
 	else{

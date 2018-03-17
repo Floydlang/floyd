@@ -496,11 +496,11 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 	else if(parent_value.is_dict()){
 		QUARK_ASSERT(key_value.is_string());
 
-		const auto instance = parent_value.get_dict_value();
+		const auto entries = parent_value.get_dict_value();
 		const string key = key_value.get_string_value();
 
-		const auto found_it = instance->_elements.find(key);
-		if(found_it == instance->_elements.end()){
+		const auto found_it = entries.find(key);
+		if(found_it == entries.end()){
 			throw std::runtime_error("Lookup in dict: key not found.");
 		}
 		else{
