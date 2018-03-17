@@ -45,7 +45,7 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 
 environment_t* find_env_from_address(const interpreter_t& vm, const variable_address_t& a){
 	if(a._parent_steps == -1){
-		return vm._globals.get();
+		return vm._globals;
 	}
 	else{
 		environment_t* env = vm._env.get();
@@ -1189,7 +1189,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 	//	Make the top-level environment = global scope.
 	_env = environment_t::make_environment({}, &_imm->_ast._globals, {});
-	_globals = _env;
+	_globals = _env.get();
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto r = execute_statements(*this, _imm->_ast._globals._statements);
@@ -1283,7 +1283,7 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 }
 
 value_t get_global(const interpreter_t& vm, const std::string& name){
-	const auto result = find_symbol_by_name_deep(vm, vm._globals.get(), name);
+	const auto result = find_symbol_by_name_deep(vm, vm._globals, name);
 	if(result == nullptr){
 		throw std::runtime_error("Cannot find global.");
 	}

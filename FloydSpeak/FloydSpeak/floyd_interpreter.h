@@ -134,7 +134,7 @@ namespace floyd {
 
 		////////////////////////		STATE
 		public: std::shared_ptr<interpreter_imm_t> _imm;
-		public: std::shared_ptr<environment_t> _globals;
+		public: environment_t* _globals;
 		public: std::shared_ptr<environment_t> _env;
 		public: std::vector<std::string> _print_output;
 	};
