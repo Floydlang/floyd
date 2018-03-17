@@ -68,6 +68,9 @@ namespace floyd {
 		//	This is a type that specifies another type.
 		k_typeid,
 
+			//All above are included in code-types. They don't need further info.
+			k_core_count,
+
 		k_struct,
 		k_vector,
 		k_dict,
@@ -404,12 +407,27 @@ namespace floyd {
 
 
 
+
+
 	struct itypeid_t;
 
 	struct interned_typeids_t {
 		//	Index is used as the intern-id.
 		//	Never contains duplicates.
 		std::vector<typeid_t> _interns;
+
+
+		interned_typeids_t() :
+			_interns((int)base_type::k_core_count, typeid_t::make_null())
+		{
+			_interns[(int)base_type::k_null] = typeid_t::make_null();
+			_interns[(int)base_type::k_bool] = typeid_t::make_bool();
+			_interns[(int)base_type::k_int] = typeid_t::make_int();
+			_interns[(int)base_type::k_float] = typeid_t::make_float();
+			_interns[(int)base_type::k_string] = typeid_t::make_string();
+			_interns[(int)base_type::k_json_value] = typeid_t::make_json_value();
+			_interns[(int)base_type::k_typeid] = typeid_t::make_typeid();
+		}
 
 		public: int intern_typeid(const typeid_t& type){
 			const auto it = std::find_if(_interns.begin(), _interns.end(), [&type](const typeid_t& e) { return e == type; });
@@ -422,7 +440,36 @@ namespace floyd {
 			}
 		}
 	};
+
 	struct itypeid_t {
+		public: bool operator==(const itypeid_t& other){
+			return _intern_id == other._intern_id;
+		}
+
+		public: static itypeid_t make_null(){
+			return { (int)base_type::k_null };
+		}
+		public: static itypeid_t make_bool(){
+			return { (int)base_type::k_bool };
+		}
+		public: static itypeid_t make_int(){
+			return { (int)base_type::k_int };
+		}
+		public: static itypeid_t make_float(){
+			return { (int)base_type::k_float };
+		}
+		public: static itypeid_t make_string(){
+			return { (int)base_type::k_string };
+		}
+		public: static itypeid_t make_json_value(){
+			return { (int)base_type::k_json_value };
+		}
+		public: static itypeid_t make_typeid(){
+			return { (int)base_type::k_typeid };
+		}
+
+
+
 		public: int _intern_id;
 	};
 
