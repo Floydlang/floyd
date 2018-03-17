@@ -1266,7 +1266,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto def = function_def_expr._def;
 	const auto function_type = get_function_type(def);
 
-	//	Make function body with arguments injected as local symbols.
+	//	Make function body with arguments injected FIRST in body as local symbols.
 	auto symbol_vec = def._body->_symbols;
 	for(const auto x: def._args){
 		symbol_vec.push_back({x._name , symbol_t::make_immutable_local(x._type)});

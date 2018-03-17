@@ -91,8 +91,11 @@ namespace floyd {
 	struct environment_t {
 		public: std::shared_ptr<environment_t> _prev_env;
 
+		public: const body_t* _body_ptr;
+
 		//	Bool says if value is MUTABLE. Which is rare.
-		public: std::vector<std::pair<std::string, std::pair<value_t, bool>> > _values;
+//		public: std::vector<std::pair<std::string, std::pair<value_t, bool>> > _values;
+		public: std::vector<value_t> _values;
 
 
 		public: bool check_invariant() const;
@@ -100,7 +103,7 @@ namespace floyd {
 		public: static std::shared_ptr<environment_t> make_environment(
 			const std::shared_ptr<environment_t>& prev_env,
 			const body_t* body_ptr,
-			const std::map<std::string, std::pair<value_t, bool>>& init_values
+			const std::vector<value_t>& init_values
 		);
 	};
 
@@ -169,7 +172,7 @@ namespace floyd {
 	std::pair<interpreter_t, statement_result_t> execute_body(
 		const interpreter_t& vm,
 		const body_t& body,
-		const std::map<std::string, std::pair<value_t, bool>>& values
+		const std::vector<value_t>& init_values
 	);
 
 
@@ -184,7 +187,7 @@ namespace floyd {
 
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
 	typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type);
-	std::pair<floyd::value_t, bool>* find_symbol_by_name(const interpreter_t& vm, const std::string& s);
+	floyd::value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.
