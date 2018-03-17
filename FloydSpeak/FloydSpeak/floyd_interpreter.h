@@ -89,8 +89,6 @@ namespace floyd {
 	*/
 
 	struct environment_t {
-		public: const body_t* _body_ptr;
-
 		//	Bool says if value is MUTABLE. Which is rare.
 		public: std::vector<std::pair<std::string, std::pair<value_t, bool>> > _values;
 
@@ -101,6 +99,16 @@ namespace floyd {
 	};
 
 
+
+	//////////////////////////////////////		interpreter_t
+
+
+	struct interpreter_imm_t {
+		////////////////////////		STATE
+		public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
+		public: const ast_t _ast;
+		public: const std::map<int, HOST_FUNCTION_PTR> _host_functions;
+	};
 
 
 	//////////////////////////////////////		interpreter_t
@@ -119,11 +127,7 @@ namespace floyd {
 #endif
 
 		////////////////////////		STATE
-		public: std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
-
-		public: std::shared_ptr<const ast_t> _ast;
-		public: std::map<int, HOST_FUNCTION_PTR> _host_functions;
-
+		public: std::shared_ptr<interpreter_imm_t> _imm;
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<environment_t>> _call_stack;

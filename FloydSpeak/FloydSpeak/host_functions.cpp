@@ -255,7 +255,7 @@ std::pair<interpreter_t, value_t> host__get_time_of_day(const interpreter_t& vm,
 	}
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = t - vm._start_time;
+	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
 	const auto ms = elapsed_seconds.count() * 1000.0;
 	return {vm, value_t::make_int(int(ms)) };
 }

@@ -1057,7 +1057,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	}
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(*vm._ast)._value },
+		{ "ast", ast_to_json(vm._imm->_ast)._value },
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
@@ -1153,7 +1153,7 @@ std::shared_ptr<environment_t> environment_t::make_environment(const body_t* bod
 		found_it->second.first = e.second.first;
 	}
 
-	const auto temp = environment_t{ body_ptr, values };
+	const auto temp = environment_t{ values };
 	return make_shared<environment_t>(temp);
 }
 
@@ -1164,7 +1164,7 @@ bool environment_t::check_invariant() const {
 std::pair<interpreter_t, statement_result_t> call_host_function(const interpreter_t& vm, int function_id, const std::vector<floyd::value_t> args){
 	QUARK_ASSERT(function_id >= 0);
 
-	const auto& host_function = vm._host_functions.at(function_id);
+	const auto& host_function = vm._imm->_host_functions.at(function_id);
 
 	//	arity
 //	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -1179,33 +1179,34 @@ std::pair<interpreter_t, statement_result_t> call_host_function(const interprete
 interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	_ast = make_shared<ast_t>(ast);
-
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto host_functions = get_host_functions();
+	std::map<int, HOST_FUNCTION_PTR> host_functions2;
 	for(auto hf_kv: host_functions){
 		const auto function_id = hf_kv.second._signature._function_id;
 		const auto function_ptr = hf_kv.second._f;
-		_host_functions.insert({ function_id, function_ptr });
+		host_functions2.insert({ function_id, function_ptr });
 	}
 
+
+	const auto start_time = std::chrono::high_resolution_clock::now();
+	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, ast, host_functions2});
+
+
 	//	Make the top-level environment = global scope.
-	auto global_env = environment_t::make_environment(&_ast->_globals, {});
+	auto global_env = environment_t::make_environment(&_imm->_ast._globals, {});
 	_call_stack.push_back(global_env);
 
-	_start_time = std::chrono::high_resolution_clock::now();
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _ast->_globals._statements);
+	const auto r = execute_statements(*this, _imm->_ast._globals._statements);
 
 	_print_output = r.first._print_output;
 	QUARK_ASSERT(check_invariant());
 }
 
 interpreter_t::interpreter_t(const interpreter_t& other) :
-	_start_time(other._start_time),
-	_ast(other._ast),
-	_host_functions(other._host_functions),
+	_imm(other._imm),
 	_call_stack(other._call_stack),
 	_print_output(other._print_output)
 {
@@ -1215,9 +1216,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 
 //??? make proper operator=(). Exception safety etc.
 const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
-	_start_time = other._start_time;
-	_ast = other._ast;
-	_host_functions = other._host_functions;
+	_imm = other._imm;
 	_call_stack = other._call_stack;
 	_print_output = other._print_output;
 	return *this;
@@ -1225,7 +1224,7 @@ const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 
 #if DEBUG
 bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_ast->check_invariant());
+	QUARK_ASSERT(_imm->_ast.check_invariant());
 	return true;
 }
 #endif
