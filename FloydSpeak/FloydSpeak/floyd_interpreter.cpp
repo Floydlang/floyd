@@ -785,7 +785,7 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 			return {vm_acc, value_t::make_int(left % right)};
 		}
 
-		//??? Could be replaced by feture to convert any value to bool -- they use a generic comparison for && and ||
+		//??? Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
 		else if(op == expression_type::k_logical_and__2){
 			return {vm_acc, value_t::make_bool((left != 0) && (right != 0))};
 		}
@@ -898,11 +898,12 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 		return evaluate_call_expression(vm, e);
 	}
 
-	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_struct){
+		// Moved entire function to symbol table -- no need for k_define_function-expression in interpreter!
 		QUARK_ASSERT(false);
 		return {vm, value_t::make_null()};
 	}
+
 	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
@@ -958,9 +959,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 	auto vm_acc = vm;
 
-	if(f.is_function() == false){
-		QUARK_ASSERT(false);
-	}
+	QUARK_ASSERT(f.is_function());
 
 	const auto& function_def = f.get_function_value()->_def;
 	if(function_def._host_function != 0){
@@ -969,12 +968,12 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 	}
 	else{
 		const auto return_type = f.get_type().get_function_return();
+#if DEBUG
 		const auto arg_types = f.get_type().get_function_args();
 
 		//	arity
 		QUARK_ASSERT(args.size() == arg_types.size());
 
-#if DEBUG
 		for(int i = 0 ; i < args.size() ; i++){
 			if(args[i].get_type() != arg_types[i]){
 				QUARK_ASSERT(false);
@@ -1114,8 +1113,8 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 //////////////////////////		environment_t
 
 
+//??? access constants directly in symbol table -- no need to push them on callstack!
 
-//??? For each init-value, keep the index where to store it in environment values vector.
 std::shared_ptr<environment_t> environment_t::make_environment(
 	const std::shared_ptr<environment_t>& prev_env,
 	const body_t* body_ptr,
