@@ -128,15 +128,12 @@ namespace floyd {
 			QUARK_ASSERT(!_struct_def);
 		}
 		else if(_base_type == floyd::base_type::k_typeid){
-			QUARK_ASSERT(_parts.size() == 0);
-//			QUARK_ASSERT(_parts[0].check_invariant());
+			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_struct_def);
-
-//			QUARK_ASSERT(_parts[0].check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_struct){
-			QUARK_ASSERT(_parts.empty() == true);
+			QUARK_ASSERT(_parts.empty());
 			QUARK_ASSERT(_unresolved_type_identifier.empty());
 			QUARK_ASSERT(_struct_def);
 			QUARK_ASSERT(_struct_def->check_invariant());
@@ -629,6 +626,8 @@ namespace floyd {
 		}
 		return json_t::make_array(r);
 	}
+
+
 
 
 }

@@ -243,7 +243,6 @@ namespace floyd {
 			return r;
 		}
 
-
 		public: static typeid_t make_unresolved_type_identifier(const std::string& s){
 			return { floyd::base_type::k_unresolved_type_identifier, {}, {}, s, {} };
 		}
@@ -285,7 +284,6 @@ namespace floyd {
 			return _base_type;
 		}
 
-
 		private: typeid_t(
 			floyd::base_type base_type,
 			const std::vector<typeid_t>& parts,
@@ -319,7 +317,6 @@ namespace floyd {
 	};
 
 
-
 	//////////////////////////////////////		FORMATS
 
 	/*
@@ -349,9 +346,6 @@ namespace floyd {
 		randomize_player			k_unresolved_type_identifier	"randomize_player"
 		- When parsing we find identifiers that we don't know what they mean. Stored as k_unresolved_type_identifier with identifier
 
-
-
-
 		AST JSON
 		This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
 
@@ -380,9 +374,6 @@ namespace floyd {
 	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
 
 
-
-
-
 	//////////////////////////////////////		member_t
 
 	/*
@@ -406,6 +397,42 @@ namespace floyd {
 	json_t members_to_json(const std::vector<member_t>& members);
 	std::vector<member_t> members_from_json(const json_t& members);
 
+
+
+
+	//////////////////////////////////////		interned_typeids_t
+
+
+
+	struct itypeid_t;
+
+	struct interned_typeids_t {
+		//	Index is used as the intern-id.
+		//	Never contains duplicates.
+		std::vector<typeid_t> _interns;
+
+		public: int intern_typeid(const typeid_t& type){
+			const auto it = std::find_if(_interns.begin(), _interns.end(), [&type](const typeid_t& e) { return e == type; });
+			if(it != _interns.end()){
+				return static_cast<int>(it - _interns.begin());
+			}
+			else{
+				_interns.push_back(type);
+				return static_cast<int>(_interns.size() - 1 + 10000);
+			}
+		}
+	};
+
+	struct itypeid_t {
+		public: itypeid_t(interned_typeids_t* interned, const typeid_t& type) :
+			_interned(interned),
+			_intern_id(interned->intern_typeid(type))
+		{
+		}
+
+		private: interned_typeids_t* _interned;
+		private: int _intern_id;
+	};
 }
 
 #endif /* ast_typeid_hpp */
