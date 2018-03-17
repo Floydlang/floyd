@@ -55,28 +55,10 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////////////////		vector_instance_t
 
-
-	bool vector_instance_t::check_invariant() const{
-		for(const auto m: _elements){
-			QUARK_ASSERT(m.check_invariant());
-			QUARK_ASSERT(m.get_type() == _element_type);
-		}
-		return true;
-	}
-
-	bool vector_instance_t::operator==(const vector_instance_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		return _element_type == other._element_type && _elements == other._elements;
-	}
-
-
-	std::string vector_instance_to_compact_string(const vector_instance_t& instance){
+	std::string vector_instance_to_compact_string(const std::vector<value_t>& elements0){
 		std::vector<std::string> elements;
-		for(const auto e: instance._elements){
+		for(const auto e: elements0){
 			const auto es = to_compact_string_quote_strings(e);
 			elements.push_back(es);
 		}
@@ -239,22 +221,22 @@ int value_t::compare_struct_true_deep(const struct_instance_t& left, const struc
 
 //	Compare vector element by element.
 //	### Think more of equality when vectors have different size and shared elements are equal.
-int compare_vector_true_deep(const vector_instance_t& left, const vector_instance_t& right){
-	QUARK_ASSERT(left.check_invariant());
-	QUARK_ASSERT(right.check_invariant());
-	QUARK_ASSERT(left._element_type == right._element_type);
+int compare_vector_true_deep(const std::vector<value_t>& left, const std::vector<value_t>& right){
+//	QUARK_ASSERT(left.check_invariant());
+//	QUARK_ASSERT(right.check_invariant());
+//	QUARK_ASSERT(left._element_type == right._element_type);
 
-	const auto shared_count = std::min(left._elements.size(), right._elements.size());
+	const auto shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		const auto element_result = value_t::compare_value_true_deep(left._elements[i], right._elements[i]);
+		const auto element_result = value_t::compare_value_true_deep(left[i], right[i]);
 		if(element_result != 0){
 			return element_result;
 		}
 	}
-	if(left._elements.size() == right._elements.size()){
+	if(left.size() == right.size()){
 		return 0;
 	}
-	else if(left._elements.size() > right._elements.size()){
+	else if(left.size() > right.size()){
 		return -1;
 	}
 	else{
@@ -389,7 +371,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		else{
 			const auto left_vec = left.get_vector_value();
 			const auto right_vec = right.get_vector_value();
-			return compare_vector_true_deep(*left_vec, *right_vec);
+			return compare_vector_true_deep(left_vec, right_vec);
 		}
 	}
 	else if(type.is_dict()){
@@ -431,7 +413,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 	}
@@ -440,7 +422,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 	}
@@ -449,7 +431,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 	}
@@ -458,7 +440,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 	}
@@ -467,7 +449,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 	}
@@ -476,7 +458,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value != nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 
@@ -488,7 +470,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 //		QUARK_ASSERT(_typeid_value != typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 	}
@@ -497,7 +479,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct != nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
 
@@ -508,19 +490,16 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector != nullptr);
+//		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function == nullptr);
-
-		QUARK_ASSERT(_vector && _vector->check_invariant());
-		QUARK_ASSERT(_typeid.get_vector_element_type() == _vector->_element_type);
 	}
 	else if(base_type == base_type::k_dict){
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict != nullptr);
 		QUARK_ASSERT(_function == nullptr);
 
@@ -532,7 +511,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
-		QUARK_ASSERT(_vector == nullptr);
+		QUARK_ASSERT(_vector_elements.empty());
 		QUARK_ASSERT(_dict == nullptr);
 		QUARK_ASSERT(_function != nullptr);
 
@@ -585,7 +564,7 @@ std::string to_compact_string2(const value_t& value) {
 		return struct_instance_to_compact_string(*value.get_struct_value());
 	}
 	else if(base_type == base_type::k_vector){
-		return vector_instance_to_compact_string(*value.get_vector_value());
+		return vector_instance_to_compact_string(value.get_vector_value());
 	}
 	else if(base_type == base_type::k_dict){
 		return dict_instance_to_compact_string(*value.get_dict_value());
@@ -801,8 +780,8 @@ ast_json_t value_to_ast_json(const value_t& v){
 //		return ast_json_t{ values_to_json_array(value->_member_values) 	};
 	}
 	else if(v.is_vector()){
-		const auto value = v.get_vector_value();
-		return ast_json_t{ values_to_json_array(value->_elements) 	};
+		const auto vec = v.get_vector_value();
+		return ast_json_t{ values_to_json_array(vec) 	};
 /*
 		std::vector<json_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
@@ -898,8 +877,7 @@ value_t value_t::make_struct_value(const typeid_t& struct_type, const std::vecto
 }
 
 value_t value_t::make_vector_value(const typeid_t& element_type, const std::vector<value_t>& elements){
-	auto f = std::shared_ptr<vector_instance_t>(new vector_instance_t{element_type, elements});
-	return value_t(f);
+	return value_t(element_type, elements);
 }
 
 value_t value_t::make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& elements){

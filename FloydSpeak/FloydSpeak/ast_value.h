@@ -79,28 +79,6 @@ namespace floyd {
 
 
 
-
-	//////////////////////////////////////////////////		vector_instance_t
-
-
-	struct vector_instance_t {
-		public: bool check_invariant() const;
-		public: bool operator==(const vector_instance_t& other) const;
-
-		public: vector_instance_t(
-			typeid_t element_type,
-			const std::vector<value_t>& elements
-		):
-			_element_type(element_type),
-			_elements(elements)
-		{
-		}
-
-		typeid_t _element_type;
-		std::vector<value_t> _elements;
-	};
-
-
 	//////////////////////////////////////////////////		dict_instance_t
 
 
@@ -290,12 +268,10 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: explicit value_t(const std::shared_ptr<vector_instance_t>& instance) :
-			_typeid(typeid_t::make_vector(instance->_element_type)),
-			_vector(instance)
+		private: explicit value_t(const typeid_t& element_type, const std::vector<value_t>& elements) :
+			_typeid(typeid_t::make_vector(element_type)),
+			_vector_elements(elements)
 		{
-			QUARK_ASSERT(instance && instance->check_invariant());
-
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -338,7 +314,7 @@ namespace floyd {
 			_json_value(other._json_value),
 			_typeid_value(other._typeid_value),
 			_struct(other._struct),
-			_vector(other._vector),
+			_vector_elements(other._vector_elements),
 			_dict(other._dict),
 			_function(other._function)
 		{
@@ -397,7 +373,7 @@ namespace floyd {
 				return *_struct == *other._struct;
 			}
 			else if(base_type == base_type::k_vector){
-				return *_vector == *other._vector;
+				return _vector_elements == other._vector_elements;
 			}
 			else if(base_type == base_type::k_dict){
 				return *_dict == *other._dict;
@@ -560,13 +536,13 @@ namespace floyd {
 
 			return _typeid.get_base_type() == base_type::k_vector;
 		}
-		public: std::shared_ptr<vector_instance_t> get_vector_value() const{
+		public: const std::vector<value_t>& get_vector_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_vector()){
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _vector;
+			return _vector_elements;
 		}
 
 		public: static value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, value_t>& elements);
@@ -616,7 +592,7 @@ namespace floyd {
 			std::swap(_json_value, other._json_value);
 			std::swap(_typeid_value, other._typeid_value);
 			std::swap(_struct, other._struct);
-			std::swap(_vector, other._vector);
+			std::swap(_vector_elements, other._vector_elements);
 			std::swap(_dict, other._dict);
 			std::swap(_function, other._function);
 
@@ -646,7 +622,7 @@ namespace floyd {
 		private: std::shared_ptr<json_t> _json_value;
 		private: typeid_t _typeid_value = typeid_t::make_null();
 		private: std::shared_ptr<struct_instance_t> _struct;
-		private: std::shared_ptr<vector_instance_t> _vector;
+		private: std::vector<value_t> _vector_elements;
 		private: std::shared_ptr<dict_instance_t> _dict;
 		private: std::shared_ptr<const function_instance_t> _function;
 	};

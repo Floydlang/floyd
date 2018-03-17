@@ -403,20 +403,20 @@ std::pair<interpreter_t, value_t> host__update(const interpreter_t& vm, const st
 			}
 			else{
 				const auto obj = obj1;
-				const auto v = obj.get_vector_value();
-				auto v2 = v->_elements;
+				auto v2 = obj.get_vector_value();
+				const auto element_type = obj.get_type().get_vector_element_type();
 
-				if((v->_element_type == new_value.get_type()) == false){
+				if(element_type != new_value.get_type()){
 					throw std::runtime_error("Update element must match vector type.");
 				}
 				else{
 					const int lookup_index = lookup_key.get_int_value();
-					if(lookup_index < 0 || lookup_index >= v->_elements.size()){
+					if(lookup_index < 0 || lookup_index >= v2.size()){
 						throw std::runtime_error("Vector lookup out of bounds.");
 					}
 					else{
 						v2[lookup_index] = new_value;
-						const auto s2 = value_t::make_vector_value(v->_element_type, v2);
+						const auto s2 = value_t::make_vector_value(element_type, v2);
 						return {vm, s2 };
 					}
 				}
@@ -497,7 +497,7 @@ std::pair<interpreter_t, value_t> host__size(const interpreter_t& vm, const std:
 		}
 	}
 	else if(obj.is_vector()){
-		const auto size = obj.get_vector_value()->_elements.size();
+		const auto size = obj.get_vector_value().size();
 		return {vm, value_t::make_int(static_cast<int>(size))};
 	}
 	else if(obj.is_dict()){
@@ -533,12 +533,13 @@ std::pair<interpreter_t, value_t> host__find(const interpreter_t& vm, const std:
 	}
 	else if(obj.is_vector()){
 		const auto vec = obj.get_vector_value();
-		if(wanted.get_type() != vec->_element_type){
+		const auto element_type = obj.get_type().get_vector_element_type();
+		if(wanted.get_type() != element_type){
 			throw std::runtime_error("Type mismatch.");
 		}
-		const auto size = vec->_elements.size();
+		const auto size = vec.size();
 		int index = 0;
-		while(index < size && vec->_elements[index] != wanted){
+		while(index < size && vec[index] != wanted){
 			index++;
 		}
 		if(index == size){
@@ -629,12 +630,13 @@ std::pair<interpreter_t, value_t> host__push_back(const interpreter_t& vm, const
 	}
 	else if(obj.is_vector()){
 		const auto vec = obj.get_vector_value();
-		if(element.get_type() != vec->_element_type){
+		const auto element_type = obj.get_type().get_vector_element_type();
+		if(element.get_type() != element_type){
 			throw std::runtime_error("Type mismatch.");
 		}
-		auto elements2 = vec->_elements;
+		auto elements2 = vec;
 		elements2.push_back(element);
-		const auto v = value_t::make_vector_value(vec->_element_type, elements2);
+		const auto v = value_t::make_vector_value(element_type, elements2);
 		return {vm, v};
 	}
 	else{
@@ -676,13 +678,14 @@ std::pair<interpreter_t, value_t> host__subset(const interpreter_t& vm, const st
 	}
 	else if(obj.is_vector()){
 		const auto vec = obj.get_vector_value();
-		const auto start2 = std::min(start, static_cast<int>(vec->_elements.size()));
-		const auto end2 = std::min(end, static_cast<int>(vec->_elements.size()));
+		const auto element_type = obj.get_type().get_vector_element_type();
+		const auto start2 = std::min(start, static_cast<int>(vec.size()));
+		const auto end2 = std::min(end, static_cast<int>(vec.size()));
 		vector<value_t> elements2;
 		for(int i = start2 ; i < end2 ; i++){
-			elements2.push_back(vec->_elements[i]);
+			elements2.push_back(vec[i]);
 		}
-		const auto v = value_t::make_vector_value(vec->_element_type, elements2);
+		const auto v = value_t::make_vector_value(element_type, elements2);
 		return {vm, v};
 	}
 	else{
@@ -727,19 +730,20 @@ std::pair<interpreter_t, value_t> host__replace(const interpreter_t& vm, const s
 	}
 	else if(obj.is_vector()){
 		const auto vec = obj.get_vector_value();
-		const auto start2 = std::min(start, static_cast<int>(vec->_elements.size()));
-		const auto end2 = std::min(end, static_cast<int>(vec->_elements.size()));
+		const auto element_type = obj.get_type().get_vector_element_type();
+		const auto start2 = std::min(start, static_cast<int>(vec.size()));
+		const auto end2 = std::min(end, static_cast<int>(vec.size()));
 		const auto new_bits = args[3].get_vector_value();
 
 
-		const auto string_left = vector<value_t>(vec->_elements.begin(), vec->_elements.begin() + start2);
-		const auto string_right = vector<value_t>(vec->_elements.begin() + end2, vec->_elements.end());
+		const auto string_left = vector<value_t>(vec.begin(), vec.begin() + start2);
+		const auto string_right = vector<value_t>(vec.begin() + end2, vec.end());
 
 		auto result = string_left;
-		result.insert(result.end(), new_bits->_elements.begin(), new_bits->_elements.end());
+		result.insert(result.end(), new_bits.begin(), new_bits.end());
 		result.insert(result.end(), string_right.begin(), string_right.end());
 
-		const auto v = value_t::make_vector_value(vec->_element_type, result);
+		const auto v = value_t::make_vector_value(element_type, result);
 		return {vm, v};
 	}
 	else{

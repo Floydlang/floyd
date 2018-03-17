@@ -482,14 +482,14 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 	else if(parent_value.is_vector()){
 		QUARK_ASSERT(key_value.is_int());
 
-		const auto instance = parent_value.get_vector_value();
+		const auto vec = parent_value.get_vector_value();
 
 		int lookup_index = key_value.get_int_value();
-		if(lookup_index < 0 || lookup_index >= instance->_elements.size()){
+		if(lookup_index < 0 || lookup_index >= vec.size()){
 			throw std::runtime_error("Lookup in vector: out of bounds.");
 		}
 		else{
-			const value_t value = instance->_elements[lookup_index];
+			const value_t value = vec[lookup_index];
 			return { vm_acc, value};
 		}
 	}
@@ -853,8 +853,8 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		const auto element_type = left_constant.get_type().get_vector_element_type();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			auto elements2 = left_constant.get_vector_value()->_elements;
-			elements2.insert(elements2.end(), right_constant.get_vector_value()->_elements.begin(), right_constant.get_vector_value()->_elements.end());
+			auto elements2 = left_constant.get_vector_value();
+			elements2.insert(elements2.end(), right_constant.get_vector_value().begin(), right_constant.get_vector_value().end());
 
 			const auto value2 = value_t::make_vector_value(element_type, elements2);
 			return {vm_acc, value2};
