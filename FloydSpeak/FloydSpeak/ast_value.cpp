@@ -86,26 +86,6 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////		dict_def_t
-
-
-
-	bool dict_def_t::check_invariant() const{
-		QUARK_ASSERT(_value_type.check_invariant());
-		QUARK_ASSERT(_value_type.is_null() == false);
-		return true;
-	}
-
-	bool dict_def_t::operator==(const dict_def_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(!(_value_type == other._value_type)){
-			return false;
-		}
-		return true;
-	}
-
 
 
 	//////////////////////////////////////////////////		dict_instance_t

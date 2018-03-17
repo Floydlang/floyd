@@ -101,23 +101,6 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////		dict_def_t
-
-
-	struct dict_def_t {
-		public: dict_def_t(floyd::typeid_t value_type) :
-			_value_type(value_type)
-		{
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const dict_def_t& other) const;
-
-
-		/////////////////////////////		STATE
-		public: floyd::typeid_t _value_type;
-	};
-
-
 	//////////////////////////////////////////////////		dict_instance_t
 
 
