@@ -1195,12 +1195,16 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 	QUARK_ASSERT(check_invariant());
 }
 
-//??? make proper operator=(). Exception safety etc.
+void interpreter_t::swap(interpreter_t& other) throw(){
+	other._imm.swap(this->_imm);
+	std::swap(other._globals, this->_globals);
+	other._env.swap(this->_env);
+	other._print_output.swap(this->_print_output);
+}
+
 const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
-	_imm = other._imm;
-	_globals = other._globals;
-	_env = other._env;
-	_print_output = other._print_output;
+	auto temp = other;
+	temp.swap(*this);
 	return *this;
 }
 

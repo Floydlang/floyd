@@ -134,6 +134,7 @@ namespace floyd {
 #if DEBUG
 		public: bool check_invariant() const;
 #endif
+		public: void swap(interpreter_t& other) throw();
 
 		////////////////////////		STATE
 		public: std::shared_ptr<interpreter_imm_t> _imm;
