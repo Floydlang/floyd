@@ -228,9 +228,9 @@ namespace floyd {
 		}
 
 		private: explicit value_t(bool value) :
-			_typeid(typeid_t::make_bool()),
-			_bool(value)
+			_typeid(typeid_t::make_bool())
 		{
+			_value_internals._bool = value;
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -239,9 +239,9 @@ namespace floyd {
 		}
 
 		private: explicit value_t(int value) :
-			_typeid(typeid_t::make_int()),
-			_int(value)
+			_typeid(typeid_t::make_int())
 		{
+			_value_internals._int = value;
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -250,9 +250,9 @@ namespace floyd {
 		}
 
 		private: value_t(float value) :
-			_typeid(typeid_t::make_float()),
-			_float(value)
+			_typeid(typeid_t::make_float())
 		{
+			_value_internals._float = value;
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -295,6 +295,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
+
 		private: explicit value_t(const typeid_t& type) :
 			_typeid(typeid_t::make_typeid()),
 			_typeid_value(type)
@@ -362,13 +363,10 @@ namespace floyd {
 		}
 
 
-
 		public: value_t(const value_t& other):
 			_typeid(other._typeid),
 
-			_bool(other._bool),
-			_int(other._int),
-			_float(other._float),
+			_value_internals(other._value_internals),
 			_string(other._string),
 			_json_value(other._json_value),
 			_typeid_value(other._typeid_value),
@@ -411,13 +409,13 @@ namespace floyd {
 				return true;
 			}
 			else if(base_type == base_type::k_bool){
-				return _bool == other._bool;
+				return _value_internals._bool == other._value_internals._bool;
 			}
 			else if(base_type == base_type::k_int){
-				return _int == other._int;
+				return _value_internals._int == other._value_internals._int;
 			}
 			else if(base_type == base_type::k_float){
-				return _float == other._float;
+				return _value_internals._float == other._value_internals._float;
 			}
 			else if(base_type == base_type::k_string){
 				return _string == other._string;
@@ -493,7 +491,7 @@ namespace floyd {
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _bool;
+			return _value_internals._bool;
 		}
 
 		public: static value_t make_int(int value);
@@ -508,7 +506,7 @@ namespace floyd {
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _int;
+			return _value_internals._int;
 		}
 
 		public: static value_t make_float(float value);
@@ -523,7 +521,7 @@ namespace floyd {
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _float;
+			return _value_internals._float;
 		}
 
 		public: static value_t make_string(const std::string& value);
@@ -646,9 +644,7 @@ namespace floyd {
 
 			_typeid.swap(other._typeid);
 
-			std::swap(_bool, other._bool);
-			std::swap(_int, other._int);
-			std::swap(_float, other._float);
+			std::swap(_value_internals, other._value_internals);
 			std::swap(_string, other._string);
 			std::swap(_json_value, other._json_value);
 			std::swap(_typeid_value, other._typeid_value);
@@ -671,9 +667,13 @@ namespace floyd {
 #endif
 		private: typeid_t _typeid;
 
-		private: bool _bool = false;
-		private: int _int = 0;
-		private: float _float = 0.0f;
+		private: union value_internals_t {
+			bool _bool;
+			int _int;
+			float _float;
+		};
+
+		private: value_internals_t _value_internals;
 		private: std::string _string = "";
 		private: std::shared_ptr<json_t> _json_value;
 		private: typeid_t _typeid_value = typeid_t::make_null();

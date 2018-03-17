@@ -466,9 +466,6 @@ bool value_t::check_invariant() const{
 
 	const auto base_type = _typeid.get_base_type();
 	if(base_type == base_type::k_null){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -478,9 +475,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_bool){
-//				QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -490,9 +484,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_int){
-		QUARK_ASSERT(_bool == false);
-//				QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -502,9 +493,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_float){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-//				QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -514,9 +502,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_string){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 //				QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -526,9 +511,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_json_value){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value != nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -541,9 +523,6 @@ bool value_t::check_invariant() const{
 	}
 
 	else if(base_type == base_type::k_typeid){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 //		QUARK_ASSERT(_typeid_value != typeid_t::make_null());
@@ -553,9 +532,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_struct){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -567,9 +543,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_struct && _struct->check_invariant());
 	}
 	else if(base_type == base_type::k_vector){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -582,9 +555,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_typeid.get_vector_element_type() == _vector->_element_type);
 	}
 	else if(base_type == base_type::k_dict){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
@@ -597,9 +567,6 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_typeid.get_dict_value_type() == _dict->_value_type);
 	}
 	else if(base_type == base_type::k_function){
-		QUARK_ASSERT(_bool == false);
-		QUARK_ASSERT(_int == 0);
-		QUARK_ASSERT(_float == 0.0f);
 		QUARK_ASSERT(_string == "");
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
