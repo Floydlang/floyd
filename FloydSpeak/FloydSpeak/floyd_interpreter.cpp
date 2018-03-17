@@ -43,6 +43,20 @@ using std::make_shared;
 std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
 
 
+environment_t* find_env_from_address(const interpreter_t& vm, const variable_address_t& a){
+	if(a._parent_steps == -1){
+		return vm._globals.get();
+	}
+	else{
+		environment_t* env = vm._env.get();
+		for(auto i = 0 ; i < a._parent_steps ; i++){
+			env = env->_prev_env.get();
+		}
+		return env;
+	}
+}
+
+
 std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -71,9 +85,6 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		return {vm, arg };
 	}
 	else if(type.is_struct()){
-//		QUARK_SCOPED_TRACE("construct_struct()");
-//		QUARK_TRACE("type: " + typeid_to_compact_string(struct_type));
-
 	#if DEBUG
 		const auto def = type.get_struct_ref();
 		QUARK_ASSERT(arg_values.size() == def->_members.size());
@@ -91,7 +102,6 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 
 		return { vm, instance };
 	}
-
 	else if(type.is_vector()){
 		const auto element_type = type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_null() == false);
@@ -160,28 +170,16 @@ std::pair<interpreter_t, statement_result_t> execute_body(
 {
 	QUARK_ASSERT(vm.check_invariant());
 
+	auto new_environment = environment_t::make_environment(vm._env, &body, init_values);
 	auto vm_acc = vm;
-
-	auto new_environment = environment_t::make_environment(&body, init_values);
-	vm_acc._call_stack.push_back(new_environment);
+	vm_acc._env = new_environment;
 
 	const auto r = execute_statements(vm_acc, body._statements);
 	vm_acc = r.first;
-	vm_acc._call_stack.pop_back();
+	vm_acc._env = vm._env;
 
 	return { vm_acc, r.second };
 }
-
-/*
-bool does_symbol_exist_shallow(const interpreter_t& vm, const std::string& symbol){
-    const auto it = std::find_if(
-    	vm._call_stack.back()->_values.begin(),
-    	vm._call_stack.back()->_values.end(),
-    	[&symbol](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == symbol; }
-	);
-	return it != vm._call_stack.back()->_values.end();
-}
-*/
 
 std::pair<interpreter_t, statement_result_t> execute_store2_statement(const interpreter_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -193,11 +191,8 @@ std::pair<interpreter_t, statement_result_t> execute_store2_statement(const inte
 	vm_acc = rhs_expr_pair.first;
 	const auto rhs_value = rhs_expr_pair.second;
 
-	const auto env_index = address._parent_steps == -1 ? 0: vm._call_stack.size() - address._parent_steps - 1;
-	auto& env = vm._call_stack[env_index];
+	auto env = find_env_from_address(vm_acc, address);
 	const auto lhs_value_deep_ptr = &env->_values[address._index].second;
-	QUARK_ASSERT(lhs_value_deep_ptr != nullptr);
-
 	const auto lhs_value = lhs_value_deep_ptr->first;
 
 	*lhs_value_deep_ptr = std::pair<value_t, bool>(rhs_value, true);
@@ -365,21 +360,21 @@ std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<floyd::value_t, bool>* resolve_env_variable_deep(const interpreter_t& vm, int depth, const std::string& s){
+std::pair<floyd::value_t, bool>* find_symbol_by_name_deep(const interpreter_t& vm, environment_t* env, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
+	QUARK_ASSERT(env != nullptr);
 	QUARK_ASSERT(s.size() > 0);
 
     const auto it = std::find_if(
-    	vm._call_stack[depth]->_values.begin(),
-    	vm._call_stack[depth]->_values.end(),
+    	env->_values.begin(),
+    	env->_values.end(),
     	[&s](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == s; }
 	);
-	if(it != vm._call_stack[depth]->_values.end()){
+	if(it != env->_values.end()){
 		return &it->second;
 	}
-	else if(depth > 0){
-		return resolve_env_variable_deep(vm, depth - 1, s);
+	else if(env->_prev_env){
+		return find_symbol_by_name_deep(vm, env->_prev_env.get(), s);
 	}
 	else{
 		return nullptr;
@@ -391,15 +386,11 @@ std::pair<floyd::value_t, bool>* find_symbol_by_name(const interpreter_t& vm, co
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_env_variable_deep(vm, static_cast<int>(vm._call_stack.size() - 1), s);
+	return find_symbol_by_name_deep(vm, vm._env.get(), s);
 }
 
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
-	const auto t = find_symbol_by_name(vm, s);
-	if(t == nullptr){
-		QUARK_ASSERT(false);
-	}
-	return t->first;
+	return get_global(vm, s);
 }
 
 std::pair<interpreter_t, value_t> evaluate_resolve_member_expression(const interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
@@ -517,11 +508,7 @@ std::pair<interpreter_t, value_t> evaluate_load2_expression(const interpreter_t&
 
 	auto vm_acc = vm;
 
-	const auto env_index = expr._address._parent_steps == -1 ? 0 : vm._call_stack.size() - expr._address._parent_steps - 1;
-	QUARK_ASSERT(env_index >= 0 && env_index < vm._call_stack.size());
-
-	const auto env = vm._call_stack[env_index];
-
+	environment_t* env = find_env_from_address(vm_acc, expr._address);
 	QUARK_ASSERT(expr._address._index >= 0 && expr._address._index < env->_values.size());
 	const auto value = env->_values[expr._address._index].second.first;
 
@@ -1037,7 +1024,8 @@ std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& 
 
 json_t interpreter_to_json(const interpreter_t& vm){
 	vector<json_t> callstack;
-	for(const auto& e: vm._call_stack){
+	const environment_t* e = vm._env.get();
+	while(e != nullptr){
 		std::map<string, json_t> values;
 		for(const auto&v: e->_values){
 
@@ -1054,6 +1042,8 @@ json_t interpreter_to_json(const interpreter_t& vm){
 			{ "values", values }
 		});
 		callstack.push_back(env);
+
+		e = e->_prev_env.get();
 	}
 
 	return json_t::make_object({
@@ -1128,7 +1118,11 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
 
 
 //??? For each init-value, keep the index where to store it in environment values vector.
-std::shared_ptr<environment_t> environment_t::make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& init_values){
+std::shared_ptr<environment_t> environment_t::make_environment(
+	const std::shared_ptr<environment_t>& prev_env,
+	const body_t* body_ptr,
+	const std::map<std::string, std::pair<value_t, bool>>& init_values
+){
 	QUARK_ASSERT(body_ptr != nullptr);
 
 	vector<std::pair<std::string, std::pair<value_t, bool>>> values;
@@ -1153,7 +1147,7 @@ std::shared_ptr<environment_t> environment_t::make_environment(const body_t* bod
 		found_it->second.first = e.second.first;
 	}
 
-	const auto temp = environment_t{ values };
+	const auto temp = environment_t{ prev_env, values };
 	return make_shared<environment_t>(temp);
 }
 
@@ -1194,9 +1188,8 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 
 	//	Make the top-level environment = global scope.
-	auto global_env = environment_t::make_environment(&_imm->_ast._globals, {});
-	_call_stack.push_back(global_env);
-
+	_env = environment_t::make_environment({}, &_imm->_ast._globals, {});
+	_globals = _env;
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto r = execute_statements(*this, _imm->_ast._globals._statements);
@@ -1207,7 +1200,8 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 interpreter_t::interpreter_t(const interpreter_t& other) :
 	_imm(other._imm),
-	_call_stack(other._call_stack),
+	_globals(other._globals),
+	_env(other._env),
 	_print_output(other._print_output)
 {
 	QUARK_ASSERT(other.check_invariant());
@@ -1217,7 +1211,8 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 //??? make proper operator=(). Exception safety etc.
 const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 	_imm = other._imm;
-	_call_stack = other._call_stack;
+	_globals = other._globals;
+	_env = other._env;
 	_print_output = other._print_output;
 	return *this;
 }
@@ -1288,15 +1283,13 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 }
 
 value_t get_global(const interpreter_t& vm, const std::string& name){
-    const auto it = std::find_if(
-    	vm._call_stack.front()->_values.begin(),
-    	vm._call_stack.front()->_values.end(),
-    	[&name](const std::pair<std::string, std::pair<value_t, bool>>& e) { return e.first == name; }
-	);
-	if(it != vm._call_stack.front()->_values.end()){
-		return it->second.first;
+	const auto result = find_symbol_by_name_deep(vm, vm._globals.get(), name);
+	if(result == nullptr){
+		throw std::runtime_error("Cannot find global.");
 	}
-	throw std::runtime_error("Cannot find global.");
+	else{
+		return result->first;
+	}
 }
 
 

@@ -89,13 +89,19 @@ namespace floyd {
 	*/
 
 	struct environment_t {
+		public: std::shared_ptr<environment_t> _prev_env;
+
 		//	Bool says if value is MUTABLE. Which is rare.
 		public: std::vector<std::pair<std::string, std::pair<value_t, bool>> > _values;
 
 
 		public: bool check_invariant() const;
 
-		public: static std::shared_ptr<environment_t> make_environment(const body_t* body_ptr, const std::map<std::string, std::pair<value_t, bool>>& init_values);
+		public: static std::shared_ptr<environment_t> make_environment(
+			const std::shared_ptr<environment_t>& prev_env,
+			const body_t* body_ptr,
+			const std::map<std::string, std::pair<value_t, bool>>& init_values
+		);
 	};
 
 
@@ -128,10 +134,8 @@ namespace floyd {
 
 		////////////////////////		STATE
 		public: std::shared_ptr<interpreter_imm_t> _imm;
-
-		//	Non-constant. Last scope is the current one. First scope is the root.
-		public: std::vector<std::shared_ptr<environment_t>> _call_stack;
-
+		public: std::shared_ptr<environment_t> _globals;
+		public: std::shared_ptr<environment_t> _env;
 		public: std::vector<std::string> _print_output;
 	};
 
