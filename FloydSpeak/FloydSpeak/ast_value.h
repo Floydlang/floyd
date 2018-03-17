@@ -78,21 +78,6 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////		vector_def_t
-
-
-	struct vector_def_t {
-		public: vector_def_t(floyd::typeid_t element_type) :
-			_element_type(element_type)
-		{
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const vector_def_t& other) const;
-
-
-		/////////////////////////////		STATE
-		public: floyd::typeid_t _element_type;
-	};
 
 
 	//////////////////////////////////////////////////		vector_instance_t
@@ -179,7 +164,6 @@ namespace floyd {
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 
-	//??? lose this
 	ast_json_t function_def_to_ast_json(const function_definition_t& v);
 
 	typeid_t get_function_type(const function_definition_t& f);
@@ -671,6 +655,7 @@ namespace floyd {
 			bool _bool;
 			int _int;
 			float _float;
+
 		};
 
 		private: value_internals_t _value_internals;

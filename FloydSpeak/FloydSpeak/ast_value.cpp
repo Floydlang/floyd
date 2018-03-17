@@ -54,25 +54,6 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////		vector_def_t
-
-
-
-	bool vector_def_t::check_invariant() const{
-		QUARK_ASSERT(!_element_type.is_null() && _element_type.check_invariant());
-		return true;
-	}
-
-	bool vector_def_t::operator==(const vector_def_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		if(!(_element_type == other._element_type)){
-			return false;
-		}
-		return true;
-	}
-
 
 	//////////////////////////////////////////////////		vector_instance_t
 
