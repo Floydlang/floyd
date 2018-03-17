@@ -422,17 +422,20 @@ namespace floyd {
 			}
 		}
 	};
-
 	struct itypeid_t {
-		public: itypeid_t(interned_typeids_t* interned, const typeid_t& type) :
-			_interned(interned),
-			_intern_id(interned->intern_typeid(type))
-		{
-		}
-
-		private: interned_typeids_t* _interned;
-		private: int _intern_id;
+		public: int _intern_id;
 	};
+
+	inline const typeid_t& resolve(const interned_typeids_t& interned, const itypeid_t& type){
+		const auto& i = interned._interns[type._intern_id];
+		return i;
+	}
+	inline itypeid_t intern_typeid(interned_typeids_t& interned, const typeid_t& type){
+		const auto i = interned.intern_typeid(type);
+		return itypeid_t{i};
+	}
+
+
 }
 
 #endif /* ast_typeid_hpp */
