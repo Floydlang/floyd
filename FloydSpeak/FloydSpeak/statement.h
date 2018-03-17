@@ -63,11 +63,6 @@ namespace floyd {
 		floyd::value_t _const_value;
 
 
-		//	Requires to use symbol_t as value in std::map() and use its [].
-		public: symbol_t() :
-			_value_type(floyd::typeid_t::make_unresolved_type_identifier("xyz"))
-		{
-		}
 
 		private: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
 			_symbol_type(symbol_type),

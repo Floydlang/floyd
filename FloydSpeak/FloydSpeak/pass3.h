@@ -80,7 +80,7 @@ namespace floyd_pass3 {
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;
 
-//		public: floyd::interned_typeids_t _interned_typeids;
+		public: floyd::interned_typeids_t _interned_typeids;
 	};
 
 	floyd::ast_t analyse(const analyser_t& a);

@@ -42,13 +42,6 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 
 
 
-std::vector<std::pair<std::string, symbol_t>> symbol_map_to_vec(const std::map<std::string, symbol_t>& symbols){
-	std::vector<std::pair<std::string, symbol_t>> result;
-	for(const auto e: symbols){
-		result.push_back({e.first, e.second});
-	}
-	return result;
-}
 
 
 std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
@@ -1487,32 +1480,32 @@ ast_t analyse(const analyser_t& a){
 	/*
 		Create built-in globla symbol map: built in data types, built-in functions (host functions).
 	*/
-	std::map<std::string, symbol_t> symbol_map;
+	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
 	//	Insert built-in functions into AST.
 	for(auto hf_kv: a._imm->_host_functions){
 		const auto& function_name = hf_kv.first;
 		const auto function_value = make_host_function_value(hf_kv.second);
-		symbol_map[function_name] = symbol_t::make_constant(function_value);
+		symbol_map.push_back({function_name, symbol_t::make_constant(function_value)});
 	}
 
-	symbol_map[keyword_t::k_null] = symbol_t::make_constant(value_t::make_null());
-	symbol_map[keyword_t::k_bool] = symbol_t::make_type(typeid_t::make_bool());
-	symbol_map[keyword_t::k_int] = symbol_t::make_type(typeid_t::make_int());
-	symbol_map[keyword_t::k_float] = symbol_t::make_type(typeid_t::make_float());
-	symbol_map[keyword_t::k_string] = symbol_t::make_type(typeid_t::make_string());
-	symbol_map[keyword_t::k_typeid] = symbol_t::make_type(typeid_t::make_typeid());
-	symbol_map[keyword_t::k_json_value] = symbol_t::make_type(typeid_t::make_json_value());
+	symbol_map.push_back({keyword_t::k_null, symbol_t::make_constant(value_t::make_null())});
+	symbol_map.push_back({keyword_t::k_bool, symbol_t::make_type(typeid_t::make_bool())});
+	symbol_map.push_back({keyword_t::k_int, symbol_t::make_type(typeid_t::make_int())});
+	symbol_map.push_back({keyword_t::k_float, symbol_t::make_type(typeid_t::make_float())});
+	symbol_map.push_back({keyword_t::k_string, symbol_t::make_type(typeid_t::make_string())});
+	symbol_map.push_back({keyword_t::k_typeid, symbol_t::make_type(typeid_t::make_typeid())});
+	symbol_map.push_back({keyword_t::k_json_value, symbol_t::make_type(typeid_t::make_json_value())});
 
-	symbol_map[keyword_t::k_json_object] = symbol_t::make_constant(value_t::make_int(1));
-	symbol_map[keyword_t::k_json_array] = symbol_t::make_constant(value_t::make_int(2));
-	symbol_map[keyword_t::k_json_string] = symbol_t::make_constant(value_t::make_int(3));
-	symbol_map[keyword_t::k_json_number] = symbol_t::make_constant(value_t::make_int(4));
-	symbol_map[keyword_t::k_json_true] = symbol_t::make_constant(value_t::make_int(5));
-	symbol_map[keyword_t::k_json_false] = symbol_t::make_constant(value_t::make_int(6));
-	symbol_map[keyword_t::k_json_null] = symbol_t::make_constant(value_t::make_int(7));
+	symbol_map.push_back({keyword_t::k_json_object, symbol_t::make_constant(value_t::make_int(1))});
+	symbol_map.push_back({keyword_t::k_json_array, symbol_t::make_constant(value_t::make_int(2))});
+	symbol_map.push_back({keyword_t::k_json_string, symbol_t::make_constant(value_t::make_int(3))});
+	symbol_map.push_back({keyword_t::k_json_number, symbol_t::make_constant(value_t::make_int(4))});
+	symbol_map.push_back({keyword_t::k_json_true, symbol_t::make_constant(value_t::make_int(5))});
+	symbol_map.push_back({keyword_t::k_json_false, symbol_t::make_constant(value_t::make_int(6))});
+	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_constant(value_t::make_int(7))});
 
-	const auto body = body_t(a._imm->_ast._globals._statements, symbol_map_to_vec(symbol_map));
+	const auto body = body_t(a._imm->_ast._globals._statements, symbol_map);
 	const auto result = analyse_body(a, body);
 	const auto result_ast = ast_t(result.second);
 
