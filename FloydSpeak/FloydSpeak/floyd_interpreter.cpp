@@ -961,9 +961,9 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 
 	QUARK_ASSERT(f.is_function());
 
-	const auto& function_def = f.get_function_value()->_def;
-	if(function_def._host_function != 0){
-		const auto r = call_host_function(vm_acc, function_def._host_function, args);
+	const auto& function_def = f.get_function_value();
+	if(function_def->_host_function != 0){
+		const auto r = call_host_function(vm_acc, function_def->_host_function, args);
 		return { r.first, r.second };
 	}
 	else{
@@ -981,7 +981,7 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		}
 #endif
 
-		const auto r = execute_body(vm_acc, *function_def._body, args);
+		const auto r = execute_body(vm_acc, *function_def->_body, args);
 		vm_acc = r.first;
 
 		// ??? move this check to pass3.

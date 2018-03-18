@@ -138,20 +138,6 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////////////////		function_instance_t
-
-
-
-	bool function_instance_t::check_invariant() const {
-		return true;
-	}
-
-	bool function_instance_t::operator==(const function_instance_t& other) const{
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		return _def == other._def;
-	}
 
 
 int limit(int value, int min, int max){
@@ -182,7 +168,7 @@ QUARK_UNIT_TESTQ("compare_string()", ""){
 }
 
 
-int value_t::compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right){
+int compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -190,7 +176,7 @@ int value_t::compare_struct_true_deep(const struct_instance_t& left, const struc
 	auto b_it = right._member_values.begin();
 
 	while(a_it !=left._member_values.end()){
-		int diff = compare_value_true_deep(*a_it, *b_it);
+		int diff = value_t::compare_value_true_deep(*a_it, *b_it);
 		if(diff != 0){
 			return diff;
 		}
@@ -775,10 +761,10 @@ ast_json_t value_to_ast_json(const value_t& v){
 		return ast_json_t{result};
 	}
 	else if(v.is_function()){
-		const auto value = v.get_function_value();
+		const auto def = v.get_function_value();
 		return ast_json_t{json_t::make_object(
 			{
-				{ "function_type", typeid_to_ast_json(get_function_type(value->_def))._value }
+				{ "function_type", typeid_to_ast_json(get_function_type(*def))._value }
 			}
 		)};
 	}
@@ -858,9 +844,9 @@ value_t value_t::make_dict_value(const typeid_t& value_type, const std::map<std:
 	return value_t(value_type, entries);
 }
 
-value_t value_t::make_function_value(const function_definition_t& def){
-	auto f = std::shared_ptr<function_instance_t>(new function_instance_t{def});
-	return value_t(f);
+value_t value_t::make_function_value(const std::shared_ptr<const function_definition_t>& def){
+	QUARK_ASSERT(def);
+	return value_t(get_function_type(*def), def);
 }
 
 

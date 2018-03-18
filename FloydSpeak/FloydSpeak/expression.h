@@ -378,27 +378,25 @@ namespace floyd {
 
 
 		public: struct function_definition_expr_t : public expr_base_t {
-			function_definition_expr_t(const function_definition_t & def)
+			function_definition_expr_t(const std::shared_ptr<const function_definition_t>& def)
 			:
 				_def(def)
 			{
 			}
 
 			virtual ast_json_t expr_base__to_json() const {
-				return ast_json_t{function_def_to_ast_json(_def)};
+				return ast_json_t{function_def_to_ast_json(*_def)};
 			}
 
 
-			const function_definition_t _def;
+			const std::shared_ptr<const function_definition_t> _def;
 		};
 
-		public: static expression_t make_function_definition(const function_definition_t& def){
+		public: static expression_t make_function_definition(const std::shared_ptr<const function_definition_t>& def){
 			return expression_t{
 				expression_type::k_define_function,
-				std::make_shared<function_definition_expr_t>(
-					function_definition_expr_t{ function_definition_t(def) }
-				),
-				std::make_shared<typeid_t>(get_function_type(def))
+				std::make_shared<function_definition_expr_t>(function_definition_expr_t{ def }),
+				std::make_shared<typeid_t>(get_function_type(*def))
 			};
 		}
 

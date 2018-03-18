@@ -107,7 +107,7 @@ OFF_QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 	double cpp_iteration_time = (double)cpp_ns / (double)cpp_iterations;
 	double floyd_iteration_time = (double)floyd_ns / (double)floyd_iterations;
 	double k = cpp_iteration_time / floyd_iteration_time;
-	std::cout << "Floyd performace: " << k << std::endl;
+	std::cout << "Floyd performance: " << k << std::endl;
 }
 
 
@@ -164,7 +164,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	);
 
 	double k = (double)cpp_ns / (double)floyd_ns;
-	std::cout << "Floyd performace percentage of C++: " << (k * 100.0) << std::endl;
+	std::cout << "Floyd performance percentage of C++: " << (k * 100.0) << std::endl;
 }
 
 #endif

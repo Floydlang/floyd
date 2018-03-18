@@ -93,6 +93,17 @@ namespace floyd {
 			const typeid_t& return_type
 		);
 
+		public: bool check_invariant() const {
+			if(_host_function != 0){
+				QUARK_ASSERT(!_body);
+			}
+			else{
+				QUARK_ASSERT(_body);
+			}
+			return true;
+		}
+
+
 		const std::vector<member_t> _args;
 		const std::shared_ptr<body_t> _body;
 		const int _host_function;
@@ -106,17 +117,6 @@ namespace floyd {
 	typeid_t get_function_type(const function_definition_t& f);
 
 
-
-	//////////////////////////////////////////////////		function_instance_t
-
-
-	struct function_instance_t {
-		public: bool check_invariant() const;
-		public: bool operator==(const function_instance_t& other) const;
-
-
-		public: function_definition_t _def;
-	};
 
 
 
@@ -266,11 +266,11 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: explicit value_t(const std::shared_ptr<function_instance_t>& function_instance) :
-			_typeid(get_function_type(function_instance->_def)),
-			_function(function_instance)
+		private: explicit value_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& def) :
+			_typeid(type),
+			_function(def)
 		{
-			QUARK_ASSERT(function_instance && function_instance->check_invariant());
+			QUARK_ASSERT(def);
 
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
@@ -534,13 +534,13 @@ namespace floyd {
 			return _dict_entries;
 		}
 
-		public: static value_t make_function_value(const function_definition_t& def);
+		public: static value_t make_function_value(const std::shared_ptr<const function_definition_t>& def);
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _typeid.get_base_type() == base_type::k_function;
 		}
-		public: std::shared_ptr<const function_instance_t> get_function_value() const{
+		public: std::shared_ptr<const function_definition_t> get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
 				throw std::runtime_error("Type mismatch!");
@@ -574,8 +574,6 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: static int compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right);
-
 
 		////////////////////		STATE
 
@@ -598,7 +596,7 @@ namespace floyd {
 		private: std::shared_ptr<struct_instance_t> _struct;
 		private: std::vector<value_t> _vector_elements;
 		private: std::map<std::string, value_t> _dict_entries;
-		private: std::shared_ptr<const function_instance_t> _function;
+		private: std::shared_ptr<const function_definition_t> _function;
 	};
 
 

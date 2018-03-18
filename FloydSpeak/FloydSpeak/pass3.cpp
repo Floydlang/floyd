@@ -1099,7 +1099,7 @@ bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr
 		QUARK_ASSERT(callee != nullptr);
 
 		if(callee->_const_value.is_function()){
-			return callee->_const_value.get_function_value()->_def._host_function != 0;
+			return callee->_const_value.get_function_value()->_host_function != 0;
 		}
 		else{
 			return false;
@@ -1116,7 +1116,7 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 
 	const auto callee = resolve_symbol_by_address(vm, callee_expr.get_load2()->_address);
 	QUARK_ASSERT(callee != nullptr);
-	const auto host_function_id = callee->_const_value.get_function_value()->_def._host_function;
+	const auto host_function_id = callee->_const_value.get_function_value()->_host_function;
 
 	const auto& host_functions = vm._imm->_host_functions;
 	const auto found_it = find_if(host_functions.begin(), host_functions.end(), [&](const std::pair<std::string, floyd::host_function_signature_t>& kv){ return kv.second._function_id == host_function_id; });
@@ -1257,21 +1257,21 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	const auto function_def_expr = *e.get_function_definition();
 	const auto def = function_def_expr._def;
-	const auto function_type = get_function_type(def);
+	const auto function_type = get_function_type(*def);
 
 	//	Make function body with arguments injected FIRST in body as local symbols.
-	auto symbol_vec = def._body->_symbols;
-	for(const auto x: def._args){
+	auto symbol_vec = def->_body->_symbols;
+	for(const auto x: def->_args){
 		symbol_vec.push_back({x._name , symbol_t::make_immutable_local(x._type)});
 	}
-	const auto injected_body = body_t(def._body->_statements, symbol_vec);
+	const auto injected_body = body_t(def->_body->_statements, symbol_vec);
 
 	const auto function_body_pair = analyse_body(vm, injected_body);
 	auto vm_acc = function_body_pair.first;
 
 	const auto body = function_body_pair.second;
-	const auto def2 = function_definition_t(def._args, make_shared<body_t>(body), def._return_type);
-	return {vm_acc, expression_t::make_function_definition(def2) };
+	const auto def2 = function_definition_t(def->_args, make_shared<body_t>(body), def->_return_type);
+	return {vm_acc, expression_t::make_function_definition(make_shared<function_definition_t>(def2)) };
 }
 
 

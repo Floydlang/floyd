@@ -1066,7 +1066,7 @@ floyd::value_t make_host_function_value(const host_function_signature_t& signatu
 		signature._function_type.get_function_return()
 	);
 
-	const auto function_value = value_t::make_function_value(def);
+	const auto function_value = value_t::make_function_value(make_shared<function_definition_t>(def));
 	return function_value;
 }
 
