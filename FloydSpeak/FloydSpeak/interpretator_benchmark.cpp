@@ -119,8 +119,8 @@ int fibonacci(int n) {
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
-	const int64_t cpp_iterations = (18);
+QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+	const int64_t cpp_iterations = (23);
 
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++: Fibonacci",
@@ -145,7 +145,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 			}
 
 			int f(){
-				for (i in 0...18) {
+				for (i in 0...23) {
 					a = fibonacci(i);
 				}
 				return 8;

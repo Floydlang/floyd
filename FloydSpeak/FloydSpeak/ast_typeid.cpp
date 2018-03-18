@@ -609,14 +609,6 @@ namespace floyd {
 	}
 
 
-	json_t values_to_json_array(const std::vector<value_t>& values){
-		std::vector<json_t> r;
-		for(const auto i: values){
-			const auto j = value_to_ast_json(i)._value;
-			r.push_back(j);
-		}
-		return json_t::make_array(r);
-	}
 
 
 

@@ -116,9 +116,6 @@ namespace floyd {
 */
 	};
 
-
-	json_t values_to_json_array(const std::vector<value_t>& values);
-
 }
 
 
