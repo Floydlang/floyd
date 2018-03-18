@@ -350,17 +350,16 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	QUARK_ASSERT(right.check_invariant());
 	QUARK_ASSERT(left.get_type() == right.get_type());
 
-	const auto type = left._typeid;
-	if(type.is_null()){
+	if(left.is_null()){
 		return 0;
 	}
-	else if(type.is_bool()){
+	else if(left.is_bool()){
 		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
 	}
-	else if(type.is_int()){
+	else if(left.is_int()){
 		return limit(left.get_int_value() - right.get_int_value(), -1, 1);
 	}
-	else if(type.is_float()){
+	else if(left.is_float()){
 		const auto a = left.get_float_value();
 		const auto b = right.get_float_value();
 		if(a > b){
@@ -373,13 +372,13 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return 0;
 		}
 	}
-	else if(type.is_string()){
+	else if(left.is_string()){
 		return compare_string(left.get_string_value(), right.get_string_value());
 	}
-	else if(type.is_json_value()){
+	else if(left.is_json_value()){
 		return compare_json_values(left.get_json_value(), right.get_json_value());
 	}
-	else if(type.is_typeid()){
+	else if(left.is_typeid()){
 	//???
 		if(left.get_typeid_value() == right.get_typeid_value()){
 			return 0;
@@ -388,7 +387,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return -1;//??? Hack -- should return +1 depending on values.
 		}
 	}
-	else if(type.is_struct()){
+	else if(left.is_struct()){
 		//	Make sure the EXACT struct types are the same -- not only that they are both structs
 		if(left.get_type() != right.get_type()){
 			throw std::runtime_error("Cannot compare structs of different type.");
@@ -403,7 +402,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			}
 		}
 	}
-	else if(type.is_vector()){
+	else if(left.is_vector()){
 		//	Make sure the EXACT types are the same -- not only that they are both vectors.
 		if(left.get_type() != right.get_type()){
 			throw std::runtime_error("Cannot compare structs of different type.");
@@ -414,7 +413,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return compare_vector_true_deep(left_vec, right_vec);
 		}
 	}
-	else if(type.is_dict()){
+	else if(left.is_dict()){
 		//	Make sure the EXACT types are the same -- not only that they are both dicts.
 		if(left.get_type() != right.get_type()){
 			throw std::runtime_error("Cannot compare dicts of different type.");
@@ -425,11 +424,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			return compare_dict_true_deep(left2, right2);
 		}
 	}
-	else if(type.is_function()){
-		QUARK_ASSERT(false);
-		return 0;
-	}
-	else if(type.is_unresolved_type_identifier()){
+	else if(left.is_function()){
 		QUARK_ASSERT(false);
 		return 0;
 	}
@@ -445,46 +440,21 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 
 
 bool value_t::check_invariant() const{
-	QUARK_ASSERT(_typeid.check_invariant());
-
-	const auto base_type = _typeid.get_base_type();
-	if(base_type == base_type::k_null){
+	const auto type_int = _type_int;
+	if(type_int == type_int::k_null){
 		QUARK_ASSERT(!_ext);
 	}
-	else if(base_type == base_type::k_bool){
+	else if(type_int == type_int::k_bool){
 		QUARK_ASSERT(!_ext);
 	}
-	else if(base_type == base_type::k_int){
+	else if(type_int == type_int::k_int){
 		QUARK_ASSERT(!_ext);
 	}
-	else if(base_type == base_type::k_float){
+	else if(type_int == type_int::k_float){
 		QUARK_ASSERT(!_ext);
 	}
-	else if(base_type == base_type::k_string){
+	else if(type_int == type_int::k_ext){
 		QUARK_ASSERT(_ext && _ext->check_invariant());
-	}
-	else if(base_type == base_type::k_json_value){
-		QUARK_ASSERT(_ext && _ext->check_invariant());
-	}
-
-	else if(base_type == base_type::k_typeid){
-		QUARK_ASSERT(_ext && _ext->check_invariant());
-	}
-	else if(base_type == base_type::k_struct){
-		QUARK_ASSERT(_ext && _ext->check_invariant());
-	}
-	else if(base_type == base_type::k_vector){
-		QUARK_ASSERT(_ext && _ext->check_invariant());
-	}
-	else if(base_type == base_type::k_dict){
-		QUARK_ASSERT(_ext && _ext->check_invariant());
-	}
-	else if(base_type == base_type::k_function){
-		QUARK_ASSERT(_ext && _ext->check_invariant());
-	}
-	else if(base_type == base_type::k_unresolved_type_identifier){
-		//	 Cannot have a value of unknown type.
-		QUARK_ASSERT(false);
 	}
 	else {
 		QUARK_ASSERT(false);
@@ -655,7 +625,7 @@ std::string value_and_type_to_string(const value_t& value) {
 
 
 		value_t::value_t(const char s[]) :
-			_typeid(typeid_t::make_string()),
+			_type_int(type_int::k_ext),
 			_ext(std::make_shared<value_ext_t>(value_ext_t{std::string(s)}))
 		{
 			QUARK_ASSERT(s != nullptr);
@@ -668,7 +638,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const std::string& s) :
-			_typeid(typeid_t::make_string()),
+			_type_int(type_int::k_ext),
 			_ext(std::make_shared<value_ext_t>(value_ext_t{s}))
 		{
 #if DEBUG
@@ -679,7 +649,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const std::shared_ptr<json_t>& s) :
-			_typeid(typeid_t::make_json_value()),
+			_type_int(type_int::k_ext),
 			_ext(std::make_shared<value_ext_t>(value_ext_t(s)))
 		{
 			QUARK_ASSERT(s != nullptr && s->check_invariant());
@@ -691,7 +661,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& type) :
-			_typeid(typeid_t::make_typeid()),
+			_type_int(type_int::k_ext),
 			_ext(std::make_shared<value_ext_t>(value_ext_t(type)))
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -704,7 +674,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& struct_type, std::shared_ptr<struct_instance_t>& instance) :
-			_typeid(struct_type),
+			_type_int(type_int::k_ext),
 			_ext(std::make_shared<value_ext_t>(value_ext_t(struct_type, instance)))
 		{
 			QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
@@ -718,8 +688,8 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& element_type, const std::vector<value_t>& elements) :
-			_typeid(typeid_t::make_vector(element_type)),
-			_ext(std::make_shared<value_ext_t>(value_ext_t(_typeid, elements)))
+			_type_int(type_int::k_ext),
+			_ext(std::make_shared<value_ext_t>(value_ext_t(typeid_t::make_vector(element_type), elements)))
 		{
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
@@ -729,8 +699,8 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries) :
-			_typeid(typeid_t::make_dict(value_type)),
-			_ext(std::make_shared<value_ext_t>(value_ext_t(_typeid, entries)))
+			_type_int(type_int::k_ext),
+			_ext(std::make_shared<value_ext_t>(value_ext_t(typeid_t::make_dict(value_type), entries)))
 		{
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
@@ -740,7 +710,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& def) :
-			_typeid(type),
+			_type_int(type_int::k_ext),
 			_ext(std::make_shared<value_ext_t>(value_ext_t(type, def)))
 		{
 			QUARK_ASSERT(def);
@@ -997,6 +967,35 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 value_t value_t::make_null(){
 	return value_t();
 }
+
+
+		//	Used internally in check_invariant() -- don't call check_invariant().
+		typeid_t value_t::get_type() const{
+//			QUARK_ASSERT(check_invariant());
+
+			if(_type_int == k_null){
+				return typeid_t::make_null();
+			}
+			else if(_type_int == k_bool){
+				return typeid_t::make_bool();
+			}
+			else if(_type_int == k_int){
+				return typeid_t::make_int();
+			}
+			else if(_type_int == k_float){
+				return typeid_t::make_float();
+			}
+			else if(_type_int == k_ext){
+				QUARK_ASSERT(_ext);
+				return _ext->_type;
+			}
+			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
+			}
+		}
+
+
 
 
 value_t value_t::make_bool(bool value){
