@@ -469,9 +469,10 @@ namespace floyd {
 	struct value_ext_t {
 		public: bool check_invariant() const{
 
+			QUARK_ASSERT(_type.check_invariant());
 			QUARK_ASSERT(_typeid_value.check_invariant());
 
-			const auto base_type = _type;
+			const auto base_type = _type.get_base_type();
 			if(base_type == base_type::k_string){
 //				QUARK_ASSERT(_string);
 				QUARK_ASSERT(_json_value == nullptr);
@@ -555,14 +556,14 @@ namespace floyd {
 
 
 		public: value_ext_t(const std::string& s) :
-			_type(base_type::k_string),
+			_type(typeid_t::make_string()),
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: value_ext_t(const std::shared_ptr<json_t>& s) :
-			_type(base_type::k_json_value),
+			_type(typeid_t::make_json_value()),
 			_json_value(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -570,15 +571,14 @@ namespace floyd {
 
 		public: value_ext_t(const typeid_t& s);
 
-		public: value_ext_t(std::shared_ptr<struct_instance_t>& s);
-		public: value_ext_t(const std::vector<value_t>& s);
-		public: value_ext_t(const std::map<std::string, value_t>& s);
-		public: value_ext_t(const std::shared_ptr<const function_definition_t>& s);
+		public: value_ext_t(const typeid_t& type, std::shared_ptr<struct_instance_t>& s);
+		public: value_ext_t(const typeid_t& type, const std::vector<value_t>& s);
+		public: value_ext_t(const typeid_t& type, const std::map<std::string, value_t>& s);
+		public: value_ext_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& s);
 
 
 
-		public: base_type _type;
-
+		private: typeid_t _type;
 		public: std::string _string;
 		public: std::shared_ptr<json_t> _json_value;
 		public: typeid_t _typeid_value = typeid_t::make_null();

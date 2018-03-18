@@ -142,36 +142,36 @@ namespace floyd {
 
 
 		value_ext_t::value_ext_t(const typeid_t& s) :
-			_type(base_type::k_typeid),
+			_type(typeid_t::make_typeid()),
 			_typeid_value(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 
-		value_ext_t::value_ext_t(std::shared_ptr<struct_instance_t>& s) :
-			_type(base_type::k_struct),
+		value_ext_t::value_ext_t(const typeid_t& type, std::shared_ptr<struct_instance_t>& s) :
+			_type(type),
 			_struct(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_ext_t::value_ext_t(const std::vector<value_t>& s) :
-			_type(base_type::k_vector),
+		value_ext_t::value_ext_t(const typeid_t& type, const std::vector<value_t>& s) :
+			_type(type),
 			_vector_elements(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_ext_t::value_ext_t(const std::map<std::string, value_t>& s) :
-			_type(base_type::k_dict),
+		value_ext_t::value_ext_t(const typeid_t& type, const std::map<std::string, value_t>& s) :
+			_type(type),
 			_dict_entries(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_ext_t::value_ext_t(const std::shared_ptr<const function_definition_t>& s) :
-			_type(base_type::k_function),
+		value_ext_t::value_ext_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& s) :
+			_type(type),
 			_function(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -184,7 +184,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			const auto base_type = _type;
+			const auto base_type = _type.get_base_type();
 			if(base_type == base_type::k_string){
 				return _string == other._string;
 			}
@@ -705,7 +705,7 @@ std::string value_and_type_to_string(const value_t& value) {
 
 		value_t::value_t(const typeid_t& struct_type, std::shared_ptr<struct_instance_t>& instance) :
 			_typeid(struct_type),
-			_ext(std::make_shared<value_ext_t>(value_ext_t(instance)))
+			_ext(std::make_shared<value_ext_t>(value_ext_t(struct_type, instance)))
 		{
 			QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
 			QUARK_ASSERT(instance && instance->check_invariant());
@@ -719,7 +719,7 @@ std::string value_and_type_to_string(const value_t& value) {
 
 		value_t::value_t(const typeid_t& element_type, const std::vector<value_t>& elements) :
 			_typeid(typeid_t::make_vector(element_type)),
-			_ext(std::make_shared<value_ext_t>(value_ext_t(elements)))
+			_ext(std::make_shared<value_ext_t>(value_ext_t(_typeid, elements)))
 		{
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
@@ -730,7 +730,7 @@ std::string value_and_type_to_string(const value_t& value) {
 
 		value_t::value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries) :
 			_typeid(typeid_t::make_dict(value_type)),
-			_ext(std::make_shared<value_ext_t>(value_ext_t(entries)))
+			_ext(std::make_shared<value_ext_t>(value_ext_t(_typeid, entries)))
 		{
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
@@ -741,7 +741,7 @@ std::string value_and_type_to_string(const value_t& value) {
 
 		value_t::value_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& def) :
 			_typeid(type),
-			_ext(std::make_shared<value_ext_t>(value_ext_t(def)))
+			_ext(std::make_shared<value_ext_t>(value_ext_t(type, def)))
 		{
 			QUARK_ASSERT(def);
 
