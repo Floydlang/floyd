@@ -54,8 +54,6 @@ namespace floyd {
 
 
 
-
-
 	std::string vector_instance_to_compact_string(const std::vector<value_t>& elements0){
 		std::vector<std::string> elements;
 		for(const auto e: elements0){
@@ -65,9 +63,6 @@ namespace floyd {
 //		return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
 		return "[" + concat_strings_with_divider(elements, ", ") + "]";
 	}
-
-
-
 
 
 
@@ -372,7 +367,7 @@ bool value_t::check_invariant() const{
 
 	const auto base_type = _typeid.get_base_type();
 	if(base_type == base_type::k_null){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -381,7 +376,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_bool){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -390,7 +385,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_int){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -399,7 +394,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_float){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -408,7 +403,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_string){
-//				QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -417,7 +412,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_json_value){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value != nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -429,7 +424,7 @@ bool value_t::check_invariant() const{
 	}
 
 	else if(base_type == base_type::k_typeid){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 //		QUARK_ASSERT(_typeid_value != typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -438,7 +433,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_struct){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct != nullptr);
@@ -449,7 +444,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_struct && _struct->check_invariant());
 	}
 	else if(base_type == base_type::k_vector){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -458,7 +453,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_dict){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -467,7 +462,7 @@ bool value_t::check_invariant() const{
 		QUARK_ASSERT(_function == nullptr);
 	}
 	else if(base_type == base_type::k_function){
-		QUARK_ASSERT(_string == "");
+		QUARK_ASSERT(!_ext);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_null());
 		QUARK_ASSERT(_struct == nullptr);
@@ -815,9 +810,6 @@ value_t value_t::make_float(float value){
 	return value_t(value);
 }
 
-value_t value_t::make_string(const std::string& value){
-	return value_t(value);
-}
 
 value_t value_t::make_json_value(const json_t& v){
 	auto f = std::make_shared<json_t>(v);

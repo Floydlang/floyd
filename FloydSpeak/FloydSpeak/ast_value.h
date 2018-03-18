@@ -86,6 +86,53 @@ namespace floyd {
 	typeid_t get_function_type(const function_definition_t& f);
 
 
+	//////////////////////////////////////////////////		value_ext_t
+
+
+	struct value_ext_t {
+
+		public: bool check_invariant() const{
+			return true;
+		}
+
+		public: bool operator==(const value_ext_t& other) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
+			return _string == other._string;
+/*
+			else if(base_type == base_type::k_string){
+				return compare_shared_values(_ext, other._ext);
+			}
+			else if(base_type == base_type::k_json_value){
+				return *_json_value == *other._json_value;
+			}
+			else if(base_type == base_type::k_typeid){
+				return _typeid_value == other._typeid_value;
+			}
+			else if(base_type == base_type::k_struct){
+				return *_struct == *other._struct;
+			}
+			else if(base_type == base_type::k_vector){
+				return _vector_elements == other._vector_elements;
+			}
+			else if(base_type == base_type::k_dict){
+				return _dict_entries == other._dict_entries;
+			}
+			else if(base_type == base_type::k_function){
+				return *_function == *other._function;
+			}
+			else {
+				QUARK_ASSERT(false);
+				throw std::exception();
+			}
+*/
+
+		}
+
+
+		public: std::string _string;
+	};
 
 
 
@@ -195,7 +242,9 @@ namespace floyd {
 		//------------------------------------------------		string
 
 
-		public: static value_t make_string(const std::string& value);
+		public: static value_t make_string(const std::string& value){
+			return value_t(value);
+		}
 		public: static inline value_t make_string(const char value[]){
 			return make_string(std::string(value));
 		}
@@ -210,7 +259,7 @@ namespace floyd {
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _string;
+			return _ext->_string;
 		}
 
 
@@ -337,7 +386,7 @@ namespace floyd {
 			_typeid(other._typeid),
 
 			_value_internals(other._value_internals),
-			_string(other._string),
+			_ext(other._ext),
 			_json_value(other._json_value),
 			_typeid_value(other._typeid_value),
 			_struct(other._struct),
@@ -388,7 +437,7 @@ namespace floyd {
 				return _value_internals._float == other._value_internals._float;
 			}
 			else if(base_type == base_type::k_string){
-				return _string == other._string;
+				return compare_shared_values(_ext, other._ext);
 			}
 			else if(base_type == base_type::k_json_value){
 				return *_json_value == *other._json_value;
@@ -441,7 +490,7 @@ namespace floyd {
 			_typeid.swap(other._typeid);
 
 			std::swap(_value_internals, other._value_internals);
-			std::swap(_string, other._string);
+			std::swap(_ext, other._ext);
 			std::swap(_json_value, other._json_value);
 			std::swap(_typeid_value, other._typeid_value);
 			std::swap(_struct, other._struct);
@@ -492,7 +541,7 @@ namespace floyd {
 
 		private: explicit value_t(const char s[]) :
 			_typeid(typeid_t::make_string()),
-			_string(s)
+			_ext(std::make_shared<value_ext_t>(value_ext_t{std::string(s)}))
 		{
 			QUARK_ASSERT(s != nullptr);
 
@@ -505,7 +554,7 @@ namespace floyd {
 
 		private: explicit value_t(const std::string& s) :
 			_typeid(typeid_t::make_string()),
-			_string(s)
+			_ext(std::make_shared<value_ext_t>(value_ext_t{s}))
 		{
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
@@ -605,7 +654,7 @@ namespace floyd {
 		};
 
 		private: value_internals_t _value_internals;
-		private: std::string _string = "";
+		private: std::shared_ptr<value_ext_t> _ext;
 		private: std::shared_ptr<json_t> _json_value;
 		private: typeid_t _typeid_value = typeid_t::make_null();
 		private: std::shared_ptr<struct_instance_t> _struct;
