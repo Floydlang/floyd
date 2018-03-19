@@ -92,7 +92,7 @@ namespace floyd {
 
 	struct environment_t {
 		public: const body_t* _body_ptr;
-		public: std::vector<value_t> _values;
+		public: std::vector<environment_t>::size_type _values_offset;
 	};
 
 
@@ -125,7 +125,9 @@ namespace floyd {
 
 		////////////////////////		STATE
 		public: std::shared_ptr<interpreter_imm_t> _imm;
-		public: environment_t* _globals;
+
+		//	Holds all values for all environments.
+		public: std::vector<value_t> _value_stack;
 		public: std::vector<environment_t> _call_stack;
 		public: std::vector<std::string> _print_output;
 	};

@@ -174,20 +174,19 @@ statement_result_t execute_body(
 {
 	QUARK_ASSERT(vm.check_invariant());
 
-	vector<value_t> values;
-	values.reserve(body._symbols.size());
+	const auto values_offset = vm._value_stack.size();
 	for(const auto& e: init_values){
-		values.push_back(e);
+		vm._value_stack.push_back(e);
 	}
 	for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
 		const auto& symbol = body._symbols[i];
-		values.push_back(symbol.second._const_value);
+		vm._value_stack.push_back(symbol.second._const_value);
 	}
-	const auto& temp = environment_t{ &body, values };
-	vm._call_stack.push_back(temp);
+	vm._call_stack.push_back(environment_t{ &body, values_offset });
 
 	const auto& r = execute_statements2(vm, body._statements);
 	vm._call_stack.pop_back();
+	vm._value_stack.resize(values_offset);
 
 	return r;
 }
@@ -196,12 +195,12 @@ statement_result_t execute_store2_statement(interpreter_t& vm, const statement_t
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& address = statement._dest_variable;
-
 	const auto& rhs_value = execute_expression(vm, statement._expression);
-
 	auto env = find_env_from_address(vm, address);
-	const auto lhs_value_deep_ptr = &env->_values[address._index];
-	*lhs_value_deep_ptr = rhs_value;
+	const auto pos = env->_values_offset + address._index;
+	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+	vm._value_stack[pos] = rhs_value;
+
 	return statement_result_t::make_no_output();
 }
 
@@ -352,7 +351,9 @@ const floyd::value_t* find_symbol_by_name_deep(const interpreter_t& vm, int dept
 	);
 	if(it != env->_body_ptr->_symbols.end()){
 		const auto index = it - env->_body_ptr->_symbols.begin();
-		return &env->_values[index];
+		const auto pos = env->_values_offset + index;
+		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+		return &vm._value_stack[pos];
 	}
 	else if(depth > 0){
 		return find_symbol_by_name_deep(vm, depth - 1, s);
@@ -489,11 +490,10 @@ value_t execute_load2_expression(interpreter_t& vm, const expression_t& e){
 	const auto& expr = *e.get_load2();
 
 	environment_t* env = find_env_from_address(vm, expr._address);
-	QUARK_ASSERT(expr._address._index >= 0 && expr._address._index < env->_values.size());
-	const auto& value = env->_values[expr._address._index];
-
+	const auto pos = env->_values_offset + expr._address._index;
+	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+	const auto& value = vm._value_stack[pos];
 	QUARK_ASSERT(value.get_type() == e.get_annotated_type() /*|| e.get_annotated_type().is_null()*/);
-
 	return value;
 }
 
@@ -943,10 +943,14 @@ value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 
 json_t interpreter_to_json(const interpreter_t& vm){
 	vector<json_t> callstack;
-	for(int i = 0 ; i < vm._call_stack.size() ; i++){
-		const auto e = &vm._call_stack[vm._call_stack.size() - 1 - i];
+	for(int env_index = 0 ; env_index < vm._call_stack.size() ; env_index++){
+		const auto e = &vm._call_stack[vm._call_stack.size() - 1 - env_index];
+
+		const auto local_end = (env_index == (vm._call_stack.size() - 1)) ? vm._value_stack.size() : vm._call_stack[vm._call_stack.size() - 1 - env_index + 1]._values_offset;
+		const auto local_count = local_end - e->_values_offset;
 		std::vector<json_t> values;
-		for(const auto&v: e->_values){
+		for(int local_index = 0 ; local_index < local_count ; local_index++){
+			const auto& v = vm._value_stack[e->_values_offset + local_index];
 			const auto& a = value_and_type_to_ast_json(v);
 			values.push_back(a._value);
 		}
@@ -1039,6 +1043,9 @@ statement_result_t call_host_function(interpreter_t& vm, int function_id, const 
 interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
+	_value_stack.reserve(1024);
+	_call_stack.reserve(32);
+
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto& host_functions = get_host_functions();
 	std::map<int, HOST_FUNCTION_PTR> host_functions2;
@@ -1051,17 +1058,14 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	const auto start_time = std::chrono::high_resolution_clock::now();
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, ast, host_functions2});
 
-	vector<value_t> values;
+
+	const auto values_offset = _value_stack.size();
 	const auto& body_ptr = _imm->_ast._globals;
-	values.reserve(body_ptr._symbols.size());
 	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
 		const auto& symbol = body_ptr._symbols[i];
-		values.push_back(symbol.second._const_value);
+		_value_stack.push_back(symbol.second._const_value);
 	}
-
-	//	Make the top-level environment = global scope.
-	const auto temp = environment_t{ &body_ptr, values };
-	_call_stack.push_back(temp);
+	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto& r = execute_statements2(*this, _imm->_ast._globals._statements);
@@ -1070,6 +1074,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 
 interpreter_t::interpreter_t(const interpreter_t& other) :
 	_imm(other._imm),
+	_value_stack(other._value_stack),
 	_call_stack(other._call_stack),
 	_print_output(other._print_output)
 {
@@ -1079,6 +1084,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 
 void interpreter_t::swap(interpreter_t& other) throw(){
 	other._imm.swap(this->_imm);
+	other._value_stack.swap(this->_value_stack);
 	_call_stack.swap(this->_call_stack);
 	other._print_output.swap(this->_print_output);
 }
