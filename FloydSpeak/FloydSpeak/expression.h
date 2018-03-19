@@ -294,6 +294,11 @@ namespace floyd {
 
 
 		public: struct call_expr_t : public expr_base_t {
+/*
+			virtual ~call_expr_t(){
+				QUARK_TRACE("test");
+			}
+*/
 			call_expr_t(
 				const expression_t& callee,
 				std::vector<expression_t> args

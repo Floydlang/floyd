@@ -137,7 +137,7 @@ namespace floyd {
 
 
 	/*
-		Evaluates an expression as far as possible.
+		Executes an expression as far as possible.
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/

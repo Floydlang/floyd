@@ -40,7 +40,7 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-value_t evaluate_call_expression(interpreter_t& vm, const expression_t& e);
+value_t execute_call_expression(interpreter_t& vm, const expression_t& e);
 
 
 environment_t* find_env_from_address(interpreter_t& vm, const variable_address_t& a){
@@ -67,14 +67,14 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 	if(type.is_json_value()){
 		QUARK_ASSERT(arg_values.size() == 1);
 
-		const auto arg = arg_values[0];
+		const auto& arg = arg_values[0];
 		const auto value = value_to_ast_json(arg);
 		return value_t::make_json_value(value._value);
 	}
 	else if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_typeid()){
 		QUARK_ASSERT(arg_values.size() == 1);
 
-		const auto arg = arg_values[0];
+		const auto& arg = arg_values[0];
 		if(type.is_string()){
 			if(arg.is_json_value() && arg.get_json_value().is_string()){
 				return value_t::make_string(arg.get_json_value().get_string());
@@ -107,19 +107,19 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 		return instance;
 	}
 	else if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
+		const auto& element_type = type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
 		return value_t::make_vector_value(element_type, arg_values);
 	}
 	else if(type.is_dict()){
-		const auto element_type = type.get_dict_value_type();
+		const auto& element_type = type.get_dict_value_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
 		std::map<string, value_t> m;
 		for(auto i = 0 ; i < arg_values.size() / 2 ; i++){
-			const auto key = arg_values[i * 2 + 0].get_string_value();
-			const auto value = arg_values[i * 2 + 1];
+			const auto& key = arg_values[i * 2 + 0].get_string_value();
+			const auto& value = arg_values[i * 2 + 1];
 			m.insert({ key, value });
 		}
 		return value_t::make_dict_value(element_type, m);
@@ -135,13 +135,14 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 	throw std::exception();
 }
 
+//??? stop using shared_ptr<> here!
 statement_result_t execute_statements2(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
 	int statement_index = 0;
 	while(statement_index < statements.size()){
-		const auto statement = statements[statement_index];
+		const auto& statement = statements[statement_index];
 		const auto& r = execute_statement(vm, *statement);
 		if(r._type == statement_result_t::k_return_unwind){
 			return r;
@@ -176,17 +177,17 @@ statement_result_t execute_body(
 
 	vector<value_t> values;
 	values.reserve(body._symbols.size());
-	for(const auto e: init_values){
+	for(const auto& e: init_values){
 		values.push_back(e);
 	}
 	for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
-		const auto symbol = body._symbols[i];
+		const auto& symbol = body._symbols[i];
 		values.push_back(symbol.second._const_value);
 	}
-	const auto temp = environment_t{ &body, values };
+	const auto& temp = environment_t{ &body, values };
 	vm._call_stack.push_back(temp);
 
-	const auto r = execute_statements2(vm, body._statements);
+	const auto& r = execute_statements2(vm, body._statements);
 	vm._call_stack.pop_back();
 
 	return r;
@@ -195,9 +196,9 @@ statement_result_t execute_body(
 statement_result_t execute_store2_statement(interpreter_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto address = statement._dest_variable;
+	const auto& address = statement._dest_variable;
 
-	const auto rhs_value = execute_expression(vm, statement._expression);
+	const auto& rhs_value = execute_expression(vm, statement._expression);
 
 	auto env = find_env_from_address(vm, address);
 	const auto lhs_value_deep_ptr = &env->_values[address._index];
@@ -208,8 +209,8 @@ statement_result_t execute_store2_statement(interpreter_t& vm, const statement_t
 statement_result_t execute_return_statement(interpreter_t& vm, const statement_t::return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = statement._expression;
-	const auto rhs_value = execute_expression(vm, expr);
+	const auto& expr = statement._expression;
+	const auto& rhs_value = execute_expression(vm, expr);
 	return statement_result_t::make_return_unwind(rhs_value);
 }
 
@@ -236,10 +237,8 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 statement_result_t execute_ifelse_statement(interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto condition_result = execute_expression(vm, statement._condition);
-	QUARK_ASSERT(condition_result.is_bool());
-
-	const auto condition_result_value = condition_result;
+	const auto& condition_result_value = execute_expression(vm, statement._condition);
+	QUARK_ASSERT(condition_result_value.is_bool());
 	bool r = condition_result_value.get_bool_value();
 	if(r){
 		return execute_body(vm, statement._then_body, {});
@@ -252,16 +251,16 @@ statement_result_t execute_ifelse_statement(interpreter_t& vm, const statement_t
 statement_result_t execute_for_statement(interpreter_t& vm, const statement_t::for_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto start_value0 = execute_expression(vm, statement._start_expression);
-	const auto start_value_int = start_value0.get_int_value();
+	const auto& start_value0 = execute_expression(vm, statement._start_expression);
+	const auto& start_value_int = start_value0.get_int_value();
 
-	const auto end_value0 = execute_expression(vm, statement._end_expression);
-	const auto end_value_int = end_value0.get_int_value();
+	const auto& end_value0 = execute_expression(vm, statement._end_expression);
+	const auto& end_value_int = end_value0.get_int_value();
 
 	vector<value_t> space_for_iterator = {value_t::make_null()};
 	for(int x = start_value_int ; x <= end_value_int ; x++){
 		space_for_iterator[0] = value_t::make_int(x);
-		const auto return_value = execute_body(vm, statement._body, space_for_iterator);
+		const auto& return_value = execute_body(vm, statement._body, space_for_iterator);
 		if(return_value._type == statement_result_t::k_return_unwind){
 			return return_value;
 		}
@@ -274,12 +273,11 @@ statement_result_t execute_while_statement(interpreter_t& vm, const statement_t:
 
 	bool again = true;
 	while(again){
-		const auto condition_value_expr = execute_expression(vm, statement._condition);
-		const auto condition_value = condition_value_expr.get_bool_value();
+		const auto& condition_value_expr = execute_expression(vm, statement._condition);
+		const auto& condition_value = condition_value_expr.get_bool_value();
 
 		if(condition_value){
-			const auto result = execute_body(vm, statement._body, {});
-			const auto return_value = result;
+			const auto& return_value = execute_body(vm, statement._body, {});
 			if(return_value._type == statement_result_t::k_return_unwind){
 				return return_value;
 			}
@@ -294,7 +292,7 @@ statement_result_t execute_while_statement(interpreter_t& vm, const statement_t:
 statement_result_t execute_expression_statement(interpreter_t& vm, const statement_t::expression_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto rhs_value = execute_expression(vm, statement._expression);
+	const auto& rhs_value = execute_expression(vm, statement._expression);
 	return statement_result_t::make_passive_expression_output(rhs_value);
 }
 
@@ -348,7 +346,7 @@ const floyd::value_t* find_symbol_by_name_deep(const interpreter_t& vm, int dept
 	QUARK_ASSERT(s.size() > 0);
 
 	const auto env = &vm._call_stack[depth];
-    const auto it = std::find_if(
+    const auto& it = std::find_if(
     	env->_body_ptr->_symbols.begin(),
     	env->_body_ptr->_symbols.end(),
     	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
@@ -388,13 +386,13 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 
 
 
-value_t evaluate_resolve_member_expression(interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
+value_t execute_resolve_member_expression(interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto parent_expr = execute_expression(vm, *expr._parent_address);
+	const auto& parent_expr = execute_expression(vm, *expr._parent_address);
 	QUARK_ASSERT(parent_expr.is_struct());
 
-	const auto struct_instance = parent_expr.get_struct_value();
+	const auto& struct_instance = parent_expr.get_struct_value();
 
 	int index = find_struct_member_index(*struct_instance->_def, expr._member_name);
 	QUARK_ASSERT(index != -1);
@@ -403,15 +401,15 @@ value_t evaluate_resolve_member_expression(interpreter_t& vm, const expression_t
 	return value;
 }
 
-value_t evaluate_lookup_element_expression(interpreter_t& vm, const expression_t::lookup_expr_t& expr){
+value_t execute_lookup_element_expression(interpreter_t& vm, const expression_t::lookup_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto parent_value = execute_expression(vm, *expr._parent_address);
-	const auto key_value = execute_expression(vm, *expr._lookup_key);
+	const auto& parent_value = execute_expression(vm, *expr._parent_address);
+	const auto& key_value = execute_expression(vm, *expr._lookup_key);
 	if(parent_value.is_string()){
 		QUARK_ASSERT(key_value.is_int());
 
-		const auto instance = parent_value.get_string_value();
+		const auto& instance = parent_value.get_string_value();
 		int lookup_index = key_value.get_int_value();
 		if(lookup_index < 0 || lookup_index >= instance.size()){
 			throw std::runtime_error("Lookup in string: out of bounds.");
@@ -424,25 +422,25 @@ value_t evaluate_lookup_element_expression(interpreter_t& vm, const expression_t
 	}
 	else if(parent_value.is_json_value()){
 		//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
-		const auto parent_json_value = parent_value.get_json_value();
+		const auto& parent_json_value = parent_value.get_json_value();
 		if(parent_json_value.is_object()){
 			QUARK_ASSERT(key_value.is_string());
-			const auto lookup_key = key_value.get_string_value();
+			const auto& lookup_key = key_value.get_string_value();
 
 			//	get_object_element() throws if key can't be found.
-			const auto value = parent_json_value.get_object_element(lookup_key);
+			const auto& value = parent_json_value.get_object_element(lookup_key);
 			const auto value2 = value_t::make_json_value(value);
 			return value2;
 		}
 		else if(parent_json_value.is_array()){
 			QUARK_ASSERT(key_value.is_int());
-			const auto lookup_index = key_value.get_int_value();
+			const auto& lookup_index = key_value.get_int_value();
 
 			if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
 				throw std::runtime_error("Lookup in json_value array: out of bounds.");
 			}
 			else{
-				const auto value = parent_json_value.get_array_n(lookup_index);
+				const auto& value = parent_json_value.get_array_n(lookup_index);
 				const auto value2 = value_t::make_json_value(value);
 				return value2;
 			}
@@ -454,7 +452,7 @@ value_t evaluate_lookup_element_expression(interpreter_t& vm, const expression_t
 	else if(parent_value.is_vector()){
 		QUARK_ASSERT(key_value.is_int());
 
-		const auto vec = parent_value.get_vector_value();
+		const auto& vec = parent_value.get_vector_value();
 
 		int lookup_index = key_value.get_int_value();
 		if(lookup_index < 0 || lookup_index >= vec.size()){
@@ -468,10 +466,10 @@ value_t evaluate_lookup_element_expression(interpreter_t& vm, const expression_t
 	else if(parent_value.is_dict()){
 		QUARK_ASSERT(key_value.is_string());
 
-		const auto entries = parent_value.get_dict_value();
+		const auto& entries = parent_value.get_dict_value();
 		const string key = key_value.get_string_value();
 
-		const auto found_it = entries.find(key);
+		const auto& found_it = entries.find(key);
 		if(found_it == entries.end()){
 			throw std::runtime_error("Lookup in dict: key not found.");
 		}
@@ -486,29 +484,29 @@ value_t evaluate_lookup_element_expression(interpreter_t& vm, const expression_t
 	}
 }
 
-value_t evaluate_load2_expression(interpreter_t& vm, const expression_t& e){
+value_t execute_load2_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_load2();
+	const auto& expr = *e.get_load2();
 
 	environment_t* env = find_env_from_address(vm, expr._address);
 	QUARK_ASSERT(expr._address._index >= 0 && expr._address._index < env->_values.size());
-	const auto value = env->_values[expr._address._index];
+	const auto& value = env->_values[expr._address._index];
 
 	QUARK_ASSERT(value.get_type() == e.get_annotated_type() /*|| e.get_annotated_type().is_null()*/);
 
 	return value;
 }
 
-value_t evaluate_construct_value_expression(interpreter_t& vm, const expression_t& e){
+value_t execute_construct_value_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_construct_value();
+	const auto& expr = *e.get_construct_value();
 
 	if(expr._value_type2.is_vector()){
 		const std::vector<expression_t>& elements = expr._args;
-		const auto root_value_type = expr._value_type2;
-		const auto element_type = root_value_type.get_vector_element_type();
+		const auto& root_value_type = expr._value_type2;
+		const auto& element_type = root_value_type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
 		//	An empty vector is encoded as a constant value by pass3, not a vector-definition-expression.
@@ -518,8 +516,8 @@ value_t evaluate_construct_value_expression(interpreter_t& vm, const expression_
 		QUARK_ASSERT(element_type.is_null() == false);
 
 		std::vector<value_t> elements2;
-		for(const auto m: elements){
-			const auto element = execute_expression(vm, m);
+		for(const auto& m: elements){
+			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
 
@@ -532,8 +530,8 @@ value_t evaluate_construct_value_expression(interpreter_t& vm, const expression_
 	}
 	else if(expr._value_type2.is_dict()){
 		const auto& elements = expr._args;
-		const auto root_value_type = expr._value_type2;
-		const auto element_type = root_value_type.get_dict_value_type();
+		const auto& root_value_type = expr._value_type2;
+		const auto& element_type = root_value_type.get_dict_value_type();
 
 		//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
 		QUARK_ASSERT(elements.empty() == false);
@@ -543,10 +541,10 @@ value_t evaluate_construct_value_expression(interpreter_t& vm, const expression_
 
 		std::vector<value_t> elements2;
 		for(auto i = 0 ; i < elements.size() / 2 ; i++){
-			const auto key_expr = elements[i * 2 + 0];
-			const auto value_expr = elements[i * 2 + 1];
+			const auto& key_expr = elements[i * 2 + 0];
+			const auto& value_expr = elements[i * 2 + 1];
 
-			const auto value = execute_expression(vm, value_expr);
+			const auto& value = execute_expression(vm, value_expr);
 			const string key = key_expr.get_literal().get_string_value();
 			elements2.push_back(value_t::make_string(key));
 			elements2.push_back(value);
@@ -556,7 +554,7 @@ value_t evaluate_construct_value_expression(interpreter_t& vm, const expression_
 	else if(expr._value_type2.is_struct()){
 		std::vector<value_t> elements2;
 		for(const auto m: expr._args){
-			const auto element = execute_expression(vm, m);
+			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
 		return construct_value_from_typeid(vm, expr._value_type2, elements2);
@@ -564,12 +562,12 @@ value_t evaluate_construct_value_expression(interpreter_t& vm, const expression_
 	else{
 		QUARK_ASSERT(expr._args.size() == 1);
 
-		const auto element = execute_expression(vm, expr._args[0]);
+		const auto& element = execute_expression(vm, expr._args[0]);
 		return construct_value_from_typeid(vm, expr._value_type2, { element });
 	}
 }
 
-value_t evaluate_arithmetic_unary_minus_expression(interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
+value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& c = execute_expression(vm, *expr._expr);
@@ -601,15 +599,15 @@ value_t evaluate_arithmetic_unary_minus_expression(interpreter_t& vm, const expr
 	}
 }
 
-value_t evaluate_conditional_operator_expression(interpreter_t& vm, const expression_t::conditional_expr_t& expr){
+value_t execute_conditional_operator_expression(interpreter_t& vm, const expression_t::conditional_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto cond_result = execute_expression(vm, *expr._condition);
+	const auto& cond_result = execute_expression(vm, *expr._condition);
 	QUARK_ASSERT(cond_result.is_bool());
 	const bool cond_flag = cond_result.get_bool_value();
 
-	//	!!! Only evaluate the CHOSEN expression. Not that important since functions are pure.
+	//	!!! Only execute the CHOSEN expression. Not that important since functions are pure.
 	if(cond_flag){
 		return execute_expression(vm, *expr._a);
 	}
@@ -618,12 +616,11 @@ value_t evaluate_conditional_operator_expression(interpreter_t& vm, const expres
 	}
 }
 
-value_t evaluate_comparison_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+value_t execute_comparison_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	//	First evaluate all inputs to our operation.
-	const auto left_constant = execute_expression(vm, *simple2_expr._left);
-	const auto right_constant = execute_expression(vm, *simple2_expr._right);
+	const auto& left_constant = execute_expression(vm, *simple2_expr._left);
+	const auto& right_constant = execute_expression(vm, *simple2_expr._right);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
 	//	Do generic functionallity, independant on type.
@@ -658,15 +655,14 @@ value_t evaluate_comparison_expression(interpreter_t& vm, expression_type op, co
 	}
 }
 
-value_t evaluate_arithmetic_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	//	First evaluate all inputs to our operation.
-	const auto left_constant = execute_expression(vm, *simple2_expr._left);
-	const auto right_constant = execute_expression(vm, *simple2_expr._right);
+	const auto& left_constant = execute_expression(vm, *simple2_expr._left);
+	const auto& right_constant = execute_expression(vm, *simple2_expr._right);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
-	const auto type_mode = left_constant.get_type();
+	const auto& type_mode = left_constant.get_type();
 
 	//	bool
 	if(type_mode.is_bool()){
@@ -760,8 +756,8 @@ value_t evaluate_arithmetic_expression(interpreter_t& vm, expression_type op, co
 
 	//	string
 	else if(type_mode.is_string()){
-		const auto left = left_constant.get_string_value();
-		const auto right = right_constant.get_string_value();
+		const auto& left = left_constant.get_string_value();
+		const auto& right = right_constant.get_string_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
 			return value_t::make_string(left + right);
@@ -778,14 +774,12 @@ value_t evaluate_arithmetic_expression(interpreter_t& vm, expression_type op, co
 
 	//	vector
 	else if(type_mode.is_vector()){
-		//	Improves vectors before using them.
-		const auto element_type = left_constant.get_type().get_vector_element_type();
-
+		const auto& element_type = left_constant.get_type().get_vector_element_type();
 		if(op == expression_type::k_arithmetic_add__2){
 			auto elements2 = left_constant.get_vector_value();
 			elements2.insert(elements2.end(), right_constant.get_vector_value().begin(), right_constant.get_vector_value().end());
 
-			const auto value2 = value_t::make_vector_value(element_type, elements2);
+			const auto& value2 = value_t::make_vector_value(element_type, elements2);
 			return value2;
 		}
 		else{
@@ -805,26 +799,26 @@ value_t execute_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto op = e.get_operation();
+	const auto& op = e.get_operation();
 
 	if(op == expression_type::k_literal){
 		return e.get_literal();
 	}
 	else if(op == expression_type::k_resolve_member){
-		return evaluate_resolve_member_expression(vm, *e.get_resolve_member());
+		return execute_resolve_member_expression(vm, *e.get_resolve_member());
 	}
 	else if(op == expression_type::k_lookup_element){
-		return evaluate_lookup_element_expression(vm, *e.get_lookup());
+		return execute_lookup_element_expression(vm, *e.get_lookup());
 	}
 	else if(op == expression_type::k_load){
 		QUARK_ASSERT(false);
 	}
 	else if(op == expression_type::k_load2){
-		return evaluate_load2_expression(vm, e);
+		return execute_load2_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_call){
-		return evaluate_call_expression(vm, e);
+		return execute_call_expression(vm, e);
 	}
 
 	else if(op == expression_type::k_define_struct){
@@ -835,22 +829,22 @@ value_t execute_expression(interpreter_t& vm, const expression_t& e){
 
 	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
-		const auto expr = e.get_function_definition();
+		const auto& expr = e.get_function_definition();
 		return value_t::make_function_value(expr->_def);
 	}
 
 	else if(op == expression_type::k_construct_value){
-		return evaluate_construct_value_expression(vm, e);
+		return execute_construct_value_expression(vm, e);
 	}
 
 	//	This can be desugared at compile time.
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return evaluate_arithmetic_unary_minus_expression(vm, *e.get_unary_minus());
+		return execute_arithmetic_unary_minus_expression(vm, *e.get_unary_minus());
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == expression_type::k_conditional_operator3){
-		return evaluate_conditional_operator_expression(vm, *e.get_conditional());
+		return execute_conditional_operator_expression(vm, *e.get_conditional());
 	}
 	else if (false
 		|| op == expression_type::k_comparison_smaller_or_equal__2
@@ -861,7 +855,7 @@ value_t execute_expression(interpreter_t& vm, const expression_t& e){
 		|| op == expression_type::k_logical_equal__2
 		|| op == expression_type::k_logical_nonequal__2
 	){
-		return evaluate_comparison_expression(vm, op, *e.get_simple__2());
+		return execute_comparison_expression(vm, op, *e.get_simple__2());
 	}
 	else if (false
 		|| op == expression_type::k_arithmetic_add__2
@@ -873,7 +867,7 @@ value_t execute_expression(interpreter_t& vm, const expression_t& e){
 		|| op == expression_type::k_logical_and__2
 		|| op == expression_type::k_logical_or__2
 	){
-		return evaluate_arithmetic_expression(vm, op, *e.get_simple__2());
+		return execute_arithmetic_expression(vm, op, *e.get_simple__2());
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -890,11 +884,11 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 
 	const auto& function_def = f.get_function_value();
 	if(function_def->_host_function != 0){
-		const auto r = call_host_function(vm, function_def->_host_function, args);
+		const auto& r = call_host_function(vm, function_def->_host_function, args);
 		return r;
 	}
 	else{
-		const auto return_type = f.get_type().get_function_return();
+		const auto& return_type = f.get_type().get_function_return();
 #if DEBUG
 		const auto arg_types = f.get_type().get_function_args();
 
@@ -908,7 +902,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 		}
 #endif
 
-		const auto r = execute_body(vm, *function_def->_body, args);
+		const auto& r = execute_body(vm, *function_def->_body, args);
 
 		// ??? move this check to pass3.
 		if(r._type != statement_result_t::k_return_unwind){
@@ -925,16 +919,17 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 	}
 }
 
-value_t evaluate_call_expression(interpreter_t& vm, const expression_t& e){
+value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto expr = *e.get_call();
+	const auto& expr = *e.get_call();
+
 	const auto& function_value = execute_expression(vm, *expr._callee);
 	QUARK_ASSERT(function_value.is_function());
 
 	vector<value_t> arg_values;
 	for(int i = 0 ; i < expr._args.size() ; i++){
-		const auto t = execute_expression(vm, expr._args[i]);
+		const auto& t = execute_expression(vm, expr._args[i]);
 		arg_values.push_back(t);
 	}
 
@@ -949,7 +944,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		const auto e = &vm._call_stack[vm._call_stack.size() - 1 - i];
 		std::vector<json_t> values;
 		for(const auto&v: e->_values){
-			const auto a = value_and_type_to_ast_json(v);
+			const auto& a = value_and_type_to_ast_json(v);
 			values.push_back(a._value);
 		}
 
@@ -968,7 +963,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 void test__execute_expression(const expression_t& e, const value_t& expected_value){
 	const ast_t ast;
 	interpreter_t interpreter(ast);
-	const auto e3 = execute_expression(interpreter, e);
+	const auto& e3 = execute_expression(interpreter, e);
 
 	ut_compare_jsons(value_to_ast_json(e3)._value, value_to_ast_json(expected_value)._value);
 }
@@ -1034,7 +1029,7 @@ statement_result_t call_host_function(interpreter_t& vm, int function_id, const 
 	//	arity
 //	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
-	const auto result = (host_function)(vm, args);
+	const auto& result = (host_function)(vm, args);
 	return statement_result_t::make_return_unwind(result);
 }
 
@@ -1042,11 +1037,11 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
-	const auto host_functions = get_host_functions();
+	const auto& host_functions = get_host_functions();
 	std::map<int, HOST_FUNCTION_PTR> host_functions2;
-	for(auto hf_kv: host_functions){
-		const auto function_id = hf_kv.second._signature._function_id;
-		const auto function_ptr = hf_kv.second._f;
+	for(auto& hf_kv: host_functions){
+		const auto& function_id = hf_kv.second._signature._function_id;
+		const auto& function_ptr = hf_kv.second._f;
 		host_functions2.insert({ function_id, function_ptr });
 	}
 
@@ -1057,7 +1052,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	const auto& body_ptr = _imm->_ast._globals;
 	values.reserve(body_ptr._symbols.size());
 	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
-		const auto symbol = body_ptr._symbols[i];
+		const auto& symbol = body_ptr._symbols[i];
 		values.push_back(symbol.second._const_value);
 	}
 
@@ -1066,7 +1061,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_call_stack.push_back(temp);
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements2(*this, _imm->_ast._globals._statements);
+	const auto& r = execute_statements2(*this, _imm->_ast._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1104,16 +1099,16 @@ ast_t program_to_ast2(const interpreter_context_t& context, const string& progra
 //	parser_context_t context{ quark::make_default_tracer() };
 //	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
 
-	const auto pass1 = floyd::parse_program2(context2, program);
-	const auto pass2 = run_pass2(context2._tracer, pass1);
-	const auto pass3 = floyd_pass3::run_pass3(context2._tracer, pass2);
+	const auto& pass1 = floyd::parse_program2(context2, program);
+	const auto& pass2 = run_pass2(context2._tracer, pass1);
+	const auto& pass3 = floyd_pass3::run_pass3(context2._tracer, pass2);
 	return pass3;
 }
 
 void print_vm_printlog(const interpreter_t& vm){
 	if(vm._print_output.empty() == false){
 		std::cout << "print output:\n";
-		for(const auto line: vm._print_output){
+		for(const auto& line: vm._print_output){
 			std::cout << line << "\n";
 		}
 	}
@@ -1133,9 +1128,9 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 	//	Runs global code.
 	auto vm = interpreter_t(ast);
 
-	const auto main_function = find_symbol_by_name(vm, "main");
+	const auto& main_function = find_symbol_by_name(vm, "main");
 	if(main_function != nullptr){
-		const auto result = call_function(vm, *main_function, args);
+		const auto& result = call_function(vm, *main_function, args);
 		return { vm, result };
 	}
 	else{
@@ -1146,9 +1141,9 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const ast_t& ast, const vector<floyd::value_t>& args){
 	auto vm = interpreter_t(ast);
 
-	const auto main_func = find_symbol_by_name(vm, "main");
+	const auto& main_func = find_symbol_by_name(vm, "main");
 	if(main_func != nullptr){
-		const auto r = call_function(vm, *main_func, args);
+		const auto& r = call_function(vm, *main_func, args);
 		return { vm, r };
 	}
 	else{
