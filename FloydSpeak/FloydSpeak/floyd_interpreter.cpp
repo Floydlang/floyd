@@ -135,7 +135,6 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 	throw std::exception();
 }
 
-//??? stop using shared_ptr<> here!
 statement_result_t execute_statements2(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
@@ -888,7 +887,6 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 		return r;
 	}
 	else{
-		const auto& return_type = f.get_type().get_function_return();
 #if DEBUG
 		const auto arg_types = f.get_type().get_function_args();
 
@@ -904,6 +902,8 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 
 		const auto& r = execute_body(vm, *function_def->_body, args);
 
+/*
+		const auto& return_type = f.get_type().get_function_return();
 		// ??? move this check to pass3.
 		if(r._type != statement_result_t::k_return_unwind){
 			throw std::runtime_error("Function missing return statement");
@@ -914,8 +914,10 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 			throw std::runtime_error("Function return type wrong.");
 		}
 		else{
-			return r;
 		}
+*/
+
+		return r;
 	}
 }
 

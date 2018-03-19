@@ -1057,7 +1057,6 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	Magic: a function taking ONE argument of type NULL: variable arguments count of any type. Like c-lang (...).
 */
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& vm, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
-
 	if(callee_args.size() == 1 && callee_args[0].is_null()){
 		auto vm_acc = vm;
 		vector<expression_t> call_args2;
@@ -1167,6 +1166,21 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 	callee(callee_args)		== function def: int(
 	a = my_func(x, 13, "cat");
 	a = json_value(1 + 3);
+*/
+/*
+???
+		const auto& return_type = f.get_type().get_function_return();
+		// ??? move this check to pass3.
+		if(r._type != statement_result_t::k_return_unwind){
+			throw std::runtime_error("Function missing return statement");
+		}
+
+		// ??? move this check to pass3.
+		else if(r._output.get_type().is_struct() == false && r._output.get_type() != return_type){
+			throw std::runtime_error("Function return type wrong.");
+		}
+		else{
+		}
 */
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
