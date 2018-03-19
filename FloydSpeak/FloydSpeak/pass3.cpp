@@ -1098,7 +1098,7 @@ bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr
 		QUARK_ASSERT(callee != nullptr);
 
 		if(callee->_const_value.is_function()){
-			return callee->_const_value.get_function_value()->_host_function != 0;
+			return callee->_const_value.get_function_value()->_host_function_id != 0;
 		}
 		else{
 			return false;
@@ -1115,7 +1115,7 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 
 	const auto callee = resolve_symbol_by_address(vm, callee_expr.get_load2()->_address);
 	QUARK_ASSERT(callee != nullptr);
-	const auto host_function_id = callee->_const_value.get_function_value()->_host_function;
+	const auto host_function_id = callee->_const_value.get_function_value()->_host_function_id;
 
 	const auto& host_functions = vm._imm->_host_functions;
 	const auto found_it = find_if(host_functions.begin(), host_functions.end(), [&](const std::pair<std::string, floyd::host_function_signature_t>& kv){ return kv.second._function_id == host_function_id; });

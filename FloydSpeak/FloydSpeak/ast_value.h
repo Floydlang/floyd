@@ -61,12 +61,12 @@ namespace floyd {
 		);
 		public: function_definition_t(
 			const std::vector<member_t>& args,
-			int host_function,
+			int host_function_id,
 			const typeid_t& return_type
 		);
 
 		public: bool check_invariant() const {
-			if(_host_function != 0){
+			if(_host_function_id != 0){
 				QUARK_ASSERT(!_body);
 			}
 			else{
@@ -78,7 +78,7 @@ namespace floyd {
 
 		const std::vector<member_t> _args;
 		const std::shared_ptr<body_t> _body;
-		const int _host_function;
+		const int _host_function_id;
 		const typeid_t _return_type;
 	};
 

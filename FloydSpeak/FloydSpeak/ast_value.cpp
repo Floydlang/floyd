@@ -91,7 +91,7 @@ namespace floyd {
 	:
 		_args(args),
 		_body(body),
-		_host_function(0),
+		_host_function_id(0),
 		_return_type(return_type)
 	{
 	}
@@ -103,7 +103,7 @@ namespace floyd {
 	)
 	:
 		_args(args),
-		_host_function(host_function),
+		_host_function_id(host_function),
 		_return_type(return_type)
 	{
 	}
@@ -112,7 +112,7 @@ namespace floyd {
 		return
 			lhs._args == rhs._args
 			&& compare_shared_values(lhs._body, rhs._body)
-			&& lhs._host_function == rhs._host_function
+			&& lhs._host_function_id == rhs._host_function_id
 			&& lhs._return_type == rhs._return_type;
 	}
 

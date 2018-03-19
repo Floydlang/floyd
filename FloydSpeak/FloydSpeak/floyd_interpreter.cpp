@@ -887,8 +887,8 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 #endif
 
 	const auto& function_def = f.get_function_value();
-	if(function_def->_host_function != 0){
-		const auto& r = call_host_function(vm, function_def->_host_function, args);
+	if(function_def->_host_function_id != 0){
+		const auto& r = call_host_function(vm, function_def->_host_function_id, args);
 		return r;
 	}
 	else{
@@ -928,21 +928,71 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 
 value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
 
 	const auto& expr = *e.get_call();
 
 	const auto& function_value = execute_expression(vm, *expr._callee);
 	QUARK_ASSERT(function_value.is_function());
+	const auto& function_def = function_value.get_function_value();
 
-	vector<value_t> arg_values;
-	for(int i = 0 ; i < expr._args.size() ; i++){
-		const auto& t = execute_expression(vm, expr._args[i]);
-		arg_values.push_back(t);
+	if(function_def->_host_function_id != 0){
+		const auto& host_function = vm._imm->_host_functions.at(function_def->_host_function_id);
+
+		//	arity
+		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
+
+		std::vector<value_t> arg_values;
+		arg_values.reserve(expr._args.size());
+		for(int i = 0 ; i < expr._args.size() ; i++){
+			const auto& arg_expr = expr._args[i];
+			QUARK_ASSERT(arg_expr.check_invariant());
+
+			const auto& t = execute_expression(vm, arg_expr);
+			arg_values.push_back(t);
+		}
+		const auto& result = (host_function)(vm, arg_values);
+		return result;
 	}
+	else{
+		const auto values_offset = vm._value_stack.size();
 
-	const auto& result = call_function(vm, function_value, arg_values);
-	QUARK_ASSERT(result._type == statement_result_t::k_return_unwind);
-	return result._output;
+		for(int i = 0 ; i < expr._args.size() ; i++){
+			const auto& arg_expr = expr._args[i];
+			QUARK_ASSERT(arg_expr.check_invariant());
+
+			const auto& t = execute_expression(vm, arg_expr);
+			vm._value_stack.push_back(t);
+		}
+		if(function_def->_body->_symbols.empty() == false){
+			for(vector<value_t>::size_type i = expr._args.size() ; i < function_def->_body->_symbols.size() ; i++){
+				const auto& symbol = function_def->_body->_symbols[i];
+				vm._value_stack.push_back(symbol.second._const_value);
+			}
+		}
+		vm._call_stack.push_back(environment_t{ function_def->_body.get(), values_offset });
+
+		const auto& result = execute_statements2(vm, function_def->_body->_statements);
+		vm._call_stack.pop_back();
+		vm._value_stack.resize(values_offset);
+
+/*
+#if DEBUG
+		const auto arg_types = f.get_type().get_function_args();
+
+		//	arity
+		QUARK_ASSERT(args.size() == arg_types.size());
+
+		for(int i = 0 ; i < args.size() ; i++){
+			if(args[i].get_type() != arg_types[i]){
+				QUARK_ASSERT(false);
+			}
+		}
+#endif
+*/
+		QUARK_ASSERT(result._type == statement_result_t::k_return_unwind);
+		return result._output;
+	}
 }
 
 json_t interpreter_to_json(const interpreter_t& vm){
