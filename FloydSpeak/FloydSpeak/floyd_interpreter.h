@@ -91,16 +91,8 @@ namespace floyd {
 	*/
 
 	struct environment_t {
-		public: std::shared_ptr<environment_t> _prev_env;
 		public: const body_t* _body_ptr;
 		public: std::vector<value_t> _values;
-
-
-		public: static std::shared_ptr<environment_t> make_environment(
-			const std::shared_ptr<environment_t>& prev_env,
-			const body_t* body_ptr,
-			const std::vector<value_t>& init_values
-		);
 	};
 
 
@@ -134,7 +126,7 @@ namespace floyd {
 		////////////////////////		STATE
 		public: std::shared_ptr<interpreter_imm_t> _imm;
 		public: environment_t* _globals;
-		public: std::shared_ptr<environment_t> _env;
+		public: std::vector<environment_t> _call_stack;
 		public: std::vector<std::string> _print_output;
 	};
 
@@ -183,7 +175,7 @@ namespace floyd {
 
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
 	typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type);
-	floyd::value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s);
+	const floyd::value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.
