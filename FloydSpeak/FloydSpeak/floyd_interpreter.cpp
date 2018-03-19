@@ -1017,11 +1017,12 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	}
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(vm._imm->_program._bcgen_ast)._value },
+		{ "ast", bcprogram_to_json(vm._imm->_program) },
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
 
+/*
 void test__execute_expression(const expression_t& e, const value_t& expected_value){
 	const bc_program_t program;
 	interpreter_t interpreter(program);
@@ -1079,7 +1080,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "(3 * 4) * 5 == 60") {
 		value_t::make_int(60)
 	);
 }
-
+*/
 
 
 
@@ -1115,7 +1116,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 
 
 	const auto values_offset = _value_stack.size();
-	const auto& body_ptr = _imm->_program._bcgen_ast._globals;
+	const auto& body_ptr = _imm->_program._globals;
 	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
 		const auto& symbol = body_ptr._symbols[i];
 		_value_stack.push_back(symbol.second._const_value);
@@ -1123,7 +1124,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto& r = execute_statements2(*this, _imm->_program._bcgen_ast._globals._statements);
+	const auto& r = execute_statements2(*this, _imm->_program._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 

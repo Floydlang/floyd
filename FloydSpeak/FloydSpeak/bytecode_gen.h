@@ -109,12 +109,12 @@ namespace floyd {
 
 	struct bc_program_t {
 		public: bool check_invariant() const {
-			QUARK_ASSERT(_bcgen_ast.check_invariant());
+//			QUARK_ASSERT(_globals.check_invariant());
 			return true;
 		}
 
 //		const std::vector<const bc_instruction_t> _instructions;
-		floyd::ast_t _bcgen_ast;
+		public: const body_t _globals;
 	};
 
 
@@ -175,6 +175,8 @@ namespace floyd {
 
 
 	bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t& pass3);
+
+	json_t bcprogram_to_json(const bc_program_t& program);
 
 } //	floyd
 

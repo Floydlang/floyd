@@ -22,7 +22,6 @@ using std::make_shared;
 
 
 expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
-json_t bgenerator_to_json(const bgenerator_t& vm);
 expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
 std::vector<std::shared_ptr<statement_t>> bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
 body_t bcgen_body(bgenerator_t& vm, const body_t& body);
@@ -342,7 +341,7 @@ expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 	return expression_t::make_call(callee_expr, args2, e.get_annotated_type2());
 }
 
-json_t bgenerator_to_json(const bgenerator_t& vm){
+json_t bcprogram_to_json(const bc_program_t& program){
 	vector<json_t> callstack;
 /*
 	for(int env_index = 0 ; env_index < vm._call_stack.size() ; env_index++){
@@ -365,8 +364,8 @@ json_t bgenerator_to_json(const bgenerator_t& vm){
 */
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(vm._imm->_ast_pass3)._value },
-		{ "callstack", json_t::make_array(callstack) }
+//		{ "ast", ast_to_json(vm._imm->_ast_pass3)._value },
+//		{ "callstack", json_t::make_array(callstack) }
 	});
 }
 
@@ -416,7 +415,7 @@ bool bgenerator_t::check_invariant() const {
 
 bc_program_t bcgen_analyse(bgenerator_t& vm){
 	const auto body2 = bcgen_body(vm, vm._imm->_ast_pass3._globals);
-	const auto result = bc_program_t{ ast_t(body2) };
+	const auto result = bc_program_t{ body2 };
 	return result;
 }
 
@@ -430,7 +429,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t&
 	bgenerator_t a(pass3);
 	const auto result = bcgen_analyse(a);
 
-	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(result._bcgen_ast)._value));
+	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 
 	return result;
 }
