@@ -175,12 +175,16 @@ statement_result_t execute_body(
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto values_offset = vm._value_stack.size();
-	for(const auto& e: init_values){
-		vm._value_stack.push_back(e);
+	if(init_values.empty() == false){
+		for(const auto& e: init_values){
+			vm._value_stack.push_back(e);
+		}
 	}
-	for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
-		const auto& symbol = body._symbols[i];
-		vm._value_stack.push_back(symbol.second._const_value);
+	if(body._symbols.empty() == false){
+		for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
+			const auto& symbol = body._symbols[i];
+			vm._value_stack.push_back(symbol.second._const_value);
+		}
 	}
 	vm._call_stack.push_back(environment_t{ &body, values_offset });
 
