@@ -16,6 +16,7 @@
 #include "ast_value.h"
 #include "pass2.h"
 #include "pass3.h"
+#include "bytecode_gen.h"
 #include "json_support.h"
 #include "json_parser.h"
 
@@ -1016,14 +1017,14 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	}
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(vm._imm->_ast)._value },
+		{ "ast", ast_to_json(vm._imm->_program._bcgen_ast)._value },
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
 
 void test__execute_expression(const expression_t& e, const value_t& expected_value){
-	const ast_t ast;
-	interpreter_t interpreter(ast);
+	const bc_program_t program;
+	interpreter_t interpreter(program);
 	const auto& e3 = execute_expression(interpreter, e);
 
 	ut_compare_jsons(value_to_ast_json(e3)._value, value_to_ast_json(expected_value)._value);
@@ -1094,8 +1095,8 @@ statement_result_t call_host_function(interpreter_t& vm, int function_id, const 
 	return statement_result_t::make_return_unwind(result);
 }
 
-interpreter_t::interpreter_t(const ast_t& ast){
-	QUARK_ASSERT(ast.check_invariant());
+interpreter_t::interpreter_t(const bc_program_t& program){
+	QUARK_ASSERT(program.check_invariant());
 
 	_value_stack.reserve(1024);
 	_call_stack.reserve(32);
@@ -1110,11 +1111,11 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	}
 
 	const auto start_time = std::chrono::high_resolution_clock::now();
-	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, ast, host_functions2});
+	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions2});
 
 
 	const auto values_offset = _value_stack.size();
-	const auto& body_ptr = _imm->_ast._globals;
+	const auto& body_ptr = _imm->_program._bcgen_ast._globals;
 	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
 		const auto& symbol = body_ptr._symbols[i];
 		_value_stack.push_back(symbol.second._const_value);
@@ -1122,7 +1123,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto& r = execute_statements2(*this, _imm->_ast._globals._statements);
+	const auto& r = execute_statements2(*this, _imm->_program._bcgen_ast._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1151,13 +1152,13 @@ const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 
 #if DEBUG
 bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_imm->_ast.check_invariant());
+	QUARK_ASSERT(_imm->_program.check_invariant());
 	return true;
 }
 #endif
 
 
-ast_t program_to_ast2(const interpreter_context_t& context, const string& program){
+bc_program_t program_to_ast2(const interpreter_context_t& context, const string& program){
 	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
 //	parser_context_t context{ quark::make_default_tracer() };
 //	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
@@ -1165,7 +1166,11 @@ ast_t program_to_ast2(const interpreter_context_t& context, const string& progra
 	const auto& pass1 = floyd::parse_program2(context2, program);
 	const auto& pass2 = run_pass2(context2._tracer, pass1);
 	const auto& pass3 = floyd_pass3::run_pass3(context2._tracer, pass2);
-	return pass3;
+
+
+	const auto bc = run_bggen(context2._tracer, pass3);
+
+	return bc;
 }
 
 void print_vm_printlog(const interpreter_t& vm){
@@ -1178,18 +1183,18 @@ void print_vm_printlog(const interpreter_t& vm){
 }
 
 interpreter_t run_global(const interpreter_context_t& context, const string& source){
-	auto ast = program_to_ast2(context, source);
-	auto vm = interpreter_t(ast);
+	auto program = program_to_ast2(context, source);
+	auto vm = interpreter_t(program);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	print_vm_printlog(vm);
 	return vm;
 }
 
 std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
-	auto ast = program_to_ast2(context, source);
+	auto program = program_to_ast2(context, source);
 
 	//	Runs global code.
-	auto vm = interpreter_t(ast);
+	auto vm = interpreter_t(program);
 
 	const auto& main_function = find_symbol_by_name(vm, "main");
 	if(main_function != nullptr){
@@ -1201,8 +1206,8 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 	}
 }
 
-std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const ast_t& ast, const vector<floyd::value_t>& args){
-	auto vm = interpreter_t(ast);
+std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const vector<floyd::value_t>& args){
+	auto vm = interpreter_t(program);
 
 	const auto& main_func = find_symbol_by_name(vm, "main");
 	if(main_func != nullptr){

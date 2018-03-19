@@ -43,7 +43,7 @@ using std::make_shared;
 value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
 
 
-environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
+bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
 	if(a._parent_steps == -1){
 		return &vm._call_stack[0];
 	}
@@ -51,7 +51,7 @@ environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t&
 		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
 	}
 }
-const environment_t* find_env_from_address(const bgenerator_t& vm, const variable_address_t& a){
+const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const variable_address_t& a){
 	if(a._parent_steps == -1){
 		return &vm._call_stack[0];
 	}
@@ -186,7 +186,7 @@ bgen_statement_result_t bcgen_body(
 			vm._value_stack.push_back(symbol.second._const_value);
 		}
 	}
-	vm._call_stack.push_back(environment_t{ &body, values_offset });
+	vm._call_stack.push_back(bcgen_environment_t{ &body, values_offset });
 
 	const auto& r = bcgen_statements2(vm, body._statements);
 	vm._call_stack.pop_back();
@@ -493,7 +493,7 @@ value_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 
 	const auto& expr = *e.get_load2();
 
-	environment_t* env = find_env_from_address(vm, expr._address);
+	bcgen_environment_t* env = find_env_from_address(vm, expr._address);
 	const auto pos = env->_values_offset + expr._address._index;
 	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 	const auto& value = vm._value_stack[pos];
@@ -974,7 +974,7 @@ value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 				vm._value_stack.push_back(symbol.second._const_value);
 			}
 		}
-		vm._call_stack.push_back(environment_t{ function_def->_body.get(), values_offset });
+		vm._call_stack.push_back(bcgen_environment_t{ function_def->_body.get(), values_offset });
 
 		const auto& result = bcgen_statements2(vm, function_def->_body->_statements);
 		vm._call_stack.pop_back();
@@ -1125,7 +1125,7 @@ bgenerator_t::bgenerator_t(const ast_t& ast){
 		const auto& symbol = body_ptr._symbols[i];
 		_value_stack.push_back(symbol.second._const_value);
 	}
-	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
+	_call_stack.push_back(bcgen_environment_t{ &body_ptr, values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
 	const auto& r = bcgen_statements2(*this, _imm->_ast._globals._statements);
@@ -1163,25 +1163,23 @@ bool bgenerator_t::check_invariant() const {
 #endif
 
 
-ast_t program_to_ast2(const bcgen_context_t& context, const string& program){
-	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
-//	parser_context_t context{ quark::make_default_tracer() };
-//	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
+bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t& pass3){
+	QUARK_ASSERT(pass3.check_invariant());
 
-	const auto& pass1 = floyd::parse_program2(context2, program);
-	const auto& pass2 = run_pass2(context2._tracer, pass1);
-	const auto& pass3 = floyd_pass3::run_pass3(context2._tracer, pass2);
-	return pass3;
+	QUARK_CONTEXT_SCOPED_TRACE(tracer, "run_bggen");
+
+	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(pass3)._value));
+
+//	bgenerator_t a(pass3);
+	const auto result = bc_program_t{ pass3 };
+
+	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(result._bcgen_ast)._value));
+
+	return result;
 }
 
-void print_vm_printlog(const bgenerator_t& vm){
-	if(vm._print_output.empty() == false){
-		std::cout << "print output:\n";
-		for(const auto& line: vm._print_output){
-			std::cout << line << "\n";
-		}
-	}
-}
+
+
 
 
 }	//	floyd

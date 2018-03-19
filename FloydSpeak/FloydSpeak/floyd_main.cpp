@@ -265,7 +265,7 @@ void run_file(const std::vector<std::string>& args){
 
 //	std::cout << "Compiling..." << std::endl;
 	floyd::interpreter_context_t context{ quark::make_default_tracer() };
-	auto ast = floyd::program_to_ast2(context, source);
+	auto program = floyd::program_to_ast2(context, source);
 
 
 //	std::cout << "Preparing arguments..." << std::endl;
@@ -277,7 +277,7 @@ void run_file(const std::vector<std::string>& args){
 
 //	std::cout << "Running..." << source << std::endl;
 
-	const auto result = floyd::run_program(context, ast, args3);
+	const auto result = floyd::run_program(context, program, args3);
 	if(result.second._output.is_null()){
 	}
 	else{

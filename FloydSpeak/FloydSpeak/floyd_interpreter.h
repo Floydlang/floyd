@@ -18,13 +18,14 @@
 #include "ast.h"
 #include "ast_value.h"
 #include "host_functions.hpp"
+#include "bytecode_gen.h"
 
 namespace floyd {
 	struct expression_t;
 	struct value_t;
 	struct statement_t;
 	struct interpreter_t;
-
+	struct bc_program_t;
 
 
 
@@ -102,7 +103,7 @@ namespace floyd {
 	struct interpreter_imm_t {
 		////////////////////////		STATE
 		public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
-		public: const ast_t _ast;
+		public: const bc_program_t _program;
 		public: const std::map<int, HOST_FUNCTION_PTR> _host_functions;
 	};
 
@@ -115,7 +116,7 @@ namespace floyd {
 	*/
 
 	struct interpreter_t {
-		public: explicit interpreter_t(const ast_t& ast);
+		public: explicit interpreter_t(const bc_program_t& program);
 		public: interpreter_t(const interpreter_t& other);
 		public: const interpreter_t& operator=(const interpreter_t& other);
 #if DEBUG
@@ -188,9 +189,9 @@ namespace floyd {
 		const std::vector<value_t>& args
 	);
 
-	std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const ast_t& ast, const std::vector<floyd::value_t>& args);
+	std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const std::vector<floyd::value_t>& args);
 
-	ast_t program_to_ast2(const interpreter_context_t& context, const std::string& program);
+	bc_program_t program_to_ast2(const interpreter_context_t& context, const std::string& program);
 
 
 	interpreter_t run_global(const interpreter_context_t& context, const std::string& source);
