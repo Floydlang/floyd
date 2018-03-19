@@ -138,12 +138,6 @@ namespace floyd {
 
 	json_t interpreter_to_json(const interpreter_t& vm);
 
-
-	/*
-		Executes an expression as far as possible.
-		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
-		return == _constant == nullptr: the expression was partially evaluate.
-	*/
 	value_t execute_expression(interpreter_t& vm, const expression_t& e);
 
 	statement_result_t call_function(

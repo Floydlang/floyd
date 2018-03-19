@@ -761,13 +761,13 @@ namespace floyd {
 
 				else if(op == expression_type::k_define_struct){
 					//??? check function's statements too.
-					const auto& e = *get_struct_def();
+//					const auto& e = *get_struct_def();
 					return true;
 				}
 
 				else if(op == expression_type::k_define_function){
 					//??? check function's statements too.
-					const auto& e = *get_function_definition();
+//					const auto& e = *get_function_definition();
 					return true;
 				}
 

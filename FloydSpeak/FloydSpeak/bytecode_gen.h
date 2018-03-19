@@ -13,10 +13,7 @@
 
 #include <string>
 #include <vector>
-#include <map>
 #include "ast.h"
-#include "ast_value.h"
-#include "host_functions.hpp"
 
 namespace floyd {
 	struct expression_t;
@@ -109,6 +106,7 @@ namespace floyd {
 		bc_instr _opcode;
 		std::shared_ptr<const statement_t> _statement;
 	};
+
 	struct bc_program_t {
 		public: bool check_invariant() const {
 			QUARK_ASSERT(_bcgen_ast.check_invariant());
@@ -120,56 +118,12 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////		bgen_statement_result_t
+	//////////////////////////////////////		bcgen_context_t
 
 
 	struct bcgen_context_t {
 		public: quark::trace_context_t _tracer;
 	};
-
-
-	//////////////////////////////////////		bgen_statement_result_t
-
-
-	struct bgen_statement_result_t {
-		enum output_type {
-
-			//	_output != nullptr
-			k_return_unwind,
-
-			//	_output != nullptr
-			k_passive_expression_output,
-
-
-			//	_output == nullptr
-			k_none
-		};
-
-		public: static bgen_statement_result_t make_return_unwind(const value_t& return_value){
-			return { bgen_statement_result_t::k_return_unwind, return_value };
-		}
-		public: static bgen_statement_result_t make_passive_expression_output(const value_t& output_value){
-			return { bgen_statement_result_t::k_passive_expression_output, output_value };
-		}
-		public: static bgen_statement_result_t make_no_output(){
-			return { bgen_statement_result_t::k_passive_expression_output, value_t::make_null() };
-		}
-
-		private: bgen_statement_result_t(output_type type, const value_t& output) :
-			_type(type),
-			_output(output)
-		{
-		}
-
-		public: output_type _type;
-		public: value_t _output;
-	};
-
-	inline bool operator==(const bgen_statement_result_t& lhs, const bgen_statement_result_t& rhs){
-		return true
-			&& lhs._type == rhs._type
-			&& lhs._output == rhs._output;
-	}
 
 
 	//////////////////////////////////////		bcgen_environment_t
@@ -218,8 +172,6 @@ namespace floyd {
 
 
 	//////////////////////////		run_bggen()
-
-
 
 
 	bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t& pass3);
