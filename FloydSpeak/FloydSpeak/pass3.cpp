@@ -1284,7 +1284,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto vm_acc = function_body_pair.first;
 
 	const auto body = function_body_pair.second;
-	const auto def2 = function_definition_t(def->_args, make_shared<body_t>(body), def->_return_type);
+	const auto def2 = function_definition_t(def->_function_type, def->_args, make_shared<body_t>(body));
 	return {vm_acc, expression_t::make_function_definition(make_shared<function_definition_t>(def2)) };
 }
 

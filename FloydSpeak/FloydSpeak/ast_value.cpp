@@ -84,40 +84,41 @@ namespace floyd {
 
 
 	function_definition_t::function_definition_t(
+		const typeid_t& function_type,
 		const std::vector<member_t>& args,
-		const std::shared_ptr<body_t>& body,
-		const typeid_t& return_type
+		const std::shared_ptr<body_t>& body
 	)
 	:
+		_function_type(function_type),
 		_args(args),
 		_body(body),
-		_host_function_id(0),
-		_return_type(return_type)
+		_host_function_id(0)
 	{
 	}
 
 	function_definition_t::function_definition_t(
+		const typeid_t& function_type,
 		const std::vector<member_t>& args,
-		const int host_function,
-		const typeid_t& return_type
+		const int host_function
 	)
 	:
+		_function_type(function_type),
 		_args(args),
-		_host_function_id(host_function),
-		_return_type(return_type)
+		_host_function_id(host_function)
 	{
 	}
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
-		return
-			lhs._args == rhs._args
+		return true
+			&& lhs._function_type == rhs._function_type
+			&& lhs._args == rhs._args
 			&& compare_shared_values(lhs._body, rhs._body)
 			&& lhs._host_function_id == rhs._host_function_id
-			&& lhs._return_type == rhs._return_type;
+			;
 	}
 
-	typeid_t get_function_type(const function_definition_t& f){
-		return typeid_t::make_function(f._return_type, get_member_types(f._args));
+	const typeid_t& get_function_type(const function_definition_t& f){
+		return f._function_type;
 	}
 
 	ast_json_t function_def_to_ast_json(const function_definition_t& v) {
@@ -127,7 +128,7 @@ namespace floyd {
 			typeid_to_ast_json(function_type)._value,
 			members_to_json(v._args),
 			body_to_json(*v._body)._value,
-			typeid_to_ast_json(v._return_type)._value
+			typeid_to_ast_json(v._function_type.get_function_return())._value
 		})};
 	}
 
@@ -600,7 +601,7 @@ std::string value_and_type_to_string(const value_t& value) {
 			return _ext->_dict_entries;
 		}
 
-		std::shared_ptr<const function_definition_t> value_t::get_function_value() const{
+		const std::shared_ptr<const function_definition_t>& value_t::get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
 				throw std::runtime_error("Type mismatch!");
@@ -927,7 +928,7 @@ ast_json_t value_to_ast_json(const value_t& v){
 		return ast_json_t{result};
 	}
 	else if(v.is_function()){
-		const auto def = v.get_function_value();
+		const auto& def = v.get_function_value();
 		return ast_json_t{json_t::make_object(
 			{
 				{ "function_type", typeid_to_ast_json(get_function_type(*def))._value }

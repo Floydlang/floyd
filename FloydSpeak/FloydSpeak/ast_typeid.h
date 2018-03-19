@@ -251,7 +251,7 @@ namespace floyd {
 			return _base_type == base_type::k_function;
 		}
 
-		public: typeid_t get_function_return() const{
+		public: const typeid_t& get_function_return() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_function);
 
 			return _ext->_parts[0];

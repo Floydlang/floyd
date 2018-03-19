@@ -55,14 +55,14 @@ namespace floyd {
 
 	struct function_definition_t {
 		public: function_definition_t(
+			const typeid_t& function_type,
 			const std::vector<member_t>& args,
-			const std::shared_ptr<body_t>& body,
-			const typeid_t& return_type
+			const std::shared_ptr<body_t>& body
 		);
 		public: function_definition_t(
+			const typeid_t& function_type,
 			const std::vector<member_t>& args,
-			int host_function_id,
-			const typeid_t& return_type
+			int host_function_id
 		);
 
 		public: bool check_invariant() const {
@@ -76,15 +76,15 @@ namespace floyd {
 		}
 
 
+		const typeid_t _function_type;
 		const std::vector<member_t> _args;
 		const std::shared_ptr<body_t> _body;
 		const int _host_function_id;
-		const typeid_t _return_type;
 	};
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 	ast_json_t function_def_to_ast_json(const function_definition_t& v);
-	typeid_t get_function_type(const function_definition_t& f);
+	const typeid_t& get_function_type(const function_definition_t& f);
 
 
 
@@ -404,7 +404,7 @@ namespace floyd {
 
 			return _type_int == type_int::k_ext && _ext->_type.is_function();
 		}
-		public: std::shared_ptr<const function_definition_t> get_function_value() const;
+		public: const std::shared_ptr<const function_definition_t>& get_function_value() const;
 
 
 		//////////////////////////////////////////////////		PUBLIC - TYPE INDEPENDANT

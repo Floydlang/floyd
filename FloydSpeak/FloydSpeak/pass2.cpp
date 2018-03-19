@@ -369,7 +369,7 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast__lossy
 			const auto return_type2 = resolve_type_name(ast_json_t{return_type});
 			const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 			const auto body = body_t{fstatements2};
-			const auto function_def = function_definition_t(args2, make_shared<body_t>(body), return_type2);
+			const auto function_def = function_definition_t(function_typeid, args2, make_shared<body_t>(body));
 			const auto function_def_expr = expression_t::make_function_definition(make_shared<function_definition_t>(function_def));
 
 			statements2.push_back(make_shared<statement_t>(
