@@ -227,8 +227,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 					std::cout << vm._print_output[print_pos] << std::endl;
 					print_pos++;
 				}
-				if(b.second._output.is_null() == false){
-					std::cout << to_compact_string2(b.second._output) << std::endl;
+				if(b._output.is_null() == false){
+					std::cout << to_compact_string2(b._output) << std::endl;
 				}
 			}
 		}
@@ -276,7 +276,6 @@ void run_file(const std::vector<std::string>& args){
 	}
 
 //	std::cout << "Running..." << source << std::endl;
-
 
 	const auto result = floyd::run_program(context, ast, args3);
 	if(result.second._output.is_null()){

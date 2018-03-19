@@ -74,7 +74,7 @@ OFF_QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
 
 
 
-OFF_QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
+QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 	const int64_t cpp_iterations = (10000LL * 50000LL);
 	const int64_t floyd_iterations = 20000LL;
 

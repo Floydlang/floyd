@@ -40,7 +40,7 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e);
+value_t evaluate_call_expression(interpreter_t& vm, const expression_t& e);
 
 
 environment_t* find_env_from_address(const interpreter_t& vm, const variable_address_t& a){
@@ -57,7 +57,7 @@ environment_t* find_env_from_address(const interpreter_t& vm, const variable_add
 }
 
 
-std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
+value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(type.is_json_value()){
@@ -65,7 +65,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 
 		const auto arg = arg_values[0];
 		const auto value = value_to_ast_json(arg);
-		return {vm, value_t::make_json_value(value._value)};
+		return value_t::make_json_value(value._value);
 	}
 	else if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_typeid()){
 		QUARK_ASSERT(arg_values.size() == 1);
@@ -73,7 +73,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		const auto arg = arg_values[0];
 		if(type.is_string()){
 			if(arg.is_json_value() && arg.get_json_value().is_string()){
-				return {vm, value_t::make_string(arg.get_json_value().get_string())};
+				return value_t::make_string(arg.get_json_value().get_string());
 			}
 			else if(arg.is_string()){
 			}
@@ -82,7 +82,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 			if(arg.get_type() != type){
 			}
 		}
-		return {vm, arg };
+		return arg;
 	}
 	else if(type.is_struct()){
 	#if DEBUG
@@ -100,13 +100,13 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 		const auto instance = value_t::make_struct_value(type, arg_values);
 		QUARK_TRACE(to_compact_string2(instance));
 
-		return { vm, instance };
+		return instance;
 	}
 	else if(type.is_vector()){
 		const auto element_type = type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
-		return { vm, value_t::make_vector_value(element_type, arg_values) };
+		return value_t::make_vector_value(element_type, arg_values);
 	}
 	else if(type.is_dict()){
 		const auto element_type = type.get_dict_value_type();
@@ -118,7 +118,7 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 			const auto value = arg_values[i * 2 + 1];
 			m.insert({ key, value });
 		}
-		return { vm, value_t::make_dict_value(element_type, m) };
+		return value_t::make_dict_value(element_type, m);
 	}
 	else if(type.is_function()){
 	}
@@ -131,26 +131,23 @@ std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_
 	throw std::exception();
 }
 
-std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
+statement_result_t execute_statements2(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
-
-	auto vm_acc = vm;
 
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
-		const auto& r = execute_statement(vm_acc, *statement);
-		vm_acc = r.first;
-		if(r.second._type == statement_result_t::k_return_unwind){
-			return { vm_acc, r.second };
+		const auto& r = execute_statement(vm, *statement);
+		if(r._type == statement_result_t::k_return_unwind){
+			return r;
 		}
 		else{
 
 			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
 			if(statement_index == (statements.size() - 1)){
-				if(r.second._type == statement_result_t::k_passive_expression_output){
-					return { vm_acc, r.second };
+				if(r._type == statement_result_t::k_passive_expression_output){
+					return r;
 				}
 			}
 			else{
@@ -159,57 +156,49 @@ std::pair<interpreter_t, statement_result_t> execute_statements(const interprete
 			statement_index++;
 		}
 	}
-	return { vm_acc, statement_result_t::make_no_output() };
+	return statement_result_t::make_no_output();
+}
+statement_result_t execute_statements(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
+	return execute_statements2(vm, statements);
 }
 
-std::pair<interpreter_t, statement_result_t> execute_body(
-	const interpreter_t& vm,
+statement_result_t execute_body(
+	interpreter_t& vm,
 	const body_t& body,
 	const std::vector<value_t>& init_values
 )
 {
 	QUARK_ASSERT(vm.check_invariant());
 
+	const auto prev_env = vm._env;
 	auto new_environment = environment_t::make_environment(vm._env, &body, init_values);
-	auto vm_acc = vm;
-	vm_acc._env = new_environment;
+	vm._env = new_environment;
 
-	const auto r = execute_statements(vm_acc, body._statements);
-	vm_acc = r.first;
-	vm_acc._env = vm._env;
+	const auto r = execute_statements2(vm, body._statements);
+	vm._env = prev_env;
 
-	return { vm_acc, r.second };
+	return r;
 }
 
-std::pair<interpreter_t, statement_result_t> execute_store2_statement(const interpreter_t& vm, const statement_t::store2_t& statement){
+statement_result_t execute_store2_statement(interpreter_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
 	const auto address = statement._dest_variable;
 
-	const auto rhs_expr_pair = evaluate_expression(vm_acc, statement._expression);
-	vm_acc = rhs_expr_pair.first;
-	const auto rhs_value = rhs_expr_pair.second;
+	const auto rhs_value = execute_expression(vm, statement._expression);
 
-	auto env = find_env_from_address(vm_acc, address);
+	auto env = find_env_from_address(vm, address);
 	const auto lhs_value_deep_ptr = &env->_values[address._index];
 	*lhs_value_deep_ptr = rhs_value;
-	return { vm_acc, statement_result_t::make_no_output() };
+	return statement_result_t::make_no_output();
 }
 
-std::pair<interpreter_t, statement_result_t> execute_return_statement(const interpreter_t& vm, const statement_t::return_statement_t& statement){
+statement_result_t execute_return_statement(interpreter_t& vm, const statement_t::return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
 	const auto expr = statement._expression;
-	const auto result = evaluate_expression(vm_acc, expr);
-	vm_acc = result.first;
-
-	const auto rhs_value = result.second;
-	return {
-		vm_acc,
-		statement_result_t::make_return_unwind(rhs_value)
-	};
+	const auto rhs_value = execute_expression(vm, expr);
+	return statement_result_t::make_return_unwind(rhs_value);
 }
 
 typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
@@ -232,92 +221,72 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 	}
 }
 
-std::pair<interpreter_t, statement_result_t> execute_ifelse_statement(const interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
+statement_result_t execute_ifelse_statement(interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
+	const auto condition_result = execute_expression(vm, statement._condition);
+	QUARK_ASSERT(condition_result.is_bool());
 
-	const auto condition_result = evaluate_expression(vm_acc, statement._condition);
-	vm_acc = condition_result.first;
-	QUARK_ASSERT(condition_result.second.is_bool());
-
-	const auto condition_result_value = condition_result.second;
+	const auto condition_result_value = condition_result;
 	bool r = condition_result_value.get_bool_value();
 	if(r){
-		return execute_body(vm_acc, statement._then_body, {});
+		return execute_body(vm, statement._then_body, {});
 	}
 	else{
-		return execute_body(vm_acc, statement._else_body, {});
+		return execute_body(vm, statement._else_body, {});
 	}
 }
 
-std::pair<interpreter_t, statement_result_t> execute_for_statement(const interpreter_t& vm, const statement_t::for_statement_t& statement){
+statement_result_t execute_for_statement(interpreter_t& vm, const statement_t::for_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
+	const auto start_value0 = execute_expression(vm, statement._start_expression);
+	const auto start_value_int = start_value0.get_int_value();
 
-	const auto start_value0 = evaluate_expression(vm_acc, statement._start_expression);
-	vm_acc = start_value0.first;
-	const auto start_value_int = start_value0.second.get_int_value();
-
-	const auto end_value0 = evaluate_expression(vm_acc, statement._end_expression);
-	vm_acc = end_value0.first;
-	const auto end_value_int = end_value0.second.get_int_value();
+	const auto end_value0 = execute_expression(vm, statement._end_expression);
+	const auto end_value_int = end_value0.get_int_value();
 
 	vector<value_t> space_for_iterator = {value_t::make_null()};
 	for(int x = start_value_int ; x <= end_value_int ; x++){
 		space_for_iterator[0] = value_t::make_int(x);
-		const auto result = execute_body(vm_acc, statement._body, space_for_iterator);
-		vm_acc = result.first;
-
-		const auto return_value = result.second;
+		const auto return_value = execute_body(vm, statement._body, space_for_iterator);
 		if(return_value._type == statement_result_t::k_return_unwind){
-			return { vm_acc, return_value };
+			return return_value;
 		}
 	}
-	return { vm_acc, statement_result_t::make_no_output() };
+	return statement_result_t::make_no_output();
 }
 
-std::pair<interpreter_t, statement_result_t> execute_while_statement(const interpreter_t& vm, const statement_t::while_statement_t& statement){
+statement_result_t execute_while_statement(interpreter_t& vm, const statement_t::while_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm_acc = vm;
 
 	bool again = true;
 	while(again){
-		const auto condition_value_expr = evaluate_expression(vm_acc, statement._condition);
-		vm_acc = condition_value_expr.first;
-		const auto condition_value = condition_value_expr.second.get_bool_value();
+		const auto condition_value_expr = execute_expression(vm, statement._condition);
+		const auto condition_value = condition_value_expr.get_bool_value();
 
 		if(condition_value){
-			const auto result = execute_body(vm_acc, statement._body, {});
-			vm_acc = result.first;
-			const auto return_value = result.second;
+			const auto result = execute_body(vm, statement._body, {});
+			const auto return_value = result;
 			if(return_value._type == statement_result_t::k_return_unwind){
-				return { vm_acc, return_value };
+				return return_value;
 			}
 		}
 		else{
 			again = false;
 		}
 	}
-	return { vm_acc, statement_result_t::make_no_output() };
+	return statement_result_t::make_no_output();
 }
 
-std::pair<interpreter_t, statement_result_t> execute_expression_statement(const interpreter_t& vm, const statement_t::expression_statement_t& statement){
+statement_result_t execute_expression_statement(interpreter_t& vm, const statement_t::expression_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-	const auto result = evaluate_expression(vm_acc, statement._expression);
-	vm_acc = result.first;
-	const auto rhs_value = result.second;
-	return {
-		vm_acc,
-		statement_result_t::make_passive_expression_output(rhs_value)
-	};
+	const auto rhs_value = execute_expression(vm, statement._expression);
+	return statement_result_t::make_passive_expression_output(rhs_value);
 }
 
-std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm, const statement_t& statement){
+statement_result_t execute_statement(interpreter_t& vm, const statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
@@ -406,36 +375,26 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 
 
 
-std::pair<interpreter_t, value_t> evaluate_resolve_member_expression(const interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
+value_t evaluate_resolve_member_expression(interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
-	vm_acc = parent_expr.first;
-	QUARK_ASSERT(parent_expr.second.is_struct());
+	const auto parent_expr = execute_expression(vm, *expr._parent_address);
+	QUARK_ASSERT(parent_expr.is_struct());
 
-	const auto struct_instance = parent_expr.second.get_struct_value();
+	const auto struct_instance = parent_expr.get_struct_value();
 
 	int index = find_struct_member_index(*struct_instance->_def, expr._member_name);
 	QUARK_ASSERT(index != -1);
 
 	const value_t value = struct_instance->_member_values[index];
-	return { vm_acc, value};
+	return value;
 }
 
-std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const interpreter_t& vm, const expression_t::lookup_expr_t& expr){
+value_t evaluate_lookup_element_expression(interpreter_t& vm, const expression_t::lookup_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-	const auto parent_expr = evaluate_expression(vm_acc, *expr._parent_address);
-	vm_acc = parent_expr.first;
-
-	const auto key_expr = evaluate_expression(vm_acc, *expr._lookup_key);
-	vm_acc = key_expr.first;
-
-	const auto parent_value = parent_expr.second;
-	const auto key_value = key_expr.second;
-
+	const auto parent_value = execute_expression(vm, *expr._parent_address);
+	const auto key_value = execute_expression(vm, *expr._lookup_key);
 	if(parent_value.is_string()){
 		QUARK_ASSERT(key_value.is_int());
 
@@ -447,7 +406,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 		else{
 			const char ch = instance[lookup_index];
 			const auto value2 = value_t::make_string(string(1, ch));
-			return { vm_acc, value2};
+			return value2;
 		}
 	}
 	else if(parent_value.is_json_value()){
@@ -460,7 +419,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 			//	get_object_element() throws if key can't be found.
 			const auto value = parent_json_value.get_object_element(lookup_key);
 			const auto value2 = value_t::make_json_value(value);
-			return { vm_acc, value2};
+			return value2;
 		}
 		else if(parent_json_value.is_array()){
 			QUARK_ASSERT(key_value.is_int());
@@ -472,7 +431,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 			else{
 				const auto value = parent_json_value.get_array_n(lookup_index);
 				const auto value2 = value_t::make_json_value(value);
-				return { vm_acc, value2};
+				return value2;
 			}
 		}
 		else{
@@ -490,7 +449,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 		}
 		else{
 			const value_t value = vec[lookup_index];
-			return { vm_acc, value};
+			return value;
 		}
 	}
 	else if(parent_value.is_dict()){
@@ -505,7 +464,7 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 		}
 		else{
 			const value_t value = found_it->second;
-			return { vm_acc, value};
+			return value;
 		}
 	}
 	else {
@@ -514,27 +473,24 @@ std::pair<interpreter_t, value_t> evaluate_lookup_element_expression(const inter
 	}
 }
 
-std::pair<interpreter_t, value_t> evaluate_load2_expression(const interpreter_t& vm, const expression_t& e){
+value_t evaluate_load2_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_load2();
 
-	auto vm_acc = vm;
-
-	environment_t* env = find_env_from_address(vm_acc, expr._address);
+	environment_t* env = find_env_from_address(vm, expr._address);
 	QUARK_ASSERT(expr._address._index >= 0 && expr._address._index < env->_values.size());
 	const auto value = env->_values[expr._address._index];
 
 	QUARK_ASSERT(value.get_type() == e.get_annotated_type() /*|| e.get_annotated_type().is_null()*/);
 
-	return {vm_acc, value};
+	return value;
 }
 
-std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const interpreter_t& vm, const expression_t& e){
+value_t evaluate_construct_value_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_construct_value();
-	auto vm_acc = vm;
 
 	if(expr._value_type2.is_vector()){
 		const std::vector<expression_t>& elements = expr._args;
@@ -550,10 +506,7 @@ std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const inte
 
 		std::vector<value_t> elements2;
 		for(const auto m: elements){
-			const auto element_expr = evaluate_expression(vm_acc, m);
-			vm_acc = element_expr.first;
-
-			const auto element = element_expr.second;
+			const auto element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
 
@@ -580,10 +533,7 @@ std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const inte
 			const auto key_expr = elements[i * 2 + 0];
 			const auto value_expr = elements[i * 2 + 1];
 
-			const auto element_expr = evaluate_expression(vm_acc, value_expr);
-			vm_acc = element_expr.first;
-
-			const auto value = element_expr.second;
+			const auto value = execute_expression(vm, value_expr);
 			const string key = key_expr.get_literal().get_string_value();
 			elements2.push_back(value_t::make_string(key));
 			elements2.push_back(value);
@@ -593,10 +543,7 @@ std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const inte
 	else if(expr._value_type2.is_struct()){
 		std::vector<value_t> elements2;
 		for(const auto m: expr._args){
-			const auto element_expr = evaluate_expression(vm_acc, m);
-			vm_acc = element_expr.first;
-
-			const auto element = element_expr.second;
+			const auto element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
 		return construct_value_from_typeid(vm, expr._value_type2, elements2);
@@ -604,41 +551,33 @@ std::pair<interpreter_t, value_t> evaluate_construct_value_expression(const inte
 	else{
 		QUARK_ASSERT(expr._args.size() == 1);
 
-		const auto element_expr = evaluate_expression(vm_acc, expr._args[0]);
-		vm_acc = element_expr.first;
-
-		return construct_value_from_typeid(vm, expr._value_type2, { element_expr.second });
+		const auto element = execute_expression(vm, expr._args[0]);
+		return construct_value_from_typeid(vm, expr._value_type2, { element });
 	}
 }
 
-std::pair<interpreter_t, value_t> evaluate_arithmetic_unary_minus_expression(const interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
+value_t evaluate_arithmetic_unary_minus_expression(interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-	const auto& expr2 = evaluate_expression(vm_acc, *expr._expr);
-	vm_acc = expr2.first;
-
-	const auto& c = expr2.second;
-	vm_acc = expr2.first;
-
+	const auto& c = execute_expression(vm, *expr._expr);
 	if(c.is_int()){
-		return evaluate_expression(
-			vm_acc,
+		return execute_expression(
+			vm,
 			expression_t::make_simple_expression__2(
 				expression_type::k_arithmetic_subtract__2,
 				expression_t::make_literal_int(0),
-				expression_t::make_literal(expr2.second),
+				expression_t::make_literal(c),
 				make_shared<typeid_t>(c.get_type())
 			)
 		);
 	}
 	else if(c.is_float()){
-		return evaluate_expression(
-			vm_acc,
+		return execute_expression(
+			vm,
 			expression_t::make_simple_expression__2(
 				expression_type::k_arithmetic_subtract__2,
 				expression_t::make_literal_float(0.0f),
-				expression_t::make_literal(expr2.second),
+				expression_t::make_literal(c),
 				make_shared<typeid_t>(c.get_type())
 			)
 		);
@@ -649,70 +588,56 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_unary_minus_expression(con
 	}
 }
 
-std::pair<interpreter_t, value_t> evaluate_conditional_operator_expression(const interpreter_t& vm, const expression_t::conditional_expr_t& expr){
+value_t evaluate_conditional_operator_expression(interpreter_t& vm, const expression_t::conditional_expr_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto cond_result = evaluate_expression(vm_acc, *expr._condition);
-	vm_acc = cond_result.first;
-
-	QUARK_ASSERT(cond_result.second.is_bool());
-
-	const bool cond_flag = cond_result.second.get_bool_value();
+	const auto cond_result = execute_expression(vm, *expr._condition);
+	QUARK_ASSERT(cond_result.is_bool());
+	const bool cond_flag = cond_result.get_bool_value();
 
 	//	!!! Only evaluate the CHOSEN expression. Not that important since functions are pure.
 	if(cond_flag){
-		return evaluate_expression(vm_acc, *expr._a);
+		return execute_expression(vm, *expr._a);
 	}
 	else{
-		return evaluate_expression(vm_acc, *expr._b);
+		return execute_expression(vm, *expr._b);
 	}
 }
 
-std::pair<interpreter_t, value_t> evaluate_comparison_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+value_t evaluate_comparison_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-
 	//	First evaluate all inputs to our operation.
-	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr._left);
-	vm_acc = left_expr.first;
-
-	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr._right);
-	vm_acc = right_expr.first;
-
-	//	Perform math operation on the two constants => new constant.
-	const auto left_constant = left_expr.second;
-	const auto right_constant = right_expr.second;
+	const auto left_constant = execute_expression(vm, *simple2_expr._left);
+	const auto right_constant = execute_expression(vm, *simple2_expr._right);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
 	//	Do generic functionallity, independant on type.
 	if(op == expression_type::k_comparison_smaller_or_equal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, value_t::make_bool(diff <= 0)};
+		return value_t::make_bool(diff <= 0);
 	}
 	else if(op == expression_type::k_comparison_smaller__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, value_t::make_bool(diff < 0)};
+		return value_t::make_bool(diff < 0);
 	}
 	else if(op == expression_type::k_comparison_larger_or_equal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, value_t::make_bool(diff >= 0)};
+		return value_t::make_bool(diff >= 0);
 	}
 	else if(op == expression_type::k_comparison_larger__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, value_t::make_bool(diff > 0)};
+		return value_t::make_bool(diff > 0);
 	}
 
 	else if(op == expression_type::k_logical_equal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, value_t::make_bool(diff == 0)};
+		return value_t::make_bool(diff == 0);
 	}
 	else if(op == expression_type::k_logical_nonequal__2){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return {vm_acc, value_t::make_bool(diff != 0)};
+		return value_t::make_bool(diff != 0);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -720,21 +645,12 @@ std::pair<interpreter_t, value_t> evaluate_comparison_expression(const interpret
 	}
 }
 
-std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+value_t evaluate_arithmetic_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	auto vm_acc = vm;
-
 	//	First evaluate all inputs to our operation.
-	const auto left_expr = evaluate_expression(vm_acc, *simple2_expr._left);
-	vm_acc = left_expr.first;
-
-	const auto right_expr = evaluate_expression(vm_acc, *simple2_expr._right);
-	vm_acc = right_expr.first;
-
-	//	Perform math operation on the two constants => new constant.
-	const auto left_constant = left_expr.second;
-	const auto right_constant = right_expr.second;
+	const auto left_constant = execute_expression(vm, *simple2_expr._left);
+	const auto right_constant = execute_expression(vm, *simple2_expr._right);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
 	const auto type_mode = left_constant.get_type();
@@ -745,13 +661,13 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		const bool right = right_constant.get_bool_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			return {vm_acc, value_t::make_bool(left + right)};
+			return value_t::make_bool(left + right);
 		}
 		else if(op == expression_type::k_logical_and__2){
-			return {vm_acc, value_t::make_bool(left && right)};
+			return value_t::make_bool(left && right);
 		}
 		else if(op == expression_type::k_logical_or__2){
-			return {vm_acc, value_t::make_bool(left || right)};
+			return value_t::make_bool(left || right);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -764,33 +680,33 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		const int right = right_constant.get_int_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			return {vm_acc, value_t::make_int(left + right)};
+			return value_t::make_int(left + right);
 		}
 		else if(op == expression_type::k_arithmetic_subtract__2){
-			return {vm_acc, value_t::make_int(left - right)};
+			return value_t::make_int(left - right);
 		}
 		else if(op == expression_type::k_arithmetic_multiply__2){
-			return {vm_acc, value_t::make_int(left * right)};
+			return value_t::make_int(left * right);
 		}
 		else if(op == expression_type::k_arithmetic_divide__2){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return {vm_acc, value_t::make_int(left / right)};
+			return value_t::make_int(left / right);
 		}
 		else if(op == expression_type::k_arithmetic_remainder__2){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return {vm_acc, value_t::make_int(left % right)};
+			return value_t::make_int(left % right);
 		}
 
 		//??? Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
 		else if(op == expression_type::k_logical_and__2){
-			return {vm_acc, value_t::make_bool((left != 0) && (right != 0))};
+			return value_t::make_bool((left != 0) && (right != 0));
 		}
 		else if(op == expression_type::k_logical_or__2){
-			return {vm_acc, value_t::make_bool((left != 0) || (right != 0))};
+			return value_t::make_bool((left != 0) || (right != 0));
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -803,26 +719,26 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		const float right = right_constant.get_float_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			return {vm_acc, value_t::make_float(left + right)};
+			return value_t::make_float(left + right);
 		}
 		else if(op == expression_type::k_arithmetic_subtract__2){
-			return {vm_acc, value_t::make_float(left - right)};
+			return value_t::make_float(left - right);
 		}
 		else if(op == expression_type::k_arithmetic_multiply__2){
-			return {vm_acc, value_t::make_float(left * right)};
+			return value_t::make_float(left * right);
 		}
 		else if(op == expression_type::k_arithmetic_divide__2){
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return {vm_acc, value_t::make_float(left / right)};
+			return value_t::make_float(left / right);
 		}
 
 		else if(op == expression_type::k_logical_and__2){
-			return {vm_acc, value_t::make_bool((left != 0.0f) && (right != 0.0f))};
+			return value_t::make_bool((left != 0.0f) && (right != 0.0f));
 		}
 		else if(op == expression_type::k_logical_or__2){
-			return {vm_acc, value_t::make_bool((left != 0.0f) || (right != 0.0f))};
+			return value_t::make_bool((left != 0.0f) || (right != 0.0f));
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -835,7 +751,7 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 		const auto right = right_constant.get_string_value();
 
 		if(op == expression_type::k_arithmetic_add__2){
-			return {vm_acc, value_t::make_string(left + right)};
+			return value_t::make_string(left + right);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -857,7 +773,7 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 			elements2.insert(elements2.end(), right_constant.get_vector_value().begin(), right_constant.get_vector_value().end());
 
 			const auto value2 = value_t::make_vector_value(element_type, elements2);
-			return {vm_acc, value2};
+			return value2;
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -872,14 +788,14 @@ std::pair<interpreter_t, value_t> evaluate_arithmetic_expression(const interpret
 	throw std::exception();
 }
 
-std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, const expression_t& e){
+value_t execute_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto op = e.get_operation();
 
 	if(op == expression_type::k_literal){
-		return { vm, e.get_literal() };
+		return e.get_literal();
 	}
 	else if(op == expression_type::k_resolve_member){
 		return evaluate_resolve_member_expression(vm, *e.get_resolve_member());
@@ -901,13 +817,13 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	else if(op == expression_type::k_define_struct){
 		// Moved entire function to symbol table -- no need for k_define_function-expression in interpreter!
 		QUARK_ASSERT(false);
-		return {vm, value_t::make_null()};
+		return value_t::make_null();
 	}
 
 	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
 		const auto expr = e.get_function_definition();
-		return {vm, value_t::make_function_value(expr->_def)};
+		return value_t::make_function_value(expr->_def);
 	}
 
 	else if(op == expression_type::k_construct_value){
@@ -952,19 +868,17 @@ std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, c
 	throw std::exception();
 }
 
-std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-
-	auto vm_acc = vm;
 
 	QUARK_ASSERT(f.is_function());
 
 	const auto& function_def = f.get_function_value();
 	if(function_def->_host_function != 0){
-		const auto r = call_host_function(vm_acc, function_def->_host_function, args);
-		return { r.first, r.second };
+		const auto r = call_host_function(vm, function_def->_host_function, args);
+		return r;
 	}
 	else{
 		const auto return_type = f.get_type().get_function_return();
@@ -981,48 +895,39 @@ std::pair<interpreter_t, statement_result_t> call_function(const interpreter_t& 
 		}
 #endif
 
-		const auto r = execute_body(vm_acc, *function_def->_body, args);
-		vm_acc = r.first;
+		const auto r = execute_body(vm, *function_def->_body, args);
 
 		// ??? move this check to pass3.
-		if(r.second._type != statement_result_t::k_return_unwind){
+		if(r._type != statement_result_t::k_return_unwind){
 			throw std::runtime_error("Function missing return statement");
 		}
 
 		// ??? move this check to pass3.
-		else if(r.second._output.get_type().is_struct() == false && r.second._output.get_type() != return_type){
+		else if(r._output.get_type().is_struct() == false && r._output.get_type() != return_type){
 			throw std::runtime_error("Function return type wrong.");
 		}
 		else{
-			return {vm_acc, r.second };
+			return r;
 		}
 	}
 }
 
-std::pair<interpreter_t, value_t> evaluate_call_expression(const interpreter_t& vm, const expression_t& e){
+value_t evaluate_call_expression(interpreter_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto expr = *e.get_call();
-
-	auto vm_acc = vm;
-
-	const auto function = evaluate_expression(vm_acc, *expr._callee);
-	vm_acc = function.first;
-
-	const auto& function_value = function.second;
+	const auto& function_value = execute_expression(vm, *expr._callee);
 	QUARK_ASSERT(function_value.is_function());
 
 	vector<value_t> arg_values;
 	for(int i = 0 ; i < expr._args.size() ; i++){
-		const auto t = evaluate_expression(vm_acc, expr._args[i]);
-		vm_acc = t.first;
-		arg_values.push_back(t.second);
+		const auto t = execute_expression(vm, expr._args[i]);
+		arg_values.push_back(t);
 	}
 
-	const auto& result = call_function(vm_acc, function_value, arg_values);
-	QUARK_ASSERT(result.second._type == statement_result_t::k_return_unwind);
-	vm_acc = result.first;
-	return { vm_acc, result.second._output};
+	const auto& result = call_function(vm, function_value, arg_values);
+	QUARK_ASSERT(result._type == statement_result_t::k_return_unwind);
+	return result._output;
 }
 
 json_t interpreter_to_json(const interpreter_t& vm){
@@ -1049,24 +954,24 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	});
 }
 
-void test__evaluate_expression(const expression_t& e, const value_t& expected_value){
+void test__execute_expression(const expression_t& e, const value_t& expected_value){
 	const ast_t ast;
-	const interpreter_t interpreter(ast);
-	const auto e3 = evaluate_expression(interpreter, e);
+	interpreter_t interpreter(ast);
+	const auto e3 = execute_expression(interpreter, e);
 
-	ut_compare_jsons(value_to_ast_json(e3.second)._value, value_to_ast_json(expected_value)._value);
+	ut_compare_jsons(value_to_ast_json(e3)._value, value_to_ast_json(expected_value)._value);
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "literal 1234 == 1234") {
-	test__evaluate_expression(
+QUARK_UNIT_TESTQ("execute_expression()", "literal 1234 == 1234") {
+	test__execute_expression(
 		expression_t::make_literal_int(1234),
 		value_t::make_int(1234)
 	);
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
-	test__evaluate_expression(
+QUARK_UNIT_TESTQ("execute_expression()", "1 + 2 == 3") {
+	test__execute_expression(
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_add__2,
 			expression_t::make_literal_int(1),
@@ -1078,8 +983,8 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "1 + 2 == 3") {
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
-	test__evaluate_expression(
+QUARK_UNIT_TESTQ("execute_expression()", "3 * 4 == 12") {
+	test__execute_expression(
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_multiply__2,
 			expression_t::make_literal_int(3),
@@ -1090,8 +995,8 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "3 * 4 == 12") {
 	);
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "(3 * 4) * 5 == 60") {
-	test__evaluate_expression(
+QUARK_UNIT_TESTQ("execute_expression()", "(3 * 4) * 5 == 60") {
+	test__execute_expression(
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_multiply__2,
 			expression_t::make_simple_expression__2(
@@ -1138,11 +1043,8 @@ std::shared_ptr<environment_t> environment_t::make_environment(
 	return make_shared<environment_t>(temp);
 }
 
-bool environment_t::check_invariant() const {
-	return true;
-}
 
-std::pair<interpreter_t, statement_result_t> call_host_function(const interpreter_t& vm, int function_id, const std::vector<floyd::value_t> args){
+statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<floyd::value_t> args){
 	QUARK_ASSERT(function_id >= 0);
 
 	const auto& host_function = vm._imm->_host_functions.at(function_id);
@@ -1151,10 +1053,7 @@ std::pair<interpreter_t, statement_result_t> call_host_function(const interprete
 //	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
 	const auto result = (host_function)(vm, args);
-	return {
-		result.first,
-		statement_result_t::make_return_unwind(result.second)
-	};
+	return statement_result_t::make_return_unwind(result);
 }
 
 interpreter_t::interpreter_t(const ast_t& ast){
@@ -1179,9 +1078,7 @@ interpreter_t::interpreter_t(const ast_t& ast){
 	_globals = _env.get();
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto r = execute_statements(*this, _imm->_ast._globals._statements);
-
-	_print_output = r.first._print_output;
+	const auto r = execute_statements2(*this, _imm->_ast._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1253,7 +1150,7 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 	const auto main_function = find_symbol_by_name(vm, "main");
 	if(main_function != nullptr){
 		const auto result = call_function(vm, *main_function, args);
-		return { result.first, result.second };
+		return { vm, result };
 	}
 	else{
 		return {vm, statement_result_t::make_no_output()};
@@ -1266,7 +1163,7 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 	const auto main_func = find_symbol_by_name(vm, "main");
 	if(main_func != nullptr){
 		const auto r = call_function(vm, *main_func, args);
-		return { r.first, r.second };
+		return { vm, r };
 	}
 	else{
 		return { vm, statement_result_t::make_no_output() };

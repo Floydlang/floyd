@@ -35,7 +35,7 @@ namespace floyd {
 
 
 
-	typedef std::pair<interpreter_t, value_t> (*HOST_FUNCTION_PTR)(const interpreter_t& vm, const std::vector<value_t>& args);
+	typedef value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const std::vector<value_t>& args);
 
 	struct host_function_t {
 		host_function_signature_t _signature;

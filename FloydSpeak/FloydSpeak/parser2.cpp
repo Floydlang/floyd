@@ -1535,46 +1535,46 @@ void test__parse_expression__throw(const std::string& expression, const std::str
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses error") {
+QUARK_UNIT_TESTQ("parse_expression()", "Parentheses error") {
 	test__parse_expression__throw("5*((1+3)*2+1", "");
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses error") {
+QUARK_UNIT_TESTQ("parse_expression()", "Parentheses error") {
 //	test__parse_expression__throw("5*((1+3)*2)+1)", "");
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators (wrong)") {
+QUARK_UNIT_TESTQ("parse_expression()", "Repeated operators (wrong)") {
 	test__parse_expression__throw("5*/2", "");
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Wrong position of an operator") {
+QUARK_UNIT_TESTQ("parse_expression()", "Wrong position of an operator") {
 	test__parse_expression__throw("*2", "");
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Wrong position of an operator") {
+QUARK_UNIT_TESTQ("parse_expression()", "Wrong position of an operator") {
 	test__parse_expression__throw("2+", "Unexpected end of string.");
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Wrong position of an operator") {
+QUARK_UNIT_TESTQ("parse_expression()", "Wrong position of an operator") {
 	test__parse_expression__throw("2*", "Unexpected end of string.");
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Invalid characters") {
+QUARK_UNIT_TESTQ("parse_expression()", "Invalid characters") {
 	test__parse_expression__throw("~5", "Illegal characters.");
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Invalid characters") {
+QUARK_UNIT_TESTQ("parse_expression()", "Invalid characters") {
 	test__parse_expression__throw("~5", "");
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Invalid characters") {
+QUARK_UNIT_TESTQ("parse_expression()", "Invalid characters") {
 //	test__parse_expression__throw("5x", "EEE_WRONG_CHAR");
 }
 
 
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Invalid characters") {
+QUARK_UNIT_TESTQ("parse_expression()", "Invalid characters") {
 	test__parse_expression__throw("2/", "Unexpected end of string.");
 }
 

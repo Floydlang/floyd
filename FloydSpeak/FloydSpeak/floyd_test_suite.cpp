@@ -184,20 +184,20 @@ QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
 
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses") {
+QUARK_UNIT_TESTQ("execute_expression()", "Parentheses") {
 	test__run_init__check_result("int result = 5*(4+4+1);", value_t::make_int(45));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses") {
+QUARK_UNIT_TESTQ("execute_expression()", "Parentheses") {
 	test__run_init__check_result("int result = 5*(2*(1+3)+1);", value_t::make_int(45));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Parentheses") {
+QUARK_UNIT_TESTQ("execute_expression()", "Parentheses") {
 	test__run_init__check_result("int result = 5*((1+3)*2+1);", value_t::make_int(45));
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parentheses") {
+QUARK_UNIT_TESTQ("execute_expression()", "Sign before parentheses") {
 	test__run_init__check_result("int result = -(2+1)*4;", value_t::make_int(-12));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parentheses") {
+QUARK_UNIT_TESTQ("execute_expression()", "Sign before parentheses") {
 	test__run_init__check_result("int result = -4*(2+1);", value_t::make_int(-12));
 }
 
@@ -205,13 +205,13 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Sign before parentheses") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - SPACES
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
+QUARK_UNIT_TESTQ("execute_expression()", "Spaces") {
 	test__run_init__check_result("int result = 5 * ((1 + 3) * 2 + 1) ;", value_t::make_int(45));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
+QUARK_UNIT_TESTQ("execute_expression()", "Spaces") {
 	test__run_init__check_result("int result = 5 - 2 * ( 3 ) ;", value_t::make_int(-1));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
+QUARK_UNIT_TESTQ("execute_expression()", "Spaces") {
 	test__run_init__check_result("int result =  5 - 2 * ( ( 4 )  - 1 ) ;", value_t::make_int(-1));
 }
 
@@ -220,38 +220,38 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Spaces") {
 
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 	test__run_init__check_result("float result = 5.5/5.0;", value_t::make_float(1.1f));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 //	test__run_init__check_result("int result = 1/5e10") == 2e-11);
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 	test__run_init__check_result("float result = (4.0-3.0)/(4.0*4.0);", value_t::make_float(0.0625f));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 	test__run_init__check_result("float result = 1.0/2.0/2.0;", value_t::make_float(0.25f));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 	test__run_init__check_result("float result = 0.25 * .5 * 0.5;", value_t::make_float(0.0625f));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Fractional numbers") {
+QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 	test__run_init__check_result("float result = .25 / 2.0 * .5;", value_t::make_float(0.0625f));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("execute_expression()", "Repeated operators") {
 	test__run_init__check_result("int result = 1+-2;", value_t::make_int(-1));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("execute_expression()", "Repeated operators") {
 	test__run_init__check_result("int result = --2;", value_t::make_int(2));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("execute_expression()", "Repeated operators") {
 	test__run_init__check_result("int result = 2---2;", value_t::make_int(0));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
+QUARK_UNIT_TESTQ("execute_expression()", "Repeated operators") {
 	test__run_init__check_result("int result = 2-+-2;", value_t::make_int(4));
 }
 
@@ -259,10 +259,10 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Repeated operators") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - BOOL
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
+QUARK_UNIT_TESTQ("execute_expression()", "Bool") {
 	test__run_init__check_result("bool result = true;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
+QUARK_UNIT_TESTQ("execute_expression()", "Bool") {
 	test__run_init__check_result("bool result = false;", value_t::make_bool(false));
 }
 
@@ -271,25 +271,25 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Bool") {
 
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+QUARK_UNIT_TESTQ("execute_expression()", "?:") {
 	test__run_init__check_result("int result = true ? 4 : 6;", value_t::make_int(4));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+QUARK_UNIT_TESTQ("execute_expression()", "?:") {
 	test__run_init__check_result("int result = false ? 4 : 6;", value_t::make_int(6));
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+QUARK_UNIT_TESTQ("execute_expression()", "?:") {
 	test__run_init__check_result("int result = 1==3 ? 4 : 6;", value_t::make_int(6));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+QUARK_UNIT_TESTQ("execute_expression()", "?:") {
 	test__run_init__check_result("int result = 3==3 ? 4 : 6;", value_t::make_int(4));
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+QUARK_UNIT_TESTQ("execute_expression()", "?:") {
 	test__run_init__check_result("int result = 3==3 ? 2 + 2 : 2 * 3;", value_t::make_int(4));
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
+QUARK_UNIT_TESTQ("execute_expression()", "?:") {
 	test__run_init__check_result("int result = 3==1+2 ? 2 + 2 : 2 * 3;", value_t::make_int(4));
 }
 
@@ -297,19 +297,19 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "?:") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ==
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
+QUARK_UNIT_TESTQ("execute_expression()", "==") {
 	test__run_init__check_result("bool result = 1 == 1;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
+QUARK_UNIT_TESTQ("execute_expression()", "==") {
 	test__run_init__check_result("bool result = 1 == 2;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
+QUARK_UNIT_TESTQ("execute_expression()", "==") {
 	test__run_init__check_result("bool result = 1.3 == 1.3;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
+QUARK_UNIT_TESTQ("execute_expression()", "==") {
 	test__run_init__check_result("bool result = \"hello\" == \"hello\";", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
+QUARK_UNIT_TESTQ("execute_expression()", "==") {
 	test__run_init__check_result("bool result = \"hello\" == \"bye\";", value_t::make_bool(false));
 }
 
@@ -317,100 +317,100 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "==") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR <
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
+QUARK_UNIT_TESTQ("execute_expression()", "<") {
 	test__run_init__check_result("bool result = 1 < 2;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
+QUARK_UNIT_TESTQ("execute_expression()", "<") {
 	test__run_init__check_result("bool result = 5 < 2;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
+QUARK_UNIT_TESTQ("execute_expression()", "<") {
 	test__run_init__check_result("bool result = 0.3 < 0.4;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
+QUARK_UNIT_TESTQ("execute_expression()", "<") {
 	test__run_init__check_result("bool result = 1.5 < 0.4;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
+QUARK_UNIT_TESTQ("execute_expression()", "<") {
 	test__run_init__check_result("bool result = \"adwark\" < \"boat\";", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "<") {
+QUARK_UNIT_TESTQ("execute_expression()", "<") {
 	test__run_init__check_result("bool result = \"boat\" < \"adwark\";", value_t::make_bool(false));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR &&
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = false && false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = false && true;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = true && false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = true && true;", value_t::make_bool(true));
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = false && false && false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = false && false && true;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = false && true && false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = false && true && true;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = true && false && false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = true && true && false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "&&") {
+QUARK_UNIT_TESTQ("execute_expression()", "&&") {
 	test__run_init__check_result("bool result = true && true && true;", value_t::make_bool(true));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ||
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = false || false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = false || true;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = true || false;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = true || true;", value_t::make_bool(true));
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = false || false || false;", value_t::make_bool(false));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = false || false || true;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = false || true || false;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = false || true || true;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = true || false || false;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = true || false || true;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = true || true || false;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
+QUARK_UNIT_TESTQ("execute_expression()", "||") {
 	test__run_init__check_result("bool result = true || true || true;", value_t::make_bool(true));
 }
 
@@ -418,7 +418,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "||") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - ERRORS
 
 
-QUARK_UNIT_TEST("evaluate_expression()", "Type mismatch", "", "") {
+QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 	try{
 		test__run_init__check_result("int result = true;", value_t::make_int(1));
 		QUARK_TEST_VERIFY(false);
@@ -429,7 +429,7 @@ QUARK_UNIT_TEST("evaluate_expression()", "Type mismatch", "", "") {
 }
 
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
+QUARK_UNIT_TESTQ("execute_expression()", "Division by zero") {
 	try{
 		test__run_init__check_result("int result = 2/0;", value_t::make_null());
 		QUARK_TEST_VERIFY(false);
@@ -439,7 +439,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero") {
 	}
 }
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero"){
+QUARK_UNIT_TESTQ("execute_expression()", "Division by zero"){
 	try{
 		test__run_init__check_result("int result = 3+1/(5-5)+4;", value_t::make_null());
 		QUARK_TEST_VERIFY(false);
@@ -451,18 +451,18 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Division by zero"){
 
 #if false
 
-QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
+QUARK_UNIT_TESTQ("execute_expression()", "Errors") {
 		//	Multiple errors not possible/relevant now that we use exceptions for errors.
 /*
 	//////////////////////////		Only one error will be detected (in this case, the last one)
-	QUARK_TEST_VERIFY(test__evaluate_expression("3+1/0+4$") == EEE_WRONG_CHAR);
+	QUARK_TEST_VERIFY(test__execute_expression("3+1/0+4$") == EEE_WRONG_CHAR);
 
-	QUARK_TEST_VERIFY(test__evaluate_expression("3+1/0+4") == EEE_DIVIDE_BY_ZERO);
+	QUARK_TEST_VERIFY(test__execute_expression("3+1/0+4") == EEE_DIVIDE_BY_ZERO);
 
 	// ...or the first one
-	QUARK_TEST_VERIFY(test__evaluate_expression("q+1/0)") == EEE_WRONG_CHAR);
-	QUARK_TEST_VERIFY(test__evaluate_expression("+1/0)") == EEE_PARENTHESES);
-	QUARK_TEST_VERIFY(test__evaluate_expression("+1/0") == EEE_DIVIDE_BY_ZERO);
+	QUARK_TEST_VERIFY(test__execute_expression("q+1/0)") == EEE_WRONG_CHAR);
+	QUARK_TEST_VERIFY(test__execute_expression("+1/0)") == EEE_PARENTHESES);
+	QUARK_TEST_VERIFY(test__execute_expression("+1/0") == EEE_DIVIDE_BY_ZERO);
 */
 }
 
@@ -470,7 +470,7 @@ QUARK_UNIT_TESTQ("evaluate_expression()", "Errors") {
 
 
 
-QUARK_UNIT_TEST("evaluate_expression()", "-true", "", "") {
+QUARK_UNIT_TEST("execute_expression()", "-true", "", "") {
 	try{
 		test__run_init__check_result("int result = -true;", value_t::make_int(0));
 		QUARK_TEST_VERIFY(false);
@@ -527,7 +527,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t::make_int(7)));
+	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_int(7)));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
@@ -540,7 +540,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t::make_string("123456")));
+	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_string("123456")));
 }
 
 
@@ -702,7 +702,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t::make_int(15)));
+	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_int(15)));
 }
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
@@ -715,10 +715,10 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
-	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t::make_string("-xyz-")));
+	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_string("-xyz-")));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("Hello, world!") });
-	QUARK_TEST_VERIFY(result2.second == statement_result_t::make_return_unwind(value_t::make_string("-Hello, world!-")));
+	QUARK_TEST_VERIFY(result2 == statement_result_t::make_return_unwind(value_t::make_string("-Hello, world!-")));
 }
 
 
@@ -737,11 +737,11 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
 //	QUARK_TEST_VERIFY(*result.second == value_t::make_string("--xyz<xyz>--"));
-	QUARK_TEST_VERIFY(result.second == statement_result_t::make_return_unwind(value_t::make_string("--xyz<xyz>--")));
+	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_string("--xyz<xyz>--")));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("123") });
 //	QUARK_TEST_VERIFY(*result2.second == value_t::make_string("--123<123>--"));
-	QUARK_TEST_VERIFY(result2.second == statement_result_t::make_return_unwind(value_t::make_string("--123<123>--")));
+	QUARK_TEST_VERIFY(result2 == statement_result_t::make_return_unwind(value_t::make_string("--123<123>--")));
 }
 
 

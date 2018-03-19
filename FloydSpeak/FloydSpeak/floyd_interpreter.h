@@ -26,7 +26,9 @@ namespace floyd {
 	struct interpreter_t;
 
 
-	std::pair<interpreter_t, value_t> construct_value_from_typeid(const interpreter_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
+
+
+	value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
 
 
 	//////////////////////////////////////		statement_result_t
@@ -90,15 +92,9 @@ namespace floyd {
 
 	struct environment_t {
 		public: std::shared_ptr<environment_t> _prev_env;
-
 		public: const body_t* _body_ptr;
-
-		//	Bool says if value is MUTABLE. Which is rare.
-//		public: std::vector<std::pair<std::string, std::pair<value_t, bool>> > _values;
 		public: std::vector<value_t> _values;
 
-
-		public: bool check_invariant() const;
 
 		public: static std::shared_ptr<environment_t> make_environment(
 			const std::shared_ptr<environment_t>& prev_env,
@@ -108,8 +104,7 @@ namespace floyd {
 	};
 
 
-
-	//////////////////////////////////////		interpreter_t
+	//////////////////////////////////////		interpreter_imm_t
 
 
 	struct interpreter_imm_t {
@@ -144,7 +139,7 @@ namespace floyd {
 	};
 
 
-	std::pair<interpreter_t, statement_result_t> call_host_function(const interpreter_t& vm, int function_id, const std::vector<value_t> args);
+	statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t> args);
 
 	json_t interpreter_to_json(const interpreter_t& vm);
 
@@ -154,10 +149,10 @@ namespace floyd {
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	std::pair<interpreter_t, value_t> evaluate_expression(const interpreter_t& vm, const expression_t& e);
+	value_t execute_expression(interpreter_t& vm, const expression_t& e);
 
-	std::pair<interpreter_t, statement_result_t> call_function(
-		const interpreter_t& vm,
+	statement_result_t call_function(
+		interpreter_t& vm,
 		const value_t& f,
 		const std::vector<value_t>& args
 	);
@@ -168,17 +163,17 @@ namespace floyd {
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	std::pair<interpreter_t, statement_result_t> execute_statements(const interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
+	statement_result_t execute_statements(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
 
-	std::pair<interpreter_t, statement_result_t> execute_body(
-		const interpreter_t& vm,
+	statement_result_t execute_body(
+		interpreter_t& vm,
 		const body_t& body,
 		const std::vector<value_t>& init_values
 	);
 
 
 	//	Output is the RETURN VALUE of the executed statement, if any.
-	std::pair<interpreter_t, statement_result_t> execute_statement(const interpreter_t& vm, const statement_t& statement);
+	statement_result_t execute_statement(interpreter_t& vm, const statement_t& statement);
 
 
 
@@ -208,6 +203,97 @@ namespace floyd {
 	value_t get_global(const interpreter_t& vm, const std::string& name);
 
 	void print_vm_printlog(const interpreter_t& vm);
+
+
+
+	//////////////////////////////////////		bc_vm_t
+
+	typedef uint32_t bc_instruction_t;
+
+
+	/*
+		----------------------------------- -----------------------------------
+		66665555 55555544 44444444 33333333 33222222 22221111 11111100 00000000
+		32109876 54321098 76543210 98765432 10987654 32109876 54321098 76543210
+
+		XXXXXXXX XXXXXXXX PPPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP PPPPPppp
+		48bit Intel x86_64 pointer. ppp = low bits, set to 0, X = bit 47
+
+		-----------------------------------
+		33222222 22221111 11111100 00000000
+		10987654 32109876 54321098 76543210
+
+		INSTRUCTION
+		CCCCCCCC AAAAAAAA BBBBBBBB CCCCCCCC
+
+		A = destination register.
+		B = lhs register
+		C = rhs register
+
+
+		-----------------------------------------------------------------------
+	*/
+
+	enum bc_instr {
+		//	Store a into local/global variable a
+		k_statement_store,
+
+		//	Needed?
+		k_statement_block,
+
+		k_statement_return,
+		k_statement_if,
+
+		//	replace by k_statement_if.
+		k_statement_for,
+
+		//	replace by k_statement_if.
+		k_statement_while,
+
+		//	Not needed. Just use an expression and don't use its result.
+		k_statement_expression,
+
+		k_expression_literal,
+		k_expression_resolve_member,
+		k_expression_lookup_element,
+		k_expression_call,
+		k_expression_construct_value,
+		k_expression_arithmetic_unary_minus,
+
+		//	replace by k_statement_if.
+		k_expression_conditional_operator3,
+
+		k_expression_comparison_smaller_or_equal,
+		k_expression_comparison_smaller,
+		k_expression_comparison_larger_or_equal,
+		k_expression_comparison_larger,
+
+		k_expression_logical_equal,
+		k_expression_logical_nonequal,
+
+		k_expression_arithmetic_add,
+		k_expression_arithmetic_subtract,
+		k_expression_arithmetic_multiply,
+		k_expression_arithmetic_divide,
+		k_expression_arithmetic_remainder,
+
+		k_expression_logical_and,
+		k_expression_logical_or
+	};
+
+	//	A memory block. Addressed using index. Always 1 cache line big.
+	//	Prefetcher likes bigger blocks than this.
+	struct bc_node_t {
+		uint32_t _words[64 / sizeof(uint32_t)];
+	};
+
+	//	Mutable
+	struct bc_vm_t {
+		const std::vector<const bc_instruction_t> _instructions;
+
+		std::vector<uint32_t> _stack;
+		std::vector<bc_node_t> _object_blocks;
+	};
 
 } //	floyd
 
