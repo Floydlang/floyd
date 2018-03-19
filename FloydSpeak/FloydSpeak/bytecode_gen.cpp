@@ -42,7 +42,7 @@ using std::make_shared;
 
 	value_t construct_value_from_typeid(bgenerator_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
 
-	value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
+	expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
 	bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, const std::vector<value_t> args);
 	json_t bgenerator_to_json(const bgenerator_t& vm);
 
@@ -52,30 +52,27 @@ using std::make_shared;
 		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
 		return == _constant == nullptr: the expression was partially evaluate.
 	*/
-	value_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
+	expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
 
+/*
 	bgen_statement_result_t call_function(
 		bgenerator_t& vm,
 		const value_t& f,
 		const std::vector<value_t>& args
 	);
-
+*/
 	/*
 		Return value:
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	bgen_statement_result_t bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
+	std::vector<std::shared_ptr<statement_t>> bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
 
-	bgen_statement_result_t bcgen_body(
-		bgenerator_t& vm,
-		const body_t& body,
-		const std::vector<value_t>& init_values
-	);
+	body_t bcgen_body(bgenerator_t& vm, const body_t& body);
 
 
 	//	Output is the RETURN VALUE of the executed statement, if any.
-	bgen_statement_result_t bcgen_statement(bgenerator_t& vm, const statement_t& statement);
+	std::shared_ptr<statement_t> bcgen_statement(bgenerator_t& vm, const statement_t& statement);
 
 
 	typeid_t find_type_by_name(const bgenerator_t& vm, const typeid_t& type);
@@ -84,8 +81,6 @@ using std::make_shared;
 //	floyd::value_t find_global_symbol(const bgenerator_t& vm, const std::string& s);
 //	const floyd::value_t* find_symbol_by_name(const bgenerator_t& vm, const std::string& s);
 //	value_t get_global(const bgenerator_t& vm, const std::string& name);
-
-
 
 
 
@@ -182,71 +177,45 @@ value_t construct_value_from_typeid(bgenerator_t& vm, const typeid_t& type, cons
 	throw std::exception();
 }
 
-bgen_statement_result_t bcgen_statements2(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
+std::vector<std::shared_ptr<statement_t>> bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
+	std::vector<std::shared_ptr<statement_t>> result;
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto& statement = statements[statement_index];
 		const auto& r = bcgen_statement(vm, *statement);
-		if(r._type == bgen_statement_result_t::k_return_unwind){
-			return r;
+		if(r){
+			result.push_back(r);
 		}
-		else{
-
-			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
-			if(statement_index == (statements.size() - 1)){
-				if(r._type == bgen_statement_result_t::k_passive_expression_output){
-					return r;
-				}
-			}
-			else{
-			}
-
-			statement_index++;
-		}
+		statement_index++;
 	}
-	return bgen_statement_result_t::make_no_output();
-}
-bgen_statement_result_t bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
-	return bcgen_statements2(vm, statements);
+	return result;
 }
 
-bgen_statement_result_t bcgen_body(
-	bgenerator_t& vm,
-	const body_t& body,
-	const std::vector<value_t>& init_values
-)
-{
+body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
 	vm._call_stack.push_back(bcgen_environment_t{ &body });
-	const auto& r = bcgen_statements2(vm, body._statements);
+	const auto& r = bcgen_statements(vm, body._statements);
 	vm._call_stack.pop_back();
 
-	return r;
+	return body_t(r, body._symbols);
 }
 
-bgen_statement_result_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement){
+std::shared_ptr<statement_t> bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& address = statement._dest_variable;
-	const auto& rhs_value = bcgen_expression(vm, statement._expression);
-	auto env = find_env_from_address(vm, address);
-//	const auto pos = env->_values_offset + address._index;
-//	/QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-//	vm._value_stack[pos] = rhs_value;
-
-	return bgen_statement_result_t::make_no_output();
+	const auto& expr = bcgen_expression(vm, statement._expression);
+	return make_shared<statement_t>(statement_t::make__store2(statement._dest_variable, expr));
 }
 
-bgen_statement_result_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement){
+std::shared_ptr<statement_t> bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = statement._expression;
-	const auto& rhs_value = bcgen_expression(vm, expr);
-	return bgen_statement_result_t::make_return_unwind(rhs_value);
+	const auto& expr = bcgen_expression(vm, statement._expression);
+	return make_shared<statement_t>(statement_t::make__return_statement(expr));
 }
 
 /*
@@ -271,72 +240,47 @@ typeid_t find_type_by_name(const bgenerator_t& vm, const typeid_t& type){
 }
 */
 
-bgen_statement_result_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement){
+std::shared_ptr<statement_t> bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& condition_result_value = bcgen_expression(vm, statement._condition);
-	QUARK_ASSERT(condition_result_value.is_bool());
-	bool r = condition_result_value.get_bool_value();
-	if(r){
-		return bcgen_body(vm, statement._then_body, {});
-	}
-	else{
-		return bcgen_body(vm, statement._else_body, {});
-	}
+	const auto& condition_expr = bcgen_expression(vm, statement._condition);
+	QUARK_ASSERT(condition_expr.get_annotated_type().is_bool());
+	const auto& then_expr = bcgen_body(vm, statement._then_body);
+	const auto& else_expr = bcgen_body(vm, statement._else_body);
+	return make_shared<statement_t>(statement_t::make__ifelse_statement(condition_expr, then_expr, else_expr));
 }
 
-bgen_statement_result_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement){
+std::shared_ptr<statement_t> bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& start_value0 = bcgen_expression(vm, statement._start_expression);
-	const auto start_value_int = start_value0.get_int_value();
-
-	const auto& end_value0 = bcgen_expression(vm, statement._end_expression);
-	const auto end_value_int = end_value0.get_int_value();
-
-	vector<value_t> space_for_iterator = {value_t::make_null()};
-	for(int x = start_value_int ; x <= end_value_int ; x++){
-		space_for_iterator[0] = value_t::make_int(x);
-		const auto& return_value = bcgen_body(vm, statement._body, space_for_iterator);
-		if(return_value._type == bgen_statement_result_t::k_return_unwind){
-			return return_value;
-		}
-	}
-	return bgen_statement_result_t::make_no_output();
+	//??? iterator name string should be an address instead!
+	const auto& iterator_name = statement._iterator_name;
+	const auto& start_expr = bcgen_expression(vm, statement._start_expression);
+	const auto& end_expr = bcgen_expression(vm, statement._end_expression);
+	const auto& body = bcgen_body(vm, statement._body);
+	return make_shared<statement_t>(statement_t::make__for_statement(iterator_name, start_expr, end_expr, body));
 }
 
-bgen_statement_result_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement){
+std::shared_ptr<statement_t> bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	bool again = true;
-	while(again){
-		const auto& condition_value_expr = bcgen_expression(vm, statement._condition);
-		const auto& condition_value = condition_value_expr.get_bool_value();
-
-		if(condition_value){
-			const auto& return_value = bcgen_body(vm, statement._body, {});
-			if(return_value._type == bgen_statement_result_t::k_return_unwind){
-				return return_value;
-			}
-		}
-		else{
-			again = false;
-		}
-	}
-	return bgen_statement_result_t::make_no_output();
+	const auto& condition_expr = bcgen_expression(vm, statement._condition);
+	const auto& body = bcgen_body(vm, statement._body);
+	return make_shared<statement_t>(statement_t::make__while_statement(condition_expr, body));
 }
 
-bgen_statement_result_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement){
+std::shared_ptr<statement_t> bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& rhs_value = bcgen_expression(vm, statement._expression);
-	return bgen_statement_result_t::make_passive_expression_output(rhs_value);
+	const auto& expr = bcgen_expression(vm, statement._expression);
+	return make_shared<statement_t>(statement_t::make__expression_statement(expr));
 }
 
-bgen_statement_result_t bcgen_statement(bgenerator_t& vm, const statement_t& statement){
+std::shared_ptr<statement_t> bcgen_statement(bgenerator_t& vm, const statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
+/*
 	if(statement._bind_local){
 		//	Bind is converted to symbol table + store-local in pass3.
 		QUARK_ASSERT(false);
@@ -344,18 +288,23 @@ bgen_statement_result_t bcgen_statement(bgenerator_t& vm, const statement_t& sta
 	else if(statement._store){
 		QUARK_ASSERT(false);
 	}
-	else if(statement._store2){
+	else
+*/
+	if(statement._store2){
 		return bcgen_store2_statement(vm, *statement._store2);
 	}
 	else if(statement._block){
-		return bcgen_body(vm, statement._block->_body, {});
+		return make_shared<statement_t>(statement);
+//		return bcgen_body(vm, statement._block->_body, {});
 	}
 	else if(statement._return){
 		return bcgen_return_statement(vm, *statement._return);
 	}
+/*
 	else if(statement._def_struct){
 		QUARK_ASSERT(false);
 	}
+*/
 	else if(statement._if){
 		return bcgen_ifelse_statement(vm, *statement._if);
 	}
@@ -424,25 +373,26 @@ value_t get_global(const bgenerator_t& vm, const std::string& name){
 }
 */
 
-
-
-value_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t::resolve_member_expr_t& expr){
+expression_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+
+	const auto& expr = *e.get_resolve_member();
 
 	const auto& parent_expr = bcgen_expression(vm, *expr._parent_address);
-	QUARK_ASSERT(parent_expr.is_struct());
+	QUARK_ASSERT(parent_expr.get_annotated_type().is_struct());
 
-	const auto& struct_instance = parent_expr.get_struct_value();
+	//??? SHould use an address index, not a string!
+	const auto member_name = expr._member_name;
 
-	int index = find_struct_member_index(*struct_instance->_def, expr._member_name);
-	QUARK_ASSERT(index != -1);
-
-	const value_t value = struct_instance->_member_values[index];
-	return value;
+	return expression_t::make_resolve_member(parent_expr, member_name, e.get_annotated_type2());
 }
 
-value_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t::lookup_expr_t& expr){
+expression_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+
+	return e;
+/*
+	const expression_t::lookup_expr_t& expr
 
 	const auto& parent_value = bcgen_expression(vm, *expr._parent_address);
 	const auto& key_value = bcgen_expression(vm, *expr._lookup_key);
@@ -522,14 +472,17 @@ value_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t::lo
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+*/
+
 }
 
-value_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
+expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
+	return e;
+#if 0
 	const auto& expr = *e.get_load2();
 
-#if 0
 	bcgen_environment_t* env = find_env_from_address(vm, expr._address);
 	const auto pos = env->_values_offset + expr._address._index;
 	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
@@ -537,13 +490,14 @@ value_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(value.get_type() == e.get_annotated_type() /*|| e.get_annotated_type().is_null()*/);
 	return value;
 #endif
-	return value_t::make_null();
 }
 
-value_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){
+expression_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_construct_value();
+	return e;
+
+/*	const auto& expr = *e.get_construct_value();
 
 	if(expr._value_type2.is_vector()){
 		const std::vector<expression_t>& elements = expr._args;
@@ -607,10 +561,16 @@ value_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e
 		const auto& element = bcgen_expression(vm, expr._args[0]);
 		return construct_value_from_typeid(vm, expr._value_type2, { element });
 	}
+*/
+
 }
 
-value_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t::unary_minus_expr_t& expr){
+expression_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+
+	return e;
+/*
+expression_t::unary_minus_expr_t& expr
 
 	const auto& c = bcgen_expression(vm, *expr._expr);
 	if(c.is_int()){
@@ -639,10 +599,16 @@ value_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expressi
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+*/
+
 }
 
-value_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t::conditional_expr_t& expr){
+expression_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+
+	return e;
+/*
+expression_t::conditional_expr_t& expr
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	const auto& cond_result = bcgen_expression(vm, *expr._condition);
@@ -656,10 +622,16 @@ value_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression
 	else{
 		return bcgen_expression(vm, *expr._b);
 	}
+*/
 }
 
-value_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
+
+	return e;
+/*
+const expression_t::simple_expr__2_t& simple2_expr
+*e.get_simple__2()
 
 	const auto& left_constant = bcgen_expression(vm, *simple2_expr._left);
 	const auto& right_constant = bcgen_expression(vm, *simple2_expr._right);
@@ -695,11 +667,16 @@ value_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const 
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+*/
+
 }
 
-value_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
+	return e;
+#if 0
+	const expression_t::simple_expr__2_t& simple2_expr
 	const auto& left_constant = bcgen_expression(vm, *simple2_expr._left);
 	const auto& right_constant = bcgen_expression(vm, *simple2_expr._right);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
@@ -835,22 +812,24 @@ value_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const 
 		QUARK_ASSERT(false);
 	}
 	throw std::exception();
+#endif
+
 }
 
-value_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
+expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto& op = e.get_operation();
 
 	if(op == expression_type::k_literal){
-		return e.get_literal();
+		return e;
 	}
 	else if(op == expression_type::k_resolve_member){
-		return bcgen_resolve_member_expression(vm, *e.get_resolve_member());
+		return bcgen_resolve_member_expression(vm, e);
 	}
 	else if(op == expression_type::k_lookup_element){
-		return bcgen_lookup_element_expression(vm, *e.get_lookup());
+		return bcgen_lookup_element_expression(vm, e);
 	}
 	else if(op == expression_type::k_load){
 		QUARK_ASSERT(false);
@@ -864,15 +843,13 @@ value_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	}
 
 	else if(op == expression_type::k_define_struct){
-		// Moved entire function to symbol table -- no need for k_define_function-expression in interpreter!
 		QUARK_ASSERT(false);
-		return value_t::make_null();
 	}
 
-	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
-		const auto& expr = e.get_function_definition();
-		return value_t::make_function_value(expr->_def);
+		return e;
+//		const auto& expr = e.get_function_definition();
+//		return value_t::make_function_value(expr->_def);
 	}
 
 	else if(op == expression_type::k_construct_value){
@@ -881,12 +858,12 @@ value_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 
 	//	This can be desugared at compile time.
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return bcgen_arithmetic_unary_minus_expression(vm, *e.get_unary_minus());
+		return bcgen_arithmetic_unary_minus_expression(vm, e);
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == expression_type::k_conditional_operator3){
-		return bcgen_conditional_operator_expression(vm, *e.get_conditional());
+		return bcgen_conditional_operator_expression(vm, e);
 	}
 	else if (false
 		|| op == expression_type::k_comparison_smaller_or_equal__2
@@ -897,7 +874,7 @@ value_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 		|| op == expression_type::k_logical_equal__2
 		|| op == expression_type::k_logical_nonequal__2
 	){
-		return bcgen_comparison_expression(vm, op, *e.get_simple__2());
+		return bcgen_comparison_expression(vm, op, e);
 	}
 	else if (false
 		|| op == expression_type::k_arithmetic_add__2
@@ -909,7 +886,7 @@ value_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 		|| op == expression_type::k_logical_and__2
 		|| op == expression_type::k_logical_or__2
 	){
-		return bcgen_arithmetic_expression(vm, op, *e.get_simple__2());
+		return bcgen_arithmetic_expression(vm, op, e);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -917,6 +894,7 @@ value_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	throw std::exception();
 }
 
+#if 0
 bgen_statement_result_t call_function(bgenerator_t& vm, const floyd::value_t& f, const vector<value_t>& args){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
@@ -964,11 +942,14 @@ bgen_statement_result_t call_function(bgenerator_t& vm, const floyd::value_t& f,
 		return r;
 	}
 }
+#endif
 
-value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
+expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
+	return e;
+#if 0
 	const auto& expr = *e.get_call();
 
 	const auto& function_value = bcgen_expression(vm, *expr._callee);
@@ -1013,7 +994,7 @@ value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 
 //		vm._call_stack.push_back(bcgen_environment_t{ function_def->_body.get(), values_offset });
 
-		const auto& result = bcgen_statements2(vm, function_def->_body->_statements);
+		const auto& result = bcgen_statements(vm, function_def->_body->_statements);
 		vm._call_stack.pop_back();
 //		vm._value_stack.resize(values_offset);
 
@@ -1034,6 +1015,8 @@ value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 		QUARK_ASSERT(result._type == bgen_statement_result_t::k_return_unwind);
 		return result._output;
 	}
+#endif
+
 }
 
 json_t bgenerator_to_json(const bgenerator_t& vm){
@@ -1064,15 +1047,15 @@ json_t bgenerator_to_json(const bgenerator_t& vm){
 	});
 }
 
-void test__bcgen_expression(const expression_t& e, const value_t& expected_value){
+void test__bcgen_expression(const expression_t& e, const expression_t& expected_value){
 	const ast_t ast;
 	bgenerator_t interpreter(ast);
 	const auto& e3 = bcgen_expression(interpreter, e);
 
-	ut_compare_jsons(value_to_ast_json(e3)._value, value_to_ast_json(expected_value)._value);
+	ut_compare_jsons(expression_to_json(e3)._value, expression_to_json(expected_value)._value);
 }
 
-
+/*
 QUARK_UNIT_TESTQ("bcgen_expression()", "literal 1234 == 1234") {
 	test__bcgen_expression(
 		expression_t::make_literal_int(1234),
@@ -1121,7 +1104,7 @@ QUARK_UNIT_TESTQ("bcgen_expression()", "(3 * 4) * 5 == 60") {
 		value_t::make_int(60)
 	);
 }
-
+*/
 
 
 
@@ -1142,11 +1125,7 @@ bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, co
 bgenerator_t::bgenerator_t(const ast_t& pass3){
 	QUARK_ASSERT(pass3.check_invariant());
 
-	const body_t* body_ptr = &_imm->_ast_pass3._globals;
-
 	_imm = std::make_shared<bgenerator_imm_t>(bgenerator_imm_t{pass3});
-	_call_stack.push_back(bcgen_environment_t{ body_ptr });
-	const auto& r = bcgen_statements2(*this, _imm->_ast_pass3._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1178,6 +1157,16 @@ bool bgenerator_t::check_invariant() const {
 }
 #endif
 
+bc_program_t bcgen_analyse(bgenerator_t& vm){
+//	const body_t* body_ptr = &vm._imm->_ast_pass3._globals;
+//	vm._call_stack.push_back(bcgen_environment_t{ body_ptr });
+	const auto body2 = bcgen_body(vm, vm._imm->_ast_pass3._globals);
+//	const auto& r = bcgen_statements(*this, _imm->_ast_pass3._globals._statements);
+	const auto result = bc_program_t{ ast_t(body2) };
+//	const auto result = bc_program_t{ vm._imm->_ast_pass3 };
+	return result;
+}
+
 
 bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t& pass3){
 	QUARK_ASSERT(pass3.check_invariant());
@@ -1186,15 +1175,13 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t&
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(pass3)._value));
 
-//	bgenerator_t a(pass3);
-	const auto result = bc_program_t{ pass3 };
+	bgenerator_t a(pass3);
+	const auto result = bcgen_analyse(a);
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(result._bcgen_ast)._value));
 
 	return result;
 }
-
-
 
 
 
