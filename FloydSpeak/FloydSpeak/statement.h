@@ -455,7 +455,7 @@ namespace floyd {
 		}
 
  		public: static bool is_annotated_deep(const std::vector<std::shared_ptr<statement_t>>& s){
-			for(const auto e: s){
+			for(const auto& e: s){
 				if(e->is_annotated_deep() == false){
 					return false;
 				}
@@ -536,7 +536,7 @@ namespace floyd {
 	};
 
 	inline bool is_annotated_deep2(const body_t& body){
-		for(const auto e: body._statements){
+		for(const auto& e: body._statements){
 			if(e->is_annotated_deep() == false){
 				return false;
 			}

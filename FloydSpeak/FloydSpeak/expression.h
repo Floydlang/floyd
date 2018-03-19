@@ -731,11 +731,11 @@ namespace floyd {
 					return true;
 				}
 				else if(op == expression_type::k_resolve_member){
-					const auto e = *get_resolve_member();
+					const auto& e = *get_resolve_member();
 					return e._parent_address->is_annotated_deep();
 				}
 				else if(op == expression_type::k_lookup_element){
-					const auto e = *get_lookup();
+					const auto& e = *get_lookup();
 					return e._parent_address->is_annotated_deep() && e._lookup_key;
 				}
 				else if(op == expression_type::k_load){
@@ -745,12 +745,12 @@ namespace floyd {
 					return true;
 				}
 				else if(op == expression_type::k_call){
-					const auto e = *get_call();
+					const auto& e = *get_call();
 					if(e._callee->is_annotated_deep() == false){
 						return false;
 					}
 					else{
-						for(const auto a: e._args){
+						for(const auto& a: e._args){
 							if(a.is_annotated_deep() == false){
 								return false;
 							}
@@ -761,19 +761,19 @@ namespace floyd {
 
 				else if(op == expression_type::k_define_struct){
 					//??? check function's statements too.
-					const auto e = *get_struct_def();
+					const auto& e = *get_struct_def();
 					return true;
 				}
 
 				else if(op == expression_type::k_define_function){
 					//??? check function's statements too.
-					const auto e = *get_function_definition();
+					const auto& e = *get_function_definition();
 					return true;
 				}
 
 				else if(op == expression_type::k_construct_value){
-					const auto e = *get_construct_value();
-					for(const auto a: e._args){
+					const auto& e = *get_construct_value();
+					for(const auto& a: e._args){
 						if(a.is_annotated_deep() == false){
 							return false;
 						}
@@ -783,13 +783,13 @@ namespace floyd {
 
 				//	This can be desugared at compile time.
 				else if(op == expression_type::k_arithmetic_unary_minus__1){
-					const auto e = *get_unary_minus();
+					const auto& e = *get_unary_minus();
 					return e._expr->is_annotated_deep();
 				}
 
 				//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 				else if(op == expression_type::k_conditional_operator3){
-					const auto e = *get_conditional();
+					const auto& e = *get_conditional();
 					return e._condition->is_annotated_deep() && e._a->is_annotated_deep() && e._b->is_annotated_deep();
 				}
 				else if (false
@@ -801,7 +801,7 @@ namespace floyd {
 					|| op == expression_type::k_logical_equal__2
 					|| op == expression_type::k_logical_nonequal__2
 				){
-					const auto e = *get_simple__2();
+					const auto& e = *get_simple__2();
 					return e._left->is_annotated_deep() && e._right->is_annotated_deep();
 				}
 				else if (false
@@ -814,7 +814,7 @@ namespace floyd {
 					|| op == expression_type::k_logical_and__2
 					|| op == expression_type::k_logical_or__2
 				){
-					const auto e = *get_simple__2();
+					const auto& e = *get_simple__2();
 					return e._left->is_annotated_deep() && e._right->is_annotated_deep();
 				}
 				else{

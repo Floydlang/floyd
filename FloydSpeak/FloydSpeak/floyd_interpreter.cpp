@@ -251,10 +251,10 @@ statement_result_t execute_for_statement(interpreter_t& vm, const statement_t::f
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& start_value0 = execute_expression(vm, statement._start_expression);
-	const auto& start_value_int = start_value0.get_int_value();
+	const auto start_value_int = start_value0.get_int_value();
 
 	const auto& end_value0 = execute_expression(vm, statement._end_expression);
-	const auto& end_value_int = end_value0.get_int_value();
+	const auto end_value_int = end_value0.get_int_value();
 
 	vector<value_t> space_for_iterator = {value_t::make_null()};
 	for(int x = start_value_int ; x <= end_value_int ; x++){
@@ -875,11 +875,12 @@ value_t execute_expression(interpreter_t& vm, const expression_t& e){
 }
 
 statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+#if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
 	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-
 	QUARK_ASSERT(f.is_function());
+#endif
 
 	const auto& function_def = f.get_function_value();
 	if(function_def->_host_function != 0){

@@ -26,7 +26,7 @@ namespace floyd {
 	bool struct_instance_t::check_invariant() const{
 		QUARK_ASSERT(_def && _def->check_invariant());
 
-		for(const auto m: _member_values){
+		for(const auto& m: _member_values){
 			QUARK_ASSERT(m.check_invariant());
 		}
 		return true;
@@ -56,7 +56,7 @@ namespace floyd {
 
 	std::string vector_instance_to_compact_string(const std::vector<value_t>& elements0){
 		std::vector<std::string> elements;
-		for(const auto e: elements0){
+		for(const auto& e: elements0){
 			const auto es = to_compact_string_quote_strings(e);
 			elements.push_back(es);
 		}
@@ -68,10 +68,10 @@ namespace floyd {
 
 	std::string dict_instance_to_compact_string(const std::map<std::string, value_t>& entries){
 		std::vector<std::string> elements;
-		for(const auto e: entries){
-			const auto key_str = quote(e.first);
-			const auto value_str = to_compact_string_quote_strings(e.second);
-			const auto es = key_str + ": " + value_str;
+		for(const auto& e: entries){
+			const auto& key_str = quote(e.first);
+			const auto& value_str = to_compact_string_quote_strings(e.second);
+			const auto& es = key_str + ": " + value_str;
 			elements.push_back(es);
 		}
 //		return "[string:" + typeid_to_compact_string(instance._value_type) + "]" + "{" + concat_strings_with_divider(elements, ",") + "}";
@@ -249,8 +249,8 @@ int compare_struct_true_deep(const struct_instance_t& left, const struct_instanc
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
-	auto a_it = left._member_values.begin();
-	auto b_it = right._member_values.begin();
+	std::vector<value_t>::const_iterator a_it = left._member_values.begin();
+	std::vector<value_t>::const_iterator b_it = right._member_values.begin();
 
 	while(a_it !=left._member_values.end()){
 		int diff = value_t::compare_value_true_deep(*a_it, *b_it);
@@ -271,7 +271,7 @@ int compare_vector_true_deep(const std::vector<value_t>& left, const std::vector
 //	QUARK_ASSERT(right.check_invariant());
 //	QUARK_ASSERT(left._element_type == right._element_type);
 
-	const auto shared_count = std::min(left.size(), right.size());
+	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
 		const auto element_result = value_t::compare_value_true_deep(left[i], right[i]);
 		if(element_result != 0){
@@ -408,8 +408,8 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			throw std::runtime_error("Cannot compare structs of different type.");
 		}
 		else{
-			const auto left_vec = left.get_vector_value();
-			const auto right_vec = right.get_vector_value();
+			const auto& left_vec = left.get_vector_value();
+			const auto& right_vec = right.get_vector_value();
 			return compare_vector_true_deep(left_vec, right_vec);
 		}
 	}
@@ -419,8 +419,8 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 			throw std::runtime_error("Cannot compare dicts of different type.");
 		}
 		else{
-			const auto left2 = left.get_dict_value();
-			const auto right2 = right.get_dict_value();
+			const auto& left2 = left.get_dict_value();
+			const auto& right2 = right.get_dict_value();
 			return compare_dict_true_deep(left2, right2);
 		}
 	}
@@ -882,14 +882,14 @@ ast_json_t value_to_ast_json(const value_t& v){
 		return typeid_to_ast_json(v.get_typeid_value());
 	}
 	else if(v.is_struct()){
-		const auto struct_value = v.get_struct_value();
+		const auto& struct_value = v.get_struct_value();
 		std::map<string, json_t> obj2;
 		for(int i = 0 ; i < struct_value->_def->_members.size() ; i++){
-			const auto member = struct_value->_def->_members[i];
-			const auto key = member._name;
-			const auto type = member._type;
-			const auto value = struct_value->_member_values[i];
-			const auto value2 = value_to_ast_json(value);
+			const auto& member = struct_value->_def->_members[i];
+			const auto& key = member._name;
+			const auto& type = member._type;
+			const auto& value = struct_value->_member_values[i];
+			const auto& value2 = value_to_ast_json(value);
 			obj2[key] = value2._value;
 		}
 		return ast_json_t{json_t::make_object(obj2)};
@@ -906,7 +906,7 @@ ast_json_t value_to_ast_json(const value_t& v){
 //		return ast_json_t{ values_to_json_array(value->_member_values) 	};
 	}
 	else if(v.is_vector()){
-		const auto vec = v.get_vector_value();
+		const auto& vec = v.get_vector_value();
 		return ast_json_t{ values_to_json_array(vec) 	};
 /*
 		std::vector<json_t> result;
@@ -921,7 +921,7 @@ ast_json_t value_to_ast_json(const value_t& v){
 	else if(v.is_dict()){
 		const auto entries = v.get_dict_value();
 		std::map<string, json_t> result;
-		for(const auto e: entries){
+		for(const auto& e: entries){
 			result[e.first] = value_to_ast_json(e.second)._value;
 		}
 		return ast_json_t{result};
@@ -1046,8 +1046,8 @@ value_t value_t::make_function_value(const std::shared_ptr<const function_defini
 
 	json_t values_to_json_array(const std::vector<value_t>& values){
 		std::vector<json_t> r;
-		for(const auto i: values){
-			const auto j = value_to_ast_json(i)._value;
+		for(const auto& i: values){
+			const auto& j = value_to_ast_json(i)._value;
 			r.push_back(j);
 		}
 		return json_t::make_array(r);
