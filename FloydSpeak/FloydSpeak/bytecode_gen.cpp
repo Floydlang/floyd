@@ -40,7 +40,54 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
+	value_t construct_value_from_typeid(bgenerator_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
+
+	value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
+	bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, const std::vector<value_t> args);
+	json_t bgenerator_to_json(const bgenerator_t& vm);
+
+
+	/*
+		Executes an expression as far as possible.
+		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
+		return == _constant == nullptr: the expression was partially evaluate.
+	*/
+	value_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
+
+	bgen_statement_result_t call_function(
+		bgenerator_t& vm,
+		const value_t& f,
+		const std::vector<value_t>& args
+	);
+
+	/*
+		Return value:
+			null = statements were all executed through.
+			value = return statement returned a value.
+	*/
+	bgen_statement_result_t bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
+
+	bgen_statement_result_t bcgen_body(
+		bgenerator_t& vm,
+		const body_t& body,
+		const std::vector<value_t>& init_values
+	);
+
+
+	//	Output is the RETURN VALUE of the executed statement, if any.
+	bgen_statement_result_t bcgen_statement(bgenerator_t& vm, const statement_t& statement);
+
+
+	typeid_t find_type_by_name(const bgenerator_t& vm, const typeid_t& type);
+
+
+//	floyd::value_t find_global_symbol(const bgenerator_t& vm, const std::string& s);
+//	const floyd::value_t* find_symbol_by_name(const bgenerator_t& vm, const std::string& s);
+//	value_t get_global(const bgenerator_t& vm, const std::string& name);
+
+
+
+
 
 
 bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
@@ -174,23 +221,9 @@ bgen_statement_result_t bcgen_body(
 {
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto values_offset = vm._value_stack.size();
-	if(init_values.empty() == false){
-		for(const auto& e: init_values){
-			vm._value_stack.push_back(e);
-		}
-	}
-	if(body._symbols.empty() == false){
-		for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
-			const auto& symbol = body._symbols[i];
-			vm._value_stack.push_back(symbol.second._const_value);
-		}
-	}
-	vm._call_stack.push_back(bcgen_environment_t{ &body, values_offset });
-
+	vm._call_stack.push_back(bcgen_environment_t{ &body });
 	const auto& r = bcgen_statements2(vm, body._statements);
 	vm._call_stack.pop_back();
-	vm._value_stack.resize(values_offset);
 
 	return r;
 }
@@ -201,9 +234,9 @@ bgen_statement_result_t bcgen_store2_statement(bgenerator_t& vm, const statement
 	const auto& address = statement._dest_variable;
 	const auto& rhs_value = bcgen_expression(vm, statement._expression);
 	auto env = find_env_from_address(vm, address);
-	const auto pos = env->_values_offset + address._index;
-	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-	vm._value_stack[pos] = rhs_value;
+//	const auto pos = env->_values_offset + address._index;
+//	/QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+//	vm._value_stack[pos] = rhs_value;
 
 	return bgen_statement_result_t::make_no_output();
 }
@@ -216,6 +249,7 @@ bgen_statement_result_t bcgen_return_statement(bgenerator_t& vm, const statement
 	return bgen_statement_result_t::make_return_unwind(rhs_value);
 }
 
+/*
 typeid_t find_type_by_name(const bgenerator_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
 		const auto v = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
@@ -235,6 +269,7 @@ typeid_t find_type_by_name(const bgenerator_t& vm, const typeid_t& type){
 		return type;
 	}
 }
+*/
 
 bgen_statement_result_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -340,7 +375,7 @@ bgen_statement_result_t bcgen_statement(bgenerator_t& vm, const statement_t& sta
 }
 
 
-
+/*
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 const floyd::value_t* find_symbol_by_name_deep(const bgenerator_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -387,6 +422,7 @@ value_t get_global(const bgenerator_t& vm, const std::string& name){
 		return *result;
 	}
 }
+*/
 
 
 
@@ -493,12 +529,15 @@ value_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 
 	const auto& expr = *e.get_load2();
 
+#if 0
 	bcgen_environment_t* env = find_env_from_address(vm, expr._address);
 	const auto pos = env->_values_offset + expr._address._index;
 	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 	const auto& value = vm._value_stack[pos];
 	QUARK_ASSERT(value.get_type() == e.get_annotated_type() /*|| e.get_annotated_type().is_null()*/);
 	return value;
+#endif
+	return value_t::make_null();
 }
 
 value_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){
@@ -937,7 +976,7 @@ value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 	const auto& function_def = function_value.get_function_value();
 
 	if(function_def->_host_function_id != 0){
-		const auto& host_function = vm._imm->_host_functions.at(function_def->_host_function_id);
+//		const auto& host_function = vm._imm->_host_functions.at(function_def->_host_function_id);
 
 		//	arity
 		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -959,26 +998,24 @@ value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 		return value_t();
 	}
 	else{
-		const auto values_offset = vm._value_stack.size();
 
 		for(int i = 0 ; i < expr._args.size() ; i++){
 			const auto& arg_expr = expr._args[i];
 			QUARK_ASSERT(arg_expr.check_invariant());
 
 			const auto& t = bcgen_expression(vm, arg_expr);
-			vm._value_stack.push_back(t);
+//			vm._value_stack.push_back(t);
 		}
-		if(function_def->_body->_symbols.empty() == false){
-			for(vector<value_t>::size_type i = expr._args.size() ; i < function_def->_body->_symbols.size() ; i++){
-				const auto& symbol = function_def->_body->_symbols[i];
-				vm._value_stack.push_back(symbol.second._const_value);
-			}
+		for(vector<value_t>::size_type i = expr._args.size() ; i < function_def->_body->_symbols.size() ; i++){
+			const auto& symbol = function_def->_body->_symbols[i];
+//			vm._value_stack.push_back(symbol.second._const_value);
 		}
-		vm._call_stack.push_back(bcgen_environment_t{ function_def->_body.get(), values_offset });
+
+//		vm._call_stack.push_back(bcgen_environment_t{ function_def->_body.get(), values_offset });
 
 		const auto& result = bcgen_statements2(vm, function_def->_body->_statements);
 		vm._call_stack.pop_back();
-		vm._value_stack.resize(values_offset);
+//		vm._value_stack.resize(values_offset);
 
 /*
 #if DEBUG
@@ -1001,6 +1038,7 @@ value_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 
 json_t bgenerator_to_json(const bgenerator_t& vm){
 	vector<json_t> callstack;
+/*
 	for(int env_index = 0 ; env_index < vm._call_stack.size() ; env_index++){
 		const auto e = &vm._call_stack[vm._call_stack.size() - 1 - env_index];
 
@@ -1018,9 +1056,10 @@ json_t bgenerator_to_json(const bgenerator_t& vm){
 		});
 		callstack.push_back(env);
 	}
+*/
 
 	return json_t::make_object({
-		{ "ast", ast_to_json(vm._imm->_ast)._value },
+		{ "ast", ast_to_json(vm._imm->_ast_pass3)._value },
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
@@ -1089,7 +1128,7 @@ QUARK_UNIT_TESTQ("bcgen_expression()", "(3 * 4) * 5 == 60") {
 bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, const std::vector<floyd::value_t> args){
 	QUARK_ASSERT(function_id >= 0);
 
-	const auto& host_function = vm._imm->_host_functions.at(function_id);
+//	const auto& host_function = vm._imm->_host_functions.at(function_id);
 
 	//	arity
 //	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -1100,41 +1139,19 @@ bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, co
 	return bgen_statement_result_t::make_return_unwind(result);
 }
 
-bgenerator_t::bgenerator_t(const ast_t& ast){
-	QUARK_ASSERT(ast.check_invariant());
+bgenerator_t::bgenerator_t(const ast_t& pass3){
+	QUARK_ASSERT(pass3.check_invariant());
 
-	_value_stack.reserve(1024);
-	_call_stack.reserve(32);
+	const body_t* body_ptr = &_imm->_ast_pass3._globals;
 
-	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
-	const auto& host_functions = get_host_functions();
-	std::map<int, HOST_FUNCTION_PTR> host_functions2;
-	for(auto& hf_kv: host_functions){
-		const auto& function_id = hf_kv.second._signature._function_id;
-		const auto& function_ptr = hf_kv.second._f;
-		host_functions2.insert({ function_id, function_ptr });
-	}
-
-	const auto start_time = std::chrono::high_resolution_clock::now();
-	_imm = std::make_shared<bgenerator_imm_t>(bgenerator_imm_t{start_time, ast, host_functions2});
-
-
-	const auto values_offset = _value_stack.size();
-	const auto& body_ptr = _imm->_ast._globals;
-	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
-		const auto& symbol = body_ptr._symbols[i];
-		_value_stack.push_back(symbol.second._const_value);
-	}
-	_call_stack.push_back(bcgen_environment_t{ &body_ptr, values_offset });
-
-	//	Run static intialization (basically run global statements before calling main()).
-	const auto& r = bcgen_statements2(*this, _imm->_ast._globals._statements);
+	_imm = std::make_shared<bgenerator_imm_t>(bgenerator_imm_t{pass3});
+	_call_stack.push_back(bcgen_environment_t{ body_ptr });
+	const auto& r = bcgen_statements2(*this, _imm->_ast_pass3._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 
 bgenerator_t::bgenerator_t(const bgenerator_t& other) :
 	_imm(other._imm),
-	_value_stack(other._value_stack),
 	_call_stack(other._call_stack),
 	_print_output(other._print_output)
 {
@@ -1144,7 +1161,6 @@ bgenerator_t::bgenerator_t(const bgenerator_t& other) :
 
 void bgenerator_t::swap(bgenerator_t& other) throw(){
 	other._imm.swap(this->_imm);
-	other._value_stack.swap(this->_value_stack);
 	_call_stack.swap(this->_call_stack);
 	other._print_output.swap(this->_print_output);
 }
@@ -1157,7 +1173,7 @@ const bgenerator_t& bgenerator_t::operator=(const bgenerator_t& other){
 
 #if DEBUG
 bool bgenerator_t::check_invariant() const {
-	QUARK_ASSERT(_imm->_ast.check_invariant());
+	QUARK_ASSERT(_imm->_ast_pass3.check_invariant());
 	return true;
 }
 #endif

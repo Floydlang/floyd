@@ -23,16 +23,12 @@ namespace floyd {
 	struct value_t;
 	struct statement_t;
 	struct bgenerator_t;
-	value_t construct_value_from_typeid(bgenerator_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
-
-
 
 
 
 	//////////////////////////////////////		bc_vm_t
 
 	typedef uint32_t bc_instruction_t;
-
 
 	/*
 		----------------------------------- -----------------------------------
@@ -52,7 +48,6 @@ namespace floyd {
 		A = destination register.
 		B = lhs register
 		C = rhs register
-
 
 		-----------------------------------------------------------------------
 	*/
@@ -115,7 +110,6 @@ namespace floyd {
 		std::shared_ptr<const statement_t> _statement;
 	};
 	struct bc_program_t {
-
 		public: bool check_invariant() const {
 			QUARK_ASSERT(_bcgen_ast.check_invariant());
 			return true;
@@ -124,8 +118,6 @@ namespace floyd {
 //		const std::vector<const bc_instruction_t> _instructions;
 		floyd::ast_t _bcgen_ast;
 	};
-
-
 
 
 	//////////////////////////////////////		bgen_statement_result_t
@@ -188,7 +180,6 @@ namespace floyd {
 
 	struct bcgen_environment_t {
 		public: const body_t* _body_ptr;
-		public: std::vector<bcgen_environment_t>::size_type _values_offset;
 	};
 
 
@@ -197,9 +188,7 @@ namespace floyd {
 
 	struct bgenerator_imm_t {
 		////////////////////////		STATE
-		public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
-		public: const ast_t _ast;
-		public: const std::map<int, HOST_FUNCTION_PTR> _host_functions;
+		public: const ast_t _ast_pass3;
 	};
 
 
@@ -211,7 +200,7 @@ namespace floyd {
 	*/
 
 	struct bgenerator_t {
-		public: explicit bgenerator_t(const ast_t& ast);
+		public: explicit bgenerator_t(const ast_t& pass3);
 		public: bgenerator_t(const bgenerator_t& other);
 		public: const bgenerator_t& operator=(const bgenerator_t& other);
 #if DEBUG
@@ -223,63 +212,17 @@ namespace floyd {
 		public: std::shared_ptr<bgenerator_imm_t> _imm;
 
 		//	Holds all values for all environments.
-		public: std::vector<value_t> _value_stack;
 		public: std::vector<bcgen_environment_t> _call_stack;
 		public: std::vector<std::string> _print_output;
 	};
 
 
-	bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, const std::vector<value_t> args);
-
-	json_t bgenerator_to_json(const bgenerator_t& vm);
-
-
-	/*
-		Executes an expression as far as possible.
-		return == _constant != nullptr:	the expression was completely evaluated and resulted in a constant value.
-		return == _constant == nullptr: the expression was partially evaluate.
-	*/
-	value_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
-
-	bgen_statement_result_t call_function(
-		bgenerator_t& vm,
-		const value_t& f,
-		const std::vector<value_t>& args
-	);
-
-
-	/*
-		Return value:
-			null = statements were all executed through.
-			value = return statement returned a value.
-	*/
-	bgen_statement_result_t bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
-
-	bgen_statement_result_t bcgen_body(
-		bgenerator_t& vm,
-		const body_t& body,
-		const std::vector<value_t>& init_values
-	);
-
-
-	//	Output is the RETURN VALUE of the executed statement, if any.
-	bgen_statement_result_t bcgen_statement(bgenerator_t& vm, const statement_t& statement);
+	//////////////////////////		run_bggen()
 
 
 
-	//////////////////////////		run_main()
-
-
-
-	floyd::value_t find_global_symbol(const bgenerator_t& vm, const std::string& s);
-	typeid_t find_type_by_name(const bgenerator_t& vm, const typeid_t& type);
-	const floyd::value_t* find_symbol_by_name(const bgenerator_t& vm, const std::string& s);
 
 	bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t& pass3);
-
-
-	value_t get_global(const bgenerator_t& vm, const std::string& name);
-
 
 } //	floyd
 
