@@ -43,7 +43,6 @@ using std::make_shared;
 	value_t construct_value_from_typeid(bgenerator_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
 
 	expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
-	bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, const std::vector<value_t> args);
 	json_t bgenerator_to_json(const bgenerator_t& vm);
 
 
@@ -54,22 +53,9 @@ using std::make_shared;
 	*/
 	expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
 
-/*
-	bgen_statement_result_t call_function(
-		bgenerator_t& vm,
-		const value_t& f,
-		const std::vector<value_t>& args
-	);
-*/
-	/*
-		Return value:
-			null = statements were all executed through.
-			value = return statement returned a value.
-	*/
 	std::vector<std::shared_ptr<statement_t>> bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
 
 	body_t bcgen_body(bgenerator_t& vm, const body_t& body);
-
 
 	//	Output is the RETURN VALUE of the executed statement, if any.
 	std::shared_ptr<statement_t> bcgen_statement(bgenerator_t& vm, const statement_t& statement);
@@ -390,10 +376,11 @@ expression_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_
 expression_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return e;
+	const auto& expr = *e.get_lookup();
+	const auto& parent_expr = bcgen_expression(vm, *expr._parent_address);
+	const auto& key_expr = bcgen_expression(vm, *expr._lookup_key);
+	return expression_t::make_lookup(parent_expr, key_expr, e.get_annotated_type2());
 /*
-	const expression_t::lookup_expr_t& expr
-
 	const auto& parent_value = bcgen_expression(vm, *expr._parent_address);
 	const auto& key_value = bcgen_expression(vm, *expr._lookup_key);
 	if(parent_value.is_string()){
@@ -479,10 +466,11 @@ expression_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_
 expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return e;
-#if 0
 	const auto& expr = *e.get_load2();
+	const auto& address = expr._address;
+	return expression_t::make_load2(address, e.get_annotated_type2());
 
+#if 0
 	bcgen_environment_t* env = find_env_from_address(vm, expr._address);
 	const auto pos = env->_values_offset + expr._address._index;
 	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
@@ -495,7 +483,16 @@ expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 expression_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return e;
+	const auto& expr = *e.get_construct_value();
+	const auto& value_type = expr._value_type2;
+
+	std::vector<expression_t> args2;
+	for(const auto& m: expr._args){
+		const auto& m2 = bcgen_expression(vm, m);
+		args2.push_back(m2);
+	}
+
+	return expression_t::make_construct_value_expr(value_type, args2);
 
 /*	const auto& expr = *e.get_construct_value();
 
@@ -568,7 +565,9 @@ expression_t bcgen_construct_value_expression(bgenerator_t& vm, const expression
 expression_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return e;
+	const auto& expr = *e.get_unary_minus();
+	const auto& exprx = bcgen_expression(vm, *expr._expr);
+	return expression_t::make_unary_minus(exprx, e.get_annotated_type2());
 /*
 expression_t::unary_minus_expr_t& expr
 
@@ -600,13 +599,16 @@ expression_t::unary_minus_expr_t& expr
 		throw std::exception();
 	}
 */
-
 }
 
 expression_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return e;
+	const auto& expr = *e.get_conditional();
+	const auto& condition_expr = bcgen_expression(vm, *expr._condition);
+	const auto& a_expr = bcgen_expression(vm, *expr._a);
+	const auto& b_expr = bcgen_expression(vm, *expr._b);
+	return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, e.get_annotated_type2());
 /*
 expression_t::conditional_expr_t& expr
 
@@ -628,7 +630,10 @@ expression_t::conditional_expr_t& expr
 expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return e;
+	const auto& expr = *e.get_simple__2();
+	const auto& left_expr = bcgen_expression(vm, *expr._left);
+	const auto& right_expr = bcgen_expression(vm, *expr._right);
+	return expression_t::make_simple_expression__2(e.get_operation(), left_expr, right_expr, e.get_annotated_type2());
 /*
 const expression_t::simple_expr__2_t& simple2_expr
 *e.get_simple__2()
@@ -668,13 +673,15 @@ const expression_t::simple_expr__2_t& simple2_expr
 		throw std::exception();
 	}
 */
-
 }
 
 expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	return e;
+	const auto& expr = *e.get_simple__2();
+	const auto& left_expr = bcgen_expression(vm, *expr._left);
+	const auto& right_expr = bcgen_expression(vm, *expr._right);
+	return expression_t::make_simple_expression__2(e.get_operation(), left_expr, right_expr, e.get_annotated_type2());
 #if 0
 	const expression_t::simple_expr__2_t& simple2_expr
 	const auto& left_constant = bcgen_expression(vm, *simple2_expr._left);
@@ -894,61 +901,19 @@ expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	throw std::exception();
 }
 
-#if 0
-bgen_statement_result_t call_function(bgenerator_t& vm, const floyd::value_t& f, const vector<value_t>& args){
-#if DEBUG
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
-	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-	QUARK_ASSERT(f.is_function());
-#endif
-
-	const auto& function_def = f.get_function_value();
-	if(function_def->_host_function_id != 0){
-		const auto& r = call_host_function(vm, function_def->_host_function_id, args);
-		return r;
-	}
-	else{
-#if DEBUG
-		const auto arg_types = f.get_type().get_function_args();
-
-		//	arity
-		QUARK_ASSERT(args.size() == arg_types.size());
-
-		for(int i = 0 ; i < args.size() ; i++){
-			if(args[i].get_type() != arg_types[i]){
-				QUARK_ASSERT(false);
-			}
-		}
-#endif
-
-		const auto& r = bcgen_body(vm, *function_def->_body, args);
-
-/*
-		const auto& return_type = f.get_type().get_function_return();
-		// ??? move this check to pass3.
-		if(r._type != bgen_statement_result_t::k_return_unwind){
-			throw std::runtime_error("Function missing return statement");
-		}
-
-		// ??? move this check to pass3.
-		else if(r._output.get_type().is_struct() == false && r._output.get_type() != return_type){
-			throw std::runtime_error("Function return type wrong.");
-		}
-		else{
-		}
-*/
-
-		return r;
-	}
-}
-#endif
 
 expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	return e;
+	const auto& expr = *e.get_call();
+	const auto& callee_expr = bcgen_expression(vm, *expr._callee);
+	std::vector<expression_t> args2;
+	for(const auto& m: expr._args){
+		const auto& m2 = bcgen_expression(vm, m);
+		args2.push_back(m2);
+	}
+	return expression_t::make_call(callee_expr, args2, e.get_annotated_type2());
 #if 0
 	const auto& expr = *e.get_call();
 
@@ -1107,20 +1072,6 @@ QUARK_UNIT_TESTQ("bcgen_expression()", "(3 * 4) * 5 == 60") {
 */
 
 
-
-bgen_statement_result_t call_host_function(bgenerator_t& vm, int function_id, const std::vector<floyd::value_t> args){
-	QUARK_ASSERT(function_id >= 0);
-
-//	const auto& host_function = vm._imm->_host_functions.at(function_id);
-
-	//	arity
-//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
-
-		//???
-//	const auto& result = (host_function)(vm, args);
-	const auto& result = value_t::make_null();
-	return bgen_statement_result_t::make_return_unwind(result);
-}
 
 bgenerator_t::bgenerator_t(const ast_t& pass3){
 	QUARK_ASSERT(pass3.check_invariant());
