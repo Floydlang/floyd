@@ -40,6 +40,80 @@ using std::make_shared;
 
 value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& e);
 
+//	Output is the RETURN VALUE of the executed statement, if any.
+statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statement);
+
+
+
+
+typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
+	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
+		const auto v = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
+		if(v){
+			if(v->is_typeid()){
+				return v->get_typeid_value();
+			}
+			else{
+				return typeid_t::make_null();
+			}
+		}
+		else{
+			return typeid_t::make_null();
+		}
+	}
+	else{
+		return type;
+	}
+}
+
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+const floyd::value_t* find_symbol_by_name_deep(const interpreter_t& vm, int depth, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto env = &vm._call_stack[depth];
+    const auto& it = std::find_if(
+    	env->_body_ptr->_symbols.begin(),
+    	env->_body_ptr->_symbols.end(),
+    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
+	);
+	if(it != env->_body_ptr->_symbols.end()){
+		const auto index = it - env->_body_ptr->_symbols.begin();
+		const auto pos = env->_values_offset + index;
+		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+		return &vm._value_stack[pos];
+	}
+	else if(depth > 0){
+		return find_symbol_by_name_deep(vm, depth - 1, s);
+	}
+	else{
+		return nullptr;
+	}
+}
+
+
+//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
+const floyd::value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	return find_symbol_by_name_deep(vm, (int)(vm._call_stack.size() - 1), s);
+}
+
+floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
+	return get_global(vm, s);
+}
+value_t get_global(const interpreter_t& vm, const std::string& name){
+	const auto result = find_symbol_by_name_deep(vm, 0, name);
+	if(result == nullptr){
+		throw std::runtime_error("Cannot find global.");
+	}
+	else{
+		return *result;
+	}
+}
+
 const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
 	QUARK_ASSERT(v.is_function());
 
@@ -66,7 +140,6 @@ const environment_t* find_env_from_address(const interpreter_t& vm, const variab
 		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
 	}
 }
-
 
 value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
@@ -142,41 +215,45 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 	throw std::exception();
 }
 
-statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements){
+statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+#if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+	QUARK_ASSERT(f.is_function());
+#endif
 
-	for(const auto& s: statements){
-		const auto& r = execute_statement(vm, s);
-		if(r._type == statement_result_t::k_returning){
-			return r;
-		}
+	const auto& function_def = get_function_def(vm, f);
+	if(function_def._host_function_id != 0){
+		const auto& r = call_host_function(vm, function_def._host_function_id, args);
+		return r;
 	}
-	return statement_result_t::make__complete_without_value();
+	else{
+#if DEBUG
+		const auto arg_types = f.get_type().get_function_args();
+
+		//	arity
+		QUARK_ASSERT(args.size() == arg_types.size());
+
+		for(int i = 0 ; i < args.size() ; i++){
+			if(args[i].get_type() != arg_types[i]){
+				QUARK_ASSERT(false);
+			}
+		}
+#endif
+
+		const auto& r = execute_body(vm, *function_def._body, args);
+		return r;
+	}
 }
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<value_t>& init_values){
-	QUARK_ASSERT(vm.check_invariant());
 
-	const auto values_offset = vm._value_stack.size();
-	if(init_values.empty() == false){
-		for(const auto& e: init_values){
-			vm._value_stack.push_back(e);
-		}
-	}
-	if(body._symbols.empty() == false){
-		for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
-			const auto& symbol = body._symbols[i];
-			vm._value_stack.push_back(symbol.second._const_value);
-		}
-	}
-	vm._call_stack.push_back(environment_t{ &body, values_offset });
 
-	const auto& r = execute_statements(vm, body._statements);
-	vm._call_stack.pop_back();
-	vm._value_stack.resize(values_offset);
 
-	return r;
-}
+
+//////////////////////////////////////////		STATEMENTS
+
+
 
 statement_result_t execute_store2_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
@@ -196,26 +273,6 @@ statement_result_t execute_return_statement(interpreter_t& vm, const bc_instr_t&
 	const auto& expr = statement._e[0];
 	const auto& rhs_value = execute_expression(vm, expr);
 	return statement_result_t::make_return_unwind(rhs_value);
-}
-
-typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
-	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
-		const auto v = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
-		if(v){
-			if(v->is_typeid()){
-				return v->get_typeid_value();
-			}
-			else{
-				return typeid_t::make_null();
-			}
-		}
-		else{
-			return typeid_t::make_null();
-		}
-	}
-	else{
-		return type;
-	}
 }
 
 statement_result_t execute_ifelse_statement(interpreter_t& vm, const bc_instr_t& statement){
@@ -312,54 +369,45 @@ statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statem
 	throw std::exception();
 }
 
-
-
-//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const floyd::value_t* find_symbol_by_name_deep(const interpreter_t& vm, int depth, const std::string& s){
+statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
-	QUARK_ASSERT(s.size() > 0);
 
-	const auto env = &vm._call_stack[depth];
-    const auto& it = std::find_if(
-    	env->_body_ptr->_symbols.begin(),
-    	env->_body_ptr->_symbols.end(),
-    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
-	);
-	if(it != env->_body_ptr->_symbols.end()){
-		const auto index = it - env->_body_ptr->_symbols.begin();
-		const auto pos = env->_values_offset + index;
-		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-		return &vm._value_stack[pos];
+	for(const auto& s: statements){
+		const auto& r = execute_statement(vm, s);
+		if(r._type == statement_result_t::k_returning){
+			return r;
+		}
 	}
-	else if(depth > 0){
-		return find_symbol_by_name_deep(vm, depth - 1, s);
-	}
-	else{
-		return nullptr;
-	}
+	return statement_result_t::make__complete_without_value();
 }
 
-//	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const floyd::value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s){
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(s.size() > 0);
 
-	return find_symbol_by_name_deep(vm, (int)(vm._call_stack.size() - 1), s);
+	const auto values_offset = vm._value_stack.size();
+	if(init_values.empty() == false){
+		for(const auto& e: init_values){
+			vm._value_stack.push_back(e);
+		}
+	}
+	if(body._symbols.empty() == false){
+		for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
+			const auto& symbol = body._symbols[i];
+			vm._value_stack.push_back(symbol.second._const_value);
+		}
+	}
+	vm._call_stack.push_back(environment_t{ &body, values_offset });
+
+	const auto& r = execute_statements(vm, body._statements);
+	vm._call_stack.pop_back();
+	vm._value_stack.resize(values_offset);
+
+	return r;
 }
 
-floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
-	return get_global(vm, s);
-}
-value_t get_global(const interpreter_t& vm, const std::string& name){
-	const auto result = find_symbol_by_name_deep(vm, 0, name);
-	if(result == nullptr){
-		throw std::runtime_error("Cannot find global.");
-	}
-	else{
-		return *result;
-	}
-}
+
+
+//////////////////////////////////////////		EXPRESSIONS
 
 
 
@@ -471,6 +519,76 @@ value_t execute_load2_expression(interpreter_t& vm, const bc_expression_t& expr)
 	const auto& value = vm._value_stack[pos];
 	QUARK_ASSERT(value.get_type() == expr._result_type);
 	return value;
+}
+
+value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
+
+	const auto& function_value = execute_expression(vm, expr._e[0]);
+	const auto& function_def = get_function_def(vm, function_value);
+
+	//	_e[...] contains first callee, then each argument.
+	const auto arg_count = expr._e.size() - 1;
+
+
+	if(function_def._host_function_id != 0){
+		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
+
+		//	arity
+		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
+
+		std::vector<value_t> arg_values;
+		arg_values.reserve(arg_count);
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& arg_expr = expr._e[i + 1];
+			QUARK_ASSERT(arg_expr.check_invariant());
+
+			const auto& t = execute_expression(vm, arg_expr);
+			arg_values.push_back(t);
+		}
+		const auto& result = (host_function)(vm, arg_values);
+		return result;
+	}
+	else{
+		const auto values_offset = vm._value_stack.size();
+
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& arg_expr = expr._e[i + 1];
+			QUARK_ASSERT(arg_expr.check_invariant());
+
+			const auto& t = execute_expression(vm, arg_expr);
+			vm._value_stack.push_back(t);
+		}
+		if(function_def._body->_symbols.empty() == false){
+			for(vector<value_t>::size_type i = arg_count ; i < function_def._body->_symbols.size() ; i++){
+				const auto& symbol = function_def._body->_symbols[i];
+				vm._value_stack.push_back(symbol.second._const_value);
+			}
+		}
+		vm._call_stack.push_back(environment_t{ function_def._body.get(), values_offset });
+
+		const auto& result = execute_statements(vm, function_def._body->_statements);
+		vm._call_stack.pop_back();
+		vm._value_stack.resize(values_offset);
+
+/*
+#if DEBUG
+		const auto arg_types = f.get_type().get_function_args();
+
+		//	arity
+		QUARK_ASSERT(args.size() == arg_types.size());
+
+		for(int i = 0 ; i < args.size() ; i++){
+			if(args[i].get_type() != arg_types[i]){
+				QUARK_ASSERT(false);
+			}
+		}
+#endif
+*/
+		QUARK_ASSERT(result._type == statement_result_t::k_returning);
+		return result._output;
+	}
 }
 
 value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
@@ -823,123 +941,78 @@ value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 
 
 
-statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
-#if DEBUG
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(f.check_invariant());
-	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-	QUARK_ASSERT(f.is_function());
-#endif
 
-	const auto& function_def = get_function_def(vm, f);
-	if(function_def._host_function_id != 0){
-		const auto& r = call_host_function(vm, function_def._host_function_id, args);
-		return r;
+//////////////////////////////////////////		interpreter_t
+
+
+
+interpreter_t::interpreter_t(const bc_program_t& program){
+	QUARK_ASSERT(program.check_invariant());
+
+	_value_stack.reserve(1024);
+	_call_stack.reserve(32);
+
+	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
+	const auto& host_functions = get_host_functions();
+	std::map<int, HOST_FUNCTION_PTR> host_functions2;
+	for(auto& hf_kv: host_functions){
+		const auto& function_id = hf_kv.second._signature._function_id;
+		const auto& function_ptr = hf_kv.second._f;
+		host_functions2.insert({ function_id, function_ptr });
 	}
-	else{
-#if DEBUG
-		const auto arg_types = f.get_type().get_function_args();
 
-		//	arity
-		QUARK_ASSERT(args.size() == arg_types.size());
+	const auto start_time = std::chrono::high_resolution_clock::now();
+	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions2});
 
-		for(int i = 0 ; i < args.size() ; i++){
-			if(args[i].get_type() != arg_types[i]){
-				QUARK_ASSERT(false);
-			}
-		}
-#endif
 
-		const auto& r = execute_body(vm, *function_def._body, args);
-
-/*
-		const auto& return_type = f.get_type().get_function_return();
-		// ??? move this check to pass3.
-		if(r._type != statement_result_t::k_returning){
-			throw std::runtime_error("Function missing return statement");
-		}
-
-		// ??? move this check to pass3.
-		else if(r._output.get_type().is_struct() == false && r._output.get_type() != return_type){
-			throw std::runtime_error("Function return type wrong.");
-		}
-		else{
-		}
-*/
-
-		return r;
+	const auto values_offset = _value_stack.size();
+	const auto& body_ptr = _imm->_program._globals;
+	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
+		const auto& symbol = body_ptr._symbols[i];
+		_value_stack.push_back(symbol.second._const_value);
 	}
+	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
+
+	//	Run static intialization (basically run global statements before calling main()).
+	const auto& r = execute_statements(*this, _imm->_program._globals._statements);
+	QUARK_ASSERT(check_invariant());
 }
 
-value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(expr.check_invariant());
-
-	const auto& function_value = execute_expression(vm, expr._e[0]);
-	const auto& function_def = get_function_def(vm, function_value);
-
-	//	_e[...] contains first callee, then each argument.
-	const auto arg_count = expr._e.size() - 1;
-
-
-	if(function_def._host_function_id != 0){
-		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
-
-		//	arity
-		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
-
-		std::vector<value_t> arg_values;
-		arg_values.reserve(arg_count);
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto& arg_expr = expr._e[i + 1];
-			QUARK_ASSERT(arg_expr.check_invariant());
-
-			const auto& t = execute_expression(vm, arg_expr);
-			arg_values.push_back(t);
-		}
-		const auto& result = (host_function)(vm, arg_values);
-		return result;
-	}
-	else{
-		const auto values_offset = vm._value_stack.size();
-
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto& arg_expr = expr._e[i + 1];
-			QUARK_ASSERT(arg_expr.check_invariant());
-
-			const auto& t = execute_expression(vm, arg_expr);
-			vm._value_stack.push_back(t);
-		}
-		if(function_def._body->_symbols.empty() == false){
-			for(vector<value_t>::size_type i = arg_count ; i < function_def._body->_symbols.size() ; i++){
-				const auto& symbol = function_def._body->_symbols[i];
-				vm._value_stack.push_back(symbol.second._const_value);
-			}
-		}
-		vm._call_stack.push_back(environment_t{ function_def._body.get(), values_offset });
-
-		const auto& result = execute_statements(vm, function_def._body->_statements);
-		vm._call_stack.pop_back();
-		vm._value_stack.resize(values_offset);
-
-/*
-#if DEBUG
-		const auto arg_types = f.get_type().get_function_args();
-
-		//	arity
-		QUARK_ASSERT(args.size() == arg_types.size());
-
-		for(int i = 0 ; i < args.size() ; i++){
-			if(args[i].get_type() != arg_types[i]){
-				QUARK_ASSERT(false);
-			}
-		}
-#endif
-*/
-		QUARK_ASSERT(result._type == statement_result_t::k_returning);
-		return result._output;
-	}
+interpreter_t::interpreter_t(const interpreter_t& other) :
+	_imm(other._imm),
+	_value_stack(other._value_stack),
+	_call_stack(other._call_stack),
+	_print_output(other._print_output)
+{
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
 }
+
+void interpreter_t::swap(interpreter_t& other) throw(){
+	other._imm.swap(this->_imm);
+	other._value_stack.swap(this->_value_stack);
+	_call_stack.swap(this->_call_stack);
+	other._print_output.swap(this->_print_output);
+}
+
+const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
+	auto temp = other;
+	temp.swap(*this);
+	return *this;
+}
+
+#if DEBUG
+bool interpreter_t::check_invariant() const {
+	QUARK_ASSERT(_imm->_program.check_invariant());
+	return true;
+}
+#endif
+
+
+
+//////////////////////////////////////////		FUNCTIONS
+
+
 
 json_t interpreter_to_json(const interpreter_t& vm){
 	vector<json_t> callstack;
@@ -1040,69 +1113,6 @@ statement_result_t call_host_function(interpreter_t& vm, int function_id, const 
 	const auto& result = (host_function)(vm, args);
 	return statement_result_t::make_return_unwind(result);
 }
-
-interpreter_t::interpreter_t(const bc_program_t& program){
-	QUARK_ASSERT(program.check_invariant());
-
-	_value_stack.reserve(1024);
-	_call_stack.reserve(32);
-
-	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
-	const auto& host_functions = get_host_functions();
-	std::map<int, HOST_FUNCTION_PTR> host_functions2;
-	for(auto& hf_kv: host_functions){
-		const auto& function_id = hf_kv.second._signature._function_id;
-		const auto& function_ptr = hf_kv.second._f;
-		host_functions2.insert({ function_id, function_ptr });
-	}
-
-	const auto start_time = std::chrono::high_resolution_clock::now();
-	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions2});
-
-
-	const auto values_offset = _value_stack.size();
-	const auto& body_ptr = _imm->_program._globals;
-	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
-		const auto& symbol = body_ptr._symbols[i];
-		_value_stack.push_back(symbol.second._const_value);
-	}
-	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
-
-	//	Run static intialization (basically run global statements before calling main()).
-	const auto& r = execute_statements(*this, _imm->_program._globals._statements);
-	QUARK_ASSERT(check_invariant());
-}
-
-interpreter_t::interpreter_t(const interpreter_t& other) :
-	_imm(other._imm),
-	_value_stack(other._value_stack),
-	_call_stack(other._call_stack),
-	_print_output(other._print_output)
-{
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-}
-
-void interpreter_t::swap(interpreter_t& other) throw(){
-	other._imm.swap(this->_imm);
-	other._value_stack.swap(this->_value_stack);
-	_call_stack.swap(this->_call_stack);
-	other._print_output.swap(this->_print_output);
-}
-
-const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
-	auto temp = other;
-	temp.swap(*this);
-	return *this;
-}
-
-#if DEBUG
-bool interpreter_t::check_invariant() const {
-	QUARK_ASSERT(_imm->_program.check_invariant());
-	return true;
-}
-#endif
-
 
 bc_program_t program_to_ast2(const interpreter_context_t& context, const string& program){
 	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };

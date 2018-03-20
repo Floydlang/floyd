@@ -139,11 +139,7 @@ namespace floyd {
 
 	value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
 
-	statement_result_t call_function(
-		interpreter_t& vm,
-		const value_t& f,
-		const std::vector<value_t>& args
-	);
+	statement_result_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
 
 
 	/*
@@ -159,9 +155,6 @@ namespace floyd {
 		const std::vector<value_t>& init_values
 	);
 
-
-	//	Output is the RETURN VALUE of the executed statement, if any.
-	statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statement);
 
 
 
