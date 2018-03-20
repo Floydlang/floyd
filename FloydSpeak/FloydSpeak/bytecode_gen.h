@@ -71,14 +71,18 @@ namespace floyd {
 		k_statement_while,
 
 		//	Not needed. Just use an expression and don't use its result.
-		k_statement_expression,
+		k_statement_expression
 
-/*
+	};
+
+	enum bc_expression_opcode {
 		k_expression_literal,
 		k_expression_resolve_member,
 		k_expression_lookup_element,
+		k_expression_load,
 		k_expression_call,
 		k_expression_construct_value,
+
 		k_expression_arithmetic_unary_minus,
 
 		//	replace by k_statement_if.
@@ -100,8 +104,17 @@ namespace floyd {
 
 		k_expression_logical_and,
 		k_expression_logical_or
-*/
+	};
 
+	struct bc_expression_t {
+		bc_expression_opcode _opcode;
+		typeid_t _result_type;
+		std::vector<bc_expression_t> _e;
+		std::string _name;
+		variable_address_t _address;
+		value_t _value;
+
+		public: bool check_invariant() const { return true; }
 	};
 
 	//	A memory block. Addressed using index. Always 1 cache line big.
@@ -114,11 +127,9 @@ namespace floyd {
 	struct bc_instr_t {
 		bc_instr _opcode;
 
-		std::vector<expression_t> _e;
+		std::vector<bc_expression_t> _e;
 		variable_address_t _v;
 		std::vector<bc_body_t> _b;
-//		std::shared_ptr<const bc_body_t> _body_x;
-//		std::shared_ptr<const bc_body_t> _body_y;
 
 
 		public: bool check_invariant() const {

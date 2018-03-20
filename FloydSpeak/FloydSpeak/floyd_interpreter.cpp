@@ -9,9 +9,6 @@
 #include "floyd_interpreter.h"
 
 #include "parser_primitives.h"
-#include "parse_expression.h"
-#include "parse_statement.h"
-#include "statement.h"
 #include "floyd_parser.h"
 #include "ast_value.h"
 #include "pass2.h"
@@ -41,7 +38,7 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-value_t execute_call_expression(interpreter_t& vm, const expression_t& e);
+value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& e);
 
 const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
 	QUARK_ASSERT(v.is_function());
@@ -386,26 +383,27 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 
 
 
-value_t execute_resolve_member_expression(interpreter_t& vm, const expression_t::resolve_member_expr_t& expr){
+value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& parent_expr = execute_expression(vm, *expr._parent_address);
+	const auto& parent_expr = execute_expression(vm, expr._e[0]);
 	QUARK_ASSERT(parent_expr.is_struct());
 
 	const auto& struct_instance = parent_expr.get_struct_value();
 
-	int index = find_struct_member_index(*struct_instance->_def, expr._member_name);
+	//??? Use index instead of string!
+	int index = find_struct_member_index(*struct_instance->_def, expr._name);
 	QUARK_ASSERT(index != -1);
 
 	const value_t value = struct_instance->_member_values[index];
 	return value;
 }
 
-value_t execute_lookup_element_expression(interpreter_t& vm, const expression_t::lookup_expr_t& expr){
+value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& parent_value = execute_expression(vm, *expr._parent_address);
-	const auto& key_value = execute_expression(vm, *expr._lookup_key);
+	const auto& parent_value = execute_expression(vm, expr._e[0]);
+	const auto& key_value = execute_expression(vm, expr._e[1]);
 	if(parent_value.is_string()){
 		QUARK_ASSERT(key_value.is_int());
 
@@ -484,27 +482,23 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const expression_t:
 	}
 }
 
-value_t execute_load2_expression(interpreter_t& vm, const expression_t& e){
+value_t execute_load2_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& expr = *e.get_load2();
 
 	environment_t* env = find_env_from_address(vm, expr._address);
 	const auto pos = env->_values_offset + expr._address._index;
 	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 	const auto& value = vm._value_stack[pos];
-	QUARK_ASSERT(value.get_type() == e.get_annotated_type() /*|| e.get_annotated_type().is_null()*/);
+	QUARK_ASSERT(value.get_type() == expr._result_type);
 	return value;
 }
 
-value_t execute_construct_value_expression(interpreter_t& vm, const expression_t& e){
+value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_construct_value();
-
-	if(expr._value_type2.is_vector()){
-		const std::vector<expression_t>& elements = expr._args;
-		const auto& root_value_type = expr._value_type2;
+	if(expr._result_type.is_vector()){
+		const std::vector<bc_expression_t>& elements = expr._e;
+		const auto& root_value_type = expr._result_type;
 		const auto& element_type = root_value_type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
@@ -527,9 +521,9 @@ value_t execute_construct_value_expression(interpreter_t& vm, const expression_t
 	#endif
 		return construct_value_from_typeid(vm, typeid_t::make_vector(element_type), elements2);
 	}
-	else if(expr._value_type2.is_dict()){
-		const auto& elements = expr._args;
-		const auto& root_value_type = expr._value_type2;
+	else if(expr._result_type.is_dict()){
+		const auto& elements = expr._e;
+		const auto& root_value_type = expr._result_type;
 		const auto& element_type = root_value_type.get_dict_value_type();
 
 		//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
@@ -544,53 +538,37 @@ value_t execute_construct_value_expression(interpreter_t& vm, const expression_t
 			const auto& value_expr = elements[i * 2 + 1];
 
 			const auto& value = execute_expression(vm, value_expr);
-			const string key = key_expr.get_literal().get_string_value();
+			const string key = key_expr._value.get_string_value();
 			elements2.push_back(value_t::make_string(key));
 			elements2.push_back(value);
 		}
 		return construct_value_from_typeid(vm, typeid_t::make_dict(element_type), elements2);
 	}
-	else if(expr._value_type2.is_struct()){
+	else if(expr._result_type.is_struct()){
 		std::vector<value_t> elements2;
-		for(const auto m: expr._args){
+		for(const auto m: expr._e){
 			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
-		return construct_value_from_typeid(vm, expr._value_type2, elements2);
+		return construct_value_from_typeid(vm, expr._result_type, elements2);
 	}
 	else{
-		QUARK_ASSERT(expr._args.size() == 1);
+		QUARK_ASSERT(expr._e.size() == 1);
 
-		const auto& element = execute_expression(vm, expr._args[0]);
-		return construct_value_from_typeid(vm, expr._value_type2, { element });
+		const auto& element = execute_expression(vm, expr._e[0]);
+		return construct_value_from_typeid(vm, expr._result_type, { element });
 	}
 }
 
-value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const expression_t::unary_minus_expr_t& expr){
+value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& c = execute_expression(vm, *expr._expr);
+	const auto& c = execute_expression(vm, expr._e[0]);
 	if(c.is_int()){
-		return execute_expression(
-			vm,
-			expression_t::make_simple_expression__2(
-				expression_type::k_arithmetic_subtract__2,
-				expression_t::make_literal_int(0),
-				expression_t::make_literal(c),
-				make_shared<typeid_t>(c.get_type())
-			)
-		);
+		return value_t::make_int(0 - c.get_int_value());
 	}
 	else if(c.is_float()){
-		return execute_expression(
-			vm,
-			expression_t::make_simple_expression__2(
-				expression_type::k_arithmetic_subtract__2,
-				expression_t::make_literal_float(0.0f),
-				expression_t::make_literal(c),
-				make_shared<typeid_t>(c.get_type())
-			)
-		);
+		return value_t::make_float(0.0f - c.get_float_value());
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -598,53 +576,54 @@ value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const expre
 	}
 }
 
-value_t execute_conditional_operator_expression(interpreter_t& vm, const expression_t::conditional_expr_t& expr){
+value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto& cond_result = execute_expression(vm, *expr._condition);
+	const auto& cond_result = execute_expression(vm, expr._e[0]);
 	QUARK_ASSERT(cond_result.is_bool());
 	const bool cond_flag = cond_result.get_bool_value();
 
 	//	!!! Only execute the CHOSEN expression. Not that important since functions are pure.
 	if(cond_flag){
-		return execute_expression(vm, *expr._a);
+		return execute_expression(vm, expr._e[1]);
 	}
 	else{
-		return execute_expression(vm, *expr._b);
+		return execute_expression(vm, expr._e[2]);
 	}
 }
 
-value_t execute_comparison_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& left_constant = execute_expression(vm, *simple2_expr._left);
-	const auto& right_constant = execute_expression(vm, *simple2_expr._right);
+	const auto& left_constant = execute_expression(vm, expr._e[0]);
+	const auto& right_constant = execute_expression(vm, expr._e[1]);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
+	const auto opcode = expr._opcode;
 	//	Do generic functionallity, independant on type.
-	if(op == expression_type::k_comparison_smaller_or_equal__2){
+	if(opcode == bc_expression_opcode::k_expression_comparison_smaller_or_equal){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 		return value_t::make_bool(diff <= 0);
 	}
-	else if(op == expression_type::k_comparison_smaller__2){
+	else if(opcode == bc_expression_opcode::k_expression_comparison_smaller){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 		return value_t::make_bool(diff < 0);
 	}
-	else if(op == expression_type::k_comparison_larger_or_equal__2){
+	else if(opcode == bc_expression_opcode::k_expression_comparison_larger_or_equal){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 		return value_t::make_bool(diff >= 0);
 	}
-	else if(op == expression_type::k_comparison_larger__2){
+	else if(opcode == bc_expression_opcode::k_expression_comparison_larger){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 		return value_t::make_bool(diff > 0);
 	}
 
-	else if(op == expression_type::k_logical_equal__2){
+	else if(opcode == bc_expression_opcode::k_expression_logical_equal){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 		return value_t::make_bool(diff == 0);
 	}
-	else if(op == expression_type::k_logical_nonequal__2){
+	else if(opcode == bc_expression_opcode::k_expression_logical_nonequal){
 		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
 		return value_t::make_bool(diff != 0);
 	}
@@ -654,27 +633,29 @@ value_t execute_comparison_expression(interpreter_t& vm, expression_type op, con
 	}
 }
 
-value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, const expression_t::simple_expr__2_t& simple2_expr){
+value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& left_constant = execute_expression(vm, *simple2_expr._left);
-	const auto& right_constant = execute_expression(vm, *simple2_expr._right);
+	const auto& left_constant = execute_expression(vm, expr._e[0]);
+	const auto& right_constant = execute_expression(vm, expr._e[1]);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
 	const auto& type_mode = left_constant.get_type();
+
+	const auto op = expr._opcode;
 
 	//	bool
 	if(type_mode.is_bool()){
 		const bool left = left_constant.get_bool_value();
 		const bool right = right_constant.get_bool_value();
 
-		if(op == expression_type::k_arithmetic_add__2){
+		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			return value_t::make_bool(left + right);
 		}
-		else if(op == expression_type::k_logical_and__2){
+		else if(op == bc_expression_opcode::k_expression_logical_and){
 			return value_t::make_bool(left && right);
 		}
-		else if(op == expression_type::k_logical_or__2){
+		else if(op == bc_expression_opcode::k_expression_logical_or){
 			return value_t::make_bool(left || right);
 		}
 		else{
@@ -687,22 +668,22 @@ value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, con
 		const int left = left_constant.get_int_value();
 		const int right = right_constant.get_int_value();
 
-		if(op == expression_type::k_arithmetic_add__2){
+		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			return value_t::make_int(left + right);
 		}
-		else if(op == expression_type::k_arithmetic_subtract__2){
+		else if(op == bc_expression_opcode::k_expression_arithmetic_subtract){
 			return value_t::make_int(left - right);
 		}
-		else if(op == expression_type::k_arithmetic_multiply__2){
+		else if(op == bc_expression_opcode::k_expression_arithmetic_multiply){
 			return value_t::make_int(left * right);
 		}
-		else if(op == expression_type::k_arithmetic_divide__2){
+		else if(op == bc_expression_opcode::k_expression_arithmetic_divide){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			return value_t::make_int(left / right);
 		}
-		else if(op == expression_type::k_arithmetic_remainder__2){
+		else if(op == bc_expression_opcode::k_expression_arithmetic_remainder){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
@@ -710,10 +691,10 @@ value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, con
 		}
 
 		//??? Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
-		else if(op == expression_type::k_logical_and__2){
+		else if(op == bc_expression_opcode::k_expression_logical_and){
 			return value_t::make_bool((left != 0) && (right != 0));
 		}
-		else if(op == expression_type::k_logical_or__2){
+		else if(op == bc_expression_opcode::k_expression_logical_or){
 			return value_t::make_bool((left != 0) || (right != 0));
 		}
 		else{
@@ -726,26 +707,26 @@ value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, con
 		const float left = left_constant.get_float_value();
 		const float right = right_constant.get_float_value();
 
-		if(op == expression_type::k_arithmetic_add__2){
+		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			return value_t::make_float(left + right);
 		}
-		else if(op == expression_type::k_arithmetic_subtract__2){
+		else if(op == bc_expression_opcode::k_expression_arithmetic_subtract){
 			return value_t::make_float(left - right);
 		}
-		else if(op == expression_type::k_arithmetic_multiply__2){
+		else if(op == bc_expression_opcode::k_expression_arithmetic_multiply){
 			return value_t::make_float(left * right);
 		}
-		else if(op == expression_type::k_arithmetic_divide__2){
+		else if(op == bc_expression_opcode::k_expression_arithmetic_divide){
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			return value_t::make_float(left / right);
 		}
 
-		else if(op == expression_type::k_logical_and__2){
+		else if(op == bc_expression_opcode::k_expression_logical_and){
 			return value_t::make_bool((left != 0.0f) && (right != 0.0f));
 		}
-		else if(op == expression_type::k_logical_or__2){
+		else if(op == bc_expression_opcode::k_expression_logical_or){
 			return value_t::make_bool((left != 0.0f) || (right != 0.0f));
 		}
 		else{
@@ -758,7 +739,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, con
 		const auto& left = left_constant.get_string_value();
 		const auto& right = right_constant.get_string_value();
 
-		if(op == expression_type::k_arithmetic_add__2){
+		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			return value_t::make_string(left + right);
 		}
 		else{
@@ -774,7 +755,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, con
 	//	vector
 	else if(type_mode.is_vector()){
 		const auto& element_type = left_constant.get_type().get_vector_element_type();
-		if(op == expression_type::k_arithmetic_add__2){
+		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			auto elements2 = left_constant.get_vector_value();
 			elements2.insert(elements2.end(), right_constant.get_vector_value().begin(), right_constant.get_vector_value().end());
 
@@ -794,80 +775,64 @@ value_t execute_arithmetic_expression(interpreter_t& vm, expression_type op, con
 	throw std::exception();
 }
 
-value_t execute_expression(interpreter_t& vm, const expression_t& e){
+value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto& op = e.get_operation();
+	const auto& op = e._opcode;
 
-	if(op == expression_type::k_literal){
-		return e.get_literal();
+	if(op == bc_expression_opcode::k_expression_literal){
+		return e._value;
 	}
-	else if(op == expression_type::k_resolve_member){
-		return execute_resolve_member_expression(vm, *e.get_resolve_member());
+	else if(op == bc_expression_opcode::k_expression_resolve_member){
+		return execute_resolve_member_expression(vm, e);
 	}
-	else if(op == expression_type::k_lookup_element){
-		return execute_lookup_element_expression(vm, *e.get_lookup());
+	else if(op == bc_expression_opcode::k_expression_lookup_element){
+		return execute_lookup_element_expression(vm, e);
 	}
-	else if(op == expression_type::k_load){
-		QUARK_ASSERT(false);
-	}
-	else if(op == expression_type::k_load2){
+	else if(op == bc_expression_opcode::k_expression_load){
 		return execute_load2_expression(vm, e);
 	}
 
-	else if(op == expression_type::k_call){
+	else if(op == bc_expression_opcode::k_expression_call){
 		return execute_call_expression(vm, e);
 	}
 
-	else if(op == expression_type::k_define_struct){
-		// Moved entire function to symbol table -- no need for k_define_function-expression in interpreter!
-		QUARK_ASSERT(false);
-		return value_t::make_null();
-	}
-
-	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
-	else if(op == expression_type::k_define_function){
-		QUARK_ASSERT(false);
-//		const auto& fnc = e.get_function_definition();
-//		return value_t::make_function_value(expr->_def);
-	}
-
-	else if(op == expression_type::k_construct_value){
+	else if(op == bc_expression_opcode::k_expression_construct_value){
 		return execute_construct_value_expression(vm, e);
 	}
 
 	//	This can be desugared at compile time.
-	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return execute_arithmetic_unary_minus_expression(vm, *e.get_unary_minus());
+	else if(op == bc_expression_opcode::k_expression_arithmetic_unary_minus){
+		return execute_arithmetic_unary_minus_expression(vm, e);
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	else if(op == expression_type::k_conditional_operator3){
-		return execute_conditional_operator_expression(vm, *e.get_conditional());
+	else if(op == bc_expression_opcode::k_expression_conditional_operator3){
+		return execute_conditional_operator_expression(vm, e);
 	}
 	else if (false
-		|| op == expression_type::k_comparison_smaller_or_equal__2
-		|| op == expression_type::k_comparison_smaller__2
-		|| op == expression_type::k_comparison_larger_or_equal__2
-		|| op == expression_type::k_comparison_larger__2
+		|| op == bc_expression_opcode::k_expression_comparison_smaller_or_equal
+		|| op == bc_expression_opcode::k_expression_comparison_smaller
+		|| op == bc_expression_opcode::k_expression_comparison_larger_or_equal
+		|| op == bc_expression_opcode::k_expression_comparison_larger
 
-		|| op == expression_type::k_logical_equal__2
-		|| op == expression_type::k_logical_nonequal__2
+		|| op == bc_expression_opcode::k_expression_logical_equal
+		|| op == bc_expression_opcode::k_expression_logical_nonequal
 	){
-		return execute_comparison_expression(vm, op, *e.get_simple__2());
+		return execute_comparison_expression(vm, e);
 	}
 	else if (false
-		|| op == expression_type::k_arithmetic_add__2
-		|| op == expression_type::k_arithmetic_subtract__2
-		|| op == expression_type::k_arithmetic_multiply__2
-		|| op == expression_type::k_arithmetic_divide__2
-		|| op == expression_type::k_arithmetic_remainder__2
+		|| op == bc_expression_opcode::k_expression_arithmetic_add
+		|| op == bc_expression_opcode::k_expression_arithmetic_subtract
+		|| op == bc_expression_opcode::k_expression_arithmetic_multiply
+		|| op == bc_expression_opcode::k_expression_arithmetic_divide
+		|| op == bc_expression_opcode::k_expression_arithmetic_remainder
 
-		|| op == expression_type::k_logical_and__2
-		|| op == expression_type::k_logical_or__2
+		|| op == bc_expression_opcode::k_expression_logical_and
+		|| op == bc_expression_opcode::k_expression_logical_or
 	){
-		return execute_arithmetic_expression(vm, op, *e.get_simple__2());
+		return execute_arithmetic_expression(vm, e);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -926,14 +891,16 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 	}
 }
 
-value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
+value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
-	const auto& expr = *e.get_call();
-
-	const auto& function_value = execute_expression(vm, *expr._callee);
+	const auto& function_value = execute_expression(vm, expr._e[0]);
 	const auto& function_def = get_function_def(vm, function_value);
+
+	//	_e[...] contains first callee, then each argument.
+	const auto arg_count = expr._e.size() - 1;
+
 
 	if(function_def._host_function_id != 0){
 		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
@@ -942,9 +909,9 @@ value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
 		std::vector<value_t> arg_values;
-		arg_values.reserve(expr._args.size());
-		for(int i = 0 ; i < expr._args.size() ; i++){
-			const auto& arg_expr = expr._args[i];
+		arg_values.reserve(arg_count);
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 
 			const auto& t = execute_expression(vm, arg_expr);
@@ -956,15 +923,15 @@ value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 	else{
 		const auto values_offset = vm._value_stack.size();
 
-		for(int i = 0 ; i < expr._args.size() ; i++){
-			const auto& arg_expr = expr._args[i];
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 
 			const auto& t = execute_expression(vm, arg_expr);
 			vm._value_stack.push_back(t);
 		}
 		if(function_def._body->_symbols.empty() == false){
-			for(vector<value_t>::size_type i = expr._args.size() ; i < function_def._body->_symbols.size() ; i++){
+			for(vector<value_t>::size_type i = arg_count ; i < function_def._body->_symbols.size() ; i++){
 				const auto& symbol = function_def._body->_symbols[i];
 				vm._value_stack.push_back(symbol.second._const_value);
 			}
@@ -1053,7 +1020,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "1 + 2 == 3") {
 QUARK_UNIT_TESTQ("execute_expression()", "3 * 4 == 12") {
 	test__execute_expression(
 		expression_t::make_simple_expression__2(
-			expression_type::k_arithmetic_multiply__2,
+			bc_expression_opcode::k_expression_arithmetic_multiply,
 			expression_t::make_literal_int(3),
 			expression_t::make_literal_int(4),
 			make_shared<typeid_t>(typeid_t::make_int())
@@ -1065,9 +1032,9 @@ QUARK_UNIT_TESTQ("execute_expression()", "3 * 4 == 12") {
 QUARK_UNIT_TESTQ("execute_expression()", "(3 * 4) * 5 == 60") {
 	test__execute_expression(
 		expression_t::make_simple_expression__2(
-			expression_type::k_arithmetic_multiply__2,
+			bc_expression_opcode::k_expression_arithmetic_multiply,
 			expression_t::make_simple_expression__2(
-				expression_type::k_arithmetic_multiply__2,
+				bc_expression_opcode::k_expression_arithmetic_multiply,
 				expression_t::make_literal_int(3),
 				expression_t::make_literal_int(4),
 				make_shared<typeid_t>(typeid_t::make_int())

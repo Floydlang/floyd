@@ -50,8 +50,8 @@ namespace floyd {
 			2: previous-previous stack frame
 			-1: global stack frame
 		*/
-		public: const int _parent_steps;
-		public: const int _index;
+		public: int _parent_steps;
+		public: int _index;
 	};
 
 	inline bool operator==(const variable_address_t& lhs, const variable_address_t& rhs){

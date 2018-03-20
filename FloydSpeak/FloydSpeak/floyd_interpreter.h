@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "ast.h"
 #include "ast_value.h"
 #include "host_functions.hpp"
 #include "bytecode_gen.h"
@@ -138,7 +137,7 @@ namespace floyd {
 
 	json_t interpreter_to_json(const interpreter_t& vm);
 
-	value_t execute_expression(interpreter_t& vm, const expression_t& e);
+	value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
 
 	statement_result_t call_function(
 		interpreter_t& vm,
@@ -192,8 +191,6 @@ namespace floyd {
 	value_t get_global(const interpreter_t& vm, const std::string& name);
 
 	void print_vm_printlog(const interpreter_t& vm);
-
-
 
 } //	floyd
 
