@@ -234,7 +234,6 @@ namespace floyd {
 
 		//	Holds all values for all environments.
 		public: std::vector<bcgen_environment_t> _call_stack;
-		public: std::vector<std::shared_ptr<const bc_function_definition_t>> _function_defs;
 	};
 
 

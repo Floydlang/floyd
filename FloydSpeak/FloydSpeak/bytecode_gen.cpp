@@ -411,8 +411,7 @@ bgenerator_t::bgenerator_t(const ast_t& pass3){
 
 bgenerator_t::bgenerator_t(const bgenerator_t& other) :
 	_imm(other._imm),
-	_call_stack(other._call_stack),
-	_function_defs(other._function_defs)
+	_call_stack(other._call_stack)
 {
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -421,7 +420,6 @@ bgenerator_t::bgenerator_t(const bgenerator_t& other) :
 void bgenerator_t::swap(bgenerator_t& other) throw(){
 	other._imm.swap(this->_imm);
 	_call_stack.swap(this->_call_stack);
-	other._function_defs.swap(this->_function_defs);
 }
 
 const bgenerator_t& bgenerator_t::operator=(const bgenerator_t& other){
