@@ -134,12 +134,8 @@ namespace floyd {
 
 
 	statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t> args);
-
-	json_t interpreter_to_json(const interpreter_t& vm);
-
-	value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
-
 	statement_result_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
+	json_t interpreter_to_json(const interpreter_t& vm);
 
 
 	/*
@@ -148,12 +144,6 @@ namespace floyd {
 			value = return statement returned a value.
 	*/
 	statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements);
-
-	statement_result_t execute_body(
-		interpreter_t& vm,
-		const bc_body_t& body,
-		const std::vector<value_t>& init_values
-	);
 
 
 

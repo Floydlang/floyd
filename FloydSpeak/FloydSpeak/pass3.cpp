@@ -546,7 +546,7 @@ bool check_type_fully_defined(const expression_t& e){
 		return false;
 	}
 	else{
-		const auto op = e.get_operation();
+//		const auto op = e.get_operation();
 		return true;
 	}
 }

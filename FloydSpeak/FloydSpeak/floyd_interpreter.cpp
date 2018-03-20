@@ -43,7 +43,13 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& e);
 //	Output is the RETURN VALUE of the executed statement, if any.
 statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statement);
 
+	value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
 
+	statement_result_t execute_body(
+		interpreter_t& vm,
+		const bc_body_t& body,
+		const std::vector<value_t>& init_values
+	);
 
 
 typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
@@ -114,7 +120,7 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 	}
 }
 
-const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
+inline const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
 	QUARK_ASSERT(v.is_function());
 
 	const auto function_id = v.get_function_value();
@@ -124,7 +130,7 @@ const bc_function_definition_t& get_function_def(const interpreter_t& vm, const 
 	return function_def;
 }
 
-environment_t* find_env_from_address(interpreter_t& vm, const variable_address_t& a){
+inline environment_t* find_env_from_address(interpreter_t& vm, const variable_address_t& a){
 	if(a._parent_steps == -1){
 		return &vm._call_stack[0];
 	}
@@ -132,7 +138,8 @@ environment_t* find_env_from_address(interpreter_t& vm, const variable_address_t
 		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
 	}
 }
-const environment_t* find_env_from_address(const interpreter_t& vm, const variable_address_t& a){
+
+inline const environment_t* find_env_from_address(const interpreter_t& vm, const variable_address_t& a){
 	if(a._parent_steps == -1){
 		return &vm._call_stack[0];
 	}
@@ -249,133 +256,93 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 
 
 
-
-
 //////////////////////////////////////////		STATEMENTS
 
 
 
-statement_result_t execute_store2_statement(interpreter_t& vm, const bc_instr_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& rhs_value = execute_expression(vm, statement._e[0]);
-	auto env = find_env_from_address(vm, statement._v);
-	const auto pos = env->_values_offset + statement._v._index;
-	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-	vm._value_stack[pos] = rhs_value;
-
-	return statement_result_t::make__complete_without_value();
-}
-
-statement_result_t execute_return_statement(interpreter_t& vm, const bc_instr_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& expr = statement._e[0];
-	const auto& rhs_value = execute_expression(vm, expr);
-	return statement_result_t::make_return_unwind(rhs_value);
-}
-
-statement_result_t execute_ifelse_statement(interpreter_t& vm, const bc_instr_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& condition_result_value = execute_expression(vm, statement._e[0]);
-	QUARK_ASSERT(condition_result_value.is_bool());
-	bool r = condition_result_value.get_bool_value();
-	if(r){
-		return execute_body(vm, statement._b[0], {});
-	}
-	else{
-		return execute_body(vm, statement._b[1], {});
-	}
-}
-
-statement_result_t execute_for_statement(interpreter_t& vm, const bc_instr_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& start_value0 = execute_expression(vm, statement._e[0]);
-	const auto start_value_int = start_value0.get_int_value();
-
-	const auto& end_value0 = execute_expression(vm, statement._e[1]);
-	const auto end_value_int = end_value0.get_int_value();
-
-	vector<value_t> space_for_iterator = {value_t::make_null()};
-	for(int x = start_value_int ; x <= end_value_int ; x++){
-		space_for_iterator[0] = value_t::make_int(x);
-		const auto& return_value = execute_body(vm, statement._b[0], space_for_iterator);
-		if(return_value._type == statement_result_t::k_returning){
-			return return_value;
-		}
-	}
-	return statement_result_t::make__complete_without_value();
-}
-
-statement_result_t execute_while_statement(interpreter_t& vm, const bc_instr_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	bool again = true;
-	while(again){
-		const auto& condition_value_expr = execute_expression(vm, statement._e[0]);
-		const auto& condition_value = condition_value_expr.get_bool_value();
-
-		if(condition_value){
-			const auto& return_value = execute_body(vm, statement._b[0], {});
-			if(return_value._type == statement_result_t::k_returning){
-				return return_value;
-			}
-		}
-		else{
-			again = false;
-		}
-	}
-	return statement_result_t::make__complete_without_value();
-}
-
-statement_result_t execute_expression_statement(interpreter_t& vm, const bc_instr_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-
-	const auto& rhs_value = execute_expression(vm, statement._e[0]);
-	return statement_result_t::make_passive_expression_output(rhs_value);
-}
-
-statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statement){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(statement.check_invariant());
-
-	const auto opcode = statement._opcode;
-	if(opcode == bc_instr::k_statement_store){
-		return execute_store2_statement(vm, statement);
-	}
-	else if(opcode == bc_instr::k_statement_block){
-		return execute_body(vm, statement._b[0], {});
-	}
-	else if(opcode == bc_instr::k_statement_return){
-		return execute_return_statement(vm, statement);
-	}
-	else if(opcode == bc_instr::k_statement_if){
-		return execute_ifelse_statement(vm, statement);
-	}
-	else if(opcode == bc_instr::k_statement_for){
-		return execute_for_statement(vm, statement);
-	}
-	else if(opcode == bc_instr::k_statement_while){
-		return execute_while_statement(vm, statement);
-	}
-	else if(opcode == bc_instr::k_statement_expression){
-		return execute_expression_statement(vm, statement);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-	throw std::exception();
-}
-
 statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 
-	for(const auto& s: statements){
-		const auto& r = execute_statement(vm, s);
-		if(r._type == statement_result_t::k_returning){
-			return r;
+	for(const auto& statement: statements){
+		QUARK_ASSERT(vm.check_invariant());
+		QUARK_ASSERT(statement.check_invariant());
+
+		const auto opcode = statement._opcode;
+		if(opcode == bc_instr::k_statement_store){
+			const auto& rhs_value = execute_expression(vm, statement._e[0]);
+			auto env = find_env_from_address(vm, statement._v);
+			const auto pos = env->_values_offset + statement._v._index;
+			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+			vm._value_stack[pos] = rhs_value;
+		}
+		else if(opcode == bc_instr::k_statement_block){
+			const auto& r = execute_body(vm, statement._b[0], {});
+			if(r._type == statement_result_t::k_returning){
+				return r;
+			}
+		}
+		else if(opcode == bc_instr::k_statement_return){
+			const auto& expr = statement._e[0];
+			const auto& rhs_value = execute_expression(vm, expr);
+			return statement_result_t::make_return_unwind(rhs_value);
+		}
+		else if(opcode == bc_instr::k_statement_if){
+			const auto& condition_result_value = execute_expression(vm, statement._e[0]);
+			QUARK_ASSERT(condition_result_value.is_bool());
+
+			bool flag = condition_result_value.get_bool_value();
+			if(flag){
+				const auto& r = execute_body(vm, statement._b[0], {});
+				if(r._type == statement_result_t::k_returning){
+					return r;
+				}
+			}
+			else{
+				const auto& r = execute_body(vm, statement._b[1], {});
+				if(r._type == statement_result_t::k_returning){
+					return r;
+				}
+			}
+		}
+		else if(opcode == bc_instr::k_statement_for){
+			const auto& start_value0 = execute_expression(vm, statement._e[0]);
+			const auto start_value_int = start_value0.get_int_value();
+
+			const auto& end_value0 = execute_expression(vm, statement._e[1]);
+			const auto end_value_int = end_value0.get_int_value();
+
+			vector<value_t> space_for_iterator = {value_t::make_null()};
+			for(int x = start_value_int ; x <= end_value_int ; x++){
+				space_for_iterator[0] = value_t::make_int(x);
+				const auto& return_value = execute_body(vm, statement._b[0], space_for_iterator);
+				if(return_value._type == statement_result_t::k_returning){
+					return return_value;
+				}
+			}
+		}
+		else if(opcode == bc_instr::k_statement_while){
+			bool again = true;
+			while(again){
+				const auto& condition_value_expr = execute_expression(vm, statement._e[0]);
+				const auto& condition_value = condition_value_expr.get_bool_value();
+
+				if(condition_value){
+					const auto& return_value = execute_body(vm, statement._b[0], {});
+					if(return_value._type == statement_result_t::k_returning){
+						return return_value;
+					}
+				}
+				else{
+					again = false;
+				}
+			}
+		}
+		else if(opcode == bc_instr::k_statement_expression){
+			/*const auto& rhs_value =*/ execute_expression(vm, statement._e[0]);
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 	return statement_result_t::make__complete_without_value();
@@ -974,7 +941,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto& r = execute_statements(*this, _imm->_program._globals._statements);
+	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 
