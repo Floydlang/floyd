@@ -47,24 +47,24 @@ namespace floyd {
 		enum output_type {
 
 			//	_output != nullptr
-			k_return_unwind,
+			k_returning,
 
 			//	_output != nullptr
 			k_passive_expression_output,
 
 
 			//	_output == nullptr
-			k_none
+			k_complete_without_result_value
 		};
 
 		public: static statement_result_t make_return_unwind(const value_t& return_value){
-			return { statement_result_t::k_return_unwind, return_value };
+			return { statement_result_t::k_returning, return_value };
 		}
 		public: static statement_result_t make_passive_expression_output(const value_t& output_value){
 			return { statement_result_t::k_passive_expression_output, output_value };
 		}
-		public: static statement_result_t make_no_output(){
-			return { statement_result_t::k_passive_expression_output, value_t::make_null() };
+		public: static statement_result_t make__complete_without_value(){
+			return { statement_result_t::k_complete_without_result_value, value_t::make_null() };
 		}
 
 		private: statement_result_t(output_type type, const value_t& output) :

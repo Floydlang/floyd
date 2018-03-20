@@ -445,7 +445,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const ast_t& pass3)
 
 	bgenerator_t a(pass3);
 
-	std::vector<std::shared_ptr<const bc_function_definition_t>> function_defs2;
+	std::vector<const bc_function_definition_t> function_defs2;
 	for(int function_id = 0 ; function_id < pass3._function_defs.size() ; function_id++){
 		const auto& function_def = *pass3._function_defs[function_id];
 		const auto body2_ptr = function_def._body ? make_shared<bc_body_t>(bcgen_body(a, *function_def._body)) : nullptr;
@@ -455,8 +455,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const ast_t& pass3)
 			body2_ptr,
 			function_def._host_function_id
 		};
-		auto b = make_shared<const bc_function_definition_t>(function_def2);
-		function_defs2.push_back(b);
+		function_defs2.push_back(function_def2);
 	}
 
 	const auto body2 = bcgen_body(a, a._imm->_ast_pass3._globals);

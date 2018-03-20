@@ -181,7 +181,7 @@ namespace floyd {
 		}
 
 		public: const bc_body_t _globals;
-		public: std::vector<std::shared_ptr<const bc_function_definition_t>> _function_defs;
+		public: std::vector<const bc_function_definition_t> _function_defs;
 	};
 
 

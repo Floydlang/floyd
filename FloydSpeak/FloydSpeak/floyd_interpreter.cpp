@@ -47,7 +47,7 @@ const bc_function_definition_t& get_function_def(const interpreter_t& vm, const 
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 
 	const auto& function_def = vm._imm->_program._function_defs[function_id];
-	return *function_def;
+	return function_def;
 }
 
 environment_t* find_env_from_address(interpreter_t& vm, const variable_address_t& a){
@@ -145,36 +145,16 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 
-	int statement_index = 0;
-	while(statement_index < statements.size()){
-		const auto& statement = statements[statement_index];
-		const auto& r = execute_statement(vm, statement);
-		if(r._type == statement_result_t::k_return_unwind){
+	for(const auto& s: statements){
+		const auto& r = execute_statement(vm, s);
+		if(r._type == statement_result_t::k_returning){
 			return r;
 		}
-		else{
-
-			//	Last statement outputs its value, if any. This is passive output, not a return-unwind.
-			if(statement_index == (statements.size() - 1)){
-				if(r._type == statement_result_t::k_passive_expression_output){
-					return r;
-				}
-			}
-			else{
-			}
-
-			statement_index++;
-		}
 	}
-	return statement_result_t::make_no_output();
+	return statement_result_t::make__complete_without_value();
 }
 
-statement_result_t execute_body(
-	interpreter_t& vm,
-	const bc_body_t& body,
-	const std::vector<value_t>& init_values
-)
-{
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto values_offset = vm._value_stack.size();
@@ -207,7 +187,7 @@ statement_result_t execute_store2_statement(interpreter_t& vm, const bc_instr_t&
 	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 	vm._value_stack[pos] = rhs_value;
 
-	return statement_result_t::make_no_output();
+	return statement_result_t::make__complete_without_value();
 }
 
 statement_result_t execute_return_statement(interpreter_t& vm, const bc_instr_t& statement){
@@ -265,11 +245,11 @@ statement_result_t execute_for_statement(interpreter_t& vm, const bc_instr_t& st
 	for(int x = start_value_int ; x <= end_value_int ; x++){
 		space_for_iterator[0] = value_t::make_int(x);
 		const auto& return_value = execute_body(vm, statement._b[0], space_for_iterator);
-		if(return_value._type == statement_result_t::k_return_unwind){
+		if(return_value._type == statement_result_t::k_returning){
 			return return_value;
 		}
 	}
-	return statement_result_t::make_no_output();
+	return statement_result_t::make__complete_without_value();
 }
 
 statement_result_t execute_while_statement(interpreter_t& vm, const bc_instr_t& statement){
@@ -282,7 +262,7 @@ statement_result_t execute_while_statement(interpreter_t& vm, const bc_instr_t& 
 
 		if(condition_value){
 			const auto& return_value = execute_body(vm, statement._b[0], {});
-			if(return_value._type == statement_result_t::k_return_unwind){
+			if(return_value._type == statement_result_t::k_returning){
 				return return_value;
 			}
 		}
@@ -290,7 +270,7 @@ statement_result_t execute_while_statement(interpreter_t& vm, const bc_instr_t& 
 			again = false;
 		}
 	}
-	return statement_result_t::make_no_output();
+	return statement_result_t::make__complete_without_value();
 }
 
 statement_result_t execute_expression_statement(interpreter_t& vm, const bc_instr_t& statement){
@@ -875,7 +855,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 /*
 		const auto& return_type = f.get_type().get_function_return();
 		// ??? move this check to pass3.
-		if(r._type != statement_result_t::k_return_unwind){
+		if(r._type != statement_result_t::k_returning){
 			throw std::runtime_error("Function missing return statement");
 		}
 
@@ -956,7 +936,7 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 		}
 #endif
 */
-		QUARK_ASSERT(result._type == statement_result_t::k_return_unwind);
+		QUARK_ASSERT(result._type == statement_result_t::k_returning);
 		return result._output;
 	}
 }
@@ -1168,7 +1148,7 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 		return { vm, result };
 	}
 	else{
-		return {vm, statement_result_t::make_no_output()};
+		return {vm, statement_result_t::make__complete_without_value()};
 	}
 }
 
@@ -1181,7 +1161,7 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 		return { vm, r };
 	}
 	else{
-		return { vm, statement_result_t::make_no_output() };
+		return { vm, statement_result_t::make__complete_without_value() };
 	}
 }
 
