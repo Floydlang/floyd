@@ -54,17 +54,6 @@ namespace floyd {
 
 
 	struct function_definition_t {
-		public: function_definition_t(
-			const typeid_t& function_type,
-			const std::vector<member_t>& args,
-			const std::shared_ptr<body_t>& body
-		);
-		public: function_definition_t(
-			const typeid_t& function_type,
-			const std::vector<member_t>& args,
-			int host_function_id
-		);
-
 		public: bool check_invariant() const {
 			if(_host_function_id != 0){
 				QUARK_ASSERT(!_body);

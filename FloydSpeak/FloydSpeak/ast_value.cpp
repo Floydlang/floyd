@@ -83,30 +83,6 @@ namespace floyd {
 	//////////////////////////////////////////////////		function_definition_t
 
 
-	function_definition_t::function_definition_t(
-		const typeid_t& function_type,
-		const std::vector<member_t>& args,
-		const std::shared_ptr<body_t>& body
-	)
-	:
-		_function_type(function_type),
-		_args(args),
-		_body(body),
-		_host_function_id(0)
-	{
-	}
-
-	function_definition_t::function_definition_t(
-		const typeid_t& function_type,
-		const std::vector<member_t>& args,
-		const int host_function
-	)
-	:
-		_function_type(function_type),
-		_args(args),
-		_host_function_id(host_function)
-	{
-	}
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
 		return true

@@ -1319,7 +1319,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	vm_acc = function_body_pair.first;
 
 	const auto body = function_body_pair.second;
-	const auto def2 = function_definition_t(def->_function_type, def->_args, make_shared<body_t>(body));
+	const auto def2 = function_definition_t{def->_function_type, def->_args, make_shared<body_t>(body), 0};
 	vm_acc._function_defs.push_back(make_shared<function_definition_t>(def2));
 
 	const int function_id = static_cast<int>(vm_acc._function_defs.size() - 1);
@@ -1550,7 +1550,7 @@ ast_t analyse(const analyser_t& a){
 			return result;
 		}();
 
-		const auto def = make_shared<function_definition_t>(function_definition_t(signature._function_type, args, signature._function_id));
+		const auto def = make_shared<function_definition_t>(function_definition_t{signature._function_type, args, {}, signature._function_id});
 
 		const auto function_id = static_cast<int>(function_defs.size());
 		function_defs.push_back(def);

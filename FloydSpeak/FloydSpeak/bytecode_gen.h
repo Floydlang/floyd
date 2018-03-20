@@ -119,7 +119,13 @@ namespace floyd {
 		std::string _name;
 		std::shared_ptr<const bc_body_t> _body_x;
 		std::shared_ptr<const bc_body_t> _body_y;
+
+
+		public: bool check_invariant() const {
+			return true;
+		}
 	};
+
 
 
 	struct bc_body_t {
@@ -139,6 +145,23 @@ namespace floyd {
 		}
 	};
 
+	struct bc_function_definition_t {
+		public: bool check_invariant() const {
+			if(_host_function_id != 0){
+				QUARK_ASSERT(!_body);
+			}
+			else{
+				QUARK_ASSERT(_body);
+			}
+			return true;
+		}
+
+
+		typeid_t _function_type;
+		std::vector<member_t> _args;
+		std::shared_ptr<bc_body_t> _body;
+		int _host_function_id;
+	};
 
 	struct bc_program_t {
 		public: bool check_invariant() const {
@@ -146,8 +169,8 @@ namespace floyd {
 			return true;
 		}
 
-		public: const body_t _globals;
-		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+		public: const bc_body_t _globals;
+		public: std::vector<std::shared_ptr<const bc_function_definition_t>> _function_defs;
 	};
 
 
@@ -200,14 +223,14 @@ namespace floyd {
 
 		//	Holds all values for all environments.
 		public: std::vector<bcgen_environment_t> _call_stack;
-		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+		public: std::vector<std::shared_ptr<const bc_function_definition_t>> _function_defs;
 	};
 
 
 	//////////////////////////		run_bggen()
 
 
-	bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t& pass3);
+	bc_program_t run_bggen(const quark::trace_context_t& tracer, const ast_t& pass3);
 
 	json_t bcprogram_to_json(const bc_program_t& program);
 

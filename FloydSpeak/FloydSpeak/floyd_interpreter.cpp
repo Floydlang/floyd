@@ -43,7 +43,7 @@ using std::make_shared;
 
 value_t execute_call_expression(interpreter_t& vm, const expression_t& e);
 
-const function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
+const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
 	QUARK_ASSERT(v.is_function());
 
 	const auto function_id = v.get_function_value();
@@ -145,14 +145,13 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 	throw std::exception();
 }
 
-statement_result_t execute_statements2(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
+statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements){
 	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
 
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto& statement = statements[statement_index];
-		const auto& r = execute_statement(vm, *statement);
+		const auto& r = execute_statement(vm, statement);
 		if(r._type == statement_result_t::k_return_unwind){
 			return r;
 		}
@@ -172,13 +171,10 @@ statement_result_t execute_statements2(interpreter_t& vm, const std::vector<std:
 	}
 	return statement_result_t::make_no_output();
 }
-statement_result_t execute_statements(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
-	return execute_statements2(vm, statements);
-}
 
 statement_result_t execute_body(
 	interpreter_t& vm,
-	const body_t& body,
+	const bc_body_t& body,
 	const std::vector<value_t>& init_values
 )
 {
@@ -198,30 +194,29 @@ statement_result_t execute_body(
 	}
 	vm._call_stack.push_back(environment_t{ &body, values_offset });
 
-	const auto& r = execute_statements2(vm, body._statements);
+	const auto& r = execute_statements(vm, body._statements);
 	vm._call_stack.pop_back();
 	vm._value_stack.resize(values_offset);
 
 	return r;
 }
 
-statement_result_t execute_store2_statement(interpreter_t& vm, const statement_t::store2_t& statement){
+statement_result_t execute_store2_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& address = statement._dest_variable;
-	const auto& rhs_value = execute_expression(vm, statement._expression);
-	auto env = find_env_from_address(vm, address);
-	const auto pos = env->_values_offset + address._index;
+	const auto& rhs_value = execute_expression(vm, statement._e[0]);
+	auto env = find_env_from_address(vm, statement._v);
+	const auto pos = env->_values_offset + statement._v._index;
 	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 	vm._value_stack[pos] = rhs_value;
 
 	return statement_result_t::make_no_output();
 }
 
-statement_result_t execute_return_statement(interpreter_t& vm, const statement_t::return_statement_t& statement){
+statement_result_t execute_return_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = statement._expression;
+	const auto& expr = statement._e[0];
 	const auto& rhs_value = execute_expression(vm, expr);
 	return statement_result_t::make_return_unwind(rhs_value);
 }
@@ -246,33 +241,33 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 	}
 }
 
-statement_result_t execute_ifelse_statement(interpreter_t& vm, const statement_t::ifelse_statement_t& statement){
+statement_result_t execute_ifelse_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& condition_result_value = execute_expression(vm, statement._condition);
+	const auto& condition_result_value = execute_expression(vm, statement._e[0]);
 	QUARK_ASSERT(condition_result_value.is_bool());
 	bool r = condition_result_value.get_bool_value();
 	if(r){
-		return execute_body(vm, statement._then_body, {});
+		return execute_body(vm, *statement._body_x, {});
 	}
 	else{
-		return execute_body(vm, statement._else_body, {});
+		return execute_body(vm, *statement._body_y, {});
 	}
 }
 
-statement_result_t execute_for_statement(interpreter_t& vm, const statement_t::for_statement_t& statement){
+statement_result_t execute_for_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& start_value0 = execute_expression(vm, statement._start_expression);
+	const auto& start_value0 = execute_expression(vm, statement._e[0]);
 	const auto start_value_int = start_value0.get_int_value();
 
-	const auto& end_value0 = execute_expression(vm, statement._end_expression);
+	const auto& end_value0 = execute_expression(vm, statement._e[1]);
 	const auto end_value_int = end_value0.get_int_value();
 
 	vector<value_t> space_for_iterator = {value_t::make_null()};
 	for(int x = start_value_int ; x <= end_value_int ; x++){
 		space_for_iterator[0] = value_t::make_int(x);
-		const auto& return_value = execute_body(vm, statement._body, space_for_iterator);
+		const auto& return_value = execute_body(vm, *statement._body_x, space_for_iterator);
 		if(return_value._type == statement_result_t::k_return_unwind){
 			return return_value;
 		}
@@ -280,16 +275,16 @@ statement_result_t execute_for_statement(interpreter_t& vm, const statement_t::f
 	return statement_result_t::make_no_output();
 }
 
-statement_result_t execute_while_statement(interpreter_t& vm, const statement_t::while_statement_t& statement){
+statement_result_t execute_while_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	bool again = true;
 	while(again){
-		const auto& condition_value_expr = execute_expression(vm, statement._condition);
+		const auto& condition_value_expr = execute_expression(vm, statement._e[0]);
 		const auto& condition_value = condition_value_expr.get_bool_value();
 
 		if(condition_value){
-			const auto& return_value = execute_body(vm, statement._body, {});
+			const auto& return_value = execute_body(vm, *statement._body_x, {});
 			if(return_value._type == statement_result_t::k_return_unwind){
 				return return_value;
 			}
@@ -301,47 +296,38 @@ statement_result_t execute_while_statement(interpreter_t& vm, const statement_t:
 	return statement_result_t::make_no_output();
 }
 
-statement_result_t execute_expression_statement(interpreter_t& vm, const statement_t::expression_statement_t& statement){
+statement_result_t execute_expression_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& rhs_value = execute_expression(vm, statement._expression);
+	const auto& rhs_value = execute_expression(vm, statement._e[0]);
 	return statement_result_t::make_passive_expression_output(rhs_value);
 }
 
-statement_result_t execute_statement(interpreter_t& vm, const statement_t& statement){
+statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
-	if(statement._bind_local){
-		//	Bind is converted to symbol table + store-local in pass3.
-		QUARK_ASSERT(false);
+	const auto opcode = statement._opcode;
+	if(opcode == bc_instr::k_statement_store){
+		return execute_store2_statement(vm, statement);
 	}
-	else if(statement._store){
-		QUARK_ASSERT(false);
+	else if(opcode == bc_instr::k_statement_block){
+		return execute_body(vm, *statement._body_x, {});
 	}
-	else if(statement._store2){
-		return execute_store2_statement(vm, *statement._store2);
+	else if(opcode == bc_instr::k_statement_return){
+		return execute_return_statement(vm, statement);
 	}
-	else if(statement._block){
-		return execute_body(vm, statement._block->_body, {});
+	else if(opcode == bc_instr::k_statement_if){
+		return execute_ifelse_statement(vm, statement);
 	}
-	else if(statement._return){
-		return execute_return_statement(vm, *statement._return);
+	else if(opcode == bc_instr::k_statement_for){
+		return execute_for_statement(vm, statement);
 	}
-	else if(statement._def_struct){
-		QUARK_ASSERT(false);
+	else if(opcode == bc_instr::k_statement_while){
+		return execute_while_statement(vm, statement);
 	}
-	else if(statement._if){
-		return execute_ifelse_statement(vm, *statement._if);
-	}
-	else if(statement._for){
-		return execute_for_statement(vm, *statement._for);
-	}
-	else if(statement._while){
-		return execute_while_statement(vm, *statement._while);
-	}
-	else if(statement._expression){
-		return execute_expression_statement(vm, *statement._expression);
+	else if(opcode == bc_instr::k_statement_expression){
+		return execute_expression_statement(vm, statement);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -985,7 +971,7 @@ value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 		}
 		vm._call_stack.push_back(environment_t{ function_def._body.get(), values_offset });
 
-		const auto& result = execute_statements2(vm, function_def._body->_statements);
+		const auto& result = execute_statements(vm, function_def._body->_statements);
 		vm._call_stack.pop_back();
 		vm._value_stack.resize(values_offset);
 
@@ -1136,7 +1122,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
-	const auto& r = execute_statements2(*this, _imm->_program._globals._statements);
+	const auto& r = execute_statements(*this, _imm->_program._globals._statements);
 	QUARK_ASSERT(check_invariant());
 }
 

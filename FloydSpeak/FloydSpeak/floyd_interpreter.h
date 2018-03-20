@@ -26,7 +26,7 @@ namespace floyd {
 	struct statement_t;
 	struct interpreter_t;
 	struct bc_program_t;
-
+	struct bc_instr_t;
 
 
 	value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
@@ -92,7 +92,7 @@ namespace floyd {
 	*/
 
 	struct environment_t {
-		public: const body_t* _body_ptr;
+		public: const bc_body_t* _body_ptr;
 		public: std::vector<environment_t>::size_type _values_offset;
 	};
 
@@ -152,17 +152,17 @@ namespace floyd {
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	statement_result_t execute_statements(interpreter_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
+	statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements);
 
 	statement_result_t execute_body(
 		interpreter_t& vm,
-		const body_t& body,
+		const bc_body_t& body,
 		const std::vector<value_t>& init_values
 	);
 
 
 	//	Output is the RETURN VALUE of the executed statement, if any.
-	statement_result_t execute_statement(interpreter_t& vm, const statement_t& statement);
+	statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statement);
 
 
 

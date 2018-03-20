@@ -220,7 +220,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto return_type2 = resolve_type_name(ast_json_t{return_type});
 		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
 		const auto body = body_t{fstatements2};
-		const auto function_def = function_definition_t(function_typeid, args2, make_shared<body_t>(body));
+		const auto function_def = function_definition_t{function_typeid, args2, make_shared<body_t>(body), 0};
 
 		const auto s = statement_t::define_function_statement_t{ name2, std::make_shared<function_definition_t>(function_def) };
 		return statement_t::make__define_function_statement(s);

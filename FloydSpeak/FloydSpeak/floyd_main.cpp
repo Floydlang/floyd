@@ -197,7 +197,8 @@ Python 2.7.10 (default, Jul 15 2017, 17:16:57)
 Type "help", "copyright", "credits" or "license" for more information.
 */
 
-
+/*
+??? fix REPL!
 	while(true){
 		try {
 			const auto line = get_command();
@@ -239,6 +240,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 			std::cout << "Runtime error." << std::endl;
 		}
 	}
+*/
+
 }
 
 void run_file(const std::vector<std::string>& args){
