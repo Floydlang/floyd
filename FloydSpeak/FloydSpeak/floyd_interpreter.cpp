@@ -386,8 +386,7 @@ value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression
 
 	const auto& struct_instance = parent_expr.get_struct_value();
 
-	//??? Use index instead of string!
-	int index = find_struct_member_index(*struct_instance->_def, expr._name);
+	int index = expr._address._index;
 	QUARK_ASSERT(index != -1);
 
 	const value_t value = struct_instance->_member_values[index];
@@ -755,7 +754,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 			return value_t::make_int(left % right);
 		}
 
-		//??? Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
+		//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
 		else if(op == bc_expression_opcode::k_expression_logical_and){
 			return value_t::make_bool((left != 0) && (right != 0));
 		}

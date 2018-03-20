@@ -110,7 +110,6 @@ namespace floyd {
 		bc_expression_opcode _opcode;
 		typeid_t _result_type;
 		std::vector<bc_expression_t> _e;
-		std::string _name;
 		variable_address_t _address;
 		value_t _value;
 
