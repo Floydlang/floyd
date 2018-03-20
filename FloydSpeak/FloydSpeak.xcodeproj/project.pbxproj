@@ -524,6 +524,9 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_UNROLL_LOOPS = YES;
+				LLVM_LTO = YES;
 				PRODUCT_NAME = floyd;
 			};
 			name = Debug;
@@ -531,10 +534,14 @@
 		2C1D84E61CA765A90042F0A8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
 				);
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_UNROLL_LOOPS = YES;
+				LLVM_LTO = YES;
 				PRODUCT_NAME = floyd;
 			};
 			name = Release;
