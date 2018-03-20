@@ -116,7 +116,7 @@ namespace floyd {
 
 		std::vector<expression_t> _e;
 		variable_address_t _v;
-		std::string _name;
+//		std::vector<bc_body_t> _b;
 		std::shared_ptr<const bc_body_t> _body_x;
 		std::shared_ptr<const bc_body_t> _body_y;
 
