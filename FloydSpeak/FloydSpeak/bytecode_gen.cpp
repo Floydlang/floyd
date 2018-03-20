@@ -77,14 +77,14 @@ bc_instr_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t&
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instr_t{ bc_instr::k_statement_store, {expr}, statement._dest_variable,  {}, {}};
+	return bc_instr_t{ bc_instr::k_statement_store, {expr}, statement._dest_variable,  {}};
 }
 
 bc_instr_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instr_t{ bc_instr::k_statement_return, {expr}, {}, {}, {}};
+	return bc_instr_t{ bc_instr::k_statement_return, {expr}, {}, {}};
 }
 
 bc_instr_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement){
@@ -94,7 +94,7 @@ bc_instr_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_st
 	QUARK_ASSERT(condition_expr.get_annotated_type().is_bool());
 	const auto& then_expr = bcgen_body(vm, statement._then_body);
 	const auto& else_expr = bcgen_body(vm, statement._else_body);
-	return bc_instr_t{ bc_instr::k_statement_if, {condition_expr}, {}, make_shared<bc_body_t>(then_expr), make_shared<bc_body_t>(else_expr) };
+	return bc_instr_t{ bc_instr::k_statement_if, {condition_expr}, {}, { then_expr, else_expr }};
 }
 
 bc_instr_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement){
@@ -103,7 +103,7 @@ bc_instr_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statemen
 	const auto& start_expr = bcgen_expression(vm, statement._start_expression);
 	const auto& end_expr = bcgen_expression(vm, statement._end_expression);
 	const auto& body = bcgen_body(vm, statement._body);
-	return bc_instr_t{ bc_instr::k_statement_for, {start_expr, end_expr}, {}, make_shared<bc_body_t>(body), {} };
+	return bc_instr_t{ bc_instr::k_statement_for, {start_expr, end_expr}, {}, { body } };
 }
 
 bc_instr_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement){
@@ -111,14 +111,14 @@ bc_instr_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_stat
 
 	const auto& condition_expr = bcgen_expression(vm, statement._condition);
 	const auto& body = bcgen_body(vm, statement._body);
-	return bc_instr_t{ bc_instr::k_statement_while, {condition_expr}, {}, make_shared<bc_body_t>(body), {} };
+	return bc_instr_t{ bc_instr::k_statement_while, {condition_expr}, {}, {body} };
 }
 
 bc_instr_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instr_t{ bc_instr::k_statement_expression, {expr}, {}, {}, {} };
+	return bc_instr_t{ bc_instr::k_statement_expression, {expr}, {}, {} };
 }
 
 bc_instr_t bcgen_statement(bgenerator_t& vm, const statement_t& statement){
@@ -138,7 +138,7 @@ bc_instr_t bcgen_statement(bgenerator_t& vm, const statement_t& statement){
 	}
 	else if(statement._block){
 		const auto& body = bcgen_body(vm, statement._block->_body);
-		return bc_instr_t{ bc_instr::k_statement_block, {}, {}, make_shared<bc_body_t>(body), {} };
+		return bc_instr_t{ bc_instr::k_statement_block, {}, {}, { body} };
 	}
 	else if(statement._return){
 		return bcgen_return_statement(vm, *statement._return);

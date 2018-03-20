@@ -248,10 +248,10 @@ statement_result_t execute_ifelse_statement(interpreter_t& vm, const bc_instr_t&
 	QUARK_ASSERT(condition_result_value.is_bool());
 	bool r = condition_result_value.get_bool_value();
 	if(r){
-		return execute_body(vm, *statement._body_x, {});
+		return execute_body(vm, statement._b[0], {});
 	}
 	else{
-		return execute_body(vm, *statement._body_y, {});
+		return execute_body(vm, statement._b[1], {});
 	}
 }
 
@@ -267,7 +267,7 @@ statement_result_t execute_for_statement(interpreter_t& vm, const bc_instr_t& st
 	vector<value_t> space_for_iterator = {value_t::make_null()};
 	for(int x = start_value_int ; x <= end_value_int ; x++){
 		space_for_iterator[0] = value_t::make_int(x);
-		const auto& return_value = execute_body(vm, *statement._body_x, space_for_iterator);
+		const auto& return_value = execute_body(vm, statement._b[0], space_for_iterator);
 		if(return_value._type == statement_result_t::k_return_unwind){
 			return return_value;
 		}
@@ -284,7 +284,7 @@ statement_result_t execute_while_statement(interpreter_t& vm, const bc_instr_t& 
 		const auto& condition_value = condition_value_expr.get_bool_value();
 
 		if(condition_value){
-			const auto& return_value = execute_body(vm, *statement._body_x, {});
+			const auto& return_value = execute_body(vm, statement._b[0], {});
 			if(return_value._type == statement_result_t::k_return_unwind){
 				return return_value;
 			}
@@ -312,7 +312,7 @@ statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statem
 		return execute_store2_statement(vm, statement);
 	}
 	else if(opcode == bc_instr::k_statement_block){
-		return execute_body(vm, *statement._body_x, {});
+		return execute_body(vm, statement._b[0], {});
 	}
 	else if(opcode == bc_instr::k_statement_return){
 		return execute_return_statement(vm, statement);
