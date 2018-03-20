@@ -146,7 +146,6 @@ namespace floyd {
 			return true;
 		}
 
-//		public: const bc_body_t _globals2;
 		public: const body_t _globals;
 		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 	};
@@ -201,7 +200,7 @@ namespace floyd {
 
 		//	Holds all values for all environments.
 		public: std::vector<bcgen_environment_t> _call_stack;
-		public: std::vector<std::string> _print_output;
+		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 	};
 
 

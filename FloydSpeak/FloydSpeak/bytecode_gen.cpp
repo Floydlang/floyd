@@ -388,7 +388,7 @@ bgenerator_t::bgenerator_t(const ast_t& pass3){
 bgenerator_t::bgenerator_t(const bgenerator_t& other) :
 	_imm(other._imm),
 	_call_stack(other._call_stack),
-	_print_output(other._print_output)
+	_function_defs(other._function_defs)
 {
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -397,7 +397,7 @@ bgenerator_t::bgenerator_t(const bgenerator_t& other) :
 void bgenerator_t::swap(bgenerator_t& other) throw(){
 	other._imm.swap(this->_imm);
 	_call_stack.swap(this->_call_stack);
-	other._print_output.swap(this->_print_output);
+	other._function_defs.swap(this->_function_defs);
 }
 
 const bgenerator_t& bgenerator_t::operator=(const bgenerator_t& other){
@@ -413,13 +413,7 @@ bool bgenerator_t::check_invariant() const {
 }
 #endif
 
-/*
-bc_program_t bcgen_analyse(bgenerator_t& vm){
-	const auto body2 = bcgen_body(vm, vm._imm->_ast_pass3._globals);
-	const auto result = bc_program_t{ body2 };
-	return result;
-}
-*/
+
 bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t& pass3){
 	QUARK_ASSERT(pass3.check_invariant());
 
@@ -427,8 +421,10 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t&
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(pass3)._value));
 
-//	bgenerator_t a(pass3);
-//	const auto result = bcgen_analyse(a);
+	bgenerator_t a(pass3);
+	const auto body2 = bcgen_body(a, a._imm->_ast_pass3._globals);
+//	const auto result = bc_program_t{ body2, a._function_defs };
+
 
 	const auto result = bc_program_t{pass3._globals, pass3._function_defs};
 
