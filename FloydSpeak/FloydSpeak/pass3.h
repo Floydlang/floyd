@@ -59,7 +59,9 @@ namespace floyd_pass3 {
 	*/
 
 	struct analyzer_imm_t {
+		//??? Remove _ast so we don't confuse it with real statements.
 		public: floyd::ast_t _ast;
+
 		public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
 	};
 
@@ -70,6 +72,7 @@ namespace floyd_pass3 {
 #if DEBUG
 		public: bool check_invariant() const;
 #endif
+		public: void swap(analyser_t& other) throw();
 
 
 		////////////////////////		STATE
@@ -80,7 +83,7 @@ namespace floyd_pass3 {
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;
 
-		public: floyd::interned_typeids_t _interned_typeids;
+		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 	};
 
 	floyd::ast_t analyse(const analyser_t& a);

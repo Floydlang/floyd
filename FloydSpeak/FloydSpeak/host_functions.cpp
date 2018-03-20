@@ -1049,20 +1049,4 @@ std::map<int,  host_function_t> get_host_functions(){
 }
 
 
-floyd::value_t make_host_function_value(const host_function_signature_t& signature){
-	const auto args = [&](){
-		vector<member_t> result;
-		for(const auto e: signature._function_type.get_function_args()){
-			result.push_back(member_t(e, "dummy"));
-		}
-		return result;
-	}();
-
-	const auto def = function_definition_t(signature._function_type, args, signature._function_id);
-
-	const auto function_value = value_t::make_function_value(make_shared<function_definition_t>(def));
-	return function_value;
-}
-
-
 }

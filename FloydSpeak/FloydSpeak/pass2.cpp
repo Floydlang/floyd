@@ -466,7 +466,7 @@ ast_t run_pass2(const quark::trace_context_t& tracer, const ast_json_t& parse_tr
 	QUARK_CONTEXT_TRACE(tracer, json_to_pretty_string(parse_tree._value));
 
 	const auto program_body = astjson_to_statements(tracer, parse_tree);
-	return ast_t(body_t{program_body});
+	return ast_t{body_t{program_body}, {}};
 }
 
 

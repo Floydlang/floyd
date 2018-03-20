@@ -22,18 +22,6 @@ namespace floyd {
 	////////////////////////			ast_t
 
 
-	ast_t::ast_t() :
-		_globals({})
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
-	ast_t::ast_t(const body_t& globals) :
-		_globals(globals)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
 	bool ast_t::check_invariant() const {
 		return true;
 	}

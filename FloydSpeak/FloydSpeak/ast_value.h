@@ -107,7 +107,7 @@ namespace floyd {
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function == nullptr);
+				QUARK_ASSERT(_function_id == -1);
 			}
 			else if(base_type == base_type::k_json_value){
 				QUARK_ASSERT(_string.empty());
@@ -116,7 +116,7 @@ namespace floyd {
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function == nullptr);
+				QUARK_ASSERT(_function_id == -1);
 
 				QUARK_ASSERT(_json_value->check_invariant());
 			}
@@ -128,7 +128,7 @@ namespace floyd {
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function == nullptr);
+				QUARK_ASSERT(_function_id == -1);
 
 				QUARK_ASSERT(_typeid_value.check_invariant());
 			}
@@ -139,7 +139,7 @@ namespace floyd {
 				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function == nullptr);
+				QUARK_ASSERT(_function_id == -1);
 
 				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
@@ -150,7 +150,7 @@ namespace floyd {
 				QUARK_ASSERT(_struct == nullptr);
 		//		QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function == nullptr);
+				QUARK_ASSERT(_function_id == -1);
 			}
 			else if(base_type == base_type::k_dict){
 				QUARK_ASSERT(_string.empty());
@@ -159,7 +159,7 @@ namespace floyd {
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 		//		QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function == nullptr);
+				QUARK_ASSERT(_function_id == -1);
 			}
 			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(_string.empty());
@@ -168,9 +168,7 @@ namespace floyd {
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function != nullptr);
-
-				QUARK_ASSERT(_function && _function->check_invariant());
+				QUARK_ASSERT(_function_id != -1);
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -201,7 +199,7 @@ namespace floyd {
 		public: value_ext_t(const typeid_t& type, std::shared_ptr<struct_instance_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::vector<value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::map<std::string, value_t>& s);
-		public: value_ext_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& s);
+		public: value_ext_t(const typeid_t& type, int function_id);
 
 
 
@@ -212,7 +210,7 @@ namespace floyd {
 		public: std::shared_ptr<struct_instance_t> _struct;
 		public: std::vector<value_t> _vector_elements;
 		public: std::map<std::string, value_t> _dict_entries;
-		public: std::shared_ptr<const function_definition_t> _function;
+		public: int _function_id = -1;
 	};
 
 
@@ -398,13 +396,13 @@ namespace floyd {
 		//------------------------------------------------		function
 
 
-		public: static value_t make_function_value(const std::shared_ptr<const function_definition_t>& def);
+		public: static value_t make_function_value(const typeid_t& function_type, int function_id);
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _type_int == type_int::k_ext && _ext->_type.is_function();
 		}
-		public: const std::shared_ptr<const function_definition_t>& get_function_value() const;
+		public: int get_function_value() const;
 
 
 		//////////////////////////////////////////////////		PUBLIC - TYPE INDEPENDANT
@@ -546,7 +544,7 @@ namespace floyd {
 		private: explicit value_t(const typeid_t& struct_type, std::shared_ptr<struct_instance_t>& instance);
 		private: explicit value_t(const typeid_t& element_type, const std::vector<value_t>& elements);
 		private: explicit value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries);
-		private: explicit value_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& def);
+		private: explicit value_t(const typeid_t& type, int function_id);
 
 
 		//////////////////////////////////////////////////		STATE

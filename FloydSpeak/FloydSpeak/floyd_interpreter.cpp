@@ -43,6 +43,15 @@ using std::make_shared;
 
 value_t execute_call_expression(interpreter_t& vm, const expression_t& e);
 
+const function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
+	QUARK_ASSERT(v.is_function());
+
+	const auto function_id = v.get_function_value();
+	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
+
+	const auto& function_def = vm._imm->_program._function_defs[function_id];
+	return *function_def;
+}
 
 environment_t* find_env_from_address(interpreter_t& vm, const variable_address_t& a){
 	if(a._parent_steps == -1){
@@ -833,8 +842,9 @@ value_t execute_expression(interpreter_t& vm, const expression_t& e){
 
 	//??? Move entire function to symbol table -- no need for k_define_function-expression in interpreter!
 	else if(op == expression_type::k_define_function){
-		const auto& expr = e.get_function_definition();
-		return value_t::make_function_value(expr->_def);
+		QUARK_ASSERT(false);
+//		const auto& fnc = e.get_function_definition();
+//		return value_t::make_function_value(expr->_def);
 	}
 
 	else if(op == expression_type::k_construct_value){
@@ -879,6 +889,9 @@ value_t execute_expression(interpreter_t& vm, const expression_t& e){
 	throw std::exception();
 }
 
+
+
+
 statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
@@ -887,9 +900,9 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 	QUARK_ASSERT(f.is_function());
 #endif
 
-	const auto& function_def = f.get_function_value();
-	if(function_def->_host_function_id != 0){
-		const auto& r = call_host_function(vm, function_def->_host_function_id, args);
+	const auto& function_def = get_function_def(vm, f);
+	if(function_def._host_function_id != 0){
+		const auto& r = call_host_function(vm, function_def._host_function_id, args);
 		return r;
 	}
 	else{
@@ -906,7 +919,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 		}
 #endif
 
-		const auto& r = execute_body(vm, *function_def->_body, args);
+		const auto& r = execute_body(vm, *function_def._body, args);
 
 /*
 		const auto& return_type = f.get_type().get_function_return();
@@ -934,11 +947,10 @@ value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 	const auto& expr = *e.get_call();
 
 	const auto& function_value = execute_expression(vm, *expr._callee);
-	QUARK_ASSERT(function_value.is_function());
-	const auto& function_def = function_value.get_function_value();
+	const auto& function_def = get_function_def(vm, function_value);
 
-	if(function_def->_host_function_id != 0){
-		const auto& host_function = vm._imm->_host_functions.at(function_def->_host_function_id);
+	if(function_def._host_function_id != 0){
+		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
 
 		//	arity
 		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -965,15 +977,15 @@ value_t execute_call_expression(interpreter_t& vm, const expression_t& e){
 			const auto& t = execute_expression(vm, arg_expr);
 			vm._value_stack.push_back(t);
 		}
-		if(function_def->_body->_symbols.empty() == false){
-			for(vector<value_t>::size_type i = expr._args.size() ; i < function_def->_body->_symbols.size() ; i++){
-				const auto& symbol = function_def->_body->_symbols[i];
+		if(function_def._body->_symbols.empty() == false){
+			for(vector<value_t>::size_type i = expr._args.size() ; i < function_def._body->_symbols.size() ; i++){
+				const auto& symbol = function_def._body->_symbols[i];
 				vm._value_stack.push_back(symbol.second._const_value);
 			}
 		}
-		vm._call_stack.push_back(environment_t{ function_def->_body.get(), values_offset });
+		vm._call_stack.push_back(environment_t{ function_def._body.get(), values_offset });
 
-		const auto& result = execute_statements2(vm, function_def->_body->_statements);
+		const auto& result = execute_statements2(vm, function_def._body->_statements);
 		vm._call_stack.pop_back();
 		vm._value_stack.resize(values_offset);
 

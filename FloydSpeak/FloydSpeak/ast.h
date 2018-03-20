@@ -25,13 +25,12 @@ namespace floyd {
 		Immutable
 	*/
 	struct ast_t {
-		public: ast_t();
-		public: explicit ast_t(const body_t& globals);
 		public: bool check_invariant() const;
 
 
 		/////////////////////////////		STATE
-		public: const body_t _globals;
+		public: body_t _globals;
+		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 	};
 
 	ast_json_t ast_to_json(const ast_t& ast);

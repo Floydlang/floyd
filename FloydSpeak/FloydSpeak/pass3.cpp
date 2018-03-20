@@ -42,6 +42,12 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 
 
 
+const function_definition_t& function_id_to_def(const analyser_t& vm, int function_id){
+	QUARK_ASSERT(function_id >= 0 && function_id < vm._function_defs.size());
+
+	return *vm._function_defs[function_id];
+}
+
 
 
 std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
@@ -389,8 +395,8 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 		statement._def->_function_type,
 		function_def_expr, statement_t::bind_local_t::k_immutable
 	);
-	const auto s3 = analyse_bind_local_statement(vm, s2);
-	return { s3.first, s3.second };
+	const auto s3 = analyse_bind_local_statement(vm_acc, s2);
+	return s3;
 }
 
 
@@ -1121,7 +1127,8 @@ bool is_host_function_call(const analyser_t& vm, const expression_t& callee_expr
 		QUARK_ASSERT(callee != nullptr);
 
 		if(callee->_const_value.is_function()){
-			return callee->_const_value.get_function_value()->_host_function_id != 0;
+			const auto& function_def = function_id_to_def(vm, callee->_const_value.get_function_value());
+			return function_def._host_function_id != 0;
 		}
 		else{
 			return false;
@@ -1138,7 +1145,10 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 
 	const auto callee = resolve_symbol_by_address(vm, callee_expr.get_load2()->_address);
 	QUARK_ASSERT(callee != nullptr);
-	const auto host_function_id = callee->_const_value.get_function_value()->_host_function_id;
+
+	const auto& function_def = function_id_to_def(vm, callee->_const_value.get_function_value());
+
+	const auto host_function_id = function_def._host_function_id;
 
 	const auto& host_functions = vm._imm->_host_functions;
 	const auto found_it = find_if(host_functions.begin(), host_functions.end(), [&](const std::pair<std::string, floyd::host_function_signature_t>& kv){ return kv.second._function_id == host_function_id; });
@@ -1292,6 +1302,8 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
+	auto vm_acc = vm;
+
 	const auto function_def_expr = *e.get_function_definition();
 	const auto def = function_def_expr._def;
 	const auto function_type = get_function_type(*def);
@@ -1303,14 +1315,18 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	}
 	const auto injected_body = body_t(def->_body->_statements, symbol_vec);
 
-	const auto function_body_pair = analyse_body(vm, injected_body);
-	auto vm_acc = function_body_pair.first;
+	const auto function_body_pair = analyse_body(vm_acc, injected_body);
+	vm_acc = function_body_pair.first;
 
 	const auto body = function_body_pair.second;
 	const auto def2 = function_definition_t(def->_function_type, def->_args, make_shared<body_t>(body));
-	return {vm_acc, expression_t::make_function_definition(make_shared<function_definition_t>(def2)) };
-}
+	vm_acc._function_defs.push_back(make_shared<function_definition_t>(def2));
 
+	const int function_id = static_cast<int>(vm_acc._function_defs.size() - 1);
+	const auto r = expression_t::make_literal(value_t::make_function_value(function_type, function_id));
+
+	return {vm_acc, r };
+}
 
 
 std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analyser_t& vm, const expression_t& e){
@@ -1519,10 +1535,28 @@ ast_t analyse(const analyser_t& a){
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	//	Insert built-in functions into AST.
+	auto function_defs = a._imm->_ast._function_defs;
+
+	//	Insert built-in functions.
 	for(auto hf_kv: a._imm->_host_functions){
 		const auto& function_name = hf_kv.first;
-		const auto function_value = make_host_function_value(hf_kv.second);
+		const auto& signature = hf_kv.second;
+
+		const auto args = [&](){
+			vector<member_t> result;
+			for(const auto e: signature._function_type.get_function_args()){
+				result.push_back(member_t(e, "dummy"));
+			}
+			return result;
+		}();
+
+		const auto def = make_shared<function_definition_t>(function_definition_t(signature._function_type, args, signature._function_id));
+
+		const auto function_id = static_cast<int>(function_defs.size());
+		function_defs.push_back(def);
+
+		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
+
 		symbol_map.push_back({function_name, symbol_t::make_constant(function_value)});
 	}
 
@@ -1542,9 +1576,12 @@ ast_t analyse(const analyser_t& a){
 	symbol_map.push_back({keyword_t::k_json_false, symbol_t::make_constant(value_t::make_int(6))});
 	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_constant(value_t::make_int(7))});
 
-	const auto body = body_t(a._imm->_ast._globals._statements, symbol_map);
-	const auto result = analyse_body(a, body);
-	const auto result_ast = ast_t(result.second);
+	auto analyser2 = a;
+	analyser2._function_defs.swap(function_defs);
+
+	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_map);
+	const auto result = analyse_body(analyser2, body);
+	const auto result_ast = ast_t{result.second, result.first._function_defs};
 
 	QUARK_ASSERT(result_ast.check_invariant());
 	return result_ast;
@@ -1552,17 +1589,22 @@ ast_t analyse(const analyser_t& a){
 
 analyser_t::analyser_t(const analyser_t& other) :
 	_imm(other._imm),
-	_call_stack(other._call_stack)
+	_call_stack(other._call_stack),
+	_function_defs(other._function_defs)
 {
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
 }
 
+void analyser_t::swap(analyser_t& other) throw() {
+	_imm.swap(other._imm);
+	_call_stack.swap(other._call_stack);
+	_function_defs.swap(other._function_defs);
+}
 
-//??? make proper operator=(). Exception safety etc.
 const analyser_t& analyser_t::operator=(const analyser_t& other){
-	_imm = other._imm;
-	_call_stack = other._call_stack;
+	auto temp = other;
+	swap(temp);
 	return *this;
 }
 

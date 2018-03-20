@@ -171,9 +171,9 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_ext_t::value_ext_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& s) :
+		value_ext_t::value_ext_t(const typeid_t& type, int function_id) :
 			_type(type),
-			_function(s)
+			_function_id(function_id)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -205,7 +205,7 @@ namespace floyd {
 				return _dict_entries == other._dict_entries;
 			}
 			else if(base_type == base_type::k_function){
-				return *_function == *other._function;
+				return _function_id == other._function_id;
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -601,13 +601,13 @@ std::string value_and_type_to_string(const value_t& value) {
 			return _ext->_dict_entries;
 		}
 
-		const std::shared_ptr<const function_definition_t>& value_t::get_function_value() const{
+		int value_t::get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _ext->_function;
+			return _ext->_function_id;
 		}
 
 
@@ -710,12 +710,10 @@ std::string value_and_type_to_string(const value_t& value) {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_t::value_t(const typeid_t& type, const std::shared_ptr<const function_definition_t>& def) :
+		value_t::value_t(const typeid_t& type, int function_id) :
 			_type_int(type_int::k_ext),
-			_ext(std::make_shared<value_ext_t>(value_ext_t(type, def)))
+			_ext(std::make_shared<value_ext_t>(value_ext_t(type, function_id)))
 		{
-			QUARK_ASSERT(def);
-
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -928,10 +926,9 @@ ast_json_t value_to_ast_json(const value_t& v){
 		return ast_json_t{result};
 	}
 	else if(v.is_function()){
-		const auto& def = v.get_function_value();
 		return ast_json_t{json_t::make_object(
 			{
-				{ "function_type", typeid_to_ast_json(get_function_type(*def))._value }
+				{ "function_type", typeid_to_ast_json(v.get_type())._value }
 			}
 		)};
 	}
@@ -1037,9 +1034,9 @@ value_t value_t::make_dict_value(const typeid_t& value_type, const std::map<std:
 	return value_t(value_type, entries);
 }
 
-value_t value_t::make_function_value(const std::shared_ptr<const function_definition_t>& def){
-	QUARK_ASSERT(def);
-	return value_t(get_function_type(*def), def);
+value_t value_t::make_function_value(const typeid_t& function_type, int function_id){
+	QUARK_ASSERT(function_type.check_invariant());
+	return value_t(function_type, function_id);
 }
 
 

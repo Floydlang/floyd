@@ -31,8 +31,6 @@ namespace floyd {
 
 	std::map<std::string, host_function_signature_t> get_host_function_signatures();
 
-	floyd::value_t make_host_function_value(const host_function_signature_t& signature);
-
 
 
 	typedef value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const std::vector<value_t>& args);
@@ -48,3 +46,4 @@ namespace floyd {
 
 
 #endif /* host_functions_hpp */
+

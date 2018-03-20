@@ -106,12 +106,15 @@ namespace floyd {
 		const std::vector<std::shared_ptr<statement_t>> _statements;
 		const std::vector<std::pair<std::string, symbol_t>> _symbols;
 
+		body_t(){
+		}
 
 		body_t(const std::vector<std::shared_ptr<statement_t>>& s) :
 			_statements(s),
 			_symbols{}
 		{
 		}
+
 		body_t(const std::vector<std::shared_ptr<statement_t>>& statements, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
 			_statements(statements),
 			_symbols(symbols)

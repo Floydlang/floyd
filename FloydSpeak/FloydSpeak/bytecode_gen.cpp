@@ -430,7 +430,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const floyd::ast_t&
 //	bgenerator_t a(pass3);
 //	const auto result = bcgen_analyse(a);
 
-	const auto result = bc_program_t{pass3._globals};
+	const auto result = bc_program_t{pass3._globals, pass3._function_defs};
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 
