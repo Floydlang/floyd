@@ -21,6 +21,7 @@ namespace floyd {
 	struct statement_t;
 	struct bgenerator_t;
 
+	struct bc_body_t;
 
 
 	//////////////////////////////////////		bc_vm_t
@@ -50,24 +51,29 @@ namespace floyd {
 	*/
 
 	enum bc_instr {
-		//	Store a into local/global variable a
+		k_nop,
+
+		//	Store _e[0] -> _v
 		k_statement_store,
 
 		//	Needed?
+		//	execute body_x
 		k_statement_block,
 
+		//	_e[0]
 		k_statement_return,
+
+		//	if _e[0] execute _body_x, else execute _body_y
 		k_statement_if,
 
-		//	replace by k_statement_if.
 		k_statement_for,
 
-		//	replace by k_statement_if.
 		k_statement_while,
 
 		//	Not needed. Just use an expression and don't use its result.
 		k_statement_expression,
 
+/*
 		k_expression_literal,
 		k_expression_resolve_member,
 		k_expression_lookup_element,
@@ -94,6 +100,8 @@ namespace floyd {
 
 		k_expression_logical_and,
 		k_expression_logical_or
+*/
+
 	};
 
 	//	A memory block. Addressed using index. Always 1 cache line big.
@@ -102,10 +110,35 @@ namespace floyd {
 		uint32_t _words[64 / sizeof(uint32_t)];
 	};
 
+	//??? Start by only using k_statement_store and k_fallback_to_checking_statement_manually.
 	struct bc_instr_t {
 		bc_instr _opcode;
-		std::shared_ptr<const statement_t> _statement;
+
+		std::vector<expression_t> _e;
+		variable_address_t _v;
+		std::string _name;
+		std::shared_ptr<const bc_body_t> _body_x;
+		std::shared_ptr<const bc_body_t> _body_y;
 	};
+
+
+	struct bc_body_t {
+		const std::vector<std::pair<std::string, symbol_t>> _symbols;
+
+		std::vector<bc_instr_t> _statements;
+
+		bc_body_t(const std::vector<bc_instr_t>& s) :
+			_statements(s),
+			_symbols{}
+		{
+		}
+		bc_body_t(const std::vector<bc_instr_t>& statements, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
+			_statements(statements),
+			_symbols(symbols)
+		{
+		}
+	};
+
 
 	struct bc_program_t {
 		public: bool check_invariant() const {
@@ -113,7 +146,7 @@ namespace floyd {
 			return true;
 		}
 
-//		const std::vector<const bc_instruction_t> _instructions;
+//		public: const bc_body_t _globals2;
 		public: const body_t _globals;
 	};
 

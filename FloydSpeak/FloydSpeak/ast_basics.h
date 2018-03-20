@@ -29,6 +29,12 @@ namespace floyd {
 
 
 	struct variable_address_t {
+		public: variable_address_t() :
+			_parent_steps(-1),
+			_index(-1)
+		{
+		}
+
 		public: static variable_address_t make_variable_address(int parent_steps, int index){
 			return variable_address_t(parent_steps, index);
 		}
