@@ -178,6 +178,26 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		define_function_statement_t
+
+
+		struct define_function_statement_t {
+			bool operator==(const define_function_statement_t& other) const {
+				return _name == other._name && _def == other._def;
+			}
+
+			const std::string _name;
+			const std::shared_ptr<const function_definition_t> _def;
+		};
+        public: statement_t(const define_function_statement_t& value) :
+			_def_function(std::make_shared<define_function_statement_t>(value))
+		{
+		}
+		public: static statement_t make__define_function_statement(const define_function_statement_t& value){
+			return statement_t(value);
+		}
+
+
 		//////////////////////////////////////		bind_local_t
 
 
@@ -387,6 +407,9 @@ namespace floyd {
 			else if(_def_struct){
 				return compare_shared_values(_def_struct, other._def_struct);
 			}
+			else if(_def_function){
+				return compare_shared_values(_def_function, other._def_function);
+			}
 			else if(_bind_local){
 				return compare_shared_values(_bind_local, other._bind_local);
 			}
@@ -418,6 +441,7 @@ namespace floyd {
 			int count = 0;
 			count = count + (_return != nullptr ? 1 : 0);
 			count = count + (_def_struct != nullptr ? 1 : 0);
+			count = count + (_def_function != nullptr ? 1 : 0);
 			count = count + (_bind_local != nullptr ? 1 : 0);
 			count = count + (_store != nullptr ? 1 : 0);
 			count = count + (_store2 != nullptr ? 1 : 0);
@@ -431,6 +455,8 @@ namespace floyd {
 			if(_return != nullptr){
 			}
 			else if(_def_struct != nullptr){
+			}
+			else if(_def_function != nullptr){
 			}
 			else if(_bind_local){
 			}
@@ -471,6 +497,9 @@ namespace floyd {
 				return _return->_expression.is_annotated_deep();
 			}
 			else if(_def_struct != nullptr){
+				return true;
+			}
+			else if(_def_function != nullptr){
 				return true;
 			}
 			else if(_bind_local){
@@ -525,6 +554,7 @@ namespace floyd {
 		//	Only *one* of these are used for each instance.
 		public: const std::shared_ptr<return_statement_t> _return;
 		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
+		public: const std::shared_ptr<define_function_statement_t> _def_function;
 		public: const std::shared_ptr<bind_local_t> _bind_local;
 		public: const std::shared_ptr<store_t> _store;
 		public: const std::shared_ptr<store2_t> _store2;

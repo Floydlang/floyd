@@ -375,6 +375,25 @@ analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t:
 	return vm_acc;
 }
 
+std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser_t& vm, const statement_t& s){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto& statement = *s._def_function;
+
+	auto vm_acc = vm;
+
+	//	Translates into:  bind-local, "myfunc", function_definition_expr_t
+	const auto function_def_expr = expression_t::make_function_definition(statement._def);
+	const auto& s2 = statement_t::make__bind_local(
+		statement._name,
+		statement._def->_function_type,
+		function_def_expr, statement_t::bind_local_t::k_immutable
+	);
+	const auto s3 = analyse_bind_local_statement(vm, s2);
+	return { s3.first, s3.second };
+}
+
+
 std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -476,6 +495,10 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 	else if(statement._def_struct){
 		const auto e = analyse_def_struct_statement(vm, *statement._def_struct);
 		return { e, {} };
+	}
+	else if(statement._def_function){
+		const auto e = analyse_def_function_statement(vm, statement);
+		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._if){
 		const auto e = analyse_ifelse_statement(vm, *statement._if);

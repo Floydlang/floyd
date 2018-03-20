@@ -128,10 +128,6 @@ expression_t parser_expression_to_ast(const quark::trace_context_t& tracer, cons
 	}
 }
 
-
-
-
-
 statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer, const ast_json_t& statement0){
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "astjson_to_statement__nonlossy()");
 	QUARK_ASSERT(statement0._value.check_invariant());
@@ -245,6 +241,26 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		return statement_t::make__define_struct_statement(s);
 	}
 
+	else if(type == "def-func"){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+		const auto def = statement.get_array_n(1);
+		const auto name = def.get_object_element("name");
+		const auto args = def.get_object_element("args");
+		const auto fstatements = def.get_object_element("statements");
+		const auto return_type = def.get_object_element("return_type");
+
+		const auto name2 = name.get_string();
+		const auto args2 = members_from_json(args);
+		const auto fstatements2 = parser_statements_to_ast__lossy(tracer, ast_json_t{fstatements});
+		const auto return_type2 = resolve_type_name(ast_json_t{return_type});
+		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
+		const auto body = body_t{fstatements2};
+		const auto function_def = function_definition_t(function_typeid, args2, make_shared<body_t>(body));
+
+		const auto s = statement_t::define_function_statement_t{ name2, std::make_shared<function_definition_t>(function_def) };
+		return statement_t::make__define_function_statement(s);
+	}
+
 	//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]
 	//	Else is optional.
 	else if(type == keyword_t::k_if){
@@ -308,8 +324,6 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 
 
-
-
 const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast__lossy(const quark::trace_context_t& tracer, const ast_json_t& p){
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "parser_statements_to_ast()");
 	QUARK_ASSERT(p._value.check_invariant());
@@ -355,6 +369,8 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast__lossy
 					}
 				]
 		*/
+
+/*
 		if(type == "def-func"){
 			QUARK_ASSERT(statement.get_array_size() == 2);
 			const auto def = statement.get_array_n(1);
@@ -402,9 +418,10 @@ const std::vector<std::shared_ptr<statement_t> > parser_statements_to_ast__lossy
 		}
 
 		else {
+*/
 			const auto s2 = astjson_to_statement__nonlossy(tracer, ast_json_t{ statement });
 			statements2.push_back(make_shared<statement_t>(s2));
-		}
+//		}
 	}
 
 	return statements2;
@@ -476,6 +493,13 @@ ast_json_t statement_to_json(const statement_t& e){
 			json_t("def-struct"),
 			json_t(e._def_struct->_name),
 			struct_definition_to_ast_json(*e._def_struct->_def)._value
+		})};
+	}
+	else if(e._def_function){
+		return ast_json_t{json_t::make_array({
+			json_t("def-func"),
+			json_t(e._def_function->_name),
+			function_def_to_ast_json(*e._def_function->_def)._value
 		})};
 	}
 	else if(e._bind_local){
@@ -654,6 +678,7 @@ const std::string k_test_program_0_pass2output = R"(
 	- the transform of the AST worked as expected
 	- Correct errors are emitted.
 */
+/*
 QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
 	const auto tracer = quark::make_default_tracer();
 
@@ -662,7 +687,7 @@ QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_0"){
 	const auto pass2_output = parse_json(seq_t(floyd::k_test_program_0_pass2output)).first;
 	ut_compare_jsons(ast_to_json(pass2)._value, pass2_output);
 }
-
+*/
 /*
 QUARK_UNIT_TESTQ("run_pass2()", "k_test_program_100"){
 	const auto pass1 = parse_json(seq_t(k_test_program_100_parserout)).first;
