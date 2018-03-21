@@ -38,18 +38,10 @@ using std::unique_ptr;
 using std::make_shared;
 
 
-value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& e);
 
-//	Output is the RETURN VALUE of the executed statement, if any.
-statement_result_t execute_statement(interpreter_t& vm, const bc_instr_t& statement);
 
-	value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
-
-	statement_result_t execute_body(
-		interpreter_t& vm,
-		const bc_body_t& body,
-		const std::vector<value_t>& init_values
-	);
+value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<value_t>& init_values);
 
 
 typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
@@ -311,6 +303,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto& end_value0 = execute_expression(vm, statement._e[1]);
 			const auto end_value_int = end_value0.get_int_value();
 
+			//	Allocates vector everytime!
 			vector<value_t> space_for_iterator = {value_t::make_null()};
 			for(int x = start_value_int ; x <= end_value_int ; x++){
 				space_for_iterator[0] = value_t::make_int(x);
@@ -474,17 +467,6 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-}
-
-value_t execute_load2_expression(interpreter_t& vm, const bc_expression_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-
-	environment_t* env = find_env_from_address(vm, expr._address);
-	const auto pos = env->_values_offset + expr._address._index;
-	QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-	const auto& value = vm._value_stack[pos];
-	QUARK_ASSERT(value.get_type() == expr._result_type);
-	return value;
 }
 
 value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
@@ -855,7 +837,12 @@ value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 		return execute_lookup_element_expression(vm, e);
 	}
 	else if(op == bc_expression_opcode::k_expression_load){
-		return execute_load2_expression(vm, e);
+		environment_t* env = find_env_from_address(vm, e._address);
+		const auto pos = env->_values_offset + e._address._index;
+		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+		const auto& value = vm._value_stack[pos];
+		QUARK_ASSERT(value.get_type() == e._result_type);
+		return value;
 	}
 
 	else if(op == bc_expression_opcode::k_expression_call){
