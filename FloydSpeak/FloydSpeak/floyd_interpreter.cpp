@@ -298,10 +298,10 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		}
 		else if(opcode == bc_instr::k_statement_for){
 			const auto& start_value0 = execute_expression(vm, statement._e[0]);
-			const auto start_value_int = start_value0.get_int_value();
+			const auto start_value_int = start_value0.get_int_value_quick();
 
 			const auto& end_value0 = execute_expression(vm, statement._e[1]);
-			const auto end_value_int = end_value0.get_int_value();
+			const auto end_value_int = end_value0.get_int_value_quick();
 
 			//	Allocates vector everytime!
 			vector<value_t> space_for_iterator = {value_t::make_null()};
@@ -395,7 +395,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 		QUARK_ASSERT(key_value.is_int());
 
 		const auto& instance = parent_value.get_string_value();
-		int lookup_index = key_value.get_int_value();
+		int lookup_index = key_value.get_int_value_quick();
 		if(lookup_index < 0 || lookup_index >= instance.size()){
 			throw std::runtime_error("Lookup in string: out of bounds.");
 		}
@@ -419,7 +419,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 		}
 		else if(parent_json_value.is_array()){
 			QUARK_ASSERT(key_value.is_int());
-			const auto& lookup_index = key_value.get_int_value();
+			const auto& lookup_index = key_value.get_int_value_quick();
 
 			if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
 				throw std::runtime_error("Lookup in json_value array: out of bounds.");
@@ -439,7 +439,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 
 		const auto& vec = parent_value.get_vector_value();
 
-		int lookup_index = key_value.get_int_value();
+		int lookup_index = key_value.get_int_value_quick();
 		if(lookup_index < 0 || lookup_index >= vec.size()){
 			throw std::runtime_error("Lookup in vector: out of bounds.");
 		}
@@ -611,7 +611,7 @@ value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc_ex
 
 	const auto& c = execute_expression(vm, expr._e[0]);
 	if(c.is_int()){
-		return value_t::make_int(0 - c.get_int_value());
+		return value_t::make_int(0 - c.get_int_value_quick());
 	}
 	else if(c.is_float()){
 		return value_t::make_float(0.0f - c.get_float_value());
@@ -711,8 +711,8 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 
 	//	int
 	else if(type_mode.is_int()){
-		const int left = left_constant.get_int_value();
-		const int right = right_constant.get_int_value();
+		const int left = left_constant.get_int_value_quick();
+		const int right = right_constant.get_int_value_quick();
 
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			return value_t::make_int(left + right);

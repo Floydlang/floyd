@@ -84,7 +84,7 @@ namespace floyd {
 
 	struct value_ext_t {
 		public: bool check_invariant() const{
-
+			QUARK_ASSERT(_rc > 0);
 			QUARK_ASSERT(_type.check_invariant());
 			QUARK_ASSERT(_typeid_value.check_invariant());
 
@@ -170,6 +170,7 @@ namespace floyd {
 
 
 		public: value_ext_t(const std::string& s) :
+			_rc(1),
 			_type(typeid_t::make_string()),
 			_string(s)
 		{
@@ -177,6 +178,7 @@ namespace floyd {
 		}
 
 		public: value_ext_t(const std::shared_ptr<json_t>& s) :
+			_rc(1),
 			_type(typeid_t::make_json_value()),
 			_json_value(s)
 		{
@@ -192,6 +194,7 @@ namespace floyd {
 
 
 
+		public: int _rc;
 		public: typeid_t _type;
 		public: std::string _string;
 		public: std::shared_ptr<json_t> _json_value;
@@ -270,7 +273,9 @@ namespace floyd {
 		//------------------------------------------------		int
 
 
-		public: static value_t make_int(int value);
+static value_t make_int(int value){
+	return value_t(value);
+}
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -285,6 +290,9 @@ namespace floyd {
 			return _value_internals._int;
 		}
 
+		public: int get_int_value_quick() const{
+			return _value_internals._int;
+		}
 
 		//------------------------------------------------		float
 
@@ -317,7 +325,7 @@ namespace floyd {
 		public: bool is_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _ext->_type.is_string();
+			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_string();
 		}
 		public: std::string get_string_value() const;
 
@@ -329,7 +337,7 @@ namespace floyd {
 		public: bool is_json_value() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _ext->_type.is_json_value();
+			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_json_value();
 		}
 		public: json_t get_json_value() const;
 
@@ -341,7 +349,7 @@ namespace floyd {
 		public: bool is_typeid() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _ext->_type.is_typeid();
+			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_typeid();
 		}
 		public: typeid_t get_typeid_value() const;
 
@@ -353,7 +361,7 @@ namespace floyd {
 		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _ext->_type.is_struct();
+			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_struct();
 		}
 		public: std::shared_ptr<struct_instance_t> get_struct_value() const;
 
@@ -365,7 +373,7 @@ namespace floyd {
 		public: bool is_vector() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _ext->_type.is_vector();
+			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_vector();
 		}
 		public: const std::vector<value_t>& get_vector_value() const;
 
@@ -377,7 +385,7 @@ namespace floyd {
 		public: bool is_dict() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _ext->_type.is_dict();
+			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_dict();
 		}
 		public: const std::map<std::string, value_t>& get_dict_value() const;
 
@@ -389,7 +397,7 @@ namespace floyd {
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _ext->_type.is_function();
+			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_function();
 		}
 		public: int get_function_value() const;
 
@@ -401,17 +409,31 @@ namespace floyd {
 
 		public: value_t(const value_t& other):
 			_type_int(other._type_int),
-
-			_value_internals(other._value_internals),
-			_ext(other._ext)
+			_value_internals(other._value_internals)
 		{
 			QUARK_ASSERT(other.check_invariant());
+
+			if(_type_int == type_int::k_ext){
+				_value_internals._ext->_rc++;
+			}
 
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
 
 			QUARK_ASSERT(check_invariant());
+		}
+
+		public: ~value_t(){
+			QUARK_ASSERT(check_invariant());
+
+			if(_type_int == type_int::k_ext){
+				_value_internals._ext->_rc--;
+				if(_value_internals._ext->_rc == 0){
+					delete _value_internals._ext;
+				}
+				_value_internals._ext = nullptr;
+			}
 		}
 
 		public: value_t& operator=(const value_t& other){
@@ -447,7 +469,7 @@ namespace floyd {
 				return _value_internals._float == other._value_internals._float;
 			}
 			else if(_type_int == type_int::k_ext){
-				return compare_shared_values(_ext, other._ext);
+				return compare_shared_values(_value_internals._ext, other._value_internals._ext);
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -482,7 +504,6 @@ namespace floyd {
 			std::swap(_type_int, other._type_int);
 
 			std::swap(_value_internals, other._value_internals);
-			std::swap(_ext, other._ext);
 
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
@@ -555,10 +576,10 @@ namespace floyd {
 			bool _bool;
 			int _int;
 			float _float;
+			value_ext_t* _ext;
 		};
 
 		private: value_internals_t _value_internals;
-		private: std::shared_ptr<value_ext_t> _ext;
 	};
 
 

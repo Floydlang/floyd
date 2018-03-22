@@ -74,9 +74,9 @@ OFF_QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
 
 
 
-QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
-	const int64_t cpp_iterations = (10000LL * 50000LL);
-	const int64_t floyd_iterations = 20000LL;
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
+	const int64_t cpp_iterations = (50LL * 1000LL * 1000LL);
+	const int64_t floyd_iterations = (50LL * 1000LL * 1000LL);
 
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++: For-loop",
@@ -96,7 +96,7 @@ QUARK_UNIT_TEST("Basic performance", "for-loop", "", ""){
 			const auto vm = run_global(context,
 			R"(
 				mutable int count = 0;
-				for (index in 1...20000) {
+				for (index in 1...50000000) {
 					count = count + 1;
 				}
 //				print("Floyd count:" + to_string(count));
