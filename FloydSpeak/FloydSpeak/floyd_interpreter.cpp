@@ -307,26 +307,31 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto& body = statement._b[0];
 
 			const auto values_offset = vm._value_stack.size();
+			vm._value_stack.push_back(value_t::make_null());
 
-			//??? Easy optimizations possible here.
-			for(int x = start_value_int ; x <= end_value_int ; x++){
-				vm._value_stack.push_back(value_t::make_int(x));
-				if(body._symbols.empty() == false){
-					for(vector<value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
-						const auto& symbol = body._symbols[i];
-						vm._value_stack.push_back(symbol.second._const_value);
-					}
+			//	These are constants (can be reused for every iteration of the for-loop, or memory slots = also reuse).
+			if(body._symbols.empty() == false){
+				for(vector<value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
+					const auto& symbol = body._symbols[i];
+					vm._value_stack.push_back(symbol.second._const_value);
 				}
-				vm._call_stack.push_back(environment_t{ &body, values_offset });
+			}
+			vm._call_stack.push_back(environment_t{ &body, values_offset });
 
+			for(int x = start_value_int ; x <= end_value_int ; x++){
+				vm._value_stack[values_offset + 0] = value_t::make_int(x);
+
+				//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 				const auto& return_value = execute_statements(vm, body._statements);
-				vm._call_stack.pop_back();
-				vm._value_stack.resize(values_offset);
 
 				if(return_value._type == statement_result_t::k_returning){
+					vm._call_stack.pop_back();
+					vm._value_stack.resize(values_offset);
 					return return_value;
 				}
 			}
+			vm._call_stack.pop_back();
+			vm._value_stack.resize(values_offset);
 		}
 		else if(opcode == bc_instr::k_statement_while){
 			bool again = true;
