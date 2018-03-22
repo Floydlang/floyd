@@ -229,6 +229,7 @@ namespace floyd {
 		public: value_t() :
 			_basetype(base_type::k_null)
 		{
+			_value_internals._int = 0xdeadbeef;
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif

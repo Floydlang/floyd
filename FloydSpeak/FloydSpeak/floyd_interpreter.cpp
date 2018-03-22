@@ -507,6 +507,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 	}
 }
 
+/*
 value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(expr.check_invariant());
@@ -516,7 +517,6 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 
 	//	_e[...] contains first callee, then each argument.
 	const auto arg_count = expr._e.size() - 1;
-
 
 	if(function_def._host_function_id != 0){
 		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
@@ -557,21 +557,68 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 		const auto& result = execute_statements(vm, function_def._body._statements);
 		vm._call_stack.pop_back();
 		vm._value_stack.resize(values_offset);
+		QUARK_ASSERT(result._type == statement_result_t::k_returning);
+		return result._output;
+	}
+}
+*/
 
-/*
-#if DEBUG
-		const auto arg_types = f.get_type().get_function_args();
+value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
+
+	const auto& function_value = execute_expression(vm, expr._e[0]);
+	const auto& function_def = get_function_def(vm, function_value);
+
+	//	_e[...] contains first callee, then each argument.
+	const auto arg_count = expr._e.size() - 1;
+
+
+	if(function_def._host_function_id != 0){
+		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
 
 		//	arity
-		QUARK_ASSERT(args.size() == arg_types.size());
+		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
-		for(int i = 0 ; i < args.size() ; i++){
-			if(args[i].get_type() != arg_types[i]){
-				QUARK_ASSERT(false);
+		std::vector<value_t> arg_values;
+		arg_values.reserve(arg_count);
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& arg_expr = expr._e[i + 1];
+			QUARK_ASSERT(arg_expr.check_invariant());
+
+			const auto& t = execute_expression(vm, arg_expr);
+			arg_values.push_back(t);
+		}
+		const auto& result = (host_function)(vm, arg_values);
+		return result;
+	}
+	else{
+		const auto values_offset = vm._value_stack.size();
+
+		//	Notice that arguments are first in the symbol list.
+		const auto symbol_count = function_def._body._symbols.size();
+
+		vm._value_stack.resize(values_offset + symbol_count);
+
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& arg_expr = expr._e[i + 1];
+			QUARK_ASSERT(arg_expr.check_invariant());
+
+			const auto& t = execute_expression(vm, arg_expr);
+			vm._value_stack[values_offset + i] = t;
+		}
+		if(symbol_count > arg_count){
+			//	Skip args, they are already copied.
+			for(vector<value_t>::size_type i = arg_count ; i < symbol_count ; i++){
+				const auto& symbol = function_def._body._symbols[i];
+				vm._value_stack[values_offset + i] = symbol.second._const_value;
 			}
 		}
-#endif
-*/
+		vm._call_stack.push_back(environment_t{ &function_def._body, values_offset });
+		const auto& result = execute_statements(vm, function_def._body._statements);
+		vm._call_stack.pop_back();
+		vm._value_stack.resize(values_offset);
+
 		QUARK_ASSERT(result._type == statement_result_t::k_returning);
 		return result._output;
 	}
