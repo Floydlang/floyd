@@ -40,8 +40,8 @@ using std::make_shared;
 
 
 
-value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<value_t>& init_values);
+bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values);
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 
 
@@ -66,7 +66,7 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const floyd::value_t* find_symbol_by_name_deep(const interpreter_t& vm, int depth, const std::string& s){
+const floyd::bc_value_t* find_symbol_by_name_deep(const interpreter_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
@@ -93,7 +93,7 @@ const floyd::value_t* find_symbol_by_name_deep(const interpreter_t& vm, int dept
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const floyd::value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s){
+const floyd::bc_value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
@@ -109,11 +109,11 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 		throw std::runtime_error("Cannot find global.");
 	}
 	else{
-		return *result;
+		return bc_to_value(*result);
 	}
 }
 
-inline const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::value_t& v){
+inline const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::bc_value_t& v){
 	QUARK_ASSERT(v.is_function());
 
 	const auto function_id = v.get_function_value();
@@ -141,15 +141,17 @@ inline const environment_t* find_env_from_address(const interpreter_t& vm, const
 	}
 }
 
-value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const vector<value_t>& arg_values){
+
+bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const vector<bc_value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(type.is_json_value()){
 		QUARK_ASSERT(arg_values.size() == 1);
 
-		const auto& arg = arg_values[0];
+		const auto& arg0 = arg_values[0];
+		const auto arg = bc_to_value(arg0);
 		const auto value = value_to_ast_json(arg);
-		return value_t::make_json_value(value._value);
+		return bc_value_t::make_json_value(value._value);
 	}
 	else if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_typeid()){
 		QUARK_ASSERT(arg_values.size() == 1);
@@ -157,7 +159,7 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 		const auto& arg = arg_values[0];
 		if(type.is_string()){
 			if(arg.is_json_value() && arg.get_json_value().is_string()){
-				return value_t::make_string(arg.get_json_value().get_string());
+				return bc_value_t::make_string(arg.get_json_value().get_string());
 			}
 			else if(arg.is_string()){
 			}
@@ -181,7 +183,8 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 			QUARK_ASSERT(v.get_type() == a._type);
 		}
 	#endif
-		const auto instance = value_t::make_struct_value(type, arg_values);
+
+		const auto instance = bc_value_t::make_struct_value(type, arg_values);
 		QUARK_TRACE(to_compact_string2(instance));
 
 		return instance;
@@ -190,19 +193,19 @@ value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, con
 		const auto& element_type = type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
-		return value_t::make_vector_value(element_type, arg_values);
+		return bc_value_t::make_vector_value(element_type, arg_values);
 	}
 	else if(type.is_dict()){
 		const auto& element_type = type.get_dict_value_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
-		std::map<string, value_t> m;
+		std::map<string, bc_value_t> m;
 		for(auto i = 0 ; i < arg_values.size() / 2 ; i++){
 			const auto& key = arg_values[i * 2 + 0].get_string_value();
 			const auto& value = arg_values[i * 2 + 1];
 			m.insert({ key, value });
 		}
-		return value_t::make_dict_value(element_type, m);
+		return bc_value_t::make_dict_value(element_type, m);
 	}
 	else if(type.is_function()){
 	}
@@ -223,7 +226,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 	QUARK_ASSERT(f.is_function());
 #endif
 
-	const auto& function_def = get_function_def(vm, f);
+	const auto& function_def = get_function_def(vm, value_to_bc(f));
 	if(function_def._host_function_id != 0){
 		const auto& r = call_host_function(vm, function_def._host_function_id, args);
 		return r;
@@ -242,7 +245,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 		}
 #endif
 
-		const auto& r = execute_body(vm, function_def._body, args);
+		const auto& r = execute_body(vm, function_def._body, values_to_bcs(args));
 		return r;
 	}
 }
@@ -307,19 +310,19 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto& body = statement._b[0];
 
 			const auto values_offset = vm._value_stack.size();
-			vm._value_stack.push_back(value_t::make_null());
+			vm._value_stack.push_back(bc_value_t::make_null());
 
 			//	These are constants (can be reused for every iteration of the for-loop, or memory slots = also reuse).
 			if(body._symbols.empty() == false){
-				for(vector<value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
+				for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
 					const auto& symbol = body._symbols[i];
-					vm._value_stack.push_back(symbol.second._const_value);
+					vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 				}
 			}
 			vm._call_stack.push_back(environment_t{ &body, values_offset });
 
 			for(int x = start_value_int ; x <= end_value_int ; x++){
-				vm._value_stack[values_offset + 0] = value_t::make_int(x);
+				vm._value_stack[values_offset + 0] = bc_value_t::make_int(x);
 
 				//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 				const auto& return_value = execute_statements(vm, body._statements);
@@ -361,7 +364,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 	return statement_result_t::make__complete_without_value();
 }
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<value_t>& init_values){
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto values_offset = vm._value_stack.size();
@@ -371,9 +374,9 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const 
 		}
 	}
 	if(body._symbols.empty() == false){
-		for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
+		for(vector<bc_value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
 			const auto& symbol = body._symbols[i];
-			vm._value_stack.push_back(symbol.second._const_value);
+			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 		}
 	}
 	vm._call_stack.push_back(environment_t{ &body, values_offset });
@@ -389,9 +392,9 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 
 	const auto values_offset = vm._value_stack.size();
 	if(body._symbols.empty() == false){
-		for(vector<value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
+		for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
 			const auto& symbol = body._symbols[i];
-			vm._value_stack.push_back(symbol.second._const_value);
+			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 		}
 	}
 	vm._call_stack.push_back(environment_t{ &body, values_offset });
@@ -409,7 +412,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 
 
 
-value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& parent_expr = execute_expression(vm, expr._e[0]);
@@ -420,11 +423,11 @@ value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression
 	int index = expr._address._index;
 	QUARK_ASSERT(index != -1);
 
-	const value_t value = struct_instance->_member_values[index];
+	const bc_value_t value = value_to_bc(struct_instance->_member_values[index]);
 	return value;
 }
 
-value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& parent_value = execute_expression(vm, expr._e[0]);
@@ -439,7 +442,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 		}
 		else{
 			const char ch = instance[lookup_index];
-			const auto value2 = value_t::make_string(string(1, ch));
+			const auto value2 = bc_value_t::make_string(string(1, ch));
 			return value2;
 		}
 	}
@@ -452,7 +455,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 
 			//	get_object_element() throws if key can't be found.
 			const auto& value = parent_json_value.get_object_element(lookup_key);
-			const auto value2 = value_t::make_json_value(value);
+			const auto value2 = bc_value_t::make_json_value(value);
 			return value2;
 		}
 		else if(parent_json_value.is_array()){
@@ -464,7 +467,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 			}
 			else{
 				const auto& value = parent_json_value.get_array_n(lookup_index);
-				const auto value2 = value_t::make_json_value(value);
+				const auto value2 = bc_value_t::make_json_value(value);
 				return value2;
 			}
 		}
@@ -482,7 +485,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 			throw std::runtime_error("Lookup in vector: out of bounds.");
 		}
 		else{
-			const value_t value = vec[lookup_index];
+			const bc_value_t value = vec[lookup_index];
 			return value;
 		}
 	}
@@ -497,7 +500,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 			throw std::runtime_error("Lookup in dict: key not found.");
 		}
 		else{
-			const value_t value = found_it->second;
+			const bc_value_t value = found_it->second;
 			return value;
 		}
 	}
@@ -507,63 +510,7 @@ value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression
 	}
 }
 
-/*
-value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(expr.check_invariant());
-
-	const auto& function_value = execute_expression(vm, expr._e[0]);
-	const auto& function_def = get_function_def(vm, function_value);
-
-	//	_e[...] contains first callee, then each argument.
-	const auto arg_count = expr._e.size() - 1;
-
-	if(function_def._host_function_id != 0){
-		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
-
-		//	arity
-		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
-
-		std::vector<value_t> arg_values;
-		arg_values.reserve(arg_count);
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto& arg_expr = expr._e[i + 1];
-			QUARK_ASSERT(arg_expr.check_invariant());
-
-			const auto& t = execute_expression(vm, arg_expr);
-			arg_values.push_back(t);
-		}
-		const auto& result = (host_function)(vm, arg_values);
-		return result;
-	}
-	else{
-		const auto values_offset = vm._value_stack.size();
-
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto& arg_expr = expr._e[i + 1];
-			QUARK_ASSERT(arg_expr.check_invariant());
-
-			const auto& t = execute_expression(vm, arg_expr);
-			vm._value_stack.push_back(t);
-		}
-		if(function_def._body._symbols.empty() == false){
-			for(vector<value_t>::size_type i = arg_count ; i < function_def._body._symbols.size() ; i++){
-				const auto& symbol = function_def._body._symbols[i];
-				vm._value_stack.push_back(symbol.second._const_value);
-			}
-		}
-		vm._call_stack.push_back(environment_t{ &function_def._body, values_offset });
-
-		const auto& result = execute_statements(vm, function_def._body._statements);
-		vm._call_stack.pop_back();
-		vm._value_stack.resize(values_offset);
-		QUARK_ASSERT(result._type == statement_result_t::k_returning);
-		return result._output;
-	}
-}
-*/
-
-value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(expr.check_invariant());
 
@@ -580,7 +527,7 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 		//	arity
 		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
-		std::vector<value_t> arg_values;
+		std::vector<bc_value_t> arg_values;
 		arg_values.reserve(arg_count);
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
@@ -589,8 +536,9 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 			const auto& t = execute_expression(vm, arg_expr);
 			arg_values.push_back(t);
 		}
-		const auto& result = (host_function)(vm, arg_values);
-		return result;
+
+		const auto& result = (host_function)(vm, bcs_to_values(arg_values));
+		return value_to_bc(result);
 	}
 	else{
 		const auto values_offset = vm._value_stack.size();
@@ -609,9 +557,9 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 		}
 		if(symbol_count > arg_count){
 			//	Skip args, they are already copied.
-			for(vector<value_t>::size_type i = arg_count ; i < symbol_count ; i++){
+			for(vector<bc_value_t>::size_type i = arg_count ; i < symbol_count ; i++){
 				const auto& symbol = function_def._body._symbols[i];
-				vm._value_stack[values_offset + i] = symbol.second._const_value;
+				vm._value_stack[values_offset + i] = value_to_bc(symbol.second._const_value);
 			}
 		}
 		vm._call_stack.push_back(environment_t{ &function_def._body, values_offset });
@@ -624,7 +572,7 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 	}
 }
 
-value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(expr._result_type.is_vector()){
@@ -639,7 +587,7 @@ value_t execute_construct_value_expression(interpreter_t& vm, const bc_expressio
 		QUARK_ASSERT(root_value_type.is_null() == false);
 		QUARK_ASSERT(element_type.is_null() == false);
 
-		std::vector<value_t> elements2;
+		std::vector<bc_value_t> elements2;
 		for(const auto& m: elements){
 			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
@@ -663,20 +611,20 @@ value_t execute_construct_value_expression(interpreter_t& vm, const bc_expressio
 		QUARK_ASSERT(root_value_type.is_null() == false);
 		QUARK_ASSERT(element_type.is_null() == false);
 
-		std::vector<value_t> elements2;
+		std::vector<bc_value_t> elements2;
 		for(auto i = 0 ; i < elements.size() / 2 ; i++){
 			const auto& key_expr = elements[i * 2 + 0];
 			const auto& value_expr = elements[i * 2 + 1];
 
 			const auto& value = execute_expression(vm, value_expr);
 			const string key = key_expr._value.get_string_value();
-			elements2.push_back(value_t::make_string(key));
+			elements2.push_back(bc_value_t::make_string(key));
 			elements2.push_back(value);
 		}
 		return construct_value_from_typeid(vm, typeid_t::make_dict(element_type), elements2);
 	}
 	else if(expr._result_type.is_struct()){
-		std::vector<value_t> elements2;
+		std::vector<bc_value_t> elements2;
 		for(const auto m: expr._e){
 			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
@@ -691,15 +639,15 @@ value_t execute_construct_value_expression(interpreter_t& vm, const bc_expressio
 	}
 }
 
-value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& c = execute_expression(vm, expr._e[0]);
 	if(c.is_int()){
-		return value_t::make_int(0 - c.get_int_value_quick());
+		return bc_value_t::make_int(0 - c.get_int_value_quick());
 	}
 	else if(c.is_float()){
-		return value_t::make_float(0.0f - c.get_float_value());
+		return bc_value_t::make_float(0.0f - c.get_float_value());
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -707,7 +655,7 @@ value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc_ex
 	}
 }
 
-value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
@@ -724,7 +672,7 @@ value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_expr
 	}
 }
 
-value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& left_constant = execute_expression(vm, expr._e[0]);
@@ -734,29 +682,29 @@ value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& 
 	const auto opcode = expr._opcode;
 	//	Do generic functionallity, independant on type.
 	if(opcode == bc_expression_opcode::k_expression_comparison_smaller_or_equal){
-		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return value_t::make_bool(diff <= 0);
+		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant);
+		return bc_value_t::make_bool(diff <= 0);
 	}
 	else if(opcode == bc_expression_opcode::k_expression_comparison_smaller){
-		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return value_t::make_bool(diff < 0);
+		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant);
+		return bc_value_t::make_bool(diff < 0);
 	}
 	else if(opcode == bc_expression_opcode::k_expression_comparison_larger_or_equal){
-		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return value_t::make_bool(diff >= 0);
+		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant);
+		return bc_value_t::make_bool(diff >= 0);
 	}
 	else if(opcode == bc_expression_opcode::k_expression_comparison_larger){
-		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return value_t::make_bool(diff > 0);
+		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant);
+		return bc_value_t::make_bool(diff > 0);
 	}
 
 	else if(opcode == bc_expression_opcode::k_expression_logical_equal){
-		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return value_t::make_bool(diff == 0);
+		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant);
+		return bc_value_t::make_bool(diff == 0);
 	}
 	else if(opcode == bc_expression_opcode::k_expression_logical_nonequal){
-		long diff = value_t::compare_value_true_deep(left_constant, right_constant);
-		return value_t::make_bool(diff != 0);
+		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant);
+		return bc_value_t::make_bool(diff != 0);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -764,7 +712,7 @@ value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& 
 	}
 }
 
-value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& expr){
+bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& left_constant = execute_expression(vm, expr._e[0]);
@@ -781,13 +729,13 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 		const bool right = right_constant.get_bool_value_quick();
 
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return value_t::make_bool(left + right);
+			return bc_value_t::make_bool(left + right);
 		}
 		else if(op == bc_expression_opcode::k_expression_logical_and){
-			return value_t::make_bool(left && right);
+			return bc_value_t::make_bool(left && right);
 		}
 		else if(op == bc_expression_opcode::k_expression_logical_or){
-			return value_t::make_bool(left || right);
+			return bc_value_t::make_bool(left || right);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -800,33 +748,33 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 		const int right = right_constant.get_int_value_quick();
 
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return value_t::make_int(left + right);
+			return bc_value_t::make_int(left + right);
 		}
 		else if(op == bc_expression_opcode::k_expression_arithmetic_subtract){
-			return value_t::make_int(left - right);
+			return bc_value_t::make_int(left - right);
 		}
 		else if(op == bc_expression_opcode::k_expression_arithmetic_multiply){
-			return value_t::make_int(left * right);
+			return bc_value_t::make_int(left * right);
 		}
 		else if(op == bc_expression_opcode::k_expression_arithmetic_divide){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return value_t::make_int(left / right);
+			return bc_value_t::make_int(left / right);
 		}
 		else if(op == bc_expression_opcode::k_expression_arithmetic_remainder){
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return value_t::make_int(left % right);
+			return bc_value_t::make_int(left % right);
 		}
 
 		//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
 		else if(op == bc_expression_opcode::k_expression_logical_and){
-			return value_t::make_bool((left != 0) && (right != 0));
+			return bc_value_t::make_bool((left != 0) && (right != 0));
 		}
 		else if(op == bc_expression_opcode::k_expression_logical_or){
-			return value_t::make_bool((left != 0) || (right != 0));
+			return bc_value_t::make_bool((left != 0) || (right != 0));
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -839,26 +787,26 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 		const float right = right_constant.get_float_value();
 
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return value_t::make_float(left + right);
+			return bc_value_t::make_float(left + right);
 		}
 		else if(op == bc_expression_opcode::k_expression_arithmetic_subtract){
-			return value_t::make_float(left - right);
+			return bc_value_t::make_float(left - right);
 		}
 		else if(op == bc_expression_opcode::k_expression_arithmetic_multiply){
-			return value_t::make_float(left * right);
+			return bc_value_t::make_float(left * right);
 		}
 		else if(op == bc_expression_opcode::k_expression_arithmetic_divide){
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			return value_t::make_float(left / right);
+			return bc_value_t::make_float(left / right);
 		}
 
 		else if(op == bc_expression_opcode::k_expression_logical_and){
-			return value_t::make_bool((left != 0.0f) && (right != 0.0f));
+			return bc_value_t::make_bool((left != 0.0f) && (right != 0.0f));
 		}
 		else if(op == bc_expression_opcode::k_expression_logical_or){
-			return value_t::make_bool((left != 0.0f) || (right != 0.0f));
+			return bc_value_t::make_bool((left != 0.0f) || (right != 0.0f));
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -871,7 +819,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 		const auto& right = right_constant.get_string_value();
 
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return value_t::make_string(left + right);
+			return bc_value_t::make_string(left + right);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -888,9 +836,10 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 		const auto& element_type = left_constant.get_type().get_vector_element_type();
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			auto elements2 = left_constant.get_vector_value();
-			elements2.insert(elements2.end(), right_constant.get_vector_value().begin(), right_constant.get_vector_value().end());
+			const auto& rhs_elements = right_constant.get_vector_value();
+			elements2.insert(elements2.end(), rhs_elements.begin(), rhs_elements.end());
 
-			const auto& value2 = value_t::make_vector_value(element_type, elements2);
+			const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
 			return value2;
 		}
 		else{
@@ -906,7 +855,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 	throw std::exception();
 }
 
-value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
+bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1005,9 +954,9 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 
 	const auto values_offset = _value_stack.size();
 	const auto& body_ptr = _imm->_program._globals;
-	for(vector<value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
+	for(vector<bc_value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
 		const auto& symbol = body_ptr._symbols[i];
-		_value_stack.push_back(symbol.second._const_value);
+		_value_stack.push_back(value_to_bc(symbol.second._const_value));
 	}
 	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
 
@@ -1062,7 +1011,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		std::vector<json_t> values;
 		for(int local_index = 0 ; local_index < local_count ; local_index++){
 			const auto& v = vm._value_stack[e->_values_offset + local_index];
-			const auto& a = value_and_type_to_ast_json(v);
+			const auto& a = value_and_type_to_ast_json(bc_to_value(v));
 			values.push_back(a._value);
 		}
 
@@ -1078,69 +1027,8 @@ json_t interpreter_to_json(const interpreter_t& vm){
 	});
 }
 
-/*
-void test__execute_expression(const expression_t& e, const value_t& expected_value){
-	const bc_program_t program;
-	interpreter_t interpreter(program);
-	const auto& e3 = execute_expression(interpreter, e);
 
-	ut_compare_jsons(value_to_ast_json(e3)._value, value_to_ast_json(expected_value)._value);
-}
-
-
-QUARK_UNIT_TESTQ("execute_expression()", "literal 1234 == 1234") {
-	test__execute_expression(
-		expression_t::make_literal_int(1234),
-		value_t::make_int(1234)
-	);
-}
-
-QUARK_UNIT_TESTQ("execute_expression()", "1 + 2 == 3") {
-	test__execute_expression(
-		expression_t::make_simple_expression__2(
-			expression_type::k_arithmetic_add__2,
-			expression_t::make_literal_int(1),
-			expression_t::make_literal_int(2),
-			make_shared<typeid_t>(typeid_t::make_int())
-		),
-		value_t::make_int(3)
-	);
-}
-
-
-QUARK_UNIT_TESTQ("execute_expression()", "3 * 4 == 12") {
-	test__execute_expression(
-		expression_t::make_simple_expression__2(
-			bc_expression_opcode::k_expression_arithmetic_multiply,
-			expression_t::make_literal_int(3),
-			expression_t::make_literal_int(4),
-			make_shared<typeid_t>(typeid_t::make_int())
-		),
-		value_t::make_int(12)
-	);
-}
-
-QUARK_UNIT_TESTQ("execute_expression()", "(3 * 4) * 5 == 60") {
-	test__execute_expression(
-		expression_t::make_simple_expression__2(
-			bc_expression_opcode::k_expression_arithmetic_multiply,
-			expression_t::make_simple_expression__2(
-				bc_expression_opcode::k_expression_arithmetic_multiply,
-				expression_t::make_literal_int(3),
-				expression_t::make_literal_int(4),
-				make_shared<typeid_t>(typeid_t::make_int())
-			),
-			expression_t::make_literal_int(5),
-			make_shared<typeid_t>(typeid_t::make_int())
-		),
-		value_t::make_int(60)
-	);
-}
-*/
-
-
-
-statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<floyd::value_t> args){
+statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<floyd::value_t>& args){
 	QUARK_ASSERT(function_id >= 0);
 
 	const auto& host_function = vm._imm->_host_functions.at(function_id);
@@ -1149,7 +1037,7 @@ statement_result_t call_host_function(interpreter_t& vm, int function_id, const 
 //	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
 	const auto& result = (host_function)(vm, args);
-	return statement_result_t::make_return_unwind(result);
+	return statement_result_t::make_return_unwind(value_to_bc(result));
 }
 
 bc_program_t program_to_ast2(const interpreter_context_t& context, const string& program){
@@ -1192,7 +1080,7 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 
 	const auto& main_function = find_symbol_by_name(vm, "main");
 	if(main_function != nullptr){
-		const auto& result = call_function(vm, *main_function, args);
+		const auto& result = call_function(vm, bc_to_value(*main_function), args);
 		return { vm, result };
 	}
 	else{
@@ -1205,7 +1093,7 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 
 	const auto& main_func = find_symbol_by_name(vm, "main");
 	if(main_func != nullptr){
-		const auto& r = call_function(vm, *main_func, args);
+		const auto& r = call_function(vm, bc_to_value(*main_func), args);
 		return { vm, r };
 	}
 	else{

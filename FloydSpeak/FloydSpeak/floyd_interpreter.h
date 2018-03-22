@@ -21,14 +21,14 @@
 
 namespace floyd {
 	struct expression_t;
-	struct value_t;
+	struct bc_value_t;
 	struct statement_t;
 	struct interpreter_t;
 	struct bc_program_t;
 	struct bc_instr_t;
 
 
-	value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const std::vector<value_t>& arg_values);
+	bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const std::vector<bc_value_t>& arg_values);
 
 
 	//////////////////////////////////////		statement_result_t
@@ -57,30 +57,30 @@ namespace floyd {
 			k_complete_without_result_value
 		};
 
-		public: static statement_result_t make_return_unwind(const value_t& return_value){
+		public: static statement_result_t make_return_unwind(const bc_value_t& return_value){
 			return { statement_result_t::k_returning, return_value };
 		}
-		public: static statement_result_t make_passive_expression_output(const value_t& output_value){
+		public: static statement_result_t make_passive_expression_output(const bc_value_t& output_value){
 			return { statement_result_t::k_passive_expression_output, output_value };
 		}
 		public: static statement_result_t make__complete_without_value(){
-			return { statement_result_t::k_complete_without_result_value, value_t::make_null() };
+			return { statement_result_t::k_complete_without_result_value, bc_value_t::make_null() };
 		}
 
-		private: statement_result_t(output_type type, const value_t& output) :
+		private: statement_result_t(output_type type, const bc_value_t& output) :
 			_type(type),
 			_output(output)
 		{
 		}
 
 		public: output_type _type;
-		public: value_t _output;
+		public: bc_value_t _output;
 	};
 
 	inline bool operator==(const statement_result_t& lhs, const statement_result_t& rhs){
 		return true
 			&& lhs._type == rhs._type
-			&& lhs._output == rhs._output;
+			&& lhs._output._backstore == rhs._output._backstore;
 	}
 
 
@@ -127,13 +127,13 @@ namespace floyd {
 		public: std::shared_ptr<interpreter_imm_t> _imm;
 
 		//	Holds all values for all environments.
-		public: std::vector<value_t> _value_stack;
+		public: std::vector<bc_value_t> _value_stack;
 		public: std::vector<environment_t> _call_stack;
 		public: std::vector<std::string> _print_output;
 	};
 
 
-	statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t> args);
+	statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t>& args);
 	statement_result_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
 	json_t interpreter_to_json(const interpreter_t& vm);
 
@@ -154,7 +154,7 @@ namespace floyd {
 
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
 	typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type);
-	const floyd::value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s);
+	const floyd::bc_value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.

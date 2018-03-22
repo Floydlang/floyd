@@ -280,7 +280,7 @@ bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	const auto& op = e.get_operation();
 
 	if(op == expression_type::k_literal){
-		return bc_expression_t{ bc_expression_opcode::k_expression_literal, e.get_annotated_type(), {}, {}, e.get_literal() };
+		return bc_expression_t{ bc_expression_opcode::k_expression_literal, e.get_annotated_type(), {}, {}, value_to_bc(e.get_literal()) };
 	}
 	else if(op == expression_type::k_resolve_member){
 		return bcgen_resolve_member_expression(vm, e);

@@ -950,8 +950,8 @@ value_t host__instantiate_from_typeid(interpreter_t& vm, const std::vector<value
 	else{
 		const auto type_to_construct = args[0].get_typeid_value();
 		const std::vector<value_t> init_args(args.begin() + 1, args.end());
-		const auto result = construct_value_from_typeid(vm, type_to_construct, init_args);
-		return result;
+		const auto result = construct_value_from_typeid(vm, type_to_construct, values_to_bcs(init_args));
+		return bc_to_value(result);
 	}
 }
 

@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 #include "ast.h"
+#include "ast_typeid.h"
+#include "ast_value.h"
 
 namespace floyd {
 	struct expression_t;
@@ -22,6 +24,229 @@ namespace floyd {
 	struct bgenerator_t;
 
 	struct bc_body_t;
+	struct bc_value_t;
+
+
+inline value_t bc_to_value(const bc_value_t& value);
+inline bc_value_t value_to_bc(const value_t& value);
+
+
+inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
+inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values);
+
+
+
+	struct bc_value_t {
+		public: value_t _backstore;
+
+		public: bc_value_t(){
+		}
+
+		private: explicit bc_value_t(const value_t& value) :
+			_backstore(value)
+		{
+		}
+
+		public: bool check_invariant() const {
+			return _backstore.check_invariant();
+		}
+		public: typeid_t get_type() const {
+			return _backstore.get_type();
+		}
+		public: base_type get_basetype() const {
+			return _backstore.get_basetype();
+		}
+
+		public: bool operator==(const bc_value_t& other) const{
+			return _backstore == other._backstore;
+		}
+
+
+
+
+
+		public: bool is_null() const {
+			return _backstore.is_null();
+		}
+
+		public: static bc_value_t make_null(){
+			return {};
+		}
+
+
+
+		public: bool is_bool() const {
+			return _backstore.is_bool();
+		}
+		public: static bc_value_t make_bool(bool v){
+			return bc_value_t{ value_t::make_bool(v) };
+		}
+		public: bool get_bool_value_quick() const {
+			return _backstore.get_bool_value_quick();
+		}
+
+
+
+		public: bool is_int() const {
+			return _backstore.is_int();
+		}
+		public: static bc_value_t make_int(int v){
+			return bc_value_t{ value_t::make_int(v) };
+		}
+		public: int get_int_value() const {
+			return _backstore.get_int_value();
+		}
+		public: int get_int_value_quick() const {
+			return _backstore.get_int_value_quick();
+		}
+
+
+
+		public: bool is_float() const {
+			return _backstore.is_float();
+		}
+		public: static bc_value_t make_float(float v){
+			return bc_value_t{ value_t::make_float(v) };
+		}
+		public: float get_float_value() const {
+			return _backstore.get_float_value();
+		}
+
+
+
+		public: bool is_string() const {
+			return _backstore.is_string();
+		}
+		public: static bc_value_t make_string(const std::string& v){
+			return bc_value_t{ value_t::make_string(v) };
+		}
+		std::string get_string_value() const{
+			return _backstore.get_string_value();
+		}
+
+
+
+
+		public: bool is_function() const {
+			return _backstore.is_function();
+		}
+		int get_function_value() const{
+			return _backstore.get_function_value();
+		}
+
+		public: bool is_vector() const {
+			return _backstore.is_vector();
+		}
+		public: bool is_struct() const {
+			return _backstore.is_struct();
+		}
+		public: bool is_dict() const {
+			return _backstore.is_dict();
+		}
+
+		public: bool is_typeid() const {
+			return _backstore.is_typeid();
+		}
+		public: typeid_t get_typeid_value() const {
+			return _backstore.get_typeid_value();
+		}
+		public: std::shared_ptr<struct_instance_t> get_struct_value() const {
+			return _backstore.get_struct_value();
+		}
+
+		public: const std::vector<bc_value_t> get_vector_value() const{
+			return values_to_bcs(_backstore.get_vector_value());
+		}
+
+		public: static bc_value_t make_struct_value(const typeid_t& struct_type, const std::vector<bc_value_t>& values){
+			return bc_value_t{ value_t::make_struct_value(struct_type, bcs_to_values(values)) };
+		}
+		public: static bc_value_t make_struct_value(const typeid_t& struct_type, const std::vector<value_t>& values){
+			return bc_value_t{ value_t::make_struct_value(struct_type, values) };
+		}
+
+		public: static bc_value_t make_vector_value(const typeid_t& element_type, const std::vector<bc_value_t>& elements){
+			return bc_value_t{value_t::make_vector_value(element_type, bcs_to_values(elements))};
+		}
+
+
+
+
+		public: static bc_value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries){
+			std::map<std::string, value_t> elements2;
+			for(const auto e: entries){
+				elements2.insert({e.first, bc_to_value(e.second)});
+			}
+			return bc_value_t{value_t::make_dict_value(value_type, elements2)};
+		}
+
+		public: const std::map<std::string, bc_value_t> get_dict_value() const{
+			std::map<std::string, bc_value_t> result;
+			const auto& elements = _backstore.get_dict_value();
+			for(const auto e: elements){
+				result.insert({e.first, value_to_bc(e.second)});
+			}
+			return result;
+		}
+
+		public: static int compare_value_true_deep(const bc_value_t& left, const bc_value_t& right){
+			return value_t::compare_value_true_deep(left._backstore, right._backstore);
+		}
+
+
+
+
+		public: bool is_json_value() const {
+			return _backstore.is_json_value();
+		}
+		public: static bc_value_t make_json_value(const json_t& v){
+			return bc_value_t{ value_t::make_json_value(v) };
+		}
+		public: json_t get_json_value() const{
+			return _backstore.get_json_value();
+		}
+
+
+
+		friend bc_value_t value_to_bc(const value_t& value);
+
+	};
+
+
+inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+	std::vector<bc_value_t> result;
+	for(const auto e: values){
+		result.push_back(value_to_bc(e));
+	}
+	return result;
+}
+
+inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(bc_to_value(e));
+	}
+	return result;
+}
+
+inline value_t bc_to_value(const bc_value_t& value){
+	return value._backstore;
+}
+inline bc_value_t value_to_bc(const value_t& value){
+	return bc_value_t{value};
+}
+
+inline std::string to_compact_string2(const bc_value_t& value) {
+	return to_compact_string2(value._backstore);
+}
+
+
+
+	struct bc_struct_instance_t {
+		public: std::vector<bc_value_t> _member_values;
+	};
+
+
 
 
 	//////////////////////////////////////		bc_vm_t
@@ -111,7 +336,7 @@ namespace floyd {
 		typeid_t _result_type;
 		std::vector<bc_expression_t> _e;
 		variable_address_t _address;
-		value_t _value;
+		bc_value_t _value;
 
 		public: bool check_invariant() const { return true; }
 	};
@@ -122,7 +347,6 @@ namespace floyd {
 		uint32_t _words[64 / sizeof(uint32_t)];
 	};
 
-	//??? Start by only using k_statement_store and k_fallback_to_checking_statement_manually.
 	struct bc_instr_t {
 		bc_instr _opcode;
 

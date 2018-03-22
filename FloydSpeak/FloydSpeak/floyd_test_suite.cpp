@@ -66,7 +66,7 @@ void test__run_main(const std::string& program, const vector<floyd::value_t>& ar
 
 	const auto result = run_main(context, program, args);
 	ut_compare_jsons(
-		expression_to_json(expression_t::make_literal(result.second._output))._value,
+		expression_to_json(expression_t::make_literal(bc_to_value(result.second._output)))._value,
 		expression_to_json(expression_t::make_literal(expected_return))._value
 	);
 }
@@ -527,7 +527,8 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_int(7)));
+	QUARK_TEST_VERIFY(result._type == statement_result_t::k_returning);
+	QUARK_TEST_VERIFY(result._output == bc_value_t::make_int(7));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
@@ -540,7 +541,8 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_string("123456")));
+	QUARK_TEST_VERIFY(result._type == statement_result_t::k_returning);
+	QUARK_TEST_VERIFY(result._output == bc_value_t::make_string("123456"));
 }
 
 
@@ -702,7 +704,8 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_int(15)));
+	QUARK_TEST_VERIFY(result._type == statement_result_t::k_returning);
+	QUARK_TEST_VERIFY(result._output == bc_value_t::make_int(15));
 }
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
@@ -715,10 +718,12 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
-	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_string("-xyz-")));
+	QUARK_TEST_VERIFY(result._type == statement_result_t::k_returning);
+	QUARK_TEST_VERIFY(result._output == bc_value_t::make_string("-xyz-"));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("Hello, world!") });
-	QUARK_TEST_VERIFY(result2 == statement_result_t::make_return_unwind(value_t::make_string("-Hello, world!-")));
+	QUARK_TEST_VERIFY(result2._type == statement_result_t::k_returning);
+	QUARK_TEST_VERIFY(result2._output == bc_value_t::make_string("-Hello, world!-"));
 }
 
 
@@ -736,12 +741,14 @@ QUARK_UNIT_TESTQ("call_function()", "use local variables"){
 	auto vm = interpreter_t(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
-//	QUARK_TEST_VERIFY(*result.second == value_t::make_string("--xyz<xyz>--"));
-	QUARK_TEST_VERIFY(result == statement_result_t::make_return_unwind(value_t::make_string("--xyz<xyz>--")));
+
+	QUARK_TEST_VERIFY(result._type == statement_result_t::k_returning);
+	QUARK_TEST_VERIFY(result._output == bc_value_t::make_string("--xyz<xyz>--"));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("123") });
-//	QUARK_TEST_VERIFY(*result2.second == value_t::make_string("--123<123>--"));
-	QUARK_TEST_VERIFY(result2 == statement_result_t::make_return_unwind(value_t::make_string("--123<123>--")));
+
+	QUARK_TEST_VERIFY(result2._type == statement_result_t::k_returning);
+	QUARK_TEST_VERIFY(result2._output == bc_value_t::make_string("--123<123>--"));
 }
 
 
