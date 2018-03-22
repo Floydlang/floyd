@@ -42,6 +42,7 @@ using std::make_shared;
 
 value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<value_t>& init_values);
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 
 
 typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
@@ -268,7 +269,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			vm._value_stack[pos] = rhs_value;
 		}
 		else if(opcode == bc_instr::k_statement_block){
-			const auto& r = execute_body(vm, statement._b[0], {});
+			const auto& r = execute_body(vm, statement._b[0]);
 			if(r._type == statement_result_t::k_returning){
 				return r;
 			}
@@ -284,13 +285,13 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 
 			bool flag = condition_result_value.get_bool_value_quick();
 			if(flag){
-				const auto& r = execute_body(vm, statement._b[0], {});
+				const auto& r = execute_body(vm, statement._b[0]);
 				if(r._type == statement_result_t::k_returning){
 					return r;
 				}
 			}
 			else{
-				const auto& r = execute_body(vm, statement._b[1], {});
+				const auto& r = execute_body(vm, statement._b[1]);
 				if(r._type == statement_result_t::k_returning){
 					return r;
 				}
@@ -303,11 +304,25 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto& end_value0 = execute_expression(vm, statement._e[1]);
 			const auto end_value_int = end_value0.get_int_value_quick();
 
-			//	Allocates vector everytime!
-			vector<value_t> space_for_iterator = {value_t::make_null()};
+			const auto& body = statement._b[0];
+
+			const auto values_offset = vm._value_stack.size();
+
+			//??? Easy optimizations possible here.
 			for(int x = start_value_int ; x <= end_value_int ; x++){
-				space_for_iterator[0] = value_t::make_int(x);
-				const auto& return_value = execute_body(vm, statement._b[0], space_for_iterator);
+				vm._value_stack.push_back(value_t::make_int(x));
+				if(body._symbols.empty() == false){
+					for(vector<value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
+						const auto& symbol = body._symbols[i];
+						vm._value_stack.push_back(symbol.second._const_value);
+					}
+				}
+				vm._call_stack.push_back(environment_t{ &body, values_offset });
+
+				const auto& return_value = execute_statements(vm, body._statements);
+				vm._call_stack.pop_back();
+				vm._value_stack.resize(values_offset);
+
 				if(return_value._type == statement_result_t::k_returning){
 					return return_value;
 				}
@@ -320,7 +335,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				const auto& condition_value = condition_value_expr.get_bool_value_quick();
 
 				if(condition_value){
-					const auto& return_value = execute_body(vm, statement._b[0], {});
+					const auto& return_value = execute_body(vm, statement._b[0]);
 					if(return_value._type == statement_result_t::k_returning){
 						return return_value;
 					}
@@ -352,6 +367,24 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const 
 	}
 	if(body._symbols.empty() == false){
 		for(vector<value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
+			const auto& symbol = body._symbols[i];
+			vm._value_stack.push_back(symbol.second._const_value);
+		}
+	}
+	vm._call_stack.push_back(environment_t{ &body, values_offset });
+
+	const auto& r = execute_statements(vm, body._statements);
+	vm._call_stack.pop_back();
+	vm._value_stack.resize(values_offset);
+
+	return r;
+}
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto values_offset = vm._value_stack.size();
+	if(body._symbols.empty() == false){
+		for(vector<value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
 			const auto& symbol = body._symbols[i];
 			vm._value_stack.push_back(symbol.second._const_value);
 		}
