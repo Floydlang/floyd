@@ -157,19 +157,13 @@ namespace floyd {
 
 	struct bc_function_definition_t {
 		public: bool check_invariant() const {
-			if(_host_function_id != 0){
-				QUARK_ASSERT(!_body);
-			}
-			else{
-				QUARK_ASSERT(_body);
-			}
 			return true;
 		}
 
 
 		typeid_t _function_type;
 		std::vector<member_t> _args;
-		std::shared_ptr<bc_body_t> _body;
+		bc_body_t _body;
 		int _host_function_id;
 	};
 

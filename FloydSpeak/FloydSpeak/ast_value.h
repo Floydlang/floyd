@@ -227,7 +227,7 @@ namespace floyd {
 		//////////////////////////////////////////////////		PUBLIC - SPECIFIC TO TYPE
 
 		public: value_t() :
-			_type_int(type_int::k_null)
+			_basetype(base_type::k_null)
 		{
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
@@ -238,6 +238,9 @@ namespace floyd {
 
 		//	Used internally in check_invariant() -- don't call check_invariant().
 		public: typeid_t get_type() const;
+		public: base_type get_basetype() const{
+			return _basetype;
+		}
 
 
 		//------------------------------------------------		null
@@ -247,7 +250,7 @@ namespace floyd {
 		public: bool is_null() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == k_null;
+			return _basetype == base_type::k_null;
 		}
 
 
@@ -258,7 +261,7 @@ namespace floyd {
 		public: bool is_bool() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == k_bool;
+			return _basetype == base_type::k_bool;
 		}
 		public: bool get_bool_value() const{
 			QUARK_ASSERT(check_invariant());
@@ -282,7 +285,7 @@ static value_t make_int(int value){
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == k_int;
+			return _basetype == base_type::k_int;
 		}
 		public: int get_int_value() const{
 			QUARK_ASSERT(check_invariant());
@@ -304,7 +307,7 @@ static value_t make_int(int value){
 		public: bool is_float() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == k_float;
+			return _basetype == base_type::k_float;
 		}
 		public: float get_float_value() const{
 			QUARK_ASSERT(check_invariant());
@@ -328,7 +331,7 @@ static value_t make_int(int value){
 		public: bool is_string() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_string();
+			return _basetype == base_type::k_string;
 		}
 		public: std::string get_string_value() const;
 
@@ -340,7 +343,7 @@ static value_t make_int(int value){
 		public: bool is_json_value() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_json_value();
+			return _basetype == base_type::k_json_value;
 		}
 		public: json_t get_json_value() const;
 
@@ -352,7 +355,7 @@ static value_t make_int(int value){
 		public: bool is_typeid() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_typeid();
+			return _basetype == base_type::k_typeid;
 		}
 		public: typeid_t get_typeid_value() const;
 
@@ -364,7 +367,7 @@ static value_t make_int(int value){
 		public: bool is_struct() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_struct();
+			return _basetype == base_type::k_struct;
 		}
 		public: std::shared_ptr<struct_instance_t> get_struct_value() const;
 
@@ -376,7 +379,7 @@ static value_t make_int(int value){
 		public: bool is_vector() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_vector();
+			return _basetype == base_type::k_vector;
 		}
 		public: const std::vector<value_t>& get_vector_value() const;
 
@@ -388,7 +391,7 @@ static value_t make_int(int value){
 		public: bool is_dict() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_dict();
+			return _basetype == base_type::k_dict;
 		}
 		public: const std::map<std::string, value_t>& get_dict_value() const;
 
@@ -400,23 +403,47 @@ static value_t make_int(int value){
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _type_int == type_int::k_ext && _value_internals._ext->_type.is_function();
+			return _basetype == base_type::k_function;
 		}
 		public: int get_function_value() const;
 
 
 		//////////////////////////////////////////////////		PUBLIC - TYPE INDEPENDANT
 
+bool is_ext_slow(base_type basetype) const{
+	return false
+		|| basetype == base_type::k_string
+		|| basetype == base_type::k_json_value
+		|| basetype == base_type::k_typeid
+		|| basetype == base_type::k_struct
+		|| basetype == base_type::k_vector
+		|| basetype == base_type::k_dict
+		|| basetype == base_type::k_function;
+}
+
+bool is_ext(base_type basetype) const{
+/*
+		k_null,
+		k_bool,
+		k_int,
+		k_float,
+*/
+	bool ext = basetype > base_type::k_float;
+
+	//	Make sure above assumtion about order of base types is valid.
+	QUARK_ASSERT(ext == is_ext_slow(basetype));
+	return ext;
+}
 
 		public: bool check_invariant() const;
 
 		public: value_t(const value_t& other):
-			_type_int(other._type_int),
+			_basetype(other._basetype),
 			_value_internals(other._value_internals)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
-			if(_type_int == type_int::k_ext){
+			if(is_ext(_basetype)){
 				_value_internals._ext->_rc++;
 			}
 
@@ -430,7 +457,7 @@ static value_t make_int(int value){
 		public: ~value_t(){
 			QUARK_ASSERT(check_invariant());
 
-			if(_type_int == type_int::k_ext){
+			if(is_ext(_basetype)){
 				_value_internals._ext->_rc--;
 				if(_value_internals._ext->_rc == 0){
 					delete _value_internals._ext;
@@ -455,28 +482,25 @@ static value_t make_int(int value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 
-			if(!(_type_int == other._type_int)){
+			if(!(_basetype == other._basetype)){
 				return false;
 			}
 
-			if(_type_int == type_int::k_null){
+			if(_basetype == base_type::k_null){
 				return true;
 			}
-			else if(_type_int == type_int::k_bool){
+			else if(_basetype == base_type::k_bool){
 				return _value_internals._bool == other._value_internals._bool;
 			}
-			else if(_type_int == type_int::k_int){
+			else if(_basetype == base_type::k_int){
 				return _value_internals._int == other._value_internals._int;
 			}
-			else if(_type_int == type_int::k_float){
+			else if(_basetype == base_type::k_float){
 				return _value_internals._float == other._value_internals._float;
 			}
-			else if(_type_int == type_int::k_ext){
+			else{
+				QUARK_ASSERT(is_ext(_basetype));
 				return compare_shared_values(_value_internals._ext, other._value_internals._ext);
-			}
-			else {
-				QUARK_ASSERT(false);
-				throw std::exception();
 			}
 		}
 
@@ -504,7 +528,7 @@ static value_t make_int(int value){
 			std::swap(DEBUG_STR, other.DEBUG_STR);
 #endif
 
-			std::swap(_type_int, other._type_int);
+			std::swap(_basetype, other._basetype);
 
 			std::swap(_value_internals, other._value_internals);
 
@@ -517,7 +541,7 @@ static value_t make_int(int value){
 
 
 		private: explicit value_t(bool value) :
-			_type_int(type_int::k_bool)
+			_basetype(base_type::k_bool)
 		{
 			_value_internals._bool = value;
 #if DEBUG
@@ -528,7 +552,7 @@ static value_t make_int(int value){
 		}
 
 		private: explicit value_t(int value) :
-			_type_int(type_int::k_int)
+			_basetype(base_type::k_int)
 		{
 			_value_internals._int = value;
 #if DEBUG
@@ -539,7 +563,7 @@ static value_t make_int(int value){
 		}
 
 		private: value_t(float value) :
-			_type_int(type_int::k_float)
+			_basetype(base_type::k_float)
 		{
 			_value_internals._float = value;
 #if DEBUG
@@ -562,19 +586,6 @@ static value_t make_int(int value){
 
 		//////////////////////////////////////////////////		STATE
 
-
-#if DEBUG
-		private: std::string DEBUG_STR;
-#endif
-		enum type_int {
-			k_null = 0,
-			k_bool = 1,
-			k_int = 2,
-			k_float = 3,
-			k_ext
-		};
-		private: uint8_t _type_int;
-
 		private: union value_internals_t {
 			bool _bool;
 			int _int;
@@ -582,6 +593,10 @@ static value_t make_int(int value){
 			value_ext_t* _ext;
 		};
 
+#if DEBUG
+		private: std::string DEBUG_STR;
+#endif
+		private: base_type _basetype;
 		private: value_internals_t _value_internals;
 	};
 

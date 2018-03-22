@@ -453,11 +453,11 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const ast_t& pass3)
 	std::vector<const bc_function_definition_t> function_defs2;
 	for(int function_id = 0 ; function_id < pass3._function_defs.size() ; function_id++){
 		const auto& function_def = *pass3._function_defs[function_id];
-		const auto body2_ptr = function_def._body ? make_shared<bc_body_t>(bcgen_body(a, *function_def._body)) : nullptr;
+		const auto body2 = function_def._body ? bcgen_body(a, *function_def._body) : bc_body_t({});
 		const auto function_def2 = bc_function_definition_t{
 			function_def._function_type,
 			function_def._args,
-			body2_ptr,
+			body2,
 			function_def._host_function_id
 		};
 		function_defs2.push_back(function_def2);

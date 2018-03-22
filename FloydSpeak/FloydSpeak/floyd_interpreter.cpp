@@ -241,7 +241,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 		}
 #endif
 
-		const auto& r = execute_body(vm, *function_def._body, args);
+		const auto& r = execute_body(vm, function_def._body, args);
 		return r;
 	}
 }
@@ -508,15 +508,15 @@ value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 			const auto& t = execute_expression(vm, arg_expr);
 			vm._value_stack.push_back(t);
 		}
-		if(function_def._body->_symbols.empty() == false){
-			for(vector<value_t>::size_type i = arg_count ; i < function_def._body->_symbols.size() ; i++){
-				const auto& symbol = function_def._body->_symbols[i];
+		if(function_def._body._symbols.empty() == false){
+			for(vector<value_t>::size_type i = arg_count ; i < function_def._body._symbols.size() ; i++){
+				const auto& symbol = function_def._body._symbols[i];
 				vm._value_stack.push_back(symbol.second._const_value);
 			}
 		}
-		vm._call_stack.push_back(environment_t{ function_def._body.get(), values_offset });
+		vm._call_stack.push_back(environment_t{ &function_def._body, values_offset });
 
-		const auto& result = execute_statements(vm, function_def._body->_statements);
+		const auto& result = execute_statements(vm, function_def._body._statements);
 		vm._call_stack.pop_back();
 		vm._value_stack.resize(values_offset);
 
@@ -686,12 +686,12 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 	const auto& right_constant = execute_expression(vm, expr._e[1]);
 	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
 
-	const auto& type_mode = left_constant.get_type();
+	const auto& basetype = left_constant.get_basetype();
 
 	const auto op = expr._opcode;
 
 	//	bool
-	if(type_mode.is_bool()){
+	if(basetype == base_type::k_bool){
 		const bool left = left_constant.get_bool_value_quick();
 		const bool right = right_constant.get_bool_value_quick();
 
@@ -710,7 +710,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 	}
 
 	//	int
-	else if(type_mode.is_int()){
+	else if(basetype == base_type::k_int){
 		const int left = left_constant.get_int_value_quick();
 		const int right = right_constant.get_int_value_quick();
 
@@ -749,7 +749,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 	}
 
 	//	float
-	else if(type_mode.is_float()){
+	else if(basetype == base_type::k_float){
 		const float left = left_constant.get_float_value();
 		const float right = right_constant.get_float_value();
 
@@ -781,7 +781,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 	}
 
 	//	string
-	else if(type_mode.is_string()){
+	else if(basetype == base_type::k_string){
 		const auto& left = left_constant.get_string_value();
 		const auto& right = right_constant.get_string_value();
 
@@ -794,12 +794,12 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 	}
 
 	//	struct
-	else if(type_mode.is_struct()){
+	else if(basetype == base_type::k_struct){
 		QUARK_ASSERT(false);
 	}
 
 	//	vector
-	else if(type_mode.is_vector()){
+	else if(basetype == base_type::k_vector){
 		const auto& element_type = left_constant.get_type().get_vector_element_type();
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			auto elements2 = left_constant.get_vector_value();
@@ -812,7 +812,7 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 			QUARK_ASSERT(false);
 		}
 	}
-	else if(type_mode.is_function()){
+	else if(basetype == base_type::k_function){
 		QUARK_ASSERT(false);
 	}
 	else{

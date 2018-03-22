@@ -68,8 +68,8 @@ namespace floyd {
 		//	This is a type that specifies another type.
 		k_typeid,
 
-			//All above are included in code-types. They don't need further info.
-			k_core_count,
+		//All above are included in code-types. They don't need further info.
+		k_core_count,
 
 		k_struct,
 		k_vector,
@@ -77,7 +77,7 @@ namespace floyd {
 		k_function,
 
 		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-		k_unresolved_type_identifier
+		k_unresolved_type_identifier,
 	};
 
 	std::string base_type_to_string(const base_type t);

@@ -424,16 +424,34 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 
 
 bool value_t::check_invariant() const{
-	const auto type_int = _type_int;
-	if(type_int == type_int::k_null){
+	const auto type_int = _basetype;
+	if(type_int == base_type::k_null){
 	}
-	else if(type_int == type_int::k_bool){
+	else if(type_int == base_type::k_bool){
 	}
-	else if(type_int == type_int::k_int){
+	else if(type_int == base_type::k_int){
 	}
-	else if(type_int == type_int::k_float){
+	else if(type_int == base_type::k_float){
 	}
-	else if(type_int == type_int::k_ext){
+	else if(type_int == base_type::k_string){
+		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
+	}
+	else if(type_int == base_type::k_json_value){
+		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
+	}
+	else if(type_int == base_type::k_typeid){
+		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
+	}
+	else if(type_int == base_type::k_struct){
+		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
+	}
+	else if(type_int == base_type::k_vector){
+		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
+	}
+	else if(type_int == base_type::k_dict){
+		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
+	}
+	else if(type_int == base_type::k_function){
 		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
 	}
 	else {
@@ -593,7 +611,7 @@ std::string value_and_type_to_string(const value_t& value) {
 
 
 		value_t::value_t(const char s[]) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_string)
 		{
 			QUARK_ASSERT(s != nullptr);
 
@@ -607,7 +625,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const std::string& s) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_string)
 		{
 			_value_internals._ext = new value_ext_t{std::string(s)};
 			QUARK_ASSERT(_value_internals._ext->_rc == 1);
@@ -620,7 +638,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const std::shared_ptr<json_t>& s) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_json_value)
 		{
 			QUARK_ASSERT(s != nullptr && s->check_invariant());
 
@@ -635,7 +653,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& type) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_typeid)
 		{
 			QUARK_ASSERT(type.check_invariant());
 
@@ -650,7 +668,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& struct_type, std::shared_ptr<struct_instance_t>& instance) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_struct)
 		{
 			QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
 			QUARK_ASSERT(instance && instance->check_invariant());
@@ -666,7 +684,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& element_type, const std::vector<value_t>& elements) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_vector)
 		{
 			_value_internals._ext = new value_ext_t{typeid_t::make_vector(element_type), elements};
 			QUARK_ASSERT(_value_internals._ext->_rc == 1);
@@ -679,7 +697,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_dict)
 		{
 			_value_internals._ext = new value_ext_t{typeid_t::make_dict(value_type), entries};
 			QUARK_ASSERT(_value_internals._ext->_rc == 1);
@@ -692,7 +710,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const typeid_t& type, int function_id) :
-			_type_int(type_int::k_ext)
+			_basetype(base_type::k_function)
 		{
 			_value_internals._ext = new value_ext_t{type, function_id};
 			QUARK_ASSERT(_value_internals._ext->_rc == 1);
@@ -954,25 +972,21 @@ value_t value_t::make_null(){
 		typeid_t value_t::get_type() const{
 //			QUARK_ASSERT(check_invariant());
 
-			if(_type_int == k_null){
+			if(_basetype == base_type::k_null){
 				return typeid_t::make_null();
 			}
-			else if(_type_int == k_bool){
+			else if(_basetype == base_type::k_bool){
 				return typeid_t::make_bool();
 			}
-			else if(_type_int == k_int){
+			else if(_basetype == base_type::k_int){
 				return typeid_t::make_int();
 			}
-			else if(_type_int == k_float){
+			else if(_basetype == base_type::k_float){
 				return typeid_t::make_float();
 			}
-			else if(_type_int == k_ext){
+			else{
 				QUARK_ASSERT(_value_internals._ext);
 				return _value_internals._ext->_type;
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
 			}
 		}
 
