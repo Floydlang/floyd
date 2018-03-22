@@ -282,7 +282,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto& condition_result_value = execute_expression(vm, statement._e[0]);
 			QUARK_ASSERT(condition_result_value.is_bool());
 
-			bool flag = condition_result_value.get_bool_value();
+			bool flag = condition_result_value.get_bool_value_quick();
 			if(flag){
 				const auto& r = execute_body(vm, statement._b[0], {});
 				if(r._type == statement_result_t::k_returning){
@@ -317,7 +317,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			bool again = true;
 			while(again){
 				const auto& condition_value_expr = execute_expression(vm, statement._e[0]);
-				const auto& condition_value = condition_value_expr.get_bool_value();
+				const auto& condition_value = condition_value_expr.get_bool_value_quick();
 
 				if(condition_value){
 					const auto& return_value = execute_body(vm, statement._b[0], {});
@@ -628,7 +628,7 @@ value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_expr
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	const auto& cond_result = execute_expression(vm, expr._e[0]);
 	QUARK_ASSERT(cond_result.is_bool());
-	const bool cond_flag = cond_result.get_bool_value();
+	const bool cond_flag = cond_result.get_bool_value_quick();
 
 	//	!!! Only execute the CHOSEN expression. Not that important since functions are pure.
 	if(cond_flag){
@@ -692,8 +692,8 @@ value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& 
 
 	//	bool
 	if(type_mode.is_bool()){
-		const bool left = left_constant.get_bool_value();
-		const bool right = right_constant.get_bool_value();
+		const bool left = left_constant.get_bool_value_quick();
+		const bool right = right_constant.get_bool_value_quick();
 
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			return value_t::make_bool(left + right);

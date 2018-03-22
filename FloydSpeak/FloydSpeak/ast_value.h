@@ -268,6 +268,9 @@ namespace floyd {
 
 			return _value_internals._bool;
 		}
+		public: bool get_bool_value_quick() const{
+			return _value_internals._bool;
+		}
 
 
 		//------------------------------------------------		int
