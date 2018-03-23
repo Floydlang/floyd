@@ -281,7 +281,7 @@ void run_file(const std::vector<std::string>& args){
 //	std::cout << "Running..." << source << std::endl;
 
 	const auto result = floyd::run_program(context, program, args3);
-	std::cout << result.second._output.get_int_value() << std::endl;
+	std::cout << result.second.get_int_value() << std::endl;
 }
 
 void run_tests(){

@@ -29,6 +29,222 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 
 
 
+
+
+
+
+int bc_limit(int value, int min, int max){
+	if(value < min){
+		return min;
+	}
+	else if(value > max){
+		return max;
+	}
+	else{
+		return value;
+	}
+}
+
+int bc_compare_string(const std::string& left, const std::string& right){
+	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
+	return bc_limit(std::strcmp(left.c_str(), right.c_str()), -1, 1);
+}
+
+QUARK_UNIT_TESTQ("bc_compare_string()", ""){
+	QUARK_TEST_VERIFY(bc_compare_string("", "") == 0);
+}
+QUARK_UNIT_TESTQ("bc_compare_string()", ""){
+	QUARK_TEST_VERIFY(bc_compare_string("aaa", "aaa") == 0);
+}
+QUARK_UNIT_TESTQ("bc_compare_string()", ""){
+	QUARK_TEST_VERIFY(bc_compare_string("b", "a") == 1);
+}
+
+
+int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right){
+	std::vector<bc_value_t>::const_iterator a_it = left.begin();
+	std::vector<bc_value_t>::const_iterator b_it = right.begin();
+
+	while(a_it !=left.end()){
+		int diff = bc_value_t::compare_value_true_deep(*a_it, *b_it);
+		if(diff != 0){
+			return diff;
+		}
+
+		a_it++;
+		b_it++;
+	}
+	return 0;
+}
+
+//	Compare vector element by element.
+//	### Think more of equality when vectors have different size and shared elements are equal.
+int bc_compare_vector_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right){
+//	QUARK_ASSERT(left.check_invariant());
+//	QUARK_ASSERT(right.check_invariant());
+//	QUARK_ASSERT(left._element_type == right._element_type);
+
+	const auto& shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		const auto element_result = bc_value_t::compare_value_true_deep(left[i], right[i]);
+		if(element_result != 0){
+			return element_result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+template <typename Map>
+bool bc_map_compare (Map const &lhs, Map const &rhs) {
+    // No predicate needed because there is operator== for pairs already.
+    return lhs.size() == rhs.size()
+        && std::equal(lhs.begin(), lhs.end(),
+                      rhs.begin());
+}
+
+
+int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it && *left_it == *right_it){
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	else if(left_it != left_end_it && right_it != right_end_it){
+		int key_diff = bc_compare_string(left_it->first, right_it->first);
+		if(key_diff != 0){
+			return key_diff;
+		}
+		else {
+			return bc_value_t::compare_value_true_deep(left_it->second, right_it->second);
+		}
+	}
+	else{
+		QUARK_ASSERT(false)
+		throw std::exception();
+	}
+}
+
+int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
+	if(lhs == rhs){
+		return 0;
+	}
+	else{
+		// ??? implement compare.
+		assert(false);
+	}
+}
+
+int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t& right){
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+	QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
+
+	if(left.is_null()){
+		return 0;
+	}
+	else if(left.is_bool()){
+		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
+	}
+	else if(left.is_int()){
+		return bc_limit(left.get_int_value() - right.get_int_value(), -1, 1);
+	}
+	else if(left.is_float()){
+		const auto a = left.get_float_value();
+		const auto b = right.get_float_value();
+		if(a > b){
+			return 1;
+		}
+		else if(a < b){
+			return -1;
+		}
+		else{
+			return 0;
+		}
+	}
+	else if(left.is_string()){
+		return bc_compare_string(left.get_string_value(), right.get_string_value());
+	}
+	else if(left.is_json_value()){
+		return bc_compare_json_values(left.get_json_value(), right.get_json_value());
+	}
+	else if(left.is_typeid()){
+	//???
+		if(left.get_typeid_value() == right.get_typeid_value()){
+			return 0;
+		}
+		else{
+			return -1;//??? Hack -- should return +1 depending on values.
+		}
+	}
+	else if(left.is_struct()){
+		//	Make sure the EXACT struct types are the same -- not only that they are both structs
+//		if(left.get_type() != right.get_type()){
+//			throw std::runtime_error("Cannot compare structs of different type.");
+//		}
+
+		//	Shortcut: same obejct == we know values are same without having to check them.
+		if(left.get_struct_value() == right.get_struct_value()){
+			return 0;
+		}
+		else{
+			return bc_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value());
+		}
+	}
+	else if(left.is_vector()){
+		//	Make sure the EXACT types are the same -- not only that they are both vectors.
+//		if(left.get_type() != right.get_type()){
+
+		const auto& left_vec = left.get_vector_value();
+		const auto& right_vec = right.get_vector_value();
+		return bc_compare_vector_true_deep(left_vec, right_vec);
+	}
+	else if(left.is_dict()){
+		//	Make sure the EXACT types are the same -- not only that they are both dicts.
+//		if(left.get_type() != right.get_type()){
+		const auto& left2 = left.get_dict_value();
+		const auto& right2 = right.get_dict_value();
+		return bc_compare_dict_true_deep(left2, right2);
+	}
+	else if(left.is_function()){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
+
+
+
+
 bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
 	if(a._parent_steps == -1){
 		return &vm._call_stack[0];
@@ -368,7 +584,7 @@ bc_expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 	}
 	vector<bc_expression_t> all = { callee_expr };
 	all.insert(all.end(), args2.begin(), args2.end());
-	return bc_expression_t{ bc_expression_opcode::k_expression_call, bc_typeid_t(e.get_annotated_type()), all, {}, {} };
+	return bc_expression_t{ bc_expression_opcode::k_expression_call, bc_typeid_t(e.get_annotated_type()), all, {}, {}, {} };
 }
 
 json_t bcprogram_to_json(const bc_program_t& program){

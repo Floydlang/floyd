@@ -145,11 +145,9 @@ bool check_type_fully_defined(const typeid_t& type){
 		return true;
 	}
 	else if(type.is_function()){
-/*
 		if(check_type_fully_defined(type.get_function_return()) == false){
 			return false;
 		}
-*/
 		for(const auto e: type.get_function_args()){
 			if(check_type_fully_defined(e) == false){
 				return false;
@@ -186,6 +184,9 @@ bool check_type_fully_defined(const typeid_t& type){
 			}
 		}
 		return true;
+	}
+	else if(type.is_unresolved_type_identifier()){
+		return false;
 	}
 	else{
 		return true;
@@ -700,7 +701,7 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const ex
 	auto vm_acc = vm;
 	const auto found = find_symbol_by_name(vm_acc, expr._variable);
 	if(found.first != nullptr){
-		return {vm_acc, expression_t::make_variable_expression(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
+		return {vm_acc, expression_t::make_load(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
 	}
 	else{
 		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
@@ -1319,11 +1320,13 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	vm_acc = function_body_pair.first;
 
 	const auto body = function_body_pair.second;
-	const auto def2 = function_definition_t{def->_function_type, def->_args, make_shared<body_t>(body), 0};
+	const auto function_type2 = function_type;
+	QUARK_ASSERT(check_type_fully_defined(function_type2));
+	const auto def2 = function_definition_t{function_type2, def->_args, make_shared<body_t>(body), 0};
 	vm_acc._function_defs.push_back(make_shared<function_definition_t>(def2));
 
 	const int function_id = static_cast<int>(vm_acc._function_defs.size() - 1);
-	const auto r = expression_t::make_literal(value_t::make_function_value(function_type, function_id));
+	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
 
 	return {vm_acc, r };
 }

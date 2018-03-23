@@ -121,7 +121,7 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 		throw std::runtime_error("Cannot find global.");
 	}
 	else{
-		return bc_to_value(result->_value);
+		return bc_to_value(result->_value, result->_symbol._value_type);
 	}
 }
 
@@ -161,7 +161,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 		QUARK_ASSERT(arg_values.size() == 1);
 
 		const auto& arg0 = arg_values[0];
-		const auto arg = bc_to_value(arg0);
+		const auto arg = bc_to_value(arg0, arg0_type);
 		const auto value = value_to_ast_json(arg);
 		return bc_value_t::make_json_value(value._value);
 	}
@@ -177,12 +177,13 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 			}
 		}
 		else{
-			if(arg.get_type() != type){
+			if(arg0_type != type){
 			}
 		}
 		return arg;
 	}
 	else if(type.is_struct()){
+/*
 	#if DEBUG
 		const auto def = type.get_struct_ref();
 		QUARK_ASSERT(arg_values.size() == def->_members.size());
@@ -195,7 +196,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 			QUARK_ASSERT(v.get_type() == a._type);
 		}
 	#endif
-
+*/
 		const auto instance = bc_value_t::make_struct_value(type, arg_values);
 		QUARK_TRACE(to_compact_string2(instance));
 
@@ -230,7 +231,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 	throw std::exception();
 }
 
-statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
@@ -258,7 +259,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 #endif
 
 		const auto& r = execute_body(vm, function_def._body, values_to_bcs(args));
-		return r;
+		return bc_to_value(r._output, f.get_type().get_function_return());
 	}
 }
 
@@ -433,7 +434,7 @@ bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_express
 	int index = expr._address._index;
 	QUARK_ASSERT(index != -1);
 
-	const bc_value_t value = value_to_bc(struct_instance->_member_values[index]);
+	const bc_value_t value = struct_instance[index];
 	return value;
 }
 
@@ -537,17 +538,21 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	arity
 		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
-		std::vector<bc_value_t> arg_values;
+		std::vector<value_t> arg_values;
 		arg_values.reserve(arg_count);
+
+//		const auto& arg_types = function_def._function_type.get_function_args();
+
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 
 			const auto& t = execute_expression(vm, arg_expr);
-			arg_values.push_back(t);
+			const auto t1 = bc_to_value(t, arg_expr._type.get_fulltype());
+			arg_values.push_back(t1);
 		}
 
-		const auto& result = (host_function)(vm, bcs_to_values(arg_values));
+		const auto& result = (host_function)(vm, arg_values);
 		return value_to_bc(result);
 	}
 	else{
@@ -608,7 +613,7 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 
 	#if DEBUG
 		for(const auto m: elements2){
-			QUARK_ASSERT(m.get_type() == element_type);
+			QUARK_ASSERT(m.get_debug_type() == element_type);
 		}
 	#endif
 		return construct_value_from_typeid(vm, typeid_t::make_vector(element_type), element_type, elements2);
@@ -690,7 +695,7 @@ bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_
 
 	const auto& left_constant = execute_expression(vm, expr._e[0]);
 	const auto& right_constant = execute_expression(vm, expr._e[1]);
-	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
+	QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 
 	const auto opcode = expr._opcode;
 	//	Do generic functionallity, independant on type.
@@ -730,9 +735,9 @@ bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_
 
 	const auto& left_constant = execute_expression(vm, expr._e[0]);
 	const auto& right_constant = execute_expression(vm, expr._e[1]);
-	QUARK_ASSERT(left_constant.get_type() == right_constant.get_type());
+	QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 
-	const auto& basetype = left_constant.get_basetype();
+	const auto& basetype = expr._type._basetype;
 
 	const auto op = expr._opcode;
 
@@ -846,7 +851,7 @@ bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_
 
 	//	vector
 	else if(basetype == base_type::k_vector){
-		const auto& element_type = left_constant.get_type().get_vector_element_type();
+		const auto& element_type = expr._type.get_fulltype().get_vector_element_type();
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			auto elements2 = left_constant.get_vector_value();
 			const auto& rhs_elements = right_constant.get_vector_value();
@@ -1024,8 +1029,8 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		std::vector<json_t> values;
 		for(int local_index = 0 ; local_index < local_count ; local_index++){
 			const auto& v = vm._value_stack[e->_values_offset + local_index];
-			const auto& a = value_and_type_to_ast_json(bc_to_value(v));
-			values.push_back(a._value);
+//???			const auto& a = value_and_type_to_ast_json(bc_to_value(v));
+//			values.push_back(a._value);
 		}
 
 		const auto& env = json_t::make_object({
@@ -1041,7 +1046,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 }
 
 
-statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<floyd::value_t>& args){
+value_t call_host_function(interpreter_t& vm, int function_id, const std::vector<floyd::value_t>& args){
 	QUARK_ASSERT(function_id >= 0);
 
 	const auto& host_function = vm._imm->_host_functions.at(function_id);
@@ -1050,7 +1055,7 @@ statement_result_t call_host_function(interpreter_t& vm, int function_id, const 
 //	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
 
 	const auto& result = (host_function)(vm, args);
-	return statement_result_t::make_return_unwind(value_to_bc(result));
+	return result;
 }
 
 bc_program_t program_to_ast2(const interpreter_context_t& context, const string& program){
@@ -1085,7 +1090,7 @@ interpreter_t run_global(const interpreter_context_t& context, const string& sou
 	return vm;
 }
 
-std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
+std::pair<interpreter_t, value_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
 	auto program = program_to_ast2(context, source);
 
 	//	Runs global code.
@@ -1093,24 +1098,24 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 
 	const auto& main_function = find_symbol_by_name(vm, "main");
 	if(main_function != nullptr){
-		const auto& result = call_function(vm, bc_to_value(main_function->_value), args);
+		const auto& result = call_function(vm, bc_to_value(main_function->_value, main_function->_symbol._value_type), args);
 		return { vm, result };
 	}
 	else{
-		return {vm, statement_result_t::make__complete_without_value()};
+		return {vm, value_t::make_null()};
 	}
 }
 
-std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const vector<floyd::value_t>& args){
+std::pair<interpreter_t, value_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const vector<floyd::value_t>& args){
 	auto vm = interpreter_t(program);
 
 	const auto& main_func = find_symbol_by_name(vm, "main");
 	if(main_func != nullptr){
-		const auto& r = call_function(vm, bc_to_value(main_func->_value), args);
+		const auto& r = call_function(vm, bc_to_value(main_func->_value, main_func->_symbol._value_type), args);
 		return { vm, r };
 	}
 	else{
-		return { vm, statement_result_t::make__complete_without_value() };
+		return { vm, value_t::make_null() };
 	}
 }
 

@@ -159,7 +159,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	const auto floyd_ns = measure_execution_time_ns(
 		"Floyd: Fibonacci",
 		[&] {
-			const auto result = call_function(vm, bc_to_value(f->_value), {});
+			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
 		}
 	);
 

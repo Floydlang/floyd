@@ -77,11 +77,14 @@ namespace floyd {
 		public: bc_value_t _output;
 	};
 
+/*
 	inline bool operator==(const statement_result_t& lhs, const statement_result_t& rhs){
 		return true
 			&& lhs._type == rhs._type
-			&& lhs._output._backstore == rhs._output._backstore;
+			&& lhs._output == rhs._output;
 	}
+*/
+
 
 
 	//////////////////////////////////////		environment_t
@@ -133,8 +136,8 @@ namespace floyd {
 	};
 
 
-	statement_result_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t>& args);
-	statement_result_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
+	value_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t>& args);
+	value_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
 	json_t interpreter_to_json(const interpreter_t& vm);
 
 
@@ -164,13 +167,13 @@ namespace floyd {
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
-	std::pair<interpreter_t, statement_result_t> run_main(
+	std::pair<interpreter_t, value_t> run_main(
 		const interpreter_context_t& context,
 		const std::string& source,
 		const std::vector<value_t>& args
 	);
 
-	std::pair<interpreter_t, statement_result_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const std::vector<floyd::value_t>& args);
+	std::pair<interpreter_t, value_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const std::vector<floyd::value_t>& args);
 
 	bc_program_t program_to_ast2(const interpreter_context_t& context, const std::string& program);
 

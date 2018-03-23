@@ -411,30 +411,33 @@ static value_t make_int(int value){
 
 		//////////////////////////////////////////////////		PUBLIC - TYPE INDEPENDANT
 
-bool is_ext_slow(base_type basetype) const{
-	return false
-		|| basetype == base_type::k_string
-		|| basetype == base_type::k_json_value
-		|| basetype == base_type::k_typeid
-		|| basetype == base_type::k_struct
-		|| basetype == base_type::k_vector
-		|| basetype == base_type::k_dict
-		|| basetype == base_type::k_function;
-}
 
-bool is_ext(base_type basetype) const{
-/*
-		k_null,
-		k_bool,
-		k_int,
-		k_float,
-*/
-	bool ext = basetype > base_type::k_float;
 
-	//	Make sure above assumtion about order of base types is valid.
-	QUARK_ASSERT(ext == is_ext_slow(basetype));
-	return ext;
-}
+		static bool is_ext_slow(base_type basetype){
+			return false
+				|| basetype == base_type::k_string
+				|| basetype == base_type::k_json_value
+				|| basetype == base_type::k_typeid
+				|| basetype == base_type::k_struct
+				|| basetype == base_type::k_vector
+				|| basetype == base_type::k_dict
+				|| basetype == base_type::k_function;
+		}
+
+		bool is_ext(base_type basetype) const{
+		/*
+				k_null,
+				k_bool,
+				k_int,
+				k_float,
+		*/
+			bool ext = basetype > base_type::k_float;
+
+			//	Make sure above assumtion about order of base types is valid.
+			QUARK_ASSERT(ext == is_ext_slow(basetype));
+			return ext;
+		}
+
 
 		public: bool check_invariant() const;
 

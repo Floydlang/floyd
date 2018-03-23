@@ -41,7 +41,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	quark::ut_compare_strings(
 		expression_to_json_string(
 			expression_t::make_call(
-				expression_t::make_variable_expression("my_func", nullptr),
+				expression_t::make_load("my_func", nullptr),
 				{
 					expression_t::make_literal_string("xyz"),
 					expression_t::make_literal_int(123)
@@ -57,7 +57,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 	quark::ut_compare_strings(
 		expression_to_json_string(
 			expression_t::make_lookup(
-				expression_t::make_variable_expression("hello", nullptr),
+				expression_t::make_load("hello", nullptr),
 				expression_t::make_literal_string("xyz"),
 				nullptr
 			)

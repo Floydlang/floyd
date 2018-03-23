@@ -96,7 +96,7 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 	else if(op == "@"){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_variable_expression(variable_symbol, nullptr);
+		return expression_t::make_load(variable_symbol, nullptr);
 	}
 	else if(op == "@i"){
 		QUARK_ASSERT(e.get_array_size() == 3);

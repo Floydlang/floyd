@@ -433,7 +433,7 @@ namespace floyd {
 			Specify free variables.
 			It will be resolved via static scopes: (global variable) <-(function argument) <- (function local variable) etc.
 		*/
-		public: static expression_t make_variable_expression(const std::string& variable, const std::shared_ptr<typeid_t>& annotated_type)
+		public: static expression_t make_load(const std::string& variable, const std::shared_ptr<typeid_t>& annotated_type)
 		{
 			return expression_t{
 				expression_type::k_load,

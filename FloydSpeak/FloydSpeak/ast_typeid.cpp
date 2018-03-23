@@ -275,7 +275,7 @@ namespace floyd {
 			})};
 		}
 		else if(b == base_type::k_unresolved_type_identifier){
-			return ast_json_t{t.get_unresolved_type_identifier()};
+			return ast_json_t{t.get_unresolved_type_identifier() + "???"};
 		}
 		else{
 			QUARK_ASSERT(false);
