@@ -49,8 +49,8 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
 		const auto v = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
 		if(v){
-			if(v->is_typeid()){
-				return v->get_typeid_value();
+			if(v->_symbol._value_type.is_typeid()){
+				return v->_value.get_typeid_value();
 			}
 			else{
 				return typeid_t::make_null();
@@ -65,8 +65,10 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 	}
 }
 
+
+
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const floyd::bc_value_t* find_symbol_by_name_deep(const interpreter_t& vm, int depth, const std::string& s){
+std::shared_ptr<value_entry_t> find_symbol_by_name_deep(const interpreter_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
@@ -81,7 +83,17 @@ const floyd::bc_value_t* find_symbol_by_name_deep(const interpreter_t& vm, int d
 		const auto index = it - env->_body_ptr->_symbols.begin();
 		const auto pos = env->_values_offset + index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-		return &vm._value_stack[pos];
+
+		//	Assumes we are scanning from the top of the stack.
+		int parent_steps = static_cast<int>(vm._call_stack.size() - 1 - depth);
+
+		const auto value_entry = value_entry_t{
+			vm._value_stack[pos],
+			it->first,
+			it->second,
+			variable_address_t::make_variable_address(parent_steps, static_cast<int>(index))
+		};
+		return make_shared<value_entry_t>(value_entry);
 	}
 	else if(depth > 0){
 		return find_symbol_by_name_deep(vm, depth - 1, s);
@@ -93,7 +105,7 @@ const floyd::bc_value_t* find_symbol_by_name_deep(const interpreter_t& vm, int d
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const floyd::bc_value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s){
+std::shared_ptr<value_entry_t> find_symbol_by_name(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
@@ -109,12 +121,12 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 		throw std::runtime_error("Cannot find global.");
 	}
 	else{
-		return bc_to_value(*result);
+		return bc_to_value(result->_value);
 	}
 }
 
 inline const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::bc_value_t& v){
-	QUARK_ASSERT(v.is_function());
+//	QUARK_ASSERT(v.is_function());
 
 	const auto function_id = v.get_function_value();
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
@@ -141,8 +153,8 @@ inline const environment_t* find_env_from_address(const interpreter_t& vm, const
 	}
 }
 
-
-bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const vector<bc_value_t>& arg_values){
+//??? split into one-argument and multi-argument opcodes.
+bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(type.is_json_value()){
@@ -158,10 +170,10 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 
 		const auto& arg = arg_values[0];
 		if(type.is_string()){
-			if(arg.is_json_value() && arg.get_json_value().is_string()){
+			if(arg0_type.is_json_value() && arg.get_json_value().is_string()){
 				return bc_value_t::make_string(arg.get_json_value().get_string());
 			}
-			else if(arg.is_string()){
+			else if(arg0_type.is_string()){
 			}
 		}
 		else{
@@ -256,7 +268,7 @@ statement_result_t call_function(interpreter_t& vm, const floyd::value_t& f, con
 
 
 
-statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements){
+statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instruction_t>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 
 	for(const auto& statement: statements){
@@ -264,27 +276,26 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		QUARK_ASSERT(statement.check_invariant());
 
 		const auto opcode = statement._opcode;
-		if(opcode == bc_instr::k_statement_store){
+		if(opcode == bc_statement_opcode::k_statement_store){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
 			auto env = find_env_from_address(vm, statement._v);
 			const auto pos = env->_values_offset + statement._v._index;
 			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 			vm._value_stack[pos] = rhs_value;
 		}
-		else if(opcode == bc_instr::k_statement_block){
+		else if(opcode == bc_statement_opcode::k_statement_block){
 			const auto& r = execute_body(vm, statement._b[0]);
 			if(r._type == statement_result_t::k_returning){
 				return r;
 			}
 		}
-		else if(opcode == bc_instr::k_statement_return){
+		else if(opcode == bc_statement_opcode::k_statement_return){
 			const auto& expr = statement._e[0];
 			const auto& rhs_value = execute_expression(vm, expr);
 			return statement_result_t::make_return_unwind(rhs_value);
 		}
-		else if(opcode == bc_instr::k_statement_if){
+		else if(opcode == bc_statement_opcode::k_statement_if){
 			const auto& condition_result_value = execute_expression(vm, statement._e[0]);
-			QUARK_ASSERT(condition_result_value.is_bool());
 
 			bool flag = condition_result_value.get_bool_value_quick();
 			if(flag){
@@ -300,7 +311,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				}
 			}
 		}
-		else if(opcode == bc_instr::k_statement_for){
+		else if(opcode == bc_statement_opcode::k_statement_for){
 			const auto& start_value0 = execute_expression(vm, statement._e[0]);
 			const auto start_value_int = start_value0.get_int_value_quick();
 
@@ -336,7 +347,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			vm._call_stack.pop_back();
 			vm._value_stack.resize(values_offset);
 		}
-		else if(opcode == bc_instr::k_statement_while){
+		else if(opcode == bc_statement_opcode::k_statement_while){
 			bool again = true;
 			while(again){
 				const auto& condition_value_expr = execute_expression(vm, statement._e[0]);
@@ -353,7 +364,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				}
 			}
 		}
-		else if(opcode == bc_instr::k_statement_expression){
+		else if(opcode == bc_statement_opcode::k_statement_expression){
 			/*const auto& rhs_value =*/ execute_expression(vm, statement._e[0]);
 		}
 		else{
@@ -416,10 +427,9 @@ bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_express
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& parent_expr = execute_expression(vm, expr._e[0]);
-	QUARK_ASSERT(parent_expr.is_struct());
+	QUARK_ASSERT(expr._e[0]._type._basetype == base_type::k_struct);
 
 	const auto& struct_instance = parent_expr.get_struct_value();
-
 	int index = expr._address._index;
 	QUARK_ASSERT(index != -1);
 
@@ -431,10 +441,13 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& parent_value = execute_expression(vm, expr._e[0]);
-	const auto& key_value = execute_expression(vm, expr._e[1]);
-	if(parent_value.is_string()){
-		QUARK_ASSERT(key_value.is_int());
+	const auto parent_type = expr._e[0]._type._basetype;
 
+	const auto& key_value = execute_expression(vm, expr._e[1]);
+	const auto key_type = expr._e[1]._type._basetype;
+
+
+	if(parent_type == base_type::k_string){
 		const auto& instance = parent_value.get_string_value();
 		int lookup_index = key_value.get_int_value_quick();
 		if(lookup_index < 0 || lookup_index >= instance.size()){
@@ -446,11 +459,11 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 			return value2;
 		}
 	}
-	else if(parent_value.is_json_value()){
+	else if(parent_type == base_type::k_json_value){
 		//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
 		const auto& parent_json_value = parent_value.get_json_value();
 		if(parent_json_value.is_object()){
-			QUARK_ASSERT(key_value.is_string());
+			QUARK_ASSERT(key_type == base_type::k_string);
 			const auto& lookup_key = key_value.get_string_value();
 
 			//	get_object_element() throws if key can't be found.
@@ -459,7 +472,6 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 			return value2;
 		}
 		else if(parent_json_value.is_array()){
-			QUARK_ASSERT(key_value.is_int());
 			const auto& lookup_index = key_value.get_int_value_quick();
 
 			if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
@@ -475,9 +487,7 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 			throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
 		}
 	}
-	else if(parent_value.is_vector()){
-		QUARK_ASSERT(key_value.is_int());
-
+	else if(parent_type == base_type::k_vector){
 		const auto& vec = parent_value.get_vector_value();
 
 		int lookup_index = key_value.get_int_value_quick();
@@ -489,8 +499,8 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 			return value;
 		}
 	}
-	else if(parent_value.is_dict()){
-		QUARK_ASSERT(key_value.is_string());
+	else if(parent_type == base_type::k_dict){
+		QUARK_ASSERT(key_type == base_type::k_string);
 
 		const auto& entries = parent_value.get_dict_value();
 		const string key = key_value.get_string_value();
@@ -572,12 +582,15 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 	}
 }
 
+//	This function evaluates all input expressions, then call construct_value_from_typeid() to do the work.
+//??? Make several opcodes for construct-value: construct-struct, vector, dict, basic. ALSO casting 1:1 between types.
 bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(expr._result_type.is_vector()){
+	const auto basetype = expr._type._basetype;
+	if(basetype == base_type::k_vector){
 		const std::vector<bc_expression_t>& elements = expr._e;
-		const auto& root_value_type = expr._result_type;
+		const auto& root_value_type = expr._type._fulltype.front();
 		const auto& element_type = root_value_type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_null() == false);
 
@@ -598,11 +611,11 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 			QUARK_ASSERT(m.get_type() == element_type);
 		}
 	#endif
-		return construct_value_from_typeid(vm, typeid_t::make_vector(element_type), elements2);
+		return construct_value_from_typeid(vm, typeid_t::make_vector(element_type), element_type, elements2);
 	}
-	else if(expr._result_type.is_dict()){
+	else if(basetype == base_type::k_dict){
 		const auto& elements = expr._e;
-		const auto& root_value_type = expr._result_type;
+		const auto& root_value_type = expr._type._fulltype.front();
 		const auto& element_type = root_value_type.get_dict_value_type();
 
 		//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
@@ -621,21 +634,21 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 			elements2.push_back(bc_value_t::make_string(key));
 			elements2.push_back(value);
 		}
-		return construct_value_from_typeid(vm, typeid_t::make_dict(element_type), elements2);
+		return construct_value_from_typeid(vm, typeid_t::make_dict(element_type), element_type, elements2);
 	}
-	else if(expr._result_type.is_struct()){
+	else if(basetype == base_type::k_struct){
 		std::vector<bc_value_t> elements2;
 		for(const auto m: expr._e){
 			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
-		return construct_value_from_typeid(vm, expr._result_type, elements2);
+		return construct_value_from_typeid(vm, expr._type._fulltype.front(), typeid_t::make_null(), elements2);
 	}
 	else{
 		QUARK_ASSERT(expr._e.size() == 1);
 
 		const auto& element = execute_expression(vm, expr._e[0]);
-		return construct_value_from_typeid(vm, expr._result_type, { element });
+		return construct_value_from_typeid(vm, expr._type.get_fulltype(), expr._input_type.get_fulltype(), { element });
 	}
 }
 
@@ -643,10 +656,11 @@ bc_value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& c = execute_expression(vm, expr._e[0]);
-	if(c.is_int()){
+	const auto basetype = expr._type._basetype;
+	if(basetype == base_type::k_int){
 		return bc_value_t::make_int(0 - c.get_int_value_quick());
 	}
-	else if(c.is_float()){
+	else if(basetype == base_type::k_float){
 		return bc_value_t::make_float(0.0f - c.get_float_value());
 	}
 	else{
@@ -660,7 +674,6 @@ bc_value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_e
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	const auto& cond_result = execute_expression(vm, expr._e[0]);
-	QUARK_ASSERT(cond_result.is_bool());
 	const bool cond_flag = cond_result.get_bool_value_quick();
 
 	//	!!! Only execute the CHOSEN expression. Not that important since functions are pure.
@@ -875,7 +888,7 @@ bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 		const auto pos = env->_values_offset + e._address._index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 		const auto& value = vm._value_stack[pos];
-		QUARK_ASSERT(value.get_type() == e._result_type);
+//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
 		return value;
 	}
 
@@ -1080,7 +1093,7 @@ std::pair<interpreter_t, statement_result_t> run_main(const interpreter_context_
 
 	const auto& main_function = find_symbol_by_name(vm, "main");
 	if(main_function != nullptr){
-		const auto& result = call_function(vm, bc_to_value(*main_function), args);
+		const auto& result = call_function(vm, bc_to_value(main_function->_value), args);
 		return { vm, result };
 	}
 	else{
@@ -1093,7 +1106,7 @@ std::pair<interpreter_t, statement_result_t> run_program(const interpreter_conte
 
 	const auto& main_func = find_symbol_by_name(vm, "main");
 	if(main_func != nullptr){
-		const auto& r = call_function(vm, bc_to_value(*main_func), args);
+		const auto& r = call_function(vm, bc_to_value(main_func->_value), args);
 		return { vm, r };
 	}
 	else{

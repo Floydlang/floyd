@@ -27,12 +27,16 @@ namespace floyd {
 	struct bc_value_t;
 
 
-inline value_t bc_to_value(const bc_value_t& value);
-inline bc_value_t value_to_bc(const value_t& value);
+	inline value_t bc_to_value(const bc_value_t& value);
+	inline bc_value_t value_to_bc(const value_t& value);
 
 
-inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
-inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values);
+	inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
+	inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values);
+
+
+
+	//////////////////////////////////////		bc_value_t
 
 
 
@@ -61,11 +65,7 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 			return _backstore == other._backstore;
 		}
 
-
-
-
-
-		public: bool is_null() const {
+		private: bool is_null() const {
 			return _backstore.is_null();
 		}
 
@@ -73,9 +73,7 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 			return {};
 		}
 
-
-
-		public: bool is_bool() const {
+		private: bool is_bool() const {
 			return _backstore.is_bool();
 		}
 		public: static bc_value_t make_bool(bool v){
@@ -85,9 +83,7 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 			return _backstore.get_bool_value_quick();
 		}
 
-
-
-		public: bool is_int() const {
+		private: bool is_int() const {
 			return _backstore.is_int();
 		}
 		public: static bc_value_t make_int(int v){
@@ -100,9 +96,7 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 			return _backstore.get_int_value_quick();
 		}
 
-
-
-		public: bool is_float() const {
+		private: bool is_float() const {
 			return _backstore.is_float();
 		}
 		public: static bc_value_t make_float(float v){
@@ -112,39 +106,35 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 			return _backstore.get_float_value();
 		}
 
-
-
-		public: bool is_string() const {
+		private: bool is_string() const {
 			return _backstore.is_string();
 		}
 		public: static bc_value_t make_string(const std::string& v){
 			return bc_value_t{ value_t::make_string(v) };
 		}
-		std::string get_string_value() const{
+		public: std::string get_string_value() const{
 			return _backstore.get_string_value();
 		}
 
 
-
-
-		public: bool is_function() const {
+		private: bool is_function() const {
 			return _backstore.is_function();
 		}
-		int get_function_value() const{
+		public: int get_function_value() const{
 			return _backstore.get_function_value();
 		}
 
-		public: bool is_vector() const {
+		private: bool is_vector() const {
 			return _backstore.is_vector();
 		}
-		public: bool is_struct() const {
+		private: bool is_struct() const {
 			return _backstore.is_struct();
 		}
-		public: bool is_dict() const {
+		private: bool is_dict() const {
 			return _backstore.is_dict();
 		}
 
-		public: bool is_typeid() const {
+		private: bool is_typeid() const {
 			return _backstore.is_typeid();
 		}
 		public: typeid_t get_typeid_value() const {
@@ -169,9 +159,6 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 			return bc_value_t{value_t::make_vector_value(element_type, bcs_to_values(elements))};
 		}
 
-
-
-
 		public: static bc_value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries){
 			std::map<std::string, value_t> elements2;
 			for(const auto e: entries){
@@ -193,10 +180,7 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 			return value_t::compare_value_true_deep(left._backstore, right._backstore);
 		}
 
-
-
-
-		public: bool is_json_value() const {
+		private: bool is_json_value() const {
 			return _backstore.is_json_value();
 		}
 		public: static bc_value_t make_json_value(const json_t& v){
@@ -213,32 +197,41 @@ inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values)
 	};
 
 
-inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
-	std::vector<bc_value_t> result;
-	for(const auto e: values){
-		result.push_back(value_to_bc(e));
+
+	//////////////////////////////////////		value helpers
+
+
+
+	inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+		std::vector<bc_value_t> result;
+		for(const auto e: values){
+			result.push_back(value_to_bc(e));
+		}
+		return result;
 	}
-	return result;
-}
 
-inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values){
-	std::vector<value_t> result;
-	for(const auto e: values){
-		result.push_back(bc_to_value(e));
+	inline std::vector<value_t> bcs_to_values(const std::vector<bc_value_t>& values){
+		std::vector<value_t> result;
+		for(const auto e: values){
+			result.push_back(bc_to_value(e));
+		}
+		return result;
 	}
-	return result;
-}
 
-inline value_t bc_to_value(const bc_value_t& value){
-	return value._backstore;
-}
-inline bc_value_t value_to_bc(const value_t& value){
-	return bc_value_t{value};
-}
+	inline value_t bc_to_value(const bc_value_t& value){
+		return value._backstore;
+	}
+	inline bc_value_t value_to_bc(const value_t& value){
+		return bc_value_t{value};
+	}
 
-inline std::string to_compact_string2(const bc_value_t& value) {
-	return to_compact_string2(value._backstore);
-}
+	inline std::string to_compact_string2(const bc_value_t& value) {
+		return to_compact_string2(value._backstore);
+	}
+
+
+
+	//////////////////////////////////////		bc_struct_instance_t
 
 
 
@@ -249,9 +242,10 @@ inline std::string to_compact_string2(const bc_value_t& value) {
 
 
 
-	//////////////////////////////////////		bc_vm_t
+	//////////////////////////////////////		bc_statement_opcode
 
-	typedef uint32_t bc_instruction_t;
+
+//	typedef uint32_t bc_instruction_t;
 
 	/*
 		----------------------------------- -----------------------------------
@@ -275,7 +269,7 @@ inline std::string to_compact_string2(const bc_value_t& value) {
 		-----------------------------------------------------------------------
 	*/
 
-	enum bc_instr {
+	enum bc_statement_opcode {
 		k_nop,
 
 		//	Store _e[0] -> _v
@@ -299,6 +293,12 @@ inline std::string to_compact_string2(const bc_value_t& value) {
 		k_statement_expression
 
 	};
+
+
+
+	//////////////////////////////////////		bc_expression_opcode
+
+
 
 	enum bc_expression_opcode {
 		k_expression_literal,
@@ -331,12 +331,93 @@ inline std::string to_compact_string2(const bc_value_t& value) {
 		k_expression_logical_or
 	};
 
+
+
+	//////////////////////////////////////		get_fulltype2()
+
+
+
+	inline std::vector<typeid_t> get_fulltype2(const typeid_t& type){
+		if(type.is_null()){
+			return {};
+		}
+		else if(type.is_bool()){
+			return {};
+		}
+		else if(type.is_int()){
+			return {};
+		}
+		else if(type.is_float()){
+			return {};
+		}
+		else{
+			return {type};
+		}
+	}
+
+
+
+	//////////////////////////////////////		bc_typeid_t
+
+
+
+	struct bc_typeid_t {
+		bc_typeid_t() :
+			_basetype(base_type::k_null),
+			_fulltype()
+		{
+		}
+		explicit bc_typeid_t(const typeid_t& full) :
+			_basetype(full.get_base_type()),
+			_fulltype(get_fulltype2(full))
+		{
+		}
+		base_type _basetype;
+
+
+		public: typeid_t get_fulltype() const {
+			if(_fulltype.empty()){
+				if(_basetype == base_type::k_null){
+					return typeid_t::make_null();
+				}
+				else if(_basetype == base_type::k_bool){
+					return typeid_t::make_bool();
+				}
+				else if(_basetype == base_type::k_int){
+					return typeid_t::make_int();
+				}
+				else if(_basetype == base_type::k_float){
+					return typeid_t::make_float();
+				}
+				else{
+					QUARK_ASSERT(false);
+					throw std::exception();
+				}
+			}
+			else{
+				return _fulltype.front();
+			}
+		}
+
+		//	0 or 1 elements. Contains an element if _basetype doesn't fully describe the type.
+		std::vector<typeid_t> _fulltype;
+	};
+
+
+
+	//////////////////////////////////////		bc_expression_t
+
+
+
 	struct bc_expression_t {
 		bc_expression_opcode _opcode;
-		typeid_t _result_type;
+
+		bc_typeid_t _type;
+
 		std::vector<bc_expression_t> _e;
 		variable_address_t _address;
 		bc_value_t _value;
+		bc_typeid_t _input_type;
 
 		public: bool check_invariant() const { return true; }
 	};
@@ -347,8 +428,15 @@ inline std::string to_compact_string2(const bc_value_t& value) {
 		uint32_t _words[64 / sizeof(uint32_t)];
 	};
 
-	struct bc_instr_t {
-		bc_instr _opcode;
+
+
+	//////////////////////////////////////		bc_instruction_t
+
+
+
+	struct bc_instruction_t {
+		bc_statement_opcode _opcode;
+		bc_typeid_t _type;
 
 		std::vector<bc_expression_t> _e;
 		variable_address_t _v;
@@ -362,22 +450,31 @@ inline std::string to_compact_string2(const bc_value_t& value) {
 
 
 
+	//////////////////////////////////////		bc_body_t
+
+
+
 	struct bc_body_t {
 		const std::vector<std::pair<std::string, symbol_t>> _symbols;
 
-		std::vector<bc_instr_t> _statements;
+		std::vector<bc_instruction_t> _statements;
 
-		bc_body_t(const std::vector<bc_instr_t>& s) :
+		bc_body_t(const std::vector<bc_instruction_t>& s) :
 			_statements(s),
 			_symbols{}
 		{
 		}
-		bc_body_t(const std::vector<bc_instr_t>& statements, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
+		bc_body_t(const std::vector<bc_instruction_t>& statements, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
 			_statements(statements),
 			_symbols(symbols)
 		{
 		}
 	};
+
+
+
+	//////////////////////////////////////		bc_function_definition_t
+
 
 	struct bc_function_definition_t {
 		public: bool check_invariant() const {
@@ -390,6 +487,12 @@ inline std::string to_compact_string2(const bc_value_t& value) {
 		bc_body_t _body;
 		int _host_function_id;
 	};
+
+
+
+	//////////////////////////////////////		bc_program_t
+
+
 
 	struct bc_program_t {
 		public: bool check_invariant() const {

@@ -25,10 +25,10 @@ namespace floyd {
 	struct statement_t;
 	struct interpreter_t;
 	struct bc_program_t;
-	struct bc_instr_t;
+	struct bc_instruction_t;
 
 
-	bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const std::vector<bc_value_t>& arg_values);
+	bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const std::vector<bc_value_t>& arg_values);
 
 
 	//////////////////////////////////////		statement_result_t
@@ -143,18 +143,23 @@ namespace floyd {
 			null = statements were all executed through.
 			value = return statement returned a value.
 	*/
-	statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instr_t>& statements);
+	statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instruction_t>& statements);
 
 
 
 
 	//////////////////////////		run_main()
 
-
+	struct value_entry_t {
+		bc_value_t _value;
+		std::string _symbol_name;
+		symbol_t _symbol;
+		variable_address_t _address;
+	};
 
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
 	typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type);
-	const floyd::bc_value_t* find_symbol_by_name(const interpreter_t& vm, const std::string& s);
+	std::shared_ptr<value_entry_t> find_symbol_by_name(const interpreter_t& vm, const std::string& s);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.

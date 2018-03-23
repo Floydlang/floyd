@@ -281,11 +281,7 @@ void run_file(const std::vector<std::string>& args){
 //	std::cout << "Running..." << source << std::endl;
 
 	const auto result = floyd::run_program(context, program, args3);
-	if(result.second._output.is_null()){
-	}
-	else{
-		std::cout << result.second._output.get_int_value() << std::endl;
-	}
+	std::cout << result.second._output.get_int_value() << std::endl;
 }
 
 void run_tests(){
