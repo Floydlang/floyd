@@ -1065,7 +1065,7 @@ bc_program_t program_to_ast2(const interpreter_context_t& context, const string&
 
 	const auto& pass1 = floyd::parse_program2(context2, program);
 	const auto& pass2 = run_pass2(context2._tracer, pass1);
-	const auto& pass3 = floyd_pass3::run_pass3(context2._tracer, pass2);
+	const auto& pass3 = floyd::run_pass3(context2._tracer, pass2);
 
 
 	const auto bc = run_bggen(context2._tracer, pass3);

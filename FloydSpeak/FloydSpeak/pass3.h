@@ -27,19 +27,12 @@ namespace floyd {
 }
 
 
-namespace floyd_pass3 {
+namespace floyd {
 	struct analyser_t;
 
 	floyd::value_t unflatten_json_to_specific_type(const json_t& v);
 	bool check_types_resolved(const floyd::ast_t& ast);
 
-
-	//////////////////////////////////////		interpreter_context_t
-
-
-	struct interpreter_context_t {
-		public: quark::trace_context_t _tracer;
-	};
 
 
 
@@ -67,10 +60,18 @@ namespace floyd_pass3 {
 	*/
 	struct semantic_ast_t {
 		semantic_ast_t(const floyd::ast_t& checked_ast){
+			QUARK_ASSERT(checked_ast.check_invariant());
 			QUARK_ASSERT(check_types_resolved(checked_ast));
 
 			_checked_ast = checked_ast;
 		}
+#if DEBUG
+		public: bool check_invariant() const{
+			QUARK_ASSERT(_checked_ast.check_invariant());
+			QUARK_ASSERT(check_types_resolved(_checked_ast));
+			return true;
+		}
+#endif
 
 		public: floyd::ast_t _checked_ast;
 	};
@@ -112,9 +113,6 @@ namespace floyd_pass3 {
 		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 	};
 
-	floyd::ast_t analyse(const analyser_t& a);
-
-
 	json_t analyser_to_json(const analyser_t& vm);
 
 
@@ -140,7 +138,7 @@ namespace floyd_pass3 {
 	/*
 		Semantic Analysis -> SYMBOL TABLE + annotated AST
 	*/
-	floyd::ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2);
+	semantic_ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2);
 }
 #endif /* pass3_hpp */
 

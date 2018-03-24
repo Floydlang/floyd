@@ -11,6 +11,8 @@
 #include <cmath>
 #include <algorithm>
 
+#include "pass3.h"
+
 namespace floyd {
 
 using std::vector;
@@ -19,6 +21,8 @@ using std::pair;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
+
+struct semantic_ast_t;
 
 
 bc_expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
@@ -631,18 +635,18 @@ bool bgenerator_t::check_invariant() const {
 #endif
 
 
-bc_program_t run_bggen(const quark::trace_context_t& tracer, const ast_t& pass3){
+bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_t& pass3){
 	QUARK_ASSERT(pass3.check_invariant());
 
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "run_bggen");
 
-	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(pass3)._value));
+	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(pass3._checked_ast)._value));
 
-	bgenerator_t a(pass3);
+	bgenerator_t a(pass3._checked_ast);
 
 	std::vector<const bc_function_definition_t> function_defs2;
-	for(int function_id = 0 ; function_id < pass3._function_defs.size() ; function_id++){
-		const auto& function_def = *pass3._function_defs[function_id];
+	for(int function_id = 0 ; function_id < pass3._checked_ast._function_defs.size() ; function_id++){
+		const auto& function_def = *pass3._checked_ast._function_defs[function_id];
 		const auto body2 = function_def._body ? bcgen_body(a, *function_def._body) : bc_body_t({});
 		const auto function_def2 = bc_function_definition_t{
 			function_def._function_type,

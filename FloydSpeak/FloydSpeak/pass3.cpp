@@ -19,7 +19,7 @@
 #include "host_functions.hpp"
 #include <fstream>
 
-namespace floyd_pass3 {
+namespace floyd {
 
 	using namespace std;
 	using floyd::value_t;
@@ -39,6 +39,7 @@ namespace floyd_pass3 {
 	using floyd::body_t;
 
 std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& vm, const statement_t& statement);
+	floyd::ast_t analyse(const analyser_t& a);
 
 
 
@@ -1628,7 +1629,7 @@ bool analyser_t::check_invariant() const {
 #endif
 
 
-floyd::ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2){
+semantic_ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2){
 	QUARK_ASSERT(ast_pass2.check_invariant());
 
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "pass3");

@@ -25,6 +25,7 @@ namespace floyd {
 
 	struct bc_body_t;
 	struct bc_value_t;
+	struct semantic_ast_t;
 
 
 	inline value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
@@ -1136,7 +1137,7 @@ namespace floyd {
 	//////////////////////////		run_bggen()
 
 
-	bc_program_t run_bggen(const quark::trace_context_t& tracer, const ast_t& pass3);
+	bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_t& pass3);
 
 	json_t bcprogram_to_json(const bc_program_t& program);
 
