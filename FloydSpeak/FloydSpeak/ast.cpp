@@ -15,22 +15,17 @@
 
 
 namespace floyd {
-	using std::vector;
-
 
 
 	////////////////////////			ast_t
 
 
-	bool ast_t::check_invariant() const {
-		return true;
-	}
 
 
 	ast_json_t ast_to_json(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
-		vector<json_t> fds;
+		std::vector<json_t> fds;
 		for(const auto& e: ast._function_defs){
 			ast_json_t fd = function_def_to_ast_json(*e);
 			fds.push_back(fd._value);

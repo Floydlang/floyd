@@ -12,11 +12,13 @@
 #include <vector>
 #include "quark.h"
 #include "statement.h"
+//#include "pass3.h"
 
 namespace floyd {
 	struct ast_json_t;
 
 
+	//??? rename to raw_ast_t
 	//////////////////////////////////////////////////		ast_t
 
 
@@ -25,8 +27,22 @@ namespace floyd {
 		Immutable
 	*/
 	struct ast_t {
-		public: bool check_invariant() const;
+/*
+		ast_t(const ast_t& a) :
+			_globals(a._globals),
+			_function_defs(a._function_defs)
+		{
+			QUARK_ASSERT(a.check_invariant());
+			QUARK_ASSERT(a._function_defs.empty());
+			QUARK_ASSERT(a._globals._symbols.empty());
 
+			QUARK_ASSERT(check_invariant());
+		}
+*/
+		public: bool check_invariant() const{
+			QUARK_ASSERT(_globals.check_invariant());
+			return true;
+		}
 
 		/////////////////////////////		STATE
 		public: body_t _globals;
@@ -34,6 +50,12 @@ namespace floyd {
 	};
 
 	ast_json_t ast_to_json(const ast_t& ast);
+
+
+
+
+
+
 
 
 }	//	floyd

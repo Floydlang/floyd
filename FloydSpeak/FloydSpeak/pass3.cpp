@@ -1580,14 +1580,24 @@ ast_t analyse(const analyser_t& a){
 	const auto result_ast = ast_t{result.second, result.first._function_defs};
 
 	QUARK_ASSERT(result_ast.check_invariant());
-
-	QUARK_ASSERT(result_ast._globals.check_types_resolved());
-	for(const auto& e: result_ast._function_defs){
-		QUARK_ASSERT(e->check_types_resolved());
-	}
-
+	QUARK_ASSERT(check_types_resolved(result_ast));
 	return result_ast;
 }
+
+
+bool check_types_resolved(const ast_t& ast){
+	if(ast._globals.check_types_resolved() == false){
+		return false;
+	}
+	for(const auto& e: ast._function_defs){
+		const auto result = e->check_types_resolved();
+		if(result == false){
+			return false;
+		}
+	}
+	return true;
+}
+
 
 analyser_t::analyser_t(const analyser_t& other) :
 	_imm(other._imm),

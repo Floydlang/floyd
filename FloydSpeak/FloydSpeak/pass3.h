@@ -29,7 +29,9 @@ namespace floyd {
 
 namespace floyd_pass3 {
 	struct analyser_t;
+
 	floyd::value_t unflatten_json_to_specific_type(const json_t& v);
+	bool check_types_resolved(const floyd::ast_t& ast);
 
 
 	//////////////////////////////////////		interpreter_context_t
@@ -49,6 +51,8 @@ namespace floyd_pass3 {
 	};
 
 
+
+
 	//////////////////////////////////////		semantic_ast_t
 
 
@@ -58,14 +62,19 @@ namespace floyd_pass3 {
 		- All language-level syntax checks passed.
 		- All symbols have been resolved.
 		- All built-in types and host functions are inserted.
+
+		An instance of semantic_ast_t is guaranteed to be resolved.
 	*/
 	struct semantic_ast_t {
-		semantic_ast_t(const floyd::ast_t& raw_ast){
-			_checked_ast = raw_ast;
+		semantic_ast_t(const floyd::ast_t& checked_ast){
+			QUARK_ASSERT(check_types_resolved(checked_ast));
+
+			_checked_ast = checked_ast;
 		}
 
 		public: floyd::ast_t _checked_ast;
 	};
+
 
 
 	//////////////////////////////////////		analyser_t
