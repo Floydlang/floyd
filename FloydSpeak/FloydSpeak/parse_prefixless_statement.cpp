@@ -292,7 +292,7 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto expression = parse_expression_all(seq_t(expression_str));
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
-	const auto statement = make_array_skip_nulls({ "bind", typeid_to_ast_json(type)._value, identifier, expression._value, meta });
+	const auto statement = make_array_skip_nulls({ "bind", typeid_to_ast_json(type, json_tags::k_tag_resolve_state)._value, identifier, expression._value, meta });
 
 	const auto x = read_until(s, ";");
 	return { ast_json_t{statement}, x.second.rest1() };
@@ -303,7 +303,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 		parse_bind_statement(seq_t("bool bb = true;")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "bool", "bb", ["k", true, "bool"]]
+				[ "bind", "^bool", "bb", ["k", true, "^bool"]]
 			)"
 		)).first
 	);
@@ -313,7 +313,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 		parse_bind_statement(seq_t("int hello = 3;")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "int", "hello", ["k", 3, "int"]]
+				[ "bind", "^int", "hello", ["k", 3, "^int"]]
 			)"
 		)).first
 	);
@@ -324,7 +324,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 		parse_bind_statement(seq_t("mutable int a = 14;")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "int", "a", ["k", 14, "int"], { "mutable": true }]
+				[ "bind", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -335,7 +335,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 		parse_bind_statement(seq_t("mutable hello = 3;")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "null", "hello", ["k", 3, "int"], { "mutable": true }]
+				[ "bind", "^null", "hello", ["k", 3, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -365,7 +365,7 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 		parse_assign_statement(seq_t("x = 10;")).first._value,
 		parse_json(seq_t(
 			R"(
-				["store","x",["k",10,"int"]]
+				["store","x",["k",10,"^int"]]
 			)"
 		)).first
 	);
@@ -388,7 +388,7 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 		parse_expression_statement(seq_t("print(14);")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "expression-statement", [ "call", ["@", "print"], [["k", 14, "int"]] ] ]
+				[ "expression-statement", [ "call", ["@", "print"], [["k", 14, "^int"]] ] ]
 			)"
 		)).first
 	);
@@ -421,7 +421,7 @@ std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_compare_jsons(
 		parse_prefixless_statement(seq_t("int x = f(3);")).first._value,
-		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
+		parse_json(seq_t(R"(["bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
 

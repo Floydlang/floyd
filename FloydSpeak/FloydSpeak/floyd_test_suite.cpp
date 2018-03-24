@@ -338,7 +338,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "<") {
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR &&
 
-QUARK_UNIT_TESTQ("execute_expression()", "&&") {
+QUARK_UNIT_TEST("execute_expression()", "&&", "", "") {
 	test__run_init__check_result("bool result = false && false;", value_t::make_bool(false));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "&&") {
@@ -2041,7 +2041,8 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 	});
 }
 
-QUARK_UNIT_TEST_VIP("run_main()", "return struct from function", "", ""){
+
+OFF_QUARK_UNIT_TEST_VIP("run_main()", "return struct from function", "", ""){
 	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -2055,7 +2056,7 @@ QUARK_UNIT_TEST_VIP("run_main()", "return struct from function", "", ""){
 	});
 }
 
-QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
+OFF_QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -2353,7 +2354,7 @@ QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
 }
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
-QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
+OFF_QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a);
@@ -2364,7 +2365,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 }
 
 // JSON example snippets: http://json.org/example.html
-QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
+OFF_QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 	const auto vm = test__run_global(R"ABCD(
 		json_value a = {
 			"menu": {
@@ -2386,7 +2387,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 	});
 }
 
-QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
+OFF_QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" };
 		print(a);
@@ -2396,7 +2397,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 	});
 }
 
-QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("json_value-object", "{}", "", ""){
 	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a["pigcount"]);
@@ -2700,41 +2701,41 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 //////////////////////////////////////////		flatten_to_json() -> unflatten_from_json() roundtrip
 
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(true), bool);
 	)", {});
 	ut_compare_values(result, value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(false), bool);
 	)", {});
 	ut_compare_values(result, value_t::make_bool(false));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(91), int);
 	)", {});
 	ut_compare_values(result, value_t::make_int(91));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "float", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "float", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(-0.125), float);
 	)", {});
 	ut_compare_values(result, value_t::make_float(-0.125));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(""), string);
 	)", {});
 	ut_compare_values(result, value_t::make_string(""));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json("cola"), string);
 	)", {});
@@ -2743,14 +2744,14 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 
 /// Makes no sense to unflatten a json_value from json.
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "typeid", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "typeid", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(typeof([3])), typeid);
 	)", {});
 	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json([1,2,3]), typeof([1]));
 	)", {});
@@ -2761,7 +2762,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 }
 
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
+OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 	const auto point_t_def = std::make_shared<floyd::struct_definition_t>(
 		std::vector<member_t>{
 			member_t(typeid_t::make_float(), "x"),

@@ -67,9 +67,9 @@ namespace floyd {
 			json_t::make_object({
 				{ "name", "a" },
 				{ "members", json_t::make_array({
-					json_t::make_object({ { "name", "x"}, { "type", "int"} }),
-					json_t::make_object({ { "name", "y"}, { "type", "string"} }),
-					json_t::make_object({ { "name", "z"}, { "type", "float"} })
+					json_t::make_object({ { "name", "x"}, { "type", "^int"} }),
+					json_t::make_object({ { "name", "y"}, { "type", "^string"} }),
+					json_t::make_object({ { "name", "z"}, { "type", "^float"} })
 				}) },
 			})
 		});

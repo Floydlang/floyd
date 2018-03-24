@@ -330,8 +330,8 @@ ast_json_t symbol_to_json(const symbol_t& e){
 	return ast_json_t{
 		json_t::make_object({
 			{ "type", symbol_type_str },
-			{ "value_type", typeid_to_ast_json(e._value_type)._value },
-			{ "const_value", value_to_ast_json(e._const_value)._value }
+			{ "value_type", typeid_to_ast_json(e._value_type, json_tags::k_tag_resolve_state)._value },
+			{ "const_value", value_to_ast_json(e._const_value, json_tags::k_tag_resolve_state)._value }
 		})
 	};
 }
@@ -370,7 +370,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		return ast_json_t{make_array_skip_nulls({
 			json_t("bind"),
 			e._bind_local->_new_local_name,
-			typeid_to_ast_json(e._bind_local->_bindtype)._value,
+			typeid_to_ast_json(e._bind_local->_bindtype, json_tags::k_tag_resolve_state)._value,
 			expression_to_json(e._bind_local->_expression)._value,
 			meta
 		})};
@@ -433,13 +433,103 @@ ast_json_t statement_to_json(const statement_t& e){
 }
 
 
-ast_json_t expression_to_json(const expression_t& e){
-	const auto a = e.get_expr()->expr_base__to_json();
 
+
+ast_json_t expression_to_json_xyz(const expression_t& e){
+	const auto opcode = e.get_operation();
+
+	if(opcode == expression_type::k_literal){
+		return ast_json_t{json_t::make_array({
+			"k",
+			value_to_ast_json(e._value, json_tags::k_tag_resolve_state)._value,
+			typeid_to_ast_json(e._value.get_type(), json_tags::k_tag_resolve_state)._value
+		})};
+	}
+	else if(is_arithmetic_expression(opcode) || is_comparison_expression(opcode)){
+		return ast_json_t{
+			json_t::make_array({
+				expression_type_to_token(opcode),
+				expression_to_json(e._input_exprs[0])._value,
+				expression_to_json(e._input_exprs[1])._value
+			})
+		};
+	}
+	else if(opcode == expression_type::k_arithmetic_unary_minus__1){
+		return ast_json_t{json_t::make_array({
+			expression_to_json(e._input_exprs[0])._value
+		})};
+	}
+	if(opcode == expression_type::k_conditional_operator3){
+		const auto a = ast_json_t{json_t::make_array({
+			"?:",
+			expression_to_json(e._input_exprs[0])._value,
+			expression_to_json(e._input_exprs[1])._value,
+			expression_to_json(e._input_exprs[2])._value,
+		})};
+		return a;
+	}
+	else if(opcode == expression_type::k_call){
+		const auto callee = e._input_exprs[0];
+		const auto args = vector<expression_t>(e._input_exprs.begin() + 1, e._input_exprs.end());
+
+		return ast_json_t{json_t::make_array({
+			"call",
+			expression_to_json(callee)._value,
+			expressions_to_json(args)._value
+		})};
+	}
+	else if(opcode == expression_type::k_define_struct){
+		return ast_json_t{json_t::make_array({
+			"def-struct",
+			struct_definition_to_ast_json(*e._struct_def)._value
+		})};
+	}
+	else if(opcode == expression_type::k_define_function){
+		return ast_json_t{function_def_to_ast_json(*e._function_def)};
+	}
+	else if(opcode == expression_type::k_load){
+		return ast_json_t{json_t::make_array({ "@", json_t(e._variable_name) })};
+	}
+	else if(opcode == expression_type::k_load2){
+		return ast_json_t{json_t::make_array({ "@i", json_t(e._address._parent_steps), json_t(e._address._index) })};
+	}
+
+	else if(opcode == expression_type::k_resolve_member){
+		return ast_json_t{json_t::make_array({
+			"->",
+			expression_to_json(e._input_exprs[0])._value,
+			json_t(e._variable_name)
+		})};
+	}
+	else if(opcode == expression_type::k_lookup_element){
+		return ast_json_t{json_t::make_array({
+			"[]",
+			expression_to_json(e._input_exprs[0])._value,
+			expression_to_json(e._input_exprs[1])._value
+		})};
+	}
+
+	else if(opcode == expression_type::k_construct_value){
+		return ast_json_t{json_t::make_array({
+			"construct-value",
+			typeid_to_ast_json(*e._output_type, json_tags::k_tag_resolve_state)._value,
+			expressions_to_json(e._input_exprs)._value
+		})};
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+ast_json_t expression_to_json(const expression_t& e){
+	const auto a = expression_to_json_xyz(e);
+
+	//	Add annotated-type element to json?
 	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
 		const auto t = e.get_annotated_type();
 		auto a2 = a._value.get_array();
-		const auto type_json = typeid_to_ast_json(t);
+		const auto type_json = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
 		a2.push_back(type_json._value);
 		return ast_json_t{ json_t::make_array(a2) };
 	}

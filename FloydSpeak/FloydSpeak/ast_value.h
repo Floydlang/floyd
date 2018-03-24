@@ -64,6 +64,8 @@ namespace floyd {
 			return true;
 		}
 
+		public: bool check_types_resolved() const;
+
 
 		const typeid_t _function_type;
 		const std::vector<member_t> _args;
@@ -629,7 +631,7 @@ static value_t make_int(int value){
 	*/
 	std::string value_and_type_to_string(const value_t& value);
 
-	ast_json_t value_to_ast_json(const value_t& v);
+	ast_json_t value_to_ast_json(const value_t& v, json_tags tags);
 	ast_json_t value_and_type_to_ast_json(const value_t& v);
 
 	json_t values_to_json_array(const std::vector<value_t>& values);

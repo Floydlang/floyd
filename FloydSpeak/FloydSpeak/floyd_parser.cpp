@@ -62,7 +62,7 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
 		parse_statement(seq_t("int x = 10;")).first._value,
-		parse_json(seq_t(R"(["bind", "int", "x", ["k", 10, "int"]])")).first
+		parse_json(seq_t(R"(["bind", "^int", "x", ["k", 10, "^int"]])")).first
 	);
 }
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
@@ -72,11 +72,11 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 			[
 				"def-func",
 				{
-					"args": [{ "name": "name", "type": "string" }],
+					"args": [{ "name": "name", "type": "^string" }],
 					"name": "f",
-					"return_type": "int",
+					"return_type": "^int",
 					"statements": [
-						["return", ["k", 13, "int"]]
+						["return", ["k", 13, "^int"]]
 					]
 				}
 			]
@@ -87,7 +87,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
 		parse_statement(seq_t("int x = f(3);")).first._value,
-		parse_json(seq_t(R"(["bind", "int", "x", ["call", ["@", "f"], [["k", 3, "int"]]]])")).first
+		parse_json(seq_t(R"(["bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
 
@@ -126,9 +126,9 @@ const std::string k_test_program_0_parserout = R"(
 			{
 				"args": [],
 				"name": "main",
-				"return_type": "int",
+				"return_type": "^int",
 				"statements": [
-					[ "return", [ "k", 3, "int" ] ]
+					[ "return", [ "k", 3, "^int" ] ]
 				]
 			}
 		]
@@ -148,12 +148,12 @@ const std::string k_test_program_1_parserout = R"(
 			"def-func",
 			{
 				"args": [
-					{ "name": "args", "type": "string" }
+					{ "name": "args", "type": "^string" }
 				],
 				"name": "main",
-				"return_type": "int",
+				"return_type": "^int",
 				"statements": [
-					[ "return", [ "k", 3, "int" ] ]
+					[ "return", [ "k", 3, "^int" ] ]
 				]
 			}
 		]
@@ -176,9 +176,9 @@ const char k_test_program_100_parserout[] = R"(
 			"def-struct",
 			{
 				"members": [
-					{ "name": "red", "type": "float" },
-					{ "name": "green", "type": "float" },
-					{ "name": "blue", "type": "float" }
+					{ "name": "red", "type": "^float" },
+					{ "name": "green", "type": "^float" },
+					{ "name": "blue", "type": "^float" }
 				],
 				"name": "pixel"
 			}
@@ -186,9 +186,9 @@ const char k_test_program_100_parserout[] = R"(
 		[
 			"def-func",
 			{
-				"args": [{ "name": "p", "type": "pixel" }],
+				"args": [{ "name": "p", "type": "#pixel" }],
 				"name": "get_grey",
-				"return_type": "float",
+				"return_type": "^float",
 				"statements": [
 					[
 						"return",
@@ -199,7 +199,7 @@ const char k_test_program_100_parserout[] = R"(
 								["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
 								["->", ["@", "p"], "blue"]
 							],
-							["k", 3.0, "float"]
+							["k", 3.0, "^float"]
 						]
 					]
 				]
@@ -210,13 +210,13 @@ const char k_test_program_100_parserout[] = R"(
 			{
 				"args": [],
 				"name": "main",
-				"return_type": "float",
+				"return_type": "^float",
 				"statements": [
 					[
 						"bind",
-						"pixel",
+						"#pixel",
 						"p",
-						["call", ["@", "pixel"], [["k", 1, "int"], ["k", 0, "int"], ["k", 0, "int"]]]
+						["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]
 					],
 					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 				]

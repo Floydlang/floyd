@@ -41,7 +41,6 @@ namespace floyd_pass3 {
 
 
 
-
 	//////////////////////////////////////		lexical_scope_t
 
 
@@ -49,6 +48,24 @@ namespace floyd_pass3 {
 		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
 	};
 
+
+	//////////////////////////////////////		semantic_ast_t
+
+
+	/*
+		This is an ast where:
+		- All language-level syntactical transforms (replacying operations with simpler ones).
+		- All language-level syntax checks passed.
+		- All symbols have been resolved.
+		- All built-in types and host functions are inserted.
+	*/
+	struct semantic_ast_t {
+		semantic_ast_t(const floyd::ast_t& raw_ast){
+			_checked_ast = raw_ast;
+		}
+
+		public: floyd::ast_t _checked_ast;
+	};
 
 
 	//////////////////////////////////////		analyser_t
@@ -83,7 +100,7 @@ namespace floyd_pass3 {
 		//	Non-constant. Last scope is the current one. First scope is the root.
 		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;
 
-		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 	};
 
 	floyd::ast_t analyse(const analyser_t& a);

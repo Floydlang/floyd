@@ -70,17 +70,17 @@ ast_json_t expr_to_json(const expr_t& e){
 	if(e._op == eoperation::k_0_number_constant){
 		const auto value = *e._constant;
 		if(value._type == constant_value_t::etype::k_bool){
-			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._bool), json_t(keyword_t::k_bool) })};
+			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._bool), typeid_to_ast_json(typeid_t::make_bool(), json_tags::k_tag_resolve_state)._value })};
 		}
 		else if(value._type == constant_value_t::etype::k_int){
-			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t((double)value._int), json_t(keyword_t::k_int) })};
+			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t((double)value._int), typeid_to_ast_json(typeid_t::make_int(), json_tags::k_tag_resolve_state)._value })};
 		}
 		else if(value._type == constant_value_t::etype::k_float){
-			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._float), json_t(keyword_t::k_float) })};
+			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._float), typeid_to_ast_json(typeid_t::make_float(), json_tags::k_tag_resolve_state)._value })};
 		}
 		else if(value._type == constant_value_t::etype::k_string){
 			//	 Use k_0_string_literal!
-			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t(keyword_t::k_string) })};
+			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._string), typeid_to_ast_json(typeid_t::make_string(), json_tags::k_tag_resolve_state)._value })};
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -93,7 +93,7 @@ ast_json_t expr_to_json(const expr_t& e){
 	else if(e._op == eoperation::k_0_string_literal){
 		const auto value = *e._constant;
 		QUARK_ASSERT(value._type == constant_value_t::etype::k_string);
-		return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._string), json_t(keyword_t::k_string) })};
+		return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._string), typeid_to_ast_json(typeid_t::make_string(), json_tags::k_tag_resolve_state)._value })};
 	}
 	else if(e._op == eoperation::k_x_member_access){
 		return ast_json_t{make_array_skip_nulls({ json_t("->"), json_t(), expr_to_json(e._exprs[0])._value, json_t(e._identifier) })};
@@ -160,7 +160,7 @@ ast_json_t expr_to_json(const expr_t& e){
 
 		return ast_json_t{json_t::make_array({
 			json_t("construct-value"),
-			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_null()))._value,
+			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_null()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
 		})};
 	}
@@ -170,7 +170,7 @@ ast_json_t expr_to_json(const expr_t& e){
 
 		return ast_json_t{json_t::make_array({
 			json_t("construct-value"),
-			typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_null()))._value,
+			typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_null()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
 		})};
 

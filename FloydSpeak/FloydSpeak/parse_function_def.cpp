@@ -40,7 +40,7 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 			{ "name", function_name },
 			{ "args", args },
 			{ "statements", body.first._value },
-			{ "return_type", typeid_to_ast_json(return_type_pos.first)._value }
+			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value }
 		})
 	});
 	return { ast_json_t{function_def}, body.second };
@@ -60,7 +60,7 @@ const std::vector<test> testsxyz = {
 		R"(
 			[
 				"def-func",
-				{ "args": [], "name": "f", "return_type": "int", "statements": [["return", ["k", 3, "int"]]] }
+				{ "args": [], "name": "f", "return_type": "^int", "statements": [["return", ["k", 3, "^int"]]] }
 			]
 		)"
 	},
@@ -72,13 +72,13 @@ const std::vector<test> testsxyz = {
 				"def-func",
 				{
 					"args": [
-						{ "name": "a", "type": "string" },
-						{ "name": "barry", "type": "float" },
-						{ "name": "c", "type": "int" },
+						{ "name": "a", "type": "^string" },
+						{ "name": "barry", "type": "^float" },
+						{ "name": "c", "type": "^int" },
 					],
 					"name": "printf",
-					"return_type": "int",
-					"statements": [["return", ["k", 3, "int"]]]
+					"return_type": "^int",
+					"statements": [["return", ["k", 3, "^int"]]]
 				}
 			]
 		)"
@@ -91,12 +91,12 @@ const std::vector<test> testsxyz = {
 				"def-func",
 				{
 					"args": [
-						{ "name": "a", "type": "string" },
-						{ "name": "b", "type": "float" }
+						{ "name": "a", "type": "^string" },
+						{ "name": "b", "type": "^float" }
 					],
 					"name": "printf",
-					"return_type": "int",
-					"statements": [["return", ["k", 3, "int"]]]
+					"return_type": "^int",
+					"statements": [["return", ["k", 3, "^int"]]]
 				}
 			]
 		)"
@@ -109,12 +109,12 @@ const std::vector<test> testsxyz = {
 				"def-func",
 				{
 					"args": [
-						{ "name": "a", "type": "string" },
-						{ "name": "b", "type": "float" }
+						{ "name": "a", "type": "^string" },
+						{ "name": "b", "type": "^float" }
 					],
 					"name": "printf",
-					"return_type": "int",
-					"statements": [["return", ["k", 3, "int"]]]
+					"return_type": "^int",
+					"statements": [["return", ["k", 3, "^int"]]]
 				}
 			]
 		)"

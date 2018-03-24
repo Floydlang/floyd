@@ -42,7 +42,7 @@ using std::make_shared;
 
 
 value_t flatten_to_json(const value_t& value){
-	const auto j = value_to_ast_json(value);
+	const auto j = value_to_ast_json(value, json_tags::k_plain);
 	value_t json_value = value_t::make_json_value(j._value);
 	return json_value;
 }
@@ -227,7 +227,7 @@ value_t host__to_pretty_string(interpreter_t& vm, const std::vector<value_t>& ar
 	}
 
 	const auto& value = args[0];
-	const auto json = value_to_ast_json(value);
+	const auto json = value_to_ast_json(value, json_tags::k_plain);
 	const auto s = json_to_pretty_string(json._value, 0, pretty_t{80, 4});
 	return value_t::make_string(s);
 }

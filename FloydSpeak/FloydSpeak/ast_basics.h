@@ -145,6 +145,30 @@ namespace floyd {
 		k_construct_value,
 	};
 
+	inline bool is_arithmetic_expression(expression_type op){
+		return false
+			|| op == expression_type::k_arithmetic_add__2
+			|| op == expression_type::k_arithmetic_subtract__2
+			|| op == expression_type::k_arithmetic_multiply__2
+			|| op == expression_type::k_arithmetic_divide__2
+			|| op == expression_type::k_arithmetic_remainder__2
+			|| op == expression_type::k_logical_and__2
+			|| op == expression_type::k_logical_or__2
+			;
+	}
+
+	inline bool is_comparison_expression(expression_type op){
+		return false
+			|| op == expression_type::k_comparison_smaller_or_equal__2
+			|| op == expression_type::k_comparison_smaller__2
+			|| op == expression_type::k_comparison_larger_or_equal__2
+			|| op == expression_type::k_comparison_larger__2
+
+			|| op == expression_type::k_logical_equal__2
+			|| op == expression_type::k_logical_nonequal__2
+			;
+	}
+
 	expression_type token_to_expression_type(const std::string& op);
 	std::string expression_type_to_token(const expression_type& op);
 

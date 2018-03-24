@@ -103,11 +103,12 @@ namespace floyd {
 
 
 	struct body_t {
-		const std::vector<std::shared_ptr<statement_t>> _statements;
-		const std::vector<std::pair<std::string, symbol_t>> _symbols;
-
 		body_t(){
 		}
+
+//		body_t(const body_t& oth) = default;
+//		body_t& operator=(const body_t& oth) = default;
+
 
 		body_t(const std::vector<std::shared_ptr<statement_t>>& s) :
 			_statements(s),
@@ -120,13 +121,17 @@ namespace floyd {
 			_symbols(symbols)
 		{
 		}
+		bool check_types_resolved() const;
+
+
+		std::vector<std::shared_ptr<statement_t>> _statements;
+		std::vector<std::pair<std::string, symbol_t>> _symbols;
 	};
 
 	inline bool operator==(const body_t& lhs, const body_t& rhs){
 		return compare_shared_value_vectors(lhs._statements, rhs._statements);
 	}
 
-	inline bool is_annotated_deep2(const body_t& body);
 
 
 
@@ -483,66 +488,64 @@ namespace floyd {
 			return true;
 		}
 
- 		public: static bool is_annotated_deep(const std::vector<std::shared_ptr<statement_t>>& s){
+ 		public: static bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s){
 			for(const auto& e: s){
-				if(e->is_annotated_deep() == false){
+				if(e->check_types_resolved() == false){
 					return false;
 				}
 			}
 			return true;
 		}
 
-		//??? save code all over by introducing non-return-block and return-block and use for all nested blocks/scopes.
-		public: bool is_annotated_deep() const{
+		public: bool check_types_resolved() const{
 			QUARK_ASSERT(check_invariant());
 
 			if(_return != nullptr){
-				return _return->_expression.is_annotated_deep();
+				return _return->_expression.check_types_resolved();
 			}
 			else if(_def_struct != nullptr){
-				return true;
+				return _def_struct->_def->check_types_resolved();
 			}
 			else if(_def_function != nullptr){
-				return true;
+				return _def_function->_def->check_types_resolved();
 			}
 			else if(_bind_local){
-				return _bind_local->_expression.is_annotated_deep();
+				return true
+					&& _bind_local->_bindtype.check_types_resolved()
+					&& _bind_local->_expression.check_types_resolved()
+					;
 			}
 			else if(_store){
-				return _store->_expression.is_annotated_deep();
+				return _store->_expression.check_types_resolved();
 			}
 			else if(_store2){
-				return _store2->_expression.is_annotated_deep();
+				return _store2->_expression.check_types_resolved();
 			}
 			else if(_block){
-				return is_annotated_deep2(_block->_body);
+				return _block->_body.check_types_resolved();
 			}
 			else if(_if){
-				if(_if->_condition.is_annotated_deep()){
-					return is_annotated_deep2(_if->_then_body) && is_annotated_deep2(_if->_else_body);
-				}
-				else{
-					return false;
-				}
+				return true
+					&& _if->_condition.check_types_resolved()
+					&& _if->_then_body.check_types_resolved()
+					&& _if->_else_body.check_types_resolved()
+					;
 			}
 			else if(_for){
-				if(_for->_start_expression.is_annotated_deep() && _for->_end_expression.is_annotated_deep()){
-					return is_annotated_deep2(_for->_body);
-				}
-				else{
-					return false;
-				}
+				return true
+					&& _for->_start_expression.check_types_resolved()
+					&& _for->_end_expression.check_types_resolved()
+					&& _for->_body.check_types_resolved()
+					;
 			}
 			else if(_while){
-				if(_while->_condition.is_annotated_deep()){
-					return is_annotated_deep2(_while->_body);
-				}
-				else{
-					return false;
-				}
+				return true
+					&& _while->_condition.check_types_resolved()
+					&& _while->_body.check_types_resolved()
+					;
 			}
 			else if(_expression){
-				return _expression->_expression.is_annotated_deep();
+				return _expression->_expression.check_types_resolved();
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -568,9 +571,17 @@ namespace floyd {
 		public: const std::shared_ptr<expression_statement_t> _expression;
 	};
 
-	inline bool is_annotated_deep2(const body_t& body){
-		for(const auto& e: body._statements){
-			if(e->is_annotated_deep() == false){
+	inline bool body_t::check_types_resolved() const{
+		for(const auto& e: _statements){
+			if(e->check_types_resolved() == false){
+				return false;
+			}
+		}
+		for(const auto& s: _symbols){
+			if(s.second._value_type.check_types_resolved() == false){
+				return false;
+			}
+			if(s.second._const_value.get_type().check_types_resolved() == false){
 				return false;
 			}
 		}

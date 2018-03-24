@@ -50,7 +50,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					["bind","int","y",["k",11,"int"]]
+					["bind","^int","y",["k",11,"^int"]]
 				]
 			)"
 		)).first
@@ -62,8 +62,8 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					["bind","int","y",["k",11,"int"]],
-					["expression-statement", ["call",["@", "print"],[["k",3, "int"]]] ]
+					["bind","^int","y",["k",11,"^int"]],
+					["expression-statement", ["call",["@", "print"],[["k",3, "^int"]]] ]
 				]
 			)"
 		)).first
@@ -77,8 +77,8 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					["bind","int","x",["k",1,"int"]],
-					["bind","int","y",["k",2,"int"]]
+					["bind","^int","x",["k",1,"^int"]],
+					["bind","^int","y",["k",2,"^int"]]
 				]
 			)"
 		)).first
@@ -103,8 +103,8 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 				[
 					"block",
 					[
-						["bind","int","x",["k",1,"int"]],
-						["bind","int","y",["k",2,"int"]]
+						["bind","^int","x",["k",1,"^int"]],
+						["bind","^int","y",["k",2,"^int"]]
 					]
 				]
 			)"
@@ -131,7 +131,7 @@ pair<ast_json_t, seq_t> parse_return_statement(const seq_t& s){
 
 QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 	const auto result = parse_return_statement(seq_t("return 0;"));
-	QUARK_TEST_VERIFY(json_to_compact_string(result.first._value) == R"(["return", ["k", 0, "int"]])");
+	QUARK_TEST_VERIFY(json_to_compact_string(result.first._value) == R"(["return", ["k", 0, "^int"]])");
 	QUARK_TEST_VERIFY(result.second.get_s() == "");
 }
 
@@ -217,9 +217,9 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}", ""){
 			R"(
 				[
 					"if",
-					[">",["k",1,"int"],["k",2,"int"]],
+					[">",["k",1,"^int"],["k",2,"^int"]],
 					[
-						["return", ["k", 3, "int"]]
+						["return", ["k", 3, "^int"]]
 					]
 				]
 			)"
@@ -234,12 +234,12 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 			R"(
 				[
 					"if",
-					[">",["k",1,"int"],["k",2,"int"]],
+					[">",["k",1,"^int"],["k",2,"^int"]],
 					[
-						["return", ["k", 3, "int"]]
+						["return", ["k", 3, "^int"]]
 					],
 					[
-						["return", ["k", 4, "int"]]
+						["return", ["k", 4, "^int"]]
 					]
 				]
 			)"
@@ -254,12 +254,12 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 			R"(
 				[
 					"if",
-					[">",["k",1,"int"],["k",2,"int"]],
+					[">",["k",1,"^int"],["k",2,"^int"]],
 					[
-						["return", ["k", 3, "int"]]
+						["return", ["k", 3, "^int"]]
 					],
 					[
-						["return", ["k", 4, "int"]]
+						["return", ["k", 4, "^int"]]
 					]
 				]
 			)"
@@ -275,22 +275,22 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					"if", ["==",["k",1,"int"],["k",1,"int"]],
+					"if", ["==",["k",1,"^int"],["k",1,"^int"]],
 					[
-						["return", ["k", 1, "int"]]
+						["return", ["k", 1, "^int"]]
 					],
 					[
-						[ "if", ["==",["k",2,"int"],["k",2,"int"]],
+						[ "if", ["==",["k",2,"^int"],["k",2,"^int"]],
 							[
-								["return", ["k", 2, "int"]]
+								["return", ["k", 2, "^int"]]
 							],
 							[
-								[ "if", ["==",["k",3,"int"],["k",3,"int"]],
+								[ "if", ["==",["k",3,"^int"],["k",3,"^int"]],
 									[
-										["return", ["k", 3, "int"]]
+										["return", ["k", 3, "^int"]]
 									],
 									[
-										["return", ["k", 4, "int"]]
+										["return", ["k", 4, "^int"]]
 									]
 								]
 							]
@@ -360,10 +360,10 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 					"for",
 					"open_range",
 					"index",
-					["k",1,"int"],
-					["k",5,"int"],
+					["k",1,"^int"],
+					["k",5,"^int"],
 					[
-						["bind","int","y",["k",11,"int"]]
+						["bind","^int","y",["k",11,"^int"]]
 					]
 				]
 			)"
@@ -402,7 +402,7 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "for(){}", ""){
 			R"(
 				[
 					"while",
-					["<", ["@", "a"], ["k",10,"int"]],
+					["<", ["@", "a"], ["k",10,"^int"]],
 					[
 						["expression-statement",
 							["call",

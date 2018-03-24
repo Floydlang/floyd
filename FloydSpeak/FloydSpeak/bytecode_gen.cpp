@@ -384,13 +384,12 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 bc_expression_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_resolve_member();
-	QUARK_ASSERT(expr._parent_address->get_annotated_type().is_struct());
+	QUARK_ASSERT(e._input_exprs[0].get_annotated_type().is_struct());
 
-	const auto& parent_expr = bcgen_expression(vm, *expr._parent_address);
-	const auto member_name = expr._member_name;
+	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0]);
+	const auto member_name = e._variable_name;
 
-	const auto& struct_def = expr._parent_address->get_annotated_type().get_struct();
+	const auto& struct_def = e._input_exprs[0].get_annotated_type().get_struct();
 	int index = find_struct_member_index(struct_def, member_name);
 	QUARK_ASSERT(index != -1);
 
@@ -401,28 +400,25 @@ bc_expression_t bcgen_resolve_member_expression(bgenerator_t& vm, const expressi
 bc_expression_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_lookup();
-	const auto& parent_expr = bcgen_expression(vm, *expr._parent_address);
-	const auto& key_expr = bcgen_expression(vm, *expr._lookup_key);
+	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0]);
+	const auto& key_expr = bcgen_expression(vm, e._input_exprs[1]);
 	return bc_expression_t{ bc_expression_opcode::k_expression_lookup_element, bc_typeid_t(e.get_annotated_type()), {parent_expr, key_expr}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_load2();
-	const auto& address = expr._address;
+	const auto& address = e._address;
 	return bc_expression_t{ bc_expression_opcode::k_expression_load, bc_typeid_t(e.get_annotated_type()), {}, address, {}, {} };
 }
 
 bc_expression_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_construct_value();
-	const auto& value_type = expr._value_type2;
+	const auto& value_type = *e._output_type;
 
 	std::vector<bc_expression_t> args2;
-	for(const auto& m: expr._args){
+	for(const auto& m: e._input_exprs){
 		const auto& m2 = bcgen_expression(vm, m);
 		args2.push_back(m2);
 	}
@@ -434,27 +430,24 @@ bc_expression_t bcgen_construct_value_expression(bgenerator_t& vm, const express
 bc_expression_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_unary_minus();
-	const auto& exprx = bcgen_expression(vm, *expr._expr);
+	const auto& exprx = bcgen_expression(vm, e._input_exprs[0]);
 	return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_unary_minus, bc_typeid_t(e.get_annotated_type()), {exprx}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_conditional();
-	const auto& condition_expr = bcgen_expression(vm, *expr._condition);
-	const auto& a_expr = bcgen_expression(vm, *expr._a);
-	const auto& b_expr = bcgen_expression(vm, *expr._b);
+	const auto& condition_expr = bcgen_expression(vm, e._input_exprs[0]);
+	const auto& a_expr = bcgen_expression(vm, e._input_exprs[1]);
+	const auto& b_expr = bcgen_expression(vm, e._input_exprs[2]);
 	return bc_expression_t{ bc_expression_opcode::k_expression_conditional_operator3, bc_typeid_t(e.get_annotated_type()), {condition_expr, a_expr, b_expr}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_simple__2();
-	const auto& left_expr = bcgen_expression(vm, *expr._left);
-	const auto& right_expr = bcgen_expression(vm, *expr._right);
+	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0]);
+	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1]);
 
 	const std::map<expression_type, bc_expression_opcode> conv_opcode = {
 		{ expression_type::k_comparison_smaller_or_equal__2, bc_expression_opcode::k_expression_comparison_smaller_or_equal },
@@ -465,16 +458,15 @@ bc_expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op
 		{ expression_type::k_logical_equal__2, bc_expression_opcode::k_expression_logical_equal },
 		{ expression_type::k_logical_nonequal__2, bc_expression_opcode::k_expression_logical_nonequal }
 	};
-	const auto opcode = conv_opcode.at(expr._op);
+	const auto opcode = conv_opcode.at(e._operation);
 	return bc_expression_t{ opcode, bc_typeid_t(e.get_annotated_type()), {left_expr, right_expr}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = *e.get_simple__2();
-	const auto& left_expr = bcgen_expression(vm, *expr._left);
-	const auto& right_expr = bcgen_expression(vm, *expr._right);
+	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0]);
+	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1]);
 
 	const std::map<expression_type, bc_expression_opcode> conv_opcode = {
 		{ expression_type::k_arithmetic_add__2, bc_expression_opcode::k_expression_arithmetic_add },
@@ -487,7 +479,7 @@ bc_expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op
 		{ expression_type::k_logical_or__2, bc_expression_opcode::k_expression_logical_or }
 	};
 
-	const auto opcode = conv_opcode.at(expr._op);
+	const auto opcode = conv_opcode.at(e._operation);
 	return bc_expression_t{ opcode, bc_typeid_t(e.get_annotated_type()), {left_expr, right_expr}, {}, {}, {} };
 }
 
@@ -541,28 +533,11 @@ bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	else if(op == expression_type::k_conditional_operator3){
 		return bcgen_conditional_operator_expression(vm, e);
 	}
-	else if (false
-		|| op == expression_type::k_comparison_smaller_or_equal__2
-		|| op == expression_type::k_comparison_smaller__2
-		|| op == expression_type::k_comparison_larger_or_equal__2
-		|| op == expression_type::k_comparison_larger__2
-
-		|| op == expression_type::k_logical_equal__2
-		|| op == expression_type::k_logical_nonequal__2
-	){
-		return bcgen_comparison_expression(vm, op, e);
-	}
-	else if (false
-		|| op == expression_type::k_arithmetic_add__2
-		|| op == expression_type::k_arithmetic_subtract__2
-		|| op == expression_type::k_arithmetic_multiply__2
-		|| op == expression_type::k_arithmetic_divide__2
-		|| op == expression_type::k_arithmetic_remainder__2
-
-		|| op == expression_type::k_logical_and__2
-		|| op == expression_type::k_logical_or__2
-	){
+	else if (is_arithmetic_expression(op)){
 		return bcgen_arithmetic_expression(vm, op, e);
+	}
+	else if (is_comparison_expression(op)){
+		return bcgen_comparison_expression(vm, op, e);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -575,15 +550,12 @@ bc_expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto& expr = *e.get_call();
-	const auto& callee_expr = bcgen_expression(vm, *expr._callee);
-	std::vector<bc_expression_t> args2;
-	for(const auto& m: expr._args){
+	//	_input_exprs[0] is callee, rest are arguments.
+	std::vector<bc_expression_t> all;
+	for(const auto& m: e._input_exprs){
 		const auto& m2 = bcgen_expression(vm, m);
-		args2.push_back(m2);
+		all.push_back(m2);
 	}
-	vector<bc_expression_t> all = { callee_expr };
-	all.insert(all.end(), args2.begin(), args2.end());
 	return bc_expression_t{ bc_expression_opcode::k_expression_call, bc_typeid_t(e.get_annotated_type()), all, {}, {}, {} };
 }
 

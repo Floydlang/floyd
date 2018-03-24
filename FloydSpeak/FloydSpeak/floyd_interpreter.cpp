@@ -162,7 +162,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 
 		const auto& arg0 = arg_values[0];
 		const auto arg = bc_to_value(arg0, arg0_type);
-		const auto value = value_to_ast_json(arg);
+		const auto value = value_to_ast_json(arg, json_tags::k_plain);
 		return bc_value_t::make_json_value(value._value);
 	}
 	else if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_typeid()){

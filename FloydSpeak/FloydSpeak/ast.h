@@ -30,7 +30,7 @@ namespace floyd {
 
 		/////////////////////////////		STATE
 		public: body_t _globals;
-		public: std::vector<const std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 	};
 
 	ast_json_t ast_to_json(const ast_t& ast);

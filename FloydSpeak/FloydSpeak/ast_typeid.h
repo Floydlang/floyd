@@ -36,6 +36,7 @@ namespace floyd {
 		}
 		public: bool check_invariant() const;
 		public: bool operator==(const struct_definition_t& other) const;
+		public: bool check_types_resolved() const;
 
 
 		public: std::vector<member_t> _members;
@@ -318,6 +319,8 @@ namespace floyd {
 		public: void swap(typeid_t& other);
 
 
+		public: bool check_types_resolved() const;
+
 		public: floyd::base_type get_base_type() const{
 			return _base_type;
 		}
@@ -334,6 +337,7 @@ namespace floyd {
 #endif
 			QUARK_ASSERT(check_invariant());
 		}
+
 
 
 		/////////////////////////////		STATE
@@ -393,7 +397,13 @@ namespace floyd {
 		int -> "int"
 		[int] -> [ "vector", "int" ]
 	*/
-	ast_json_t typeid_to_ast_json(const typeid_t& t);
+
+	enum class json_tags{
+		k_plain,
+		k_tag_resolve_state
+	};
+
+	ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags);
 	typeid_t typeid_from_ast_json(const ast_json_t& t);
 
 	std::string typeid_to_compact_string(const typeid_t& t);

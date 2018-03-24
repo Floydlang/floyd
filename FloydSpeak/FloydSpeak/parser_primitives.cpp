@@ -375,6 +375,9 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	else if(pos1.first == keyword_t::k_string){
 		return { make_shared<typeid_t>(typeid_t::make_string()), pos1.second };
 	}
+	else if(pos1.first == keyword_t::k_json_value){
+		return { make_shared<typeid_t>(typeid_t::make_json_value()), pos1.second };
+	}
 	else{
 		return { make_shared<typeid_t>(typeid_t::make_unresolved_type_identifier(pos1.first)), pos1.second };
 	}
