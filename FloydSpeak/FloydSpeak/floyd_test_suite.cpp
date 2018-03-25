@@ -1006,7 +1006,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 
 /*
 //??? add support for typeof(int)
-QUARK_UNIT_TEST_VIP("", "typeof()", "", ""){
+QUARK_UNIT_TEST("", "typeof()", "", ""){
 	const auto result = run_return_result(
 		R"(
 			result = typeof(int);
@@ -1189,7 +1189,6 @@ QUARK_UNIT_TESTQ("run_init()", "Block with local variable, no shadowing"){
 	);
 }
 
-/*
 QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", ""){
 	const auto r = test__run_global(
 		R"(
@@ -1205,7 +1204,6 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
 }
-*/
 
 
 
@@ -1455,19 +1453,17 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 
 
 
-/*
 QUARK_UNIT_TEST("null", "", "", "0"){
 	try{
 		const auto result = run_return_result(R"(
 			result = null;
 		)", {});
-//		QUARK_UT_VERIFY(false);
+		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Types not compatible in bind.");
+		QUARK_UT_VERIFY(string(e.what()) == "Undefined variable \"null\".");
 	}
 }
-*/
 
 
 //////////////////////////////////////////		STRING - TYPE
@@ -2416,7 +2412,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 
 
 
-OFF_QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
+QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value({}))
 	)", {});
@@ -2519,22 +2515,19 @@ QUARK_UNIT_TEST("", "", "", ""){
 	ut_compare_values(result, value_t::make_float(201.0));
 }
 
-OFF_QUARK_UNIT_TEST("", "", "", ""){
-	const auto result = run_return_result(R"(
-		struct pixel_t { float x; float y; }
-		c = { "version": "1.0", "image": 100 };
-		result = c["image"][1].y
-	)", {});
-	ut_compare_values(result, value_t::make_float(201.0));
-}
+QUARK_UNIT_TEST("", "", "", ""){
+	try{
+		const auto result = run_return_result(R"(
+			struct pixel_t { float x; float y; }
 
-OFF_QUARK_UNIT_TEST_VIP("", "", "", ""){
-	const auto result = run_return_result(R"(
-		struct pixel_t { float x; float y; }
-		c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] };
-		result = c["image"][1].y
-	)", {});
-	ut_compare_values(result, value_t::make_float(201.0));
+			//	c is a json_value::object
+			c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] };
+			result = c["image"][1].y
+		)", {});
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Dict can not hold elements of different type!");
+	}
 }
 
 
@@ -2726,15 +2719,6 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 	ut_compare_values(result, value_t::make_string("cola"));
 }
 
-/// Makes no sense to unflatten a json_value from json.
-/*
-QUARK_UNIT_TEST("", "unflatten_from_json()", "typeid", ""){
-	const auto result = run_return_result(R"(
-		result = unflatten_from_json(flatten_to_json(typeof([3])), typeid);
-	)", {});
-	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
-}
-*/
 
 /*
 Need better way to specify typeid
@@ -2837,7 +2821,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access unknown member in non-struct", "excepti
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Resolve struct member failed.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Parent is not a struct.");
 	}
 }
 

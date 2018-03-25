@@ -406,15 +406,12 @@ analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t:
 		const auto name = e._name;
 		const auto type = e._type;
 		const auto type2 = resolve_type(vm_acc, type);
-
-		QUARK_ASSERT(type2.get_base_type() != base_type::k_internal_unresolved_type_identifier);
-
 		const auto e2 = member_t(type2, name);
 		members2.push_back(e2);
 	}
 
-	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
-	const auto struct_typeid = typeid_t::make_struct(resolved_struct_def);
+	const auto struct_def2 = std::make_shared<struct_definition_t>(struct_definition_t(members2));
+	const auto struct_typeid = typeid_t::make_struct(struct_def2);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid);
 	vm_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
 
@@ -601,7 +598,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 		return { vm_acc, expression_t::make_resolve_member(parent_expr.second, e._variable_name, make_shared<typeid_t>(member_type))};
 	}
 	else{
-		throw std::runtime_error("Resolve struct member failed.");
+		throw std::runtime_error("Parent is not a struct.");
 	}
 }
 
@@ -845,10 +842,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
 				const auto element_type0 = elements2[i * 2 + 1].get_annotated_type();
 				if(element_type0 != element_type2){
-
-				//??? Make we make a json_value::object if we find mixed values in dict?
-				//??? dict-def needs to hold mixed values to allow json_value to type object to work.
-				//???				throw std::runtime_error("Dict can not hold elements of different type!");
+					throw std::runtime_error("Dict can not hold elements of different type!");
 				}
 			}
 			return {vm_acc, expression_t::make_construct_value_expr(result_type, elements2)};
@@ -1383,9 +1377,6 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 		const auto name = e._name;
 		const auto type = e._type;
 		const auto type2 = resolve_type(vm_acc, type);
-
-		QUARK_ASSERT(type2.get_base_type() != base_type::k_internal_unresolved_type_identifier);
-
 		const auto e2 = member_t(type2, name);
 		members2.push_back(e2);
 	}
