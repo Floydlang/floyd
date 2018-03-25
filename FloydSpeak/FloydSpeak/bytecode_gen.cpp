@@ -19,7 +19,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::shared_ptr;
-using std::unique_ptr;
 using std::make_shared;
 
 struct semantic_ast_t;
