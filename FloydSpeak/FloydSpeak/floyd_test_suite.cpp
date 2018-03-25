@@ -1454,15 +1454,19 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 
 
 QUARK_UNIT_TEST("null", "", "", "0"){
-	try{
+//	try{
 		const auto result = run_return_result(R"(
 			result = null;
 		)", {});
+/*
 		QUARK_UT_VERIFY(false);
-	}
+
+ }
 	catch(const std::runtime_error& e){
 		QUARK_UT_VERIFY(string(e.what()) == "Undefined variable \"null\".");
 	}
+*/
+
 }
 
 
@@ -2390,8 +2394,7 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 }
 
 
-//??? need to add back "null".
-OFF_QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
+QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 	const auto result = run_return_result(R"(
 		json_value result = null;
 	)", {});
@@ -2449,7 +2452,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	ut_compare_values(result, value_t::make_int(6));
 }
 
-OFF_QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
+QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value(null))
 	)", {});

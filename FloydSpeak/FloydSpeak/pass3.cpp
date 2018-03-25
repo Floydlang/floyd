@@ -1734,6 +1734,8 @@ ast_t analyse(const analyser_t& a){
 	}
 
 	//??? hide internal types from client code?
+	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
+
 	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});
 	symbol_map.push_back({keyword_t::k_internal_dynamic, symbol_t::make_constant(value_t::make_internal_dynamic())});
 
