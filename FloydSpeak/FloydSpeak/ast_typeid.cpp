@@ -27,8 +27,15 @@ const char tag_resolved_type_char = '^';
 
 
 	string base_type_to_string(const base_type t){
-		if(t == base_type::k_null){
-			return keyword_t::k_null;
+		if(t == base_type::k_internal_undefined){
+			return keyword_t::k_internal_undefined;
+		}
+		else if(t == base_type::k_internal_dynamic){
+			return keyword_t::k_internal_dynamic;
+		}
+
+		else if(t == base_type::k_void){
+			return keyword_t::k_void;
 		}
 		else if(t == base_type::k_bool){
 			return keyword_t::k_bool;
@@ -62,7 +69,7 @@ const char tag_resolved_type_char = '^';
 		else if(t == base_type::k_function){
 			return "function";
 		}
-		else if(t == base_type::k_unresolved_type_identifier){
+		else if(t == base_type::k_internal_unresolved_type_identifier){
 			return "unknown-identifier";
 		}
 		else{
@@ -87,7 +94,7 @@ const char tag_resolved_type_char = '^';
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "function");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_unresolved_type_identifier) == "unknown-identifier");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_unresolved_type_identifier) == "unknown-identifier");
 	}
 
 
@@ -99,7 +106,14 @@ const char tag_resolved_type_char = '^';
 	bool typeid_t::check_invariant() const{
 //		QUARK_ASSERT(_DEBUG != "");
 
-		if(_base_type == floyd::base_type::k_null){
+		if(_base_type == floyd::base_type::k_internal_undefined){
+			QUARK_ASSERT(!_ext);
+		}
+		else if(_base_type == floyd::base_type::k_internal_dynamic){
+			QUARK_ASSERT(!_ext);
+		}
+
+		else if(_base_type == floyd::base_type::k_void){
 			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_bool){
@@ -153,7 +167,7 @@ const char tag_resolved_type_char = '^';
 				QUARK_ASSERT(e.check_invariant());
 			}
 		}
-		else if(_base_type == floyd::base_type::k_unresolved_type_identifier){
+		else if(_base_type == floyd::base_type::k_internal_unresolved_type_identifier){
 			QUARK_ASSERT(_ext);
 			QUARK_ASSERT(_ext->_parts.empty());
 			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty() == false);
@@ -180,7 +194,7 @@ const char tag_resolved_type_char = '^';
 	}
 
 	QUARK_UNIT_TESTQ("typeid_t", "null"){
-		QUARK_UT_VERIFY(typeid_t::make_null().is_null());
+		QUARK_UT_VERIFY(typeid_t::make_undefined().is_undefined());
 	}
 
 	QUARK_UNIT_TESTQ("typeid_t", "string"){
@@ -188,7 +202,7 @@ const char tag_resolved_type_char = '^';
 	}
 
 	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
-		QUARK_UT_VERIFY(typeid_t::make_unresolved_type_identifier("hello").get_base_type() == base_type::k_unresolved_type_identifier);
+		QUARK_UT_VERIFY(typeid_t::make_unresolved_type_identifier("hello").get_base_type() == base_type::k_internal_unresolved_type_identifier);
 	}
 
 
@@ -201,7 +215,7 @@ const char tag_resolved_type_char = '^';
 
 		const auto basetype = t.get_base_type();
 
-		if(basetype == floyd::base_type::k_unresolved_type_identifier){
+		if(basetype == floyd::base_type::k_internal_unresolved_type_identifier){
 			return std::string() + "•" + t.get_unresolved_type_identifier() + "•";
 		}
 /*
@@ -249,7 +263,18 @@ const char tag_resolved_type_char = '^';
 		const auto basetype_str = base_type_to_string(b);
 		const auto basetype_str_tagged = tags == json_tags::k_tag_resolve_state ? (std::string() + tag_resolved_type_char + basetype_str) : basetype_str;
 
-		if(b == base_type::k_null || b == base_type::k_bool || b == base_type::k_int || b == base_type::k_float || b == base_type::k_string || b == base_type::k_json_value || b == base_type::k_typeid){
+		if(false
+			|| b == base_type::k_internal_undefined
+			|| b == base_type::k_internal_dynamic
+
+			|| b == base_type::k_void
+			|| b == base_type::k_bool
+			|| b == base_type::k_int
+			|| b == base_type::k_float
+			|| b == base_type::k_string
+			|| b == base_type::k_json_value
+			|| b == base_type::k_typeid
+		){
 			return ast_json_t{basetype_str_tagged};
 		}
 		else if(b == base_type::k_struct){
@@ -280,7 +305,7 @@ const char tag_resolved_type_char = '^';
 				typeids_to_json_array(t.get_function_args())
 			})};
 		}
-		else if(b == base_type::k_unresolved_type_identifier){
+		else if(b == base_type::k_internal_unresolved_type_identifier){
 			return ast_json_t{ std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifier() };
 		}
 		else{
@@ -300,10 +325,16 @@ const char tag_resolved_type_char = '^';
 
 			if(s0.front() == tag_resolved_type_char){
 				if(s == ""){
-					return typeid_t::make_null();
+					return typeid_t::make_undefined();
 				}
-				else if(s == keyword_t::k_null){
-					return typeid_t::make_null();
+				else if(s == keyword_t::k_internal_undefined){
+					return typeid_t::make_undefined();
+				}
+				else if(s == keyword_t::k_internal_dynamic){
+					return typeid_t::make_internal_dynamic();
+				}
+				else if(s == keyword_t::k_void){
+					return typeid_t::make_void();
 				}
 				else if(s == keyword_t::k_bool){
 					return typeid_t::make_bool();
@@ -370,11 +401,11 @@ const char tag_resolved_type_char = '^';
 			}
 			else if(s == "unknown-identifier"){
 				QUARK_ASSERT(false);
-				return typeid_t::make_null();
+				throw std::exception();
 			}
 			else {
 				QUARK_ASSERT(false);
-				return typeid_t::make_null();
+				throw std::exception();
 			}
 		}
 		else{
@@ -399,7 +430,7 @@ const char tag_resolved_type_char = '^';
 		);
 
 		const auto tests = vector<typeid_str_test_t>{
-			{ typeid_t::make_null(), quote(keyword_t::k_null), keyword_t::k_null },
+			{ typeid_t::make_undefined(), quote(keyword_t::k_internal_undefined), keyword_t::k_internal_undefined },
 			{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
 			{ typeid_t::make_int(), quote(keyword_t::k_int), keyword_t::k_int },
 			{ typeid_t::make_float(), quote(keyword_t::k_float), keyword_t::k_float },
@@ -513,7 +544,7 @@ const char tag_resolved_type_char = '^';
 
 
 	bool struct_definition_t::check_invariant() const{
-//		QUARK_ASSERT(_struct!type.is_null() && _struct_type.check_invariant());
+//		QUARK_ASSERT(_struct!type.is_undefined() && _struct_type.check_invariant());
 
 		for(const auto m: _members){
 			QUARK_ASSERT(m.check_invariant());
@@ -641,6 +672,9 @@ const char tag_resolved_type_char = '^';
 
 		bool typeid_t::check_types_resolved() const{
 			if(is_unresolved_type_identifier()){
+				return false;
+			}
+			else if(is_undefined()){
 				return false;
 			}
 			else{

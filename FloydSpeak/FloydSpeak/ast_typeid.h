@@ -59,7 +59,11 @@ namespace floyd {
 		This type is tracked by compiler, not stored in the value-type.
 	*/
 	enum class base_type {
-		k_null,
+		k_internal_undefined,	//	k_internal_undefined is never exposed in code, only used internally in compiler.
+		k_internal_dynamic,	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
+
+		k_void,		//	Means no value. Used as return type for print() etc.
+
 		k_bool,
 		k_int,
 		k_float,
@@ -78,7 +82,7 @@ namespace floyd {
 		k_function,
 
 		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-		k_unresolved_type_identifier,
+		k_internal_unresolved_type_identifier,
 	};
 
 	std::string base_type_to_string(const base_type t);
@@ -94,7 +98,7 @@ namespace floyd {
 
 		public: const std::vector<typeid_t> _parts;
 
-		//	Used for k_unresolved_type_identifier.
+		//	Used for k_internal_unresolved_type_identifier.
 		public: const std::string _unresolved_type_identifier;
 
 		public: const std::shared_ptr<const struct_definition_t> _struct_def;
@@ -107,15 +111,37 @@ namespace floyd {
 
 	struct typeid_t {
 
-		public: static typeid_t make_null(){
-			return { floyd::base_type::k_null, {} };
+		public: static typeid_t make_undefined(){
+			return { floyd::base_type::k_internal_undefined, {} };
 		}
 
-		public: bool is_null() const {
+		public: bool is_undefined() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _base_type == floyd::base_type::k_null;
+			return _base_type == floyd::base_type::k_internal_undefined;
 		}
+
+
+		public: static typeid_t make_internal_dynamic(){
+			return { floyd::base_type::k_internal_dynamic, {} };
+		}
+
+		public: bool is_internal_dynamic() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == floyd::base_type::k_internal_dynamic;
+		}
+
+		public: static typeid_t make_void(){
+			return { floyd::base_type::k_void, {} };
+		}
+
+		public: bool is_void() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _base_type == floyd::base_type::k_void;
+		}
+
 
 		public: static typeid_t make_bool(){
 			return { floyd::base_type::k_bool, {} };
@@ -268,18 +294,18 @@ namespace floyd {
 
 		public: static typeid_t make_unresolved_type_identifier(const std::string& s){
 			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, s, {} });
-			return { floyd::base_type::k_unresolved_type_identifier, ext };
+			return { floyd::base_type::k_internal_unresolved_type_identifier, ext };
 		}
 
 		public: bool is_unresolved_type_identifier() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _base_type == base_type::k_unresolved_type_identifier;
+			return _base_type == base_type::k_internal_unresolved_type_identifier;
 		}
 
 		public: std::string get_unresolved_type_identifier() const{
 			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(get_base_type() == base_type::k_unresolved_type_identifier);
+			QUARK_ASSERT(get_base_type() == base_type::k_internal_unresolved_type_identifier);
 
 			return _ext->_unresolved_type_identifier;
 		}
@@ -357,7 +383,7 @@ namespace floyd {
 
 		in-code						base					More								notes
 		================================================================================================================
-		null						k_null
+		null						k_internal_undefined
 		bool						k_bool
 		int							k_int
 		float						k_float
@@ -376,8 +402,8 @@ namespace floyd {
 
 		int (float, [string])		k_function				return = k_int, args = [ k_float, typeid_t(k_vector, string) ]
 
-		randomize_player			k_unresolved_type_identifier	"randomize_player"
-		- When parsing we find identifiers that we don't know what they mean. Stored as k_unresolved_type_identifier with identifier
+		randomize_player			k_internal_unresolved_type_identifier	"randomize_player"
+		- When parsing we find identifiers that we don't know what they mean. Stored as k_internal_unresolved_type_identifier with identifier
 
 		AST JSON
 		This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
@@ -438,7 +464,7 @@ namespace floyd {
 
 
 
-
+/*
 	//////////////////////////////////////		interned_typeids_t
 
 
@@ -456,7 +482,7 @@ namespace floyd {
 		interned_typeids_t() :
 			_interns((int)base_type::k_core_count, typeid_t::make_null())
 		{
-			_interns[(int)base_type::k_null] = typeid_t::make_null();
+			_interns[(int)base_type::k_internal_undefined] = typeid_t::make_null();
 			_interns[(int)base_type::k_bool] = typeid_t::make_bool();
 			_interns[(int)base_type::k_int] = typeid_t::make_int();
 			_interns[(int)base_type::k_float] = typeid_t::make_float();
@@ -483,7 +509,7 @@ namespace floyd {
 		}
 
 		public: static itypeid_t make_null(){
-			return { (int)base_type::k_null };
+			return { (int)base_type::k_internal_undefined };
 		}
 		public: static itypeid_t make_bool(){
 			return { (int)base_type::k_bool };
@@ -517,7 +543,7 @@ namespace floyd {
 		const auto i = interned.intern_typeid(type);
 		return itypeid_t{i};
 	}
-
+*/
 
 }
 

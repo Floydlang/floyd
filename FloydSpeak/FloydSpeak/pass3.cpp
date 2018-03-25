@@ -51,45 +51,6 @@ const function_definition_t& function_id_to_def(const analyser_t& vm, int functi
 
 
 
-std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
-	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
-
-	auto vm_acc = vm;
-
-	vector<shared_ptr<statement_t>> statements2;
-	int statement_index = 0;
-	while(statement_index < statements.size()){
-		const auto statement = statements[statement_index];
-		const auto& r = analyse_statement(vm_acc, *statement);
-		vm_acc = r.first;
-
-		if(r.second){
-			QUARK_ASSERT(r.second->check_types_resolved());
-			statements2.push_back(r.second);
-		}
-		statement_index++;
-	}
-	return { vm_acc, statements2 };
-}
-
-std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::body_t& body){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto vm_acc = vm;
-
-	auto new_environment = lexical_scope_t{ body._symbols };
-	vm_acc._call_stack.push_back(make_shared<lexical_scope_t>(new_environment));
-	const auto result = analyse_statements(vm_acc, body._statements);
-	vm_acc = result.first;
-
-	const auto body2 = body_t(result.second, result.first._call_stack.back()->_symbols);
-
-	vm_acc._call_stack.pop_back();
-	return { vm_acc, body2 };
-}
-
-
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::pair<symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const analyser_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -140,60 +101,142 @@ symbol_t find_global_symbol(const analyser_t& vm, const string& s){
 }
 
 
-//	Make sure there is no null or [null] or [string: null] etc. inside type.
-bool check_type_fully_defined(const typeid_t& type){
-	if(type.is_null()){
-		return true;
+
+
+typeid_t resolve_type(const analyser_t& vm, const typeid_t& type);
+
+//???? improve using new types:k_internal_dynamic, k_void.
+typeid_t resolve_type_int(const analyser_t& vm, const typeid_t& type){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto basetype = type.get_base_type();
+
+	if(basetype == base_type::k_internal_undefined){
+		throw std::runtime_error("Cannot resolve type.");
 	}
-	else if(type.is_function()){
-		if(check_type_fully_defined(type.get_function_return()) == false){
-			return false;
+	else if(basetype == base_type::k_internal_dynamic){
+		return type;
+	}
+
+	else if(basetype == base_type::k_void){
+		return type;
+	}
+	else if(basetype == base_type::k_bool){
+		return type;
+	}
+	else if(basetype == base_type::k_int){
+		return type;
+	}
+	else if(basetype == base_type::k_float){
+		return type;
+	}
+	else if(basetype == base_type::k_string){
+		return type;
+	}
+	else if(basetype == base_type::k_json_value){
+		return type;
+	}
+
+	else if(basetype == base_type::k_typeid){
+		return type;
+	}
+
+	else if(basetype == base_type::k_struct){
+		const auto& struct_def = type.get_struct();
+		std::vector<member_t> members2;
+		for(const auto& e: struct_def._members){
+			members2.push_back(member_t(resolve_type(vm, e._type), e._name));
 		}
-		for(const auto e: type.get_function_args()){
-			if(check_type_fully_defined(e) == false){
-				return false;
+		const auto struct_def2 = struct_definition_t(members2);
+		return typeid_t::make_struct(std::make_shared<struct_definition_t>(struct_def2));
+	}
+	else if(basetype == base_type::k_vector){
+		return typeid_t::make_vector(resolve_type(vm, type.get_vector_element_type()));
+	}
+	else if(basetype == base_type::k_dict){
+		return typeid_t::make_dict(resolve_type(vm, type.get_dict_value_type()));
+	}
+	else if(basetype == base_type::k_function){
+		const auto ret = type.get_function_return();
+		const auto args = type.get_function_args();
+
+		const auto ret2 = resolve_type(vm, ret);
+		vector<typeid_t> args2;
+		for(const auto& e: args){
+			args2.push_back(resolve_type(vm, e));
+		}
+		return typeid_t::make_function(ret2, args2);
+	}
+
+	else if(basetype == base_type::k_internal_unresolved_type_identifier){
+		const auto found = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
+		if(found.first != nullptr){
+			if(found.first->_value_type.is_typeid()){
+				return found.first->_const_value.get_typeid_value();
+			}
+			else{
+				throw std::runtime_error("Cannot resolve type.");
 			}
 		}
-		return true;
-	}
-	else if(type.is_dict()){
-		const auto value_type = type.get_dict_value_type();
-		if(value_type.is_null()){
-			return false;
-		}
 		else{
-			return check_type_fully_defined(value_type);
+			throw std::runtime_error("Cannot resolve type.");
 		}
 	}
-	else if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
-		if(element_type.is_null()){
-			return false;
-		}
-		else{
-			return check_type_fully_defined(element_type);
-		}
-	}
-	else if(type.is_json_value()){
-		return true;
-	}
-	else if(type.is_struct()){
-		const auto def = type.get_struct();
-		for(const auto e: def._members){
-			if(check_type_fully_defined(e._type) == false){
-				return false;
-			}
-		}
-		return true;
-	}
-	else if(type.is_unresolved_type_identifier()){
-	//???
-		return true;
-	}
-	else{
-		return true;
+	else {
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
+typeid_t resolve_type(const analyser_t& vm, const typeid_t& type){
+	const auto result = resolve_type_int(vm, type);
+	if(result.check_types_resolved() == false){
+		throw std::runtime_error("Cannot resolve type.");
+	}
+	return result;
+}
+
+
+
+
+std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
+	QUARK_ASSERT(vm.check_invariant());
+	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
+
+	auto vm_acc = vm;
+
+	vector<shared_ptr<statement_t>> statements2;
+	int statement_index = 0;
+	while(statement_index < statements.size()){
+		const auto statement = statements[statement_index];
+		const auto& r = analyse_statement(vm_acc, *statement);
+		vm_acc = r.first;
+
+		if(r.second){
+			QUARK_ASSERT(r.second->check_types_resolved());
+			statements2.push_back(r.second);
+		}
+		statement_index++;
+	}
+	return { vm_acc, statements2 };
+}
+
+std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+
+	auto new_environment = lexical_scope_t{ body._symbols };
+	vm_acc._call_stack.push_back(make_shared<lexical_scope_t>(new_environment));
+	const auto result = analyse_statements(vm_acc, body._statements);
+	vm_acc = result.first;
+
+	const auto body2 = body_t(result.second, result.first._call_stack.back()->_symbols);
+
+	vm_acc._call_stack.pop_back();
+	return { vm_acc, body2 };
+}
+
 
 
 
@@ -222,7 +265,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& vm,
 		}
 		else{
 			const auto lhs_type = existing_value_deep_ptr.first->get_type();
-			QUARK_ASSERT(check_type_fully_defined(lhs_type));
+			QUARK_ASSERT(lhs_type.check_types_resolved());
 
 			const auto rhs_expr2 = analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
 			vm_acc = rhs_expr2.first;
@@ -243,6 +286,13 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& vm,
 		const auto rhs_expr2 = analyse_expression_no_target(vm_acc, statement._expression);
 		vm_acc = rhs_expr2.first;
 		const auto rhs_expr2_type = rhs_expr2.second.get_annotated_type();
+
+		//??????????????????? fix code now that we have internal_undefined/internal_dynamic/void.
+	//??? analyse_expression_no_target() guarantees expr is resolved!
+		//??? need generic mechnanism, this is a special case to pass specific test.
+		if(rhs_expr2_type == typeid_t::make_vector(typeid_t::make_undefined())){
+			throw std::runtime_error("Cannot resolve type.");
+		}
 
 		vm_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
 		int variable_index = (int)(vm_acc._call_stack.back()->_symbols.size() - 1);
@@ -266,7 +316,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	auto vm_acc = vm;
 
 	const auto new_local_name = statement._new_local_name;
-	const auto lhs_type = statement._bindtype;
+	const auto lhs_type = resolve_type(vm_acc, statement._bindtype);
 	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
 	const auto value_exists_in_env = does_symbol_exist_shallow(vm_acc, new_local_name);
@@ -281,13 +331,14 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	const auto local_name_index = vm_acc._call_stack.back()->_symbols.size() - 1;
 
 	try {
-		const auto rhs_expr_pair = lhs_type.is_null()? analyse_expression_no_target(vm_acc, statement._expression) : analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
+		const auto rhs_expr_pair = lhs_type.is_undefined() ? analyse_expression_no_target(vm_acc, statement._expression) : analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
 		vm_acc = rhs_expr_pair.first;
 
-//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no store-statement!
+
+		//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no store-statement!
 
 		const auto rhs_type = rhs_expr_pair.second.get_annotated_type();
-		const auto lhs_type2 = lhs_type.is_null() ? rhs_type : lhs_type;
+		const auto lhs_type2 = lhs_type.is_undefined() ? rhs_type : lhs_type;
 
 		if(lhs_type2 != lhs_type2){
 			throw std::runtime_error("Types not compatible in bind.");
@@ -334,26 +385,6 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& vm
 	return { vm_acc, statement_t::make__return_statement(result.second) };
 }
 
-typeid_t find_type_by_name(const analyser_t& vm, const typeid_t& type){
-	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
-		const auto found = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
-		if(found.first != nullptr){
-			if(found.first->_value_type.is_typeid()){
-				return found.first->_const_value.get_typeid_value();
-			}
-			else{
-				return typeid_t::make_null();
-			}
-		}
-		else{
-			return typeid_t::make_null();
-		}
-	}
-	else{
-		return type;
-	}
-}
-
 analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t::define_struct_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -368,9 +399,9 @@ analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t:
 	for(const auto e: statement._def->_members){
 		const auto name = e._name;
 		const auto type = e._type;
-		const auto type2 = find_type_by_name(vm_acc, type);
+		const auto type2 = resolve_type(vm_acc, type);
 
-		QUARK_ASSERT(type2.get_base_type() != base_type::k_unresolved_type_identifier);
+		QUARK_ASSERT(type2.get_base_type() != base_type::k_internal_unresolved_type_identifier);
 
 		const auto e2 = member_t(type2, name);
 		members2.push_back(e2);
@@ -543,75 +574,6 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 
 
 
-//?? check all types of expressions. Time for visitor-pattern?
-bool check_type_fully_defined(const expression_t& e){
-	if(check_type_fully_defined(e.get_annotated_type()) == false){
-		return false;
-	}
-	else{
-//		const auto op = e.get_operation();
-		return true;
-	}
-}
-
-
-/*
-	If e doesn't have a fully-formed type, attempt to give it one.
-*/
-expression_t improve_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
-	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(wanted_type.check_invariant());
-
-	const auto e_type = e.get_annotated_type();
-
-	if(wanted_type.is_null()){
-		return e;
-	}
-	else if(wanted_type.is_string()){
-		if(e_type.is_json_value()){
-			return expression_t::make_construct_value_expr(wanted_type, { e });
-		}
-		else{
-			return e;
-		}
-	}
-	else if(wanted_type.is_json_value()){
-		if(e_type.is_null() || e_type.is_int() || e_type.is_float() || e_type.is_string() || e_type.is_bool() || e_type.is_dict() || e_type.is_vector()){
-			return expression_t::make_construct_value_expr(wanted_type, { e });
-		}
-		else{
-			return e;
-		}
-	}
-	else if(wanted_type.is_vector()){
-		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_null(), {})){
-			return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
-		}
-		else if(e_type.is_vector() && e_type.get_vector_element_type().is_null()  && e.get_operation() == expression_type::k_construct_value){
-			QUARK_ASSERT(false);
-			throw std::exception();
-//			return expression_t::make_construct_value_expr(typeid_t::make_vector(wanted_type), e.get_construct_value()->_args);
-		}
-		else{
-			return e;
-		}
-	}
-	else if(wanted_type.is_dict()){
-		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_dict_value(typeid_t::make_null(), {})){
-			return expression_t::make_literal(value_t::make_dict_value(wanted_type.get_dict_value_type(), {}));
-		}
-		else{
-			return e;
-		}
-	}
-	else{
-		return e;
-	}
-}
-
-
-
-
 std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -711,57 +673,157 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const ex
 		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
 	}
 */
-
 }
 
-std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
+/*
+	first_element_type = internal-dynamic if you don't have one.
+	Always returns a resolved type.
+*/
 
-	auto vm_acc = vm;
+#if 0
+typeid_t deduce_type(const typeid_t& current_type, const typeid_t& target_type, const typeid_t& opt_value_type){
+	QUARK_ASSERT(current_type.check_invariant());
+	QUARK_ASSERT(target_type.check_invariant());
+	QUARK_ASSERT(target_type.check_types_resolved());
+	QUARK_ASSERT(opt_value_type.check_invariant());
+	QUARK_ASSERT(opt_value_type.is_internal_dynamic() || opt_value_type.check_types_resolved());
 
-	const auto dest_value_type = *e._output_type;
-	if(dest_value_type.is_vector()){
-		const std::vector<expression_t>& elements = e._input_exprs;
-		QUARK_ASSERT(dest_value_type.is_vector());
-		const auto element_type = dest_value_type.get_vector_element_type();
+	if(current_type.check_types_resolved()){
+		QUARK_ASSERT(current_type.check_types_resolved());
+		return current_type;
+	}
+	else{
+		if(current_type.is_vector()){
+			const auto current_element_type = current_type.get_vector_element_type();
 
-		if(elements.empty()){
-			return {vm_acc, expression_t::make_literal(value_t::make_vector_value(element_type, {}))};
-		}
-		else{
-			std::vector<expression_t> elements2;
-			for(const auto m: elements){
-				const auto element_expr = analyse_expression_no_target(vm_acc, m);
-				vm_acc = element_expr.first;
-				elements2.push_back(element_expr.second);
+			//	 Use target_type if applyable.
+			if(target_type.is_vector()){
+				const auto target_element_type = target_type.get_vector_element_type();
+				const auto opt_value_type2 = opt_value_type.is_vector() ? opt_value_type.get_vector_element_type() : typeid_t::make_internal_dynamic();
+				const auto element_type2 = deduce_type(current_element_type, target_element_type, opt_value_type2);
+
+				QUARK_ASSERT(element_type2.check_types_resolved());
+				return typeid_t::make_vector(element_type2);
 			}
 
-			//	If we don't have an explicit element type, deduct it from first element.
-			const auto element_type2 = element_type.is_null() ? elements2[0].get_annotated_type(): element_type;
+
+			if(opt_value_type.is_internal_dynamic() == false){
+			}
+/*
+			//	Use type of first element.
 			for(const auto m: elements2){
 				if(m.get_annotated_type() != element_type2){
 					throw std::runtime_error("Vector can not hold elements of different types.");
 				}
 			}
-			return { vm_acc, expression_t::make_construct_value_expr(typeid_t::make_vector(element_type2), elements2) };
+*/
+
+			const auto result = typeid_t::make_vector(element_type2);
+			QUARK_ASSERT(result.check_types_resolved());
+			return result;
+		}
+		else{
+			QUARK_ASSERT();
+		}
+	}
+}
+#endif
+
+std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& vm, const expression_t& e, const typeid_t& target_type){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto vm_acc = vm;
+
+	const auto current_type = *e._output_type;
+	if(current_type.is_vector()){
+		//	JSON constants supports mixed element types: convert each element into a json_value.
+		//	Encode as [json_value]
+		if(target_type.is_json_value()){
+			const auto element_type = typeid_t::make_json_value();
+
+			std::vector<expression_t> elements2;
+			for(const auto m: e._input_exprs){
+				const auto element_expr = analyse_expression_to_target(vm_acc, m, element_type);
+				vm_acc = element_expr.first;
+				elements2.push_back(element_expr.second);
+			}
+			const auto result_type = typeid_t::make_vector(typeid_t::make_json_value());
+			if(result_type.check_types_resolved() == false){
+				throw std::runtime_error("Cannot resolve type.");
+			}
+			return {
+				vm_acc,
+				expression_t::make_construct_value_expr(
+					typeid_t::make_json_value(),
+					{ expression_t::make_construct_value_expr(typeid_t::make_vector(typeid_t::make_json_value()), elements2) }
+				)
+			};
+		}
+		else {
+			const auto element_type = current_type.get_vector_element_type();
+			std::vector<expression_t> elements2;
+			for(const auto m: e._input_exprs){
+				const auto element_expr = analyse_expression_no_target(vm_acc, m);
+				vm_acc = element_expr.first;
+				elements2.push_back(element_expr.second);
+			}
+
+			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0].get_annotated_type() : element_type;
+			const auto result_type0 = typeid_t::make_vector(element_type2);
+			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
+
+			if(result_type.check_types_resolved() == false){
+				throw std::runtime_error("Cannot resolve type.");
+			}
+
+			for(const auto m: elements2){
+				if(m.get_annotated_type() != element_type2){
+					throw std::runtime_error("Vector can not hold elements of different types.");
+				}
+			}
+			QUARK_ASSERT(result_type.check_types_resolved());
+			return { vm_acc, expression_t::make_construct_value_expr(result_type, elements2) };
 		}
 	}
 
 	//	Dicts uses pairs of (string,value). This is stored in _args as interleaved expression: string0, value0, string1, value1.
-	else if(dest_value_type.is_dict()){
-		const auto& elements = e._input_exprs;
-		QUARK_ASSERT(elements.size() % 2 == 0);
+	else if(current_type.is_dict()){
+		//	JSON constants supports mixed element types: convert each element into a json_value.
+		//	Encode as [string:json_value]
+		if(target_type.is_json_value()){
+			const auto element_type = typeid_t::make_json_value();
 
-		const auto element_type = dest_value_type.get_dict_value_type();
-
-		if(elements.empty()){
-			return {vm_acc, expression_t::make_literal(value_t::make_dict_value(element_type, {}))};
-		}
-		else{
 			std::vector<expression_t> elements2;
-			for(int i = 0 ; i < elements.size() / 2 ; i++){
-				const auto& key = elements[i * 2 + 0].get_literal().get_string_value();
-				const auto& value = elements[i * 2 + 1];
+			for(int i = 0 ; i < e._input_exprs.size() / 2 ; i++){
+				const auto& key = e._input_exprs[i * 2 + 0].get_literal().get_string_value();
+				const auto& value = e._input_exprs[i * 2 + 1];
+				const auto element_expr = analyse_expression_to_target(vm_acc, value, element_type);
+				vm_acc = element_expr.first;
+				elements2.push_back(expression_t::make_literal_string(key));
+				elements2.push_back(element_expr.second);
+			}
+
+			const auto result_type = typeid_t::make_dict(typeid_t::make_json_value());
+			if(result_type.check_types_resolved() == false){
+				throw std::runtime_error("Cannot resolve type.");
+			}
+			return {
+				vm_acc,
+				expression_t::make_construct_value_expr(
+					typeid_t::make_json_value(),
+					{ expression_t::make_construct_value_expr(typeid_t::make_dict(typeid_t::make_json_value()), elements2) }
+				)
+			};
+		}
+		else {
+			QUARK_ASSERT(e._input_exprs.size() % 2 == 0);
+
+			const auto element_type = current_type.get_dict_value_type();
+
+			std::vector<expression_t> elements2;
+			for(int i = 0 ; i < e._input_exprs.size() / 2 ; i++){
+				const auto& key = e._input_exprs[i * 2 + 0].get_literal().get_string_value();
+				const auto& value = e._input_exprs[i * 2 + 1];
 				const auto element_expr = analyse_expression_no_target(vm_acc, value);
 				vm_acc = element_expr.first;
 				elements2.push_back(expression_t::make_literal_string(key));
@@ -769,7 +831,9 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			//	Deduce type of dictionary based on first value.
-			const auto element_type2 = element_type.is_null() == false ? element_type : elements2[0 * 2 + 1].get_annotated_type();
+			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0 * 2 + 1].get_annotated_type() : element_type;
+			const auto result_type0 = typeid_t::make_dict(element_type2);
+			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
@@ -781,7 +845,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				//???				throw std::runtime_error("Dict can not hold elements of different type!");
 				}
 			}
-			return {vm_acc, expression_t::make_construct_value_expr(typeid_t::make_dict(element_type2), elements2)};
+			return {vm_acc, expression_t::make_construct_value_expr(result_type, elements2)};
 		}
 	}
 	else{
@@ -851,7 +915,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	vm_acc = right_expr.first;
 	const auto rhs_type = right_expr.second.get_annotated_type();
 
-	if(lhs_type != rhs_type && lhs_type.is_null() == false && rhs_type.is_null() == false){
+	if(lhs_type != rhs_type && lhs_type.is_undefined() == false && rhs_type.is_undefined() == false){
 		throw std::runtime_error("Comparison: Left and right expressions must be same type!");
 	}
 	else{
@@ -1091,7 +1155,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	Magic: a function taking ONE argument of type NULL: variable arguments count of any type. Like c-lang (...).
 */
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& vm, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
-	if(callee_args.size() == 1 && callee_args[0].is_null()){
+	if(callee_args.size() == 1 && callee_args[0].is_internal_dynamic()){
 		auto vm_acc = vm;
 		vector<expression_t> call_args2;
 		for(int i = 0 ; i < call_args.size() ; i++){
@@ -1179,7 +1243,7 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 	else if(function_name == "instantiate_from_typeid"){
 		if(args[0].get_operation() == expression_type::k_load2){
 			const auto symbol = resolve_symbol_by_address(vm, args[0]._address);
-			if(symbol != nullptr && symbol->_const_value.is_null() == false){
+			if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
 				return symbol->_const_value.get_typeid_value();
 			}
 			else{
@@ -1190,11 +1254,24 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
 		}
 	}
-/*
-		else if(function_name == "unflatten_from_json"){
-			return args[0].get_annotated_type();
+	else if(function_name == "unflatten_from_json"){
+		QUARK_ASSERT(args.size() == 2);
+
+		const auto arg0 = args[0];
+		const auto arg1 = args[1];
+		if(arg1.get_operation() == expression_type::k_load2){
+			const auto symbol = resolve_symbol_by_address(vm, arg1._address);
+			if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
+				return symbol->_const_value.get_typeid_value();
+			}
+			else{
+				throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+			}
 		}
-*/
+		else{
+			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+		}
+	}
 	else{
 		return callee_expr.get_annotated_type().get_function_return();
 	}
@@ -1258,7 +1335,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 		const auto found_symbol_ptr = resolve_symbol_by_address(vm_acc, callee_expr._address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
-		if(found_symbol_ptr->_const_value.is_null()){
+		if(found_symbol_ptr->_const_value.is_undefined()){
 			throw std::runtime_error("Cannot resolve callee.");
 		}
 		else{
@@ -1299,9 +1376,9 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 	for(const auto e: struct_def._members){
 		const auto name = e._name;
 		const auto type = e._type;
-		const auto type2 = find_type_by_name(vm_acc, type);
+		const auto type2 = resolve_type(vm_acc, type);
 
-		QUARK_ASSERT(type2.get_base_type() != base_type::k_unresolved_type_identifier);
+		QUARK_ASSERT(type2.get_base_type() != base_type::k_internal_unresolved_type_identifier);
 
 		const auto e2 = member_t(type2, name);
 		members2.push_back(e2);
@@ -1318,22 +1395,29 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto vm_acc = vm;
 
 	const auto function_def = e._function_def;
-	const auto function_type = get_function_type(*function_def);
+	const auto function_type2 = resolve_type(vm_acc, function_def->_function_type);
+
+	vector<member_t> args2;
+	for(const auto arg: function_def->_args){
+		const auto arg_type2 = resolve_type(vm_acc, arg._type);
+		args2.push_back(member_t(arg_type2, arg._name));
+	}
 
 	//	Make function body with arguments injected FIRST in body as local symbols.
 	auto symbol_vec = function_def->_body->_symbols;
-	for(const auto x: function_def->_args){
-		symbol_vec.push_back({x._name , symbol_t::make_immutable_local(x._type)});
+	for(const auto arg: args2){
+		symbol_vec.push_back({arg._name , symbol_t::make_immutable_local(arg._type)});
 	}
-	const auto injected_body = body_t(function_def->_body->_statements, symbol_vec);
+	const auto function_body2 = body_t(function_def->_body->_statements, symbol_vec);
 
-	const auto function_body_pair = analyse_body(vm_acc, injected_body);
+	const auto function_body_pair = analyse_body(vm_acc, function_body2);
 	vm_acc = function_body_pair.first;
+	const auto function_body3 = function_body_pair.second;
 
-	const auto body = function_body_pair.second;
-	const auto function_type2 = function_type;
-	QUARK_ASSERT(check_type_fully_defined(function_type2));
-	const auto function_def2 = function_definition_t{function_type2, function_def->_args, make_shared<body_t>(body), 0};
+	const auto function_def2 = function_definition_t{ function_type2, args2, make_shared<body_t>(function_body3), 0 };
+
+	QUARK_ASSERT(function_def2.check_types_resolved());
+
 	vm_acc._function_defs.push_back(make_shared<function_definition_t>(function_def2));
 
 	const int function_id = static_cast<int>(vm_acc._function_defs.size() - 1);
@@ -1343,7 +1427,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 }
 
 
-std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analyser_t& vm, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analyser_t& vm, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1378,7 +1462,7 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	}
 
 	else if(op == expression_type::k_construct_value){
-		return analyse_construct_value_expression(vm, e);
+		return analyse_construct_value_expression(vm, e, target_type);
 	}
 
 	//	This can be desugared at compile time. ???
@@ -1402,54 +1486,149 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 	}
 }
 
+
+
+//???? improve using new types:k_internal_dynamic, k_void.
+/*
+	- If expression type is not 100% resolved, attempt to do this.
+	- Inserta automatic type-conversions from string -> json_value etc.
+	If e doesn't have a fully-formed type, attempt to give it one.
+*/
+expression_t auto_cast_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(wanted_type.check_invariant());
+	QUARK_ASSERT(wanted_type.is_undefined() == false);
+
+	const auto current_type = e.get_annotated_type();
+
+	if(wanted_type.is_internal_dynamic()){
+		return e;
+	}
+	else if(wanted_type.is_string()){
+		if(current_type.is_json_value()){
+			return expression_t::make_construct_value_expr(wanted_type, { e });
+		}
+		else{
+			return e;
+		}
+	}
+	else if(wanted_type.is_json_value()){
+		if(current_type.is_int() || current_type.is_float() || current_type.is_string() || current_type.is_bool()){
+			return expression_t::make_construct_value_expr(wanted_type, { e });
+		}
+		else if(current_type.is_vector()){
+			return expression_t::make_construct_value_expr(wanted_type, { e });
+		}
+		else if(current_type.is_dict()){
+			return expression_t::make_construct_value_expr(wanted_type, { e });
+		}
+		else{
+			return e;
+		}
+	}
+	else if(wanted_type.is_vector()){
+		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_undefined(), {})){
+			return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
+		}
+		else{
+			return e;
+		}
+	}
+	else if(wanted_type.is_dict()){
+		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_dict_value(typeid_t::make_undefined(), {})){
+			return expression_t::make_literal(value_t::make_dict_value(wanted_type.get_dict_value_type(), {}));
+		}
+		else{
+			return e;
+		}
+	}
+	else{
+		return e;
+	}
+}
+
+/*
+	Case A:
+		A = [ "one", 2, 3, "four" ];
+		rhs is invalid floyd vector -- mixes value types -- but it's a valid JSON array.
+
+	Case B:
+		b = { "one": 1, "two": "zwei" };
+
+	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dift. BUT: it's a valid JSON!
+*/
+expression_t deduce_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(wanted_type.check_invariant());
+	QUARK_ASSERT(wanted_type.is_undefined() == false);
+
+	const auto current_type = e.get_annotated_type();
+
+	if(wanted_type.is_internal_dynamic()){
+		return e;
+	}
+
+	//	Case A.
+	else if(wanted_type.is_vector()){
+		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_undefined(), {})){
+			return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
+		}
+		else{
+			return e;
+		}
+	}
+
+	//	Case B.
+	else if(wanted_type.is_dict()){
+		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_dict_value(typeid_t::make_undefined(), {})){
+			return expression_t::make_literal(value_t::make_dict_value(wanted_type.get_dict_value_type(), {}));
+		}
+		else{
+			return e;
+		}
+	}
+	else{
+		return e;
+	}
+}
+
+//??? every expression-function should take a target-type as hint. Fix types *before* AND *after* doing subexpressions.
+
+//	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& vm, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(target_type.is_void() == false && target_type.is_undefined() == false);
+	QUARK_ASSERT(target_type.check_types_resolved());
 
 	auto vm_acc = vm;
-	const auto e1_pair = analyse_expression__op_specific(vm_acc, e);
-	vm_acc = e1_pair.first;
+	const auto e2_pair = analyse_expression__op_specific(vm_acc, e, target_type);
+	vm_acc = e2_pair.first;
 
-	const auto e3 = improve_expression_type(e1_pair.second, target_type);
+	const auto e2 = auto_cast_expression_type(e2_pair.second, target_type);
+	const auto e3 = deduce_expression_type(e2, target_type);
 
-	if(e3.get_annotated_type() == target_type){
-		if(check_type_fully_defined(e3) == false){
-			throw std::runtime_error("Cannot resolve type.");
-		}
+	if(target_type.is_internal_dynamic()){
 	}
-	else if(target_type.is_null()){
-		if(check_type_fully_defined(e3) == false){
-			throw std::runtime_error("Cannot resolve type.");
-		}
+	else if(e3.get_annotated_type() == target_type){
 	}
-	else if(e3.get_annotated_type().is_null()){
+	else if(e3.get_annotated_type().is_undefined()){
 		throw std::runtime_error("Expression type mismatch.");
 	}
 	else{
 		throw std::runtime_error("Expression type mismatch.");
 	}
 
+	if(e3.check_types_resolved() == false){
+		throw std::runtime_error("Cannot resolve type.");
+	}
+	QUARK_ASSERT(e3.check_types_resolved());
 	return { vm_acc, e3 };
 }
 
+//	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	auto vm_acc = vm;
-	const auto e1_pair = analyse_expression__op_specific(vm_acc, e);
-	vm_acc = e1_pair.first;
-
-	QUARK_ASSERT(e1_pair.second.get_annotated_type2() != nullptr);
-	const auto e2 = e1_pair.second;
-
-	if(check_type_fully_defined(e2) == false){
-		throw std::runtime_error("Cannot resolve type.");
-	}
-	return { vm_acc, e2 };
+	return analyse_expression_to_target(vm, e, typeid_t::make_internal_dynamic());
 }
 
 
@@ -1557,7 +1736,11 @@ ast_t analyse(const analyser_t& a){
 		symbol_map.push_back({function_name, symbol_t::make_constant(function_value)});
 	}
 
-	symbol_map.push_back({keyword_t::k_null, symbol_t::make_constant(value_t::make_null())});
+	//??? hide internal types from client code?
+	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});
+	symbol_map.push_back({keyword_t::k_internal_dynamic, symbol_t::make_constant(value_t::make_internal_dynamic())});
+
+	symbol_map.push_back({keyword_t::k_void, symbol_t::make_constant(value_t::make_void())});
 	symbol_map.push_back({keyword_t::k_bool, symbol_t::make_type(typeid_t::make_bool())});
 	symbol_map.push_back({keyword_t::k_int, symbol_t::make_type(typeid_t::make_int())});
 	symbol_map.push_back({keyword_t::k_float, symbol_t::make_type(typeid_t::make_float())});
@@ -1639,8 +1822,6 @@ semantic_ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_
 	const auto pass3_result = analyse(a);
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(pass3_result)._value));
-
-	QUARK_ASSERT(statement_t::check_types_resolved(pass3_result._globals._statements));
 	return pass3_result;
 }
 

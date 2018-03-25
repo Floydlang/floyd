@@ -46,18 +46,18 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 
 
 typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
-	if(type.get_base_type() == base_type::k_unresolved_type_identifier){
+	if(type.get_base_type() == base_type::k_internal_unresolved_type_identifier){
 		const auto v = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
 		if(v){
 			if(v->_symbol._value_type.is_typeid()){
 				return v->_value.get_typeid_value();
 			}
 			else{
-				return typeid_t::make_null();
+				return typeid_t::make_undefined();
 			}
 		}
 		else{
-			return typeid_t::make_null();
+			return typeid_t::make_undefined();
 		}
 	}
 	else{
@@ -192,7 +192,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 			const auto v = arg_values[i];
 			const auto a = def->_members[i];
 			QUARK_ASSERT(v.check_invariant());
-			QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved_type_identifier);
+			QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_internal_unresolved_type_identifier);
 			QUARK_ASSERT(v.get_type() == a._type);
 		}
 	#endif
@@ -204,13 +204,13 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 	}
 	else if(type.is_vector()){
 		const auto& element_type = type.get_vector_element_type();
-		QUARK_ASSERT(element_type.is_null() == false);
+		QUARK_ASSERT(element_type.is_undefined() == false);
 
 		return bc_value_t::make_vector_value(element_type, arg_values);
 	}
 	else if(type.is_dict()){
 		const auto& element_type = type.get_dict_value_type();
-		QUARK_ASSERT(element_type.is_null() == false);
+		QUARK_ASSERT(element_type.is_undefined() == false);
 
 		std::map<string, bc_value_t> m;
 		for(auto i = 0 ; i < arg_values.size() / 2 ; i++){
@@ -322,7 +322,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto& body = statement._b[0];
 
 			const auto values_offset = vm._value_stack.size();
-			vm._value_stack.push_back(bc_value_t::make_null());
+			vm._value_stack.push_back(bc_value_t::make_undefined());
 
 			//	These are constants (can be reused for every iteration of the for-loop, or memory slots = also reuse).
 			if(body._symbols.empty() == false){
@@ -597,13 +597,13 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 		const std::vector<bc_expression_t>& elements = expr._e;
 		const auto& root_value_type = expr._type._fulltype.front();
 		const auto& element_type = root_value_type.get_vector_element_type();
-		QUARK_ASSERT(element_type.is_null() == false);
+		QUARK_ASSERT(element_type.is_undefined() == false);
 
 		//	An empty vector is encoded as a constant value by pass3, not a vector-definition-expression.
-		QUARK_ASSERT(elements.empty() == false);
+//		QUARK_ASSERT(elements.empty() == false);
 
-		QUARK_ASSERT(root_value_type.is_null() == false);
-		QUARK_ASSERT(element_type.is_null() == false);
+		QUARK_ASSERT(root_value_type.is_undefined() == false);
+		QUARK_ASSERT(element_type.is_undefined() == false);
 
 		std::vector<bc_value_t> elements2;
 		for(const auto& m: elements){
@@ -624,10 +624,10 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 		const auto& element_type = root_value_type.get_dict_value_type();
 
 		//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
-		QUARK_ASSERT(elements.empty() == false);
+//		QUARK_ASSERT(elements.empty() == false);
 
-		QUARK_ASSERT(root_value_type.is_null() == false);
-		QUARK_ASSERT(element_type.is_null() == false);
+		QUARK_ASSERT(root_value_type.is_undefined() == false);
+		QUARK_ASSERT(element_type.is_undefined() == false);
 
 		std::vector<bc_value_t> elements2;
 		for(auto i = 0 ; i < elements.size() / 2 ; i++){
@@ -647,7 +647,7 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
-		return construct_value_from_typeid(vm, expr._type._fulltype.front(), typeid_t::make_null(), elements2);
+		return construct_value_from_typeid(vm, expr._type._fulltype.front(), typeid_t::make_undefined(), elements2);
 	}
 	else{
 		QUARK_ASSERT(expr._e.size() == 1);
@@ -1102,7 +1102,7 @@ std::pair<interpreter_t, value_t> run_main(const interpreter_context_t& context,
 		return { vm, result };
 	}
 	else{
-		return {vm, value_t::make_null()};
+		return {vm, value_t::make_undefined()};
 	}
 }
 
@@ -1115,7 +1115,7 @@ std::pair<interpreter_t, value_t> run_program(const interpreter_context_t& conte
 		return { vm, r };
 	}
 	else{
-		return { vm, value_t::make_null() };
+		return { vm, value_t::make_undefined() };
 	}
 }
 

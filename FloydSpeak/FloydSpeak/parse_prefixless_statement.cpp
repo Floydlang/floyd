@@ -288,7 +288,7 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const bool mutable_flag = mutable_pos.first;
 	const auto type_pos = skip_whitespace(mutable_pos.second);
 
-	const auto type = type_pos.empty() ? typeid_t::make_null() : read_required_type(type_pos).first;
+	const auto type = type_pos.empty() ? typeid_t::make_undefined() : read_required_type(type_pos).first;
 	const auto expression = parse_expression_all(seq_t(expression_str));
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
@@ -335,7 +335,7 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 		parse_bind_statement(seq_t("mutable hello = 3;")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "^null", "hello", ["k", 3, "^int"], { "mutable": true }]
+				[ "bind", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);

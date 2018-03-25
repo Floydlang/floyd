@@ -166,7 +166,7 @@ int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t
 	QUARK_ASSERT(right.check_invariant());
 	QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 
-	if(left.is_null()){
+	if(left.is_undefined()){
 		return 0;
 	}
 	else if(left.is_bool()){

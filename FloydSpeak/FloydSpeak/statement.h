@@ -581,10 +581,10 @@ namespace floyd {
 			}
 		}
 		for(const auto& s: _symbols){
-			if(s.second._value_type.check_types_resolved() == false){
+			if(s.first != "**undef**" && s.second._value_type.check_types_resolved() == false){
 				return false;
 			}
-			if(s.second._const_value.get_type().check_types_resolved() == false){
+			if(s.first != "**undef**" && s.second._const_value.is_undefined() == false && s.second._const_value.get_type().check_types_resolved() == false){
 				return false;
 			}
 		}

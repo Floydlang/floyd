@@ -64,7 +64,7 @@ namespace floyd {
 			return { statement_result_t::k_passive_expression_output, output_value };
 		}
 		public: static statement_result_t make__complete_without_value(){
-			return { statement_result_t::k_complete_without_result_value, bc_value_t::make_null() };
+			return { statement_result_t::k_complete_without_result_value, bc_value_t::make_undefined() };
 		}
 
 		private: statement_result_t(output_type type, const bc_value_t& output) :

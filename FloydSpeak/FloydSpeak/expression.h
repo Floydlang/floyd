@@ -54,8 +54,14 @@ namespace floyd {
 			);
 		}
 
-		public: static expression_t make_literal_null(){
-			return make_literal(value_t::make_null());
+		public: static expression_t make_literal_undefined(){
+			return make_literal(value_t::make_undefined());
+		}
+		public: static expression_t make_literal_internal_dynamic(){
+			return make_literal(value_t::make_internal_dynamic());
+		}
+		public: static expression_t make_literal_void(){
+			return make_literal(value_t::make_void());
 		}
 		public: static expression_t make_literal_int(const int i){
 			return make_literal(value_t::make_int(i));
@@ -263,7 +269,7 @@ namespace floyd {
 
 		public: bool check_invariant() const{
 			//	QUARK_ASSERT(_debug.size() > 0);
-			//	QUARK_ASSERT(_result_type._base_type != base_type::k_null && _result_type.check_invariant());
+			//	QUARK_ASSERT(_result_type._base_type != base_type::k_internal_undefined && _result_type.check_invariant());
 			QUARK_ASSERT(_output_type == nullptr || _output_type->check_invariant());
 			return true;
 		}
@@ -331,7 +337,7 @@ namespace floyd {
 		public: bool check_types_resolved() const{
 			QUARK_ASSERT(check_invariant());
 
-			if(_output_type == nullptr){
+			if(_output_type == nullptr || _output_type->check_types_resolved() == false){
 				return false;
 			}
 

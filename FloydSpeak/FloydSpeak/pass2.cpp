@@ -38,8 +38,8 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 		const auto type = e.get_array_n(2);
 		const auto type2 = resolve_type_name(ast_json_t{type});
 
-		if(type2.is_null()){
-			return expression_t::make_literal_null();
+		if(type2.is_undefined()){
+			return expression_t::make_literal_undefined();
 		}
 		else if(type2.get_base_type() == base_type::k_bool){
 			return expression_t::make_literal_bool(value.is_false() ? false : true);

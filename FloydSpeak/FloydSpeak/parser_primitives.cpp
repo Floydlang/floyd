@@ -355,12 +355,18 @@ QUARK_UNIT_TESTQ("read_required_identifier()", ""){
 std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 
-	const auto pos1 = read_while(pos0, identifier_chars);
+	const auto pos1 = read_while(pos0, identifier_chars + "*");
 	if(pos1.first.empty()){
 		return { nullptr, pos1.second };
 	}
-	else if(pos1.first == keyword_t::k_null){
-		return { make_shared<typeid_t>(typeid_t::make_null()), pos1.second };
+	else if(pos1.first == keyword_t::k_internal_undefined){
+		return { make_shared<typeid_t>(typeid_t::make_undefined()), pos1.second };
+	}
+	else if(pos1.first == keyword_t::k_internal_dynamic){
+		return { make_shared<typeid_t>(typeid_t::make_internal_dynamic()), pos1.second };
+	}
+	else if(pos1.first == keyword_t::k_void){
+		return { make_shared<typeid_t>(typeid_t::make_void()), pos1.second };
 	}
 	else if(pos1.first == keyword_t::k_bool){
 		return { make_shared<typeid_t>(typeid_t::make_bool()), pos1.second };
@@ -500,7 +506,13 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(read_type(seq_t("-3")).first == nullptr);
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
-	QUARK_TEST_VERIFY(*read_type(seq_t("null")).first == typeid_t::make_null());
+	QUARK_TEST_VERIFY(*read_type(seq_t("**undef**")).first == typeid_t::make_undefined());
+}
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(*read_type(seq_t("**dyn**")).first == typeid_t::make_internal_dynamic());
+}
+QUARK_UNIT_TEST("", "read_type()", "", ""){
+	QUARK_TEST_VERIFY(*read_type(seq_t("void")).first == typeid_t::make_void());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("bool")).first == typeid_t::make_bool());

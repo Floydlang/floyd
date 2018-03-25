@@ -228,7 +228,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 					std::cout << vm._print_output[print_pos] << std::endl;
 					print_pos++;
 				}
-				if(b._output.is_null() == false){
+				if(b._output.is_undefined() == false){
 					std::cout << to_compact_string2(b._output) << std::endl;
 				}
 			}

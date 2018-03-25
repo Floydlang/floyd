@@ -51,7 +51,7 @@ namespace floyd {
 			if(base_type == base_type::k_string){
 //				QUARK_ASSERT(_string);
 				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_typeid_value == typeid_t::make_null());
+				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
@@ -60,7 +60,7 @@ namespace floyd {
 			else if(base_type == base_type::k_json_value){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value != nullptr);
-				QUARK_ASSERT(_typeid_value == typeid_t::make_null());
+				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
@@ -72,7 +72,7 @@ namespace floyd {
 			else if(base_type == base_type::k_typeid){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
-		//		QUARK_ASSERT(_typeid_value != typeid_t::make_null());
+		//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
@@ -83,7 +83,7 @@ namespace floyd {
 			else if(base_type == base_type::k_struct){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_typeid_value == typeid_t::make_null());
+				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
@@ -94,7 +94,7 @@ namespace floyd {
 			else if(base_type == base_type::k_vector){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_typeid_value == typeid_t::make_null());
+				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 		//		QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
@@ -103,7 +103,7 @@ namespace floyd {
 			else if(base_type == base_type::k_dict){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_typeid_value == typeid_t::make_null());
+				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
 		//		QUARK_ASSERT(_dict_entries.empty());
@@ -112,7 +112,7 @@ namespace floyd {
 			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_typeid_value == typeid_t::make_null());
+				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
@@ -190,7 +190,7 @@ namespace floyd {
 		//	Holds ALL variants of objects right now -- optimize!
 		public: std::string _string;
 		public: std::shared_ptr<json_t> _json_value;
-		public: typeid_t _typeid_value = typeid_t::make_null();
+		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::vector<bc_value_t> _struct_members;
 
 
@@ -220,7 +220,13 @@ namespace floyd {
 
 	struct bc_value_t {
 		public: bc_value_t() :
-			_debug_type(typeid_t::make_null()),
+			_debug_type(typeid_t::make_undefined()),
+			_is_ext(false)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+		private: explicit bc_value_t(const typeid_t& type, bool dummy) :
+			_debug_type(type),
 			_is_ext(false)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -274,7 +280,7 @@ namespace floyd {
 				return false;
 			}
 
-			if(_basetype == base_type::k_null){
+			if(_basetype == base_type::k_internal_undefined){
 				return true;
 			}
 			else if(_basetype == base_type::k_bool){
@@ -322,8 +328,17 @@ namespace floyd {
 			QUARK_ASSERT(value.check_invariant());
 
 			const auto basetype = value.get_basetype();
-			if(basetype == base_type::k_null){
-				return make_null();
+			if(basetype == base_type::k_internal_undefined){
+				return make_undefined();
+			}
+			else if(basetype == base_type::k_internal_dynamic){
+				return make_internal_dynamic();
+			}
+			else if(basetype == base_type::k_void){
+				return make_void();
+			}
+			else if(basetype == base_type::k_bool){
+				return make_bool(value.get_bool_value());
 			}
 			else if(basetype == base_type::k_bool){
 				return make_bool(value.get_bool_value());
@@ -389,19 +404,47 @@ namespace floyd {
 
 
 
-		//////////////////////////////////////		null
+		//////////////////////////////////////		internal-undefined type
 
 
 #if DEBUG
-		public: bool is_null() const {
+		public: bool is_undefined() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _debug_type.is_null();
+			return _debug_type.is_undefined();
 		}
 #endif
 
-		public: static bc_value_t make_null(){
-			return {};
+		public: static bc_value_t make_undefined(){
+			return bc_value_t(typeid_t::make_undefined(), true);
+		}
+
+		//////////////////////////////////////		internal-dynamic type
+
+#if DEBUG
+		public: bool is_internal_dynamic() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _debug_type.is_internal_dynamic();
+		}
+#endif
+		public: static bc_value_t make_internal_dynamic(){
+			return bc_value_t(typeid_t::make_internal_dynamic(), true);
+		}
+
+		//////////////////////////////////////		void
+
+
+#if DEBUG
+		public: bool is_void() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _debug_type.is_void();
+		}
+#endif
+
+		public: static bc_value_t make_void(){
+			return bc_value_t(typeid_t::make_void(), true);
 		}
 
 
@@ -740,8 +783,15 @@ namespace floyd {
 		QUARK_ASSERT(value.check_invariant());
 
 		const auto basetype = type.get_base_type();
-		if(basetype == base_type::k_null){
-			return value_t::make_null();
+
+		if(basetype == base_type::k_internal_undefined){
+			return value_t::make_undefined();
+		}
+		else if(basetype == base_type::k_internal_dynamic){
+			return value_t::make_internal_dynamic();
+		}
+		else if(basetype == base_type::k_void){
+			return value_t::make_void();
 		}
 		else if(basetype == base_type::k_bool){
 			return value_t::make_bool(value.get_bool_value_quick());
@@ -915,7 +965,7 @@ namespace floyd {
 
 
 	inline std::vector<typeid_t> get_fulltype2(const typeid_t& type){
-		if(type.is_null()){
+		if(type.is_undefined()){
 			return {};
 		}
 		else if(type.is_bool()){
@@ -940,7 +990,7 @@ namespace floyd {
 
 	struct bc_typeid_t {
 		bc_typeid_t() :
-			_basetype(base_type::k_null),
+			_basetype(base_type::k_internal_undefined),
 			_fulltype()
 		{
 		}
@@ -954,8 +1004,14 @@ namespace floyd {
 
 		public: typeid_t get_fulltype() const {
 			if(_fulltype.empty()){
-				if(_basetype == base_type::k_null){
-					return typeid_t::make_null();
+				if(_basetype == base_type::k_internal_undefined){
+					return typeid_t::make_undefined();
+				}
+				else if(_basetype == base_type::k_internal_dynamic){
+					return typeid_t::make_internal_dynamic();
+				}
+				else if(_basetype == base_type::k_void){
+					return typeid_t::make_void();
 				}
 				else if(_basetype == base_type::k_bool){
 					return typeid_t::make_bool();

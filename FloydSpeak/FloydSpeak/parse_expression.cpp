@@ -160,7 +160,7 @@ ast_json_t expr_to_json(const expr_t& e){
 
 		return ast_json_t{json_t::make_array({
 			json_t("construct-value"),
-			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_null()), json_tags::k_tag_resolve_state)._value,
+			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
 		})};
 	}
@@ -170,7 +170,7 @@ ast_json_t expr_to_json(const expr_t& e){
 
 		return ast_json_t{json_t::make_array({
 			json_t("construct-value"),
-			typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_null()), json_tags::k_tag_resolve_state)._value,
+			typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
 		})};
 

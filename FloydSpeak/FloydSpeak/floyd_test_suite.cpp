@@ -431,7 +431,7 @@ QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 
 QUARK_UNIT_TESTQ("execute_expression()", "Division by zero") {
 	try{
-		test__run_init__check_result("int result = 2/0;", value_t::make_null());
+		test__run_init__check_result("int result = 2/0;", value_t::make_undefined());
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -441,7 +441,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "Division by zero") {
 
 QUARK_UNIT_TESTQ("execute_expression()", "Division by zero"){
 	try{
-		test__run_init__check_result("int result = 3+1/(5-5)+4;", value_t::make_null());
+		test__run_init__check_result("int result = 3+1/(5-5)+4;", value_t::make_undefined());
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1455,7 +1455,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 
 
 
-
+/*
 QUARK_UNIT_TEST("null", "", "", "0"){
 	try{
 		const auto result = run_return_result(R"(
@@ -1467,6 +1467,7 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 		QUARK_UT_VERIFY(string(e.what()) == "Types not compatible in bind.");
 	}
 }
+*/
 
 
 //////////////////////////////////////////		STRING - TYPE
@@ -1521,7 +1522,7 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 //////////////////////////////////////////		VECTOR - TYPE
 
 
-QUARK_UNIT_TEST("vector", "[]-constructor, inplicit type", "strings", "valid vector"){
+QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "strings", "valid vector"){
 	const auto vm = test__run_global(R"(
 		a = ["one", "two"];
 		print(a);
@@ -1608,7 +1609,6 @@ QUARK_UNIT_TEST("vector", "==", "strings", ""){
 }
 
 //	We could support this if we had special type for empty-vector and empty-dict.
-
 QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 	try{
 		const auto vm = test__run_global(R"(
@@ -1970,16 +1970,6 @@ QUARK_UNIT_TESTQ("run_main()", "struct"){
 	)");
 }
 
-/*
-QUARK_UNIT_TESTQ("run_main()", "struct - make instance"){
-	const auto vm = test__run_global(R"(
-		struct t { int a;}
-		t(3);
-	)");
-	QUARK_UT_VERIFY((	vm._call_stack.back()->_values["t"].first.is_typeid()	));
-}
-*/
-
 QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 	const auto vm = test__run_global(R"(
 		struct t { int a;}
@@ -2029,7 +2019,7 @@ QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
 	});
 }
 
-QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
+QUARK_UNIT_TEST("run_main()", "struct - access member of nested structs", "", ""){
 	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -2041,8 +2031,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - access member of nested structs"){
 	});
 }
 
-
-OFF_QUARK_UNIT_TEST_VIP("run_main()", "return struct from function", "", ""){
+QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -2050,13 +2039,14 @@ OFF_QUARK_UNIT_TEST_VIP("run_main()", "return struct from function", "", ""){
 			return color(100, 101, 102);
 		}
 		z = make_color();
+		print(z);
 	)");
 	ut_compare_stringvects(vm._print_output, vector<string>{
 		"{red=100, green=101, blue=102}",
 	});
 }
 
-OFF_QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
+QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
 		struct image { color back; color front;}
@@ -2125,19 +2115,6 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 }
 
 
-
-
-/*
-QUARK_UNIT_TESTQ("run_main()", "struct - anonymous <"){
-	const auto vm = test__run_global(R"(
-		struct { int red; int green; int blue;}
-		print(color(1, 2, 3) < color(1, 4, 3));
-	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
-		"true"
-	});
-}
-*/
 
 
 
@@ -2354,7 +2331,7 @@ QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
 }
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
-OFF_QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
+QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a);
@@ -2365,7 +2342,7 @@ OFF_QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 }
 
 // JSON example snippets: http://json.org/example.html
-OFF_QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
+QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 	const auto vm = test__run_global(R"ABCD(
 		json_value a = {
 			"menu": {
@@ -2387,7 +2364,7 @@ OFF_QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 	});
 }
 
-OFF_QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
+QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" };
 		print(a);
@@ -2397,7 +2374,7 @@ OFF_QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 	});
 }
 
-OFF_QUARK_UNIT_TEST_VIP("json_value-object", "{}", "", ""){
+QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 	const auto vm = test__run_global(R"(
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a["pigcount"]);
@@ -2416,7 +2393,9 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
+
+//??? need to add back "null".
+OFF_QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 	const auto result = run_return_result(R"(
 		json_value result = null;
 	)", {});
@@ -2424,13 +2403,20 @@ QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 }
 
 
+//////////////////////////////////////////		TEST TYPE DEDUCING
 
+QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
+	const auto result = run_return_result(R"(
+		json_value result = {};
+	)", {});
+	ut_compare_values(result, value_t::make_json_value(json_t::make_object()));
+}
 
 //////////////////////////////////////////		json_value features
 
 
 
-QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
+OFF_QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value({}))
 	)", {});
@@ -2467,7 +2453,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	ut_compare_values(result, value_t::make_int(6));
 }
 
-QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
+OFF_QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value(null))
 	)", {});
@@ -2533,8 +2519,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	ut_compare_values(result, value_t::make_float(201.0));
 }
 
-/*
-QUARK_UNIT_TEST("", "", "", ""){
+OFF_QUARK_UNIT_TEST("", "", "", ""){
 	const auto result = run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		c = { "version": "1.0", "image": 100 };
@@ -2543,7 +2528,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	ut_compare_values(result, value_t::make_float(201.0));
 }
 
-QUARK_UNIT_TEST_VIP("", "", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("", "", "", ""){
 	const auto result = run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] };
@@ -2551,7 +2536,6 @@ QUARK_UNIT_TEST_VIP("", "", "", ""){
 	)", {});
 	ut_compare_values(result, value_t::make_float(201.0));
 }
-*/
 
 
 
@@ -2701,41 +2685,41 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 //////////////////////////////////////////		flatten_to_json() -> unflatten_from_json() roundtrip
 
 
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(true), bool);
 	)", {});
 	ut_compare_values(result, value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(false), bool);
 	)", {});
 	ut_compare_values(result, value_t::make_bool(false));
 }
 
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(91), int);
 	)", {});
 	ut_compare_values(result, value_t::make_int(91));
 }
 
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "float", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "float", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(-0.125), float);
 	)", {});
 	ut_compare_values(result, value_t::make_float(-0.125));
 }
 
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(""), string);
 	)", {});
 	ut_compare_values(result, value_t::make_string(""));
 }
 
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json("cola"), string);
 	)", {});
@@ -2743,15 +2727,18 @@ OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 }
 
 /// Makes no sense to unflatten a json_value from json.
-
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "typeid", ""){
+/*
+QUARK_UNIT_TEST("", "unflatten_from_json()", "typeid", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(typeof([3])), typeid);
 	)", {});
 	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
 }
+*/
 
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
+/*
+Need better way to specify typeid
+QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 	const auto result = run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json([1,2,3]), typeof([1]));
 	)", {});
@@ -2760,9 +2747,10 @@ OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 		value_t::make_vector_value(typeid_t::make_int(), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
 	);
 }
+*/
 
 
-OFF_QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 	const auto point_t_def = std::make_shared<floyd::struct_definition_t>(
 		std::vector<member_t>{
 			member_t(typeid_t::make_float(), "x"),
