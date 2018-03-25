@@ -316,7 +316,9 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	auto vm_acc = vm;
 
 	const auto new_local_name = statement._new_local_name;
-	const auto lhs_type = resolve_type(vm_acc, statement._bindtype);
+	const auto lhs_type0 = statement._bindtype;
+	const auto lhs_type = lhs_type0.check_types_resolved() == false && lhs_type0.is_undefined() == false ? resolve_type(vm_acc, lhs_type0) : lhs_type0;
+
 	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
 	const auto value_exists_in_env = does_symbol_exist_shallow(vm_acc, new_local_name);
@@ -327,13 +329,17 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	//	Setup temporary simply so function definition can find itself = recursive.
 	//	Notice: the final type may not be correct yet, but for function defintions it is.
 	//	This logicl should be available for deduced binds too, in analyse_store_statement().
-	vm_acc._call_stack.back()->_symbols.push_back({new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type)});
+	vm_acc._call_stack.back()->_symbols.push_back({
+		new_local_name,
+		bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type)
+	});
 	const auto local_name_index = vm_acc._call_stack.back()->_symbols.size() - 1;
 
 	try {
-		const auto rhs_expr_pair = lhs_type.is_undefined() ? analyse_expression_no_target(vm_acc, statement._expression) : analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
+		const auto rhs_expr_pair = lhs_type.is_undefined()
+			? analyse_expression_no_target(vm_acc, statement._expression)
+			: analyse_expression_to_target(vm_acc, statement._expression, lhs_type);
 		vm_acc = rhs_expr_pair.first;
-
 
 		//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no store-statement!
 
