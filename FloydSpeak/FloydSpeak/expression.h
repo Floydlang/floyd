@@ -296,25 +296,12 @@ namespace floyd {
 			return _operation;
 		}
 
-
-
-		public: typeid_t get_annotated_type() const {	return get_output_type(); }
-		public: std::shared_ptr<typeid_t> get_annotated_type2() const { return get_output_type2(); }
-
-
 		public: typeid_t get_output_type() const {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_output_type != nullptr);
 
 			return *_output_type;
 		}
-		public: std::shared_ptr<typeid_t> get_output_type2() const {
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(_output_type != nullptr);
-
-			return _output_type;
-		}
-
 
 		public: bool is_annotated_shallow() const{
 			QUARK_ASSERT(check_invariant());

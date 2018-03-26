@@ -26,6 +26,7 @@ typeid_t resolve_type_name(const ast_json_t& t){
 	return t2;
 }
 
+//??? loses output-type for some expressions. Make it nonlossy!
 expression_t astjson_to_expression(const quark::trace_context_t& tracer, const json_t& e){
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_CONTEXT_TRACE(tracer, json_to_pretty_string(e));
@@ -527,7 +528,7 @@ ast_json_t expression_to_json(const expression_t& e){
 
 	//	Add annotated-type element to json?
 	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
-		const auto t = e.get_annotated_type();
+		const auto t = e.get_output_type();
 		auto a2 = a._value.get_array();
 		const auto type_json = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
 		a2.push_back(type_json._value);

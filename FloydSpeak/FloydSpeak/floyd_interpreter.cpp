@@ -1028,8 +1028,6 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		std::vector<json_t> values;
 		for(int local_index = 0 ; local_index < local_count ; local_index++){
 			const auto& v = vm._value_stack[e->_values_offset + local_index];
-//???			const auto& a = value_and_type_to_ast_json(bc_to_value(v));
-//			values.push_back(a._value);
 		}
 
 		const auto& env = json_t::make_object({

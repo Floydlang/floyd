@@ -73,9 +73,6 @@ namespace floyd {
 		//	This is a type that specifies another type.
 		k_typeid,
 
-		//All above are included in code-types. They don't need further info.
-		k_core_count,
-
 		k_struct,
 		k_vector,
 		k_dict,

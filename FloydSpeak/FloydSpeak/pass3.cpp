@@ -102,10 +102,8 @@ symbol_t find_global_symbol(const analyser_t& vm, const string& s){
 
 
 
-
 typeid_t resolve_type(const analyser_t& vm, const typeid_t& type);
 
-//???? improve using new types:k_internal_dynamic, k_void.
 typeid_t resolve_type_int(const analyser_t& vm, const typeid_t& type){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -198,7 +196,6 @@ typeid_t resolve_type(const analyser_t& vm, const typeid_t& type){
 
 
 
-
 std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
@@ -245,8 +242,6 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::b
 
 
 /*
-	Simple assign
-
 	- Can update an existing local (if local is mutable).
 	- Can implicitly create a new local
 */
@@ -271,8 +266,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& vm,
 			vm_acc = rhs_expr2.first;
 			const auto rhs_expr3 = rhs_expr2.second;
 
-			//??? we don't have type when calling push_back().
-			if(lhs_type != rhs_expr3.get_annotated_type()){
+			if(lhs_type != rhs_expr3.get_output_type()){
 				throw std::runtime_error("Types not compatible in bind.");
 			}
 			else{
@@ -285,14 +279,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& vm,
 	else{
 		const auto rhs_expr2 = analyse_expression_no_target(vm_acc, statement._expression);
 		vm_acc = rhs_expr2.first;
-		const auto rhs_expr2_type = rhs_expr2.second.get_annotated_type();
-
-		//??????????????????? fix code now that we have internal_undefined/internal_dynamic/void.
-	//??? analyse_expression_no_target() guarantees expr is resolved!
-		//??? need generic mechnanism, this is a special case to pass specific test.
-		if(rhs_expr2_type == typeid_t::make_vector(typeid_t::make_undefined())){
-			throw std::runtime_error("Cannot resolve type.");
-		}
+		const auto rhs_expr2_type = rhs_expr2.second.get_output_type();
 
 		vm_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
 		int variable_index = (int)(vm_acc._call_stack.back()->_symbols.size() - 1);
@@ -343,7 +330,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 
 		//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no store-statement!
 
-		const auto rhs_type = rhs_expr_pair.second.get_annotated_type();
+		const auto rhs_type = rhs_expr_pair.second.get_output_type();
 		const auto lhs_type2 = lhs_type.is_undefined() ? rhs_type : lhs_type;
 
 		if(lhs_type2 != lhs_type2){
@@ -400,19 +387,9 @@ analyser_t analyse_def_struct_statement(const analyser_t& vm, const statement_t:
 		throw std::runtime_error("Name already used.");
 	}
 
-	//	Resolve member types in this scope.
-	std::vector<member_t> members2;
-	for(const auto e: statement._def->_members){
-		const auto name = e._name;
-		const auto type = e._type;
-		const auto type2 = resolve_type(vm_acc, type);
-		const auto e2 = member_t(type2, name);
-		members2.push_back(e2);
-	}
-
-	const auto struct_def2 = std::make_shared<struct_definition_t>(struct_definition_t(members2));
-	const auto struct_typeid = typeid_t::make_struct(struct_def2);
-	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid);
+	const auto struct_typeid1 = typeid_t::make_struct(statement._def);
+	const auto struct_typeid2 = resolve_type(vm_acc, struct_typeid1);
+	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 	vm_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
 
 	return vm_acc;
@@ -445,7 +422,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& vm
 	const auto condition2 = analyse_expression_no_target(vm_acc, statement._condition);
 	vm_acc = condition2.first;
 
-	const auto condition_type = condition2.second.get_annotated_type();
+	const auto condition_type = condition2.second.get_output_type();
 	if(condition_type.is_bool() == false){
 		throw std::runtime_error("Boolean condition required.");
 	}
@@ -463,14 +440,14 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, c
 	const auto start_expr2 = analyse_expression_no_target(vm_acc, statement._start_expression);
 	vm_acc = start_expr2.first;
 
-	if(start_expr2.second.get_annotated_type().is_int() == false){
+	if(start_expr2.second.get_output_type().is_int() == false){
 		throw std::runtime_error("For-loop requires integer iterator.");
 	}
 
 	const auto end_expr2 = analyse_expression_no_target(vm_acc, statement._end_expression);
 	vm_acc = end_expr2.first;
 
-	if(end_expr2.second.get_annotated_type().is_int() == false){
+	if(end_expr2.second.get_output_type().is_int() == false){
 		throw std::runtime_error("For-loop requires integer iterator.");
 	}
 
@@ -584,7 +561,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	const auto parent_expr = analyse_expression_no_target(vm_acc, e._input_exprs[0]);
 	vm_acc = parent_expr.first;
 
-	const auto parent_type = parent_expr.second.get_annotated_type();
+	const auto parent_type = parent_expr.second.get_output_type();
 
 	if(parent_type.is_struct()){
 		const auto struct_def = parent_type.get_struct();
@@ -612,8 +589,8 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	const auto key_expr = analyse_expression_no_target(vm_acc, e._input_exprs[1]);
 	vm_acc = key_expr.first;
 
-	const auto parent_type = parent_expr.second.get_annotated_type();
-	const auto key_type = key_expr.second.get_annotated_type();
+	const auto parent_type = parent_expr.second.get_output_type();
+	const auto key_type = key_expr.second.get_output_type();
 
 	if(parent_type.is_string()){
 		if(key_type.is_int() == false){
@@ -664,74 +641,20 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const ex
 	QUARK_ASSERT(vm.check_invariant());
 
 	return { vm, e };
-/*
-	auto vm_acc = vm;
-	const auto found = find_symbol_by_name(vm_acc, expr._variable);
-	if(found.first != nullptr){
-
-		//??? should nto make a load1!???
-		return {vm_acc, expression_t::make_load2(expr._variable, make_shared<typeid_t>(found.first->_value_type)) };
-	}
-	else{
-		throw std::runtime_error("Undefined variable \"" + expr._variable + "\".");
-	}
-*/
 }
 
 /*
-	first_element_type = internal-dynamic if you don't have one.
-	Always returns a resolved type.
+	Here is trickery with JSON support.
+
+	Case A:
+		A = [ "one", 2, 3, "four" ];
+	rhs is invalid floyd vector -- mixes value types -- but it's a valid JSON array.
+
+	Case B:
+		b = { "one": 1, "two": "zwei" };
+
+	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dift. BUT: it's a valid JSON!
 */
-
-#if 0
-typeid_t deduce_type(const typeid_t& current_type, const typeid_t& target_type, const typeid_t& opt_value_type){
-	QUARK_ASSERT(current_type.check_invariant());
-	QUARK_ASSERT(target_type.check_invariant());
-	QUARK_ASSERT(target_type.check_types_resolved());
-	QUARK_ASSERT(opt_value_type.check_invariant());
-	QUARK_ASSERT(opt_value_type.is_internal_dynamic() || opt_value_type.check_types_resolved());
-
-	if(current_type.check_types_resolved()){
-		QUARK_ASSERT(current_type.check_types_resolved());
-		return current_type;
-	}
-	else{
-		if(current_type.is_vector()){
-			const auto current_element_type = current_type.get_vector_element_type();
-
-			//	 Use target_type if applyable.
-			if(target_type.is_vector()){
-				const auto target_element_type = target_type.get_vector_element_type();
-				const auto opt_value_type2 = opt_value_type.is_vector() ? opt_value_type.get_vector_element_type() : typeid_t::make_internal_dynamic();
-				const auto element_type2 = deduce_type(current_element_type, target_element_type, opt_value_type2);
-
-				QUARK_ASSERT(element_type2.check_types_resolved());
-				return typeid_t::make_vector(element_type2);
-			}
-
-
-			if(opt_value_type.is_internal_dynamic() == false){
-			}
-/*
-			//	Use type of first element.
-			for(const auto m: elements2){
-				if(m.get_annotated_type() != element_type2){
-					throw std::runtime_error("Vector can not hold elements of different types.");
-				}
-			}
-*/
-
-			const auto result = typeid_t::make_vector(element_type2);
-			QUARK_ASSERT(result.check_types_resolved());
-			return result;
-		}
-		else{
-			QUARK_ASSERT();
-		}
-	}
-}
-#endif
-
 std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& vm, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -771,7 +694,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0].get_annotated_type() : element_type;
+			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0].get_output_type() : element_type;
 			const auto result_type0 = typeid_t::make_vector(element_type2);
 			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
 
@@ -780,7 +703,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			for(const auto m: elements2){
-				if(m.get_annotated_type() != element_type2){
+				if(m.get_output_type() != element_type2){
 					throw std::runtime_error("Vector can not hold elements of different types.");
 				}
 			}
@@ -834,13 +757,13 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			//	Deduce type of dictionary based on first value.
-			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0 * 2 + 1].get_annotated_type() : element_type;
+			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0 * 2 + 1].get_output_type() : element_type;
 			const auto result_type0 = typeid_t::make_dict(element_type2);
 			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
-				const auto element_type0 = elements2[i * 2 + 1].get_annotated_type();
+				const auto element_type0 = elements2[i * 2 + 1].get_output_type();
 				if(element_type0 != element_type2){
 					throw std::runtime_error("Dict can not hold elements of different type!");
 				}
@@ -862,7 +785,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	vm_acc = expr2.first;
 
 	//??? We could simplify here and return [ "-", 0, expr]
-	const auto type = expr2.second.get_annotated_type();
+	const auto type = expr2.second.get_output_type();
 	if(type.is_int() || type.is_float()){
 		return {vm_acc, expression_t::make_unary_minus(expr2.second, make_shared<typeid_t>(type))  };
 	}
@@ -886,15 +809,15 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	const auto b = analyse_expression_no_target(vm_acc, e._input_exprs[2]);
 	vm_acc = b.first;
 
-	const auto type = cond_result.second.get_annotated_type();
+	const auto type = cond_result.second.get_output_type();
 	if(type.is_bool() == false){
 		throw std::runtime_error("Could not analyse condition in conditional expression.");
 	}
-	else if(a.second.get_annotated_type() != b.second.get_annotated_type()){
+	else if(a.second.get_output_type() != b.second.get_output_type()){
 		throw std::runtime_error("Conditional expression requires both true/false conditions to have the same type.");
 	}
 	else{
-		const auto final_expression_type = a.second.get_annotated_type();
+		const auto final_expression_type = a.second.get_output_type();
 		return {vm_acc, expression_t::make_conditional_operator(cond_result.second, a.second, b.second, make_shared<typeid_t>(final_expression_type))  };
 	}
 }
@@ -908,12 +831,12 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	const auto left_expr = analyse_expression_no_target(vm_acc, e._input_exprs[0]);
 	vm_acc = left_expr.first;
 
-	const auto lhs_type = left_expr.second.get_annotated_type();
+	const auto lhs_type = left_expr.second.get_output_type();
 
 	//	Make rhs match left if needed/possible.
 	const auto right_expr = analyse_expression_to_target(vm_acc, e._input_exprs[1], lhs_type);
 	vm_acc = right_expr.first;
-	const auto rhs_type = right_expr.second.get_annotated_type();
+	const auto rhs_type = right_expr.second.get_output_type();
 
 	if(lhs_type != rhs_type && lhs_type.is_undefined() == false && rhs_type.is_undefined() == false){
 		throw std::runtime_error("Comparison: Left and right expressions must be same type!");
@@ -950,13 +873,13 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	const auto left_expr = analyse_expression_no_target(vm_acc, e._input_exprs[0]);
 	vm_acc = left_expr.first;
 
-	const auto lhs_type = left_expr.second.get_annotated_type();
+	const auto lhs_type = left_expr.second.get_output_type();
 
 	//	Make rhs match lhs if needed/possible.
 	const auto right_expr = analyse_expression_to_target(vm_acc, e._input_exprs[1], lhs_type);
 	vm_acc = right_expr.first;
 
-	const auto rhs_type = right_expr.second.get_annotated_type();
+	const auto rhs_type = right_expr.second.get_output_type();
 
 
 	if(lhs_type != rhs_type){
@@ -1226,19 +1149,19 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 	const auto function_name = found_it->first;
 
 	if(function_name == "update"){
-		return args[0].get_annotated_type();
+		return args[0].get_output_type();
 	}
 	else if(function_name == "erase"){
-		return args[0].get_annotated_type();
+		return args[0].get_output_type();
 	}
 	else if(function_name == "push_back"){
-		return args[0].get_annotated_type();
+		return args[0].get_output_type();
 	}
 	else if(function_name == "subset"){
-		return args[0].get_annotated_type();
+		return args[0].get_output_type();
 	}
 	else if(function_name == "replace"){
-		return args[0].get_annotated_type();
+		return args[0].get_output_type();
 	}
 	else if(function_name == "instantiate_from_typeid"){
 		if(args[0].get_operation() == expression_type::k_load2){
@@ -1273,31 +1196,11 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 		}
 	}
 	else{
-		return callee_expr.get_annotated_type().get_function_return();
+		return callee_expr.get_output_type().get_function_return();
 	}
 }
 
 /*
-	callee(callee_args)		== function def: int(
-	a = my_func(x, 13, "cat");
-	a = json_value(1 + 3);
-*/
-/*
-???
-		const auto& return_type = f.get_type().get_function_return();
-		// ??? move this check to pass3.
-		if(r._type != statement_result_t::k_return_unwind){
-			throw std::runtime_error("Function missing return statement");
-		}
-
-		// ??? move this check to pass3.
-		else if(r._output.get_type().is_struct() == false && r._output.get_type() != return_type){
-			throw std::runtime_error("Function return type wrong.");
-		}
-		else{
-		}
-
-
 	Notice: e._input_expr[0] is callee, the remaining are arguments.
 */
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm, const expression_t& e){
@@ -1313,7 +1216,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 
 
 	//	This is a call to a function-value. Callee is a function-type.
-	const auto callee_type = callee_expr.get_annotated_type();
+	const auto callee_type = callee_expr.get_output_type();
 	if(callee_type.is_function()){
 		const auto callee_args = callee_type.get_function_args();
 		const auto callee_return_value = callee_type.get_function_return();
@@ -1384,8 +1287,7 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 	return {vm_acc, expression_t::make_struct_definition(resolved_struct_def) };
 }
 
-
-//?? resolve all types! Function return, args etc.
+// ??? Check that function returns a value, if so specified.
 std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1462,7 +1364,6 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 		return analyse_construct_value_expression(vm, e, target_type);
 	}
 
-	//	This can be desugared at compile time. ???
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
 		return analyse_arithmetic_unary_minus_expression(vm, e);
 	}
@@ -1485,18 +1386,15 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 
 
 
-//???? improve using new types:k_internal_dynamic, k_void.
 /*
-	- If expression type is not 100% resolved, attempt to do this.
 	- Inserta automatic type-conversions from string -> json_value etc.
-	If e doesn't have a fully-formed type, attempt to give it one.
 */
 expression_t auto_cast_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(wanted_type.check_invariant());
 	QUARK_ASSERT(wanted_type.is_undefined() == false);
 
-	const auto current_type = e.get_annotated_type();
+	const auto current_type = e.get_output_type();
 
 	if(wanted_type.is_internal_dynamic()){
 		return e;
@@ -1523,73 +1421,10 @@ expression_t auto_cast_expression_type(const expression_t& e, const floyd::typei
 			return e;
 		}
 	}
-	else if(wanted_type.is_vector()){
-		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_undefined(), {})){
-			return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
-		}
-		else{
-			return e;
-		}
-	}
-	else if(wanted_type.is_dict()){
-		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_dict_value(typeid_t::make_undefined(), {})){
-			return expression_t::make_literal(value_t::make_dict_value(wanted_type.get_dict_value_type(), {}));
-		}
-		else{
-			return e;
-		}
-	}
 	else{
 		return e;
 	}
 }
-
-/*
-	Case A:
-		A = [ "one", 2, 3, "four" ];
-		rhs is invalid floyd vector -- mixes value types -- but it's a valid JSON array.
-
-	Case B:
-		b = { "one": 1, "two": "zwei" };
-
-	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dift. BUT: it's a valid JSON!
-*/
-expression_t deduce_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
-	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(wanted_type.check_invariant());
-	QUARK_ASSERT(wanted_type.is_undefined() == false);
-
-	const auto current_type = e.get_annotated_type();
-
-	if(wanted_type.is_internal_dynamic()){
-		return e;
-	}
-
-	//	Case A.
-	else if(wanted_type.is_vector()){
-		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_vector_value(typeid_t::make_undefined(), {})){
-			return expression_t::make_literal(value_t::make_vector_value(wanted_type.get_vector_element_type(), {}));
-		}
-		else{
-			return e;
-		}
-	}
-
-	//	Case B.
-	else if(wanted_type.is_dict()){
-		if(e.get_operation() == expression_type::k_literal && e.get_literal() == value_t::make_dict_value(typeid_t::make_undefined(), {})){
-			return expression_t::make_literal(value_t::make_dict_value(wanted_type.get_dict_value_type(), {}));
-		}
-		else{
-			return e;
-		}
-	}
-	else{
-		return e;
-	}
-}
-
-//??? every expression-function should take a target-type as hint. Fix types *before* AND *after* doing subexpressions.
 
 //	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& vm, const expression_t& e, const typeid_t& target_type){
@@ -1601,15 +1436,19 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	auto vm_acc = vm;
 	const auto e2_pair = analyse_expression__op_specific(vm_acc, e, target_type);
 	vm_acc = e2_pair.first;
+	const auto e2b = e2_pair.second;
+	if(e2b.check_types_resolved() == false){
+		throw std::runtime_error("Cannot resolve type.");
+	}
 
-	const auto e2 = auto_cast_expression_type(e2_pair.second, target_type);
-	const auto e3 = deduce_expression_type(e2, target_type);
+	const auto e3 = auto_cast_expression_type(e2b, target_type);
 
 	if(target_type.is_internal_dynamic()){
 	}
-	else if(e3.get_annotated_type() == target_type){
+	else if(e3.get_output_type() == target_type){
 	}
-	else if(e3.get_annotated_type().is_undefined()){
+	else if(e3.get_output_type().is_undefined()){
+		QUARK_ASSERT(false);
 		throw std::runtime_error("Expression type mismatch.");
 	}
 	else{
@@ -1734,6 +1573,8 @@ ast_t analyse(const analyser_t& a){
 	}
 
 	//??? hide internal types from client code?
+
+	//	"null" is equivalent to json_value::null
 	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
 
 	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});

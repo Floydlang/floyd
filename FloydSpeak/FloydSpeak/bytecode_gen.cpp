@@ -311,7 +311,7 @@ bc_instruction_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ife
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& condition_expr = bcgen_expression(vm, statement._condition);
-	QUARK_ASSERT(statement._condition.get_annotated_type().is_bool());
+	QUARK_ASSERT(statement._condition.get_output_type().is_bool());
 	const auto& then_expr = bcgen_body(vm, statement._then_body);
 	const auto& else_expr = bcgen_body(vm, statement._else_body);
 	return bc_instruction_t{ bc_statement_opcode::k_statement_if, bc_typeid_t(), {condition_expr}, {}, { then_expr, else_expr }};
@@ -387,17 +387,17 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 bc_expression_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
-	QUARK_ASSERT(e._input_exprs[0].get_annotated_type().is_struct());
+	QUARK_ASSERT(e._input_exprs[0].get_output_type().is_struct());
 
 	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0]);
 	const auto member_name = e._variable_name;
 
-	const auto& struct_def = e._input_exprs[0].get_annotated_type().get_struct();
+	const auto& struct_def = e._input_exprs[0].get_output_type().get_struct();
 	int index = find_struct_member_index(struct_def, member_name);
 	QUARK_ASSERT(index != -1);
 
 	//	Store member index in address field.
-	return bc_expression_t{ bc_expression_opcode::k_expression_resolve_member, bc_typeid_t(e.get_annotated_type()), {parent_expr}, variable_address_t::make_variable_address(0, index), {}, {} };
+	return bc_expression_t{ bc_expression_opcode::k_expression_resolve_member, bc_typeid_t(e.get_output_type()), {parent_expr}, variable_address_t::make_variable_address(0, index), {}, {} };
 }
 
 bc_expression_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t& e){
@@ -405,14 +405,14 @@ bc_expression_t bcgen_lookup_element_expression(bgenerator_t& vm, const expressi
 
 	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0]);
 	const auto& key_expr = bcgen_expression(vm, e._input_exprs[1]);
-	return bc_expression_t{ bc_expression_opcode::k_expression_lookup_element, bc_typeid_t(e.get_annotated_type()), {parent_expr, key_expr}, {}, {}, {} };
+	return bc_expression_t{ bc_expression_opcode::k_expression_lookup_element, bc_typeid_t(e.get_output_type()), {parent_expr, key_expr}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& address = e._address;
-	return bc_expression_t{ bc_expression_opcode::k_expression_load, bc_typeid_t(e.get_annotated_type()), {}, address, {}, {} };
+	return bc_expression_t{ bc_expression_opcode::k_expression_load, bc_typeid_t(e.get_output_type()), {}, address, {}, {} };
 }
 
 bc_expression_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){
@@ -434,7 +434,7 @@ bc_expression_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const 
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& exprx = bcgen_expression(vm, e._input_exprs[0]);
-	return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_unary_minus, bc_typeid_t(e.get_annotated_type()), {exprx}, {}, {}, {} };
+	return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_unary_minus, bc_typeid_t(e.get_output_type()), {exprx}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t& e){
@@ -443,7 +443,7 @@ bc_expression_t bcgen_conditional_operator_expression(bgenerator_t& vm, const ex
 	const auto& condition_expr = bcgen_expression(vm, e._input_exprs[0]);
 	const auto& a_expr = bcgen_expression(vm, e._input_exprs[1]);
 	const auto& b_expr = bcgen_expression(vm, e._input_exprs[2]);
-	return bc_expression_t{ bc_expression_opcode::k_expression_conditional_operator3, bc_typeid_t(e.get_annotated_type()), {condition_expr, a_expr, b_expr}, {}, {}, {} };
+	return bc_expression_t{ bc_expression_opcode::k_expression_conditional_operator3, bc_typeid_t(e.get_output_type()), {condition_expr, a_expr, b_expr}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
@@ -462,7 +462,7 @@ bc_expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op
 		{ expression_type::k_logical_nonequal__2, bc_expression_opcode::k_expression_logical_nonequal }
 	};
 	const auto opcode = conv_opcode.at(e._operation);
-	return bc_expression_t{ opcode, bc_typeid_t(e.get_annotated_type()), {left_expr, right_expr}, {}, {}, {} };
+	return bc_expression_t{ opcode, bc_typeid_t(e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
@@ -483,7 +483,7 @@ bc_expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op
 	};
 
 	const auto opcode = conv_opcode.at(e._operation);
-	return bc_expression_t{ opcode, bc_typeid_t(e.get_annotated_type()), {left_expr, right_expr}, {}, {}, {} };
+	return bc_expression_t{ opcode, bc_typeid_t(e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
 }
 
 bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
@@ -493,7 +493,7 @@ bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	const auto& op = e.get_operation();
 
 	if(op == expression_type::k_literal){
-		return bc_expression_t{ bc_expression_opcode::k_expression_literal, bc_typeid_t(e.get_annotated_type()), {}, {}, value_to_bc(e.get_literal()), {} };
+		return bc_expression_t{ bc_expression_opcode::k_expression_literal, bc_typeid_t(e.get_output_type()), {}, {}, value_to_bc(e.get_literal()), {} };
 	}
 	else if(op == expression_type::k_resolve_member){
 		return bcgen_resolve_member_expression(vm, e);
@@ -559,7 +559,7 @@ bc_expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
 		const auto& m2 = bcgen_expression(vm, m);
 		all.push_back(m2);
 	}
-	return bc_expression_t{ bc_expression_opcode::k_expression_call, bc_typeid_t(e.get_annotated_type()), all, {}, {}, {} };
+	return bc_expression_t{ bc_expression_opcode::k_expression_call, bc_typeid_t(e.get_output_type()), all, {}, {}, {} };
 }
 
 json_t bcprogram_to_json(const bc_program_t& program){
