@@ -161,7 +161,7 @@ namespace floyd {
 	};
 
 	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
-	typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type);
+//	typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type);
 	std::shared_ptr<value_entry_t> find_symbol_by_name(const interpreter_t& vm, const std::string& s);
 
 	/*

@@ -1120,8 +1120,8 @@ namespace floyd {
 			_opcode(opcode),
 			_type(type),
 			_e(e),
-			_address_parent_step(address._parent_steps),
-			_address_index(address._index),
+			_address_parent_step(static_cast<int16_t>(address._parent_steps)),
+			_address_index(static_cast<int16_t>(address._index)),
 			_value(value),
 			_input_type(input_type)
 		{
@@ -1134,13 +1134,15 @@ namespace floyd {
 
 		//////////////////////////////////////		STATE
 
+		bc_expression_opcode _opcode;
+		uint8_t _pad;
+		bc_typeid_t _type;
+
 		std::vector<bc_expression_t> _e;			//	24
 		int16_t _address_parent_step;
 		int16_t _address_index;
-		bc_typeid_t _type;
 		bc_typeid_t _input_type;
 		bc_value_t _value;							//	16
-		bc_expression_opcode _opcode;
 	};
 
 	//	A memory block. Addressed using index. Always 1 cache line big.

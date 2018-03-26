@@ -43,7 +43,7 @@ bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values);
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 
-
+/*
 typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_internal_unresolved_type_identifier){
 		const auto v = find_symbol_by_name(vm, type.get_unresolved_type_identifier());
@@ -63,6 +63,7 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 		return type;
 	}
 }
+*/
 
 
 
@@ -497,7 +498,9 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 	const auto parent_type = get_basetype(vm, expr._e[0]._type);
 
 	const auto& key_value = execute_expression(vm, expr._e[1]);
-//	const auto key_type = get_basetype(vm, expr._e[1]._type)._basetype;
+#if DEBUG
+	const auto key_type = get_basetype(vm, expr._e[1]._type);
+#endif
 
 
 	if(parent_type == base_type::k_string){

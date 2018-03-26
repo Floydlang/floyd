@@ -276,37 +276,40 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 
-
+	//??? The update mechanism uses strings == slow.
 	value_t update_struct_member_shallow(interpreter_t& vm, const value_t& obj, const std::string& member_name, const value_t& new_value){
 		QUARK_ASSERT(obj.check_invariant());
+		QUARK_ASSERT(obj.is_struct());
 		QUARK_ASSERT(member_name.empty() == false);
 		QUARK_ASSERT(new_value.check_invariant());
 
-		const auto s = obj.get_struct_value();
-		const auto def = s->_def;
+		const auto& struct_typeid = obj.get_type();
+		const auto& s = obj.get_struct_value();
+		const auto& struct_def = s->_def;
 
-		int member_index = find_struct_member_index(*def, member_name);
+		int member_index = find_struct_member_index(*struct_def, member_name);
 		if(member_index == -1){
 			throw std::runtime_error("Unknown member.");
 		}
 
-		const auto struct_typeid = obj.get_type();
-		const auto values = s->_member_values;
-
+#if DEBUG
 
 		QUARK_TRACE(typeid_to_compact_string(new_value.get_type()));
-		QUARK_TRACE(typeid_to_compact_string(def->_members[member_index]._type));
+		QUARK_TRACE(typeid_to_compact_string(struct_def->_members[member_index]._type));
 
-		const auto dest_member_entry = def->_members[member_index];
+		const auto dest_member_entry = struct_def->_members[member_index];
+
+/*
 		auto dest_member_resolved_type = dest_member_entry._type;
 
 		//?? why is runtime resolve needed?
 		dest_member_resolved_type = find_type_by_name(vm, dest_member_entry._type);
 
-		if(!(new_value.get_type() == dest_member_resolved_type)){
-			throw std::runtime_error("Value type not matching struct member type.");
-		}
+		QUARK_ASSERT(new_value.get_type() == dest_member_resolved_type);
+*/
+#endif
 
+		const auto& values = s->_member_values;
 		auto values2 = values;
 		values2[member_index] = new_value;
 
