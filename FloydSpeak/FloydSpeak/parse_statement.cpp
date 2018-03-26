@@ -308,6 +308,28 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 
 //////////////////////////////////////////////////		parse_for_statement()
 
+struct range_def_t {
+	std::string _start;
+	std::string _range_type;
+	seq_t _end_pos;
+};
+
+//	Closed range == "1 ... 5 ".
+//	Open range == "1 ..< 5 ".
+//	left_and_right == "1 ", " 5 ".
+range_def_t parse_range(const seq_t& pos){
+	const auto start_end = split_at(pos, "...");
+	if(start_end.first != ""){
+		return { start_end.first, "...", start_end.second };
+	}
+
+	const auto start_end2 = split_at(pos, "..<");
+	if(start_end2.first != ""){
+		return { start_end2.first, "..<", start_end2.second };
+	}
+
+	throw std::runtime_error("For loop has illegal range.");
+}
 
 
 std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos){
@@ -327,21 +349,20 @@ std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos){
 
 	const auto in_str = read_required(skip_whitespace(iterator_name.second), "in");
 
-	//	range == "1 ... 5 ".
 	const auto range = skip_whitespace(in_str);
 
-	//	left_and_right == "1 ", " 5 ".
-	const auto start_end = split_at(range, "...");
-	const auto start = start_end.first;
-	const auto end = start_end.second;
+	const auto range_parts = parse_range(range);
+	const auto start = range_parts._start;
+	const auto range_type = range_parts._range_type;
+	const auto end_pos = range_parts._end_pos;
 
 	const auto start_expr = parse_expression_all(seq_t(start));
-	const auto end_expr = parse_expression_all(end);
+	const auto end_expr = parse_expression_all(end_pos);
 
 	const auto r = ast_json_t{json_t::make_array(
 		{
 			keyword_t::k_for,
-			"open_range",
+			range_type == "..." ? "closed-range" : "open-range",
 			iterator_name.first,
 			start_expr._value,
 			end_expr._value,
@@ -358,7 +379,26 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 			R"(
 				[
 					"for",
-					"open_range",
+					"closed-range",
+					"index",
+					["k",1,"^int"],
+					["k",5,"^int"],
+					[
+						["bind","^int","y",["k",11,"^int"]]
+					]
+				]
+			)"
+		)).first
+	);
+}
+QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
+	ut_compare_jsons(
+		parse_for_statement(seq_t("for ( index in 1..<5 ) { int y = 11; }")).first._value,
+		parse_json(seq_t(
+			R"(
+				[
+					"for",
+					"open-range",
 					"index",
 					["k",1,"^int"],
 					["k",5,"^int"],

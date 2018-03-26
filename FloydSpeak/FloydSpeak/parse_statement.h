@@ -107,7 +107,8 @@ namespace floyd {
 		}
 
 		OUTPUT
-			[ "for", "open_range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
+			[ "for", "closed-range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
+			[ "for", "open-range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
 	*/
 	std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos);
 

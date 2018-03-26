@@ -460,7 +460,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& vm, c
 	const auto result = analyse_body(vm_acc, body_injected);
 	vm_acc = result.first;
 
-	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second) };
+	return { vm_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second, statement._range_type) };
 }
 
 std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& vm, const statement_t::while_statement_t& statement){

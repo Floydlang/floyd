@@ -257,11 +257,13 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto end_expression2 = astjson_to_expression(tracer, end_expression);
 		const auto body_statements2 = astjson_to_statements(tracer, ast_json_t{body_statements});
 
+		const auto range_type = for_mode.get_string() == "open-range" ? statement_t::for_statement_t::k_open_range : statement_t::for_statement_t::k_closed_range;
 		return statement_t::make__for_statement(
 			iterator_name.get_string(),
 			start_expression2,
 			end_expression2,
-			body_t{body_statements2}
+			body_t{ body_statements2 },
+			range_type
 		);
 	}
 	else if(type == keyword_t::k_while){
@@ -408,7 +410,7 @@ ast_json_t statement_to_json(const statement_t& e){
 	else if(e._for){
 		return ast_json_t{json_t::make_array({
 			json_t(keyword_t::k_for),
-			json_t("open_range"),
+			json_t("closed_range"),
 			expression_to_json(e._for->_start_expression)._value,
 			expression_to_json(e._for->_end_expression)._value,
 			body_to_json(e._for->_body)._value

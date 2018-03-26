@@ -379,17 +379,40 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			}
 			vm._call_stack.push_back(environment_t{ &body, values_offset });
 
-			for(int x = start_value_int ; x <= end_value_int ; x++){
-				vm._value_stack[values_offset + 0] = bc_value_t::make_int(x);
+			//??? simplify code -- create a count instead.
+			//	open-range
+			if(statement._param_x == 0){
+				for(int x = start_value_int ; x < end_value_int ; x++){
+					vm._value_stack[values_offset + 0] = bc_value_t::make_int(x);
 
-				//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
-				const auto& return_value = execute_statements(vm, body._statements);
+					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
+					const auto& return_value = execute_statements(vm, body._statements);
 
-				if(return_value._type == statement_result_t::k_returning){
-					vm._call_stack.pop_back();
-					vm._value_stack.resize(values_offset);
-					return return_value;
+					if(return_value._type == statement_result_t::k_returning){
+						vm._call_stack.pop_back();
+						vm._value_stack.resize(values_offset);
+						return return_value;
+					}
 				}
+			}
+
+			//	closed-range
+			else if(statement._param_x == 1){
+				for(int x = start_value_int ; x <= end_value_int ; x++){
+					vm._value_stack[values_offset + 0] = bc_value_t::make_int(x);
+
+					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
+					const auto& return_value = execute_statements(vm, body._statements);
+
+					if(return_value._type == statement_result_t::k_returning){
+						vm._call_stack.pop_back();
+						vm._value_stack.resize(values_offset);
+						return return_value;
+					}
+				}
+			}
+			else{
+				QUARK_ASSERT(false);
 			}
 			vm._call_stack.pop_back();
 			vm._value_stack.resize(values_offset);

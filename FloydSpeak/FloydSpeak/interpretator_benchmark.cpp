@@ -145,7 +145,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 			}
 
 			int f(){
-				for (i in 0...29) {
+				for (i in 0..<29) {
 					a = fibonacci(i);
 				}
 				return 8;

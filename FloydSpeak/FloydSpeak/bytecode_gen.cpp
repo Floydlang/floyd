@@ -315,14 +315,14 @@ bc_instruction_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::sto
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_store, expr._type, {expr}, statement._dest_variable,  {}};
+	return bc_instruction_t{ bc_statement_opcode::k_statement_store, expr._type, 0, {expr}, statement._dest_variable,  {}};
 }
 
 bc_instruction_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_return, expr._type, {expr}, {}, {}};
+	return bc_instruction_t{ bc_statement_opcode::k_statement_return, expr._type, 0, {expr}, {}, {}};
 }
 
 bc_instruction_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement){
@@ -332,7 +332,7 @@ bc_instruction_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ife
 	QUARK_ASSERT(statement._condition.get_output_type().is_bool());
 	const auto& then_expr = bcgen_body(vm, statement._then_body);
 	const auto& else_expr = bcgen_body(vm, statement._else_body);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_if, intern_type(vm, typeid_t::make_undefined()), {condition_expr}, {}, { then_expr, else_expr }};
+	return bc_instruction_t{ bc_statement_opcode::k_statement_if, intern_type(vm, typeid_t::make_undefined()), 0, {condition_expr}, {}, { then_expr, else_expr }};
 }
 
 bc_instruction_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement){
@@ -341,7 +341,8 @@ bc_instruction_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_st
 	const auto& start_expr = bcgen_expression(vm, statement._start_expression);
 	const auto& end_expr = bcgen_expression(vm, statement._end_expression);
 	const auto& body = bcgen_body(vm, statement._body);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_for, intern_type(vm, typeid_t::make_undefined()), {start_expr, end_expr}, {}, { body } };
+	const uint8_t param_x = (statement._range_type == statement_t::for_statement_t::k_open_range ? 0 : 1);
+	return bc_instruction_t{ bc_statement_opcode::k_statement_for, intern_type(vm, typeid_t::make_undefined()), param_x, {start_expr, end_expr}, {}, { body } };
 }
 
 bc_instruction_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement){
@@ -349,14 +350,14 @@ bc_instruction_t bcgen_while_statement(bgenerator_t& vm, const statement_t::whil
 
 	const auto& condition_expr = bcgen_expression(vm, statement._condition);
 	const auto& body = bcgen_body(vm, statement._body);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_while, intern_type(vm, typeid_t::make_undefined()), {condition_expr}, {}, {body} };
+	return bc_instruction_t{ bc_statement_opcode::k_statement_while, intern_type(vm, typeid_t::make_undefined()), 0, {condition_expr}, {}, {body} };
 }
 
 bc_instruction_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_expression, intern_type(vm, typeid_t::make_undefined()), {expr}, {}, {} };
+	return bc_instruction_t{ bc_statement_opcode::k_statement_expression, intern_type(vm, typeid_t::make_undefined()), 0, {expr}, {}, {} };
 }
 
 bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement){
@@ -376,7 +377,7 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 	}
 	else if(statement._block){
 		const auto& body = bcgen_body(vm, statement._block->_body);
-		return bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), {}, {}, { body} };
+		return bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { body} };
 	}
 	else if(statement._return){
 		return bcgen_return_statement(vm, *statement._return);

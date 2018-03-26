@@ -336,18 +336,26 @@ namespace floyd {
 
 
 		struct for_statement_t {
+			enum range_type {
+				k_open_range,	//	..<
+				k_closed_range	//	...
+			};
+
 			bool operator==(const for_statement_t& other) const {
 				return
 					_iterator_name == other._iterator_name
 					&& _start_expression == other._start_expression
 					&& _end_expression == other._end_expression
-					&& _body == other._body;
+					&& _body == other._body
+					&& _range_type == other._range_type
+					;
 			}
 
 			const std::string _iterator_name;
 			const expression_t _start_expression;
 			const expression_t _end_expression;
 			const body_t _body;
+			const range_type _range_type;
 		};
         public: statement_t(const for_statement_t& value) :
 			_for(std::make_shared<for_statement_t>(value))
@@ -357,9 +365,10 @@ namespace floyd {
 			const std::string iterator_name,
 			const expression_t& start_expression,
 			const expression_t& end_expression,
-			const body_t body
+			const body_t& body,
+			for_statement_t::range_type range_type
 		){
-			return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body });
+			return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body, range_type });
 		}
 
 

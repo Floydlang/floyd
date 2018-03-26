@@ -73,6 +73,7 @@ http://craftinginterpreters.com/representing-code.html
 		IF								"if" "(" EXPRESSION ")" BODY "else" BODY
 		IF-ELSE							"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
 		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
+		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..<" EXPRESSION ")" BODY
 		WHILE 							"while" "(" EXPRESSOIN ")" BODY
 
  		BIND							TYPE IDENTIFIER "=" EXPRESSION

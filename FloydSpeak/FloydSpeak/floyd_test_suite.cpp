@@ -1391,7 +1391,7 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 
 
 
-QUARK_UNIT_TESTQ("run_init()", "for"){
+QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	const auto r = test__run_global(
 		R"(
 			for (i in 0...2) {
@@ -1400,6 +1400,16 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 		)"
 	);
 	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
+}
+QUARK_UNIT_TEST("run_init()", "for", "", ""){
+	const auto r = test__run_global(
+		R"(
+			for (i in 0..<2) {
+				print("Iteration: " + to_string(i));
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1" }));
 }
 
 QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
