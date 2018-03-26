@@ -46,6 +46,7 @@ namespace floyd {
 
 
 	struct bc_value_object_t {
+#if DEBUG
 		public: bool check_invariant() const{
 			QUARK_ASSERT(_rc > 0);
 			QUARK_ASSERT(_type.check_invariant());
@@ -127,6 +128,7 @@ namespace floyd {
 			}
 			return true;
 		}
+#endif
 
 		public: bool operator==(const bc_value_object_t& other) const;
 
@@ -134,7 +136,9 @@ namespace floyd {
 
 		public: bc_value_object_t(const std::string& s) :
 			_rc(1),
+#if DEBUG && FLOYD_BD_DEBUG
 			_type(typeid_t::make_string()),
+#endif
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -142,7 +146,9 @@ namespace floyd {
 
 		public: bc_value_object_t(const std::shared_ptr<json_t>& s) :
 			_rc(1),
+#if DEBUG && FLOYD_BD_DEBUG
 			_type(typeid_t::make_json_value()),
+#endif
 			_json_value(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -150,7 +156,9 @@ namespace floyd {
 
 		public: bc_value_object_t(const typeid_t& s) :
 			_rc(1),
+#if DEBUG && FLOYD_BD_DEBUG
 			_type(typeid_t::make_typeid()),
+#endif
 			_typeid_value(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -158,28 +166,36 @@ namespace floyd {
 
 		public: bc_value_object_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag) :
 			_rc(1),
+#if DEBUG && FLOYD_BD_DEBUG
 			_type(type),
+#endif
 			_struct_members(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bc_value_object_t(const typeid_t& type, const std::vector<bc_value_t>& s) :
 			_rc(1),
+#if DEBUG && FLOYD_BD_DEBUG
 			_type(type),
+#endif
 			_vector_elements(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bc_value_object_t(const typeid_t& type, const std::map<std::string, bc_value_t>& s) :
 			_rc(1),
+#if DEBUG && FLOYD_BD_DEBUG
 			_type(type),
+#endif
 			_dict_entries(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bc_value_object_t(const typeid_t& type, int function_id) :
 			_rc(1),
+#if DEBUG && FLOYD_BD_DEBUG
 			_type(type),
+#endif
 			_function_id(function_id)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -224,7 +240,7 @@ namespace floyd {
 
 	struct bc_value_t {
 		public: bc_value_t() :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_undefined()),
 #endif
 			_is_ext(false)
@@ -232,7 +248,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 		private: explicit bc_value_t(const typeid_t& type, bool dummy) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(type),
 #endif
 			_is_ext(false)
@@ -253,7 +269,7 @@ namespace floyd {
 		}
 
 		public: typeid_t get_debug_type() const {
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			return _debug_type;
 #else
 			return typeid_t::make_undefined();
@@ -261,7 +277,7 @@ namespace floyd {
 		}
 
 		public: bc_value_t(const bc_value_t& other) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(other._debug_type),
 #endif
 			_is_ext(other._is_ext),
@@ -324,10 +340,8 @@ namespace floyd {
 			QUARK_ASSERT(other.check_invariant());
 			QUARK_ASSERT(check_invariant());
 
-#if FLOYD_BD_DEBUG
-#if DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			std::swap(_debug_type, other._debug_type);
-#endif
 #endif
 
 			std::swap(_is_ext, other._is_ext);
@@ -404,14 +418,12 @@ namespace floyd {
 
 
 
-		public: bool check_invariant() const {
-#if FLOYD_BD_DEBUG
 #if DEBUG
+		public: bool check_invariant() const {
 			QUARK_ASSERT(_debug_type.check_invariant());
-#endif
-#endif
 			return true;
 		}
+#endif
 
 /*
 		public: bool operator==(const bc_value_t& other) const{
@@ -499,7 +511,7 @@ namespace floyd {
 			return _value_internals._bool;
 		}
 		private: explicit bc_value_t(bool value) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_bool()),
 #endif
 			_is_ext(false)
@@ -536,7 +548,7 @@ namespace floyd {
 			return _value_internals._int;
 		}
 		private: explicit bc_value_t(int value) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_int()),
 #endif
 			_is_ext(false)
@@ -567,7 +579,7 @@ namespace floyd {
 			return _value_internals._float;
 		}
 		private: explicit bc_value_t(float value) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_float()),
 #endif
 			_is_ext(false)
@@ -598,7 +610,7 @@ namespace floyd {
 			return _value_internals._ext->_string;
 		}
 		private: explicit bc_value_t(const std::string value) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_string()),
 #endif
 			_is_ext(true)
@@ -627,7 +639,7 @@ namespace floyd {
 			return *_value_internals._ext->_json_value.get();
 		}
 		private: explicit bc_value_t(const std::shared_ptr<json_t>& value) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_json_value()),
 #endif
 			_is_ext(true)
@@ -657,7 +669,7 @@ namespace floyd {
 			return _value_internals._ext->_typeid_value;
 		}
 		private: explicit bc_value_t(const typeid_t& type_id) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_typeid()),
 #endif
 			_is_ext(true)
@@ -684,7 +696,7 @@ namespace floyd {
 			return _value_internals._ext->_struct_members;
 		}
 		private: explicit bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(struct_type),
 #endif
 			_is_ext(true)
@@ -714,7 +726,7 @@ namespace floyd {
 			return _value_internals._ext->_vector_elements;
 		}
 		private: explicit bc_value_t(const typeid_t& element_type, const std::vector<bc_value_t>& values) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_vector(element_type)),
 #endif
 			_is_ext(true)
@@ -745,7 +757,7 @@ namespace floyd {
 			return _value_internals._ext->_dict_entries;
 		}
 		private: explicit bc_value_t(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_dict(value_type)),
 #endif
 			_is_ext(true)
@@ -775,7 +787,7 @@ namespace floyd {
 			return _value_internals._ext->_function_id;
 		}
 		private: explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
-#if FLOYD_BD_DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(function_type),
 #endif
 			_is_ext(true)
@@ -801,10 +813,8 @@ namespace floyd {
 		};
 
 
-#if FLOYD_BD_DEBUG
-#if DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 		private: typeid_t _debug_type;
-#endif
 #endif
 		private: bool _is_ext = false;
 		private: value_internals_t _value_internals;
@@ -1118,8 +1128,9 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
+#if DEBUG
 		public: bool check_invariant() const { return true; }
-
+#endif
 
 		//////////////////////////////////////		STATE
 
@@ -1153,9 +1164,12 @@ namespace floyd {
 		std::vector<bc_body_t> _b;
 
 
+#if DEBUG
 		public: bool check_invariant() const {
 			return true;
 		}
+#endif
+
 	};
 
 
@@ -1187,10 +1201,11 @@ namespace floyd {
 
 
 	struct bc_function_definition_t {
+#if DEBUG
 		public: bool check_invariant() const {
 			return true;
 		}
-
+#endif
 
 		typeid_t _function_type;
 		std::vector<member_t> _args;
@@ -1205,10 +1220,12 @@ namespace floyd {
 
 
 	struct bc_program_t {
+#if DEBUG
 		public: bool check_invariant() const {
 //			QUARK_ASSERT(_globals.check_invariant());
 			return true;
 		}
+#endif
 
 		public: const bc_body_t _globals;
 		public: std::vector<const bc_function_definition_t> _function_defs;

@@ -471,6 +471,9 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 const bc_typeid2_t get_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
+const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
+	return vm._imm->_program._types[type]._basetype;
+}
 
 
 bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression_t& expr){
@@ -491,10 +494,10 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& parent_value = execute_expression(vm, expr._e[0]);
-	const auto parent_type = get_type(vm, expr._e[0]._type)._basetype;
+	const auto parent_type = get_basetype(vm, expr._e[0]._type);
 
 	const auto& key_value = execute_expression(vm, expr._e[1]);
-	const auto key_type = get_type(vm, expr._e[1]._type)._basetype;
+//	const auto key_type = get_basetype(vm, expr._e[1]._type)._basetype;
 
 
 	if(parent_type == base_type::k_string){
@@ -638,10 +641,11 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 
 //	This function evaluates all input expressions, then call construct_value_from_typeid() to do the work.
 //??? Make several opcodes for construct-value: construct-struct, vector, dict, basic. ALSO casting 1:1 between types.
+//??? Optimize -- inline construct_value_from_typeid() to simplify a lot.
 bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto basetype = get_type(vm, expr._type)._basetype;
+	const auto basetype = get_basetype(vm, expr._type);
 	if(basetype == base_type::k_vector){
 		const std::vector<bc_expression_t>& elements = expr._e;
 		const auto& root_value_type = get_type(vm, expr._type)._fulltype.front();
@@ -710,7 +714,7 @@ bc_value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& c = execute_expression(vm, expr._e[0]);
-	const auto basetype = get_type(vm, expr._type)._basetype;
+	const auto basetype = get_basetype(vm, expr._type);
 	if(basetype == base_type::k_int){
 		return bc_value_t::make_int(0 - c.get_int_value_quick());
 	}
@@ -749,7 +753,6 @@ bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_
 	const auto opcode = expr._opcode;
 	const auto type = get_type(vm, expr._e[0]._type);
 
-	//	Do generic functionallity, independant on type.
 	if(opcode == bc_expression_opcode::k_expression_comparison_smaller_or_equal){
 		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 		return bc_value_t::make_bool(diff <= 0);
@@ -781,6 +784,7 @@ bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_
 	}
 }
 
+//??? make dedicated opcodes for each type - no need to switch.
 bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -788,7 +792,7 @@ bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_
 	const auto& right_constant = execute_expression(vm, expr._e[1]);
 	QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 
-	const auto& basetype = get_type(vm, expr._type)._basetype;
+	const auto& basetype = get_basetype(vm, expr._type);
 
 	const auto op = expr._opcode;
 

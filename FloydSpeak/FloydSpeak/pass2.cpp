@@ -519,6 +519,7 @@ ast_json_t expression_to_json_xyz(const expression_t& e){
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
