@@ -469,11 +469,11 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 //////////////////////////////////////////		EXPRESSIONS
 
 
-const bc_typeid2_t get_type(const interpreter_t& vm, const bc_typeid_t& type){
+inline const bc_typeid2_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
-const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
-	return vm._imm->_program._types[type]._basetype;
+inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
+	return vm._imm->_program._types[type].get_base_type();
 }
 
 
@@ -481,7 +481,7 @@ bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_express
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& parent_expr = execute_expression(vm, expr._e[0]);
-	QUARK_ASSERT(get_type(vm, expr._e[0]._type)._basetype == base_type::k_struct);
+	QUARK_ASSERT(get_type(vm, expr._e[0]._type).get_base_type() == base_type::k_struct);
 
 	const auto& struct_instance = parent_expr.get_struct_value();
 	int index = expr._address_index;
@@ -603,7 +603,7 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 			QUARK_ASSERT(arg_expr.check_invariant());
 
 			const auto& t = execute_expression(vm, arg_expr);
-			const auto t1 = bc_to_value(t, get_type(vm, arg_expr._type).get_fulltype());
+			const auto t1 = bc_to_value(t, get_type(vm, arg_expr._type));
 			arg_values.push_back(t1);
 		}
 
@@ -651,7 +651,7 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 	const auto basetype = get_basetype(vm, expr._type);
 	if(basetype == base_type::k_vector){
 		const std::vector<bc_expression_t>& elements = expr._e;
-		const auto& root_value_type = get_type(vm, expr._type)._fulltype.front();
+		const auto& root_value_type = get_type(vm, expr._type);
 		const auto& element_type = root_value_type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_undefined() == false);
 
@@ -676,7 +676,7 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 	}
 	else if(basetype == base_type::k_dict){
 		const auto& elements = expr._e;
-		const auto& root_value_type = get_type(vm, expr._type)._fulltype.front();
+		const auto& root_value_type = get_type(vm, expr._type);
 		const auto& element_type = root_value_type.get_dict_value_type();
 
 		//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
@@ -703,13 +703,13 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
-		return construct_value_from_typeid(vm, get_type(vm, expr._type)._fulltype.front(), typeid_t::make_undefined(), elements2);
+		return construct_value_from_typeid(vm, get_type(vm, expr._type), typeid_t::make_undefined(), elements2);
 	}
 	else{
 		QUARK_ASSERT(expr._e.size() == 1);
 
 		const auto& element = execute_expression(vm, expr._e[0]);
-		return construct_value_from_typeid(vm, get_type(vm, expr._type).get_fulltype(), get_type(vm, expr._input_type).get_fulltype(), { element });
+		return construct_value_from_typeid(vm, get_type(vm, expr._type), get_type(vm, expr._input_type), { element });
 	}
 }
 
@@ -746,6 +746,7 @@ bc_value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_e
 	}
 }
 
+//??? flatten to main dispatch function.
 bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -909,7 +910,7 @@ bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_
 
 	//	vector
 	else if(basetype == base_type::k_vector){
-		const auto& element_type = get_type(vm, expr._type).get_fulltype().get_vector_element_type();
+		const auto& element_type = get_type(vm, expr._type).get_vector_element_type();
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
 			auto elements2 = left_constant.get_vector_value();
 			const auto& rhs_elements = right_constant.get_vector_value();

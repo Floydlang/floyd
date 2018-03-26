@@ -30,7 +30,10 @@ namespace floyd {
 	struct bc_body_t;
 	struct bc_value_t;
 	struct semantic_ast_t;
-	struct bc_typeid2_t;
+//	struct bc_typeid2_t;
+
+	typedef typeid_t bc_typeid2_t;
+	typedef int16_t bc_typeid_t;
 
 	inline value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
 	inline bc_value_t value_to_bc(const value_t& value);
@@ -497,20 +500,20 @@ namespace floyd {
 		}
 #endif
 */
-		public: static bc_value_t make_bool(bool v){
+		public: inline static bc_value_t make_bool(bool v){
 			return bc_value_t(v);
 		}
-		public: bool get_bool_value() const {
+		public: inline bool get_bool_value() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._bool;
 		}
-		public: bool get_bool_value_quick() const {
+		public: inline bool get_bool_value_quick() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._bool;
 		}
-		private: explicit bc_value_t(bool value) :
+		private: inline explicit bc_value_t(bool value) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_bool()),
 #endif
@@ -534,20 +537,20 @@ namespace floyd {
 #endif
 */
 
-		public: static bc_value_t make_int(int v){
+		public: inline static bc_value_t make_int(int v){
 			return bc_value_t{ v };
 		}
-		public: int get_int_value() const {
+		public: inline int get_int_value() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._int;
 		}
-		public: int get_int_value_quick() const {
+		public: inline int get_int_value_quick() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._int;
 		}
-		private: explicit bc_value_t(int value) :
+		private: inline explicit bc_value_t(int value) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_int()),
 #endif
@@ -1024,7 +1027,7 @@ namespace floyd {
 
 
 
-
+/*
 	//////////////////////////////////////		bc_typeid_t
 
 	//??? not needed anymore - we use int:s in interpreter, we can use typeid_t as global types.
@@ -1098,8 +1101,8 @@ namespace floyd {
 		//	0 or 1 elements. Contains an element if _basetype doesn't fully describe the type.
 		std::vector<typeid_t> _fulltype;
 	};
+*/
 
-	typedef int16_t bc_typeid_t;
 
 
 	//////////////////////////////////////		bc_expression_t

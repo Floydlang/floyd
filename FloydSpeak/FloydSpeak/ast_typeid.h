@@ -344,7 +344,7 @@ namespace floyd {
 
 		public: bool check_types_resolved() const;
 
-		public: floyd::base_type get_base_type() const{
+		public: inline floyd::base_type get_base_type() const{
 			return _base_type;
 		}
 

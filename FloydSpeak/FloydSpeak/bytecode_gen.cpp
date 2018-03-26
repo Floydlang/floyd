@@ -33,7 +33,6 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 
 
 
-
 bc_typeid_t intern_type(bgenerator_t& vm, const bc_typeid2_t& type){
     const auto it = std::find_if(vm._types.begin(), vm._types.end(), [&type](const bc_typeid2_t& e) { return e == type; });
 	if(it != vm._types.end()){
@@ -46,9 +45,11 @@ bc_typeid_t intern_type(bgenerator_t& vm, const bc_typeid2_t& type){
 	}
 }
 
+/*
 bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
 	return intern_type(vm, bc_typeid2_t(type));
 }
+*/
 
 
 int bc_limit(int value, int min, int max){
@@ -80,7 +81,7 @@ QUARK_UNIT_TESTQ("bc_compare_string()", ""){
 
 //??? Slow!.
 int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const bc_typeid2_t& type){
-	const auto& struct_def = type.get_fulltype().get_struct();
+	const auto& struct_def = type.get_struct();
 
 	for(int i = 0 ; i < struct_def._members.size() ; i++){
 		const auto& member_type = struct_def._members[i]._type;
@@ -101,7 +102,7 @@ int bc_compare_vector_true_deep(const std::vector<bc_value_t>& left, const std::
 //	QUARK_ASSERT(left._element_type == right._element_type);
 
 	const auto& shared_count = std::min(left.size(), right.size());
-	const auto& element_type = bc_typeid2_t(type.get_fulltype().get_vector_element_type());
+	const auto& element_type = bc_typeid2_t(type.get_vector_element_type());
 	for(int i = 0 ; i < shared_count ; i++){
 		const auto element_result = bc_value_t::compare_value_true_deep(left[i], right[i], element_type);
 		if(element_result != 0){
@@ -129,7 +130,7 @@ bool bc_map_compare (Map const &lhs, Map const &rhs) {
 
 
 int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right, const bc_typeid2_t& type){
-	const auto& element_type = bc_typeid2_t(type.get_fulltype().get_dict_value_type());
+	const auto& element_type = bc_typeid2_t(type.get_dict_value_type());
 
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
@@ -179,7 +180,7 @@ int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
-	const auto type = type0.get_fulltype();
+	const auto type = type0;
 	if(type.is_undefined()){
 		return 0;
 	}
@@ -331,7 +332,7 @@ bc_instruction_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ife
 	QUARK_ASSERT(statement._condition.get_output_type().is_bool());
 	const auto& then_expr = bcgen_body(vm, statement._then_body);
 	const auto& else_expr = bcgen_body(vm, statement._else_body);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_if, intern_type(vm, {}), {condition_expr}, {}, { then_expr, else_expr }};
+	return bc_instruction_t{ bc_statement_opcode::k_statement_if, intern_type(vm, typeid_t::make_undefined()), {condition_expr}, {}, { then_expr, else_expr }};
 }
 
 bc_instruction_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement){
@@ -340,7 +341,7 @@ bc_instruction_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_st
 	const auto& start_expr = bcgen_expression(vm, statement._start_expression);
 	const auto& end_expr = bcgen_expression(vm, statement._end_expression);
 	const auto& body = bcgen_body(vm, statement._body);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_for, intern_type(vm, {}), {start_expr, end_expr}, {}, { body } };
+	return bc_instruction_t{ bc_statement_opcode::k_statement_for, intern_type(vm, typeid_t::make_undefined()), {start_expr, end_expr}, {}, { body } };
 }
 
 bc_instruction_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement){
@@ -348,14 +349,14 @@ bc_instruction_t bcgen_while_statement(bgenerator_t& vm, const statement_t::whil
 
 	const auto& condition_expr = bcgen_expression(vm, statement._condition);
 	const auto& body = bcgen_body(vm, statement._body);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_while, intern_type(vm, {}), {condition_expr}, {}, {body} };
+	return bc_instruction_t{ bc_statement_opcode::k_statement_while, intern_type(vm, typeid_t::make_undefined()), {condition_expr}, {}, {body} };
 }
 
 bc_instruction_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_expression, intern_type(vm, {}), {expr}, {}, {} };
+	return bc_instruction_t{ bc_statement_opcode::k_statement_expression, intern_type(vm, typeid_t::make_undefined()), {expr}, {}, {} };
 }
 
 bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement){
@@ -375,7 +376,7 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 	}
 	else if(statement._block){
 		const auto& body = bcgen_body(vm, statement._block->_body);
-		return bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, {}), {}, {}, { body} };
+		return bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), {}, {}, { body} };
 	}
 	else if(statement._return){
 		return bcgen_return_statement(vm, *statement._return);
