@@ -18,7 +18,7 @@
 #include "ast_value.h"
 
 
-#define FLOYD_BD_DEBUG 0
+#define FLOYD_BD_DEBUG 1
 
 
 namespace floyd {
@@ -254,7 +254,7 @@ namespace floyd {
 
 		public: typeid_t get_debug_type() const {
 #if FLOYD_BD_DEBUG
-			return _debug_type
+			return _debug_type;
 #else
 			return typeid_t::make_undefined();
 #endif
