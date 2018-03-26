@@ -616,22 +616,22 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	Notice that arguments are first in the symbol list.
 		const auto symbol_count = function_def._body._symbols.size();
 
-		vm._value_stack.resize(values_offset + symbol_count);
-
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 
 			const auto& t = execute_expression(vm, arg_expr);
-			vm._value_stack[values_offset + i] = t;
+			vm._value_stack.push_back(t);
 		}
 		if(symbol_count > arg_count){
 			//	Skip args, they are already copied.
 			for(vector<bc_value_t>::size_type i = arg_count ; i < symbol_count ; i++){
 				const auto& symbol = function_def._body._symbols[i];
-				vm._value_stack[values_offset + i] = value_to_bc(symbol.second._const_value);
+				vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 			}
 		}
+
+		//??? Remove the parallell _call_stack -- encode stack frames into _value_stack.
 		vm._call_stack.push_back(environment_t{ &function_def._body, values_offset });
 		const auto& result = execute_statements(vm, function_def._body._statements);
 		vm._call_stack.pop_back();
@@ -946,6 +946,8 @@ bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 	else if(op == bc_expression_opcode::k_expression_lookup_element){
 		return execute_lookup_element_expression(vm, e);
 	}
+
+	//??? Optimize by inlining find_env_from_address() and making sep paths.
 	else if(op == bc_expression_opcode::k_expression_load){
 		environment_t* env = find_env_from_address(vm, e._address_parent_step);
 		const auto pos = env->_values_offset + e._address_index;
