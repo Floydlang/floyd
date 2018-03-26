@@ -66,7 +66,7 @@ typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 */
 
 
-
+/*
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::shared_ptr<value_entry_t> find_symbol_by_name_deep(const interpreter_t& vm, int depth, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -103,7 +103,6 @@ std::shared_ptr<value_entry_t> find_symbol_by_name_deep(const interpreter_t& vm,
 	}
 }
 
-
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
 std::shared_ptr<value_entry_t> find_symbol_by_name(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
@@ -111,12 +110,40 @@ std::shared_ptr<value_entry_t> find_symbol_by_name(const interpreter_t& vm, cons
 
 	return find_symbol_by_name_deep(vm, (int)(vm._call_stack.size() - 1), s);
 }
+*/
 
+std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto& symbols = vm._imm->_program._globals._symbols;
+    const auto& it = std::find_if(
+    	symbols.begin(),
+    	symbols.end(),
+    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
+	);
+	if(it != symbols.end()){
+		const auto index = it - symbols.begin();
+		const auto pos = index;
+		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+
+		const auto value_entry = value_entry_t{
+			vm._value_stack[pos],
+			it->first,
+			it->second,
+			variable_address_t::make_variable_address(-1, static_cast<int>(index))
+		};
+		return make_shared<value_entry_t>(value_entry);
+	}
+	else{
+		return nullptr;
+	}
+}
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	return get_global(vm, s);
 }
 value_t get_global(const interpreter_t& vm, const std::string& name){
-	const auto& result = find_symbol_by_name_deep(vm, 0, name);
+	const auto& result = find_global_symbol2(vm, name);
 	if(result == nullptr){
 		throw std::runtime_error("Cannot find global.");
 	}
@@ -377,7 +404,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 					vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 				}
 			}
-			vm._call_stack.push_back(environment_t{ &body, values_offset });
+			vm._call_stack.push_back(environment_t{ values_offset });
 
 			//??? simplify code -- create a count instead.
 			//	open-range
@@ -460,7 +487,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const 
 			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 		}
 	}
-	vm._call_stack.push_back(environment_t{ &body, values_offset });
+	vm._call_stack.push_back(environment_t{ values_offset });
 
 	const auto& r = execute_statements(vm, body._statements);
 	vm._call_stack.pop_back();
@@ -478,7 +505,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 		}
 	}
-	vm._call_stack.push_back(environment_t{ &body, values_offset });
+	vm._call_stack.push_back(environment_t{ values_offset });
 
 	const auto& r = execute_statements(vm, body._statements);
 	vm._call_stack.pop_back();
@@ -655,7 +682,7 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		}
 
 		//??? Remove the parallell _call_stack -- encode stack frames into _value_stack.
-		vm._call_stack.push_back(environment_t{ &function_def._body, values_offset });
+		vm._call_stack.push_back(environment_t{ values_offset });
 		const auto& result = execute_statements(vm, function_def._body._statements);
 		vm._call_stack.pop_back();
 		vm._value_stack.resize(values_offset);
@@ -1420,11 +1447,10 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 	}
 }
 
-bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
+inline bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 	return execute_expression__switch(vm, e);
 //	return execute_expression__computed_goto(vm, e);
 }
-
 
 
 
@@ -1457,7 +1483,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 		const auto& symbol = body_ptr._symbols[i];
 		_value_stack.push_back(value_to_bc(symbol.second._const_value));
 	}
-	_call_stack.push_back(environment_t{ &body_ptr, values_offset });
+	_call_stack.push_back(environment_t{ values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
 	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._statements);
@@ -1575,7 +1601,7 @@ std::pair<interpreter_t, value_t> run_main(const interpreter_context_t& context,
 	//	Runs global code.
 	auto vm = interpreter_t(program);
 
-	const auto& main_function = find_symbol_by_name(vm, "main");
+	const auto& main_function = find_global_symbol2(vm, "main");
 	if(main_function != nullptr){
 		const auto& result = call_function(vm, bc_to_value(main_function->_value, main_function->_symbol._value_type), args);
 		return { vm, result };
@@ -1588,7 +1614,7 @@ std::pair<interpreter_t, value_t> run_main(const interpreter_context_t& context,
 std::pair<interpreter_t, value_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const vector<floyd::value_t>& args){
 	auto vm = interpreter_t(program);
 
-	const auto& main_func = find_symbol_by_name(vm, "main");
+	const auto& main_func = find_global_symbol2(vm, "main");
 	if(main_func != nullptr){
 		const auto& r = call_function(vm, bc_to_value(main_func->_value, main_func->_symbol._value_type), args);
 		return { vm, r };

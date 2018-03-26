@@ -119,7 +119,7 @@ int fibonacci(int n) {
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	const int64_t cpp_iterations = 32;
 
 	const auto cpp_ns = measure_execution_time_ns(
@@ -153,7 +153,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 		)"
 	);
 	interpreter_t vm(ast);
-	const auto f = find_symbol_by_name(vm, "f");
+	const auto f = find_global_symbol2(vm, "f");
 	QUARK_ASSERT(f != nullptr);
 
 	const auto floyd_ns = measure_execution_time_ns(

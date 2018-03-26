@@ -94,7 +94,7 @@ namespace floyd {
 	*/
 
 	struct environment_t {
-		public: const bc_body_t* _body_ptr;
+//		public: const bc_body_t* _body_ptr;
 		public: std::vector<environment_t>::size_type _values_offset;
 	};
 
@@ -132,6 +132,7 @@ namespace floyd {
 		//	Holds all values for all environments.
 		public: std::vector<bc_value_t> _value_stack;
 		public: std::vector<environment_t> _call_stack;
+//		public: int _current_stack_frame;
 		public: std::vector<std::string> _print_output;
 	};
 
@@ -160,9 +161,9 @@ namespace floyd {
 		variable_address_t _address;
 	};
 
-	floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
-//	typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type);
-	std::shared_ptr<value_entry_t> find_symbol_by_name(const interpreter_t& vm, const std::string& s);
+	value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
+	value_t get_global(const interpreter_t& vm, const std::string& name);
+	std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.
@@ -179,7 +180,6 @@ namespace floyd {
 
 
 	interpreter_t run_global(const interpreter_context_t& context, const std::string& source);
-	value_t get_global(const interpreter_t& vm, const std::string& name);
 
 	void print_vm_printlog(const interpreter_t& vm);
 
