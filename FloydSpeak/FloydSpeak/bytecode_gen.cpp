@@ -52,17 +52,6 @@ bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
 */
 
 
-int bc_limit(int value, int min, int max){
-	if(value < min){
-		return min;
-	}
-	else if(value > max){
-		return max;
-	}
-	else{
-		return value;
-	}
-}
 
 int bc_compare_string(const std::string& left, const std::string& right){
 	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
@@ -472,39 +461,56 @@ bc_expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op
 
 	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0]);
 	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1]);
+	QUARK_ASSERT(left_expr._type == right_expr._type);
+	const auto type = e._input_exprs[0].get_output_type();
 
-	const std::map<expression_type, bc_expression_opcode> conv_opcode = {
-		{ expression_type::k_comparison_smaller_or_equal__2, bc_expression_opcode::k_expression_comparison_smaller_or_equal },
-		{ expression_type::k_comparison_smaller__2, bc_expression_opcode::k_expression_comparison_smaller },
-		{ expression_type::k_comparison_larger_or_equal__2, bc_expression_opcode::k_expression_comparison_larger_or_equal },
-		{ expression_type::k_comparison_larger__2, bc_expression_opcode::k_expression_comparison_larger },
+	if(e._operation == expression_type::k_comparison_smaller_or_equal__2 && type.is_int()){
+		return bc_expression_t{ bc_expression_opcode::k_expression_comparison_smaller_or_equal__int, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
+	}
+	else{
+		const std::map<expression_type, bc_expression_opcode> conv_opcode = {
+			{ expression_type::k_comparison_smaller_or_equal__2, bc_expression_opcode::k_expression_comparison_smaller_or_equal },
+			{ expression_type::k_comparison_smaller__2, bc_expression_opcode::k_expression_comparison_smaller },
+			{ expression_type::k_comparison_larger_or_equal__2, bc_expression_opcode::k_expression_comparison_larger_or_equal },
+			{ expression_type::k_comparison_larger__2, bc_expression_opcode::k_expression_comparison_larger },
 
-		{ expression_type::k_logical_equal__2, bc_expression_opcode::k_expression_logical_equal },
-		{ expression_type::k_logical_nonequal__2, bc_expression_opcode::k_expression_logical_nonequal }
-	};
-	const auto opcode = conv_opcode.at(e._operation);
-	return bc_expression_t{ opcode, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
+			{ expression_type::k_logical_equal__2, bc_expression_opcode::k_expression_logical_equal },
+			{ expression_type::k_logical_nonequal__2, bc_expression_opcode::k_expression_logical_nonequal }
+		};
+		const auto opcode = conv_opcode.at(e._operation);
+		return bc_expression_t{ opcode, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
+	}
 }
+
+
+const std::map<expression_type, bc_expression_opcode> conv_opcode__arithmetic = {
+	{ expression_type::k_arithmetic_add__2, bc_expression_opcode::k_expression_arithmetic_add },
+	{ expression_type::k_arithmetic_subtract__2, bc_expression_opcode::k_expression_arithmetic_subtract },
+	{ expression_type::k_arithmetic_multiply__2, bc_expression_opcode::k_expression_arithmetic_multiply },
+	{ expression_type::k_arithmetic_divide__2, bc_expression_opcode::k_expression_arithmetic_divide },
+	{ expression_type::k_arithmetic_remainder__2, bc_expression_opcode::k_expression_arithmetic_remainder },
+
+	{ expression_type::k_logical_and__2, bc_expression_opcode::k_expression_logical_and },
+	{ expression_type::k_logical_or__2, bc_expression_opcode::k_expression_logical_or }
+};
 
 bc_expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0]);
 	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1]);
+	const auto type = e._input_exprs[0].get_output_type();
 
-	const std::map<expression_type, bc_expression_opcode> conv_opcode = {
-		{ expression_type::k_arithmetic_add__2, bc_expression_opcode::k_expression_arithmetic_add },
-		{ expression_type::k_arithmetic_subtract__2, bc_expression_opcode::k_expression_arithmetic_subtract },
-		{ expression_type::k_arithmetic_multiply__2, bc_expression_opcode::k_expression_arithmetic_multiply },
-		{ expression_type::k_arithmetic_divide__2, bc_expression_opcode::k_expression_arithmetic_divide },
-		{ expression_type::k_arithmetic_remainder__2, bc_expression_opcode::k_expression_arithmetic_remainder },
-
-		{ expression_type::k_logical_and__2, bc_expression_opcode::k_expression_logical_and },
-		{ expression_type::k_logical_or__2, bc_expression_opcode::k_expression_logical_or }
-	};
-
-	const auto opcode = conv_opcode.at(e._operation);
-	return bc_expression_t{ opcode, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
+	if(e._operation == expression_type::k_arithmetic_add__2 && type.is_int()){
+		return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_add__int, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
+	}
+	else if(e._operation == expression_type::k_arithmetic_subtract__2 && type.is_int()){
+		return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_subtract__int, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
+	}
+	else{
+		const auto opcode = conv_opcode__arithmetic.at(e._operation);
+		return bc_expression_t{ opcode, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
+	}
 }
 
 bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
@@ -512,9 +518,15 @@ bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto& op = e.get_operation();
-
+	const auto output_type = e.get_output_type();
 	if(op == expression_type::k_literal){
-		return bc_expression_t{ bc_expression_opcode::k_expression_literal, intern_type(vm, e.get_output_type()), {}, {}, value_to_bc(e.get_literal()), {} };
+		if(output_type.is_int()){
+			//??? encode cheaper in expression-object?
+			return bc_expression_t{ bc_expression_opcode::k_expression_literal__int, intern_type(vm, output_type), {}, {}, value_to_bc(e.get_literal()), {} };
+		}
+		else{
+			return bc_expression_t{ bc_expression_opcode::k_expression_literal, intern_type(vm, output_type), {}, {}, value_to_bc(e.get_literal()), {} };
+		}
 	}
 	else if(op == expression_type::k_resolve_member){
 		return bcgen_resolve_member_expression(vm, e);

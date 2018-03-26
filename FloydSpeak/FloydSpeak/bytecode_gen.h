@@ -862,6 +862,7 @@ namespace floyd {
 
 	enum class bc_expression_opcode: uint8_t {
 		k_expression_literal = 0,
+		k_expression_literal__int,
 		k_expression_resolve_member,
 		k_expression_lookup_element,
 		k_expression_load,
@@ -874,6 +875,7 @@ namespace floyd {
 		k_expression_conditional_operator3,
 
 		k_expression_comparison_smaller_or_equal,
+		k_expression_comparison_smaller_or_equal__int,
 		k_expression_comparison_smaller,
 		k_expression_comparison_larger_or_equal,
 		k_expression_comparison_larger,
@@ -882,7 +884,9 @@ namespace floyd {
 		k_expression_logical_nonequal,
 
 		k_expression_arithmetic_add,
+		k_expression_arithmetic_add__int,
 		k_expression_arithmetic_subtract,
+		k_expression_arithmetic_subtract__int,
 		k_expression_arithmetic_multiply,
 		k_expression_arithmetic_divide,
 		k_expression_arithmetic_remainder,
@@ -891,6 +895,17 @@ namespace floyd {
 		k_expression_logical_or
 	};
 
+inline int bc_limit(int value, int min, int max){
+	if(value < min){
+		return min;
+	}
+	else if(value > max){
+		return max;
+	}
+	else{
+		return value;
+	}
+}
 
 
 /*

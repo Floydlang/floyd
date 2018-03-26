@@ -974,6 +974,9 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 	if(op == bc_expression_opcode::k_expression_literal){
 		return e._value;
 	}
+	else if(op == bc_expression_opcode::k_expression_literal__int){
+		return e._value;
+	}
 	else if(op == bc_expression_opcode::k_expression_resolve_member){
 		return execute_resolve_member_expression(vm, e);
 	}
@@ -1017,6 +1020,12 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		const auto& type = get_type(vm, e._e[0]._type);
 		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 		return bc_value_t::make_bool(diff <= 0);
+	}
+	else if(op == bc_expression_opcode::k_expression_comparison_smaller_or_equal__int){
+		const auto& left_constant = execute_expression(vm, e._e[0]);
+		const auto& right_constant = execute_expression(vm, e._e[1]);
+		QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
+		return bc_value_t::make_bool(left_constant.get_int_value_quick() <= right_constant.get_int_value_quick());
 	}
 	else if(op == bc_expression_opcode::k_expression_comparison_smaller){
 		const auto& left_constant = execute_expression(vm, e._e[0]);
@@ -1112,6 +1121,14 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+	else if(op == bc_expression_opcode::k_expression_arithmetic_add__int){
+		const auto& left = execute_expression(vm, e._e[0]);
+		const auto& right = execute_expression(vm, e._e[1]);
+		QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
+		const int left2 = left.get_int_value_quick();
+		const int right2 = right.get_int_value_quick();
+		return bc_value_t::make_int(left2 + right2);
+	}
 
 	else if(op == bc_expression_opcode::k_expression_arithmetic_subtract){
 		const auto& left = execute_expression(vm, e._e[0]);
@@ -1137,6 +1154,14 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		}
 		QUARK_ASSERT(false);
 		throw std::exception();
+	}
+	else if(op == bc_expression_opcode::k_expression_arithmetic_subtract__int){
+		const auto& left = execute_expression(vm, e._e[0]);
+		const auto& right = execute_expression(vm, e._e[1]);
+		QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
+		const int left2 = left.get_int_value_quick();
+		const int right2 = right.get_int_value_quick();
+		return bc_value_t::make_int(left2 - right2);
 	}
 	else if(op == bc_expression_opcode::k_expression_arithmetic_multiply){
 		const auto& left = execute_expression(vm, e._e[0]);
