@@ -956,7 +956,10 @@ bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_
 	throw std::exception();
 }
 
-bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
+
+
+
+bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1028,6 +1031,115 @@ bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 	throw std::exception();
 }
 
+//	Computed goto-dispatch of expressions: -- not faster than switch when running max optimizations. C++ Optimizer makes compute goto?
+//	May be better bet when doing a SEQUENCE of opcode dispatches in a loop.
+//??? use C++ local variables as our VM locals1?
+//https://eli.thegreenplace.net/2012/07/12/computed-goto-for-efficient-dispatch-tables
+bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	const auto& op = static_cast<int>(e._opcode);
+
+
+	//	Not thread safe -- avoid static locals!
+	static void* dispatch_table[] = {
+		&&bc_expression_opcode___k_expression_literal,
+		&&bc_expression_opcode___k_expression_resolve_member,
+		&&bc_expression_opcode___k_expression_lookup_element,
+		&&bc_expression_opcode___k_expression_load,
+		&&bc_expression_opcode___k_expression_call,
+		&&bc_expression_opcode___k_expression_construct_value,
+
+		&&bc_expression_opcode___k_expression_arithmetic_unary_minus,
+
+		&&bc_expression_opcode___k_expression_conditional_operator3,
+
+		&&bc_expression_opcode___k_expression_comparison_smaller_or_equal,
+		&&bc_expression_opcode___k_expression_comparison_smaller,
+		&&bc_expression_opcode___k_expression_comparison_larger_or_equal,
+		&&bc_expression_opcode___k_expression_comparison_larger,
+
+		&&bc_expression_opcode___k_expression_logical_equal,
+		&&bc_expression_opcode___k_expression_logical_nonequal,
+
+		&&bc_expression_opcode___k_expression_arithmetic_add,
+		&&bc_expression_opcode___k_expression_arithmetic_subtract,
+		&&bc_expression_opcode___k_expression_arithmetic_multiply,
+		&&bc_expression_opcode___k_expression_arithmetic_divide,
+		&&bc_expression_opcode___k_expression_arithmetic_remainder,
+
+		&&bc_expression_opcode___k_expression_logical_and,
+		&&bc_expression_opcode___k_expression_logical_or
+	};
+//	#define DISPATCH() goto *dispatch_table[op]
+
+//	DISPATCH();
+	goto *dispatch_table[op];
+	while (1) {
+        bc_expression_opcode___k_expression_literal:
+			return e._value;
+
+		bc_expression_opcode___k_expression_resolve_member:
+			return execute_resolve_member_expression(vm, e);
+
+		bc_expression_opcode___k_expression_lookup_element:
+			return execute_lookup_element_expression(vm, e);
+
+		//??? Optimize by inlining find_env_from_address() and making sep paths.
+		bc_expression_opcode___k_expression_load:
+			{
+				environment_t* env = find_env_from_address(vm, e._address_parent_step);
+				const auto pos = env->_values_offset + e._address_index;
+				QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+				const auto& value = vm._value_stack[pos];
+		//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
+				return value;
+			}
+
+		bc_expression_opcode___k_expression_call:
+			return execute_call_expression(vm, e);
+
+		bc_expression_opcode___k_expression_construct_value:
+			return execute_construct_value_expression(vm, e);
+
+
+
+		bc_expression_opcode___k_expression_arithmetic_unary_minus:
+			return execute_arithmetic_unary_minus_expression(vm, e);
+
+
+
+		bc_expression_opcode___k_expression_conditional_operator3:
+			return execute_conditional_operator_expression(vm, e);
+
+
+
+		bc_expression_opcode___k_expression_comparison_smaller_or_equal:
+		bc_expression_opcode___k_expression_comparison_smaller:
+		bc_expression_opcode___k_expression_comparison_larger_or_equal:
+		bc_expression_opcode___k_expression_comparison_larger:
+		bc_expression_opcode___k_expression_logical_equal:
+		bc_expression_opcode___k_expression_logical_nonequal:
+			return execute_comparison_expression(vm, e);
+
+
+		bc_expression_opcode___k_expression_arithmetic_add:
+		bc_expression_opcode___k_expression_arithmetic_subtract:
+		bc_expression_opcode___k_expression_arithmetic_multiply:
+		bc_expression_opcode___k_expression_arithmetic_divide:
+		bc_expression_opcode___k_expression_arithmetic_remainder:
+
+		bc_expression_opcode___k_expression_logical_and:
+		bc_expression_opcode___k_expression_logical_or:
+			return execute_arithmetic_expression(vm, e);
+	}
+}
+
+bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
+	return execute_expression__switch(vm, e);
+//	return execute_expression__computed_goto(vm, e);
+}
 
 
 

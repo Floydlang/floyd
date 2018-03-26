@@ -189,7 +189,6 @@ namespace floyd {
 		}
 
 
-
 		public: int _rc;
 #if DEBUG
 //??? use bc_typeid_t instead
@@ -862,7 +861,7 @@ namespace floyd {
 
 
 	enum class bc_expression_opcode: uint8_t {
-		k_expression_literal,
+		k_expression_literal = 0,
 		k_expression_resolve_member,
 		k_expression_lookup_element,
 		k_expression_load,
@@ -1042,7 +1041,6 @@ namespace floyd {
 			return true;
 		}
 #endif
-
 	};
 
 
