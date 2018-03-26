@@ -120,7 +120,7 @@ int fibonacci(int n) {
 }
 
 QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
-	const int64_t cpp_iterations = (29);
+	const int64_t cpp_iterations = 32;
 
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++: Fibonacci",
@@ -145,7 +145,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 			}
 
 			int f(){
-				for (i in 0..<29) {
+				for (i in 0..<32) {
 					a = fibonacci(i);
 				}
 				return 8;
