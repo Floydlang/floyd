@@ -73,7 +73,7 @@ std::shared_ptr<value_entry_t> find_symbol_by_name_deep(const interpreter_t& vm,
 	QUARK_ASSERT(depth >= 0 && depth < vm._call_stack.size());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto env = &vm._call_stack[depth];
+	const auto& env = &vm._call_stack[depth];
     const auto& it = std::find_if(
     	env->_body_ptr->_symbols.begin(),
     	env->_body_ptr->_symbols.end(),
@@ -116,7 +116,7 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	return get_global(vm, s);
 }
 value_t get_global(const interpreter_t& vm, const std::string& name){
-	const auto result = find_symbol_by_name_deep(vm, 0, name);
+	const auto& result = find_symbol_by_name_deep(vm, 0, name);
 	if(result == nullptr){
 		throw std::runtime_error("Cannot find global.");
 	}
@@ -246,7 +246,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 	}
 	else{
 #if DEBUG
-		const auto arg_types = f.get_type().get_function_args();
+		const auto& arg_types = f.get_type().get_function_args();
 
 		//	arity
 		QUARK_ASSERT(args.size() == arg_types.size());
@@ -325,7 +325,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		const auto opcode = statement._opcode;
 		if(opcode == bc_statement_opcode::k_statement_store){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
-			auto env = find_env_from_address(vm, statement._v._parent_steps);
+			const auto& env = find_env_from_address(vm, statement._v._parent_steps);
 			const auto pos = env->_values_offset + statement._v._index;
 			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 			vm._value_stack[pos] = rhs_value;
@@ -668,7 +668,7 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 		}
 
 	#if DEBUG
-		for(const auto m: elements2){
+		for(const auto& m: elements2){
 			QUARK_ASSERT(m.get_debug_type() == element_type);
 		}
 	#endif
@@ -699,7 +699,7 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 	}
 	else if(basetype == base_type::k_struct){
 		std::vector<bc_value_t> elements2;
-		for(const auto m: expr._e){
+		for(const auto& m: expr._e){
 			const auto& element = execute_expression(vm, m);
 			elements2.push_back(element);
 		}
@@ -755,7 +755,7 @@ bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_
 	QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 
 	const auto opcode = expr._opcode;
-	const auto type = get_type(vm, expr._e[0]._type);
+	const auto& type = get_type(vm, expr._e[0]._type);
 
 	if(opcode == bc_expression_opcode::k_expression_comparison_smaller_or_equal){
 		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
@@ -912,6 +912,7 @@ bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_
 	else if(basetype == base_type::k_vector){
 		const auto& element_type = get_type(vm, expr._type).get_vector_element_type();
 		if(op == bc_expression_opcode::k_expression_arithmetic_add){
+			//	Copy vector into elements.
 			auto elements2 = left_constant.get_vector_value();
 			const auto& rhs_elements = right_constant.get_vector_value();
 			elements2.insert(elements2.end(), rhs_elements.begin(), rhs_elements.end());
@@ -1083,7 +1084,7 @@ bool interpreter_t::check_invariant() const {
 json_t interpreter_to_json(const interpreter_t& vm){
 	vector<json_t> callstack;
 	for(int env_index = 0 ; env_index < vm._call_stack.size() ; env_index++){
-		const auto e = &vm._call_stack[vm._call_stack.size() - 1 - env_index];
+		const auto& e = &vm._call_stack[vm._call_stack.size() - 1 - env_index];
 
 		const auto local_end = (env_index == (vm._call_stack.size() - 1)) ? vm._value_stack.size() : vm._call_stack[vm._call_stack.size() - 1 - env_index + 1]._values_offset;
 		const auto local_count = local_end - e->_values_offset;
