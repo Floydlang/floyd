@@ -134,21 +134,21 @@ inline const bc_function_definition_t& get_function_def(const interpreter_t& vm,
 	return function_def;
 }
 
-inline environment_t* find_env_from_address(interpreter_t& vm, const variable_address_t& a){
-	if(a._parent_steps == -1){
+inline environment_t* find_env_from_address(interpreter_t& vm, int parent_step){
+	if(parent_step == -1){
 		return &vm._call_stack[0];
 	}
 	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
+		return &vm._call_stack[vm._call_stack.size() - 1 - parent_step];
 	}
 }
 
-inline const environment_t* find_env_from_address(const interpreter_t& vm, const variable_address_t& a){
-	if(a._parent_steps == -1){
+inline const environment_t* find_env_from_address(const interpreter_t& vm, int parent_step){
+	if(parent_step == -1){
 		return &vm._call_stack[0];
 	}
 	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
+		return &vm._call_stack[vm._call_stack.size() - 1 - parent_step];
 	}
 }
 
@@ -271,9 +271,30 @@ QUARK_UNIT_TEST_VIP("", "", "", ""){
 	QUARK_UT_VERIFY(s == 64);
 }
 
+
+
 QUARK_UNIT_TEST_VIP("", "", "", ""){
 	const auto s = sizeof(bc_expression_t);
 	QUARK_UT_VERIFY(s == 56);
+
+
+	const auto opcode_offset = offsetof(bc_expression_t, _opcode);
+//	QUARK_UT_VERIFY(opcode_offset == 8);
+
+	const auto opcode_size = sizeof(bc_expression_opcode);
+	QUARK_UT_VERIFY(opcode_size == 1);
+
+
+	auto temp = bc_expression_t(
+		bc_expression_opcode::k_expression_load,
+		13,
+		{},
+		variable_address_t::make_variable_address(10, 11),
+		bc_value_t::make_int(1234),
+		16
+	);
+	QUARK_ASSERT(temp.check_invariant());
+	QUARK_UT_VERIFY(sizeof(temp) == 56);
 }
 
 QUARK_UNIT_TEST_VIP("", "", "", ""){
@@ -290,6 +311,9 @@ QUARK_UNIT_TEST_VIP("", "", "", ""){
 }
 
 
+
+
+
 statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instruction_t>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -300,7 +324,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		const auto opcode = statement._opcode;
 		if(opcode == bc_statement_opcode::k_statement_store){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
-			auto env = find_env_from_address(vm, statement._v);
+			auto env = find_env_from_address(vm, statement._v._parent_steps);
 			const auto pos = env->_values_offset + statement._v._index;
 			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 			vm._value_stack[pos] = rhs_value;
@@ -456,7 +480,7 @@ bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_express
 	QUARK_ASSERT(get_type(vm, expr._e[0]._type)._basetype == base_type::k_struct);
 
 	const auto& struct_instance = parent_expr.get_struct_value();
-	int index = expr._address._index;
+	int index = expr._address_index;
 	QUARK_ASSERT(index != -1);
 
 	const bc_value_t value = struct_instance[index];
@@ -916,8 +940,8 @@ bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e){
 		return execute_lookup_element_expression(vm, e);
 	}
 	else if(op == bc_expression_opcode::k_expression_load){
-		environment_t* env = find_env_from_address(vm, e._address);
-		const auto pos = env->_values_offset + e._address._index;
+		environment_t* env = find_env_from_address(vm, e._address_parent_step);
+		const auto pos = env->_values_offset + e._address_index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 		const auto& value = vm._value_stack[pos];
 //		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
