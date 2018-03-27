@@ -131,8 +131,7 @@ namespace floyd {
 
 		//	Holds all values for all environments.
 		public: std::vector<bc_value_t> _value_stack;
-		public: std::vector<environment_t> _call_stack;
-//		public: int _current_stack_frame;
+		public: int _current_stack_frame;
 		public: std::vector<std::string> _print_output;
 	};
 

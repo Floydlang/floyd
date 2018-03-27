@@ -43,6 +43,48 @@ bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e);
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values);
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 
+//	Returns new frame-pos, same as vm._current_stack_frame.
+//	Will NOT add local variables etc.
+//	Only pushes previous stack frame pos.
+int open_stack_frame(interpreter_t& vm){
+	const auto new_frame_start = static_cast<int>(vm._value_stack.size());
+	const auto prev_frame_pos = vm._current_stack_frame;
+	vm._value_stack.push_back(bc_value_t::make_int(prev_frame_pos));
+	const auto new_frame_pos = new_frame_start + 1;
+	vm._current_stack_frame = new_frame_pos;
+	return new_frame_pos;
+}
+
+//	Pops entire stack frame -- all locals etc.
+//	Restores previous stack frame pos.
+//	Returns resulting stack frame pos.
+int close_stack_frame(interpreter_t& vm){
+	const auto current_pos = vm._current_stack_frame;
+	const auto prev_frame_pos = vm._value_stack[current_pos - 1].get_int_value();
+	const auto prev_frame_end_pos = current_pos - 1;
+	vm._value_stack.resize(prev_frame_end_pos);
+	vm._current_stack_frame = prev_frame_pos;
+	return prev_frame_pos;
+}
+
+//	#0 is top of stack, last elementis bottom.
+//	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
+vector<std::pair<int, int>> get_stack_frames(const interpreter_t& vm){
+	int frame_pos = vm._current_stack_frame;
+
+	//	We use the entire current stack to calc top frame's size. This can be wrong, if someone pushed more stuff there. Same goes with the previous stack frames too..
+	vector<std::pair<int, int>> result{ { frame_pos, static_cast<int>(vm._value_stack.size()) - frame_pos }};
+
+	while(frame_pos > 1){
+		const auto prev_frame_pos = vm._value_stack[frame_pos - 1].get_int_value();
+		const auto prev_size = (frame_pos - 1) - prev_frame_pos;
+		result.push_back(std::pair<int, int>{ frame_pos, prev_size });
+
+		frame_pos = prev_frame_pos;
+	}
+	return result;
+}
+
 /*
 typeid_t find_type_by_name(const interpreter_t& vm, const typeid_t& type){
 	if(type.get_base_type() == base_type::k_internal_unresolved_type_identifier){
@@ -124,7 +166,7 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
 	);
 	if(it != symbols.end()){
 		const auto index = it - symbols.begin();
-		const auto pos = index;
+		const auto pos = 1 + index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 
 		const auto value_entry = value_entry_t{
@@ -162,23 +204,23 @@ inline const bc_function_definition_t& get_function_def(const interpreter_t& vm,
 	return function_def;
 }
 
-inline environment_t* find_env_from_address(interpreter_t& vm, int parent_step){
-	if(parent_step == -1){
-		return &vm._call_stack[0];
+inline int find_frame_from_address(interpreter_t& vm, int parent_step){
+	if(parent_step == 0){
+		return vm._current_stack_frame;
+	}
+	else if(parent_step == -1){
+		//	Address 0 holds dummy prevstack for globals.
+		return 1;
 	}
 	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - parent_step];
+		int frame_pos = vm._current_stack_frame;
+		for(auto i = 0 ; i < parent_step ; i++){
+			frame_pos = vm._value_stack[frame_pos - 1].get_int_value();
+		}
+		return frame_pos;
 	}
 }
 
-inline const environment_t* find_env_from_address(const interpreter_t& vm, int parent_step){
-	if(parent_step == -1){
-		return &vm._call_stack[0];
-	}
-	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - parent_step];
-	}
-}
 
 //??? split into one-argument and multi-argument opcodes.
 bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
@@ -352,8 +394,8 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		const auto opcode = statement._opcode;
 		if(opcode == bc_statement_opcode::k_statement_store){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
-			const auto& env = find_env_from_address(vm, statement._v._parent_steps);
-			const auto pos = env->_values_offset + statement._v._index;
+			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
+			const auto pos = frame_pos + statement._v._index;
 			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 			vm._value_stack[pos] = rhs_value;
 		}
@@ -388,36 +430,33 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		else if(opcode == bc_statement_opcode::k_statement_for){
 			const auto& start_value0 = execute_expression(vm, statement._e[0]);
 			const auto start_value_int = start_value0.get_int_value_quick();
-
 			const auto& end_value0 = execute_expression(vm, statement._e[1]);
 			const auto end_value_int = end_value0.get_int_value_quick();
-
 			const auto& body = statement._b[0];
 
-			const auto values_offset = vm._value_stack.size();
-			vm._value_stack.push_back(bc_value_t::make_undefined());
+			const auto new_frame_pos = open_stack_frame(vm);
 
 			//	These are constants (can be reused for every iteration of the for-loop, or memory slots = also reuse).
+			//	Notice that first symbol is the loop-iterator.
+			QUARK_ASSERT(body._symbols.size() >= 1);
 			if(body._symbols.empty() == false){
 				for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
 					const auto& symbol = body._symbols[i];
 					vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 				}
 			}
-			vm._call_stack.push_back(environment_t{ values_offset });
 
 			//??? simplify code -- create a count instead.
 			//	open-range
 			if(statement._param_x == 0){
 				for(int x = start_value_int ; x < end_value_int ; x++){
-					vm._value_stack[values_offset + 0] = bc_value_t::make_int(x);
+					vm._value_stack[new_frame_pos + 0] = bc_value_t::make_int(x);
 
 					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 					const auto& return_value = execute_statements(vm, body._statements);
 
 					if(return_value._type == statement_result_t::k_returning){
-						vm._call_stack.pop_back();
-						vm._value_stack.resize(values_offset);
+						close_stack_frame(vm);
 						return return_value;
 					}
 				}
@@ -426,14 +465,13 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			//	closed-range
 			else if(statement._param_x == 1){
 				for(int x = start_value_int ; x <= end_value_int ; x++){
-					vm._value_stack[values_offset + 0] = bc_value_t::make_int(x);
+					vm._value_stack[new_frame_pos + 0] = bc_value_t::make_int(x);
 
 					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 					const auto& return_value = execute_statements(vm, body._statements);
 
 					if(return_value._type == statement_result_t::k_returning){
-						vm._call_stack.pop_back();
-						vm._value_stack.resize(values_offset);
+						close_stack_frame(vm);
 						return return_value;
 					}
 				}
@@ -441,8 +479,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			else{
 				QUARK_ASSERT(false);
 			}
-			vm._call_stack.pop_back();
-			vm._value_stack.resize(values_offset);
+			close_stack_frame(vm);
 		}
 		else if(opcode == bc_statement_opcode::k_statement_while){
 			bool again = true;
@@ -475,7 +512,8 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto values_offset = vm._value_stack.size();
+	const auto new_frame_pos = open_stack_frame(vm);
+
 	if(init_values.empty() == false){
 		for(const auto& e: init_values){
 			vm._value_stack.push_back(e);
@@ -487,30 +525,25 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const 
 			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 		}
 	}
-	vm._call_stack.push_back(environment_t{ values_offset });
 
 	const auto& r = execute_statements(vm, body._statements);
-	vm._call_stack.pop_back();
-	vm._value_stack.resize(values_offset);
-
+	close_stack_frame(vm);
 	return r;
 }
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto values_offset = vm._value_stack.size();
+	const auto new_frame_pos = open_stack_frame(vm);
+
 	if(body._symbols.empty() == false){
 		for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
 			const auto& symbol = body._symbols[i];
 			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
 		}
 	}
-	vm._call_stack.push_back(environment_t{ values_offset });
 
 	const auto& r = execute_statements(vm, body._statements);
-	vm._call_stack.pop_back();
-	vm._value_stack.resize(values_offset);
-
+	close_stack_frame(vm);
 	return r;
 }
 
@@ -661,18 +694,22 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		return value_to_bc(result);
 	}
 	else{
-		const auto values_offset = vm._value_stack.size();
-
 		//	Notice that arguments are first in the symbol list.
 		const auto symbol_count = function_def._body._symbols.size();
 
+		vector<bc_value_t> temp;
+		temp.reserve(arg_count);
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
-
 			const auto& t = execute_expression(vm, arg_expr);
-			vm._value_stack.push_back(t);
+			temp.push_back(t);
 		}
+
+		const auto new_frame_pos = open_stack_frame(vm);
+
+		vm._value_stack.insert(vm._value_stack.end(), temp.begin(), temp.end());
+
 		if(symbol_count > arg_count){
 			//	Skip args, they are already copied.
 			for(vector<bc_value_t>::size_type i = arg_count ; i < symbol_count ; i++){
@@ -681,11 +718,8 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 			}
 		}
 
-		//??? Remove the parallell _call_stack -- encode stack frames into _value_stack.
-		vm._call_stack.push_back(environment_t{ values_offset });
 		const auto& result = execute_statements(vm, function_def._body._statements);
-		vm._call_stack.pop_back();
-		vm._value_stack.resize(values_offset);
+		close_stack_frame(vm);
 
 		QUARK_ASSERT(result._type == statement_result_t::k_returning);
 		return result._output;
@@ -1013,8 +1047,8 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 
 	//??? Optimize by inlining find_env_from_address() and making sep paths.
 	else if(op == bc_expression_opcode::k_expression_load){
-		environment_t* env = find_env_from_address(vm, e._address_parent_step);
-		const auto pos = env->_values_offset + e._address_index;
+		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
+		const auto pos = frame_pos + e._address_index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 		const auto& value = vm._value_stack[pos];
 //		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
@@ -1400,8 +1434,8 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 		//??? Optimize by inlining find_env_from_address() and making sep paths.
 		bc_expression_opcode___k_expression_load:
 			{
-				environment_t* env = find_env_from_address(vm, e._address_parent_step);
-				const auto pos = env->_values_offset + e._address_index;
+				int frame_pos = find_frame_from_address(vm, e._address_parent_step);
+				const auto pos = frame_pos + e._address_index;
 				QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 				const auto& value = vm._value_stack[pos];
 		//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
@@ -1458,11 +1492,12 @@ inline bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e
 
 
 
+
+
 interpreter_t::interpreter_t(const bc_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
 	_value_stack.reserve(1024);
-	_call_stack.reserve(32);
 
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto& host_functions = get_host_functions();
@@ -1476,14 +1511,13 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	const auto start_time = std::chrono::high_resolution_clock::now();
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions2});
 
-
-	const auto values_offset = _value_stack.size();
+	_current_stack_frame = 0;
+	open_stack_frame(*this);
 	const auto& body_ptr = _imm->_program._globals;
 	for(vector<bc_value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
 		const auto& symbol = body_ptr._symbols[i];
 		_value_stack.push_back(value_to_bc(symbol.second._const_value));
 	}
-	_call_stack.push_back(environment_t{ values_offset });
 
 	//	Run static intialization (basically run global statements before calling main()).
 	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._statements);
@@ -1493,7 +1527,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 interpreter_t::interpreter_t(const interpreter_t& other) :
 	_imm(other._imm),
 	_value_stack(other._value_stack),
-	_call_stack(other._call_stack),
+	_current_stack_frame(other._current_stack_frame),
 	_print_output(other._print_output)
 {
 	QUARK_ASSERT(other.check_invariant());
@@ -1503,7 +1537,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 void interpreter_t::swap(interpreter_t& other) throw(){
 	other._imm.swap(this->_imm);
 	other._value_stack.swap(this->_value_stack);
-	_call_stack.swap(this->_call_stack);
+	std::swap(_current_stack_frame, this->_current_stack_frame);
 	other._print_output.swap(this->_print_output);
 }
 
@@ -1528,8 +1562,11 @@ bool interpreter_t::check_invariant() const {
 
 json_t interpreter_to_json(const interpreter_t& vm){
 	vector<json_t> callstack;
-	for(int env_index = 0 ; env_index < vm._call_stack.size() ; env_index++){
-		const auto& e = &vm._call_stack[vm._call_stack.size() - 1 - env_index];
+
+	const auto stack_frames = get_stack_frames(vm);
+/*
+	for(int env_index = 0 ; env_index < stack_frames.size() ; env_index++){
+		const auto frame_pos = stack_frames[env_index];
 
 		const auto local_end = (env_index == (vm._call_stack.size() - 1)) ? vm._value_stack.size() : vm._call_stack[vm._call_stack.size() - 1 - env_index + 1]._values_offset;
 		const auto local_count = local_end - e->_values_offset;
@@ -1543,6 +1580,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		});
 		callstack.push_back(env);
 	}
+*/
 
 	return json_t::make_object({
 		{ "ast", bcprogram_to_json(vm._imm->_program) },
