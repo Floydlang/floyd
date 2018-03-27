@@ -17,6 +17,7 @@
 #include "json_support.h"
 #include "json_parser.h"
 
+#include <array>
 #include <cmath>
 #include <sys/time.h>
 
@@ -697,18 +698,45 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	Notice that arguments are first in the symbol list.
 		const auto symbol_count = function_def._body._symbols.size();
 
-		vector<bc_value_t> temp;
-		temp.reserve(arg_count);
+		//	NOTICE: the arg expressions are designed to be run in caller's stack frame -- their addresses are relative it that.
+		//	execute_expression() may temporarily use the stack, overwriting stack after frame pointer.
+		//	This makes it hard to execute the args and store the directly into the right spot of stack.
+		//	Need temp to solve this. Find better solution?
+
+		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
+
+#if 1
+		if(arg_count > 8){
+			throw std::runtime_error("Max 8 arguments.");
+		}
+	    std::array<bc_value_t, 8> temp;
+//		vector<bc_value_t> temp;
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 			const auto& t = execute_expression(vm, arg_expr);
-			temp.push_back(t);
+			temp[i] = t;
 		}
 
 		const auto new_frame_pos = open_stack_frame(vm);
 
-		vm._value_stack.insert(vm._value_stack.end(), temp.begin(), temp.end());
+		vm._value_stack.insert(vm._value_stack.end(), temp.begin(), temp.begin() + arg_count);
+#endif
+#if 0
+		const auto new_frame_pos = open_stack_frame(vm);
+		for(int i = 0 ; i < arg_count ; i++){
+			vm._value_stack.push_back({});
+		}
+		vm._current_stack_frame = new_frame_pos + static_cast<int>(arg_count);
+
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& arg_expr = expr._e[i + 1];
+			QUARK_ASSERT(arg_expr.check_invariant());
+			const auto& t = execute_expression(vm, arg_expr);
+			vm._value_stack[new_frame_pos + i] = t;
+		}
+		vm._current_stack_frame = new_frame_pos;
+#endif
 
 		if(symbol_count > arg_count){
 			//	Skip args, they are already copied.
