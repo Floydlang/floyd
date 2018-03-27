@@ -18,7 +18,7 @@
 #include "ast_value.h"
 
 
-#define FLOYD_BD_DEBUG 1
+#define FLOYD_BD_DEBUG 0
 
 
 namespace floyd {
@@ -52,6 +52,7 @@ namespace floyd {
 #if DEBUG
 		public: bool check_invariant() const{
 			QUARK_ASSERT(_rc > 0);
+#if DEBUG && FLOYD_BD_DEBUG
 			QUARK_ASSERT(_type.check_invariant());
 			QUARK_ASSERT(_typeid_value.check_invariant());
 
@@ -122,6 +123,7 @@ namespace floyd {
 			else {
 				QUARK_ASSERT(false);
 			}
+#endif
 			return true;
 		}
 #endif
@@ -190,7 +192,7 @@ namespace floyd {
 
 
 		public: int _rc;
-#if DEBUG
+#if DEBUG && FLOYD_BD_DEBUG
 //??? use bc_typeid_t instead
 		public: typeid_t _type;
 #endif
@@ -229,14 +231,17 @@ namespace floyd {
 #endif
 			_is_ext(false)
 		{
+			_value_internals._ext = nullptr;
 			QUARK_ASSERT(check_invariant());
 		}
+
 		private: explicit bc_value_t(const typeid_t& type, bool dummy) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(type),
 #endif
 			_is_ext(false)
 		{
+			_value_internals._ext = nullptr;
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -252,13 +257,12 @@ namespace floyd {
 			}
 		}
 
-		public: typeid_t get_debug_type() const {
 #if DEBUG && FLOYD_BD_DEBUG
+		public: typeid_t get_debug_type() const {
 			return _debug_type;
-#else
 			return typeid_t::make_undefined();
-#endif
 		}
+#endif
 
 		public: bc_value_t(const bc_value_t& other) :
 #if DEBUG && FLOYD_BD_DEBUG
@@ -332,9 +336,7 @@ namespace floyd {
 #if DEBUG && FLOYD_BD_DEBUG
 			std::swap(_debug_type, other._debug_type);
 #endif
-
 			std::swap(_is_ext, other._is_ext);
-
 			std::swap(_value_internals, other._value_internals);
 
 			QUARK_ASSERT(other.check_invariant());
@@ -404,7 +406,9 @@ namespace floyd {
 
 #if DEBUG
 		public: bool check_invariant() const {
+#if DEBUG && FLOYD_BD_DEBUG
 			QUARK_ASSERT(_debug_type.check_invariant());
+#endif
 			return true;
 		}
 #endif
@@ -861,7 +865,9 @@ namespace floyd {
 
 
 	enum class bc_expression_opcode: uint8_t {
-		k_expression_literal = 0,
+		k_expression_illegal_opcode = 0,
+
+		k_expression_literal,
 		k_expression_literal__int,
 		k_expression_resolve_member,
 		k_expression_lookup_element,
@@ -991,6 +997,72 @@ inline int bc_limit(int value, int min, int max){
 
 
 	struct bc_expression_t {
+		private: bc_expression_t() :
+			_opcode(bc_expression_opcode::k_expression_illegal_opcode),
+			_pad(0),
+			_type(-1),
+			_e(nullptr),
+			_e_count(0),
+			_address_parent_step(0),
+			_address_index(0),
+			_value(),
+			_input_type(-1)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: bc_expression_t(const bc_expression_t& other) :
+			_opcode(other._opcode),
+			_pad(other._pad),
+			_type(other._type),
+			_e(nullptr),
+			_e_count(other._e_count),
+			_address_parent_step(other._address_parent_step),
+			_address_index(other._address_index),
+			_value(other._value),
+			_input_type(other._input_type)
+		{
+			QUARK_ASSERT(other.check_invariant());
+			if(_e_count > 0){
+				bc_expression_t* ptr = new bc_expression_t[_e_count];
+				for( int i = 0; i < _e_count; ++i ) {
+					ptr[i] = other._e[i];
+				}
+				_e = ptr;
+			}
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: bc_expression_t& operator=(const bc_expression_t& other){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
+			bc_expression_t temp = other;
+			temp.swap(*this);
+
+			QUARK_ASSERT(check_invariant());
+			return *this;
+		}
+
+		public: void swap(bc_expression_t& other) throw() {
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
+			std::swap(_opcode, other._opcode);
+			std::swap(_pad, other._pad);
+			std::swap(_type, other._type);
+			std::swap(_e, other._e);
+			std::swap(_e_count, other._e_count);
+			std::swap(_address_parent_step, other._address_parent_step);
+			std::swap(_address_index, other._address_index);
+			_value.swap(other._value);
+			std::swap(_input_type, other._input_type);
+
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+		}
+
+
 		bc_expression_t(
 			bc_expression_opcode opcode,
 
@@ -1002,14 +1074,31 @@ inline int bc_limit(int value, int min, int max){
 			bc_typeid_t input_type
 		):
 			_opcode(opcode),
+			_pad(0),
 			_type(type),
-			_e(e),
+			_e(nullptr),
+			_e_count(static_cast<uint16_t>(e.size())),
 			_address_parent_step(static_cast<int16_t>(address._parent_steps)),
 			_address_index(static_cast<int16_t>(address._index)),
 			_value(value),
 			_input_type(input_type)
 		{
+			if(_e_count > 0){
+				bc_expression_t* ptr = new bc_expression_t[_e_count];
+				for( int i = 0; i < _e_count; ++i ) {
+					ptr[i] = e[i];
+				}
+				_e = ptr;
+			}
+
 			QUARK_ASSERT(check_invariant());
+		}
+
+		~bc_expression_t(){
+			if(_e != nullptr){
+				delete[] _e;
+				_e = nullptr;
+			}
 		}
 
 #if DEBUG
@@ -1021,8 +1110,8 @@ inline int bc_limit(int value, int min, int max){
 		bc_expression_opcode _opcode;
 		uint8_t _pad;
 		bc_typeid_t _type;
-
-		std::vector<bc_expression_t> _e;			//	24
+		const bc_expression_t* _e;			//	8
+		uint16_t _e_count;
 		int16_t _address_parent_step;
 		int16_t _address_index;
 		bc_typeid_t _input_type;
