@@ -358,12 +358,19 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto s = sizeof(bc_expression_t);
-	QUARK_UT_VERIFY(s == 40);
+	const auto value_size = sizeof(bc_value_t);
+	const auto expression_size = sizeof(bc_expression_t);
+	const auto e_count_offset = offsetof(bc_expression_t, _e_count);
+	const auto e_offset = offsetof(bc_expression_t, _e);
+	const auto value_offset = offsetof(bc_expression_t, _value);
 
-
-	const auto opcode_offset = offsetof(bc_expression_t, _opcode);
-//	QUARK_UT_VERIFY(opcode_offset == 8);
+/*
+	QUARK_UT_VERIFY(value_size == 16);
+	QUARK_UT_VERIFY(expression_size == 40);
+	QUARK_UT_VERIFY(e_count_offset == 4);
+	QUARK_UT_VERIFY(e_offset == 8);
+	QUARK_UT_VERIFY(value_offset == 16);
+*/
 
 	const auto opcode_size = sizeof(bc_expression_opcode);
 	QUARK_UT_VERIFY(opcode_size == 1);

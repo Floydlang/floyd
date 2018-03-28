@@ -1107,15 +1107,21 @@ inline int bc_limit(int value, int min, int max){
 
 		//////////////////////////////////////		STATE
 
-		bc_expression_opcode _opcode;
-		uint8_t _pad;
-		bc_typeid_t _type;
+		bc_expression_opcode _opcode;	//	1
+		uint8_t _pad;	//	1
+		bc_typeid_t _type;	//	2
+		uint16_t _e_count;	//	2
+		bc_typeid_t _input_type;	//	2
+
+//pos = 8
 		const bc_expression_t* _e;			//	8
-		uint16_t _e_count;
-		int16_t _address_parent_step;
-		int16_t _address_index;
-		bc_typeid_t _input_type;
+
+//	pos=16
 		bc_value_t _value;							//	16
+
+		int16_t _address_parent_step;	//	2
+		int16_t _address_index;	//	2
+
 	};
 
 	//	A memory block. Addressed using index. Always 1 cache line big.
@@ -1131,20 +1137,37 @@ inline int bc_limit(int value, int min, int max){
 
 
 	struct bc_instruction_t {
-		bc_statement_opcode _opcode;
-		bc_typeid_t _type;
-		uint8_t _param_x;
-
-		std::vector<bc_expression_t> _e;
-		variable_address_t _v;
-		std::vector<bc_body_t> _b;
-
+		bc_instruction_t(
+			bc_statement_opcode opcode,
+			bc_typeid_t type2,
+			uint8_t param_x,
+			const std::vector<bc_expression_t>& e,
+			const variable_address_t& v,
+			const std::vector<bc_body_t>& b
+		) :
+			_opcode(opcode),
+			_param_x(param_x),
+			_e(e),
+			_v(v),
+			_b(b)
+		{
+		}
 
 #if DEBUG
 		public: bool check_invariant() const {
 			return true;
 		}
 #endif
+
+
+		//////////////////////////////////////		STATE
+
+		bc_statement_opcode _opcode;
+		uint8_t _param_x;
+		variable_address_t _v;
+
+		std::vector<bc_expression_t> _e;
+		std::vector<bc_body_t> _b;
 	};
 
 
