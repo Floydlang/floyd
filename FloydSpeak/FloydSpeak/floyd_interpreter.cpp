@@ -64,7 +64,7 @@ inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& 
 
 //??? Notice -- when need to decrement stack RC:s when destruciting / copying interpreter_t. IDEA: Make vm_stack_t -- object that encapsuated all this.
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values);
+statement_result_t execute_body2(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values);
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 
 //	Returns new frame-pos, same as vm._current_stack_frame.
@@ -112,7 +112,48 @@ int close_stack_frame(interpreter_t& vm, const bc_body_t& body){
 	return prev_frame_pos;
 }
 
-int open_stack_frame2(interpreter_t& vm, const bc_body_t& body, const bc_value_t* init_values, int init_value_count){
+//	init_values must be have correct RC!
+int open_stack_frame2(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
+	int frame_pos = open_stack_frame(vm);
+
+	if(init_value_count > 0){
+/*
+		for(int i = 0 ; i < init_value_count ; i++){
+			bump_rc(init_values[i], body._symbols[i].second._value_type.get_base_type());
+//			vm._value_stack.push_value(init_values[i], body._symbols[i].second._value_type);
+		}
+*/
+		vm._value_stack.push_values_no_rc_bump(init_values, init_value_count);
+	}
+
+	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._symbols.size() ; i++){
+		const auto& symbol = body._symbols[i];
+
+		//	Variable slot.
+		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
+			const auto basetype = symbol.second._value_type.get_base_type();
+
+			//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
+			//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type().
+			//	Use a placeholder object. Type won't match symbol but that's OK.
+	//??? DO NOT CREATE TYPEID_T instances!!
+			if(bc_value_t::is_bc_ext(basetype)){
+				vm._value_stack.push_value(vm._internal_placeholder_object, typeid_t::make_string());
+			}
+			else{
+			///??? replace by faster funcction than push_value(). push_padding():
+				vm._value_stack.push_value(bc_value_t::make_undefined(), typeid_t::make_undefined());
+			}
+		}
+
+		//	Constant.
+		else{
+			vm._value_stack.push_value(value_to_bc(symbol.second._const_value), symbol.second._const_value.get_type());
+		}
+	}
+	return frame_pos;
+}
+int open_stack_frame3(interpreter_t& vm, const bc_body_t& body, const bc_value_t* init_values, int init_value_count){
 	int frame_pos = open_stack_frame(vm);
 
 	if(init_value_count > 0){
@@ -411,7 +452,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 		}
 #endif
 
-		const auto& r = execute_body(vm, function_def._body, values_to_bcs(args));
+		const auto& r = execute_body2(vm, function_def._body, values_to_bcs(args));
 		return bc_to_value(r._output, f.get_type().get_function_return());
 	}
 }
@@ -601,10 +642,10 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 }
 
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
+statement_result_t execute_body2(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto new_frame_pos = open_stack_frame2(vm, body, &init_values[0], init_values.size());
+	const auto new_frame_pos = open_stack_frame3(vm, body, &init_values[0], init_values.size());
 	const auto& r = execute_statements(vm, body._statements);
 	close_stack_frame(vm, body);
 	return r;
@@ -773,12 +814,16 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		if(arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
-	    std::array<bc_value_t, 8> temp;
+	    bc_value_t::value_internals_t temp[8];
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 			const auto& t = execute_expression(vm, arg_expr);
-			temp[i] = t;
+
+			//??? store is-ext flags in symboltable to optimize this!
+			const auto basetype = function_def._body._symbols[i].second._value_type.get_base_type();
+			bump_rc(t, basetype);
+			temp[i] = t._value_internals;
 		}
 
 		open_stack_frame2(vm, function_def._body, &temp[0], arg_count);

@@ -47,11 +47,19 @@ namespace floyd {
 //	};
 
 
-inline void bump_rc(const bc_value_t& value, const typeid_t& type){
-	const auto basetype = type.get_base_type();
+inline void bump_rc(const bc_value_t::value_internals_t& value, base_type basetype){
+	if(bc_value_t::is_bc_ext(basetype)){
+		value._ext->_rc++;
+	}
+}
+inline void bump_rc(const bc_value_t& value, base_type basetype){
 	if(bc_value_t::is_bc_ext(basetype)){
 		value._value_internals._ext->_rc++;
 	}
+}
+inline void bump_rc(const bc_value_t& value, const typeid_t& type){
+	const auto basetype = type.get_base_type();
+	bump_rc(value, basetype);
 }
 
 
@@ -94,6 +102,13 @@ inline void bump_rc(const bc_value_t& value, const typeid_t& type){
 			e._int = value;
 			_value_stack.push_back(e);
 		}
+
+		inline void push_values_no_rc_bump(const bc_value_t::value_internals_t* values, int value_count){
+			QUARK_ASSERT(values != nullptr);
+			_value_stack.insert(_value_stack.end(), values, values + value_count);
+		}
+
+
 
 		//	returned value will has ownership of obj, if any.
 		inline bc_value_t load_value(int pos, const typeid_t& type) const{
