@@ -63,7 +63,6 @@ inline interpret_stack_element_t make_object_element(const bc_value_t& value, co
 	interpret_stack_element_t temp;
 	value._value_internals._ext->_rc++;
 	temp._internals._ext = value._value_internals._ext;
-	temp._is_ext = true;
 	return temp;
 }
 
@@ -72,43 +71,36 @@ inline interpret_stack_element_t make_element(const bc_value_t& value, const typ
 	if(basettype == base_type::k_internal_undefined){
 		interpret_stack_element_t temp;
 		temp._internals._ext = nullptr;
-		temp._is_ext = false;
 		return temp;
 	}
 	else if(basettype == base_type::k_internal_dynamic){
 		interpret_stack_element_t temp;
 		temp._internals._ext = nullptr;
-		temp._is_ext = false;
 		return temp;
 	}
 	else if(basettype == base_type::k_void){
 		interpret_stack_element_t temp;
 		temp._internals._ext = nullptr;
-		temp._is_ext = false;
 		return temp;
 	}
 	else if(basettype == base_type::k_bool){
 		interpret_stack_element_t temp;
 		temp._internals._bool = value.get_bool_value();
-		temp._is_ext = false;
 		return temp;
 	}
 	else if(basettype == base_type::k_int){
 		interpret_stack_element_t temp;
 		temp._internals._int = value.get_int_value();
-		temp._is_ext = false;
 		return temp;
 	}
 	else if(basettype == base_type::k_float){
 		interpret_stack_element_t temp;
 		temp._internals._float = value.get_float_value();
-		temp._is_ext = false;
 		return temp;
 	}
 	else if(basettype == base_type::k_function){
 		interpret_stack_element_t temp;
 		temp._internals._function_id = value.get_function_value();
-		temp._is_ext = false;
 		return temp;
 	}
 
@@ -215,6 +207,7 @@ int open_stack_frame(interpreter_t& vm){
 //	Pops entire stack frame -- all locals etc.
 //	Restores previous stack frame pos.
 //	Returns resulting stack frame pos.
+//??? Make this decrement all RC too!
 int close_stack_frame(interpreter_t& vm){
 	const auto current_pos = vm._current_stack_frame;
 	const auto prev_frame_pos = load_int(vm, current_pos - 1).get_int_value();
@@ -223,6 +216,43 @@ int close_stack_frame(interpreter_t& vm){
 	vm._current_stack_frame = prev_frame_pos;
 	return prev_frame_pos;
 }
+
+int open_stack_frame2(interpreter_t& vm, const bc_body_t& body, const bc_value_t* init_values, int init_value_count){
+	int frame_pos = open_stack_frame(vm);
+
+	if(init_value_count > 0){
+		for(int i = 0 ; i < init_value_count ; i++){
+			push_value(vm, init_values[i], body._symbols[i].second._value_type);
+		}
+	}
+
+	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._symbols.size() ; i++){
+		const auto& symbol = body._symbols[i];
+
+		//	Variable slot.
+		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
+			const auto basetype = symbol.second._value_type.get_base_type();
+
+			//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
+			//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type().
+			//	Use a placeholder object. Type won't match symbol but that's OK.
+			if(bc_value_t::is_bc_ext(basetype)){
+				push_value(vm, vm._internal_placeholder_object, typeid_t::make_string());
+			}
+			else{
+				push_value(vm, bc_value_t::make_undefined(), typeid_t::make_undefined());
+			}
+		}
+
+		//	Constant.
+		else{
+			push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._const_value.get_type());
+		}
+	}
+	return frame_pos;
+}
+
+
 
 //	#0 is top of stack, last elementis bottom.
 //	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
@@ -598,17 +628,10 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto end_value_int = end_value0.get_int_value_quick();
 			const auto& body = statement._b[0];
 
-			const auto new_frame_pos = open_stack_frame(vm);
-
 			//	These are constants (can be reused for every iteration of the for-loop, or memory slots = also reuse).
 			//	Notice that first symbol is the loop-iterator.
 			QUARK_ASSERT(body._symbols.size() >= 1);
-			if(body._symbols.empty() == false){
-				for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
-					const auto& symbol = body._symbols[i];
-					push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._value_type);
-				}
-			}
+			const auto new_frame_pos = open_stack_frame2(vm, body, nullptr, 0);
 
 			//??? simplify code -- create a count instead.
 			//	open-range
@@ -674,57 +697,10 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 }
 
 
-void push_symbols(interpreter_t& vm, const bc_body_t& body, int skip_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-/*
-	if(body._symbols.empty() == false){
-		for(vector<bc_value_t>::size_type i = skip_count ; i < body._symbols.size() ; i++){
-			const auto& symbol = body._symbols[i];
-			push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._value_type);
-		}
-	}
-*/
-	if(body._symbols.empty() == false){
-		for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
-			const auto& symbol = body._symbols[i];
-
-			//	Variable slot.
-			if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
-				const auto basetype = symbol.second._value_type.get_base_type();
-
-				//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
-				//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type().
-				//	Use a placeholder object. Type won't match symbol but that's OK.
-				if(bc_value_t::is_bc_ext(basetype)){
-					push_value(vm, vm._internal_placeholder_object, typeid_t::make_string());
-				}
-				else{
-					push_value(vm, bc_value_t::make_undefined(), typeid_t::make_undefined());
-				}
-			}
-
-			//	Constant.
-			else{
-				push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._const_value.get_type());
-			}
-		}
-	}
-}
-
-
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto new_frame_pos = open_stack_frame(vm);
-
-	if(init_values.empty() == false){
-		for(int i = 0 ; i < init_values.size() ; i++){
-			push_value(vm, init_values[i], body._symbols[i].second._value_type);
-		}
-	}
-	push_symbols(vm, body, init_values.size());
-
+	const auto new_frame_pos = open_stack_frame2(vm, body, &init_values[0], init_values.size());
 	const auto& r = execute_statements(vm, body._statements);
 	close_stack_frame(vm);
 	return r;
@@ -732,9 +708,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const 
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto new_frame_pos = open_stack_frame(vm);
-
-	push_symbols(vm, body, 0);
+	const auto new_frame_pos = open_stack_frame2(vm, body, nullptr, 0);
 
 	const auto& r = execute_statements(vm, body._statements);
 	close_stack_frame(vm);
@@ -907,12 +881,7 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 			temp[i] = t;
 		}
 
-		const auto new_frame_pos = open_stack_frame(vm);
-
-//		vm._value_stack.insert(vm._value_stack.end(), temp.begin(), temp.begin() + arg_count);
-		for(int i = 0 ; i < arg_count ; i++){
-			push_value(vm, temp[i], function_def._body._symbols[i].second._value_type);
-		}
+		const auto new_frame_pos = open_stack_frame2(vm, function_def._body, &temp[0], arg_count);
 #endif
 #if 0
 		const auto new_frame_pos = open_stack_frame(vm);
@@ -929,16 +898,6 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		}
 		vm._current_stack_frame = new_frame_pos;
 #endif
-
-		if(symbol_count > arg_count){
-			//	Skip args, they are already copied.
-			for(vector<bc_value_t>::size_type i = arg_count ; i < symbol_count ; i++){
-				const auto& symbol = function_def._body._symbols[i];
-//				vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
-				push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._value_type);
-			}
-		}
-
 		const auto& result = execute_statements(vm, function_def._body._statements);
 		close_stack_frame(vm);
 
@@ -1766,9 +1725,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions2});
 
 	_current_stack_frame = 0;
-	open_stack_frame(*this);
-	const auto& body_ptr = _imm->_program._globals;
-	push_symbols(*this, body_ptr, 0);
+	open_stack_frame2(*this, _imm->_program._globals, nullptr, 0);
 
 	//	Run static intialization (basically run global statements before calling main()).
 	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._statements);

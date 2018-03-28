@@ -45,9 +45,6 @@ namespace floyd {
 			bc_value_object_t* _ext;
 		};
 		public: value_internals_t _internals;
-
-		//	Lost this flag -- we know that via symbol table already!
-		public: bool _is_ext = false;
 	};
 
 
