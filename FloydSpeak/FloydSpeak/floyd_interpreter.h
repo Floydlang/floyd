@@ -47,6 +47,17 @@ namespace floyd {
 //	};
 
 
+inline void debump(bc_value_t::value_internals_t& value){
+	QUARK_ASSERT(value._ext != nullptr);
+
+	value._ext->_rc--;
+	if(value._ext->_rc == 0){
+		delete value._ext;
+		value._ext = nullptr;
+	}
+}
+
+
 inline void bump_rc(const bc_value_t::value_internals_t& value, base_type basetype){
 	if(bc_value_t::is_bc_ext(basetype)){
 		value._ext->_rc++;

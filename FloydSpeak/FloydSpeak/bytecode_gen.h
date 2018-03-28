@@ -1191,17 +1191,35 @@ inline int bc_limit(int value, int min, int max){
 	struct bc_body_t {
 		const std::vector<std::pair<std::string, symbol_t>> _symbols;
 
+		//	True if equivalent symbol is an ext.
+		std::vector<bool> _exts;
+
 		std::vector<bc_instruction_t> _statements;
+
+
 
 		bc_body_t(const std::vector<bc_instruction_t>& s) :
 			_statements(s),
 			_symbols{}
 		{
+			QUARK_ASSERT(check_invariant());
 		}
+
 		bc_body_t(const std::vector<bc_instruction_t>& statements, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
 			_statements(statements),
 			_symbols(symbols)
 		{
+			for(int i = 0 ; i < _symbols.size() ; i++){
+				const auto basetype = symbols[i].second._value_type.get_base_type();
+				const bool ext = bc_value_t::is_bc_ext(basetype);
+				_exts.push_back(ext);
+			}
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: bool check_invariant() const {
+			QUARK_ASSERT(_symbols.size() == _exts.size());
+			return true;
 		}
 	};
 

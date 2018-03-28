@@ -70,7 +70,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 //	Returns new frame-pos, same as vm._current_stack_frame.
 //	Will NOT add local variables etc.
 //	Only pushes previous stack frame pos.
-int open_stack_frame(interpreter_t& vm){
+int open_stack_frame_internal(interpreter_t& vm){
 	const auto new_frame_start = static_cast<int>(vm._value_stack.size());
 	const auto prev_frame_pos = vm._current_stack_frame;
 	vm._value_stack.push_intq(prev_frame_pos);
@@ -82,27 +82,19 @@ int open_stack_frame(interpreter_t& vm){
 //	Pops entire stack frame -- all locals etc.
 //	Restores previous stack frame pos.
 //	Returns resulting stack frame pos.
-//??? Make this decrement all RC too!
+//	Decrements all stack frame object RCs.
 int close_stack_frame(interpreter_t& vm, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
 	const auto current_pos = vm._current_stack_frame;
 	const auto prev_frame_pos = vm._value_stack.load_intq(current_pos - 1);
 	const auto prev_frame_end_pos = current_pos - 1;
 
 	//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
-	//??? Can be faster if we have a special list of frame-offsets where objects sit = no scanning for them.
-	for(int i = 0 ; i < body._symbols.size() ; i++){
-		const auto& symbol = body._symbols[i];
-		const auto basetype = symbol.second._value_type.get_base_type();
-
-		if(bc_value_t::is_bc_ext(basetype)){
-			const auto pos = current_pos + i;
-			QUARK_ASSERT(vm._value_stack._value_stack[pos]._ext != nullptr);
-
-			vm._value_stack._value_stack[pos]._ext->_rc--;
-			if(vm._value_stack._value_stack[pos]._ext->_rc == 0){
-				delete vm._value_stack._value_stack[pos]._ext;
-				vm._value_stack._value_stack[pos]._ext = nullptr;
-			}
+	for(int i = 0 ; i < body._exts.size() ; i++){
+		if(body._exts[i]){
+			debump(vm._value_stack._value_stack[vm._current_stack_frame + i]);
 		}
 	}
 	vm._value_stack._value_stack.resize(prev_frame_end_pos);
@@ -112,15 +104,20 @@ int close_stack_frame(interpreter_t& vm, const bc_body_t& body){
 	return prev_frame_pos;
 }
 
-//	init_values must be have correct RC!
-int open_stack_frame2(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
-	int frame_pos = open_stack_frame(vm);
+
+//	WILL bump RCs of init_values.
+int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
+	int frame_pos = open_stack_frame_internal(vm);
 
 	if(init_value_count > 0){
 /*
 		for(int i = 0 ; i < init_value_count ; i++){
-			bump_rc(init_values[i], body._symbols[i].second._value_type.get_base_type());
-//			vm._value_stack.push_value(init_values[i], body._symbols[i].second._value_type);
+			if(body._exts[i]){
+				init_values[i]._ext->_rc++;
+			}
 		}
 */
 		vm._value_stack.push_values_no_rc_bump(init_values, init_value_count);
@@ -154,7 +151,10 @@ int open_stack_frame2(interpreter_t& vm, const bc_body_t& body, const bc_value_t
 	return frame_pos;
 }
 int open_stack_frame3(interpreter_t& vm, const bc_body_t& body, const bc_value_t* init_values, int init_value_count){
-	int frame_pos = open_stack_frame(vm);
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
+	int frame_pos = open_stack_frame_internal(vm);
 
 	if(init_value_count > 0){
 		for(int i = 0 ; i < init_value_count ; i++){
@@ -195,6 +195,8 @@ int open_stack_frame3(interpreter_t& vm, const bc_body_t& body, const bc_value_t
 //	#0 is top of stack, last elementis bottom.
 //	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
 vector<std::pair<int, int>> get_stack_frames(const interpreter_t& vm){
+	QUARK_ASSERT(vm.check_invariant());
+
 	int frame_pos = vm._current_stack_frame;
 
 	//	We use the entire current stack to calc top frame's size. This can be wrong, if someone pushed more stuff there. Same goes with the previous stack frames too..
@@ -307,9 +309,13 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
 	}
 }
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
+	QUARK_ASSERT(vm.check_invariant());
+
 	return get_global(vm, s);
 }
 value_t get_global(const interpreter_t& vm, const std::string& name){
+	QUARK_ASSERT(vm.check_invariant());
+
 	const auto& result = find_global_symbol2(vm, name);
 	if(result == nullptr){
 		throw std::runtime_error("Cannot find global.");
@@ -320,7 +326,8 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 }
 
 inline const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::bc_value_t& v){
-//	QUARK_ASSERT(v.is_function());
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(v.check_invariant());
 
 	const auto function_id = v.get_function_value();
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
@@ -330,6 +337,8 @@ inline const bc_function_definition_t& get_function_def(const interpreter_t& vm,
 }
 
 inline int find_frame_from_address(interpreter_t& vm, int parent_step){
+	QUARK_ASSERT(vm.check_invariant());
+
 	if(parent_step == 0){
 		return vm._current_stack_frame;
 	}
@@ -350,6 +359,7 @@ inline int find_frame_from_address(interpreter_t& vm, int parent_step){
 //??? split into one-argument and multi-argument opcodes.
 bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
 	if(type.is_json_value()){
 		QUARK_ASSERT(arg_values.size() == 1);
@@ -576,7 +586,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			//	These are constants (can be reused for every iteration of the for-loop, or memory slots = also reuse).
 			//	Notice that first symbol is the loop-iterator.
 			QUARK_ASSERT(body._symbols.size() >= 1);
-			const auto new_frame_pos = open_stack_frame2(vm, body, nullptr, 0);
+			const auto new_frame_pos = open_stack_frame2_nobump(vm, body, nullptr, 0);
 
 			//??? simplify code -- create a count instead.
 			//	open-range
@@ -644,6 +654,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 
 statement_result_t execute_body2(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	const auto new_frame_pos = open_stack_frame3(vm, body, &init_values[0], init_values.size());
 	const auto& r = execute_statements(vm, body._statements);
@@ -652,8 +663,9 @@ statement_result_t execute_body2(interpreter_t& vm, const bc_body_t& body, const
 }
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
-	const auto new_frame_pos = open_stack_frame2(vm, body, nullptr, 0);
+	const auto new_frame_pos = open_stack_frame2_nobump(vm, body, nullptr, 0);
 
 	const auto& r = execute_statements(vm, body._statements);
 	close_stack_frame(vm, body);
@@ -669,6 +681,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 
 bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
 	const auto& parent_value = execute_expression(vm, expr._e[0]);
 	QUARK_ASSERT(get_type(vm, expr._e[0]._type).get_base_type() == base_type::k_struct);
@@ -683,6 +696,7 @@ bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_express
 
 bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
 	const auto& parent_value = execute_expression(vm, expr._e[0]);
 	const auto parent_type = get_basetype(vm, expr._e[0]._type);
@@ -691,7 +705,6 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 #if DEBUG
 	const auto key_type = get_basetype(vm, expr._e[1]._type);
 #endif
-
 
 	if(parent_type == base_type::k_string){
 		const auto& instance = parent_value.get_string_value();
@@ -765,7 +778,7 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 		throw std::exception();
 	}
 }
-
+	//	Store function ptr instead of of ID???
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
@@ -819,14 +832,13 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 			const auto& t = execute_expression(vm, arg_expr);
-
-			//??? store is-ext flags in symboltable to optimize this!
-			const auto basetype = function_def._body._symbols[i].second._value_type.get_base_type();
-			bump_rc(t, basetype);
+			if(function_def._body._exts[i]){
+				t._value_internals._ext->_rc++;
+			}
 			temp[i] = t._value_internals;
 		}
 
-		open_stack_frame2(vm, function_def._body, &temp[0], arg_count);
+		open_stack_frame2_nobump(vm, function_def._body, &temp[0], arg_count);
 		const auto& result = execute_statements(vm, function_def._body._statements);
 		close_stack_frame(vm, function_def._body);
 
@@ -840,6 +852,7 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 //??? Optimize -- inline construct_value_from_typeid() to simplify a lot.
 bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
 	const auto basetype = get_basetype(vm, expr._type);
 	if(basetype == base_type::k_vector){
@@ -908,6 +921,7 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 
 bc_value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
 	const auto& c = execute_expression(vm, expr._e[0]);
 	const auto basetype = get_basetype(vm, expr._type);
@@ -925,6 +939,7 @@ bc_value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc
 
 bc_value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	const auto& cond_result = execute_expression(vm, expr._e[0]);
@@ -942,6 +957,7 @@ bc_value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_e
 //??? flatten to main dispatch function.
 bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
 	const auto& left_constant = execute_expression(vm, expr._e[0]);
 	const auto& right_constant = execute_expression(vm, expr._e[1]);
@@ -986,6 +1002,7 @@ bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_
 //??? make dedicated opcodes for each type - no need to switch.
 bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(expr.check_invariant());
 
 	const auto& left = execute_expression(vm, expr._e[0]);
 	const auto& right = execute_expression(vm, expr._e[1]);
@@ -1143,7 +1160,7 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto& op = e._opcode;
+	const auto op = e._opcode;
 
 	if(op == bc_expression_opcode::k_expression_literal){
 		return e._value;
@@ -1170,6 +1187,8 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		const auto& value = vm._value_stack.load_inline_value(pos);
 		return value;
 	}
+
+	//??? Could return ptr to object on stack, no need to bump etc while it sits there.
 	else if(op == bc_expression_opcode::k_expression_load_obj){
 		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 		const auto pos = frame_pos + e._address_index;
@@ -1670,7 +1689,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions2});
 
 	_current_stack_frame = 0;
-	open_stack_frame2(*this, _imm->_program._globals, nullptr, 0);
+	open_stack_frame2_nobump(*this, _imm->_program._globals, nullptr, 0);
 
 	//	Run static intialization (basically run global statements before calling main()).
 	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._statements);
@@ -1721,6 +1740,7 @@ bool interpreter_t::check_invariant() const {
 
 json_t interpreter_to_json(const interpreter_t& vm){
 	vector<json_t> callstack;
+	QUARK_ASSERT(vm.check_invariant());
 
 	const auto stack_frames = get_stack_frames(vm);
 /*
@@ -1749,6 +1769,7 @@ json_t interpreter_to_json(const interpreter_t& vm){
 
 
 value_t call_host_function(interpreter_t& vm, int function_id, const std::vector<floyd::value_t>& args){
+	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(function_id >= 0);
 
 	const auto& host_function = vm._imm->_host_functions.at(function_id);
@@ -1776,6 +1797,8 @@ bc_program_t program_to_ast2(const interpreter_context_t& context, const string&
 }
 
 void print_vm_printlog(const interpreter_t& vm){
+	QUARK_ASSERT(vm.check_invariant());
+
 	if(vm._print_output.empty() == false){
 		std::cout << "print output:\n";
 		for(const auto& line: vm._print_output){
