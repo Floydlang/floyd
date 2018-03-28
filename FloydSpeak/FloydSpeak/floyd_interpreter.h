@@ -105,6 +105,7 @@ inline interpret_stack_element_t make_element(const bc_value_t& value, const typ
 		throw std::exception();
 	}
 }
+//???? stupid-slow. Also not needed really.
 inline bc_value_t element_to_value(const interpret_stack_element_t& e, const typeid_t& type){
 	if(type.is_undefined()){
 		return bc_value_t::make_undefined();
@@ -189,6 +190,11 @@ inline bc_value_t element_to_value(const interpret_stack_element_t& e, const typ
 			const auto e = make_element(value, type);
 			_value_stack.push_back(e);
 		}
+		inline void push_intq(int value){
+			interpret_stack_element_t e;
+			e._internals._int = value;
+			_value_stack.push_back(e);
+		}
 
 		inline bc_value_t load_value(int pos, const typeid_t& type) const{
 			const auto& e = _value_stack[pos];
@@ -206,6 +212,10 @@ inline bc_value_t element_to_value(const interpret_stack_element_t& e, const typ
 
 			const auto e = make_element(value, type);
 			_value_stack[pos] = e;
+		}
+
+		inline void replace_int(int pos, const int& value){
+			_value_stack[pos]._internals._int = value;
 		}
 
 		inline void pop_value(const typeid_t& type){

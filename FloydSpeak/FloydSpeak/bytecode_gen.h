@@ -30,9 +30,7 @@ namespace floyd {
 	struct bc_body_t;
 	struct bc_value_t;
 	struct semantic_ast_t;
-//	struct bc_typeid2_t;
 
-	typedef typeid_t bc_typeid2_t;
 	typedef int16_t bc_typeid_t;
 
 	inline value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
@@ -238,16 +236,6 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: explicit bc_value_t(const typeid_t& type, bool dummy) :
-#if DEBUG && FLOYD_BD_DEBUG
-			_debug_type(type),
-#endif
-			_is_ext(false)
-		{
-			_value_internals._ext = nullptr;
-			QUARK_ASSERT(check_invariant());
-		}
-
 		public: ~bc_value_t(){
 			QUARK_ASSERT(check_invariant());
 
@@ -418,14 +406,14 @@ namespace floyd {
 
 
 
-		public: static int compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const bc_typeid2_t& type);
+		public: static int compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
 
 
 		//////////////////////////////////////		internal-undefined type
 
 
 		public: static bc_value_t make_undefined(){
-			return bc_value_t(typeid_t::make_undefined(), true);
+			return bc_value_t();
 		}
 
 
@@ -433,14 +421,14 @@ namespace floyd {
 
 
 		public: static bc_value_t make_internal_dynamic(){
-			return bc_value_t(typeid_t::make_internal_dynamic(), true);
+			return bc_value_t();
 		}
 
 		//////////////////////////////////////		void
 
 
 		public: static bc_value_t make_void(){
-			return bc_value_t(typeid_t::make_void(), true);
+			return bc_value_t();
 		}
 
 
@@ -686,17 +674,22 @@ namespace floyd {
 			return temp;
 		}
 
-
-		//////////////////////////////////////		STATE
-
-
-		private: union value_internals_t {
+		public: union value_internals_t {
 			bool _bool;
 			int _int;
 			float _float;
 			int _function_id;
 			bc_value_object_t* _ext;
 		};
+
+		public: explicit bc_value_t(const value_internals_t& internals) :
+			_value_internals(internals)
+		{
+		}
+
+		//////////////////////////////////////		STATE
+
+
 
 
 #if DEBUG && FLOYD_BD_DEBUG
@@ -841,6 +834,8 @@ namespace floyd {
 		//	Store _e[0] -> _v
 		k_statement_store,
 
+		k_statement_store_int,
+
 		//	Notice: instruction doesn't have to know value-type -- we can see type in symbol table
 		//	A) index of local/global variable.
 		//	B) Future: have BLOB as stack-frame, shift+mask data into it. env_index, word_offset, shift
@@ -884,6 +879,7 @@ namespace floyd {
 		k_expression_resolve_member,
 		k_expression_lookup_element,
 		k_expression_load,
+		k_expression_load_int,
 		k_expression_call,
 		k_expression_construct_value,
 
@@ -1239,7 +1235,7 @@ inline int bc_limit(int value, int min, int max){
 
 		public: const bc_body_t _globals;
 		public: std::vector<const bc_function_definition_t> _function_defs;
-		public: std::vector<const bc_typeid2_t> _types;
+		public: std::vector<const typeid_t> _types;
 	};
 
 
@@ -1293,7 +1289,7 @@ inline int bc_limit(int value, int min, int max){
 		//	Holds all values for all environments.
 		public: std::vector<bcgen_environment_t> _call_stack;
 
-		public: std::vector<const bc_typeid2_t> _types;
+		public: std::vector<const typeid_t> _types;
 	};
 
 

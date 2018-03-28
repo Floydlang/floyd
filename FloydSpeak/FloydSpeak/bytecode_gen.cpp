@@ -33,8 +33,8 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 
 
 
-bc_typeid_t intern_type(bgenerator_t& vm, const bc_typeid2_t& type){
-    const auto it = std::find_if(vm._types.begin(), vm._types.end(), [&type](const bc_typeid2_t& e) { return e == type; });
+bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
+    const auto it = std::find_if(vm._types.begin(), vm._types.end(), [&type](const typeid_t& e) { return e == type; });
 	if(it != vm._types.end()){
 		const auto pos = static_cast<bc_typeid_t>(it - vm._types.begin());
 		return pos;
@@ -47,7 +47,7 @@ bc_typeid_t intern_type(bgenerator_t& vm, const bc_typeid2_t& type){
 
 /*
 bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
-	return intern_type(vm, bc_typeid2_t(type));
+	return intern_type(vm, typeid_t(type));
 }
 */
 
@@ -69,13 +69,13 @@ QUARK_UNIT_TESTQ("bc_compare_string()", ""){
 }
 
 //??? Slow!.
-int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const bc_typeid2_t& type){
+int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const typeid_t& type){
 	const auto& struct_def = type.get_struct();
 
 	for(int i = 0 ; i < struct_def._members.size() ; i++){
 		const auto& member_type = struct_def._members[i]._type;
 
-		int diff = bc_value_t::compare_value_true_deep(left[i], right[i], bc_typeid2_t(member_type));
+		int diff = bc_value_t::compare_value_true_deep(left[i], right[i], member_type);
 		if(diff != 0){
 			return diff;
 		}
@@ -85,13 +85,13 @@ int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::
 
 //	Compare vector element by element.
 //	### Think more of equality when vectors have different size and shared elements are equal.
-int bc_compare_vector_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const bc_typeid2_t& type){
+int bc_compare_vector_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const typeid_t& type){
 //	QUARK_ASSERT(left.check_invariant());
 //	QUARK_ASSERT(right.check_invariant());
 //	QUARK_ASSERT(left._element_type == right._element_type);
 
 	const auto& shared_count = std::min(left.size(), right.size());
-	const auto& element_type = bc_typeid2_t(type.get_vector_element_type());
+	const auto& element_type = typeid_t(type.get_vector_element_type());
 	for(int i = 0 ; i < shared_count ; i++){
 		const auto element_result = bc_value_t::compare_value_true_deep(left[i], right[i], element_type);
 		if(element_result != 0){
@@ -118,8 +118,8 @@ bool bc_map_compare (Map const &lhs, Map const &rhs) {
 }
 
 
-int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right, const bc_typeid2_t& type){
-	const auto& element_type = bc_typeid2_t(type.get_dict_value_type());
+int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right, const typeid_t& type){
+	const auto& element_type = typeid_t(type.get_dict_value_type());
 
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
@@ -165,7 +165,7 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 	}
 }
 
-int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const bc_typeid2_t& type0){
+int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type0){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -304,7 +304,13 @@ bc_instruction_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::sto
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_store, expr._type, 0, {expr}, statement._dest_variable,  {}};
+	const auto type = vm._types[expr._type];
+	if(type.is_int()){
+		return bc_instruction_t{ bc_statement_opcode::k_statement_store_int, expr._type, 0, {expr}, statement._dest_variable,  {}};
+	}
+	else{
+		return bc_instruction_t{ bc_statement_opcode::k_statement_store, expr._type, 0, {expr}, statement._dest_variable,  {}};
+	}
 }
 
 bc_instruction_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement){
@@ -422,7 +428,12 @@ bc_expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& address = e._address;
-	return bc_expression_t{ bc_expression_opcode::k_expression_load, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+	if(e._output_type->is_int()){
+		return bc_expression_t{ bc_expression_opcode::k_expression_load_int, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+	}
+	else{
+		return bc_expression_t{ bc_expression_opcode::k_expression_load, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+	}
 }
 
 bc_expression_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){

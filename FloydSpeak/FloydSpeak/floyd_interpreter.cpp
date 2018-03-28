@@ -51,7 +51,7 @@ inline bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e
 */
 #define execute_expression execute_expression__switch
 
-inline const bc_typeid2_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
+inline const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
 inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
@@ -73,7 +73,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 int open_stack_frame(interpreter_t& vm){
 	const auto new_frame_start = static_cast<int>(vm._value_stack.size());
 	const auto prev_frame_pos = vm._current_stack_frame;
-	vm._value_stack.push_value(bc_value_t::make_int(prev_frame_pos), typeid_t::make_int());
+	vm._value_stack.push_intq(prev_frame_pos);
 	const auto new_frame_pos = new_frame_start + 1;
 	vm._current_stack_frame = new_frame_pos;
 	return new_frame_pos;
@@ -134,6 +134,7 @@ int open_stack_frame2(interpreter_t& vm, const bc_body_t& body, const bc_value_t
 				vm._value_stack.push_value(vm._internal_placeholder_object, typeid_t::make_string());
 			}
 			else{
+			///??? replace by faster funcction than push_value(). push_padding():
 				vm._value_stack.push_value(bc_value_t::make_undefined(), typeid_t::make_undefined());
 			}
 		}
@@ -487,6 +488,13 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 			vm._value_stack.replace_value_same_type(pos, rhs_value, get_type(vm, statement._e[0]._type));
 		}
+		else if(opcode == bc_statement_opcode::k_statement_store_int){
+			const auto& rhs_value = execute_expression(vm, statement._e[0]);
+			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
+			const auto pos = frame_pos + statement._v._index;
+			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+			vm._value_stack.replace_int(pos, rhs_value.get_int_value_quick());
+		}
 		else if(opcode == bc_statement_opcode::k_statement_block){
 			const auto& r = execute_body(vm, statement._b[0]);
 			if(r._type == statement_result_t::k_returning){
@@ -531,7 +539,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			//	open-range
 			if(statement._param_x == 0){
 				for(int x = start_value_int ; x < end_value_int ; x++){
-					vm._value_stack.replace_value_same_type(new_frame_pos + 0, bc_value_t::make_int(x), typeid_t::make_int());
+					vm._value_stack.replace_int(new_frame_pos + 0, x);
 
 					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 					const auto& return_value = execute_statements(vm, body._statements);
@@ -546,7 +554,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			//	closed-range
 			else if(statement._param_x == 1){
 				for(int x = start_value_int ; x <= end_value_int ; x++){
-					vm._value_stack.replace_value_same_type(new_frame_pos + 0, bc_value_t::make_int(x), typeid_t::make_int());
+					vm._value_stack.replace_int(new_frame_pos + 0, x);
 
 					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 					const auto& return_value = execute_statements(vm, body._statements);
@@ -725,7 +733,6 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 
 	//	_e[...] contains first callee, then each argument.
 	const auto arg_count = expr._e_count - 1;
-//	const auto arg_count = function_def._args.size();
 
 
 	if(function_def._host_function_id != 0){
@@ -759,10 +766,8 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	execute_expression() may temporarily use the stack, overwriting stack after frame pointer.
 		//	This makes it hard to execute the args and store the directly into the right spot of stack.
 		//	Need temp to solve this. Find better solution?
-
 		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
 
-#if 1
 		if(arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
@@ -776,22 +781,6 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		}
 
 		const auto new_frame_pos = open_stack_frame2(vm, function_def._body, &temp[0], arg_count);
-#endif
-#if 0
-		const auto new_frame_pos = open_stack_frame(vm);
-		for(int i = 0 ; i < arg_count ; i++){
-			vm._value_stack.push_back({});
-		}
-		vm._current_stack_frame = new_frame_pos + static_cast<int>(arg_count);
-
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto& arg_expr = expr._e[i + 1];
-			QUARK_ASSERT(arg_expr.check_invariant());
-			const auto& t = execute_expression(vm, arg_expr);
-			vm._value_stack[new_frame_pos + i] = t;
-		}
-		vm._current_stack_frame = new_frame_pos;
-#endif
 		const auto& result = execute_statements(vm, function_def._body._statements);
 		close_stack_frame(vm, function_def._body);
 
@@ -1122,7 +1111,7 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 	else if(op == bc_expression_opcode::k_expression_lookup_element){
 		return execute_lookup_element_expression(vm, e);
 	}
-
+	//??? we know the type of value, we know the symbol table!
 	//??? Optimize by inlining find_env_from_address() and making sep paths.
 	else if(op == bc_expression_opcode::k_expression_load){
 		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
@@ -1131,6 +1120,14 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		const auto& value = vm._value_stack.load_value(pos, get_type(vm, e._type));
 //		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
 		return value;
+	}
+	else if(op == bc_expression_opcode::k_expression_load_int){
+		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
+		const auto pos = frame_pos + e._address_index;
+		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+		const auto& value = vm._value_stack.load_intq(pos);
+//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
+		return bc_value_t::make_int(value);
 	}
 
 	else if(op == bc_expression_opcode::k_expression_call){

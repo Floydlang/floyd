@@ -72,35 +72,50 @@ OFF_QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
 
 //////////////////////////////////////////		TESTS
 
-
-
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
 	const int64_t cpp_iterations = (50LL * 1000LL * 1000LL);
 	const int64_t floyd_iterations = (50LL * 1000LL * 1000LL);
 
-	const auto cpp_ns = measure_execution_time_ns(
-		"C++: For-loop",
-		[&] {
+void copy_test(){
 			volatile int64_t count = 0;
 			for (int64_t i = 0 ; i < cpp_iterations ; i++) {
 				count = count + 1;
 			}
+			assert(count > 0);
 //			std::cout << "C++ count:" << count << std::endl;
+}
+
+
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
+
+	const auto cpp_ns = measure_execution_time_ns(
+		"C++: For-loop",
+		[&] {
+			copy_test();
 		}
 	);
 
 	interpreter_context_t context = make_test_context();
-	const auto floyd_ns = measure_execution_time_ns(
-		"Floyd: For-loop",
-		[&] {
-			const auto vm = run_global(context,
-			R"(
+	const auto ast = program_to_ast2(
+		context,
+		R"(
+			int f(){
 				mutable int count = 0;
 				for (index in 1...50000000) {
 					count = count + 1;
 				}
-//				print("Floyd count:" + to_string(count));
-			)");
+				return 13;
+			}
+	//				print("Floyd count:" + to_string(count));
+		)"
+	);
+	interpreter_t vm(ast);
+	const auto f = find_global_symbol2(vm, "f");
+	QUARK_ASSERT(f != nullptr);
+
+	const auto floyd_ns = measure_execution_time_ns(
+		"Floyd: For-loop",
+		[&] {
+			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
 		}
 	);
 
@@ -112,6 +127,9 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
 
 
 
+
+const int fib_cpp_iterations = 32;
+
 int fibonacci(int n) {
 	if (n <= 1){
 		return n;
@@ -119,17 +137,19 @@ int fibonacci(int n) {
 	return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
-	const int64_t cpp_iterations = 32;
+void fib_test(){
+	volatile int sum = 0;
+	for (auto i = 0 ; i < fib_cpp_iterations ; i++) {
+		const auto a = fibonacci(i);
+		sum = sum + a;
+	}
+}
 
+QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++: Fibonacci",
 		[&] {
-			volatile int sum = 0;
-			for (auto i = 0 ; i < cpp_iterations ; i++) {
-				const auto a = fibonacci(i);
-				sum = sum + a;
-			}
+			fib_test();
 		}
 	);
 
