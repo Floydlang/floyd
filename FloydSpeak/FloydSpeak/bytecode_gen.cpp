@@ -33,6 +33,105 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 
 
 
+
+
+	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+		std::vector<bc_value_t> result;
+		for(const auto e: values){
+			result.push_back(value_to_bc(e));
+		}
+		return result;
+	}
+
+	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type){
+		std::vector<value_t> result;
+		for(const auto e: values){
+			result.push_back(bc_to_value(e, shared_type));
+		}
+		return result;
+	}
+
+	value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
+		QUARK_ASSERT(value.check_invariant());
+
+		const auto basetype = type.get_base_type();
+
+		if(basetype == base_type::k_internal_undefined){
+			return value_t::make_undefined();
+		}
+		else if(basetype == base_type::k_internal_dynamic){
+			return value_t::make_internal_dynamic();
+		}
+		else if(basetype == base_type::k_void){
+			return value_t::make_void();
+		}
+		else if(basetype == base_type::k_bool){
+			return value_t::make_bool(value.get_bool_value());
+		}
+		else if(basetype == base_type::k_int){
+			return value_t::make_int(value.get_int_value());
+		}
+		else if(basetype == base_type::k_float){
+			return value_t::make_float(value.get_float_value());
+		}
+		else if(basetype == base_type::k_string){
+			return value_t::make_string(value.get_string_value());
+		}
+		else if(basetype == base_type::k_json_value){
+			return value_t::make_json_value(value.get_json_value());
+		}
+		else if(basetype == base_type::k_typeid){
+			return value_t::make_typeid_value(value.get_typeid_value());
+		}
+		else if(basetype == base_type::k_struct){
+			const auto& struct_def = type.get_struct();
+			const auto& members = value.get_struct_value();
+			std::vector<value_t> members2;
+			for(int i = 0 ; i < members.size() ; i++){
+				const auto& member_type = struct_def._members[i]._type;
+				const auto& member_value = members[i];
+				const auto& member_value2 = bc_to_value(member_value, member_type);
+				members2.push_back(member_value2);
+			}
+			return value_t::make_struct_value(type, members2);
+		}
+		else if(basetype == base_type::k_vector){
+			const auto& element_type  = type.get_vector_element_type();
+			return value_t::make_vector_value(element_type, bcs_to_values__same_types(value.get_vector_value(), element_type));
+		}
+		else if(basetype == base_type::k_dict){
+			const auto value_type = type.get_dict_value_type();
+			const auto entries = value.get_dict_value();
+			std::map<std::string, value_t> entries2;
+			for(const auto& e: entries){
+				entries2.insert({e.first, bc_to_value(e.second, value_type)});
+			}
+			return value_t::make_dict_value(value_type, entries2);
+		}
+		else if(basetype == base_type::k_function){
+			return value_t::make_function_value(type, value.get_function_value());
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+
+	bc_value_t value_to_bc(const value_t& value){
+		return bc_value_t::from_value(value);
+	}
+
+	std::string to_compact_string2(const bc_value_t& value) {
+		return "xxyyzz";
+//		return to_compact_string2(value._backstore);
+	}
+
+
+
+
+
+
+
 bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
     const auto it = std::find_if(vm._types.begin(), vm._types.end(), [&type](const typeid_t& e) { return e == type; });
 	if(it != vm._types.end()){

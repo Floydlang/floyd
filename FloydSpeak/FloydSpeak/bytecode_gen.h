@@ -19,6 +19,8 @@
 
 
 #define FLOYD_BD_DEBUG 0
+#define BC_INLINE	inline
+//#define BC_INLINE
 
 
 namespace floyd {
@@ -33,12 +35,12 @@ namespace floyd {
 
 	typedef int16_t bc_typeid_t;
 
-	inline value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
-	inline bc_value_t value_to_bc(const value_t& value);
+	value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
+	bc_value_t value_to_bc(const value_t& value);
 
 
-	inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
-	inline std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type);
+	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
+	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type);
 
 
 
@@ -213,6 +215,23 @@ namespace floyd {
 
 	struct bc_value_t {
 
+		public: union value_internals_t {
+			bool _bool;
+			int _int;
+			float _float;
+			int _function_id;
+			bc_value_object_t* _ext;
+		};
+
+		static BC_INLINE void debump(value_internals_t& value){
+			QUARK_ASSERT(value._ext != nullptr);
+
+			value._ext->_rc--;
+			if(value._ext->_rc == 0){
+				delete value._ext;
+				value._ext = nullptr;
+			}
+		}
 
 		static bool is_bc_ext(base_type basetype){
 			return false
@@ -224,6 +243,26 @@ namespace floyd {
 				|| basetype == base_type::k_dict
 				;
 		}
+
+
+
+		//??? keep one of these functions
+		static BC_INLINE void bump_rc(const value_internals_t& value, base_type basetype){
+			if(bc_value_t::is_bc_ext(basetype)){
+				value._ext->_rc++;
+			}
+		}
+		static BC_INLINE void bump_rc(const bc_value_t& value, base_type basetype){
+			if(bc_value_t::is_bc_ext(basetype)){
+				value._value_internals._ext->_rc++;
+			}
+		}
+		static BC_INLINE void bump_rc(const bc_value_t& value, const typeid_t& type){
+			const auto basetype = type.get_base_type();
+			bump_rc(value, basetype);
+		}
+
+
 
 
 		public: bc_value_t() :
@@ -435,20 +474,15 @@ namespace floyd {
 		//////////////////////////////////////		bool
 
 
-		public: inline static bc_value_t make_bool(bool v){
+		public: BC_INLINE static bc_value_t make_bool(bool v){
 			return bc_value_t(v);
 		}
-		public: inline bool get_bool_value() const {
+		public: BC_INLINE bool get_bool_value() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._bool;
 		}
-		public: inline bool get_bool_value_quick() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _value_internals._bool;
-		}
-		private: inline explicit bc_value_t(bool value) :
+		private: BC_INLINE explicit bc_value_t(bool value) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_bool()),
 #endif
@@ -462,20 +496,15 @@ namespace floyd {
 		//////////////////////////////////////		int
 
 
-		public: inline static bc_value_t make_int(int v){
+		public: BC_INLINE static bc_value_t make_int(int v){
 			return bc_value_t{ v };
 		}
-		public: inline int get_int_value() const {
+		public: BC_INLINE int get_int_value() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._int;
 		}
-		public: inline int get_int_value_quick() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _value_internals._int;
-		}
-		private: inline explicit bc_value_t(int value) :
+		private: BC_INLINE explicit bc_value_t(int value) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_int()),
 #endif
@@ -489,7 +518,7 @@ namespace floyd {
 		//////////////////////////////////////		float
 
 
-		public: static bc_value_t make_float(float v){
+		public: BC_INLINE  static bc_value_t make_float(float v){
 			return bc_value_t{ v };
 		}
 		public: float get_float_value() const {
@@ -497,7 +526,7 @@ namespace floyd {
 
 			return _value_internals._float;
 		}
-		private: explicit bc_value_t(float value) :
+		private: BC_INLINE  explicit bc_value_t(float value) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_float()),
 #endif
@@ -511,15 +540,15 @@ namespace floyd {
 		//////////////////////////////////////		string
 
 
-		public: static bc_value_t make_string(const std::string& v){
+		public: BC_INLINE  static bc_value_t make_string(const std::string& v){
 			return bc_value_t{ v };
 		}
-		public: std::string get_string_value() const{
+		public: BC_INLINE  std::string get_string_value() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._ext->_string;
 		}
-		private: explicit bc_value_t(const std::string value) :
+		private: BC_INLINE  explicit bc_value_t(const std::string value) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_string()),
 #endif
@@ -533,15 +562,15 @@ namespace floyd {
 		//////////////////////////////////////		json_value
 
 
-		public: static bc_value_t make_json_value(const json_t& v){
+		public: BC_INLINE  static bc_value_t make_json_value(const json_t& v){
 			return bc_value_t{ std::make_shared<json_t>(v) };
 		}
-		public: json_t get_json_value() const{
+		public: BC_INLINE  json_t get_json_value() const{
 			QUARK_ASSERT(check_invariant());
 
 			return *_value_internals._ext->_json_value.get();
 		}
-		private: explicit bc_value_t(const std::shared_ptr<json_t>& value) :
+		private: BC_INLINE  explicit bc_value_t(const std::shared_ptr<json_t>& value) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_json_value()),
 #endif
@@ -555,15 +584,15 @@ namespace floyd {
 		//////////////////////////////////////		typeid
 
 
-		public: static bc_value_t make_typeid_value(const typeid_t& type_id){
+		public: BC_INLINE  static bc_value_t make_typeid_value(const typeid_t& type_id){
 			return bc_value_t{ type_id };
 		}
-		public: typeid_t get_typeid_value() const {
+		public: BC_INLINE  typeid_t get_typeid_value() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._ext->_typeid_value;
 		}
-		private: explicit bc_value_t(const typeid_t& type_id) :
+		private: BC_INLINE  explicit bc_value_t(const typeid_t& type_id) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_typeid()),
 #endif
@@ -577,13 +606,13 @@ namespace floyd {
 		//////////////////////////////////////		struct
 
 
-		public: static bc_value_t make_struct_value(const typeid_t& struct_type, const std::vector<bc_value_t>& values){
+		public: BC_INLINE  static bc_value_t make_struct_value(const typeid_t& struct_type, const std::vector<bc_value_t>& values){
 			return bc_value_t{ struct_type, values, true };
 		}
-		public: const std::vector<bc_value_t>& get_struct_value() const {
+		public: BC_INLINE  const std::vector<bc_value_t>& get_struct_value() const {
 			return _value_internals._ext->_struct_members;
 		}
-		private: explicit bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
+		private: BC_INLINE  explicit bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(struct_type),
 #endif
@@ -596,16 +625,16 @@ namespace floyd {
 
 		//////////////////////////////////////		vector
 
-
-		public: static bc_value_t make_vector_value(const typeid_t& element_type, const std::vector<bc_value_t>& elements){
+		//??? remove all use of typeid_t -- clients will allocate them even if we don't keep the instances!
+		public: BC_INLINE static bc_value_t make_vector_value(const typeid_t& element_type, const std::vector<bc_value_t>& elements){
 			return bc_value_t{element_type, elements};
 		}
-		public: const std::vector<bc_value_t>& get_vector_value() const{
+		public: BC_INLINE const std::vector<bc_value_t>& get_vector_value() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._ext->_vector_elements;
 		}
-		private: explicit bc_value_t(const typeid_t& element_type, const std::vector<bc_value_t>& values) :
+		private: BC_INLINE explicit bc_value_t(const typeid_t& element_type, const std::vector<bc_value_t>& values) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_vector(element_type)),
 #endif
@@ -619,16 +648,16 @@ namespace floyd {
 		//////////////////////////////////////		dict
 
 
-		public: static bc_value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries){
+		public: BC_INLINE static bc_value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries){
 			return bc_value_t{value_type, entries};
 		}
 
-		public: const std::map<std::string, bc_value_t>& get_dict_value() const{
+		public: BC_INLINE const std::map<std::string, bc_value_t>& get_dict_value() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._ext->_dict_entries;
 		}
-		private: explicit bc_value_t(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries) :
+		private: BC_INLINE explicit bc_value_t(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_dict(value_type)),
 #endif
@@ -642,15 +671,15 @@ namespace floyd {
 		//////////////////////////////////////		function
 
 
-		public: static bc_value_t make_function_value(const typeid_t& function_type, int function_id){
+		public: BC_INLINE static bc_value_t make_function_value(const typeid_t& function_type, int function_id){
 			return bc_value_t{ function_type, function_id, true };
 		}
-		public: int get_function_value() const{
+		public: BC_INLINE int get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 
 			return _value_internals._function_id;
 		}
-		private: explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
+		private: BC_INLINE explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(function_type),
 #endif
@@ -666,7 +695,7 @@ namespace floyd {
 
 
 		//	Bumps RC.
-		public: static bc_value_t make_object(bc_value_object_t* ext){
+		public: BC_INLINE static bc_value_t make_object(bc_value_object_t* ext){
 			bc_value_t temp;
 			temp._is_ext = true;
 			ext->_rc++;
@@ -674,16 +703,9 @@ namespace floyd {
 			return temp;
 		}
 
-		public: union value_internals_t {
-			bool _bool;
-			int _int;
-			float _float;
-			int _function_id;
-			bc_value_object_t* _ext;
-		};
 
 		//	No bump.
-		public: explicit bc_value_t(const value_internals_t& internals) :
+		public: BC_INLINE explicit bc_value_t(const value_internals_t& internals) :
 			_value_internals(internals)
 		{
 		}
@@ -701,105 +723,7 @@ namespace floyd {
 	};
 
 
-
-	//////////////////////////////////////		value helpers
-
-
-
-	inline std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
-		std::vector<bc_value_t> result;
-		for(const auto e: values){
-			result.push_back(value_to_bc(e));
-		}
-		return result;
-	}
-
-	inline std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type){
-		std::vector<value_t> result;
-		for(const auto e: values){
-			result.push_back(bc_to_value(e, shared_type));
-		}
-		return result;
-	}
-
-	inline value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
-		QUARK_ASSERT(value.check_invariant());
-
-		const auto basetype = type.get_base_type();
-
-		if(basetype == base_type::k_internal_undefined){
-			return value_t::make_undefined();
-		}
-		else if(basetype == base_type::k_internal_dynamic){
-			return value_t::make_internal_dynamic();
-		}
-		else if(basetype == base_type::k_void){
-			return value_t::make_void();
-		}
-		else if(basetype == base_type::k_bool){
-			return value_t::make_bool(value.get_bool_value_quick());
-		}
-		else if(basetype == base_type::k_int){
-			return value_t::make_int(value.get_int_value_quick());
-		}
-		else if(basetype == base_type::k_float){
-			return value_t::make_float(value.get_float_value());
-		}
-		else if(basetype == base_type::k_string){
-			return value_t::make_string(value.get_string_value());
-		}
-		else if(basetype == base_type::k_json_value){
-			return value_t::make_json_value(value.get_json_value());
-		}
-		else if(basetype == base_type::k_typeid){
-			return value_t::make_typeid_value(value.get_typeid_value());
-		}
-		else if(basetype == base_type::k_struct){
-			const auto& struct_def = type.get_struct();
-			const auto& members = value.get_struct_value();
-			std::vector<value_t> members2;
-			for(int i = 0 ; i < members.size() ; i++){
-				const auto& member_type = struct_def._members[i]._type;
-				const auto& member_value = members[i];
-				const auto& member_value2 = bc_to_value(member_value, member_type);
-				members2.push_back(member_value2);
-			}
-			return value_t::make_struct_value(type, members2);
-		}
-		else if(basetype == base_type::k_vector){
-			const auto& element_type  = type.get_vector_element_type();
-			return value_t::make_vector_value(element_type, bcs_to_values__same_types(value.get_vector_value(), element_type));
-		}
-		else if(basetype == base_type::k_dict){
-			const auto value_type = type.get_dict_value_type();
-			const auto entries = value.get_dict_value();
-			std::map<std::string, value_t> entries2;
-			for(const auto& e: entries){
-				entries2.insert({e.first, bc_to_value(e.second, value_type)});
-			}
-			return value_t::make_dict_value(value_type, entries2);
-		}
-		else if(basetype == base_type::k_function){
-			return value_t::make_function_value(type, value.get_function_value());
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-
-	inline bc_value_t value_to_bc(const value_t& value){
-		return bc_value_t::from_value(value);
-	}
-
-	inline std::string to_compact_string2(const bc_value_t& value) {
-		return "xxyyzz";
-//		return to_compact_string2(value._backstore);
-	}
-
-
-
-
+	std::string to_compact_string2(const bc_value_t& value);
 
 
 	//////////////////////////////////////		bc_statement_opcode

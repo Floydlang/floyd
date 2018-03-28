@@ -47,31 +47,6 @@ namespace floyd {
 //	};
 
 
-inline void debump(bc_value_t::value_internals_t& value){
-	QUARK_ASSERT(value._ext != nullptr);
-
-	value._ext->_rc--;
-	if(value._ext->_rc == 0){
-		delete value._ext;
-		value._ext = nullptr;
-	}
-}
-
-
-inline void bump_rc(const bc_value_t::value_internals_t& value, base_type basetype){
-	if(bc_value_t::is_bc_ext(basetype)){
-		value._ext->_rc++;
-	}
-}
-inline void bump_rc(const bc_value_t& value, base_type basetype){
-	if(bc_value_t::is_bc_ext(basetype)){
-		value._value_internals._ext->_rc++;
-	}
-}
-inline void bump_rc(const bc_value_t& value, const typeid_t& type){
-	const auto basetype = type.get_base_type();
-	bump_rc(value, basetype);
-}
 
 
 	//////////////////////////////////////		interpreter_stack_t
@@ -104,17 +79,17 @@ inline void bump_rc(const bc_value_t& value, const typeid_t& type){
 		int size() const {
 			return static_cast<int>(_value_stack.size());
 		}
-		inline void push_value(const bc_value_t& value, const typeid_t& type){
-			bump_rc(value, type);
+		BC_INLINE void push_value(const bc_value_t& value, const typeid_t& type){
+			bc_value_t::bump_rc(value, type);
 			_value_stack.push_back(value._value_internals);
 		}
-		inline void push_intq(int value){
+		BC_INLINE void push_intq(int value){
 			interpret_stack_element_t e;
 			e._int = value;
 			_value_stack.push_back(e);
 		}
 
-		inline void push_values_no_rc_bump(const bc_value_t::value_internals_t* values, int value_count){
+		BC_INLINE void push_values_no_rc_bump(const bc_value_t::value_internals_t* values, int value_count){
 			QUARK_ASSERT(values != nullptr);
 			_value_stack.insert(_value_stack.end(), values, values + value_count);
 		}
@@ -122,7 +97,7 @@ inline void bump_rc(const bc_value_t& value, const typeid_t& type){
 
 
 		//	returned value will has ownership of obj, if any.
-		inline bc_value_t load_value(int pos, const typeid_t& type) const{
+		BC_INLINE bc_value_t load_value(int pos, const typeid_t& type) const{
 			const auto& e = _value_stack[pos];
 			if(bc_value_t::is_bc_ext(type.get_base_type())){
 				e._ext->_rc++;
@@ -130,34 +105,34 @@ inline void bump_rc(const bc_value_t& value, const typeid_t& type){
 			return bc_value_t(e);
 		}
 
-		inline bc_value_t load_inline_value(int pos) const{
+		BC_INLINE bc_value_t load_inline_value(int pos) const{
 			return bc_value_t(_value_stack[pos]);
 		}
 
 		//	returned value will has ownership of obj, if any.
-		inline bc_value_t load_obj(int pos) const{
+		BC_INLINE bc_value_t load_obj(int pos) const{
 			const auto& e = _value_stack[pos];
 			e._ext->_rc++;
 			return bc_value_t(e);
 		}
 
-		inline int load_intq(int pos) const{
+		BC_INLINE int load_intq(int pos) const{
 			return _value_stack[pos]._int;
 		}
 
-		inline void replace_value_same_type(int pos, const bc_value_t& value, const typeid_t& type){
+		BC_INLINE void replace_value_same_type(int pos, const bc_value_t& value, const typeid_t& type){
 			//	Unpack existing value so it's RC:ed OK.
 			const auto prev_value = load_value(pos, type);
 
-			bump_rc(value, type);
+			bc_value_t::bump_rc(value, type);
 			_value_stack[pos] = value._value_internals;
 		}
 
-		inline void replace_int(int pos, const int& value){
+		BC_INLINE void replace_int(int pos, const int& value){
 			_value_stack[pos]._int = value;
 		}
 
-		inline void pop_value(const typeid_t& type){
+		BC_INLINE void pop_value(const typeid_t& type){
 			//	Unpack existing value so it's RC:ed OK.
 			const auto prev_value = load_value(static_cast<int>(_value_stack.size()) - 1, type);
 			_value_stack.pop_back();
