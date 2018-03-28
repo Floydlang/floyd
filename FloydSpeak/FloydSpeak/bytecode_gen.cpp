@@ -428,11 +428,15 @@ bc_expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& address = e._address;
-	if(e._output_type->is_int()){
+	const auto basetype = e._output_type->get_base_type();
+	if(basetype == base_type::k_int){
 		return bc_expression_t{ bc_expression_opcode::k_expression_load_int, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
 	}
+	else if(bc_value_t::is_bc_ext(basetype)){
+		return bc_expression_t{ bc_expression_opcode::k_expression_load_obj, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+	}
 	else{
-		return bc_expression_t{ bc_expression_opcode::k_expression_load, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+		return bc_expression_t{ bc_expression_opcode::k_expression_load_inline, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
 	}
 }
 

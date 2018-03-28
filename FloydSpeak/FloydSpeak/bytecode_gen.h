@@ -665,7 +665,7 @@ namespace floyd {
 		friend bc_value_t value_to_bc(const value_t& value);
 
 
-
+		//	Bumps RC.
 		public: static bc_value_t make_object(bc_value_object_t* ext){
 			bc_value_t temp;
 			temp._is_ext = true;
@@ -682,6 +682,7 @@ namespace floyd {
 			bc_value_object_t* _ext;
 		};
 
+		//	No bump.
 		public: explicit bc_value_t(const value_internals_t& internals) :
 			_value_internals(internals)
 		{
@@ -878,8 +879,11 @@ namespace floyd {
 		k_expression_literal__int,
 		k_expression_resolve_member,
 		k_expression_lookup_element,
-		k_expression_load,
+
+		k_expression_load_inline,
+		k_expression_load_obj,
 		k_expression_load_int,
+
 		k_expression_call,
 		k_expression_construct_value,
 

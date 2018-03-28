@@ -93,14 +93,15 @@ int close_stack_frame(interpreter_t& vm, const bc_body_t& body){
 	for(int i = 0 ; i < body._symbols.size() ; i++){
 		const auto& symbol = body._symbols[i];
 		const auto basetype = symbol.second._value_type.get_base_type();
+
 		if(bc_value_t::is_bc_ext(basetype)){
 			const auto pos = current_pos + i;
-			QUARK_ASSERT(vm._value_stack._value_stack[pos]._internals._ext != nullptr);
+			QUARK_ASSERT(vm._value_stack._value_stack[pos]._ext != nullptr);
 
-			vm._value_stack._value_stack[pos]._internals._ext->_rc--;
-			if(vm._value_stack._value_stack[pos]._internals._ext->_rc == 0){
-				delete vm._value_stack._value_stack[pos]._internals._ext;
-				vm._value_stack._value_stack[pos]._internals._ext = nullptr;
+			vm._value_stack._value_stack[pos]._ext->_rc--;
+			if(vm._value_stack._value_stack[pos]._ext->_rc == 0){
+				delete vm._value_stack._value_stack[pos]._ext;
+				vm._value_stack._value_stack[pos]._ext = nullptr;
 			}
 		}
 	}
@@ -446,7 +447,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 	auto temp = bc_expression_t(
-		bc_expression_opcode::k_expression_load,
+		bc_expression_opcode::k_expression_load_int,
 		13,
 		{},
 		variable_address_t::make_variable_address(10, 11),
@@ -1112,14 +1113,23 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		return execute_lookup_element_expression(vm, e);
 	}
 
+	//??? Here we could use a clever box that encode stuff into stackframe/struct etc and lets us quickly access them. No need to encode type in instruction.
+	//??? get_type() should have all basetypes as first IDs.
+
 	//??? we know the type of value, we know the symbol table!
 	//??? Optimize by inlining find_env_from_address() and making sep paths.
-	else if(op == bc_expression_opcode::k_expression_load){
+	else if(op == bc_expression_opcode::k_expression_load_inline){
+		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
+		const auto pos = frame_pos + e._address_index;
+		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+		const auto& value = vm._value_stack.load_inline_value(pos);
+		return value;
+	}
+	else if(op == bc_expression_opcode::k_expression_load_obj){
 		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 		const auto pos = frame_pos + e._address_index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 		const auto& value = vm._value_stack.load_value(pos, get_type(vm, e._type));
-//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
 		return value;
 	}
 	else if(op == bc_expression_opcode::k_expression_load_int){
@@ -1127,7 +1137,6 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		const auto pos = frame_pos + e._address_index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 		const auto& value = vm._value_stack.load_intq(pos);
-//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
 		return bc_value_t::make_int(value);
 	}
 

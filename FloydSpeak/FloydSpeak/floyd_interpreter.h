@@ -39,121 +39,20 @@ namespace floyd {
 	//////////////////////////////////////		interpret_stack_element_t
 
 
-
-	struct interpret_stack_element_t {
-		private: union value_internals_t {
-			bool _bool;
-			int _int;
-			float _float;
-			int _function_id;
-			bc_value_object_t* _ext;
-		};
-		public: value_internals_t _internals;
-	};
+//	typedef bc_value_t interpret_stack_element_t;
+	typedef bc_value_t::value_internals_t interpret_stack_element_t;
+	//	IMPORTANT: Has no constructor, destructor etc!!
+//	struct interpret_stack_element_t {
+//		public: bc_value_t::value_internals_t _value_internals;
+//	};
 
 
-inline interpret_stack_element_t make_object_element(const bc_value_t& value, const typeid_t& type){
-	interpret_stack_element_t temp;
-	value._value_internals._ext->_rc++;
-	temp._internals._ext = value._value_internals._ext;
-	return temp;
-}
-
-inline interpret_stack_element_t make_element(const bc_value_t& value, const typeid_t& type){
-	const auto basettype = type.get_base_type();
-	if(basettype == base_type::k_internal_undefined){
-		interpret_stack_element_t temp;
-		temp._internals._ext = nullptr;
-		return temp;
-	}
-	else if(basettype == base_type::k_internal_dynamic){
-		interpret_stack_element_t temp;
-		temp._internals._ext = nullptr;
-		return temp;
-	}
-	else if(basettype == base_type::k_void){
-		interpret_stack_element_t temp;
-		temp._internals._ext = nullptr;
-		return temp;
-	}
-	else if(basettype == base_type::k_bool){
-		interpret_stack_element_t temp;
-		temp._internals._bool = value.get_bool_value();
-		return temp;
-	}
-	else if(basettype == base_type::k_int){
-		interpret_stack_element_t temp;
-		temp._internals._int = value.get_int_value();
-		return temp;
-	}
-	else if(basettype == base_type::k_float){
-		interpret_stack_element_t temp;
-		temp._internals._float = value.get_float_value();
-		return temp;
-	}
-	else if(basettype == base_type::k_function){
-		interpret_stack_element_t temp;
-		temp._internals._function_id = value.get_function_value();
-		return temp;
-	}
-
-	else if(bc_value_t::is_bc_ext(basettype)){
-		return make_object_element(value, type);
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+inline void bump_rc(const bc_value_t& value, const typeid_t& type){
+	const auto basetype = type.get_base_type();
+	if(bc_value_t::is_bc_ext(basetype)){
+		value._value_internals._ext->_rc++;
 	}
 }
-//???? stupid-slow. Also not needed really.
-inline bc_value_t element_to_value(const interpret_stack_element_t& e, const typeid_t& type){
-	if(type.is_undefined()){
-		return bc_value_t::make_undefined();
-	}
-	else if(type.is_internal_dynamic()){
-		return bc_value_t::make_internal_dynamic();
-	}
-	else if(type.is_void()){
-		return bc_value_t::make_void();
-	}
-	else if(type.is_bool()){
-		return bc_value_t::make_bool(e._internals._bool);
-	}
-	else if(type.is_int()){
-		return bc_value_t::make_int(e._internals._int);
-	}
-	else if(type.is_float()){
-		return bc_value_t::make_float(e._internals._float);
-	}
-	else if(type.is_string()){
-		return bc_value_t::make_object(e._internals._ext);
-	}
-	else if(type.is_json_value()){
-		return bc_value_t::make_object(e._internals._ext);
-	}
-	else if(type.is_typeid()){
-		return bc_value_t::make_object(e._internals._ext);
-	}
-	else if(type.is_struct()){
-		return bc_value_t::make_object(e._internals._ext);
-	}
-	else if(type.is_vector()){
-		return bc_value_t::make_object(e._internals._ext);
-	}
-	else if(type.is_dict()){
-		return bc_value_t::make_object(e._internals._ext);
-	}
-	else if(type.is_function()){
-		return bc_value_t::make_function_value(type, e._internals._function_id);
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-
-
 
 
 	//////////////////////////////////////		interpreter_stack_t
@@ -187,40 +86,54 @@ inline bc_value_t element_to_value(const interpret_stack_element_t& e, const typ
 			return static_cast<int>(_value_stack.size());
 		}
 		inline void push_value(const bc_value_t& value, const typeid_t& type){
-			const auto e = make_element(value, type);
-			_value_stack.push_back(e);
+			bump_rc(value, type);
+			_value_stack.push_back(value._value_internals);
 		}
 		inline void push_intq(int value){
 			interpret_stack_element_t e;
-			e._internals._int = value;
+			e._int = value;
 			_value_stack.push_back(e);
 		}
 
+		//	returned value will has ownership of obj, if any.
 		inline bc_value_t load_value(int pos, const typeid_t& type) const{
 			const auto& e = _value_stack[pos];
-			const auto result = element_to_value(e, type);
-			return result;
+			if(bc_value_t::is_bc_ext(type.get_base_type())){
+				e._ext->_rc++;
+			}
+			return bc_value_t(e);
+		}
+
+		inline bc_value_t load_inline_value(int pos) const{
+			return bc_value_t(_value_stack[pos]);
+		}
+
+		//	returned value will has ownership of obj, if any.
+		inline bc_value_t load_obj(int pos) const{
+			const auto& e = _value_stack[pos];
+			e._ext->_rc++;
+			return bc_value_t(e);
 		}
 
 		inline int load_intq(int pos) const{
-			return _value_stack[pos]._internals._int;
+			return _value_stack[pos]._int;
 		}
 
 		inline void replace_value_same_type(int pos, const bc_value_t& value, const typeid_t& type){
 			//	Unpack existing value so it's RC:ed OK.
-			const auto prev_value = element_to_value(_value_stack[pos], type);
+			const auto prev_value = load_value(pos, type);
 
-			const auto e = make_element(value, type);
-			_value_stack[pos] = e;
+			bump_rc(value, type);
+			_value_stack[pos] = value._value_internals;
 		}
 
 		inline void replace_int(int pos, const int& value){
-			_value_stack[pos]._internals._int = value;
+			_value_stack[pos]._int = value;
 		}
 
 		inline void pop_value(const typeid_t& type){
 			//	Unpack existing value so it's RC:ed OK.
-			const auto prev_value = element_to_value(_value_stack.back(), type);
+			const auto prev_value = load_value(static_cast<int>(_value_stack.size()) - 1, type);
 			_value_stack.pop_back();
 		}
 
