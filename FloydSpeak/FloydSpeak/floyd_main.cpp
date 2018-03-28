@@ -186,7 +186,7 @@ void run_repl(){
 
 	int print_pos = 0;
 	auto ast = floyd::program_to_ast2(context, "");
-	auto vm = floyd::interpreter_t(ast);
+	auto vm = std::make_shared<floyd::interpreter_t>(ast);
 
 	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;
 	std::cout << R"(Type "help", "copyright" or "license" for more informations!)" << std::endl;

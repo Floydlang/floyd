@@ -32,6 +32,10 @@ namespace floyd {
 
 
 
+
+
+
+
 	//////////////////////////////////////		interpret_stack_element_t
 
 
@@ -48,7 +52,171 @@ namespace floyd {
 	};
 
 
+inline interpret_stack_element_t make_object_element(const bc_value_t& value, const typeid_t& type){
+	interpret_stack_element_t temp;
+	value._value_internals._ext->_rc++;
+	temp._internals._ext = value._value_internals._ext;
+	return temp;
+}
 
+inline interpret_stack_element_t make_element(const bc_value_t& value, const typeid_t& type){
+	const auto basettype = type.get_base_type();
+	if(basettype == base_type::k_internal_undefined){
+		interpret_stack_element_t temp;
+		temp._internals._ext = nullptr;
+		return temp;
+	}
+	else if(basettype == base_type::k_internal_dynamic){
+		interpret_stack_element_t temp;
+		temp._internals._ext = nullptr;
+		return temp;
+	}
+	else if(basettype == base_type::k_void){
+		interpret_stack_element_t temp;
+		temp._internals._ext = nullptr;
+		return temp;
+	}
+	else if(basettype == base_type::k_bool){
+		interpret_stack_element_t temp;
+		temp._internals._bool = value.get_bool_value();
+		return temp;
+	}
+	else if(basettype == base_type::k_int){
+		interpret_stack_element_t temp;
+		temp._internals._int = value.get_int_value();
+		return temp;
+	}
+	else if(basettype == base_type::k_float){
+		interpret_stack_element_t temp;
+		temp._internals._float = value.get_float_value();
+		return temp;
+	}
+	else if(basettype == base_type::k_function){
+		interpret_stack_element_t temp;
+		temp._internals._function_id = value.get_function_value();
+		return temp;
+	}
+
+	else if(bc_value_t::is_bc_ext(basettype)){
+		return make_object_element(value, type);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+inline bc_value_t element_to_value(const interpret_stack_element_t& e, const typeid_t& type){
+	if(type.is_undefined()){
+		return bc_value_t::make_undefined();
+	}
+	else if(type.is_internal_dynamic()){
+		return bc_value_t::make_internal_dynamic();
+	}
+	else if(type.is_void()){
+		return bc_value_t::make_void();
+	}
+	else if(type.is_bool()){
+		return bc_value_t::make_bool(e._internals._bool);
+	}
+	else if(type.is_int()){
+		return bc_value_t::make_int(e._internals._int);
+	}
+	else if(type.is_float()){
+		return bc_value_t::make_float(e._internals._float);
+	}
+	else if(type.is_string()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_json_value()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_typeid()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_struct()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_vector()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_dict()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_function()){
+		return bc_value_t::make_function_value(type, e._internals._function_id);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
+
+
+	//////////////////////////////////////		interpreter_stack_t
+
+
+	struct interpreter_stack_t {
+		public: interpreter_stack_t(){
+			_value_stack.reserve(1024);
+		}
+		public: ~interpreter_stack_t(){
+		}
+
+		public: interpreter_stack_t(const interpreter_stack_t& other) :
+			_value_stack(other._value_stack)
+		{
+			//??? Cannot bump RC:s because we don't know which values!
+			QUARK_ASSERT(false);
+		}
+
+		public: interpreter_stack_t& operator=(const interpreter_stack_t& other){
+			interpreter_stack_t temp = other;
+			temp.swap(*this);
+			return *this;
+		}
+
+		public: void swap(interpreter_stack_t& other) throw() {
+			other._value_stack.swap(_value_stack);
+		}
+
+		int size() const {
+			return static_cast<int>(_value_stack.size());
+		}
+		inline void push_value(const bc_value_t& value, const typeid_t& type){
+			const auto e = make_element(value, type);
+			_value_stack.push_back(e);
+		}
+
+		inline bc_value_t load_value(int pos, const typeid_t& type) const{
+			const auto& e = _value_stack[pos];
+			const auto result = element_to_value(e, type);
+			return result;
+		}
+
+		inline int load_intq(int pos) const{
+			return _value_stack[pos]._internals._int;
+		}
+
+		inline void replace_value_same_type(int pos, const bc_value_t& value, const typeid_t& type){
+			//	Unpack existing value so it's RC:ed OK.
+			const auto prev_value = element_to_value(_value_stack[pos], type);
+
+			const auto e = make_element(value, type);
+			_value_stack[pos] = e;
+		}
+
+		inline void pop_value(const typeid_t& type){
+			//	Unpack existing value so it's RC:ed OK.
+			const auto prev_value = element_to_value(_value_stack.back(), type);
+			_value_stack.pop_back();
+		}
+
+
+		public: std::vector<interpret_stack_element_t> _value_stack;
+	};
 
 
 
@@ -140,8 +308,8 @@ namespace floyd {
 
 	struct interpreter_t {
 		public: explicit interpreter_t(const bc_program_t& program);
-		public: interpreter_t(const interpreter_t& other);
-		public: const interpreter_t& operator=(const interpreter_t& other);
+		public: interpreter_t(const interpreter_t& other) = delete;
+		public: const interpreter_t& operator=(const interpreter_t& other)= delete;
 #if DEBUG
 		public: bool check_invariant() const;
 #endif
@@ -154,7 +322,8 @@ namespace floyd {
 
 
 		//	Holds all values for all environments.
-		public: std::vector<interpret_stack_element_t> _value_stack;
+		//	Notice: stack holds refs to RC-counted objects!
+		public: interpreter_stack_t _value_stack;
 		public: int _current_stack_frame;
 		public: std::vector<std::string> _print_output;
 	};
@@ -191,18 +360,18 @@ namespace floyd {
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
-	std::pair<interpreter_t, value_t> run_main(
+	std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(
 		const interpreter_context_t& context,
 		const std::string& source,
 		const std::vector<value_t>& args
 	);
 
-	std::pair<interpreter_t, value_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const std::vector<floyd::value_t>& args);
+	std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const std::vector<floyd::value_t>& args);
 
 	bc_program_t program_to_ast2(const interpreter_context_t& context, const std::string& program);
 
 
-	interpreter_t run_global(const interpreter_context_t& context, const std::string& source);
+	std::shared_ptr<interpreter_t> run_global(const interpreter_context_t& context, const std::string& source);
 
 	void print_vm_printlog(const interpreter_t& vm);
 

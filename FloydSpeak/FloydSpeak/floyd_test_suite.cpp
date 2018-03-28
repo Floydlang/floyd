@@ -41,8 +41,8 @@ value_t run_return_result(const std::string& program, const std::vector<value_t>
 	const auto context = make_test_interpreter_context();
 
 	const auto r = run_main(context, program, args);
-	print_vm_printlog(r.first);
-	const auto result = get_global(r.first, "result");
+	print_vm_printlog(*r.first);
+	const auto result = get_global(*r.first, "result");
 	return result;
 }
 
@@ -53,7 +53,7 @@ void test__run_init__check_result(const std::string& program, const value_t& exp
 		expression_to_json(expression_t::make_literal(expected_result))._value
 	);
 }
-interpreter_t test__run_global(const std::string& program){
+std::shared_ptr<interpreter_t> test__run_global(const std::string& program){
 	const auto context = make_test_interpreter_context();
 
 	const auto result = run_global(context, program);
@@ -151,12 +151,12 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 
 QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", "") {
 	const auto r = test__run_global("print(5);");
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "5" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "5" }));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Deduced bind", "", "") {
 	const auto r = test__run_global("a = 10;print(a);");
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "10" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "10" }));
 }
 
 
@@ -524,7 +524,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 		"	return 3 + 4;\n"
 		"}\n"
 	);
-	auto vm = interpreter_t(ast);
+	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == value_t::make_int(7));
@@ -537,7 +537,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 		"	return \"123\" + \"456\";\n"
 		"}\n"
 	);
-	auto vm = interpreter_t(ast);
+	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == value_t::make_string("123456"));
@@ -699,7 +699,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 		"	return myfunc() + myfunc() * 2;\n"
 		"}\n"
 	);
-	auto vm = interpreter_t(ast);
+	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == value_t::make_int(15));
@@ -712,7 +712,7 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
 	);
-	auto vm = interpreter_t(ast);
+	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
 	QUARK_TEST_VERIFY(result == value_t::make_string("-xyz-"));
@@ -733,7 +733,7 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
 		"}\n"
 	);
-	auto vm = interpreter_t(ast);
+	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
 
@@ -758,7 +758,7 @@ QUARK_UNIT_TEST("call_function()", "mutate local", "", ""){
 			print(a);
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "2" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "2" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
@@ -769,7 +769,7 @@ QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
 			print(a);
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "1001" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "1001" }));
 }
 
 QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
@@ -806,7 +806,7 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 					print(a);
 				}
 			)");
-			QUARK_UT_VERIFY((r._print_output == vector<string>{ "8" }));
+			QUARK_UT_VERIFY((r->_print_output == vector<string>{ "8" }));
 		}
 
 		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
@@ -814,7 +814,7 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 				a = 7;
 				print(a);
 			)");
-			QUARK_UT_VERIFY((r._print_output == vector<string>{ "7" }));
+			QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
 		}
 
 
@@ -825,7 +825,7 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 				}
 				print(a);
 			)");
-			QUARK_UT_VERIFY((r._print_output == vector<string>{ "7" }));
+			QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
 		}
 
 QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
@@ -836,7 +836,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 		}
 		print(a);
 	)");
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "8" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "8" }));
 }
 
 
@@ -855,7 +855,7 @@ QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 		"string x = f();"
 		"print(x);"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
@@ -872,7 +872,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
 		"string x = f();"
 		"print(x);"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
@@ -889,7 +889,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
 		"string x = f();"
 		"print(x);"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
 // ??? add test for: return from ELSE
@@ -908,7 +908,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 		"string x = f();"
 		"print(x);"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A", "B" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
 
@@ -1027,7 +1027,7 @@ QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
 			print("Hello, World!");
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
 }
 
 
@@ -1039,7 +1039,7 @@ QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!",
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
 }
 
 QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
@@ -1050,7 +1050,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello, World!" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
 }
 
 
@@ -1066,7 +1066,7 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(...){
-//		QUARK_UT_VERIFY((r._print_output == vector<string>{ "Assertion failed.", "A" }));
+//		QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Assertion failed.", "A" }));
 	}
 }
 
@@ -1077,7 +1077,7 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 			print("A");
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "A" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A" }));
 }
 
 
@@ -1106,7 +1106,7 @@ QUARK_UNIT_TEST("", "get_env_path()", "", ""){
 		print(path);
 	)");
 
-	quark::ut_compare_strings(vm._print_output[0].substr(0, 7), "/Users/");
+	quark::ut_compare_strings(vm->_print_output[0].substr(0, 7), "/Users/");
 }
 
 //////////////////////////////////////////		HOST FUNCTION - read_text_file()
@@ -1118,7 +1118,7 @@ QUARK_UNIT_TEST("", "read_text_file()", "", ""){
 		a = read_text_file(path + "/Desktop/test1.json");
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		string() + R"({ "magic": 1234 })" + "\n"
 	});
 }
@@ -1202,7 +1202,7 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 			print("E:" + to_string(x));
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
 }
 
 
@@ -1220,7 +1220,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
 			print("Goodbye!");
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!", "Goodbye!" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello!", "Goodbye!" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
@@ -1232,7 +1232,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 			print("Goodbye!");
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Goodbye!" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
@@ -1246,7 +1246,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Hello!" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello!" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
@@ -1260,7 +1260,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Goodbye!" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Goodbye!" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1280,7 +1280,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "one" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "one" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1300,7 +1300,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "two" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "two" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1320,7 +1320,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "three" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "three" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1340,7 +1340,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "four" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "four" }));
 }
 
 
@@ -1377,7 +1377,7 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 		)"
 	);
 	QUARK_UT_VERIFY((
-		vm._print_output == vector<string>{
+		vm->_print_output == vector<string>{
 			"13", "14", "1014"
 		})
 	);
@@ -1399,7 +1399,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
 }
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	const auto r = test__run_global(
@@ -1409,7 +1409,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "Iteration: 0", "Iteration: 1" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Iteration: 0", "Iteration: 1" }));
 }
 
 QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
@@ -1427,7 +1427,7 @@ QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
 	);
 
 	QUARK_UT_VERIFY((
-		vm._print_output == vector<string>{
+		vm->_print_output == vector<string>{
 			"0", "1", "1", "2", "3", "5", "8", "13", "21", "34",
 			"55" //, "89", "144", "233", "377", "610", "987", "1597", "2584", "4181"
 		})
@@ -1448,7 +1448,7 @@ QUARK_UNIT_TESTQ("run_init()", "for"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r._print_output == vector<string>{ "100", "101", "102", "103", "104" }));
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "100", "101", "102", "103", "104" }));
 }
 
 
@@ -1537,7 +1537,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor, implicit type", "strings", "valid vec
 		a = ["one", "two"];
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"(["one", "two"])"
 	});
 }
@@ -1560,7 +1560,7 @@ QUARK_UNIT_TEST("vector", "explit bind, is [] working as type?", "strings", "val
 		[string] a = ["one", "two"];
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"(["one", "two"])"
 	});
 }
@@ -1570,7 +1570,7 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 		[string] a = [];
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"([])"
 	});
 }
@@ -1602,7 +1602,7 @@ QUARK_UNIT_TEST("vector", "=", "strings", "valid vector"){
 		print(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"(["one", "two"])",
 		R"(["one", "two"])"
 	});
@@ -1766,7 +1766,7 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 		assert(a == ["one","two","three"]);
 		assert(b == ["one","zwei","three"]);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"(["one", "two", "three"])",
 		R"(["one", "zwei", "three"])"
 	});
@@ -1789,7 +1789,7 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 		print(a["one"]);
 		print(a["two"]);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"1",
 		"2"
 	});
@@ -1826,7 +1826,7 @@ QUARK_UNIT_TEST("dict", "deduced type ", "", ""){
 		a = {"one": 1, "two": 2};
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"({"one": 1, "two": 2})",
 	});
 }
@@ -1837,7 +1837,7 @@ QUARK_UNIT_TEST("dict", "{}", "", ""){
 		a = {};
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"({})",
 	});
 }
@@ -1910,7 +1910,7 @@ QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side eff
 		print(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"({"one": 1, "two": 2})",
 		R"({"one": 1, "three": 3, "two": 2})"
 	});
@@ -1923,7 +1923,7 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 		print(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"({"one": 1, "three": 3, "two": 2})",
 		R"({"one": 1, "three": 333, "two": 2})"
 	});
@@ -1985,7 +1985,7 @@ QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 		struct t { int a;}
 		print(t);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"struct {int a;}"
 	});
 }
@@ -1996,7 +1996,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		a = t(3);
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		 R"({a=3})"
 	});
 }
@@ -2007,7 +2007,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 		temp = t(4);
 		print(temp.a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"4"
 	});
 }
@@ -2023,7 +2023,7 @@ QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
 		i = image(color(1, 2, 3), color(200, 201, 202));
 		print(i);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{red=128, green=192, blue=255}",
 		"{back={red=1, green=2, blue=3}, front={red=200, green=201, blue=202}}"
 	});
@@ -2036,7 +2036,7 @@ QUARK_UNIT_TEST("run_main()", "struct - access member of nested structs", "", ""
 		i = image(color(1, 2, 3), color(200, 201, 202));
 		print(i.front.green);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"201"
 	});
 }
@@ -2051,7 +2051,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		z = make_color();
 		print(z);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{red=100, green=101, blue=102}",
 	});
 }
@@ -2065,7 +2065,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		}
 		print(make_color());
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{red=100, green=101, blue=102}",
 	});
 }
@@ -2075,7 +2075,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) == color(1, 2, 3));
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"true"
 	});
 }
@@ -2085,7 +2085,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red; int green; int blue;}
 		print(color(9, 2, 3) == color(1, 2, 3));
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"false"
 	});
 }
@@ -2109,7 +2109,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 2, 3));
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"false"
 	});
 }
@@ -2119,7 +2119,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 		struct color { int red; int green; int blue;}
 		print(color(1, 2, 3) < color(1, 4, 3));
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"true"
 	});
 }
@@ -2136,7 +2136,7 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 		print(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{red=255, green=128, blue=128}",
 		"{red=255, green=128, blue=129}"
 	});
@@ -2166,7 +2166,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 		print(b);
 	)");
 
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{red=255, green=128, blue=128}",
 		"{red=255, green=3, blue=128}",
 	});
@@ -2181,7 +2181,7 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 		print(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{back={red=0, green=100, blue=200}, front={red=0, green=0, blue=0}}",
 		"{back={red=0, green=100, blue=200}, front={red=0, green=3, blue=0}}"
 	});
@@ -2197,7 +2197,7 @@ QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
 		print(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{red=255, green=128, blue=128}",
 		"{red=255, green=128, blue=129}"
 	});
@@ -2234,7 +2234,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 		//	XYZ
 		print("Hello");
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"Hello"
 	});
 }
@@ -2243,7 +2243,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 	const auto vm = test__run_global(R"(
 		print("Hello");		//	XYZ
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"Hello"
 	});
 }
@@ -2252,7 +2252,7 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 	const auto vm = test__run_global(R"(
 		print("Hello");/* xyz */print("Bye");
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"Hello",
 		"Bye"
 	});
@@ -2346,7 +2346,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 		json_value a = { "pigcount": 3, "pigcolor": "pink" };
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"({ "pigcolor": "pink", "pigcount": 3 })"
 	});
 }
@@ -2369,7 +2369,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 		};
 		print(a);
 	)ABCD");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"ABCD({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })ABCD"
 	});
 }
@@ -2379,7 +2379,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 		json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" };
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"({ "pigcolor": "pink", "pigcount": 3 })"
 	});
 }
@@ -2390,7 +2390,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 		print(a["pigcount"]);
 		print(a["pigcolor"]);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"3",
 		"\"pink\""
 	});
@@ -2561,7 +2561,7 @@ QUARK_UNIT_TEST("", "decode_json()", "", ""){
 		a = decode_json("{ \"magic\": 1234 }");
 		print(a);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"({ "magic": 1234 })"
 	});
 }
@@ -2577,7 +2577,7 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 		b = encode_json(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"\"cheat\""
 	});
 }
@@ -2589,7 +2589,7 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 		b = encode_json(a);
 		print(b);
 	)");
-	ut_compare_stringvects(vm._print_output, vector<string>{
+	ut_compare_stringvects(vm->_print_output, vector<string>{
 		"{ \"magic\": 1234 }"
 	});
 }
