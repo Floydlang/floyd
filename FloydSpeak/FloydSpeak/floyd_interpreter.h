@@ -31,6 +31,30 @@ namespace floyd {
 	bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const std::vector<bc_value_t>& arg_values);
 
 
+
+	//////////////////////////////////////		interpret_stack_element_t
+
+
+
+	struct interpret_stack_element_t {
+		private: union value_internals_t {
+			bool _bool;
+			int _int;
+			float _float;
+			int _function_id;
+			bc_value_object_t* _ext;
+		};
+		public: value_internals_t _internals;
+
+		//	Lost this flag -- we know that via symbol table already!
+		public: bool _is_ext = false;
+	};
+
+
+
+
+
+
 	//////////////////////////////////////		statement_result_t
 
 
@@ -129,8 +153,11 @@ namespace floyd {
 		////////////////////////		STATE
 		public: std::shared_ptr<interpreter_imm_t> _imm;
 
+		public: bc_value_t _internal_placeholder_object;
+
+
 		//	Holds all values for all environments.
-		public: std::vector<bc_value_t> _value_stack;
+		public: std::vector<interpret_stack_element_t> _value_stack;
 		public: int _current_stack_frame;
 		public: std::vector<std::string> _print_output;
 	};

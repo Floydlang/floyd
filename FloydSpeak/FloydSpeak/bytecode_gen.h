@@ -191,7 +191,7 @@ namespace floyd {
 		}
 
 
-		public: int _rc;
+		public: mutable int _rc;
 #if DEBUG && FLOYD_BD_DEBUG
 //??? use bc_typeid_t instead
 		public: typeid_t _type;
@@ -211,20 +211,23 @@ namespace floyd {
 	//////////////////////////////////////		bc_value_t
 
 
-	inline bool is_ext_slow2(base_type basetype){
-		return false
-			|| basetype == base_type::k_string
-			|| basetype == base_type::k_json_value
-			|| basetype == base_type::k_typeid
-			|| basetype == base_type::k_struct
-			|| basetype == base_type::k_vector
-			|| basetype == base_type::k_dict
-			|| basetype == base_type::k_function;
-	}
-
 
 
 	struct bc_value_t {
+
+
+		static bool is_bc_ext(base_type basetype){
+			return false
+				|| basetype == base_type::k_string
+				|| basetype == base_type::k_json_value
+				|| basetype == base_type::k_typeid
+				|| basetype == base_type::k_struct
+				|| basetype == base_type::k_vector
+				|| basetype == base_type::k_dict
+				;
+		}
+
+
 		public: bc_value_t() :
 #if DEBUG && FLOYD_BD_DEBUG
 			_debug_type(typeid_t::make_undefined()),
@@ -675,6 +678,15 @@ namespace floyd {
 
 
 
+		public: static bc_value_t make_object(bc_value_object_t* ext){
+			bc_value_t temp;
+			temp._is_ext = true;
+			ext->_rc++;
+			temp._value_internals._ext = ext;
+			return temp;
+		}
+
+
 		//////////////////////////////////////		STATE
 
 
@@ -691,7 +703,7 @@ namespace floyd {
 		private: typeid_t _debug_type;
 #endif
 		private: bool _is_ext = false;
-		private: value_internals_t _value_internals;
+		public: value_internals_t _value_internals;
 	};
 
 

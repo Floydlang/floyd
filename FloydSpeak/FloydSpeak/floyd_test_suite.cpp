@@ -125,7 +125,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "float constant expression"){
 	test__run_init__check_result("float result = 3.5;", value_t::make_float(float(3.5)));
 }
 
-QUARK_UNIT_TESTQ("Floyd test suite", "string constant expression"){
+QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 	test__run_init__check_result("string result = \"xyz\";", value_t::make_string("xyz"));
 }
 

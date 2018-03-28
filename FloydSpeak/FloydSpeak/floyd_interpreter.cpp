@@ -51,7 +51,150 @@ inline bc_value_t execute_expression(interpreter_t& vm, const bc_expression_t& e
 */
 #define execute_expression execute_expression__switch
 
+inline const bc_typeid2_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
+	return vm._imm->_program._types[type];
+}
+inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
+	return vm._imm->_program._types[type].get_base_type();
+}
 
+
+inline interpret_stack_element_t make_object_element(const bc_value_t& value, const typeid_t& type){
+	interpret_stack_element_t temp;
+	value._value_internals._ext->_rc++;
+	temp._internals._ext = value._value_internals._ext;
+	temp._is_ext = true;
+	return temp;
+}
+
+inline interpret_stack_element_t make_element(const bc_value_t& value, const typeid_t& type){
+	const auto basettype = type.get_base_type();
+	if(basettype == base_type::k_internal_undefined){
+		interpret_stack_element_t temp;
+		temp._internals._ext = nullptr;
+		temp._is_ext = false;
+		return temp;
+	}
+	else if(basettype == base_type::k_internal_dynamic){
+		interpret_stack_element_t temp;
+		temp._internals._ext = nullptr;
+		temp._is_ext = false;
+		return temp;
+	}
+	else if(basettype == base_type::k_void){
+		interpret_stack_element_t temp;
+		temp._internals._ext = nullptr;
+		temp._is_ext = false;
+		return temp;
+	}
+	else if(basettype == base_type::k_bool){
+		interpret_stack_element_t temp;
+		temp._internals._bool = value.get_bool_value();
+		temp._is_ext = false;
+		return temp;
+	}
+	else if(basettype == base_type::k_int){
+		interpret_stack_element_t temp;
+		temp._internals._int = value.get_int_value();
+		temp._is_ext = false;
+		return temp;
+	}
+	else if(basettype == base_type::k_float){
+		interpret_stack_element_t temp;
+		temp._internals._float = value.get_float_value();
+		temp._is_ext = false;
+		return temp;
+	}
+	else if(basettype == base_type::k_function){
+		interpret_stack_element_t temp;
+		temp._internals._function_id = value.get_function_value();
+		temp._is_ext = false;
+		return temp;
+	}
+
+	else if(bc_value_t::is_bc_ext(basettype)){
+		return make_object_element(value, type);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+inline bc_value_t element_to_value(const interpret_stack_element_t& e, const typeid_t& type){
+	if(type.is_undefined()){
+		return bc_value_t::make_undefined();
+	}
+	else if(type.is_internal_dynamic()){
+		return bc_value_t::make_internal_dynamic();
+	}
+	else if(type.is_void()){
+		return bc_value_t::make_void();
+	}
+	else if(type.is_bool()){
+		return bc_value_t::make_bool(e._internals._bool);
+	}
+	else if(type.is_int()){
+		return bc_value_t::make_int(e._internals._int);
+	}
+	else if(type.is_float()){
+		return bc_value_t::make_float(e._internals._float);
+	}
+	else if(type.is_string()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_json_value()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_typeid()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_struct()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_vector()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_dict()){
+		return bc_value_t::make_object(e._internals._ext);
+	}
+	else if(type.is_function()){
+		return bc_value_t::make_function_value(type, e._internals._function_id);
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+inline void push_value(interpreter_t& vm, const bc_value_t& value, const typeid_t& type){
+	const auto e = make_element(value, type);
+	vm._value_stack.push_back(e);
+}
+
+inline bc_value_t load_value(const interpreter_t& vm, int pos, const typeid_t& type){
+	const auto& e = vm._value_stack[pos];
+	const auto result = element_to_value(e, type);
+	return result;
+}
+
+inline bc_value_t load_int(const interpreter_t& vm, int pos){
+//??? make faster! Return int, don't go via element_to_value(). Don't instantiate typeid_t!
+	return load_value(vm, pos, typeid_t::make_int());
+}
+
+inline void replace_value_same_type(interpreter_t& vm, int pos, const bc_value_t& value, const typeid_t& type){
+	//	Unpack existing value so it's RC:ed OK.
+	const auto prev_value = element_to_value(vm._value_stack[pos], type);
+
+	const auto e = make_element(value, type);
+	vm._value_stack[pos] = e;
+}
+
+inline void pop_value(interpreter_t& vm, const typeid_t& type){
+	//	Unpack existing value so it's RC:ed OK.
+	const auto prev_value = element_to_value(vm._value_stack.back(), type);
+	vm._value_stack.pop_back();
+}
 
 
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values);
@@ -63,7 +206,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
 int open_stack_frame(interpreter_t& vm){
 	const auto new_frame_start = static_cast<int>(vm._value_stack.size());
 	const auto prev_frame_pos = vm._current_stack_frame;
-	vm._value_stack.push_back(bc_value_t::make_int(prev_frame_pos));
+	push_value(vm, bc_value_t::make_int(prev_frame_pos), typeid_t::make_int());
 	const auto new_frame_pos = new_frame_start + 1;
 	vm._current_stack_frame = new_frame_pos;
 	return new_frame_pos;
@@ -74,7 +217,7 @@ int open_stack_frame(interpreter_t& vm){
 //	Returns resulting stack frame pos.
 int close_stack_frame(interpreter_t& vm){
 	const auto current_pos = vm._current_stack_frame;
-	const auto prev_frame_pos = vm._value_stack[current_pos - 1].get_int_value();
+	const auto prev_frame_pos = load_int(vm, current_pos - 1).get_int_value();
 	const auto prev_frame_end_pos = current_pos - 1;
 	vm._value_stack.resize(prev_frame_end_pos);
 	vm._current_stack_frame = prev_frame_pos;
@@ -90,7 +233,7 @@ vector<std::pair<int, int>> get_stack_frames(const interpreter_t& vm){
 	vector<std::pair<int, int>> result{ { frame_pos, static_cast<int>(vm._value_stack.size()) - frame_pos }};
 
 	while(frame_pos > 1){
-		const auto prev_frame_pos = vm._value_stack[frame_pos - 1].get_int_value();
+		const auto prev_frame_pos = load_int(vm, frame_pos - 1).get_int_value();
 		const auto prev_size = (frame_pos - 1) - prev_frame_pos;
 		result.push_back(std::pair<int, int>{ frame_pos, prev_size });
 
@@ -184,7 +327,7 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 
 		const auto value_entry = value_entry_t{
-			vm._value_stack[pos],
+			load_value(vm, pos, it->second._value_type),
 			it->first,
 			it->second,
 			variable_address_t::make_variable_address(-1, static_cast<int>(index))
@@ -229,7 +372,7 @@ inline int find_frame_from_address(interpreter_t& vm, int parent_step){
 	else{
 		int frame_pos = vm._current_stack_frame;
 		for(auto i = 0 ; i < parent_step ; i++){
-			frame_pos = vm._value_stack[frame_pos - 1].get_int_value();
+			frame_pos = load_int(vm, frame_pos - 1).get_int_value();
 		}
 		return frame_pos;
 	}
@@ -418,7 +561,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
 			const auto pos = frame_pos + statement._v._index;
 			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-			vm._value_stack[pos] = rhs_value;
+			replace_value_same_type(vm, pos, rhs_value, get_type(vm, statement._e[0]._type));
 		}
 		else if(opcode == bc_statement_opcode::k_statement_block){
 			const auto& r = execute_body(vm, statement._b[0]);
@@ -463,7 +606,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			if(body._symbols.empty() == false){
 				for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
 					const auto& symbol = body._symbols[i];
-					vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
+					push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._value_type);
 				}
 			}
 
@@ -471,7 +614,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			//	open-range
 			if(statement._param_x == 0){
 				for(int x = start_value_int ; x < end_value_int ; x++){
-					vm._value_stack[new_frame_pos + 0] = bc_value_t::make_int(x);
+					replace_value_same_type(vm, new_frame_pos + 0, bc_value_t::make_int(x), typeid_t::make_int());
 
 					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 					const auto& return_value = execute_statements(vm, body._statements);
@@ -486,7 +629,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			//	closed-range
 			else if(statement._param_x == 1){
 				for(int x = start_value_int ; x <= end_value_int ; x++){
-					vm._value_stack[new_frame_pos + 0] = bc_value_t::make_int(x);
+					replace_value_same_type(vm, new_frame_pos + 0, bc_value_t::make_int(x), typeid_t::make_int());
 
 					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
 					const auto& return_value = execute_statements(vm, body._statements);
@@ -530,22 +673,57 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 	return statement_result_t::make__complete_without_value();
 }
 
+
+void push_symbols(interpreter_t& vm, const bc_body_t& body, int skip_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+/*
+	if(body._symbols.empty() == false){
+		for(vector<bc_value_t>::size_type i = skip_count ; i < body._symbols.size() ; i++){
+			const auto& symbol = body._symbols[i];
+			push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._value_type);
+		}
+	}
+*/
+	if(body._symbols.empty() == false){
+		for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
+			const auto& symbol = body._symbols[i];
+
+			//	Variable slot.
+			if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
+				const auto basetype = symbol.second._value_type.get_base_type();
+
+				//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
+				//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type().
+				//	Use a placeholder object. Type won't match symbol but that's OK.
+				if(bc_value_t::is_bc_ext(basetype)){
+					push_value(vm, vm._internal_placeholder_object, typeid_t::make_string());
+				}
+				else{
+					push_value(vm, bc_value_t::make_undefined(), typeid_t::make_undefined());
+				}
+			}
+
+			//	Constant.
+			else{
+				push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._const_value.get_type());
+			}
+		}
+	}
+}
+
+
 statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto new_frame_pos = open_stack_frame(vm);
 
 	if(init_values.empty() == false){
-		for(const auto& e: init_values){
-			vm._value_stack.push_back(e);
+		for(int i = 0 ; i < init_values.size() ; i++){
+			push_value(vm, init_values[i], body._symbols[i].second._value_type);
 		}
 	}
-	if(body._symbols.empty() == false){
-		for(vector<bc_value_t>::size_type i = init_values.size() ; i < body._symbols.size() ; i++){
-			const auto& symbol = body._symbols[i];
-			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
-		}
-	}
+	push_symbols(vm, body, init_values.size());
 
 	const auto& r = execute_statements(vm, body._statements);
 	close_stack_frame(vm);
@@ -556,12 +734,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 
 	const auto new_frame_pos = open_stack_frame(vm);
 
-	if(body._symbols.empty() == false){
-		for(vector<bc_value_t>::size_type i = 0 ; i < body._symbols.size() ; i++){
-			const auto& symbol = body._symbols[i];
-			vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
-		}
-	}
+	push_symbols(vm, body, 0);
 
 	const auto& r = execute_statements(vm, body._statements);
 	close_stack_frame(vm);
@@ -573,12 +746,6 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
 //////////////////////////////////////////		EXPRESSIONS
 
 
-inline const bc_typeid2_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
-	return vm._imm->_program._types[type];
-}
-inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
-	return vm._imm->_program._types[type].get_base_type();
-}
 
 
 bc_value_t execute_resolve_member_expression(interpreter_t& vm, const bc_expression_t& expr){
@@ -742,7 +909,10 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 
 		const auto new_frame_pos = open_stack_frame(vm);
 
-		vm._value_stack.insert(vm._value_stack.end(), temp.begin(), temp.begin() + arg_count);
+//		vm._value_stack.insert(vm._value_stack.end(), temp.begin(), temp.begin() + arg_count);
+		for(int i = 0 ; i < arg_count ; i++){
+			push_value(vm, temp[i], function_def._body._symbols[i].second._value_type);
+		}
 #endif
 #if 0
 		const auto new_frame_pos = open_stack_frame(vm);
@@ -764,7 +934,8 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 			//	Skip args, they are already copied.
 			for(vector<bc_value_t>::size_type i = arg_count ; i < symbol_count ; i++){
 				const auto& symbol = function_def._body._symbols[i];
-				vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
+//				vm._value_stack.push_back(value_to_bc(symbol.second._const_value));
+				push_value(vm, value_to_bc(symbol.second._const_value), symbol.second._value_type);
 			}
 		}
 
@@ -1104,7 +1275,7 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 		const auto pos = frame_pos + e._address_index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-		const auto& value = vm._value_stack[pos];
+		const auto& value = load_value(vm, pos, get_type(vm, e._type));
 //		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
 		return value;
 	}
@@ -1523,7 +1694,7 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 				int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 				const auto pos = frame_pos + e._address_index;
 				QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-				const auto& value = vm._value_stack[pos];
+				const auto& value = load_value(vm, pos, get_type(vm, e._type));
 		//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
 				return value;
 			}
@@ -1580,6 +1751,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
 	_value_stack.reserve(1024);
+	_internal_placeholder_object = bc_value_t::make_string("Internal placeholder object");
 
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto& host_functions = get_host_functions();
@@ -1596,10 +1768,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	_current_stack_frame = 0;
 	open_stack_frame(*this);
 	const auto& body_ptr = _imm->_program._globals;
-	for(vector<bc_value_t>::size_type i = 0 ; i < body_ptr._symbols.size() ; i++){
-		const auto& symbol = body_ptr._symbols[i];
-		_value_stack.push_back(value_to_bc(symbol.second._const_value));
-	}
+	push_symbols(*this, body_ptr, 0);
 
 	//	Run static intialization (basically run global statements before calling main()).
 	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._statements);
@@ -1608,6 +1777,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 
 interpreter_t::interpreter_t(const interpreter_t& other) :
 	_imm(other._imm),
+	_internal_placeholder_object(other._internal_placeholder_object),
 	_value_stack(other._value_stack),
 	_current_stack_frame(other._current_stack_frame),
 	_print_output(other._print_output)
@@ -1618,6 +1788,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 
 void interpreter_t::swap(interpreter_t& other) throw(){
 	other._imm.swap(this->_imm);
+	_internal_placeholder_object.swap(other._internal_placeholder_object);
 	other._value_stack.swap(this->_value_stack);
 	std::swap(_current_stack_frame, this->_current_stack_frame);
 	other._print_output.swap(this->_print_output);
