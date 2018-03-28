@@ -130,6 +130,7 @@ int open_stack_frame2(interpreter_t& vm, const bc_body_t& body, const bc_value_t
 			//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
 			//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type().
 			//	Use a placeholder object. Type won't match symbol but that's OK.
+	//??? DO NOT CREATE TYPEID_T instances!!
 			if(bc_value_t::is_bc_ext(basetype)){
 				vm._value_stack.push_value(vm._internal_placeholder_object, typeid_t::make_string());
 			}
@@ -760,7 +761,6 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 	}
 	else{
 		//	Notice that arguments are first in the symbol list.
-		const auto symbol_count = function_def._body._symbols.size();
 
 		//	NOTICE: the arg expressions are designed to be run in caller's stack frame -- their addresses are relative it that.
 		//	execute_expression() may temporarily use the stack, overwriting stack after frame pointer.
@@ -768,11 +768,11 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	Need temp to solve this. Find better solution?
 		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
 
+		//??? Store the temps in std::array<interpret_stack_element_t> -- the do memcpy.
 		if(arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
 	    std::array<bc_value_t, 8> temp;
-//		vector<bc_value_t> temp;
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
@@ -780,7 +780,7 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 			temp[i] = t;
 		}
 
-		const auto new_frame_pos = open_stack_frame2(vm, function_def._body, &temp[0], arg_count);
+		open_stack_frame2(vm, function_def._body, &temp[0], arg_count);
 		const auto& result = execute_statements(vm, function_def._body._statements);
 		close_stack_frame(vm, function_def._body);
 
@@ -1111,6 +1111,7 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 	else if(op == bc_expression_opcode::k_expression_lookup_element){
 		return execute_lookup_element_expression(vm, e);
 	}
+
 	//??? we know the type of value, we know the symbol table!
 	//??? Optimize by inlining find_env_from_address() and making sep paths.
 	else if(op == bc_expression_opcode::k_expression_load){
