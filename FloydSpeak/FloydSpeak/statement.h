@@ -123,9 +123,7 @@ namespace floyd {
 		}
 		bool check_types_resolved() const;
 
-		bool check_invariant() const {
-			return true;
-		}
+		bool check_invariant() const;
 
 		std::vector<std::shared_ptr<statement_t>> _statements;
 		std::vector<std::pair<std::string, symbol_t>> _symbols;

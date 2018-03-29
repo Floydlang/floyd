@@ -1106,7 +1106,7 @@ inline int bc_limit(int value, int min, int max){
 
 
 	struct bc_body_t {
-		const std::vector<std::pair<std::string, symbol_t>> _symbols;
+		std::vector<std::pair<std::string, symbol_t>> _symbols;
 
 		//	True if equivalent symbol is an ext.
 		std::vector<bool> _exts;

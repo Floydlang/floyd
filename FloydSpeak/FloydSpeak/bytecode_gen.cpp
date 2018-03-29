@@ -26,12 +26,7 @@ struct semantic_ast_t;
 
 bc_expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
 bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
-std::vector<bc_instruction_t> bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements);
 bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body);
-bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement);
-
-
-
 
 
 
@@ -371,32 +366,6 @@ const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const v
 	}
 }
 
-std::vector<bc_instruction_t> bcgen_statements(bgenerator_t& vm, const std::vector<std::shared_ptr<statement_t>>& statements){
-	QUARK_ASSERT(vm.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
-
-	std::vector<bc_instruction_t> result;
-	int statement_index = 0;
-	while(statement_index < statements.size()){
-		const auto& statement = statements[statement_index];
-		const auto& r = bcgen_statement(vm, *statement);
-		if(r._opcode != bc_statement_opcode::k_nop){
-			result.push_back(r);
-		}
-		statement_index++;
-	}
-	return result;
-}
-
-bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
-	QUARK_ASSERT(vm.check_invariant());
-
-	vm._call_stack.push_back(bcgen_environment_t{ &body });
-	const auto& r = bcgen_statements(vm, body._statements);
-	vm._call_stack.pop_back();
-
-	return bc_body_t(r, body._symbols);
-}
 
 
 bc_instruction_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement){
@@ -458,48 +427,53 @@ bc_instruction_t bcgen_expression_statement(bgenerator_t& vm, const statement_t:
 	return bc_instruction_t{ bc_statement_opcode::k_statement_expression, intern_type(vm, typeid_t::make_undefined()), 0, {expr}, {}, {} };
 }
 
-bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement){
+
+
+
+
+bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(statement.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
-	if(statement._bind_local){
-		//	Bind is converted to symbol table + store-local in pass3.
-		QUARK_ASSERT(false);
+	vm._call_stack.push_back(bcgen_environment_t{ &body });
+	std::vector<bc_instruction_t> statements2;
+
+	for(const auto& s: body._statements){
+		const auto& statement = *s;
+		QUARK_ASSERT(statement.check_invariant());
+
+		if(statement._store2){
+			statements2.push_back(bcgen_store2_statement(vm, *statement._store2));
+		}
+		else if(statement._block){
+			const auto& b = bcgen_body(vm, statement._block->_body);
+			statements2.push_back(bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { b} });
+		}
+		else if(statement._return){
+			statements2.push_back(bcgen_return_statement(vm, *statement._return));
+		}
+		else if(statement._if){
+			statements2.push_back(bcgen_ifelse_statement(vm, *statement._if));
+		}
+		else if(statement._for){
+			statements2.push_back(bcgen_for_statement(vm, *statement._for));
+		}
+		else if(statement._while){
+			statements2.push_back(bcgen_while_statement(vm, *statement._while));
+		}
+		else if(statement._expression){
+			statements2.push_back(bcgen_expression_statement(vm, *statement._expression));
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
 	}
-	else if(statement._store){
-		QUARK_ASSERT(false);
-	}
-	else if(statement._store2){
-		return bcgen_store2_statement(vm, *statement._store2);
-	}
-	else if(statement._block){
-		const auto& body = bcgen_body(vm, statement._block->_body);
-		return bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { body} };
-	}
-	else if(statement._return){
-		return bcgen_return_statement(vm, *statement._return);
-	}
-	else if(statement._def_struct){
-		QUARK_ASSERT(false);
-	}
-	else if(statement._if){
-		return bcgen_ifelse_statement(vm, *statement._if);
-	}
-	else if(statement._for){
-		return bcgen_for_statement(vm, *statement._for);
-	}
-	else if(statement._while){
-		return bcgen_while_statement(vm, *statement._while);
-	}
-	else if(statement._expression){
-		return bcgen_expression_statement(vm, *statement._expression);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-	throw std::exception();
+
+	vm._call_stack.pop_back();
+
+	return bc_body_t(statements2, body._symbols);
 }
-
 
 
 bc_expression_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t& e){

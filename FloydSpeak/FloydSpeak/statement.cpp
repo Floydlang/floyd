@@ -9,3 +9,9 @@
 #include "statement.h"
 
 
+bool floyd::body_t::check_invariant() const {
+			for(const auto i: _statements){
+				QUARK_ASSERT(i->check_invariant());
+			};
+			return true;
+		}
