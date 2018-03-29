@@ -371,6 +371,11 @@ namespace floyd {
 		private: std::shared_ptr<const typeid_ext_imm_t> _ext;
 	};
 
+	//	A dynamic function has one or several arguments of type internal-dynamic.
+	//	The argument types for internal-dyanamic arguments must be supplied for each invocation.
+	bool is_dynamic_function(const typeid_t& function_type);
+
+	bool count_function_dynamic_args(const typeid_t& function_type);
 
 
 	//////////////////////////////////////		FORMATS

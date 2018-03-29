@@ -940,6 +940,7 @@ value_t host__get_json_type(interpreter_t& vm, const std::vector<value_t>& args)
 	o: typeid,
 	1... -- arguments to constructor.
 */
+/*
 value_t host__instantiate_from_typeid(interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -956,7 +957,7 @@ value_t host__instantiate_from_typeid(interpreter_t& vm, const std::vector<value
 		return bc_to_value(result, type_to_construct);
 	}
 }
-
+*/
 
 
 std::map<std::string, host_function_signature_t> get_host_function_signatures(){
@@ -988,9 +989,10 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "encode_json", host_function_signature_t{ 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}) }},
 		{ "flatten_to_json", host_function_signature_t{ 1019, typeid_t::make_function(typeid_t::make_json_value(), { DYN }) }},
 		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }) }},
-		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }},
+		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }}
+		,
 
-		{ "instantiate_from_typeid", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { DYN }) }}
+//		{ "instantiate_from_typeid", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { DYN }) }}
 
 	};
 	return temp;
@@ -1034,8 +1036,9 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "encode_json", host__encode_json },
 		{ "flatten_to_json", host__flatten_to_json },
 		{ "unflatten_from_json", host__unflatten_from_json },
-		{ "get_json_type", host__get_json_type },
-		{ "instantiate_from_typeid", host__instantiate_from_typeid }
+		{ "get_json_type", host__get_json_type }
+//		,
+	//	{ "instantiate_from_typeid", host__instantiate_from_typeid }
 	};
 
 	const auto lookup = [&](){

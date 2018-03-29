@@ -1163,6 +1163,7 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 	else if(function_name == "replace"){
 		return args[0].get_output_type();
 	}
+/*
 	else if(function_name == "instantiate_from_typeid"){
 		if(args[0].get_operation() == expression_type::k_load2){
 			const auto symbol = resolve_symbol_by_address(vm, args[0]._address);
@@ -1177,6 +1178,7 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
 		}
 	}
+*/
 	else if(function_name == "unflatten_from_json"){
 		QUARK_ASSERT(args.size() == 2);
 
@@ -1188,11 +1190,11 @@ typeid_t get_host_function_return_type(const analyser_t& vm, const expression_t&
 				return symbol->_const_value.get_typeid_value();
 			}
 			else{
-				throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+				throw std::runtime_error("Cannot resolve type for unflatten_from_json().");
 			}
 		}
 		else{
-			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+			throw std::runtime_error("Cannot resolve type for unflatten_from_json().");
 		}
 	}
 	else{

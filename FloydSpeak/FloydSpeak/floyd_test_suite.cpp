@@ -149,7 +149,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 
 //??? test all types, like [int] etc.
 
-QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", "") {
+QUARK_UNIT_TEST_VIP("Floyd test suite", "Expression statement", "", "") {
 	const auto r = test__run_global("print(5);");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "5" }));
 }
@@ -1161,7 +1161,7 @@ QUARK_UNIT_TEST("run_global()", "", "", ""){
 }
 */
 
-QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it works too", ""){
+OFF_QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it works too", ""){
 	const auto result = run_return_result(R"(
 		struct pos_t { float x; float y; }
 		a = instantiate_from_typeid(pos_t, 100.0, 3.0);

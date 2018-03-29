@@ -670,35 +670,52 @@ const char tag_resolved_type_char = '^';
 
 
 
-		bool typeid_t::check_types_resolved() const{
-			if(is_unresolved_type_identifier()){
-				return false;
-			}
-			else if(is_undefined()){
-				return false;
-			}
-			else{
-				if(_ext){
-					for(const auto& e: _ext->_parts){
-						bool result = e.check_types_resolved();
-						if(result == false){
-							return false;
-						}
-					}
-
-					if(_ext->_struct_def){
-						bool result = _ext->_struct_def->check_types_resolved();
-						if(result == false){
-							return false;
-						}
-					}
+bool typeid_t::check_types_resolved() const{
+	if(is_unresolved_type_identifier()){
+		return false;
+	}
+	else if(is_undefined()){
+		return false;
+	}
+	else{
+		if(_ext){
+			for(const auto& e: _ext->_parts){
+				bool result = e.check_types_resolved();
+				if(result == false){
+					return false;
 				}
 			}
-			return true;
+
+			if(_ext->_struct_def){
+				bool result = _ext->_struct_def->check_types_resolved();
+				if(result == false){
+					return false;
+				}
+			}
 		}
+	}
+	return true;
+}
 
 
+bool count_function_dynamic_args(const typeid_t& function_type){
+	QUARK_ASSERT(function_type.is_function());
 
+	const auto args = function_type.get_function_args();
+	int count = 0;
+	for(const auto& e: args){
+		if(e.is_internal_dynamic()){
+			count++;
+		}
+	}
+	return count;
+}
+bool is_dynamic_function(const typeid_t& function_type){
+	QUARK_ASSERT(function_type.is_function());
+
+	const auto count = count_function_dynamic_args(function_type);
+	return count > 0;
+}
 
 }
 

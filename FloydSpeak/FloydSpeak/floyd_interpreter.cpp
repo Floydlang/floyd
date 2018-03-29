@@ -47,12 +47,12 @@ BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_
 	return vm._imm->_program._types[type].get_base_type();
 }
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_pod_value_t* init_values, int init_value_count);
+statement_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& body, const bc_pod_value_t* init_values, int init_value_count);
 
 
 //	Will NOT bump RCs of init_values.
 //	Returns new frame-pos, same as vm._current_stack_frame.
-int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_pod_value_t* init_values, int init_value_count){
+int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_optimized_t& body, const bc_pod_value_t* init_values, int init_value_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -67,8 +67,8 @@ int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_
 	}
 
 	//??? Make precomputed stuff in bc_body_t. Use memcpy() + a GC-fixup loop.
-	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._symbols.size() ; i++){
-		const auto& symbol = body._symbols[i];
+	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._body._symbols.size() ; i++){
+		const auto& symbol = body._body._symbols[i];
 		bool is_ext = body._exts[i];
 
 		//	Variable slot.
@@ -96,7 +96,7 @@ int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_
 //	Restores previous stack frame pos.
 //	Returns resulting stack frame pos.
 //	Decrements all stack frame object RCs.
-int close_stack_frame(interpreter_t& vm, const bc_body_t& body){
+int close_stack_frame(interpreter_t& vm, const bc_body_optimized_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -479,6 +479,13 @@ std::string read_register_string(const interpreter_t& vm, const variable_address
 	const auto value = vm._value_stack.load_obj(pos);
 	return value.get_string_value();
 }
+bool read_register_bool(const interpreter_t& vm, const variable_address_t& reg){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	return vm._value_stack.load_inline_value(pos).get_bool_value();
+}
 int read_register_int(const interpreter_t& vm, const variable_address_t& reg){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(reg.check_invariant());
@@ -511,6 +518,38 @@ void write_register_slow(interpreter_t& vm, const variable_address_t& reg, const
 	write_register_slow(vm, reg, value, type);
 }
 
+void write_register_bool(interpreter_t& vm, const variable_address_t& reg, bool value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	const auto value2 = bc_value_t::make_bool(value);
+	vm._value_stack.replace_inline(pos, value2);
+}
+void write_register_int(interpreter_t& vm, const variable_address_t& reg, int value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	const auto value2 = bc_value_t::make_int(value);
+	vm._value_stack.replace_inline(pos, value2);
+}
+void write_register_float(interpreter_t& vm, const variable_address_t& reg, float value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	const auto value2 = bc_value_t::make_float(value);
+	vm._value_stack.replace_inline(pos, value2);
+}
+void write_register_string(interpreter_t& vm, const variable_address_t& reg, const std::string& value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	const auto value2 = bc_value_t::make_string(value);
+	vm._value_stack.replace_obj(pos, value2);
+}
 
 
 
@@ -601,6 +640,8 @@ void execute_lookup_element_expression(interpreter_t& vm, const bc_instruction_t
 	}
 }
 
+
+
 //	Store function ptr instead of of ID???
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
@@ -609,35 +650,55 @@ void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 
 	const auto& function_value = read_register_function(vm, expr._reg2);
 	const auto& function_def = get_function_def(vm, function_value);
+	const auto& function_def_arg_count = function_def._args.size();
+	const int function_def_dynamic_arg_count = count_function_dynamic_args(function_def._function_type);
 
 	//	_e[...] contains first callee, then each argument.
-	//	We need to examin the callee, since we support magic argument lists of varying size.
-	const auto arg_count = expr._reg3._index;
+	//	We need to examine the callee, since we support magic argument lists of varying size.
+
+	const auto callee_arg_count = read_register_int(vm, expr._reg3);
+
+	if(function_def_arg_count + function_def_dynamic_arg_count != callee_arg_count){
+		QUARK_ASSERT(false);
+	}
 
 	if(function_def._host_function_id != 0){
 		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
 
-		//	arity
-		//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
+		//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
+		//??? store itype for each entry?
+		//??? can't know types of dynamic arguments!?
 
 		std::vector<value_t> arg_values;
-		arg_values.reserve(arg_count);
 
-//??? can't know types of dynamic arguments!?
-/*
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto arg_bc = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg2._parent_steps,expr._reg2._index + 1 + u), )
-
-			const auto t1 = bc_to_value(t, get_type(vm, arg_expr._type));
-			arg_values.push_back(t1);
+		int input_reg = expr._reg3._index + 1;
+		for(int i = 0 ; i < function_def_arg_count ; i++){
+			const auto& func_arg_type = function_def._args[i]._type;
+			if(func_arg_type.is_internal_dynamic()){
+				const auto arg_itype = read_register_int(vm, variable_address_t::make_variable_address(expr._reg3._parent_steps, input_reg));
+				const auto& arg_type = get_type(vm, static_cast<int16_t>(arg_itype));
+				const auto arg_bc = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg3._parent_steps, input_reg + 1), arg_type);
+				const auto arg_value = bc_to_value(arg_bc, arg_type);
+				arg_values.push_back(arg_value);
+				input_reg += 2;
+			}
+			else{
+				const auto arg_bc = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg3._parent_steps, input_reg), func_arg_type);
+				const auto arg_value = bc_to_value(arg_bc, func_arg_type);
+				arg_values.push_back(arg_value);
+				input_reg++;
+			}
 		}
 
 		const auto& result = (host_function)(vm, arg_values);
-		return value_to_bc(result);
-*/
+		const auto bc_result = value_to_bc(result);
+		write_register_slow(vm, expr._reg1, bc_result, expr._instr_type);
 	}
 	else{
 		//	Notice that arguments are first in the symbol list.
+
+		//	Future: support dynamic Floyd functions too.
+		QUARK_ASSERT(function_def_dynamic_arg_count == 0);
 
 		//	NOTICE: the arg expressions are designed to be run in caller's stack frame -- their addresses are relative it that.
 		//	execute_expression() may temporarily use the stack, overwriting stack after frame pointer.
@@ -646,14 +707,14 @@ void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
 		//??? Or change calling conventions to store args *before* frame.
 
-		if(arg_count > 8){
+		if(callee_arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
 
 	    bc_pod_value_t temp[8];
-		for(int i = 0 ; i < arg_count ; i++){
+		for(int i = 0 ; i < callee_arg_count ; i++){
 			const auto& arg_type = function_def._args[i]._type;
-			const auto t = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg2._parent_steps,expr._reg2._index + 1 + i), arg_type);
+			const auto t = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg2._parent_steps, expr._reg2._index + 1 + i), arg_type);
 
 			if(function_def._body._exts[i]){
 				t._pod._ext->_rc++;
@@ -661,8 +722,8 @@ void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 			temp[i] = t._pod;
 		}
 
-		open_stack_frame2_nobump(vm, function_def._body, &temp[0], arg_count);
-		const auto& result = execute_statements(vm, function_def._body._statements);
+		open_stack_frame2_nobump(vm, function_def._body, &temp[0], callee_arg_count);
+		const auto& result = execute_statements(vm, function_def._body._body._statements);
 		close_stack_frame(vm, function_def._body);
 
 		QUARK_ASSERT(result._type == statement_result_t::k_returning);
@@ -736,197 +797,6 @@ void execute_construct_value_expression(interpreter_t& vm, const bc_instruction_
 	}
 }
 
-bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(expr.check_invariant());
-
-	const auto& left_constant = execute_expression(vm, expr._e[0]);
-	const auto& right_constant = execute_expression(vm, expr._e[1]);
-#if FLOYD_BD_DEBUG
-	QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-#endif
-
-	const auto opcode = expr._opcode;
-	const auto& type = get_type(vm, expr._e[0]._type);
-
-	if(opcode == bc_expression_opcode::k_expression_comparison_smaller_or_equal){
-		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-		return bc_value_t::make_bool(diff <= 0);
-	}
-	else if(opcode == bc_expression_opcode::k_expression_comparison_smaller){
-		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-		return bc_value_t::make_bool(diff < 0);
-	}
-	else if(opcode == bc_expression_opcode::k_expression_comparison_larger_or_equal){
-		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-		return bc_value_t::make_bool(diff >= 0);
-	}
-	else if(opcode == bc_expression_opcode::k_expression_comparison_larger){
-		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-		return bc_value_t::make_bool(diff > 0);
-	}
-
-	else if(opcode == bc_expression_opcode::k_expression_logical_equal){
-		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-		return bc_value_t::make_bool(diff == 0);
-	}
-	else if(opcode == bc_expression_opcode::k_expression_logical_nonequal){
-		long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-		return bc_value_t::make_bool(diff != 0);
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-//??? make dedicated opcodes for each type - no need to switch.
-bc_value_t execute_arithmetic_expression(interpreter_t& vm, const bc_expression_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(expr.check_invariant());
-
-	const auto& left = execute_expression(vm, expr._e[0]);
-	const auto& right = execute_expression(vm, expr._e[1]);
-#if FLOYD_BD_DEBUG
-	QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-#endif
-
-	const auto basetype = get_basetype(vm, expr._type);
-
-	const auto op = expr._opcode;
-
-	//	bool
-	if(basetype == base_type::k_bool){
-		const bool left2 = left.get_bool_value();
-		const bool right2 = right.get_bool_value();
-
-		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return bc_value_t::make_bool(left2 + right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_logical_and){
-			return bc_value_t::make_bool(left2 && right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_logical_or){
-			return bc_value_t::make_bool(left2 || right2);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-	//	int
-	else if(basetype == base_type::k_int){
-		const int left2 = left.get_int_value();
-		const int right2 = right.get_int_value();
-
-		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return bc_value_t::make_int(left2 + right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_arithmetic_subtract){
-			return bc_value_t::make_int(left2 - right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_arithmetic_multiply){
-			return bc_value_t::make_int(left2 * right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_arithmetic_divide){
-			if(right2 == 0){
-				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-			}
-			return bc_value_t::make_int(left2 / right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_arithmetic_remainder){
-			if(right2 == 0){
-				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-			}
-			return bc_value_t::make_int(left2 % right2);
-		}
-
-		//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
-		else if(op == bc_expression_opcode::k_expression_logical_and){
-			return bc_value_t::make_bool((left2 != 0) && (right2 != 0));
-		}
-		else if(op == bc_expression_opcode::k_expression_logical_or){
-			return bc_value_t::make_bool((left2 != 0) || (right2 != 0));
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-	//	float
-	else if(basetype == base_type::k_float){
-		const float left2 = left.get_float_value();
-		const float right2 = right.get_float_value();
-
-		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return bc_value_t::make_float(left2 + right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_arithmetic_subtract){
-			return bc_value_t::make_float(left2 - right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_arithmetic_multiply){
-			return bc_value_t::make_float(left2 * right2);
-		}
-		else if(op == bc_expression_opcode::k_expression_arithmetic_divide){
-			if(right2 == 0.0f){
-				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-			}
-			return bc_value_t::make_float(left2 / right2);
-		}
-
-		else if(op == bc_expression_opcode::k_expression_logical_and){
-			return bc_value_t::make_bool((left2 != 0.0f) && (right2 != 0.0f));
-		}
-		else if(op == bc_expression_opcode::k_expression_logical_or){
-			return bc_value_t::make_bool((left2 != 0.0f) || (right2 != 0.0f));
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-	//	string
-	else if(basetype == base_type::k_string){
-		const auto& left2 = left.get_string_value();
-		const auto& right2 = right.get_string_value();
-
-		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			return bc_value_t::make_string(left2 + right2);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-
-	//	struct
-	else if(basetype == base_type::k_struct){
-		QUARK_ASSERT(false);
-	}
-
-	//	vector
-	else if(basetype == base_type::k_vector){
-		const auto& element_type = get_type(vm, expr._type).get_vector_element_type();
-		if(op == bc_expression_opcode::k_expression_arithmetic_add){
-			//	Copy vector into elements.
-			auto elements2 = left.get_vector_value();
-			const auto& rhs_elements = right.get_vector_value();
-			elements2.insert(elements2.end(), rhs_elements.begin(), rhs_elements.end());
-
-			const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
-			return value2;
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-	else if(basetype == base_type::k_function){
-		QUARK_ASSERT(false);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-	throw std::exception();
-}
 
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -947,7 +817,15 @@ QUARK_UNIT_TEST("", "", "", ""){
 statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instruction_t>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 
-	for(const auto& statement: statements){
+	int pc = 0;
+	while(true){
+		if(pc == statements.size()){
+			return statement_result_t::make__complete_without_value();
+		}
+		QUARK_ASSERT(pc >= 0);
+		QUARK_ASSERT(pc < statements.size());
+		const auto& statement = statements[pc];
+
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(statement.check_invariant());
 
@@ -976,337 +854,256 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		else if(opcode == bc_statement_opcode::k_statement_store_resolve){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto value = read_register_slow(vm, statement._reg2, type);
-			write_register_slow(vm, statement._reg1, type, value);
+			write_register_slow(vm, statement._reg1, value, type);
+			pc++;
 		}
 
-		else if(opcode == bc_statement_opcode::k_statement_block){
-			const auto& r = execute_body(vm, statement._b[0], nullptr, 0);
-			if(r._type == statement_result_t::k_returning){
-				return r;
-			}
-		}
 		else if(opcode == bc_statement_opcode::k_statement_return){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto reg1 = resolve_register(vm, statement._reg1);
 			const auto value = vm._value_stack.load_value_slow(reg1, type);
+
+	//??? flatten all functions into ONE big list of instructions or not?
 			return statement_result_t::make_return_unwind(value);
 		}
-		else if(opcode == bc_statement_opcode::k_statement_if){
-/*
-			const auto& condition_result_value = execute_expression(vm, statement._e[0]);
-
-			bool flag = condition_result_value.get_bool_value();
-			if(flag){
-				const auto& r = execute_body(vm, statement._b[0], nullptr, 0);
-				if(r._type == statement_result_t::k_returning){
-					return r;
-				}
+		else if(opcode == bc_statement_opcode::k_branch_zero){
+			//??? how to check any type for ZERO?
+			const auto value = read_register_bool(vm, statement._reg1);
+			if(value){
+				pc++;
 			}
 			else{
-				const auto& r = execute_body(vm, statement._b[1], nullptr, 0);
-				if(r._type == statement_result_t::k_returning){
-					return r;
-				}
+				const auto offset = read_register_int(vm, statement._reg2);
+				pc = pc + offset;
 			}
-*/
-
 		}
-		else if(opcode == bc_statement_opcode::k_statement_for){
-/*
-			const auto& start_value0 = execute_expression(vm, statement._e[0]);
-			const auto start_value_int = start_value0.get_int_value();
-			const auto& end_value0 = execute_expression(vm, statement._e[1]);
-			const auto end_value_int = end_value0.get_int_value();
-			const auto& body = statement._b[0];
-
-			//	These are constants (can be reused for every iteration of the for-loop, or memory slots = also reuse).
-			//	Notice that first symbol is the loop-iterator.
-			QUARK_ASSERT(body._symbols.size() >= 1);
-			const auto new_frame_pos = open_stack_frame2_nobump(vm, body, nullptr, 0);
-
-			//??? simplify code -- create a count instead.
-			//	open-range
-			if(statement._param_x == 0){
-				for(int x = start_value_int ; x < end_value_int ; x++){
-					vm._value_stack.replace_int(new_frame_pos + 0, x);
-
-					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
-					const auto& return_value = execute_statements(vm, body._statements);
-
-					if(return_value._type == statement_result_t::k_returning){
-						close_stack_frame(vm, body);
-						return return_value;
-					}
-				}
-			}
-
-			//	closed-range
-			else if(statement._param_x == 1){
-				for(int x = start_value_int ; x <= end_value_int ; x++){
-					vm._value_stack.replace_int(new_frame_pos + 0, x);
-
-					//### If statements don't have a RETURN, then we don't need to check for it. Make two loops?
-					const auto& return_value = execute_statements(vm, body._statements);
-
-					if(return_value._type == statement_result_t::k_returning){
-						close_stack_frame(vm, body);
-						return return_value;
-					}
-				}
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
-			close_stack_frame(vm, body);
-*/
-
-		}
-		else if(opcode == bc_statement_opcode::k_statement_while){
-/*
-			bool again = true;
-			while(again){
-				const auto& condition_value_expr = execute_expression(vm, statement._e[0]);
-				const auto& condition_value = condition_value_expr.get_bool_value();
-
-				if(condition_value){
-					const auto& return_value = execute_body(vm, statement._b[0], nullptr, 0);
-					if(return_value._type == statement_result_t::k_returning){
-						return return_value;
-					}
-				}
-				else{
-					again = false;
-				}
-			}
-*/
+		else if(opcode == bc_statement_opcode::k_jump){
+			const auto offset = read_register_int(vm, statement._reg1);
+			pc = pc + offset;
 		}
 
-		else if(opcode == bc_expression_opcode::k_expression_resolve_member){
-			return execute_resolve_member_expression(vm, e);
+		else if(opcode == bc_statement_opcode::k_opcode_resolve_member){
+			execute_resolve_member_expression(vm, statement);
+			pc++;
 		}
-		else if(opcode == bc_expression_opcode::k_expression_lookup_element){
-			return execute_lookup_element_expression(vm, e);
-		}
-
-		else if(opcode == bc_expression_opcode::k_expression_load){
-			const auto& value = vm._value_stack.load_inline_value(1 + e._address_index);
-			return value;
+		else if(opcode == bc_statement_opcode::k_opcode_lookup_element){
+			execute_lookup_element_expression(vm, statement);
+			pc++;
 		}
 
-		else if(opcode == bc_expression_opcode::k_expression_call){
-			execute_call_expression(vm, e);
+		else if(opcode == bc_statement_opcode::k_opcode_call){
+			execute_call_expression(vm, statement);
+			pc++;
 		}
 
-		else if(opcode == bc_expression_opcode::k_expression_construct_value){
-			return execute_construct_value_expression(vm, e);
+		else if(opcode == bc_statement_opcode::k_opcode_construct_value){
+			execute_construct_value_expression(vm, statement);
+			pc++;
 		}
 
-		else if(opcode == bc_expression_opcode::k_expression_comparison_smaller_or_equal){
-			const auto& left_constant = execute_expression(vm, e._e[0]);
-			const auto& right_constant = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+
+		//////////////////////////////		comparison
+
+
+		else if(opcode == bc_statement_opcode::k_opcode_comparison_smaller_or_equal){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left_constant = read_register_slow(vm, statement._reg2, type);
+			const auto right_constant = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-	#endif
-			const auto& type = get_type(vm, e._e[0]._type);
+		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			return bc_value_t::make_bool(diff <= 0);
+			write_register_bool(vm, statement._reg1, diff <= 0);
+			pc++;
 		}
-		else if(opcode == bc_expression_opcode::k_expression_comparison_smaller_or_equal__int){
-			const auto& left_constant = execute_expression(vm, e._e[0]);
-			const auto& right_constant = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_comparison_smaller){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left_constant = read_register_slow(vm, statement._reg2, type);
+			const auto right_constant = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-	#endif
-			return bc_value_t::make_bool(left_constant.get_int_value() <= right_constant.get_int_value());
-		}
-		else if(opcode == bc_expression_opcode::k_expression_comparison_smaller){
-			const auto& left_constant = execute_expression(vm, e._e[0]);
-			const auto& right_constant = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
-			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-	#endif
-			const auto& type = get_type(vm, e._e[0]._type);
+		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			return bc_value_t::make_bool(diff < 0);
+			write_register_bool(vm, statement._reg1, diff < 0);
+			pc++;
 		}
-		else if(opcode == bc_expression_opcode::k_expression_comparison_larger_or_equal){
-			const auto& left_constant = execute_expression(vm, e._e[0]);
-			const auto& right_constant = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_comparison_larger_or_equal){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left_constant = read_register_slow(vm, statement._reg2, type);
+			const auto right_constant = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-	#endif
-			const auto& type = get_type(vm, e._e[0]._type);
+		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			return bc_value_t::make_bool(diff >= 0);
+			write_register_bool(vm, statement._reg1, diff >= 0);
+			pc++;
 		}
-		else if(opcode == bc_expression_opcode::k_expression_comparison_larger){
-			const auto& left_constant = execute_expression(vm, e._e[0]);
-			const auto& right_constant = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_comparison_larger){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left_constant = read_register_slow(vm, statement._reg2, type);
+			const auto right_constant = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-	#endif
-			const auto& type = get_type(vm, e._e[0]._type);
+		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			return bc_value_t::make_bool(diff > 0);
+			write_register_bool(vm, statement._reg1, diff > 0);
+			pc++;
+		}
+
+		else if(opcode == bc_statement_opcode::k_opcode_logical_equal){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left_constant = read_register_slow(vm, statement._reg2, type);
+			const auto right_constant = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
+			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
+		#endif
+			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
+			write_register_bool(vm, statement._reg1, diff == 0);
+			pc++;
+		}
+		else if(opcode == bc_statement_opcode::k_opcode_logical_nonequal){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left_constant = read_register_slow(vm, statement._reg2, type);
+			const auto right_constant = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
+			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
+		#endif
+			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
+			write_register_bool(vm, statement._reg1, diff != 0);
+			pc++;
 		}
 
 
-		else if(opcode == bc_expression_opcode::k_expression_logical_equal){
-			const auto& left_constant = execute_expression(vm, e._e[0]);
-			const auto& right_constant = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
-			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-	#endif
-			const auto& type = get_type(vm, e._e[0]._type);
-			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			return bc_value_t::make_bool(diff == 0);
-		}
-		else if(opcode == bc_expression_opcode::k_expression_logical_nonequal){
-			const auto& left_constant = execute_expression(vm, e._e[0]);
-			const auto& right_constant = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
-			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
-	#endif
-			const auto& type = get_type(vm, e._e[0]._type);
-			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			return bc_value_t::make_bool(diff != 0);
-		}
+		//////////////////////////////		arithmetic
 
-		else if(opcode == bc_expression_opcode::k_expression_arithmetic_add){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+
+		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_add){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left = read_register_slow(vm, statement._reg2, type);
+			const auto right = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const auto basetype = get_basetype(vm, e._type);
+		#endif
+			const auto basetype = type.get_base_type();
 
 			//	bool
 			if(basetype == base_type::k_bool){
 				const bool left2 = left.get_bool_value();
 				const bool right2 = right.get_bool_value();
-				return bc_value_t::make_bool(left2 + right2);
+				write_register_bool(vm, statement._reg1, left2 + right2);
+				pc++;
 			}
 
 			//	int
 			else if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				return bc_value_t::make_int(left2 + right2);
+				write_register_int(vm, statement._reg1, left2 + right2);
+				pc++;
 			}
 
 			//	float
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				return bc_value_t::make_float(left2 + right2);
+				write_register_float(vm, statement._reg1, left2 + right2);
+				pc++;
 			}
 
 			//	string
 			else if(basetype == base_type::k_string){
 				const auto& left2 = left.get_string_value();
 				const auto& right2 = right.get_string_value();
-				return bc_value_t::make_string(left2 + right2);
+				write_register_string(vm, statement._reg1, left2 + right2);
+				pc++;
 			}
 
 			//	vector
 			else if(basetype == base_type::k_vector){
-				const auto& element_type = get_type(vm, e._type).get_vector_element_type();
+				const auto& element_type = type.get_vector_element_type();
 
 				//	Copy vector into elements.
 				auto elements2 = left.get_vector_value();
 				const auto& right_elements = right.get_vector_value();
 				elements2.insert(elements2.end(), right_elements.begin(), right_elements.end());
 				const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
-				return value2;
+				write_register_slow(vm, statement._reg1, value2, type);
+				pc++;
 			}
 			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
 			}
-
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		else if(opcode == bc_expression_opcode::k_expression_arithmetic_add__int){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const int left2 = left.get_int_value();
-			const int right2 = right.get_int_value();
-			return bc_value_t::make_int(left2 + right2);
 		}
 
-		else if(opcode == bc_expression_opcode::k_expression_arithmetic_subtract){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_subtract){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left = read_register_slow(vm, statement._reg2, type);
+			const auto right = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const auto basetype = get_basetype(vm, e._type);
+		#endif
+			const auto basetype = type.get_base_type();
 
 			//	int
 			if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				return bc_value_t::make_int(left2 - right2);
+				write_register_int(vm, statement._reg1, left2 - right2);
+				pc++;
 			}
 
 			//	float
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				return bc_value_t::make_float(left2 - right2);
+				write_register_float(vm, statement._reg1, left2 - right2);
+				pc++;
 			}
 
 			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
 			}
-			QUARK_ASSERT(false);
-			throw std::exception();
 		}
-		else if(opcode == bc_expression_opcode::k_expression_arithmetic_subtract__int){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_multiply){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left = read_register_slow(vm, statement._reg2, type);
+			const auto right = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const int left2 = left.get_int_value();
-			const int right2 = right.get_int_value();
-			return bc_value_t::make_int(left2 - right2);
-		}
-		else if(opcode == bc_expression_opcode::k_expression_arithmetic_multiply){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const auto basetype = get_basetype(vm, e._type);
+		#endif
+			const auto basetype = type.get_base_type();
 
 			//	int
 			if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				return bc_value_t::make_int(left2 * right2);
+				write_register_int(vm, statement._reg1, left2 * right2);
+				pc++;
 			}
 
 			//	float
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				return bc_value_t::make_float(left2 * right2);
+				write_register_float(vm, statement._reg1, left2 * right2);
+				pc++;
 			}
 
 			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
 			}
-			QUARK_ASSERT(false);
-			throw std::exception();
 		}
-		else if(opcode == bc_expression_opcode::k_expression_arithmetic_divide){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_divide){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left = read_register_slow(vm, statement._reg2, type);
+			const auto right = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const auto basetype = get_basetype(vm, e._type);
+		#endif
+			const auto basetype = type.get_base_type();
 
 			//	int
 			if(basetype == base_type::k_int){
@@ -1315,7 +1112,8 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				if(right2 == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return bc_value_t::make_int(left2 / right2);
+				write_register_int(vm, statement._reg1, left2 / right2);
+				pc++;
 			}
 
 			//	float
@@ -1325,21 +1123,23 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				if(right2 == 0.0f){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return bc_value_t::make_float(left2 / right2);
+				write_register_float(vm, statement._reg1, left2 / right2);
+				pc++;
 			}
 
 			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
 			}
-			QUARK_ASSERT(false);
-			throw std::exception();
 		}
-		else if(opcode == bc_expression_opcode::k_expression_arithmetic_remainder){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_remainder){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left = read_register_slow(vm, statement._reg2, type);
+			const auto right = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const auto basetype = get_basetype(vm, e._type);
+		#endif
+			const auto basetype = type.get_base_type();
 
 			//	int
 			if(basetype == base_type::k_int){
@@ -1348,28 +1148,31 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				if(right2 == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				return bc_value_t::make_int(left2 % right2);
+				write_register_int(vm, statement._reg1, left2 % right2);
+				pc++;
 			}
 
 			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
 			}
-			QUARK_ASSERT(false);
-			throw std::exception();
 		}
 
-		else if(opcode == bc_expression_opcode::k_expression_logical_and){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_logical_and){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left = read_register_slow(vm, statement._reg2, type);
+			const auto right = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const auto basetype = get_basetype(vm, e._type);
+		#endif
+			const auto basetype = type.get_base_type();
 
 			//	bool
 			if(basetype == base_type::k_bool){
 				const bool left2 = left.get_bool_value();
 				const bool right2 = right.get_bool_value();
-				return bc_value_t::make_bool(left2 && right2);
+				write_register_bool(vm, statement._reg1, left2 && right2);
+				pc++;
 			}
 
 			//	int
@@ -1378,7 +1181,8 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				const int right2 = right.get_int_value();
 
 				//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
-				return bc_value_t::make_bool((left2 != 0) && (right2 != 0));
+				write_register_bool(vm, statement._reg1, (left2 != 0) && (right2 != 0));
+				pc++;
 			}
 
 			//	float
@@ -1386,7 +1190,8 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				return bc_value_t::make_bool((left2 != 0.0f) && (right2 != 0.0f));
+				write_register_bool(vm, statement._reg1, (left2 != 0.0f) && (right2 != 0.0f));
+				pc++;
 			}
 
 			else{
@@ -1394,33 +1199,37 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_expression_opcode::k_expression_logical_or){
-			const auto& left = execute_expression(vm, e._e[0]);
-			const auto& right = execute_expression(vm, e._e[1]);
-	#if FLOYD_BD_DEBUG
+		else if(opcode == bc_statement_opcode::k_opcode_logical_or){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto left = read_register_slow(vm, statement._reg2, type);
+			const auto right = read_register_slow(vm, statement._reg3, type);
+		#if FLOYD_BD_DEBUG
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-	#endif
-			const auto basetype = get_basetype(vm, e._type);
+		#endif
+			const auto basetype = type.get_base_type();
 
 			//	bool
 			if(basetype == base_type::k_bool){
 				const bool left2 = left.get_bool_value();
 				const bool right2 = right.get_bool_value();
-				return bc_value_t::make_bool(left2 || right2);
+				write_register_bool(vm, statement._reg1, left2 || right2);
+				pc++;
 			}
 
 			//	int
 			else if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				return bc_value_t::make_bool((left2 != 0) || (right2 != 0));
+				write_register_bool(vm, statement._reg1, (left2 != 0) || (right2 != 0));
+				pc++;
 			}
 
 			//	float
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				return bc_value_t::make_bool((left2 != 0.0f) || (right2 != 0.0f));
+				write_register_bool(vm, statement._reg1, (left2 != 0.0f) || (right2 != 0.0f));
+				pc++;
 			}
 
 			else{
@@ -1438,12 +1247,12 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 }
 
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_pod_value_t* init_values, int init_value_count){
+statement_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& body, const bc_pod_value_t* init_values, int init_value_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	open_stack_frame2_nobump(vm, body, init_values, init_value_count);
-	const auto& r = execute_statements(vm, body._statements);
+	const auto& r = execute_statements(vm, body._body._statements);
 	close_stack_frame(vm, body);
 	return r;
 }

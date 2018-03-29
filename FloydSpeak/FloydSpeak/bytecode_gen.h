@@ -720,7 +720,6 @@ namespace floyd {
 	//////////////////////////////////////		bc_statement_opcode
 
 
-//	typedef uint32_t bc_instruction_t;
 
 	/*
 		----------------------------------- -----------------------------------
@@ -1094,10 +1093,11 @@ inline int bc_limit(int value, int min, int max){
 	enum class bc_statement_opcode: uint8_t {
 		k_nop,
 
+		k_statement_store_resolve,
+
 		k_opcode_resolve_member,
 		k_opcode_lookup_element,
 		k_opcode_call,
-
 
 		k_opcode_arithmetic_add,
 		k_opcode_arithmetic_subtract,
@@ -1116,26 +1116,13 @@ inline int bc_limit(int value, int min, int max){
 		k_opcode_logical_equal,
 		k_opcode_logical_nonequal,
 
+		k_opcode_construct_value,
 
-		k_statement_store_resolve,
-
-
-		//	Needed?
-		//	execute body_x
-		k_statement_block,
-
-		//	_e[0]
 		k_statement_return,
 
-		//	if _e[0] execute _body_x, else execute _body_y
-		k_statement_if,
-
-		k_statement_for,
-
-		k_statement_while,
-
-		//	Not needed. Just use an expression and don't use its result.
-		k_statement_expression
+		k_branch_zero,
+		k_branch_notzero,
+		k_jump
 	};
 
 
@@ -1207,11 +1194,7 @@ inline int bc_limit(int value, int min, int max){
 	struct bc_body_t {
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
 
-		//	True if equivalent symbol is an ext.
-		std::vector<bool> _exts;
-
 		std::vector<bc_instruction_t> _statements;
-
 
 
 		bc_body_t(const std::vector<bc_instruction_t>& s) :
@@ -1225,20 +1208,38 @@ inline int bc_limit(int value, int min, int max){
 			_statements(statements),
 			_symbols(symbols)
 		{
-			for(int i = 0 ; i < _symbols.size() ; i++){
-				const auto basetype = symbols[i].second._value_type.get_base_type();
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: bool check_invariant() const {
+			return true;
+		}
+	};
+
+	struct bc_body_optimized_t {
+
+		bc_body_optimized_t(const bc_body_t& body) :
+			_body(body)
+		{
+			for(int i = 0 ; i < _body._symbols.size() ; i++){
+				const auto basetype = _body._symbols[i].second._value_type.get_base_type();
 				const bool ext = bc_value_t::is_bc_ext(basetype);
 				_exts.push_back(ext);
 			}
 			QUARK_ASSERT(check_invariant());
 		}
-
 		public: bool check_invariant() const {
-			QUARK_ASSERT(_symbols.size() == _exts.size());
+			QUARK_ASSERT(_body.check_invariant());
+			QUARK_ASSERT(_body._symbols.size() == _exts.size());
 			return true;
 		}
-	};
 
+
+		bc_body_t _body;
+
+		//	True if equivalent symbol is an ext.
+		std::vector<bool> _exts;
+	};
 
 
 	//////////////////////////////////////		bc_function_definition_t
@@ -1251,9 +1252,10 @@ inline int bc_limit(int value, int min, int max){
 		}
 #endif
 
+		//??? store more optimzation stuff here!
 		typeid_t _function_type;
 		std::vector<member_t> _args;
-		bc_body_t _body;
+		bc_body_optimized_t _body;
 		int _host_function_id;
 	};
 
