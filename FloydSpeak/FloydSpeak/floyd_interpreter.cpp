@@ -492,6 +492,15 @@ bc_value_t read_register_function(const interpreter_t& vm, const variable_addres
 
 	const auto pos = resolve_register(vm, reg);
 	const auto value = vm._value_stack.load_inline_value(pos);
+	return value;
+}
+void write_register_slow(interpreter_t& vm, const variable_address_t& reg, const bc_value_t& value, const typeid_t& type){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	vm._value_stack.replace_value_same_type_SLOW(pos, value, type);
 }
 void write_register_slow(interpreter_t& vm, const variable_address_t& reg, const bc_value_t& value, bc_typeid_t itype){
 	QUARK_ASSERT(vm.check_invariant());
@@ -499,8 +508,7 @@ void write_register_slow(interpreter_t& vm, const variable_address_t& reg, const
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto type = get_type(vm, itype);
-	const auto pos = resolve_register(vm, reg);
-	vm._value_stack.replace_value_same_type_SLOW(pos, value, type);
+	write_register_slow(vm, reg, value, type);
 }
 
 
@@ -665,27 +673,23 @@ void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 //	This function evaluates all input expressions, then call construct_value_from_typeid() to do the work.
 //??? Make several opcodes for construct-value: construct-struct, vector, dict, basic. ALSO casting 1:1 between types.
 //??? Optimize -- inline construct_value_from_typeid() to simplify a lot.
-bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expression_t& expr){
+void execute_construct_value_expression(interpreter_t& vm, const bc_instruction_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(expr.check_invariant());
 
-	const auto basetype = get_basetype(vm, expr._type);
+	const auto args_reg = expr._reg2;
+	const auto arg_count = expr._reg3._index;
+	const auto& root_value_type = get_type(vm, expr._instr_type);
+	const auto basetype = get_basetype(vm, expr._instr_type);
 	if(basetype == base_type::k_vector){
-		const bc_expression_t* elements = &expr._e[0];
-		const auto& root_value_type = get_type(vm, expr._type);
 		const auto& element_type = root_value_type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_undefined() == false);
-
-		//	An empty vector is encoded as a constant value by pass3, not a vector-definition-expression.
-//		QUARK_ASSERT(elements.empty() == false);
-
 		QUARK_ASSERT(root_value_type.is_undefined() == false);
-		QUARK_ASSERT(element_type.is_undefined() == false);
 
 		std::vector<bc_value_t> elements2;
-		for(int i = 0 ; i < expr._e_count ; i++){
-			const auto& element = execute_expression(vm, elements[i]);
-			elements2.push_back(element);
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto arg = read_register_slow(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i), element_type);
+			elements2.push_back(arg);
 		}
 
 	#if DEBUG && FLOYD_BD_DEBUG
@@ -693,79 +697,42 @@ bc_value_t execute_construct_value_expression(interpreter_t& vm, const bc_expres
 			QUARK_ASSERT(m.get_debug_type() == element_type);
 		}
 	#endif
-		return construct_value_from_typeid(vm, typeid_t::make_vector(element_type), element_type, elements2);
+		//??? should use itype.
+		const auto& result = construct_value_from_typeid(vm, typeid_t::make_vector(element_type), element_type, elements2);
+		write_register_slow(vm, expr._reg1, result, root_value_type);
 	}
 	else if(basetype == base_type::k_dict){
-		const bc_expression_t* elements = expr._e;
-		const auto& root_value_type = get_type(vm, expr._type);
 		const auto& element_type = root_value_type.get_dict_value_type();
-
-		//	An empty dict is encoded as a constant value pass3, not a dict-definition-expression.
-//		QUARK_ASSERT(elements.empty() == false);
-
 		QUARK_ASSERT(root_value_type.is_undefined() == false);
 		QUARK_ASSERT(element_type.is_undefined() == false);
 
 		std::vector<bc_value_t> elements2;
-		for(auto i = 0 ; i < expr._e_count / 2 ; i++){
-			const auto& key_expr = elements[i * 2 + 0];
-			const auto& value_expr = elements[i * 2 + 1];
-
-			const auto& value = execute_expression(vm, value_expr);
-			const string key = key_expr._value.get_string_value();
+		for(auto i = 0 ; i < arg_count / 2 ; i++){
+			const auto key = read_register_string(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i * 2 + 0));
+			const auto value = read_register_slow(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i * 2 + 1), element_type);
 			elements2.push_back(bc_value_t::make_string(key));
 			elements2.push_back(value);
 		}
-		return construct_value_from_typeid(vm, typeid_t::make_dict(element_type), element_type, elements2);
+		const auto& result = construct_value_from_typeid(vm, root_value_type, typeid_t::make_undefined(), elements2);
+		write_register_slow(vm, expr._reg1, result, root_value_type);
 	}
 	else if(basetype == base_type::k_struct){
+		const auto& struct_def = root_value_type.get_struct();
 		std::vector<bc_value_t> elements2;
-		for(int i = 0 ; i < expr._e_count ; i++){
-			const auto& element = execute_expression(vm, expr._e[i]);
-			elements2.push_back(element);
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto member_type = struct_def._members[i]._type;
+			const auto arg = read_register_slow(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i), member_type);
+			elements2.push_back(arg);
 		}
-		return construct_value_from_typeid(vm, get_type(vm, expr._type), typeid_t::make_undefined(), elements2);
+		const auto& result = construct_value_from_typeid(vm, root_value_type, typeid_t::make_undefined(), elements2);
+		write_register_slow(vm, expr._reg1, result, root_value_type);
 	}
 	else{
-		QUARK_ASSERT(expr._e_count == 1);
-
-		const auto& element = execute_expression(vm, expr._e[0]);
-		return construct_value_from_typeid(vm, get_type(vm, expr._type), get_type(vm, expr._input_type), { element });
-	}
-}
-
-bc_value_t execute_arithmetic_unary_minus_expression(interpreter_t& vm, const bc_expression_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(expr.check_invariant());
-
-	const auto& c = execute_expression(vm, expr._e[0]);
-	const auto basetype = get_basetype(vm, expr._type);
-	if(basetype == base_type::k_int){
-		return bc_value_t::make_int(0 - c.get_int_value());
-	}
-	else if(basetype == base_type::k_float){
-		return bc_value_t::make_float(0.0f - c.get_float_value());
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-bc_value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_expression_t& expr){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(expr.check_invariant());
-
-	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto& cond_result = execute_expression(vm, expr._e[0]);
-	const bool cond_flag = cond_result.get_bool_value();
-
-	//	!!! Only execute the CHOSEN expression. Not that important since functions are pure.
-	if(cond_flag){
-		return execute_expression(vm, expr._e[1]);
-	}
-	else{
-		return execute_expression(vm, expr._e[2]);
+		QUARK_ASSERT(arg_count == 1);
+		const auto input_arg_type = get_type(vm, expr._parent_type);
+		const auto element = read_register_slow(vm, expr._reg2, input_arg_type);
+		const auto& result = construct_value_from_typeid(vm, root_value_type, input_arg_type, { element });
+		write_register_slow(vm, expr._reg1, result, root_value_type);
 	}
 }
 
