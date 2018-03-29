@@ -58,12 +58,12 @@ BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_
 	return vm._imm->_program._types[type].get_base_type();
 }
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count);
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_pod_value_t* init_values, int init_value_count);
 
 
 //	Will NOT bump RCs of init_values.
 //	Returns new frame-pos, same as vm._current_stack_frame.
-int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
+int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_pod_value_t* init_values, int init_value_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -398,14 +398,14 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 		}
 #endif
 
-		std::vector<bc_value_t::value_internals_t> arg_internals;
+		std::vector<bc_pod_value_t> arg_internals;
 		for(int i = 0 ; i < args.size() ; i++){
 			const auto bc = value_to_bc(args[i]);
 			bool is_ext = function_def._body._exts[i];
 			if(is_ext){
-				bc._value_internals._ext->_rc++;
+				bc._pod._ext->_rc++;
 			}
-			arg_internals.push_back(bc._value_internals);
+			arg_internals.push_back(bc._pod);
 		}
 		const auto& r = execute_body(vm, function_def._body, &arg_internals[0], static_cast<int>(arg_internals.size()));
 		return bc_to_value(r._output, f.get_type().get_function_return());
@@ -601,7 +601,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 }
 
 
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_pod_value_t* init_values, int init_value_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -761,20 +761,20 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	This makes it hard to execute the args and store the directly into the right spot of stack.
 		//	Need temp to solve this. Find better solution?
 		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
-		//??? Store the temps in std::array<interpret_stack_element_t> -- the do memcpy.
+		//??? Store the temps in std::array<bc_pod_value_t> -- the do memcpy.
 
 		if(arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
-	    bc_value_t::value_internals_t temp[8];
+	    bc_pod_value_t temp[8];
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
 			const auto& t = execute_expression(vm, arg_expr);
 			if(function_def._body._exts[i]){
-				t._value_internals._ext->_rc++;
+				t._pod._ext->_rc++;
 			}
-			temp[i] = t._value_internals;
+			temp[i] = t._pod;
 		}
 
 		open_stack_frame2_nobump(vm, function_def._body, &temp[0], arg_count);

@@ -34,17 +34,6 @@ namespace floyd {
 
 
 
-
-
-	//////////////////////////////////////		interpret_stack_element_t
-
-
-	//	IMPORTANT: Has no constructor, destructor etc!! POD.
-	//	??? rename to value_pod_t
-	typedef bc_value_t::value_internals_t interpret_stack_element_t;
-
-
-
 	//////////////////////////////////////		interpreter_stack_t
 
 
@@ -78,21 +67,21 @@ namespace floyd {
 		}
 		BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
 			if(is_ext){
-				value._value_internals._ext->_rc++;
+				value._pod._ext->_rc++;
 			}
-			_value_stack.push_back(value._value_internals);
+			_value_stack.push_back(value._pod);
 		}
 		BC_INLINE void push_intq(int value){
-			interpret_stack_element_t e;
+			bc_pod_value_t e;
 			e._int = value;
 			_value_stack.push_back(e);
 		}
 		BC_INLINE void push_obj(const bc_value_t& value){
-			value._value_internals._ext->_rc++;
-			_value_stack.push_back(value._value_internals);
+			value._pod._ext->_rc++;
+			_value_stack.push_back(value._pod);
 		}
 
-		BC_INLINE void push_values_no_rc_bump(const bc_value_t::value_internals_t* values, int value_count){
+		BC_INLINE void push_values_no_rc_bump(const bc_pod_value_t* values, int value_count){
 			QUARK_ASSERT(values != nullptr);
 
 			_value_stack.insert(_value_stack.end(), values, values + value_count);
@@ -143,15 +132,15 @@ namespace floyd {
 		BC_INLINE void replace_inline(int pos, const bc_value_t& value){
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 
-			_value_stack[pos] = value._value_internals;
+			_value_stack[pos] = value._pod;
 		}
 
 		BC_INLINE void replace_obj(int pos, const bc_value_t& value){
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 
 			auto prev_copy = _value_stack[pos];
-			value._value_internals._ext->_rc++;
-			_value_stack[pos] = value._value_internals;
+			value._pod._ext->_rc++;
+			_value_stack[pos] = value._pod;
 			bc_value_t::debump(prev_copy);
 		}
 
@@ -171,7 +160,7 @@ namespace floyd {
 		}
 */
 
-		public: std::vector<interpret_stack_element_t> _value_stack;
+		public: std::vector<bc_pod_value_t> _value_stack;
 	};
 
 
