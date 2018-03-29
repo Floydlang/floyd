@@ -453,7 +453,7 @@ static value_t make_int(int value){
 
 
 
-		static bool is_ext_slow(base_type basetype){
+		private: static bool is_ext_slow(base_type basetype){
 			return false
 				|| basetype == base_type::k_string
 				|| basetype == base_type::k_json_value
@@ -464,7 +464,7 @@ static value_t make_int(int value){
 				|| basetype == base_type::k_function;
 		}
 
-		bool is_ext(base_type basetype) const{
+		private: bool is_ext(base_type basetype) const{
 		/*
 				k_internal_undefined,
 				k_internal_dynamic,

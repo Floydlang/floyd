@@ -233,7 +233,8 @@ namespace floyd {
 			}
 		}
 
-		static bool is_bc_ext(base_type basetype){
+		//	??? very slow?
+		BC_INLINE static bool is_bc_ext(base_type basetype){
 			return false
 				|| basetype == base_type::k_string
 				|| basetype == base_type::k_json_value
@@ -243,26 +244,6 @@ namespace floyd {
 				|| basetype == base_type::k_dict
 				;
 		}
-
-
-
-		//??? keep one of these functions
-		static BC_INLINE void bump_rc(const value_internals_t& value, base_type basetype){
-			if(bc_value_t::is_bc_ext(basetype)){
-				value._ext->_rc++;
-			}
-		}
-		static BC_INLINE void bump_rc(const bc_value_t& value, base_type basetype){
-			if(bc_value_t::is_bc_ext(basetype)){
-				value._value_internals._ext->_rc++;
-			}
-		}
-		static BC_INLINE void bump_rc(const bc_value_t& value, const typeid_t& type){
-			const auto basetype = type.get_base_type();
-			bump_rc(value, basetype);
-		}
-
-
 
 
 		public: bc_value_t() :
@@ -703,12 +684,16 @@ namespace floyd {
 			return temp;
 		}
 
-
-		//	No bump.
-		public: BC_INLINE explicit bc_value_t(const value_internals_t& internals) :
-			_value_internals(internals)
+		//	YES bump.
+		public: BC_INLINE explicit bc_value_t(const value_internals_t& internals, bool is_ext) :
+			_value_internals(internals),
+			_is_ext(is_ext)
 		{
+			if(_is_ext){
+				_value_internals._ext->_rc++;
+			}
 		}
+
 
 		//////////////////////////////////////		STATE
 
@@ -718,7 +703,7 @@ namespace floyd {
 #if DEBUG && FLOYD_BD_DEBUG
 		private: typeid_t _debug_type;
 #endif
-		private: bool _is_ext = false;
+		private: bool _is_ext;
 		public: value_internals_t _value_internals;
 	};
 
@@ -756,21 +741,15 @@ namespace floyd {
 	enum class bc_statement_opcode: uint8_t {
 		k_nop,
 
+
 		//	Store _e[0] -> _v
-		k_statement_store,
+		k_statement_store_resolve_inline,
+		k_statement_store_resolve_obj,
 
-		k_statement_store_int,
+		//	"resolve" = local variable or parent env chain.
+		k_statement_store_resolve_int,
 
-		//	Notice: instruction doesn't have to know value-type -- we can see type in symbol table
-		//	A) index of local/global variable.
-		//	B) Future: have BLOB as stack-frame, shift+mask data into it. env_index, word_offset, shift
-		//	C) Instruction uses local-index and VM knows have to encode into stack BLOB.
-		k_statement_store1bit,
-		k_statement_store8bits,
-		k_statement_store16bits,
-		k_statement_store32bits,
-		k_statement_store64bits,
-		k_statement_store_objptr,
+
 
 		//	Needed?
 		//	execute body_x
@@ -804,9 +783,17 @@ namespace floyd {
 		k_expression_resolve_member,
 		k_expression_lookup_element,
 
-		k_expression_load_inline,
-		k_expression_load_obj,
+
+
+		k_expression_load_global_inline,
+
+		//	"resolve" = local variable or parent env chain.
+		k_expression_load_resolve_inline,
 		k_expression_load_int,
+
+		k_expression_load_obj,
+
+
 
 		k_expression_call,
 		k_expression_construct_value,

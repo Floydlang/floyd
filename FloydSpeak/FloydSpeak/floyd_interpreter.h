@@ -39,17 +39,14 @@ namespace floyd {
 	//////////////////////////////////////		interpret_stack_element_t
 
 
-//	typedef bc_value_t interpret_stack_element_t;
+	//	IMPORTANT: Has no constructor, destructor etc!! POD.
+	//	??? rename to value_pod_t
 	typedef bc_value_t::value_internals_t interpret_stack_element_t;
-	//	IMPORTANT: Has no constructor, destructor etc!!
-//	struct interpret_stack_element_t {
-//		public: bc_value_t::value_internals_t _value_internals;
-//	};
-
 
 
 
 	//////////////////////////////////////		interpreter_stack_t
+
 
 
 	struct interpreter_stack_t {
@@ -79,8 +76,10 @@ namespace floyd {
 		int size() const {
 			return static_cast<int>(_value_stack.size());
 		}
-		BC_INLINE void push_value(const bc_value_t& value, const typeid_t& type){
-			bc_value_t::bump_rc(value, type);
+		BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
+			if(is_ext){
+				value._value_internals._ext->_rc++;
+			}
 			_value_stack.push_back(value._value_internals);
 		}
 		BC_INLINE void push_intq(int value){
@@ -88,56 +87,89 @@ namespace floyd {
 			e._int = value;
 			_value_stack.push_back(e);
 		}
+		BC_INLINE void push_obj(const bc_value_t& value){
+			value._value_internals._ext->_rc++;
+			_value_stack.push_back(value._value_internals);
+		}
 
 		BC_INLINE void push_values_no_rc_bump(const bc_value_t::value_internals_t* values, int value_count){
 			QUARK_ASSERT(values != nullptr);
+
 			_value_stack.insert(_value_stack.end(), values, values + value_count);
 		}
 
 
 
-		//	returned value will has ownership of obj, if any.
-		BC_INLINE bc_value_t load_value(int pos, const typeid_t& type) const{
+		//	returned value will have ownership of obj, if it's an obj.
+		BC_INLINE bc_value_t load_value_slow(int pos, const typeid_t& type) const{
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
 			const auto& e = _value_stack[pos];
-			if(bc_value_t::is_bc_ext(type.get_base_type())){
-				e._ext->_rc++;
-			}
-			return bc_value_t(e);
+			bool is_ext = bc_value_t::is_bc_ext(type.get_base_type());
+			return bc_value_t(e, is_ext);
 		}
 
 		BC_INLINE bc_value_t load_inline_value(int pos) const{
-			return bc_value_t(_value_stack[pos]);
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
+			return bc_value_t(_value_stack[pos], false);
 		}
 
-		//	returned value will has ownership of obj, if any.
 		BC_INLINE bc_value_t load_obj(int pos) const{
-			const auto& e = _value_stack[pos];
-			e._ext->_rc++;
-			return bc_value_t(e);
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
+			return bc_value_t(_value_stack[pos], true);
 		}
 
 		BC_INLINE int load_intq(int pos) const{
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
 			return _value_stack[pos]._int;
 		}
 
-		BC_INLINE void replace_value_same_type(int pos, const bc_value_t& value, const typeid_t& type){
-			//	Unpack existing value so it's RC:ed OK.
-			const auto prev_value = load_value(pos, type);
+/*
+		BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 
-			bc_value_t::bump_rc(value, type);
+			if(bc_value_t::is_bc_ext(type.get_base_type())){
+				replace_obj(pos, value);
+			}
+			else{
+				replace_inline(pos, value);
+			}
+		}
+*/
+
+		BC_INLINE void replace_inline(int pos, const bc_value_t& value){
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
 			_value_stack[pos] = value._value_internals;
 		}
 
+		BC_INLINE void replace_obj(int pos, const bc_value_t& value){
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
+			auto prev_copy = _value_stack[pos];
+			value._value_internals._ext->_rc++;
+			_value_stack[pos] = value._value_internals;
+			bc_value_t::debump(prev_copy);
+		}
+
 		BC_INLINE void replace_int(int pos, const int& value){
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
 			_value_stack[pos]._int = value;
 		}
 
-		BC_INLINE void pop_value(const typeid_t& type){
-			//	Unpack existing value so it's RC:ed OK.
-			const auto prev_value = load_value(static_cast<int>(_value_stack.size()) - 1, type);
-			_value_stack.pop_back();
-		}
+/*
+		BC_INLINE void pop_value_slow(const typeid_t& type){
+			QUARK_ASSERT(_value_stack.empty() == false);
 
+			auto prev_copy = _value_stack.back();
+			_value_stack.pop_back();
+			bc_value_t::debump(prev_copy);
+		}
+*/
 
 		public: std::vector<interpret_stack_element_t> _value_stack;
 	};
@@ -188,27 +220,6 @@ namespace floyd {
 
 		public: output_type _type;
 		public: bc_value_t _output;
-	};
-
-/*
-	inline bool operator==(const statement_result_t& lhs, const statement_result_t& rhs){
-		return true
-			&& lhs._type == rhs._type
-			&& lhs._output == rhs._output;
-	}
-*/
-
-
-
-	//////////////////////////////////////		environment_t
-
-	/*
-		Runtime scope, similar to a stack frame.
-	*/
-
-	struct environment_t {
-//		public: const bc_body_t* _body_ptr;
-		public: std::vector<environment_t>::size_type _values_offset;
 	};
 
 
@@ -264,7 +275,6 @@ namespace floyd {
 			value = return statement returned a value.
 	*/
 	statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instruction_t>& statements);
-
 
 
 

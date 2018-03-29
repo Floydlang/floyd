@@ -497,7 +497,7 @@ QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
 	);
 }
 
-QUARK_UNIT_TESTQ("run_main()", "minimal program 2"){
+QUARK_UNIT_TEST("run_main()", "minimal program 2", "", ""){
 	test__run_main(
 		"string main(string args){\n"
 		"	return \"123\" + \"456\";\n"

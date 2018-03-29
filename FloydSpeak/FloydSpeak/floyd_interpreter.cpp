@@ -58,24 +58,48 @@ BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_
 	return vm._imm->_program._types[type].get_base_type();
 }
 
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count);
 
 
-
-
-//??? Notice -- when need to decrement stack RC:s when destruciting / copying interpreter_t. IDEA: Make vm_stack_t -- object that encapsuated all this.
-
-statement_result_t execute_body2(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values);
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body);
-
+//	Will NOT bump RCs of init_values.
 //	Returns new frame-pos, same as vm._current_stack_frame.
-//	Will NOT add local variables etc.
-//	Only pushes previous stack frame pos.
-int open_stack_frame_internal(interpreter_t& vm){
+int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
 	const auto new_frame_start = static_cast<int>(vm._value_stack.size());
 	const auto prev_frame_pos = vm._current_stack_frame;
 	vm._value_stack.push_intq(prev_frame_pos);
 	const auto new_frame_pos = new_frame_start + 1;
 	vm._current_stack_frame = new_frame_pos;
+
+	if(init_value_count > 0){
+		vm._value_stack.push_values_no_rc_bump(init_values, init_value_count);
+	}
+
+	//??? Make precomputed stuff in bc_body_t. Use memcpy() + a GC-fixup loop.
+	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._symbols.size() ; i++){
+		const auto& symbol = body._symbols[i];
+		bool is_ext = body._exts[i];
+
+		//	Variable slot.
+		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
+		//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type_SLOW().
+		//	Use a placeholder object. Type won't match symbol but that's OK.
+		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
+			if(is_ext){
+				vm._value_stack.push_value(vm._internal_placeholder_object, true);
+			}
+			else{
+				vm._value_stack.push_intq(0xdeadbeef);
+			}
+		}
+
+		//	Constant.
+		else{
+			vm._value_stack.push_value(value_to_bc(symbol.second._const_value), is_ext);
+		}
+	}
 	return new_frame_pos;
 }
 
@@ -103,94 +127,6 @@ int close_stack_frame(interpreter_t& vm, const bc_body_t& body){
 	vm._current_stack_frame = prev_frame_pos;
 	return prev_frame_pos;
 }
-
-
-//	WILL bump RCs of init_values.
-int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(body.check_invariant());
-
-	int frame_pos = open_stack_frame_internal(vm);
-
-	if(init_value_count > 0){
-/*
-		for(int i = 0 ; i < init_value_count ; i++){
-			if(body._exts[i]){
-				init_values[i]._ext->_rc++;
-			}
-		}
-*/
-		vm._value_stack.push_values_no_rc_bump(init_values, init_value_count);
-	}
-
-	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._symbols.size() ; i++){
-		const auto& symbol = body._symbols[i];
-
-		//	Variable slot.
-		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
-			const auto basetype = symbol.second._value_type.get_base_type();
-
-			//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
-			//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type().
-			//	Use a placeholder object. Type won't match symbol but that's OK.
-	//??? DO NOT CREATE TYPEID_T instances!!
-			if(bc_value_t::is_bc_ext(basetype)){
-				vm._value_stack.push_value(vm._internal_placeholder_object, typeid_t::make_string());
-			}
-			else{
-			///??? replace by faster funcction than push_value(). push_padding():
-				vm._value_stack.push_value(bc_value_t::make_undefined(), typeid_t::make_undefined());
-			}
-		}
-
-		//	Constant.
-		else{
-			vm._value_stack.push_value(value_to_bc(symbol.second._const_value), symbol.second._const_value.get_type());
-		}
-	}
-	return frame_pos;
-}
-int open_stack_frame3(interpreter_t& vm, const bc_body_t& body, const bc_value_t* init_values, int init_value_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(body.check_invariant());
-
-	int frame_pos = open_stack_frame_internal(vm);
-
-	if(init_value_count > 0){
-		for(int i = 0 ; i < init_value_count ; i++){
-			vm._value_stack.push_value(init_values[i], body._symbols[i].second._value_type);
-		}
-	}
-
-	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._symbols.size() ; i++){
-		const auto& symbol = body._symbols[i];
-
-		//	Variable slot.
-		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
-			const auto basetype = symbol.second._value_type.get_base_type();
-
-			//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
-			//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type().
-			//	Use a placeholder object. Type won't match symbol but that's OK.
-	//??? DO NOT CREATE TYPEID_T instances!!
-			if(bc_value_t::is_bc_ext(basetype)){
-				vm._value_stack.push_value(vm._internal_placeholder_object, typeid_t::make_string());
-			}
-			else{
-			///??? replace by faster funcction than push_value(). push_padding():
-				vm._value_stack.push_value(bc_value_t::make_undefined(), typeid_t::make_undefined());
-			}
-		}
-
-		//	Constant.
-		else{
-			vm._value_stack.push_value(value_to_bc(symbol.second._const_value), symbol.second._const_value.get_type());
-		}
-	}
-	return frame_pos;
-}
-
-
 
 //	#0 is top of stack, last elementis bottom.
 //	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
@@ -292,12 +228,12 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
     	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
 	);
 	if(it != symbols.end()){
-		const auto index = it - symbols.begin();
+		const auto index = static_cast<int>(it - symbols.begin());
 		const auto pos = 1 + index;
 		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 
 		const auto value_entry = value_entry_t{
-			vm._value_stack.load_value(pos, it->second._value_type),
+			vm._value_stack.load_value_slow(pos, it->second._value_type),
 			it->first,
 			it->second,
 			variable_address_t::make_variable_address(-1, static_cast<int>(index))
@@ -462,7 +398,16 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 		}
 #endif
 
-		const auto& r = execute_body2(vm, function_def._body, values_to_bcs(args));
+		std::vector<bc_value_t::value_internals_t> arg_internals;
+		for(int i = 0 ; i < args.size() ; i++){
+			const auto bc = value_to_bc(args[i]);
+			bool is_ext = function_def._body._exts[i];
+			if(is_ext){
+				bc._value_internals._ext->_rc++;
+			}
+			arg_internals.push_back(bc._value_internals);
+		}
+		const auto& r = execute_body(vm, function_def._body, &arg_internals[0], static_cast<int>(arg_internals.size()));
 		return bc_to_value(r._output, f.get_type().get_function_return());
 	}
 }
@@ -534,22 +479,26 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		QUARK_ASSERT(statement.check_invariant());
 
 		const auto opcode = statement._opcode;
-		if(opcode == bc_statement_opcode::k_statement_store){
+		if(opcode == bc_statement_opcode::k_statement_store_resolve_inline){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
 			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
 			const auto pos = frame_pos + statement._v._index;
-			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-			vm._value_stack.replace_value_same_type(pos, rhs_value, get_type(vm, statement._e[0]._type));
+			vm._value_stack.replace_inline(pos, rhs_value);
 		}
-		else if(opcode == bc_statement_opcode::k_statement_store_int){
+		else if(opcode == bc_statement_opcode::k_statement_store_resolve_obj){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
 			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
 			const auto pos = frame_pos + statement._v._index;
-			QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+			vm._value_stack.replace_obj(pos, rhs_value);
+		}
+		else if(opcode == bc_statement_opcode::k_statement_store_resolve_int){
+			const auto& rhs_value = execute_expression(vm, statement._e[0]);
+			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
+			const auto pos = frame_pos + statement._v._index;
 			vm._value_stack.replace_int(pos, rhs_value.get_int_value());
 		}
 		else if(opcode == bc_statement_opcode::k_statement_block){
-			const auto& r = execute_body(vm, statement._b[0]);
+			const auto& r = execute_body(vm, statement._b[0], nullptr, 0);
 			if(r._type == statement_result_t::k_returning){
 				return r;
 			}
@@ -564,13 +513,13 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 
 			bool flag = condition_result_value.get_bool_value();
 			if(flag){
-				const auto& r = execute_body(vm, statement._b[0]);
+				const auto& r = execute_body(vm, statement._b[0], nullptr, 0);
 				if(r._type == statement_result_t::k_returning){
 					return r;
 				}
 			}
 			else{
-				const auto& r = execute_body(vm, statement._b[1]);
+				const auto& r = execute_body(vm, statement._b[1], nullptr, 0);
 				if(r._type == statement_result_t::k_returning){
 					return r;
 				}
@@ -630,7 +579,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				const auto& condition_value = condition_value_expr.get_bool_value();
 
 				if(condition_value){
-					const auto& return_value = execute_body(vm, statement._b[0]);
+					const auto& return_value = execute_body(vm, statement._b[0], nullptr, 0);
 					if(return_value._type == statement_result_t::k_returning){
 						return return_value;
 					}
@@ -652,21 +601,11 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 }
 
 
-statement_result_t execute_body2(interpreter_t& vm, const bc_body_t& body, const std::vector<bc_value_t>& init_values){
+statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body, const bc_value_t::value_internals_t* init_values, int init_value_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto new_frame_pos = open_stack_frame3(vm, body, &init_values[0], init_values.size());
-	const auto& r = execute_statements(vm, body._statements);
-	close_stack_frame(vm, body);
-	return r;
-}
-statement_result_t execute_body(interpreter_t& vm, const bc_body_t& body){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(body.check_invariant());
-
-	const auto new_frame_pos = open_stack_frame2_nobump(vm, body, nullptr, 0);
-
+	open_stack_frame2_nobump(vm, body, init_values, init_value_count);
 	const auto& r = execute_statements(vm, body._statements);
 	close_stack_frame(vm, body);
 	return r;
@@ -822,8 +761,8 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	This makes it hard to execute the args and store the directly into the right spot of stack.
 		//	Need temp to solve this. Find better solution?
 		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
-
 		//??? Store the temps in std::array<interpret_stack_element_t> -- the do memcpy.
+
 		if(arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
@@ -1180,10 +1119,13 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 
 	//??? we know the type of value, we know the symbol table!
 	//??? Optimize by inlining find_env_from_address() and making sep paths.
-	else if(op == bc_expression_opcode::k_expression_load_inline){
+	else if(op == bc_expression_opcode::k_expression_load_global_inline){
+		const auto& value = vm._value_stack.load_inline_value(1 + e._address_index);
+		return value;
+	}
+	else if(op == bc_expression_opcode::k_expression_load_resolve_inline){
 		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 		const auto pos = frame_pos + e._address_index;
-		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 		const auto& value = vm._value_stack.load_inline_value(pos);
 		return value;
 	}
@@ -1192,14 +1134,12 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 	else if(op == bc_expression_opcode::k_expression_load_obj){
 		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 		const auto pos = frame_pos + e._address_index;
-		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-		const auto& value = vm._value_stack.load_value(pos, get_type(vm, e._type));
+		const auto& value = vm._value_stack.load_obj(pos);
 		return value;
 	}
 	else if(op == bc_expression_opcode::k_expression_load_int){
 		int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 		const auto pos = frame_pos + e._address_index;
-		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
 		const auto& value = vm._value_stack.load_intq(pos);
 		return bc_value_t::make_int(value);
 	}
@@ -1618,7 +1558,7 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 				int frame_pos = find_frame_from_address(vm, e._address_parent_step);
 				const auto pos = frame_pos + e._address_index;
 				QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-				const auto& value = vm._value_stack.load_value(pos, get_type(vm, e._type));
+				const auto& value = vm._value_stack.load_value_slow(pos, get_type(vm, e._type));
 		//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
 				return value;
 			}

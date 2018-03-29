@@ -403,12 +403,16 @@ bc_instruction_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::sto
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
-	const auto type = vm._types[expr._type];
-	if(type.is_int()){
-		return bc_instruction_t{ bc_statement_opcode::k_statement_store_int, expr._type, 0, {expr}, statement._dest_variable,  {}};
+	const auto basetype = vm._types[expr._type].get_base_type();
+
+	if(basetype == base_type::k_int){
+		return bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_int, expr._type, 0, {expr}, statement._dest_variable,  {}};
+	}
+	else if(bc_value_t::is_bc_ext(basetype)){
+		return bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_obj, expr._type, 0, {expr}, statement._dest_variable,  {}};
 	}
 	else{
-		return bc_instruction_t{ bc_statement_opcode::k_statement_store, expr._type, 0, {expr}, statement._dest_variable,  {}};
+		return bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_inline, expr._type, 0, {expr}, statement._dest_variable,  {}};
 	}
 }
 
@@ -465,8 +469,7 @@ bc_instruction_t bcgen_statement(bgenerator_t& vm, const statement_t& statement)
 	else if(statement._store){
 		QUARK_ASSERT(false);
 	}
-	else
-	if(statement._store2){
+	else if(statement._store2){
 		return bcgen_store2_statement(vm, *statement._store2);
 	}
 	else if(statement._block){
@@ -528,14 +531,22 @@ bc_expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
 
 	const auto& address = e._address;
 	const auto basetype = e._output_type->get_base_type();
+/*
 	if(basetype == base_type::k_int){
 		return bc_expression_t{ bc_expression_opcode::k_expression_load_int, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
 	}
-	else if(bc_value_t::is_bc_ext(basetype)){
+	else
+*/
+	if(bc_value_t::is_bc_ext(basetype)){
 		return bc_expression_t{ bc_expression_opcode::k_expression_load_obj, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
 	}
 	else{
-		return bc_expression_t{ bc_expression_opcode::k_expression_load_inline, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+		if(address._parent_steps == -1){
+			return bc_expression_t{ bc_expression_opcode::k_expression_load_global_inline, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+		}
+		else{
+			return bc_expression_t{ bc_expression_opcode::k_expression_load_resolve_inline, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+		}
 	}
 }
 
