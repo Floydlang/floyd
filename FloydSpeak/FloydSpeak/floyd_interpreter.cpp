@@ -739,8 +739,6 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		std::vector<value_t> arg_values;
 		arg_values.reserve(arg_count);
 
-//		const auto& arg_types = function_def._function_type.get_function_args();
-
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& arg_expr = expr._e[i + 1];
 			QUARK_ASSERT(arg_expr.check_invariant());
@@ -761,7 +759,7 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		//	This makes it hard to execute the args and store the directly into the right spot of stack.
 		//	Need temp to solve this. Find better solution?
 		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
-		//??? Store the temps in std::array<bc_pod_value_t> -- the do memcpy.
+		//??? Or change calling conventions to store args *before* frame.
 
 		if(arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
@@ -893,7 +891,6 @@ bc_value_t execute_conditional_operator_expression(interpreter_t& vm, const bc_e
 	}
 }
 
-//??? flatten to main dispatch function.
 bc_value_t execute_comparison_expression(interpreter_t& vm, const bc_expression_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(expr.check_invariant());
@@ -1095,6 +1092,12 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(r == true);
 }
 
+
+//??? Here we could use a clever box that encode stuff into stackframe/struct etc and lets us quickly access them. No need to encode type in instruction.
+//??? get_type() should have all basetypes as first IDs.
+
+
+
 bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& e){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1114,11 +1117,6 @@ bc_value_t execute_expression__switch(interpreter_t& vm, const bc_expression_t& 
 		return execute_lookup_element_expression(vm, e);
 	}
 
-	//??? Here we could use a clever box that encode stuff into stackframe/struct etc and lets us quickly access them. No need to encode type in instruction.
-	//??? get_type() should have all basetypes as first IDs.
-
-	//??? we know the type of value, we know the symbol table!
-	//??? Optimize by inlining find_env_from_address() and making sep paths.
 	else if(op == bc_expression_opcode::k_expression_load_global_inline){
 		const auto& value = vm._value_stack.load_inline_value(1 + e._address_index);
 		return value;
