@@ -447,15 +447,51 @@ int resolve_register(const interpreter_t& vm, const variable_address_t& reg){
 	return pos;
 }
 
+bc_value_t read_register_slow(const interpreter_t& vm, const variable_address_t& reg, const typeid_t& type){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	const auto value = vm._value_stack.load_value_slow(pos, type);
+	return value;
+}
 bc_value_t read_register_slow(const interpreter_t& vm, const variable_address_t& reg, bc_typeid_t itype){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(reg.check_invariant());
 
 	const auto type = get_type(vm, itype);
 	const auto pos = resolve_register(vm, reg);
-
 	const auto value = vm._value_stack.load_value_slow(pos, type);
 	return value;
+}
+bc_value_t read_register_obj(const interpreter_t& vm, const variable_address_t& reg){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	return vm._value_stack.load_obj(pos);
+}
+std::string read_register_string(const interpreter_t& vm, const variable_address_t& reg){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	const auto value = vm._value_stack.load_obj(pos);
+	return value.get_string_value();
+}
+int read_register_int(const interpreter_t& vm, const variable_address_t& reg){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	return vm._value_stack.load_intq(pos);
+}
+bc_value_t read_register_function(const interpreter_t& vm, const variable_address_t& reg){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(reg.check_invariant());
+
+	const auto pos = resolve_register(vm, reg);
+	const auto value = vm._value_stack.load_inline_value(pos);
 }
 void write_register_slow(interpreter_t& vm, const variable_address_t& reg, const bc_value_t& value, bc_typeid_t itype){
 	QUARK_ASSERT(vm.check_invariant());
@@ -464,7 +500,6 @@ void write_register_slow(interpreter_t& vm, const variable_address_t& reg, const
 
 	const auto type = get_type(vm, itype);
 	const auto pos = resolve_register(vm, reg);
-
 	vm._value_stack.replace_value_same_type_SLOW(pos, value, type);
 }
 
@@ -475,62 +510,54 @@ void execute_resolve_member_expression(interpreter_t& vm, const bc_instruction_t
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(expr.check_invariant());
 
-	const auto& parent_value = read_register_slow(vm, expr._reg2, typeid_t);
-	const auto& parent_value = read_register_slow(vm, expr._reg2);
+	const auto& parent_value = read_register_obj(vm, expr._reg2);
+	const auto& member_index = expr._reg3._index;
 
 	const auto& struct_instance = parent_value.get_struct_value();
-	int index = expr._address_index;
-	QUARK_ASSERT(index != -1);
+	QUARK_ASSERT(member_index != -1);
 
-	const bc_value_t value = struct_instance[index];
+	const bc_value_t value = struct_instance[member_index];
+	write_register_slow(vm, expr._reg1, value, expr._instr_type);
 }
 
-bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_expression_t& expr){
+void execute_lookup_element_expression(interpreter_t& vm, const bc_instruction_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(expr.check_invariant());
 
-	const auto& parent_value = execute_expression(vm, expr._e[0]);
-	const auto parent_type = get_basetype(vm, expr._e[0]._type);
-
-	const auto& key_value = execute_expression(vm, expr._e[1]);
-#if DEBUG
-	const auto key_type = get_basetype(vm, expr._e[1]._type);
-#endif
-
+	const auto& parent_value = read_register_obj(vm, expr._reg2);
+	const auto parent_type = get_type(vm, expr._parent_type).get_base_type();
 	if(parent_type == base_type::k_string){
 		const auto& instance = parent_value.get_string_value();
-		int lookup_index = key_value.get_int_value();
+		const auto lookup_index = read_register_int(vm, expr._reg3);
 		if(lookup_index < 0 || lookup_index >= instance.size()){
 			throw std::runtime_error("Lookup in string: out of bounds.");
 		}
 		else{
 			const char ch = instance[lookup_index];
 			const auto value2 = bc_value_t::make_string(string(1, ch));
-			return value2;
+			write_register_slow(vm, expr._reg1, value2, expr._instr_type);
 		}
 	}
 	else if(parent_type == base_type::k_json_value){
 		//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
 		const auto& parent_json_value = parent_value.get_json_value();
 		if(parent_json_value.is_object()){
-			QUARK_ASSERT(key_type == base_type::k_string);
-			const auto& lookup_key = key_value.get_string_value();
+			const auto lookup_key = read_register_string(vm, expr._reg3);
 
 			//	get_object_element() throws if key can't be found.
 			const auto& value = parent_json_value.get_object_element(lookup_key);
 			const auto value2 = bc_value_t::make_json_value(value);
-			return value2;
+			write_register_slow(vm, expr._reg1, value2, expr._instr_type);
 		}
 		else if(parent_json_value.is_array()){
-			const auto& lookup_index = key_value.get_int_value();
-
+			const auto lookup_index = read_register_int(vm, expr._reg3);
 			if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
 				throw std::runtime_error("Lookup in json_value array: out of bounds.");
 			}
 			else{
 				const auto& value = parent_json_value.get_array_n(lookup_index);
 				const auto value2 = bc_value_t::make_json_value(value);
-				return value2;
+				write_register_slow(vm, expr._reg1, value2, expr._instr_type);
 			}
 		}
 		else{
@@ -539,29 +566,25 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 	}
 	else if(parent_type == base_type::k_vector){
 		const auto& vec = parent_value.get_vector_value();
-
-		int lookup_index = key_value.get_int_value();
+		const auto lookup_index = read_register_int(vm, expr._reg3);
 		if(lookup_index < 0 || lookup_index >= vec.size()){
 			throw std::runtime_error("Lookup in vector: out of bounds.");
 		}
 		else{
 			const bc_value_t value = vec[lookup_index];
-			return value;
+			write_register_slow(vm, expr._reg1, value, expr._instr_type);
 		}
 	}
 	else if(parent_type == base_type::k_dict){
-		QUARK_ASSERT(key_type == base_type::k_string);
-
+		const auto lookup_key = read_register_string(vm, expr._reg3);
 		const auto& entries = parent_value.get_dict_value();
-		const string key = key_value.get_string_value();
-
-		const auto& found_it = entries.find(key);
+		const auto& found_it = entries.find(lookup_key);
 		if(found_it == entries.end()){
 			throw std::runtime_error("Lookup in dict: key not found.");
 		}
 		else{
 			const bc_value_t value = found_it->second;
-			return value;
+			write_register_slow(vm, expr._reg1, value, expr._instr_type);
 		}
 	}
 	else {
@@ -569,18 +592,19 @@ bc_value_t execute_lookup_element_expression(interpreter_t& vm, const bc_express
 		throw std::exception();
 	}
 }
-	//	Store function ptr instead of of ID???
+
+//	Store function ptr instead of of ID???
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
-bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& expr){
+void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(expr.check_invariant());
 
-	const auto& function_value = execute_expression(vm, expr._e[0]);
+	const auto& function_value = read_register_function(vm, expr._reg2);
 	const auto& function_def = get_function_def(vm, function_value);
 
 	//	_e[...] contains first callee, then each argument.
-	const auto arg_count = expr._e_count - 1;
-
+	//	We need to examin the callee, since we support magic argument lists of varying size.
+	const auto arg_count = expr._reg3._index;
 
 	if(function_def._host_function_id != 0){
 		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
@@ -591,17 +615,18 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		std::vector<value_t> arg_values;
 		arg_values.reserve(arg_count);
 
+//??? can't know types of dynamic arguments!?
+/*
 		for(int i = 0 ; i < arg_count ; i++){
-			const auto& arg_expr = expr._e[i + 1];
-			QUARK_ASSERT(arg_expr.check_invariant());
+			const auto arg_bc = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg2._parent_steps,expr._reg2._index + 1 + u), )
 
-			const auto& t = execute_expression(vm, arg_expr);
 			const auto t1 = bc_to_value(t, get_type(vm, arg_expr._type));
 			arg_values.push_back(t1);
 		}
 
 		const auto& result = (host_function)(vm, arg_values);
 		return value_to_bc(result);
+*/
 	}
 	else{
 		//	Notice that arguments are first in the symbol list.
@@ -616,11 +641,12 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		if(arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
+
 	    bc_pod_value_t temp[8];
 		for(int i = 0 ; i < arg_count ; i++){
-			const auto& arg_expr = expr._e[i + 1];
-			QUARK_ASSERT(arg_expr.check_invariant());
-			const auto& t = execute_expression(vm, arg_expr);
+			const auto& arg_type = function_def._args[i]._type;
+			const auto t = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg2._parent_steps,expr._reg2._index + 1 + i), arg_type);
+
 			if(function_def._body._exts[i]){
 				t._pod._ext->_rc++;
 			}
@@ -632,7 +658,7 @@ bc_value_t execute_call_expression(interpreter_t& vm, const bc_expression_t& exp
 		close_stack_frame(vm, function_def._body);
 
 		QUARK_ASSERT(result._type == statement_result_t::k_returning);
-		return result._output;
+		write_register_slow(vm, expr._reg1, result._output, expr._instr_type);
 	}
 }
 
@@ -1086,9 +1112,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				}
 			}
 */
-
 		}
-
 
 		else if(opcode == bc_expression_opcode::k_expression_resolve_member){
 			return execute_resolve_member_expression(vm, e);
@@ -1103,7 +1127,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		}
 
 		else if(opcode == bc_expression_opcode::k_expression_call){
-			return execute_call_expression(vm, e);
+			execute_call_expression(vm, e);
 		}
 
 		else if(opcode == bc_expression_opcode::k_expression_construct_value){

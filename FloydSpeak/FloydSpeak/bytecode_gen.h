@@ -1158,6 +1158,23 @@ inline int bc_limit(int value, int min, int max){
 		{
 			QUARK_ASSERT(check_invariant());
 		}
+		bc_instruction_t(
+			bc_statement_opcode opcode,
+			bc_typeid_t type,
+			variable_address_t reg1,
+			variable_address_t reg2,
+			variable_address_t reg3,
+			bc_typeid_t parent_type
+		) :
+			_opcode(opcode),
+			_instr_type(type),
+			_reg1(reg1),
+			_reg2(reg2),
+			_reg3(reg3),
+			_parent_type(parent_type)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
 
 
 #if DEBUG
@@ -1176,6 +1193,9 @@ inline int bc_limit(int value, int min, int max){
 
 		//??? temporary. Plan is to embedd this type into opcode.
 		bc_typeid_t _instr_type;
+
+		//	Used to specify parent-type, for struct or lookups.
+		bc_typeid_t _parent_type;
 	};
 
 

@@ -599,7 +599,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 		itype,
 		function_result_reg,
 		callee_expr._output_register,
-		{}
+		variable_address_t::make_variable_address(0, arg_temps.size())		//	immediate value!
 	));
 
 	return { body_acc, function_result_reg, itype };
