@@ -75,11 +75,11 @@ namespace floyd {
 			return _value_type;
 		}
 
-		public: static symbol_t make_immutable_local(const floyd::typeid_t value_type){
+		public: static symbol_t make_immutable_local(const floyd::typeid_t& value_type){
 			return symbol_t{ type::immutable_local, value_type, {} };
 		}
 
-		public: static symbol_t make_mutable_local(const floyd::typeid_t value_type){
+		public: static symbol_t make_mutable_local(const floyd::typeid_t& value_type){
 			return symbol_t{ type::mutable_local, value_type, {} };
 		}
 
@@ -96,6 +96,10 @@ namespace floyd {
 		}
 	};
 
+	typedef std::vector<std::pair<std::string, symbol_t>> symbol_table_t;
+
+	int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value);
+	int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::typeid_t& value_type);
 
 
 	//////////////////////////////////////		body_t

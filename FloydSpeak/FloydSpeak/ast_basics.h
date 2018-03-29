@@ -35,6 +35,9 @@ namespace floyd {
 		{
 		}
 
+		public: bool check_invariant() const {
+			return true;
+		}
 		public: static variable_address_t make_variable_address(int parent_steps, int index){
 			return variable_address_t(parent_steps, index);
 		}

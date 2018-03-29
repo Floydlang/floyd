@@ -116,7 +116,6 @@ namespace floyd {
 			return _value_stack[pos]._int;
 		}
 
-/*
 		BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 
@@ -127,7 +126,6 @@ namespace floyd {
 				replace_inline(pos, value);
 			}
 		}
-*/
 
 		BC_INLINE void replace_inline(int pos, const bc_value_t& value){
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());

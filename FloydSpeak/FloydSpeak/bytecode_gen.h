@@ -744,40 +744,66 @@ namespace floyd {
 		-----------------------------------------------------------------------
 	*/
 
-	enum class bc_statement_opcode: uint8_t {
-		k_nop,
 
 
-		//	Store _e[0] -> _v
-		k_statement_store_resolve_inline,
-		k_statement_store_resolve_obj,
+/*
+	enum class bc_opcode: uint8_t {
+		k_opcode__return_a,
+		k_opcode__branch_if_true,
+
+
+		k_opcode__add_object_abc,
+		k_opcode__add_int_abc,
+		k_opcode__add_float_abc,
+		k_opcode__add_string_abc,
+		k_opcode__add_vector_abc,
+
+		k_opcode__resolve_member_int_ab,
+		k_opcode__lookup_element_int_ab,
+
+
+		k_opcode__load_global_inline,
 
 		//	"resolve" = local variable or parent env chain.
-		k_statement_store_resolve_int,
+		k_opcode__load_resolve_inline,
+		k_opcode__load_int,
+
+		k_opcode__load_obj,
 
 
+		k_opcode__call,
+		k_opcode__construct_value,
 
-		//	Needed?
-		//	execute body_x
-		k_statement_block,
+//		k_opcode__arithmetic_unary_minus,
 
-		//	_e[0]
-		k_statement_return,
+		//	replace by k_statement_if.
+		k_opcode__conditional_operator3,
 
-		//	if _e[0] execute _body_x, else execute _body_y
-		k_statement_if,
+		k_opcode__comparison_smaller_or_equal,
+		k_opcode__comparison_smaller_or_equal__int,
+		k_opcode__comparison_smaller,
+		k_opcode__comparison_larger_or_equal,
+		k_opcode__comparison_larger,
 
-		k_statement_for,
+		k_opcode__logical_equal,
+		k_opcode__logical_nonequal,
 
-		k_statement_while,
+		k_opcode__arithmetic_add,
+		k_opcode__arithmetic_add__int,
+		k_opcode__arithmetic_subtract,
+		k_opcode__arithmetic_subtract__int,
+		k_opcode__arithmetic_multiply,
+		k_opcode__arithmetic_divide,
+		k_opcode__arithmetic_remainder,
 
-		//	Not needed. Just use an expression and don't use its result.
-		k_statement_expression
+		k_opcode__logical_and,
+		k_opcode__logical_or
 	};
+*/
 
 
 
-	//////////////////////////////////////		bc_expression_opcode
+/*	//////////////////////////////////////		bc_expression_opcode
 
 
 
@@ -804,19 +830,20 @@ namespace floyd {
 		k_expression_call,
 		k_expression_construct_value,
 
-		k_expression_arithmetic_unary_minus,
+//		k_expression_arithmetic_unary_minus,
 
 		//	replace by k_statement_if.
 		k_expression_conditional_operator3,
 
+
 		k_expression_comparison_smaller_or_equal,
-		k_expression_comparison_smaller_or_equal__int,
 		k_expression_comparison_smaller,
 		k_expression_comparison_larger_or_equal,
 		k_expression_comparison_larger,
 
 		k_expression_logical_equal,
 		k_expression_logical_nonequal,
+
 
 		k_expression_arithmetic_add,
 		k_expression_arithmetic_add__int,
@@ -829,6 +856,7 @@ namespace floyd {
 		k_expression_logical_and,
 		k_expression_logical_or
 	};
+*/
 
 inline int bc_limit(int value, int min, int max){
 	if(value < min){
@@ -924,7 +952,7 @@ inline int bc_limit(int value, int min, int max){
 	//////////////////////////////////////		bc_expression_t
 
 
-
+/*
 	struct bc_expression_t {
 		private: bc_expression_t() :
 			_opcode(bc_expression_opcode::k_expression_illegal_opcode),
@@ -1058,29 +1086,79 @@ inline int bc_limit(int value, int min, int max){
 	struct bc_node_t {
 		uint32_t _words[64 / sizeof(uint32_t)];
 	};
-
+*/
 
 
 	//////////////////////////////////////		bc_instruction_t
 
+	enum class bc_statement_opcode: uint8_t {
+		k_nop,
 
+		k_opcode_resolve_member,
+		k_opcode_lookup_element,
+		k_opcode_call,
+
+
+		k_opcode_arithmetic_add,
+		k_opcode_arithmetic_subtract,
+		k_opcode_arithmetic_multiply,
+		k_opcode_arithmetic_divide,
+		k_opcode_arithmetic_remainder,
+
+		k_opcode_logical_and,
+		k_opcode_logical_or,
+
+		k_opcode_comparison_smaller_or_equal,
+		k_opcode_comparison_smaller,
+		k_opcode_comparison_larger_or_equal,
+		k_opcode_comparison_larger,
+
+		k_opcode_logical_equal,
+		k_opcode_logical_nonequal,
+
+
+		k_statement_store_resolve,
+
+
+		//	Needed?
+		//	execute body_x
+		k_statement_block,
+
+		//	_e[0]
+		k_statement_return,
+
+		//	if _e[0] execute _body_x, else execute _body_y
+		k_statement_if,
+
+		k_statement_for,
+
+		k_statement_while,
+
+		//	Not needed. Just use an expression and don't use its result.
+		k_statement_expression
+	};
+
+
+	//	Replace by int when we have flattened local bodies.
+	typedef variable_address_t reg_t;
 
 	struct bc_instruction_t {
 		bc_instruction_t(
 			bc_statement_opcode opcode,
-			bc_typeid_t type2,
-			uint8_t param_x,
-			const std::vector<bc_expression_t>& e,
-			const variable_address_t& v,
-			const std::vector<bc_body_t>& b
+			bc_typeid_t type,
+			variable_address_t reg1,
+			variable_address_t reg2,
+			variable_address_t reg3
 		) :
 			_opcode(opcode),
-			_param_x(param_x),
-			_e(e),
-			_v(v),
-			_b(b)
+			_instr_type(type),
+			_reg1(reg1),
+			_reg2(reg2),
+			_reg3(reg3)
 		{
+			QUARK_ASSERT(check_invariant());
 		}
+
 
 #if DEBUG
 		public: bool check_invariant() const {
@@ -1092,11 +1170,12 @@ inline int bc_limit(int value, int min, int max){
 		//////////////////////////////////////		STATE
 
 		bc_statement_opcode _opcode;
-		uint8_t _param_x;
-		variable_address_t _v;
+		variable_address_t _reg1;
+		variable_address_t _reg2;
+		variable_address_t _reg3;
 
-		std::vector<bc_expression_t> _e;
-		std::vector<bc_body_t> _b;
+		//??? temporary. Plan is to embedd this type into opcode.
+		bc_typeid_t _instr_type;
 	};
 
 

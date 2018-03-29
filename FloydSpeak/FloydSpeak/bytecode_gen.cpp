@@ -24,9 +24,32 @@ using std::make_shared;
 struct semantic_ast_t;
 
 
-bc_expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e);
-bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e);
+
+
+struct expr_info_t {
+	bc_body_t _body;
+	variable_address_t _output_register;
+
+	//	Output type.
+	int16_t _type;
+};
+
+expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body);
 bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body);
+
+variable_address_t add_temp(bc_body_t& body_acc, const typeid_t& type){
+	int id = add_temp(body_acc._symbols, "temp", type);
+	return variable_address_t::make_variable_address(0, id);
+}
+
+
+
+variable_address_t add_const(bc_body_t& body_acc, const value_t& value){
+	int id = add_constant_literal(body_acc._symbols, "temp-const", value);
+	return variable_address_t::make_variable_address(0, id);
+}
+
+
 
 
 
@@ -371,74 +394,76 @@ const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const v
 bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = bcgen_expression(vm, statement._expression);
-	const auto basetype = vm._types[expr._type].get_base_type();
+	auto body_acc = body;
+	const auto expr = bcgen_expression(vm, statement._expression, body_acc);
+	body_acc = expr._body;
 
-	if(basetype == base_type::k_int){
-		const auto instr = bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_int, expr._type, 0, {expr}, statement._dest_variable,  {}};
-		auto body2 = body;
-		body2._statements.push_back(instr);
-		return body2;
-	}
-	else if(bc_value_t::is_bc_ext(basetype)){
-		const auto instr = bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_obj, expr._type, 0, {expr}, statement._dest_variable,  {}};
-		auto body2 = body;
-		body2._statements.push_back(instr);
-		return body2;
-	}
-	else{
-		const auto instr = bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_inline, expr._type, 0, {expr}, statement._dest_variable,  {}};
-		auto body2 = body;
-		body2._statements.push_back(instr);
-		return body2;
-	}
+	body_acc._statements.push_back(bc_instruction_t(bc_statement_opcode::k_statement_store_resolve, expr._type, statement._dest_variable, expr._output_register, {}));
+	return body_acc;
 }
 
-bc_instruction_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement){
+bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_return, expr._type, 0, {expr}, {}, {}};
+	auto body_acc = body;
+	const auto expr = bcgen_expression(vm, statement._expression, body);
+	body_acc = expr._body;
+	body_acc._statements.push_back(bc_instruction_t(bc_statement_opcode::k_statement_return, expr._type, expr._output_register,{}, {}));
+	return body_acc;
 }
 
-bc_instruction_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement){
+bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& condition_expr = bcgen_expression(vm, statement._condition);
+	auto body_acc = body;
+/*
+	const auto condition_expr = bcgen_expression(vm, statement._condition, body_acc);
+	body_acc = condition_expr._body;
 	QUARK_ASSERT(statement._condition.get_output_type().is_bool());
+
 	const auto& then_expr = bcgen_body(vm, statement._then_body);
 	const auto& else_expr = bcgen_body(vm, statement._else_body);
+
+
+
 	return bc_instruction_t{ bc_statement_opcode::k_statement_if, intern_type(vm, typeid_t::make_undefined()), 0, {condition_expr}, {}, { then_expr, else_expr }};
+*/
+	return body;
 }
 
-bc_instruction_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement){
+bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& start_expr = bcgen_expression(vm, statement._start_expression);
-	const auto& end_expr = bcgen_expression(vm, statement._end_expression);
-	const auto& body = bcgen_body(vm, statement._body);
+/*
+	const auto& start_expr = bcgen_expression(vm, statement._start_expression, body);
+	const auto& end_expr = bcgen_expression(vm, statement._end_expression, body);
+	const auto& body2 = bcgen_body(vm, statement._body);
 	const uint8_t param_x = (statement._range_type == statement_t::for_statement_t::k_open_range ? 0 : 1);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_for, intern_type(vm, typeid_t::make_undefined()), param_x, {start_expr, end_expr}, {}, { body } };
+	return bc_instruction_t{ bc_statement_opcode::k_statement_for, intern_type(vm, typeid_t::make_undefined()), param_x, {start_expr, end_expr}, {}, { body2 } };
+*/
+
+	return body;
 }
 
-bc_instruction_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement){
+bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& condition_expr = bcgen_expression(vm, statement._condition);
-	const auto& body = bcgen_body(vm, statement._body);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_while, intern_type(vm, typeid_t::make_undefined()), 0, {condition_expr}, {}, {body} };
+/*
+	const auto& condition_expr = bcgen_expression(vm, statement._condition, body);
+	const auto& body2 = bcgen_body(vm, statement._body);
+	return bc_instruction_t{ bc_statement_opcode::k_statement_while, intern_type(vm, typeid_t::make_undefined()), 0, {condition_expr}, {}, {body2} };
+*/
+	return body;
 }
 
-bc_instruction_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement){
+bc_body_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& expr = bcgen_expression(vm, statement._expression);
-	return bc_instruction_t{ bc_statement_opcode::k_statement_expression, intern_type(vm, typeid_t::make_undefined()), 0, {expr}, {}, {} };
+	auto body_acc = body;
+	const auto& expr = bcgen_expression(vm, statement._expression, body);
+	body_acc = expr._body;
+	return body_acc;
 }
-
-
-
-
 
 bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
@@ -459,19 +484,19 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 			body2._statements.push_back(bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { b} });
 		}
 		else if(statement._return){
-			body2._statements.push_back(bcgen_return_statement(vm, *statement._return));
+			body2 = bcgen_return_statement(vm, *statement._return, body2);
 		}
 		else if(statement._if){
-			body2._statements.push_back(bcgen_ifelse_statement(vm, *statement._if));
+			body2 = bcgen_ifelse_statement(vm, *statement._if, body2);
 		}
 		else if(statement._for){
-			body2._statements.push_back(bcgen_for_statement(vm, *statement._for));
+			body2 = bcgen_for_statement(vm, *statement._for, body2);
 		}
 		else if(statement._while){
-			body2._statements.push_back(bcgen_while_statement(vm, *statement._while));
+			body2 = bcgen_while_statement(vm, *statement._while, body2);
 		}
 		else if(statement._expression){
-			body2._statements.push_back(bcgen_expression_statement(vm, *statement._expression));
+			body2 = bcgen_expression_statement(vm, *statement._expression, body2);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -485,203 +510,296 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 }
 
 
-bc_expression_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
 
+//////////////////////////////////////		EXPRESSIONS
+
+
+
+expr_info_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e._input_exprs[0].get_output_type().is_struct());
 
-	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0]);
-	const auto member_name = e._variable_name;
+	auto body_acc = body;
+
+	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0], body);
+	body_acc = parent_expr._body;
 
 	const auto& struct_def = e._input_exprs[0].get_output_type().get_struct();
-	int index = find_struct_member_index(struct_def, member_name);
+	int index = find_struct_member_index(struct_def, e._variable_name);
 	QUARK_ASSERT(index != -1);
 
-	//	Store member index in address field.
-	return bc_expression_t{ bc_expression_opcode::k_expression_resolve_member, intern_type(vm, e.get_output_type()), {parent_expr}, variable_address_t::make_variable_address(0, index), {}, {} };
+	const auto type = e.get_output_type();
+	const auto itype = intern_type(vm, type);
+
+	const auto temp = add_temp(body_acc, type);
+	body_acc._statements.push_back(bc_instruction_t(bc_statement_opcode::k_opcode_resolve_member,
+		itype,
+		temp,
+		parent_expr._output_register,
+		variable_address_t::make_variable_address(0, index)		//	immediate value!
+	));
+
+	return { body_acc, temp, intern_type(vm, *e._output_type) };
 }
 
-bc_expression_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t& e){
+expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0]);
-	const auto& key_expr = bcgen_expression(vm, e._input_exprs[1]);
-	return bc_expression_t{ bc_expression_opcode::k_expression_lookup_element, intern_type(vm, e.get_output_type()), {parent_expr, key_expr}, {}, {}, {} };
+	auto body_acc = body;
+
+	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0], body);
+	body_acc = parent_expr._body;
+
+	const auto& key_expr = bcgen_expression(vm, e._input_exprs[1], body);
+	body_acc = key_expr._body;
+
+	const auto type = e.get_output_type();
+	const auto itype = intern_type(vm, type);
+
+	const auto temp = add_temp(body_acc, type);
+	body_acc._statements.push_back(bc_instruction_t(bc_statement_opcode::k_opcode_lookup_element,
+		itype,
+		temp,
+		parent_expr._output_register,
+		key_expr._output_register
+	));
+
+	return { body_acc, temp, itype };
 }
 
-bc_expression_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e){
+expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& address = e._address;
-	const auto basetype = e._output_type->get_base_type();
+	return { body, e._address, intern_type(vm, *e._output_type) };
+}
+
+expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto body_acc = body;
+
+	//	_input_exprs[0] is callee, rest are arguments.
+	const auto& callee_expr = bcgen_expression(vm, e._input_exprs[0], body);
+	body_acc = callee_expr._body;
+
+	vector<variable_address_t> arg_temps;
+	for(int i = 0 ; i < e._input_exprs.size() - 1 ; i++){
+		const auto& m2 = bcgen_expression(vm, e._input_exprs[i + 1], body_acc);
+		body_acc = m2._body;
+		arg_temps.push_back(m2._output_register);
+	}
+
+	const auto type = e.get_output_type();
+	const auto itype = intern_type(vm, type);
+
+	//	Callee is in callee_expr-register. All args follow in the folling registers.
+	const auto function_result_reg = add_temp(body_acc, type);
+	body_acc._statements.push_back(bc_instruction_t(bc_statement_opcode::k_opcode_call,
+		itype,
+		function_result_reg,
+		callee_expr._output_register,
+		{}
+	));
+
+	return { body_acc, function_result_reg, itype };
+}
+
+expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto body_acc = body;
+
+	vector<variable_address_t> arg_temps;
+	for(int i = 0 ; i < e._input_exprs.size() ; i++){
+		const auto& m2 = bcgen_expression(vm, e._input_exprs[i], body_acc);
+		body_acc = m2._body;
+		arg_temps.push_back(m2._output_register);
+	}
+
+	const auto type = e.get_output_type();
+	const auto itype = intern_type(vm, type);
+
+	//	All args follow first arg.
+	const auto function_result_reg = add_temp(body_acc, type);
+	body_acc._statements.push_back(bc_instruction_t(bc_statement_opcode::k_opcode_call,
+		itype,
+		function_result_reg,
+		arg_temps[0],
+		{}
+	));
+
+	return { body_acc, function_result_reg, itype };
+}
+
+expr_info_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto type = e._input_exprs[0].get_output_type();
+
+	if(type.is_int()){
+		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), e, e._output_type);
+		return bcgen_expression(vm,e2, body);
+	}
+	else if(type.is_float()){
+		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0), e, e._output_type);
+		return bcgen_expression(vm,e2, body);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
 /*
-	if(basetype == base_type::k_int){
-		return bc_expression_t{ bc_expression_opcode::k_expression_load_int, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
+	temp = a ? b : c
+
+	becomes:
+
+	temp = 0
+	if(a){
+		temp = b
 	}
-	else
+	else{
+		temp = c
+	}
 */
-	if(bc_value_t::is_bc_ext(basetype)){
-		return bc_expression_t{ bc_expression_opcode::k_expression_load_obj, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
-	}
-	else{
-		if(address._parent_steps == -1){
-			return bc_expression_t{ bc_expression_opcode::k_expression_load_global_inline, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
-		}
-		else{
-			return bc_expression_t{ bc_expression_opcode::k_expression_load_resolve_inline, intern_type(vm, e.get_output_type()), {}, address, {}, {} };
-		}
-	}
-}
 
-bc_expression_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e){
+expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& value_type = *e._output_type;
+	auto body_acc = body;
 
-	std::vector<bc_expression_t> args2;
-	for(const auto& m: e._input_exprs){
-		const auto& m2 = bcgen_expression(vm, m);
-		args2.push_back(m2);
-	}
+	const auto& condition_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
+	body_acc = condition_expr._body;
 
-	const auto extra_type = args2.size() > 0 ? args2[0]._type : bc_typeid_t{};
-	return bc_expression_t{ bc_expression_opcode::k_expression_construct_value, intern_type(vm, value_type), args2, {}, {}, extra_type };
+	const auto type = e.get_output_type();
+	const auto itype = intern_type(vm, type);
+
+	const auto result_reg = add_temp(body_acc, type);
+
+	const std::vector<std::shared_ptr<statement_t>> then_statements = {
+		make_shared<statement_t>(statement_t::make__store2(result_reg, e._input_exprs[1]))
+	};
+	const std::vector<std::shared_ptr<statement_t>> else_statements = {
+		make_shared<statement_t>(statement_t::make__store2(result_reg, e._input_exprs[2]))
+	};
+	const auto ifelse_statement = statement_t::make__ifelse_statement(e._input_exprs[0], body_t(then_statements), body_t(else_statements));
+	body_acc = bcgen_ifelse_statement(vm, *ifelse_statement._if, body_acc);
+
+	return { body_acc, result_reg, itype };
 }
 
-bc_expression_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t& e){
+expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& exprx = bcgen_expression(vm, e._input_exprs[0]);
-	return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_unary_minus, intern_type(vm, e.get_output_type()), {exprx}, {}, {}, {} };
-}
+	static const std::map<expression_type, bc_statement_opcode> conv_opcode = {
+		{ expression_type::k_comparison_smaller_or_equal__2, bc_statement_opcode::k_opcode_comparison_smaller_or_equal },
+		{ expression_type::k_comparison_smaller__2, bc_statement_opcode::k_opcode_comparison_smaller },
+		{ expression_type::k_comparison_larger_or_equal__2, bc_statement_opcode::k_opcode_comparison_larger_or_equal },
+		{ expression_type::k_comparison_larger__2, bc_statement_opcode::k_opcode_comparison_larger },
 
-bc_expression_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
+		{ expression_type::k_logical_equal__2, bc_statement_opcode::k_opcode_logical_equal },
+		{ expression_type::k_logical_nonequal__2, bc_statement_opcode::k_opcode_logical_nonequal }
+	};
 
-	const auto& condition_expr = bcgen_expression(vm, e._input_exprs[0]);
-	const auto& a_expr = bcgen_expression(vm, e._input_exprs[1]);
-	const auto& b_expr = bcgen_expression(vm, e._input_exprs[2]);
-	return bc_expression_t{ bc_expression_opcode::k_expression_conditional_operator3, intern_type(vm, e.get_output_type()), {condition_expr, a_expr, b_expr}, {}, {}, {} };
-}
+	auto body_acc = body;
+	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
+	body_acc = left_expr._body;
 
-bc_expression_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
+	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
+	body_acc = right_expr._body;
 
-	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0]);
-	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1]);
-	QUARK_ASSERT(left_expr._type == right_expr._type);
 	const auto type = e._input_exprs[0].get_output_type();
+	const auto itype = intern_type(vm, type);
+	const auto temp = add_temp(body_acc, type);
 
-	if(e._operation == expression_type::k_comparison_smaller_or_equal__2 && type.is_int()){
-		return bc_expression_t{ bc_expression_opcode::k_expression_comparison_smaller_or_equal__int, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
-	}
-	else{
-		const std::map<expression_type, bc_expression_opcode> conv_opcode = {
-			{ expression_type::k_comparison_smaller_or_equal__2, bc_expression_opcode::k_expression_comparison_smaller_or_equal },
-			{ expression_type::k_comparison_smaller__2, bc_expression_opcode::k_expression_comparison_smaller },
-			{ expression_type::k_comparison_larger_or_equal__2, bc_expression_opcode::k_expression_comparison_larger_or_equal },
-			{ expression_type::k_comparison_larger__2, bc_expression_opcode::k_expression_comparison_larger },
-
-			{ expression_type::k_logical_equal__2, bc_expression_opcode::k_expression_logical_equal },
-			{ expression_type::k_logical_nonequal__2, bc_expression_opcode::k_expression_logical_nonequal }
-		};
-		const auto opcode = conv_opcode.at(e._operation);
-		return bc_expression_t{ opcode, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
-	}
+	body_acc._statements.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+		itype,
+		temp,
+		left_expr._output_register,
+		right_expr._output_register
+	));
+	return { body_acc, temp, itype };
 }
 
 
-const std::map<expression_type, bc_expression_opcode> conv_opcode__arithmetic = {
-	{ expression_type::k_arithmetic_add__2, bc_expression_opcode::k_expression_arithmetic_add },
-	{ expression_type::k_arithmetic_subtract__2, bc_expression_opcode::k_expression_arithmetic_subtract },
-	{ expression_type::k_arithmetic_multiply__2, bc_expression_opcode::k_expression_arithmetic_multiply },
-	{ expression_type::k_arithmetic_divide__2, bc_expression_opcode::k_expression_arithmetic_divide },
-	{ expression_type::k_arithmetic_remainder__2, bc_expression_opcode::k_expression_arithmetic_remainder },
-
-	{ expression_type::k_logical_and__2, bc_expression_opcode::k_expression_logical_and },
-	{ expression_type::k_logical_or__2, bc_expression_opcode::k_expression_logical_or }
-};
-
-bc_expression_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e){
+expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0]);
-	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1]);
-	const auto type = e._input_exprs[0].get_output_type();
+	static const std::map<expression_type, bc_statement_opcode> conv_opcode = {
+		{ expression_type::k_arithmetic_add__2, bc_statement_opcode::k_opcode_arithmetic_add },
+		{ expression_type::k_arithmetic_subtract__2, bc_statement_opcode::k_opcode_arithmetic_subtract },
+		{ expression_type::k_arithmetic_multiply__2, bc_statement_opcode::k_opcode_arithmetic_multiply },
+		{ expression_type::k_arithmetic_divide__2, bc_statement_opcode::k_opcode_arithmetic_divide },
+		{ expression_type::k_arithmetic_remainder__2, bc_statement_opcode::k_opcode_arithmetic_remainder },
 
-	if(e._operation == expression_type::k_arithmetic_add__2 && type.is_int()){
-		return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_add__int, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
-	}
-	else if(e._operation == expression_type::k_arithmetic_subtract__2 && type.is_int()){
-		return bc_expression_t{ bc_expression_opcode::k_expression_arithmetic_subtract__int, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
-	}
-	else{
-		const auto opcode = conv_opcode__arithmetic.at(e._operation);
-		return bc_expression_t{ opcode, intern_type(vm, e.get_output_type()), {left_expr, right_expr}, {}, {}, {} };
-	}
+		{ expression_type::k_logical_and__2, bc_statement_opcode::k_opcode_logical_and },
+		{ expression_type::k_logical_or__2, bc_statement_opcode::k_opcode_logical_or }
+	};
+
+	auto body_acc = body;
+	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
+	body_acc = left_expr._body;
+
+	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
+	body_acc = right_expr._body;
+
+	const auto type = e._input_exprs[0].get_output_type();
+	const auto itype = intern_type(vm, type);
+	const auto temp = add_temp(body_acc, type);
+
+	body_acc._statements.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+		itype,
+		temp,
+		left_expr._output_register,
+		right_expr._output_register
+	));
+	return { body_acc, temp, itype };
 }
 
-bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
+
+expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto& op = e.get_operation();
 	const auto output_type = e.get_output_type();
 	if(op == expression_type::k_literal){
-		if(output_type.is_int()){
-			//??? encode cheaper in expression-object?
-			return bc_expression_t{ bc_expression_opcode::k_expression_literal__int, intern_type(vm, output_type), {}, {}, value_to_bc(e.get_literal()), {} };
-		}
-		else{
-			return bc_expression_t{ bc_expression_opcode::k_expression_literal, intern_type(vm, output_type), {}, {}, value_to_bc(e.get_literal()), {} };
-		}
+		auto body_acc = body;
+		const auto const_temp = add_const(body_acc, e.get_literal());
+		return { body_acc, const_temp, intern_type(vm, output_type) };
 	}
 	else if(op == expression_type::k_resolve_member){
-		return bcgen_resolve_member_expression(vm, e);
+		return bcgen_resolve_member_expression(vm, e, body);
 	}
 	else if(op == expression_type::k_lookup_element){
-		return bcgen_lookup_element_expression(vm, e);
-	}
-	else if(op == expression_type::k_load){
-		QUARK_ASSERT(false);
+		return bcgen_lookup_element_expression(vm, e, body);
 	}
 	else if(op == expression_type::k_load2){
-		return bcgen_load2_expression(vm, e);
+		return bcgen_load2_expression(vm, e, body);
 	}
 
 	else if(op == expression_type::k_call){
-		return bcgen_call_expression(vm, e);
-	}
-
-	else if(op == expression_type::k_define_struct){
-		QUARK_ASSERT(false);
-	}
-
-	else if(op == expression_type::k_define_function){
-		QUARK_ASSERT(false);
-//		return e;
-//		const auto& expr = e.get_function_definition();
-//		return value_t::make_function_value(expr->_def);
+		return bcgen_call_expression(vm, e, body);
 	}
 
 	else if(op == expression_type::k_construct_value){
-		return bcgen_construct_value_expression(vm, e);
+		return bcgen_construct_value_expression(vm, e, body);
 	}
 
-	//	This can be desugared at compile time.
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return bcgen_arithmetic_unary_minus_expression(vm, e);
+		return bcgen_arithmetic_unary_minus_expression(vm, e, body);
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == expression_type::k_conditional_operator3){
-		return bcgen_conditional_operator_expression(vm, e);
+		return bcgen_conditional_operator_expression(vm, e, body);
 	}
 	else if (is_arithmetic_expression(op)){
-		return bcgen_arithmetic_expression(vm, op, e);
+		return bcgen_arithmetic_expression(vm, op, e, body);
 	}
 	else if (is_comparison_expression(op)){
-		return bcgen_comparison_expression(vm, op, e);
+		return bcgen_comparison_expression(vm, op, e, body);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -690,18 +808,12 @@ bc_expression_t bcgen_expression(bgenerator_t& vm, const expression_t& e){
 }
 
 
-bc_expression_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
 
-	//	_input_exprs[0] is callee, rest are arguments.
-	std::vector<bc_expression_t> all;
-	for(const auto& m: e._input_exprs){
-		const auto& m2 = bcgen_expression(vm, m);
-		all.push_back(m2);
-	}
-	return bc_expression_t{ bc_expression_opcode::k_expression_call, intern_type(vm, e.get_output_type()), all, {}, {}, {} };
-}
+
+
+//////////////////////////////////////		globals
+
+
 
 json_t bcprogram_to_json(const bc_program_t& program){
 	vector<json_t> callstack;
