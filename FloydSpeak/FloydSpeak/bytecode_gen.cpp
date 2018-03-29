@@ -368,20 +368,29 @@ const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const v
 
 
 
-bc_instruction_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement){
+bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& expr = bcgen_expression(vm, statement._expression);
 	const auto basetype = vm._types[expr._type].get_base_type();
 
 	if(basetype == base_type::k_int){
-		return bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_int, expr._type, 0, {expr}, statement._dest_variable,  {}};
+		const auto instr = bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_int, expr._type, 0, {expr}, statement._dest_variable,  {}};
+		auto body2 = body;
+		body2._statements.push_back(instr);
+		return body2;
 	}
 	else if(bc_value_t::is_bc_ext(basetype)){
-		return bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_obj, expr._type, 0, {expr}, statement._dest_variable,  {}};
+		const auto instr = bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_obj, expr._type, 0, {expr}, statement._dest_variable,  {}};
+		auto body2 = body;
+		body2._statements.push_back(instr);
+		return body2;
 	}
 	else{
-		return bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_inline, expr._type, 0, {expr}, statement._dest_variable,  {}};
+		const auto instr = bc_instruction_t{ bc_statement_opcode::k_statement_store_resolve_inline, expr._type, 0, {expr}, statement._dest_variable,  {}};
+		auto body2 = body;
+		body2._statements.push_back(instr);
+		return body2;
 	}
 }
 
@@ -436,33 +445,33 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 	QUARK_ASSERT(body.check_invariant());
 
 	vm._call_stack.push_back(bcgen_environment_t{ &body });
-	std::vector<bc_instruction_t> statements2;
 
+	auto body2 = bc_body_t({}, body._symbols);
 	for(const auto& s: body._statements){
 		const auto& statement = *s;
 		QUARK_ASSERT(statement.check_invariant());
 
 		if(statement._store2){
-			statements2.push_back(bcgen_store2_statement(vm, *statement._store2));
+			body2 = bcgen_store2_statement(vm, *statement._store2, body2);
 		}
 		else if(statement._block){
 			const auto& b = bcgen_body(vm, statement._block->_body);
-			statements2.push_back(bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { b} });
+			body2._statements.push_back(bc_instruction_t{ bc_statement_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { b} });
 		}
 		else if(statement._return){
-			statements2.push_back(bcgen_return_statement(vm, *statement._return));
+			body2._statements.push_back(bcgen_return_statement(vm, *statement._return));
 		}
 		else if(statement._if){
-			statements2.push_back(bcgen_ifelse_statement(vm, *statement._if));
+			body2._statements.push_back(bcgen_ifelse_statement(vm, *statement._if));
 		}
 		else if(statement._for){
-			statements2.push_back(bcgen_for_statement(vm, *statement._for));
+			body2._statements.push_back(bcgen_for_statement(vm, *statement._for));
 		}
 		else if(statement._while){
-			statements2.push_back(bcgen_while_statement(vm, *statement._while));
+			body2._statements.push_back(bcgen_while_statement(vm, *statement._while));
 		}
 		else if(statement._expression){
-			statements2.push_back(bcgen_expression_statement(vm, *statement._expression));
+			body2._statements.push_back(bcgen_expression_statement(vm, *statement._expression));
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -472,7 +481,7 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 
 	vm._call_stack.pop_back();
 
-	return bc_body_t(statements2, body._symbols);
+	return body2;
 }
 
 
