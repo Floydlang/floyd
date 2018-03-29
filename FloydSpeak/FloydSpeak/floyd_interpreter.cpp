@@ -649,6 +649,8 @@ void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 	QUARK_ASSERT(expr.check_invariant());
 
 	const auto& function_value = read_register_function(vm, expr._reg2);
+	const int callee_arg_count = expr._reg3._index;
+
 	const auto& function_def = get_function_def(vm, function_value);
 	const auto& function_def_arg_count = function_def._args.size();
 	const int function_def_dynamic_arg_count = count_function_dynamic_args(function_def._function_type);
@@ -656,37 +658,34 @@ void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 	//	_e[...] contains first callee, then each argument.
 	//	We need to examine the callee, since we support magic argument lists of varying size.
 
-	const auto callee_arg_count = read_register_int(vm, expr._reg3);
-
-	if(function_def_arg_count + function_def_dynamic_arg_count != callee_arg_count){
+	if(function_def_arg_count != callee_arg_count){
 		QUARK_ASSERT(false);
 	}
 
 	if(function_def._host_function_id != 0){
 		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
 
+		const int arg0_stack_pos = vm._value_stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
+		int stack_pos = arg0_stack_pos;
+
 		//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
-		//??? store itype for each entry?
-		//??? can't know types of dynamic arguments!?
-
 		std::vector<value_t> arg_values;
-
-		int input_reg = expr._reg3._index + 1;
 		for(int i = 0 ; i < function_def_arg_count ; i++){
 			const auto& func_arg_type = function_def._args[i]._type;
 			if(func_arg_type.is_internal_dynamic()){
-				const auto arg_itype = read_register_int(vm, variable_address_t::make_variable_address(expr._reg3._parent_steps, input_reg));
+				const auto arg_itype = vm._value_stack.load_intq(stack_pos);
 				const auto& arg_type = get_type(vm, static_cast<int16_t>(arg_itype));
-				const auto arg_bc = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg3._parent_steps, input_reg + 1), arg_type);
+				const auto arg_bc = vm._value_stack.load_value_slow(stack_pos + 1, arg_type);
+
 				const auto arg_value = bc_to_value(arg_bc, arg_type);
 				arg_values.push_back(arg_value);
-				input_reg += 2;
+				stack_pos += 2;
 			}
 			else{
-				const auto arg_bc = read_register_slow(vm, variable_address_t::make_variable_address(expr._reg3._parent_steps, input_reg), func_arg_type);
+				const auto arg_bc = vm._value_stack.load_value_slow(stack_pos + 0, func_arg_type);
 				const auto arg_value = bc_to_value(arg_bc, func_arg_type);
 				arg_values.push_back(arg_value);
-				input_reg++;
+				stack_pos++;
 			}
 		}
 
@@ -832,33 +831,33 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		const auto opcode = statement._opcode;
 		if(false){
 		}
-/*		if(opcode == bc_statement_opcode::k_statement_store_resolve_inline){
+/*		if(opcode == bc_opcode::k_statement_store_resolve_inline){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
 			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
 			const auto pos = frame_pos + statement._v._index;
 			vm._value_stack.replace_inline(pos, rhs_value);
 		}
-		else if(opcode == bc_statement_opcode::k_statement_store_resolve_obj){
+		else if(opcode == bc_opcode::k_statement_store_resolve_obj){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
 			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
 			const auto pos = frame_pos + statement._v._index;
 			vm._value_stack.replace_obj(pos, rhs_value);
 		}
-		else if(opcode == bc_statement_opcode::k_statement_store_resolve_int){
+		else if(opcode == bc_opcode::k_statement_store_resolve_int){
 			const auto& rhs_value = execute_expression(vm, statement._e[0]);
 			const auto frame_pos = find_frame_from_address(vm, statement._v._parent_steps);
 			const auto pos = frame_pos + statement._v._index;
 			vm._value_stack.replace_int(pos, rhs_value.get_int_value());
 		}
 */
-		else if(opcode == bc_statement_opcode::k_statement_store_resolve){
+		else if(opcode == bc_opcode::k_store_resolve){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto value = read_register_slow(vm, statement._reg2, type);
 			write_register_slow(vm, statement._reg1, value, type);
 			pc++;
 		}
 
-		else if(opcode == bc_statement_opcode::k_statement_return){
+		else if(opcode == bc_opcode::k_return){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto reg1 = resolve_register(vm, statement._reg1);
 			const auto value = vm._value_stack.load_value_slow(reg1, type);
@@ -866,37 +865,53 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 	//??? flatten all functions into ONE big list of instructions or not?
 			return statement_result_t::make_return_unwind(value);
 		}
-		else if(opcode == bc_statement_opcode::k_branch_zero){
+
+		else if(opcode == bc_opcode::k_push){
+			const auto type = get_type(vm, statement._instr_type);
+			const auto value = read_register_slow(vm, statement._reg1, type);
+			vm._value_stack.push_value(value, bc_value_t::is_bc_ext(type.get_base_type()));
+			pc++;
+		}
+		else if(opcode == bc_opcode::k_popn){
+			const uint32_t n = statement._reg1._index;
+			const uint32_t extbits = statement._reg2._index;
+			vm._value_stack.pop_batch(n, extbits);
+			pc++;
+		}
+
+
+
+		else if(opcode == bc_opcode::k_branch_zero){
 			//??? how to check any type for ZERO?
 			const auto value = read_register_bool(vm, statement._reg1);
 			if(value){
 				pc++;
 			}
 			else{
-				const auto offset = read_register_int(vm, statement._reg2);
+				const auto offset = statement._reg2._index;
 				pc = pc + offset;
 			}
 		}
-		else if(opcode == bc_statement_opcode::k_jump){
-			const auto offset = read_register_int(vm, statement._reg1);
+		else if(opcode == bc_opcode::k_jump){
+			const auto offset = statement._reg1._index;
 			pc = pc + offset;
 		}
 
-		else if(opcode == bc_statement_opcode::k_opcode_resolve_member){
+		else if(opcode == bc_opcode::k_resolve_member){
 			execute_resolve_member_expression(vm, statement);
 			pc++;
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_lookup_element){
+		else if(opcode == bc_opcode::k_lookup_element){
 			execute_lookup_element_expression(vm, statement);
 			pc++;
 		}
 
-		else if(opcode == bc_statement_opcode::k_opcode_call){
+		else if(opcode == bc_opcode::k_call){
 			execute_call_expression(vm, statement);
 			pc++;
 		}
 
-		else if(opcode == bc_statement_opcode::k_opcode_construct_value){
+		else if(opcode == bc_opcode::k_construct_value){
 			execute_construct_value_expression(vm, statement);
 			pc++;
 		}
@@ -905,7 +920,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		//////////////////////////////		comparison
 
 
-		else if(opcode == bc_statement_opcode::k_opcode_comparison_smaller_or_equal){
+		else if(opcode == bc_opcode::k_comparison_smaller_or_equal){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left_constant = read_register_slow(vm, statement._reg2, type);
 			const auto right_constant = read_register_slow(vm, statement._reg3, type);
@@ -916,7 +931,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			write_register_bool(vm, statement._reg1, diff <= 0);
 			pc++;
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_comparison_smaller){
+		else if(opcode == bc_opcode::k_comparison_smaller){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left_constant = read_register_slow(vm, statement._reg2, type);
 			const auto right_constant = read_register_slow(vm, statement._reg3, type);
@@ -927,7 +942,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			write_register_bool(vm, statement._reg1, diff < 0);
 			pc++;
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_comparison_larger_or_equal){
+		else if(opcode == bc_opcode::k_comparison_larger_or_equal){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left_constant = read_register_slow(vm, statement._reg2, type);
 			const auto right_constant = read_register_slow(vm, statement._reg3, type);
@@ -938,7 +953,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			write_register_bool(vm, statement._reg1, diff >= 0);
 			pc++;
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_comparison_larger){
+		else if(opcode == bc_opcode::k_comparison_larger){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left_constant = read_register_slow(vm, statement._reg2, type);
 			const auto right_constant = read_register_slow(vm, statement._reg3, type);
@@ -950,7 +965,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			pc++;
 		}
 
-		else if(opcode == bc_statement_opcode::k_opcode_logical_equal){
+		else if(opcode == bc_opcode::k_logical_equal){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left_constant = read_register_slow(vm, statement._reg2, type);
 			const auto right_constant = read_register_slow(vm, statement._reg3, type);
@@ -961,7 +976,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			write_register_bool(vm, statement._reg1, diff == 0);
 			pc++;
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_logical_nonequal){
+		else if(opcode == bc_opcode::k_logical_nonequal){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left_constant = read_register_slow(vm, statement._reg2, type);
 			const auto right_constant = read_register_slow(vm, statement._reg3, type);
@@ -977,7 +992,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 		//////////////////////////////		arithmetic
 
 
-		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_add){
+		else if(opcode == bc_opcode::k_arithmetic_add){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left = read_register_slow(vm, statement._reg2, type);
 			const auto right = read_register_slow(vm, statement._reg3, type);
@@ -1036,7 +1051,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			}
 		}
 
-		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_subtract){
+		else if(opcode == bc_opcode::k_arithmetic_subtract){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left = read_register_slow(vm, statement._reg2, type);
 			const auto right = read_register_slow(vm, statement._reg3, type);
@@ -1066,7 +1081,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_multiply){
+		else if(opcode == bc_opcode::k_arithmetic_multiply){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left = read_register_slow(vm, statement._reg2, type);
 			const auto right = read_register_slow(vm, statement._reg3, type);
@@ -1096,7 +1111,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_divide){
+		else if(opcode == bc_opcode::k_arithmetic_divide){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left = read_register_slow(vm, statement._reg2, type);
 			const auto right = read_register_slow(vm, statement._reg3, type);
@@ -1132,7 +1147,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_arithmetic_remainder){
+		else if(opcode == bc_opcode::k_arithmetic_remainder){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left = read_register_slow(vm, statement._reg2, type);
 			const auto right = read_register_slow(vm, statement._reg3, type);
@@ -1158,7 +1173,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			}
 		}
 
-		else if(opcode == bc_statement_opcode::k_opcode_logical_and){
+		else if(opcode == bc_opcode::k_logical_and){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left = read_register_slow(vm, statement._reg2, type);
 			const auto right = read_register_slow(vm, statement._reg3, type);
@@ -1199,7 +1214,7 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_statement_opcode::k_opcode_logical_or){
+		else if(opcode == bc_opcode::k_logical_or){
 			const auto type = get_type(vm, statement._instr_type);
 			const auto left = read_register_slow(vm, statement._reg2, type);
 			const auto right = read_register_slow(vm, statement._reg3, type);

@@ -148,6 +148,23 @@ namespace floyd {
 			_value_stack[pos]._int = value;
 		}
 
+		//	extbits[0] tells if the first popped value has ext. etc.
+		//	Max 32 can be popped.
+		BC_INLINE void pop_batch(int count, uint32_t extbits){
+			QUARK_ASSERT(_value_stack.empty() == false);
+			QUARK_ASSERT(count <= 32);
+
+			for(int i = 0 ; i < count ; i++){
+				bool ext = (extbits & (1 << i)) == 0 ? false : true;
+
+				auto copy = _value_stack.back();
+				_value_stack.pop_back();
+				if(ext){
+					bc_value_t::debump(copy);
+				}
+			}
+		}
+
 /*
 		BC_INLINE void pop_value_slow(const typeid_t& type){
 			QUARK_ASSERT(_value_stack.empty() == false);

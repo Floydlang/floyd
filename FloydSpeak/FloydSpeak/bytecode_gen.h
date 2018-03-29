@@ -717,7 +717,7 @@ namespace floyd {
 	std::string to_compact_string2(const bc_value_t& value);
 
 
-	//////////////////////////////////////		bc_statement_opcode
+	//////////////////////////////////////		bc_opcode
 
 
 
@@ -1090,35 +1090,38 @@ inline int bc_limit(int value, int min, int max){
 
 	//////////////////////////////////////		bc_instruction_t
 
-	enum class bc_statement_opcode: uint8_t {
+	enum class bc_opcode: uint8_t {
 		k_nop,
 
-		k_statement_store_resolve,
+		k_store_resolve,
 
-		k_opcode_resolve_member,
-		k_opcode_lookup_element,
-		k_opcode_call,
+		k_resolve_member,
+		k_lookup_element,
+		k_call,
 
-		k_opcode_arithmetic_add,
-		k_opcode_arithmetic_subtract,
-		k_opcode_arithmetic_multiply,
-		k_opcode_arithmetic_divide,
-		k_opcode_arithmetic_remainder,
+		k_arithmetic_add,
+		k_arithmetic_subtract,
+		k_arithmetic_multiply,
+		k_arithmetic_divide,
+		k_arithmetic_remainder,
 
-		k_opcode_logical_and,
-		k_opcode_logical_or,
+		k_logical_and,
+		k_logical_or,
 
-		k_opcode_comparison_smaller_or_equal,
-		k_opcode_comparison_smaller,
-		k_opcode_comparison_larger_or_equal,
-		k_opcode_comparison_larger,
+		k_comparison_smaller_or_equal,
+		k_comparison_smaller,
+		k_comparison_larger_or_equal,
+		k_comparison_larger,
 
-		k_opcode_logical_equal,
-		k_opcode_logical_nonequal,
+		k_logical_equal,
+		k_logical_nonequal,
 
-		k_opcode_construct_value,
+		k_construct_value,
 
-		k_statement_return,
+		k_return,
+
+		k_push,
+		k_popn,
 
 		k_branch_zero,
 		k_branch_notzero,
@@ -1131,7 +1134,7 @@ inline int bc_limit(int value, int min, int max){
 
 	struct bc_instruction_t {
 		bc_instruction_t(
-			bc_statement_opcode opcode,
+			bc_opcode opcode,
 			bc_typeid_t type,
 			variable_address_t reg1,
 			variable_address_t reg2,
@@ -1146,7 +1149,7 @@ inline int bc_limit(int value, int min, int max){
 			QUARK_ASSERT(check_invariant());
 		}
 		bc_instruction_t(
-			bc_statement_opcode opcode,
+			bc_opcode opcode,
 			bc_typeid_t type,
 			variable_address_t reg1,
 			variable_address_t reg2,
@@ -1173,7 +1176,7 @@ inline int bc_limit(int value, int min, int max){
 
 		//////////////////////////////////////		STATE
 
-		bc_statement_opcode _opcode;
+		bc_opcode _opcode;
 		variable_address_t _reg1;
 		variable_address_t _reg2;
 		variable_address_t _reg3;

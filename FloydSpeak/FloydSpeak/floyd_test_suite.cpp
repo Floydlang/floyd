@@ -149,7 +149,7 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 
 //??? test all types, like [int] etc.
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "Expression statement", "", "") {
+QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", "") {
 	const auto r = test__run_global("print(5);");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "5" }));
 }
@@ -163,19 +163,19 @@ QUARK_UNIT_TEST("Floyd test suite", "Deduced bind", "", "") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
-QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+QUARK_UNIT_TEST_VIP("run_main()", "conditional expression", "", ""){
 	test__run_init__check_result("int result = true ? 1 : 2;", value_t::make_int(1));
 }
-QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	test__run_init__check_result("int result = false ? 1 : 2;", value_t::make_int(2));
 }
 
 //??? Test truthness off all variable types: strings, floats
 
-QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	test__run_init__check_result("string result = true ? \"yes\" : \"no\";", value_t::make_string("yes"));
 }
-QUARK_UNIT_TESTQ("run_main()", "conditional expression"){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	test__run_init__check_result("string result = false ? \"yes\" : \"no\";", value_t::make_string("no"));
 }
 
