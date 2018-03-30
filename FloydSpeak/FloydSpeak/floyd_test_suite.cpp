@@ -306,7 +306,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "==") {
 QUARK_UNIT_TESTQ("execute_expression()", "==") {
 	test__run_init__check_result("bool result = 1.3 == 1.3;", value_t::make_bool(true));
 }
-QUARK_UNIT_TEST_VIP("execute_expression()", "==", "", "") {
+QUARK_UNIT_TEST("execute_expression()", "==", "", "") {
 	test__run_init__check_result("bool result = \"hello\" == \"hello\";", value_t::make_bool(true));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "==") {
@@ -548,7 +548,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 //////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
 
 
-QUARK_UNIT_TEST("", "bool()", "", ""){
+QUARK_UNIT_TEST_VIP("", "bool()", "", ""){
 	test__run_init__check_result("result = bool(false);", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("", "bool()", "", ""){

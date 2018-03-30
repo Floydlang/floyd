@@ -638,7 +638,7 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 	const int callee_arg_count = instruction._reg_c._index;
 
 	const auto& function_def = get_function_def(vm, function_value);
-	const auto& function_def_arg_count = function_def._args.size();
+	const auto function_def_arg_count = function_def._args.size();
 	const int function_def_dynamic_arg_count = count_function_dynamic_args(function_def._function_type);
 
 	//	_e[...] contains first callee, then each argument.
@@ -862,29 +862,47 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 
 
+		else if(opcode == bc_opcode::k_branch_false_bool){
+			const auto value = read_register_bool(vm, instruction._reg_a);
+			if(value == false){
+				const auto offset = instruction._reg_b._index;
+				pc = pc + offset;
+			}
+			else{
+				pc++;
+			}
+		}
+		else if(opcode == bc_opcode::k_branch_true_bool){
+			const auto value = read_register_bool(vm, instruction._reg_a);
+			if(value == true){
+				const auto offset = instruction._reg_b._index;
+				pc = pc + offset;
+			}
+			else{
+				pc++;
+			}
+		}
+		else if(opcode == bc_opcode::k_branch_zero_int){
+			const auto value = read_register_int(vm, instruction._reg_a);
+			if(value == 0){
+				const auto offset = instruction._reg_b._index;
+				pc = pc + offset;
+			}
+			else{
+				pc++;
+			}
+		}
+		else if(opcode == bc_opcode::k_branch_notzero_int){
+			const auto value = read_register_int(vm, instruction._reg_a);
+			if(value != 0){
+				const auto offset = instruction._reg_b._index;
+				pc = pc + offset;
+			}
+			else{
+				pc++;
+			}
+		}
 
-		else if(opcode == bc_opcode::k_branch_zero){
-			//??? how to check any type for ZERO?
-			const auto value = read_register_bool(vm, instruction._reg_a);
-			if(value){
-				pc++;
-			}
-			else{
-				const auto offset = instruction._reg_b._index;
-				pc = pc + offset;
-			}
-		}
-		else if(opcode == bc_opcode::k_branch_notzero){
-			//??? how to check any type for ZERO?
-			const auto value = read_register_bool(vm, instruction._reg_a);
-			if(!value){
-				pc++;
-			}
-			else{
-				const auto offset = instruction._reg_b._index;
-				pc = pc + offset;
-			}
-		}
 		else if(opcode == bc_opcode::k_jump){
 			const auto offset = instruction._reg_a._index;
 			pc = pc + offset;

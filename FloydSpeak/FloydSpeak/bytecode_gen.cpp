@@ -479,7 +479,7 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 
 	body_acc._instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_branch_zero,
+			bc_opcode::k_branch_false_bool,
 			{},
 			condition_expr._output_register,
 			make_immediate_int(static_cast<int>(then_expr._instructions.size()) + 2),
@@ -499,8 +499,6 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 	body_acc = flatten_body(vm, body_acc, else_expr);
 	return body_acc;
 }
-
-//?????PROBLEM: flattening body = all parent_step becomes wrong.
 
 //??? check range-type too!
 bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement, const bc_body_t& body){
@@ -522,19 +520,15 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	const auto const1_reg = add_const(body_acc, value_t::make_int(1), "for-loop, decrement int 1");
 
 	const auto itype_int = intern_type(vm, typeid_t::make_int());
+//??? broken. Should calculate count using start_expr and end_expr.
+QUARK_ASSERT(false);
 
 	instructions.push_back(
-		bc_instruction_t(
-			bc_opcode::k_arithmetic_subtract,
-			itype_int,
-			counter_reg,
-			const1_reg,
-			{}
-		)
+		bc_instruction_t(bc_opcode::k_arithmetic_subtract, itype_int, counter_reg, const1_reg, {} )
 	);
 	instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_branch_notzero,
+			bc_opcode::k_branch_zero_int,
 			{},
 			counter_reg,
 			make_immediate_int(static_cast<int>(loop_body._instructions.size()) + 2),
@@ -554,11 +548,7 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	);
 	instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_branch_notzero,
-			{},
-			counter_reg,
-			make_immediate_int(0 - 1 - static_cast<int>(loop_body._instructions.size())),
-			{}
+			bc_opcode::k_branch_notzero_int, {}, counter_reg, make_immediate_int(0 - 1 - static_cast<int>(loop_body._instructions.size())), {}
 		)
 	);
 
@@ -582,7 +572,7 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 
 	instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_branch_zero,
+			bc_opcode::k_branch_false_bool,
 			{},
 			flag_reg,
 			make_immediate_int(static_cast<int>(loop_body._instructions.size()) + 1),
@@ -755,7 +745,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 	const auto itype_int = intern_type(vm, typeid_t::make_int());
 
 	//	We have max 32 extbits when popping stack.
-	if(arg_count > 16){
+	if(arg_count > 32){
 		throw std::runtime_error("Max 16 arguments to function.");
 	}
 
@@ -873,7 +863,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	int jump1_pc = static_cast<int>(body_acc._instructions.size());
 	body_acc._instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_branch_zero,
+			bc_opcode::k_branch_false_bool,
 			{},
 			condition_expr._output_register,
 			make_immediate_int(0xbeefdeeb),
@@ -886,7 +876,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 
 	//	Copy result to result_reg.
 	body_acc._instructions.push_back(
-		bc_instruction_t(bc_opcode::k_store_resolve, {}, result_reg, a_expr._output_register, {} )
+		bc_instruction_t(bc_opcode::k_store_resolve, itype, result_reg, a_expr._output_register, {} )
 	);
 
 	int jump2_pc = static_cast<int>(body_acc._instructions.size());
@@ -905,7 +895,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	body_acc = b_expr._body;
 
 	body_acc._instructions.push_back(
-		bc_instruction_t(bc_opcode::k_store_resolve, {}, result_reg, b_expr._output_register, {} )
+		bc_instruction_t(bc_opcode::k_store_resolve, itype, result_reg, b_expr._output_register, {} )
 	);
 
 	int end_pc = static_cast<int>(body_acc._instructions.size());
@@ -938,17 +928,21 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
 	body_acc = right_expr._body;
 
-	const auto result_type = typeid_t::make_bool();
-	const auto result_itype = intern_type(vm, result_type);
-	const auto result_reg = add_temp(body_acc, result_type, "comparison expression output register");
+	//	Type is the data the opcode works on -- comparing two ints, comparing two strings etc.
+	const auto type = e._input_exprs[0].get_output_type();
+	const auto itype = intern_type(vm, type);
+
+	//	Output reg always a bool.
+
+	const auto result_reg = add_temp(body_acc, typeid_t::make_bool(), "comparison expression output register");
 
 	body_acc._instructions.push_back(bc_instruction_t(conv_opcode.at(e._operation),
-		result_itype,
+		itype,
 		result_reg,
 		left_expr._output_register,
 		right_expr._output_register
 	));
-	return { body_acc, result_reg, result_itype };
+	return { body_acc, result_reg, intern_type(vm, typeid_t::make_bool()) };
 }
 
 
@@ -1077,8 +1071,11 @@ std::string opcode_to_string(bc_opcode opcode){
 		{ bc_opcode::k_push, "push" },
 		{ bc_opcode::k_popn, "popn" },
 
-		{ bc_opcode::k_branch_zero, "branch_zero" },
-		{ bc_opcode::k_branch_notzero, "branch_notzero" },
+		{ bc_opcode::k_branch_false_bool, "branch_false_bool" },
+		{ bc_opcode::k_branch_true_bool, "branch_true_bool" },
+		{ bc_opcode::k_branch_zero_int, "branch_zero_int" },
+		{ bc_opcode::k_branch_notzero_int, "branch_notzero_int" },
+
 		{ bc_opcode::k_jump, "jump" }
 
 

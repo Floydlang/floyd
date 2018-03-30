@@ -869,8 +869,11 @@ inline int bc_limit(int value, int min, int max){
 		k_push,
 		k_popn,
 
-		k_branch_zero,
-		k_branch_notzero,
+		k_branch_false_bool,
+		k_branch_true_bool,
+		k_branch_zero_int,
+		k_branch_notzero_int,
+
 		k_jump
 	};
 
