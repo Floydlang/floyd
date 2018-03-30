@@ -884,31 +884,31 @@ inline int bc_limit(int value, int min, int max){
 		bc_instruction_t(
 			bc_opcode opcode,
 			bc_typeid_t type,
-			variable_address_t reg1,
-			variable_address_t reg2,
-			variable_address_t reg3
+			variable_address_t regA,
+			variable_address_t regB,
+			variable_address_t regC
 		) :
 			_opcode(opcode),
 			_instr_type(type),
-			_reg1(reg1),
-			_reg2(reg2),
-			_reg3(reg3)
+			_reg_a(regA),
+			_reg_b(regB),
+			_reg_c(regC)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 		bc_instruction_t(
 			bc_opcode opcode,
 			bc_typeid_t type,
-			variable_address_t reg1,
-			variable_address_t reg2,
-			variable_address_t reg3,
+			variable_address_t regA,
+			variable_address_t regB,
+			variable_address_t regC,
 			bc_typeid_t parent_type
 		) :
 			_opcode(opcode),
 			_instr_type(type),
-			_reg1(reg1),
-			_reg2(reg2),
-			_reg3(reg3),
+			_reg_a(regA),
+			_reg_b(regB),
+			_reg_c(regC),
 			_parent_type(parent_type)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -925,9 +925,9 @@ inline int bc_limit(int value, int min, int max){
 		//////////////////////////////////////		STATE
 
 		bc_opcode _opcode;
-		variable_address_t _reg1;
-		variable_address_t _reg2;
-		variable_address_t _reg3;
+		variable_address_t _reg_a;
+		variable_address_t _reg_b;
+		variable_address_t _reg_c;
 
 		//??? temporary. Plan is to embedd this type into opcode.
 		bc_typeid_t _instr_type;

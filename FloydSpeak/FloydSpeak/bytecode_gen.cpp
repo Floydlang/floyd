@@ -450,9 +450,9 @@ bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t&
 		const auto s2 = bc_instruction_t(
 			s._opcode,
 			s._instr_type,
-			flatten_ref(s._reg1, offset),
-			flatten_ref(s._reg2, offset),
-			flatten_ref(s._reg3, offset),
+			flatten_ref(s._reg_a, offset),
+			flatten_ref(s._reg_b, offset),
+			flatten_ref(s._reg_c, offset),
 			s._parent_type
 		);
 		instructions.push_back(s2);
@@ -910,10 +910,10 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 
 	int end_pc = static_cast<int>(body_acc._instructions.size());
 
-	QUARK_ASSERT(body_acc._instructions[jump1_pc]._reg2._index == 0xbeefdeeb);
-	QUARK_ASSERT(body_acc._instructions[jump2_pc]._reg1._index == 0xfea57be7);
-	body_acc._instructions[jump1_pc]._reg2._index = b_pc - jump1_pc;
-	body_acc._instructions[jump2_pc]._reg1._index = end_pc - jump2_pc;
+	QUARK_ASSERT(body_acc._instructions[jump1_pc]._reg_b._index == 0xbeefdeeb);
+	QUARK_ASSERT(body_acc._instructions[jump2_pc]._reg_a._index == 0xfea57be7);
+	body_acc._instructions[jump1_pc]._reg_b._index = b_pc - jump1_pc;
+	body_acc._instructions[jump2_pc]._reg_a._index = end_pc - jump2_pc;
 	return { body_acc, result_reg, itype };
 }
 
@@ -1105,9 +1105,9 @@ json_t body_to_json(const bc_body_optimized_t& body){
 			typeid_to_ast_json(e.second._value_type, json_tags::k_plain)._value,
 			e.second._symbol_type
 			opcode_to_string(e._opcode),
-			reg_to_json(e._reg1),
-			reg_to_json(e._reg2),
-			reg_to_json(e._reg3),
+			reg_to_json(e._reg_a),
+			reg_to_json(e._reg_b),
+			reg_to_json(e._reg_c),
 			"_parent_type"
 		});
 		instructions.push_back(i);
@@ -1122,9 +1122,9 @@ json_t body_to_json(const bc_body_optimized_t& body){
 			pc,
 			opcode_to_string(e._opcode),
 			e._instr_type,
-			reg_to_json(e._reg1),
-			reg_to_json(e._reg2),
-			reg_to_json(e._reg3),
+			reg_to_json(e._reg_a),
+			reg_to_json(e._reg_b),
+			reg_to_json(e._reg_c),
 			e._parent_type
 		});
 		instructions.push_back(i);
