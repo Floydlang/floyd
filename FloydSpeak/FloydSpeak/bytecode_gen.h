@@ -944,7 +944,6 @@ inline int bc_limit(int value, int min, int max){
 
 	struct bc_body_t {
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
-
 		std::vector<bc_instruction_t> _instructions;
 
 

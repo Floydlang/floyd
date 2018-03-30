@@ -306,7 +306,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "==") {
 QUARK_UNIT_TESTQ("execute_expression()", "==") {
 	test__run_init__check_result("bool result = 1.3 == 1.3;", value_t::make_bool(true));
 }
-QUARK_UNIT_TESTQ("execute_expression()", "==") {
+QUARK_UNIT_TEST_VIP("execute_expression()", "==", "", "") {
 	test__run_init__check_result("bool result = \"hello\" == \"hello\";", value_t::make_bool(true));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "==") {
@@ -1211,7 +1211,7 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 
 
 
-QUARK_UNIT_TEST_VIP("run_init()", "if(true){}", "", ""){
+QUARK_UNIT_TEST("run_init()", "if(true){}", "", ""){
 	const auto r = test__run_global(
 		R"(
 			if(true){

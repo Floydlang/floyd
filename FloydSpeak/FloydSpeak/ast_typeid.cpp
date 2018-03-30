@@ -67,7 +67,7 @@ const char tag_resolved_type_char = '^';
 			return "dict";
 		}
 		else if(t == base_type::k_function){
-			return "function";
+			return "fun";
 		}
 		else if(t == base_type::k_internal_unresolved_type_identifier){
 			return "unknown-identifier";

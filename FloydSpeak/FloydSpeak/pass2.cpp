@@ -316,7 +316,7 @@ std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, sym
 				symbol_index,
 				e.first,
 				"CONST",
-				value_to_ast_json(symbol._const_value, json_tags::k_tag_resolve_state)._value
+				value_and_type_to_ast_json(symbol._const_value)._value
 			});
 			r.push_back(e2);
 		}

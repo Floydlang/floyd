@@ -425,6 +425,46 @@ bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_sta
 //??? shortcut evaluation of conditions!
 //?? registers should ALWAYS bein current stack frame. What about upvalues?
 
+
+reg_t flatten_ref(const reg_t& r, int offset){
+	if(r._parent_steps == 666){
+		return r;
+	}
+	else if(r._parent_steps == 0){
+		return reg_t::make_variable_address(r._parent_steps - 1, r._index + offset);
+	}
+	else if(r._parent_steps == -1){
+		return r;
+	}
+	else{
+		return reg_t::make_variable_address(r._parent_steps - 1, r._index);
+	}
+}
+
+bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t& source){
+	std::vector<bc_instruction_t> instructions;
+	int offset = static_cast<int>(dest._symbols.size());
+	for(int i = 0 ; i < source._instructions.size() ; i++){
+		//	Decrese parent-step for all local register accesses.
+		auto s = source._instructions[i];
+		const auto s2 = bc_instruction_t(
+			s._opcode,
+			s._instr_type,
+			flatten_ref(s._reg1, offset),
+			flatten_ref(s._reg2, offset),
+			flatten_ref(s._reg3, offset),
+			s._parent_type
+		);
+		instructions.push_back(s2);
+	}
+
+	auto body_acc = dest;
+	body_acc._instructions.insert(body_acc._instructions.end(), instructions.begin(), instructions.end());
+	body_acc._symbols.insert(body_acc._symbols.end(), source._symbols.begin(), source._symbols.end());
+	return body_acc;
+}
+
+
 bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -437,8 +477,7 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 	const auto& then_expr = bcgen_body(vm, statement._then_body);
 	const auto& else_expr = bcgen_body(vm, statement._else_body);
 
-	std::vector<bc_instruction_t> instructions;
-	instructions.push_back(
+	body_acc._instructions.push_back(
 		bc_instruction_t(
 			bc_opcode::k_branch_zero,
 			{},
@@ -447,8 +486,8 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 			{}
 		)
 	);
-	instructions.insert(instructions.end(), then_expr._instructions.begin(), then_expr._instructions.end());
-	instructions.push_back(
+	body_acc = flatten_body(vm, body_acc, then_expr);
+	body_acc._instructions.push_back(
 		bc_instruction_t(
 			bc_opcode::k_jump,
 			{},
@@ -457,9 +496,7 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 			{}
 		)
 	);
-	instructions.insert(instructions.end(), else_expr._instructions.begin(), else_expr._instructions.end());
-
-	body_acc._instructions.insert(body_acc._instructions.end(), instructions.begin(), instructions.end());
+	body_acc = flatten_body(vm, body_acc, else_expr);
 	return body_acc;
 }
 
@@ -678,12 +715,12 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 	return { body_acc, temp, itype };
 }
 
-
 expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
 	return { body, e._address, intern_type(vm, *e._output_type) };
 }
+
 //??? Do interning of add_const().
 //??? make different types for register vs stack-pos.
 expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
@@ -833,18 +870,54 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 
 	const auto result_reg = add_temp(body_acc, type, "conditional_operator output register");
 
-	const std::vector<std::shared_ptr<statement_t>> then_statements = {
-		make_shared<statement_t>(statement_t::make__store2(result_reg, e._input_exprs[1]))
-	};
-	const std::vector<std::shared_ptr<statement_t>> else_statements = {
-		make_shared<statement_t>(statement_t::make__store2(result_reg, e._input_exprs[2]))
-	};
-	const auto ifelse_statement = statement_t::make__ifelse_statement(e._input_exprs[0], body_t(then_statements), body_t(else_statements));
-	body_acc = bcgen_ifelse_statement(vm, *ifelse_statement._if, body_acc);
+	int jump1_pc = static_cast<int>(body_acc._instructions.size());
+	body_acc._instructions.push_back(
+		bc_instruction_t(
+			bc_opcode::k_branch_zero,
+			{},
+			condition_expr._output_register,
+			make_immediate_int(0xbeefdeeb),
+			{}
+		)
+	);
 
+	const auto& a_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
+	body_acc = a_expr._body;
+
+	//	Copy result to result_reg.
+	body_acc._instructions.push_back(
+		bc_instruction_t(bc_opcode::k_store_resolve, {}, result_reg, a_expr._output_register, {} )
+	);
+
+	int jump2_pc = static_cast<int>(body_acc._instructions.size());
+	body_acc._instructions.push_back(
+		bc_instruction_t(
+			bc_opcode::k_jump,
+			{},
+			make_immediate_int(0xfea57be7),
+			{},
+			{}
+		)
+	);
+
+	int b_pc = static_cast<int>(body_acc._instructions.size());
+	const auto& b_expr = bcgen_expression(vm, e._input_exprs[2], body_acc);
+	body_acc = b_expr._body;
+
+	body_acc._instructions.push_back(
+		bc_instruction_t(bc_opcode::k_store_resolve, {}, result_reg, b_expr._output_register, {} )
+	);
+
+	int end_pc = static_cast<int>(body_acc._instructions.size());
+
+	QUARK_ASSERT(body_acc._instructions[jump1_pc]._reg2._index == 0xbeefdeeb);
+	QUARK_ASSERT(body_acc._instructions[jump2_pc]._reg1._index == 0xfea57be7);
+	body_acc._instructions[jump1_pc]._reg2._index = b_pc - jump1_pc;
+	body_acc._instructions[jump2_pc]._reg1._index = end_pc - jump2_pc;
 	return { body_acc, result_reg, itype };
 }
 
+//??? shortcut evaluation!
 expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -865,17 +938,17 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 	const auto& right_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
 	body_acc = right_expr._body;
 
-	const auto type = e._input_exprs[0].get_output_type();
-	const auto itype = intern_type(vm, type);
-	const auto temp = add_temp(body_acc, type, "comparison expression output register");
+	const auto result_type = typeid_t::make_bool();
+	const auto result_itype = intern_type(vm, result_type);
+	const auto result_reg = add_temp(body_acc, result_type, "comparison expression output register");
 
 	body_acc._instructions.push_back(bc_instruction_t(conv_opcode.at(e._operation),
-		itype,
-		temp,
+		result_itype,
+		result_reg,
 		left_expr._output_register,
 		right_expr._output_register
 	));
-	return { body_acc, temp, itype };
+	return { body_acc, result_reg, result_itype };
 }
 
 
@@ -912,7 +985,6 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 	));
 	return { body_acc, temp, itype };
 }
-
 
 expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
