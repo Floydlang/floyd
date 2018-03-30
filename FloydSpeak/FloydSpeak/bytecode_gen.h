@@ -745,118 +745,6 @@ namespace floyd {
 
 
 
-/*
-	enum class bc_opcode: uint8_t {
-		k_opcode__return_a,
-		k_opcode__branch_if_true,
-
-
-		k_opcode__add_object_abc,
-		k_opcode__add_int_abc,
-		k_opcode__add_float_abc,
-		k_opcode__add_string_abc,
-		k_opcode__add_vector_abc,
-
-		k_opcode__resolve_member_int_ab,
-		k_opcode__lookup_element_int_ab,
-
-
-		k_opcode__load_global_inline,
-
-		//	"resolve" = local variable or parent env chain.
-		k_opcode__load_resolve_inline,
-		k_opcode__load_int,
-
-		k_opcode__load_obj,
-
-
-		k_opcode__call,
-		k_opcode__construct_value,
-
-//		k_opcode__arithmetic_unary_minus,
-
-		//	replace by k_statement_if.
-		k_opcode__conditional_operator3,
-
-		k_opcode__comparison_smaller_or_equal,
-		k_opcode__comparison_smaller_or_equal__int,
-		k_opcode__comparison_smaller,
-		k_opcode__comparison_larger_or_equal,
-		k_opcode__comparison_larger,
-
-		k_opcode__logical_equal,
-		k_opcode__logical_nonequal,
-
-		k_opcode__arithmetic_add,
-		k_opcode__arithmetic_add__int,
-		k_opcode__arithmetic_subtract,
-		k_opcode__arithmetic_subtract__int,
-		k_opcode__arithmetic_multiply,
-		k_opcode__arithmetic_divide,
-		k_opcode__arithmetic_remainder,
-
-		k_opcode__logical_and,
-		k_opcode__logical_or
-	};
-*/
-
-
-
-/*	//////////////////////////////////////		bc_expression_opcode
-
-
-
-	enum class bc_expression_opcode: uint8_t {
-		k_expression_illegal_opcode = 0,
-
-		k_expression_literal,
-		k_expression_literal__int,
-		k_expression_resolve_member,
-		k_expression_lookup_element,
-
-
-
-		k_expression_load_global_inline,
-
-		//	"resolve" = local variable or parent env chain.
-		k_expression_load_resolve_inline,
-		k_expression_load_int,
-
-		k_expression_load_obj,
-
-
-
-		k_expression_call,
-		k_expression_construct_value,
-
-//		k_expression_arithmetic_unary_minus,
-
-		//	replace by k_statement_if.
-		k_expression_conditional_operator3,
-
-
-		k_expression_comparison_smaller_or_equal,
-		k_expression_comparison_smaller,
-		k_expression_comparison_larger_or_equal,
-		k_expression_comparison_larger,
-
-		k_expression_logical_equal,
-		k_expression_logical_nonequal,
-
-
-		k_expression_arithmetic_add,
-		k_expression_arithmetic_add__int,
-		k_expression_arithmetic_subtract,
-		k_expression_arithmetic_subtract__int,
-		k_expression_arithmetic_multiply,
-		k_expression_arithmetic_divide,
-		k_expression_arithmetic_remainder,
-
-		k_expression_logical_and,
-		k_expression_logical_or
-	};
-*/
-
 inline int bc_limit(int value, int min, int max){
 	if(value < min){
 		return min;
@@ -946,146 +834,6 @@ inline int bc_limit(int value, int min, int max){
 	};
 */
 
-
-
-	//////////////////////////////////////		bc_expression_t
-
-
-/*
-	struct bc_expression_t {
-		private: bc_expression_t() :
-			_opcode(bc_expression_opcode::k_expression_illegal_opcode),
-			_pad(0),
-			_type(-1),
-			_e(nullptr),
-			_e_count(0),
-			_address_parent_step(0),
-			_address_index(0),
-			_value(),
-			_input_type(-1)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-		public: bc_expression_t(const bc_expression_t& other) :
-			_opcode(other._opcode),
-			_pad(other._pad),
-			_type(other._type),
-			_e(nullptr),
-			_e_count(other._e_count),
-			_address_parent_step(other._address_parent_step),
-			_address_index(other._address_index),
-			_value(other._value),
-			_input_type(other._input_type)
-		{
-			QUARK_ASSERT(other.check_invariant());
-			if(_e_count > 0){
-				bc_expression_t* ptr = new bc_expression_t[_e_count];
-				for( int i = 0; i < _e_count; ++i ) {
-					ptr[i] = other._e[i];
-				}
-				_e = ptr;
-			}
-			QUARK_ASSERT(check_invariant());
-		}
-
-		public: bc_expression_t& operator=(const bc_expression_t& other){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(other.check_invariant());
-
-			bc_expression_t temp = other;
-			temp.swap(*this);
-
-			QUARK_ASSERT(check_invariant());
-			return *this;
-		}
-
-		public: void swap(bc_expression_t& other) throw() {
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(other.check_invariant());
-
-			std::swap(_opcode, other._opcode);
-			std::swap(_pad, other._pad);
-			std::swap(_type, other._type);
-			std::swap(_e, other._e);
-			std::swap(_e_count, other._e_count);
-			std::swap(_address_parent_step, other._address_parent_step);
-			std::swap(_address_index, other._address_index);
-			_value.swap(other._value);
-			std::swap(_input_type, other._input_type);
-
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(other.check_invariant());
-		}
-
-
-		bc_expression_t(
-			bc_expression_opcode opcode,
-
-			bc_typeid_t type,
-
-			std::vector<bc_expression_t> e,
-			variable_address_t address,
-			bc_value_t value,
-			bc_typeid_t input_type
-		):
-			_opcode(opcode),
-			_pad(0),
-			_type(type),
-			_e(nullptr),
-			_e_count(static_cast<uint16_t>(e.size())),
-			_address_parent_step(static_cast<int16_t>(address._parent_steps)),
-			_address_index(static_cast<int16_t>(address._index)),
-			_value(value),
-			_input_type(input_type)
-		{
-			if(_e_count > 0){
-				bc_expression_t* ptr = new bc_expression_t[_e_count];
-				for( int i = 0; i < _e_count; ++i ) {
-					ptr[i] = e[i];
-				}
-				_e = ptr;
-			}
-
-			QUARK_ASSERT(check_invariant());
-		}
-
-		~bc_expression_t(){
-			if(_e != nullptr){
-				delete[] _e;
-				_e = nullptr;
-			}
-		}
-
-#if DEBUG
-		public: bool check_invariant() const { return true; }
-#endif
-
-		//////////////////////////////////////		STATE
-
-		bc_expression_opcode _opcode;	//	1
-		uint8_t _pad;	//	1
-		bc_typeid_t _type;	//	2
-		uint16_t _e_count;	//	2
-		bc_typeid_t _input_type;	//	2
-
-//pos = 8
-		const bc_expression_t* _e;			//	8
-
-//	pos=16
-		bc_value_t _value;							//	16
-
-		int16_t _address_parent_step;	//	2
-		int16_t _address_index;	//	2
-
-	};
-
-	//	A memory block. Addressed using index. Always 1 cache line big.
-	//	Prefetcher likes bigger blocks than this.
-	struct bc_node_t {
-		uint32_t _words[64 / sizeof(uint32_t)];
-	};
-*/
 
 
 	//////////////////////////////////////		bc_instruction_t
@@ -1197,18 +945,18 @@ inline int bc_limit(int value, int min, int max){
 	struct bc_body_t {
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
 
-		std::vector<bc_instruction_t> _statements;
+		std::vector<bc_instruction_t> _instructions;
 
 
 		bc_body_t(const std::vector<bc_instruction_t>& s) :
-			_statements(s),
+			_instructions(s),
 			_symbols{}
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		bc_body_t(const std::vector<bc_instruction_t>& statements, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
-			_statements(statements),
+		bc_body_t(const std::vector<bc_instruction_t>& instructions, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
+			_instructions(instructions),
 			_symbols(symbols)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -1276,7 +1024,7 @@ inline int bc_limit(int value, int min, int max){
 		}
 #endif
 
-		public: const bc_body_t _globals;
+		public: const bc_body_optimized_t _globals;
 		public: std::vector<const bc_function_definition_t> _function_defs;
 		public: std::vector<const typeid_t> _types;
 	};

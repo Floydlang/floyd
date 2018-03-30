@@ -47,14 +47,6 @@ variable_address_t add_const(bc_body_t& body_acc, const value_t& value, const st
 	return variable_address_t::make_variable_address(0, id);
 }
 
-const std::vector<std::shared_ptr<statement_t>> make_statements(const std::vector<statement_t>& statements){
-	std::vector<std::shared_ptr<statement_t>> result;
-	for(const auto& e: statements){
-		result.push_back(std::make_shared<statement_t>(e));
-	}
-	return result;
-}
-
 //	Use to stuff an integer into an instruction, in one of the register slots.
 variable_address_t make_immediate_int(int value){
 	return variable_address_t::make_variable_address(666, value);
@@ -408,7 +400,7 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 	const auto expr = bcgen_expression(vm, statement._expression, body_acc);
 	body_acc = expr._body;
 
-	body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_store_resolve, expr._type, statement._dest_variable, expr._output_register, {}));
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_store_resolve, expr._type, statement._dest_variable, expr._output_register, {}));
 	return body_acc;
 }
 
@@ -416,7 +408,7 @@ bc_body_t bcgen_block_statement(bgenerator_t& vm, const statement_t::block_state
 	QUARK_ASSERT(vm.check_invariant());
 
 //???			const auto& b = bcgen_body(vm, statement._block->_body);
-//			body2._statements.push_back(bc_instruction_t{ bc_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { b} });
+//			body2._instructions.push_back(bc_instruction_t{ bc_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { b} });
 	return body;
 }
 
@@ -426,12 +418,12 @@ bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_sta
 	auto body_acc = body;
 	const auto expr = bcgen_expression(vm, statement._expression, body);
 	body_acc = expr._body;
-	body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_return, expr._type, expr._output_register,{}, {}));
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_return, expr._type, expr._output_register,{}, {}));
 	return body_acc;
 }
 
 //??? shortcut evaluation of conditions!
-
+//?? registers should ALWAYS bein current stack frame. What about upvalues?
 
 bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
@@ -451,25 +443,27 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 			bc_opcode::k_branch_zero,
 			{},
 			condition_expr._output_register,
-			make_immediate_int(static_cast<int>(then_expr._statements.size()) + 1),
+			make_immediate_int(static_cast<int>(then_expr._instructions.size()) + 2),
 			{}
 		)
 	);
-	instructions.insert(instructions.end(), then_expr._statements.begin(), then_expr._statements.end());
+	instructions.insert(instructions.end(), then_expr._instructions.begin(), then_expr._instructions.end());
 	instructions.push_back(
 		bc_instruction_t(
 			bc_opcode::k_jump,
 			{},
-			make_immediate_int(static_cast<int>(else_expr._statements.size()) + 0),
+			make_immediate_int(static_cast<int>(else_expr._instructions.size()) + 1),
 			{},
 			{}
 		)
 	);
-	instructions.insert(instructions.end(), else_expr._statements.begin(), else_expr._statements.end());
+	instructions.insert(instructions.end(), else_expr._instructions.begin(), else_expr._instructions.end());
 
-	body_acc._statements.insert(body_acc._statements.end(), instructions.begin(), instructions.end());
+	body_acc._instructions.insert(body_acc._instructions.end(), instructions.begin(), instructions.end());
 	return body_acc;
 }
+
+//?????PROBLEM: flattening body = all parent_step becomes wrong.
 
 //??? check range-type too!
 bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement, const bc_body_t& body){
@@ -506,11 +500,11 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 			bc_opcode::k_branch_notzero,
 			{},
 			counter_reg,
-			make_immediate_int(static_cast<int>(loop_body._statements.size()) + 2),
+			make_immediate_int(static_cast<int>(loop_body._instructions.size()) + 2),
 			{}
 		)
 	);
-	instructions.insert(instructions.end(), loop_body._statements.begin(), loop_body._statements.end());
+	instructions.insert(instructions.end(), loop_body._instructions.begin(), loop_body._instructions.end());
 
 	instructions.push_back(
 		bc_instruction_t(
@@ -526,12 +520,12 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 			bc_opcode::k_branch_notzero,
 			{},
 			counter_reg,
-			make_immediate_int(0 - 1 - static_cast<int>(loop_body._statements.size())),
+			make_immediate_int(0 - 1 - static_cast<int>(loop_body._instructions.size())),
 			{}
 		)
 	);
 
-	body_acc._statements.insert(body_acc._statements.end(), instructions.begin(), instructions.end());
+	body_acc._instructions.insert(body_acc._instructions.end(), instructions.begin(), instructions.end());
 	return body_acc;
 }
 
@@ -554,11 +548,11 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 			bc_opcode::k_branch_zero,
 			{},
 			flag_reg,
-			make_immediate_int(static_cast<int>(loop_body._statements.size()) + 1),
+			make_immediate_int(static_cast<int>(loop_body._instructions.size()) + 1),
 			{}
 		)
 	);
-	instructions.insert(instructions.end(), loop_body._statements.begin(), loop_body._statements.end());
+	instructions.insert(instructions.end(), loop_body._instructions.begin(), loop_body._instructions.end());
 
 	instructions.push_back(
 		bc_instruction_t(
@@ -570,7 +564,7 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 		)
 	);
 
-	body_acc._statements.insert(body_acc._statements.end(), instructions.begin(), instructions.end());
+	body_acc._instructions.insert(body_acc._instructions.end(), instructions.begin(), instructions.end());
 	return body_acc;
 }
 
@@ -649,7 +643,7 @@ expr_info_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t
 	const auto itype = intern_type(vm, type);
 
 	const auto temp = add_temp(body_acc, type, "resolve-member output register");
-	body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_resolve_member,
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_resolve_member,
 		itype,
 		temp,
 		parent_expr._output_register,
@@ -674,7 +668,7 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 	const auto itype = intern_type(vm, type);
 
 	const auto temp = add_temp(body_acc, type, "lookup-element output register");
-	body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_lookup_element,
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_lookup_element,
 		itype,
 		temp,
 		parent_expr._output_register,
@@ -739,7 +733,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
 		if(func_arg_type.is_internal_dynamic()){
 			const auto arg_type_reg = add_const(body_acc, value_t::make_int(callee_arg_type), "DYN type arg #" + std::to_string(i));
-			body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_push, itype_int, arg_type_reg, {}, {} ));
+			body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_push, itype_int, arg_type_reg, {}, {} ));
 		}
 
 		const auto arg_type_full = vm._types[callee_arg_type];
@@ -749,20 +743,20 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 			extbits = extbits | 1;
 		}
 
-		body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_push, callee_arg_type, arg_reg, {}, {} ));
+		body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_push, callee_arg_type, arg_reg, {}, {} ));
 	}
 	int stack_count = arg_count + dynamic_arg_count;
 
 //	const auto itype = intern_type(vm, function_type);
 
 	const auto function_result_reg = add_temp(body_acc, function_type.get_function_return(), "call result register");
-	body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_call,
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_call,
 		{},
 		function_result_reg,
 		callee_expr._output_register,
 		make_immediate_int(arg_count)
 	));
-	body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_popn, {}, make_immediate_int(stack_count), make_immediate_int(extbits), {} ));
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_popn, {}, make_immediate_int(stack_count), make_immediate_int(extbits), {} ));
 
 	return { body_acc, function_result_reg, intern_type(vm, function_return_type) };
 }
@@ -784,7 +778,7 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 
 	//	All args follow first arg.
 	const auto function_result_reg = add_temp(body_acc, type, "construct-value output register");
-	body_acc._statements.push_back(bc_instruction_t(bc_opcode::k_call,
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_call,
 		itype,
 		function_result_reg,
 		arg_temps[0],
@@ -875,7 +869,7 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 	const auto itype = intern_type(vm, type);
 	const auto temp = add_temp(body_acc, type, "comparison expression output register");
 
-	body_acc._statements.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+	body_acc._instructions.push_back(bc_instruction_t(conv_opcode.at(e._operation),
 		itype,
 		temp,
 		left_expr._output_register,
@@ -910,7 +904,7 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 	const auto itype = intern_type(vm, type);
 	const auto temp = add_temp(body_acc, type, "arithmetic output register");
 
-	body_acc._statements.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+	body_acc._instructions.push_back(bc_instruction_t(conv_opcode.at(e._operation),
 		itype,
 		temp,
 		left_expr._output_register,
@@ -977,6 +971,115 @@ expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_b
 
 
 
+std::string opcode_to_string(bc_opcode opcode){
+	static const std::map<bc_opcode, std::string> lookup = {
+		{ bc_opcode::k_nop, "nop" },
+
+		{ bc_opcode::k_store_resolve, "store_resolve" },
+
+		{ bc_opcode::k_resolve_member, "resolve_member" },
+		{ bc_opcode::k_lookup_element, "lookup_element" },
+		{ bc_opcode::k_call, "call" },
+
+		{ bc_opcode::k_arithmetic_add, "arithmetic_add" },
+		{ bc_opcode::k_arithmetic_subtract, "arithmetic_subtract" },
+		{ bc_opcode::k_arithmetic_multiply, "arithmetic_multiply" },
+		{ bc_opcode::k_arithmetic_divide, "arithmetic_divide" },
+		{ bc_opcode::k_arithmetic_remainder, "arithmetic_remainder" },
+
+		{ bc_opcode::k_logical_and, "logical_and" },
+		{ bc_opcode::k_logical_or, "logical_or" },
+
+		{ bc_opcode::k_comparison_smaller_or_equal, "comparison_smaller_or_equal" },
+		{ bc_opcode::k_comparison_smaller, "comparison_smaller" },
+		{ bc_opcode::k_comparison_larger_or_equal, "comparison_larger_or_equal" },
+		{ bc_opcode::k_comparison_larger, "comparison_larger" },
+
+		{ bc_opcode::k_logical_equal, "logical_equal" },
+		{ bc_opcode::k_logical_nonequal, "logical_nonequal" },
+
+		{ bc_opcode::k_construct_value, "construct_value" },
+
+		{ bc_opcode::k_return, "return" },
+
+		{ bc_opcode::k_push, "push" },
+		{ bc_opcode::k_popn, "popn" },
+
+		{ bc_opcode::k_branch_zero, "branch_zero" },
+		{ bc_opcode::k_branch_notzero, "branch_notzero" },
+		{ bc_opcode::k_jump, "jump" }
+
+
+	};
+	return lookup.at(opcode);
+}
+
+json_t reg_to_json(const variable_address_t& reg){
+	const auto i = json_t::make_array({
+		reg._parent_steps,
+		reg._index,
+	});
+	return i;
+}
+
+json_t body_to_json(const bc_body_optimized_t& body){
+/*	vector<json_t> symbols;
+	int symbol_index;
+	for(const auto& e: body._body._symbols){
+		const auto i = json_t::make_array({
+			std::to_string(symbol_index),
+			e.first,
+			value_to_ast_json(e.second._const_value, json_tags::k_plain)._value,
+			typeid_to_ast_json(e.second._value_type, json_tags::k_plain)._value,
+			e.second._symbol_type
+			opcode_to_string(e._opcode),
+			reg_to_json(e._reg1),
+			reg_to_json(e._reg2),
+			reg_to_json(e._reg3),
+			"_parent_type"
+		});
+		instructions.push_back(i);
+		symbol_index++;
+	}
+*/
+
+	vector<json_t> instructions;
+	int pc = 0;
+	for(const auto& e: body._body._instructions){
+		const auto i = json_t::make_array({
+			pc,
+			opcode_to_string(e._opcode),
+			e._instr_type,
+			reg_to_json(e._reg1),
+			reg_to_json(e._reg2),
+			reg_to_json(e._reg3),
+			e._parent_type
+		});
+		instructions.push_back(i);
+		pc++;
+	}
+
+	return json_t::make_object({
+		{ "symbols", json_t::make_array(symbols_to_json(body._body._symbols)) },
+		{ "instructions", json_t::make_array(instructions) }
+	});
+}
+
+json_t types_to_json(const std::vector<const typeid_t>& types){
+	vector<json_t> r;
+	int id = 0;
+	for(const auto& e: types){
+		const auto i = json_t::make_array({
+			id,
+			typeid_to_ast_json(e, json_tags::k_plain)._value
+		});
+		r.push_back(i);
+		id++;
+	}
+	return json_t::make_array(r);
+}
+
+
 json_t bcprogram_to_json(const bc_program_t& program){
 	vector<json_t> callstack;
 /*
@@ -1000,7 +1103,8 @@ json_t bcprogram_to_json(const bc_program_t& program){
 */
 
 	return json_t::make_object({
-//		{ "ast", ast_to_json(vm._imm->_ast_pass3)._value },
+		{ "globals", body_to_json(program._globals) },
+		{ "types", types_to_json(program._types) }
 //		{ "callstack", json_t::make_array(callstack) }
 	});
 }

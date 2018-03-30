@@ -163,7 +163,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Deduced bind", "", "") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
-QUARK_UNIT_TEST_VIP("run_main()", "conditional expression", "", ""){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	test__run_init__check_result("int result = true ? 1 : 2;", value_t::make_int(1));
 }
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
@@ -1211,7 +1211,7 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 
 
 
-QUARK_UNIT_TESTQ("run_init()", "if(true){}"){
+QUARK_UNIT_TEST_VIP("run_init()", "if(true){}", "", ""){
 	const auto r = test__run_global(
 		R"(
 			if(true){

@@ -210,7 +210,7 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto& symbols = vm._imm->_program._globals._symbols;
+	const auto& symbols = vm._imm->_program._globals._body._symbols;
     const auto& it = std::find_if(
     	symbols.begin(),
     	symbols.end(),
@@ -722,7 +722,7 @@ void execute_call_expression(interpreter_t& vm, const bc_instruction_t& expr){
 		}
 
 		open_stack_frame2_nobump(vm, function_def._body, &temp[0], callee_arg_count);
-		const auto& result = execute_statements(vm, function_def._body._body._statements);
+		const auto& result = execute_statements(vm, function_def._body._body._instructions);
 		close_stack_frame(vm, function_def._body);
 
 		QUARK_ASSERT(result._type == statement_result_t::k_returning);
@@ -885,6 +885,17 @@ statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_in
 			//??? how to check any type for ZERO?
 			const auto value = read_register_bool(vm, statement._reg1);
 			if(value){
+				pc++;
+			}
+			else{
+				const auto offset = statement._reg2._index;
+				pc = pc + offset;
+			}
+		}
+		else if(opcode == bc_opcode::k_branch_notzero){
+			//??? how to check any type for ZERO?
+			const auto value = read_register_bool(vm, statement._reg1);
+			if(!value){
 				pc++;
 			}
 			else{
@@ -1267,7 +1278,7 @@ statement_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& bo
 	QUARK_ASSERT(body.check_invariant());
 
 	open_stack_frame2_nobump(vm, body, init_values, init_value_count);
-	const auto& r = execute_statements(vm, body._body._statements);
+	const auto& r = execute_statements(vm, body._body._instructions);
 	close_stack_frame(vm, body);
 	return r;
 }
@@ -1417,7 +1428,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	open_stack_frame2_nobump(*this, _imm->_program._globals, nullptr, 0);
 
 	//	Run static intialization (basically run global statements before calling main()).
-	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._statements);
+	/*const auto& r =*/ execute_statements(*this, _imm->_program._globals._body._instructions);
 	QUARK_ASSERT(check_invariant());
 }
 

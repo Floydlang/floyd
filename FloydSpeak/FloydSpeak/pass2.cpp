@@ -304,20 +304,47 @@ const std::vector<std::shared_ptr<statement_t> > astjson_to_statements(const qua
 	return statements2;
 }
 
+std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, symbol_t>>& symbols){
+	std::vector<json_t> r;
+	int symbol_index = 0;
+	for(const auto& e: symbols){
+		const auto& symbol = e.second;
+		const auto symbol_type_str = symbol._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+
+		if(symbol._const_value.is_undefined() == false){
+			const auto e2 = json_t::make_array({
+				symbol_index,
+				e.first,
+				"CONST",
+				value_to_ast_json(symbol._const_value, json_tags::k_tag_resolve_state)._value
+			});
+			r.push_back(e2);
+		}
+		else{
+			const auto e2 = json_t::make_array({
+				symbol_index,
+				e.first,
+				"LOCAL",
+				json_t::make_object({
+					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state)._value },
+					{ "type", symbol_type_str }
+				})
+			});
+			r.push_back(e2);
+		}
+
+		symbol_index++;
+	}
+	return r;
+}
+
 ast_json_t body_to_json(const body_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
 		statements.push_back(statement_to_json(*i)._value);
 	}
 
-	std::vector<json_t> symbols;
-	for(const auto& i: e._symbols){
-		const auto e2 = json_t::make_object({
-			{ "name", i.first },
-			{ "symbol", symbol_to_json(i.second)._value }
-		});
-		symbols.push_back(e2);
-	}
+	const auto symbols = symbols_to_json(e._symbols);
 
 	return ast_json_t{
 		json_t::make_object({
@@ -330,13 +357,21 @@ ast_json_t body_to_json(const body_t& e){
 ast_json_t symbol_to_json(const symbol_t& e){
 	const auto symbol_type_str = e._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
 
-	return ast_json_t{
-		json_t::make_object({
-			{ "type", symbol_type_str },
-			{ "value_type", typeid_to_ast_json(e._value_type, json_tags::k_tag_resolve_state)._value },
-			{ "const_value", value_to_ast_json(e._const_value, json_tags::k_tag_resolve_state)._value }
-		})
-	};
+	if(e._const_value.is_undefined() == false){
+		return ast_json_t{
+			json_t::make_object({
+				{ "const_value", value_to_ast_json(e._const_value, json_tags::k_tag_resolve_state)._value }
+			})
+		};
+	}
+	else{
+		return ast_json_t{
+			json_t::make_object({
+				{ "type", symbol_type_str },
+				{ "value_type", typeid_to_ast_json(e._value_type, json_tags::k_tag_resolve_state)._value }
+			})
+		};
+	}
 }
 
 ast_json_t statement_to_json(const statement_t& e){

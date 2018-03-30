@@ -30,6 +30,7 @@ namespace floyd {
 	ast_json_t body_to_json(const body_t& e);
 
 	ast_json_t symbol_to_json(const symbol_t& e);
+	std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, symbol_t>>& symbols);
 
 
 	ast_json_t expressions_to_json(const std::vector<expression_t> v);
