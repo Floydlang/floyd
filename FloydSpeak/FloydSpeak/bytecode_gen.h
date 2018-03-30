@@ -24,9 +24,7 @@
 
 
 namespace floyd {
-	struct expression_t;
 	struct value_t;
-	struct statement_t;
 	struct bgenerator_t;
 
 	struct bc_body_t;

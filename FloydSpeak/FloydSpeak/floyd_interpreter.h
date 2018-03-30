@@ -20,9 +20,7 @@
 #include "bytecode_gen.h"
 
 namespace floyd {
-	struct expression_t;
 	struct bc_value_t;
-	struct statement_t;
 	struct interpreter_t;
 	struct bc_program_t;
 	struct bc_instruction_t;
@@ -180,7 +178,7 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////		statement_result_t
+	//////////////////////////////////////		interpreter_context_t
 
 
 
@@ -189,10 +187,10 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////		statement_result_t
+	//////////////////////////////////////		execution_result_t
 
 
-	struct statement_result_t {
+	struct execution_result_t {
 		enum output_type {
 
 			//	_output != nullptr
@@ -206,17 +204,17 @@ namespace floyd {
 			k_complete_without_result_value
 		};
 
-		public: static statement_result_t make_return_unwind(const bc_value_t& return_value){
-			return { statement_result_t::k_returning, return_value };
+		public: static execution_result_t make_return_unwind(const bc_value_t& return_value){
+			return { execution_result_t::k_returning, return_value };
 		}
-		public: static statement_result_t make_passive_expression_output(const bc_value_t& output_value){
-			return { statement_result_t::k_passive_expression_output, output_value };
+		public: static execution_result_t make_passive_expression_output(const bc_value_t& output_value){
+			return { execution_result_t::k_passive_expression_output, output_value };
 		}
-		public: static statement_result_t make__complete_without_value(){
-			return { statement_result_t::k_complete_without_result_value, bc_value_t::make_undefined() };
+		public: static execution_result_t make__complete_without_value(){
+			return { execution_result_t::k_complete_without_result_value, bc_value_t::make_undefined() };
 		}
 
-		private: statement_result_t(output_type type, const bc_value_t& output) :
+		private: execution_result_t(output_type type, const bc_value_t& output) :
 			_type(type),
 			_output(output)
 		{
@@ -275,10 +273,10 @@ namespace floyd {
 
 	/*
 		Return value:
-			null = statements were all executed through.
-			value = return statement returned a value.
+			null = instructions were all executed through.
+			value = return instruction returned a value.
 	*/
-	statement_result_t execute_statements(interpreter_t& vm, const std::vector<bc_instruction_t>& statements);
+	execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
 
 
 
