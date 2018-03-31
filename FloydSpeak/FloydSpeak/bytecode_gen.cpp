@@ -679,20 +679,28 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	body_acc = end_expr._body;
 
 	const auto const1_reg = add_local_const(body_acc, value_t::make_int(1), "integer 1, to decrement with");
+	const auto flag_reg = add_local_temp(body_acc, typeid_t::make_bool(), "while-flag");
+
 	const auto& loop_body = bcgen_body(vm, statement._body);
+	int body_instr_count = static_cast<int>(loop_body._instrs.size());
 
 	//	Iterator register is the FIRST symbol of the loop body's symbol table.
 	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols.size()));
 
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_subtract, itype_int, counter_reg, end_expr._output_reg, start_expr._output_reg));
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_add, itype_int, counter_reg, counter_reg, const1_reg));
+	QUARK_ASSERT(
+		statement._range_type == statement_t::for_statement_t::k_closed_range
+		|| statement._range_type ==statement_t::for_statement_t::k_open_range
+	);
+	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_comparison_smaller_or_equal : bc_opcode::k_comparison_smaller;
 
-	int body_instr_count = static_cast<int>(loop_body._instrs.size());
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_zero_int, {}, counter_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
+	//	Write start-integer in counter_reg
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_resolve, itype_int, counter_reg, start_expr._output_reg, {}));
+	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, itype_int, flag_reg, counter_reg, end_expr._output_reg));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, {}, flag_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
 	body_acc = flatten_body(vm, body_acc, loop_body);
-
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_subtract, itype_int, counter_reg, counter_reg, const1_reg ));
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_notzero_int, {}, counter_reg, make_imm_int(0 - 1 - body_instr_count), {}));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_add, itype_int, counter_reg, counter_reg, const1_reg));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, {}, make_imm_int(0 - 3 - body_instr_count), {}, {}));
+	QUARK_ASSERT(body_acc.check_invariant());
 	return body_acc;
 }
 
@@ -702,22 +710,17 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 
 	auto body_acc = body;
 
-	const auto condition_start = static_cast<int>(body._symbols.size());
-	const auto condition_expr = bcgen_expression(vm, statement._condition, body_acc);
-	body_acc = condition_expr._body;
-
 	const auto& loop_body = bcgen_body(vm, statement._body);
 
-	std::vector<bc_instruction_t> instructions;
-	const auto flag_reg = add_local_temp(body_acc, typeid_t::make_bool(), "while-flag");
 	int body_instr_count = static_cast<int>(loop_body._instrs.size());
 
-	instructions.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, {}, flag_reg, make_imm_int(body_instr_count + 1), {}));
-	instructions.insert(instructions.end(), loop_body._instrs.begin(), loop_body._instrs.end());
-
-	instructions.push_back(bc_instruction_t(bc_opcode::k_branch_always, {}, make_imm_int(condition_start -static_cast<int>(instructions.size())), {}, {} ));
-
-	body_acc._instrs.insert(body_acc._instrs.end(), instructions.begin(), instructions.end());
+	const auto condition_pc = static_cast<int>(body_acc._instrs.size());
+	const auto condition_expr = bcgen_expression(vm, statement._condition, body_acc);
+	body_acc = condition_expr._body;
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, {}, condition_expr._output_reg, make_imm_int(body_instr_count + 2), {}));
+	body_acc = flatten_body(vm, body_acc, loop_body);
+	const auto body_end_pc = static_cast<int>(body_acc._instrs.size());
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, {}, make_imm_int(condition_pc - body_end_pc), {}, {} ));
 	return body_acc;
 }
 

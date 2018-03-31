@@ -972,6 +972,7 @@ inline int bc_limit(int value, int min, int max){
 			A: Register: input to test
 			B: IMMEDIATE: branch offset (added to PC).
 			C: ---
+			NOTICE: These have their own conditions, instead of check bool from k_comparison_smaller. Bad???
 		*/
 		k_branch_false_bool,
 		k_branch_true_bool,
