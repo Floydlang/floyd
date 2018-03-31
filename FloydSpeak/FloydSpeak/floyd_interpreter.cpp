@@ -57,16 +57,25 @@ execution_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& bo
 
 
 /*
-0	[int = 0] previous stack frame pos, 0 = global
-1	local0		<- stack frame #0
-2	local1
-3	local2
+0	[int = 0] 		previous stack frame pos, 0 = global
+1	[symbols_ptr frame #0]
+2	[local0]		<- stack frame #0
+3	[local1]
+4	[local2]
 
-4	[int = 1] //	prev stack frame pos
-5	local1		<- stack frame #1
-6	local2
-7	local3
+5	[int = 1] //	prev stack frame pos
+1	[symbols_ptr frame #1]
+7	[local1]		<- stack frame #1
+8	[local2]
+9	[local3]
 */
+
+struct frame_pos_t {
+	int _pos;
+};
+
+//	We store prev-frame-pos & symbol-ptr.
+static const int k_frame_overhead = 2;
 
 const bc_body_optimized_t* get_body(const interpreter_t& vm, int body_id){
 	if(body_id == -1){
@@ -77,8 +86,61 @@ const bc_body_optimized_t* get_body(const interpreter_t& vm, int body_id){
 	}
 }
 
+int read_prev_frame_pos(const interpreter_t& vm, int frame_pos){
+//	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(frame_pos >= k_frame_overhead);
+
+	const auto v = vm._value_stack.load_intq(frame_pos - 2);
+	QUARK_ASSERT(v < frame_pos);
+	QUARK_ASSERT(v >= 0);
+	return v;
+}
+
+const bc_body_optimized_t* read_symbol_ptr(const interpreter_t& vm, int frame_pos){
+//	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(frame_pos >= k_frame_overhead);
+
+	const auto v = vm._value_stack.load_symbol_ptr(frame_pos - 1);
+	QUARK_ASSERT(v != nullptr);
+	QUARK_ASSERT(v->check_invariant());
+	return v;
+}
+
 int get_global_n_pos(int n){
-	return 1 + n;
+	return k_frame_overhead + n;
+}
+int get_local_n_pos(int frame_pos, int n){
+	return frame_pos + n;
+}
+
+
+//??? Merge interpreter_stack_t and register-access / frame handling into safe class. Uses symbol_ptrs.
+bool check_stack_frame(const interpreter_t& vm, int frame_pos){
+	if(frame_pos == 0){
+		return true;
+	}
+	else{
+		const auto symbols = read_symbol_ptr(vm, frame_pos);
+		const auto prev_frame_pos = read_prev_frame_pos(vm, frame_pos);
+		QUARK_ASSERT(symbols != nullptr && symbols->check_invariant());
+		QUARK_ASSERT(prev_frame_pos >= 0 && prev_frame_pos < frame_pos);
+
+		for(int i = 0 ; i < symbols->_body._symbols.size() ; i++){
+			const auto& symbol = symbols->_body._symbols[i];
+
+			bool symbol_ext = bc_value_t::is_bc_ext(symbol.second._value_type.get_base_type());
+			int local_pos = get_local_n_pos(frame_pos, i);
+
+			bool stack_ext = vm._value_stack.is_ext(local_pos);
+			QUARK_ASSERT(symbol_ext == stack_ext);
+		}
+		if(prev_frame_pos > 2){
+			return check_stack_frame(vm, prev_frame_pos);
+		}
+		else{
+			return true;
+		}
+	}
 }
 
 //	Will NOT bump RCs of init_values.
@@ -87,10 +149,11 @@ int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_optimized_t& body,
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto new_frame_start = static_cast<int>(vm._value_stack.size());
-	const auto prev_frame_pos = vm._current_stack_frame;
-	vm._value_stack.push_intq(prev_frame_pos);
-	const auto new_frame_pos = new_frame_start + 1;
+	const auto start_pos = static_cast<int>(vm._value_stack.size());
+	vm._value_stack.push_intq(vm._current_stack_frame);
+	vm._value_stack.push_symbol_ptr(&body);
+
+	const auto new_frame_pos = start_pos + k_frame_overhead;
 	vm._current_stack_frame = new_frame_pos;
 
 	if(init_value_count > 0){
@@ -136,13 +199,15 @@ int close_stack_frame(interpreter_t& vm, const bc_body_optimized_t& body){
 	QUARK_ASSERT(body.check_invariant());
 
 	const auto current_pos = vm._current_stack_frame;
-	const auto prev_frame_pos = vm._value_stack.load_intq(current_pos - 1);
-	const auto prev_frame_end_pos = current_pos - 1;
+	const auto prev_frame_pos = read_prev_frame_pos(vm, current_pos);
 
 	//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
 	vm._value_stack.pop_batch(body._exts);
 
-	//	Also pop our save of the prev stack frame pos.
+	//	Pop symbols ptr.
+	vm._value_stack.pop(false);
+
+	//	Pop prev-frame-pos.
 	vm._value_stack.pop(false);
 
 	vm._current_stack_frame = prev_frame_pos;
@@ -159,9 +224,9 @@ vector<std::pair<int, int>> get_stack_frames(const interpreter_t& vm){
 	//	We use the entire current stack to calc top frame's size. This can be wrong, if someone pushed more stuff there. Same goes with the previous stack frames too..
 	vector<std::pair<int, int>> result{ { frame_pos, static_cast<int>(vm._value_stack.size()) - frame_pos }};
 
-	while(frame_pos > 1){
-		const auto prev_frame_pos = vm._value_stack.load_intq(frame_pos - 1);
-		const auto prev_size = (frame_pos - 1) - prev_frame_pos;
+	while(frame_pos > 2){
+		const auto prev_frame_pos = read_prev_frame_pos(vm, frame_pos);
+		const auto prev_size = (frame_pos - k_frame_overhead) - prev_frame_pos;
 		result.push_back(std::pair<int, int>{ frame_pos, prev_size });
 
 		frame_pos = prev_frame_pos;
@@ -205,17 +270,16 @@ BC_INLINE int find_frame_from_address(const interpreter_t& vm, int parent_step){
 	}
 	else if(parent_step == -1){
 		//	Address 0 holds dummy prevstack for globals.
-		return 1;
+		return k_frame_overhead;
 	}
 	else{
 		int frame_pos = vm._current_stack_frame;
 		for(auto i = 0 ; i < parent_step ; i++){
-			frame_pos = vm._value_stack.load_intq(frame_pos - 1);
+			frame_pos = read_prev_frame_pos(vm, frame_pos);
 		}
 		return frame_pos;
 	}
 }
-
 
 int resolve_register(const interpreter_t& vm, const variable_address_t& reg){
 	QUARK_ASSERT(vm.check_invariant());
@@ -819,25 +883,6 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		const auto opcode = instruction._opcode;
 		if(false){
 		}
-/*		if(opcode == bc_opcode::k_instruction_store_resolve_inline){
-			const auto& rhs_value = execute_expression(vm, instruction._e[0]);
-			const auto frame_pos = find_frame_from_address(vm, instruction._v._parent_steps);
-			const auto pos = frame_pos + instruction._v._index;
-			vm._value_stack.replace_inline(pos, rhs_value);
-		}
-		else if(opcode == bc_opcode::k_instruction_store_resolve_obj){
-			const auto& rhs_value = execute_expression(vm, instruction._e[0]);
-			const auto frame_pos = find_frame_from_address(vm, instruction._v._parent_steps);
-			const auto pos = frame_pos + instruction._v._index;
-			vm._value_stack.replace_obj(pos, rhs_value);
-		}
-		else if(opcode == bc_opcode::k_instruction_store_resolve_int){
-			const auto& rhs_value = execute_expression(vm, instruction._e[0]);
-			const auto frame_pos = find_frame_from_address(vm, instruction._v._parent_steps);
-			const auto pos = frame_pos + instruction._v._index;
-			vm._value_stack.replace_int(pos, rhs_value.get_int_value());
-		}
-*/
 		else if(opcode == bc_opcode::k_store_resolve){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto value = read_register_slow(vm, instruction._reg_b, type);
@@ -1315,36 +1360,9 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto& op = static_cast<int>(e._opcode);
-
-
 	//	Not thread safe -- avoid static locals!
 	static void* dispatch_table[] = {
 		&&bc_expression_opcode___k_expression_literal,
-		&&bc_expression_opcode___k_expression_resolve_member,
-		&&bc_expression_opcode___k_expression_lookup_element,
-		&&bc_expression_opcode___k_expression_load,
-		&&bc_expression_opcode___k_expression_call,
-		&&bc_expression_opcode___k_expression_construct_value,
-
-		&&bc_expression_opcode___k_expression_arithmetic_unary_minus,
-
-		&&bc_expression_opcode___k_expression_conditional_operator3,
-
-		&&bc_expression_opcode___k_expression_comparison_smaller_or_equal,
-		&&bc_expression_opcode___k_expression_comparison_smaller,
-		&&bc_expression_opcode___k_expression_comparison_larger_or_equal,
-		&&bc_expression_opcode___k_expression_comparison_larger,
-
-		&&bc_expression_opcode___k_expression_logical_equal,
-		&&bc_expression_opcode___k_expression_logical_nonequal,
-
-		&&bc_expression_opcode___k_expression_arithmetic_add,
-		&&bc_expression_opcode___k_expression_arithmetic_subtract,
-		&&bc_expression_opcode___k_expression_arithmetic_multiply,
-		&&bc_expression_opcode___k_expression_arithmetic_divide,
-		&&bc_expression_opcode___k_expression_arithmetic_remainder,
-
-		&&bc_expression_opcode___k_expression_logical_and,
 		&&bc_expression_opcode___k_expression_logical_or
 	};
 //	#define DISPATCH() goto *dispatch_table[op]
@@ -1361,53 +1379,6 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 		bc_expression_opcode___k_expression_lookup_element:
 			return execute_lookup_element_expression(vm, e);
 
-		//??? Optimize by inlining find_env_from_address() and making sep paths.
-		bc_expression_opcode___k_expression_load:
-			{
-				int frame_pos = find_frame_from_address(vm, e._address_parent_step);
-				const auto pos = frame_pos + e._address_index;
-				QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-				const auto& value = vm._value_stack.load_value_slow(pos, get_type(vm, e._type));
-		//		QUARK_ASSERT(value.get_type().get_base_type() == e._basetype);
-				return value;
-			}
-
-		bc_expression_opcode___k_expression_call:
-			return execute_call_expression(vm, e);
-
-		bc_expression_opcode___k_expression_construct_value:
-			return execute_construct_value_expression(vm, e);
-
-
-
-		bc_expression_opcode___k_expression_arithmetic_unary_minus:
-			return execute_arithmetic_unary_minus_expression(vm, e);
-
-
-
-		bc_expression_opcode___k_expression_conditional_operator3:
-			return execute_conditional_operator_expression(vm, e);
-
-
-
-		bc_expression_opcode___k_expression_comparison_smaller_or_equal:
-		bc_expression_opcode___k_expression_comparison_smaller:
-		bc_expression_opcode___k_expression_comparison_larger_or_equal:
-		bc_expression_opcode___k_expression_comparison_larger:
-		bc_expression_opcode___k_expression_logical_equal:
-		bc_expression_opcode___k_expression_logical_nonequal:
-			return execute_comparison_expression(vm, e);
-
-
-		bc_expression_opcode___k_expression_arithmetic_add:
-		bc_expression_opcode___k_expression_arithmetic_subtract:
-		bc_expression_opcode___k_expression_arithmetic_multiply:
-		bc_expression_opcode___k_expression_arithmetic_divide:
-		bc_expression_opcode___k_expression_arithmetic_remainder:
-
-		bc_expression_opcode___k_expression_logical_and:
-		bc_expression_opcode___k_expression_logical_or:
-			return execute_arithmetic_expression(vm, e);
 	}
 }
 */
@@ -1477,6 +1448,7 @@ const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
 #if DEBUG
 bool interpreter_t::check_invariant() const {
 	QUARK_ASSERT(_imm->_program.check_invariant());
+	QUARK_ASSERT(check_stack_frame(*this, _current_stack_frame));
 	return true;
 }
 #endif

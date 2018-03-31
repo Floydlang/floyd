@@ -203,7 +203,7 @@ namespace floyd {
 		public: std::map<std::string, bc_value_t> _dict_entries;
 	};
 
-
+	struct bc_body_optimized_t;
 
 	//////////////////////////////////////		bc_value_t
 
@@ -215,6 +215,7 @@ namespace floyd {
 		float _float;
 		int _function_id;
 		bc_value_object_t* _ext;
+		const bc_body_optimized_t* _symbol_table;
 	};
 
 

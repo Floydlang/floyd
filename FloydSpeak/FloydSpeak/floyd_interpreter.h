@@ -240,6 +240,22 @@ namespace floyd {
 
 			return _value_stack[pos]._int;
 		}
+		BC_INLINE const bc_body_optimized_t* load_symbol_ptr(int pos) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(false == _exts[pos]);
+
+			return _value_stack[pos]._symbol_table;
+		}
+		BC_INLINE void push_symbol_ptr(const bc_body_optimized_t* symbols){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(symbols != nullptr && symbols->check_invariant());
+
+			bc_pod_value_t e;
+			e._symbol_table = symbols;
+			_value_stack.push_back(e);
+			_exts.push_back(false);
+		}
 
 		BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
 			QUARK_ASSERT(check_invariant());
@@ -336,6 +352,11 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
+		public: bool is_ext(int pos) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			return _exts[pos];
+		}
 /*
 		BC_INLINE void pop_value_slow(const typeid_t& type){
 			QUARK_ASSERT(_value_stack.empty() == false);
