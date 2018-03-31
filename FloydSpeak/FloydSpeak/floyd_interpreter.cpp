@@ -77,15 +77,6 @@ struct frame_pos_t {
 //	We store prev-frame-pos & symbol-ptr.
 static const int k_frame_overhead = 2;
 
-const bc_body_optimized_t* get_body(const interpreter_t& vm, int body_id){
-	if(body_id == -1){
-		return &vm._imm->_program._globals;
-	}
-	else {
-		return &vm._imm->_program._function_defs[body_id]._body;
-	}
-}
-
 int read_prev_frame_pos(const interpreter_t& vm, int frame_pos){
 //	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(frame_pos >= k_frame_overhead);
@@ -145,7 +136,7 @@ bool check_stack_frame(const interpreter_t& vm, int frame_pos){
 
 //	Will NOT bump RCs of init_values.
 //	Returns new frame-pos, same as vm._current_stack_frame.
-int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_optimized_t& body, const bc_value_t* init_values, int init_value_count){
+int open_frame(interpreter_t& vm, const bc_body_optimized_t& body, const bc_value_t* init_values, int init_value_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -194,7 +185,7 @@ int open_stack_frame2_nobump(interpreter_t& vm, const bc_body_optimized_t& body,
 //	Restores previous stack frame pos.
 //	Returns resulting stack frame pos.
 //	Decrements all stack frame object RCs.
-int close_stack_frame(interpreter_t& vm, const bc_body_optimized_t& body){
+int close_frame(interpreter_t& vm, const bc_body_optimized_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -214,7 +205,7 @@ int close_stack_frame(interpreter_t& vm, const bc_body_optimized_t& body){
 	return prev_frame_pos;
 }
 
-//	#0 is top of stack, last elementis bottom.
+//	#0 is top of stack, last element is bottom.
 //	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
 vector<std::pair<int, int>> get_stack_frames(const interpreter_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
@@ -232,34 +223,6 @@ vector<std::pair<int, int>> get_stack_frames(const interpreter_t& vm){
 		frame_pos = prev_frame_pos;
 	}
 	return result;
-}
-
-std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(s.size() > 0);
-
-	const auto& symbols = vm._imm->_program._globals._body._symbols;
-    const auto& it = std::find_if(
-    	symbols.begin(),
-    	symbols.end(),
-    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
-	);
-	if(it != symbols.end()){
-		const auto index = static_cast<int>(it - symbols.begin());
-		const auto pos = get_global_n_pos(index);
-		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
-
-		const auto value_entry = value_entry_t{
-			vm._value_stack.load_value_slow(pos, it->second._value_type),
-			it->first,
-			it->second,
-			variable_address_t::make_variable_address(-1, static_cast<int>(index))
-		};
-		return make_shared<value_entry_t>(value_entry);
-	}
-	else{
-		return nullptr;
-	}
 }
 
 BC_INLINE int find_frame_from_address(const interpreter_t& vm, int parent_step){
@@ -403,6 +366,34 @@ void write_register_string(interpreter_t& vm, const variable_address_t& reg, con
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
+
+std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto& symbols = vm._imm->_program._globals._body._symbols;
+    const auto& it = std::find_if(
+    	symbols.begin(),
+    	symbols.end(),
+    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
+	);
+	if(it != symbols.end()){
+		const auto index = static_cast<int>(it - symbols.begin());
+		const auto pos = get_global_n_pos(index);
+		QUARK_ASSERT(pos >= 0 && pos < vm._value_stack.size());
+
+		const auto value_entry = value_entry_t{
+			vm._value_stack.load_value_slow(pos, it->second._value_type),
+			it->first,
+			it->second,
+			variable_address_t::make_variable_address(-1, static_cast<int>(index))
+		};
+		return make_shared<value_entry_t>(value_entry);
+	}
+	else{
+		return nullptr;
+	}
+}
 
 
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
@@ -759,9 +750,9 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 				temp_ownership.push_back(t);
 			}
 
-			open_stack_frame2_nobump(vm, function_def._body, &temp_ownership[0], callee_arg_count);
+			open_frame(vm, function_def._body, &temp_ownership[0], callee_arg_count);
 			const auto& result = execute_instructions(vm, function_def._body._body._instructions);
-			close_stack_frame(vm, function_def._body);
+			close_frame(vm, function_def._body);
 
 			QUARK_ASSERT(result._type == execution_result_t::k_returning);
 			if(function_return_type.is_void() == false){
@@ -1335,9 +1326,9 @@ execution_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& bo
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	open_stack_frame2_nobump(vm, body, init_values, init_value_count);
+	open_frame(vm, body, init_values, init_value_count);
 	const auto& r = execute_instructions(vm, body._body._instructions);
-	close_stack_frame(vm, body);
+	close_frame(vm, body);
 	return r;
 }
 
@@ -1409,7 +1400,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions2});
 
 	_current_stack_frame = 0;
-	open_stack_frame2_nobump(*this, _imm->_program._globals, nullptr, 0);
+	open_frame(*this, _imm->_program._globals, nullptr, 0);
 
 	//	Run static intialization (basically run global instructions before calling main()).
 	/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._body._instructions);
