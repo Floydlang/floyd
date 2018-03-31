@@ -110,7 +110,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
 	test__run_init__check_result("int result = 123;", value_t::make_int(123));
 }
 
-QUARK_UNIT_TESTQ("Floyd test suite", "bool constant expression"){
+QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
 	test__run_init__check_result("bool result = true;", value_t::make_bool(true));
 }
 QUARK_UNIT_TESTQ("Floyd test suite", "bool constant expression"){
@@ -858,7 +858,7 @@ QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
-QUARK_UNIT_TESTQ("call_function()", "return from within IF block"){
+QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
 	auto r = test__run_global(
 		"string f(){"
 		"	if(true){"

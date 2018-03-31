@@ -63,15 +63,22 @@ namespace floyd {
 		floyd::value_t _const_value;
 
 
+		public: bool check_invariant() const {
+			QUARK_ASSERT(_const_value.is_undefined() || _const_value.get_type() == _value_type);
+			return true;
+		}
 
 		private: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
 			_symbol_type(symbol_type),
 			_value_type(value_type),
 			_const_value(const_value)
 		{
+			QUARK_ASSERT(check_invariant());
 		}
 
 		public: floyd::typeid_t get_type() const {
+			QUARK_ASSERT(check_invariant());
+
 			return _value_type;
 		}
 

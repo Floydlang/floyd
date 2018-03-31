@@ -74,6 +74,7 @@ variable_address_t make_immediate_int(int value){
 
 	value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
 		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(type.check_invariant());
 
 		const auto basetype = type.get_base_type();
 
@@ -139,10 +140,14 @@ variable_address_t make_immediate_int(int value){
 	}
 
 	bc_value_t value_to_bc(const value_t& value){
+		QUARK_ASSERT(value.check_invariant());
+
 		return bc_value_t::from_value(value);
 	}
 
 	std::string to_compact_string2(const bc_value_t& value) {
+		QUARK_ASSERT(value.check_invariant());
+
 		return "xxyyzz";
 //		return to_compact_string2(value._backstore);
 	}
@@ -154,6 +159,9 @@ variable_address_t make_immediate_int(int value){
 
 
 bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
     const auto it = std::find_if(vm._types.begin(), vm._types.end(), [&type](const typeid_t& e) { return e == type; });
 	if(it != vm._types.end()){
 		const auto pos = static_cast<bc_typeid_t>(it - vm._types.begin());
@@ -163,6 +171,8 @@ bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
 		vm._types.push_back(type);
 		return static_cast<bc_typeid_t>(vm._types.size() - 1);
 	}
+
+	QUARK_ASSERT(vm.check_invariant());
 }
 
 /*
@@ -170,6 +180,72 @@ bc_typeid_t intern_type(bgenerator_t& vm, const typeid_t& type){
 	return intern_type(vm, typeid_t(type));
 }
 */
+
+
+
+struct opcode_info_t {
+	std::string _as_text;
+	enum class encoding {
+		k_e_0000,
+		k_f_trr0,
+		k_g_trri,
+		k_h_trrr,
+		k_i_trii,
+		k_j_trxx,
+		k_k_0ri0,
+		k_l_00i0,
+		k_m_tr00,
+		k_n_tii0
+	};
+	encoding _encoding;
+};
+
+static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
+	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
+
+	{ bc_opcode::k_store_resolve, { "store_resolve", opcode_info_t::encoding::k_f_trr0 } },
+
+	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
+	{ bc_opcode::k_lookup_element, { "lookup_element", opcode_info_t::encoding::k_g_trri } },
+	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_g_trri } },
+
+	{ bc_opcode::k_arithmetic_add, { "arithmetic_add", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_arithmetic_subtract, { "arithmetic_subtract", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_arithmetic_multiply, { "arithmetic_multiply", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_arithmetic_divide, { "arithmetic_divide", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_arithmetic_remainder, { "arithmetic_remainder", opcode_info_t::encoding::k_h_trrr } },
+
+	{ bc_opcode::k_logical_and, { "logical_and", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_or, { "logical_or", opcode_info_t::encoding::k_h_trrr } },
+
+	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_larger_or_equal, { "comparison_larger_or_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_larger, { "comparison_larger", opcode_info_t::encoding::k_h_trrr } },
+
+	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_h_trrr } },
+
+	{ bc_opcode::k_construct_value, { "construct_value", opcode_info_t::encoding::k_i_trii } },
+
+	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_j_trxx } },
+
+	{ bc_opcode::k_push, { "push", opcode_info_t::encoding::k_m_tr00 } },
+	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_tii0 } },
+
+	{ bc_opcode::k_branch_false_bool, { "branch_false_bool", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_branch_true_bool, { "branch_true_bool", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_branch_zero_int, { "branch_zero_int", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_branch_notzero_int, { "branch_notzero_int", opcode_info_t::encoding::k_k_0ri0 } },
+
+	{ bc_opcode::k_branch_always, { "branch_always", opcode_info_t::encoding::k_l_00i0 } }
+
+
+};
+
+
+
+
 
 
 
@@ -378,7 +454,9 @@ int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t
 //?? registers should ALWAYS bein current stack frame. What about upvalues?
 
 
-reg_t flatten_ref(const reg_t& r, int offset){
+reg_t flatten_reg(const reg_t& r, int offset){
+	QUARK_ASSERT(r.check_invariant());
+
 	if(r._parent_steps == 666){
 		return r;
 	}
@@ -393,18 +471,96 @@ reg_t flatten_ref(const reg_t& r, int offset){
 	}
 }
 
+struct reg_flags_t {
+	bool _a;
+	bool _b;
+	bool _c;
+};
+reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
+	if(e == opcode_info_t::encoding::k_e_0000){
+		return { false, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_f_trr0){
+		return { true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_g_trri){
+		return { true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_h_trrr){
+		return { true, true, true };
+	}
+	else if(e == opcode_info_t::encoding::k_i_trii){
+		return { true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_j_trxx){
+		return { true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_k_0ri0){
+		return { true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_l_00i0){
+		return { false, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_m_tr00){
+		return { true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_n_tii0){
+		return { false, false, false };
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+bool check_register(const reg_t& reg, bool is_reg){
+	if(is_reg){
+		QUARK_ASSERT(reg._parent_steps != 666);
+	}
+	else{
+		QUARK_ASSERT(reg._parent_steps == 666 || (reg._parent_steps == -1 && reg._index == -1));
+	}
+	return true;
+}
+
+bool check_invariant(bc_instruction_t instruction){
+	const auto encoding = k_opcode_info.at(instruction._opcode)._encoding;
+	const auto reg_flags = encoding_to_reg_flags(encoding);
+
+	QUARK_ASSERT(check_register(instruction._reg_a, reg_flags._a));
+	QUARK_ASSERT(check_register(instruction._reg_b, reg_flags._b));
+	QUARK_ASSERT(check_register(instruction._reg_c, reg_flags._c));
+
+	QUARK_ASSERT(instruction._parent_type == -1);
+	return true;
+}
+
+
+//??? Cannot flatten immediate values! Must handle opcodes differently? Have a few opcode flavors?
+//	RRR, RII etc. Register-Register-Register.
+
+//Problem now is that flatten change immediate values.alignas(<#expression#>)
 bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t& source){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(dest.check_invariant());
+	QUARK_ASSERT(source.check_invariant());
+
 	std::vector<bc_instruction_t> instructions;
 	int offset = static_cast<int>(dest._symbols.size());
 	for(int i = 0 ; i < source._instructions.size() ; i++){
 		//	Decrese parent-step for all local register accesses.
 		auto s = source._instructions[i];
+
+		const auto encoding = k_opcode_info.at(s._opcode)._encoding;
+		const auto reg_flags = encoding_to_reg_flags(encoding);
+
+		//	Make a new instructions with registered offsetted for flattening. Only offset registrers, not when used as immediates.
 		const auto s2 = bc_instruction_t(
 			s._opcode,
 			s._instr_type,
-			flatten_ref(s._reg_a, offset),
-			flatten_ref(s._reg_b, offset),
-			flatten_ref(s._reg_c, offset),
+			reg_flags._a ? flatten_reg(s._reg_a, offset) : s._reg_a,
+			reg_flags._b ? flatten_reg(s._reg_b, offset) : s._reg_b,
+			reg_flags._c ? flatten_reg(s._reg_c, offset) : s._reg_c,
 			s._parent_type
 		);
 		instructions.push_back(s2);
@@ -418,6 +574,9 @@ bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t&
 
 
 bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(a.check_invariant());
+
 	if(a._parent_steps == -1){
 		return &vm._call_stack[0];
 	}
@@ -426,6 +585,8 @@ bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_addr
 	}
 }
 const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const variable_address_t& a){
+	QUARK_ASSERT(vm.check_invariant());
+
 	if(a._parent_steps == -1){
 		return &vm._call_stack[0];
 	}
@@ -437,6 +598,7 @@ const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const v
 
 bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 	const auto expr = bcgen_expression(vm, statement._expression, body_acc);
@@ -448,6 +610,7 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 
 bc_body_t bcgen_block_statement(bgenerator_t& vm, const statement_t::block_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	const auto body_acc = bcgen_body(vm, statement._body);
 	return flatten_body(vm, body, body_acc);
@@ -455,6 +618,7 @@ bc_body_t bcgen_block_statement(bgenerator_t& vm, const statement_t::block_state
 
 bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 	const auto expr = bcgen_expression(vm, statement._expression, body);
@@ -465,6 +629,7 @@ bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_sta
 
 bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -487,7 +652,7 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 	body_acc = flatten_body(vm, body_acc, then_expr);
 	body_acc._instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_jump,
+			bc_opcode::k_branch_always,
 			{},
 			make_immediate_int(static_cast<int>(else_expr._instructions.size()) + 1),
 			{},
@@ -501,6 +666,7 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 //??? check range-type too!
 bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -556,6 +722,7 @@ QUARK_ASSERT(false);
 
 bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -581,7 +748,7 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 
 	instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_jump,
+			bc_opcode::k_branch_always,
 			{},
 			make_immediate_int(condition_start -static_cast<int>(instructions.size())),
 			{},
@@ -595,6 +762,7 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 
 bc_body_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expression_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 	const auto& expr = bcgen_expression(vm, statement._expression, body);
@@ -642,6 +810,8 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 
 	vm._call_stack.pop_back();
 
+	QUARK_ASSERT(body.check_invariant());
+	QUARK_ASSERT(vm.check_invariant());
 	return body2;
 }
 
@@ -654,6 +824,7 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 expr_info_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e._input_exprs[0].get_output_type().is_struct());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -680,6 +851,8 @@ expr_info_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t
 
 expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -705,6 +878,8 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 
 expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	return { body, e._address, intern_type(vm, *e._output_type) };
 }
@@ -733,12 +908,11 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(args != nullptr);
 	QUARK_ASSERT(body.check_invariant());
+	QUARK_ASSERT(callee_arg_count == function_def_arg_type.size());
 
 	auto body_acc = body;
 
 	int dynamic_arg_count = count_function_dynamic_args(function_def_arg_type);
-
-	QUARK_ASSERT(callee_arg_count == function_def_arg_type.size());
 	const auto arg_count = callee_arg_count;
 
 	//	Generate code / symbols for all arguments to the function call. Record where each arg is kept.
@@ -781,12 +955,15 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 	}
 	int stack_count = arg_count + dynamic_arg_count;
 
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body_acc.check_invariant());
 	return { body_acc, extbits, stack_count };
 }
 
 expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -811,7 +988,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 	const auto function_result_reg = add_temp(body_acc, return_type, "call result register");
 	body_acc._instructions.push_back(bc_instruction_t(
 		bc_opcode::k_call,
-		{},
+		intern_type(vm, return_type),
 		function_result_reg,
 		function_reg,
 		make_immediate_int(arg_count)
@@ -829,6 +1006,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -862,6 +1040,8 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 
 expr_info_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	const auto type = e._input_exprs[0].get_output_type();
 
@@ -894,6 +1074,8 @@ expr_info_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expr
 
 expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
@@ -927,7 +1109,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	int jump2_pc = static_cast<int>(body_acc._instructions.size());
 	body_acc._instructions.push_back(
 		bc_instruction_t(
-			bc_opcode::k_jump,
+			bc_opcode::k_branch_always,
 			{},
 			make_immediate_int(0xfea57be7),
 			{},
@@ -955,6 +1137,8 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 //??? shortcut evaluation!
 expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	static const std::map<expression_type, bc_opcode> conv_opcode = {
 		{ expression_type::k_comparison_smaller_or_equal__2, bc_opcode::k_comparison_smaller_or_equal },
@@ -993,6 +1177,8 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 
 expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	static const std::map<expression_type, bc_opcode> conv_opcode = {
 		{ expression_type::k_arithmetic_add__2, bc_opcode::k_arithmetic_add },
@@ -1028,6 +1214,7 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
 
 	const auto op = e.get_operation();
 	const auto output_type = e.get_output_type();
@@ -1083,49 +1270,7 @@ expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_b
 
 
 std::string opcode_to_string(bc_opcode opcode){
-	static const std::map<bc_opcode, std::string> lookup = {
-		{ bc_opcode::k_nop, "nop" },
-
-		{ bc_opcode::k_store_resolve, "store_resolve" },
-
-		{ bc_opcode::k_resolve_member, "resolve_member" },
-		{ bc_opcode::k_lookup_element, "lookup_element" },
-		{ bc_opcode::k_call, "call" },
-
-		{ bc_opcode::k_arithmetic_add, "arithmetic_add" },
-		{ bc_opcode::k_arithmetic_subtract, "arithmetic_subtract" },
-		{ bc_opcode::k_arithmetic_multiply, "arithmetic_multiply" },
-		{ bc_opcode::k_arithmetic_divide, "arithmetic_divide" },
-		{ bc_opcode::k_arithmetic_remainder, "arithmetic_remainder" },
-
-		{ bc_opcode::k_logical_and, "logical_and" },
-		{ bc_opcode::k_logical_or, "logical_or" },
-
-		{ bc_opcode::k_comparison_smaller_or_equal, "comparison_smaller_or_equal" },
-		{ bc_opcode::k_comparison_smaller, "comparison_smaller" },
-		{ bc_opcode::k_comparison_larger_or_equal, "comparison_larger_or_equal" },
-		{ bc_opcode::k_comparison_larger, "comparison_larger" },
-
-		{ bc_opcode::k_logical_equal, "logical_equal" },
-		{ bc_opcode::k_logical_nonequal, "logical_nonequal" },
-
-		{ bc_opcode::k_construct_value, "construct_value" },
-
-		{ bc_opcode::k_return, "return" },
-
-		{ bc_opcode::k_push, "push" },
-		{ bc_opcode::k_popn, "popn" },
-
-		{ bc_opcode::k_branch_false_bool, "branch_false_bool" },
-		{ bc_opcode::k_branch_true_bool, "branch_true_bool" },
-		{ bc_opcode::k_branch_zero_int, "branch_zero_int" },
-		{ bc_opcode::k_branch_notzero_int, "branch_notzero_int" },
-
-		{ bc_opcode::k_jump, "jump" }
-
-
-	};
-	return lookup.at(opcode);
+	return k_opcode_info.at(opcode)._as_text;
 }
 
 json_t reg_to_json(const variable_address_t& reg){
@@ -1137,25 +1282,14 @@ json_t reg_to_json(const variable_address_t& reg){
 }
 
 json_t body_to_json(const bc_body_optimized_t& body){
-/*	vector<json_t> symbols;
-	int symbol_index;
-	for(const auto& e: body._body._symbols){
-		const auto i = json_t::make_array({
-			std::to_string(symbol_index),
-			e.first,
-			value_to_ast_json(e.second._const_value, json_tags::k_plain)._value,
-			typeid_to_ast_json(e.second._value_type, json_tags::k_plain)._value,
-			e.second._symbol_type
-			opcode_to_string(e._opcode),
-			reg_to_json(e._reg_a),
-			reg_to_json(e._reg_b),
-			reg_to_json(e._reg_c),
-			"_parent_type"
-		});
-		instructions.push_back(i);
-		symbol_index++;
+	vector<json_t> exts;
+	for(int i = 0 ; i < body._exts.size() ; i++){
+		const auto& e = body._exts[i];
+		exts.push_back(json_t::make_array({
+			json_t(i),
+			json_t(e)
+		}));
 	}
-*/
 
 	vector<json_t> instructions;
 	int pc = 0;
@@ -1175,7 +1309,8 @@ json_t body_to_json(const bc_body_optimized_t& body){
 
 	return json_t::make_object({
 		{ "symbols", json_t::make_array(symbols_to_json(body._body._symbols)) },
-		{ "instructions", json_t::make_array(instructions) }
+		{ "instructions", json_t::make_array(instructions) },
+		{ "exts", json_t::make_array(exts) }
 	});
 }
 
@@ -1191,6 +1326,15 @@ json_t types_to_json(const std::vector<const typeid_t>& types){
 		id++;
 	}
 	return json_t::make_array(r);
+}
+
+json_t functiondef_to_json(const bc_function_definition_t& def){
+	return json_t::make_array({
+		json_t(typeid_to_compact_string(def._function_type)),
+		members_to_json(def._args),
+		body_to_json(def._body),
+		json_t(def._host_function_id)
+	});
 }
 
 
@@ -1215,10 +1359,19 @@ json_t bcprogram_to_json(const bc_program_t& program){
 		callstack.push_back(env);
 	}
 */
+	vector<json_t> function_defs;
+	for(int i = 0 ; i < program._function_defs.size() ; i++){
+		const auto& function_def = program._function_defs[i];
+		function_defs.push_back(json_t::make_array({
+			json_t(i),
+			functiondef_to_json(function_def)
+		}));
+	}
 
 	return json_t::make_object({
 		{ "globals", body_to_json(program._globals) },
-		{ "types", types_to_json(program._types) }
+		{ "types", types_to_json(program._types) },
+		{ "function_defs", json_t::make_array(function_defs) }
 //		{ "callstack", json_t::make_array(callstack) }
 	});
 }

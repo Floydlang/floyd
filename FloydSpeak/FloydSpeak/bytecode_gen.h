@@ -18,7 +18,7 @@
 #include "ast_value.h"
 
 
-#define FLOYD_BD_DEBUG 0
+#define FLOYD_BD_DEBUG 1
 #define BC_INLINE	inline
 //#define BC_INLINE
 
@@ -689,6 +689,17 @@ namespace floyd {
 		}
 
 		//	YES bump.
+#if DEBUG && FLOYD_BD_DEBUG
+		public: BC_INLINE explicit bc_value_t(typeid_t debug_type, const bc_pod_value_t& internals, bool is_ext) :
+			_debug_type(debug_type),
+			_pod(internals),
+			_is_ext(is_ext)
+		{
+			if(_is_ext){
+				_pod._ext->_rc++;
+			}
+		}
+#else
 		public: BC_INLINE explicit bc_value_t(const bc_pod_value_t& internals, bool is_ext) :
 			_pod(internals),
 			_is_ext(is_ext)
@@ -697,6 +708,7 @@ namespace floyd {
 				_pod._ext->_rc++;
 			}
 		}
+#endif
 
 
 		//////////////////////////////////////		STATE
@@ -705,7 +717,7 @@ namespace floyd {
 
 
 #if DEBUG && FLOYD_BD_DEBUG
-		private: typeid_t _debug_type;
+		public: typeid_t _debug_type;
 #endif
 		private: bool _is_ext;
 		public: bc_pod_value_t _pod;
@@ -839,19 +851,47 @@ inline int bc_limit(int value, int min, int max){
 	enum class bc_opcode: uint8_t {
 		k_nop,
 
+		/*
+			TYPE: itype of returned member
+			A: Register: where to put result
+			B: Register: parent
+			C: ---
+		*/
 		k_store_resolve,
 
+		/*
+			TYPE: itype of returned member
+			A: Register: where to put result
+			B: Register: parent
+			C: Register: key
+		*/
 		k_resolve_member,
+
+		/*
+			TYPE: itype of returned member
+			A: Register: where to put result
+			B: Register: parent
+			C: IMMEDIATE: member-index
+		*/
 		k_lookup_element,
 
 		/*
-			A: Register tells where to put function return
-			B: function value to call
-			C: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
-			_instr_type: ---
+			TYPE: itype of function output
+			A: Register: tells where to put function return
+			B: Register: function value to call
+			C: IMMEDIATE: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
+
+			All arguments are pushed to stack, first argument first.
+			DYN arguments are pushed as (itype, value)
 		*/
 		k_call,
 
+		/*
+			TYPE: itype of returned value
+			A: Register: where to put result
+			B: Register: lhs
+			C: Register: rhs
+		*/
 		k_arithmetic_add,
 		k_arithmetic_subtract,
 		k_arithmetic_multiply,
@@ -861,6 +901,13 @@ inline int bc_limit(int value, int min, int max){
 		k_logical_and,
 		k_logical_or,
 
+
+		/*
+			TYPE: itype of values to compare. Output is always bool.
+			A: Register: where to put result
+			B: Register: lhs
+			C: Register: rhs
+		*/
 		k_comparison_smaller_or_equal,
 		k_comparison_smaller,
 		k_comparison_larger_or_equal,
@@ -871,11 +918,13 @@ inline int bc_limit(int value, int min, int max){
 
 
 		/*
-			Constructs a value from its type.
+			TYPE: target_type - type to create
 			A: Register tells where to put function return
-			B: Source itype IMMEDIATE
-			C: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
-			_instr_type: target_type - type to create
+			B: IMMEDIATE: Source itype
+			C: IMMEDIATE: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
+
+			All arguments are pushed to stack, first argument first.
+			No DYN argumentes.
 		*/
 		k_construct_value,
 
@@ -893,17 +942,48 @@ inline int bc_limit(int value, int min, int max){
 */
 
 
+		/*
+			TYPE: itype of output value.
+			A: Register: value to push
+			B: ---
+			C: ---
+		*/
 		k_return,
 
+		/*
+			TYPE: value_type.
+			A: Register: where get value from
+			B: ---
+			C: ---
+		*/
 		k_push,
+
+		/*
+			TYPE: ---
+			A: IMMEDIATE: arg count
+			B: IMMEDIATE: extbits
+			C: ---
+		*/
 		k_popn,
 
+		/*
+			TYPE: ---
+			A: Register: input to test
+			B: IMMEDIATE: branch offset (added to PC).
+			C: ---
+		*/
 		k_branch_false_bool,
 		k_branch_true_bool,
 		k_branch_zero_int,
 		k_branch_notzero_int,
 
-		k_jump
+		/*
+			TYPE: ---
+			A: ---
+			B: IMMEDIATE: branch offset (added to PC).
+			C: ---
+		*/
+		k_branch_always
 	};
 
 
@@ -922,7 +1002,8 @@ inline int bc_limit(int value, int min, int max){
 			_instr_type(type),
 			_reg_a(regA),
 			_reg_b(regB),
-			_reg_c(regC)
+			_reg_c(regC),
+			_parent_type(-1)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -971,6 +1052,7 @@ inline int bc_limit(int value, int min, int max){
 	//////////////////////////////////////		bc_body_t
 
 
+	bool check_invariant(bc_instruction_t instruction);
 
 	struct bc_body_t {
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
@@ -992,6 +1074,14 @@ inline int bc_limit(int value, int min, int max){
 		}
 
 		public: bool check_invariant() const {
+			for(int i = 0 ; i < _instructions.size() ; i++){
+				const auto instruction = _instructions[i];
+				QUARK_ASSERT(::floyd::check_invariant(instruction));
+			}
+			for(const auto& e: _symbols){
+				QUARK_ASSERT(e.first != "");
+				QUARK_ASSERT(e.second.check_invariant());
+			}
 			return true;
 		}
 	};

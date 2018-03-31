@@ -30,6 +30,8 @@ namespace floyd {
 
 
 
+	#define DEBUG_STACK (DEBUG & FLOYD_BD_DEBUG)
+
 
 
 	//////////////////////////////////////		interpreter_stack_t
@@ -39,128 +41,299 @@ namespace floyd {
 	struct interpreter_stack_t {
 		public: interpreter_stack_t(){
 			_value_stack.reserve(1024);
-		}
-		public: ~interpreter_stack_t(){
+
+			QUARK_ASSERT(check_invariant());
 		}
 
+		public: ~interpreter_stack_t(){
+			QUARK_ASSERT(check_invariant());
+		}
+
+
+		public: bool check_invariant() const {
+			QUARK_ASSERT(_exts.size() == _value_stack.size());
+			for(int i = 0 ; i < _value_stack.size() ; i++){
+//				QUARK_ASSERT(_value_stack[i].check_invariant());
+			}
+			return true;
+		}
+
+
 		public: interpreter_stack_t(const interpreter_stack_t& other) :
-			_value_stack(other._value_stack)
+			_value_stack(other._value_stack),
+			_exts(other._exts)
 		{
+			QUARK_ASSERT(other.check_invariant());
+
 			//??? Cannot bump RC:s because we don't know which values!
 			QUARK_ASSERT(false);
 		}
 
 		public: interpreter_stack_t& operator=(const interpreter_stack_t& other){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
 			interpreter_stack_t temp = other;
 			temp.swap(*this);
 			return *this;
 		}
 
 		public: void swap(interpreter_stack_t& other) throw() {
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
 			other._value_stack.swap(_value_stack);
+			other._exts.swap(_exts);
+
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
 		}
 
 		int size() const {
+			QUARK_ASSERT(check_invariant());
+
 			return static_cast<int>(_value_stack.size());
 		}
+
+
+		static bool is_compatible(bool is_ext, const typeid_t& stack_info){
+			if(stack_info.is_unresolved_type_identifier()){
+				const auto tag = stack_info.get_unresolved_type_identifier();
+				if(tag == "OBJ" && is_ext == false){
+					QUARK_ASSERT(false);
+				}
+				else if(tag == "INLINE" && is_ext == true){
+					QUARK_ASSERT(false);
+				}
+				else{
+					return true;
+				}
+			}
+			else{
+				bool is_ext_rhs = bc_value_t::is_bc_ext(stack_info.get_base_type());
+				QUARK_ASSERT(is_ext == is_ext_rhs);
+			}
+			return true;
+		}
+
+		static bool is_compatible(const typeid_t& type, const typeid_t& stack_info){
+			if(stack_info.is_unresolved_type_identifier()){
+				const auto tag = stack_info.get_unresolved_type_identifier();
+				bool is_ext = bc_value_t::is_bc_ext(type.get_base_type());
+				if(tag == "OBJ" && is_ext == false){
+					QUARK_ASSERT(false);
+				}
+				else if(tag == "INLINE" && is_ext == true){
+					QUARK_ASSERT(false);
+				}
+				else{
+					return true;
+				}
+			}
+			else{
+				QUARK_ASSERT(type == stack_info);
+			}
+			return true;
+		}
+
+
 		BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(value.check_invariant());
+			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == is_ext);
+
 			if(is_ext){
 				value._pod._ext->_rc++;
 			}
 			_value_stack.push_back(value._pod);
+			_exts.push_back(is_ext);
+
+			QUARK_ASSERT(check_invariant());
 		}
 		BC_INLINE void push_intq(int value){
+			QUARK_ASSERT(check_invariant());
+
 			bc_pod_value_t e;
 			e._int = value;
 			_value_stack.push_back(e);
+			_exts.push_back(false);
+
+			QUARK_ASSERT(check_invariant());
 		}
 		BC_INLINE void push_obj(const bc_value_t& value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(value.check_invariant());
+			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
+
 			value._pod._ext->_rc++;
 			_value_stack.push_back(value._pod);
+			_exts.push_back(true);
+
+			QUARK_ASSERT(check_invariant());
 		}
 
+/*
 		BC_INLINE void push_values_no_rc_bump(const bc_pod_value_t* values, int value_count){
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(values != nullptr);
+			QUARK_ASSERT(value_count >= 0);
 
 			_value_stack.insert(_value_stack.end(), values, values + value_count);
-		}
+			for(int i = 0 ; i < value_count ; i++){
+				_exts.push_back(false);
+			}
 
+			QUARK_ASSERT(check_invariant());
+		}
+*/
 
 
 		//	returned value will have ownership of obj, if it's an obj.
 		BC_INLINE bc_value_t load_value_slow(int pos, const typeid_t& type) const{
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(type.check_invariant());
 
 			const auto& e = _value_stack[pos];
 			bool is_ext = bc_value_t::is_bc_ext(type.get_base_type());
-			return bc_value_t(e, is_ext);
+
+			QUARK_ASSERT(is_ext == _exts[pos]);
+
+#if DEBUG && FLOYD_BD_DEBUG
+			const auto result = bc_value_t(type, e, is_ext);
+#else
+			const auto result = bc_value_t(e, is_ext);
+#endif
+			return result;
 		}
 
 		BC_INLINE bc_value_t load_inline_value(int pos) const{
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(false == _exts[pos]);
 
-			return bc_value_t(_value_stack[pos], false);
+#if DEBUG && FLOYD_BD_DEBUG
+			const auto result = bc_value_t(typeid_t::make_unresolved_type_identifier("INLINE"), _value_stack[pos], false);
+#else
+			const auto result = bc_value_t(_value_stack[pos], false);
+#endif
+			return result;
 		}
 
 		BC_INLINE bc_value_t load_obj(int pos) const{
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(true == _exts[pos]);
 
-			return bc_value_t(_value_stack[pos], true);
+#if DEBUG && FLOYD_BD_DEBUG
+			const auto result = bc_value_t(typeid_t::make_unresolved_type_identifier("OBJ"), _value_stack[pos], true);
+#else
+			const auto result = bc_value_t(_value_stack[pos], true);
+#endif
+			return result;
 		}
 
 		BC_INLINE int load_intq(int pos) const{
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(false == _exts[pos]);
 
 			return _value_stack[pos]._int;
 		}
 
 		BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(value.check_invariant());
+			QUARK_ASSERT(type.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(value._debug_type == type);
 
 			if(bc_value_t::is_bc_ext(type.get_base_type())){
+				QUARK_ASSERT(true == _exts[pos]);
 				replace_obj(pos, value);
 			}
 			else{
+				QUARK_ASSERT(false == _exts[pos]);
 				replace_inline(pos, value);
 			}
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		BC_INLINE void replace_inline(int pos, const bc_value_t& value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == false);
+			QUARK_ASSERT(false == _exts[pos]);
 
 			_value_stack[pos] = value._pod;
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		BC_INLINE void replace_obj(int pos, const bc_value_t& value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
+			QUARK_ASSERT(true == _exts[pos]);
 
 			auto prev_copy = _value_stack[pos];
 			value._pod._ext->_rc++;
 			_value_stack[pos] = value._pod;
 			bc_value_t::debump(prev_copy);
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		BC_INLINE void replace_int(int pos, const int& value){
+			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			QUARK_ASSERT(false == _exts[pos]);
 
 			_value_stack[pos]._int = value;
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		//	extbits[0] tells if the first popped value has ext. etc.
 		//	Max 32 can be popped.
 		BC_INLINE void pop_batch(int count, uint32_t extbits){
-			QUARK_ASSERT(_value_stack.empty() == false);
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(_value_stack.size() >= count);
+			QUARK_ASSERT(count >= 0);
 			QUARK_ASSERT(count <= 32);
 
 			for(int i = 0 ; i < count ; i++){
 				bool ext = (extbits & (1 << i)) == 0 ? false : true;
-
-				auto copy = _value_stack.back();
-				_value_stack.pop_back();
-				if(ext){
-					bc_value_t::debump(copy);
-				}
+				pop(ext);
 			}
+			QUARK_ASSERT(check_invariant());
+		}
+
+		BC_INLINE void pop_batch(const std::vector<bool>& exts){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(_value_stack.size() >= exts.size());
+
+			for(int i = 0 ; i < exts.size() ; i++){
+				pop(exts[exts.size() - i - 1]);
+			}
+			QUARK_ASSERT(check_invariant());
+		}
+		BC_INLINE void pop(bool ext){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(_value_stack.empty() == false);
+			QUARK_ASSERT(_exts.back() == ext);
+
+			auto copy = _value_stack.back();
+			_value_stack.pop_back();
+			_exts.pop_back();
+			if(ext){
+				bc_value_t::debump(copy);
+			}
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 /*
@@ -173,7 +346,8 @@ namespace floyd {
 		}
 */
 
-		public: std::vector<bc_pod_value_t> _value_stack;
+		private: std::vector<bc_pod_value_t> _value_stack;
+		private: std::vector<bool> _exts;
 	};
 
 
