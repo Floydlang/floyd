@@ -1411,7 +1411,9 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 //	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
 }
 
-QUARK_UNIT_TEST_VIP("run_init()", "for", "", ""){
+
+//???
+OFF_QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	const auto r = test__run_global(
 		R"(
 			for (i in 0...2) {

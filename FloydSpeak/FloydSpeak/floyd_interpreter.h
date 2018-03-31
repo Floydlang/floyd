@@ -324,6 +324,7 @@ namespace floyd {
 		}
 
 		//	extbits[0] tells if the first popped value has ext. etc.
+		//	bit 0 maps to the next value to be popped from stack
 		//	Max 32 can be popped.
 		BC_INLINE void pop_batch(int count, uint32_t extbits){
 			QUARK_ASSERT(check_invariant());
@@ -331,19 +332,24 @@ namespace floyd {
 			QUARK_ASSERT(count >= 0);
 			QUARK_ASSERT(count <= 32);
 
+			uint32_t bits = extbits;
 			for(int i = 0 ; i < count ; i++){
-				bool ext = (extbits & (1 << i)) == 0 ? false : true;
+				bool ext = (bits & 1) ? true : false;
 				pop(ext);
+				bits = bits >> 1;
 			}
 			QUARK_ASSERT(check_invariant());
 		}
 
+		//	exts[exts.size() - 1] maps to the closed value on stack, the next to be popped.
 		BC_INLINE void pop_batch(const std::vector<bool>& exts){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_value_stack.size() >= exts.size());
 
+			auto flag_index = exts.size() - 1;
 			for(int i = 0 ; i < exts.size() ; i++){
-				pop(exts[exts.size() - i - 1]);
+				pop(exts[flag_index]);
+				flag_index--;
 			}
 			QUARK_ASSERT(check_invariant());
 		}

@@ -794,7 +794,7 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 			}
 
 			open_frame(vm._value_stack, function_def._body, &temp_ownership[0], callee_arg_count);
-			const auto& result = execute_instructions(vm, function_def._body._body._instructions);
+			const auto& result = execute_instructions(vm, function_def._body._body._instrs);
 			close_frame(vm._value_stack, function_def._body);
 
 			QUARK_ASSERT(result._type == execution_result_t::k_returning);
@@ -1097,7 +1097,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		//////////////////////////////		arithmetic
 
 
-		else if(opcode == bc_opcode::k_arithmetic_add){
+		else if(opcode == bc_opcode::k_add){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
@@ -1156,7 +1156,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 		}
 
-		else if(opcode == bc_opcode::k_arithmetic_subtract){
+		else if(opcode == bc_opcode::k_subtract){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
@@ -1186,7 +1186,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_arithmetic_multiply){
+		else if(opcode == bc_opcode::k_multiply){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
@@ -1216,7 +1216,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_arithmetic_divide){
+		else if(opcode == bc_opcode::k_divide){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
@@ -1252,7 +1252,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_arithmetic_remainder){
+		else if(opcode == bc_opcode::k_remainder){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
@@ -1372,7 +1372,7 @@ execution_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& bo
 	QUARK_ASSERT(body.check_invariant());
 
 	open_frame(vm._value_stack, body, init_values, init_value_count);
-	const auto& r = execute_instructions(vm, body._body._instructions);
+	const auto& r = execute_instructions(vm, body._body._instrs);
 	close_frame(vm._value_stack, body);
 	return r;
 }
@@ -1445,7 +1445,7 @@ interpreter_t::interpreter_t(const bc_program_t& program){
 	open_frame(_value_stack, _imm->_program._globals, nullptr, 0);
 
 	//	Run static intialization (basically run global instructions before calling main()).
-	/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._body._instructions);
+	/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._body._instrs);
 	QUARK_ASSERT(check_invariant());
 }
 

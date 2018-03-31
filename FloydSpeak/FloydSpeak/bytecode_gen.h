@@ -893,11 +893,11 @@ inline int bc_limit(int value, int min, int max){
 			B: Register: lhs
 			C: Register: rhs
 		*/
-		k_arithmetic_add,
-		k_arithmetic_subtract,
-		k_arithmetic_multiply,
-		k_arithmetic_divide,
-		k_arithmetic_remainder,
+		k_add,
+		k_subtract,
+		k_multiply,
+		k_divide,
+		k_remainder,
 
 		k_logical_and,
 		k_logical_or,
@@ -962,7 +962,7 @@ inline int bc_limit(int value, int min, int max){
 		/*
 			TYPE: ---
 			A: IMMEDIATE: arg count
-			B: IMMEDIATE: extbits
+			B: IMMEDIATE: extbits. bit 0 maps to the next value to be popped from stack.
 			C: ---
 		*/
 		k_popn,
@@ -1057,26 +1057,26 @@ inline int bc_limit(int value, int min, int max){
 
 	struct bc_body_t {
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
-		std::vector<bc_instruction_t> _instructions;
+		std::vector<bc_instruction_t> _instrs;
 
 
 		bc_body_t(const std::vector<bc_instruction_t>& s) :
-			_instructions(s),
+			_instrs(s),
 			_symbols{}
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		bc_body_t(const std::vector<bc_instruction_t>& instructions, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
-			_instructions(instructions),
+			_instrs(instructions),
 			_symbols(symbols)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
 		public: bool check_invariant() const {
-			for(int i = 0 ; i < _instructions.size() ; i++){
-				const auto instruction = _instructions[i];
+			for(int i = 0 ; i < _instrs.size() ; i++){
+				const auto instruction = _instrs[i];
 				QUARK_ASSERT(::floyd::check_invariant(instruction));
 			}
 			for(const auto& e: _symbols){
