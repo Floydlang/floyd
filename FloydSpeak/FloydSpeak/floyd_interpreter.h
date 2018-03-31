@@ -39,7 +39,10 @@ namespace floyd {
 
 
 	struct interpreter_stack_t {
-		public: interpreter_stack_t(){
+		public: interpreter_stack_t() :
+			_internal_placeholder_object(bc_value_t::make_string("Internal placeholder object")),
+			_current_stack_frame(0)
+		{
 			_value_stack.reserve(1024);
 
 			QUARK_ASSERT(check_invariant());
@@ -51,6 +54,9 @@ namespace floyd {
 
 
 		public: bool check_invariant() const {
+			QUARK_ASSERT(_current_stack_frame >= 0);
+			QUARK_ASSERT(_current_stack_frame <= _value_stack.size());
+			QUARK_ASSERT(_internal_placeholder_object.check_invariant());
 			QUARK_ASSERT(_exts.size() == _value_stack.size());
 			for(int i = 0 ; i < _value_stack.size() ; i++){
 //				QUARK_ASSERT(_value_stack[i].check_invariant());
@@ -61,7 +67,9 @@ namespace floyd {
 
 		public: interpreter_stack_t(const interpreter_stack_t& other) :
 			_value_stack(other._value_stack),
-			_exts(other._exts)
+			_exts(other._exts),
+			_internal_placeholder_object(other._internal_placeholder_object),
+			_current_stack_frame(other._current_stack_frame)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
@@ -84,6 +92,8 @@ namespace floyd {
 
 			other._value_stack.swap(_value_stack);
 			other._exts.swap(_exts);
+			_internal_placeholder_object.swap(other._internal_placeholder_object);
+			std::swap(_current_stack_frame, other._current_stack_frame);
 
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
@@ -367,8 +377,10 @@ namespace floyd {
 		}
 */
 
+		public: bc_value_t _internal_placeholder_object;
 		private: std::vector<bc_pod_value_t> _value_stack;
 		private: std::vector<bool> _exts;
+		public: int _current_stack_frame;
 	};
 
 
@@ -450,13 +462,11 @@ namespace floyd {
 		////////////////////////		STATE
 		public: std::shared_ptr<interpreter_imm_t> _imm;
 
-		public: bc_value_t _internal_placeholder_object;
 
 
 		//	Holds all values for all environments.
 		//	Notice: stack holds refs to RC-counted objects!
 		public: interpreter_stack_t _value_stack;
-		public: int _current_stack_frame;
 		public: std::vector<std::string> _print_output;
 	};
 
