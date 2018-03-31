@@ -1035,7 +1035,7 @@ inline int bc_limit(int value, int min, int max){
 
 
 		//////////////////////////////////////		STATE
-
+		//??? lose variable_address_t and closures for now. register = int16. negative = global/constant, positive = local stack register.
 		bc_opcode _opcode;
 		variable_address_t _reg_a;
 		variable_address_t _reg_b;
@@ -1045,6 +1045,7 @@ inline int bc_limit(int value, int min, int max){
 		bc_typeid_t _instr_type;
 
 		//	Used to specify parent-type, for struct or lookups.
+		//??? Lose now!
 		bc_typeid_t _parent_type;
 	};
 

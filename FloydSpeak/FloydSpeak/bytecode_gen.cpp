@@ -450,7 +450,7 @@ int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t
 
 
 
-//??? shortcut evaluation of conditions!
+//??? Shortcut evaluation of conditions!
 //?? registers should ALWAYS bein current stack frame. What about upvalues?
 
 
@@ -681,7 +681,6 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	const auto const1_reg = add_local_const(body_acc, value_t::make_int(1), "integer 1, to decrement with");
 	const auto& loop_body = bcgen_body(vm, statement._body);
 
-	//??? also check loop mode.
 	//	Iterator register is the FIRST symbol of the loop body's symbol table.
 	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols.size()));
 
@@ -862,9 +861,6 @@ struct call_setup_t {
 //??? Do interning of add_local_const().
 //??? make different types for register vs stack-pos.
 
-struct call_description_t {
-	std::vector<typeid_t> _function_def_args;
-};
 //	NOTICE: extbits are generated for every value on callstack, even for DYN-types.
 call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& function_def_arg_type, const expression_t* args, int callee_arg_count, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
@@ -965,7 +961,6 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 }
 
 //??? Submit dest-register to all gen-functions = minimize temps.
-
 //??? make struct to make itype typesafe.
 
 
