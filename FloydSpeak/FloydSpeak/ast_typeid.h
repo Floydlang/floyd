@@ -375,7 +375,8 @@ namespace floyd {
 	//	The argument types for internal-dyanamic arguments must be supplied for each invocation.
 	bool is_dynamic_function(const typeid_t& function_type);
 
-	bool count_function_dynamic_args(const typeid_t& function_type);
+	int count_function_dynamic_args(const std::vector<typeid_t>& args);
+	int count_function_dynamic_args(const typeid_t& function_type);
 
 
 	//////////////////////////////////////		FORMATS

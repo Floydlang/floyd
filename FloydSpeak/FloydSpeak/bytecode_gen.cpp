@@ -374,54 +374,6 @@ int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t
 
 
 
-
-bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
-	if(a._parent_steps == -1){
-		return &vm._call_stack[0];
-	}
-	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
-	}
-}
-const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const variable_address_t& a){
-	if(a._parent_steps == -1){
-		return &vm._call_stack[0];
-	}
-	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
-	}
-}
-
-
-bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto body_acc = body;
-	const auto expr = bcgen_expression(vm, statement._expression, body_acc);
-	body_acc = expr._body;
-
-	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_store_resolve, expr._type, statement._dest_variable, expr._output_register, {}));
-	return body_acc;
-}
-
-bc_body_t bcgen_block_statement(bgenerator_t& vm, const statement_t::block_statement_t& statement, const bc_body_t& body){
-	QUARK_ASSERT(vm.check_invariant());
-
-//???			const auto& b = bcgen_body(vm, statement._block->_body);
-//			body2._instructions.push_back(bc_instruction_t{ bc_opcode::k_statement_block, intern_type(vm, typeid_t::make_undefined()), 0, {}, {}, { b} });
-	return body;
-}
-
-bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement, const bc_body_t& body){
-	QUARK_ASSERT(vm.check_invariant());
-
-	auto body_acc = body;
-	const auto expr = bcgen_expression(vm, statement._expression, body);
-	body_acc = expr._body;
-	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_return, expr._type, expr._output_register,{}, {}));
-	return body_acc;
-}
-
 //??? shortcut evaluation of conditions!
 //?? registers should ALWAYS bein current stack frame. What about upvalues?
 
@@ -464,6 +416,52 @@ bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t&
 	return body_acc;
 }
 
+
+bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
+	if(a._parent_steps == -1){
+		return &vm._call_stack[0];
+	}
+	else{
+		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
+	}
+}
+const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const variable_address_t& a){
+	if(a._parent_steps == -1){
+		return &vm._call_stack[0];
+	}
+	else{
+		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
+	}
+}
+
+
+bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto body_acc = body;
+	const auto expr = bcgen_expression(vm, statement._expression, body_acc);
+	body_acc = expr._body;
+
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_store_resolve, expr._type, statement._dest_variable, expr._output_register, {}));
+	return body_acc;
+}
+
+bc_body_t bcgen_block_statement(bgenerator_t& vm, const statement_t::block_statement_t& statement, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto body_acc = bcgen_body(vm, statement._body);
+	return flatten_body(vm, body, body_acc);
+}
+
+bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_statement_t& statement, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+
+	auto body_acc = body;
+	const auto expr = bcgen_expression(vm, statement._expression, body);
+	body_acc = expr._body;
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_return, expr._type, expr._output_register,{}, {}));
+	return body_acc;
+}
 
 bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
@@ -711,51 +709,60 @@ expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, cons
 	return { body, e._address, intern_type(vm, *e._output_type) };
 }
 
+
+/*
+	1) Generates code to evaluate all argument expressions
+	2) Generates call-instruction, with all push/pops needed to pass arguments.
+	Supports DYN-arguments.
+*/
+struct call_setup_t {
+	bc_body_t _body;
+	uint32_t _extbits;
+	int _stack_count;
+};
+
+//??? if zero or few arguments, use shortcuts. Stuff single arg into instruction reg_c etc.
 //??? Do interning of add_const().
 //??? make different types for register vs stack-pos.
-expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
+
+struct call_description_t {
+	std::vector<typeid_t> _function_def_args;
+};
+
+call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& function_def_arg_type, const expression_t* args, int callee_arg_count, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(args != nullptr);
+	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
-	//	_input_exprs[0] is callee, rest are arguments.
-	const auto& callee_expr = bcgen_expression(vm, e._input_exprs[0], body);
-	body_acc = callee_expr._body;
+	int dynamic_arg_count = count_function_dynamic_args(function_def_arg_type);
 
-	const auto callee_arg_count = static_cast<int>(e._input_exprs.size()) - 1;
-
-	const auto function_type = e._input_exprs[0].get_output_type();
-	const auto function_return_type = e.get_output_type();
-	int dynamic_arg_count = count_function_dynamic_args(function_type);
-	const auto function_def_arg_types = function_type.get_function_args();
+	QUARK_ASSERT(callee_arg_count == function_def_arg_type.size());
+	const auto arg_count = callee_arg_count;
 
 	//	Generate code / symbols for all arguments to the function call. Record where each arg is kept.
 	//	This might not create instructions or anything, if arguments are available as constants somewhere.
 	vector<std::pair<reg_t, bc_typeid_t>> argument_regs;
-	for(int i = 0 ; i < callee_arg_count ; i++){
-		const auto& m2 = bcgen_expression(vm, e._input_exprs[i + 1], body_acc);
+	for(int i = 0 ; i < arg_count ; i++){
+		const auto& m2 = bcgen_expression(vm, args[i], body_acc);
 		body_acc = m2._body;
 		argument_regs.push_back(std::pair<reg_t, bc_typeid_t>(m2._output_register, m2._type));
 	}
-
-	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
-	const auto arg_count = callee_arg_count;
 
 	const auto itype_int = intern_type(vm, typeid_t::make_int());
 
 	//	We have max 32 extbits when popping stack.
 	if(arg_count > 32){
-		throw std::runtime_error("Max 16 arguments to function.");
+		throw std::runtime_error("Max 32 arguments to function.");
 	}
 
-	uint32_t extbits = 0x00000000;
-
 	//	Make push-instructions that push args in correct order on callstack, before k_opcode_call is inserted.
+	uint32_t extbits = 0x00000000;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto arg_reg = argument_regs[i].first;
 		const auto callee_arg_type = argument_regs[i].second;
-		const auto& func_arg_type = function_def_arg_types[i];
+		const auto& func_arg_type = function_def_arg_type[i];
 
 		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
 		if(func_arg_type.is_internal_dynamic()){
@@ -774,45 +781,83 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 	}
 	int stack_count = arg_count + dynamic_arg_count;
 
-//	const auto itype = intern_type(vm, function_type);
-
-	const auto function_result_reg = add_temp(body_acc, function_type.get_function_return(), "call result register");
-	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_call,
-		{},
-		function_result_reg,
-		callee_expr._output_register,
-		make_immediate_int(arg_count)
-	));
-	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_popn, {}, make_immediate_int(stack_count), make_immediate_int(extbits), {} ));
-
-	return { body_acc, function_result_reg, intern_type(vm, function_return_type) };
+	return { body_acc, extbits, stack_count };
 }
 
-expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
+expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
 
 	auto body_acc = body;
 
-	vector<variable_address_t> arg_temps;
-	for(int i = 0 ; i < e._input_exprs.size() ; i++){
-		const auto& m2 = bcgen_expression(vm, e._input_exprs[i], body_acc);
-		body_acc = m2._body;
-		arg_temps.push_back(m2._output_register);
-	}
+	//	_input_exprs[0] is callee, rest are arguments.
+	const auto& callee_expr = bcgen_expression(vm, e._input_exprs[0], body);
+	body_acc = callee_expr._body;
+	const auto function_reg = callee_expr._output_register;
+	const auto callee_arg_count = static_cast<int>(e._input_exprs.size()) - 1;
 
-	const auto type = e.get_output_type();
-	const auto itype = intern_type(vm, type);
+	const auto function_type = e._input_exprs[0].get_output_type();
+	const auto function_def_arg_types = function_type.get_function_args();
+	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 
-	//	All args follow first arg.
-	const auto function_result_reg = add_temp(body_acc, type, "construct-value output register");
-	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_call,
-		itype,
+	const auto return_type = function_type.get_function_return();
+
+	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
+	const auto arg_count = callee_arg_count;
+
+	const auto call_setup = gen_call_setup(vm, function_def_arg_types, &e._input_exprs[1], callee_arg_count, body_acc);
+	body_acc = call_setup._body;
+
+	const auto function_result_reg = add_temp(body_acc, return_type, "call result register");
+	body_acc._instructions.push_back(bc_instruction_t(
+		bc_opcode::k_call,
+		{},
 		function_result_reg,
-		arg_temps[0],
-		make_immediate_int(static_cast<int>(arg_temps.size()))
+		function_reg,
+		make_immediate_int(arg_count)
 	));
 
-	return { body_acc, function_result_reg, itype };
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_popn, {}, make_immediate_int(call_setup._stack_count), make_immediate_int(call_setup._extbits), {} ));
+	return { body_acc, function_result_reg, intern_type(vm, return_type) };
+}
+
+//??? Submit dest-register to all gen-functions = minimize temps.
+
+//??? make struct to make itype typesafe.
+
+
+expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto body_acc = body;
+
+	const auto target_type = e.get_output_type();
+	const auto target_itype = intern_type(vm, target_type);
+
+	const auto callee_arg_count = static_cast<int>(e._input_exprs.size());
+	vector<typeid_t> arg_types;
+	for(const auto& m: e._input_exprs){
+		arg_types.push_back(m.get_output_type());
+	}
+	const auto arg_count = callee_arg_count;
+
+	const auto call_setup = gen_call_setup(vm, arg_types, &e._input_exprs[0], arg_count, body_acc);
+	body_acc = call_setup._body;
+
+	const auto source_itype = arg_count == 0 ? -1 : intern_type(vm, e._input_exprs[0].get_output_type());
+
+	const auto function_result_reg = add_temp(body_acc, target_type, "Construct-value result register");
+	body_acc._instructions.push_back(bc_instruction_t(
+		bc_opcode::k_construct_value,
+		target_itype,
+		function_result_reg,
+		make_immediate_int(source_itype),
+		make_immediate_int(arg_count)
+	));
+
+	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_popn, {}, make_immediate_int(call_setup._stack_count), make_immediate_int(call_setup._extbits), {} ));
+	return { body_acc, function_result_reg, target_itype };
 }
 
 expr_info_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){

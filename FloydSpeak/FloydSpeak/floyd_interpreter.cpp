@@ -280,7 +280,6 @@ BC_INLINE int find_frame_from_address(const interpreter_t& vm, int parent_step){
 	}
 }
 
-
 //??? split into one-argument and multi-argument opcodes.
 bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
@@ -626,7 +625,7 @@ void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_
 	}
 }
 
-
+//??? create type call_control_t. It contains arg_count, extbits = all that's needed to handle stack for calls.
 
 //	Store function ptr instead of of ID???
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
@@ -648,10 +647,11 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 		QUARK_ASSERT(false);
 	}
 
+	const int arg0_stack_pos = vm._value_stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
+
 	if(function_def._host_function_id != 0){
 		const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
 
-		const int arg0_stack_pos = vm._value_stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 		int stack_pos = arg0_stack_pos;
 
 		//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
@@ -680,30 +680,31 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 		write_register_slow(vm, instruction._reg_a, bc_result, instruction._instr_type);
 	}
 	else{
-		//	Notice that arguments are first in the symbol list.
-
 		//	Future: support dynamic Floyd functions too.
-		QUARK_ASSERT(function_def_dynamic_arg_count == 0);
-
 		//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
 		//??? Or change calling conventions to store args *before* frame.
+		QUARK_ASSERT(function_def_dynamic_arg_count == 0);
 
 		if(callee_arg_count > 8){
 			throw std::runtime_error("Max 8 arguments.");
 		}
 
-	    bc_pod_value_t temp[8];
+		//??? No need to temp[] now that inputs are values (not expressions).
+		//??? dynamic vectors. temp code.
+		vector<bc_value_t> temp_ownership;
+		vector<bc_pod_value_t> temp_pods;
 		for(int i = 0 ; i < callee_arg_count ; i++){
 			const auto& arg_type = function_def._args[i]._type;
-			const auto t = read_register_slow(vm, variable_address_t::make_variable_address(instruction._reg_b._parent_steps, instruction._reg_b._index + 1 + i), arg_type);
+			const auto t = vm._value_stack.load_value_slow(arg0_stack_pos + 0, arg_type);
 
 			if(function_def._body._exts[i]){
 				t._pod._ext->_rc++;
 			}
-			temp[i] = t._pod;
+			temp_ownership.push_back(t);
+			temp_pods.push_back(t._pod);
 		}
 
-		open_stack_frame2_nobump(vm, function_def._body, &temp[0], callee_arg_count);
+		open_stack_frame2_nobump(vm, function_def._body, &temp_pods[0], callee_arg_count);
 		const auto& result = execute_instructions(vm, function_def._body._body._instructions);
 		close_stack_frame(vm, function_def._body);
 
@@ -715,70 +716,76 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 //	This function evaluates all input expressions, then call construct_value_from_typeid() to do the work.
 //??? Make several opcodes for construct-value: construct-struct, vector, dict, basic. ALSO casting 1:1 between types.
 //??? Optimize -- inline construct_value_from_typeid() to simplify a lot.
+
+
 void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
-	const auto args_reg = instruction._reg_b;
+	const auto dest_reg = instruction._reg_a;
+	const auto source_input_itype = static_cast<bc_typeid_t>(instruction._reg_b._index);		//	Only used for 1-args.??? Split out casting features to separate opcode.
 	const auto arg_count = instruction._reg_c._index;
-	const auto& root_value_type = get_type(vm, instruction._instr_type);
-	const auto basetype = get_basetype(vm, instruction._instr_type);
-	if(basetype == base_type::k_vector){
-		const auto& element_type = root_value_type.get_vector_element_type();
+	const auto target_itype = instruction._instr_type;
+
+	const auto& target_type = get_type(vm, target_itype);
+	const auto target_basetype = get_basetype(vm, target_itype);
+
+	//	IMPORTANT: NO arguments are passed as DYN arguments.
+	const int arg0_stack_pos = vm._value_stack.size() - arg_count;
+
+	std::vector<value_t> arg_values;
+
+	if(target_basetype == base_type::k_vector){
+		const auto& element_type = target_type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_undefined() == false);
-		QUARK_ASSERT(root_value_type.is_undefined() == false);
+		QUARK_ASSERT(target_type.is_undefined() == false);
 
 		std::vector<bc_value_t> elements2;
 		for(int i = 0 ; i < arg_count ; i++){
-			const auto arg = read_register_slow(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i), element_type);
-			elements2.push_back(arg);
+			const auto arg_bc = vm._value_stack.load_value_slow(arg0_stack_pos + i, element_type);
+			elements2.push_back(arg_bc);
 		}
 
-	#if DEBUG && FLOYD_BD_DEBUG
-		for(const auto& m: elements2){
-			QUARK_ASSERT(m.get_debug_type() == element_type);
-		}
-	#endif
 		//??? should use itype.
 		const auto& result = construct_value_from_typeid(vm, typeid_t::make_vector(element_type), element_type, elements2);
-		write_register_slow(vm, instruction._reg_a, result, root_value_type);
+		write_register_slow(vm, dest_reg, result, target_type);
 	}
-	else if(basetype == base_type::k_dict){
-		const auto& element_type = root_value_type.get_dict_value_type();
-		QUARK_ASSERT(root_value_type.is_undefined() == false);
+	else if(target_basetype == base_type::k_dict){
+		const auto& element_type = target_type.get_dict_value_type();
+		QUARK_ASSERT(target_type.is_undefined() == false);
 		QUARK_ASSERT(element_type.is_undefined() == false);
 
+		//??? do we leak bc_value_t exts here?
+		const auto string_typeid = typeid_t::make_string();
 		std::vector<bc_value_t> elements2;
-		for(auto i = 0 ; i < arg_count / 2 ; i++){
-			const auto key = read_register_string(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i * 2 + 0));
-			const auto value = read_register_slow(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i * 2 + 1), element_type);
-			elements2.push_back(bc_value_t::make_string(key));
+		int dict_element_count = arg_count / 2;
+		for(auto i = 0 ; i < dict_element_count ; i++){
+			const auto key = vm._value_stack.load_value_slow(arg0_stack_pos + i * 2 + 0, string_typeid);
+			const auto value = vm._value_stack.load_value_slow(arg0_stack_pos + i * 2 + 1, element_type);
+			elements2.push_back(key);
 			elements2.push_back(value);
 		}
-		const auto& result = construct_value_from_typeid(vm, root_value_type, typeid_t::make_undefined(), elements2);
-		write_register_slow(vm, instruction._reg_a, result, root_value_type);
+		const auto& result = construct_value_from_typeid(vm, target_type, typeid_t::make_undefined(), elements2);
+		write_register_slow(vm, dest_reg, result, target_type);
 	}
-	else if(basetype == base_type::k_struct){
-		const auto& struct_def = root_value_type.get_struct();
+	else if(target_basetype == base_type::k_struct){
+		const auto& struct_def = target_type.get_struct();
 		std::vector<bc_value_t> elements2;
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto member_type = struct_def._members[i]._type;
-			const auto arg = read_register_slow(vm, variable_address_t::make_variable_address(args_reg._parent_steps, args_reg._index + i), member_type);
-			elements2.push_back(arg);
+			const auto value = vm._value_stack.load_value_slow(arg0_stack_pos + i, member_type);
+			elements2.push_back(value);
 		}
-		const auto& result = construct_value_from_typeid(vm, root_value_type, typeid_t::make_undefined(), elements2);
-		write_register_slow(vm, instruction._reg_a, result, root_value_type);
+		const auto& result = construct_value_from_typeid(vm, target_type, typeid_t::make_undefined(), elements2);
+		write_register_slow(vm, dest_reg, result, target_type);
 	}
 	else{
-		QUARK_ASSERT(arg_count == 1);
-		const auto input_arg_type = get_type(vm, instruction._parent_type);
-		const auto element = read_register_slow(vm, instruction._reg_b, input_arg_type);
-		const auto& result = construct_value_from_typeid(vm, root_value_type, input_arg_type, { element });
-		write_register_slow(vm, instruction._reg_a, result, root_value_type);
+		const auto input_arg_type = get_type(vm, source_input_itype);
+		const auto element = vm._value_stack.load_value_slow(arg0_stack_pos + 0, input_arg_type);
+		const auto& result = construct_value_from_typeid(vm, target_type, input_arg_type, { element });
+		write_register_slow(vm, dest_reg, result, target_type);
 	}
 }
-
-
 
 QUARK_UNIT_TEST("", "", "", ""){
 	float a = 10.0f;

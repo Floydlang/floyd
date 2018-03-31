@@ -698,10 +698,7 @@ bool typeid_t::check_types_resolved() const{
 }
 
 
-bool count_function_dynamic_args(const typeid_t& function_type){
-	QUARK_ASSERT(function_type.is_function());
-
-	const auto args = function_type.get_function_args();
+int count_function_dynamic_args(const std::vector<typeid_t>& args){
 	int count = 0;
 	for(const auto& e: args){
 		if(e.is_internal_dynamic()){
@@ -709,6 +706,11 @@ bool count_function_dynamic_args(const typeid_t& function_type){
 		}
 	}
 	return count;
+}
+int count_function_dynamic_args(const typeid_t& function_type){
+	QUARK_ASSERT(function_type.is_function());
+
+	return count_function_dynamic_args(function_type.get_function_args());
 }
 bool is_dynamic_function(const typeid_t& function_type){
 	QUARK_ASSERT(function_type.is_function());

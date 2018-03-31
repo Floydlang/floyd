@@ -843,6 +843,13 @@ inline int bc_limit(int value, int min, int max){
 
 		k_resolve_member,
 		k_lookup_element,
+
+		/*
+			A: Register tells where to put function return
+			B: function value to call
+			C: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
+			_instr_type: ---
+		*/
 		k_call,
 
 		k_arithmetic_add,
@@ -862,7 +869,29 @@ inline int bc_limit(int value, int min, int max){
 		k_logical_equal,
 		k_logical_nonequal,
 
+
+		/*
+			Constructs a value from its type.
+			A: Register tells where to put function return
+			B: Source itype IMMEDIATE
+			C: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
+			_instr_type: target_type - type to create
+		*/
 		k_construct_value,
+
+/*
+		k_construct_bool,
+		k_construct_int,
+		k_construct_float,
+		k_construct_string,
+		k_construct_typeid,
+
+		k_construct_json_value,	//	support deep-conversion of input arg to json.???
+		k_construct_vector,	//	element-type, count, value #0, value #1, value #2 ...
+		k_construct_dict,	//	element-type, count, vale #0, vale #1, vale #2 ...
+		k_construct_struct,
+*/
+
 
 		k_return,
 
@@ -995,7 +1024,7 @@ inline int bc_limit(int value, int min, int max){
 
 	//////////////////////////////////////		bc_function_definition_t
 
-
+	//???	All functions should be function values: host-functions and Floyd functions. This means _host_function_id should be in the VALUE not function definition!
 	struct bc_function_definition_t {
 #if DEBUG
 		public: bool check_invariant() const {

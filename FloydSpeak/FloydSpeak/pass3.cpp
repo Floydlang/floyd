@@ -1259,6 +1259,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& vm
 			//	One argument for primitive types.
 			else{
 				const auto callee_args = vector<typeid_t>{ callee_type2 };
+				QUARK_ASSERT(callee_args.size() == 1);
 				const auto call_args_pair = analyze_call_args(vm_acc, args0, callee_args);
 				vm_acc = call_args_pair.first;
 				return { vm_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
