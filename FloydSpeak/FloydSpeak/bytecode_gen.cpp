@@ -37,12 +37,12 @@ struct expr_info_t {
 expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body);
 bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body);
 
-variable_address_t add_temp(bc_body_t& body_acc, const typeid_t& type, const std::string& name){
+variable_address_t add_local_temp(bc_body_t& body_acc, const typeid_t& type, const std::string& name){
 	int id = add_temp(body_acc._symbols, name, type);
 	return variable_address_t::make_variable_address(0, id);
 }
 
-variable_address_t add_const(bc_body_t& body_acc, const value_t& value, const std::string& name){
+variable_address_t add_local_const(bc_body_t& body_acc, const value_t& value, const std::string& name){
 	int id = add_constant_literal(body_acc._symbols, name, value);
 	return variable_address_t::make_variable_address(0, id);
 }
@@ -461,7 +461,7 @@ reg_t flatten_reg(const reg_t& r, int offset){
 		return r;
 	}
 	else if(r._parent_steps == 0){
-		return reg_t::make_variable_address(r._parent_steps - 1, r._index + offset);
+		return reg_t::make_variable_address(0, r._index + offset);
 	}
 	else if(r._parent_steps == -1){
 		return r;
@@ -539,7 +539,7 @@ bool check_invariant(bc_instruction_t instruction){
 //??? Cannot flatten immediate values! Must handle opcodes differently? Have a few opcode flavors?
 //	RRR, RII etc. Register-Register-Register.
 
-//Problem now is that flatten change immediate values.alignas(<#expression#>)
+//Problem now is that flatten change immediate values.
 bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t& source){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(dest.check_invariant());
@@ -680,8 +680,8 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 
 	std::vector<bc_instruction_t> instructions;
 
-	const auto counter_reg = add_temp(body_acc, typeid_t::make_int(), "for-loop-counter");
-	const auto const1_reg = add_const(body_acc, value_t::make_int(1), "for-loop, decrement int 1");
+	const auto counter_reg = add_local_temp(body_acc, typeid_t::make_int(), "for-loop-counter");
+	const auto const1_reg = add_local_const(body_acc, value_t::make_int(1), "for-loop, decrement int 1");
 
 	const auto itype_int = intern_type(vm, typeid_t::make_int());
 //??? broken. Should calculate count using start_expr and end_expr.
@@ -733,7 +733,7 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 	const auto& loop_body = bcgen_body(vm, statement._body);
 
 	std::vector<bc_instruction_t> instructions;
-	const auto flag_reg = add_temp(body_acc, typeid_t::make_bool(), "while-flag");
+	const auto flag_reg = add_local_temp(body_acc, typeid_t::make_bool(), "while-flag");
 
 	instructions.push_back(
 		bc_instruction_t(
@@ -774,9 +774,9 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	vm._call_stack.push_back(bcgen_environment_t{ &body });
-
 	auto body2 = bc_body_t({}, body._symbols);
+	vm._call_stack.push_back(bcgen_environment_t{ &body2 });
+
 	for(const auto& s: body._statements){
 		const auto& statement = *s;
 		QUARK_ASSERT(statement.check_invariant());
@@ -838,7 +838,7 @@ expr_info_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t
 	const auto type = e.get_output_type();
 	const auto itype = intern_type(vm, type);
 
-	const auto temp = add_temp(body_acc, type, "resolve-member output register");
+	const auto temp = add_local_temp(body_acc, type, "resolve-member output register");
 	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_resolve_member,
 		itype,
 		temp,
@@ -865,7 +865,7 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 	const auto type = e.get_output_type();
 	const auto itype = intern_type(vm, type);
 
-	const auto temp = add_temp(body_acc, type, "lookup-element output register");
+	const auto temp = add_local_temp(body_acc, type, "lookup-element output register");
 	body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_lookup_element,
 		itype,
 		temp,
@@ -897,7 +897,7 @@ struct call_setup_t {
 };
 
 //??? if zero or few arguments, use shortcuts. Stuff single arg into instruction reg_c etc.
-//??? Do interning of add_const().
+//??? Do interning of add_local_const().
 //??? make different types for register vs stack-pos.
 
 struct call_description_t {
@@ -940,7 +940,7 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 
 		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
 		if(func_arg_type.is_internal_dynamic()){
-			const auto arg_type_reg = add_const(body_acc, value_t::make_int(callee_arg_type), "DYN type arg #" + std::to_string(i));
+			const auto arg_type_reg = add_local_const(body_acc, value_t::make_int(callee_arg_type), "DYN type arg #" + std::to_string(i));
 			body_acc._instructions.push_back(bc_instruction_t(bc_opcode::k_push, itype_int, arg_type_reg, {}, {} ));
 		}
 
@@ -985,7 +985,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 	const auto call_setup = gen_call_setup(vm, function_def_arg_types, &e._input_exprs[1], callee_arg_count, body_acc);
 	body_acc = call_setup._body;
 
-	const auto function_result_reg = add_temp(body_acc, return_type, "call result register");
+	const auto function_result_reg = add_local_temp(body_acc, return_type, "call result register");
 	body_acc._instructions.push_back(bc_instruction_t(
 		bc_opcode::k_call,
 		intern_type(vm, return_type),
@@ -1025,7 +1025,7 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 
 	const auto source_itype = arg_count == 0 ? -1 : intern_type(vm, e._input_exprs[0].get_output_type());
 
-	const auto function_result_reg = add_temp(body_acc, target_type, "Construct-value result register");
+	const auto function_result_reg = add_local_temp(body_acc, target_type, "Construct-value result register");
 	body_acc._instructions.push_back(bc_instruction_t(
 		bc_opcode::k_construct_value,
 		target_itype,
@@ -1085,7 +1085,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	const auto type = e.get_output_type();
 	const auto itype = intern_type(vm, type);
 
-	const auto result_reg = add_temp(body_acc, type, "conditional_operator output register");
+	const auto result_reg = add_local_temp(body_acc, type, "conditional_operator output register");
 
 	int jump1_pc = static_cast<int>(body_acc._instructions.size());
 	body_acc._instructions.push_back(
@@ -1163,7 +1163,7 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 
 	//	Output reg always a bool.
 
-	const auto result_reg = add_temp(body_acc, typeid_t::make_bool(), "comparison expression output register");
+	const auto result_reg = add_local_temp(body_acc, typeid_t::make_bool(), "comparison expression output register");
 
 	body_acc._instructions.push_back(bc_instruction_t(conv_opcode.at(e._operation),
 		itype,
@@ -1200,7 +1200,7 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 
 	const auto type = e._input_exprs[0].get_output_type();
 	const auto itype = intern_type(vm, type);
-	const auto temp = add_temp(body_acc, type, "arithmetic output register");
+	const auto temp = add_local_temp(body_acc, type, "arithmetic output register");
 
 	body_acc._instructions.push_back(bc_instruction_t(conv_opcode.at(e._operation),
 		itype,
@@ -1220,7 +1220,7 @@ expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_b
 	const auto output_type = e.get_output_type();
 	if(op == expression_type::k_literal){
 		auto body_acc = body;
-		const auto const_temp = add_const(body_acc, e.get_literal(), "literal constant");
+		const auto const_temp = add_local_const(body_acc, e.get_literal(), "literal constant");
 		return { body_acc, const_temp, intern_type(vm, output_type) };
 	}
 	else if(op == expression_type::k_resolve_member){
@@ -1431,21 +1431,24 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 
 	bgenerator_t a(pass3._checked_ast);
 
+	const auto globals2 = bc_body_optimized_t(bcgen_body(a, a._imm->_ast_pass3._globals));
+	a._call_stack.push_back(bcgen_environment_t{ &globals2._body });
+
 	std::vector<const bc_function_definition_t> function_defs2;
 	for(int function_id = 0 ; function_id < pass3._checked_ast._function_defs.size() ; function_id++){
 		const auto& function_def = *pass3._checked_ast._function_defs[function_id];
 		const auto body2 = function_def._body ? bcgen_body(a, *function_def._body) : bc_body_t({});
+		const auto body3 = bc_body_optimized_t(body2);
 		const auto function_def2 = bc_function_definition_t{
 			function_def._function_type,
 			function_def._args,
-			body2,
+			body3,
 			function_def._host_function_id
 		};
 		function_defs2.push_back(function_def2);
 	}
 
-	const auto body2 = bcgen_body(a, a._imm->_ast_pass3._globals);
-	const auto result = bc_program_t{ body2, function_defs2, a._types };
+	const auto result = bc_program_t{ globals2, function_defs2, a._types };
 
 
 //	const auto result = bc_program_t{pass3._globals, pass3._function_defs};

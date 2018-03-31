@@ -858,7 +858,7 @@ QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
-QUARK_UNIT_TEST_VIP("call_function()", "return from within IF block", "", ""){
+QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
 	auto r = test__run_global(
 		"string f(){"
 		"	if(true){"

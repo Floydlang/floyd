@@ -1089,7 +1089,7 @@ inline int bc_limit(int value, int min, int max){
 
 	struct bc_body_optimized_t {
 
-		bc_body_optimized_t(const bc_body_t& body) :
+		explicit bc_body_optimized_t(const bc_body_t& body) :
 			_body(body)
 		{
 			for(int i = 0 ; i < _body._symbols.size() ; i++){
@@ -1165,7 +1165,7 @@ inline int bc_limit(int value, int min, int max){
 	*/
 
 	struct bcgen_environment_t {
-		public: const body_t* _body_ptr;
+		public: const bc_body_t* _body_ptr;
 	};
 
 
