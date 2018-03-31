@@ -875,7 +875,7 @@ QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
-QUARK_UNIT_TESTQ("call_function()", "return from within FOR block"){
+QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
 	auto r = test__run_global(
 		"string f(){"
 		"	for(e in 0...3){"
@@ -1390,8 +1390,28 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 
 
 
-
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
+	const auto r = test__run_global(
+		R"(
+			for (i in 0...2) {
+				print("xyz");
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "xyz", "xyz", "xyz" }));
+}
+QUARK_UNIT_TEST("run_init()", "for", "", ""){
+	const auto r = test__run_global(
+		R"(
+			for (i in 0...2) {
+				to_string(i);
+			}
+		)"
+	);
+//	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
+}
+
+QUARK_UNIT_TEST_VIP("run_init()", "for", "", ""){
 	const auto r = test__run_global(
 		R"(
 			for (i in 0...2) {
