@@ -195,7 +195,8 @@ struct opcode_info_t {
 		k_k_0ri0,
 		k_l_00i0,
 		k_m_tr00,
-		k_n_tii0
+		k_n_tii0,
+		k_o_0rrr
 	};
 	encoding _encoding;
 };
@@ -221,13 +222,27 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_logical_and, { "logical_and", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_logical_or, { "logical_or", opcode_info_t::encoding::k_h_trrr } },
 
+
+
 	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_smaller_or_equal_int, { "k_comparison_smaller_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+
 	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_smaller_int, { "k_comparison_smaller_int", opcode_info_t::encoding::k_o_0rrr } },
+
 	{ bc_opcode::k_comparison_larger_or_equal, { "comparison_larger_or_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_larger_or_equal_int, { "k_comparison_larger_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+
 	{ bc_opcode::k_comparison_larger, { "comparison_larger", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_larger_int, { "k_comparison_larger_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_equal_int, { "k_logical_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+
 	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_nonequal_int, { "k_logical_nonequal_int", opcode_info_t::encoding::k_o_0rrr } },
+
+
 
 	{ bc_opcode::k_construct_value, { "construct_value", opcode_info_t::encoding::k_i_trii } },
 
@@ -475,40 +490,44 @@ reg_t flatten_reg(const reg_t& r, int offset){
 }
 
 struct reg_flags_t {
+	bool _type;
 	bool _a;
 	bool _b;
 	bool _c;
 };
 reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	if(e == opcode_info_t::encoding::k_e_0000){
-		return { false, false, false };
+		return { false,		false, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_f_trr0){
-		return { true, true, false };
+		return { true,		true, true, false };
 	}
 	else if(e == opcode_info_t::encoding::k_g_trri){
-		return { true, true, false };
+		return { true,		true, true, false };
 	}
 	else if(e == opcode_info_t::encoding::k_h_trrr){
-		return { true, true, true };
+		return { true,		true, true, true };
 	}
 	else if(e == opcode_info_t::encoding::k_i_trii){
-		return { true, false, false };
+		return { true,		true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_j_trxx){
-		return { true, false, false };
+		return { true,		true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_k_0ri0){
-		return { true, false, false };
+		return { false,		true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_l_00i0){
-		return { false, false, false };
+		return { false,		false, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_m_tr00){
-		return { true, false, false };
+		return { true,		true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_n_tii0){
-		return { false, false, false };
+		return { true,		false, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_o_0rrr){
+		return { false,		true, true, true };
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -529,6 +548,12 @@ bool check_register(const reg_t& reg, bool is_reg){
 bool check_invariant(bc_instruction_t instruction){
 	const auto encoding = k_opcode_info.at(instruction._opcode)._encoding;
 	const auto reg_flags = encoding_to_reg_flags(encoding);
+
+	if(reg_flags._type){
+	}
+	else{
+		QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+	}
 
 	QUARK_ASSERT(check_register(instruction._reg_a, reg_flags._a));
 	QUARK_ASSERT(check_register(instruction._reg_b, reg_flags._b));
@@ -623,7 +648,7 @@ bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_sta
 	auto body_acc = body;
 	const auto expr = bcgen_expression(vm, statement._expression, body);
 	body_acc = expr._body;
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_return, expr._type, expr._output_reg,{}, {}));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_return, expr._type, expr._output_reg, {}, {}));
 	return body_acc;
 }
 
@@ -643,7 +668,7 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 	body_acc._instrs.push_back(
 		bc_instruction_t(
 			bc_opcode::k_branch_false_bool,
-			{},
+			k_no_bctypeid,
 			condition_expr._output_reg,
 			make_imm_int(static_cast<int>(then_expr._instrs.size()) + 2),
 			{}
@@ -653,7 +678,7 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 	body_acc._instrs.push_back(
 		bc_instruction_t(
 			bc_opcode::k_branch_always,
-			{},
+			k_no_bctypeid,
 			make_imm_int(static_cast<int>(else_expr._instrs.size()) + 1),
 			{},
 			{}
@@ -691,15 +716,15 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 		statement._range_type == statement_t::for_statement_t::k_closed_range
 		|| statement._range_type ==statement_t::for_statement_t::k_open_range
 	);
-	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_comparison_smaller_or_equal : bc_opcode::k_comparison_smaller;
+	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_comparison_smaller_or_equal_int : bc_opcode::k_comparison_smaller_int;
 
 	//	Write start-integer in counter_reg
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_resolve, itype_int, counter_reg, start_expr._output_reg, {}));
-	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, itype_int, flag_reg, counter_reg, end_expr._output_reg));
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, {}, flag_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
+	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, k_no_bctypeid, flag_reg, counter_reg, end_expr._output_reg));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, k_no_bctypeid, flag_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
 	body_acc = flatten_body(vm, body_acc, loop_body);
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_add, itype_int, counter_reg, counter_reg, const1_reg));
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, {}, make_imm_int(0 - 3 - body_instr_count), {}, {}));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, k_no_bctypeid, make_imm_int(0 - 3 - body_instr_count), {}, {}));
 	QUARK_ASSERT(body_acc.check_invariant());
 	return body_acc;
 }
@@ -717,10 +742,10 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 	const auto condition_pc = static_cast<int>(body_acc._instrs.size());
 	const auto condition_expr = bcgen_expression(vm, statement._condition, body_acc);
 	body_acc = condition_expr._body;
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, {}, condition_expr._output_reg, make_imm_int(body_instr_count + 2), {}));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, k_no_bctypeid, condition_expr._output_reg, make_imm_int(body_instr_count + 2), {}));
 	body_acc = flatten_body(vm, body_acc, loop_body);
 	const auto body_end_pc = static_cast<int>(body_acc._instrs.size());
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, {}, make_imm_int(condition_pc - body_end_pc), {}, {} ));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, k_no_bctypeid, make_imm_int(condition_pc - body_end_pc), {}, {} ));
 	return body_acc;
 }
 
@@ -847,6 +872,7 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}();
 
@@ -983,7 +1009,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 		make_imm_int(arg_count)
 	));
 
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, {}, make_imm_int(call_setup._stack_count), make_imm_int(call_setup._extbits), {} ));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, k_no_bctypeid, make_imm_int(call_setup._stack_count), make_imm_int(call_setup._extbits), {} ));
 	return { body_acc, function_result_reg, intern_type(vm, return_type) };
 }
 
@@ -1022,7 +1048,7 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 		make_imm_int(arg_count)
 	));
 
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, {}, make_imm_int(call_setup._stack_count), make_imm_int(call_setup._extbits), {} ));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, k_no_bctypeid, make_imm_int(call_setup._stack_count), make_imm_int(call_setup._extbits), {} ));
 	return { body_acc, function_result_reg, target_itype };
 }
 
@@ -1080,7 +1106,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	body_acc._instrs.push_back(
 		bc_instruction_t(
 			bc_opcode::k_branch_false_bool,
-			{},
+			k_no_bctypeid,
 			condition_expr._output_reg,
 			make_imm_int(0xbeefdeeb),
 			{}
@@ -1099,7 +1125,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	body_acc._instrs.push_back(
 		bc_instruction_t(
 			bc_opcode::k_branch_always,
-			{},
+			k_no_bctypeid,
 			make_imm_int(0xfea57be7),
 			{},
 			{}
@@ -1129,16 +1155,6 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	static const std::map<expression_type, bc_opcode> conv_opcode = {
-		{ expression_type::k_comparison_smaller_or_equal__2, bc_opcode::k_comparison_smaller_or_equal },
-		{ expression_type::k_comparison_smaller__2, bc_opcode::k_comparison_smaller },
-		{ expression_type::k_comparison_larger_or_equal__2, bc_opcode::k_comparison_larger_or_equal },
-		{ expression_type::k_comparison_larger__2, bc_opcode::k_comparison_larger },
-
-		{ expression_type::k_logical_equal__2, bc_opcode::k_logical_equal },
-		{ expression_type::k_logical_nonequal__2, bc_opcode::k_logical_nonequal }
-	};
-
 	auto body_acc = body;
 	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
 	body_acc = left_expr._body;
@@ -1154,12 +1170,45 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 
 	const auto result_reg = add_local_temp(body_acc, typeid_t::make_bool(), "comparison expression output register");
 
-	body_acc._instrs.push_back(bc_instruction_t(conv_opcode.at(e._operation),
-		itype,
-		result_reg,
-		left_expr._output_reg,
-		right_expr._output_reg
-	));
+	if(type.is_int()){
+		static const std::map<expression_type, bc_opcode> conv_opcode_int = {
+			{ expression_type::k_comparison_smaller_or_equal__2, bc_opcode::k_comparison_smaller_or_equal_int },
+			{ expression_type::k_comparison_smaller__2, bc_opcode::k_comparison_smaller_int },
+			{ expression_type::k_comparison_larger_or_equal__2, bc_opcode::k_comparison_larger_or_equal_int },
+			{ expression_type::k_comparison_larger__2, bc_opcode::k_comparison_larger_int },
+
+			{ expression_type::k_logical_equal__2, bc_opcode::k_logical_equal_int },
+			{ expression_type::k_logical_nonequal__2, bc_opcode::k_logical_nonequal_int }
+		};
+
+		body_acc._instrs.push_back(bc_instruction_t(
+			conv_opcode_int.at(e._operation),
+			k_no_bctypeid,
+			result_reg,
+			left_expr._output_reg,
+			right_expr._output_reg
+		));
+	}
+	else{
+		static const std::map<expression_type, bc_opcode> conv_opcode = {
+			{ expression_type::k_comparison_smaller_or_equal__2, bc_opcode::k_comparison_smaller_or_equal },
+			{ expression_type::k_comparison_smaller__2, bc_opcode::k_comparison_smaller },
+			{ expression_type::k_comparison_larger_or_equal__2, bc_opcode::k_comparison_larger_or_equal },
+			{ expression_type::k_comparison_larger__2, bc_opcode::k_comparison_larger },
+
+			{ expression_type::k_logical_equal__2, bc_opcode::k_logical_equal },
+			{ expression_type::k_logical_nonequal__2, bc_opcode::k_logical_nonequal }
+		};
+
+		body_acc._instrs.push_back(bc_instruction_t(
+			conv_opcode.at(e._operation),
+			itype,
+			result_reg,
+			left_expr._output_reg,
+			right_expr._output_reg
+		));
+	}
+
 	return { body_acc, result_reg, intern_type(vm, typeid_t::make_bool()) };
 }
 

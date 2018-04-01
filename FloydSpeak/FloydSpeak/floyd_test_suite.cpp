@@ -317,7 +317,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "==") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR <
 
 
-QUARK_UNIT_TESTQ("execute_expression()", "<") {
+QUARK_UNIT_TEST("execute_expression()", "<", "", "") {
 	test__run_init__check_result("bool result = 1 < 2;", value_t::make_bool(true));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "<") {

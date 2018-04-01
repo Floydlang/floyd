@@ -33,6 +33,11 @@ namespace floyd {
 
 	typedef int16_t bc_typeid_t;
 
+	enum {
+		k_no_bctypeid = -3
+	};
+
+
 	value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
 	bc_value_t value_to_bc(const value_t& value);
 
@@ -908,18 +913,31 @@ inline int bc_limit(int value, int min, int max){
 
 
 		/*
+			The type unspecific version is a fallback to handles all types not speical cased.
 			TYPE: itype of values to compare. Output is always bool.
+			A: Register: where to put result
+			B: Register: lhs
+			C: Register: rhs
+
+			Type-sepecific opcodes have no type field.
+			TYPE: ---
 			A: Register: where to put result
 			B: Register: lhs
 			C: Register: rhs
 		*/
 		k_comparison_smaller_or_equal,
+		k_comparison_smaller_or_equal_int,
 		k_comparison_smaller,
+		k_comparison_smaller_int,
 		k_comparison_larger_or_equal,
+		k_comparison_larger_or_equal_int,
 		k_comparison_larger,
+		k_comparison_larger_int,
 
 		k_logical_equal,
+		k_logical_equal_int,
 		k_logical_nonequal,
+		k_logical_nonequal_int,
 
 
 		/*

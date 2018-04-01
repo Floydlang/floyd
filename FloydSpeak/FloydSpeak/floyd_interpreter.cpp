@@ -1064,6 +1064,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_comparison_smaller_or_equal){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(type.is_int() == false);
 			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
 			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -1073,9 +1074,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			vm._stack.write_register_bool(instruction._reg_a, diff <= 0);
 			pc++;
 		}
+		else if(opcode == bc_opcode::k_comparison_smaller_or_equal_int){
+			const auto left = vm._stack.read_register_int(instruction._reg_b);
+			const auto right = vm._stack.read_register_int(instruction._reg_c);
+			vm._stack.write_register_bool(instruction._reg_a, left <= right);
+			pc++;
+		}
+
 		else if(opcode == bc_opcode::k_comparison_smaller){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(type.is_int() == false);
 			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
 			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -1085,9 +1094,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			vm._stack.write_register_bool(instruction._reg_a, diff < 0);
 			pc++;
 		}
+		else if(opcode == bc_opcode::k_comparison_smaller_int){
+			const auto left = vm._stack.read_register_int(instruction._reg_b);
+			const auto right = vm._stack.read_register_int(instruction._reg_c);
+			vm._stack.write_register_bool(instruction._reg_a, left < right);
+			pc++;
+		}
+
 		else if(opcode == bc_opcode::k_comparison_larger_or_equal){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(type.is_int() == false);
 			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
 			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -1097,9 +1114,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			vm._stack.write_register_bool(instruction._reg_a, diff >= 0);
 			pc++;
 		}
+		else if(opcode == bc_opcode::k_comparison_larger_or_equal_int){
+			const auto left = vm._stack.read_register_int(instruction._reg_b);
+			const auto right = vm._stack.read_register_int(instruction._reg_c);
+			vm._stack.write_register_bool(instruction._reg_a, left >= right);
+			pc++;
+		}
+
 		else if(opcode == bc_opcode::k_comparison_larger){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(type.is_int() == false);
 			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
 			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -1109,10 +1134,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			vm._stack.write_register_bool(instruction._reg_a, diff > 0);
 			pc++;
 		}
+		else if(opcode == bc_opcode::k_comparison_larger_int){
+			const auto left = vm._stack.read_register_int(instruction._reg_b);
+			const auto right = vm._stack.read_register_int(instruction._reg_c);
+			vm._stack.write_register_bool(instruction._reg_a, left > right);
+			pc++;
+		}
 
 		else if(opcode == bc_opcode::k_logical_equal){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(type.is_int() == false);
 			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
 			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -1122,9 +1154,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			vm._stack.write_register_bool(instruction._reg_a, diff == 0);
 			pc++;
 		}
+		else if(opcode == bc_opcode::k_logical_equal_int){
+			const auto left = vm._stack.read_register_int(instruction._reg_b);
+			const auto right = vm._stack.read_register_int(instruction._reg_c);
+			vm._stack.write_register_bool(instruction._reg_a, left == right);
+			pc++;
+		}
+
 		else if(opcode == bc_opcode::k_logical_nonequal){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(type.is_int() == false);
 			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
 			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -1132,6 +1172,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 			vm._stack.write_register_bool(instruction._reg_a, diff != 0);
+			pc++;
+		}
+		else if(opcode == bc_opcode::k_logical_nonequal_int){
+			const auto left = vm._stack.read_register_int(instruction._reg_b);
+			const auto right = vm._stack.read_register_int(instruction._reg_c);
+			vm._stack.write_register_bool(instruction._reg_a, left != right);
 			pc++;
 		}
 
