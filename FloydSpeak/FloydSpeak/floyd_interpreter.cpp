@@ -971,11 +971,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 			else{
 				const char ch = instance[lookup_index];
-				const auto value2 = bc_value_t::make_string(string(1, ch));
-				vm._stack.write_register_slow(instruction._reg_a, value2, get_type(vm, instruction._instr_type));
+				const auto value2 = string(1, ch);
+				vm._stack.write_register_string(instruction._reg_a, value2);
 			}
 			pc++;
 		}
+
 		else if(opcode == bc_opcode::k_lookup_element_json_value){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& parent_type = type_lookup[instruction._instr_type];
@@ -1007,6 +1008,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 			pc++;
 		}
+
 		else if(opcode == bc_opcode::k_lookup_element_vector){
 			const auto* vec = vm._stack.read_register_vector(instruction._reg_b);
 			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
@@ -1022,6 +1024,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 			pc++;
 		}
+
 		else if(opcode == bc_opcode::k_lookup_element_dict){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& parent_type = type_lookup[instruction._instr_type];
