@@ -1019,6 +1019,7 @@ expr_info_t bcgen_arithmetic_unary_minus_expression(bgenerator_t& vm, const expr
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
