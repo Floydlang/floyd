@@ -1412,8 +1412,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 }
 
 
-//???
-OFF_QUARK_UNIT_TEST("run_init()", "for", "", ""){
+QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	const auto r = test__run_global(
 		R"(
 			for (i in 0...2) {
