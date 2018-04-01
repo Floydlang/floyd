@@ -93,7 +93,7 @@ const char tag_resolved_type_char = '^';
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "function");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "fun");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_unresolved_type_identifier) == "unknown-identifier");
 	}
 

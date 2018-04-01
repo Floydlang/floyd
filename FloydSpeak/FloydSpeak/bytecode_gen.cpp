@@ -206,7 +206,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_store_resolve, { "store_resolve", opcode_info_t::encoding::k_f_trr0 } },
 
 	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
-	{ bc_opcode::k_lookup_element, { "lookup_element", opcode_info_t::encoding::k_g_trri } },
+	{ bc_opcode::k_lookup_element, { "lookup_element", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_g_trri } },
 
 	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_h_trrr } },
@@ -530,8 +530,6 @@ bool check_invariant(bc_instruction_t instruction){
 	QUARK_ASSERT(check_register(instruction._reg_a, reg_flags._a));
 	QUARK_ASSERT(check_register(instruction._reg_b, reg_flags._b));
 	QUARK_ASSERT(check_register(instruction._reg_c, reg_flags._c));
-
-	QUARK_ASSERT(instruction._parent_type == -1);
 	return true;
 }
 
@@ -560,8 +558,7 @@ bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t&
 			s._instr_type,
 			reg_flags._a ? flatten_reg(s._reg_a, offset) : s._reg_a,
 			reg_flags._b ? flatten_reg(s._reg_b, offset) : s._reg_b,
-			reg_flags._c ? flatten_reg(s._reg_c, offset) : s._reg_c,
-			s._parent_type
+			reg_flags._c ? flatten_reg(s._reg_c, offset) : s._reg_c
 		);
 		instructions.push_back(s2);
 	}
@@ -810,6 +807,7 @@ expr_info_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t
 		make_imm_int(index)
 	));
 
+	QUARK_ASSERT(body_acc.check_invariant());
 	return { body_acc, temp, intern_type(vm, *e._output_type) };
 }
 
@@ -829,15 +827,15 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 	const auto type = e.get_output_type();
 	const auto itype = intern_type(vm, type);
 
-	const auto temp = add_local_temp(body_acc, type, "lookup-element output register");
+	const auto temp_reg = add_local_temp(body_acc, type, "lookup-element output register");
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_lookup_element,
-		itype,
-		temp,
+		parent_expr._type,
+		temp_reg,
 		parent_expr._output_reg,
 		key_expr._output_reg
 	));
-
-	return { body_acc, temp, itype };
+	QUARK_ASSERT(body_acc.check_invariant());
+	return { body_acc, temp_reg, itype };
 }
 
 expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
@@ -867,7 +865,7 @@ struct call_setup_t {
 //	NOTICE: extbits are generated for every value on callstack, even for DYN-types.
 call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& function_def_arg_type, const expression_t* args, int callee_arg_count, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(args != nullptr);
+	QUARK_ASSERT(args != nullptr || callee_arg_count == 0);
 	QUARK_ASSERT(body.check_invariant());
 	QUARK_ASSERT(callee_arg_count == function_def_arg_type.size());
 
@@ -942,7 +940,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 	const auto function_def_arg_types = function_type.get_function_args();
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 
-	const auto return_type = function_type.get_function_return();
+	const auto return_type = e.get_output_type();
 
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 	const auto arg_count = callee_arg_count;
@@ -950,6 +948,8 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 	const auto call_setup = gen_call_setup(vm, function_def_arg_types, &e._input_exprs[1], callee_arg_count, body_acc);
 	body_acc = call_setup._body;
 
+	//??? No need to allocate return register if functions returns void.
+	QUARK_ASSERT(return_type.is_internal_dynamic() == false && return_type.is_undefined() == false)
 	const auto function_result_reg = add_local_temp(body_acc, return_type, "call result register");
 	body_acc._instrs.push_back(bc_instruction_t(
 		bc_opcode::k_call,
@@ -1264,8 +1264,7 @@ json_t body_to_json(const bc_body_optimized_t& body){
 			e._instr_type,
 			reg_to_json(e._reg_a),
 			reg_to_json(e._reg_b),
-			reg_to_json(e._reg_c),
-			e._parent_type
+			reg_to_json(e._reg_c)
 		});
 		instructions.push_back(i);
 		pc++;

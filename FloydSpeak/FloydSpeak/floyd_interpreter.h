@@ -267,6 +267,8 @@ namespace floyd {
 			_exts.push_back(false);
 		}
 
+		//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
+
 		BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());

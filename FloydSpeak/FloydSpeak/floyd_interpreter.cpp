@@ -592,7 +592,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto s = sizeof(bc_instruction_t);
-	QUARK_UT_VERIFY(s == 64);
+	QUARK_UT_VERIFY(s == 32);
 }
 
 
@@ -629,9 +629,11 @@ void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
-	const auto& parent_value = read_register_obj(vm._value_stack, instruction._reg_b);
-	const auto parent_type = get_type(vm, instruction._parent_type).get_base_type();
-	if(parent_type == base_type::k_string){
+	const auto parent_type = get_type(vm, instruction._instr_type);
+	const auto parent_basetype = parent_type.get_base_type();
+
+	const auto& parent_value = read_register_slow(vm._value_stack, instruction._reg_b, parent_type);
+	if(parent_basetype == base_type::k_string){
 		const auto& instance = parent_value.get_string_value();
 		const auto lookup_index = read_register_int(vm._value_stack, instruction._reg_c);
 		if(lookup_index < 0 || lookup_index >= instance.size()){
@@ -643,7 +645,7 @@ void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_
 			write_register_slow(vm._value_stack, instruction._reg_a, value2, get_type(vm, instruction._instr_type));
 		}
 	}
-	else if(parent_type == base_type::k_json_value){
+	else if(parent_basetype == base_type::k_json_value){
 		//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
 		const auto& parent_json_value = parent_value.get_json_value();
 		if(parent_json_value.is_object()){
@@ -652,7 +654,7 @@ void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_
 			//	get_object_element() throws if key can't be found.
 			const auto& value = parent_json_value.get_object_element(lookup_key);
 			const auto value2 = bc_value_t::make_json_value(value);
-			write_register_slow(vm._value_stack, instruction._reg_a, value2, get_type(vm, instruction._instr_type));
+			write_register_slow(vm._value_stack, instruction._reg_a, value2, typeid_t::make_json_value());
 		}
 		else if(parent_json_value.is_array()){
 			const auto lookup_index = read_register_int(vm._value_stack, instruction._reg_c);
@@ -662,25 +664,26 @@ void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_
 			else{
 				const auto& value = parent_json_value.get_array_n(lookup_index);
 				const auto value2 = bc_value_t::make_json_value(value);
-				write_register_slow(vm._value_stack, instruction._reg_a, value2, get_type(vm, instruction._instr_type));
+				write_register_slow(vm._value_stack, instruction._reg_a, value2, typeid_t::make_json_value());
 			}
 		}
 		else{
 			throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
 		}
 	}
-	else if(parent_type == base_type::k_vector){
+	else if(parent_basetype == base_type::k_vector){
 		const auto& vec = parent_value.get_vector_value();
 		const auto lookup_index = read_register_int(vm._value_stack, instruction._reg_c);
 		if(lookup_index < 0 || lookup_index >= vec.size()){
 			throw std::runtime_error("Lookup in vector: out of bounds.");
 		}
 		else{
+			const auto element_type = parent_type.get_vector_element_type();
 			const bc_value_t value = vec[lookup_index];
-			write_register_slow(vm._value_stack, instruction._reg_a, value, get_type(vm, instruction._instr_type));
+			write_register_slow(vm._value_stack, instruction._reg_a, value, element_type);
 		}
 	}
-	else if(parent_type == base_type::k_dict){
+	else if(parent_basetype == base_type::k_dict){
 		const auto lookup_key = read_register_string(vm._value_stack, instruction._reg_c);
 		const auto& entries = parent_value.get_dict_value();
 		const auto& found_it = entries.find(lookup_key);
@@ -688,8 +691,9 @@ void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_
 			throw std::runtime_error("Lookup in dict: key not found.");
 		}
 		else{
+			const auto value_type = parent_type.get_dict_value_type();
 			const bc_value_t value = found_it->second;
-			write_register_slow(vm._value_stack, instruction._reg_a, value, get_type(vm, instruction._instr_type));
+			write_register_slow(vm._value_stack, instruction._reg_a, value, value_type);
 		}
 	}
 	else {
@@ -766,7 +770,12 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 			const auto& result = (host_function)(vm, arg_values);
 			const auto bc_result = value_to_bc(result);
 
-			if(function_return_type.is_void() == false){
+			if(function_return_type.is_void() == true){
+			}
+			else if(function_return_type.is_internal_dynamic()){
+				write_register_slow(vm._value_stack, instruction._reg_a, bc_result, result.get_type());
+			}
+			else{
 				write_register_slow(vm._value_stack, instruction._reg_a, bc_result, function_return_type);
 			}
 		}

@@ -864,15 +864,15 @@ inline int bc_limit(int value, int min, int max){
 			TYPE: itype of returned member
 			A: Register: where to put result
 			B: Register: parent
-			C: Register: key
+			C: IMMEDIATE: member-index
 		*/
 		k_resolve_member,
 
 		/*
-			TYPE: itype of returned member
+			TYPE: itype of parent
 			A: Register: where to put result
 			B: Register: parent
-			C: IMMEDIATE: member-index
+			C: Register: key
 		*/
 		k_lookup_element,
 
@@ -1004,29 +1004,10 @@ inline int bc_limit(int value, int min, int max){
 			_instr_type(type),
 			_reg_a(regA),
 			_reg_b(regB),
-			_reg_c(regC),
-			_parent_type(-1)
+			_reg_c(regC)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
-		bc_instruction_t(
-			bc_opcode opcode,
-			bc_typeid_t type,
-			variable_address_t regA,
-			variable_address_t regB,
-			variable_address_t regC,
-			bc_typeid_t parent_type
-		) :
-			_opcode(opcode),
-			_instr_type(type),
-			_reg_a(regA),
-			_reg_b(regB),
-			_reg_c(regC),
-			_parent_type(parent_type)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
 
 #if DEBUG
 		public: bool check_invariant() const {
@@ -1047,7 +1028,7 @@ inline int bc_limit(int value, int min, int max){
 
 		//	Used to specify parent-type, for struct or lookups.
 		//??? Lose now!
-		bc_typeid_t _parent_type;
+//		bc_typeid_t _parent_type;
 	};
 
 

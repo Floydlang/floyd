@@ -1519,7 +1519,7 @@ QUARK_UNIT_TEST("string", "size()", "string", "24"){
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("string", "push_back()", "string", "correct final vector"){
+QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
 	const auto vm = test__run_global(R"(
 		a = push_back("one", "two");
 		assert(a == "onetwo");
