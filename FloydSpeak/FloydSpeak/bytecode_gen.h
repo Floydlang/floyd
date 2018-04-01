@@ -615,10 +615,10 @@ namespace floyd {
 		public: BC_INLINE static bc_value_t make_vector_value(const typeid_t& element_type, const std::vector<bc_value_t>& elements){
 			return bc_value_t{element_type, elements};
 		}
-		public: BC_INLINE const std::vector<bc_value_t>& get_vector_value() const{
+		public: BC_INLINE const std::vector<bc_value_t>* get_vector_value() const{
 			QUARK_ASSERT(check_invariant());
 
-			return _pod._ext->_vector_elements;
+			return &_pod._ext->_vector_elements;
 		}
 		private: BC_INLINE explicit bc_value_t(const typeid_t& element_type, const std::vector<bc_value_t>& values) :
 #if FLOYD_BC_VALUE_DEBUG_TYPE

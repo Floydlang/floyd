@@ -119,7 +119,7 @@ variable_address_t make_imm_int(int value){
 		}
 		else if(basetype == base_type::k_vector){
 			const auto& element_type  = type.get_vector_element_type();
-			return value_t::make_vector_value(element_type, bcs_to_values__same_types(value.get_vector_value(), element_type));
+			return value_t::make_vector_value(element_type, bcs_to_values__same_types(*value.get_vector_value(), element_type));
 		}
 		else if(basetype == base_type::k_dict){
 			const auto value_type = type.get_dict_value_type();
@@ -425,7 +425,7 @@ int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t
 
 		const auto& left_vec = left.get_vector_value();
 		const auto& right_vec = right.get_vector_value();
-		return bc_compare_vector_true_deep(left_vec, right_vec, type0);
+		return bc_compare_vector_true_deep(*left_vec, *right_vec, type0);
 	}
 	else if(type.is_dict()){
 		//	Make sure the EXACT types are the same -- not only that they are both dicts.

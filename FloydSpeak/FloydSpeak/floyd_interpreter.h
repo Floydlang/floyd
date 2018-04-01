@@ -28,7 +28,7 @@ namespace floyd {
 
 	bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const std::vector<bc_value_t>& arg_values);
 
-
+	struct value_entry_t;
 
 	#define DEBUG_STACK (1 && DEBUG)
 
@@ -37,7 +37,19 @@ namespace floyd {
 	//////////////////////////////////////		interpreter_stack_t
 
 
+/*
+	0	[int = 0] 		previous stack frame pos, 0 = global
+	1	[symbols_ptr frame #0]
+	2	[local0]		<- stack frame #0
+	3	[local1]
+	4	[local2]
 
+	5	[int = 1] //	prev stack frame pos
+	1	[symbols_ptr frame #1]
+	7	[local1]		<- stack frame #1
+	8	[local2]
+	9	[local3]
+*/
 	struct interpreter_stack_t {
 		public: interpreter_stack_t() :
 			_internal_placeholder_object(bc_value_t::make_string("Internal placeholder object")),
@@ -99,14 +111,64 @@ namespace floyd {
 			QUARK_ASSERT(other.check_invariant());
 		}
 
-		int size() const {
+		public: int size() const {
 			QUARK_ASSERT(check_invariant());
 
 			return static_cast<int>(_value_stack.size());
 		}
 
 
-		BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
+		//////////////////////////////////////		FRAME
+
+
+		public: int read_prev_frame_pos(int frame_pos) const;
+		public: const bc_body_optimized_t* read_symbol_ptr(int frame_pos) const;
+		public: bool check_stack_frame(int frame_pos) const;
+
+		public: int open_frame(const bc_body_optimized_t& body, const bc_value_t* init_values, int init_value_count);
+		public: int close_frame(const bc_body_optimized_t& body);
+
+		public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
+
+		public: BC_INLINE int find_frame_pos(int parent_step) const;
+
+		//	Returns stack position of the reg. Can be any stack frame.
+		public: int resolve_register(const variable_address_t& reg) const;
+
+		public: const std::pair<std::string, symbol_t>* get_register_info(const variable_address_t& reg) const;
+
+
+		public: bc_value_t read_register_slow(const variable_address_t& reg, const typeid_t& type) const;
+		public: void write_register_slow(const variable_address_t& reg, const bc_value_t& value, const typeid_t& type);
+
+		public: bc_value_t read_register_obj(const variable_address_t& reg) const;
+
+		public: bool read_register_bool(const variable_address_t& reg) const;
+		public: void write_register_bool(const variable_address_t& reg, bool value);
+
+
+		public: int read_register_int(const variable_address_t& reg) const;
+		public: void write_register_int(const variable_address_t& reg, int value);
+
+
+		public: void write_register_float(const variable_address_t& reg, float value);
+
+		public: std::string read_register_string(const variable_address_t& reg) const;
+		public: void write_register_string(const variable_address_t& reg, const std::string& value);
+
+		public: bc_value_t read_register_function(const variable_address_t& reg) const;
+
+		public: const std::vector<bc_value_t>* read_register_vector(const variable_address_t& reg) const;
+
+
+		friend std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);
+
+
+
+		//////////////////////////////////////		STACK
+
+
+		public: BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -121,7 +183,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-		BC_INLINE void push_intq(int value){
+		private: BC_INLINE void push_intq(int value){
 			QUARK_ASSERT(check_invariant());
 
 			bc_pod_value_t e;
@@ -131,7 +193,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-		BC_INLINE void push_obj(const bc_value_t& value){
+		private: BC_INLINE void push_obj(const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if FLOYD_BC_VALUE_DEBUG_TYPE
@@ -147,7 +209,7 @@ namespace floyd {
 
 
 		//	returned value will have ownership of obj, if it's an obj.
-		BC_INLINE bc_value_t load_value_slow(int pos, const typeid_t& type) const{
+		public: BC_INLINE bc_value_t load_value_slow(int pos, const typeid_t& type) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(type.check_invariant());
@@ -165,7 +227,7 @@ namespace floyd {
 			return result;
 		}
 
-		BC_INLINE bc_value_t load_inline_value(int pos) const{
+		private: BC_INLINE bc_value_t load_inline_value(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(false == _exts[pos]);
@@ -178,7 +240,7 @@ namespace floyd {
 			return result;
 		}
 
-		BC_INLINE bc_value_t load_obj(int pos) const{
+		private: BC_INLINE bc_value_t load_obj(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(true == _exts[pos]);
@@ -191,21 +253,21 @@ namespace floyd {
 			return result;
 		}
 
-		BC_INLINE int load_intq(int pos) const{
+		public: BC_INLINE int load_intq(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(false == _exts[pos]);
 
 			return _value_stack[pos]._int;
 		}
-		BC_INLINE const bc_body_optimized_t* load_symbol_ptr(int pos) const{
+		private: BC_INLINE const bc_body_optimized_t* load_symbol_ptr(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(false == _exts[pos]);
 
 			return _value_stack[pos]._symbol_table;
 		}
-		BC_INLINE void push_symbol_ptr(const bc_body_optimized_t* symbols){
+		private: BC_INLINE void push_symbol_ptr(const bc_body_optimized_t* symbols){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(symbols != nullptr && symbols->check_invariant());
 
@@ -217,7 +279,7 @@ namespace floyd {
 
 		//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
 
-		BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
+		private: BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(type.check_invariant());
@@ -238,7 +300,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		BC_INLINE void replace_inline(int pos, const bc_value_t& value){
+		private: BC_INLINE void replace_inline(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
@@ -252,7 +314,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		BC_INLINE void replace_obj(int pos, const bc_value_t& value){
+		private: BC_INLINE void replace_obj(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
@@ -269,7 +331,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		BC_INLINE void replace_int(int pos, const int& value){
+		private: BC_INLINE void replace_int(int pos, const int& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(false == _exts[pos]);
@@ -282,7 +344,7 @@ namespace floyd {
 		//	extbits[0] tells if the first popped value has ext. etc.
 		//	bit 0 maps to the next value to be popped from stack
 		//	Max 32 can be popped.
-		BC_INLINE void pop_batch(int count, uint32_t extbits){
+		public: BC_INLINE void pop_batch(int count, uint32_t extbits){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_value_stack.size() >= count);
 			QUARK_ASSERT(count >= 0);
@@ -298,7 +360,7 @@ namespace floyd {
 		}
 
 		//	exts[exts.size() - 1] maps to the closed value on stack, the next to be popped.
-		BC_INLINE void pop_batch(const std::vector<bool>& exts){
+		private: BC_INLINE void pop_batch(const std::vector<bool>& exts){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_value_stack.size() >= exts.size());
 
@@ -309,7 +371,7 @@ namespace floyd {
 			}
 			QUARK_ASSERT(check_invariant());
 		}
-		BC_INLINE void pop(bool ext){
+		private: BC_INLINE void pop(bool ext){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_value_stack.empty() == false);
 			QUARK_ASSERT(_exts.back() == ext);
@@ -339,10 +401,16 @@ namespace floyd {
 		}
 */
 
-		public: bc_value_t _internal_placeholder_object;
+		public: int get_current_frame_pos() const {
+			QUARK_ASSERT(check_invariant());
+			return _current_stack_frame;
+		}
+
+
+		private: bc_value_t _internal_placeholder_object;
 		private: std::vector<bc_pod_value_t> _value_stack;
 		private: std::vector<bool> _exts;
-		public: int _current_stack_frame;
+		private: int _current_stack_frame;
 	};
 
 
@@ -428,7 +496,7 @@ namespace floyd {
 
 		//	Holds all values for all environments.
 		//	Notice: stack holds refs to RC-counted objects!
-		public: interpreter_stack_t _value_stack;
+		public: interpreter_stack_t _stack;
 		public: std::vector<std::string> _print_output;
 	};
 
