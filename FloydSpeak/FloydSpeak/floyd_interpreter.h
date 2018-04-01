@@ -30,7 +30,7 @@ namespace floyd {
 
 
 
-	#define DEBUG_STACK (DEBUG & FLOYD_BD_DEBUG)
+	#define DEBUG_STACK (1 && DEBUG)
 
 
 
@@ -106,51 +106,12 @@ namespace floyd {
 		}
 
 
-		static bool is_compatible(bool is_ext, const typeid_t& stack_info){
-			if(stack_info.is_unresolved_type_identifier()){
-				const auto tag = stack_info.get_unresolved_type_identifier();
-				if(tag == "OBJ" && is_ext == false){
-					QUARK_ASSERT(false);
-				}
-				else if(tag == "INLINE" && is_ext == true){
-					QUARK_ASSERT(false);
-				}
-				else{
-					return true;
-				}
-			}
-			else{
-				bool is_ext_rhs = bc_value_t::is_bc_ext(stack_info.get_base_type());
-				QUARK_ASSERT(is_ext == is_ext_rhs);
-			}
-			return true;
-		}
-
-		static bool is_compatible(const typeid_t& type, const typeid_t& stack_info){
-			if(stack_info.is_unresolved_type_identifier()){
-				const auto tag = stack_info.get_unresolved_type_identifier();
-				bool is_ext = bc_value_t::is_bc_ext(type.get_base_type());
-				if(tag == "OBJ" && is_ext == false){
-					QUARK_ASSERT(false);
-				}
-				else if(tag == "INLINE" && is_ext == true){
-					QUARK_ASSERT(false);
-				}
-				else{
-					return true;
-				}
-			}
-			else{
-				QUARK_ASSERT(type == stack_info);
-			}
-			return true;
-		}
-
-
 		BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == is_ext);
+#endif
 
 			if(is_ext){
 				value._pod._ext->_rc++;
@@ -173,7 +134,9 @@ namespace floyd {
 		BC_INLINE void push_obj(const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
+#endif
 
 			value._pod._ext->_rc++;
 			_value_stack.push_back(value._pod);
@@ -181,21 +144,6 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-
-/*
-		BC_INLINE void push_values_no_rc_bump(const bc_pod_value_t* values, int value_count){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(values != nullptr);
-			QUARK_ASSERT(value_count >= 0);
-
-			_value_stack.insert(_value_stack.end(), values, values + value_count);
-			for(int i = 0 ; i < value_count ; i++){
-				_exts.push_back(false);
-			}
-
-			QUARK_ASSERT(check_invariant());
-		}
-*/
 
 
 		//	returned value will have ownership of obj, if it's an obj.
@@ -209,7 +157,7 @@ namespace floyd {
 
 			QUARK_ASSERT(is_ext == _exts[pos]);
 
-#if DEBUG && FLOYD_BD_DEBUG
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			const auto result = bc_value_t(type, e, is_ext);
 #else
 			const auto result = bc_value_t(e, is_ext);
@@ -222,7 +170,7 @@ namespace floyd {
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(false == _exts[pos]);
 
-#if DEBUG && FLOYD_BD_DEBUG
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			const auto result = bc_value_t(typeid_t::make_unresolved_type_identifier("INLINE"), _value_stack[pos], false);
 #else
 			const auto result = bc_value_t(_value_stack[pos], false);
@@ -235,7 +183,7 @@ namespace floyd {
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(true == _exts[pos]);
 
-#if DEBUG && FLOYD_BD_DEBUG
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			const auto result = bc_value_t(typeid_t::make_unresolved_type_identifier("OBJ"), _value_stack[pos], true);
 #else
 			const auto result = bc_value_t(_value_stack[pos], true);
@@ -274,7 +222,9 @@ namespace floyd {
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(type.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(value._debug_type == type);
+#endif
 
 			if(bc_value_t::is_bc_ext(type.get_base_type())){
 				QUARK_ASSERT(true == _exts[pos]);
@@ -292,7 +242,9 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == false);
+#endif
 			QUARK_ASSERT(false == _exts[pos]);
 
 			_value_stack[pos] = value._pod;
@@ -304,7 +256,9 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
+#endif
 			QUARK_ASSERT(true == _exts[pos]);
 
 			auto prev_copy = _value_stack[pos];

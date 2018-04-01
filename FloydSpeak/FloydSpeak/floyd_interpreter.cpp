@@ -1045,7 +1045,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left_constant = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right_constant = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
@@ -1056,7 +1056,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left_constant = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right_constant = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
@@ -1067,7 +1067,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left_constant = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right_constant = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
@@ -1078,7 +1078,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left_constant = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right_constant = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
@@ -1090,7 +1090,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left_constant = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right_constant = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
@@ -1101,7 +1101,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left_constant = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right_constant = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
@@ -1117,7 +1117,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
 			const auto basetype = type.get_base_type();
@@ -1175,7 +1175,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
 			const auto basetype = type.get_base_type();
@@ -1205,7 +1205,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
 			const auto basetype = type.get_base_type();
@@ -1235,7 +1235,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
 			const auto basetype = type.get_base_type();
@@ -1271,7 +1271,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
 			const auto basetype = type.get_base_type();
@@ -1296,7 +1296,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
 			const auto basetype = type.get_base_type();
@@ -1336,7 +1336,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
 			const auto right = read_register_slow(vm._value_stack, instruction._reg_c, type);
-		#if FLOYD_BD_DEBUG
+		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
 			const auto basetype = type.get_base_type();
