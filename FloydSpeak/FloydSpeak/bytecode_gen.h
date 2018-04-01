@@ -730,7 +730,7 @@ namespace floyd {
 	};
 
 
-	std::string to_compact_string2(const bc_value_t& value);
+//	std::string to_compact_string2(const bc_value_t& value);
 
 
 	//////////////////////////////////////		bc_opcode

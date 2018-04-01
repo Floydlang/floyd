@@ -49,6 +49,8 @@
 		2CD9283F1D515AF100243F0A /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CD9283D1D515AF100243F0A /* expression.cpp */; };
 		2CEB5745207106560005AC7A /* benchmark_game_of_life.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB5744207106560005AC7A /* benchmark_game_of_life.cpp */; };
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
+		2CEB574A2071103D0005AC7A /* benchmark_text_metrics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57492071103D0005AC7A /* benchmark_text_metrics.cpp */; };
+		2CEB574C207112D90005AC7A /* benchmark_simple.cp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB574B207112D90005AC7A /* benchmark_simple.cp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -149,6 +151,8 @@
 		2CEB5744207106560005AC7A /* benchmark_game_of_life.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_game_of_life.cpp; sourceTree = "<group>"; };
 		2CEB57462071069B0005AC7A /* benchmark_basics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_basics.cpp; sourceTree = "<group>"; };
 		2CEB5748207106C60005AC7A /* benchmark_basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = benchmark_basics.h; sourceTree = "<group>"; };
+		2CEB57492071103D0005AC7A /* benchmark_text_metrics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_text_metrics.cpp; sourceTree = "<group>"; };
+		2CEB574B207112D90005AC7A /* benchmark_simple.cp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_simple.cp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -211,6 +215,8 @@
 				2CEB57462071069B0005AC7A /* benchmark_basics.cpp */,
 				2CEB5748207106C60005AC7A /* benchmark_basics.h */,
 				2CEB5744207106560005AC7A /* benchmark_game_of_life.cpp */,
+				2CEB574B207112D90005AC7A /* benchmark_simple.cp */,
+				2CEB57492071103D0005AC7A /* benchmark_text_metrics.cpp */,
 				2C982D3520603FE2002002FF /* bytecode_gen.cpp */,
 				2C982D3720604002002002FF /* bytecode_gen.h */,
 				2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */,
@@ -385,7 +391,9 @@
 				2C0056B11D5D5E88009F8219 /* json_parser.cpp in Sources */,
 				2C4427A5200CED94006AAE1A /* parse_prefixless_statement.cpp in Sources */,
 				2C95E6D21D5AA47200186D5A /* llvm_code_gen.cpp in Sources */,
+				2CEB574A2071103D0005AC7A /* benchmark_text_metrics.cpp in Sources */,
 				2C8270071D46E0DD00E697ED /* text_parser.cpp in Sources */,
+				2CEB574C207112D90005AC7A /* benchmark_simple.cp in Sources */,
 				2CB2A516203D642B0001A19E /* pass3.cpp in Sources */,
 				2CC50E281CE49A4C008D78C7 /* game_of_life3.cpp in Sources */,
 				2C95E6CE1D5A9F3500186D5A /* statement.cpp in Sources */,

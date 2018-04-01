@@ -520,7 +520,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 	#endif
 */
 		const auto instance = bc_value_t::make_struct_value(type, arg_values);
-		QUARK_TRACE(to_compact_string2(instance));
+//		QUARK_TRACE(to_compact_string2(instance));
 
 		return instance;
 	}

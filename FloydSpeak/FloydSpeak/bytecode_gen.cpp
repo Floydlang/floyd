@@ -145,13 +145,14 @@ variable_address_t make_imm_int(int value){
 		return bc_value_t::from_value(value);
 	}
 
+/*
 	std::string to_compact_string2(const bc_value_t& value) {
 		QUARK_ASSERT(value.check_invariant());
 
 		return "xxyyzz";
 //		return to_compact_string2(value._backstore);
 	}
-
+*/
 
 
 

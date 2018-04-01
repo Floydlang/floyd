@@ -222,7 +222,7 @@ const std::string gol_floyd_str = R"(
 )";
 
 
-QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++",
 		[&] {
