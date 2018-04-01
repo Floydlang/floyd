@@ -38,6 +38,13 @@ using std::shared_ptr;
 using std::make_shared;
 
 
+//??? Make several opcodes for construct-value: construct-struct, vector, dict, basic. ALSO casting 1:1 between types.
+//??? Make a clever box that encode stuff into stackframe/struct etc and lets us quickly access them. No need to encode type in instruction.
+//??? get_type() should have all basetypes as first IDs = no need to looup.
+
+//??? flatten all function-defs into ONE big list of instructions or not?
+
+
 
 
 BC_INLINE const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
@@ -152,7 +159,6 @@ int open_frame(interpreter_stack_t& stack, const bc_body_optimized_t& body, cons
 		}
 	}
 
-	//??? Make precomputed stuff in bc_body_t. Use memcpy() + a GC-fixup loop.
 	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._body._symbols.size() ; i++){
 		const auto& symbol = body._body._symbols[i];
 		bool is_ext = body._exts[i];
@@ -468,7 +474,6 @@ BC_INLINE const bc_function_definition_t& get_function_def(const interpreter_t& 
 }
 
 
-//??? split into one-argument and multi-argument opcodes.
 bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -590,6 +595,8 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 
 //////////////////////////////////////////		INSTRUCTIONS
 
+
+
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto s = sizeof(bc_instruction_t);
 	QUARK_UT_VERIFY(s == 32);
@@ -710,9 +717,7 @@ void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_
 	4) Destroys functions stack frame.
 	5) Writes the function return via the call-instruction's output register.
 */
-//??? create type call_control_t. It contains arg_count, extbits = all that's needed to handle stack for calls.
 
-//	Store function ptr instead of of ID???
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
@@ -781,16 +786,12 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 		}
 		else{
 			//	Future: support dynamic Floyd functions too.
-			//??? maybe execute arg expressions while stack frame is set *beyond* our new frame?
-			//??? Or change calling conventions to store args *before* frame.
 			QUARK_ASSERT(function_def_dynamic_arg_count == 0);
 
 			if(callee_arg_count > 8){
 				throw std::runtime_error("Max 8 arguments.");
 			}
 
-			//??? No need to temp[] now that inputs are values (not expressions).
-			//??? dynamic vectors. temp code.
 			vector<bc_value_t> temp_ownership;
 			for(int i = 0 ; i < callee_arg_count ; i++){
 				const auto& arg_type = function_def._args[i]._type;
@@ -819,17 +820,15 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 	QUARK_ASSERT(stack_size0 == stack_size2);
 }
 
-//	This function evaluates all input expressions, then call construct_value_from_typeid() to do the work.
-//??? Make several opcodes for construct-value: construct-struct, vector, dict, basic. ALSO casting 1:1 between types.
-//??? Optimize -- inline construct_value_from_typeid() to simplify a lot.
-
-
 void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
 	const auto dest_reg = instruction._reg_a;
-	const auto source_input_itype = static_cast<bc_typeid_t>(instruction._reg_b._index);		//	Only used for 1-args.??? Split out casting features to separate opcode.
+
+	//	Only use_reg_b for 1-args.??? Split out casting features to separate opcode.
+	const auto source_input_itype = static_cast<bc_typeid_t>(instruction._reg_b._index);
+
 	const auto arg_count = instruction._reg_c._index;
 	const auto target_itype = instruction._instr_type;
 
@@ -861,7 +860,6 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 		QUARK_ASSERT(target_type.is_undefined() == false);
 		QUARK_ASSERT(element_type.is_undefined() == false);
 
-		//??? do we leak bc_value_t exts here?
 		const auto string_typeid = typeid_t::make_string();
 		std::vector<bc_value_t> elements2;
 		int dict_element_count = arg_count / 2;
@@ -902,10 +900,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-//??? Here we could use a clever box that encode stuff into stackframe/struct etc and lets us quickly access them. No need to encode type in instruction.
-//??? get_type() should have all basetypes as first IDs.
-
-
 
 
 execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
@@ -928,6 +922,11 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		const auto opcode = instruction._opcode;
 		if(false){
 		}
+
+
+		//////////////////////////////////////////		STORE
+
+
 		else if(opcode == bc_opcode::k_store_resolve){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto value = read_register_slow(vm._value_stack, instruction._reg_b, type);
@@ -935,12 +934,14 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			pc++;
 		}
 
+
+		//////////////////////////////////////////		STACK
+
+
 		else if(opcode == bc_opcode::k_return){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto regA = resolve_register(vm._value_stack, instruction._reg_a);
 			const auto value = vm._value_stack.load_value_slow(regA, type);
-
-	//??? flatten all functions into ONE big list of instructions or not?
 			return execution_result_t::make_return_unwind(value);
 		}
 
@@ -956,6 +957,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			vm._value_stack.pop_batch(n, extbits);
 			pc++;
 		}
+
+
+		//////////////////////////////////////////		BRANCHING
 
 
 		else if(opcode == bc_opcode::k_branch_false_bool){
@@ -998,11 +1002,14 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				pc++;
 			}
 		}
-
 		else if(opcode == bc_opcode::k_branch_always){
 			const auto offset = instruction._reg_a._index;
 			pc = pc + offset;
 		}
+
+
+		//////////////////////////////////////////		COMPLEX
+
 
 		else if(opcode == bc_opcode::k_resolve_member){
 			const auto& parent_value = read_register_obj(vm._value_stack, instruction._reg_b);
@@ -1031,7 +1038,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 
 
-		//////////////////////////////		comparison
+		//////////////////////////////		COMPARISON
 
 
 		else if(opcode == bc_opcode::k_comparison_smaller_or_equal){
@@ -1103,7 +1110,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 
 
-		//////////////////////////////		arithmetic
+		//////////////////////////////		ARITHMETICS
 
 
 		else if(opcode == bc_opcode::k_add){
@@ -1164,7 +1171,6 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-
 		else if(opcode == bc_opcode::k_subtract){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
@@ -1286,7 +1292,6 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-
 		else if(opcode == bc_opcode::k_logical_and){
 			const auto type = get_type(vm, instruction._instr_type);
 			const auto left = read_register_slow(vm._value_stack, instruction._reg_b, type);
@@ -1315,7 +1320,6 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 
 			//	float
-			//??? Maybe skip support for this.
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
@@ -1366,6 +1370,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
+
+
+		//////////////////////////////		NONE
+
 
 		else{
 			QUARK_ASSERT(false);
