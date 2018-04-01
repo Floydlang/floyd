@@ -868,13 +868,17 @@ inline int bc_limit(int value, int min, int max){
 		*/
 		k_resolve_member,
 
+
 		/*
 			TYPE: itype of parent
 			A: Register: where to put result
-			B: Register: parent
-			C: Register: key
+			B: Register: vector object
+			C: Register: index (int)
 		*/
-		k_lookup_element,
+		k_lookup_element_string,
+		k_lookup_element_json_value,
+		k_lookup_element_vector,
+		k_lookup_element_dict,
 
 		/*
 			TYPE: itype of function output

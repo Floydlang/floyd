@@ -44,6 +44,8 @@ using std::make_shared;
 
 //??? flatten all function-defs into ONE big list of instructions or not?
 
+//??? special-case collection types: vector<bool>, vector<int> etc. Don't always tore vector<bc_value_t>
+
 
 BC_INLINE const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
@@ -628,87 +630,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 //	QUARK_UT_VERIFY(s == 16);
 }
 
-//??? special-case collection types: vector<bool>, vector<int> etc. Don't always tore vector<bc_value_t>
 
 
-
-void execute_lookup_element_instruction(interpreter_t& vm, const bc_instruction_t& instruction){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(instruction.check_invariant());
-
-	const auto parent_type = get_type(vm, instruction._instr_type);
-	const auto parent_basetype = parent_type.get_base_type();
-
-	if(parent_basetype == base_type::k_string){
-		const auto& instance = vm._stack.read_register_string(instruction._reg_b);
-		const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
-		if(lookup_index < 0 || lookup_index >= instance.size()){
-			throw std::runtime_error("Lookup in string: out of bounds.");
-		}
-		else{
-			const char ch = instance[lookup_index];
-			const auto value2 = bc_value_t::make_string(string(1, ch));
-			vm._stack.write_register_slow(instruction._reg_a, value2, get_type(vm, instruction._instr_type));
-		}
-	}
-	else if(parent_basetype == base_type::k_json_value){
-		//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
-		const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b, parent_type);
-		const auto& parent_json_value = parent_value.get_json_value();
-		if(parent_json_value.is_object()){
-			const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
-
-			//	get_object_element() throws if key can't be found.
-			const auto& value = parent_json_value.get_object_element(lookup_key);
-			const auto value2 = bc_value_t::make_json_value(value);
-			vm._stack.write_register_slow(instruction._reg_a, value2, typeid_t::make_json_value());
-		}
-		else if(parent_json_value.is_array()){
-			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
-			if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
-				throw std::runtime_error("Lookup in json_value array: out of bounds.");
-			}
-			else{
-				const auto& value = parent_json_value.get_array_n(lookup_index);
-				const auto value2 = bc_value_t::make_json_value(value);
-				vm._stack.write_register_slow(instruction._reg_a, value2, typeid_t::make_json_value());
-			}
-		}
-		else{
-			throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
-		}
-	}
-	else if(parent_basetype == base_type::k_vector){
-		const auto* vec = vm._stack.read_register_vector(instruction._reg_b);
-		const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
-		if(lookup_index < 0 || lookup_index >= (*vec).size()){
-			throw std::runtime_error("Lookup in vector: out of bounds.");
-		}
-		else{
-			const auto element_type = parent_type.get_vector_element_type();
-			const bc_value_t value = (*vec)[lookup_index];
-			vm._stack.write_register_slow(instruction._reg_a, value, element_type);
-		}
-	}
-	else if(parent_basetype == base_type::k_dict){
-		const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b, parent_type);
-		const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
-		const auto& entries = parent_value.get_dict_value();
-		const auto& found_it = entries.find(lookup_key);
-		if(found_it == entries.end()){
-			throw std::runtime_error("Lookup in dict: key not found.");
-		}
-		else{
-			const auto& value_type = parent_type.get_dict_value_type();
-			const bc_value_t value = found_it->second;
-			vm._stack.write_register_slow(instruction._reg_a, value, value_type);
-		}
-	}
-	else {
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
 
 /*
 	Performs call to a function
@@ -1037,10 +960,89 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			vm._stack.write_register_slow(instruction._reg_a, value, type);
 			pc++;
 		}
-		else if(opcode == bc_opcode::k_lookup_element){
-			execute_lookup_element_instruction(vm, instruction);
+
+
+
+		else if(opcode == bc_opcode::k_lookup_element_string){
+			const auto& instance = vm._stack.read_register_string(instruction._reg_b);
+			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
+			if(lookup_index < 0 || lookup_index >= instance.size()){
+				throw std::runtime_error("Lookup in string: out of bounds.");
+			}
+			else{
+				const char ch = instance[lookup_index];
+				const auto value2 = bc_value_t::make_string(string(1, ch));
+				vm._stack.write_register_slow(instruction._reg_a, value2, get_type(vm, instruction._instr_type));
+			}
 			pc++;
 		}
+		else if(opcode == bc_opcode::k_lookup_element_json_value){
+			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			const auto& parent_type = type_lookup[instruction._instr_type];
+
+			//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
+			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b, parent_type);
+			const auto& parent_json_value = parent_value.get_json_value();
+			if(parent_json_value.is_object()){
+				const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
+
+				//	get_object_element() throws if key can't be found.
+				const auto& value = parent_json_value.get_object_element(lookup_key);
+				const auto value2 = bc_value_t::make_json_value(value);
+				vm._stack.write_register_slow(instruction._reg_a, value2, typeid_t::make_json_value());
+			}
+			else if(parent_json_value.is_array()){
+				const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
+				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
+					throw std::runtime_error("Lookup in json_value array: out of bounds.");
+				}
+				else{
+					const auto& value = parent_json_value.get_array_n(lookup_index);
+					const auto value2 = bc_value_t::make_json_value(value);
+					vm._stack.write_register_slow(instruction._reg_a, value2, typeid_t::make_json_value());
+				}
+			}
+			else{
+				throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+			}
+			pc++;
+		}
+		else if(opcode == bc_opcode::k_lookup_element_vector){
+			const auto* vec = vm._stack.read_register_vector(instruction._reg_b);
+			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
+			if(lookup_index < 0 || lookup_index >= (*vec).size()){
+				throw std::runtime_error("Lookup in vector: out of bounds.");
+			}
+			else{
+				QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+				const auto& parent_type = type_lookup[instruction._instr_type];
+				const auto element_type = parent_type.get_vector_element_type();
+				const bc_value_t value = (*vec)[lookup_index];
+				vm._stack.write_register_slow(instruction._reg_a, value, element_type);
+			}
+			pc++;
+		}
+		else if(opcode == bc_opcode::k_lookup_element_dict){
+			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			const auto& parent_type = type_lookup[instruction._instr_type];
+
+			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b, parent_type);
+			const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
+			const auto& entries = parent_value.get_dict_value();
+			const auto& found_it = entries.find(lookup_key);
+			if(found_it == entries.end()){
+				throw std::runtime_error("Lookup in dict: key not found.");
+			}
+			else{
+				const auto& value_type = parent_type.get_dict_value_type();
+				const bc_value_t value = found_it->second;
+				vm._stack.write_register_slow(instruction._reg_a, value, value_type);
+			}
+			pc++;
+		}
+
+
+
 
 		else if(opcode == bc_opcode::k_call){
 			execute_call_instruction(vm, instruction);

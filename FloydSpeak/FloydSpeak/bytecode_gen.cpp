@@ -206,7 +206,10 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_store_resolve, { "store_resolve", opcode_info_t::encoding::k_f_trr0 } },
 
 	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
-	{ bc_opcode::k_lookup_element, { "lookup_element", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_string, { "k_lookup_element_string", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_json_value, { "k_lookup_element_jsonvalue", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_vector, { "k_lookup_element_vector", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_dict, { "k_lookup_element_dict", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_g_trri } },
 
 	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_h_trrr } },
@@ -827,8 +830,29 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 	const auto type = e.get_output_type();
 	const auto itype = intern_type(vm, type);
 
+	const auto parent_type = vm._types[parent_expr._type];
+
+	const auto opcode = [&parent_type]{
+		if(parent_type.is_string()){
+			return bc_opcode::k_lookup_element_string;
+		}
+		else if(parent_type.is_json_value()){
+			return bc_opcode::k_lookup_element_json_value;
+		}
+		else if(parent_type.is_vector()){
+			return bc_opcode::k_lookup_element_vector;
+		}
+		else if(parent_type.is_dict()){
+			return bc_opcode::k_lookup_element_dict;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}();
+
 	const auto temp_reg = add_local_temp(body_acc, type, "lookup-element output register");
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_lookup_element,
+	body_acc._instrs.push_back(bc_instruction_t(
+		opcode,
 		parent_expr._type,
 		temp_reg,
 		parent_expr._output_reg,
