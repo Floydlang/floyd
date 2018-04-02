@@ -20,6 +20,17 @@ The VM stack a strack frame structure that represents the running function. The 
 
 
 
+
+# FUNCTION CALLS
+
+
+
+k_alloc_frame, 
+
+
+
+
+
 # MISC NOTES
 
 

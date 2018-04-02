@@ -91,7 +91,7 @@ static const std::string gol_floyd_str = R"(
 
 static const int k_len = 39 * 1000;
 
-QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 /*
 	std::vector<uint8_t> a;
 	std::vector<uint8_t> b;

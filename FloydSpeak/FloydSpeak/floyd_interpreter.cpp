@@ -54,9 +54,6 @@ BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_
 	return vm._imm->_program._types[type].get_base_type();
 }
 
-execution_result_t execute_body(interpreter_t& vm, const bc_frame_t& frame, const bc_value_t* init_values, int init_value_count);
-
-
 
 
 //////////////////////////////////////////		STACK FRAME SUPPORT
@@ -325,7 +322,6 @@ int interpreter_stack_t::read_register_int(const variable_address_t& reg) const{
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_int());
 #endif
 
-
 	const auto pos = resolve_register(reg);
 	return load_intq(pos);
 }
@@ -585,7 +581,9 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 			const auto bc = value_to_bc(args[i]);
 			arg_internals.push_back(bc);
 		}
-		const auto& r = execute_body(vm, function_def._frame, &arg_internals[0], static_cast<int>(arg_internals.size()));
+		vm._stack.open_frame(function_def._frame, &arg_internals[0], static_cast<int>(arg_internals.size()));
+		const auto& r = execute_instructions(vm, function_def._frame._body._instrs);
+		vm._stack.close_frame(function_def._frame);
 		return bc_to_value(r._output, f.get_type().get_function_return());
 	}
 }
@@ -633,6 +631,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 /*
 	??? IDEA Don't use push/pop to send arguments for calls -- copy arguments directly to new stackframe.
+
+	??? Make stub bc_frame_t for each host function to make call conventions same as Floyd functions.
 */
 
 /*
@@ -829,6 +829,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
+//??? use type of the register/frame, not the instruction!! Fix for all instructions!
 
 execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
@@ -859,7 +860,6 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		//////////////////////////////////////////		STORE
 
-//??? use type of the register/frame, not the instruction!! Fix for all instructions!
 		else if(opcode == bc_opcode::k_store_resolve){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
@@ -1465,16 +1465,6 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 	return execution_result_t::make__complete_without_value();
 }
 
-
-execution_result_t execute_body(interpreter_t& vm, const bc_frame_t& frame, const bc_value_t* init_values, int init_value_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(frame.check_invariant());
-
-	vm._stack.open_frame(frame, init_values, init_value_count);
-	const auto& r = execute_instructions(vm, frame._body._instrs);
-	vm._stack.close_frame(frame);
-	return r;
-}
 
 
 
