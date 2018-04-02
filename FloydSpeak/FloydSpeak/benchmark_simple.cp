@@ -21,6 +21,11 @@ using namespace floyd;
 
 
 
+interpreter_context_t make_context2(){
+	const auto t = quark::trace_context_t(true, quark::get_trace());
+	interpreter_context_t context{ t };
+	return context;
+}
 
 
 //////////////////////////////////////////		C
@@ -65,7 +70,7 @@ static const std::string gol_floyd_str = R"(
 		struct pixel_t { int red; int green; int blue;}
 
 		mutable [pixel_t] a = [];
-		for(i in 0 ..< 128){
+		for(i in 0 ..< 32){
 			a = push_back(a, pixel_t(100, 100, 100));
 			a = push_back(a, pixel_t(100, 0, 0));
 			a = push_back(a, pixel_t(0, 0, 0));
@@ -106,7 +111,8 @@ QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	);
 */
 
-	interpreter_context_t context = make_test_context();
+//	interpreter_context_t context = make_test_context();
+	interpreter_context_t context = make_context2();
 	const auto ast = program_to_ast2(context, gol_floyd_str);
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol2(vm, "f");

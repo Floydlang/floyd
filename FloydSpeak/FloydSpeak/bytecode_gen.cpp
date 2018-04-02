@@ -212,6 +212,9 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_lookup_element_json_value, { "k_lookup_element_jsonvalue", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_lookup_element_vector, { "k_lookup_element_vector", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_lookup_element_dict, { "k_lookup_element_dict", opcode_info_t::encoding::k_h_trrr } },
+
+//	{ bc_opcode::k_size, { "k_size", opcode_info_t::encoding::k_f_trr0 } },
+
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_g_trri } },
 
 	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_h_trrr } },
@@ -974,6 +977,27 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 	return { body_acc, extbits, stack_count };
 }
 
+/*
+	const auto opcode = [&parent_type]{
+		if(parent_type.is_string()){
+			return bc_opcode::k_lookup_element_string;
+		}
+		else if(parent_type.is_json_value()){
+			return bc_opcode::k_lookup_element_json_value;
+		}
+		else if(parent_type.is_vector()){
+			return bc_opcode::k_lookup_element_vector;
+		}
+		else if(parent_type.is_dict()){
+			return bc_opcode::k_lookup_element_dict;
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}();
+*/
+
 expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1320,7 +1344,7 @@ json_t reg_to_json(const variable_address_t& reg){
 	return i;
 }
 
-json_t body_to_json(const bc_body_optimized_t& body){
+json_t frame_to_json(const bc_frame_t& body){
 	vector<json_t> exts;
 	for(int i = 0 ; i < body._exts.size() ; i++){
 		const auto& e = body._exts[i];
@@ -1370,7 +1394,7 @@ json_t functiondef_to_json(const bc_function_definition_t& def){
 	return json_t::make_array({
 		json_t(typeid_to_compact_string(def._function_type)),
 		members_to_json(def._args),
-		body_to_json(def._body),
+		frame_to_json(def._frame),
 		json_t(def._host_function_id)
 	});
 }
@@ -1407,7 +1431,7 @@ json_t bcprogram_to_json(const bc_program_t& program){
 	}
 
 	return json_t::make_object({
-		{ "globals", body_to_json(program._globals) },
+		{ "globals", frame_to_json(program._globals) },
 		{ "types", types_to_json(program._types) },
 		{ "function_defs", json_t::make_array(function_defs) }
 //		{ "callstack", json_t::make_array(callstack) }
@@ -1469,14 +1493,14 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 
 	bgenerator_t a(pass3._checked_ast);
 
-	const auto globals2 = bc_body_optimized_t(bcgen_body(a, a._imm->_ast_pass3._globals));
+	const auto globals2 = bc_frame_t(bcgen_body(a, a._imm->_ast_pass3._globals));
 	a._call_stack.push_back(bcgen_environment_t{ &globals2._body });
 
 	std::vector<const bc_function_definition_t> function_defs2;
 	for(int function_id = 0 ; function_id < pass3._checked_ast._function_defs.size() ; function_id++){
 		const auto& function_def = *pass3._checked_ast._function_defs[function_id];
 		const auto body2 = function_def._body ? bcgen_body(a, *function_def._body) : bc_body_t({});
-		const auto body3 = bc_body_optimized_t(body2);
+		const auto body3 = bc_frame_t(body2);
 		const auto function_def2 = bc_function_definition_t{
 			function_def._function_type,
 			function_def._args,

@@ -122,11 +122,11 @@ namespace floyd {
 
 
 		public: int read_prev_frame_pos(int frame_pos) const;
-		public: const bc_body_optimized_t* read_symbol_ptr(int frame_pos) const;
+		public: const bc_frame_t* get_frame(int frame_pos) const;
 		public: bool check_stack_frame(int frame_pos) const;
 
-		public: int open_frame(const bc_body_optimized_t& body, const bc_value_t* init_values, int init_value_count);
-		public: int close_frame(const bc_body_optimized_t& body);
+		public: int open_frame(const bc_frame_t& frame, const bc_value_t* init_values, int init_value_count);
+		public: int close_frame(const bc_frame_t& frame);
 
 		public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
 
@@ -260,19 +260,19 @@ namespace floyd {
 
 			return _value_stack[pos]._int;
 		}
-		private: BC_INLINE const bc_body_optimized_t* load_symbol_ptr(int pos) const{
+		private: BC_INLINE const bc_frame_t* load_frame_ptr(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(false == _exts[pos]);
 
-			return _value_stack[pos]._symbol_table;
+			return _value_stack[pos]._frame_ptr;
 		}
-		private: BC_INLINE void push_symbol_ptr(const bc_body_optimized_t* symbols){
+		private: BC_INLINE void push_frame_ptr(const bc_frame_t* frame){
 			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(symbols != nullptr && symbols->check_invariant());
+			QUARK_ASSERT(frame != nullptr && frame->check_invariant());
 
 			bc_pod_value_t e;
-			e._symbol_table = symbols;
+			e._frame_ptr = frame;
 			_value_stack.push_back(e);
 			_exts.push_back(false);
 		}

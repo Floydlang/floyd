@@ -1,3 +1,28 @@
+# FLOYD BYTE CODE
+
+Floyd compiles to a custom bytecode format. The bytecode is interpreted.
+
+The VM is a register machine -- there is an unlimited number of registers availble. Each instruction can specify 3 registers, A, B and C. The registers tell which register
+
+
+The VM stack a strack frame structure that represents the running function. The stack frame 
+
+
+
+- 
+
+
+??? opcode_call() and other calls are today done using C++ stack. This means that all data it pushes on stack also lives in the calling C++ function. This means that the
+
+
+
+
+
+
+
+# MISC NOTES
+
+
 
 
 		public: std::string _string;

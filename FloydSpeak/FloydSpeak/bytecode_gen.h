@@ -206,7 +206,7 @@ namespace floyd {
 		public: std::map<std::string, bc_value_t> _dict_entries;
 	};
 
-	struct bc_body_optimized_t;
+	struct bc_frame_t;
 
 	//////////////////////////////////////		bc_value_t
 
@@ -218,7 +218,7 @@ namespace floyd {
 		float _float;
 		int _function_id;
 		bc_value_object_t* _ext;
-		const bc_body_optimized_t* _symbol_table;
+		const bc_frame_t* _frame_ptr;
 	};
 
 
@@ -886,6 +886,14 @@ inline int bc_limit(int value, int min, int max){
 		k_lookup_element_dict,
 
 		/*
+			TYPE: itype of object
+			A: Register: where to put result: integer
+			B: Register: object
+			C: ---
+		*/
+//		k_size,
+
+		/*
 			TYPE: itype of function output
 			A: Register: tells where to put function return
 			B: Register: function value to call
@@ -912,6 +920,10 @@ inline int bc_limit(int value, int min, int max){
 		k_logical_or,
 
 
+		//////////////////////////////////////		COMPARISON
+
+		//??? Remove all conditions. Only have conditional branches.
+		//??? Remove all >= -- just swap registers and use <.
 		/*
 			The type unspecific version is a fallback to handles all types not speical cased.
 			TYPE: itype of values to compare. Output is always bool.
@@ -967,19 +979,81 @@ inline int bc_limit(int value, int min, int max){
 
 		/*
 			TYPE: itype of output value.
-			A: Register: value to push
+			A: Register: value to return
 			B: ---
 			C: ---
 		*/
 		k_return,
 
+
+		//////////////////////////////////////		STACK
+
 		/*
-			TYPE: value_type.
-			A: Register: where get value from
+			TYPE: itype of V.
+			A: Register: where get V
 			B: ---
 			C: ---
+			STACK 1: a b c
+			STACK 2: a b c V
 		*/
 		k_push,
+
+#if false
+		///??? Could optimize by pushing 3 values with ONE instruction -- use A B C.
+		///??? Could optimize by using a byte-stack and only pushing minimal number of bytes. Bool needs 1 byte only.
+
+		/*
+			TYPE: ---
+			A: Register: where to read V
+			B: ---
+			C: ---
+			STACK 1: a b c
+			STACK 2: a b c V
+		*/
+		k_push_inplace,
+
+		/*
+			NOTICE: This function bumps the RC of the pushed V-object. This represents the stack-entry co-owning V.
+			TYPE: ---
+			A: Register: where to read V
+			B: ---
+			C: ---
+			STACK 1: a b c
+			STACK 2: a b c V
+		*/
+		k_push_obj,
+
+		/*
+			NOTICE: This function bumps the RC of the pushed object. This represents the stack-entry co-owning the object.
+			TYPE: ---
+			A: Register: where get V
+			B: Register: itype of V
+			C: ---
+			STACK 1: a b c
+			STACK 2: a b c ITYPE V
+		*/
+		k_push_dyn,
+
+		/*
+			TYPE: ---
+			A: Register: where to put V
+			B: ---
+			C: ---
+			STACK 1: a b c V
+			STACK 2: a b c
+		*/
+		k_pop_inplace,
+		k_pop_obj,
+		k_pop_dyn,
+
+		/*
+			TYPE: ---
+			A: IMMEDIATE: arg count
+			B: IMMEDIATE: extbits. bit 0 maps to the next value to be popped from stack.
+			C: ---
+		*/
+#endif
+
 
 		/*
 			TYPE: ---
@@ -988,6 +1062,10 @@ inline int bc_limit(int value, int min, int max){
 			C: ---
 		*/
 		k_popn,
+
+
+		//////////////////////////////////////		BRANCH
+
 
 		/*
 			TYPE: ---
@@ -1092,9 +1170,9 @@ inline int bc_limit(int value, int min, int max){
 		}
 	};
 
-	struct bc_body_optimized_t {
+	struct bc_frame_t {
 
-		explicit bc_body_optimized_t(const bc_body_t& body) :
+		explicit bc_frame_t(const bc_body_t& body) :
 			_body(body)
 		{
 			for(int i = 0 ; i < _body._symbols.size() ; i++){
@@ -1131,7 +1209,7 @@ inline int bc_limit(int value, int min, int max){
 		//??? store more optimzation stuff here!
 		typeid_t _function_type;
 		std::vector<member_t> _args;
-		bc_body_optimized_t _body;
+		bc_frame_t _frame;
 		int _host_function_id;
 	};
 
@@ -1149,7 +1227,7 @@ inline int bc_limit(int value, int min, int max){
 		}
 #endif
 
-		public: const bc_body_optimized_t _globals;
+		public: const bc_frame_t _globals;
 		public: std::vector<const bc_function_definition_t> _function_defs;
 		public: std::vector<const typeid_t> _types;
 	};

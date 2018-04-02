@@ -54,7 +54,7 @@ BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_
 	return vm._imm->_program._types[type].get_base_type();
 }
 
-execution_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& body, const bc_value_t* init_values, int init_value_count);
+execution_result_t execute_body(interpreter_t& vm, const bc_frame_t& frame, const bc_value_t* init_values, int init_value_count);
 
 
 
@@ -82,11 +82,11 @@ int interpreter_stack_t::read_prev_frame_pos(int frame_pos) const{
 	return v;
 }
 
-const bc_body_optimized_t* interpreter_stack_t::read_symbol_ptr(int frame_pos) const{
+const bc_frame_t* interpreter_stack_t::get_frame(int frame_pos) const{
 //	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(frame_pos >= k_frame_overhead);
 
-	const auto v = load_symbol_ptr(frame_pos - 1);
+	const auto v = load_frame_ptr(frame_pos - 1);
 	QUARK_ASSERT(v != nullptr);
 	QUARK_ASSERT(v->check_invariant());
 	return v;
@@ -104,7 +104,7 @@ bool interpreter_stack_t::check_stack_frame(int frame_pos) const{
 		return true;
 	}
 	else{
-		const auto symbols = read_symbol_ptr(frame_pos);
+		const auto symbols = get_frame(frame_pos);
 		const auto prev_frame_pos = read_prev_frame_pos(frame_pos);
 		QUARK_ASSERT(symbols != nullptr && symbols->check_invariant());
 		QUARK_ASSERT(prev_frame_pos >= 0 && prev_frame_pos < frame_pos);
@@ -128,27 +128,27 @@ bool interpreter_stack_t::check_stack_frame(int frame_pos) const{
 }
 
 //	Returns new frame-pos, same as vm._current_stack_frame.
-int interpreter_stack_t::open_frame(const bc_body_optimized_t& body, const bc_value_t* init_values, int init_value_count){
+int interpreter_stack_t::open_frame(const bc_frame_t& frame, const bc_value_t* init_values, int init_value_count){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(body.check_invariant());
+	QUARK_ASSERT(frame.check_invariant());
 
 	const auto start_pos = size();
 	push_intq(_current_stack_frame);
-	push_symbol_ptr(&body);
+	push_frame_ptr(&frame);
 
 	const auto new_frame_pos = start_pos + k_frame_overhead;
 
 	if(init_value_count > 0){
 		for(int i = 0 ; i < init_value_count ; i++){
-			const auto& symbol = body._body._symbols[i];
-			bool is_ext = body._exts[i];
+			const auto& symbol = frame._body._symbols[i];
+			bool is_ext = frame._exts[i];
 			push_value(init_values[i], is_ext);
 		}
 	}
 
-	for(vector<bc_value_t>::size_type i = init_value_count ; i < body._body._symbols.size() ; i++){
-		const auto& symbol = body._body._symbols[i];
-		bool is_ext = body._exts[i];
+	for(vector<bc_value_t>::size_type i = init_value_count ; i < frame._body._symbols.size() ; i++){
+		const auto& symbol = frame._body._symbols[i];
+		bool is_ext = frame._exts[i];
 
 		//	Variable slot.
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
@@ -176,14 +176,14 @@ int interpreter_stack_t::open_frame(const bc_body_optimized_t& body, const bc_va
 //	Restores previous stack frame pos.
 //	Returns resulting stack frame pos.
 //	Decrements all stack frame object RCs.
-int interpreter_stack_t::close_frame(const bc_body_optimized_t& body){
+int interpreter_stack_t::close_frame(const bc_frame_t& frame){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(body.check_invariant());
+	QUARK_ASSERT(frame.check_invariant());
 
 	const auto prev_frame_pos = read_prev_frame_pos(_current_stack_frame);
 
 	//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
-	pop_batch(body._exts);
+	pop_batch(frame._exts);
 
 	_current_stack_frame = prev_frame_pos;
 
@@ -247,8 +247,8 @@ const std::pair<std::string, symbol_t>* interpreter_stack_t::get_register_info(c
 	QUARK_ASSERT(reg.check_invariant());
 
 	const auto frame_pos = find_frame_pos(reg._parent_steps);
-	const auto symbols = read_symbol_ptr(frame_pos);
-	const auto symbol_ptr = &symbols->_body._symbols[reg._index];
+	const auto frame = get_frame(frame_pos);
+	const auto symbol_ptr = &frame->_body._symbols[reg._index];
 	return symbol_ptr;
 }
 
@@ -585,7 +585,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 			const auto bc = value_to_bc(args[i]);
 			arg_internals.push_back(bc);
 		}
-		const auto& r = execute_body(vm, function_def._body, &arg_internals[0], static_cast<int>(arg_internals.size()));
+		const auto& r = execute_body(vm, function_def._frame, &arg_internals[0], static_cast<int>(arg_internals.size()));
 		return bc_to_value(r._output, f.get_type().get_function_return());
 	}
 }
@@ -631,7 +631,9 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-
+/*
+	??? IDEA Don't use push/pop to send arguments for calls -- copy arguments directly to new stackframe.
+*/
 
 /*
 	Performs call to a function
@@ -723,15 +725,15 @@ void execute_call_instruction(interpreter_t& vm, const bc_instruction_t& instruc
 				const auto& arg_type = function_def._args[i]._type;
 				const auto t = vm._stack.load_value_slow(arg0_stack_pos + 0, arg_type);
 
-				if(function_def._body._exts[i]){
+				if(function_def._frame._exts[i]){
 					t._pod._ext->_rc++;
 				}
 				temp_ownership.push_back(t);
 			}
 
-			vm._stack.open_frame(function_def._body, &temp_ownership[0], callee_arg_count);
-			const auto& result = execute_instructions(vm, function_def._body._body._instrs);
-			vm._stack.close_frame(function_def._body);
+			vm._stack.open_frame(function_def._frame, &temp_ownership[0], callee_arg_count);
+			const auto& result = execute_instructions(vm, function_def._frame._body._instrs);
+			vm._stack.close_frame(function_def._frame);
 
 			QUARK_ASSERT(result._type == execution_result_t::k_returning);
 			if(function_return_type.is_void() == false){
@@ -831,7 +833,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto symbols = vm._stack.read_symbol_ptr(vm._stack.get_current_frame_pos());
+	const auto symbols = vm._stack.get_frame(vm._stack.get_current_frame_pos());
 
 	const typeid_t* type_lookup = &vm._imm->_program._types[0];
 	const auto type_count = vm._imm->_program._types.size();
@@ -857,7 +859,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		//////////////////////////////////////////		STORE
 
-
+//??? use type of the register/frame, not the instruction!! Fix for all instructions!
 		else if(opcode == bc_opcode::k_store_resolve){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
@@ -1464,13 +1466,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 }
 
 
-execution_result_t execute_body(interpreter_t& vm, const bc_body_optimized_t& body, const bc_value_t* init_values, int init_value_count){
+execution_result_t execute_body(interpreter_t& vm, const bc_frame_t& frame, const bc_value_t* init_values, int init_value_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(body.check_invariant());
+	QUARK_ASSERT(frame.check_invariant());
 
-	vm._stack.open_frame(body, init_values, init_value_count);
-	const auto& r = execute_instructions(vm, body._body._instrs);
-	vm._stack.close_frame(body);
+	vm._stack.open_frame(frame, init_values, init_value_count);
+	const auto& r = execute_instructions(vm, frame._body._instrs);
+	vm._stack.close_frame(frame);
 	return r;
 }
 
