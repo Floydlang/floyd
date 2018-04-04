@@ -81,7 +81,6 @@ namespace floyd {
 
 	struct interpreter_stack_t {
 		public: interpreter_stack_t(const bc_frame_t* global_frame) :
-			_internal_placeholder_object(bc_value_t::make_string("Internal placeholder object")),
 			_current_stack_frame(),
 			_global_frame(global_frame)
 		{
@@ -98,7 +97,6 @@ namespace floyd {
 		public: bool check_invariant() const {
 			QUARK_ASSERT(_current_stack_frame._frame_pos >= 0);
 			QUARK_ASSERT(_current_stack_frame._frame_pos <= _value_stack.size());
-			QUARK_ASSERT(_internal_placeholder_object.check_invariant());
 			QUARK_ASSERT(_debug_types.size() == _value_stack.size());
 			for(int i = 0 ; i < _value_stack.size() ; i++){
 //				QUARK_ASSERT(_value_stack[i].check_invariant());
@@ -112,7 +110,6 @@ namespace floyd {
 /*		private: save_for_later___interpreter_stack_t(const interpreter_stack_t& other) :
 			_value_stack(other._value_stack),
 			_debug_types(other._debug_types),
-			_internal_placeholder_object(other._internal_placeholder_object),
 			_current_stack_frame(other._current_stack_frame),
 			_global_frame(other._global_frame)
 		{
@@ -142,7 +139,6 @@ namespace floyd {
 
 			other._value_stack.swap(_value_stack);
 			other._debug_types.swap(_debug_types);
-			_internal_placeholder_object.swap(other._internal_placeholder_object);
 			std::swap(_current_stack_frame, other._current_stack_frame);
 			std::swap(_global_frame, other._global_frame);
 
@@ -179,6 +175,8 @@ namespace floyd {
 		public: const std::pair<std::string, symbol_t>* get_register_info(const variable_address_t& reg) const;
 
 
+
+
 		public: bc_value_t read_register_slow(const variable_address_t& reg, const typeid_t& type) const;
 		public: void write_register_slow(const variable_address_t& reg, const bc_value_t& value, const typeid_t& type);
 
@@ -191,7 +189,6 @@ namespace floyd {
 
 		public: int read_register_int(const variable_address_t& reg) const;
 		public: void write_register_int(const variable_address_t& reg, int value);
-
 
 		public: void write_register_float(const variable_address_t& reg, float value);
 
@@ -498,7 +495,6 @@ namespace floyd {
 		public: json_t stack_to_json() const;
 
 
-		private: bc_value_t _internal_placeholder_object;
 		private: std::vector<bc_pod_value_t> _value_stack;
 
 		//	These are DEEP copies = do not share RC with non-debug values.

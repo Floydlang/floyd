@@ -62,9 +62,10 @@ BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_
 
 
 
-
 //	We store prev-frame-pos & symbol-ptr.
 static const int k_frame_overhead = 2;
+
+
 
 int interpreter_stack_t::read_prev_frame_pos(int frame_pos) const{
 //	QUARK_ASSERT(vm.check_invariant());
@@ -212,8 +213,6 @@ void interpreter_stack_t::open_frame(const bc_frame_t& frame, int values_already
 		//	Use a placeholder object. Type won't match symbol but that's OK.
 		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
 			if(is_ext){
-				//??? Warning, the type of the value will not match the symbol-type.
-//				push_value(_internal_placeholder_object, true);
 				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
 				push_obj(value);
 			}
@@ -886,7 +885,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 	const typeid_t* type_lookup = &vm._imm->_program._types[0];
 	const auto type_count = vm._imm->_program._types.size();
 
-	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(vm._stack.stack_to_json()));
+//	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(vm._stack.stack_to_json()));
 
 
 	int pc = 0;
@@ -1693,7 +1692,6 @@ interpreter_t::interpreter_t(const bc_program_t& program) :
 /*
 interpreter_t::interpreter_t(const interpreter_t& other) :
 	_imm(other._imm),
-	_internal_placeholder_object(other._internal_placeholder_object),
 	_stack(other._stack),
 	_current_stack_frame(other._current_stack_frame),
 	_print_output(other._print_output)
