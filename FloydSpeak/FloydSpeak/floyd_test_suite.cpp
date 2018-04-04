@@ -725,7 +725,7 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 //////////////////////////////////////////		USE LOCAL VARIABLES IN FUNCTION
 
 
-QUARK_UNIT_TEST_VIP("call_function()", "use local variables", "", ""){
+QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 	const auto context = make_test_interpreter_context();
 	auto ast = program_to_ast2(context,
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"

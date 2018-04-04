@@ -193,6 +193,7 @@ namespace floyd {
 
 
 		public: mutable int _rc;
+		public: bool _is_unwritten_ext_value = false;
 #if FLOYD_BC_VALUE_DEBUG_TYPE
 //??? use bc_typeid_t instead
 		public: typeid_t _type;
@@ -208,7 +209,13 @@ namespace floyd {
 
 	struct bc_frame_t;
 
+
+
+
 	//////////////////////////////////////		bc_value_t
+
+
+
 
 	//	IMPORTANT: Has no constructor, destructor etc!! POD.
 
@@ -437,6 +444,34 @@ namespace floyd {
 
 
 		public: static int compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
+
+
+
+		public: explicit bc_value_t(const bc_frame_t* frame_ptr) :
+#if FLOYD_BC_VALUE_DEBUG_TYPE
+			_debug_type(typeid_t::make_void()),
+#endif
+			_is_ext(false)
+		{
+			_pod._frame_ptr = frame_ptr;
+			QUARK_ASSERT(check_invariant());
+		}
+
+		enum class mode {
+			k_unwritten_ext_value
+		};
+		public: BC_INLINE  explicit bc_value_t(const typeid_t& type, mode mode) :
+#if FLOYD_BC_VALUE_DEBUG_TYPE
+			_debug_type(type),
+#endif
+			_is_ext(true)
+		{
+			_pod._ext = new bc_value_object_t{"UNWRITTEN EXT VALUE"};
+			_pod._ext->_is_unwritten_ext_value = true;
+			QUARK_ASSERT(check_invariant());
+		}
+
+
 
 
 		//////////////////////////////////////		internal-undefined type

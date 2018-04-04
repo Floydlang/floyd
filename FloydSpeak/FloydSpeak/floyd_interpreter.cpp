@@ -140,6 +140,49 @@ bool interpreter_stack_t::check_stack_frame(int frame_pos, const bc_frame_t* fra
 	}
 }
 
+
+
+value_t make_def(const typeid_t& type){
+	const base_type bt = type.get_base_type();
+	if(false){
+	}
+	else if(bt == base_type::k_void){
+		return value_t::make_void();
+	}
+	else if(bt == base_type::k_bool){
+		return value_t::make_bool(false);
+	}
+	else if(bt == base_type::k_int){
+		return value_t::make_int(0);
+	}
+	else if(bt == base_type::k_float){
+		return value_t::make_float(0.0f);
+	}
+	else if(bt == base_type::k_string){
+		return value_t::make_string("");
+	}
+	else if(bt == base_type::k_json_value){
+		return value_t::make_json_value(json_t());
+	}
+	else if(bt == base_type::k_typeid){
+		return value_t::make_typeid_value(typeid_t::make_void());
+	}
+	else if(bt == base_type::k_struct){
+//		return value_t::make_struct_value(typid_t::make_struct(), {});
+	}
+	else if(bt == base_type::k_function){
+		return value_t::make_function_value(type, 0);
+	}
+	else if(bt == base_type::k_internal_undefined){
+		return value_t::make_undefined();
+	}
+	else{
+	}
+
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
 //??? DYN values /returns needs TWO registers.
 //	Returns new frame-pos, same as vm._current_stack_frame.
 void interpreter_stack_t::open_frame(const bc_frame_t& frame, int values_already_on_stack){
@@ -169,10 +212,15 @@ void interpreter_stack_t::open_frame(const bc_frame_t& frame, int values_already
 		//	Use a placeholder object. Type won't match symbol but that's OK.
 		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
 			if(is_ext){
-				push_value(_internal_placeholder_object, true);
+				//??? Warning, the type of the value will not match the symbol-type.
+//				push_value(_internal_placeholder_object, true);
+				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
+				push_obj(value);
 			}
 			else{
-				push_intq(0xdeadbeef);
+				const auto value = make_def(symbol.second._value_type);
+				const auto bc = value_to_bc(value);
+				push_inplace(bc);
 			}
 		}
 
@@ -473,9 +521,18 @@ json_t interpreter_stack_t::stack_to_json() const{
 		if(frame_start_flag){
 			elements.push_back(json_t(""));
 		}
+
+		const auto debug_type = _debug_types[i];
+		const auto ext = bc_value_t::is_bc_ext(debug_type.get_base_type());
+		const auto bc_pod = _value_stack[i];
+		const auto bc = bc_value_t(debug_type, bc_pod, ext);
+
+		bool unwritten = ext && bc._pod._ext->_is_unwritten_ext_value;
+
 		auto a = json_t::make_array({
 			json_t(i),
-			_exts[i] ? "OBJ" : "---"
+			typeid_to_ast_json(debug_type, json_tags::k_plain)._value,
+			unwritten ? json_t("UNWRITTEN") : value_to_ast_json(bc_to_value(bc, debug_type), json_tags::k_plain)._value
 		});
 		elements.push_back(a);
 	}
@@ -883,7 +940,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_push_inplace){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto value = vm._stack.read_register_inplace(instruction._reg_a);
-			vm._stack.push_pod_no_bump(value._pod, false);
+			vm._stack.push_inplace(value);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_push_obj){
