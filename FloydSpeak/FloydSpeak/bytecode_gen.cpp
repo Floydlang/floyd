@@ -197,7 +197,8 @@ struct opcode_info_t {
 		k_l_00i0,
 		k_m_tr00,
 		k_n_tii0,
-		k_o_0rrr
+		k_o_0rrr,
+		k_p_0r00
 	};
 	encoding _encoding;
 };
@@ -252,7 +253,10 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_j_trxx } },
 
-	{ bc_opcode::k_push, { "push", opcode_info_t::encoding::k_m_tr00 } },
+	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
+	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
+	{ bc_opcode::k_push_inplace, { "push_inplace", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_push_obj, { "push_obj", opcode_info_t::encoding::k_p_0r00 } },
 	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_tii0 } },
 
 	{ bc_opcode::k_branch_false_bool, { "branch_false_bool", opcode_info_t::encoding::k_k_0ri0 } },
@@ -533,6 +537,9 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	else if(e == opcode_info_t::encoding::k_o_0rrr){
 		return { false,		true, true, true };
 	}
+	else if(e == opcode_info_t::encoding::k_p_0r00){
+		return { false,		true, false, false };
+	}
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();
@@ -549,22 +556,24 @@ bool check_register(const reg_t& reg, bool is_reg){
 	return true;
 }
 
-bool check_invariant(bc_instruction_t instruction){
-	const auto encoding = k_opcode_info.at(instruction._opcode)._encoding;
+
+#if DEBUG
+bool bc_instruction_t::check_invariant() const {
+	const auto encoding = k_opcode_info.at(_opcode)._encoding;
 	const auto reg_flags = encoding_to_reg_flags(encoding);
 
 	if(reg_flags._type){
 	}
 	else{
-		QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+		QUARK_ASSERT(_instr_type == k_no_bctypeid);
 	}
 
-	QUARK_ASSERT(check_register(instruction._reg_a, reg_flags._a));
-	QUARK_ASSERT(check_register(instruction._reg_b, reg_flags._b));
-	QUARK_ASSERT(check_register(instruction._reg_c, reg_flags._c));
+	QUARK_ASSERT(check_register(_reg_a, reg_flags._a));
+	QUARK_ASSERT(check_register(_reg_b, reg_flags._b));
+	QUARK_ASSERT(check_register(_reg_c, reg_flags._c));
 	return true;
 }
-
+#endif
 
 
 
@@ -901,6 +910,26 @@ expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, cons
 }
 
 
+
+struct call_spec_t {
+	typeid_t _return;
+	std::vector<typeid_t> _args;
+
+	uint32_t _dynbits;
+	uint32_t _extbits;
+	uint32_t _stack_element_count;
+};
+
+
+
+uint32_t pack_bools(const std::vector<bool>& bools){
+	uint32_t acc = 0x0;
+	for(const auto e: bools){
+		acc = (acc << 1) | (e ? 1 : 0);
+	}
+	return acc;
+}
+
 /*
 	1) Generates code to evaluate all argument expressions
 	2) Generates call-instruction, with all push/pops needed to pass arguments.
@@ -908,7 +937,7 @@ expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, cons
 */
 struct call_setup_t {
 	bc_body_t _body;
-	uint32_t _extbits;
+	vector<bool> _exts;
 	int _stack_count;
 };
 
@@ -937,15 +966,13 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 		argument_regs.push_back(std::pair<reg_t, bc_typeid_t>(m2._output_reg, m2._type));
 	}
 
-	const auto itype_int = intern_type(vm, typeid_t::make_int());
-
 	//	We have max 32 extbits when popping stack.
 	if(arg_count > 16){
 		throw std::runtime_error("Max 16 arguments to function.");
 	}
 
 	//	Make push-instructions that push args in correct order on callstack, before k_opcode_call is inserted.
-	uint32_t extbits = 0x00000000;
+	vector<bool> exts;;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto arg_reg = argument_regs[i].first;
 		const auto callee_arg_type = argument_regs[i].second;
@@ -954,49 +981,29 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
 		if(func_arg_type.is_internal_dynamic()){
 			const auto arg_type_reg = add_local_const(body_acc, value_t::make_int(callee_arg_type), "DYN type arg #" + std::to_string(i));
-			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push, itype_int, arg_type_reg, {}, {} ));
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_inplace, k_no_bctypeid, arg_type_reg, {}, {} ));
 
 			//	Int don't need extbit.
-			extbits = extbits << 1;
+			exts.push_back(false);
 		}
 
 		const auto arg_type_full = vm._types[callee_arg_type];
 		bool ext = bc_value_t::is_bc_ext(arg_type_full.get_base_type());
-
-		extbits = extbits << 1;
 		if(ext){
-			extbits = extbits | 1;
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_obj, k_no_bctypeid, arg_reg, {}, {} ));
+			exts.push_back(true);
 		}
-
-		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push, callee_arg_type, arg_reg, {}, {} ));
+		else{
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_inplace, k_no_bctypeid, arg_reg, {}, {} ));
+			exts.push_back(false);
+		}
 	}
 	int stack_count = arg_count + dynamic_arg_count;
 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body_acc.check_invariant());
-	return { body_acc, extbits, stack_count };
+	return { body_acc, exts, stack_count };
 }
-
-/*
-	const auto opcode = [&parent_type]{
-		if(parent_type.is_string()){
-			return bc_opcode::k_lookup_element_string;
-		}
-		else if(parent_type.is_json_value()){
-			return bc_opcode::k_lookup_element_json_value;
-		}
-		else if(parent_type.is_vector()){
-			return bc_opcode::k_lookup_element_vector;
-		}
-		else if(parent_type.is_dict()){
-			return bc_opcode::k_lookup_element_dict;
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}();
-*/
 
 expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1005,8 +1012,10 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 
 	auto body_acc = body;
 
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_frame_ptr, k_no_bctypeid, {}, {}, {} ));
+
 	//	_input_exprs[0] is callee, rest are arguments.
-	const auto& callee_expr = bcgen_expression(vm, e._input_exprs[0], body);
+	const auto& callee_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
 	body_acc = callee_expr._body;
 	const auto function_reg = callee_expr._output_reg;
 	const auto callee_arg_count = static_cast<int>(e._input_exprs.size()) - 1;
@@ -1034,7 +1043,9 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 		make_imm_int(arg_count)
 	));
 
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, k_no_bctypeid, make_imm_int(call_setup._stack_count), make_imm_int(call_setup._extbits), {} ));
+	const auto extbits = pack_bools(call_setup._exts);
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, k_no_bctypeid, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_pop_frame_ptr, k_no_bctypeid, {}, {}, {} ));
 	return { body_acc, function_result_reg, intern_type(vm, return_type) };
 }
 
@@ -1073,7 +1084,8 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 		make_imm_int(arg_count)
 	));
 
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, k_no_bctypeid, make_imm_int(call_setup._stack_count), make_imm_int(call_setup._extbits), {} ));
+	const auto extbits = pack_bools(call_setup._exts);
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, k_no_bctypeid, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
 	return { body_acc, function_result_reg, target_itype };
 }
 
@@ -1326,6 +1338,68 @@ expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_b
 
 
 
+//////////////////////////////////////		bc_frame_t
+
+
+
+bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args) :
+	_body(body),
+	_args(args)
+{
+
+	int arg_count = args.size();
+//	Insert prev_frame_pos & frame_ptr into the frame -- between params & locals.
+/*
+		int read_index = 0;
+
+		std::vector<std::pair<std::string, symbol_t>> symbols;
+
+		//	Copy input parameter symbols (always first in symbols vector).
+		for(int i = 0 ; i < args.size() ; i++){
+			symbols.push_back(_body._symbols[read_index]);
+			read_index++;
+		}
+
+		//	Reserve register for prev-frame pos.
+		symbol_t::make_mutable_local(typeid_t::make_int());
+
+		//	Reserve register for frame_ptr.
+		symbol_t::make_mutable_local(typeid_t::make_int());
+
+		//	Copy locals, temporaries.
+		while(read_index < body._symbols.size()){
+			symbols.push_back(_body._symbols[read_index]);
+			read_index++;
+		}
+
+
+		//	Adjust all instructions to
+
+		std::vector<std::pair<std::string, symbol_t>> _symbols;
+		std::vector<bc_instruction_t> _instrs;
+
+	_body = body;
+*/
+
+	for(int i = 0 ; i < _body._symbols.size() ; i++){
+		const auto basetype = _body._symbols[i].second._value_type.get_base_type();
+		const bool ext = bc_value_t::is_bc_ext(basetype);
+		_exts.push_back(ext);
+	}
+
+	_exts_excluding_parameters = _exts;
+	_exts_excluding_parameters.erase(_exts_excluding_parameters.begin(), _exts_excluding_parameters.begin() + arg_count);
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bool bc_frame_t::check_invariant() const {
+	QUARK_ASSERT(_body.check_invariant());
+	QUARK_ASSERT(_body._symbols.size() == _exts.size());
+	return true;
+}
+
+
 
 
 //////////////////////////////////////		globals
@@ -1394,7 +1468,7 @@ json_t functiondef_to_json(const bc_function_definition_t& def){
 	return json_t::make_array({
 		json_t(typeid_to_compact_string(def._function_type)),
 		members_to_json(def._args),
-		frame_to_json(def._frame),
+		def._frame ? frame_to_json(*def._frame) : json_t(),
 		json_t(def._host_function_id)
 	});
 }
@@ -1493,21 +1567,33 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 
 	bgenerator_t a(pass3._checked_ast);
 
-	const auto globals2 = bc_frame_t(bcgen_body(a, a._imm->_ast_pass3._globals));
+	const auto globals2 = bc_frame_t(bcgen_body(a, a._imm->_ast_pass3._globals), {});
 	a._call_stack.push_back(bcgen_environment_t{ &globals2._body });
 
 	std::vector<const bc_function_definition_t> function_defs2;
 	for(int function_id = 0 ; function_id < pass3._checked_ast._function_defs.size() ; function_id++){
 		const auto& function_def = *pass3._checked_ast._function_defs[function_id];
-		const auto body2 = function_def._body ? bcgen_body(a, *function_def._body) : bc_body_t({});
-		const auto body3 = bc_frame_t(body2);
-		const auto function_def2 = bc_function_definition_t{
-			function_def._function_type,
-			function_def._args,
-			body3,
-			function_def._host_function_id
-		};
-		function_defs2.push_back(function_def2);
+
+		if(function_def._host_function_id){
+			const auto function_def2 = bc_function_definition_t{
+				function_def._function_type,
+				function_def._args,
+				nullptr,
+				function_def._host_function_id
+			};
+			function_defs2.push_back(function_def2);
+		}
+		else{
+			const auto body2 = function_def._body ? bcgen_body(a, *function_def._body) : bc_body_t({});
+			const auto frame = bc_frame_t(body2, function_def._function_type.get_function_args());
+			const auto function_def2 = bc_function_definition_t{
+				function_def._function_type,
+				function_def._args,
+				make_shared<bc_frame_t>(frame),
+				function_def._host_function_id
+			};
+			function_defs2.push_back(function_def2);
+		}
 	}
 
 	const auto result = bc_program_t{ globals2, function_defs2, a._types };

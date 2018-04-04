@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "floyd::bcgen_call_expression(floyd::bgenerator_t&amp;, floyd::expression_t const&amp;, floyd::bc_body_t const&amp;):bytecode_gen.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::interpreter_stack_t::write_register_string(floyd::variable_address_t const&amp;, std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt; const&amp;):floyd_interpreter.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::parse_expression_all(seq_t const&amp;):parse_expression.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::execute_call_instruction(floyd::interpreter_t&amp;, floyd::bc_instruction_t const&amp;):floyd_interpreter.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::analyse_expression_to_target(floyd::analyser_t const&amp;, floyd::expression_t const&amp;, floyd::typeid_t const&amp;):pass3.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::execute_instructions(floyd::interpreter_t&amp;, std::__1::vector&lt;floyd::bc_instruction_t, std::__1::allocator&lt;floyd::bc_instruction_t&gt; &gt; const&amp;):floyd_interpreter.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::analyse_resolve_member_expression(floyd::analyser_t const&amp;, floyd::expression_t const&amp;):pass3.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::interpreter_stack_t::read_symbol_ptr(int) const:floyd_interpreter.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::interpreter_stack_t::read_register_int(floyd::variable_address_t const&amp;) const:floyd_interpreter.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::bc_instruction_t::check_invariant() const:bytecode_gen.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "floyd::call_function(floyd::interpreter_t&amp;, floyd::value_t const&amp;, std::__1::vector&lt;floyd::value_t, std::__1::allocator&lt;floyd::value_t&gt; &gt; const&amp;):floyd_interpreter.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>

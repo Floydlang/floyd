@@ -989,16 +989,28 @@ inline int bc_limit(int value, int min, int max){
 		//////////////////////////////////////		STACK
 
 		/*
-			TYPE: itype of V.
-			A: Register: where get V
+			Pushes the VM frame info to stack.
+			TYPE: ---
+			A: ---
 			B: ---
 			C: ---
 			STACK 1: a b c
-			STACK 2: a b c V
+			STACK 2: a b c [prev frame pos] [frame_ptr]
 		*/
-		k_push,
+		k_push_frame_ptr,
 
-#if false
+		/*
+			Pops the VM frame info to stack -- this changes the VM's frame pos & frame ptr.
+			TYPE: ---
+			A: ---
+			B: ---
+			C: ---
+			STACK 1: a b c [prev frame pos] [frame_ptr]
+			STACK 2: a b c
+		*/
+		k_pop_frame_ptr,
+
+
 		///??? Could optimize by pushing 3 values with ONE instruction -- use A B C.
 		///??? Could optimize by using a byte-stack and only pushing minimal number of bytes. Bool needs 1 byte only.
 
@@ -1032,7 +1044,7 @@ inline int bc_limit(int value, int min, int max){
 			STACK 1: a b c
 			STACK 2: a b c ITYPE V
 		*/
-		k_push_dyn,
+//		k_push_dyn,
 
 		/*
 			TYPE: ---
@@ -1042,9 +1054,7 @@ inline int bc_limit(int value, int min, int max){
 			STACK 1: a b c V
 			STACK 2: a b c
 		*/
-		k_pop_inplace,
-		k_pop_obj,
-		k_pop_dyn,
+//		k_pop_dyn,
 
 		/*
 			TYPE: ---
@@ -1052,7 +1062,6 @@ inline int bc_limit(int value, int min, int max){
 			B: IMMEDIATE: extbits. bit 0 maps to the next value to be popped from stack.
 			C: ---
 		*/
-#endif
 
 
 		/*
@@ -1110,9 +1119,7 @@ inline int bc_limit(int value, int min, int max){
 		}
 
 #if DEBUG
-		public: bool check_invariant() const {
-			return true;
-		}
+		public: bool check_invariant() const;
 #endif
 
 
@@ -1132,11 +1139,8 @@ inline int bc_limit(int value, int min, int max){
 	};
 
 
-
 	//////////////////////////////////////		bc_body_t
 
-
-	bool check_invariant(bc_instruction_t instruction);
 
 	struct bc_body_t {
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
@@ -1160,7 +1164,7 @@ inline int bc_limit(int value, int min, int max){
 		public: bool check_invariant() const {
 			for(int i = 0 ; i < _instrs.size() ; i++){
 				const auto instruction = _instrs[i];
-				QUARK_ASSERT(::floyd::check_invariant(instruction));
+				QUARK_ASSERT(instruction.check_invariant());
 			}
 			for(const auto& e: _symbols){
 				QUARK_ASSERT(e.first != "");
@@ -1170,33 +1174,25 @@ inline int bc_limit(int value, int min, int max){
 		}
 	};
 
-	struct bc_frame_t {
 
-		explicit bc_frame_t(const bc_body_t& body) :
-			_body(body)
-		{
-			for(int i = 0 ; i < _body._symbols.size() ; i++){
-				const auto basetype = _body._symbols[i].second._value_type.get_base_type();
-				const bool ext = bc_value_t::is_bc_ext(basetype);
-				_exts.push_back(ext);
-			}
-			QUARK_ASSERT(check_invariant());
-		}
-		public: bool check_invariant() const {
-			QUARK_ASSERT(_body.check_invariant());
-			QUARK_ASSERT(_body._symbols.size() == _exts.size());
-			return true;
-		}
+	//////////////////////////////////////		bc_frame_t
+
+
+	struct bc_frame_t {
+		bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args);
+		public: bool check_invariant() const;
 
 
 		bc_body_t _body;
+		std::vector<typeid_t> _args;
 
 		//	True if equivalent symbol is an ext.
 		std::vector<bool> _exts;
+		std::vector<bool> _exts_excluding_parameters;
 	};
 
-
 	//////////////////////////////////////		bc_function_definition_t
+
 
 	//???	All functions should be function values: host-functions and Floyd functions. This means _host_function_id should be in the VALUE not function definition!
 	struct bc_function_definition_t {
@@ -1209,14 +1205,12 @@ inline int bc_limit(int value, int min, int max){
 		//??? store more optimzation stuff here!
 		typeid_t _function_type;
 		std::vector<member_t> _args;
-		bc_frame_t _frame;
+		std::shared_ptr<bc_frame_t> _frame;
 		int _host_function_id;
 	};
 
 
-
 	//////////////////////////////////////		bc_program_t
-
 
 
 	struct bc_program_t {

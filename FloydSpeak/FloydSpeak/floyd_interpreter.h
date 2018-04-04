@@ -34,6 +34,32 @@ namespace floyd {
 
 
 
+	//////////////////////////////////////		frame_pos_t
+
+
+
+	struct frame_pos_t {
+/*
+		frame_pos_t() :
+			_frame_pos(0),
+			_frame(nullptr)
+		{
+		}
+		frame_pos_t(int frame_pos, const bc_frame_t* frame) :
+			_frame_pos(frame_pos),
+			_frame(frame)
+		{
+		}
+*/
+
+		int _frame_pos;
+		const bc_frame_t* _frame;
+	};
+
+	inline bool operator==(const frame_pos_t& lhs, const frame_pos_t& rhs){
+		return lhs._frame_pos == rhs._frame_pos && lhs._frame == rhs._frame;
+	}
+
 	//////////////////////////////////////		interpreter_stack_t
 
 
@@ -50,10 +76,14 @@ namespace floyd {
 	8	[local2]
 	9	[local3]
 */
+
+
+
 	struct interpreter_stack_t {
-		public: interpreter_stack_t() :
+		public: interpreter_stack_t(const bc_frame_t* global_frame) :
 			_internal_placeholder_object(bc_value_t::make_string("Internal placeholder object")),
-			_current_stack_frame(0)
+			_current_stack_frame(),
+			_global_frame(global_frame)
 		{
 			_value_stack.reserve(1024);
 
@@ -66,29 +96,36 @@ namespace floyd {
 
 
 		public: bool check_invariant() const {
-			QUARK_ASSERT(_current_stack_frame >= 0);
-			QUARK_ASSERT(_current_stack_frame <= _value_stack.size());
+			QUARK_ASSERT(_current_stack_frame._frame_pos >= 0);
+			QUARK_ASSERT(_current_stack_frame._frame_pos <= _value_stack.size());
 			QUARK_ASSERT(_internal_placeholder_object.check_invariant());
 			QUARK_ASSERT(_exts.size() == _value_stack.size());
 			for(int i = 0 ; i < _value_stack.size() ; i++){
 //				QUARK_ASSERT(_value_stack[i].check_invariant());
 			}
+//			QUARK_ASSERT(_global_frame != nullptr);
 			return true;
 		}
 
+		public: interpreter_stack_t(const interpreter_stack_t& other) = delete;
 
-		public: interpreter_stack_t(const interpreter_stack_t& other) :
+/*		private: save_for_later___interpreter_stack_t(const interpreter_stack_t& other) :
 			_value_stack(other._value_stack),
 			_exts(other._exts),
 			_internal_placeholder_object(other._internal_placeholder_object),
-			_current_stack_frame(other._current_stack_frame)
+			_current_stack_frame(other._current_stack_frame),
+			_global_frame(other._global_frame)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
 			//??? Cannot bump RC:s because we don't know which values!
 			QUARK_ASSERT(false);
 		}
+*/
 
+		public: interpreter_stack_t& operator=(const interpreter_stack_t& other) = delete;
+
+/*
 		public: interpreter_stack_t& operator=(const interpreter_stack_t& other){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
@@ -97,6 +134,7 @@ namespace floyd {
 			temp.swap(*this);
 			return *this;
 		}
+*/
 
 		public: void swap(interpreter_stack_t& other) throw() {
 			QUARK_ASSERT(check_invariant());
@@ -106,6 +144,7 @@ namespace floyd {
 			other._exts.swap(_exts);
 			_internal_placeholder_object.swap(other._internal_placeholder_object);
 			std::swap(_current_stack_frame, other._current_stack_frame);
+			std::swap(_global_frame, other._global_frame);
 
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
@@ -122,15 +161,17 @@ namespace floyd {
 
 
 		public: int read_prev_frame_pos(int frame_pos) const;
-		public: const bc_frame_t* get_frame(int frame_pos) const;
-		public: bool check_stack_frame(int frame_pos) const;
+		public: frame_pos_t read_prev_frame_pos2(int frame_pos) const;
 
-		public: int open_frame(const bc_frame_t& frame, const bc_value_t* init_values, int init_value_count);
-		public: int close_frame(const bc_frame_t& frame);
+		public: const bc_frame_t* read_prev_frame(int frame_pos) const;
+		public: bool check_stack_frame(int frame_pos, const bc_frame_t* frame) const;
+
+		public: void open_frame(const bc_frame_t& frame, int values_already_on_stack);
+		public: void close_frame(const bc_frame_t& frame);
 
 		public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
 
-		public: BC_INLINE int find_frame_pos(int parent_step) const;
+		public: BC_INLINE frame_pos_t find_frame_pos(int parent_step) const;
 
 		//	Returns stack position of the reg. Can be any stack frame.
 		public: int resolve_register(const variable_address_t& reg) const;
@@ -141,6 +182,7 @@ namespace floyd {
 		public: bc_value_t read_register_slow(const variable_address_t& reg, const typeid_t& type) const;
 		public: void write_register_slow(const variable_address_t& reg, const bc_value_t& value, const typeid_t& type);
 
+		public: bc_value_t read_register_inplace(const variable_address_t& reg) const;
 		public: bc_value_t read_register_obj(const variable_address_t& reg) const;
 
 		public: bool read_register_bool(const variable_address_t& reg) const;
@@ -167,6 +209,43 @@ namespace floyd {
 
 		//////////////////////////////////////		STACK
 
+
+		public: void save_frame(){
+			bc_pod_value_t frame_pos_pod;
+			frame_pos_pod._int = _current_stack_frame._frame_pos;
+			push_pod_no_bump(frame_pos_pod, false);
+
+			bc_pod_value_t frame_ptr_pod;
+			frame_ptr_pod._frame_ptr = _current_stack_frame._frame;
+			push_pod_no_bump(frame_ptr_pod, false);
+		}
+		public: const frame_pos_t restore_frame(){
+			const auto stack_size = size();
+			bc_pod_value_t frame_ptr_pod = load_pod(stack_size - 1);
+			bc_pod_value_t frame_pos_pod = load_pod(stack_size - 2);
+
+			const auto frame_pos = frame_pos_t{frame_pos_pod._int, frame_ptr_pod._frame_ptr};
+			_current_stack_frame = frame_pos;
+
+			pop(false);
+			pop(false);
+
+			return _current_stack_frame;
+		}
+
+
+
+		//////////////////////////////////////		STACK
+
+
+		public: BC_INLINE void push_pod_no_bump(const bc_pod_value_t& value, bool is_ext){
+			QUARK_ASSERT(check_invariant());
+
+			_value_stack.push_back(value);
+			_exts.push_back(is_ext);
+
+			QUARK_ASSERT(check_invariant());
+		}
 
 		public: BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
 			QUARK_ASSERT(check_invariant());
@@ -227,6 +306,11 @@ namespace floyd {
 			return result;
 		}
 
+		public: BC_INLINE bc_pod_value_t load_pod(int pos) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+			return _value_stack[pos];
+		}
 		private: BC_INLINE bc_value_t load_inline_value(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
@@ -279,7 +363,7 @@ namespace floyd {
 
 		//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
 
-		private: BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
+		public: BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(type.check_invariant());
@@ -360,7 +444,7 @@ namespace floyd {
 		}
 
 		//	exts[exts.size() - 1] maps to the closed value on stack, the next to be popped.
-		private: BC_INLINE void pop_batch(const std::vector<bool>& exts){
+		public: BC_INLINE void pop_batch(const std::vector<bool>& exts){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_value_stack.size() >= exts.size());
 
@@ -371,7 +455,7 @@ namespace floyd {
 			}
 			QUARK_ASSERT(check_invariant());
 		}
-		private: BC_INLINE void pop(bool ext){
+		public: BC_INLINE void pop(bool ext){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_value_stack.empty() == false);
 			QUARK_ASSERT(_exts.back() == ext);
@@ -401,17 +485,22 @@ namespace floyd {
 		}
 */
 
-		public: int get_current_frame_pos() const {
+		public: frame_pos_t get_current_frame_pos() const {
 			QUARK_ASSERT(check_invariant());
 			return _current_stack_frame;
 		}
+
+		public: json_t stack_to_json() const;
 
 
 		private: bc_value_t _internal_placeholder_object;
 		private: std::vector<bc_pod_value_t> _value_stack;
 		private: std::vector<bool> _exts;
-		private: int _current_stack_frame;
+		private: frame_pos_t _current_stack_frame;
+		private: const bc_frame_t* _global_frame;
 	};
+
+
 
 
 
