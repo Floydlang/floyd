@@ -301,6 +301,12 @@ const std::pair<std::string, symbol_t>* interpreter_stack_t::get_register_info(c
 	const auto symbol_ptr = &frame_pos._frame->_body._symbols[reg._index];
 	return symbol_ptr;
 }
+const std::pair<std::string, symbol_t>* interpreter_stack_t::get_global_info(int global) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(global >= 0 && global < _global_frame->_body._symbols.size());
+
+	return &_global_frame->_body._symbols[global];
+}
 const std::pair<std::string, symbol_t>* interpreter_stack_t::get_register_info2(int reg) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(check_reg(reg));
@@ -919,10 +925,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_load_global_obj){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
-			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_b._index);
-			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
+			const std::pair<std::string, symbol_t>* info = vm._stack.get_global_info(instruction._reg_b._index);
 			const auto& type = info->second._value_type;
-			const auto global_pos = vm._stack.resolve_register(global_addr);
+			const auto global_pos = k_frame_overhead + instruction._reg_b._index;
 
 			const auto value = vm._stack.load_obj(global_pos);
 
@@ -933,10 +938,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_load_global_inline){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
-			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_b._index);
-			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
+			const std::pair<std::string, symbol_t>* info = vm._stack.get_global_info(instruction._reg_b._index);
 			const auto& type = info->second._value_type;
-			const auto global_pos = vm._stack.resolve_register(global_addr);
+			const auto global_pos = k_frame_overhead + instruction._reg_b._index;
 
 			const auto value = vm._stack.load_inline_value(global_pos);
 
@@ -949,26 +953,16 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_store_global_obj){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
-			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_a._index);
-			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
-			const auto& type = info->second._value_type;
-			const auto global_pos = vm._stack.resolve_register(global_addr);
-
 			const auto value = vm._stack.read_register_obj(instruction._reg_b._index);
-
+			const auto global_pos = k_frame_overhead + instruction._reg_a._index;
 			vm._stack.replace_obj(global_pos, value);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_store_global_inline){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
-			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_a._index);
-			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
-			const auto& type = info->second._value_type;
-			const auto global_pos = vm._stack.resolve_register(global_addr);
-
 			const auto value = vm._stack.read_register_inplace(instruction._reg_b._index);
-
+			const auto global_pos = k_frame_overhead + instruction._reg_a._index;
 			vm._stack.replace_inline(global_pos, value);
 			pc++;
 		}

@@ -173,8 +173,7 @@ namespace floyd {
 		public: int resolve_register(const variable_address_t& reg) const;
 
 		public: const std::pair<std::string, symbol_t>* get_register_info(const variable_address_t& reg) const;
-
-
+		public: const std::pair<std::string, symbol_t>* get_global_info(int global) const;
 
 		public: bool check_reg(int reg) const;
 
