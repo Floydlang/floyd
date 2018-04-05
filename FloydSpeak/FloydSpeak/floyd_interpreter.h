@@ -179,11 +179,14 @@ namespace floyd {
 
 		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const;
 
-		public: bc_value_t read_register_slow(const int reg, const typeid_t& type) const;
-		public: void write_register_slow(const int reg, const bc_value_t& value, const typeid_t& type);
+		public: bc_value_t read_register(const int reg) const;
+		public: void write_register(const int reg, const bc_value_t& value);
 
 		public: bc_value_t read_register_inplace(const int reg) const;
+		public: void write_register_inplace(const int reg, const bc_value_t& value);
+
 		public: bc_value_t read_register_obj(const int reg) const;
+		public: void write_register_obj(const int reg, const bc_value_t& value);
 
 		public: bool read_register_bool(const int reg) const;
 		public: void write_register_bool(const int reg, bool value);
@@ -305,7 +308,7 @@ namespace floyd {
 			return result;
 		}
 
-		public: BC_INLINE bc_pod_value_t load_pod(int pos) const{
+		public: BC_INLINE const bc_pod_value_t& load_pod(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			return _value_stack[pos];
