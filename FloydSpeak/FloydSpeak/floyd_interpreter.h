@@ -266,37 +266,47 @@ namespace floyd {
 		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(reg >= 0 && reg < _current_frame->_body._symbols.size());
 
-			return get_register_info(variable_address_t::make_variable_address(0, reg));
+			return &_current_frame->_body._symbols[reg];
 		}
-
-
-
-
 
 
 		public: bc_value_t read_register(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
-			const auto info = get_register_info2(reg);
 			const auto pos = _current_frame_pos + reg;
-			const auto value = load_value_slow(pos, info->second._value_type);
-			QUARK_ASSERT(info->second._value_type == value._debug_type);
-			return value;
+			QUARK_ASSERT(_debug_types[pos] == _current_frame->_body._symbols[reg].second._value_type);
+
+			bool is_ext = _current_frame->_exts[reg];
+#if DEBUG
+			const auto result = bc_value_t(_current_frame->_body._symbols[reg].second._value_type, _value_stack[pos], is_ext);
+#else
+			const auto result = bc_value_t(_value_stack[pos], is_ext);
+#endif
+			return result;
 		}
 		public: void write_register(const int reg, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(value.check_invariant());
 
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == value._debug_type);
 			const auto pos = _current_frame_pos + reg;
-			replace_value_same_type_SLOW(pos, value, info->second._value_type);
+			QUARK_ASSERT(_debug_types[pos] == _current_frame->_body._symbols[reg].second._value_type);
+			bool is_ext = _current_frame->_exts[reg];
+			if(is_ext){
+				auto prev_copy = _value_stack[pos];
+				value._pod._ext->_rc++;
+				_value_stack[pos] = value._pod;
+				bc_value_t::debump(prev_copy);
+			}
+			else{
+				_value_stack[pos] = value._pod;
+			}
+
+			QUARK_ASSERT(check_invariant());
 		}
-
-
 
 
 
@@ -635,25 +645,6 @@ namespace floyd {
 
 		//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
 
-		public: BC_INLINE void replace_value_same_type_SLOW(int pos, const bc_value_t& value, const typeid_t& type){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(value.check_invariant());
-			QUARK_ASSERT(type.check_invariant());
-			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
-			QUARK_ASSERT(value._debug_type == type);
-
-			//	NOTICE: Void slot
-			QUARK_ASSERT(_debug_types[pos] == type);
-
-			if(bc_value_t::is_bc_ext(type.get_base_type())){
-				replace_obj(pos, value);
-			}
-			else{
-				replace_inline(pos, value);
-			}
-
-			QUARK_ASSERT(check_invariant());
-		}
 
 		public: BC_INLINE void replace_inline(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());

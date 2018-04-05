@@ -1263,7 +1263,8 @@ inline int bc_limit(int value, int min, int max){
 			_args(args),
 			_frame(frame),
 			_host_function_id(host_function_id),
-			_dyn_arg_count(-1)
+			_dyn_arg_count(-1),
+			_return_is_ext(bc_value_t::is_bc_ext(_function_type.get_function_return().get_base_type()))
 		{
 			_dyn_arg_count = count_function_dynamic_args(function_type);
 		}
@@ -1283,6 +1284,7 @@ inline int bc_limit(int value, int min, int max){
 
 
 		int _dyn_arg_count;
+		bool _return_is_ext;
 	};
 
 

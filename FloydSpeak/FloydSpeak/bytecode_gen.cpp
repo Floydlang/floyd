@@ -670,6 +670,7 @@ bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t&
 	return body_acc;
 }
 
+//??? Generate fewer instructions by supplying bcgen_expression() with destination register. Allows caller to make a temp or to put value directly where it needs to go.
 bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -690,7 +691,7 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_global_inline, k_no_bctypeid, make_imm_int(dest_variable._index), expr._output_reg, {}));
 		}
 	}
-	else{//??? No instruction needed!
+	else{
 		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_resolve, intern_type(vm, result_type), dest_variable, expr._output_reg, {}));
 	}
 
@@ -1450,7 +1451,7 @@ bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args)
 
 		//	Variable slot.
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
-		//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type_SLOW().
+		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
 		//	Use a placeholder object of correct type.
 		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
 			if(is_ext){
