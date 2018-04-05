@@ -176,8 +176,11 @@ namespace floyd {
 
 
 
+		public: bool check_reg(int reg) const;
 
-		public: bc_value_t read_register_slow(const variable_address_t& reg, const typeid_t& type) const;
+		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const;
+
+		public: bc_value_t read_register_slow(const int reg, const typeid_t& type) const;
 		public: void write_register_slow(const variable_address_t& reg, const bc_value_t& value, const typeid_t& type);
 
 		public: bc_value_t read_register_inplace(const variable_address_t& reg) const;

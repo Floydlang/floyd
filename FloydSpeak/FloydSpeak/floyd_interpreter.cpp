@@ -301,20 +301,29 @@ const std::pair<std::string, symbol_t>* interpreter_stack_t::get_register_info(c
 	const auto symbol_ptr = &frame_pos._frame->_body._symbols[reg._index];
 	return symbol_ptr;
 }
-
-
-
-
-bc_value_t interpreter_stack_t::read_register_slow(const variable_address_t& reg, const typeid_t& type) const{
+const std::pair<std::string, symbol_t>* interpreter_stack_t::get_register_info2(int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
+
+	return get_register_info(variable_address_t::make_variable_address(0, reg));
+}
+
+bool interpreter_stack_t::check_reg(int reg) const{
+	QUARK_ASSERT(reg >= 0 && reg < (size() - _current_stack_frame._frame_pos));
+	return true;
+}
+
+
+bc_value_t interpreter_stack_t::read_register_slow(int reg, const typeid_t& type) const{
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(check_reg(reg));
+	QUARK_ASSERT(type.check_invariant());
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == type);
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value = load_value_slow(pos, type);
 	return value;
 }
@@ -898,7 +907,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 	const typeid_t* type_lookup = &vm._imm->_program._types[0];
 	const auto type_count = vm._imm->_program._types.size();
 
-	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(vm._stack.stack_to_json()));
+//	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(vm._stack.stack_to_json()));
 
 
 	int pc = 0;
@@ -983,7 +992,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_store_resolve){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto value = vm._stack.read_register_slow(instruction._reg_b, type);
+			const auto value = vm._stack.read_register_slow(instruction._reg_b._index, type);
 			vm._stack.write_register_slow(instruction._reg_a, value, type);
 			pc++;
 		}
@@ -1117,7 +1126,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& parent_type = type_lookup[instruction._instr_type];
 
 			//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
-			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b, parent_type);
+			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b._index, parent_type);
 			const auto& parent_json_value = parent_value.get_json_value();
 			if(parent_json_value.is_object()){
 				const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
@@ -1164,7 +1173,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& parent_type = type_lookup[instruction._instr_type];
 
-			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b, parent_type);
+			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b._index, parent_type);
 			const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
 			const auto& entries = parent_value.get_dict_value();
 			const auto& found_it = entries.find(lookup_key);
@@ -1286,8 +1295,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
-			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
@@ -1306,8 +1315,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
-			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
@@ -1326,8 +1335,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
-			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
@@ -1346,8 +1355,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
-			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
@@ -1366,8 +1375,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
-			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
@@ -1386,8 +1395,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
-			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left_constant = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right_constant = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
@@ -1409,8 +1418,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_add){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto left = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
@@ -1469,8 +1478,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_subtract){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto left = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
@@ -1500,8 +1509,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_multiply){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto left = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
@@ -1531,8 +1540,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_divide){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto left = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
@@ -1568,8 +1577,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_remainder){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto left = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
@@ -1594,8 +1603,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_logical_and){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto left = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
@@ -1635,8 +1644,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_logical_or){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
-			const auto left = vm._stack.read_register_slow(instruction._reg_b, type);
-			const auto right = vm._stack.read_register_slow(instruction._reg_c, type);
+			const auto left = vm._stack.read_register_slow(instruction._reg_b._index, type);
+			const auto right = vm._stack.read_register_slow(instruction._reg_c._index, type);
 		#if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
 		#endif
