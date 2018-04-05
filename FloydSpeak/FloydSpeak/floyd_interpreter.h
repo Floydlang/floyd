@@ -181,26 +181,26 @@ namespace floyd {
 		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const;
 
 		public: bc_value_t read_register_slow(const int reg, const typeid_t& type) const;
-		public: void write_register_slow(const variable_address_t& reg, const bc_value_t& value, const typeid_t& type);
+		public: void write_register_slow(const int reg, const bc_value_t& value, const typeid_t& type);
 
-		public: bc_value_t read_register_inplace(const variable_address_t& reg) const;
-		public: bc_value_t read_register_obj(const variable_address_t& reg) const;
+		public: bc_value_t read_register_inplace(const int reg) const;
+		public: bc_value_t read_register_obj(const int reg) const;
 
-		public: bool read_register_bool(const variable_address_t& reg) const;
-		public: void write_register_bool(const variable_address_t& reg, bool value);
+		public: bool read_register_bool(const int reg) const;
+		public: void write_register_bool(const int reg, bool value);
 
 
-		public: int read_register_int(const variable_address_t& reg) const;
-		public: void write_register_int(const variable_address_t& reg, int value);
+		public: int read_register_int(const int reg) const;
+		public: void write_register_int(const int reg, int value);
 
-		public: void write_register_float(const variable_address_t& reg, float value);
+		public: void write_register_float(const int reg, float value);
 
-		public: std::string read_register_string(const variable_address_t& reg) const;
-		public: void write_register_string(const variable_address_t& reg, const std::string& value);
+		public: std::string read_register_string(const int reg) const;
+		public: void write_register_string(const int reg, const std::string& value);
 
-		public: bc_value_t read_register_function(const variable_address_t& reg) const;
+		public: bc_value_t read_register_function(const int reg) const;
 
-		public: const std::vector<bc_value_t>* read_register_vector(const variable_address_t& reg) const;
+		public: const std::vector<bc_value_t>* read_register_vector(const int reg) const;
 
 
 		friend std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);

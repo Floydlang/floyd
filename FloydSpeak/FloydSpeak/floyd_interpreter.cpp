@@ -327,169 +327,158 @@ bc_value_t interpreter_stack_t::read_register_slow(int reg, const typeid_t& type
 	const auto value = load_value_slow(pos, type);
 	return value;
 }
-void interpreter_stack_t::write_register_slow(const variable_address_t& reg, const bc_value_t& value, const typeid_t& type){
+void interpreter_stack_t::write_register_slow(const int reg, const bc_value_t& value, const typeid_t& type){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == type);
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	replace_value_same_type_SLOW(pos, value, type);
 }
 
-bc_value_t interpreter_stack_t::read_register_inplace(const variable_address_t& reg) const{
+bc_value_t interpreter_stack_t::read_register_inplace(const int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(bc_value_t::is_bc_ext(debug_info->second._value_type.get_base_type()) == false);
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	return load_inline_value(pos);
 }
-bc_value_t interpreter_stack_t::read_register_obj(const variable_address_t& reg) const{
+bc_value_t interpreter_stack_t::read_register_obj(const int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(bc_value_t::is_bc_ext(debug_info->second._value_type.get_base_type()) == true);
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	return load_obj(pos);
 }
 
 
-bool interpreter_stack_t::read_register_bool(const variable_address_t& reg) const{
+bool interpreter_stack_t::read_register_bool(const int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_bool());
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	return load_inline_value(pos).get_bool_value();
 }
-void interpreter_stack_t::write_register_bool(const variable_address_t& reg, bool value){
+void interpreter_stack_t::write_register_bool(const int reg, bool value){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_bool());
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value2 = bc_value_t::make_bool(value);
 	replace_inline(pos, value2);
 }
 
 
-int interpreter_stack_t::read_register_int(const variable_address_t& reg) const{
+int interpreter_stack_t::read_register_int(const int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_int());
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	return load_intq(pos);
 }
-void interpreter_stack_t::write_register_int(const variable_address_t& reg, int value){
+void interpreter_stack_t::write_register_int(const int reg, int value){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_int());
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value2 = bc_value_t::make_int(value);
 	replace_inline(pos, value2);
 }
 
 
-void interpreter_stack_t::write_register_float(const variable_address_t& reg, float value){
+void interpreter_stack_t::write_register_float(const int reg, float value){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_float());
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value2 = bc_value_t::make_float(value);
 	replace_inline(pos, value2);
 }
 
 
-std::string interpreter_stack_t::read_register_string(const variable_address_t& reg) const{
+std::string interpreter_stack_t::read_register_string(const int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_string());
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value = load_obj(pos);
 	return value.get_string_value();
 }
-void interpreter_stack_t::write_register_string(const variable_address_t& reg, const std::string& value){
+void interpreter_stack_t::write_register_string(const int reg, const std::string& value){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_string());
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value2 = bc_value_t::make_string(value);
 	replace_obj(pos, value2);
 }
 
 
-bc_value_t interpreter_stack_t::read_register_function(const variable_address_t& reg) const{
+bc_value_t interpreter_stack_t::read_register_function(const int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type.get_base_type() == base_type::k_function);
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value = load_inline_value(pos);
 	return value;
 }
 
 
 
-const std::vector<bc_value_t>* interpreter_stack_t::read_register_vector(const variable_address_t& reg) const{
+const std::vector<bc_value_t>* interpreter_stack_t::read_register_vector(const int reg) const{
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
+	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
-	const auto debug_info = get_register_info(reg);
+	const auto debug_info = get_register_info2(reg);
 	QUARK_ASSERT(debug_info->second._value_type.get_base_type() == base_type::k_vector);
 #endif
-	QUARK_ASSERT(reg._parent_steps == 0);
 
-	const auto pos = resolve_register(reg);
+	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value = load_obj(pos);
 	return value.get_vector_value();
 }
@@ -848,7 +837,7 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 
 		//??? should use itype.
 		const auto& result = construct_value_from_typeid(vm, typeid_t::make_vector(element_type), element_type, elements2);
-		vm._stack.write_register_slow(dest_reg, result, target_type);
+		vm._stack.write_register_slow(dest_reg._index, result, target_type);
 	}
 	else if(target_basetype == base_type::k_dict){
 		const auto& element_type = target_type.get_dict_value_type();
@@ -865,7 +854,7 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 			elements2.push_back(value);
 		}
 		const auto& result = construct_value_from_typeid(vm, target_type, typeid_t::make_undefined(), elements2);
-		vm._stack.write_register_slow(dest_reg, result, target_type);
+		vm._stack.write_register_slow(dest_reg._index, result, target_type);
 	}
 	else if(target_basetype == base_type::k_struct){
 		const auto& struct_def = target_type.get_struct();
@@ -876,13 +865,13 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 			elements2.push_back(value);
 		}
 		const auto& result = construct_value_from_typeid(vm, target_type, typeid_t::make_undefined(), elements2);
-		vm._stack.write_register_slow(dest_reg, result, target_type);
+		vm._stack.write_register_slow(dest_reg._index, result, target_type);
 	}
 	else{
 		const auto input_arg_type = get_type(vm, source_input_itype);
 		const auto element = vm._stack.load_value_slow(arg0_stack_pos + 0, input_arg_type);
 		const auto& result = construct_value_from_typeid(vm, target_type, input_arg_type, { element });
-		vm._stack.write_register_slow(dest_reg, result, target_type);
+		vm._stack.write_register_slow(dest_reg._index, result, target_type);
 	}
 }
 
@@ -938,7 +927,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto value = vm._stack.load_obj(global_pos);
 
 			//??? We already know the type in the register!
-			vm._stack.write_register_slow(instruction._reg_a, value, type);
+			vm._stack.write_register_slow(instruction._reg_a._index, value, type);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_load_global_inline){
@@ -952,7 +941,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto value = vm._stack.load_inline_value(global_pos);
 
 			//??? We already know the type in the register!
-			vm._stack.write_register_slow(instruction._reg_a, value, type);
+			vm._stack.write_register_slow(instruction._reg_a._index, value, type);
 			pc++;
 		}
 
@@ -965,7 +954,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& type = info->second._value_type;
 			const auto global_pos = vm._stack.resolve_register(global_addr);
 
-			const auto value = vm._stack.read_register_obj(instruction._reg_b);
+			const auto value = vm._stack.read_register_obj(instruction._reg_b._index);
 
 			vm._stack.replace_obj(global_pos, value);
 			pc++;
@@ -978,7 +967,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& type = info->second._value_type;
 			const auto global_pos = vm._stack.resolve_register(global_addr);
 
-			const auto value = vm._stack.read_register_inplace(instruction._reg_b);
+			const auto value = vm._stack.read_register_inplace(instruction._reg_b._index);
 
 			vm._stack.replace_inline(global_pos, value);
 			pc++;
@@ -993,7 +982,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto value = vm._stack.read_register_slow(instruction._reg_b._index, type);
-			vm._stack.write_register_slow(instruction._reg_a, value, type);
+			vm._stack.write_register_slow(instruction._reg_a._index, value, type);
 			pc++;
 		}
 
@@ -1020,13 +1009,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		else if(opcode == bc_opcode::k_push_inplace){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto value = vm._stack.read_register_inplace(instruction._reg_a);
+			const auto value = vm._stack.read_register_inplace(instruction._reg_a._index);
 			vm._stack.push_inplace(value);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_push_obj){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto value = vm._stack.read_register_obj(instruction._reg_a);
+			const auto value = vm._stack.read_register_obj(instruction._reg_a._index);
 			vm._stack.push_value(value, true);
 			pc++;
 		}
@@ -1042,7 +1031,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 
 		else if(opcode == bc_opcode::k_branch_false_bool){
-			const auto value = vm._stack.read_register_bool(instruction._reg_a);
+			const auto value = vm._stack.read_register_bool(instruction._reg_a._index);
 			if(value == false){
 				const auto offset = instruction._reg_b._index;
 				pc = pc + offset;
@@ -1052,7 +1041,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 		}
 		else if(opcode == bc_opcode::k_branch_true_bool){
-			const auto value = vm._stack.read_register_bool(instruction._reg_a);
+			const auto value = vm._stack.read_register_bool(instruction._reg_a._index);
 			if(value == true){
 				const auto offset = instruction._reg_b._index;
 				pc = pc + offset;
@@ -1062,7 +1051,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 		}
 		else if(opcode == bc_opcode::k_branch_zero_int){
-			const auto value = vm._stack.read_register_int(instruction._reg_a);
+			const auto value = vm._stack.read_register_int(instruction._reg_a._index);
 			if(value == 0){
 				const auto offset = instruction._reg_b._index;
 				pc = pc + offset;
@@ -1072,7 +1061,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 		}
 		else if(opcode == bc_opcode::k_branch_notzero_int){
-			const auto value = vm._stack.read_register_int(instruction._reg_a);
+			const auto value = vm._stack.read_register_int(instruction._reg_a._index);
 			if(value != 0){
 				const auto offset = instruction._reg_b._index;
 				pc = pc + offset;
@@ -1094,7 +1083,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 
-			const auto& parent_value = vm._stack.read_register_obj(instruction._reg_b);
+			const auto& parent_value = vm._stack.read_register_obj(instruction._reg_b._index);
 			const auto& member_index = instruction._reg_c._index;
 
 			const auto& struct_instance = parent_value.get_struct_value();
@@ -1102,21 +1091,21 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			const bc_value_t value = struct_instance[member_index];
 
-			vm._stack.write_register_slow(instruction._reg_a, value, type);
+			vm._stack.write_register_slow(instruction._reg_a._index, value, type);
 			pc++;
 		}
 
 
 		else if(opcode == bc_opcode::k_lookup_element_string){
-			const auto& instance = vm._stack.read_register_string(instruction._reg_b);
-			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
+			const auto& instance = vm._stack.read_register_string(instruction._reg_b._index);
+			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c._index);
 			if(lookup_index < 0 || lookup_index >= instance.size()){
 				throw std::runtime_error("Lookup in string: out of bounds.");
 			}
 			else{
 				const char ch = instance[lookup_index];
 				const auto value2 = string(1, ch);
-				vm._stack.write_register_string(instruction._reg_a, value2);
+				vm._stack.write_register_string(instruction._reg_a._index, value2);
 			}
 			pc++;
 		}
@@ -1129,22 +1118,22 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b._index, parent_type);
 			const auto& parent_json_value = parent_value.get_json_value();
 			if(parent_json_value.is_object()){
-				const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
+				const auto lookup_key = vm._stack.read_register_string(instruction._reg_c._index);
 
 				//	get_object_element() throws if key can't be found.
 				const auto& value = parent_json_value.get_object_element(lookup_key);
 				const auto value2 = bc_value_t::make_json_value(value);
-				vm._stack.write_register_slow(instruction._reg_a, value2, typeid_t::make_json_value());
+				vm._stack.write_register_slow(instruction._reg_a._index, value2, typeid_t::make_json_value());
 			}
 			else if(parent_json_value.is_array()){
-				const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
+				const auto lookup_index = vm._stack.read_register_int(instruction._reg_c._index);
 				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
 					throw std::runtime_error("Lookup in json_value array: out of bounds.");
 				}
 				else{
 					const auto& value = parent_json_value.get_array_n(lookup_index);
 					const auto value2 = bc_value_t::make_json_value(value);
-					vm._stack.write_register_slow(instruction._reg_a, value2, typeid_t::make_json_value());
+					vm._stack.write_register_slow(instruction._reg_a._index, value2, typeid_t::make_json_value());
 				}
 			}
 			else{
@@ -1154,8 +1143,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 
 		else if(opcode == bc_opcode::k_lookup_element_vector){
-			const auto* vec = vm._stack.read_register_vector(instruction._reg_b);
-			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c);
+			const auto* vec = vm._stack.read_register_vector(instruction._reg_b._index);
+			const auto lookup_index = vm._stack.read_register_int(instruction._reg_c._index);
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
@@ -1164,7 +1153,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const auto& parent_type = type_lookup[instruction._instr_type];
 				const auto element_type = parent_type.get_vector_element_type();
 				const bc_value_t value = (*vec)[lookup_index];
-				vm._stack.write_register_slow(instruction._reg_a, value, element_type);
+				vm._stack.write_register_slow(instruction._reg_a._index, value, element_type);
 			}
 			pc++;
 		}
@@ -1174,7 +1163,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& parent_type = type_lookup[instruction._instr_type];
 
 			const auto& parent_value = vm._stack.read_register_slow(instruction._reg_b._index, parent_type);
-			const auto lookup_key = vm._stack.read_register_string(instruction._reg_c);
+			const auto lookup_key = vm._stack.read_register_string(instruction._reg_c._index);
 			const auto& entries = parent_value.get_dict_value();
 			const auto& found_it = entries.find(lookup_key);
 			if(found_it == entries.end()){
@@ -1183,7 +1172,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else{
 				const auto& value_type = parent_type.get_dict_value_type();
 				const bc_value_t value = found_it->second;
-				vm._stack.write_register_slow(instruction._reg_a, value, value_type);
+				vm._stack.write_register_slow(instruction._reg_a._index, value, value_type);
 			}
 			pc++;
 		}
@@ -1195,7 +1184,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto debug_stack_size0 = vm._stack.size();
 
 			{
-				const auto& function_value = vm._stack.read_register_function(instruction._reg_b);
+				const auto& function_value = vm._stack.read_register_function(instruction._reg_b._index);
 				const int callee_arg_count = instruction._reg_c._index;
 
 				const auto& function_def = get_function_def(vm, function_value);
@@ -1246,10 +1235,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 					if(function_return_type.is_void() == true){
 					}
 					else if(function_return_type.is_internal_dynamic()){
-						vm._stack.write_register_slow(instruction._reg_a, bc_result, result.get_type());
+						vm._stack.write_register_slow(instruction._reg_a._index, bc_result, result.get_type());
 					}
 					else{
-						vm._stack.write_register_slow(instruction._reg_a, bc_result, function_return_type);
+						vm._stack.write_register_slow(instruction._reg_a._index, bc_result, function_return_type);
 					}
 				}
 				else{
@@ -1301,13 +1290,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			vm._stack.write_register_bool(instruction._reg_a, diff <= 0);
+			vm._stack.write_register_bool(instruction._reg_a._index, diff <= 0);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_comparison_smaller_or_equal_int){
-			const auto left = vm._stack.read_register_int(instruction._reg_b);
-			const auto right = vm._stack.read_register_int(instruction._reg_c);
-			vm._stack.write_register_bool(instruction._reg_a, left <= right);
+			const auto left = vm._stack.read_register_int(instruction._reg_b._index);
+			const auto right = vm._stack.read_register_int(instruction._reg_c._index);
+			vm._stack.write_register_bool(instruction._reg_a._index, left <= right);
 			pc++;
 		}
 
@@ -1321,13 +1310,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			vm._stack.write_register_bool(instruction._reg_a, diff < 0);
+			vm._stack.write_register_bool(instruction._reg_a._index, diff < 0);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_comparison_smaller_int){
-			const auto left = vm._stack.read_register_int(instruction._reg_b);
-			const auto right = vm._stack.read_register_int(instruction._reg_c);
-			vm._stack.write_register_bool(instruction._reg_a, left < right);
+			const auto left = vm._stack.read_register_int(instruction._reg_b._index);
+			const auto right = vm._stack.read_register_int(instruction._reg_c._index);
+			vm._stack.write_register_bool(instruction._reg_a._index, left < right);
 			pc++;
 		}
 
@@ -1341,13 +1330,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			vm._stack.write_register_bool(instruction._reg_a, diff >= 0);
+			vm._stack.write_register_bool(instruction._reg_a._index, diff >= 0);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_comparison_larger_or_equal_int){
-			const auto left = vm._stack.read_register_int(instruction._reg_b);
-			const auto right = vm._stack.read_register_int(instruction._reg_c);
-			vm._stack.write_register_bool(instruction._reg_a, left >= right);
+			const auto left = vm._stack.read_register_int(instruction._reg_b._index);
+			const auto right = vm._stack.read_register_int(instruction._reg_c._index);
+			vm._stack.write_register_bool(instruction._reg_a._index, left >= right);
 			pc++;
 		}
 
@@ -1361,13 +1350,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			vm._stack.write_register_bool(instruction._reg_a, diff > 0);
+			vm._stack.write_register_bool(instruction._reg_a._index, diff > 0);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_comparison_larger_int){
-			const auto left = vm._stack.read_register_int(instruction._reg_b);
-			const auto right = vm._stack.read_register_int(instruction._reg_c);
-			vm._stack.write_register_bool(instruction._reg_a, left > right);
+			const auto left = vm._stack.read_register_int(instruction._reg_b._index);
+			const auto right = vm._stack.read_register_int(instruction._reg_c._index);
+			vm._stack.write_register_bool(instruction._reg_a._index, left > right);
 			pc++;
 		}
 
@@ -1381,13 +1370,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			vm._stack.write_register_bool(instruction._reg_a, diff == 0);
+			vm._stack.write_register_bool(instruction._reg_a._index, diff == 0);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_logical_equal_int){
-			const auto left = vm._stack.read_register_int(instruction._reg_b);
-			const auto right = vm._stack.read_register_int(instruction._reg_c);
-			vm._stack.write_register_bool(instruction._reg_a, left == right);
+			const auto left = vm._stack.read_register_int(instruction._reg_b._index);
+			const auto right = vm._stack.read_register_int(instruction._reg_c._index);
+			vm._stack.write_register_bool(instruction._reg_a._index, left == right);
 			pc++;
 		}
 
@@ -1401,13 +1390,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(left_constant.get_debug_type() == right_constant.get_debug_type());
 		#endif
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
-			vm._stack.write_register_bool(instruction._reg_a, diff != 0);
+			vm._stack.write_register_bool(instruction._reg_a._index, diff != 0);
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_logical_nonequal_int){
-			const auto left = vm._stack.read_register_int(instruction._reg_b);
-			const auto right = vm._stack.read_register_int(instruction._reg_c);
-			vm._stack.write_register_bool(instruction._reg_a, left != right);
+			const auto left = vm._stack.read_register_int(instruction._reg_b._index);
+			const auto right = vm._stack.read_register_int(instruction._reg_c._index);
+			vm._stack.write_register_bool(instruction._reg_a._index, left != right);
 			pc++;
 		}
 
@@ -1429,7 +1418,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			if(basetype == base_type::k_bool){
 				const bool left2 = left.get_bool_value();
 				const bool right2 = right.get_bool_value();
-				vm._stack.write_register_bool(instruction._reg_a, left2 + right2);
+				vm._stack.write_register_bool(instruction._reg_a._index, left2 + right2);
 				pc++;
 			}
 
@@ -1437,7 +1426,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				vm._stack.write_register_int(instruction._reg_a, left2 + right2);
+				vm._stack.write_register_int(instruction._reg_a._index, left2 + right2);
 				pc++;
 			}
 
@@ -1445,7 +1434,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				vm._stack.write_register_float(instruction._reg_a, left2 + right2);
+				vm._stack.write_register_float(instruction._reg_a._index, left2 + right2);
 				pc++;
 			}
 
@@ -1453,7 +1442,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_string){
 				const auto& left2 = left.get_string_value();
 				const auto& right2 = right.get_string_value();
-				vm._stack.write_register_string(instruction._reg_a, left2 + right2);
+				vm._stack.write_register_string(instruction._reg_a._index, left2 + right2);
 				pc++;
 			}
 
@@ -1467,7 +1456,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const auto& right_elements = right.get_vector_value();
 				elements2.insert(elements2.end(), right_elements->begin(), right_elements->end());
 				const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
-				vm._stack.write_register_slow(instruction._reg_a, value2, type);
+				vm._stack.write_register_slow(instruction._reg_a._index, value2, type);
 				pc++;
 			}
 			else{
@@ -1489,7 +1478,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				vm._stack.write_register_int(instruction._reg_a, left2 - right2);
+				vm._stack.write_register_int(instruction._reg_a._index, left2 - right2);
 				pc++;
 			}
 
@@ -1497,7 +1486,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				vm._stack.write_register_float(instruction._reg_a, left2 - right2);
+				vm._stack.write_register_float(instruction._reg_a._index, left2 - right2);
 				pc++;
 			}
 
@@ -1520,7 +1509,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				vm._stack.write_register_int(instruction._reg_a, left2 * right2);
+				vm._stack.write_register_int(instruction._reg_a._index, left2 * right2);
 				pc++;
 			}
 
@@ -1528,7 +1517,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				vm._stack.write_register_float(instruction._reg_a, left2 * right2);
+				vm._stack.write_register_float(instruction._reg_a._index, left2 * right2);
 				pc++;
 			}
 
@@ -1554,7 +1543,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				if(right2 == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				vm._stack.write_register_int(instruction._reg_a, left2 / right2);
+				vm._stack.write_register_int(instruction._reg_a._index, left2 / right2);
 				pc++;
 			}
 
@@ -1565,7 +1554,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				if(right2 == 0.0f){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				vm._stack.write_register_float(instruction._reg_a, left2 / right2);
+				vm._stack.write_register_float(instruction._reg_a._index, left2 / right2);
 				pc++;
 			}
 
@@ -1591,7 +1580,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				if(right2 == 0){
 					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 				}
-				vm._stack.write_register_int(instruction._reg_a, left2 % right2);
+				vm._stack.write_register_int(instruction._reg_a._index, left2 % right2);
 				pc++;
 			}
 
@@ -1614,7 +1603,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			if(basetype == base_type::k_bool){
 				const bool left2 = left.get_bool_value();
 				const bool right2 = right.get_bool_value();
-				vm._stack.write_register_bool(instruction._reg_a, left2 && right2);
+				vm._stack.write_register_bool(instruction._reg_a._index, left2 && right2);
 				pc++;
 			}
 
@@ -1624,7 +1613,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const int right2 = right.get_int_value();
 
 				//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
-				vm._stack.write_register_bool(instruction._reg_a, (left2 != 0) && (right2 != 0));
+				vm._stack.write_register_bool(instruction._reg_a._index, (left2 != 0) && (right2 != 0));
 				pc++;
 			}
 
@@ -1632,7 +1621,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				vm._stack.write_register_bool(instruction._reg_a, (left2 != 0.0f) && (right2 != 0.0f));
+				vm._stack.write_register_bool(instruction._reg_a._index, (left2 != 0.0f) && (right2 != 0.0f));
 				pc++;
 			}
 
@@ -1655,7 +1644,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			if(basetype == base_type::k_bool){
 				const bool left2 = left.get_bool_value();
 				const bool right2 = right.get_bool_value();
-				vm._stack.write_register_bool(instruction._reg_a, left2 || right2);
+				vm._stack.write_register_bool(instruction._reg_a._index, left2 || right2);
 				pc++;
 			}
 
@@ -1663,7 +1652,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_int){
 				const int left2 = left.get_int_value();
 				const int right2 = right.get_int_value();
-				vm._stack.write_register_bool(instruction._reg_a, (left2 != 0) || (right2 != 0));
+				vm._stack.write_register_bool(instruction._reg_a._index, (left2 != 0) || (right2 != 0));
 				pc++;
 			}
 
@@ -1671,7 +1660,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
 				const float right2 = right.get_float_value();
-				vm._stack.write_register_bool(instruction._reg_a, (left2 != 0.0f) || (right2 != 0.0f));
+				vm._stack.write_register_bool(instruction._reg_a._index, (left2 != 0.0f) || (right2 != 0.0f));
 				pc++;
 			}
 
