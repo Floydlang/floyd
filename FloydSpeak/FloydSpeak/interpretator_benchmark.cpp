@@ -98,7 +98,7 @@ void fib_test(){
 	}
 }
 
-QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
+OFF_QUARK_UNIT_TEST("Basic performance", "fibonacci", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++: Fibonacci",
 		[&] {

@@ -312,6 +312,7 @@ bc_value_t interpreter_stack_t::read_register_slow(const variable_address_t& reg
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == type);
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value = load_value_slow(pos, type);
@@ -325,6 +326,7 @@ void interpreter_stack_t::write_register_slow(const variable_address_t& reg, con
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == type);
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	replace_value_same_type_SLOW(pos, value, type);
@@ -337,6 +339,7 @@ bc_value_t interpreter_stack_t::read_register_inplace(const variable_address_t& 
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(bc_value_t::is_bc_ext(debug_info->second._value_type.get_base_type()) == false);
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	return load_inline_value(pos);
@@ -348,6 +351,7 @@ bc_value_t interpreter_stack_t::read_register_obj(const variable_address_t& reg)
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(bc_value_t::is_bc_ext(debug_info->second._value_type.get_base_type()) == true);
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	return load_obj(pos);
@@ -361,6 +365,7 @@ bool interpreter_stack_t::read_register_bool(const variable_address_t& reg) cons
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_bool());
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	return load_inline_value(pos).get_bool_value();
@@ -372,6 +377,7 @@ void interpreter_stack_t::write_register_bool(const variable_address_t& reg, boo
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_bool());
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value2 = bc_value_t::make_bool(value);
@@ -386,6 +392,7 @@ int interpreter_stack_t::read_register_int(const variable_address_t& reg) const{
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_int());
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	return load_intq(pos);
@@ -397,6 +404,7 @@ void interpreter_stack_t::write_register_int(const variable_address_t& reg, int 
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_int());
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value2 = bc_value_t::make_int(value);
@@ -411,6 +419,7 @@ void interpreter_stack_t::write_register_float(const variable_address_t& reg, fl
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_float());
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value2 = bc_value_t::make_float(value);
@@ -425,6 +434,7 @@ std::string interpreter_stack_t::read_register_string(const variable_address_t& 
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_string());
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value = load_obj(pos);
@@ -437,6 +447,7 @@ void interpreter_stack_t::write_register_string(const variable_address_t& reg, c
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type == typeid_t::make_string());
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value2 = bc_value_t::make_string(value);
@@ -451,6 +462,7 @@ bc_value_t interpreter_stack_t::read_register_function(const variable_address_t&
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type.get_base_type() == base_type::k_function);
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value = load_inline_value(pos);
@@ -466,6 +478,7 @@ const std::vector<bc_value_t>* interpreter_stack_t::read_register_vector(const v
 	const auto debug_info = get_register_info(reg);
 	QUARK_ASSERT(debug_info->second._value_type.get_base_type() == base_type::k_vector);
 #endif
+	QUARK_ASSERT(reg._parent_steps == 0);
 
 	const auto pos = resolve_register(reg);
 	const auto value = load_obj(pos);
@@ -885,7 +898,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 	const typeid_t* type_lookup = &vm._imm->_program._types[0];
 	const auto type_count = vm._imm->_program._types.size();
 
-//	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(vm._stack.stack_to_json()));
+	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(vm._stack.stack_to_json()));
 
 
 	int pc = 0;
@@ -903,6 +916,66 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		const auto opcode = instruction._opcode;
 		if(false){
 		}
+
+
+		else if(opcode == bc_opcode::k_load_global_obj){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+
+			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_b._index);
+			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
+			const auto& type = info->second._value_type;
+			const auto global_pos = vm._stack.resolve_register(global_addr);
+
+			const auto value = vm._stack.load_obj(global_pos);
+
+			//??? We already know the type in the register!
+			vm._stack.write_register_slow(instruction._reg_a, value, type);
+			pc++;
+		}
+		else if(opcode == bc_opcode::k_load_global_inline){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+
+			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_b._index);
+			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
+			const auto& type = info->second._value_type;
+			const auto global_pos = vm._stack.resolve_register(global_addr);
+
+			const auto value = vm._stack.load_inline_value(global_pos);
+
+			//??? We already know the type in the register!
+			vm._stack.write_register_slow(instruction._reg_a, value, type);
+			pc++;
+		}
+
+
+		else if(opcode == bc_opcode::k_store_global_obj){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+
+			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_a._index);
+			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
+			const auto& type = info->second._value_type;
+			const auto global_pos = vm._stack.resolve_register(global_addr);
+
+			const auto value = vm._stack.read_register_obj(instruction._reg_b);
+
+			vm._stack.replace_obj(global_pos, value);
+			pc++;
+		}
+		else if(opcode == bc_opcode::k_store_global_inline){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+
+			const auto global_addr = variable_address_t::make_variable_address(-1, instruction._reg_a._index);
+			const std::pair<std::string, symbol_t>* info = vm._stack.get_register_info(global_addr);
+			const auto& type = info->second._value_type;
+			const auto global_pos = vm._stack.resolve_register(global_addr);
+
+			const auto value = vm._stack.read_register_inplace(instruction._reg_b);
+
+			vm._stack.replace_inline(global_pos, value);
+			pc++;
+		}
+
+
 
 
 		//////////////////////////////////////////		STORE

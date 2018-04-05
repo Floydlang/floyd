@@ -308,7 +308,7 @@ namespace floyd {
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			return _value_stack[pos];
 		}
-		private: BC_INLINE bc_value_t load_inline_value(int pos) const{
+		public: BC_INLINE bc_value_t load_inline_value(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == false);
@@ -321,7 +321,7 @@ namespace floyd {
 			return result;
 		}
 
-		private: BC_INLINE bc_value_t load_obj(int pos) const{
+		public: BC_INLINE bc_value_t load_obj(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == true);
@@ -379,7 +379,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: BC_INLINE void replace_inline(int pos, const bc_value_t& value){
+		public: BC_INLINE void replace_inline(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
@@ -393,7 +393,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: BC_INLINE void replace_obj(int pos, const bc_value_t& value){
+		public: BC_INLINE void replace_obj(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());

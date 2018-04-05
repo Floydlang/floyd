@@ -893,6 +893,42 @@ inline int bc_limit(int value, int min, int max){
 		k_nop,
 
 		/*
+			TYPE: ---
+			A: Register: where to put result
+			B: IMMEDIATE: global index
+			C: ---
+		*/
+		k_load_global_obj,
+		/*
+			TYPE: ---
+			A: Register: where to put result
+			B: IMMEDIATE: global index
+			C: ---
+		*/
+		k_load_global_inline,
+
+
+
+
+		/*
+			TYPE: ---
+			A: IMMEDIATE: global index
+			B: Register: source reg
+			C: ---
+		*/
+		k_store_global_obj,
+
+		/*
+			TYPE: ---
+			A: IMMEDIATE: global index
+			B: Register: source reg
+			C: ---
+		*/
+		k_store_global_inline,
+
+
+
+		/*
 			TYPE: itype of returned member
 			A: Register: where to put result
 			B: Register: parent
@@ -1196,17 +1232,7 @@ inline int bc_limit(int value, int min, int max){
 			QUARK_ASSERT(check_invariant());
 		}
 
-		public: bool check_invariant() const {
-			for(int i = 0 ; i < _instrs.size() ; i++){
-				const auto instruction = _instrs[i];
-				QUARK_ASSERT(instruction.check_invariant());
-			}
-			for(const auto& e: _symbols){
-				QUARK_ASSERT(e.first != "");
-				QUARK_ASSERT(e.second.check_invariant());
-			}
-			return true;
-		}
+		public: bool check_invariant() const;
 	};
 
 

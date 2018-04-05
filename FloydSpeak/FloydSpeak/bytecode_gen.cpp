@@ -198,7 +198,9 @@ struct opcode_info_t {
 		k_m_tr00,
 		k_n_tii0,
 		k_o_0rrr,
-		k_p_0r00
+		k_p_0r00,
+		k_q_0rr0,
+		k_r_0ir0
 	};
 	encoding _encoding;
 };
@@ -206,15 +208,21 @@ struct opcode_info_t {
 static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
 
+	{ bc_opcode::k_load_global_obj, { "load_global_obj", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_load_global_inline, { "load_global_inline", opcode_info_t::encoding::k_k_0ri0 } },
+
+	{ bc_opcode::k_store_global_obj, { "store_global_obj", opcode_info_t::encoding::k_r_0ir0 } },
+	{ bc_opcode::k_store_global_inline, { "store_global_inline", opcode_info_t::encoding::k_r_0ir0 } },
+
 	{ bc_opcode::k_store_resolve, { "store_resolve", opcode_info_t::encoding::k_f_trr0 } },
 
 	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
-	{ bc_opcode::k_lookup_element_string, { "k_lookup_element_string", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_lookup_element_json_value, { "k_lookup_element_jsonvalue", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_lookup_element_vector, { "k_lookup_element_vector", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_lookup_element_dict, { "k_lookup_element_dict", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_vector, { "lookup_element_vector", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_h_trrr } },
 
-//	{ bc_opcode::k_size, { "k_size", opcode_info_t::encoding::k_f_trr0 } },
+//	{ bc_opcode::k_size, { "size", opcode_info_t::encoding::k_f_trr0 } },
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_g_trri } },
 
@@ -230,22 +238,22 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 
 	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_comparison_smaller_or_equal_int, { "k_comparison_smaller_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_comparison_smaller_or_equal_int, { "comparison_smaller_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_comparison_smaller_int, { "k_comparison_smaller_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_comparison_smaller_int, { "comparison_smaller_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_comparison_larger_or_equal, { "comparison_larger_or_equal", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_comparison_larger_or_equal_int, { "k_comparison_larger_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_comparison_larger_or_equal_int, { "comparison_larger_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_comparison_larger, { "comparison_larger", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_comparison_larger_int, { "k_comparison_larger_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_comparison_larger_int, { "comparison_larger_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_logical_equal_int, { "k_logical_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_equal_int, { "logical_equal_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_logical_nonequal_int, { "k_logical_nonequal_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_nonequal_int, { "logical_nonequal_int", opcode_info_t::encoding::k_o_0rrr } },
 
 
 
@@ -473,9 +481,6 @@ int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t
 
 
 
-
-
-
 //??? Shortcut evaluation of conditions!
 //?? registers should ALWAYS bein current stack frame. What about upvalues?
 
@@ -540,6 +545,13 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	else if(e == opcode_info_t::encoding::k_p_0r00){
 		return { false,		true, false, false };
 	}
+	else if(e == opcode_info_t::encoding::k_q_0rr0){
+		return { false,		true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_r_0ir0){
+		return { false,		false, true, false };
+	}
+
 	else{
 		QUARK_ASSERT(false);
 		throw std::exception();
@@ -555,6 +567,54 @@ bool check_register(const reg_t& reg, bool is_reg){
 	}
 	return true;
 }
+
+bool check_register_nonlocal(const reg_t& reg, bool is_reg){
+	if(is_reg){
+		//	Must not be a global -- those should have been turned to global-access opcodes.
+		QUARK_ASSERT(reg._parent_steps != -1);
+	}
+	else{
+		QUARK_ASSERT(reg._parent_steps == 666 || (reg._parent_steps == -1 && reg._index == -1));
+	}
+	return true;
+}
+
+bool check_register__local(const reg_t& reg, bool is_reg){
+	if(is_reg){
+		//	Must not be a global -- those should have been turned to global-access opcodes.
+		QUARK_ASSERT(reg._parent_steps != -1);
+	}
+	else{
+		QUARK_ASSERT(reg._parent_steps == 666 || (reg._parent_steps == -1 && reg._index == -1));
+	}
+	return true;
+}
+
+
+
+
+
+ bool bc_body_t::check_invariant() const {
+	for(int i = 0 ; i < _instrs.size() ; i++){
+		const auto instruction = _instrs[i];
+		QUARK_ASSERT(instruction.check_invariant());
+	}
+	for(const auto& e: _instrs){
+		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
+		const auto reg_flags = encoding_to_reg_flags(encoding);
+
+		QUARK_ASSERT(check_register_nonlocal(e._reg_a, reg_flags._a));
+		QUARK_ASSERT(check_register_nonlocal(e._reg_b, reg_flags._b));
+		QUARK_ASSERT(check_register_nonlocal(e._reg_c, reg_flags._c));
+	}
+	for(const auto& e: _symbols){
+		QUARK_ASSERT(e.first != "");
+		QUARK_ASSERT(e.second.check_invariant());
+	}
+	return true;
+}
+
+
 
 
 #if DEBUG
@@ -610,30 +670,6 @@ bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t&
 	return body_acc;
 }
 
-
-bcgen_environment_t* find_env_from_address(bgenerator_t& vm, const variable_address_t& a){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(a.check_invariant());
-
-	if(a._parent_steps == -1){
-		return &vm._call_stack[0];
-	}
-	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
-	}
-}
-const bcgen_environment_t* find_env_from_address(const bgenerator_t& vm, const variable_address_t& a){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(a._parent_steps == -1){
-		return &vm._call_stack[0];
-	}
-	else{
-		return &vm._call_stack[vm._call_stack.size() - 1 - a._parent_steps];
-	}
-}
-
-
 bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -642,7 +678,22 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 	const auto expr = bcgen_expression(vm, statement._expression, body_acc);
 	body_acc = expr._body;
 
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_resolve, expr._type, statement._dest_variable, expr._output_reg, {}));
+	const auto dest_variable = statement._dest_variable;
+	const auto result_type = vm._types[expr._type];
+
+	if(dest_variable._parent_steps == -1){
+		bool ext = bc_value_t::is_bc_ext(result_type.get_base_type());
+		if(ext){
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_global_obj, k_no_bctypeid, make_imm_int(dest_variable._index), expr._output_reg, {}));
+		}
+		else{
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_global_inline, k_no_bctypeid, make_imm_int(dest_variable._index), expr._output_reg, {}));
+		}
+	}
+	else{//??? No instruction needed!
+		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_resolve, intern_type(vm, result_type), dest_variable, expr._output_reg, {}));
+	}
+
 	return body_acc;
 }
 
@@ -776,33 +827,40 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	auto body2 = bc_body_t({}, body._symbols);
-	vm._call_stack.push_back(bcgen_environment_t{ &body2 });
+	auto body_acc = bc_body_t({}, body._symbols);
+	vm._call_stack.push_back(bcgen_environment_t{ &body_acc });
 
 	for(const auto& s: body._statements){
 		const auto& statement = *s;
 		QUARK_ASSERT(statement.check_invariant());
 
 		if(statement._store2){
-			body2 = bcgen_store2_statement(vm, *statement._store2, body2);
+			body_acc = bcgen_store2_statement(vm, *statement._store2, body_acc);
+			QUARK_ASSERT(body_acc.check_invariant());
 		}
 		else if(statement._block){
-			body2 = bcgen_block_statement(vm, *statement._block, body2);
+			body_acc = bcgen_block_statement(vm, *statement._block, body_acc);
+			QUARK_ASSERT(body_acc.check_invariant());
 		}
 		else if(statement._return){
-			body2 = bcgen_return_statement(vm, *statement._return, body2);
+			body_acc = bcgen_return_statement(vm, *statement._return, body_acc);
+			QUARK_ASSERT(body_acc.check_invariant());
 		}
 		else if(statement._if){
-			body2 = bcgen_ifelse_statement(vm, *statement._if, body2);
+			body_acc = bcgen_ifelse_statement(vm, *statement._if, body_acc);
+			QUARK_ASSERT(body_acc.check_invariant());
 		}
 		else if(statement._for){
-			body2 = bcgen_for_statement(vm, *statement._for, body2);
+			body_acc = bcgen_for_statement(vm, *statement._for, body_acc);
+			QUARK_ASSERT(body_acc.check_invariant());
 		}
 		else if(statement._while){
-			body2 = bcgen_while_statement(vm, *statement._while, body2);
+			body_acc = bcgen_while_statement(vm, *statement._while, body_acc);
+			QUARK_ASSERT(body_acc.check_invariant());
 		}
 		else if(statement._expression){
-			body2 = bcgen_expression_statement(vm, *statement._expression, body2);
+			body_acc = bcgen_expression_statement(vm, *statement._expression, body_acc);
+			QUARK_ASSERT(body_acc.check_invariant());
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -812,9 +870,9 @@ bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
 
 	vm._call_stack.pop_back();
 
-	QUARK_ASSERT(body.check_invariant());
+	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(vm.check_invariant());
-	return body2;
+	return body_acc;
 }
 
 
@@ -859,10 +917,10 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 
 	auto body_acc = body;
 
-	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0], body);
+	const auto& parent_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
 	body_acc = parent_expr._body;
 
-	const auto& key_expr = bcgen_expression(vm, e._input_exprs[1], body);
+	const auto& key_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
 	body_acc = key_expr._body;
 
 	const auto type = e.get_output_type();
@@ -906,7 +964,35 @@ expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, cons
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	return { body, e._address, intern_type(vm, *e._output_type) };
+	const auto result_type = *e._output_type;
+	if(e._address._parent_steps == -1){
+		auto body_acc = body;
+		const auto temp_reg = add_local_temp(body_acc, result_type, "copied from global");
+		bool ext = bc_value_t::is_bc_ext(result_type.get_base_type());
+		if(ext){
+			body_acc._instrs.push_back(bc_instruction_t(
+				bc_opcode::k_load_global_obj,
+				k_no_bctypeid,
+				temp_reg,
+				make_imm_int(e._address._index),
+				{}
+			));
+		}
+		else{
+			body_acc._instrs.push_back(bc_instruction_t(
+				bc_opcode::k_load_global_inline,
+				k_no_bctypeid,
+				temp_reg,
+				make_imm_int(e._address._index),
+				{}
+			));
+		}
+
+		return { body_acc, temp_reg, intern_type(vm, result_type) };
+	}
+	else{
+		return { body, e._address, intern_type(vm, result_type) };
+	}
 }
 
 
@@ -1153,6 +1239,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	const auto& a_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
 	body_acc = a_expr._body;
 
+	///??? real need a store-operation?
 	//	Copy result to result_reg.
 	body_acc._instrs.push_back(
 		bc_instruction_t(bc_opcode::k_store_resolve, itype, result_reg, a_expr._output_reg, {} )
@@ -1396,6 +1483,15 @@ bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args)
 bool bc_frame_t::check_invariant() const {
 	QUARK_ASSERT(_body.check_invariant());
 	QUARK_ASSERT(_body._symbols.size() == _exts.size());
+
+	for(const auto& e: _body._instrs){
+		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
+		const auto reg_flags = encoding_to_reg_flags(encoding);
+
+		QUARK_ASSERT(check_register__local(e._reg_a, reg_flags._a));
+		QUARK_ASSERT(check_register__local(e._reg_b, reg_flags._b));
+		QUARK_ASSERT(check_register__local(e._reg_c, reg_flags._c));
+	}
 	return true;
 }
 
