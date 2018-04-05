@@ -1155,5 +1155,45 @@ value_t value_t::make_function_value(const typeid_t& function_type, int function
 		return json_t::make_array(r);
 	}
 
+value_t make_def(const typeid_t& type){
+	const base_type bt = type.get_base_type();
+	if(false){
+	}
+	else if(bt == base_type::k_void){
+		return value_t::make_void();
+	}
+	else if(bt == base_type::k_bool){
+		return value_t::make_bool(false);
+	}
+	else if(bt == base_type::k_int){
+		return value_t::make_int(0);
+	}
+	else if(bt == base_type::k_float){
+		return value_t::make_float(0.0f);
+	}
+	else if(bt == base_type::k_string){
+		return value_t::make_string("");
+	}
+	else if(bt == base_type::k_json_value){
+		return value_t::make_json_value(json_t());
+	}
+	else if(bt == base_type::k_typeid){
+		return value_t::make_typeid_value(typeid_t::make_void());
+	}
+	else if(bt == base_type::k_struct){
+//		return value_t::make_struct_value(typid_t::make_struct(), {});
+	}
+	else if(bt == base_type::k_function){
+		return value_t::make_function_value(type, 0);
+	}
+	else if(bt == base_type::k_internal_undefined){
+		return value_t::make_undefined();
+	}
+	else{
+	}
+
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
 
 }	//	floyd

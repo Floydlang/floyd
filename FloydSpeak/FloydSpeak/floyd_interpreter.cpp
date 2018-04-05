@@ -145,48 +145,9 @@ bool interpreter_stack_t::check_stack_frame(int frame_pos, const bc_frame_t* fra
 
 
 
-value_t make_def(const typeid_t& type){
-	const base_type bt = type.get_base_type();
-	if(false){
-	}
-	else if(bt == base_type::k_void){
-		return value_t::make_void();
-	}
-	else if(bt == base_type::k_bool){
-		return value_t::make_bool(false);
-	}
-	else if(bt == base_type::k_int){
-		return value_t::make_int(0);
-	}
-	else if(bt == base_type::k_float){
-		return value_t::make_float(0.0f);
-	}
-	else if(bt == base_type::k_string){
-		return value_t::make_string("");
-	}
-	else if(bt == base_type::k_json_value){
-		return value_t::make_json_value(json_t());
-	}
-	else if(bt == base_type::k_typeid){
-		return value_t::make_typeid_value(typeid_t::make_void());
-	}
-	else if(bt == base_type::k_struct){
-//		return value_t::make_struct_value(typid_t::make_struct(), {});
-	}
-	else if(bt == base_type::k_function){
-		return value_t::make_function_value(type, 0);
-	}
-	else if(bt == base_type::k_internal_undefined){
-		return value_t::make_undefined();
-	}
-	else{
-	}
 
-	QUARK_ASSERT(false);
-	throw std::exception();
-}
-
-//??? DYN values /returns needs TWO registers.
+//	??? DYN values /returns needs TWO registers.
+//	??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generatet instructions to do this in the VM?
 //	Returns new frame-pos, same as vm._current_stack_frame.
 void interpreter_stack_t::open_frame(const bc_frame_t& frame, int values_already_on_stack){
 	QUARK_ASSERT(check_invariant());
@@ -200,40 +161,20 @@ void interpreter_stack_t::open_frame(const bc_frame_t& frame, int values_already
 	//	The stack frame already has symbols/registers mapped for those parameters.
 	const auto new_frame_pos = stack_end - parameter_count;
 
-	///??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generatet instructions to do this in the VM?
-
-	//	Paremters are already OK. Process the locals & temps.
-	for(vector<bc_value_t>::size_type i = parameter_count ; i < frame._body._symbols.size() ; i++){
-		const auto& symbol = frame._body._symbols[i];
-		bool is_ext = frame._exts[i];
-
-		//	Variable slot.
-		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
-		//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type_SLOW().
-		//	Use a placeholder object of correct type.
-		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
-			if(is_ext){
-				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
-				push_obj(value);
-			}
-			else{
-				const auto value = make_def(symbol.second._value_type);
-				const auto bc = value_to_bc(value);
-				push_inplace(bc);
-			}
+	for(int i = 0 ; i < frame._locals.size() ; i++){
+		bool ext = frame._locals_exts[i];
+		const auto& local = frame._locals[i];
+		if(ext){
+			push_obj(local);
 		}
-
-		//	Constant.
 		else{
-			push_value(value_to_bc(symbol.second._const_value), is_ext);
+			push_inplace(local);
 		}
 	}
 	_current_stack_frame = frame_pos_t{new_frame_pos, &frame};
 }
 
-//	Pops entire stack frame -- all locals etc.
-//	Restores previous stack frame pos.
-//	Returns resulting stack frame pos.
+//	Pops all locals, decrementing RC when needed.
 //	Decrements all stack frame object RCs.
 //	Caller handles RC for parameters, this function don't.
 void interpreter_stack_t::close_frame(const bc_frame_t& frame){
@@ -241,7 +182,7 @@ void interpreter_stack_t::close_frame(const bc_frame_t& frame){
 	QUARK_ASSERT(frame.check_invariant());
 
 	//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
-	pop_batch(frame._exts_excluding_parameters);
+	pop_batch(frame._locals_exts);
 }
 
 //	#0 is top of stack, last element is bottom.

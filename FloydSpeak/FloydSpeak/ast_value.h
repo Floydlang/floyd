@@ -683,6 +683,9 @@ static value_t make_int(int value){
 	json_t values_to_json_array(const std::vector<value_t>& values);
 
 
+	value_t make_def(const typeid_t& type);
+
+
 }	//	floyd
 
 #endif /* parser_value_hpp */

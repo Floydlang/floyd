@@ -1433,40 +1433,7 @@ bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args)
 	_body(body),
 	_args(args)
 {
-
-	int arg_count = args.size();
-//	Insert prev_frame_pos & frame_ptr into the frame -- between params & locals.
-/*
-		int read_index = 0;
-
-		std::vector<std::pair<std::string, symbol_t>> symbols;
-
-		//	Copy input parameter symbols (always first in symbols vector).
-		for(int i = 0 ; i < args.size() ; i++){
-			symbols.push_back(_body._symbols[read_index]);
-			read_index++;
-		}
-
-		//	Reserve register for prev-frame pos.
-		symbol_t::make_mutable_local(typeid_t::make_int());
-
-		//	Reserve register for frame_ptr.
-		symbol_t::make_mutable_local(typeid_t::make_int());
-
-		//	Copy locals, temporaries.
-		while(read_index < body._symbols.size()){
-			symbols.push_back(_body._symbols[read_index]);
-			read_index++;
-		}
-
-
-		//	Adjust all instructions to
-
-		std::vector<std::pair<std::string, symbol_t>> _symbols;
-		std::vector<bc_instruction_t> _instrs;
-
-	_body = body;
-*/
+	const auto parameter_count = static_cast<int>(_args.size());
 
 	for(int i = 0 ; i < _body._symbols.size() ; i++){
 		const auto basetype = _body._symbols[i].second._value_type.get_base_type();
@@ -1474,8 +1441,36 @@ bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args)
 		_exts.push_back(ext);
 	}
 
-	_exts_excluding_parameters = _exts;
-	_exts_excluding_parameters.erase(_exts_excluding_parameters.begin(), _exts_excluding_parameters.begin() + arg_count);
+	//	Process the locals & temps. They go after any parameters, which already sits on stack.
+	for(vector<bc_value_t>::size_type i = parameter_count ; i < _body._symbols.size() ; i++){
+		const auto& symbol = _body._symbols[i];
+		bool is_ext = _exts[i];
+
+		_locals_exts.push_back(is_ext);
+
+		//	Variable slot.
+		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
+		//	Problem is that IF this is an RC_object, it WILL be decremented when written to using replace_value_same_type_SLOW().
+		//	Use a placeholder object of correct type.
+		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
+			if(is_ext){
+				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
+				_locals.push_back(value);
+			}
+			else{
+				const auto value = make_def(symbol.second._value_type);
+				const auto bc = value_to_bc(value);
+				_locals.push_back(bc);
+			}
+		}
+
+		//	Constant.
+		else{
+			_locals.push_back(value_to_bc(symbol.second._const_value));
+		}
+	}
+
+
 
 	QUARK_ASSERT(check_invariant());
 }
