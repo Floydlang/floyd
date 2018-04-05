@@ -30,7 +30,6 @@ namespace floyd {
 
 	struct value_entry_t;
 
-	#define DEBUG_STACK (1 && DEBUG)
 
 
 
@@ -99,7 +98,7 @@ namespace floyd {
 			QUARK_ASSERT(_current_stack_frame._frame_pos <= _value_stack.size());
 			QUARK_ASSERT(_debug_types.size() == _value_stack.size());
 			for(int i = 0 ; i < _value_stack.size() ; i++){
-//				QUARK_ASSERT(_value_stack[i].check_invariant());
+				QUARK_ASSERT(_debug_types[i].check_invariant());
 			}
 //			QUARK_ASSERT(_global_frame != nullptr);
 			return true;
@@ -138,7 +137,9 @@ namespace floyd {
 			QUARK_ASSERT(other.check_invariant());
 
 			other._value_stack.swap(_value_stack);
+#if DEBUG
 			other._debug_types.swap(_debug_types);
+#endif
 			std::swap(_current_stack_frame, other._current_stack_frame);
 			std::swap(_global_frame, other._global_frame);
 
@@ -160,7 +161,9 @@ namespace floyd {
 		public: frame_pos_t read_prev_frame_pos2(int frame_pos) const;
 
 		public: const bc_frame_t* read_prev_frame(int frame_pos) const;
+#if DEBUG
 		public: bool check_stack_frame(int frame_pos, const bc_frame_t* frame) const;
+#endif
 
 		public: void open_frame(const bc_frame_t& frame, int values_already_on_stack);
 		public: void close_frame(const bc_frame_t& frame);
@@ -241,7 +244,7 @@ namespace floyd {
 		public: BC_INLINE void push_value(const bc_value_t& value, bool is_ext){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
-#if FLOYD_BC_VALUE_DEBUG_TYPE
+#if DEBUG
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == is_ext);
 #endif
 
@@ -249,7 +252,9 @@ namespace floyd {
 				value._pod._ext->_rc++;
 			}
 			_value_stack.push_back(value._pod);
+#if DEBUG
 			_debug_types.push_back(value._debug_type);
+#endif
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -259,32 +264,38 @@ namespace floyd {
 			bc_pod_value_t e;
 			e._int = value;
 			_value_stack.push_back(e);
+#if DEBUG
 			_debug_types.push_back(typeid_t::make_int());
+#endif
 
 			QUARK_ASSERT(check_invariant());
 		}
 		private: BC_INLINE void push_obj(const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
-#if FLOYD_BC_VALUE_DEBUG_TYPE
+#if DEBUG
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
 #endif
 
 			value._pod._ext->_rc++;
 			_value_stack.push_back(value._pod);
+#if DEBUG
 			_debug_types.push_back(value._debug_type);
+#endif
 
 			QUARK_ASSERT(check_invariant());
 		}
 		public: BC_INLINE void push_inplace(const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
-#if FLOYD_BC_VALUE_DEBUG_TYPE
+#if DEBUG
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == false);
 #endif
 
 			_value_stack.push_back(value._pod);
+#if DEBUG
 			_debug_types.push_back(value._debug_type);
+#endif
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -300,7 +311,7 @@ namespace floyd {
 			const auto& e = _value_stack[pos];
 			bool is_ext = bc_value_t::is_bc_ext(type.get_base_type());
 
-#if FLOYD_BC_VALUE_DEBUG_TYPE
+#if DEBUG
 			const auto result = bc_value_t(type, e, is_ext);
 #else
 			const auto result = bc_value_t(e, is_ext);
@@ -318,7 +329,7 @@ namespace floyd {
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == false);
 
-#if FLOYD_BC_VALUE_DEBUG_TYPE
+#if DEBUG
 			const auto result = bc_value_t(_debug_types[pos], _value_stack[pos], false);
 #else
 			const auto result = bc_value_t(_value_stack[pos], false);
@@ -331,7 +342,7 @@ namespace floyd {
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == true);
 
-#if FLOYD_BC_VALUE_DEBUG_TYPE
+#if DEBUG
 			const auto result = bc_value_t(_debug_types[pos], _value_stack[pos], true);
 #else
 			const auto result = bc_value_t(_value_stack[pos], true);
@@ -359,7 +370,10 @@ namespace floyd {
 
 			const auto value = bc_value_t(frame);
 			_value_stack.push_back(value._pod);
+#if DEBUG
 			_debug_types.push_back(value._debug_type);
+#endif
+
 		}
 
 		//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
@@ -462,7 +476,9 @@ namespace floyd {
 
 			auto copy = _value_stack.back();
 			_value_stack.pop_back();
+#if DEBUG
 			_debug_types.pop_back();
+#endif
 			if(ext){
 				bc_value_t::debump(copy);
 			}
@@ -470,17 +486,21 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
+#if DEBUG
 		public: bool is_ext(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			return bc_value_t::is_bc_ext(_debug_types[pos].get_base_type());
 		}
+#endif
 
+#if DEBUG
 		public: typeid_t debug_get_type(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
 			return _debug_types[pos];
 		}
+#endif
 /*
 		BC_INLINE void pop_value_slow(const typeid_t& type){
 			QUARK_ASSERT(_value_stack.empty() == false);
@@ -503,7 +523,9 @@ namespace floyd {
 		public: std::vector<bc_pod_value_t> _value_stack;
 
 		//	These are DEEP copies = do not share RC with non-debug values.
+#if DEBUG
 		public: std::vector<typeid_t> _debug_types;
+#endif
 		public: frame_pos_t _current_stack_frame;
 		private: const bc_frame_t* _global_frame;
 	};
