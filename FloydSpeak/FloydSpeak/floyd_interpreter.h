@@ -200,7 +200,7 @@ namespace floyd {
 		public: std::string read_register_string(const int reg) const;
 		public: void write_register_string(const int reg, const std::string& value);
 
-		public: bc_value_t read_register_function(const int reg) const;
+		public: int read_register_function(const int reg) const;
 
 		public: const std::vector<bc_value_t>* read_register_vector(const int reg) const;
 

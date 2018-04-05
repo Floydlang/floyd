@@ -1123,7 +1123,7 @@ expr_info_t bcgen_call_expression(bgenerator_t& vm, const expression_t& e, const
 	const auto function_result_reg = add_local_temp(body_acc, return_type, "call result register");
 	body_acc._instrs.push_back(bc_instruction_t(
 		bc_opcode::k_call,
-		intern_type(vm, return_type),
+		k_no_bctypeid,
 		function_result_reg,
 		function_reg,
 		make_imm_int(arg_count)

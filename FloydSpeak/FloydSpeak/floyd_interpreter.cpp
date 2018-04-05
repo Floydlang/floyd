@@ -492,7 +492,7 @@ void interpreter_stack_t::write_register_string(const int reg, const std::string
 }
 
 
-bc_value_t interpreter_stack_t::read_register_function(const int reg) const{
+int interpreter_stack_t::read_register_function(const int reg) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(check_reg(reg));
 #if DEBUG
@@ -501,8 +501,7 @@ bc_value_t interpreter_stack_t::read_register_function(const int reg) const{
 #endif
 
 	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value = load_inline_value(pos);
-	return value;
+	return _value_stack[pos]._function_id;
 }
 
 
@@ -644,11 +643,9 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 	}
 }
 
-BC_INLINE const bc_function_definition_t& get_function_def(const interpreter_t& vm, const floyd::bc_value_t& v){
+BC_INLINE const bc_function_definition_t& get_function_def(const interpreter_t& vm, int function_id){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(v.check_invariant());
 
-	const auto function_id = v.get_function_value();
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 
 	const auto& function_def = vm._imm->_program._function_defs[function_id];
@@ -742,7 +739,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 	QUARK_ASSERT(f.is_function());
 #endif
 
-	const auto& function_def = get_function_def(vm, value_to_bc(f));
+	const auto& function_def = get_function_def(vm, f.get_function_value());
 	if(function_def._host_function_id != 0){
 		const auto& r = call_host_function(vm, function_def._host_function_id, args);
 		return r;
@@ -1035,6 +1032,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 #if FLOYD_BC_VALUE_DEBUG_TYPE
 			vm._stack._debug_types.push_back(vm._stack._debug_types[pos]);
 #endif
+			QUARK_ASSERT(vm._stack.check_invariant());
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_push_obj){
@@ -1199,83 +1197,80 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		else if(opcode == bc_opcode::k_call){
 			QUARK_ASSERT(vm.check_invariant());
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
-			{
-				const auto& function_value = vm._stack.read_register_function(instruction._reg_b._index);
-				const int callee_arg_count = instruction._reg_c._index;
+			const int callee_arg_count = instruction._reg_c._index;
 
-				const auto& function_def = get_function_def(vm, function_value);
-				const auto function_def_arg_count = function_def._args.size();
-				const int function_def_dynamic_arg_count = count_function_dynamic_args(function_def._function_type);
+			const auto& function_value = vm._stack.read_register_function(instruction._reg_b._index);
+			const auto& function_def = get_function_def(vm, function_value);
+			const auto function_def_arg_count = function_def._args.size();
+			const int function_def_dynamic_arg_count = count_function_dynamic_args(function_def._function_type);
+			const auto function_return_type = function_def._function_type.get_function_return();
 
-				const auto function_return_type = get_type(vm, instruction._instr_type);
+			//	_e[...] contains first callee, then each argument.
+			//	We need to examine the callee, since we support magic argument lists of varying size.
 
+			if(function_def_arg_count != callee_arg_count){
+				QUARK_ASSERT(false);
+			}
 
-				//	_e[...] contains first callee, then each argument.
-				//	We need to examine the callee, since we support magic argument lists of varying size.
+			const int arg0_stack_pos = vm._stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 
-				if(function_def_arg_count != callee_arg_count){
-					QUARK_ASSERT(false);
-				}
+			if(function_def._host_function_id != 0){
+				const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
 
-				const int arg0_stack_pos = vm._stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
+				int stack_pos = arg0_stack_pos;
 
-				if(function_def._host_function_id != 0){
-					const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
+				//??? We can now access parameters using registers!
+				//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
+				std::vector<value_t> arg_values;
+				for(int i = 0 ; i < function_def_arg_count ; i++){
+					const auto& func_arg_type = function_def._args[i]._type;
+					if(func_arg_type.is_internal_dynamic()){
+						const auto arg_itype = vm._stack.load_intq(stack_pos);
+						const auto& arg_type = get_type(vm, static_cast<int16_t>(arg_itype));
+						const auto arg_bc = vm._stack.load_value_slow(stack_pos + 1, arg_type);
 
-					int stack_pos = arg0_stack_pos;
-
-					//??? We can now access parameters using registers!
-					//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
-					std::vector<value_t> arg_values;
-					for(int i = 0 ; i < function_def_arg_count ; i++){
-						const auto& func_arg_type = function_def._args[i]._type;
-						if(func_arg_type.is_internal_dynamic()){
-							const auto arg_itype = vm._stack.load_intq(stack_pos);
-							const auto& arg_type = get_type(vm, static_cast<int16_t>(arg_itype));
-							const auto arg_bc = vm._stack.load_value_slow(stack_pos + 1, arg_type);
-
-							const auto arg_value = bc_to_value(arg_bc, arg_type);
-							arg_values.push_back(arg_value);
-							stack_pos += 2;
-						}
-						else{
-							const auto arg_bc = vm._stack.load_value_slow(stack_pos + 0, func_arg_type);
-							const auto arg_value = bc_to_value(arg_bc, func_arg_type);
-							arg_values.push_back(arg_value);
-							stack_pos++;
-						}
-					}
-
-					const auto& result = (host_function)(vm, arg_values);
-					const auto bc_result = value_to_bc(result);
-
-					if(function_return_type.is_void() == true){
-					}
-					else if(function_return_type.is_internal_dynamic()){
-						vm._stack.write_register(instruction._reg_a._index, bc_result);
+						const auto arg_value = bc_to_value(arg_bc, arg_type);
+						arg_values.push_back(arg_value);
+						stack_pos += 2;
 					}
 					else{
-						vm._stack.write_register(instruction._reg_a._index, bc_result);
+						const auto arg_bc = vm._stack.load_value_slow(stack_pos + 0, func_arg_type);
+						const auto arg_value = bc_to_value(arg_bc, func_arg_type);
+						arg_values.push_back(arg_value);
+						stack_pos++;
 					}
 				}
+
+				const auto& result = (host_function)(vm, arg_values);
+				const auto bc_result = value_to_bc(result);
+
+				if(function_return_type.is_void() == true){
+				}
+				else if(function_return_type.is_internal_dynamic()){
+					vm._stack.write_register(instruction._reg_a._index, bc_result);
+				}
 				else{
-					//	Future: support dynamic Floyd functions too.
-					QUARK_ASSERT(function_def_dynamic_arg_count == 0);
+					vm._stack.write_register(instruction._reg_a._index, bc_result);
+				}
+			}
+			else{
+				//	Future: support dynamic Floyd functions too.
+				QUARK_ASSERT(function_def_dynamic_arg_count == 0);
 
+				int result_reg_pos = vm._stack.resolve_register(instruction._reg_a);
 
-					int result_reg_pos = vm._stack.resolve_register(instruction._reg_a);
+				vm._stack.open_frame(*function_def._frame, callee_arg_count);
+				const auto& result = execute_instructions(vm, function_def._frame->_body._instrs);
+				vm._stack.close_frame(*function_def._frame);
 
-					vm._stack.open_frame(*function_def._frame, callee_arg_count);
-					const auto& result = execute_instructions(vm, function_def._frame->_body._instrs);
-					vm._stack.close_frame(*function_def._frame);
+				QUARK_ASSERT(result._type == execution_result_t::k_returning);
+				if(function_return_type.is_void() == false){
 
-					QUARK_ASSERT(result._type == execution_result_t::k_returning);
-					if(function_return_type.is_void() == false){
-
-						//??? connot store via register, we have not yet executed k_pop_frame_ptr that restores our
-						vm._stack.replace_value_same_type_SLOW(result_reg_pos, result._output, function_return_type);
-					}
+					//??? Manually use symbol tables to track type of result.
+					//??? connot store via register, we have not yet executed k_pop_frame_ptr that restores our
+					vm._stack.replace_value_same_type_SLOW(result_reg_pos, result._output, function_return_type);
 				}
 			}
 			pc++;
