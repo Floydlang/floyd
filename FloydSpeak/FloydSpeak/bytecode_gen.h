@@ -1251,6 +1251,22 @@ inline int bc_limit(int value, int min, int max){
 
 	//???	All functions should be function values: host-functions and Floyd functions. This means _host_function_id should be in the VALUE not function definition!
 	struct bc_function_definition_t {
+		bc_function_definition_t(
+			const typeid_t& function_type,
+			const std::vector<member_t>& args,
+			const std::shared_ptr<bc_frame_t>& frame,
+			int host_function_id
+		):
+			_function_type(function_type),
+			_args(args),
+			_frame(frame),
+			_host_function_id(host_function_id),
+			_dyn_arg_count(-1)
+		{
+			_dyn_arg_count = count_function_dynamic_args(function_type);
+		}
+
+
 #if DEBUG
 		public: bool check_invariant() const {
 			return true;
@@ -1262,6 +1278,9 @@ inline int bc_limit(int value, int min, int max){
 		std::vector<member_t> _args;
 		std::shared_ptr<bc_frame_t> _frame;
 		int _host_function_id;
+
+
+		int _dyn_arg_count;
 	};
 
 

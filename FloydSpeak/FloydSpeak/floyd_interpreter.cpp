@@ -1203,13 +1203,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			const int callee_arg_count = instruction._reg_c._index;
 
-			const auto& function_value = vm._stack.read_register_function(instruction._reg_b._index);
-			const auto& function_def = get_function_def(vm, function_value);
+			const int function_id = vm._stack.read_register_function(instruction._reg_b._index);
+			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
+			const auto& function_def = vm._imm->_program._function_defs[function_id];
 			const auto function_def_arg_count = function_def._args.size();
-
-			//??? count_function_dynamic_args() SLOW allocates memory.
-			const int function_def_dynamic_arg_count = count_function_dynamic_args(function_def._function_type);
-			const auto function_return_type = function_def._function_type.get_function_return();
+			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
+			const auto& function_return_type = function_def._function_type.get_function_return();
 
 			//	_e[...] contains first callee, then each argument.
 			//	We need to examine the callee, since we support magic argument lists of varying size.
@@ -1263,6 +1262,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				//	Future: support dynamic Floyd functions too.
 				QUARK_ASSERT(function_def_dynamic_arg_count == 0);
 
+				//??? Always in current scope!
 				int result_reg_pos = vm._stack.resolve_register(instruction._reg_a);
 
 				vm._stack.open_frame(*function_def._frame, callee_arg_count);
