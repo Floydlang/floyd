@@ -31,6 +31,10 @@ namespace floyd {
 	struct value_entry_t;
 
 
+	enum {
+		//	We store prev-frame-pos & symbol-ptr.
+		k_frame_overhead = 2
+	};
 
 
 	//////////////////////////////////////		frame_pos_t
@@ -80,7 +84,8 @@ namespace floyd {
 
 	struct interpreter_stack_t {
 		public: interpreter_stack_t(const bc_frame_t* global_frame) :
-			_current_stack_frame(),
+			_current_frame_pos(0),
+			_current_frame(nullptr),
 			_global_frame(global_frame)
 		{
 			_value_stack.reserve(1024);
@@ -94,8 +99,8 @@ namespace floyd {
 
 
 		public: bool check_invariant() const {
-			QUARK_ASSERT(_current_stack_frame._frame_pos >= 0);
-			QUARK_ASSERT(_current_stack_frame._frame_pos <= _value_stack.size());
+			QUARK_ASSERT(_current_frame_pos >= 0);
+			QUARK_ASSERT(_current_frame_pos <= _value_stack.size());
 			QUARK_ASSERT(_debug_types.size() == _value_stack.size());
 			for(int i = 0 ; i < _value_stack.size() ; i++){
 				QUARK_ASSERT(_debug_types[i].check_invariant());
@@ -140,14 +145,15 @@ namespace floyd {
 #if DEBUG
 			other._debug_types.swap(_debug_types);
 #endif
-			std::swap(_current_stack_frame, other._current_stack_frame);
+			std::swap(_current_frame_pos, other._current_frame_pos);
+			std::swap(_current_frame, other._current_frame);
 			std::swap(_global_frame, other._global_frame);
 
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
 		}
 
-		public: int size() const {
+		public: inline int size() const {
 			QUARK_ASSERT(check_invariant());
 
 			return static_cast<int>(_value_stack.size());
@@ -165,47 +171,300 @@ namespace floyd {
 		public: bool check_stack_frame(int frame_pos, const bc_frame_t* frame) const;
 #endif
 
-		public: void open_frame(const bc_frame_t& frame, int values_already_on_stack);
-		public: void close_frame(const bc_frame_t& frame);
+		//	??? DYN values /returns needs TWO registers.
+		//	??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generatet instructions to do this in the VM?
+		//	Returns new frame-pos, same as vm._current_stack_frame.
+		public: void open_frame(const bc_frame_t& frame, int values_already_on_stack){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(frame.check_invariant());
+			QUARK_ASSERT(values_already_on_stack == frame._args.size());
+
+			const auto stack_end = size();
+			const auto parameter_count = static_cast<int>(frame._args.size());
+
+			//	Carefully position the new stack frame so its includes the parameters that already sits in the stack.
+			//	The stack frame already has symbols/registers mapped for those parameters.
+			const auto new_frame_pos = stack_end - parameter_count;
+
+			for(int i = 0 ; i < frame._locals.size() ; i++){
+				bool ext = frame._locals_exts[i];
+				const auto& local = frame._locals[i];
+				if(ext){
+					push_obj(local);
+				}
+				else{
+					push_inplace(local);
+				}
+			}
+			_current_frame_pos = new_frame_pos;
+			_current_frame = &frame;
+		}
+
+
+		//	Pops all locals, decrementing RC when needed.
+		//	Decrements all stack frame object RCs.
+		//	Caller handles RC for parameters, this function don't.
+		public: void close_frame(const bc_frame_t& frame){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(frame.check_invariant());
+
+			//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
+			pop_batch(frame._locals_exts);
+		}
 
 		public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
 
-		public: BC_INLINE frame_pos_t find_frame_pos(int parent_step) const;
+		public: BC_INLINE frame_pos_t find_frame_pos(int parent_step) const{
+			QUARK_ASSERT(check_invariant());
+
+			QUARK_ASSERT(parent_step == 0 || parent_step == -1);
+			if(parent_step == 0){
+				return { _current_frame_pos, _current_frame};
+			}
+			else if(parent_step == -1){
+				return frame_pos_t{k_frame_overhead, _global_frame};
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
 
 		//	Returns stack position of the reg. Can be any stack frame.
-		public: int resolve_register(const variable_address_t& reg) const;
+		public: int resolve_register(const variable_address_t& reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(reg.check_invariant());
 
-		public: const std::pair<std::string, symbol_t>* get_register_info(const variable_address_t& reg) const;
-		public: const std::pair<std::string, symbol_t>* get_global_info(int global) const;
+			const auto frame_pos = find_frame_pos(reg._parent_steps);
 
-		public: bool check_reg(int reg) const;
+			QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame->_body._symbols.size());
+			const auto pos = frame_pos._frame_pos + reg._index;
+			return pos;
+		}
 
-		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const;
+		public: const std::pair<std::string, symbol_t>* get_register_info(const variable_address_t& reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(reg.check_invariant());
 
-		public: bc_value_t read_register(const int reg) const;
-		public: void write_register(const int reg, const bc_value_t& value);
+			const auto frame_pos = find_frame_pos(reg._parent_steps);
+			QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame->_body._symbols.size());
+			const auto symbol_ptr = &frame_pos._frame->_body._symbols[reg._index];
+			return symbol_ptr;
+		}
 
-		public: bc_value_t read_register_inplace(const int reg) const;
-		public: void write_register_inplace(const int reg, const bc_value_t& value);
+		public: const std::pair<std::string, symbol_t>* get_global_info(int global) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(global >= 0 && global < _global_frame->_body._symbols.size());
 
-		public: bc_value_t read_register_obj(const int reg) const;
-		public: void write_register_obj(const int reg, const bc_value_t& value);
+			return &_global_frame->_body._symbols[global];
+		}
 
-		public: bool read_register_bool(const int reg) const;
-		public: void write_register_bool(const int reg, bool value);
+		public: bool check_reg(int reg) const{
+			QUARK_ASSERT(reg >= 0 && reg < (size() - _current_frame_pos));
+			return true;
+		}
+
+		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+
+			return get_register_info(variable_address_t::make_variable_address(0, reg));
+		}
 
 
-		public: int read_register_int(const int reg) const;
-		public: void write_register_int(const int reg, int value);
 
-		public: void write_register_float(const int reg, float value);
 
-		public: std::string read_register_string(const int reg) const;
-		public: void write_register_string(const int reg, const std::string& value);
 
-		public: int read_register_function(const int reg) const;
 
-		public: const std::vector<bc_value_t>* read_register_vector(const int reg) const;
+		public: bc_value_t read_register(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+
+			const auto info = get_register_info2(reg);
+			const auto pos = _current_frame_pos + reg;
+			const auto value = load_value_slow(pos, info->second._value_type);
+			QUARK_ASSERT(info->second._value_type == value._debug_type);
+			return value;
+		}
+		public: void write_register(const int reg, const bc_value_t& value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(value.check_invariant());
+
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == value._debug_type);
+			const auto pos = _current_frame_pos + reg;
+			replace_value_same_type_SLOW(pos, value, info->second._value_type);
+		}
+
+
+
+
+
+		public: bc_value_t read_register_inplace(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
+
+			const auto pos = _current_frame_pos + reg;
+			return load_inline_value(pos);
+		}
+		public: void write_register_inplace(const int reg, const bc_value_t& value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(value.check_invariant());
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == value._debug_type);
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			replace_inline(pos, value);
+		}
+
+		public: bc_value_t read_register_obj(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == true);
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			return load_obj(pos);
+		}
+		public: void write_register_obj(const int reg, const bc_value_t& value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(value.check_invariant());
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == value._debug_type);
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			replace_obj(pos, value);
+		}
+
+		public: bool read_register_bool(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			return load_inline_value(pos).get_bool_value();
+		}
+		public: void write_register_bool(const int reg, bool value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			const auto value2 = bc_value_t::make_bool(value);
+			replace_inline(pos, value2);
+		}
+
+
+		public: int read_register_int(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			return load_intq(pos);
+		}
+		public: void write_register_int(const int reg, int value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			const auto value2 = bc_value_t::make_int(value);
+			replace_inline(pos, value2);
+		}
+
+		public: void write_register_float(const int reg, float value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == typeid_t::make_float());
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			const auto value2 = bc_value_t::make_float(value);
+			replace_inline(pos, value2);
+		}
+
+		public: const std::string& read_register_string(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == typeid_t::make_string());
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			return _value_stack[pos]._ext->_string;
+		}
+
+		public: void write_register_string(const int reg, const std::string& value){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type == typeid_t::make_string());
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			const auto value2 = bc_value_t::make_string(value);
+			replace_obj(pos, value2);
+		}
+
+		public: inline int read_register_function(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_function);
+		#endif
+
+			return _value_stack[_current_frame_pos + reg]._function_id;
+		}
+
+		public: inline const bc_pod_value_t& peek_register(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+
+			return _value_stack[_current_frame_pos + reg];
+		}
+
+
+		public: const std::vector<bc_value_t>* read_register_vector(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+		#if DEBUG
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_vector);
+		#endif
+
+			const auto pos = _current_frame_pos + reg;
+			const auto value = load_obj(pos);
+			return value.get_vector_value();
+		}
 
 
 		friend std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);
@@ -216,24 +475,22 @@ namespace floyd {
 
 
 		public: void save_frame(){
-			const auto frame_pos = bc_value_t::make_int(_current_stack_frame._frame_pos);
+			const auto frame_pos = bc_value_t::make_int(_current_frame_pos);
 			push_inplace(frame_pos);
 
-			const auto frame_ptr = bc_value_t(_current_stack_frame._frame);
+			const auto frame_ptr = bc_value_t(_current_frame);
 			push_inplace(frame_ptr);
 		}
-		public: const frame_pos_t restore_frame(){
+		public: void restore_frame(){
 			const auto stack_size = size();
 			bc_pod_value_t frame_ptr_pod = load_pod(stack_size - 1);
 			bc_pod_value_t frame_pos_pod = load_pod(stack_size - 2);
 
-			const auto frame_pos = frame_pos_t{frame_pos_pod._int, frame_ptr_pod._frame_ptr};
-			_current_stack_frame = frame_pos;
+			_current_frame = frame_ptr_pod._frame_ptr;
+			_current_frame_pos = frame_pos_pod._int;
 
 			pop(false);
 			pop(false);
-
-			return _current_stack_frame;
 		}
 
 
@@ -386,7 +643,7 @@ namespace floyd {
 			QUARK_ASSERT(value._debug_type == type);
 
 			//	NOTICE: Void slot
-			QUARK_ASSERT(_debug_types[pos].is_void() || _debug_types[pos] == type);
+			QUARK_ASSERT(_debug_types[pos] == type);
 
 			if(bc_value_t::is_bc_ext(type.get_base_type())){
 				replace_obj(pos, value);
@@ -405,9 +662,17 @@ namespace floyd {
 #if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == false);
 #endif
-			QUARK_ASSERT(_debug_types[pos].is_void() || _debug_types[pos] == value._debug_type);
+			QUARK_ASSERT(_debug_types[pos] == value._debug_type);
 
 			_value_stack[pos] = value._pod;
+
+			QUARK_ASSERT(check_invariant());
+		}
+		public: BC_INLINE void replace_pod(int pos, const bc_pod_value_t& pod){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(pos >= 0 && pos < _value_stack.size());
+
+			_value_stack[pos] = pod;
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -419,7 +684,7 @@ namespace floyd {
 #if FLOYD_BC_VALUE_DEBUG_TYPE
 			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
 #endif
-			QUARK_ASSERT(_debug_types[pos].is_void() || _debug_types[pos] == value._debug_type);
+			QUARK_ASSERT(_debug_types[pos] == value._debug_type);
 
 			auto prev_copy = _value_stack[pos];
 			value._pod._ext->_rc++;
@@ -514,7 +779,7 @@ namespace floyd {
 		public: frame_pos_t get_current_frame_pos() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _current_stack_frame;
+			return frame_pos_t{_current_frame_pos, _current_frame};
 		}
 
 		public: json_t stack_to_json() const;
@@ -526,7 +791,9 @@ namespace floyd {
 #if DEBUG
 		public: std::vector<typeid_t> _debug_types;
 #endif
-		public: frame_pos_t _current_stack_frame;
+
+		public: int _current_frame_pos;
+		public: const bc_frame_t* _current_frame;
 		private: const bc_frame_t* _global_frame;
 	};
 

@@ -62,8 +62,6 @@ BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_
 
 
 
-//	We store prev-frame-pos & symbol-ptr.
-static const int k_frame_overhead = 2;
 
 
 
@@ -144,47 +142,6 @@ bool interpreter_stack_t::check_stack_frame(int frame_pos, const bc_frame_t* fra
 #endif
 
 
-
-
-//	??? DYN values /returns needs TWO registers.
-//	??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generatet instructions to do this in the VM?
-//	Returns new frame-pos, same as vm._current_stack_frame.
-void interpreter_stack_t::open_frame(const bc_frame_t& frame, int values_already_on_stack){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(frame.check_invariant());
-	QUARK_ASSERT(values_already_on_stack == frame._args.size());
-
-	const auto stack_end = size();
-	const auto parameter_count = static_cast<int>(frame._args.size());
-
-	//	Carefully position the new stack frame so its includes the parameters that already sits in the stack.
-	//	The stack frame already has symbols/registers mapped for those parameters.
-	const auto new_frame_pos = stack_end - parameter_count;
-
-	for(int i = 0 ; i < frame._locals.size() ; i++){
-		bool ext = frame._locals_exts[i];
-		const auto& local = frame._locals[i];
-		if(ext){
-			push_obj(local);
-		}
-		else{
-			push_inplace(local);
-		}
-	}
-	_current_stack_frame = frame_pos_t{new_frame_pos, &frame};
-}
-
-//	Pops all locals, decrementing RC when needed.
-//	Decrements all stack frame object RCs.
-//	Caller handles RC for parameters, this function don't.
-void interpreter_stack_t::close_frame(const bc_frame_t& frame){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(frame.check_invariant());
-
-	//	Using symbol table to figure out which stack-frame values needs RC. Decrement them all.
-	pop_batch(frame._locals_exts);
-}
-
 //	#0 is top of stack, last element is bottom.
 //	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
 vector<std::pair<int, int>> interpreter_stack_t::get_stack_frames(int frame_pos) const{
@@ -202,259 +159,6 @@ vector<std::pair<int, int>> interpreter_stack_t::get_stack_frames(int frame_pos)
 	}
 	return result;
 }
-
-BC_INLINE frame_pos_t interpreter_stack_t::find_frame_pos(int parent_step) const{
-	QUARK_ASSERT(check_invariant());
-
-	QUARK_ASSERT(parent_step == 0 || parent_step == -1);
-	if(parent_step == 0){
-		return _current_stack_frame;
-	}
-	else if(parent_step == -1){
-		return frame_pos_t{k_frame_overhead, _global_frame};
-	}
-	else{
-		QUARK_ASSERT(false);
-		auto frame_pos = _current_stack_frame;
-		for(auto i = 0 ; i < parent_step ; i++){
-			frame_pos = read_prev_frame_pos2(frame_pos._frame_pos);
-		}
-		return frame_pos;
-	}
-}
-int interpreter_stack_t::resolve_register(const variable_address_t& reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
-
-	const auto frame_pos = find_frame_pos(reg._parent_steps);
-
-	QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame->_body._symbols.size());
-	const auto pos = frame_pos._frame_pos + reg._index;
-	return pos;
-}
-
-const std::pair<std::string, symbol_t>* interpreter_stack_t::get_register_info(const variable_address_t& reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(reg.check_invariant());
-
-	const auto frame_pos = find_frame_pos(reg._parent_steps);
-	QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame->_body._symbols.size());
-	const auto symbol_ptr = &frame_pos._frame->_body._symbols[reg._index];
-	return symbol_ptr;
-}
-const std::pair<std::string, symbol_t>* interpreter_stack_t::get_global_info(int global) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(global >= 0 && global < _global_frame->_body._symbols.size());
-
-	return &_global_frame->_body._symbols[global];
-}
-const std::pair<std::string, symbol_t>* interpreter_stack_t::get_register_info2(int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-
-	return get_register_info(variable_address_t::make_variable_address(0, reg));
-}
-
-bool interpreter_stack_t::check_reg(int reg) const{
-	QUARK_ASSERT(reg >= 0 && reg < (size() - _current_stack_frame._frame_pos));
-	return true;
-}
-
-
-
-bc_value_t interpreter_stack_t::read_register(int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-
-	const auto info = get_register_info2(reg);
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value = load_value_slow(pos, info->second._value_type);
-	QUARK_ASSERT(info->second._value_type == value._debug_type);
-	return value;
-}
-void interpreter_stack_t::write_register(const int reg, const bc_value_t& value){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-	QUARK_ASSERT(value.check_invariant());
-
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == value._debug_type);
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	replace_value_same_type_SLOW(pos, value, info->second._value_type);
-}
-
-
-
-bc_value_t interpreter_stack_t::read_register_inplace(const int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	return load_inline_value(pos);
-}
-void interpreter_stack_t::write_register_inplace(const int reg, const bc_value_t& value){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-	QUARK_ASSERT(value.check_invariant());
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == value._debug_type);
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	replace_inline(pos, value);
-}
-
-
-bc_value_t interpreter_stack_t::read_register_obj(const int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == true);
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	return load_obj(pos);
-}
-
-void interpreter_stack_t::write_register_obj(const int reg, const bc_value_t& value){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-	QUARK_ASSERT(value.check_invariant());
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == value._debug_type);
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	replace_obj(pos, value);
-}
-
-
-
-
-bool interpreter_stack_t::read_register_bool(const int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	return load_inline_value(pos).get_bool_value();
-}
-void interpreter_stack_t::write_register_bool(const int reg, bool value){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value2 = bc_value_t::make_bool(value);
-	replace_inline(pos, value2);
-}
-
-
-int interpreter_stack_t::read_register_int(const int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	return load_intq(pos);
-}
-void interpreter_stack_t::write_register_int(const int reg, int value){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value2 = bc_value_t::make_int(value);
-	replace_inline(pos, value2);
-}
-
-
-void interpreter_stack_t::write_register_float(const int reg, float value){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == typeid_t::make_float());
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value2 = bc_value_t::make_float(value);
-	replace_inline(pos, value2);
-}
-
-
-std::string interpreter_stack_t::read_register_string(const int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == typeid_t::make_string());
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value = load_obj(pos);
-	return value.get_string_value();
-}
-void interpreter_stack_t::write_register_string(const int reg, const std::string& value){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type == typeid_t::make_string());
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value2 = bc_value_t::make_string(value);
-	replace_obj(pos, value2);
-}
-
-
-int interpreter_stack_t::read_register_function(const int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_function);
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	return _value_stack[pos]._function_id;
-}
-
-
-
-const std::vector<bc_value_t>* interpreter_stack_t::read_register_vector(const int reg) const{
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(check_reg(reg));
-#if DEBUG
-	const auto info = get_register_info2(reg);
-	QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_vector);
-#endif
-
-	const auto pos = _current_stack_frame._frame_pos + reg;
-	const auto value = load_obj(pos);
-	return value.get_vector_value();
-}
-
-
 
 json_t interpreter_stack_t::stack_to_json() const{
 	const int size = static_cast<int>(_value_stack.size());
@@ -1079,7 +783,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& parent_value = vm._stack.read_register_obj(instruction._reg_b._index);
 			const auto& parent_json_value = parent_value.get_json_value();
 			if(parent_json_value.is_object()){
-				const auto lookup_key = vm._stack.read_register_string(instruction._reg_c._index);
+				const auto& lookup_key = vm._stack.read_register_string(instruction._reg_c._index);
 
 				//??? Optimize json_value:int to be inplace.
 
@@ -1125,7 +829,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 
 			const auto& parent_value = vm._stack.read_register_obj(instruction._reg_b._index);
-			const auto lookup_key = vm._stack.read_register_string(instruction._reg_c._index);
+			const auto& lookup_key = vm._stack.read_register_string(instruction._reg_c._index);
 			const auto& entries = parent_value.get_dict_value();
 			const auto& found_it = entries.find(lookup_key);
 			if(found_it == entries.end()){
@@ -1154,15 +858,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			//	_e[...] contains first callee, then each argument.
 			//	We need to examine the callee, since we support magic argument lists of varying size.
 
-			if(function_def_arg_count != callee_arg_count){
-				QUARK_ASSERT(false);
-			}
-
-			const int arg0_stack_pos = vm._stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
+			QUARK_ASSERT(function_def_arg_count == callee_arg_count);
 
 			if(function_def._host_function_id != 0){
 				const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
 
+				const int arg0_stack_pos = vm._stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 				int stack_pos = arg0_stack_pos;
 
 				//??? We can now access parameters using registers!
