@@ -325,7 +325,9 @@ bc_value_t interpreter_stack_t::read_register(int reg) const{
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(check_reg(reg));
 
+#if DEBUG
 	const auto info = get_register_info2(reg);
+#endif
 
 	const auto pos = _current_stack_frame._frame_pos + reg;
 	const auto value = load_value_slow(pos, info->second._value_type);
@@ -925,8 +927,9 @@ QUARK_UNIT_TEST("", "", "", ""){
 execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
 
-	const auto frame_pos = vm._stack.get_current_frame_pos();
-	const bc_frame_t* frame_ptr = frame_pos._frame;
+	const auto frame_pos0 = vm._stack.get_current_frame_pos();
+	const bc_frame_t* frame_ptr = frame_pos0._frame;
+	const auto frame_pos = frame_pos0._frame_pos;
 
 	const typeid_t* type_lookup = &vm._imm->_program._types[0];
 	const auto type_count = vm._imm->_program._types.size();
@@ -1004,9 +1007,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		else if(opcode == bc_opcode::k_return){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
-			const auto& type = type_lookup[instruction._instr_type];
-			const auto regA = vm._stack.resolve_register(instruction._reg_a);
-			const auto value = vm._stack.load_value_slow(regA, type);
+			const auto value = vm._stack.read_register(instruction._reg_a._index);
 			return execution_result_t::make_return_unwind(value);
 		}
 
@@ -1021,8 +1022,19 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		else if(opcode == bc_opcode::k_push_inplace){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto value = vm._stack.read_register_inplace(instruction._reg_a._index);
-			vm._stack.push_inplace(value);
+
+			const auto a = instruction._reg_a._index;
+			QUARK_ASSERT(vm._stack.check_reg(a));
+#if DEBUG
+			const auto debug_info = vm._stack.get_register_info2(a);
+			QUARK_ASSERT(bc_value_t::is_bc_ext(debug_info->second._value_type.get_base_type()) == false);
+#endif
+
+			const auto pos = frame_pos + a;
+			vm._stack._value_stack.push_back(vm._stack._value_stack[pos]);
+#if FLOYD_BC_VALUE_DEBUG_TYPE
+			vm._stack._debug_types.push_back(vm._stack._debug_types[pos]);
+#endif
 			pc++;
 		}
 		else if(opcode == bc_opcode::k_push_obj){
@@ -1213,6 +1225,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 					int stack_pos = arg0_stack_pos;
 
+					//??? We can now access parameters using registers!
 					//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
 					std::vector<value_t> arg_values;
 					for(int i = 0 ; i < function_def_arg_count ; i++){

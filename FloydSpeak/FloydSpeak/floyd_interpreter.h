@@ -500,11 +500,11 @@ namespace floyd {
 		public: json_t stack_to_json() const;
 
 
-		private: std::vector<bc_pod_value_t> _value_stack;
+		public: std::vector<bc_pod_value_t> _value_stack;
 
 		//	These are DEEP copies = do not share RC with non-debug values.
-		private: std::vector<typeid_t> _debug_types;
-		private: frame_pos_t _current_stack_frame;
+		public: std::vector<typeid_t> _debug_types;
+		public: frame_pos_t _current_stack_frame;
 		private: const bc_frame_t* _global_frame;
 	};
 
