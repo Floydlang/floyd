@@ -1259,6 +1259,7 @@ inline int bc_limit(int value, int min, int max){
 		//	True if equivalent symbol is an ext.
 		std::vector<bool> _exts;
 
+		//	This doesn't count arguments.
 		std::vector<bool> _locals_exts;
 		std::vector<bc_value_t> _locals;
 	};

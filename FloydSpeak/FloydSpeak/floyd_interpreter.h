@@ -356,6 +356,16 @@ namespace floyd {
 			_current_frame_entry_ptr[reg] = value._pod;
 		}
 
+
+		public: bool check_register_access_obj(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(_current_frame->_exts[reg] == true);
+			return true;
+		}
+
+
 		//??? use const bc_value_object_t* peek_register_obj()
 		public: bc_value_t read_register_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
@@ -834,7 +844,7 @@ namespace floyd {
 		public: const bc_frame_t* _current_frame;
 		public: bc_pod_value_t* _current_frame_entry_ptr;
 
-		private: const bc_frame_t* _global_frame;
+		public: const bc_frame_t* _global_frame;
 	};
 
 

@@ -650,10 +650,18 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		case bc_opcode::k_store_global_obj: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_obj(instruction._reg_b._index));
 
-			const auto value = stack.read_register_obj(instruction._reg_b._index);
-			const auto global_pos = k_frame_overhead + instruction._reg_a._index;
-			stack.replace_obj(global_pos, value);
+//??? add more checks to global access.
+//			const auto info_a = stack.get_register_info2(instruction._reg_a._index);
+			QUARK_ASSERT(instruction._reg_b._index >= 0 && instruction._reg_b._index < (k_frame_overhead + stack._global_frame->_body._symbols.size()));
+//			QUARK_ASSERT(frame_ptr->_exts[reg] == true);
+
+			auto prev_copy = globals[instruction._reg_a._index];
+			const auto& source_value = registers[instruction._reg_b._index];
+			source_value._ext->_rc++;
+			globals[instruction._reg_a._index] = source_value;
+			bc_value_t::debump(prev_copy);
 			pc++;
 			break;
 		}
@@ -704,9 +712,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		case bc_opcode::k_pop_frame_ptr: {
 			stack.restore_frame();
 
-				frame_ptr = stack._current_frame;
-				frame_pos = stack._current_frame_pos;
-				registers = stack._current_frame_entry_ptr;
+			frame_ptr = stack._current_frame;
+			frame_pos = stack._current_frame_pos;
+			registers = stack._current_frame_entry_ptr;
 
 			QUARK_ASSERT(frame_pos == stack._current_frame_pos);
 			QUARK_ASSERT(frame_ptr == stack._current_frame);
