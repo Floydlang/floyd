@@ -56,6 +56,10 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 	const auto instruction_size = sizeof(bc_instruction_t);
 	QUARK_ASSERT(instruction_size == 32);
+
+
+	const auto instruction2_size = sizeof(bc_instruction2_t);
+	QUARK_ASSERT(instruction2_size == 10);
 }
 
 
@@ -235,7 +239,8 @@ struct opcode_info_t {
 		k_p_0r00,
 		k_q_0rr0,
 		k_r_0ir0,
-		k_s_0rri
+		k_s_0rri,
+		k_t_0rii
 	};
 	encoding _encoding;
 };
@@ -300,6 +305,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 
 	{ bc_opcode::k_construct_value, { "construct_value", opcode_info_t::encoding::k_i_trii } },
+	{ bc_opcode::k_new_vector, { "new_vector", opcode_info_t::encoding::k_t_0rii } },
 
 	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
 
@@ -543,6 +549,7 @@ reg_t flatten_reg(const reg_t& r, int offset){
 		return reg_t::make_variable_address(r._parent_steps - 1, r._index);
 	}
 }
+//??? Use enum with register / immediate / unused.
 
 struct reg_flags_t {
 	bool _type;
@@ -595,6 +602,9 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	}
 	else if(e == opcode_info_t::encoding::k_s_0rri){
 		return { false,		true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_t_0rii){
+		return { false,		true, false, false };
 	}
 
 	else{
@@ -1214,13 +1224,26 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 	const auto source_itype = arg_count == 0 ? -1 : intern_type(vm, e._input_exprs[0].get_output_type());
 
 	const auto function_result_reg = add_local_temp(body_acc, target_type, "Construct-value result register");
-	body_acc._instrs.push_back(bc_instruction_t(
-		bc_opcode::k_construct_value,
-		target_itype,
-		function_result_reg,
-		make_imm_int(source_itype),
-		make_imm_int(arg_count)
-	));
+
+	if(target_type.is_vector()){
+		body_acc._instrs.push_back(bc_instruction_t(
+			bc_opcode::k_new_vector,
+			k_no_bctypeid,
+			function_result_reg,
+			make_imm_int(target_itype),
+			make_imm_int(arg_count)
+		));
+
+	}
+	else{
+		body_acc._instrs.push_back(bc_instruction_t(
+			bc_opcode::k_construct_value,
+			target_itype,
+			function_result_reg,
+			make_imm_int(source_itype),
+			make_imm_int(arg_count)
+		));
+	}
 
 	const auto extbits = pack_bools(call_setup._exts);
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_popn, k_no_bctypeid, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));

@@ -488,6 +488,7 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 	std::vector<value_t> arg_values;
 
 	if(target_basetype == base_type::k_vector){
+		QUARK_ASSERT(false);
 		const auto& element_type = target_type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_undefined() == false);
 		QUARK_ASSERT(target_type.is_undefined() == false);
@@ -537,6 +538,41 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 		vm._stack.write_register(dest_reg, result);
 	}
 }
+
+//??? should use itype internaly, not typeid_t.
+//??? Split out instruction unpacking to client.
+//	IMPORTANT: NO arguments are passed as DYN arguments.
+void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(instruction.check_invariant());
+
+	const auto dest_reg = instruction._a;
+	const auto target_itype = instruction._b;
+	const auto arg_count = instruction._c;
+
+	const auto& target_type = get_type(vm, target_itype);
+	QUARK_ASSERT(target_type.get_base_type() == base_type::k_vector);
+
+	std::vector<value_t> arg_values;
+
+	const auto& element_type = target_type.get_vector_element_type();
+	QUARK_ASSERT(element_type.is_undefined() == false);
+	QUARK_ASSERT(target_type.is_undefined() == false);
+
+	const int arg0_stack_pos = vm._stack.size() - arg_count;
+	std::vector<bc_value_t> elements2;
+	for(int i = 0 ; i < arg_count ; i++){
+		const auto arg_bc = vm._stack.load_value_slow(arg0_stack_pos + i, element_type);
+		elements2.push_back(arg_bc);
+	}
+
+	const auto result = bc_value_t::make_vector_value(element_type, elements2);
+	vm._stack.write_register_obj(dest_reg, result);
+}
+
+
+
+
 
 QUARK_UNIT_TEST("", "", "", ""){
 	float a = 10.0f;
@@ -1033,6 +1069,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		case bc_opcode::k_construct_value: {
 			execute_construct_value_instruction(vm, instruction);
+			pc++;
+			break;
+		}
+
+
+		case bc_opcode::k_new_vector: {
+			execute_new_vector(vm, instruction);
 			pc++;
 			break;
 		}

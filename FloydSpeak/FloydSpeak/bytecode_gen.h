@@ -1034,14 +1034,25 @@ inline int bc_limit(int value, int min, int max){
 
 		/*
 			TYPE: target_type - type to create
-			A: Register tells where to put function return
-			B: IMMEDIATE: Source itype
+			A: Register: where to put resulting value
+			B: IMMEDIATE: Source itype, type of argument #0
 			C: IMMEDIATE: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
 
 			All arguments are pushed to stack, first argument first.
 			No DYN argumentes.
 		*/
 		k_construct_value,
+
+		/*
+			TYPE: ---
+			A: Register: where to put resulting value
+			B: IMMEDIATE: itype T, describing output type of vector, like [int] or [my_pixel].
+			C: IMMEDIATE: Argument count.
+
+			Values are put on stack. No DYN arguments. All arguments are of the element-type specified by T.
+			No DYN argumentes.
+		*/
+		k_new_vector,
 
 /*
 		k_construct_bool,
