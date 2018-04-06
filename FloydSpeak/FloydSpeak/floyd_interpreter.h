@@ -433,6 +433,15 @@ namespace floyd {
 		}
 		#endif
 
+		#if DEBUG
+		public: bool check_register_access_inline(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_current_frame->_exts[reg] == false);
+			return true;
+		}
+		#endif
+
 /*
 		public: int read_register_int_xxx(const int reg) const{
 			QUARK_ASSERT(check_register_int_access(reg));
