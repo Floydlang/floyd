@@ -21,7 +21,8 @@ using namespace floyd;
 
 
 
-interpreter_context_t make_context2(){
+
+static interpreter_context_t make_context2(){
 	const auto t = quark::trace_context_t(true, quark::get_trace());
 	interpreter_context_t context{ t };
 	return context;
@@ -30,30 +31,10 @@ interpreter_context_t make_context2(){
 
 //////////////////////////////////////////		C
 
-//	https://medium.com/@n0mad/when-competing-with-c-fudge-the-benchmark-16d3a91b437c
-
-static unsigned int tmetrics_hamming (unsigned int len, uint8_t *a, uint8_t *b)
-{
-  unsigned int acc = 0, i;
-  for (i = 0; i < len; i++)
-    {
-      if (*(a + i) != *(b + i)) acc++;
-    }
-  return acc;
-}
-
-
 
 static void c_runner(unsigned int len, uint8_t *a, uint8_t *b, uint8_t *c){
 	for(int i = 0 ; i < 3 ; i++){
-		const auto result0 = tmetrics_hamming(len, a, b);
-		const auto result1 = tmetrics_hamming(len, b, c);
-		const auto result2 = tmetrics_hamming(len, c, a);
-
-		const auto result3 = tmetrics_hamming(len, b, a);
-		const auto result4 = tmetrics_hamming(len, c, b);
-		const auto result5 = tmetrics_hamming(len, a, c);
-		const auto result = result0 + result1 + result2 + result3 + result4 + result5;
+		int result = 3;
 		QUARK_ASSERT(result != 0);
 	}
 }

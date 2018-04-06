@@ -161,7 +161,7 @@ vector<std::pair<int, int>> interpreter_stack_t::get_stack_frames(int frame_pos)
 }
 
 json_t interpreter_stack_t::stack_to_json() const{
-	const int size = static_cast<int>(_value_stack.size());
+	const int size = static_cast<int>(_stack_size);
 
 	const auto stack_frames = get_stack_frames(get_current_frame_pos()._frame_pos);
 
@@ -194,7 +194,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 		const auto debug_type = _debug_types[i];
 		const auto ext = bc_value_t::is_bc_ext(debug_type.get_base_type());
 #endif
-		const auto bc_pod = _value_stack[i];
+		const auto bc_pod = _entries[i];
 #if DEBUG
 		const auto bc = bc_value_t(debug_type, bc_pod, ext);
 #else
@@ -611,7 +611,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		else if(opcode == bc_opcode::k_store_global_inline){
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
-			stack._value_stack[k_frame_overhead + instruction._reg_a._index] = stack.peek_register(instruction._reg_b._index);
+			stack._entries[k_frame_overhead + instruction._reg_a._index] = stack.peek_register(instruction._reg_b._index);
 			pc++;
 		}
 
@@ -657,10 +657,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
 #endif
 
-			const auto pos = frame_pos + a;
-			stack._value_stack.push_back(stack._value_stack[pos]);
+			stack._entries[stack._stack_size] = stack._entries[frame_pos + a];
+			stack._stack_size++;
 #if DEBUG
-			stack._debug_types.push_back(stack._debug_types[pos]);
+			stack._debug_types.push_back(stack._debug_types[frame_pos + a]);
 #endif
 			QUARK_ASSERT(stack.check_invariant());
 			pc++;
