@@ -564,14 +564,14 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 //	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(stack.stack_to_json()));
 
-
+	const auto instruction_count = instructions.size();
 	int pc = 0;
 	while(true){
-		if(pc == instructions.size()){
+		if(pc == instruction_count){
 			return execution_result_t::make__complete_without_value();
 		}
 		QUARK_ASSERT(pc >= 0);
-		QUARK_ASSERT(pc < instructions.size());
+		QUARK_ASSERT(pc < instruction_count);
 		const auto& instruction = instructions[pc];
 
 		QUARK_ASSERT(vm.check_invariant());
@@ -754,13 +754,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 
 		else if(opcode == bc_opcode::k_lookup_element_string){
-			const auto& instance = stack.read_register_string(instruction._reg_b._index);
+			const auto& s = stack.peek_register_string(instruction._reg_b._index);
 			const auto lookup_index = stack.read_register_int(instruction._reg_c._index);
-			if(lookup_index < 0 || lookup_index >= instance.size()){
+			if(lookup_index < 0 || lookup_index >= s.size()){
 				throw std::runtime_error("Lookup in string: out of bounds.");
 			}
 			else{
-				const char ch = instance[lookup_index];
+				const char ch = s[lookup_index];
 				const auto value2 = string(1, ch);
 				stack.write_register_string(instruction._reg_a._index, value2);
 			}
@@ -774,7 +774,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& parent_value = stack.read_register_obj(instruction._reg_b._index);
 			const auto& parent_json_value = parent_value.get_json_value();
 			if(parent_json_value.is_object()){
-				const auto& lookup_key = stack.read_register_string(instruction._reg_c._index);
+				const auto& lookup_key = stack.peek_register_string(instruction._reg_c._index);
 
 				//??? Optimize json_value:int to be inplace.
 
@@ -801,7 +801,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 
 		else if(opcode == bc_opcode::k_lookup_element_vector){
-			const auto* vec = stack.read_register_vector(instruction._reg_b._index);
+			const auto* vec = stack.peek_register_vector(instruction._reg_b._index);
 			const auto lookup_index = stack.read_register_int(instruction._reg_c._index);
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
@@ -820,7 +820,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 
 			const auto& parent_value = stack.read_register_obj(instruction._reg_b._index);
-			const auto& lookup_key = stack.read_register_string(instruction._reg_c._index);
+			const auto& lookup_key = stack.peek_register_string(instruction._reg_c._index);
 			const auto& entries = parent_value.get_dict_value();
 			const auto& found_it = entries.find(lookup_key);
 			if(found_it == entries.end()){

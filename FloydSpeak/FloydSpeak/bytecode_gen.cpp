@@ -26,6 +26,39 @@ struct semantic_ast_t;
 
 
 
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto pod_size = sizeof(bc_pod_value_t);
+	QUARK_ASSERT(pod_size == 8);
+/*
+	union bc_pod_value_t {
+		bool _bool;
+		int _int;
+		float _float;
+		int _function_id;
+		bc_value_object_t* _ext;
+		const bc_frame_t* _frame_ptr;
+	};
+*/
+
+
+	const auto value_size = sizeof(bc_value_t);
+	QUARK_ASSERT(value_size == 64);
+
+
+	struct mockup_value_t {
+		private: bool _is_ext;
+		public: bc_pod_value_t _pod;
+	};
+
+	const auto mockup_value_size = sizeof(mockup_value_t);
+	QUARK_ASSERT(mockup_value_size == 16);
+
+	const auto instruction_size = sizeof(bc_instruction_t);
+	QUARK_ASSERT(instruction_size == 32);
+}
+
+
+
 struct expr_info_t {
 	bc_body_t _body;
 	variable_address_t _output_reg;

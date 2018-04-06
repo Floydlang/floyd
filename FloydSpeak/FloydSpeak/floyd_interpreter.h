@@ -86,6 +86,7 @@ namespace floyd {
 		public: interpreter_stack_t(const bc_frame_t* global_frame) :
 			_current_frame_pos(0),
 			_current_frame(nullptr),
+			_current_frame_entry_ptr(nullptr),
 			_global_frame(global_frame),
 			_entries(nullptr),
 			_allocated_count(0),
@@ -93,6 +94,7 @@ namespace floyd {
 		{
 			_entries = new bc_pod_value_t[8192];
 			_allocated_count = 8192;
+			_current_frame_entry_ptr = &_entries[_current_frame_pos];
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -110,6 +112,9 @@ namespace floyd {
 			QUARK_ASSERT(_stack_size >= 0 && _stack_size <= _allocated_count);
 			QUARK_ASSERT(_current_frame_pos >= 0);
 			QUARK_ASSERT(_current_frame_pos <= _stack_size);
+
+			QUARK_ASSERT(_current_frame_entry_ptr == &_entries[_current_frame_pos]);
+
 			QUARK_ASSERT(_debug_types.size() == _stack_size);
 			for(int i = 0 ; i < _stack_size ; i++){
 				QUARK_ASSERT(_debug_types[i].check_invariant());
@@ -145,6 +150,8 @@ namespace floyd {
 #endif
 			std::swap(_current_frame_pos, other._current_frame_pos);
 			std::swap(_current_frame, other._current_frame);
+			std::swap(_current_frame_entry_ptr, other._current_frame_entry_ptr);
+
 			std::swap(_global_frame, other._global_frame);
 
 			QUARK_ASSERT(check_invariant());
@@ -196,6 +203,7 @@ namespace floyd {
 			}
 			_current_frame_pos = new_frame_pos;
 			_current_frame = &frame;
+			_current_frame_entry_ptr = &_entries[_current_frame_pos];
 		}
 
 
@@ -278,27 +286,26 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
-			return _entries[_current_frame_pos + reg];
+			return _current_frame_entry_ptr[reg];
 		}
 		public: inline const void write_register_pod(const int reg, const bc_pod_value_t& pod) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
-			_entries[_current_frame_pos + reg] = pod;
+			_current_frame_entry_ptr[reg] = pod;
 		}
 
 		public: bc_value_t read_register(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
-			const auto pos = _current_frame_pos + reg;
-			QUARK_ASSERT(_debug_types[pos] == _current_frame->_body._symbols[reg].second._value_type);
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_body._symbols[reg].second._value_type);
 
 			bool is_ext = _current_frame->_exts[reg];
 #if DEBUG
-			const auto result = bc_value_t(_current_frame->_body._symbols[reg].second._value_type, _entries[pos], is_ext);
+			const auto result = bc_value_t(_current_frame->_body._symbols[reg].second._value_type, _current_frame_entry_ptr[reg], is_ext);
 #else
-			const auto result = bc_value_t(_entries[pos], is_ext);
+			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
 #endif
 			return result;
 		}
@@ -307,17 +314,16 @@ namespace floyd {
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(value.check_invariant());
 
-			const auto pos = _current_frame_pos + reg;
-			QUARK_ASSERT(_debug_types[pos] == _current_frame->_body._symbols[reg].second._value_type);
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_body._symbols[reg].second._value_type);
 			bool is_ext = _current_frame->_exts[reg];
 			if(is_ext){
-				auto prev_copy = _entries[pos];
+				auto prev_copy = _current_frame_entry_ptr[reg];
 				value._pod._ext->_rc++;
-				_entries[pos] = value._pod;
+				_current_frame_entry_ptr[reg] = value._pod;
 				bc_value_t::debump(prev_copy);
 			}
 			else{
-				_entries[pos] = value._pod;
+				_current_frame_entry_ptr[reg] = value._pod;
 			}
 
 			QUARK_ASSERT(check_invariant());
@@ -333,9 +339,9 @@ namespace floyd {
 			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
 
 #if DEBUG
-			return bc_value_t(_debug_types[_current_frame_pos + reg], _entries[_current_frame_pos + reg], false);
+			return bc_value_t(_debug_types[_current_frame_pos + reg], _current_frame_entry_ptr[reg], false);
 #else
-			return bc_value_t(_entries[_current_frame_pos + reg], false);
+			return bc_value_t(_current_frame_entry_ptr[reg], false);
 #endif
 		}
 		public: void write_register_inplace(const int reg, const bc_value_t& value){
@@ -347,9 +353,10 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == value._debug_type);
 		#endif
 
-			_entries[_current_frame_pos + reg] = value._pod;
+			_current_frame_entry_ptr[reg] = value._pod;
 		}
 
+		//??? use const bc_value_object_t* peek_register_obj()
 		public: bc_value_t read_register_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
@@ -358,8 +365,11 @@ namespace floyd {
 			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == true);
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			return load_obj(pos);
+#if DEBUG
+			return bc_value_t(_debug_types[_current_frame_pos + reg], _current_frame_entry_ptr[reg], true);
+#else
+			return bc_value_t(_current_frame_entry_ptr[reg], true);
+#endif
 		}
 		public: void write_register_obj(const int reg, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
@@ -370,8 +380,14 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == value._debug_type);
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			replace_obj(pos, value);
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == value._debug_type);
+
+			auto prev_copy = _current_frame_entry_ptr[reg];
+			value._pod._ext->_rc++;
+			_current_frame_entry_ptr[reg] = value._pod;
+			bc_value_t::debump(prev_copy);
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		public: bool read_register_bool(const int reg) const{
@@ -382,7 +398,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
 		#endif
 
-			return _entries[_current_frame_pos + reg]._bool;
+			return _current_frame_entry_ptr[reg]._bool;
 		}
 		public: void write_register_bool(const int reg, bool value){
 			QUARK_ASSERT(check_invariant());
@@ -392,7 +408,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
 		#endif
 
-			_entries[_current_frame_pos + reg]._bool = value;
+			_current_frame_entry_ptr[reg]._bool = value;
 		}
 
 
@@ -403,7 +419,7 @@ namespace floyd {
 			const auto info = get_register_info2(reg);
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
 		#endif
-			return _entries[_current_frame_pos + reg]._int;
+			return _current_frame_entry_ptr[reg]._int;
 		}
 		public: void write_register_int(const int reg, int value){
 			QUARK_ASSERT(check_invariant());
@@ -413,7 +429,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
 		#endif
 
-			_entries[_current_frame_pos + reg]._int = value;
+			_current_frame_entry_ptr[reg]._int = value;
 		}
 
 		public: void write_register_float(const int reg, float value){
@@ -424,10 +440,10 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_float());
 		#endif
 
-			_entries[_current_frame_pos + reg]._float = value;
+			_current_frame_entry_ptr[reg]._float = value;
 		}
 
-		public: const std::string& read_register_string(const int reg) const{
+		public: const std::string& peek_register_string(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 		#if DEBUG
@@ -435,21 +451,22 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_string());
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			return _entries[pos]._ext->_string;
+			return _current_frame_entry_ptr[reg]._ext->_string;
 		}
 
 		public: void write_register_string(const int reg, const std::string& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == typeid_t::make_string());
-		#endif
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_string());
 
-			const auto pos = _current_frame_pos + reg;
 			const auto value2 = bc_value_t::make_string(value);
-			replace_obj(pos, value2);
+
+			auto prev_copy = _current_frame_entry_ptr[reg];
+			value2._pod._ext->_rc++;
+			_current_frame_entry_ptr[reg] = value2._pod;
+			bc_value_t::debump(prev_copy);
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		public: inline int read_register_function(const int reg) const{
@@ -460,11 +477,10 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_function);
 		#endif
 
-			return _entries[_current_frame_pos + reg]._function_id;
+			return _current_frame_entry_ptr[reg]._function_id;
 		}
 
-
-		public: const std::vector<bc_value_t>* read_register_vector(const int reg) const{
+		public: const std::vector<bc_value_t>* peek_register_vector(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 		#if DEBUG
@@ -472,9 +488,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_vector);
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			const auto value = load_obj(pos);
-			return value.get_vector_value();
+			return &_current_frame_entry_ptr[reg]._ext->_vector_elements;
 		}
 
 
@@ -503,6 +517,7 @@ namespace floyd {
 
 			_current_frame = frame_ptr_pod._frame_ptr;
 			_current_frame_pos = frame_pos_pod._int;
+			_current_frame_entry_ptr = &_entries[_current_frame_pos];
 
 			pop(false);
 			pop(false);
@@ -789,6 +804,8 @@ namespace floyd {
 
 		public: int _current_frame_pos;
 		public: const bc_frame_t* _current_frame;
+		public: bc_pod_value_t* _current_frame_entry_ptr;
+
 		private: const bc_frame_t* _global_frame;
 	};
 
