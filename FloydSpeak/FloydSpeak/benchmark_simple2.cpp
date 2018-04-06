@@ -62,7 +62,7 @@ static const std::string floyd_str = R"(
 
 static void cpp_runner(){
 	volatile int result = 0;
-	for(int i = 0 ; i < 100000000 ; i++){
+	for(int i = 0 ; i < 1000000000 ; i++){
 		result = result + i * 2;
 	}
 }
@@ -70,7 +70,7 @@ static void cpp_runner(){
 static const std::string floyd_str = R"(
 	void f(){
 		mutable result = 0;
-		for(i in 0 ..< 100000000){
+		for(i in 0 ..< 1000000000){
 			result = result + i * 2;
 		}
 	}
@@ -78,11 +78,11 @@ static const std::string floyd_str = R"(
 
 
 
-QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++",
 		[&] {
-			cpp_runner();
+//			cpp_runner();
 		}
 	);
 

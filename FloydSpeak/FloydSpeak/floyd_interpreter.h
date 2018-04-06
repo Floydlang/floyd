@@ -273,6 +273,20 @@ namespace floyd {
 		}
 
 
+
+		public: inline const bc_pod_value_t& peek_register(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+
+			return _entries[_current_frame_pos + reg];
+		}
+		public: inline const void write_register_pod(const int reg, const bc_pod_value_t& pod) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+
+			_entries[_current_frame_pos + reg] = pod;
+		}
+
 		public: bc_value_t read_register(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
@@ -449,13 +463,6 @@ namespace floyd {
 			return _entries[_current_frame_pos + reg]._function_id;
 		}
 
-		public: inline const bc_pod_value_t& peek_register(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-
-			return _entries[_current_frame_pos + reg];
-		}
-
 
 		public: const std::vector<bc_value_t>* read_register_vector(const int reg) const{
 			QUARK_ASSERT(check_invariant());
@@ -475,7 +482,11 @@ namespace floyd {
 
 
 
+
+
 		//////////////////////////////////////		STACK
+
+
 
 
 		public: void save_frame(){

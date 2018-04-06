@@ -923,12 +923,20 @@ inline int bc_limit(int value, int min, int max){
 
 
 		/*
-			TYPE: itype of returned member
+			TYPE: ---
 			A: Register: where to put result
 			B: Register: parent
 			C: ---
 		*/
-		k_store_resolve,
+		k_store_local_inline,
+		/*
+			TYPE: ---
+			A: Register: where to put result
+			B: Register: parent
+			C: ---
+		*/
+		k_store_local_obj,
+
 
 		/*
 			TYPE: itype of returned member

@@ -616,15 +616,23 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 
 
-
+//???Have pointer to _entries[_current_frame_pos + 0]
 
 		//////////////////////////////////////////		STORE
 
 
-		else if(opcode == bc_opcode::k_store_resolve){
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
-			const auto value = stack.read_register(instruction._reg_b._index);
-			stack.write_register(instruction._reg_a._index, value);
+		else if(opcode == bc_opcode::k_store_local_inline){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto value = stack.peek_register(instruction._reg_b._index);
+			stack.write_register_pod(instruction._reg_a._index, value);
+			pc++;
+		}
+		else if(opcode == bc_opcode::k_store_local_obj){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+
+			//??? No need to construct a bc_value_t, we just need to copy ptr & bump RC/release RC.
+			const auto value = stack.read_register_obj(instruction._reg_b._index);
+			stack.write_register_obj(instruction._reg_a._index, value);
 			pc++;
 		}
 

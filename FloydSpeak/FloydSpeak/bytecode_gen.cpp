@@ -214,7 +214,8 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_store_global_obj, { "store_global_obj", opcode_info_t::encoding::k_r_0ir0 } },
 	{ bc_opcode::k_store_global_inline, { "store_global_inline", opcode_info_t::encoding::k_r_0ir0 } },
 
-	{ bc_opcode::k_store_resolve, { "store_resolve", opcode_info_t::encoding::k_f_trr0 } },
+	{ bc_opcode::k_store_local_inline, { "store_local_inline", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_store_local_obj, { "store_local_obj", opcode_info_t::encoding::k_q_0rr0 } },
 
 	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
 	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_h_trrr } },
@@ -677,7 +678,6 @@ bc_body_t flatten_body(bgenerator_t& vm, const bc_body_t& dest, const bc_body_t&
 	return body_acc;
 }
 
-//??? Generate fewer instructions by supplying bcgen_expression() with destination register. Allows caller to make a temp or to put value directly where it needs to go.
 bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -688,10 +688,10 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 
 	const auto dest_variable = statement._dest_variable;
 	const auto result_type = vm._types[expr._type];
+	bool is_ext = bc_value_t::is_bc_ext(result_type.get_base_type());
 
 	if(dest_variable._parent_steps == -1){
-		bool ext = bc_value_t::is_bc_ext(result_type.get_base_type());
-		if(ext){
+		if(is_ext){
 			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_global_obj, k_no_bctypeid, make_imm_int(dest_variable._index), expr._output_reg, {}));
 		}
 		else{
@@ -699,7 +699,12 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 		}
 	}
 	else{
-		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_resolve, intern_type(vm, result_type), dest_variable, expr._output_reg, {}));
+		if(is_ext){
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_obj, k_no_bctypeid, dest_variable, expr._output_reg, {}));
+		}
+		else{
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, dest_variable, expr._output_reg, {}));
+		}
 	}
 
 	return body_acc;
@@ -791,7 +796,7 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_comparison_smaller_or_equal_int : bc_opcode::k_comparison_smaller_int;
 
 	//	Write start-integer in counter_reg
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_resolve, itype_int, counter_reg, start_expr._output_reg, {}));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, counter_reg, start_expr._output_reg, {}));
 	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, k_no_bctypeid, flag_reg, counter_reg, end_expr._output_reg));
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, k_no_bctypeid, flag_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
 	body_acc = flatten_body(vm, body_acc, loop_body);
@@ -1250,7 +1255,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	///??? real need a store-operation?
 	//	Copy result to result_reg.
 	body_acc._instrs.push_back(
-		bc_instruction_t(bc_opcode::k_store_resolve, itype, result_reg, a_expr._output_reg, {} )
+		bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, result_reg, a_expr._output_reg, {} )
 	);
 
 	int jump2_pc = static_cast<int>(body_acc._instrs.size());
@@ -1269,7 +1274,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	body_acc = b_expr._body;
 
 	body_acc._instrs.push_back(
-		bc_instruction_t(bc_opcode::k_store_resolve, itype, result_reg, b_expr._output_reg, {} )
+		bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, result_reg, b_expr._output_reg, {} )
 	);
 
 	int end_pc = static_cast<int>(body_acc._instrs.size());
