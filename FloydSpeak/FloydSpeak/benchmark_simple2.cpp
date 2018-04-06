@@ -20,7 +20,6 @@ using std::string;
 using namespace floyd;
 
 
-
 static interpreter_context_t make_context3(){
 	const auto t = quark::trace_context_t(true, quark::get_trace());
 	interpreter_context_t context{ t };
@@ -59,30 +58,35 @@ static const std::string floyd_str = R"(
 )";
 #endif
 
-
 static void cpp_runner(){
-	volatile int result = 0;
-	for(int i = 0 ; i < 1000000000 ; i++){
-		result = result + i * 2;
+	volatile int result1 = 0;
+	volatile int result2 = 0;
+	volatile int result3 = 0;
+	for(int i = 0 ; i < 10000000 ; i++){
+		result1 = result1 + i * 2;
+		result2 = result2 + result1 * 2;
+		result3 = result3 + result1 + result1;
 	}
 }
 
 static const std::string floyd_str = R"(
 	void f(){
-		mutable result = 0;
-		for(i in 0 ..< 1000000000){
-			result = result + i * 2;
+		mutable int result1 = 0;
+		mutable int result2 = 0;
+		mutable int result3 = 0;
+		for(i in 0 ..< 10000000){
+			result1 = result1 + i * 2;
+			result2 = result2 + result1 * 2;
+			result3 = result3 + result1 + result1;
 		}
 	}
 )";
 
-
-
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
+QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++",
 		[&] {
-//			cpp_runner();
+			cpp_runner();
 		}
 	);
 
