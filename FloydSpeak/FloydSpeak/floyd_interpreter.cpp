@@ -700,6 +700,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		case bc_opcode::k_return: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+
 			const auto value = stack.read_register(instruction._reg_a._index);
 			return execution_result_t::make_return_unwind(value);
 		}
@@ -726,17 +727,16 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		case bc_opcode::k_push_inplace: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
-			const auto a = instruction._reg_a._index;
-			QUARK_ASSERT(stack.check_reg(a));
+			QUARK_ASSERT(stack.check_reg(instruction._reg_a._index));
 #if DEBUG
-			const auto info = stack.get_register_info2(a);
+			const auto info = stack.get_register_info2(instruction._reg_a._index);
 			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
 #endif
 
-			stack._entries[stack._stack_size] = stack._entries[frame_pos + a];
+			stack._entries[stack._stack_size] = registers[instruction._reg_a._index];
 			stack._stack_size++;
 #if DEBUG
-			stack._debug_types.push_back(stack._debug_types[frame_pos + a]);
+			stack._debug_types.push_back(stack._debug_types[frame_pos + instruction._reg_a._index]);
 #endif
 			QUARK_ASSERT(stack.check_invariant());
 			pc++;
@@ -751,6 +751,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_popn: {
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+
 			const uint32_t n = instruction._reg_a._index;
 			const uint32_t extbits = instruction._reg_b._index;
 			stack.pop_batch(n, extbits);
@@ -763,6 +765,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 
 		case bc_opcode::k_branch_false_bool: {
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._reg_a._index));
 
 			const auto value = registers[instruction._reg_a._index]._bool;
@@ -776,6 +779,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_branch_true_bool: {
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._reg_a._index));
 
 			const auto value = registers[instruction._reg_a._index]._bool;
@@ -789,6 +793,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_branch_zero_int: {
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_int(instruction._reg_a._index));
 
 			const auto value = registers[instruction._reg_a._index]._int;
@@ -802,7 +807,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_branch_notzero_int: {
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_int(instruction._reg_a._index));
+
 			const auto value = registers[instruction._reg_a._index]._int;
 			if(value != 0){
 				const auto offset = instruction._reg_b._index;
@@ -827,10 +834,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& parent_value = stack.read_register_obj(instruction._reg_b._index);
 			const auto& member_index = instruction._reg_c._index;
-
-			const auto& struct_instance = parent_value.get_struct_value();
 			QUARK_ASSERT(member_index != -1);
 
+			const auto& struct_instance = parent_value.get_struct_value();
 			const bc_value_t value = struct_instance[member_index];
 			stack.write_register(instruction._reg_a._index, value);
 			pc++;
@@ -839,6 +845,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 
 		case bc_opcode::k_lookup_element_string: {
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+
 			const auto& s = stack.peek_register_string(instruction._reg_b._index);
 			QUARK_ASSERT(stack.check_register_access_int(instruction._reg_c._index));
 			const auto lookup_index = registers[instruction._reg_c._index]._int;
@@ -1018,6 +1026,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(frame_pos == stack._current_frame_pos);
 			QUARK_ASSERT(frame_ptr == stack._current_frame);
 			QUARK_ASSERT(registers == stack._current_frame_entry_ptr);
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
