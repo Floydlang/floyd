@@ -1058,15 +1058,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				stack.write_register_bool(instruction._reg_a._index, left2 + right2);
 				pc++;
 			}
-
-			//	int
 			else if(basetype == base_type::k_int){
-				const int left2 = left.get_int_value();
-				const int right2 = right.get_int_value();
-				stack.write_register_int(instruction._reg_a._index, left2 + right2);
-				pc++;
+				QUARK_ASSERT(false);
 			}
-
 			//	float
 			else if(basetype == base_type::k_float){
 				const float left2 = left.get_float_value();
@@ -1101,6 +1095,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
+		else if(opcode == bc_opcode::k_add_int){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto right = stack.read_register_int(instruction._reg_c._index);
+			stack.write_register_int(instruction._reg_a._index, left + right);
+			pc++;
+		}
 		else if(opcode == bc_opcode::k_subtract){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
@@ -1113,10 +1114,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			//	int
 			if(basetype == base_type::k_int){
-				const int left2 = left.get_int_value();
-				const int right2 = right.get_int_value();
-				stack.write_register_int(instruction._reg_a._index, left2 - right2);
-				pc++;
+				QUARK_ASSERT(false);
 			}
 
 			//	float
@@ -1132,6 +1130,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
+		else if(opcode == bc_opcode::k_subtract_int){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto right = stack.read_register_int(instruction._reg_c._index);
+			stack.write_register_int(instruction._reg_a._index, left - right);
+			pc++;
+		}
 		else if(opcode == bc_opcode::k_multiply){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
@@ -1144,10 +1149,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			//	int
 			if(basetype == base_type::k_int){
-				const int left2 = left.get_int_value();
-				const int right2 = right.get_int_value();
-				stack.write_register_int(instruction._reg_a._index, left2 * right2);
-				pc++;
+				QUARK_ASSERT(false);
 			}
 
 			//	float
@@ -1163,6 +1165,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
+		else if(opcode == bc_opcode::k_multiply_int){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto right = stack.read_register_int(instruction._reg_c._index);
+			stack.write_register_int(instruction._reg_a._index, left * right);
+			pc++;
+		}
 		else if(opcode == bc_opcode::k_divide){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
@@ -1175,13 +1184,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			//	int
 			if(basetype == base_type::k_int){
-				const int left2 = left.get_int_value();
-				const int right2 = right.get_int_value();
-				if(right2 == 0){
-					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-				}
-				stack.write_register_int(instruction._reg_a._index, left2 / right2);
-				pc++;
+				QUARK_ASSERT(false);
 			}
 
 			//	float
@@ -1200,6 +1203,16 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
+		else if(opcode == bc_opcode::k_divide_int){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto right = stack.read_register_int(instruction._reg_c._index);
+			if(right == 0.0f){
+				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+			}
+			stack.write_register_int(instruction._reg_a._index, left / right);
+			pc++;
+		}
 		else if(opcode == bc_opcode::k_remainder){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
@@ -1212,19 +1225,23 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			//	int
 			if(basetype == base_type::k_int){
-				const int left2 = left.get_int_value();
-				const int right2 = right.get_int_value();
-				if(right2 == 0){
-					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-				}
-				stack.write_register_int(instruction._reg_a._index, left2 % right2);
-				pc++;
+				QUARK_ASSERT(false);
 			}
 
 			else{
 				QUARK_ASSERT(false);
 				throw std::exception();
 			}
+		}
+		else if(opcode == bc_opcode::k_remainder_int){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto right = stack.read_register_int(instruction._reg_c._index);
+			if(right == 0){
+				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+			}
+			stack.write_register_int(instruction._reg_a._index, left % right);
+			pc++;
 		}
 		else if(opcode == bc_opcode::k_logical_and){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
@@ -1246,12 +1263,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			//	int
 			else if(basetype == base_type::k_int){
-				const int left2 = left.get_int_value();
-				const int right2 = right.get_int_value();
-
-				//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
-				stack.write_register_bool(instruction._reg_a._index, (left2 != 0) && (right2 != 0));
-				pc++;
+				QUARK_ASSERT(false);
 			}
 
 			//	float
@@ -1266,6 +1278,14 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				QUARK_ASSERT(false);
 				throw std::exception();
 			}
+		}
+				//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
+		else if(opcode == bc_opcode::k_logical_and_int){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto right = stack.read_register_int(instruction._reg_c._index);
+			stack.write_register_bool(instruction._reg_a._index, (left != 0) && (right != 0));
+			pc++;
 		}
 		else if(opcode == bc_opcode::k_logical_or){
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
@@ -1287,10 +1307,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 			//	int
 			else if(basetype == base_type::k_int){
-				const int left2 = left.get_int_value();
-				const int right2 = right.get_int_value();
-				stack.write_register_bool(instruction._reg_a._index, (left2 != 0) || (right2 != 0));
-				pc++;
+				QUARK_ASSERT(false);
 			}
 
 			//	float
@@ -1305,6 +1322,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				QUARK_ASSERT(false);
 				throw std::exception();
 			}
+		}
+		else if(opcode == bc_opcode::k_logical_or_int){
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto right = stack.read_register_int(instruction._reg_c._index);
+			stack.write_register_bool(instruction._reg_a._index, (left != 0) || (right != 0));
+			pc++;
 		}
 
 

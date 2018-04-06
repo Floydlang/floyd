@@ -318,8 +318,11 @@ namespace floyd {
 			const auto info = get_register_info2(reg);
 			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
 
-			const auto pos = _current_frame_pos + reg;
-			return load_inline_value(pos);
+#if DEBUG
+			return bc_value_t(_debug_types[_current_frame_pos + reg], _entries[_current_frame_pos + reg], false);
+#else
+			return bc_value_t(_entries[_current_frame_pos + reg], false);
+#endif
 		}
 		public: void write_register_inplace(const int reg, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
@@ -330,8 +333,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == value._debug_type);
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			replace_inline(pos, value);
+			_entries[_current_frame_pos + reg] = value._pod;
 		}
 
 		public: bc_value_t read_register_obj(const int reg) const{
@@ -366,8 +368,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			return load_inline_value(pos).get_bool_value();
+			return _entries[_current_frame_pos + reg]._bool;
 		}
 		public: void write_register_bool(const int reg, bool value){
 			QUARK_ASSERT(check_invariant());
@@ -377,9 +378,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			const auto value2 = bc_value_t::make_bool(value);
-			replace_inline(pos, value2);
+			_entries[_current_frame_pos + reg]._bool = value;
 		}
 
 
@@ -390,9 +389,7 @@ namespace floyd {
 			const auto info = get_register_info2(reg);
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
 		#endif
-
-			const auto pos = _current_frame_pos + reg;
-			return load_intq(pos);
+			return _entries[_current_frame_pos + reg]._int;
 		}
 		public: void write_register_int(const int reg, int value){
 			QUARK_ASSERT(check_invariant());
@@ -402,9 +399,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			const auto value2 = bc_value_t::make_int(value);
-			replace_inline(pos, value2);
+			_entries[_current_frame_pos + reg]._int = value;
 		}
 
 		public: void write_register_float(const int reg, float value){
@@ -415,9 +410,7 @@ namespace floyd {
 			QUARK_ASSERT(info->second._value_type == typeid_t::make_float());
 		#endif
 
-			const auto pos = _current_frame_pos + reg;
-			const auto value2 = bc_value_t::make_float(value);
-			replace_inline(pos, value2);
+			_entries[_current_frame_pos + reg]._float = value;
 		}
 
 		public: const std::string& read_register_string(const int reg) const{

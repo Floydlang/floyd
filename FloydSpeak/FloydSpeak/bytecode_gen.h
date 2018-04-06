@@ -976,13 +976,20 @@ inline int bc_limit(int value, int min, int max){
 			C: Register: rhs
 		*/
 		k_add,
+		k_add_int,
 		k_subtract,
+		k_subtract_int,
 		k_multiply,
+		k_multiply_int,
 		k_divide,
+		k_divide_int,
 		k_remainder,
+		k_remainder_int,
 
 		k_logical_and,
+		k_logical_and_int,
 		k_logical_or,
+		k_logical_or_int,
 
 
 		//////////////////////////////////////		COMPARISON

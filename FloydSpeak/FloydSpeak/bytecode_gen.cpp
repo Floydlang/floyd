@@ -227,13 +227,20 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_g_trri } },
 
 	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_add_int, { "arithmetic_add_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract, { "arithmetic_subtract", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_subtract_int, { "arithmetic_subtract_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply, { "arithmetic_multiply", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_multiply_int, { "arithmetic_multiply_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_divide, { "arithmetic_divide", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_divide_int, { "arithmetic_divide_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_remainder, { "arithmetic_remainder", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_remainder, { "arithmetic_remainder_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_logical_and, { "logical_and", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_and_int, { "logical_and_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_or, { "logical_or", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_or_int, { "logical_or_int", opcode_info_t::encoding::k_o_0rrr } },
 
 
 
@@ -788,7 +795,7 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, k_no_bctypeid, flag_reg, counter_reg, end_expr._output_reg));
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, k_no_bctypeid, flag_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
 	body_acc = flatten_body(vm, body_acc, loop_body);
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_add, itype_int, counter_reg, counter_reg, const1_reg));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_add_int, k_no_bctypeid, counter_reg, counter_reg, const1_reg));
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, k_no_bctypeid, make_imm_int(0 - 3 - body_instr_count), {}, {}));
 	QUARK_ASSERT(body_acc.check_invariant());
 	return body_acc;
@@ -1343,17 +1350,6 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	static const std::map<expression_type, bc_opcode> conv_opcode = {
-		{ expression_type::k_arithmetic_add__2, bc_opcode::k_add },
-		{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract },
-		{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply },
-		{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide },
-		{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_remainder },
-
-		{ expression_type::k_logical_and__2, bc_opcode::k_logical_and },
-		{ expression_type::k_logical_or__2, bc_opcode::k_logical_or }
-	};
-
 	auto body_acc = body;
 	const auto& left_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
 	body_acc = left_expr._body;
@@ -1365,13 +1361,47 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 	const auto itype = intern_type(vm, type);
 	const auto temp = add_local_temp(body_acc, type, "arithmetic output register");
 
-	body_acc._instrs.push_back(bc_instruction_t(conv_opcode.at(e._operation),
-		itype,
-		temp,
-		left_expr._output_reg,
-		right_expr._output_reg
-	));
-	return { body_acc, temp, itype };
+	if(type.is_int()){
+		static const std::map<expression_type, bc_opcode> conv_opcode = {
+			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_int },
+			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_int },
+			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply_int },
+			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide_int },
+			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_remainder_int },
+
+			{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_int },
+			{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_int }
+		};
+
+		body_acc._instrs.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+			k_no_bctypeid,
+			temp,
+			left_expr._output_reg,
+			right_expr._output_reg
+		));
+		return { body_acc, temp, itype };
+	}
+	else{
+		static const std::map<expression_type, bc_opcode> conv_opcode = {
+			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add },
+			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract },
+			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply },
+			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide },
+			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_remainder },
+
+			{ expression_type::k_logical_and__2, bc_opcode::k_logical_and },
+			{ expression_type::k_logical_or__2, bc_opcode::k_logical_or }
+		};
+
+
+		body_acc._instrs.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+			itype,
+			temp,
+			left_expr._output_reg,
+			right_expr._output_reg
+		));
+		return { body_acc, temp, itype };
+	}
 }
 
 expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body){

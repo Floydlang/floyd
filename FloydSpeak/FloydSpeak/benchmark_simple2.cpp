@@ -60,7 +60,7 @@ static const std::string floyd_str = R"(
 #endif
 
 
-static void c_runner(){
+static void cpp_runner(){
 	volatile int result = 0;
 	for(int i = 0 ; i < 100000000 ; i++){
 		result = result + i * 2;
@@ -82,7 +82,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++",
 		[&] {
-			c_runner();
+			cpp_runner();
 		}
 	);
 
