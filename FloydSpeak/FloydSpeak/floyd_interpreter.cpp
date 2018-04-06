@@ -839,7 +839,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 			else if(parent_json_value.is_array()){
 				QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
-				const auto lookup_index = stack.read_register_int(instruction._reg_c._index);
+				const auto lookup_index = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
 					throw std::runtime_error("Lookup in json_value array: out of bounds.");
 				}
@@ -858,8 +859,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		case bc_opcode::k_lookup_element_vector: {
 			const auto* vec = stack.peek_register_vector(instruction._reg_b._index);
+
 			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
-			const auto lookup_index = stack.read_register_int(instruction._reg_c._index);
+			const auto lookup_index = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
@@ -1002,9 +1005,11 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_comparison_smaller_or_equal_int: {
 			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
-			const auto left = stack.read_register_int(instruction._reg_b._index);
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+
 			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, left <= right);
 			pc++;
 			break;
@@ -1025,8 +1030,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_int: {
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, left < right);
 			pc++;
 			break;
@@ -1047,8 +1056,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_comparison_larger_or_equal_int: {
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, left >= right);
 			pc++;
 			break;
@@ -1069,8 +1082,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_comparison_larger_int: {
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, left > right);
 			pc++;
 			break;
@@ -1091,8 +1108,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_logical_equal_int: {
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, left == right);
 			pc++;
 			break;
@@ -1113,8 +1134,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 		case bc_opcode::k_logical_nonequal_int: {
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, left != right);
 			pc++;
 			break;
@@ -1184,9 +1209,14 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_add_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
-			stack.write_register_int(instruction._reg_a._index, left + right);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+			stack._current_frame_entry_ptr[instruction._reg_a._index]._int = left + right;
+
 			pc++;
 			break;
 		}
@@ -1221,9 +1251,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_subtract_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
-			stack.write_register_int(instruction._reg_a._index, left - right);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+			stack._current_frame_entry_ptr[instruction._reg_a._index]._int = left - right;
 			pc++;
 			break;
 		}
@@ -1258,9 +1292,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_multiply_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
-			stack.write_register_int(instruction._reg_a._index, left * right);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+			stack._current_frame_entry_ptr[instruction._reg_a._index]._int = left * right;
 			pc++;
 			break;
 		}
@@ -1298,12 +1336,16 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_divide_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			stack.write_register_int(instruction._reg_a._index, left / right);
+			stack._current_frame_entry_ptr[instruction._reg_a._index]._int = left / right;
 			pc++;
 			break;
 		}
@@ -1329,12 +1371,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_remainder_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			stack.write_register_int(instruction._reg_a._index, left % right);
+			stack._current_frame_entry_ptr[instruction._reg_a._index]._int = left % right;
 			pc++;
 			break;
 		}
@@ -1379,8 +1426,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
 		case bc_opcode::k_logical_and_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, (left != 0) && (right != 0));
 			pc++;
 			break;
@@ -1425,8 +1477,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_logical_or_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto left = stack.read_register_int(instruction._reg_b._index);
-			const auto right = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
+			const auto left = stack._current_frame_entry_ptr[instruction._reg_b._index]._int;
+
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			const auto right = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
+
 			stack.write_register_bool(instruction._reg_a._index, (left != 0) || (right != 0));
 			pc++;
 			break;

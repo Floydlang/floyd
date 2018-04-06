@@ -417,17 +417,28 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
+			QUARK_ASSERT(info->second._value_type.is_int());
 			return true;
 		}
 		#endif
 
-		public: int read_register_int(const int reg) const{
+		#if DEBUG
+		public: bool check_register_bool_access(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			const auto info = get_register_info2(reg);
+			QUARK_ASSERT(info->second._value_type.is_bool());
+			return true;
+		}
+		#endif
+
+/*
+		public: int read_register_int_xxx(const int reg) const{
 			QUARK_ASSERT(check_register_int_access(reg));
 
 			return _current_frame_entry_ptr[reg]._int;
 		}
-		public: void write_register_int(const int reg, int value){
+		public: void write_register_int_xxx(const int reg, int value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 		#if DEBUG
@@ -437,6 +448,7 @@ namespace floyd {
 
 			_current_frame_entry_ptr[reg]._int = value;
 		}
+*/
 
 		public: void write_register_float(const int reg, float value){
 			QUARK_ASSERT(check_invariant());
