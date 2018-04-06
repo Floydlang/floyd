@@ -301,7 +301,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_construct_value, { "construct_value", opcode_info_t::encoding::k_i_trii } },
 
-	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_j_tr00 } },
+	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
 
 	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
 	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
@@ -764,7 +764,7 @@ bc_body_t bcgen_return_statement(bgenerator_t& vm, const statement_t::return_sta
 	auto body_acc = body;
 	const auto expr = bcgen_expression(vm, statement._expression, body);
 	body_acc = expr._body;
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_return, expr._type, expr._output_reg, {}, {}));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_return, k_no_bctypeid, expr._output_reg, {}, {}));
 	return body_acc;
 }
 

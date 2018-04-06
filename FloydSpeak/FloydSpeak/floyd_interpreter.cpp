@@ -699,7 +699,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 
 		case bc_opcode::k_return: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			const auto value = stack.read_register(instruction._a);
 			return execution_result_t::make_return_unwind(value);
