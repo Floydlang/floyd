@@ -390,6 +390,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
+/*
 		public: bool read_register_bool(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
@@ -410,10 +411,10 @@ namespace floyd {
 
 			_current_frame_entry_ptr[reg]._bool = value;
 		}
-
+*/
 
 		#if DEBUG
-		public: bool check_register_int_access(const int reg) const{
+		public: bool check_register_access_int(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			const auto info = get_register_info2(reg);
@@ -423,7 +424,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_bool_access(const int reg) const{
+		public: bool check_register_access_bool(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			const auto info = get_register_info2(reg);
