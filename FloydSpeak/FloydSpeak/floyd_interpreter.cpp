@@ -548,6 +548,42 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
+
+#if 0
+//	Computed goto-dispatch of expressions: -- not faster than switch when running max optimizations. C++ Optimizer makes compute goto?
+//	May be better bet when doing a SEQUENCE of opcode dispatches in a loop.
+//??? use C++ local variables as our VM locals1?
+//https://eli.thegreenplace.net/2012/07/12/computed-goto-for-efficient-dispatch-tables
+bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_expression_t& e){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	const auto& op = static_cast<int>(e._opcode);
+	//	Not thread safe -- avoid static locals!
+	static void* dispatch_table[] = {
+		&&bc_expression_opcode___k_expression_literal,
+		&&bc_expression_opcode___k_expression_logical_or
+	};
+//	#define DISPATCH() goto *dispatch_table[op]
+
+//	DISPATCH();
+	goto *dispatch_table[op];
+	while (1) {
+        bc_expression_opcode___k_expression_literal:
+			return e._value;
+
+		bc_expression_opcode___k_expression_resolve_member:
+			return execute_resolve_member_expression(vm, e);
+
+		bc_expression_opcode___k_expression_lookup_element:
+			return execute_lookup_element_expression(vm, e);
+
+	}
+}
+#endif
+
+
+
 //??? use type of the register/frame, not the instruction!! Fix for all instructions!
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
@@ -578,41 +614,42 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		QUARK_ASSERT(instruction.check_invariant());
 
 		const auto opcode = instruction._opcode;
-		if(false){
-		}
-
-
-		else if(opcode == bc_opcode::k_load_global_obj){
+		switch(opcode){
+		case bc_opcode::k_load_global_obj: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			const auto global_pos = k_frame_overhead + instruction._reg_b._index;
 			const auto value = stack.load_obj(global_pos);
 			stack.write_register_obj(instruction._reg_a._index, value);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_load_global_inline){
+		case bc_opcode::k_load_global_inline: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			const auto global_pos = k_frame_overhead + instruction._reg_b._index;
 			const auto value = stack.load_inline_value(global_pos);
 			stack.write_register_inplace(instruction._reg_a._index, value);
 			pc++;
+			break;
 		}
 
 
-		else if(opcode == bc_opcode::k_store_global_obj){
+		case bc_opcode::k_store_global_obj: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			const auto value = stack.read_register_obj(instruction._reg_b._index);
 			const auto global_pos = k_frame_overhead + instruction._reg_a._index;
 			stack.replace_obj(global_pos, value);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_store_global_inline){
+		case bc_opcode::k_store_global_inline: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			stack._entries[k_frame_overhead + instruction._reg_a._index] = stack.peek_register(instruction._reg_b._index);
 			pc++;
+			break;
 		}
 
 
@@ -621,41 +658,45 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		//////////////////////////////////////////		STORE
 
 
-		else if(opcode == bc_opcode::k_store_local_inline){
+		case bc_opcode::k_store_local_inline: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto value = stack.peek_register(instruction._reg_b._index);
 			stack.write_register_pod(instruction._reg_a._index, value);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_store_local_obj){
+		case bc_opcode::k_store_local_obj: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			//??? No need to construct a bc_value_t, we just need to copy ptr & bump RC/release RC.
 			const auto value = stack.read_register_obj(instruction._reg_b._index);
 			stack.write_register_obj(instruction._reg_a._index, value);
 			pc++;
+			break;
 		}
 
 
 		//////////////////////////////////////////		STACK
 
 
-		else if(opcode == bc_opcode::k_return){
+		case bc_opcode::k_return: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto value = stack.read_register(instruction._reg_a._index);
 			return execution_result_t::make_return_unwind(value);
 		}
 
-		else if(opcode == bc_opcode::k_push_frame_ptr){
+		case bc_opcode::k_push_frame_ptr: {
 			stack.save_frame();
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_pop_frame_ptr){
+		case bc_opcode::k_pop_frame_ptr: {
 			stack.restore_frame();
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_push_inplace){
+		case bc_opcode::k_push_inplace: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			const auto a = instruction._reg_a._index;
@@ -672,25 +713,28 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 #endif
 			QUARK_ASSERT(stack.check_invariant());
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_push_obj){
+		case bc_opcode::k_push_obj: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto value = stack.read_register_obj(instruction._reg_a._index);
 			stack.push_value(value, true);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_popn){
+		case bc_opcode::k_popn: {
 			const uint32_t n = instruction._reg_a._index;
 			const uint32_t extbits = instruction._reg_b._index;
 			stack.pop_batch(n, extbits);
 			pc++;
+			break;
 		}
 
 
 		//////////////////////////////////////////		BRANCHING
 
 
-		else if(opcode == bc_opcode::k_branch_false_bool){
+		case bc_opcode::k_branch_false_bool: {
 			const auto value = stack.read_register_bool(instruction._reg_a._index);
 			if(value == false){
 				const auto offset = instruction._reg_b._index;
@@ -699,8 +743,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else{
 				pc++;
 			}
+			break;
 		}
-		else if(opcode == bc_opcode::k_branch_true_bool){
+		case bc_opcode::k_branch_true_bool: {
 			const auto value = stack.read_register_bool(instruction._reg_a._index);
 			if(value == true){
 				const auto offset = instruction._reg_b._index;
@@ -709,9 +754,11 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else{
 				pc++;
 			}
+			break;
 		}
-		else if(opcode == bc_opcode::k_branch_zero_int){
-			const auto value = stack.read_register_int(instruction._reg_a._index);
+		case bc_opcode::k_branch_zero_int: {
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			const auto value = stack._current_frame_entry_ptr[instruction._reg_a._index]._int;
 			if(value == 0){
 				const auto offset = instruction._reg_b._index;
 				pc = pc + offset;
@@ -719,9 +766,11 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else{
 				pc++;
 			}
+			break;
 		}
-		else if(opcode == bc_opcode::k_branch_notzero_int){
-			const auto value = stack.read_register_int(instruction._reg_a._index);
+		case bc_opcode::k_branch_notzero_int: {
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_a._index));
+			const auto value = stack._current_frame_entry_ptr[instruction._reg_a._index]._int;
 			if(value != 0){
 				const auto offset = instruction._reg_b._index;
 				pc = pc + offset;
@@ -729,17 +778,19 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			else{
 				pc++;
 			}
+			break;
 		}
-		else if(opcode == bc_opcode::k_branch_always){
+		case bc_opcode::k_branch_always: {
 			const auto offset = instruction._reg_a._index;
 			pc = pc + offset;
+			break;
 		}
 
 
 		//////////////////////////////////////////		COMPLEX
 
 
-		else if(opcode == bc_opcode::k_resolve_member){
+		case bc_opcode::k_resolve_member: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& parent_value = stack.read_register_obj(instruction._reg_b._index);
 			const auto& member_index = instruction._reg_c._index;
@@ -750,12 +801,14 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const bc_value_t value = struct_instance[member_index];
 			stack.write_register(instruction._reg_a._index, value);
 			pc++;
+			break;
 		}
 
 
-		else if(opcode == bc_opcode::k_lookup_element_string){
+		case bc_opcode::k_lookup_element_string: {
 			const auto& s = stack.peek_register_string(instruction._reg_b._index);
-			const auto lookup_index = stack.read_register_int(instruction._reg_c._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
+			const auto lookup_index = stack._current_frame_entry_ptr[instruction._reg_c._index]._int;
 			if(lookup_index < 0 || lookup_index >= s.size()){
 				throw std::runtime_error("Lookup in string: out of bounds.");
 			}
@@ -765,9 +818,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				stack.write_register_string(instruction._reg_a._index, value2);
 			}
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_lookup_element_json_value){
+		case bc_opcode::k_lookup_element_json_value: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 
 			//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
@@ -784,6 +838,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				stack.write_register_obj(instruction._reg_a._index, value2);
 			}
 			else if(parent_json_value.is_array()){
+				QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
 				const auto lookup_index = stack.read_register_int(instruction._reg_c._index);
 				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
 					throw std::runtime_error("Lookup in json_value array: out of bounds.");
@@ -798,10 +853,12 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
 			}
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_lookup_element_vector){
+		case bc_opcode::k_lookup_element_vector: {
 			const auto* vec = stack.peek_register_vector(instruction._reg_b._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
 			const auto lookup_index = stack.read_register_int(instruction._reg_c._index);
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
@@ -814,9 +871,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				stack.write_register(instruction._reg_a._index, value);
 			}
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_lookup_element_dict){
+		case bc_opcode::k_lookup_element_dict: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 
 			const auto& parent_value = stack.read_register_obj(instruction._reg_b._index);
@@ -831,9 +889,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				stack.write_register(instruction._reg_a._index, value);
 			}
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_call){
+		case bc_opcode::k_call: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
@@ -914,18 +973,20 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				}
 			}
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_construct_value){
+		case bc_opcode::k_construct_value: {
 			execute_construct_value_instruction(vm, instruction);
 			pc++;
+			break;
 		}
 
 
 		//////////////////////////////		COMPARISON
 
 
-		else if(opcode == bc_opcode::k_comparison_smaller_or_equal){
+		case bc_opcode::k_comparison_smaller_or_equal: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
@@ -937,15 +998,19 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 			stack.write_register_bool(instruction._reg_a._index, diff <= 0);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_comparison_smaller_or_equal_int){
+		case bc_opcode::k_comparison_smaller_or_equal_int: {
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_b._index));
 			const auto left = stack.read_register_int(instruction._reg_b._index);
+			QUARK_ASSERT(stack.check_register_int_access(instruction._reg_c._index));
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, left <= right);
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_comparison_smaller){
+		case bc_opcode::k_comparison_smaller: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
@@ -957,15 +1022,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 			stack.write_register_bool(instruction._reg_a._index, diff < 0);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_comparison_smaller_int){
+		case bc_opcode::k_comparison_smaller_int: {
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, left < right);
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_comparison_larger_or_equal){
+		case bc_opcode::k_comparison_larger_or_equal: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
@@ -977,15 +1044,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 			stack.write_register_bool(instruction._reg_a._index, diff >= 0);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_comparison_larger_or_equal_int){
+		case bc_opcode::k_comparison_larger_or_equal_int: {
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, left >= right);
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_comparison_larger){
+		case bc_opcode::k_comparison_larger: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
@@ -997,15 +1066,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 			stack.write_register_bool(instruction._reg_a._index, diff > 0);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_comparison_larger_int){
+		case bc_opcode::k_comparison_larger_int: {
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, left > right);
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_logical_equal){
+		case bc_opcode::k_logical_equal: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
@@ -1017,15 +1088,17 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 			stack.write_register_bool(instruction._reg_a._index, diff == 0);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_logical_equal_int){
+		case bc_opcode::k_logical_equal_int: {
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, left == right);
 			pc++;
+			break;
 		}
 
-		else if(opcode == bc_opcode::k_logical_nonequal){
+		case bc_opcode::k_logical_nonequal: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			QUARK_ASSERT(type.is_int() == false);
@@ -1037,19 +1110,21 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			long diff = bc_value_t::compare_value_true_deep(left_constant, right_constant, type);
 			stack.write_register_bool(instruction._reg_a._index, diff != 0);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_logical_nonequal_int){
+		case bc_opcode::k_logical_nonequal_int: {
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, left != right);
 			pc++;
+			break;
 		}
 
 
 		//////////////////////////////		ARITHMETICS
 
 
-		else if(opcode == bc_opcode::k_add){
+		case bc_opcode::k_add: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto left = stack.read_register(instruction._reg_b._index);
@@ -1065,6 +1140,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const bool right2 = right.get_bool_value();
 				stack.write_register_bool(instruction._reg_a._index, left2 + right2);
 				pc++;
+				break;
 			}
 			else if(basetype == base_type::k_int){
 				QUARK_ASSERT(false);
@@ -1075,6 +1151,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const float right2 = right.get_float_value();
 				stack.write_register_float(instruction._reg_a._index, left2 + right2);
 				pc++;
+				break;
 			}
 
 			//	string
@@ -1083,6 +1160,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const auto& right2 = right.get_string_value();
 				stack.write_register_string(instruction._reg_a._index, left2 + right2);
 				pc++;
+				break;
 			}
 
 			//	vector
@@ -1097,20 +1175,22 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
 				stack.write_register_obj(instruction._reg_a._index, value2);
 				pc++;
+				break;
 			}
 			else{
 				QUARK_ASSERT(false);
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_add_int){
+		case bc_opcode::k_add_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_int(instruction._reg_a._index, left + right);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_subtract){
+		case bc_opcode::k_subtract: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto left = stack.read_register(instruction._reg_b._index);
@@ -1131,6 +1211,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const float right2 = right.get_float_value();
 				stack.write_register_float(instruction._reg_a._index, left2 - right2);
 				pc++;
+				break;
 			}
 
 			else{
@@ -1138,14 +1219,15 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_subtract_int){
+		case bc_opcode::k_subtract_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_int(instruction._reg_a._index, left - right);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_multiply){
+		case bc_opcode::k_multiply: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto left = stack.read_register(instruction._reg_b._index);
@@ -1166,6 +1248,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const float right2 = right.get_float_value();
 				stack.write_register_float(instruction._reg_a._index, left2 * right2);
 				pc++;
+				break;
 			}
 
 			else{
@@ -1173,14 +1256,15 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_multiply_int){
+		case bc_opcode::k_multiply_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_int(instruction._reg_a._index, left * right);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_divide){
+		case bc_opcode::k_divide: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto left = stack.read_register(instruction._reg_b._index);
@@ -1204,6 +1288,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				}
 				stack.write_register_float(instruction._reg_a._index, left2 / right2);
 				pc++;
+				break;
 			}
 
 			else{
@@ -1211,7 +1296,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_divide_int){
+		case bc_opcode::k_divide_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
@@ -1220,8 +1305,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 			stack.write_register_int(instruction._reg_a._index, left / right);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_remainder){
+		case bc_opcode::k_remainder: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto left = stack.read_register(instruction._reg_b._index);
@@ -1241,7 +1327,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_remainder_int){
+		case bc_opcode::k_remainder_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
@@ -1250,8 +1336,9 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 			stack.write_register_int(instruction._reg_a._index, left % right);
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_logical_and){
+		case bc_opcode::k_logical_and: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto left = stack.read_register(instruction._reg_b._index);
@@ -1267,6 +1354,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const bool right2 = right.get_bool_value();
 				stack.write_register_bool(instruction._reg_a._index, left2 && right2);
 				pc++;
+				break;
 			}
 
 			//	int
@@ -1280,6 +1368,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const float right2 = right.get_float_value();
 				stack.write_register_bool(instruction._reg_a._index, (left2 != 0.0f) && (right2 != 0.0f));
 				pc++;
+				break;
 			}
 
 			else{
@@ -1288,14 +1377,15 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			}
 		}
 				//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
-		else if(opcode == bc_opcode::k_logical_and_int){
+		case bc_opcode::k_logical_and_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, (left != 0) && (right != 0));
 			pc++;
+			break;
 		}
-		else if(opcode == bc_opcode::k_logical_or){
+		case bc_opcode::k_logical_or: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			const auto& type = type_lookup[instruction._instr_type];
 			const auto left = stack.read_register(instruction._reg_b._index);
@@ -1311,6 +1401,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const bool right2 = right.get_bool_value();
 				stack.write_register_bool(instruction._reg_a._index, left2 || right2);
 				pc++;
+				break;
 			}
 
 			//	int
@@ -1324,6 +1415,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				const float right2 = right.get_float_value();
 				stack.write_register_bool(instruction._reg_a._index, (left2 != 0.0f) || (right2 != 0.0f));
 				pc++;
+				break;
 			}
 
 			else{
@@ -1331,19 +1423,20 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				throw std::exception();
 			}
 		}
-		else if(opcode == bc_opcode::k_logical_or_int){
+		case bc_opcode::k_logical_or_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			const auto left = stack.read_register_int(instruction._reg_b._index);
 			const auto right = stack.read_register_int(instruction._reg_c._index);
 			stack.write_register_bool(instruction._reg_a._index, (left != 0) || (right != 0));
 			pc++;
+			break;
 		}
 
 
 		//////////////////////////////		NONE
 
 
-		else{
+		default:
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
@@ -1353,46 +1446,6 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 
 
-
-
-////////////////////////////////////////		OTHER STUFF
-
-
-
-
-
-/*
-//	Computed goto-dispatch of expressions: -- not faster than switch when running max optimizations. C++ Optimizer makes compute goto?
-//	May be better bet when doing a SEQUENCE of opcode dispatches in a loop.
-//??? use C++ local variables as our VM locals1?
-//https://eli.thegreenplace.net/2012/07/12/computed-goto-for-efficient-dispatch-tables
-bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	const auto& op = static_cast<int>(e._opcode);
-	//	Not thread safe -- avoid static locals!
-	static void* dispatch_table[] = {
-		&&bc_expression_opcode___k_expression_literal,
-		&&bc_expression_opcode___k_expression_logical_or
-	};
-//	#define DISPATCH() goto *dispatch_table[op]
-
-//	DISPATCH();
-	goto *dispatch_table[op];
-	while (1) {
-        bc_expression_opcode___k_expression_literal:
-			return e._value;
-
-		bc_expression_opcode___k_expression_resolve_member:
-			return execute_resolve_member_expression(vm, e);
-
-		bc_expression_opcode___k_expression_lookup_element:
-			return execute_lookup_element_expression(vm, e);
-
-	}
-}
-*/
 
 
 

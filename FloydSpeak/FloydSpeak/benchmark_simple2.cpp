@@ -82,7 +82,7 @@ static const std::string floyd_str = R"(
 	}
 )";
 
-QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
+OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++",
 		[&] {
