@@ -61,7 +61,7 @@ static void c_runner(unsigned int len, uint8_t *a, uint8_t *b, uint8_t *c){
 
 
 
-//////////////////////////////////////////		GAME OF LIFE -- ported to Floyd -- direct-port
+//////////////////////////////////////////		x
 
 
 static const std::string gol_floyd_str = R"(

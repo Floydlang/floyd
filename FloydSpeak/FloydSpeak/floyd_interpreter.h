@@ -226,9 +226,11 @@ namespace floyd {
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 
+/*
 		//	Returns stack position of the reg. Can be any stack frame.
 		public: int resolve_register(const variable_address_t& reg) const{
 			QUARK_ASSERT(check_invariant());
@@ -257,6 +259,7 @@ namespace floyd {
 
 			return &_global_frame->_body._symbols[global];
 		}
+*/
 
 		public: bool check_reg(int reg) const{
 			QUARK_ASSERT(reg >= 0 && reg < (size() - _current_frame_pos));
