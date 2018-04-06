@@ -275,9 +275,9 @@ namespace floyd {
 		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			QUARK_ASSERT(reg >= 0 && reg < _current_frame->_body._symbols.size());
+			QUARK_ASSERT(reg >= 0 && reg < _current_frame->_symbols.size());
 
-			return &_current_frame->_body._symbols[reg];
+			return &_current_frame->_symbols[reg];
 		}
 
 
@@ -299,11 +299,11 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
-			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_body._symbols[reg].second._value_type);
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_symbols[reg].second._value_type);
 
 			bool is_ext = _current_frame->_exts[reg];
 #if DEBUG
-			const auto result = bc_value_t(_current_frame->_body._symbols[reg].second._value_type, _current_frame_entry_ptr[reg], is_ext);
+			const auto result = bc_value_t(_current_frame->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg], is_ext);
 #else
 			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
 #endif
@@ -314,7 +314,7 @@ namespace floyd {
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(value.check_invariant());
 
-			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_body._symbols[reg].second._value_type);
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_symbols[reg].second._value_type);
 			bool is_ext = _current_frame->_exts[reg];
 			if(is_ext){
 				auto prev_copy = _current_frame_entry_ptr[reg];
@@ -947,7 +947,7 @@ namespace floyd {
 			null = instructions were all executed through.
 			value = return instruction returned a value.
 	*/
-	execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
+	execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions);
 
 
 

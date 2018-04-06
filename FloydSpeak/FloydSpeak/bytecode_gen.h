@@ -1212,10 +1212,44 @@ inline int bc_limit(int value, int min, int max){
 
 		//??? temporary. Plan is to embedd this type into opcode.
 		bc_typeid_t _instr_type;
+	};
 
-		//	Used to specify parent-type, for struct or lookups.
-		//??? Lose now!
-//		bc_typeid_t _parent_type;
+
+	//////////////////////////////////////		bc_instruction2_t
+
+
+	struct bc_instruction2_t {
+		bc_instruction2_t(
+			bc_opcode opcode,
+			bc_typeid_t type,
+			int16_t a,
+			int16_t b,
+			int16_t c
+		) :
+			_opcode(opcode),
+			_instr_type(type),
+			_a(a),
+			_b(b),
+			_c(c)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+#if DEBUG
+		public: bool check_invariant() const;
+#endif
+
+
+		//////////////////////////////////////		STATE
+		//??? lose variable_address_t and closures for now. register = int16. negative = global/constant, positive = local stack register.
+		bc_opcode _opcode;
+		uint8_t _pad8;
+		int16_t _a;
+		int16_t _b;
+		int16_t _c;
+
+		//??? temporary. Plan is to embedd this type into opcode.
+		bc_typeid_t _instr_type;
 	};
 
 
@@ -1252,8 +1286,8 @@ inline int bc_limit(int value, int min, int max){
 		bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args);
 		public: bool check_invariant() const;
 
-
-		bc_body_t _body;
+		std::vector<bc_instruction2_t> _instrs2;
+		std::vector<std::pair<std::string, symbol_t>> _symbols;
 		std::vector<typeid_t> _args;
 
 		//	True if equivalent symbol is an ext.

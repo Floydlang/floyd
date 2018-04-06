@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <cstdint>
 
 #include "pass3.h"
 
@@ -225,15 +226,16 @@ struct opcode_info_t {
 		k_g_trri,
 		k_h_trrr,
 		k_i_trii,
-		k_j_trxx,
+		k_j_tr00,
 		k_k_0ri0,
 		k_l_00i0,
 		k_m_tr00,
-		k_n_tii0,
+		k_n_0ii0,
 		k_o_0rrr,
 		k_p_0r00,
 		k_q_0rr0,
-		k_r_0ir0
+		k_r_0ir0,
+		k_s_0rri
 	};
 	encoding _encoding;
 };
@@ -251,14 +253,13 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_store_local_obj, { "store_local_obj", opcode_info_t::encoding::k_q_0rr0 } },
 
 	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
+
 	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_lookup_element_vector, { "lookup_element_vector", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_h_trrr } },
 
-//	{ bc_opcode::k_size, { "size", opcode_info_t::encoding::k_f_trr0 } },
-
-	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_g_trri } },
+	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
 	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_add_int, { "arithmetic_add_int", opcode_info_t::encoding::k_o_0rrr } },
@@ -300,13 +301,13 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_construct_value, { "construct_value", opcode_info_t::encoding::k_i_trii } },
 
-	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_j_trxx } },
+	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_j_tr00 } },
 
 	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
 	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
 	{ bc_opcode::k_push_inplace, { "push_inplace", opcode_info_t::encoding::k_p_0r00 } },
 	{ bc_opcode::k_push_obj, { "push_obj", opcode_info_t::encoding::k_p_0r00 } },
-	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_tii0 } },
+	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_0ii0 } },
 
 	{ bc_opcode::k_branch_false_bool, { "branch_false_bool", opcode_info_t::encoding::k_k_0ri0 } },
 	{ bc_opcode::k_branch_true_bool, { "branch_true_bool", opcode_info_t::encoding::k_k_0ri0 } },
@@ -565,7 +566,7 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	else if(e == opcode_info_t::encoding::k_i_trii){
 		return { true,		true, false, false };
 	}
-	else if(e == opcode_info_t::encoding::k_j_trxx){
+	else if(e == opcode_info_t::encoding::k_j_tr00){
 		return { true,		true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_k_0ri0){
@@ -577,8 +578,8 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	else if(e == opcode_info_t::encoding::k_m_tr00){
 		return { true,		true, false, false };
 	}
-	else if(e == opcode_info_t::encoding::k_n_tii0){
-		return { true,		false, false, false };
+	else if(e == opcode_info_t::encoding::k_n_0ii0){
+		return { false,		false, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_o_0rrr){
 		return { false,		true, true, true };
@@ -591,6 +592,9 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	}
 	else if(e == opcode_info_t::encoding::k_r_0ir0){
 		return { false,		false, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_s_0rri){
+		return { false,		true, true, false };
 	}
 
 	else{
@@ -643,6 +647,8 @@ bool check_register__local(const reg_t& reg, bool is_reg){
 	for(const auto& e: _instrs){
 		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
 		const auto reg_flags = encoding_to_reg_flags(encoding);
+
+		QUARK_ASSERT((reg_flags._type == false && e._instr_type == k_no_bctypeid) || (reg_flags._type == true && e._instr_type >= 0));
 
 		QUARK_ASSERT(check_register_nonlocal(e._reg_a, reg_flags._a));
 		QUARK_ASSERT(check_register_nonlocal(e._reg_b, reg_flags._b));
@@ -1494,25 +1500,84 @@ expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_b
 
 
 
+//////////////////////////////////////		bc_instruction2_t
+
+
+
+#if DEBUG
+bool bc_instruction2_t::check_invariant() const {
+	const auto encoding = k_opcode_info.at(_opcode)._encoding;
+	const auto reg_flags = encoding_to_reg_flags(encoding);
+
+	if(reg_flags._type){
+	}
+	else{
+		QUARK_ASSERT(_instr_type == k_no_bctypeid);
+	}
+
+/*
+	QUARK_ASSERT(check_register(_reg_a, reg_flags._a));
+	QUARK_ASSERT(check_register(_reg_b, reg_flags._b));
+	QUARK_ASSERT(check_register(_reg_c, reg_flags._c));
+*/
+	return true;
+}
+#endif
+
+
+
+
 //////////////////////////////////////		bc_frame_t
 
+bc_instruction2_t squeeze_instruction(const bc_instruction_t& instruction){
+	QUARK_ASSERT(instruction._reg_a._parent_steps == 0 || instruction._reg_a._parent_steps == -1 || instruction._reg_a._parent_steps == 666);
+	QUARK_ASSERT(instruction._reg_b._parent_steps == 0 || instruction._reg_b._parent_steps == -1 || instruction._reg_b._parent_steps == 666);
+	QUARK_ASSERT(instruction._reg_c._parent_steps == 0 || instruction._reg_c._parent_steps == -1 || instruction._reg_c._parent_steps == 666);
+	QUARK_ASSERT(instruction._reg_a._index >= INT16_MIN && instruction._reg_a._index <= INT16_MAX);
+	QUARK_ASSERT(instruction._reg_b._index >= INT16_MIN && instruction._reg_b._index <= INT16_MAX);
+	QUARK_ASSERT(instruction._reg_c._index >= INT16_MIN && instruction._reg_c._index <= INT16_MAX);
+
+	const auto encoding = k_opcode_info.at(instruction._opcode)._encoding;
+	const auto reg_flags = encoding_to_reg_flags(encoding);
+
+	QUARK_ASSERT(check_register__local(instruction._reg_a, reg_flags._a));
+	QUARK_ASSERT(check_register__local(instruction._reg_b, reg_flags._b));
+	QUARK_ASSERT(check_register__local(instruction._reg_c, reg_flags._c));
+
+
+	const auto result = bc_instruction2_t(
+		instruction._opcode,
+		instruction._instr_type,
+		static_cast<int16_t>(instruction._reg_a._index),
+		static_cast<int16_t>(instruction._reg_b._index),
+		static_cast<int16_t>(instruction._reg_c._index)
+	);
+	return result;
+}
 
 
 bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args) :
-	_body(body),
+	_symbols(body._symbols),
 	_args(args)
 {
+
+
+	for(const auto& e: body._instrs){
+		_instrs2.push_back(squeeze_instruction(e));
+	}
+
+
 	const auto parameter_count = static_cast<int>(_args.size());
 
-	for(int i = 0 ; i < _body._symbols.size() ; i++){
-		const auto basetype = _body._symbols[i].second._value_type.get_base_type();
+	for(int i = 0 ; i < _symbols.size() ; i++){
+		const auto basetype = _symbols[i].second._value_type.get_base_type();
 		const bool ext = bc_value_t::is_bc_ext(basetype);
 		_exts.push_back(ext);
 	}
 
 	//	Process the locals & temps. They go after any parameters, which already sits on stack.
-	for(vector<bc_value_t>::size_type i = parameter_count ; i < _body._symbols.size() ; i++){
-		const auto& symbol = _body._symbols[i];
+	for(vector<bc_value_t>::size_type i = parameter_count ; i < _symbols.size() ; i++){
+		const auto& symbol = _symbols[i];
 		bool is_ext = _exts[i];
 
 		_locals_exts.push_back(is_ext);
@@ -1545,16 +1610,19 @@ bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args)
 }
 
 bool bc_frame_t::check_invariant() const {
-	QUARK_ASSERT(_body.check_invariant());
-	QUARK_ASSERT(_body._symbols.size() == _exts.size());
+//	QUARK_ASSERT(_body.check_invariant());
+	QUARK_ASSERT(_symbols.size() == _exts.size());
 
-	for(const auto& e: _body._instrs){
+	for(const auto& e: _instrs2){
 		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
 		const auto reg_flags = encoding_to_reg_flags(encoding);
 
+/*
 		QUARK_ASSERT(check_register__local(e._reg_a, reg_flags._a));
 		QUARK_ASSERT(check_register__local(e._reg_b, reg_flags._b));
 		QUARK_ASSERT(check_register__local(e._reg_c, reg_flags._c));
+*/
+
 	}
 	return true;
 }
@@ -1578,10 +1646,10 @@ json_t reg_to_json(const variable_address_t& reg){
 	return i;
 }
 
-json_t frame_to_json(const bc_frame_t& body){
+json_t frame_to_json(const bc_frame_t& frame){
 	vector<json_t> exts;
-	for(int i = 0 ; i < body._exts.size() ; i++){
-		const auto& e = body._exts[i];
+	for(int i = 0 ; i < frame._exts.size() ; i++){
+		const auto& e = frame._exts[i];
 		exts.push_back(json_t::make_array({
 			json_t(i),
 			json_t(e)
@@ -1590,21 +1658,21 @@ json_t frame_to_json(const bc_frame_t& body){
 
 	vector<json_t> instructions;
 	int pc = 0;
-	for(const auto& e: body._body._instrs){
+	for(const auto& e: frame._instrs2){
 		const auto i = json_t::make_array({
 			pc,
 			opcode_to_string(e._opcode),
 			e._instr_type,
-			reg_to_json(e._reg_a),
-			reg_to_json(e._reg_b),
-			reg_to_json(e._reg_c)
+			json_t(e._a),
+			json_t(e._b),
+			json_t(e._c)
 		});
 		instructions.push_back(i);
 		pc++;
 	}
 
 	return json_t::make_object({
-		{ "symbols", json_t::make_array(symbols_to_json(body._body._symbols)) },
+		{ "symbols", json_t::make_array(symbols_to_json(frame._symbols)) },
 		{ "instructions", json_t::make_array(instructions) },
 		{ "exts", json_t::make_array(exts) }
 	});
@@ -1727,8 +1795,9 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 
 	bgenerator_t a(pass3._checked_ast);
 
-	const auto globals2 = bc_frame_t(bcgen_body(a, a._imm->_ast_pass3._globals), {});
-	a._call_stack.push_back(bcgen_environment_t{ &globals2._body });
+	const auto global_body = bcgen_body(a, a._imm->_ast_pass3._globals);
+	const auto globals2 = bc_frame_t(global_body, {});
+	a._call_stack.push_back(bcgen_environment_t{ &global_body });
 
 	std::vector<const bc_function_definition_t> function_defs2;
 	for(int function_id = 0 ; function_id < pass3._checked_ast._function_defs.size() ; function_id++){
