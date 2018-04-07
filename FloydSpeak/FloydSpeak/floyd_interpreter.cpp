@@ -467,38 +467,52 @@ QUARK_UNIT_TEST("", "", "", ""){
 //	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 
 
+//	IMPORTANT: NO arguments are passed as DYN arguments.
 void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction2_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
 	const auto dest_reg = instruction._a;
-
 	const auto source_input_itype = static_cast<bc_typeid_t>(instruction._b);
-
 	const auto arg_count = instruction._c;
 	const auto target_itype = instruction._instr_type;
 
+
 	const auto& target_type = get_type(vm, target_itype);
-	const auto target_basetype = get_basetype(vm, target_itype);
+	QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && target_type.is_struct() == false);
 
-	//	IMPORTANT: NO arguments are passed as DYN arguments.
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
+	const auto input_value_type = get_type(vm, source_input_itype);
+	const auto input_value = vm._stack.load_value_slow(arg0_stack_pos + 0, input_value_type);
 
-	if(target_basetype == base_type::k_vector){
-		QUARK_ASSERT(false);
-	}
-	else if(target_basetype == base_type::k_dict){
-		QUARK_ASSERT(false);
-	}
-	else if(target_basetype == base_type::k_struct){
-		QUARK_ASSERT(false);
-	}
-	else{
-		const auto input_arg_type = get_type(vm, source_input_itype);
-		const auto element = vm._stack.load_value_slow(arg0_stack_pos + 0, input_arg_type);
-		const auto& result = construct_value_from_typeid(vm, target_type, input_arg_type, { element });
-		vm._stack.write_register(dest_reg, result);
-	}
+	const bc_value_t result = [&]{
+		if(target_type.is_json_value()){
+			const auto arg = bc_to_value(input_value, input_value_type);
+			const auto value = value_to_ast_json(arg, json_tags::k_plain);
+			return bc_value_t::make_json_value(value._value);
+		}
+		else if(target_type.is_bool() || target_type.is_int() || target_type.is_float() || target_type.is_string() || target_type.is_typeid()){
+			if(target_type.is_string()){
+				if(input_value_type.is_json_value() && input_value.get_json_value().is_string()){
+					return bc_value_t::make_string(input_value.get_json_value().get_string());
+				}
+				else if(input_value_type.is_string()){
+					return input_value;
+				}
+				else{
+					return input_value;
+				}
+			}
+			else{
+				return input_value;
+			}
+		}
+		else{
+			return input_value;
+		}
+	}();
+
+	vm._stack.write_register(dest_reg, result);
 }
 
 //??? should use itype internaly, not typeid_t.
