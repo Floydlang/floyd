@@ -1072,7 +1072,6 @@ inline int bc_limit(int value, int min, int max){
 		*/
 		k_new_dict,
 
-
 		/*
 			TYPE: ---
 			A: Register: where to put resulting value

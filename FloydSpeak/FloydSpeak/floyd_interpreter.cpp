@@ -473,7 +473,6 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 
 	const auto dest_reg = instruction._a;
 
-	//	Only use_reg_b for 1-args.??? Split out casting features to separate opcode.
 	const auto source_input_itype = static_cast<bc_typeid_t>(instruction._b);
 
 	const auto arg_count = instruction._c;
@@ -485,23 +484,14 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 	//	IMPORTANT: NO arguments are passed as DYN arguments.
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 
-	std::vector<value_t> arg_values;
-
 	if(target_basetype == base_type::k_vector){
+		QUARK_ASSERT(false);
 	}
 	else if(target_basetype == base_type::k_dict){
+		QUARK_ASSERT(false);
 	}
 	else if(target_basetype == base_type::k_struct){
 		QUARK_ASSERT(false);
-		const auto& struct_def = target_type.get_struct();
-		std::vector<bc_value_t> elements2;
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto member_type = struct_def._members[i]._type;
-			const auto value = vm._stack.load_value_slow(arg0_stack_pos + i, member_type);
-			elements2.push_back(value);
-		}
-		const auto& result = construct_value_from_typeid(vm, target_type, typeid_t::make_undefined(), elements2);
-		vm._stack.write_register_obj(dest_reg, result);
 	}
 	else{
 		const auto input_arg_type = get_type(vm, source_input_itype);
