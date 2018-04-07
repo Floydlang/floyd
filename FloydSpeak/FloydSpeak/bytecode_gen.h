@@ -1004,8 +1004,9 @@ inline int bc_limit(int value, int min, int max){
 		k_logical_and_bool,
 		k_logical_and_int,
 		k_logical_and_float,
-		k_logical_or,
+		k_logical_or_bool,
 		k_logical_or_int,
+		k_logical_or_float,
 
 
 		//////////////////////////////////////		COMPARISON

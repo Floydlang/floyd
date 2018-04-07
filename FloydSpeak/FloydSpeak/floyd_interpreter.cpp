@@ -1011,7 +1011,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_vector(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-
 //			const auto& element_type = frame_ptr->_symbols[instruction._b].second._value_type.get_vector_element_type();
 
 			const auto* vec = &registers[instruction._b]._ext->_vector_elements;
@@ -1043,11 +1042,8 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_dict(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_string(instruction._c));
 
-//			const auto& value_type = frame_ptr->_symbols[instruction._b].second._value_type.get_dict_value_type();
-
 			const auto& entries = registers[instruction._b]._ext->_dict_entries;
 			const auto& lookup_key = registers[instruction._c]._ext->_string;
-
 			const auto& found_it = entries.find(lookup_key);
 			if(found_it == entries.end()){
 				throw std::runtime_error("Lookup in dict: key not found.");
@@ -1471,43 +1467,14 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			break;
 		}
 
-
-		case bc_opcode::k_logical_or: {
+		case bc_opcode::k_logical_or_bool: {
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+			QUARK_ASSERT(stack.check_register_access_bool(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_bool(instruction._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
-			const auto basetype = type.get_base_type();
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
-
-			//	bool
-			if(basetype == base_type::k_bool){
-				const bool left2 = left.get_bool_value();
-				const bool right2 = right.get_bool_value();
-				registers[instruction._a]._bool = left2 || right2;
-				pc++;
-				break;
-			}
-
-			//	int
-			else if(basetype == base_type::k_int){
-				QUARK_ASSERT(false);
-			}
-
-			//	float
-			else if(basetype == base_type::k_float){
-				const float left2 = left.get_float_value();
-				const float right2 = right.get_float_value();
-				registers[instruction._a]._bool = (left2 != 0.0f) || (right2 != 0.0f);
-				pc++;
-				break;
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
+			registers[instruction._a]._bool = registers[instruction._b]._bool || registers[instruction._c]._bool;
+			pc++;
+			break;
 		}
 		case bc_opcode::k_logical_or_int: {
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
@@ -1515,6 +1482,15 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
 			registers[instruction._a]._bool = (registers[instruction._b]._int != 0) || (registers[instruction._c]._int != 0);
+			pc++;
+			break;
+		}
+		case bc_opcode::k_logical_or_float: {
+			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+
+			registers[instruction._a]._bool = (registers[instruction._b]._float != 0.0f) || (registers[instruction._c]._float != 0.0f);
 			pc++;
 			break;
 		}
