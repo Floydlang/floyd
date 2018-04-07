@@ -488,39 +488,11 @@ void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction
 	std::vector<value_t> arg_values;
 
 	if(target_basetype == base_type::k_vector){
-		QUARK_ASSERT(false);
-		const auto& element_type = target_type.get_vector_element_type();
-		QUARK_ASSERT(element_type.is_undefined() == false);
-		QUARK_ASSERT(target_type.is_undefined() == false);
-
-		std::vector<bc_value_t> elements2;
-		for(int i = 0 ; i < arg_count ; i++){
-			const auto arg_bc = vm._stack.load_value_slow(arg0_stack_pos + i, element_type);
-			elements2.push_back(arg_bc);
-		}
-
-		//??? should use itype.
-		const auto& result = construct_value_from_typeid(vm, typeid_t::make_vector(element_type), element_type, elements2);
-		vm._stack.write_register_obj(dest_reg, result);
 	}
 	else if(target_basetype == base_type::k_dict){
-		const auto& element_type = target_type.get_dict_value_type();
-		QUARK_ASSERT(target_type.is_undefined() == false);
-		QUARK_ASSERT(element_type.is_undefined() == false);
-
-		const auto string_typeid = typeid_t::make_string();
-		std::vector<bc_value_t> elements2;
-		int dict_element_count = arg_count / 2;
-		for(auto i = 0 ; i < dict_element_count ; i++){
-			const auto key = vm._stack.load_value_slow(arg0_stack_pos + i * 2 + 0, string_typeid);
-			const auto value = vm._stack.load_value_slow(arg0_stack_pos + i * 2 + 1, element_type);
-			elements2.push_back(key);
-			elements2.push_back(value);
-		}
-		const auto& result = construct_value_from_typeid(vm, target_type, typeid_t::make_undefined(), elements2);
-		vm._stack.write_register_obj(dest_reg, result);
 	}
 	else if(target_basetype == base_type::k_struct){
+		QUARK_ASSERT(false);
 		const auto& struct_def = target_type.get_struct();
 		std::vector<bc_value_t> elements2;
 		for(int i = 0 ; i < arg_count ; i++){
@@ -551,9 +523,7 @@ void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction)
 	const auto arg_count = instruction._c;
 
 	const auto& target_type = get_type(vm, target_itype);
-	QUARK_ASSERT(target_type.get_base_type() == base_type::k_vector);
-
-	std::vector<value_t> arg_values;
+	QUARK_ASSERT(target_type.is_vector());
 
 	const auto& element_type = target_type.get_vector_element_type();
 	QUARK_ASSERT(element_type.is_undefined() == false);
@@ -562,6 +532,7 @@ void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction)
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 	std::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
+		//??? Replace load_value_slow().
 		const auto arg_bc = vm._stack.load_value_slow(arg0_stack_pos + i, element_type);
 		elements2.push_back(arg_bc);
 	}
@@ -569,6 +540,68 @@ void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction)
 	const auto result = bc_value_t::make_vector_value(element_type, elements2);
 	vm._stack.write_register_obj(dest_reg, result);
 }
+
+//	IMPORTANT: NO arguments are passed as DYN arguments.
+void execute_new_dict(interpreter_t& vm, const bc_instruction2_t& instruction){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(instruction.check_invariant());
+
+	const auto dest_reg = instruction._a;
+	const auto target_itype = instruction._b;
+	const auto arg_count = instruction._c;
+
+	const auto& target_type = get_type(vm, target_itype);
+	QUARK_ASSERT(target_type.is_dict());
+
+	const int arg0_stack_pos = vm._stack.size() - arg_count;
+
+	const auto& element_type = target_type.get_dict_value_type();
+	QUARK_ASSERT(target_type.is_undefined() == false);
+	QUARK_ASSERT(element_type.is_undefined() == false);
+
+	const auto string_type = typeid_t::make_string();
+
+	std::map<string, bc_value_t> elements2;
+	int dict_element_count = arg_count / 2;
+	for(auto i = 0 ; i < dict_element_count ; i++){
+		//??? Replace load_value_slow().
+		const auto key = vm._stack.load_value_slow(arg0_stack_pos + i * 2 + 0, string_type);
+		const auto value = vm._stack.load_value_slow(arg0_stack_pos + i * 2 + 1, element_type);
+		const auto key2 = key.get_string_value();
+		elements2.insert({ key2, value });
+	}
+
+	const auto result = bc_value_t::make_dict_value(element_type, elements2);
+	vm._stack.write_register_obj(dest_reg, result);
+}
+
+void execute_new_struct(interpreter_t& vm, const bc_instruction2_t& instruction){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(instruction.check_invariant());
+
+	const auto dest_reg = instruction._a;
+	const auto target_itype = instruction._b;
+	const auto arg_count = instruction._c;
+
+	const auto& target_type = get_type(vm, target_itype);
+	QUARK_ASSERT(target_type.is_struct());
+
+	const int arg0_stack_pos = vm._stack.size() - arg_count;
+
+	const auto& struct_def = target_type.get_struct();
+	std::vector<bc_value_t> elements2;
+	for(int i = 0 ; i < arg_count ; i++){
+		const auto member_type = struct_def._members[i]._type;
+		const auto value = vm._stack.load_value_slow(arg0_stack_pos + i, member_type);
+		elements2.push_back(value);
+	}
+
+	const auto result = bc_value_t::make_struct_value(target_type, elements2);
+//	QUARK_TRACE(to_compact_string2(instance));
+
+	vm._stack.write_register_obj(dest_reg, result);
+}
+
 
 
 
@@ -1073,9 +1106,19 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 
-
 		case bc_opcode::k_new_vector: {
 			execute_new_vector(vm, instruction);
+			pc++;
+			break;
+		}
+
+		case bc_opcode::k_new_dict: {
+			execute_new_dict(vm, instruction);
+			pc++;
+			break;
+		}
+		case bc_opcode::k_new_struct: {
+			execute_new_struct(vm, instruction);
 			pc++;
 			break;
 		}

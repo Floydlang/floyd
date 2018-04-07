@@ -1036,9 +1036,9 @@ inline int bc_limit(int value, int min, int max){
 			TYPE: target_type - type to create
 			A: Register: where to put resulting value
 			B: IMMEDIATE: Source itype, type of argument #0
-			C: IMMEDIATE: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
+			C: IMMEDIATE: argument count.
 
-			All arguments are pushed to stack, first argument first.
+			Arguments are put on stack. Notice that DYN arguments pushes itype first.
 			No DYN argumentes.
 		*/
 		k_construct_value,
@@ -1046,13 +1046,43 @@ inline int bc_limit(int value, int min, int max){
 		/*
 			TYPE: ---
 			A: Register: where to put resulting value
-			B: IMMEDIATE: itype T, describing output type of vector, like [int] or [my_pixel].
+			B: IMMEDIATE: itype T = [E], describing output type of vector, like [int] or [my_pixel].
 			C: IMMEDIATE: Argument count.
 
-			Values are put on stack. No DYN arguments. All arguments are of the element-type specified by T.
-			No DYN argumentes.
+			Arguments are put on stack. No DYN arguments. All arguments are of type E.
 		*/
 		k_new_vector,
+
+		/*
+			TYPE: ---
+			A: Register: where to put resulting value
+			B: IMMEDIATE: itype T = [string:V], describing output type of dict, like [string:int] or [string:my_pixel].
+			C: IMMEDIATE: Argument count. Each dict entry becomes TWO arguments: (string, V).
+
+			Arguments are put on stack. No DYN arguments. All arguments are of type (string, V).
+
+			Example:
+				a = { "chewie": 10.0, "leia": 20.0, "luke": 30.0 }
+
+				Gives:
+
+				B: itype with [string, float]
+				C: 6
+				Stack: "chewie", 10.0, "leia", 20.0, "luke", 30.0
+		*/
+		k_new_dict,
+
+
+		/*
+			TYPE: ---
+			A: Register: where to put resulting value
+			B: IMMEDIATE: itype T of the struct
+			C: IMMEDIATE: Argument count.
+
+			Arguments are put on stack. No DYN arguments.
+			All arguments are of types matching the struct members.
+		*/
+		k_new_struct,
 
 /*
 		k_construct_bool,

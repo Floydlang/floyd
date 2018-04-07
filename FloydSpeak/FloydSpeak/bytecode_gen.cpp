@@ -306,6 +306,8 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_construct_value, { "construct_value", opcode_info_t::encoding::k_i_trii } },
 	{ bc_opcode::k_new_vector, { "new_vector", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_dict, { "new_dict", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
 
 	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
 
@@ -1233,7 +1235,24 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 			make_imm_int(target_itype),
 			make_imm_int(arg_count)
 		));
-
+	}
+	else if(target_type.is_dict()){
+		body_acc._instrs.push_back(bc_instruction_t(
+			bc_opcode::k_new_dict,
+			k_no_bctypeid,
+			function_result_reg,
+			make_imm_int(target_itype),
+			make_imm_int(arg_count)
+		));
+	}
+	else if(target_type.is_struct()){
+		body_acc._instrs.push_back(bc_instruction_t(
+			bc_opcode::k_new_struct,
+			k_no_bctypeid,
+			function_result_reg,
+			make_imm_int(target_itype),
+			make_imm_int(arg_count)
+		));
 	}
 	else{
 		body_acc._instrs.push_back(bc_instruction_t(
