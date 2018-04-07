@@ -1025,10 +1025,6 @@ inline int bc_limit(int value, int min, int max){
 		k_comparison_smaller_or_equal_int,
 		k_comparison_smaller,
 		k_comparison_smaller_int,
-		k_comparison_larger_or_equal,
-		k_comparison_larger_or_equal_int,
-		k_comparison_larger,
-		k_comparison_larger_int,
 
 		k_logical_equal,
 		k_logical_equal_int,

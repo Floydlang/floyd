@@ -290,12 +290,6 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_comparison_smaller_int, { "comparison_smaller_int", opcode_info_t::encoding::k_o_0rrr } },
 
-	{ bc_opcode::k_comparison_larger_or_equal, { "comparison_larger_or_equal", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_comparison_larger_or_equal_int, { "comparison_larger_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
-
-	{ bc_opcode::k_comparison_larger, { "comparison_larger", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_comparison_larger_int, { "comparison_larger_int", opcode_info_t::encoding::k_o_0rrr } },
-
 	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_logical_equal_int, { "logical_equal_int", opcode_info_t::encoding::k_o_0rrr } },
 
@@ -1401,42 +1395,46 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 	const auto result_reg = add_local_temp(body_acc, typeid_t::make_bool(), "comparison expression output register");
 
 	if(type.is_int()){
-		static const std::map<expression_type, bc_opcode> conv_opcode_int = {
-			{ expression_type::k_comparison_smaller_or_equal__2, bc_opcode::k_comparison_smaller_or_equal_int },
-			{ expression_type::k_comparison_smaller__2, bc_opcode::k_comparison_smaller_int },
-			{ expression_type::k_comparison_larger_or_equal__2, bc_opcode::k_comparison_larger_or_equal_int },
-			{ expression_type::k_comparison_larger__2, bc_opcode::k_comparison_larger_int },
 
-			{ expression_type::k_logical_equal__2, bc_opcode::k_logical_equal_int },
-			{ expression_type::k_logical_nonequal__2, bc_opcode::k_logical_nonequal_int }
+		//	Bool tells if to flip left / right.
+		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode_int = {
+			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal_int } },
+			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller_int } },
+			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_int } },
+			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller_or_equal_int } },
+
+			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal_int } },
+			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal_int } }
 		};
 
-		body_acc._instrs.push_back(bc_instruction_t(
-			conv_opcode_int.at(e._operation),
-			k_no_bctypeid,
-			result_reg,
-			left_expr._output_reg,
-			right_expr._output_reg
-		));
+		const auto result = conv_opcode_int.at(e._operation);
+		if(result.first == false){
+			body_acc._instrs.push_back(bc_instruction_t(result.second, k_no_bctypeid, result_reg, left_expr._output_reg, right_expr._output_reg));
+		}
+		else{
+			body_acc._instrs.push_back(bc_instruction_t(result.second, k_no_bctypeid, result_reg, right_expr._output_reg, left_expr._output_reg));
+		}
 	}
 	else{
-		static const std::map<expression_type, bc_opcode> conv_opcode = {
-			{ expression_type::k_comparison_smaller_or_equal__2, bc_opcode::k_comparison_smaller_or_equal },
-			{ expression_type::k_comparison_smaller__2, bc_opcode::k_comparison_smaller },
-			{ expression_type::k_comparison_larger_or_equal__2, bc_opcode::k_comparison_larger_or_equal },
-			{ expression_type::k_comparison_larger__2, bc_opcode::k_comparison_larger },
 
-			{ expression_type::k_logical_equal__2, bc_opcode::k_logical_equal },
-			{ expression_type::k_logical_nonequal__2, bc_opcode::k_logical_nonequal }
+		//	Bool tells if to flip left / right.
+		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode = {
+			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller } },
+			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller } },
+			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller_or_equal } },
+
+			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal } },
+			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal } }
 		};
 
-		body_acc._instrs.push_back(bc_instruction_t(
-			conv_opcode.at(e._operation),
-			itype,
-			result_reg,
-			left_expr._output_reg,
-			right_expr._output_reg
-		));
+		const auto result = conv_opcode.at(e._operation);
+		if(result.first == false){
+			body_acc._instrs.push_back(bc_instruction_t(result.second, itype, result_reg, left_expr._output_reg, right_expr._output_reg));
+		}
+		else{
+			body_acc._instrs.push_back(bc_instruction_t(result.second, itype, result_reg, right_expr._output_reg, left_expr._output_reg));
+		}
 	}
 
 	return { body_acc, result_reg, intern_type(vm, typeid_t::make_bool()) };

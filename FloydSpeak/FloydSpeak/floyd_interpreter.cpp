@@ -1288,60 +1288,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			break;
 		}
 
-		case bc_opcode::k_comparison_larger_or_equal: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
-			const auto& type = type_lookup[instruction._instr_type];
-			QUARK_ASSERT(type.is_int() == false);
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-
-			long diff = bc_value_t::compare_value_true_deep(left, right, type);
-			registers[instruction._a]._bool = diff >= 0;
-			pc++;
-			break;
-		}
-		case bc_opcode::k_comparison_larger_or_equal_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
-
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._bool = left >= right;
-			pc++;
-			break;
-		}
-
-		case bc_opcode::k_comparison_larger: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			const auto& type = type_lookup[instruction._instr_type];
-			QUARK_ASSERT(type.is_int() == false);
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
-		#if DEBUG
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-		#endif
-			long diff = bc_value_t::compare_value_true_deep(left, right, type);
-			registers[instruction._a]._bool = diff > 0;
-			pc++;
-			break;
-		}
-		case bc_opcode::k_comparison_larger_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
-
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-
-			registers[instruction._a]._bool = left > right;
-			pc++;
-			break;
-		}
-
 		case bc_opcode::k_logical_equal: {
 			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
