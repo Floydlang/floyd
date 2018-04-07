@@ -713,6 +713,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(stack.check_global_access_obj(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
 
+			//??? No need to copy pod --we just need to keep ptr to its ext.
 			auto prev_copy = globals[instruction._a];
 			const auto& source_value = registers[instruction._b];
 			source_value._ext->_rc++;
@@ -723,8 +724,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		}
 		case bc_opcode::k_store_global_intern: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_global_access_intern(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_intern(instruction._b));
 
-			stack._entries[k_frame_overhead + instruction._a] = stack.peek_register(instruction._b);
+			globals[instruction._a] = registers[instruction._b];
 			pc++;
 			break;
 		}
@@ -747,9 +750,16 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
 
-			//??? No need to construct a bc_value_t, we just need to copy ptr & bump RC/release RC.
-			const auto value = stack.read_register_obj(instruction._b);
-			stack.write_register_obj(instruction._a, value);
+#if DEBUG
+			const auto value = bc_value_t(stack._debug_types[frame_pos + instruction._b], registers[instruction._b], true);
+#else
+			const auto value = bc_value_t(registers[instruction._b], true);
+#endif
+			//??? No need to copy pod --we just need to keep ptr to its ext.
+			auto prev_copy = registers[instruction._a];
+			value._pod._ext->_rc++;
+			registers[instruction._a] = value._pod;
+			bc_value_t::release_ext_pod(prev_copy);
 			pc++;
 			break;
 		}
