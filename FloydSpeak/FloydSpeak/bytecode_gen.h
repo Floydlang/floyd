@@ -982,14 +982,14 @@ inline int bc_limit(int value, int min, int max){
 		k_call,
 
 		/*
-			TYPE: itype of returned value
+			TYPE: ---
 			A: Register: where to put result
 			B: Register: lhs
 			C: Register: rhs
 		*/
 		k_add,
 		k_add_int,
-		k_subtract,
+		k_subtract_float,
 		k_subtract_int,
 		k_multiply,
 		k_multiply_int,

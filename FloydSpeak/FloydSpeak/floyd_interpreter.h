@@ -457,6 +457,15 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
+		public: bool check_register_access_float(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_float());
+			return true;
+		}
+		#endif
+
+		#if DEBUG
 		public: bool check_register_access_string(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));

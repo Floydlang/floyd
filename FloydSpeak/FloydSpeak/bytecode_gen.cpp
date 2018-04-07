@@ -268,7 +268,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_int, { "arithmetic_add_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_subtract, { "arithmetic_subtract", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_subtract_float, { "arithmetic_subtract_float", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "arithmetic_subtract_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply, { "arithmetic_multiply", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply_int, { "arithmetic_multiply_int", opcode_info_t::encoding::k_o_0rrr } },
@@ -1481,7 +1481,7 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 	else{
 		static const std::map<expression_type, bc_opcode> conv_opcode = {
 			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add },
-			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract },
+			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_float },
 			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply },
 			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide },
 			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_remainder },

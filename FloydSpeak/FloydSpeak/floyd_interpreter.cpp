@@ -1315,6 +1315,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//////////////////////////////		ARITHMETICS
 
 
+
 		case bc_opcode::k_add: {
 			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
@@ -1322,14 +1323,10 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 			const auto& type = frame_ptr->_symbols[instruction._a].second._value_type;
 			const auto basetype = type.get_base_type();
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
 
 			//	bool
 			if(basetype == base_type::k_bool){
-				const bool left2 = left.get_bool_value();
-				const bool right2 = right.get_bool_value();
-				registers[instruction._a]._bool = left2 + right2;
+				registers[instruction._a]._bool = registers[instruction._b]._bool + registers[instruction._c]._bool;
 				pc++;
 				break;
 			}
@@ -1338,18 +1335,14 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			}
 			//	float
 			else if(basetype == base_type::k_float){
-				const float left2 = left.get_float_value();
-				const float right2 = right.get_float_value();
-				stack.write_register_float(instruction._a, left2 + right2);
+				registers[instruction._a]._float = registers[instruction._b]._float + registers[instruction._c]._float;
 				pc++;
 				break;
 			}
 
 			//	string
 			else if(basetype == base_type::k_string){
-				const auto& left2 = left.get_string_value();
-				const auto& right2 = right.get_string_value();
-				stack.write_register_string(instruction._a, left2 + right2);
+				stack.write_register_string(instruction._a, registers[instruction._b]._ext->_string + registers[instruction._c]._ext->_string);
 				pc++;
 				break;
 			}
@@ -1358,11 +1351,11 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			else if(basetype == base_type::k_vector){
 				const auto& element_type = type.get_vector_element_type();
 
-				//	Copy vector into elements.
-				auto elements2 = *left.get_vector_value();
+				//	Copy left into new vector.
+				std::vector<bc_value_t> elements2 = registers[instruction._b]._ext->_vector_elements;
 
-				const auto& right_elements = right.get_vector_value();
-				elements2.insert(elements2.end(), right_elements->begin(), right_elements->end());
+				const auto& right_elements = registers[instruction._c]._ext->_vector_elements;
+				elements2.insert(elements2.end(), right_elements.begin(), right_elements.end());
 				const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
 				stack.write_register_obj(instruction._a, value2);
 				pc++;
@@ -1384,33 +1377,14 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			pc++;
 			break;
 		}
-		case bc_opcode::k_subtract: {
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+		case bc_opcode::k_subtract_float: {
+			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._a].second._value_type;
-			const auto basetype = type.get_base_type();
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
-
-			//	int
-			if(basetype == base_type::k_int){
-				QUARK_ASSERT(false);
-			}
-
-			//	float
-			else if(basetype == base_type::k_float){
-				const float left2 = left.get_float_value();
-				const float right2 = right.get_float_value();
-				stack.write_register_float(instruction._a, left2 - right2);
-				pc++;
-				break;
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
+			registers[instruction._a]._float = registers[instruction._b]._float - registers[instruction._c]._float;
+			pc++;
+			break;
 		}
 		case bc_opcode::k_subtract_int: {
 			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
