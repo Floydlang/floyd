@@ -284,16 +284,16 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 
 
-	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_comparison_smaller_or_equal_int, { "comparison_smaller_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
 
-	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_comparison_smaller_int, { "comparison_smaller_int", opcode_info_t::encoding::k_o_0rrr } },
 
-	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_equal_int, { "logical_equal_int", opcode_info_t::encoding::k_o_0rrr } },
 
-	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_nonequal_int, { "logical_nonequal_int", opcode_info_t::encoding::k_o_0rrr } },
 
 
@@ -440,6 +440,7 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 }
 
 int bc_value_t::compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type0){
+	QUARK_ASSERT(left._debug_type == right._debug_type);
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -1430,10 +1431,10 @@ expr_info_t bcgen_comparison_expression(bgenerator_t& vm, expression_type op, co
 
 		const auto result = conv_opcode.at(e._operation);
 		if(result.first == false){
-			body_acc._instrs.push_back(bc_instruction_t(result.second, itype, result_reg, left_expr._output_reg, right_expr._output_reg));
+			body_acc._instrs.push_back(bc_instruction_t(result.second, k_no_bctypeid, result_reg, left_expr._output_reg, right_expr._output_reg));
 		}
 		else{
-			body_acc._instrs.push_back(bc_instruction_t(result.second, itype, result_reg, right_expr._output_reg, left_expr._output_reg));
+			body_acc._instrs.push_back(bc_instruction_t(result.second, k_no_bctypeid, result_reg, right_expr._output_reg, left_expr._output_reg));
 		}
 	}
 

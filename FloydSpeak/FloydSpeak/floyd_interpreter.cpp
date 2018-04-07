@@ -1233,15 +1233,15 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 
 		case bc_opcode::k_comparison_smaller_or_equal: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
-			const auto& type = type_lookup[instruction._instr_type];
-			QUARK_ASSERT(type.is_int() == false);
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
 
+			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
+			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-
 			long diff = bc_value_t::compare_value_true_deep(left, right, type);
 
 			registers[instruction._a]._bool = diff <= 0;
@@ -1261,15 +1261,15 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 
 		case bc_opcode::k_comparison_smaller: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+
+			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-		#if DEBUG
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-		#endif
 			long diff = bc_value_t::compare_value_true_deep(left, right, type);
 
 			registers[instruction._a]._bool = diff < 0;
@@ -1289,16 +1289,17 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 
 		case bc_opcode::k_logical_equal: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+
+			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-		#if DEBUG
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-		#endif
 			long diff = bc_value_t::compare_value_true_deep(left, right, type);
+
 			registers[instruction._a]._bool = diff == 0;
 			pc++;
 			break;
@@ -1316,16 +1317,17 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 
 		case bc_opcode::k_logical_nonequal: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			const auto& type = type_lookup[instruction._instr_type];
+			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+
+			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-		#if DEBUG
-			QUARK_ASSERT(left.get_debug_type() == right.get_debug_type());
-		#endif
 			long diff = bc_value_t::compare_value_true_deep(left, right, type);
+
 			registers[instruction._a]._bool = diff != 0;
 			pc++;
 			break;

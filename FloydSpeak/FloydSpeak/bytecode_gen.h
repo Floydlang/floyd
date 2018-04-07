@@ -1009,15 +1009,14 @@ inline int bc_limit(int value, int min, int max){
 		//??? Remove all conditions. Only have conditional branches.
 		//??? Remove all >= -- just swap registers and use <.
 		/*
-			The type unspecific version is a fallback to handles all types not speical cased.
-			TYPE: itype of values to compare. Output is always bool.
-			A: Register: where to put result
+			The type-unspecific version is a fallback to handles all types not special-cased.
+			TYPE: ----
+			A: Register: where to put result BOOL
 			B: Register: lhs
 			C: Register: rhs
 
-			Type-sepecific opcodes have no type field.
 			TYPE: ---
-			A: Register: where to put result
+			A: Register: where to put result BOOL
 			B: Register: lhs
 			C: Register: rhs
 		*/
