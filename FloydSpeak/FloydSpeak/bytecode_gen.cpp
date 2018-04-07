@@ -304,7 +304,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 
 
-	{ bc_opcode::k_construct_value, { "construct_value", opcode_info_t::encoding::k_i_trii } },
+	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_vector, { "new_vector", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_dict, { "new_dict", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
@@ -1255,12 +1255,14 @@ expr_info_t bcgen_construct_value_expression(bgenerator_t& vm, const expression_
 		));
 	}
 	else{
+		QUARK_ASSERT(arg_count == 1);
+
 		body_acc._instrs.push_back(bc_instruction_t(
-			bc_opcode::k_construct_value,
-			target_itype,
+			bc_opcode::k_new_1,
+			k_no_bctypeid,
 			function_result_reg,
-			make_imm_int(source_itype),
-			make_imm_int(arg_count)
+			make_imm_int(target_itype),
+			make_imm_int(source_itype)
 		));
 	}
 

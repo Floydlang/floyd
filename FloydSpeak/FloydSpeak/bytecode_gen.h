@@ -1033,15 +1033,14 @@ inline int bc_limit(int value, int min, int max){
 
 
 		/*
-			TYPE: target_type - type to create
+			TYPE: ---
 			A: Register: where to put resulting value
-			B: IMMEDIATE: Source itype, type of argument #0
-			C: IMMEDIATE: argument count.
+			B: IMMEDIATE: Target type - type to create.
+			C: IMMEDIATE: Source itype
 
-			Arguments are put on stack. Notice that DYN arguments pushes itype first.
-			No DYN argumentes.
+			Stack hold ONE value, which is the input value
 		*/
-		k_construct_value,
+		k_new_1,
 
 		/*
 			TYPE: ---

@@ -449,63 +449,41 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-/*
-	??? IDEA Don't use push/pop to send arguments for calls -- copy arguments directly to new stackframe.
 
-	??? Make stub bc_frame_t for each host function to make call conventions same as Floyd functions.
-*/
-
-/*
-	Performs call to a function
-	1) Reads arguments from (leaves them there).
-	2) Sets up stack frame for new function and puts argments into its locals.
-	3) Runs the instructions in the function.
-	4) Destroys functions stack frame.
-	5) Writes the function return via the call-instruction's output register.
-*/
-
-//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
-
-
+//??? Make special casting-opcode. This way new_1 don't need to use stack.
 //	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_construct_value_instruction(interpreter_t& vm, const bc_instruction2_t& instruction){
+void execute_new_1(interpreter_t& vm, const bc_instruction2_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
 	const auto dest_reg = instruction._a;
-	const auto source_input_itype = static_cast<bc_typeid_t>(instruction._b);
-	const auto arg_count = instruction._c;
-	const auto target_itype = instruction._instr_type;
+	const auto target_itype = instruction._b;
+	const auto source_itype = instruction._c;
 
 
 	const auto& target_type = get_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && target_type.is_struct() == false);
 
-	const int arg0_stack_pos = vm._stack.size() - arg_count;
-	const auto input_value_type = get_type(vm, source_input_itype);
+	const int arg0_stack_pos = vm._stack.size() - 1;
+	const auto input_value_type = get_type(vm, source_itype);
 	const auto input_value = vm._stack.load_value_slow(arg0_stack_pos + 0, input_value_type);
 
 	const bc_value_t result = [&]{
-		if(target_type.is_json_value()){
-			const auto arg = bc_to_value(input_value, input_value_type);
-			const auto value = value_to_ast_json(arg, json_tags::k_plain);
-			return bc_value_t::make_json_value(value._value);
+		if(target_type.is_bool() || target_type.is_int() || target_type.is_float() || target_type.is_typeid()){
+			return input_value;
 		}
-		else if(target_type.is_bool() || target_type.is_int() || target_type.is_float() || target_type.is_string() || target_type.is_typeid()){
-			if(target_type.is_string()){
-				if(input_value_type.is_json_value() && input_value.get_json_value().is_string()){
-					return bc_value_t::make_string(input_value.get_json_value().get_string());
-				}
-				else if(input_value_type.is_string()){
-					return input_value;
-				}
-				else{
-					return input_value;
-				}
+		else if(target_type.is_string()){
+			if(input_value_type.is_json_value() && input_value.get_json_value().is_string()){
+				return bc_value_t::make_string(input_value.get_json_value().get_string());
 			}
 			else{
 				return input_value;
 			}
+		}
+		else if(target_type.is_json_value()){
+			const auto arg = bc_to_value(input_value, input_value_type);
+			const auto value = value_to_ast_json(arg, json_tags::k_plain);
+			return bc_value_t::make_json_value(value._value);
 		}
 		else{
 			return input_value;
@@ -1009,6 +987,22 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 
+		/*
+			??? IDEA Don't use push/pop to send arguments for calls -- copy arguments directly to new stackframe.
+
+			??? Make stub bc_frame_t for each host function to make call conventions same as Floyd functions.
+		*/
+
+		/*
+			Performs call to a function
+			1) Reads arguments from (leaves them there).
+			2) Sets up stack frame for new function and puts argments into its locals.
+			3) Runs the instructions in the function.
+			4) Destroys functions stack frame.
+			5) Writes the function return via the call-instruction's output register.
+		*/
+
+		//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 		case bc_opcode::k_call: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
@@ -1104,8 +1098,8 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 
-		case bc_opcode::k_construct_value: {
-			execute_construct_value_instruction(vm, instruction);
+		case bc_opcode::k_new_1: {
+			execute_new_1(vm, instruction);
 			pc++;
 			break;
 		}
