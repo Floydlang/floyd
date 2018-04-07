@@ -374,13 +374,6 @@ namespace floyd {
 		}
 
 
-		public: bool check_register_access_obj(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == true);
-			return true;
-		}
-
 		//??? use const bc_value_object_t* peek_register_obj()
 		public: bc_value_t read_register_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
@@ -438,21 +431,65 @@ namespace floyd {
 */
 
 		#if DEBUG
-		public: bool check_register_access_int(const int reg) const{
+		public: bool check_register_access_bool(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type.is_int());
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_bool());
 			return true;
 		}
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_bool(const int reg) const{
+		public: bool check_register_access_int(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type.is_bool());
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_int());
+			return true;
+		}
+		#endif
+
+		#if DEBUG
+		public: bool check_register_access_string(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_string());
+			return true;
+		}
+		#endif
+
+		#if DEBUG
+		public: bool check_register_access_vector(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_vector());
+			return true;
+		}
+		#endif
+
+		#if DEBUG
+		public: bool check_register_access_dict(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_dict());
+			return true;
+		}
+		#endif
+
+		#if DEBUG
+		public: bool check_register_access_struct(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_struct());
+			return true;
+		}
+		#endif
+
+
+		#if DEBUG
+		public: bool check_register_access_obj(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == true);
 			return true;
 		}
 		#endif

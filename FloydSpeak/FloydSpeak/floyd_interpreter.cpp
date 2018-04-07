@@ -935,7 +935,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//??? Make obj/intern version.
 		case bc_opcode::k_get_struct_member: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_struct(instruction._b));
 
 			const auto& value_pod = registers[instruction._b]._ext->_struct_members[instruction._c]._pod;
 			bool ext = frame_ptr->_exts[instruction._a];
@@ -948,27 +948,33 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			break;
 		}
 
-
+		//??? Better to return uint8 or int than a new string.
 		case bc_opcode::k_lookup_element_string: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-
-			const auto& s = stack.peek_register_string(instruction._b);
+			QUARK_ASSERT(stack.check_register_access_string(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_string(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+
+			const auto& s = registers[instruction._b]._ext->_string;
 			const auto lookup_index = registers[instruction._c]._int;
+
 			if(lookup_index < 0 || lookup_index >= s.size()){
 				throw std::runtime_error("Lookup in string: out of bounds.");
 			}
 			else{
 				const char ch = s[lookup_index];
-				const auto value2 = string(1, ch);
-				stack.write_register_string(instruction._a, value2);
+				const auto str2 = string(1, ch);
+				const auto value2 = bc_value_t::make_string(str2);
+				value2._pod._ext->_rc++;
+				bc_value_t::release_ext(registers[instruction._a]._ext);
+				registers[instruction._a] = value2._pod;
 			}
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_lookup_element_json_value: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
 			const auto& parent_value = stack.read_register_obj(instruction._b);
@@ -1004,18 +1010,19 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 
 		case bc_opcode::k_lookup_element_vector: {
-			const auto* vec = stack.peek_register_vector(instruction._b);
-
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_vector(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+
+//			const auto& element_type = frame_ptr->_symbols[instruction._b].second._value_type.get_vector_element_type();
+
+			const auto* vec = stack.peek_register_vector(instruction._b);
 			const auto lookup_index = registers[instruction._c]._int;
 
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
-				QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
-				const auto& parent_type = type_lookup[instruction._instr_type];
-				const auto element_type = parent_type.get_vector_element_type();
 				const bc_value_t value = (*vec)[lookup_index];
 				stack.write_register(instruction._a, value);
 			}
@@ -1024,7 +1031,11 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 
 		case bc_opcode::k_lookup_element_dict: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_dict(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_string(instruction._c));
+
+//			const auto& value_type = frame_ptr->_symbols[instruction._b].second._value_type.get_dict_value_type();
 
 			const auto& parent_value = stack.read_register_obj(instruction._b);
 			const auto& lookup_key = stack.peek_register_string(instruction._c);

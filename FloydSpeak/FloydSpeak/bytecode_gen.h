@@ -952,9 +952,9 @@ inline int bc_limit(int value, int min, int max){
 
 
 		/*
-			TYPE: itype of parent
+			TYPE: ---
 			A: Register: where to put result
-			B: Register: vector object
+			B: Register: string object/vector object/json_value/dict
 			C: Register: index (int)
 		*/
 		k_lookup_element_string,

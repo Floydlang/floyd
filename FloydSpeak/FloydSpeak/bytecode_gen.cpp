@@ -259,10 +259,10 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_get_struct_member, { "get_struct_member", opcode_info_t::encoding::k_s_0rri } },
 
-	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_lookup_element_vector, { "lookup_element_vector", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_vector, { "lookup_element_vector", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
@@ -1014,7 +1014,7 @@ expr_info_t bcgen_lookup_element_expression(bgenerator_t& vm, const expression_t
 	const auto temp_reg = add_local_temp(body_acc, type, "lookup-element output register");
 	body_acc._instrs.push_back(bc_instruction_t(
 		opcode,
-		parent_expr._type,
+		k_no_bctypeid,
 		temp_reg,
 		parent_expr._output_reg,
 		key_expr._output_reg

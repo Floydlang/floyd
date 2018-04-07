@@ -1507,6 +1507,17 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 
 //??? add tests for equality.
 
+QUARK_UNIT_TEST("string", "[]", "string", "0"){
+	const auto vm = test__run_global(R"(
+		assert("hello"[0] == "h");
+	)");
+}
+QUARK_UNIT_TEST("string", "[]", "string", "0"){
+	const auto vm = test__run_global(R"(
+		assert("hello"[4] == "o");
+	)");
+}
+
 QUARK_UNIT_TEST("string", "size()", "string", "0"){
 	const auto vm = test__run_global(R"(
 		assert(size("") == 0);
