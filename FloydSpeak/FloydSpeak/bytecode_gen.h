@@ -888,7 +888,7 @@ inline int bc_limit(int value, int min, int max){
 	//////////////////////////////////////		bc_instruction_t
 
 	enum class bc_opcode: uint8_t {
-		k_nop,
+		k_nop = 0,
 
 		/*
 			TYPE: ---
@@ -1001,8 +1001,9 @@ inline int bc_limit(int value, int min, int max){
 		k_remainder,
 		k_remainder_int,
 
-		k_logical_and,
+		k_logical_and_bool,
 		k_logical_and_int,
+		k_logical_and_float,
 		k_logical_or,
 		k_logical_or_int,
 
