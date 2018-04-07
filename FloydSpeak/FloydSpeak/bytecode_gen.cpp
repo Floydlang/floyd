@@ -257,7 +257,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_store_local_intern, { "store_local_intern", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_store_local_obj, { "store_local_obj", opcode_info_t::encoding::k_q_0rr0 } },
 
-	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
+	{ bc_opcode::k_get_struct_member, { "get_struct_member", opcode_info_t::encoding::k_s_0rri } },
 
 	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_h_trrr } },
@@ -963,8 +963,8 @@ expr_info_t bcgen_resolve_member_expression(bgenerator_t& vm, const expression_t
 	const auto itype = intern_type(vm, type);
 
 	const auto temp = add_local_temp(body_acc, type, "resolve-member output register");
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_resolve_member,
-		itype,
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_get_struct_member,
+		k_no_bctypeid,
 		temp,
 		parent_expr._output_reg,
 		make_imm_int(index)

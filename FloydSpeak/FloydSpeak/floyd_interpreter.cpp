@@ -932,15 +932,18 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//////////////////////////////////////////		COMPLEX
 
 
-		case bc_opcode::k_resolve_member: {
-			QUARK_ASSERT(instruction._instr_type >= 0 && instruction._instr_type < type_count);
-			const auto& parent_value = stack.read_register_obj(instruction._b);
-			const auto& member_index = instruction._c;
-			QUARK_ASSERT(member_index != -1);
+		//??? Make obj/intern version.
+		case bc_opcode::k_get_struct_member: {
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
 
-			const auto& struct_instance = parent_value.get_struct_value();
-			const bc_value_t value = struct_instance[member_index];
-			stack.write_register(instruction._a, value);
+			const auto& value_pod = registers[instruction._b]._ext->_struct_members[instruction._c]._pod;
+			bool ext = frame_ptr->_exts[instruction._a];
+			if(ext){
+				bc_value_t::release_ext(registers[instruction._a]._ext);
+				value_pod._ext->_rc++;
+			}
+			registers[instruction._a] = value_pod;
 			pc++;
 			break;
 		}
