@@ -59,7 +59,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 	const auto instruction2_size = sizeof(bc_instruction2_t);
-	QUARK_ASSERT(instruction2_size == 10);
+	QUARK_ASSERT(instruction2_size == 8);
 }
 
 
@@ -266,20 +266,20 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
-	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_int, { "arithmetic_add_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_subtract, { "arithmetic_subtract", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_subtract, { "arithmetic_subtract", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "arithmetic_subtract_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_multiply, { "arithmetic_multiply", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_multiply, { "arithmetic_multiply", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply_int, { "arithmetic_multiply_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_divide, { "arithmetic_divide", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_divide, { "arithmetic_divide", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_divide_int, { "arithmetic_divide_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_remainder, { "arithmetic_remainder", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_remainder, { "arithmetic_remainder", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_remainder_int, { "arithmetic_remainder_int", opcode_info_t::encoding::k_o_0rrr } },
 
-	{ bc_opcode::k_logical_and, { "logical_and", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_and, { "logical_and", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_and_int, { "logical_and_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_or, { "logical_or", opcode_info_t::encoding::k_h_trrr } },
+	{ bc_opcode::k_logical_or, { "logical_or", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_or_int, { "logical_or_int", opcode_info_t::encoding::k_o_0rrr } },
 
 
@@ -1492,7 +1492,7 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 
 
 		body_acc._instrs.push_back(bc_instruction_t(conv_opcode.at(e._operation),
-			itype,
+			k_no_bctypeid,
 			temp,
 			left_expr._output_reg,
 			right_expr._output_reg
@@ -1565,7 +1565,7 @@ bool bc_instruction2_t::check_invariant() const {
 	if(reg_flags._type){
 	}
 	else{
-		QUARK_ASSERT(_instr_type == k_no_bctypeid);
+//		QUARK_ASSERT(_instr_type == k_no_bctypeid);
 	}
 
 /*
@@ -1583,6 +1583,7 @@ bool bc_instruction2_t::check_invariant() const {
 //////////////////////////////////////		bc_frame_t
 
 bc_instruction2_t squeeze_instruction(const bc_instruction_t& instruction){
+	QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 	QUARK_ASSERT(instruction._reg_a._parent_steps == 0 || instruction._reg_a._parent_steps == -1 || instruction._reg_a._parent_steps == 666);
 	QUARK_ASSERT(instruction._reg_b._parent_steps == 0 || instruction._reg_b._parent_steps == -1 || instruction._reg_b._parent_steps == 666);
 	QUARK_ASSERT(instruction._reg_c._parent_steps == 0 || instruction._reg_c._parent_steps == -1 || instruction._reg_c._parent_steps == 666);
@@ -1600,7 +1601,6 @@ bc_instruction2_t squeeze_instruction(const bc_instruction_t& instruction){
 
 	const auto result = bc_instruction2_t(
 		instruction._opcode,
-		instruction._instr_type,
 		static_cast<int16_t>(instruction._reg_a._index),
 		static_cast<int16_t>(instruction._reg_b._index),
 		static_cast<int16_t>(instruction._reg_c._index)
@@ -1715,7 +1715,6 @@ json_t frame_to_json(const bc_frame_t& frame){
 		const auto i = json_t::make_array({
 			pc,
 			opcode_to_string(e._opcode),
-			e._instr_type,
 			json_t(e._a),
 			json_t(e._b),
 			json_t(e._c)

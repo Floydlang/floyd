@@ -1271,13 +1271,11 @@ inline int bc_limit(int value, int min, int max){
 	struct bc_instruction2_t {
 		bc_instruction2_t(
 			bc_opcode opcode,
-			bc_typeid_t type,
 			int16_t a,
 			int16_t b,
 			int16_t c
 		) :
 			_opcode(opcode),
-			_instr_type(type),
 			_a(a),
 			_b(b),
 			_c(c)
@@ -1291,15 +1289,11 @@ inline int bc_limit(int value, int min, int max){
 
 
 		//////////////////////////////////////		STATE
-		//??? lose variable_address_t and closures for now. register = int16. negative = global/constant, positive = local stack register.
 		bc_opcode _opcode;
 		uint8_t _pad8;
 		int16_t _a;
 		int16_t _b;
 		int16_t _c;
-
-		//??? temporary. Plan is to embedd this type into opcode.
-		bc_typeid_t _instr_type;
 	};
 
 
