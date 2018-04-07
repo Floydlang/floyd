@@ -1030,6 +1030,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			break;
 		}
 
+		//??? Make obj/intern version.
 		case bc_opcode::k_lookup_element_vector: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
@@ -1056,7 +1057,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 					bc_value_t::release_ext(registers[instruction._a]._ext);
 					value._pod._ext->_rc++;
 				}
-
 				registers[instruction._a] = value._pod;
 			}
 			QUARK_ASSERT(vm.check_invariant());
@@ -1064,23 +1064,31 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			break;
 		}
 
+		//??? Make obj/intern version.
 		case bc_opcode::k_lookup_element_dict: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_dict(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_string(instruction._c));
 
 //			const auto& value_type = frame_ptr->_symbols[instruction._b].second._value_type.get_dict_value_type();
 
-			const auto& parent_value = stack.read_register_obj(instruction._b);
-			const auto& lookup_key = stack.peek_register_string(instruction._c);
-			const auto& entries = parent_value.get_dict_value();
+			const auto& entries = registers[instruction._b]._ext->_dict_entries;
+			const auto& lookup_key = registers[instruction._c]._ext->_string;
+
 			const auto& found_it = entries.find(lookup_key);
 			if(found_it == entries.end()){
 				throw std::runtime_error("Lookup in dict: key not found.");
 			}
 			else{
 				const bc_value_t value = found_it->second;
-				stack.write_register(instruction._a, value);
+
+				bool is_ext = frame_ptr->_exts[instruction._a];
+				if(is_ext){
+					bc_value_t::release_ext(registers[instruction._a]._ext);
+					value._pod._ext->_rc++;
+				}
+				registers[instruction._a] = value._pod;
 			}
 			pc++;
 			break;
