@@ -266,9 +266,11 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
-	{ bc_opcode::k_add, { "arithmetic_add", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_bool, { "arithmetic_add_bool", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_int, { "arithmetic_add_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_float, { "arithmetic_add_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_string, { "arithmetic_add_string", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_vector, { "arithmetic_add_vector", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_float, { "arithmetic_subtract_float", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "arithmetic_subtract_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply_float, { "arithmetic_multiply_float", opcode_info_t::encoding::k_o_0rrr } },
@@ -1500,9 +1502,51 @@ expr_info_t bcgen_arithmetic_expression(bgenerator_t& vm, expression_type op, co
 		));
 		return { body_acc, temp, itype };
 	}
+	else if(type.is_string()){
+		static const std::map<expression_type, bc_opcode> conv_opcode = {
+			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_string },
+			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
+			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
+			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
+			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+
+			{ expression_type::k_logical_and__2, bc_opcode::k_nop },
+			{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+		};
+
+
+		body_acc._instrs.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+			k_no_bctypeid,
+			temp,
+			left_expr._output_reg,
+			right_expr._output_reg
+		));
+		return { body_acc, temp, itype };
+	}
+	else if(type.is_vector()){
+		static const std::map<expression_type, bc_opcode> conv_opcode = {
+			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_vector },
+			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
+			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
+			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
+			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+
+			{ expression_type::k_logical_and__2, bc_opcode::k_nop },
+			{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+		};
+
+
+		body_acc._instrs.push_back(bc_instruction_t(conv_opcode.at(e._operation),
+			k_no_bctypeid,
+			temp,
+			left_expr._output_reg,
+			right_expr._output_reg
+		));
+		return { body_acc, temp, itype };
+	}
 	else{
 		static const std::map<expression_type, bc_opcode> conv_opcode = {
-			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add },
+			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_bool },
 			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
 			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
 			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },

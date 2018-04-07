@@ -987,9 +987,11 @@ inline int bc_limit(int value, int min, int max){
 			B: Register: lhs
 			C: Register: rhs
 		*/
-		k_add,
+		k_add_bool,
 		k_add_int,
 		k_add_float,
+		k_add_string,
+		k_add_vector,
 		k_subtract_float,
 		k_subtract_int,
 		k_multiply_float,

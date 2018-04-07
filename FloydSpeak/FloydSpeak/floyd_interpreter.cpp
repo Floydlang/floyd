@@ -1306,54 +1306,15 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//////////////////////////////		ARITHMETICS
 
 
+		//??? Replace by a | b opcode.
+		case bc_opcode::k_add_bool: {
+			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_bool(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_bool(instruction._c));
 
-		case bc_opcode::k_add: {
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
-
-			const auto& type = frame_ptr->_symbols[instruction._a].second._value_type;
-			const auto basetype = type.get_base_type();
-
-			//	bool
-			if(basetype == base_type::k_bool){
-				registers[instruction._a]._bool = registers[instruction._b]._bool + registers[instruction._c]._bool;
-				pc++;
-				break;
-			}
-			else if(basetype == base_type::k_int){
-				QUARK_ASSERT(false);
-			}
-			//	float
-			else if(basetype == base_type::k_float){
-				QUARK_ASSERT(false);
-			}
-
-			//	string
-			else if(basetype == base_type::k_string){
-				stack.write_register_string(instruction._a, registers[instruction._b]._ext->_string + registers[instruction._c]._ext->_string);
-				pc++;
-				break;
-			}
-
-			//	vector
-			else if(basetype == base_type::k_vector){
-				const auto& element_type = type.get_vector_element_type();
-
-				//	Copy left into new vector.
-				std::vector<bc_value_t> elements2 = registers[instruction._b]._ext->_vector_elements;
-
-				const auto& right_elements = registers[instruction._c]._ext->_vector_elements;
-				elements2.insert(elements2.end(), right_elements.begin(), right_elements.end());
-				const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
-				stack.write_register_obj(instruction._a, value2);
-				pc++;
-				break;
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
+			registers[instruction._a]._bool = registers[instruction._b]._bool + registers[instruction._c]._bool;
+			pc++;
+			break;
 		}
 		case bc_opcode::k_add_int: {
 			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
@@ -1373,6 +1334,37 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			pc++;
 			break;
 		}
+		case bc_opcode::k_add_string: {
+			QUARK_ASSERT(stack.check_register_access_string(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_string(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_string(instruction._c));
+
+			//??? inline
+			stack.write_register_string(instruction._a, registers[instruction._b]._ext->_string + registers[instruction._c]._ext->_string);
+			pc++;
+			break;
+		}
+
+		//??? inline
+		//??? Use itypes.
+		case bc_opcode::k_add_vector: {
+			QUARK_ASSERT(stack.check_register_access_vector(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_vector(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_vector(instruction._c));
+
+			const auto& element_type = frame_ptr->_symbols[instruction._a].second._value_type.get_vector_element_type();
+
+			//	Copy left into new vector.
+			std::vector<bc_value_t> elements2 = registers[instruction._b]._ext->_vector_elements;
+
+			const auto& right_elements = registers[instruction._c]._ext->_vector_elements;
+			elements2.insert(elements2.end(), right_elements.begin(), right_elements.end());
+			const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
+			stack.write_register_obj(instruction._a, value2);
+			pc++;
+			break;
+		}
+
 		case bc_opcode::k_subtract_float: {
 			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
