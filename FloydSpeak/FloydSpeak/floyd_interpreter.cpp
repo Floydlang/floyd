@@ -898,61 +898,33 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
 
-			const auto value = registers[instruction._a]._bool;
-			if(value == false){
-				const auto offset = instruction._b;
-				pc = pc + offset;
-			}
-			else{
-				pc++;
-			}
+			pc = registers[instruction._a]._bool ? pc + 1 : pc + instruction._b;
 			break;
 		}
 		case bc_opcode::k_branch_true_bool: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
 
-			const auto value = registers[instruction._a]._bool;
-			if(value == true){
-				const auto offset = instruction._b;
-				pc = pc + offset;
-			}
-			else{
-				pc++;
-			}
+			pc = registers[instruction._a]._bool ? pc + instruction._b : pc + 1;
 			break;
 		}
 		case bc_opcode::k_branch_zero_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
 
-			const auto value = registers[instruction._a]._int;
-			if(value == 0){
-				const auto offset = instruction._b;
-				pc = pc + offset;
-			}
-			else{
-				pc++;
-			}
+			pc = registers[instruction._a]._int == 0 ? pc + instruction._b : pc + 1;
 			break;
 		}
 		case bc_opcode::k_branch_notzero_int: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
 
-			const auto value = registers[instruction._a]._int;
-			if(value != 0){
-				const auto offset = instruction._b;
-				pc = pc + offset;
-			}
-			else{
-				pc++;
-			}
+			pc = registers[instruction._a]._int == 0 ? pc + 1 : pc + instruction._b;
 			break;
 		}
 		case bc_opcode::k_branch_always: {
-			const auto offset = instruction._a;
-			pc = pc + offset;
+			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			pc = pc + instruction._a;
 			break;
 		}
 
