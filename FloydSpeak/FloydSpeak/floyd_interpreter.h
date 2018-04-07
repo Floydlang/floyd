@@ -880,14 +880,14 @@ namespace floyd {
 	struct execution_result_t {
 		enum output_type {
 
-			//	_output != nullptr
+			//	_output != bc_value_t::make_undefined()
 			k_returning,
 
-			//	_output != nullptr
+			//	_output != bc_value_t::make_undefined()
 			k_passive_expression_output,
 
 
-			//	_output == nullptr
+			//	_output == bc_value_t::make_undefined()
 			k_complete_without_result_value
 		};
 
@@ -956,12 +956,7 @@ namespace floyd {
 	json_t interpreter_to_json(const interpreter_t& vm);
 
 
-	/*
-		Return value:
-			null = instructions were all executed through.
-			value = return instruction returned a value.
-	*/
-	execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions);
+	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions);
 
 
 

@@ -400,11 +400,17 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 		}
 
 		vm._stack.open_frame(*function_def._frame, static_cast<int>(args.size()));
-		const auto& r = execute_instructions(vm, function_def._frame->_instrs2);
+		const auto& result = execute_instructions(vm, function_def._frame->_instrs2);
 		vm._stack.close_frame(*function_def._frame);
 		vm._stack.pop_batch(exts);
 		vm._stack.restore_frame();
-		return bc_to_value(r._output, f.get_type().get_function_return());
+
+		if(result.first){
+			return bc_to_value(result.second, f.get_type().get_function_return());
+		}
+		else{
+			return value_t::make_undefined();
+		}
 	}
 }
 
@@ -639,7 +645,7 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
 
-execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions){
+std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
 
 	interpreter_stack_t& stack = vm._stack;
@@ -659,7 +665,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 	int pc = 0;
 	while(true){
 		if(pc == instruction_count){
-			return execution_result_t::make__complete_without_value();
+			return { false, bc_value_t::make_undefined() };
 		}
 		QUARK_ASSERT(pc >= 0);
 		QUARK_ASSERT(pc < instruction_count);
@@ -742,16 +748,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
 
-#if DEBUG
-			const auto value = bc_value_t(stack._debug_types[frame_pos + instruction._b], registers[instruction._b], true);
-#else
-			const auto value = bc_value_t(registers[instruction._b], true);
-#endif
-			//??? No need to copy pod --we just need to keep ptr to its ext.
-			auto prev_copy = registers[instruction._a];
-			value._pod._ext->_rc++;
-			registers[instruction._a] = value._pod;
-			bc_value_t::release_ext_pod(prev_copy);
+			bc_value_t::release_ext(registers[instruction._a]._ext);
+			const auto& new_value_pod = registers[instruction._b];
+			registers[instruction._a] = new_value_pod;
+			new_value_pod._ext->_rc++;
 			pc++;
 			break;
 		}
@@ -762,13 +762,31 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 
 		case bc_opcode::k_return: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			bool is_ext = frame_ptr->_exts[instruction._a];
 
-			const auto value = stack.read_register(instruction._a);
-			return execution_result_t::make_return_unwind(value);
+			QUARK_ASSERT(
+				(is_ext && stack.check_register_access_obj(instruction._a))
+				|| (!is_ext && stack.check_register_access_intern(instruction._a))
+			);
+
+#if DEBUG
+			return { true, bc_value_t(frame_ptr->_symbols[instruction._a].second._value_type, registers[instruction._a], is_ext) };
+#else
+			return { true, bc_value_t(registers[instruction._a], is_ext) };
+#endif
 		}
 
 		case bc_opcode::k_push_frame_ptr: {
-			stack.save_frame();
+			QUARK_ASSERT(vm.check_invariant());
+			QUARK_ASSERT((stack._stack_size + 2) < stack._allocated_count)
+
+			stack._entries[stack._stack_size + 0]._int = frame_pos;
+			stack._entries[stack._stack_size + 1]._frame_ptr = frame_ptr;
+			stack._stack_size += 2;
+#if DEBUG
+			stack._debug_types.push_back(typeid_t::make_int());
+			stack._debug_types.push_back(typeid_t::make_void());
+#endif
 			pc++;
 			break;
 		}
@@ -1088,15 +1106,15 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 				frame_pos = stack._current_frame_pos;
 				registers = stack._current_frame_entry_ptr;
 
-				QUARK_ASSERT(result._type == execution_result_t::k_returning);
+				QUARK_ASSERT(result.first);
 				if(function_return_type.is_void() == false){
 
 					//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
 					if(function_def._return_is_ext){
-						stack.replace_obj(result_reg_pos, result._output);
+						stack.replace_obj(result_reg_pos, result.second);
 					}
 					else{
-						stack.replace_intern(result_reg_pos, result._output);
+						stack.replace_intern(result_reg_pos, result.second);
 					}
 				}
 			}
@@ -1654,7 +1672,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			throw std::exception();
 		}
 	}
-	return execution_result_t::make__complete_without_value();
+	return { false, bc_value_t::make_undefined() };
 }
 
 
