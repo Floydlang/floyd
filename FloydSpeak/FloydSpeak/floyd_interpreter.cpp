@@ -47,10 +47,10 @@ using std::make_shared;
 //??? special-case collection types: vector<bool>, vector<int> etc. Don't always tore vector<bc_value_t>
 
 
-BC_INLINE const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
+inline const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
-BC_INLINE const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
+inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type].get_base_type();
 }
 
@@ -272,7 +272,7 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 	}
 }
 
-BC_INLINE const bc_function_definition_t& get_function_def(const interpreter_t& vm, int function_id){
+inline const bc_function_definition_t& get_function_def(const interpreter_t& vm, int function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
@@ -685,16 +685,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
 			QUARK_ASSERT(stack.check_global_access_obj(instruction._b));
 
-#if DEBUG
-			const auto value = bc_value_t(stack._debug_types[k_frame_overhead + instruction._b], globals[instruction._b], true);
-#else
-			const auto value = bc_value_t(globals[instruction._b], true);
-#endif
-			//??? No need to copy pod --we just need to keep ptr to its ext.
-			auto prev_copy = registers[instruction._a];
-			value._pod._ext->_rc++;
-			registers[instruction._a] = value._pod;
-			bc_value_t::release_ext_pod(prev_copy);
+			bc_value_t::release_ext(registers[instruction._a]._ext);
+			const auto& new_value_pod = globals[instruction._b];
+			registers[instruction._a] = new_value_pod;
+			new_value_pod._ext->_rc++;
 			pc++;
 			break;
 		}
@@ -713,12 +707,10 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			QUARK_ASSERT(stack.check_global_access_obj(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
 
-			//??? No need to copy pod --we just need to keep ptr to its ext.
-			auto prev_copy = globals[instruction._a];
-			const auto& source_value = registers[instruction._b];
-			source_value._ext->_rc++;
-			globals[instruction._a] = source_value;
-			bc_value_t::release_ext_pod(prev_copy);
+			bc_value_t::release_ext(globals[instruction._a]._ext);
+			const auto& new_value_pod = registers[instruction._b];
+			globals[instruction._a] = new_value_pod;
+			new_value_pod._ext->_rc++;
 			pc++;
 			break;
 		}
