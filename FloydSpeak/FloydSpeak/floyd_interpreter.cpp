@@ -934,7 +934,9 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 		//??? Make obj/intern version.
 		case bc_opcode::k_get_struct_member: {
+			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_struct(instruction._b));
 
 			const auto& value_pod = registers[instruction._b]._ext->_struct_members[instruction._c]._pod;
@@ -944,12 +946,14 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				value_pod._ext->_rc++;
 			}
 			registers[instruction._a] = value_pod;
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		//??? Better to return uint8 or int than a new string.
 		case bc_opcode::k_lookup_element_string: {
+			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			QUARK_ASSERT(stack.check_register_access_string(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_string(instruction._b));
@@ -965,67 +969,97 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				const char ch = s[lookup_index];
 				const auto str2 = string(1, ch);
 				const auto value2 = bc_value_t::make_string(str2);
+
 				value2._pod._ext->_rc++;
 				bc_value_t::release_ext(registers[instruction._a]._ext);
 				registers[instruction._a] = value2._pod;
 			}
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
+		//	??? Simple JSON-values should not require ext. null, int, bool, empty object, empty array.
 		case bc_opcode::k_lookup_element_json_value: {
+			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_json_value(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_json_value(instruction._b));
 
-			//	Notice: the exact type of value in the json_value is only known at runtime = must be checked in interpreter.
-			const auto& parent_value = stack.read_register_obj(instruction._b);
-			const auto& parent_json_value = parent_value.get_json_value();
-			if(parent_json_value.is_object()){
-				const auto& lookup_key = stack.peek_register_string(instruction._c);
+			// reg c points to different types depending on the runtime-type of the json_value.
+			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
 
-				//??? Optimize json_value:int to be intern.
+			const auto& parent_json_value = registers[instruction._b]._ext->_json_value;
+
+			if(parent_json_value->is_object()){
+				QUARK_ASSERT(stack.check_register_access_string(instruction._c));
+
+				const auto& lookup_key = registers[instruction._c]._ext->_string;
 
 				//	get_object_element() throws if key can't be found.
-				const auto& value = parent_json_value.get_object_element(lookup_key);
+				const auto& value = parent_json_value->get_object_element(lookup_key);
 				const auto value2 = bc_value_t::make_json_value(value);
-				stack.write_register_obj(instruction._a, value2);
-			}
-			else if(parent_json_value.is_array()){
-				QUARK_ASSERT(stack.check_register_access_int(instruction._c));
-				const auto lookup_index = registers[instruction._c]._int;
 
-				if(lookup_index < 0 || lookup_index >= parent_json_value.get_array_size()){
+				value2._pod._ext->_rc++;
+				bc_value_t::release_ext(registers[instruction._a]._ext);
+				registers[instruction._a] = value2._pod;
+			}
+			else if(parent_json_value->is_array()){
+				QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+
+				const auto lookup_index = registers[instruction._c]._int;
+				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
 					throw std::runtime_error("Lookup in json_value array: out of bounds.");
 				}
 				else{
-					const auto& value = parent_json_value.get_array_n(lookup_index);
+					const auto& value = parent_json_value->get_array_n(lookup_index);
+
+					//??? value2 will soon go out of scope - avoid creating bc_value_t all together.
 					const auto value2 = bc_value_t::make_json_value(value);
-					stack.write_register_obj(instruction._a, value2);
+
+					value2._pod._ext->_rc++;
+					bc_value_t::release_ext(registers[instruction._a]._ext);
+					registers[instruction._a] = value2._pod;
 				}
 			}
 			else{
 				throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
 			}
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_lookup_element_vector: {
+			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_vector(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
+
 //			const auto& element_type = frame_ptr->_symbols[instruction._b].second._value_type.get_vector_element_type();
 
-			const auto* vec = stack.peek_register_vector(instruction._b);
+			const auto* vec = &registers[instruction._b]._ext->_vector_elements;
 			const auto lookup_index = registers[instruction._c]._int;
-
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
-				const bc_value_t value = (*vec)[lookup_index];
-				stack.write_register(instruction._a, value);
+				const bc_value_t& value = (*vec)[lookup_index];
+
+				//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
+				QUARK_ASSERT(value._debug_type == frame_ptr->_symbols[instruction._a].second._value_type);
+
+				bool is_ext = frame_ptr->_exts[instruction._a];
+				if(is_ext){
+					bc_value_t::release_ext(registers[instruction._a]._ext);
+					value._pod._ext->_rc++;
+				}
+
+				registers[instruction._a] = value._pod;
 			}
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}

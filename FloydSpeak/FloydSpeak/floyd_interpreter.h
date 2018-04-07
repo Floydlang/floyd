@@ -286,7 +286,7 @@ namespace floyd {
 */
 
 		public: bool check_reg(int reg) const{
-			QUARK_ASSERT(reg >= 0 && reg < (size() - _current_frame_pos));
+			QUARK_ASSERT(reg >= 0 && reg < _current_frame_ptr->_symbols.size());
 			return true;
 		}
 
@@ -431,6 +431,14 @@ namespace floyd {
 */
 
 		#if DEBUG
+		public: bool check_register_access_any(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			return true;
+		}
+		#endif
+
+		#if DEBUG
 		public: bool check_register_access_bool(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
@@ -453,6 +461,15 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_string());
+			return true;
+		}
+		#endif
+
+		#if DEBUG
+		public: bool check_register_access_json_value(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_json_value());
 			return true;
 		}
 		#endif
