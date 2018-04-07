@@ -763,7 +763,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		case bc_opcode::k_return: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 			bool is_ext = frame_ptr->_exts[instruction._a];
-
 			QUARK_ASSERT(
 				(is_ext && stack.check_register_access_obj(instruction._a))
 				|| (!is_ext && stack.check_register_access_intern(instruction._a))
@@ -828,8 +827,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 		case bc_opcode::k_push_intern: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-
-			QUARK_ASSERT(stack.check_reg(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_intern(instruction._a));
 #if DEBUG
 			const auto info = stack.get_register_info2(instruction._a);
 			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
@@ -846,9 +844,15 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 		case bc_opcode::k_push_obj: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
 
-			const auto value = stack.read_register_obj(instruction._a);
-			stack.push_value(value, true);
+			const auto& new_value_pod = registers[instruction._a];
+			new_value_pod._ext->_rc++;
+			stack._entries[stack._stack_size] = new_value_pod;
+			stack._stack_size++;
+#if DEBUG
+			stack._debug_types.push_back(stack._debug_types[frame_pos + instruction._a]);
+#endif
 			pc++;
 			break;
 		}
