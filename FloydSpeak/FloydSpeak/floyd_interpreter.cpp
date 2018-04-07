@@ -38,13 +38,7 @@ using std::shared_ptr;
 using std::make_shared;
 
 
-//??? Make several opcodes for construct-value: construct-struct, vector, dict, basic. ALSO casting 1:1 between types.
-//??? Make a clever box that encode stuff into stackframe/struct etc and lets us quickly access them. No need to encode type in instruction.
-//??? get_type() should have all basetypes as first IDs = no need to looup.
-
-//??? flatten all function-defs into ONE big list of instructions or not?
-
-//??? special-case collection types: vector<bool>, vector<int> etc. Don't always tore vector<bc_value_t>
+//??? should use itype internaly, not typeid_t.
 
 
 inline const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
@@ -456,7 +450,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-//??? Make special casting-opcode. This way new_1 don't need to use stack.
 //	IMPORTANT: NO arguments are passed as DYN arguments.
 void execute_new_1(interpreter_t& vm, const bc_instruction2_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
@@ -499,7 +492,6 @@ void execute_new_1(interpreter_t& vm, const bc_instruction2_t& instruction){
 	vm._stack.write_register(dest_reg, result);
 }
 
-//??? should use itype internaly, not typeid_t.
 //??? Split out instruction unpacking to client.
 //	IMPORTANT: NO arguments are passed as DYN arguments.
 void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction){
