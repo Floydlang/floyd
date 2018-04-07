@@ -856,12 +856,36 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			pc++;
 			break;
 		}
+
 		case bc_opcode::k_popn: {
+			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			const uint32_t n = instruction._a;
 			const uint32_t extbits = instruction._b;
-			stack.pop_batch(n, extbits);
+
+			QUARK_ASSERT(stack._stack_size >= n);
+			QUARK_ASSERT(n >= 0);
+			QUARK_ASSERT(n <= 32);
+
+			uint32_t bits = extbits;
+			int pos = static_cast<int>(stack._stack_size) - 1;
+			for(int i = 0 ; i < n ; i++){
+				bool ext = (bits & 1) ? true : false;
+
+				QUARK_ASSERT(bc_value_t::is_bc_ext(stack._debug_types.back().get_base_type()) == ext);
+	#if DEBUG
+				stack._debug_types.pop_back();
+	#endif
+				if(ext){
+					bc_value_t::release_ext(stack._entries[pos]._ext);
+				}
+				pos--;
+				bits = bits >> 1;
+			}
+			stack._stack_size -= n;
+
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}

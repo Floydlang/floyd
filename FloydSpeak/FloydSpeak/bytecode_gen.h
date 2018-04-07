@@ -1189,9 +1189,21 @@ inline int bc_limit(int value, int min, int max){
 
 		/*
 			TYPE: ---
-			A: IMMEDIATE: arg count
+			A: IMMEDIATE: arg count. 0 to 32.
 			B: IMMEDIATE: extbits. bit 0 maps to the next value to be popped from stack.
 			C: ---
+
+			Example 1: one OBJ
+			n:	1		 -------- -------- -------- -------=
+			extbits:	%00000000 00000000 00000000 00000001
+			STACK 1: a b c OBJ
+			STACK 2: a b c
+
+			Example 2: Three values.
+			n:	4		 -------- -------- -------- ----====
+			extbits:	%00000000 00000000 00000000 00001110
+			STACK 1: a b c OBJ OBJ OBJ INTERN
+			STACK 2: a b c
 		*/
 		k_popn,
 
