@@ -275,7 +275,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_divide, { "arithmetic_divide", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_divide_int, { "arithmetic_divide_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_remainder, { "arithmetic_remainder", opcode_info_t::encoding::k_h_trrr } },
-	{ bc_opcode::k_remainder, { "arithmetic_remainder_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_remainder_int, { "arithmetic_remainder_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_logical_and, { "logical_and", opcode_info_t::encoding::k_h_trrr } },
 	{ bc_opcode::k_logical_and_int, { "logical_and_int", opcode_info_t::encoding::k_o_0rrr } },
