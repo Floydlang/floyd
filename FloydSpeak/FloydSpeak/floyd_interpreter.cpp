@@ -1067,8 +1067,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 
 		/*
-			??? IDEA Don't use push/pop to send arguments for calls -- copy arguments directly to new stackframe.
-
 			??? Make stub bc_frame_t for each host function to make call conventions same as Floyd functions.
 		*/
 
@@ -1202,6 +1200,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 		//////////////////////////////		COMPARISON
 
+		//??? inline compare_value_true_deep().
 
 		case bc_opcode::k_comparison_smaller_or_equal: {
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
@@ -1223,9 +1222,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._bool = left <= right;
+			registers[instruction._a]._bool = registers[instruction._b]._int <= registers[instruction._c]._int;
 			pc++;
 			break;
 		}
@@ -1250,9 +1247,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._bool = left < right;
+			registers[instruction._a]._bool = registers[instruction._b]._int < registers[instruction._c]._int;
 			pc++;
 			break;
 		}
@@ -1276,10 +1271,8 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
 
-			registers[instruction._a]._bool = left == right;
+			registers[instruction._a]._bool = registers[instruction._b]._int == registers[instruction._c]._int;
 			pc++;
 			break;
 		}
@@ -1304,9 +1297,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._bool = left != right;
+			registers[instruction._a]._bool = registers[instruction._b]._int != registers[instruction._c]._int;
 			pc++;
 			break;
 		}
@@ -1335,9 +1326,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			}
 			//	float
 			else if(basetype == base_type::k_float){
-				registers[instruction._a]._float = registers[instruction._b]._float + registers[instruction._c]._float;
-				pc++;
-				break;
+				QUARK_ASSERT(false);
 			}
 
 			//	string
@@ -1371,9 +1360,16 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._int = left + right;
+			registers[instruction._a]._int = registers[instruction._b]._int + registers[instruction._c]._int;
+			pc++;
+			break;
+		}
+		case bc_opcode::k_add_float: {
+			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+
+			registers[instruction._a]._float = registers[instruction._b]._float + registers[instruction._c]._float;
 			pc++;
 			break;
 		}
@@ -1391,126 +1387,64 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._int = left - right;
+			registers[instruction._a]._int = registers[instruction._b]._int - registers[instruction._c]._int;
 			pc++;
 			break;
 		}
-		case bc_opcode::k_multiply: {
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+		case bc_opcode::k_multiply_float: {
+			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._a].second._value_type;
-			const auto basetype = type.get_base_type();
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
-
-			//	int
-			if(basetype == base_type::k_int){
-				QUARK_ASSERT(false);
-			}
-
-			//	float
-			else if(basetype == base_type::k_float){
-				const float left2 = left.get_float_value();
-				const float right2 = right.get_float_value();
-				stack.write_register_float(instruction._a, left2 * right2);
-				pc++;
-				break;
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
+			registers[instruction._a]._float = registers[instruction._b]._float * registers[instruction._c]._float;
+			pc++;
+			break;
 		}
 		case bc_opcode::k_multiply_int: {
 			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._int = left * right;
+			registers[instruction._a]._int = registers[instruction._b]._int * registers[instruction._c]._int;
 			pc++;
 			break;
 		}
-		case bc_opcode::k_divide: {
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+		case bc_opcode::k_divide_float: {
+			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
+			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._a].second._value_type;
-			const auto basetype = type.get_base_type();
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
-
-			//	int
-			if(basetype == base_type::k_int){
-				QUARK_ASSERT(false);
+			const auto right = registers[instruction._c]._float;
+			if(right == 0.0f){
+				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-
-			//	float
-			else if(basetype == base_type::k_float){
-				const float left2 = left.get_float_value();
-				const float right2 = right.get_float_value();
-				if(right2 == 0.0f){
-					throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
-				}
-				stack.write_register_float(instruction._a, left2 / right2);
-				pc++;
-				break;
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
+			registers[instruction._a]._float = registers[instruction._b]._float / right;
+			pc++;
+			break;
 		}
 		case bc_opcode::k_divide_int: {
 			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
 			const auto right = registers[instruction._c]._int;
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			registers[instruction._a]._int = left / right;
+			registers[instruction._a]._int = registers[instruction._b]._int / right;
 			pc++;
 			break;
-		}
-		case bc_opcode::k_remainder: {
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
-
-			const auto& type = frame_ptr->_symbols[instruction._a].second._value_type;
-			const auto basetype = type.get_base_type();
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
-
-			//	int
-			if(basetype == base_type::k_int){
-				QUARK_ASSERT(false);
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
 		}
 		case bc_opcode::k_remainder_int: {
 			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
 			const auto right = registers[instruction._c]._int;
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			registers[instruction._a]._int = left % right;
+			registers[instruction._a]._int = registers[instruction._b]._int % right;
 			pc++;
 			break;
 		}
@@ -1557,9 +1491,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._bool = (left != 0) && (right != 0);
+			registers[instruction._a]._bool = (registers[instruction._b]._int != 0) && (registers[instruction._c]._int != 0);
 			pc++;
 			break;
 		}
@@ -1605,9 +1537,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
 			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
 
-			const auto left = registers[instruction._b]._int;
-			const auto right = registers[instruction._c]._int;
-			registers[instruction._a]._bool = (left != 0) || (right != 0);
+			registers[instruction._a]._bool = (registers[instruction._b]._int != 0) || (registers[instruction._c]._int != 0);
 			pc++;
 			break;
 		}

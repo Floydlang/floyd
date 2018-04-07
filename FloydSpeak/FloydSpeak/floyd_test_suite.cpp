@@ -226,7 +226,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 //	test__run_init__check_result("int result = 1/5e10") == 2e-11);
 }
-QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
+QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", "") {
 	test__run_init__check_result("float result = (4.0-3.0)/(4.0*4.0);", value_t::make_float(0.0625f));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
