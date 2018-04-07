@@ -45,22 +45,22 @@ namespace floyd {
 /*
 		frame_pos_t() :
 			_frame_pos(0),
-			_frame(nullptr)
+			_frame_ptr(nullptr)
 		{
 		}
 		frame_pos_t(int frame_pos, const bc_frame_t* frame) :
 			_frame_pos(frame_pos),
-			_frame(frame)
+			_frame_ptr(frame)
 		{
 		}
 */
 
 		int _frame_pos;
-		const bc_frame_t* _frame;
+		const bc_frame_t* _frame_ptr;
 	};
 
 	inline bool operator==(const frame_pos_t& lhs, const frame_pos_t& rhs){
-		return lhs._frame_pos == rhs._frame_pos && lhs._frame == rhs._frame;
+		return lhs._frame_pos == rhs._frame_pos && lhs._frame_ptr == rhs._frame_ptr;
 	}
 
 	//////////////////////////////////////		interpreter_stack_t
@@ -85,7 +85,7 @@ namespace floyd {
 	struct interpreter_stack_t {
 		public: interpreter_stack_t(const bc_frame_t* global_frame) :
 			_current_frame_pos(0),
-			_current_frame(nullptr),
+			_current_frame_ptr(nullptr),
 			_current_frame_entry_ptr(nullptr),
 			_global_frame(global_frame),
 			_entries(nullptr),
@@ -149,7 +149,7 @@ namespace floyd {
 			other._debug_types.swap(_debug_types);
 #endif
 			std::swap(_current_frame_pos, other._current_frame_pos);
-			std::swap(_current_frame, other._current_frame);
+			std::swap(_current_frame_ptr, other._current_frame_ptr);
 			std::swap(_current_frame_entry_ptr, other._current_frame_entry_ptr);
 
 			std::swap(_global_frame, other._global_frame);
@@ -220,7 +220,7 @@ namespace floyd {
 				}
 			}
 			_current_frame_pos = new_frame_pos;
-			_current_frame = &frame;
+			_current_frame_ptr = &frame;
 			_current_frame_entry_ptr = &_entries[_current_frame_pos];
 		}
 
@@ -243,7 +243,7 @@ namespace floyd {
 
 			QUARK_ASSERT(parent_step == 0 || parent_step == -1);
 			if(parent_step == 0){
-				return { _current_frame_pos, _current_frame};
+				return { _current_frame_pos, _current_frame_ptr};
 			}
 			else if(parent_step == -1){
 				return frame_pos_t{k_frame_overhead, _global_frame};
@@ -262,7 +262,7 @@ namespace floyd {
 
 			const auto frame_pos = find_frame_pos(reg._parent_steps);
 
-			QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame->_body._symbols.size());
+			QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame_ptr->_body._symbols.size());
 			const auto pos = frame_pos._frame_pos + reg._index;
 			return pos;
 		}
@@ -272,8 +272,8 @@ namespace floyd {
 			QUARK_ASSERT(reg.check_invariant());
 
 			const auto frame_pos = find_frame_pos(reg._parent_steps);
-			QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame->_body._symbols.size());
-			const auto symbol_ptr = &frame_pos._frame->_body._symbols[reg._index];
+			QUARK_ASSERT(reg._index >= 0 && reg._index < frame_pos._frame_ptr->_body._symbols.size());
+			const auto symbol_ptr = &frame_pos._frame_ptr->_body._symbols[reg._index];
 			return symbol_ptr;
 		}
 
@@ -293,9 +293,9 @@ namespace floyd {
 		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			QUARK_ASSERT(reg >= 0 && reg < _current_frame->_symbols.size());
+			QUARK_ASSERT(reg >= 0 && reg < _current_frame_ptr->_symbols.size());
 
-			return &_current_frame->_symbols[reg];
+			return &_current_frame_ptr->_symbols[reg];
 		}
 
 
@@ -317,11 +317,11 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
-			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_symbols[reg].second._value_type);
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame_ptr->_symbols[reg].second._value_type);
 
-			bool is_ext = _current_frame->_exts[reg];
+			bool is_ext = _current_frame_ptr->_exts[reg];
 #if DEBUG
-			const auto result = bc_value_t(_current_frame->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg], is_ext);
+			const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg], is_ext);
 #else
 			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
 #endif
@@ -332,8 +332,8 @@ namespace floyd {
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(value.check_invariant());
 
-			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame->_symbols[reg].second._value_type);
-			bool is_ext = _current_frame->_exts[reg];
+			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == _current_frame_ptr->_symbols[reg].second._value_type);
+			bool is_ext = _current_frame_ptr->_exts[reg];
 			if(is_ext){
 				auto prev_copy = _current_frame_entry_ptr[reg];
 				value._pod._ext->_rc++;
@@ -377,7 +377,7 @@ namespace floyd {
 		public: bool check_register_access_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			QUARK_ASSERT(_current_frame->_exts[reg] == true);
+			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == true);
 			return true;
 		}
 
@@ -461,7 +461,7 @@ namespace floyd {
 		public: bool check_register_access_intern(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			QUARK_ASSERT(_current_frame->_exts[reg] == false);
+			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == false);
 			return true;
 		}
 		#endif
@@ -559,7 +559,7 @@ namespace floyd {
 			const auto frame_pos = bc_value_t::make_int(_current_frame_pos);
 			push_intern(frame_pos);
 
-			const auto frame_ptr = bc_value_t(_current_frame);
+			const auto frame_ptr = bc_value_t(_current_frame_ptr);
 			push_intern(frame_ptr);
 		}
 		public: void restore_frame(){
@@ -567,7 +567,7 @@ namespace floyd {
 			bc_pod_value_t frame_ptr_pod = load_pod(stack_size - 1);
 			bc_pod_value_t frame_pos_pod = load_pod(stack_size - 2);
 
-			_current_frame = frame_ptr_pod._frame_ptr;
+			_current_frame_ptr = frame_ptr_pod._frame_ptr;
 			_current_frame_pos = frame_pos_pod._int;
 			_current_frame_entry_ptr = &_entries[_current_frame_pos];
 
@@ -708,11 +708,11 @@ namespace floyd {
 
 			return _entries[pos]._frame_ptr;
 		}
-		private: inline void push_frame_ptr(const bc_frame_t* frame){
+		private: inline void push_frame_ptr(const bc_frame_t* frame_ptr){
 			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(frame != nullptr && frame->check_invariant());
+			QUARK_ASSERT(frame_ptr != nullptr && frame_ptr->check_invariant());
 
-			const auto value = bc_value_t(frame);
+			const auto value = bc_value_t(frame_ptr);
 			_entries[_stack_size] = value._pod;
 			_stack_size++;
 #if DEBUG
@@ -839,7 +839,7 @@ namespace floyd {
 		public: frame_pos_t get_current_frame_pos() const {
 			QUARK_ASSERT(check_invariant());
 
-			return frame_pos_t{_current_frame_pos, _current_frame};
+			return frame_pos_t{_current_frame_pos, _current_frame_ptr};
 		}
 
 		public: json_t stack_to_json() const;
@@ -855,7 +855,7 @@ namespace floyd {
 #endif
 
 		public: int _current_frame_pos;
-		public: const bc_frame_t* _current_frame;
+		public: const bc_frame_t* _current_frame_ptr;
 		public: bc_pod_value_t* _current_frame_entry_ptr;
 
 		public: const bc_frame_t* _global_frame;

@@ -399,9 +399,9 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 			vm._stack.push_value(bc, is_ext);
 		}
 
-		vm._stack.open_frame(*function_def._frame, static_cast<int>(args.size()));
-		const auto& result = execute_instructions(vm, function_def._frame->_instrs2);
-		vm._stack.close_frame(*function_def._frame);
+		vm._stack.open_frame(*function_def._frame_ptr, static_cast<int>(args.size()));
+		const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
+		vm._stack.close_frame(*function_def._frame_ptr);
 		vm._stack.pop_batch(exts);
 		vm._stack.restore_frame();
 
@@ -649,7 +649,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 	QUARK_ASSERT(vm.check_invariant());
 
 	interpreter_stack_t& stack = vm._stack;
-	const bc_frame_t* frame_ptr = stack._current_frame;
+	const bc_frame_t* frame_ptr = stack._current_frame_ptr;
 	auto frame_pos = stack._current_frame_pos;
 
 	bc_pod_value_t* registers = stack._current_frame_entry_ptr;
@@ -675,7 +675,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		QUARK_ASSERT(instruction.check_invariant());
 
 		QUARK_ASSERT(frame_pos == stack._current_frame_pos);
-		QUARK_ASSERT(frame_ptr == stack._current_frame);
+		QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
 		QUARK_ASSERT(registers == stack._current_frame_entry_ptr);
 
 
@@ -787,19 +787,41 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			stack._debug_types.push_back(typeid_t::make_int());
 			stack._debug_types.push_back(typeid_t::make_void());
 #endif
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
-		case bc_opcode::k_pop_frame_ptr: {
-			stack.restore_frame();
 
-			frame_ptr = stack._current_frame;
+		//??? don't keep frame_pos around in stack and here as a local: instead
+		//	calculate using (_current_frame_entry_ptr - _current_frame_ptr)
+		case bc_opcode::k_pop_frame_ptr: {
+			QUARK_ASSERT(vm.check_invariant());
+			QUARK_ASSERT(stack._stack_size >= 2);
+
+			frame_pos = stack._entries[stack._stack_size - 2]._int;
+			frame_ptr = stack._entries[stack._stack_size - 1]._frame_ptr;
+			stack._stack_size -= 2;
+
+#if DEBUG
+			stack._debug_types.pop_back();
+			stack._debug_types.pop_back();
+#endif
+
+			registers = &stack._entries[frame_pos];
+
+			//??? do we need stack._current_frame_ptr, stack._current_frame_pos? Only use local variables to track these?
+			stack._current_frame_ptr = frame_ptr;
+			stack._current_frame_pos = frame_pos;
+			stack._current_frame_entry_ptr = registers;
+
+			frame_ptr = stack._current_frame_ptr;
 			frame_pos = stack._current_frame_pos;
 			registers = stack._current_frame_entry_ptr;
 
 			QUARK_ASSERT(frame_pos == stack._current_frame_pos);
-			QUARK_ASSERT(frame_ptr == stack._current_frame);
+			QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
 			QUARK_ASSERT(registers == stack._current_frame_entry_ptr);
+			QUARK_ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
@@ -1096,13 +1118,13 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				//	We need to remember the global pos where to store return value, since we're switching frame to call function.
 				int result_reg_pos = stack._current_frame_pos + instruction._a;
 
-				stack.open_frame(*function_def._frame, callee_arg_count);
-				const auto& result = execute_instructions(vm, function_def._frame->_instrs2);
-				stack.close_frame(*function_def._frame);
+				stack.open_frame(*function_def._frame_ptr, callee_arg_count);
+				const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
+				stack.close_frame(*function_def._frame_ptr);
 
 
 				//	Update our cached pointers.
-				frame_ptr = stack._current_frame;
+				frame_ptr = stack._current_frame_ptr;
 				frame_pos = stack._current_frame_pos;
 				registers = stack._current_frame_entry_ptr;
 
@@ -1120,7 +1142,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			}
 
 			QUARK_ASSERT(frame_pos == stack._current_frame_pos);
-			QUARK_ASSERT(frame_ptr == stack._current_frame);
+			QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
 			QUARK_ASSERT(registers == stack._current_frame_entry_ptr);
 			QUARK_ASSERT(vm.check_invariant());
 			pc++;

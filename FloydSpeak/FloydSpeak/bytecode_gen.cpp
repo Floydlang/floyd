@@ -1750,7 +1750,7 @@ json_t functiondef_to_json(const bc_function_definition_t& def){
 	return json_t::make_array({
 		json_t(typeid_to_compact_string(def._function_type)),
 		members_to_json(def._args),
-		def._frame ? frame_to_json(*def._frame) : json_t(),
+		def._frame_ptr ? frame_to_json(*def._frame_ptr) : json_t(),
 		json_t(def._host_function_id)
 	});
 }

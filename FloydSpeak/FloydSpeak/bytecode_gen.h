@@ -1354,7 +1354,7 @@ inline int bc_limit(int value, int min, int max){
 		):
 			_function_type(function_type),
 			_args(args),
-			_frame(frame),
+			_frame_ptr(frame),
 			_host_function_id(host_function_id),
 			_dyn_arg_count(-1),
 			_return_is_ext(bc_value_t::is_bc_ext(_function_type.get_function_return().get_base_type()))
@@ -1372,7 +1372,7 @@ inline int bc_limit(int value, int min, int max){
 		//??? store more optimzation stuff here!
 		typeid_t _function_type;
 		std::vector<member_t> _args;
-		std::shared_ptr<bc_frame_t> _frame;
+		std::shared_ptr<bc_frame_t> _frame_ptr;
 		int _host_function_id;
 
 
