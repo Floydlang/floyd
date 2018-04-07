@@ -165,6 +165,24 @@ namespace floyd {
 		}
 
 
+
+
+		public: bool check_global_access_obj(const int global_index) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols.size()));
+			QUARK_ASSERT(_global_frame->_exts[global_index] == true);
+			return true;
+		}
+		public: bool check_global_access_inline(const int global_index) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols.size()));
+			QUARK_ASSERT(_global_frame->_exts[global_index] == false);
+			return true;
+		}
+
+
+
+
 		//////////////////////////////////////		FRAME
 
 
@@ -365,7 +383,6 @@ namespace floyd {
 			return true;
 		}
 
-
 		//??? use const bc_value_object_t* peek_register_obj()
 		public: bc_value_t read_register_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
@@ -389,7 +406,6 @@ namespace floyd {
 			const auto info = get_register_info2(reg);
 			QUARK_ASSERT(info->second._value_type == value._debug_type);
 		#endif
-
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg] == value._debug_type);
 
 			auto prev_copy = _current_frame_entry_ptr[reg];
