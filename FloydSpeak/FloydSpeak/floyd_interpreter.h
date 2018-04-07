@@ -173,7 +173,7 @@ namespace floyd {
 			QUARK_ASSERT(_global_frame->_exts[global_index] == true);
 			return true;
 		}
-		public: bool check_global_access_inline(const int global_index) const{
+		public: bool check_global_access_intern(const int global_index) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols.size()));
 			QUARK_ASSERT(_global_frame->_exts[global_index] == false);
@@ -216,7 +216,7 @@ namespace floyd {
 					push_obj(local);
 				}
 				else{
-					push_inplace(local);
+					push_intern(local);
 				}
 			}
 			_current_frame_pos = new_frame_pos;
@@ -338,7 +338,7 @@ namespace floyd {
 				auto prev_copy = _current_frame_entry_ptr[reg];
 				value._pod._ext->_rc++;
 				_current_frame_entry_ptr[reg] = value._pod;
-				bc_value_t::debump(prev_copy);
+				bc_value_t::release_ext_pod(prev_copy);
 			}
 			else{
 				_current_frame_entry_ptr[reg] = value._pod;
@@ -348,8 +348,7 @@ namespace floyd {
 		}
 
 
-
-		public: bc_value_t read_register_inplace(const int reg) const{
+		public: bc_value_t read_register_intern(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
@@ -362,7 +361,7 @@ namespace floyd {
 			return bc_value_t(_current_frame_entry_ptr[reg], false);
 #endif
 		}
-		public: void write_register_inplace(const int reg, const bc_value_t& value){
+		public: void write_register_intern(const int reg, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(value.check_invariant());
@@ -378,7 +377,6 @@ namespace floyd {
 		public: bool check_register_access_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			const auto info = get_register_info2(reg);
 			QUARK_ASSERT(_current_frame->_exts[reg] == true);
 			return true;
 		}
@@ -411,7 +409,7 @@ namespace floyd {
 			auto prev_copy = _current_frame_entry_ptr[reg];
 			value._pod._ext->_rc++;
 			_current_frame_entry_ptr[reg] = value._pod;
-			bc_value_t::debump(prev_copy);
+			bc_value_t::release_ext_pod(prev_copy);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -460,7 +458,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_inline(const int reg) const{
+		public: bool check_register_access_intern(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame->_exts[reg] == false);
@@ -518,7 +516,7 @@ namespace floyd {
 			auto prev_copy = _current_frame_entry_ptr[reg];
 			value2._pod._ext->_rc++;
 			_current_frame_entry_ptr[reg] = value2._pod;
-			bc_value_t::debump(prev_copy);
+			bc_value_t::release_ext_pod(prev_copy);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -559,10 +557,10 @@ namespace floyd {
 
 		public: void save_frame(){
 			const auto frame_pos = bc_value_t::make_int(_current_frame_pos);
-			push_inplace(frame_pos);
+			push_intern(frame_pos);
 
 			const auto frame_ptr = bc_value_t(_current_frame);
-			push_inplace(frame_ptr);
+			push_intern(frame_ptr);
 		}
 		public: void restore_frame(){
 			const auto stack_size = size();
@@ -630,7 +628,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-		public: BC_INLINE void push_inplace(const bc_value_t& value){
+		public: BC_INLINE void push_intern(const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if DEBUG
@@ -670,7 +668,7 @@ namespace floyd {
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 			return _entries[pos];
 		}
-		public: BC_INLINE bc_value_t load_inline_value(int pos) const{
+		public: BC_INLINE bc_value_t load_intern_value(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == false);
@@ -726,7 +724,7 @@ namespace floyd {
 		//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
 
 
-		public: BC_INLINE void replace_inline(int pos, const bc_value_t& value){
+		public: BC_INLINE void replace_intern(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -760,7 +758,7 @@ namespace floyd {
 			auto prev_copy = _entries[pos];
 			value._pod._ext->_rc++;
 			_entries[pos] = value._pod;
-			bc_value_t::debump(prev_copy);
+			bc_value_t::release_ext_pod(prev_copy);
 
 			QUARK_ASSERT(check_invariant());
 		}
@@ -816,7 +814,7 @@ namespace floyd {
 			_debug_types.pop_back();
 #endif
 			if(ext){
-				bc_value_t::debump(copy);
+				bc_value_t::release_ext_pod(copy);
 			}
 
 			QUARK_ASSERT(check_invariant());

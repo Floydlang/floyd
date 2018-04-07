@@ -230,13 +230,13 @@ namespace floyd {
 	//////////////////////////////////////		bc_value_t
 
 	/*
-		Efficient value-object. Holds inline values or RC-objects. Tracks RC lifetoime. Stores not value-type!
+		Efficient value-object. Holds intern values or RC-objects. Tracks RC lifetoime. Stores not value-type!
 	*/
 
 	struct bc_value_t {
 
 
-		static BC_INLINE void debump(bc_pod_value_t& value){
+		static BC_INLINE void release_ext_pod(bc_pod_value_t& value){
 			QUARK_ASSERT(value._ext != nullptr);
 
 			value._ext->_rc--;
@@ -899,7 +899,7 @@ inline int bc_limit(int value, int min, int max){
 			B: IMMEDIATE: global index
 			C: ---
 		*/
-		k_load_global_inline,
+		k_load_global_intern,
 
 
 
@@ -918,7 +918,7 @@ inline int bc_limit(int value, int min, int max){
 			B: Register: source reg
 			C: ---
 		*/
-		k_store_global_inline,
+		k_store_global_intern,
 
 
 
@@ -928,7 +928,7 @@ inline int bc_limit(int value, int min, int max){
 			B: Register: parent
 			C: ---
 		*/
-		k_store_local_inline,
+		k_store_local_intern,
 		/*
 			TYPE: ---
 			A: Register: where to put result
@@ -1141,7 +1141,7 @@ inline int bc_limit(int value, int min, int max){
 			STACK 1: a b c
 			STACK 2: a b c V
 		*/
-		k_push_inplace,
+		k_push_intern,
 
 		/*
 			NOTICE: This function bumps the RC of the pushed V-object. This represents the stack-entry co-owning V.

@@ -249,12 +249,12 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
 
 	{ bc_opcode::k_load_global_obj, { "load_global_obj", opcode_info_t::encoding::k_k_0ri0 } },
-	{ bc_opcode::k_load_global_inline, { "load_global_inline", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_load_global_intern, { "load_global_intern", opcode_info_t::encoding::k_k_0ri0 } },
 
 	{ bc_opcode::k_store_global_obj, { "store_global_obj", opcode_info_t::encoding::k_r_0ir0 } },
-	{ bc_opcode::k_store_global_inline, { "store_global_inline", opcode_info_t::encoding::k_r_0ir0 } },
+	{ bc_opcode::k_store_global_intern, { "store_global_intern", opcode_info_t::encoding::k_r_0ir0 } },
 
-	{ bc_opcode::k_store_local_inline, { "store_local_inline", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_store_local_intern, { "store_local_intern", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_store_local_obj, { "store_local_obj", opcode_info_t::encoding::k_q_0rr0 } },
 
 	{ bc_opcode::k_resolve_member, { "resolve_member", opcode_info_t::encoding::k_g_trri } },
@@ -313,7 +313,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
 	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
-	{ bc_opcode::k_push_inplace, { "push_inplace", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_push_intern, { "push_intern", opcode_info_t::encoding::k_p_0r00 } },
 	{ bc_opcode::k_push_obj, { "push_obj", opcode_info_t::encoding::k_p_0r00 } },
 	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_0ii0 } },
 
@@ -746,7 +746,7 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_global_obj, k_no_bctypeid, make_imm_int(dest_variable._index), expr._output_reg, {}));
 		}
 		else{
-			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_global_inline, k_no_bctypeid, make_imm_int(dest_variable._index), expr._output_reg, {}));
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_global_intern, k_no_bctypeid, make_imm_int(dest_variable._index), expr._output_reg, {}));
 		}
 	}
 	else{
@@ -754,7 +754,7 @@ bc_body_t bcgen_store2_statement(bgenerator_t& vm, const statement_t::store2_t& 
 			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_obj, k_no_bctypeid, dest_variable, expr._output_reg, {}));
 		}
 		else{
-			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, dest_variable, expr._output_reg, {}));
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_intern, k_no_bctypeid, dest_variable, expr._output_reg, {}));
 		}
 	}
 
@@ -847,7 +847,7 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_comparison_smaller_or_equal_int : bc_opcode::k_comparison_smaller_int;
 
 	//	Write start-integer in counter_reg
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, counter_reg, start_expr._output_reg, {}));
+	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_intern, k_no_bctypeid, counter_reg, start_expr._output_reg, {}));
 	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, k_no_bctypeid, flag_reg, counter_reg, end_expr._output_reg));
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, k_no_bctypeid, flag_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
 	body_acc = flatten_body(vm, body_acc, loop_body);
@@ -1044,7 +1044,7 @@ expr_info_t bcgen_load2_expression(bgenerator_t& vm, const expression_t& e, cons
 		}
 		else{
 			body_acc._instrs.push_back(bc_instruction_t(
-				bc_opcode::k_load_global_inline,
+				bc_opcode::k_load_global_intern,
 				k_no_bctypeid,
 				temp_reg,
 				make_imm_int(e._address._index),
@@ -1131,7 +1131,7 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
 		if(func_arg_type.is_internal_dynamic()){
 			const auto arg_type_reg = add_local_const(body_acc, value_t::make_int(callee_arg_type), "DYN type arg #" + std::to_string(i));
-			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_inplace, k_no_bctypeid, arg_type_reg, {}, {} ));
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_intern, k_no_bctypeid, arg_type_reg, {}, {} ));
 
 			//	Int don't need extbit.
 			exts.push_back(false);
@@ -1144,7 +1144,7 @@ call_setup_t gen_call_setup(bgenerator_t& vm, const std::vector<typeid_t>& funct
 			exts.push_back(true);
 		}
 		else{
-			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_inplace, k_no_bctypeid, arg_reg, {}, {} ));
+			body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_push_intern, k_no_bctypeid, arg_reg, {}, {} ));
 			exts.push_back(false);
 		}
 	}
@@ -1316,10 +1316,10 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	const auto& condition_expr = bcgen_expression(vm, e._input_exprs[0], body_acc);
 	body_acc = condition_expr._body;
 
-	const auto type = e.get_output_type();
-	const auto itype = intern_type(vm, type);
+	const auto result_type = e.get_output_type();
+	const auto result_itype = intern_type(vm, result_type);
 
-	const auto result_reg = add_local_temp(body_acc, type, "conditional_operator output register");
+	const auto result_reg = add_local_temp(body_acc, result_type, "conditional_operator output register");
 
 	int jump1_pc = static_cast<int>(body_acc._instrs.size());
 	body_acc._instrs.push_back(
@@ -1332,14 +1332,19 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 		)
 	);
 
+	////////	A expression
+
 	const auto& a_expr = bcgen_expression(vm, e._input_exprs[1], body_acc);
 	body_acc = a_expr._body;
 
 	///??? real need a store-operation?
 	//	Copy result to result_reg.
-	body_acc._instrs.push_back(
-		bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, result_reg, a_expr._output_reg, {} )
-	);
+	if(bc_value_t::is_bc_ext(result_type.get_base_type())){
+		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_obj, k_no_bctypeid, result_reg, a_expr._output_reg, {} ));
+	}
+	else{
+		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_intern, k_no_bctypeid, result_reg, a_expr._output_reg, {} ));
+	}
 
 	int jump2_pc = static_cast<int>(body_acc._instrs.size());
 	body_acc._instrs.push_back(
@@ -1352,13 +1357,18 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 		)
 	);
 
+	////////	B expression
+
 	int b_pc = static_cast<int>(body_acc._instrs.size());
 	const auto& b_expr = bcgen_expression(vm, e._input_exprs[2], body_acc);
 	body_acc = b_expr._body;
 
-	body_acc._instrs.push_back(
-		bc_instruction_t(bc_opcode::k_store_local_inline, k_no_bctypeid, result_reg, b_expr._output_reg, {} )
-	);
+	if(bc_value_t::is_bc_ext(result_type.get_base_type())){
+		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_obj, k_no_bctypeid, result_reg, b_expr._output_reg, {} ));
+	}
+	else{
+		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_intern, k_no_bctypeid, result_reg, b_expr._output_reg, {} ));
+	}
 
 	int end_pc = static_cast<int>(body_acc._instrs.size());
 
@@ -1366,7 +1376,7 @@ expr_info_t bcgen_conditional_operator_expression(bgenerator_t& vm, const expres
 	QUARK_ASSERT(body_acc._instrs[jump2_pc]._reg_a._index == 0xfea57be7);
 	body_acc._instrs[jump1_pc]._reg_b._index = b_pc - jump1_pc;
 	body_acc._instrs[jump2_pc]._reg_a._index = end_pc - jump2_pc;
-	return { body_acc, result_reg, itype };
+	return { body_acc, result_reg, result_itype };
 }
 
 //??? shortcut evaluation!

@@ -694,13 +694,13 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			auto prev_copy = registers[instruction._a];
 			value._pod._ext->_rc++;
 			registers[instruction._a] = value._pod;
-			bc_value_t::debump(prev_copy);
+			bc_value_t::release_ext_pod(prev_copy);
 			pc++;
 			break;
 		}
-		case bc_opcode::k_load_global_inline: {
+		case bc_opcode::k_load_global_intern: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			QUARK_ASSERT(stack.check_register_access_inline(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_intern(instruction._a));
 
 			registers[instruction._a] = globals[instruction._b];
 			pc++;
@@ -717,11 +717,11 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			const auto& source_value = registers[instruction._b];
 			source_value._ext->_rc++;
 			globals[instruction._a] = source_value;
-			bc_value_t::debump(prev_copy);
+			bc_value_t::release_ext_pod(prev_copy);
 			pc++;
 			break;
 		}
-		case bc_opcode::k_store_global_inline: {
+		case bc_opcode::k_store_global_intern: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			stack._entries[k_frame_overhead + instruction._a] = stack.peek_register(instruction._b);
@@ -733,15 +733,19 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 		//////////////////////////////////////////		ACCESS LOCALS
 
 
-		case bc_opcode::k_store_local_inline: {
+		case bc_opcode::k_store_local_intern: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
-			const auto value = stack.peek_register(instruction._b);
-			stack.write_register_pod(instruction._a, value);
+			QUARK_ASSERT(stack.check_register_access_intern(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_intern(instruction._b));
+
+			registers[instruction._a] = registers[instruction._b];
 			pc++;
 			break;
 		}
 		case bc_opcode::k_store_local_obj: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
+			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
+			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
 
 			//??? No need to construct a bc_value_t, we just need to copy ptr & bump RC/release RC.
 			const auto value = stack.read_register_obj(instruction._b);
@@ -780,7 +784,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			break;
 		}
 
-		case bc_opcode::k_push_inplace: {
+		case bc_opcode::k_push_intern: {
 			QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
 
 			QUARK_ASSERT(stack.check_reg(instruction._a));
@@ -927,7 +931,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 			if(parent_json_value.is_object()){
 				const auto& lookup_key = stack.peek_register_string(instruction._c);
 
-				//??? Optimize json_value:int to be inplace.
+				//??? Optimize json_value:int to be intern.
 
 				//	get_object_element() throws if key can't be found.
 				const auto& value = parent_json_value.get_object_element(lookup_key);
@@ -1090,7 +1094,7 @@ execution_result_t execute_instructions(interpreter_t& vm, const std::vector<bc_
 						stack.replace_obj(result_reg_pos, result._output);
 					}
 					else{
-						stack.replace_inline(result_reg_pos, result._output);
+						stack.replace_intern(result_reg_pos, result._output);
 					}
 				}
 			}
