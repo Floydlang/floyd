@@ -185,7 +185,7 @@ void run_repl(){
 	floyd::interpreter_context_t context{ quark::make_default_tracer() };
 
 	int print_pos = 0;
-	auto ast = floyd::program_to_ast2(context, "");
+	auto ast = floyd::compile_to_bytecode(context, "");
 	auto vm = std::make_shared<floyd::interpreter_t>(ast);
 
 	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;
@@ -268,7 +268,7 @@ void run_file(const std::vector<std::string>& args){
 
 //	std::cout << "Compiling..." << std::endl;
 	floyd::interpreter_context_t context{ quark::make_default_tracer() };
-	auto program = floyd::program_to_ast2(context, source);
+	auto program = floyd::compile_to_bytecode(context, source);
 
 
 //	std::cout << "Preparing arguments..." << std::endl;

@@ -230,7 +230,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
 	);
 
 	interpreter_context_t context = make_benchmark_context();
-	const auto ast = program_to_ast2(context, gol_floyd_str);
+	const auto ast = compile_to_bytecode(context, gol_floyd_str);
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol2(vm, "f");
 	QUARK_ASSERT(f != nullptr);

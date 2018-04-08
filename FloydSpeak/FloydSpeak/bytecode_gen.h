@@ -31,17 +31,48 @@ namespace floyd {
 	};
 
 
-	inline int bc_limit(int value, int min, int max){
-		if(value < min){
-			return min;
+
+
+	//??? move to bcgen
+	//	Replace by int when we have flattened local bodies.
+	typedef variable_address_t reg_t;
+
+
+
+	//	??? move to bcgen!
+	struct bc_instruction_t {
+		bc_instruction_t(
+			bc_opcode opcode,
+			bc_typeid_t type,
+			variable_address_t regA,
+			variable_address_t regB,
+			variable_address_t regC
+		) :
+			_opcode(opcode),
+			_instr_type(type),
+			_reg_a(regA),
+			_reg_b(regB),
+			_reg_c(regC)
+		{
+			QUARK_ASSERT(check_invariant());
 		}
-		else if(value > max){
-			return max;
-		}
-		else{
-			return value;
-		}
-	}
+
+#if DEBUG
+		public: bool check_invariant() const;
+#endif
+
+
+		//////////////////////////////////////		STATE
+		//??? lose variable_address_t and closures for now. register = int16. negative = global/constant, positive = local stack register.
+		bc_opcode _opcode;
+		variable_address_t _reg_a;
+		variable_address_t _reg_b;
+		variable_address_t _reg_c;
+
+		//??? temporary. Plan is to embedd this type into opcode.
+		bc_typeid_t _instr_type;
+	};
+
 
 
 

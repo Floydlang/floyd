@@ -519,7 +519,7 @@ QUARK_UNIT_TESTQ("run_main()", ""){
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	const auto context = make_test_interpreter_context();
-	auto ast = program_to_ast2(context,
+	auto ast = compile_to_bytecode(context,
 		"int main(string args){\n"
 		"	return 3 + 4;\n"
 		"}\n"
@@ -532,7 +532,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	const auto context = make_test_interpreter_context();
-	auto ast = program_to_ast2(context,
+	auto ast = compile_to_bytecode(context,
 		"string main(string args){\n"
 		"	return \"123\" + \"456\";\n"
 		"}\n"
@@ -693,7 +693,7 @@ QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
 
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
 	const auto context = make_test_interpreter_context();
-	auto ast = program_to_ast2(context,
+	auto ast = compile_to_bytecode(context,
 		"int myfunc(){ return 5; }\n"
 		"int main(string args){\n"
 		"	return myfunc() + myfunc() * 2;\n"
@@ -707,7 +707,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	const auto context = make_test_interpreter_context();
-	auto ast = program_to_ast2(context,
+	auto ast = compile_to_bytecode(context,
 		"string main(string args){\n"
 		"	return \"-\" + args + \"-\";\n"
 		"}\n"
@@ -727,7 +727,7 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 
 QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 	const auto context = make_test_interpreter_context();
-	auto ast = program_to_ast2(context,
+	auto ast = compile_to_bytecode(context,
 		"string myfunc(string t){ return \"<\" + t + \">\"; }\n"
 		"string main(string args){\n"
 		"	 string a = \"--\"; string b = myfunc(args) ; return a + args + b + a;\n"
