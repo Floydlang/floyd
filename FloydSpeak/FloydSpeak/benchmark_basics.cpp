@@ -76,7 +76,7 @@ void trace_result(const bench_result_t& result){
 	std::cout << "\tRel  : " << k << std::endl;
 }
 
-int64_t measure_floyd_function_f(const interpreter_context_t& context, const std::string& floyd_program){
+int64_t measure_floyd_function_f(const interpreter_context_t& context, const std::string& floyd_program, int count){
 	const auto ast = program_to_ast2(context, floyd_program);
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol2(vm, "f");
@@ -85,7 +85,8 @@ int64_t measure_floyd_function_f(const interpreter_context_t& context, const std
 	const auto floyd_ns = measure_execution_time_ns(
 		[&] {
 			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
-		}
+		},
+		count
 	);
 	return floyd_ns;
 }
@@ -96,32 +97,41 @@ int64_t measure_floyd_function_f(const interpreter_context_t& context, const std
 
 
 //	Returns time in nanoseconds
-std::int64_t measure_execution_time_ns(std::function<void (void)> func){
-	func();
+std::int64_t measure_execution_time_ns(std::function<void (void)> func, int count){
+	vector<std::chrono::nanoseconds> results;
+	for(int i = 0 ; i < count ; i++){
+		func();
+		auto t0 = std::chrono::system_clock::now();
+		func();
+		auto t1 = std::chrono::system_clock::now();
+		func();
+		auto t2 = std::chrono::system_clock::now();
+		func();
+		auto t3 = std::chrono::system_clock::now();
+		func();
+		auto t4 = std::chrono::system_clock::now();
 
-	auto t0 = std::chrono::system_clock::now();
-	func();
-	auto t1 = std::chrono::system_clock::now();
-	func();
-	auto t2 = std::chrono::system_clock::now();
-	func();
-	auto t3 = std::chrono::system_clock::now();
-	func();
-	auto t4 = std::chrono::system_clock::now();
-	func();
-	auto t5 = std::chrono::system_clock::now();
+		auto d0 = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0);
+		auto d1 = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
+		auto d2 = std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2);
+		auto d3 = std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3);
 
-	auto d0 = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0);
-	auto d1 = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1);
-	auto d2 = std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2);
-	auto d3 = std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3);
-	auto d4 = std::chrono::duration_cast<std::chrono::nanoseconds>(t5 - t4);
+		results.push_back(d0);
+		results.push_back(d1);
+		results.push_back(d2);
+		results.push_back(d3);
+	}
 
-	const auto average = (d0 + d1 + d2 + d3 + d4) / 5.0;
-	auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(average);
+	auto d0 = results[results.size() - 4 + 0];
+	auto d1 = results[results.size() - 4 + 1];
+	auto d2 = results[results.size() - 4 + 2];
+	auto d3 = results[results.size() - 4 + 3];
+
+	const auto average = (d0 + d1 + d2 + d3) / 4.0;
+	const auto min = std::min(std::min(d0, d1), std::min(d2, d3));
+	auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(min);
 
 	int64_t duration = duration1.count();
-//	std::cout << test_name << " execution time (ns): " << duration << std::endl;
 	return duration;
 }
 

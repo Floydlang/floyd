@@ -18,7 +18,8 @@
 floyd::interpreter_context_t make_test_context();
 
 //	Returns time in nanoseconds
-std::int64_t measure_execution_time_ns(std::function<void (void)> func);
+//	Runs warmup, 4 measuring calls. count is a multiplier that causes entire set to run more times.
+std::int64_t measure_execution_time_ns(std::function<void (void)> func, int count = 1);
 
 floyd::interpreter_context_t make_verbose_context();
 
@@ -38,6 +39,6 @@ struct bench_result_t {
 
 void trace_result(const bench_result_t& result);
 
-int64_t measure_floyd_function_f(const floyd::interpreter_context_t& context, const std::string& floyd_program);
+int64_t measure_floyd_function_f(const floyd::interpreter_context_t& context, const std::string& floyd_program, int count);
 
 #endif

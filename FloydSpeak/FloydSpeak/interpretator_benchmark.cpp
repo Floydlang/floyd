@@ -17,6 +17,8 @@ using std::string;
 using namespace floyd;
 
 
+static int k_repeats = 1;
+
 
 
 //??unused
@@ -112,7 +114,8 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		[&] {
 			c_runner(k_len, &a[0], &b[0], &c[0]);
-		}
+		},
+		k_repeats
 	);
 
 	interpreter_context_t context = make_test_context();
@@ -124,7 +127,8 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 	const auto floyd_ns = measure_execution_time_ns(
 		[&] {
 			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
-		}
+		},
+		k_repeats
 	);
 
 #endif
@@ -133,7 +137,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 
 
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
+QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 //	interpreter_context_t context = make_test_context();
 	interpreter_context_t context = make_verbose_context();
 
@@ -155,8 +159,8 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		)";
 
 		trace_result(bench_result_t{ "For loop incrementing variable",
-			measure_execution_time_ns(cpp_func),
-			measure_floyd_function_f(context, floyd_str)
+			measure_execution_time_ns(cpp_func, k_repeats),
+			measure_floyd_function_f(context, floyd_str, k_repeats)
 		});
 	}
 
@@ -190,8 +194,8 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		)";
 
 		trace_result(bench_result_t{ "For loop with if/else",
-			measure_execution_time_ns(cpp_func),
-			measure_floyd_function_f(context, floyd_str)
+			measure_execution_time_ns(cpp_func, k_repeats),
+			measure_floyd_function_f(context, floyd_str, k_repeats)
 		});
 	}
 
@@ -221,8 +225,8 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		)";
 
 		trace_result(bench_result_t{ "For loop with int math",
-			measure_execution_time_ns(cpp_func),
-			measure_floyd_function_f(context, floyd_str)
+			measure_execution_time_ns(cpp_func, k_repeats),
+			measure_floyd_function_f(context, floyd_str, k_repeats)
 		});
 	}
 
@@ -261,8 +265,8 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		)";
 
 		trace_result(bench_result_t{ "Fibonacci",
-			measure_execution_time_ns(cpp_func),
-			measure_floyd_function_f(context, floyd_str)
+			measure_execution_time_ns(cpp_func, k_repeats),
+			measure_floyd_function_f(context, floyd_str, k_repeats)
 		});
 
 	}
