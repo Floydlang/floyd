@@ -28,7 +28,7 @@ interpreter_context_t make_test_context(){
 
 
 //	Returns time in nanoseconds
-std::int64_t measure_execution_time_ns(const std::string& test_name, std::function<void (void)> func){
+std::int64_t measure_execution_time_ns(std::function<void (void)> func){
 	func();
 
 	auto t0 = std::chrono::system_clock::now();
@@ -53,13 +53,12 @@ std::int64_t measure_execution_time_ns(const std::string& test_name, std::functi
 	auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(average);
 
 	int64_t duration = duration1.count();
-	std::cout << test_name << " execution time (ns): " << duration << std::endl;
+//	std::cout << test_name << " execution time (ns): " << duration << std::endl;
 	return duration;
 }
 
 OFF_QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
 	const auto t = measure_execution_time_ns(
-		"test",
 		[] { std::cout << "Hello, my Greek friends"; }
 	);
 	std::cout << "duration2..." << t << std::endl;

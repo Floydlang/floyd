@@ -41,7 +41,6 @@ static void copy_test(){
 OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
 
 	const auto cpp_ns = measure_execution_time_ns(
-		"C++: For-loop",
 		[&] {
 			copy_test();
 		}
@@ -66,7 +65,6 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "for-loop", "", ""){
 	QUARK_ASSERT(f != nullptr);
 
 	const auto floyd_ns = measure_execution_time_ns(
-		"Floyd: For-loop",
 		[&] {
 			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
 		}
@@ -100,7 +98,6 @@ void fib_test(){
 
 OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
-		"C++: Fibonacci",
 		[&] {
 			fib_test();
 		}
@@ -130,7 +127,6 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "fibonacci", "", ""){
 	QUARK_ASSERT(f != nullptr);
 
 	const auto floyd_ns = measure_execution_time_ns(
-		"Floyd: Fibonacci",
 		[&] {
 			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
 		}

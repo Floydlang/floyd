@@ -224,7 +224,6 @@ const std::string gol_floyd_str = R"(
 
 OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
-		"C++",
 		[&] {
 			test_main(0, nullptr);
 		}
@@ -237,7 +236,6 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
 	QUARK_ASSERT(f != nullptr);
 
 	const auto floyd_ns = measure_execution_time_ns(
-		"Floyd",
 		[&] {
 			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
 		}

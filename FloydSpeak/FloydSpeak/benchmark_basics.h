@@ -18,6 +18,6 @@
 floyd::interpreter_context_t make_test_context();
 
 //	Returns time in nanoseconds
-std::int64_t measure_execution_time_ns(const std::string& test_name, std::function<void (void)> func);
+std::int64_t measure_execution_time_ns(std::function<void (void)> func);
 
 #endif
