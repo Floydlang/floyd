@@ -51,6 +51,7 @@ inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& 
 }
 
 
+//	??? move VM into separate source file.
 
 
 
@@ -817,7 +818,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 
 		vm._stack.save_frame();
 
-
+		//??? use exts-info inside function_def.
 		//	We push the values to the stack = the stack will take RC ownership of the values.
 		vector<bool> exts;
 		for(int i = 0 ; i < args.size() ; i++){
