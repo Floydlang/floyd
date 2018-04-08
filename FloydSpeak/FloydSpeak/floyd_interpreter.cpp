@@ -39,6 +39,8 @@ using std::pair;
 using std::shared_ptr;
 using std::make_shared;
 
+#define ASSERT QUARK_ASSERT
+
 
 //??? should use itype internaly, not typeid_t.
 
@@ -1072,15 +1074,15 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
 
-std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions) throw(){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
+std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions){
+	ASSERT(vm.check_invariant());
+	ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 
 	interpreter_stack_t& stack = vm._stack;
 	const bc_frame_t* frame_ptr = stack._current_frame_ptr;
 	auto frame_pos = stack._current_frame_pos;
 
-	bc_pod_value_t* registers = stack._current_frame_entry_ptr;
+	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
 
 	const typeid_t* type_lookup = &vm._imm->_program._types[0];
@@ -1095,19 +1097,19 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			return { false, bc_value_t::make_undefined() };
 		}
 */
-		QUARK_ASSERT(pc >= 0);
-		QUARK_ASSERT(pc < instructions.size());
-		const auto instruction = instructions[pc];
+		ASSERT(pc >= 0);
+		ASSERT(pc < instructions.size());
+		const auto i = instructions[pc];
 
-		QUARK_ASSERT(vm.check_invariant());
-		QUARK_ASSERT(instruction.check_invariant());
+		ASSERT(vm.check_invariant());
+		ASSERT(i.check_invariant());
 
-		QUARK_ASSERT(frame_pos == stack._current_frame_pos);
-		QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
-		QUARK_ASSERT(registers == stack._current_frame_entry_ptr);
+		ASSERT(frame_pos == stack._current_frame_pos);
+		ASSERT(frame_ptr == stack._current_frame_ptr);
+		ASSERT(regs == stack._current_frame_entry_ptr);
 
 
-		const auto opcode = instruction._opcode;
+		const auto opcode = i._opcode;
 		switch(opcode){
 
 
@@ -1115,41 +1117,41 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 
 		case bc_opcode::k_load_global_obj: {
-			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
-			QUARK_ASSERT(stack.check_global_access_obj(instruction._b));
+			ASSERT(stack.check_reg_obj(i._a));
+			ASSERT(stack.check_global_access_obj(i._b));
 
-			bc_value_t::release_ext(registers[instruction._a]._ext);
-			const auto& new_value_pod = globals[instruction._b];
-			registers[instruction._a] = new_value_pod;
+			bc_value_t::release_ext(regs[i._a]._ext);
+			const auto& new_value_pod = globals[i._b];
+			regs[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_load_global_intern: {
-			QUARK_ASSERT(stack.check_register_access_intern(instruction._a));
+			ASSERT(stack.check_reg_intern(i._a));
 
-			registers[instruction._a] = globals[instruction._b];
+			regs[i._a] = globals[i._b];
 			pc++;
 			break;
 		}
 
 
 		case bc_opcode::k_store_global_obj: {
-			QUARK_ASSERT(stack.check_global_access_obj(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
+			ASSERT(stack.check_global_access_obj(i._a));
+			ASSERT(stack.check_reg_obj(i._b));
 
-			bc_value_t::release_ext(globals[instruction._a]._ext);
-			const auto& new_value_pod = registers[instruction._b];
-			globals[instruction._a] = new_value_pod;
+			bc_value_t::release_ext(globals[i._a]._ext);
+			const auto& new_value_pod = regs[i._b];
+			globals[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_store_global_intern: {
-			QUARK_ASSERT(stack.check_global_access_intern(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_intern(instruction._b));
+			ASSERT(stack.check_global_access_intern(i._a));
+			ASSERT(stack.check_reg_intern(i._b));
 
-			globals[instruction._a] = registers[instruction._b];
+			globals[i._a] = regs[i._b];
 			pc++;
 			break;
 		}
@@ -1159,20 +1161,20 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 
 		case bc_opcode::k_store_local_intern: {
-			QUARK_ASSERT(stack.check_register_access_intern(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_intern(instruction._b));
+			ASSERT(stack.check_reg_intern(i._a));
+			ASSERT(stack.check_reg_intern(i._b));
 
-			registers[instruction._a] = registers[instruction._b];
+			regs[i._a] = regs[i._b];
 			pc++;
 			break;
 		}
 		case bc_opcode::k_store_local_obj: {
-			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_obj(instruction._b));
+			ASSERT(stack.check_reg_obj(i._a));
+			ASSERT(stack.check_reg_obj(i._b));
 
-			bc_value_t::release_ext(registers[instruction._a]._ext);
-			const auto& new_value_pod = registers[instruction._b];
-			registers[instruction._a] = new_value_pod;
+			bc_value_t::release_ext(regs[i._a]._ext);
+			const auto& new_value_pod = regs[i._b];
+			regs[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
 			pc++;
 			break;
@@ -1183,16 +1185,16 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 
 		case bc_opcode::k_return: {
-			bool is_ext = frame_ptr->_exts[instruction._a];
-			QUARK_ASSERT(
-				(is_ext && stack.check_register_access_obj(instruction._a))
-				|| (!is_ext && stack.check_register_access_intern(instruction._a))
+			bool is_ext = frame_ptr->_exts[i._a];
+			ASSERT(
+				(is_ext && stack.check_reg_obj(i._a))
+				|| (!is_ext && stack.check_reg_intern(i._a))
 			);
 
 #if DEBUG
-			return { true, bc_value_t(frame_ptr->_symbols[instruction._a].second._value_type, registers[instruction._a], is_ext) };
+			return { true, bc_value_t(frame_ptr->_symbols[i._a].second._value_type, regs[i._a], is_ext) };
 #else
-			return { true, bc_value_t(registers[instruction._a], is_ext) };
+			return { true, bc_value_t(regs[i._a], is_ext) };
 #endif
 		}
 
@@ -1201,8 +1203,8 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 
 		case bc_opcode::k_push_frame_ptr: {
-			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT((stack._stack_size + 2) < stack._allocated_count)
+			ASSERT(vm.check_invariant());
+			ASSERT((stack._stack_size + 2) < stack._allocated_count)
 
 			stack._entries[stack._stack_size + 0]._int = frame_pos;
 			stack._entries[stack._stack_size + 1]._frame_ptr = frame_ptr;
@@ -1211,7 +1213,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			stack._debug_types.push_back(typeid_t::make_int());
 			stack._debug_types.push_back(typeid_t::make_void());
 #endif
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
@@ -1219,8 +1221,8 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//??? don't keep frame_pos around in stack and here as a local: instead
 		//	calculate using (_current_frame_entry_ptr - _current_frame_ptr)
 		case bc_opcode::k_pop_frame_ptr: {
-			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack._stack_size >= 2);
+			ASSERT(vm.check_invariant());
+			ASSERT(stack._stack_size >= 2);
 
 			frame_pos = stack._entries[stack._stack_size - 2]._int;
 			frame_ptr = stack._entries[stack._stack_size - 1]._frame_ptr;
@@ -1231,71 +1233,71 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			stack._debug_types.pop_back();
 #endif
 
-			registers = &stack._entries[frame_pos];
+			regs = &stack._entries[frame_pos];
 
 			//??? do we need stack._current_frame_ptr, stack._current_frame_pos? Only use local variables to track these?
 			stack._current_frame_ptr = frame_ptr;
 			stack._current_frame_pos = frame_pos;
-			stack._current_frame_entry_ptr = registers;
+			stack._current_frame_entry_ptr = regs;
 
 			frame_ptr = stack._current_frame_ptr;
 			frame_pos = stack._current_frame_pos;
-			registers = stack._current_frame_entry_ptr;
+			regs = stack._current_frame_entry_ptr;
 
-			QUARK_ASSERT(frame_pos == stack._current_frame_pos);
-			QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
-			QUARK_ASSERT(registers == stack._current_frame_entry_ptr);
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(frame_pos == stack._current_frame_pos);
+			ASSERT(frame_ptr == stack._current_frame_ptr);
+			ASSERT(regs == stack._current_frame_entry_ptr);
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_push_intern: {
-			QUARK_ASSERT(stack.check_register_access_intern(instruction._a));
+			ASSERT(stack.check_reg_intern(i._a));
 #if DEBUG
-			const auto info = stack.get_register_info2(instruction._a);
-			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
+			const auto info = stack.get_register_info2(i._a);
+			ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
 #endif
 
-			stack._entries[stack._stack_size] = registers[instruction._a];
+			stack._entries[stack._stack_size] = regs[i._a];
 			stack._stack_size++;
 #if DEBUG
-			stack._debug_types.push_back(stack._debug_types[frame_pos + instruction._a]);
+			stack._debug_types.push_back(stack._debug_types[frame_pos + i._a]);
 #endif
-			QUARK_ASSERT(stack.check_invariant());
+			ASSERT(stack.check_invariant());
 			pc++;
 			break;
 		}
 		case bc_opcode::k_push_obj: {
-			QUARK_ASSERT(stack.check_register_access_obj(instruction._a));
+			ASSERT(stack.check_reg_obj(i._a));
 
-			const auto& new_value_pod = registers[instruction._a];
+			const auto& new_value_pod = regs[i._a];
 			new_value_pod._ext->_rc++;
 			stack._entries[stack._stack_size] = new_value_pod;
 			stack._stack_size++;
 #if DEBUG
-			stack._debug_types.push_back(stack._debug_types[frame_pos + instruction._a]);
+			stack._debug_types.push_back(stack._debug_types[frame_pos + i._a]);
 #endif
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_popn: {
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(vm.check_invariant());
 
-			const uint32_t n = instruction._a;
-			const uint32_t extbits = instruction._b;
+			const uint32_t n = i._a;
+			const uint32_t extbits = i._b;
 
-			QUARK_ASSERT(stack._stack_size >= n);
-			QUARK_ASSERT(n >= 0);
-			QUARK_ASSERT(n <= 32);
+			ASSERT(stack._stack_size >= n);
+			ASSERT(n >= 0);
+			ASSERT(n <= 32);
 
 			uint32_t bits = extbits;
 			int pos = static_cast<int>(stack._stack_size) - 1;
 			for(int i = 0 ; i < n ; i++){
 				bool ext = (bits & 1) ? true : false;
 
-				QUARK_ASSERT(bc_value_t::is_bc_ext(stack._debug_types.back().get_base_type()) == ext);
+				ASSERT(bc_value_t::is_bc_ext(stack._debug_types.back().get_base_type()) == ext);
 	#if DEBUG
 				stack._debug_types.pop_back();
 	#endif
@@ -1307,7 +1309,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			}
 			stack._stack_size -= n;
 
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
@@ -1317,31 +1319,31 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 
 		case bc_opcode::k_branch_false_bool: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
+			ASSERT(stack.check_reg_bool(i._a));
 
-			pc = registers[instruction._a]._bool ? pc + 1 : pc + instruction._b;
+			pc = regs[i._a]._bool ? pc + 1 : pc + i._b;
 			break;
 		}
 		case bc_opcode::k_branch_true_bool: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
+			ASSERT(stack.check_reg_bool(i._a));
 
-			pc = registers[instruction._a]._bool ? pc + instruction._b : pc + 1;
+			pc = regs[i._a]._bool ? pc + i._b : pc + 1;
 			break;
 		}
 		case bc_opcode::k_branch_zero_int: {
-			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
+			ASSERT(stack.check_reg_int(i._a));
 
-			pc = registers[instruction._a]._int == 0 ? pc + instruction._b : pc + 1;
+			pc = regs[i._a]._int == 0 ? pc + i._b : pc + 1;
 			break;
 		}
 		case bc_opcode::k_branch_notzero_int: {
-			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
+			ASSERT(stack.check_reg_int(i._a));
 
-			pc = registers[instruction._a]._int == 0 ? pc + 1 : pc + instruction._b;
+			pc = regs[i._a]._int == 0 ? pc + 1 : pc + i._b;
 			break;
 		}
 		case bc_opcode::k_branch_always: {
-			pc = pc + instruction._a;
+			pc = pc + i._a;
 			break;
 		}
 
@@ -1351,31 +1353,31 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 		//??? Make obj/intern version.
 		case bc_opcode::k_get_struct_member: {
-			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_struct(instruction._b));
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_any(i._a));
+			ASSERT(stack.check_reg_struct(i._b));
 
-			const auto& value_pod = registers[instruction._b]._ext->_struct_members[instruction._c]._pod;
-			bool ext = frame_ptr->_exts[instruction._a];
+			const auto& value_pod = regs[i._b]._ext->_struct_members[i._c]._pod;
+			bool ext = frame_ptr->_exts[i._a];
 			if(ext){
-				bc_value_t::release_ext(registers[instruction._a]._ext);
+				bc_value_t::release_ext(regs[i._a]._ext);
 				value_pod._ext->_rc++;
 			}
-			registers[instruction._a] = value_pod;
-			QUARK_ASSERT(vm.check_invariant());
+			regs[i._a] = value_pod;
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		//??? Better to return uint8 or int than a new string.
 		case bc_opcode::k_lookup_element_string: {
-			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_register_access_string(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_string(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_string(i._a));
+			ASSERT(stack.check_reg_string(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			const auto& s = registers[instruction._b]._ext->_string;
-			const auto lookup_index = registers[instruction._c]._int;
+			const auto& s = regs[i._b]._ext->_string;
+			const auto lookup_index = regs[i._c]._int;
 
 			if(lookup_index < 0 || lookup_index >= s.size()){
 				throw std::runtime_error("Lookup in string: out of bounds.");
@@ -1386,42 +1388,42 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				const auto value2 = bc_value_t::make_string(str2);
 
 				value2._pod._ext->_rc++;
-				bc_value_t::release_ext(registers[instruction._a]._ext);
-				registers[instruction._a] = value2._pod;
+				bc_value_t::release_ext(regs[i._a]._ext);
+				regs[i._a] = value2._pod;
 			}
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		//	??? Simple JSON-values should not require ext. null, int, bool, empty object, empty array.
 		case bc_opcode::k_lookup_element_json_value: {
-			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_register_access_json_value(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_json_value(instruction._b));
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_json(i._a));
+			ASSERT(stack.check_reg_json(i._b));
 
 			// reg c points to different types depending on the runtime-type of the json_value.
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+			ASSERT(stack.check_reg_any(i._c));
 
-			const auto& parent_json_value = registers[instruction._b]._ext->_json_value;
+			const auto& parent_json_value = regs[i._b]._ext->_json_value;
 
 			if(parent_json_value->is_object()){
-				QUARK_ASSERT(stack.check_register_access_string(instruction._c));
+				ASSERT(stack.check_reg_string(i._c));
 
-				const auto& lookup_key = registers[instruction._c]._ext->_string;
+				const auto& lookup_key = regs[i._c]._ext->_string;
 
 				//	get_object_element() throws if key can't be found.
 				const auto& value = parent_json_value->get_object_element(lookup_key);
 				const auto value2 = bc_value_t::make_json_value(value);
 
 				value2._pod._ext->_rc++;
-				bc_value_t::release_ext(registers[instruction._a]._ext);
-				registers[instruction._a] = value2._pod;
+				bc_value_t::release_ext(regs[i._a]._ext);
+				regs[i._a] = value2._pod;
 			}
 			else if(parent_json_value->is_array()){
-				QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+				ASSERT(stack.check_reg_int(i._c));
 
-				const auto lookup_index = registers[instruction._c]._int;
+				const auto lookup_index = regs[i._c]._int;
 				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
 					throw std::runtime_error("Lookup in json_value array: out of bounds.");
 				}
@@ -1432,29 +1434,29 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 					const auto value2 = bc_value_t::make_json_value(value);
 
 					value2._pod._ext->_rc++;
-					bc_value_t::release_ext(registers[instruction._a]._ext);
-					registers[instruction._a] = value2._pod;
+					bc_value_t::release_ext(regs[i._a]._ext);
+					regs[i._a] = value2._pod;
 				}
 			}
 			else{
 				throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
 			}
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		//??? Make obj/intern version.
 		case bc_opcode::k_lookup_element_vector: {
-			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_vector(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_any(i._a));
+			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-//			const auto& element_type = frame_ptr->_symbols[instruction._b].second._value_type.get_vector_element_type();
+//			const auto& element_type = frame_ptr->_symbols[i._b].second._value_type.get_vector_element_type();
 
-			const auto* vec = &registers[instruction._b]._ext->_vector_elements;
-			const auto lookup_index = registers[instruction._c]._int;
+			const auto* vec = &regs[i._b]._ext->_vector_elements;
+			const auto lookup_index = regs[i._c]._int;
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
@@ -1462,28 +1464,28 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				const bc_value_t& value = (*vec)[lookup_index];
 
 				//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
-				QUARK_ASSERT(value._debug_type == frame_ptr->_symbols[instruction._a].second._value_type);
+				ASSERT(value._debug_type == frame_ptr->_symbols[i._a].second._value_type);
 
-				bool is_ext = frame_ptr->_exts[instruction._a];
+				bool is_ext = frame_ptr->_exts[i._a];
 				if(is_ext){
-					bc_value_t::release_ext(registers[instruction._a]._ext);
+					bc_value_t::release_ext(regs[i._a]._ext);
 					value._pod._ext->_rc++;
 				}
-				registers[instruction._a] = value._pod;
+				regs[i._a] = value._pod;
 			}
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		//??? Make obj/intern version.
 		case bc_opcode::k_lookup_element_dict: {
-			QUARK_ASSERT(stack.check_register_access_any(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_dict(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_string(instruction._c));
+			ASSERT(stack.check_reg_any(i._a));
+			ASSERT(stack.check_reg_dict(i._b));
+			ASSERT(stack.check_reg_string(i._c));
 
-			const auto& entries = registers[instruction._b]._ext->_dict_entries;
-			const auto& lookup_key = registers[instruction._c]._ext->_string;
+			const auto& entries = regs[i._b]._ext->_dict_entries;
+			const auto& lookup_key = regs[i._c]._ext->_string;
 			const auto& found_it = entries.find(lookup_key);
 			if(found_it == entries.end()){
 				throw std::runtime_error("Lookup in dict: key not found.");
@@ -1491,12 +1493,12 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			else{
 				const bc_value_t value = found_it->second;
 
-				bool is_ext = frame_ptr->_exts[instruction._a];
+				bool is_ext = frame_ptr->_exts[i._a];
 				if(is_ext){
-					bc_value_t::release_ext(registers[instruction._a]._ext);
+					bc_value_t::release_ext(regs[i._a]._ext);
 					value._pod._ext->_rc++;
 				}
-				registers[instruction._a] = value._pod;
+				regs[i._a] = value._pod;
 			}
 			pc++;
 			break;
@@ -1517,12 +1519,12 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 		//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 		case bc_opcode::k_call: {
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(vm.check_invariant());
 
-			const int callee_arg_count = instruction._c;
+			const int callee_arg_count = i._c;
 
-			const int function_id = stack.read_register_function(instruction._b);
-			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
+			const int function_id = stack.read_register_function(i._b);
+			ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 			const auto& function_def = vm._imm->_program._function_defs[function_id];
 			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
 			const auto& function_return_type = function_def._function_type.get_function_return();
@@ -1530,7 +1532,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			//	_e[...] contains first callee, then each argument.
 			//	We need to examine the callee, since we support magic argument lists of varying size.
 
-			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
+			ASSERT(function_def._args.size() == callee_arg_count);
 
 			if(function_def._host_function_id != 0){
 				const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
@@ -1538,7 +1540,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 				int stack_pos = arg0_stack_pos;
 
-				//??? We can now access parameters using registers!
+				//??? We can now access parameters using regs!
 				//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
 				const auto function_def_arg_count = function_def._args.size();
 				std::vector<value_t> arg_values;
@@ -1567,17 +1569,17 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				if(function_return_type.is_void() == true){
 				}
 				else if(function_return_type.is_internal_dynamic()){
-					stack.write_register(instruction._a, bc_result);
+					stack.write_register(i._a, bc_result);
 				}
 				else{
-					stack.write_register(instruction._a, bc_result);
+					stack.write_register(i._a, bc_result);
 				}
 			}
 			else{
-				QUARK_ASSERT(function_def_dynamic_arg_count == 0);
+				ASSERT(function_def_dynamic_arg_count == 0);
 
 				//	We need to remember the global pos where to store return value, since we're switching frame to call function.
-				int result_reg_pos = stack._current_frame_pos + instruction._a;
+				int result_reg_pos = stack._current_frame_pos + i._a;
 
 				stack.open_frame(*function_def._frame_ptr, callee_arg_count);
 				const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
@@ -1587,9 +1589,9 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				//	Update our cached pointers.
 				frame_ptr = stack._current_frame_ptr;
 				frame_pos = stack._current_frame_pos;
-				registers = stack._current_frame_entry_ptr;
+				regs = stack._current_frame_entry_ptr;
 
-				QUARK_ASSERT(result.first);
+				ASSERT(result.first);
 				if(function_return_type.is_void() == false){
 
 					//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
@@ -1602,33 +1604,33 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				}
 			}
 
-			QUARK_ASSERT(frame_pos == stack._current_frame_pos);
-			QUARK_ASSERT(frame_ptr == stack._current_frame_ptr);
-			QUARK_ASSERT(registers == stack._current_frame_entry_ptr);
-			QUARK_ASSERT(vm.check_invariant());
+			ASSERT(frame_pos == stack._current_frame_pos);
+			ASSERT(frame_ptr == stack._current_frame_ptr);
+			ASSERT(regs == stack._current_frame_entry_ptr);
+			ASSERT(vm.check_invariant());
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_new_1: {
-			execute_new_1(vm, instruction);
+			execute_new_1(vm, i);
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_new_vector: {
-			execute_new_vector(vm, instruction);
+			execute_new_vector(vm, i);
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_new_dict: {
-			execute_new_dict(vm, instruction);
+			execute_new_dict(vm, i);
 			pc++;
 			break;
 		}
 		case bc_opcode::k_new_struct: {
-			execute_new_struct(vm, instruction);
+			execute_new_struct(vm, i);
 			pc++;
 			break;
 		}
@@ -1639,101 +1641,93 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//??? inline compare_value_true_deep().
 
 		case bc_opcode::k_comparison_smaller_or_equal: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_any(i._b));
+			ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
+			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			ASSERT(type.is_int() == false);
+			const auto left = stack.read_register(i._b);
+			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			registers[instruction._a]._bool = diff <= 0;
+			regs[i._a]._bool = diff <= 0;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_or_equal_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._bool = registers[instruction._b]._int <= registers[instruction._c]._int;
+			regs[i._a]._bool = regs[i._b]._int <= regs[i._c]._int;
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_comparison_smaller: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_any(i._b));
+			ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
+			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			ASSERT(type.is_int() == false);
+			const auto left = stack.read_register(i._b);
+			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			registers[instruction._a]._bool = diff < 0;
+			regs[i._a]._bool = diff < 0;
 			pc++;
 			break;
 		}
-		case bc_opcode::k_comparison_smaller_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
-
-			registers[instruction._a]._bool = registers[instruction._b]._int < registers[instruction._c]._int;
-			pc++;
-			break;
-		}
+		case bc_opcode::k_comparison_smaller_int: ASSERT(stack.check_reg_bool(i._a)); ASSERT(stack.check_reg_int(i._b)); ASSERT(stack.check_reg_int(i._c)); regs[i._a]._bool = regs[i._b]._int < regs[i._c]._int; pc++; break;
 
 		case bc_opcode::k_logical_equal: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_any(i._b));
+			ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
+			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			ASSERT(type.is_int() == false);
+			const auto left = stack.read_register(i._b);
+			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			registers[instruction._a]._bool = diff == 0;
+			regs[i._a]._bool = diff == 0;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_equal_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._bool = registers[instruction._b]._int == registers[instruction._c]._int;
+			regs[i._a]._bool = regs[i._b]._int == regs[i._c]._int;
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_logical_nonequal: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_any(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_any(i._b));
+			ASSERT(stack.check_reg_any(i._c));
 
-			const auto& type = frame_ptr->_symbols[instruction._b].second._value_type;
-			QUARK_ASSERT(type.is_int() == false);
-			const auto left = stack.read_register(instruction._b);
-			const auto right = stack.read_register(instruction._c);
+			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
+			ASSERT(type.is_int() == false);
+			const auto left = stack.read_register(i._b);
+			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			registers[instruction._a]._bool = diff != 0;
+			regs[i._a]._bool = diff != 0;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_nonequal_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._bool = registers[instruction._b]._int != registers[instruction._c]._int;
+			regs[i._a]._bool = regs[i._b]._int != regs[i._c]._int;
 			pc++;
 			break;
 		}
@@ -1744,39 +1738,39 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 		//??? Replace by a | b opcode.
 		case bc_opcode::k_add_bool: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_bool(i._b));
+			ASSERT(stack.check_reg_bool(i._c));
 
-			registers[instruction._a]._bool = registers[instruction._b]._bool + registers[instruction._c]._bool;
+			regs[i._a]._bool = regs[i._b]._bool + regs[i._c]._bool;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_add_int: {
-			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._int = registers[instruction._b]._int + registers[instruction._c]._int;
+			regs[i._a]._int = regs[i._b]._int + regs[i._c]._int;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_add_float: {
-			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+			ASSERT(stack.check_reg_float(i._a));
+			ASSERT(stack.check_reg_float(i._b));
+			ASSERT(stack.check_reg_float(i._c));
 
-			registers[instruction._a]._float = registers[instruction._b]._float + registers[instruction._c]._float;
+			regs[i._a]._float = regs[i._b]._float + regs[i._c]._float;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_add_string: {
-			QUARK_ASSERT(stack.check_register_access_string(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_string(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_string(instruction._c));
+			ASSERT(stack.check_reg_string(i._a));
+			ASSERT(stack.check_reg_string(i._b));
+			ASSERT(stack.check_reg_string(i._c));
 
 			//??? inline
-			stack.write_register_string(instruction._a, registers[instruction._b]._ext->_string + registers[instruction._c]._ext->_string);
+			stack.write_register_string(i._a, regs[i._b]._ext->_string + regs[i._c]._ext->_string);
 			pc++;
 			break;
 		}
@@ -1784,95 +1778,95 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//??? inline
 		//??? Use itypes.
 		case bc_opcode::k_add_vector: {
-			QUARK_ASSERT(stack.check_register_access_vector(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_vector(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_vector(instruction._c));
+			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_vector(i._c));
 
-			const auto& element_type = frame_ptr->_symbols[instruction._a].second._value_type.get_vector_element_type();
+			const auto& element_type = frame_ptr->_symbols[i._a].second._value_type.get_vector_element_type();
 
 			//	Copy left into new vector.
-			std::vector<bc_value_t> elements2 = registers[instruction._b]._ext->_vector_elements;
+			std::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
 
-			const auto& right_elements = registers[instruction._c]._ext->_vector_elements;
+			const auto& right_elements = regs[i._c]._ext->_vector_elements;
 			elements2.insert(elements2.end(), right_elements.begin(), right_elements.end());
 			const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
-			stack.write_register_obj(instruction._a, value2);
+			stack.write_register_obj(i._a, value2);
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_subtract_float: {
-			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+			ASSERT(stack.check_reg_float(i._a));
+			ASSERT(stack.check_reg_float(i._b));
+			ASSERT(stack.check_reg_float(i._c));
 
-			registers[instruction._a]._float = registers[instruction._b]._float - registers[instruction._c]._float;
+			regs[i._a]._float = regs[i._b]._float - regs[i._c]._float;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_subtract_int: {
-			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._int = registers[instruction._b]._int - registers[instruction._c]._int;
+			regs[i._a]._int = regs[i._b]._int - regs[i._c]._int;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_multiply_float: {
-			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+			ASSERT(stack.check_reg_float(i._a));
+			ASSERT(stack.check_reg_float(i._c));
+			ASSERT(stack.check_reg_float(i._c));
 
-			registers[instruction._a]._float = registers[instruction._b]._float * registers[instruction._c]._float;
+			regs[i._a]._float = regs[i._b]._float * regs[i._c]._float;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_multiply_int: {
-			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_int(i._c));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._int = registers[instruction._b]._int * registers[instruction._c]._int;
+			regs[i._a]._int = regs[i._b]._int * regs[i._c]._int;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_divide_float: {
-			QUARK_ASSERT(stack.check_register_access_float(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+			ASSERT(stack.check_reg_float(i._a));
+			ASSERT(stack.check_reg_float(i._b));
+			ASSERT(stack.check_reg_float(i._c));
 
-			const auto right = registers[instruction._c]._float;
+			const auto right = regs[i._c]._float;
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			registers[instruction._a]._float = registers[instruction._b]._float / right;
+			regs[i._a]._float = regs[i._b]._float / right;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_divide_int: {
-			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			const auto right = registers[instruction._c]._int;
+			const auto right = regs[i._c]._int;
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			registers[instruction._a]._int = registers[instruction._b]._int / right;
+			regs[i._a]._int = regs[i._b]._int / right;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_remainder_int: {
-			QUARK_ASSERT(stack.check_register_access_int(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			const auto right = registers[instruction._c]._int;
+			const auto right = regs[i._c]._int;
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			registers[instruction._a]._int = registers[instruction._b]._int % right;
+			regs[i._a]._int = regs[i._b]._int % right;
 			pc++;
 			break;
 		}
@@ -1880,57 +1874,57 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 		//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
 		case bc_opcode::k_logical_and_bool: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_bool(i._b));
+			ASSERT(stack.check_reg_bool(i._c));
 
-			registers[instruction._a]._bool = registers[instruction._b]._bool  && registers[instruction._c]._bool;
+			regs[i._a]._bool = regs[i._b]._bool  && regs[i._c]._bool;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_and_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._bool = (registers[instruction._b]._int != 0) && (registers[instruction._c]._int != 0);
+			regs[i._a]._bool = (regs[i._b]._int != 0) && (regs[i._c]._int != 0);
 			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_and_float: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_float(i._b));
+			ASSERT(stack.check_reg_float(i._c));
 
-			registers[instruction._a]._bool = (registers[instruction._b]._float != 0) && (registers[instruction._c]._float != 0);
+			regs[i._a]._bool = (regs[i._b]._float != 0) && (regs[i._c]._float != 0);
 			pc++;
 			break;
 		}
 
 		case bc_opcode::k_logical_or_bool: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_bool(i._b));
+			ASSERT(stack.check_reg_bool(i._c));
 
-			registers[instruction._a]._bool = registers[instruction._b]._bool || registers[instruction._c]._bool;
+			regs[i._a]._bool = regs[i._b]._bool || regs[i._c]._bool;
 			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_or_int: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_int(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+			ASSERT(stack.check_reg_int(i._c));
 
-			registers[instruction._a]._bool = (registers[instruction._b]._int != 0) || (registers[instruction._c]._int != 0);
+			regs[i._a]._bool = (regs[i._b]._int != 0) || (regs[i._c]._int != 0);
 			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_or_float: {
-			QUARK_ASSERT(stack.check_register_access_bool(instruction._a));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._b));
-			QUARK_ASSERT(stack.check_register_access_float(instruction._c));
+			ASSERT(stack.check_reg_bool(i._a));
+			ASSERT(stack.check_reg_float(i._b));
+			ASSERT(stack.check_reg_float(i._c));
 
-			registers[instruction._a]._bool = (registers[instruction._b]._float != 0.0f) || (registers[instruction._c]._float != 0.0f);
+			regs[i._a]._bool = (regs[i._b]._float != 0.0f) || (regs[i._c]._float != 0.0f);
 			pc++;
 			break;
 		}
@@ -1940,7 +1934,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 
 		default:
-			QUARK_ASSERT(false);
+			ASSERT(false);
 			throw std::exception();
 		}
 	}

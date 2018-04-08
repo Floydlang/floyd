@@ -27,7 +27,7 @@ static interpreter_context_t make_context3(){
 }
 
 #if 0
-static void c_runner(){
+static void cpp_runner(){
 		volatile int result = 0;
 		for(int i = 0 ; i < 10000000 ; i++){
 			int a = result + i * i + 2 * i - result;
@@ -58,6 +58,7 @@ static const std::string floyd_str = R"(
 )";
 #endif
 
+#if 0
 static void cpp_runner(){
 	volatile int result1 = 0;
 	volatile int result2 = 0;
@@ -81,6 +82,26 @@ static const std::string floyd_str = R"(
 		}
 	}
 )";
+#endif
+
+
+#if 1
+static void cpp_runner(){
+		volatile int result = 0;
+		for(int i = 0 ; i < 50000000 ; i++){
+			result = result + 1;
+		}
+}
+
+static const std::string floyd_str = R"(
+	void f(){
+		mutable result = 0;
+		for(i in 0 ..< 50000000){
+			result = result + 1;
+		}
+	}
+)";
+#endif
 
 QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(

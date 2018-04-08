@@ -1637,7 +1637,7 @@ namespace floyd {
 */
 
 		#if DEBUG
-		public: bool check_register_access_any(const int reg) const{
+		public: bool check_reg_any(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			return true;
@@ -1645,7 +1645,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_bool(const int reg) const{
+		public: bool check_reg_bool(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_bool());
@@ -1654,7 +1654,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_int(const int reg) const{
+		public: bool check_reg_int(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_int());
@@ -1663,7 +1663,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_float(const int reg) const{
+		public: bool check_reg_float(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_float());
@@ -1672,7 +1672,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_string(const int reg) const{
+		public: bool check_reg_string(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_string());
@@ -1681,7 +1681,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_json_value(const int reg) const{
+		public: bool check_reg_json(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_json_value());
@@ -1690,7 +1690,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_vector(const int reg) const{
+		public: bool check_reg_vector(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_vector());
@@ -1699,7 +1699,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_dict(const int reg) const{
+		public: bool check_reg_dict(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_dict());
@@ -1708,7 +1708,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_struct(const int reg) const{
+		public: bool check_reg_struct(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_debug_types[_current_frame_pos + reg].is_struct());
@@ -1718,7 +1718,7 @@ namespace floyd {
 
 
 		#if DEBUG
-		public: bool check_register_access_obj(const int reg) const{
+		public: bool check_reg_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == true);
@@ -1727,7 +1727,7 @@ namespace floyd {
 		#endif
 
 		#if DEBUG
-		public: bool check_register_access_intern(const int reg) const{
+		public: bool check_reg_intern(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == false);
@@ -2235,7 +2235,7 @@ namespace floyd {
 	json_t interpreter_to_json(const interpreter_t& vm);
 
 
-	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions) throw();
+	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions);
 
 
 
