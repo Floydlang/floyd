@@ -650,7 +650,7 @@ namespace floyd {
 
 		//////////////////////////////////////		dict
 
-
+		//??? remove all make-functions -- just use constructors.
 		public: inline static bc_value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries){
 			return bc_value_t{value_type, entries};
 		}
@@ -1041,7 +1041,7 @@ namespace floyd {
 		/*
 			TYPE: ---
 			A: Register: input to test
-			B: IMMEDIATE: branch offset (added to PC).
+			B: IMMEDIATE: branch offset (added to PC) on branch.
 			C: ---
 			NOTICE: These have their own conditions, instead of check bool from k_comparison_smaller. Bad???
 		*/
@@ -1050,10 +1050,19 @@ namespace floyd {
 		k_branch_zero_int,
 		k_branch_notzero_int,
 
+
+		/*
+			A: Register: lhs
+			B: Register: rhs
+			C: IMMEDIATE: branch offset (added to PC) on branch.
+		*/
+		k_branch_smaller_int,
+		k_branch_smaller_or_equal_int,
+
 		/*
 			TYPE: ---
 			A: ---
-			B: IMMEDIATE: branch offset (added to PC).
+			B: IMMEDIATE: branch offset (added to PC) on branch.
 			C: ---
 		*/
 		k_branch_always

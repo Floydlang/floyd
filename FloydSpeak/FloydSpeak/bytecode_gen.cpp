@@ -374,43 +374,79 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 	return body_acc;
 }
 
-//??? check range-type too!
+/*
+	start-expression
+	end-expression
+	k_store_local_intern, count_reg, start_expr_reg
+
+	B:
+	k_comparison_smaller_or_equal_int / k_comparison_smaller_int
+	k_branch_false_bool: A
+
+	BODY
+
+	k_add_int
+	k_branch_always B
+	A:
+*/
+/*
+	count_reg = start-expression
+	end-expression
+
+	B:
+	k_branch_smaller_or_equal_int / k_branch_smaller_int FALSE, A
+
+	BODY
+
+	k_add_int
+	k_branch_smaller_or_equal_int / k_branch_smaller_int, B TRUE
+	A:
+*/
+
+int get_count(const std::vector<bc_instruction_t>& instructions){
+	return static_cast<int>(instructions.size());
+}
+
 bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement_t& statement, const bc_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
 
-	const auto itype_int = intern_type(vm, typeid_t::make_int());
-
 	const auto start_expr = bcgen_expression(vm, statement._start_expression, body_acc);
 	body_acc = start_expr._body;
 
 	const auto end_expr = bcgen_expression(vm, statement._end_expression, body_acc);
 	body_acc = end_expr._body;
+	const auto end_count_reg = end_expr._output_reg;
 
 	const auto const1_reg = add_local_const(body_acc, value_t::make_int(1), "integer 1, to decrement with");
-	const auto flag_reg = add_local_temp(body_acc, typeid_t::make_bool(), "while-flag");
 
 	const auto& loop_body = bcgen_body_block(vm, statement._body);
-	int body_instr_count = static_cast<int>(loop_body._instrs.size());
-
-	//	Iterator register is the FIRST symbol of the loop body's symbol table.
-	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols.size()));
+	int body_instr_count = get_count(loop_body._instrs);
 
 	QUARK_ASSERT(
 		statement._range_type == statement_t::for_statement_t::k_closed_range
 		|| statement._range_type ==statement_t::for_statement_t::k_open_range
 	);
-	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_comparison_smaller_or_equal_int : bc_opcode::k_comparison_smaller_int;
+	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_branch_smaller_or_equal_int : bc_opcode::k_branch_smaller_int;
 
-	//	Write start-integer in counter_reg
+
+	//	IMPORTANT: Iterator register is the FIRST symbol of the loop body's symbol table.
+	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols.size()));
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_store_local_intern, k_no_bctypeid, counter_reg, start_expr._output_reg, {}));
-	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, k_no_bctypeid, flag_reg, counter_reg, end_expr._output_reg));
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_false_bool, k_no_bctypeid, flag_reg, make_imm_int(body_instr_count + 2 + 1), {} ));
+
+	// Reuse start value as our counter.
+	// Notice: we need to store iterator value in body's first register.
+	int leave_pc = 1 + body_instr_count + 2;
+	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, k_no_bctypeid, end_count_reg, counter_reg, make_imm_int(leave_pc - get_count(body_acc._instrs))));
+
+	int body_start_pc = get_count(body_acc._instrs);
+
 	body_acc = flatten_body(vm, body_acc, loop_body);
 	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_add_int, k_no_bctypeid, counter_reg, counter_reg, const1_reg));
-	body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_branch_always, k_no_bctypeid, make_imm_int(0 - 3 - body_instr_count), {}, {}));
+	body_acc._instrs.push_back(bc_instruction_t(condition_opcode, k_no_bctypeid, counter_reg, end_count_reg, make_imm_int(body_start_pc - get_count(body_acc._instrs))));
+
 	QUARK_ASSERT(body_acc.check_invariant());
 	return body_acc;
 }

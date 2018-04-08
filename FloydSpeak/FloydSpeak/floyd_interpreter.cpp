@@ -276,12 +276,13 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_branch_zero_int, { "branch_zero_int", opcode_info_t::encoding::k_k_0ri0 } },
 	{ bc_opcode::k_branch_notzero_int, { "branch_notzero_int", opcode_info_t::encoding::k_k_0ri0 } },
 
+	{ bc_opcode::k_branch_smaller_int, { "branch_smaller_int", opcode_info_t::encoding::k_s_0rri } },
+	{ bc_opcode::k_branch_smaller_or_equal_int, { "branch_smaller_or_equal_int", opcode_info_t::encoding::k_s_0rri } },
+
 	{ bc_opcode::k_branch_always, { "branch_always", opcode_info_t::encoding::k_l_00i0 } }
 
 
 };
-
-
 
 
 
@@ -1340,6 +1341,20 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._a));
 
 			pc = regs[i._a]._int == 0 ? pc + 1 : pc + i._b;
+			break;
+		}
+		case bc_opcode::k_branch_smaller_int: {
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+
+			pc = regs[i._a]._int < regs[i._b]._int ? pc + i._c : pc + 1;
+			break;
+		}
+		case bc_opcode::k_branch_smaller_or_equal_int: {
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_int(i._b));
+
+			pc = regs[i._a]._int <= regs[i._b]._int ? pc + i._c : pc + 1;
 			break;
 		}
 		case bc_opcode::k_branch_always: {

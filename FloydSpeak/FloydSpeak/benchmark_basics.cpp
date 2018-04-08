@@ -74,11 +74,13 @@ void trace_result(const bench_result_t& result){
 	double floyd_iteration_time = (double)result._floyd_ns;
 
 	double k = floyd_iteration_time / cpp_iteration_time;
+	double p = (100.0 * cpp_iteration_time) / floyd_iteration_time;
 
 	std::cout << "Test: " << result._name << std::endl;
 	std::cout << "\tC++  :" << cpp_str << " ns" <<std::endl;
 	std::cout << "\tFloyd:" << floyd_str << " ns"  << std::endl;
 	std::cout << "\tRel  : " << k << std::endl;
+	std::cout << "\t%    : " << p << std::endl;
 }
 
 int64_t measure_floyd_function_f(const interpreter_context_t& context, const std::string& floyd_program, int count){
