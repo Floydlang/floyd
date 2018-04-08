@@ -20,8 +20,13 @@ using std::string;
 using namespace floyd;
 
 
-interpreter_context_t make_test_context(){
-	const auto t = quark::trace_context_t(false, quark::get_trace());
+interpreter_context_t make_benchmark_context(){
+#if DEBUG
+	bool verbose = true;
+#else
+	bool verbose = false;
+#endif
+	const auto t = quark::trace_context_t(verbose, quark::get_trace());
 	interpreter_context_t context{ t };
 	return context;
 }

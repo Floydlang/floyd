@@ -17,7 +17,7 @@ using std::string;
 using namespace floyd;
 
 
-static int k_repeats = 1;
+static int k_repeats = 10;
 
 
 
@@ -118,7 +118,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 		k_repeats
 	);
 
-	interpreter_context_t context = make_test_context();
+	interpreter_context_t context = make_benchmark_context();
 	const auto ast = program_to_ast2(context, gol_floyd_str);
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol2(vm, "f");
@@ -138,7 +138,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 
 
 QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
-//	interpreter_context_t context = make_test_context();
+//	interpreter_context_t context = make_benchmark_context();
 	interpreter_context_t context = make_verbose_context();
 
 	if(1){
@@ -164,7 +164,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		});
 	}
 
-	if(1){
+	if(0){
 		const auto cpp_func = [] {
 			volatile int result = 0;
 			for(int i = 0 ; i < 10000000 ; i++){
@@ -199,7 +199,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		});
 	}
 
-	if(1){
+	if(0){
 		const auto cpp_func = [] {
 			volatile int result1 = 0;
 			volatile int result2 = 0;
@@ -230,7 +230,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		});
 	}
 
-	if(1){
+	if(0){
 		struct dummy_y {
 			static int fibonacci(int n) {
 				if (n <= 1){

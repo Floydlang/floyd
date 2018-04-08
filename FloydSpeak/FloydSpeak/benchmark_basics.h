@@ -15,7 +15,7 @@
 #include "floyd_interpreter.h"
 
 
-floyd::interpreter_context_t make_test_context();
+floyd::interpreter_context_t make_benchmark_context();
 
 //	Returns time in nanoseconds
 //	Runs warmup, 4 measuring calls. count is a multiplier that causes entire set to run more times.
