@@ -17,7 +17,6 @@
 namespace floyd_runtime {
 
 
-
 	//////////////////////////////////////		frontend_value_ref
 
 
@@ -85,7 +84,6 @@ namespace floyd_runtime {
 	};
 
 
-
 	//////////////////////////////////////////////////		floydrt__state
 
 
@@ -123,9 +121,7 @@ namespace floyd_runtime {
 	void delete_state(floydrt__state** /*state*/);
 
 
-
 	//////////////////////////////////////////////////		floydrt__string
-
 
 
 	struct floydrt__string {
@@ -135,7 +131,6 @@ namespace floyd_runtime {
 	};
 
 }	//	floyd_runtime
-
 
 
 #endif /* runtime_hpp */

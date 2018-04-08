@@ -34,16 +34,12 @@ namespace floyd {
 	bool check_types_resolved(const floyd::ast_t& ast);
 
 
-
-
 	//////////////////////////////////////		lexical_scope_t
 
 
 	struct lexical_scope_t {
 		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
 	};
-
-
 
 
 	//////////////////////////////////////		semantic_ast_t
@@ -75,7 +71,6 @@ namespace floyd {
 
 		public: floyd::ast_t _checked_ast;
 	};
-
 
 
 	//////////////////////////////////////		analyser_t
@@ -123,7 +118,6 @@ namespace floyd {
 	*/
 	std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& vm, const floyd::expression_t& e, const floyd::typeid_t& target_type);
 	std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& vm, const floyd::expression_t& e);
-
 
 
 	/*

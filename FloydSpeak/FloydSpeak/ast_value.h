@@ -78,9 +78,6 @@ namespace floyd {
 	const typeid_t& get_function_type(const function_definition_t& f);
 
 
-
-
-
 	//////////////////////////////////////////////////		value_ext_t
 
 
@@ -170,7 +167,6 @@ namespace floyd {
 		public: bool operator==(const value_ext_t& other) const;
 
 
-
 		public: value_ext_t(const std::string& s) :
 			_rc(1),
 			_type(typeid_t::make_string()),
@@ -195,7 +191,6 @@ namespace floyd {
 		public: value_ext_t(const typeid_t& type, int function_id);
 
 
-
 		public: int _rc;
 		public: typeid_t _type;
 		public: std::string _string;
@@ -206,7 +201,6 @@ namespace floyd {
 		public: std::map<std::string, value_t> _dict_entries;
 		public: int _function_id = -1;
 	};
-
 
 
 	//////////////////////////////////////////////////		value_t
@@ -452,7 +446,6 @@ static value_t make_int(int value){
 		//////////////////////////////////////////////////		PUBLIC - TYPE INDEPENDANT
 
 
-
 		private: static bool is_ext_slow(base_type basetype){
 			return false
 				|| basetype == base_type::k_string
@@ -651,7 +644,6 @@ static value_t make_int(int value){
 		private: base_type _basetype;
 		private: value_internals_t _value_internals;
 	};
-
 
 
 	//////////////////////////////////////////////////		Helpers

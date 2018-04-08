@@ -20,7 +20,6 @@ using namespace floyd;
 static int k_repeats = 10;
 
 
-
 //??unused
 static const std::string pixel_floyd_str = R"(
 
@@ -48,8 +47,6 @@ static const std::string pixel_floyd_str = R"(
 )";
 
 
-
-
 #if 0
 
 //////////////////////////////////////////		C
@@ -67,7 +64,6 @@ static unsigned int tmetrics_hamming (unsigned int len, uint8_t *a, uint8_t *b)
 }
 
 
-
 static void c_runner(unsigned int len, uint8_t *a, uint8_t *b, uint8_t *c){
 	for(int i = 0 ; i < 100 ; i++){
 		const auto result0 = tmetrics_hamming(len, a, b);
@@ -81,8 +77,6 @@ static void c_runner(unsigned int len, uint8_t *a, uint8_t *b, uint8_t *c){
 		QUARK_ASSERT(result != 0);
 	}
 }
-
-
 
 
 //////////////////////////////////////////		ported to Floyd -- direct-port
@@ -132,7 +126,6 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 	);
 
 #endif
-
 
 
 OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
@@ -270,6 +263,5 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 	}
 
 }
-
 
 

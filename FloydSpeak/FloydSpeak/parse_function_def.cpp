@@ -24,7 +24,6 @@ namespace floyd {
 	using std::vector;
 
 
-
 std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto return_type_pos = read_required_type(pos);
 	const auto function_name_pos = read_required_identifier(return_type_pos.second);

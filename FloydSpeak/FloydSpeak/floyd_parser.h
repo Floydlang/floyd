@@ -117,8 +117,6 @@ EXPRESSION
 		VARIABLE = IDENTIFIER_CHARS
 
 
-
-
 		int myfunc(string a, int b){
 			...
 			return b + 1;
@@ -181,7 +179,6 @@ namespace floyd {
 	*/
 
 	std::pair<ast_json_t, seq_t> parse_statement(const seq_t& pos0);
-
 
 
 	//	returns json-array of statements.

@@ -20,9 +20,6 @@
 
 
 namespace floyd {
-	struct bgenerator_t;
-	struct bc_instruction_t;
-
 	struct semantic_ast_t;
 
 
@@ -31,25 +28,21 @@ namespace floyd {
 	};
 
 
-
-
-	//??? move to bcgen
 	//	Replace by int when we have flattened local bodies.
 	typedef variable_address_t reg_t;
 
 
+	//////////////////////////////////////		bcgen_instruction_t
 
-	//	??? move to bcgen!
-	struct bc_instruction_t {
-		bc_instruction_t(
+
+	struct bcgen_instruction_t {
+		bcgen_instruction_t(
 			bc_opcode opcode,
-			bc_typeid_t type,
 			variable_address_t regA,
 			variable_address_t regB,
 			variable_address_t regC
 		) :
 			_opcode(opcode),
-			_instr_type(type),
 			_reg_a(regA),
 			_reg_b(regB),
 			_reg_c(regC)
@@ -61,34 +54,26 @@ namespace floyd {
 		public: bool check_invariant() const;
 #endif
 
-
 		//////////////////////////////////////		STATE
-		//??? lose variable_address_t and closures for now. register = int16. negative = global/constant, positive = local stack register.
 		bc_opcode _opcode;
 		variable_address_t _reg_a;
 		variable_address_t _reg_b;
 		variable_address_t _reg_c;
-
-		//??? temporary. Plan is to embedd this type into opcode.
-		bc_typeid_t _instr_type;
 	};
 
 
+	//////////////////////////////////////		bcgen_body_t
 
 
-	//////////////////////////////////////		bc_body_t
-
-
-
-	struct bc_body_t {
-		bc_body_t(const std::vector<bc_instruction_t>& s) :
+	struct bcgen_body_t {
+		bcgen_body_t(const std::vector<bcgen_instruction_t>& s) :
 			_instrs(s),
 			_symbols{}
 		{
 			QUARK_ASSERT(check_invariant());
 		}
 
-		bc_body_t(const std::vector<bc_instruction_t>& instructions, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
+		bcgen_body_t(const std::vector<bcgen_instruction_t>& instructions, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
 			_instrs(instructions),
 			_symbols(symbols)
 		{
@@ -101,10 +86,10 @@ namespace floyd {
 		//////////////////////////////////////		STATE
 
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
-		std::vector<bc_instruction_t> _instrs;
+		std::vector<bcgen_instruction_t> _instrs;
 	};
 
-	bc_frame_t make_frame(const bc_body_t& body, const std::vector<typeid_t>& args);
+	bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args);
 
 
 	//////////////////////////////////////		bcgen_context_t
@@ -122,37 +107,37 @@ namespace floyd {
 	*/
 
 	struct bcgen_environment_t {
-		public: const bc_body_t* _body_ptr;
+		public: const bcgen_body_t* _body_ptr;
 	};
 
 
-	//////////////////////////////////////		bgenerator_imm_t
+	//////////////////////////////////////		bgen_imm_t
 
 
-	struct bgenerator_imm_t {
+	struct bgen_imm_t {
 		////////////////////////		STATE
 		public: const ast_t _ast_pass3;
 	};
 
 
-	//////////////////////////////////////		bgenerator_t
+	//////////////////////////////////////		bcgenerator_t
 
 	/*
 		Complete runtime state of the bgenerator.
 		MUTABLE
 	*/
 
-	struct bgenerator_t {
-		public: explicit bgenerator_t(const ast_t& pass3);
-		public: bgenerator_t(const bgenerator_t& other);
-		public: const bgenerator_t& operator=(const bgenerator_t& other);
+	struct bcgenerator_t {
+		public: explicit bcgenerator_t(const ast_t& pass3);
+		public: bcgenerator_t(const bcgenerator_t& other);
+		public: const bcgenerator_t& operator=(const bcgenerator_t& other);
 #if DEBUG
 		public: bool check_invariant() const;
 #endif
-		public: void swap(bgenerator_t& other) throw();
+		public: void swap(bcgenerator_t& other) throw();
 
 		////////////////////////		STATE
-		public: std::shared_ptr<bgenerator_imm_t> _imm;
+		public: std::shared_ptr<bgen_imm_t> _imm;
 
 		//	Holds all values for all environments.
 		public: std::vector<bcgen_environment_t> _call_stack;
@@ -161,10 +146,10 @@ namespace floyd {
 	};
 
 
-	//////////////////////////		run_bggen()
+	//////////////////////////		generate_bytecode()
 
 
-	bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_t& pass3);
+	bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const semantic_ast_t& pass3);
 
 
 } //	floyd

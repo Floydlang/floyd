@@ -38,7 +38,6 @@ interpreter_context_t make_verbose_context(){
 }
 
 
-
 string number_fmt(unsigned long long n, char sep) {
     std::stringstream fmt;
     fmt << n;
@@ -57,13 +56,10 @@ string number_fmt(unsigned long long n, char sep) {
 }
 
 
-
 std::string format_ns(int64_t value){
 	const auto s = std::string(20, ' ') + number_fmt(value, ' ');
 	return s.substr(s.size() - 16, 16);
 }
-
-
 
 
 void trace_result(const bench_result_t& result){
@@ -97,10 +93,6 @@ int64_t measure_floyd_function_f(const interpreter_context_t& context, const std
 	);
 	return floyd_ns;
 }
-
-
-
-
 
 
 //	Returns time in nanoseconds
@@ -148,6 +140,5 @@ OFF_QUARK_UNIT_TEST("", "measure_execution_time_ns()", "", ""){
 	);
 	std::cout << "duration2..." << t << std::endl;
 }
-
 
 

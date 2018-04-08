@@ -93,7 +93,6 @@ QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
 }
 
 
-
 const string beautiful_escaped = "{\r\n  \"menu\": {\r\n    \"id\": \"file\",\r\n    \"popup\": {\r\n      \"menuitem\": [\r\n        {\r\n          \"value\": \"New\",\r\n          \"onclick\": \"CreateNewDoc()\"\r\n        },\r\n        {\r\n          \"value\": \"Close\",\r\n          \"onclick\": \"CloseDoc()\"\r\n        }\r\n      ]\r\n    }\r\n  }\r\n}";
 
 const string beautiful_raw_string = R"___({
@@ -122,12 +121,6 @@ QUARK_UNIT_TESTQ("erase_linefeed()", ""){
 QUARK_UNIT_TESTQ("C++11 raw string literals", ""){
 	quark::ut_compare_strings(erase_linefeed(beautiful_escaped), beautiful_raw_string);
 }
-
-
-
-
-
-
 
 
 std::string object_to_compact_string(const std::map<std::string, json_t>& object, bool quote_fields){
@@ -342,7 +335,6 @@ QUARK_UNIT_TESTQ("count_char_positions()", ""){
 }
 
 
-
 //??? escape string. Also unescape them when parsing.
 /*
 	key == name of this value inside a parent object if any. If this is an entry in an array, key == "". Else key == "".
@@ -536,9 +528,6 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested arrays"){
 }
 
 
-
-
-
 QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	std::cout <<(
@@ -549,7 +538,6 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 		)
 	) << "\n";
 }
-
 
 
 string get_test2(){
@@ -632,6 +620,5 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 
 	std::cout << b << "\n";
 }
-
 
 

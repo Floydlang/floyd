@@ -26,7 +26,6 @@
 #include <sstream>
 
 
-
 namespace quark {
 
 
@@ -34,9 +33,6 @@ namespace quark {
 bool assert_on = QUARK_ASSERT_ON;
 bool trace_on = QUARK_TRACE_ON;
 bool unit_tests_on = QUARK_UNIT_TESTS_ON;
-
-
-
 
 
 #if QUARK_UNIT_TESTS_ON
@@ -59,15 +55,8 @@ void set_runtime(runtime_i* iRuntime){
 }
 
 
-
-
-
-
-
 //	UNIT TEST SUPPORT
 //	====================================================================================================================
-
-
 
 
 #if QUARK_UNIT_TESTS_ON
@@ -90,12 +79,7 @@ QUARK_UNIT_TESTQ("path_to_name()", ""){
 //	====================================================================================================================
 
 
-
-
 //////////////////////////////////			default_runtime
-
-
-
 
 
 default_runtime::default_runtime(const std::string& test_data_root) :
@@ -117,11 +101,8 @@ void default_runtime::runtime_i__on_unit_test_failed(const source_code_location&
 }
 
 
-
-
 //	TESTS
 //	====================================================================================================================
-
 
 
 /*

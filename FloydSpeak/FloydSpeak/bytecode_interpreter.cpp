@@ -51,7 +51,6 @@ int get_local_n_pos(int frame_pos, int n){
 //	??? move VM into separate source file.
 
 
-
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto pod_size = sizeof(bc_pod_value_t);
 	QUARK_ASSERT(pod_size == 8);
@@ -67,11 +66,9 @@ QUARK_UNIT_TEST("", "", "", ""){
 	const auto mockup_value_size = sizeof(mockup_value_t);
 	QUARK_ASSERT(mockup_value_size == 16);
 
-	const auto instruction2_size = sizeof(bc_instruction2_t);
+	const auto instruction2_size = sizeof(bc_instruction_t);
 	QUARK_ASSERT(instruction2_size == 8);
 }
-
-
 
 
 	//////////////////////////////////////		value_t -- helpers
@@ -174,8 +171,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 //		return to_compact_string2(value._backstore);
 	}
 */
-
-
 
 
 //////////////////////////////////////////		COMPARE
@@ -389,7 +384,6 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 }
 
 
-
 extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
 
@@ -433,7 +427,6 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_logical_or_float, { "logical_or_float", opcode_info_t::encoding::k_o_0rrr } },
 
 
-
 	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_comparison_smaller_or_equal_int, { "comparison_smaller_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
 
@@ -445,7 +438,6 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_nonequal_int, { "logical_nonequal_int", opcode_info_t::encoding::k_o_0rrr } },
-
 
 
 	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
@@ -479,52 +471,52 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	if(e == opcode_info_t::encoding::k_e_0000){
-		return { false,		false, false, false };
+		return { false, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_f_trr0){
-		return { true,		true, true, false };
+		return { true, true, false };
 	}
 	else if(e == opcode_info_t::encoding::k_g_trri){
-		return { true,		true, true, false };
+		return { true, true, false };
 	}
 	else if(e == opcode_info_t::encoding::k_h_trrr){
-		return { true,		true, true, true };
+		return { true, true, true };
 	}
 	else if(e == opcode_info_t::encoding::k_i_trii){
-		return { true,		true, false, false };
+		return { true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_j_tr00){
-		return { true,		true, false, false };
+		return { true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_k_0ri0){
-		return { false,		true, false, false };
+		return { true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_l_00i0){
-		return { false,		false, false, false };
+		return { false, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_m_tr00){
-		return { true,		true, false, false };
+		return { true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_n_0ii0){
-		return { false,		false, false, false };
+		return { false, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_o_0rrr){
-		return { false,		true, true, true };
+		return { true, true, true };
 	}
 	else if(e == opcode_info_t::encoding::k_p_0r00){
-		return { false,		true, false, false };
+		return { true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_q_0rr0){
-		return { false,		true, true, false };
+		return { true, true, false };
 	}
 	else if(e == opcode_info_t::encoding::k_r_0ir0){
-		return { false,		false, true, false };
+		return { false, true, false };
 	}
 	else if(e == opcode_info_t::encoding::k_s_0rri){
-		return { false,		true, true, false };
+		return { true, true, false };
 	}
 	else if(e == opcode_info_t::encoding::k_t_0rii){
-		return { false,		true, false, false };
+		return { true, false, false };
 	}
 
 	else{
@@ -534,12 +526,27 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 }
 
 
+//////////////////////////////////////////		bc_instruction_t
+
+
+#if DEBUG
+bool bc_instruction_t::check_invariant() const {
+	const auto encoding = k_opcode_info.at(_opcode)._encoding;
+	const auto reg_flags = encoding_to_reg_flags(encoding);
+
+/*
+	QUARK_ASSERT(check_register(_reg_a, reg_flags._a));
+	QUARK_ASSERT(check_register(_reg_b, reg_flags._b));
+	QUARK_ASSERT(check_register(_reg_c, reg_flags._c));
+*/
+	return true;
+}
+#endif
+
 //////////////////////////////////////////		bc_frame_t
 
 
-
-
-bc_frame_t::bc_frame_t(const std::vector<bc_instruction2_t>& instrs2, const std::vector<std::pair<std::string, symbol_t>>& symbols, const std::vector<typeid_t>& args) :
+bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, symbol_t>>& symbols, const std::vector<typeid_t>& args) :
 	_instrs2(instrs2),
 	_symbols(symbols),
 	_args(args)
@@ -734,8 +741,6 @@ json_t interpreter_stack_t::stack_to_json() const{
 }
 
 
-
-
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
@@ -817,12 +822,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 }
 
 
-
-
 //////////////////////////////////////////		interpreter_t
-
-
-
 
 
 interpreter_t::interpreter_t(const bc_program_t& program) :
@@ -887,14 +887,7 @@ bool interpreter_t::check_invariant() const {
 #endif
 
 
-
-
-
 //////////////////////////////////////////		INSTRUCTIONS
-
-
-
-
 
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -907,7 +900,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(e_offset == 8);
 	QUARK_UT_VERIFY(value_offset == 16);
 */
-
 
 
 //	QUARK_UT_VERIFY(sizeof(temp) == 56);
@@ -923,9 +915,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-
 //	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_1(interpreter_t& vm, const bc_instruction2_t& instruction){
+void execute_new_1(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
@@ -967,7 +958,7 @@ void execute_new_1(interpreter_t& vm, const bc_instruction2_t& instruction){
 
 //??? Split out instruction unpacking to client.
 //	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction){
+void execute_new_vector(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
@@ -995,7 +986,7 @@ void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction)
 }
 
 //	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_dict(interpreter_t& vm, const bc_instruction2_t& instruction){
+void execute_new_dict(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
@@ -1028,7 +1019,7 @@ void execute_new_dict(interpreter_t& vm, const bc_instruction2_t& instruction){
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
-void execute_new_struct(interpreter_t& vm, const bc_instruction2_t& instruction){
+void execute_new_struct(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instruction.check_invariant());
 
@@ -1056,10 +1047,6 @@ void execute_new_struct(interpreter_t& vm, const bc_instruction2_t& instruction)
 }
 
 
-
-
-
-
 QUARK_UNIT_TEST("", "", "", ""){
 	float a = 10.0f;
 	float b = 23.3f;
@@ -1067,8 +1054,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 	bool r = a && b;
 	QUARK_UT_VERIFY(r == true);
 }
-
-
 
 
 #if 0
@@ -1105,12 +1090,11 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 #endif
 
 
-
 //??? use type of the register/frame, not the instruction!! Fix for all instructions!
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
 
-std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions){
+std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	ASSERT(vm.check_invariant());
 	ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 
@@ -1992,13 +1976,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 }
 
 
-
-
-
-
-
 //////////////////////////////////////////		FUNCTIONS
-
 
 
 std::string opcode_to_string(bc_opcode opcode){

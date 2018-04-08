@@ -36,10 +36,6 @@ void init_terminal(){
 }
 
 
-
-
-
-
 std::string get_command(){
 	std::string result;
 	while(result.empty()){
@@ -174,9 +170,7 @@ std::string get_command(){
 #endif
 
 
-
 std::string floyd_version_string = "0.3";
-
 
 
 void run_repl(){
@@ -378,12 +372,6 @@ void floyd_tracer::trace_i__close_scope(const char s[]) const{
 }
 
 
-
-
-
-
-
-
 struct floyd_quark_runtime : public quark::runtime_i {
 	floyd_quark_runtime(const std::string& test_data_root);
 
@@ -414,8 +402,6 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 
 	throw std::logic_error("Unit test failed");
 }
-
-
 
 
 int main(int argc, const char * argv[]) {

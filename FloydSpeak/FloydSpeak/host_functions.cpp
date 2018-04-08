@@ -160,7 +160,6 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 }
 
 
-
 //	Records all output to interpreter
 value_t host__print(interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -272,8 +271,6 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 	QUARK_UT_VERIFY(ms >= 7)
 }
-
-
 
 
 	//??? The update mechanism uses strings == slow.
@@ -608,8 +605,6 @@ value_t host__erase(interpreter_t& vm, const std::vector<value_t>& args){
 }
 
 
-
-
 //	assert(push_back(["one","two"], "three") == ["one","two","three"])
 value_t host__push_back(interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
@@ -692,7 +687,6 @@ value_t host__subset(interpreter_t& vm, const std::vector<value_t>& args){
 		throw std::runtime_error("Calling push_back() on unsupported type of value.");
 	}
 }
-
 
 
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
@@ -851,7 +845,6 @@ value_t host__encode_json(interpreter_t& vm, const std::vector<value_t>& args){
 		return value_t::make_string(s);
 	}
 }
-
 
 
 value_t host__flatten_to_json(interpreter_t& vm, const std::vector<value_t>& args){

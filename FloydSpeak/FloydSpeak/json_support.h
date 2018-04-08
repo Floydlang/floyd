@@ -302,12 +302,6 @@ struct json_t {
 };
 
 
-
-
-
-
-
-
 ////////////////////////////////////////		HELPERS
 
 
@@ -315,7 +309,6 @@ struct json_t {
 	Used for unit tests, if pretty-string version of inputs are different, trace them and fail.
 */
 void ut_compare_jsons(const json_t& result, const json_t& expected);
-
 
 
 inline std::vector<json_t> make_vec(std::initializer_list<json_t> args){
@@ -364,7 +357,6 @@ json_t dissoc(const json_t& value, const json_t& key);
 std::vector<std::string> to_string_vec(const json_t& json);
 
 json_t from_string_vec(const std::vector<std::string>& vec);
-
 
 
 #endif /* json_support_hpp */

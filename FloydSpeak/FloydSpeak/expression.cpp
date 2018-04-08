@@ -13,10 +13,7 @@ namespace floyd {
 using namespace std;
 
 
-
-
 ////////////////////////////////////////////		JSON SUPPORT
-
 
 
 QUARK_UNIT_TESTQ("expression_to_json()", "literals"){

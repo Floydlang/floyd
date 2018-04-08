@@ -22,7 +22,6 @@ namespace floyd {
 	using std::shared_ptr;
 
 
-
 std::pair<ast_json_t, seq_t> parse_statement_body(const seq_t& s){
 	const auto start_seq = skip_whitespace(s);
 	read_required(start_seq, "{");
@@ -86,7 +85,6 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 }
 
 
-
 //////////////////////////////////////////////////		parse_block()
 
 
@@ -113,9 +111,7 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 }
 
 
-
 //////////////////////////////////////////////////		parse_block()
-
 
 
 pair<ast_json_t, seq_t> parse_return_statement(const seq_t& s){
@@ -136,9 +132,7 @@ QUARK_UNIT_TESTQ("parse_return_statement()", ""){
 }
 
 
-
 //////////////////////////////////////////////////		parse_if()
-
 
 
 /*
@@ -303,9 +297,6 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
 }
 
 
-
-
-
 //////////////////////////////////////////////////		parse_for_statement()
 
 struct range_def_t {
@@ -415,7 +406,6 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 //////////////////////////////////////////////////		parse_while_statement()
 
 
-
 std::pair<ast_json_t, seq_t> parse_while_statement(const seq_t& pos){
 	std::pair<bool, seq_t> while_pos = if_first(pos, keyword_t::k_while);
 	QUARK_ASSERT(while_pos.first);
@@ -458,7 +448,6 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "for(){}", ""){
 		)).first
 	);
 }
-
 
 
 }	//	floyd

@@ -18,8 +18,6 @@ using std::make_shared;
 namespace floyd {
 
 
-
-
 	//////////////////////////////////////////////////		struct_instance_t
 
 
@@ -53,7 +51,6 @@ namespace floyd {
 	}
 
 
-
 	std::string vector_instance_to_compact_string(const std::vector<value_t>& elements0){
 		std::vector<std::string> elements;
 		for(const auto& e: elements0){
@@ -63,7 +60,6 @@ namespace floyd {
 //		return "[" + typeid_to_compact_string(instance._element_type) + "]" + "(" + concat_strings_with_divider(elements, ",") + ")";
 		return "[" + concat_strings_with_divider(elements, ", ") + "]";
 	}
-
 
 
 	std::string dict_instance_to_compact_string(const std::map<std::string, value_t>& entries){
@@ -79,9 +75,7 @@ namespace floyd {
 	}
 
 
-
 	//////////////////////////////////////////////////		function_definition_t
-
 
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
@@ -131,14 +125,6 @@ namespace floyd {
 	}
 
 
-
-
-
-
-
-
-
-
 		value_ext_t::value_ext_t(const typeid_t& s) :
 			_rc(1),
 			_type(typeid_t::make_typeid()),
@@ -181,8 +167,6 @@ namespace floyd {
 		}
 
 
-
-
 		bool value_ext_t::operator==(const value_ext_t& other) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
@@ -216,10 +200,6 @@ namespace floyd {
 				throw std::exception();
 			}
 		}
-
-
-
-
 
 
 int limit(int value, int min, int max){
@@ -446,10 +426,6 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 }
 
 
-
-
-
-
 bool value_t::check_invariant() const{
 	const auto type_int = _basetype;
 	if(type_int == base_type::k_internal_undefined){
@@ -490,11 +466,6 @@ bool value_t::check_invariant() const{
 	}
 	return true;
 }
-
-
-
-
-
 
 
 std::string to_compact_string2(const value_t& value) {
@@ -581,8 +552,6 @@ std::string value_and_type_to_string(const value_t& value) {
 }
 
 
-
-
 		std::string value_t::get_string_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_string()){
@@ -611,7 +580,6 @@ std::string value_and_type_to_string(const value_t& value) {
 
 			return _value_internals._ext->_typeid_value;
 		}
-
 
 
 		std::shared_ptr<struct_instance_t> value_t::get_struct_value() const{
@@ -651,8 +619,6 @@ std::string value_and_type_to_string(const value_t& value) {
 
 			return _value_internals._ext->_function_id;
 		}
-
-
 
 
 		value_t::value_t(const char s[]) :
@@ -768,14 +734,6 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 
-
-
-
-
-
-
-
-
 //??? swap(), operator=, copy-constructor.
 
 QUARK_UNIT_TESTQ("value_t::make_undefined()", "**undef**"){
@@ -839,7 +797,6 @@ QUARK_UNIT_TESTQ("value_t::make_void()", "void"){
 	QUARK_TEST_VERIFY(to_compact_string2(a) == "void");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "void");
 }
-
 
 
 QUARK_UNIT_TESTQ("value_t()", "bool - true"){
@@ -1066,12 +1023,6 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 }
 
 
-
-
-
-
-
-
 		//	Used internally in check_invariant() -- don't call check_invariant().
 		typeid_t value_t::get_type() const{
 //			QUARK_ASSERT(check_invariant());
@@ -1099,8 +1050,6 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 				return _value_internals._ext->_type;
 			}
 		}
-
-
 
 
 value_t value_t::make_bool(bool value){
@@ -1142,8 +1091,6 @@ value_t value_t::make_function_value(const typeid_t& function_type, int function
 	QUARK_ASSERT(function_type.check_invariant());
 	return value_t(function_type, function_id);
 }
-
-
 
 
 	json_t values_to_json_array(const std::vector<value_t>& values){

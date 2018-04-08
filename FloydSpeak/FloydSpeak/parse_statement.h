@@ -19,8 +19,6 @@ namespace floyd {
 	struct ast_json_t;
 
 
-
-
 	/*
 		INPUT:
 			"{}"

@@ -51,13 +51,6 @@ namespace floyd {
 
 	ast_json_t ast_to_json(const ast_t& ast);
 
-
-
-
-
-
-
-
 }	//	floyd
 
 #endif /* parser_ast_hpp */

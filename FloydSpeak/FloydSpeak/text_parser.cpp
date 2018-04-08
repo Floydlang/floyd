@@ -24,9 +24,7 @@ using std::shared_ptr;
 using std::make_shared;
 
 
-
 ///////////////////////////////		String utils
-
 
 
 string trim_ends(const string& s){
@@ -113,7 +111,6 @@ QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
 }
 
 
-
 float parse_float(const std::string& pos){
 	size_t end = -1;
 	auto res = std::stof(pos, &end);
@@ -141,7 +138,6 @@ QUARK_UNIT_TESTQ("float_to_string()", ""){
 }
 
 
-
 std::string double_to_string(double value){
 	std::stringstream s;
 	s << value;
@@ -158,9 +154,6 @@ QUARK_UNIT_TESTQ("double_to_string()", ""){
 QUARK_UNIT_TESTQ("double_to_string()", ""){
 	quark::ut_compare_strings(float_to_string(13.5), "13.5");
 }
-
-
-
 
 
 ///////////////////////////////		seq_t
@@ -202,7 +195,6 @@ void seq_t::swap(seq_t& other) throw(){
 	std::swap(this->_pos, other._pos);
 	std::swap(this->FIRST_debug, other.FIRST_debug);
 }
-
 
 
 seq_t::seq_t(const std::shared_ptr<const std::string>& str, std::size_t pos) :
@@ -304,7 +296,6 @@ const char* seq_t::c_str() const{
 }
 
 
-
 QUARK_UNIT_TESTQ("seq_t()", ""){
 	seq_t("");
 }
@@ -368,9 +359,6 @@ QUARK_UNIT_TESTQ("rest(n)", ""){
 }
 
 
-
-
-
 seq_t skip(const seq_t& s, const std::string& chars){
 	auto pos = s;
 	while(!pos.empty() && chars.find(pos.first1_char()) != string::npos){
@@ -411,9 +399,6 @@ QUARK_UNIT_TEST("", "read_while()", "", ""){
 QUARK_UNIT_TEST("", "read_while()", "", ""){
 	QUARK_TEST_VERIFY((read_while(seq_t("\n\t\rend"), test_whitespace_chars) == pair<string, seq_t>{ "\n\t\r", seq_t("end") }));
 }
-
-
-
 
 
 pair<string, seq_t> read_until(const seq_t& p1, const string& chars){
@@ -514,9 +499,6 @@ pair<bool, seq_t> read_optional_char(const seq_t& s, char ch){
 }
 
 
-
-
-
 pair<string, string> deinterleave_string(const string& s){
 	QUARK_ASSERT((s.size() % 2) == 0);
 
@@ -602,7 +584,6 @@ QUARK_UNIT_TEST("", "read_balanced2()", "", ""){
 	QUARK_TEST_VERIFY(read_balanced2(seq_t("{return 4 < 5;}xxx"), k_test_brackets) == (std::pair<std::string, seq_t>("{return 4 < 5;}", seq_t("xxx"))));
 }
 //	QUARK_TEST_VERIFY(read_balanced2("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", "xyz"));
-
 
 
 QUARK_UNIT_TEST("", "read_balanced2()", "", ""){

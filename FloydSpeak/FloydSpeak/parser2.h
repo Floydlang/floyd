@@ -145,7 +145,6 @@ enum class eoperation {
 };
 
 
-
 ///////////////////////////////////			constant_value_t
 
 
@@ -231,7 +230,6 @@ inline bool operator==(const expr_t& a, const expr_t& b){
 }
 
 ///////////////////////////////////			FUNCTIONS
-
 
 
 bool is_valid_expr_chars(const std::string& s);

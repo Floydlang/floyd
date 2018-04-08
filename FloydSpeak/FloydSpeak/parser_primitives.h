@@ -49,17 +49,12 @@ namespace floyd {
 	bool is_whitespace(char ch);
 
 
-
 	//////////////////////////////////////////////////		parser_context_t
-
-
-
 
 
 	struct parser_context_t {
 		public: quark::trace_context_t _tracer;
 	};
-
 
 
 	//////////////////////////////////////////////////		BALANCING PARANTHESES, BRACKETS
@@ -80,7 +75,6 @@ namespace floyd {
 	std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos);
 
 
-
 	/*
 		??? Use this is all places we scan.
 		Understands nested parantheses and brackets and skips those.
@@ -90,9 +84,7 @@ namespace floyd {
 	std::pair<std::string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars);
 
 
-
 	//////////////////////////////////////		BASIC STRING
-
 
 
 	std::string reverse(const std::string& s);
@@ -111,7 +103,6 @@ namespace floyd {
 			"hello+xxx"
 	*/
 	std::pair<std::string, seq_t> read_required_identifier(const seq_t& s);
-
 
 
 	//////////////////////////////////////		TYPES
@@ -145,10 +136,7 @@ namespace floyd {
 	std::pair<typeid_t, seq_t> read_required_type(const seq_t& s);
 
 
-
 	//////////////////////////////////////		HIGH LEVEL
-
-
 
 
 	/*

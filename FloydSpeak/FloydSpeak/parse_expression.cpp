@@ -23,7 +23,6 @@ using std::vector;
 using namespace parser2;
 
 
-
 /////////////////////////////////		TO JSON
 
 

@@ -22,8 +22,6 @@ namespace floyd {
 	struct expression_t;
 
 
-
-
 	//////////////////////////////////////		symbol_t
 
 	/*
@@ -112,7 +110,6 @@ namespace floyd {
 	//////////////////////////////////////		body_t
 
 
-
 	struct body_t {
 		body_t(){
 		}
@@ -145,9 +142,6 @@ namespace floyd {
 	}
 
 
-
-
-	
 	//////////////////////////////////////		statement_t
 
 	/*
@@ -608,7 +602,6 @@ namespace floyd {
 		}
 		return true;
 	}
-
 
 
 }	//	floyd

@@ -34,9 +34,6 @@ QUARK_UNIT_TESTQ("compare_shared_values()", ""){
 }
 
 
-
-
-
 auto lambda_echo = [](int i ) { QUARK_TRACE_SS(i); };
 
 std::vector<int> test_collection{20,24,37,42,23,45,37};
@@ -54,16 +51,11 @@ QUARK_UNIT_TEST("", "mapf()", "", "") {
 }
 
 
-
 QUARK_UNIT_TEST("", "filter()", "", "") {
 	auto filteredCol = filter(test_collection,[](int value){ return value > 30;});
 	for_each(filteredCol,lambda_echo);
 }
 */
-
-
-
-
 
 
 #if 0
@@ -92,7 +84,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_ASSERT(float_to_string_no_trailing_zeros(1.5) == "1.5");
 }
 #endif
-
 
 
 #include <sstream>

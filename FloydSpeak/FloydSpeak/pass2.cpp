@@ -471,8 +471,6 @@ ast_json_t statement_to_json(const statement_t& e){
 }
 
 
-
-
 ast_json_t expression_to_json_xyz(const expression_t& e){
 	const auto opcode = e.get_operation();
 
@@ -599,9 +597,7 @@ ast_t run_pass2(const quark::trace_context_t& tracer, const ast_json_t& parse_tr
 }
 
 
-
 ///////////////////////////////////////			TESTS
-
 
 
 const std::string k_test_program_0_parserout = R"(

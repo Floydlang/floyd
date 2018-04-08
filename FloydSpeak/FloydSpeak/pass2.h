@@ -44,7 +44,6 @@ namespace floyd {
 	std::string expression_to_json_string(const expression_t& e);
 
 
-
 	floyd::ast_t run_pass2(const quark::trace_context_t& tracer, const ast_json_t& parse_tree);
 }
 #endif /* pass2_hpp */

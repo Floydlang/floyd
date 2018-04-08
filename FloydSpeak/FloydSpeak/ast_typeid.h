@@ -50,9 +50,6 @@ namespace floyd {
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);
 
 
-
-
-
 	//////////////////////////////////////		base_type
 
 	/*
@@ -103,7 +100,6 @@ namespace floyd {
 
 
 	//////////////////////////////////////		typeid_t
-
 
 
 	struct typeid_t {
@@ -241,7 +237,6 @@ namespace floyd {
 		}
 
 
-
 		public: static typeid_t make_dict(const typeid_t& value_type){
 			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { value_type }, "", {} });
 			return { floyd::base_type::k_dict, ext };
@@ -323,7 +318,6 @@ namespace floyd {
 */
 
 
-
 		public: bool operator==(const typeid_t& other) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(other.check_invariant());
@@ -360,7 +354,6 @@ namespace floyd {
 #endif
 			QUARK_ASSERT(check_invariant());
 		}
-
 
 
 		/////////////////////////////		STATE
@@ -466,12 +459,8 @@ namespace floyd {
 	std::vector<member_t> members_from_json(const json_t& members);
 
 
-
 /*
 	//////////////////////////////////////		interned_typeids_t
-
-
-
 
 
 	struct itypeid_t;
@@ -532,7 +521,6 @@ namespace floyd {
 		public: static itypeid_t make_typeid(){
 			return { (int)base_type::k_typeid };
 		}
-
 
 
 		public: int _intern_id;

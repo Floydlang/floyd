@@ -18,7 +18,6 @@
 */
 
 
-
 #ifndef quark_h
 #define quark_h
 
@@ -50,8 +49,6 @@ Quark is designed to be a policy rather than actual code. These are the primitiv
 Using quark.h and quark.cpp is very convenient but optional.
 
 
-
-
 # CONFIGURATION
 
 Configure quark.h / quark.cpp by settings these flags in your compiler settings:
@@ -63,8 +60,6 @@ Configure quark.h / quark.cpp by settings these flags in your compiler settings:
 They are independent of each other and any combination is valid! If you don't set them, they default to the above.
 
 See "EVEN MORE INDEPENDENCE" for more advanced possibilities.
-
-
 
 
 # ASSERTS - DEFECTS
@@ -93,7 +88,6 @@ Example 2 - detect impossible conditions:
 		QUARK_ASSERT(false);
 		throw std::logic_error("");	//	Remove missing-return value warning, if any.
 	}
-
 
 
 # TRACING
@@ -139,8 +133,6 @@ Examples:
 			...
 
 
-
-
 # UNIT TESTS
 
 You can easily add a unit test where ever you can define a function. It's possible to interleave the functions with
@@ -166,8 +158,6 @@ Examples 1 - registering some unit tests
 
 Running all unit tests:
 	quark::run_tests();
-
-
 
 
 # EVEN MORE INDEPENDENCE
@@ -204,8 +194,6 @@ This allows you to decide in clients to your library how to handle asserts, trac
 	TETRIS_CLONE_ASSERT(x) QUARK_ASSERT(x)
 	...
 This becomes the chose of the *user* of your code.
-
-
 
 
 # TODO - SOMEDAY
@@ -251,7 +239,6 @@ Add mechanism for unit tests to get to test files.
 #endif
 
 
-
 #include <cassert>
 #include <vector>
 #include <string>
@@ -273,15 +260,11 @@ Add mechanism for unit tests to get to test files.
 #endif
 
 
-
 namespace quark {
-
-
 
 
 //	PRIMITIVES
 //	====================================================================================================================
-
 
 
 ////////////////////////////		source_code_location
@@ -304,8 +287,6 @@ struct source_code_location {
 };
 
 
-
-
 ////////////////////////////		runtime_i
 
 /*
@@ -319,7 +300,6 @@ class runtime_i {
 };
 
 
-
 ////////////////////////////		get_runtime() and set_runtime()
 
 /*
@@ -329,7 +309,6 @@ class runtime_i {
 
 runtime_i* get_runtime();
 void set_runtime(runtime_i* iRuntime);
-
 
 
 //	WORKAROUNDS
@@ -347,10 +326,8 @@ void set_runtime(runtime_i* iRuntime);
 #define QUARK_UNIQUE_LABEL(prefix) QUARK_UNIQUE_LABEL_INTERNAL(prefix, __LINE__)
 
 
-
 //	ASSERT SUPPORT
 //	====================================================================================================================
-
 
 
 #if QUARK_ASSERT_ON
@@ -368,8 +345,6 @@ void set_runtime(runtime_i* iRuntime);
 	#define QUARK_ASSERT(x)
 
 #endif
-
-
 
 
 inline void on_problem___put_breakpoint_here(){
@@ -392,16 +367,8 @@ inline void on_assert_hook(runtime_i* runtime, const source_code_location& locat
 #endif
 
 
-
-
-
-
-
-
 //	TRACE
 //	====================================================================================================================
-
-
 
 
 ////////////////////////////		trace_i
@@ -488,7 +455,6 @@ inline void set_trace(const trace_i* v){
 }
 
 
-
 ////////////////////////////		trace_context_t
 
 //	Notice: this is CONST but has hidden side effects. I decided this is OK.
@@ -517,7 +483,6 @@ struct trace_context_t {
 		_tracer->trace_i__close_scope(_verbose ? s : "");
 	}
 };
-
 
 
 inline trace_context_t make_default_tracer(){
@@ -561,7 +526,6 @@ inline trace_context_t make_default_tracer(){
 		}
 	};
 #endif
-
 
 
 #if QUARK_TRACE_ON
@@ -610,24 +574,13 @@ inline trace_context_t make_default_tracer(){
 #endif
 
 
-
-
 	inline int get_log_indent(){
 		return 0;
 	}
 
 
-
-
-
-
-
-
 //	UNIT TEST SUPPORT
 //	====================================================================================================================
-
-
-
 
 
 #if QUARK_UNIT_TESTS_ON
@@ -701,7 +654,6 @@ inline trace_context_t make_default_tracer(){
 
 
 	void on_unit_test_failed_hook(runtime_i* runtime, const source_code_location& location, const char expression[]);
-
 
 
 	////////////////////////////		Macros used by client code
@@ -807,7 +759,6 @@ inline void ut_compare_strings(const std::string& result, const std::string& exp
 		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 	#define OFF_QUARK_UNIT_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
 		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
-
 
 
 #if QUARK_UNIT_TESTS_ON
@@ -938,19 +889,8 @@ inline void run_tests(const std::vector<std::string>& source_file_order){
 #endif
 
 
-
-
-
-
-
-
-
-
-
-
 //	Default implementation
 //	====================================================================================================================
-
 
 
 //////////////////////////////////			default_runtime

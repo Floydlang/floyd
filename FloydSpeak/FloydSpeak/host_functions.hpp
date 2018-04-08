@@ -32,7 +32,6 @@ namespace floyd {
 	std::map<std::string, host_function_signature_t> get_host_function_signatures();
 
 
-
 	struct host_function_t {
 		host_function_signature_t _signature;
 		std::string _name;
@@ -41,6 +40,5 @@ namespace floyd {
 
 	std::map<int, host_function_t> get_host_functions();
 }
-
 
 #endif /* host_functions_hpp */

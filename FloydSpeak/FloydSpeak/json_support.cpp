@@ -20,8 +20,6 @@ using std::vector;
 ////////////////////////////////////////		json_t
 
 
-
-
 bool json_t::check_invariant() const {
 	if(_type == k_object){
 		QUARK_ASSERT(_string.empty());
@@ -116,7 +114,6 @@ bool json_t::operator==(const json_t& other) const{
 
 	return _type == other._type && _object == other._object && _array == other._array && _string == other._string && _number == other._number;
 }
-
 
 
 QUARK_UNIT_TESTQ("json_t()", ""){
@@ -237,9 +234,7 @@ QUARK_UNIT_TESTQ("json_t()", ""){
 }
 
 
-
 ////////////////////////////////////////		HELPERS
-
 
 
 void ut_compare_jsons(const json_t& result, const json_t& expected){
@@ -260,7 +255,6 @@ void ut_compare_jsons(const json_t& result, const json_t& expected){
 }
 
 
-
 long long double_to_int(const double value){
 	return std::llround(value);
 }
@@ -269,7 +263,6 @@ QUARK_UNIT_TESTQ("make_vec()", ""){
 	const auto a = make_vec({ "one", "two" });
 	QUARK_UT_VERIFY(a.size() == 2);
 }
-
 
 
 json_t make_object(const std::vector<std::pair<std::string, json_t>>& entries){
@@ -448,7 +441,6 @@ QUARK_UNIT_TESTQ("exists_in()", "mixed arrays and trees - lost & found"){
 }
 
 
-
 json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(!path.empty());
@@ -522,7 +514,6 @@ QUARK_UNIT_TESTQ("get_in()", "mixed arrays and trees"){
 	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(1.0) })) != json_t());
 	QUARK_UT_VERIFY(get_in(obj1, make_vec({ json_t(1.0), "name" })) == "Ernst Stavro Blofeld");
 }
-
 
 
 json_t assoc(const json_t& obj, const json_t& key, const json_t& new_element){
@@ -602,9 +593,6 @@ QUARK_UNIT_TESTQ("assoc()", "replace array element"){
 }
 
 
-
-
-
 /*
 	key must exist.
 	Can remove entire subtree.
@@ -665,9 +653,6 @@ QUARK_UNIT_TESTQ("dissoc()", "erase array entry"){
 	const auto obj2 = dissoc(obj1, json_t(1.0));
 	QUARK_UT_VERIFY(obj2 == json_t::make_array({ "one", "three" }));
 }
-
-
-
 
 
 json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const json_t& new_element){
@@ -732,8 +717,6 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 }
 
 
-
-
 QUARK_UNIT_TESTQ("assoc_in()", "replace obj member value"){
 	const auto obj1 = json_t::make_object({
 		{ "name", "James Bond" },
@@ -787,8 +770,6 @@ QUARK_UNIT_TESTQ("assoc_in()", "mixed arrays and trees"){
 	QUARK_UT_VERIFY(get_in(obj2, make_vec({ json_t(1.0) })) != json_t());
 	QUARK_UT_VERIFY(get_in(obj2, make_vec({ json_t(1.0), "name" })) == "Ernst Stavro Blofeld");
 }
-
-
 
 
 std::vector<std::string> to_string_vec(const json_t& json){

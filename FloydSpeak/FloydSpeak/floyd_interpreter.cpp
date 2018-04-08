@@ -25,7 +25,6 @@ using std::shared_ptr;
 using std::make_shared;
 
 
-
 #if 0
 bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
@@ -107,8 +106,6 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 #endif
 
 
-
-
 std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
@@ -160,12 +157,10 @@ bc_program_t compile_to_bytecode(const interpreter_context_t& context, const str
 //	parser_context_t context{ quark::make_default_tracer() };
 //	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
 
-	const auto& pass1 = floyd::parse_program2(context2, program);
+	const auto& pass1 = parse_program2(context2, program);
 	const auto& pass2 = run_pass2(context2._tracer, pass1);
-	const auto& pass3 = floyd::run_pass3(context2._tracer, pass2);
-
-
-	const auto bc = run_bggen(context2._tracer, pass3);
+	const auto& pass3 = run_pass3(context2._tracer, pass2);
+	const auto bc = generate_bytecode(context2._tracer, pass3);
 
 	return bc;
 }

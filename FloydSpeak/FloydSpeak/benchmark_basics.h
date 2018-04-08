@@ -28,8 +28,6 @@ std::string number_fmt(unsigned long long n, char sep = ',');
 std::string format_ns(int64_t value);
 
 
-
-
 struct bench_result_t {
 	std::string _name;
 	std::int64_t _cpp_ns;

@@ -30,5 +30,4 @@ struct pretty_t {
 std::string json_to_pretty_string(const json_t& value, int pos, const pretty_t& pretty);
 
 
-
 #endif /* json_writer_hpp */

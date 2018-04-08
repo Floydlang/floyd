@@ -30,7 +30,6 @@ QUARK_UNIT_TESTQ("test_cpp_value_class_a", "what is needed for basic operations"
 }
 
 
-
 QUARK_UNIT_TESTQ("C++ bool", ""){
 	quark::ut_compare(true, true);
 	quark::ut_compare(true, !false);
@@ -48,6 +47,5 @@ QUARK_UNIT_TEST("","", "", ""){
 	const auto size = sizeof(std::make_shared<int>(13));
 	QUARK_UT_VERIFY(size == 16);
 }
-
 
 

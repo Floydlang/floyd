@@ -62,10 +62,10 @@ namespace floyd {
 #if DEBUG
 		public: bool check_invariant() const{
 			QUARK_ASSERT(_rc > 0);
-			QUARK_ASSERT(_type.check_invariant());
+			QUARK_ASSERT(_debug_type.check_invariant());
 			QUARK_ASSERT(_typeid_value.check_invariant());
 
-			const auto base_type = _type.get_base_type();
+			const auto base_type = _debug_type.get_base_type();
 			if(base_type == base_type::k_string){
 //				QUARK_ASSERT(_string);
 				QUARK_ASSERT(_json_value == nullptr);
@@ -84,7 +84,6 @@ namespace floyd {
 
 				QUARK_ASSERT(_json_value->check_invariant());
 			}
-
 			else if(base_type == base_type::k_typeid){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
@@ -142,7 +141,7 @@ namespace floyd {
 		public: bc_value_object_t(const std::string& s) :
 			_rc(1),
 #if DEBUG
-			_type(typeid_t::make_string()),
+			_debug_type(typeid_t::make_string()),
 #endif
 			_string(s)
 		{
@@ -152,7 +151,7 @@ namespace floyd {
 		public: bc_value_object_t(const std::shared_ptr<json_t>& s) :
 			_rc(1),
 #if DEBUG
-			_type(typeid_t::make_json_value()),
+			_debug_type(typeid_t::make_json_value()),
 #endif
 			_json_value(s)
 		{
@@ -162,7 +161,7 @@ namespace floyd {
 		public: bc_value_object_t(const typeid_t& s) :
 			_rc(1),
 #if DEBUG
-			_type(typeid_t::make_typeid()),
+			_debug_type(typeid_t::make_typeid()),
 #endif
 			_typeid_value(s)
 		{
@@ -172,7 +171,7 @@ namespace floyd {
 		public: bc_value_object_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag) :
 			_rc(1),
 #if DEBUG
-			_type(type),
+			_debug_type(type),
 #endif
 			_struct_members(s)
 		{
@@ -181,7 +180,7 @@ namespace floyd {
 		public: bc_value_object_t(const typeid_t& type, const std::vector<bc_value_t>& s) :
 			_rc(1),
 #if DEBUG
-			_type(type),
+			_debug_type(type),
 #endif
 			_vector_elements(s)
 		{
@@ -190,7 +189,7 @@ namespace floyd {
 		public: bc_value_object_t(const typeid_t& type, const std::map<std::string, bc_value_t>& s) :
 			_rc(1),
 #if DEBUG
-			_type(type),
+			_debug_type(type),
 #endif
 			_dict_entries(s)
 		{
@@ -201,8 +200,7 @@ namespace floyd {
 		public: mutable int _rc;
 		public: bool _is_unwritten_ext_value = false;
 #if DEBUG
-//??? use bc_typeid_t instead
-		public: typeid_t _type;
+		public: typeid_t _debug_type;
 #endif
 		//	Holds ALL variants of objects right now -- optimize!
 		public: std::string _string;
@@ -214,9 +212,7 @@ namespace floyd {
 	};
 
 
-
 	//////////////////////////////////////		bc_pod_value_t
-
 
 
 	//	IMPORTANT: Has no constructor, destructor etc!! POD.
@@ -230,7 +226,6 @@ namespace floyd {
 		bc_value_object_t* _ext;
 		const bc_frame_t* _frame_ptr;
 	};
-
 
 
 	//////////////////////////////////////		bc_value_t
@@ -1060,38 +1055,11 @@ namespace floyd {
 	extern const std::map<bc_opcode, opcode_info_t> k_opcode_info;
 
 
-	//////////////////////////////////////		bc_instruction2_t
+	//////////////////////////////////////		bc_instruction_t
 
-	/*
-		??? IDEA for encoding:
-		----------------------------------- -----------------------------------
-		66665555 55555544 44444444 33333333 33222222 22221111 11111100 00000000
-		32109876 54321098 76543210 98765432 10987654 32109876 54321098 76543210
 
-		XXXXXXXX XXXXXXXX PPPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP PPPPPppp
-		48bit Intel x86_64 pointer. ppp = low bits, set to 0, X = bit 47
-
-		-----------------------------------
-		33222222 22221111 11111100 00000000
-		10987654 32109876 54321098 76543210
-
-		INSTRUCTION
-		CCCCCCCC AAAAAAAA BBBBBBBB CCCCCCCC
-
-		A = destination register.
-		B = lhs register
-		C = rhs register
-
-		-----------------------------------------------------------------------
-	*/
-
-	struct bc_instruction2_t {
-		bc_instruction2_t(
-			bc_opcode opcode,
-			int16_t a,
-			int16_t b,
-			int16_t c
-		) :
+	struct bc_instruction_t {
+		bc_instruction_t(bc_opcode opcode, 	int16_t a, int16_t b, int16_t c) :
 			_opcode(opcode),
 			_a(a),
 			_b(b),
@@ -1119,7 +1087,6 @@ namespace floyd {
 
 
 	struct reg_flags_t {
-		bool _type;
 		bool _a;
 		bool _b;
 		bool _c;
@@ -1128,18 +1095,21 @@ namespace floyd {
 	reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
 
 
-
 	//////////////////////////////////////		bc_frame_t
 
 
 	struct bc_frame_t {
-		bc_frame_t(const std::vector<bc_instruction2_t>& instrs2, const std::vector<std::pair<std::string, symbol_t>>& symbols, const std::vector<typeid_t>& args);
+		bc_frame_t(
+			const std::vector<bc_instruction_t>& instrs2,
+			const std::vector<std::pair<std::string, symbol_t>>& symbols,
+			const std::vector<typeid_t>& args
+		);
 		bool check_invariant() const;
 
 
 		//////////////////////////////////////		STATE
 
-		std::vector<bc_instruction2_t> _instrs2;
+		std::vector<bc_instruction_t> _instrs2;
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
 		std::vector<typeid_t> _args;
 
@@ -1150,7 +1120,6 @@ namespace floyd {
 		std::vector<bool> _locals_exts;
 		std::vector<bc_value_t> _locals;
 	};
-
 
 
 	//////////////////////////////////////		bc_function_definition_t
@@ -1210,8 +1179,7 @@ namespace floyd {
 	json_t bcprogram_to_json(const bc_program_t& program);
 
 
-
-	//////////////////////////////////////		frame_pos_t
+//////////////////////////////////////		frame_pos_t
 
 
 	struct frame_pos_t {
@@ -1859,7 +1827,6 @@ namespace floyd {
 		public: std::shared_ptr<interpreter_imm_t> _imm;
 
 
-
 		//	Holds all values for all environments.
 		//	Notice: stack holds refs to RC-counted objects!
 		public: interpreter_stack_t _stack;
@@ -1872,7 +1839,7 @@ namespace floyd {
 	value_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t>& args);
 	value_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
 	json_t interpreter_to_json(const interpreter_t& vm);
-	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions);
+	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
 
 } //	floyd
 

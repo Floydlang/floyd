@@ -42,13 +42,11 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 	floyd::ast_t analyse(const analyser_t& a);
 
 
-
 const function_definition_t& function_id_to_def(const analyser_t& vm, int function_id){
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._function_defs.size());
 
 	return *vm._function_defs[function_id];
 }
-
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
@@ -99,7 +97,6 @@ symbol_t find_global_symbol(const analyser_t& vm, const string& s){
 	}
 	return *t.first;
 }
-
 
 
 typeid_t resolve_type(const analyser_t& vm, const typeid_t& type);
@@ -195,7 +192,6 @@ typeid_t resolve_type(const analyser_t& vm, const typeid_t& type){
 }
 
 
-
 std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& vm, const vector<shared_ptr<statement_t>>& statements){
 	QUARK_ASSERT(vm.check_invariant());
 	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
@@ -235,10 +231,7 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& vm, const floyd::b
 }
 
 
-
-
 /////////////////////////////////////////			STATEMENTS
-
 
 
 /*
@@ -547,11 +540,7 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 }
 
 
-
-
 /////////////////////////////////////////			EXPRESSIONS
-
-
 
 
 std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& vm, const expression_t& e){
@@ -1388,7 +1377,6 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 }
 
 
-
 /*
 	- Inserta automatic type-conversions from string -> json_value etc.
 */
@@ -1498,7 +1486,6 @@ json_t analyser_to_json(const analyser_t& vm){
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
-
 
 
 void test__analyse_expression(const expression_t& e, const expression_t& expected){

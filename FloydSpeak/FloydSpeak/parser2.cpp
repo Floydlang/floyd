@@ -25,17 +25,13 @@ using namespace std;
 using floyd::keyword_t;
 
 
-
 namespace parser2 {
-
-
 
 
 QUARK_UNIT_TESTQ("C++ operators", ""){
 	const int a = 2-+-2;
 	QUARK_TEST_VERIFY(a == 4);
 }
-
 
 
 QUARK_UNIT_TESTQ("C++ enum class()", ""){
@@ -62,15 +58,11 @@ bool is_valid_expr_chars(const std::string& s){
 }
 
 
-
 seq_t skip_expr_whitespace(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
 	return read_while(p, k_c99_whitespace_chars).second;
 }
-
-
-
 
 
 /*
@@ -390,7 +382,6 @@ QUARK_UNIT_TESTQ("parse_string_literal()", ""){
 }
 
 
-
 std::pair<constant_value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(k_c99_number_chars.find(p.first()) != std::string::npos);
@@ -428,10 +419,6 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_float && a.first._float == 0.5f);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
-
-
-
-
 
 
 std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const expr_t& lhs, const eoperator_precedence precedence){
@@ -616,7 +603,6 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 }
 
 
-
 std::pair<expr_t, seq_t> parse_terminal(const seq_t& p0) {
 	QUARK_ASSERT(p0.check_invariant());
 
@@ -776,7 +762,6 @@ std::pair<expr_t, seq_t> parse_expression(const seq_t& p){
 	}
 	return parse_expression_int(p, eoperator_precedence::k_super_weak);
 }
-
 
 
 //////////////////////			expr_to_string
@@ -973,7 +958,6 @@ std::string expr_to_string(const expr_t& e){
 }
 
 
-
 bool test__parse_terminal(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
@@ -1040,8 +1024,6 @@ QUARK_UNIT_1("parse_terminal()", "identifier", test__parse_terminal(
 ));
 
 
-
-
 std::pair<std::string, seq_t> test_parse_expression2(const seq_t& expression){
 	const auto result = parse_expression(seq_t(expression));
 	return { expr_to_string(result.first), result.second };
@@ -1062,7 +1044,6 @@ bool test__parse_expression(const std::string& expression, string expected_value
 	}
 	return true;
 }
-
 
 
 //////////////////////////////////			EMPTY
@@ -1144,7 +1125,6 @@ QUARK_UNIT_1("parse_expression()", "arithmetics", test__parse_expression(
 ));
 
 
-
 //////////////////////////////////			parantheses
 
 QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression("(3)", "[\"k\", \"int\", 3]", ""));
@@ -1167,8 +1147,6 @@ QUARK_UNIT_1("parse_expression()", "parantheses", test__parse_expression(
 ));
 
 
-
-
 //////////////////////////////////			vector definition
 
 
@@ -1179,7 +1157,6 @@ QUARK_UNIT_TESTQ("run_main()", "vector"){
 QUARK_UNIT_TESTQ("run_main()", "vector"){
 	QUARK_UT_VERIFY(test__parse_expression("[1,2,3]", R"(["construct-value", "", [["k", "int", 1], ["k", "int", 2], ["k", "int", 3]]])", ""));
 }
-
 
 
 //////////////////////////////////			DICT definition
@@ -1197,7 +1174,6 @@ QUARK_UNIT_TEST("parser", "parge_expression()", "dict definition", ""){
 		R"(["dict-def", "", [["k", "string", "one"]:["k", "int", 1], ["k", "string", "two"]:["k", "int", 2], ["k", "string", "three"]:["k", "int", 3]]])", "")
 	);
 }
-
 
 
 //////////////////////////////////			NEG
@@ -1221,8 +1197,6 @@ QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
 	R"(["-", ["k", "int", 2], ["unary_minus", ["k", "int", 2]]])",
 	" xxx"
 ));
-
-
 
 
 //////////////////////////////////			LOGICAL EQUALITY
@@ -1299,7 +1273,6 @@ QUARK_UNIT_1("parse_expression()", "||", test__parse_expression(
 //??? Check combos of || and &&
 
 
-
 //////////////////////////////////			IDENTIFIERS
 
 
@@ -1353,8 +1326,6 @@ QUARK_UNIT_1("parse_expression()", "?:", test__parse_expression(
 ));
 
 
-
-
 //////////////////////////////////			FUNCTION CALLS
 
 QUARK_UNIT_1("parse_expression()", "function call", test__parse_expression(
@@ -1397,7 +1368,6 @@ QUARK_UNIT_TESTQ("parse_expression()", "function call, expression argument"){
 	const auto result = test_parse_expression2(seq_t("1 == 2)"));
 	QUARK_UT_VERIFY((		result == pair<string, seq_t>( "[\"==\", [\"k\", \"int\", 1], [\"k\", \"int\", 2]]", ")" )		));
 }
-
 
 
 QUARK_UNIT_TESTQ("parse_expression()", "function call, expression argument"){
@@ -1477,7 +1447,6 @@ QUARK_UNIT_1("parse_expression()", "lookup with string -- whitespace", test__par
 ));
 
 
-
 //////////////////////////////////			COMBOS
 
 
@@ -1492,7 +1461,6 @@ QUARK_UNIT_1("parse_expression()", "combo - function call", test__parse_expressi
 	R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])",
 	" xxx"
 ));
-
 
 
 QUARK_UNIT_1("parse_expression()", "complex chain", test__parse_expression(
@@ -1515,10 +1483,7 @@ QUARK_UNIT_1("parse_expression()", "combo arithmetics", test__parse_expression(
 ));
 
 
-
-
 //////////////////////////////////			EXPRESSION ERRORS
-
 
 
 void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
@@ -1570,8 +1535,6 @@ QUARK_UNIT_TESTQ("parse_expression()", "Invalid characters") {
 QUARK_UNIT_TESTQ("parse_expression()", "Invalid characters") {
 //	test__parse_expression__throw("5x", "EEE_WRONG_CHAR");
 }
-
-
 
 
 QUARK_UNIT_TESTQ("parse_expression()", "Invalid characters") {

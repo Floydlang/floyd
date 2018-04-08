@@ -27,13 +27,6 @@
 #include "ast_basics.h"
 
 
-
-
-
-
-
-
-
 namespace quark {
 	template<> std::string to_debug_str<std::pair<std::vector<std::string>, seq_t>>(const std::pair<std::vector<std::string>, seq_t>& s){
 		return json_to_pretty_string(
@@ -44,7 +37,6 @@ namespace quark {
 		);
 	}
 }
-
 
 
 namespace floyd {
@@ -72,7 +64,6 @@ std::string concat_strings(const vector<string>& v){
 //////////////////////////////////////////////////		detect_implicit_statement_lookahead()
 
 
-
 pair<string, string> split_at_tail_identifier(const std::string& s){
 	auto i = s.size();
 	while(i > 0 && whitespace_chars.find(s[i - 1]) != string::npos){
@@ -85,7 +76,6 @@ pair<string, string> split_at_tail_identifier(const std::string& s){
 	const auto identifier = s.substr(i);
 	return { pre_identifier, identifier };
 }
-
 
 
 enum class implicit_statement {
@@ -239,10 +229,7 @@ QUARK_UNIT_TEST("", "detect_implicit_statement_lookahead()", "dict", "store"){
 }
 
 
-
 //////////////////////////////////////////////////		parse_bind_statement()
-
-
 
 
 //	BIND:			int x = 10;
@@ -345,8 +332,6 @@ QUARK_UNIT_TESTQ("parse_bind_statement", ""){
 //### test string literal
 
 
-
-
 //////////////////////////////////////////////////		parse_assign_statement()
 
 
@@ -393,8 +378,6 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 		)).first
 	);
 }
-
-
 
 
 std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){

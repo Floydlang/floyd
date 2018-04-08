@@ -30,5 +30,4 @@ typedef std::pair<std::size_t, std::size_t> byte_range_t;
 //std::vector<byte_range_t> calc_struct_default_memory_layout(const floyd::types_collector_t& types, const floyd::type_def_t& s);
 
 
-
 #endif /* llvm_code_gen_hpp */

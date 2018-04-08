@@ -79,7 +79,6 @@ const char tag_resolved_type_char = '^';
 	}
 
 
-
 	//////////////////////////////////////		base_type_to_string(base_type)
 
 
@@ -98,9 +97,7 @@ const char tag_resolved_type_char = '^';
 	}
 
 
-
 	//////////////////////////////////////////////////		typeid_t
-
 
 
 	bool typeid_t::check_invariant() const{
@@ -204,7 +201,6 @@ const char tag_resolved_type_char = '^';
 	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
 		QUARK_UT_VERIFY(typeid_t::make_unresolved_type_identifier("hello").get_base_type() == base_type::k_internal_unresolved_type_identifier);
 	}
-
 
 
 	//////////////////////////////////////		FORMATS
@@ -414,9 +410,6 @@ const char tag_resolved_type_char = '^';
 	}
 
 
-
-
-
 	struct typeid_str_test_t {
 		typeid_t _typeid;
 		string _ast_json;
@@ -466,7 +459,6 @@ const char tag_resolved_type_char = '^';
 				R"(["function", "bool", [ "int", "float"]])",
 				"function bool(int,float)"
 			},
-
 
 
 			//	unknown_identifier
@@ -519,9 +511,6 @@ const char tag_resolved_type_char = '^';
 	}
 
 
-
-
-
 	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m){
 		vector<json_t> r;
 		for(const auto a: m){
@@ -539,8 +528,6 @@ const char tag_resolved_type_char = '^';
 
 
 	//////////////////////////////////////////////////		struct_definition_t
-
-
 
 
 	bool struct_definition_t::check_invariant() const{
@@ -568,7 +555,6 @@ const char tag_resolved_type_char = '^';
 		}
 		return true;
 	}
-
 
 
 	std::string to_compact_string(const struct_definition_t& v){
@@ -603,8 +589,6 @@ const char tag_resolved_type_char = '^';
 	}
 
 
-
-
 	////////////////////////			member_t
 
 
@@ -630,7 +614,6 @@ const char tag_resolved_type_char = '^';
 
 		return (_type == other._type) && (_name == other._name);
 	}
-
 
 
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m){
@@ -667,7 +650,6 @@ const char tag_resolved_type_char = '^';
 		}
 		return r;
 	}
-
 
 
 bool typeid_t::check_types_resolved() const{

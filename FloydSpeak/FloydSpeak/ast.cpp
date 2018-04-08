@@ -20,8 +20,6 @@ namespace floyd {
 	////////////////////////			ast_t
 
 
-
-
 	ast_json_t ast_to_json(const ast_t& ast){
 		QUARK_ASSERT(ast.check_invariant());
 
@@ -39,8 +37,6 @@ namespace floyd {
 			}
 		)};
 	}
-
-
 
 
 } //	floyd

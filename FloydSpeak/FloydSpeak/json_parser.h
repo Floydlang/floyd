@@ -17,5 +17,4 @@ struct seq_t;
 std::pair<json_t, seq_t> parse_json(const seq_t& s);
 
 
-
 #endif /* json_parser_hpp */

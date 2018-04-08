@@ -20,8 +20,6 @@ namespace floyd {
 	struct typeid_t;
 
 
-
-
 	//	Keywords in source code.
 	struct keyword_t {
 		static const std::string k_return;

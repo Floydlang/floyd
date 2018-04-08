@@ -16,7 +16,6 @@ struct seq_t;
 const std::string test_whitespace_chars = " \n\t\r";
 
 
-
 ///////////////////////////////		String utils
 
 
@@ -35,7 +34,6 @@ float parse_float(const std::string& pos);
 
 std::string float_to_string(float value);
 std::string double_to_string(double value);
-
 
 
 ///////////////////////////////		seq_t
@@ -65,7 +63,6 @@ struct seq_t {
 	//	You get empty if rest_size() == 0.
 	public: seq_t rest1() const;
 	public: seq_t rest() const { return rest1(); }
-
 
 
 	//	Returned string can be "" or shorter than chars if there aren't enough chars.
@@ -100,7 +97,6 @@ struct seq_t {
 
 	//	Returns pointer to entire string *following* the current pos. Never characters *before* current read pos.
 	const char* c_str() const;
-
 
 
 	/////////////		STATE

@@ -92,7 +92,6 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 }
 
 
-
 std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s){
 	vector<json_t> statements;
 	auto pos = skip_whitespace(s);
@@ -111,11 +110,7 @@ ast_json_t parse_program2(const parser_context_t& context, const string& program
 }
 
 
-
 //////////////////////////////////////////////////		Test programs
-
-
-
 
 
 const std::string k_test_program_0_source = "int main(){ return 3; }";
@@ -134,8 +129,6 @@ const std::string k_test_program_0_parserout = R"(
 		]
 	]
 )";
-
-
 
 
 const std::string k_test_program_1_source =

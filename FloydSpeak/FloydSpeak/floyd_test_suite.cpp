@@ -18,7 +18,6 @@
 #include <iostream>
 
 
-
 using std::vector;
 using std::string;
 
@@ -183,7 +182,6 @@ QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - PARANTHESES
 
 
-
 QUARK_UNIT_TESTQ("execute_expression()", "Parentheses") {
 	test__run_init__check_result("int result = 5*(4+4+1);", value_t::make_int(45));
 }
@@ -217,7 +215,6 @@ QUARK_UNIT_TESTQ("execute_expression()", "Spaces") {
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - FLOAT
-
 
 
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
@@ -268,7 +265,6 @@ QUARK_UNIT_TESTQ("execute_expression()", "Bool") {
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
-
 
 
 QUARK_UNIT_TESTQ("execute_expression()", "?:") {
@@ -469,7 +465,6 @@ QUARK_UNIT_TESTQ("execute_expression()", "Errors") {
 #endif
 
 
-
 QUARK_UNIT_TEST("execute_expression()", "-true", "", "") {
 	try{
 		test__run_init__check_result("int result = -true;", value_t::make_int(0));
@@ -481,9 +476,7 @@ QUARK_UNIT_TEST("execute_expression()", "-true", "", "") {
 }
 
 
-
 //////////////////////////////////////////		MINIMAL PROGRAMS
-
 
 
 QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
@@ -542,7 +535,6 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	QUARK_TEST_VERIFY(result == value_t::make_string("123456"));
 }
-
 
 
 //////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
@@ -690,7 +682,6 @@ QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
 //////////////////////////////////////////		CALL FUNCTIONS
 
 
-
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
 	const auto context = make_test_interpreter_context();
 	auto ast = compile_to_bytecode(context,
@@ -745,9 +736,7 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 }
 
 
-
 //////////////////////////////////////////		MUTATE VARIABLES
-
 
 
 QUARK_UNIT_TEST("call_function()", "mutate local", "", ""){
@@ -840,7 +829,6 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 }
 
 
-
 //////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
 
@@ -912,12 +900,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 }
 
 
-
-
-
-
 //////////////////////////////////////////		HOST FUNCTION - to_string()
-
 
 
 QUARK_UNIT_TESTQ("run_init()", ""){
@@ -947,9 +930,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 }
 
 
-
 //////////////////////////////////////////		HOST FUNCTION - typeof()
-
 
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
@@ -1020,7 +1001,6 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 //////////////////////////////////////////		HOST FUNCTION - print()
 
 
-
 QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
 	const auto r = test__run_global(
 		R"(
@@ -1082,7 +1062,6 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 
 
 //////////////////////////////////////////		HOST FUNCTION - get_time_of_day()
-
 
 
 QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
@@ -1171,10 +1150,7 @@ OFF_QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it wo
 }
 
 
-
-
 //////////////////////////////////////////		BLOCKS AND SCOPING
-
 
 
 QUARK_UNIT_TEST("run_init()", "Empty block", "", ""){
@@ -1206,9 +1182,7 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 }
 
 
-
 //////////////////////////////////////////		IF STATEMENT
-
 
 
 QUARK_UNIT_TEST("run_init()", "if(true){}", "", ""){
@@ -1355,8 +1329,6 @@ QUARK_UNIT_TEST("", "function calling itself by name", "", ""){
 }
 
 
-
-
 QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independent on how it's called in callstack", "", ""){
 	const auto vm = test__run_global(
 		R"(
@@ -1384,10 +1356,7 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 }
 
 
-
-
 //////////////////////////////////////////		FOR STATEMENT
-
 
 
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
@@ -1478,10 +1447,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 //	??? Test converting different types to jsons
 
 
-
-
 //////////////////////////////////////////		NULL - TYPE
-
 
 
 QUARK_UNIT_TEST("null", "", "", "0"){
@@ -1502,7 +1468,6 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 
 
 //////////////////////////////////////////		STRING - TYPE
-
 
 
 //??? add tests for equality.
@@ -1558,7 +1523,6 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 	)");
 }
 // ### test pos limiting and edge cases.
-
 
 
 //////////////////////////////////////////		VECTOR - TYPE
@@ -1808,7 +1772,6 @@ QUARK_UNIT_TEST("vector", "update()", "mutate element", "valid vector, without s
 //////////////////////////////////////////		DICT - TYPE
 
 
-
 QUARK_UNIT_TEST("dict", "construct", "", ""){
 	const auto vm = test__run_global(R"(
 		[string: int] a = {"one": 1, "two": 2};
@@ -1995,9 +1958,7 @@ QUARK_UNIT_TEST("dict", "erase()", "", ""){
 }
 
 
-
 //////////////////////////////////////////		STRUCT - TYPE
-
 
 
 QUARK_UNIT_TESTQ("run_main()", "struct"){
@@ -2157,9 +2118,6 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 }
 
 
-
-
-
 QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 	const auto vm = test__run_global(R"(
 		struct color { int red; int green; int blue;}
@@ -2237,9 +2195,7 @@ QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
 */
 
 
-
 //////////////////////////////////////////
-
 
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -2291,13 +2247,7 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 }
 
 
-
-
-
-
 //////////////////////////////////////////		json_value - TYPE
-
-
 
 
 QUARK_UNIT_TEST("json_value-string", "deduce json_value::string", "", ""){
@@ -2456,7 +2406,6 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 //////////////////////////////////////////		json_value features
 
 
-
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 	const auto result = run_return_result(R"(
 		result = get_json_type(json_value({}))
@@ -2576,9 +2525,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-
 //////////////////////////////////////////		decode_json()
-
 
 
 QUARK_UNIT_TEST("", "decode_json()", "", ""){
@@ -2600,7 +2547,6 @@ QUARK_UNIT_TEST("", "decode_json()", "", ""){
 
 
 //////////////////////////////////////////		encode_json()
-
 
 
 QUARK_UNIT_TEST("", "encode_json()", "", ""){
@@ -2627,9 +2573,7 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 }
 
 
-
 //////////////////////////////////////////		flatten_to_json()
-
 
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "bool", ""){
@@ -2719,7 +2663,6 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 }
 
 
-
 //////////////////////////////////////////		flatten_to_json() -> unflatten_from_json() roundtrip
 
 
@@ -2794,12 +2737,8 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 }
 
 
-
-
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
-
-
 
 
 QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
@@ -3052,7 +2991,5 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 		QUARK_TEST_VERIFY(string(e.what()) == "Lookup using [] only works with strings, vectors, dicts and json_value.");
 	}
 }
-
-
 
 

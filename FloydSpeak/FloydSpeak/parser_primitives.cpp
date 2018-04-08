@@ -36,7 +36,6 @@ using std::pair;
 //////////////////////////////////////////////////		Text parsing primitives
 
 
-
 std::string skip_whitespace(const string& s){
 	return skip_whitespace2(seq_t(s)).second.str();
 }
@@ -165,8 +164,6 @@ QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
 }
 
 
-
-
 bool is_whitespace(char ch){
 	return whitespace_chars.find(string(1, ch)) != string::npos;
 }
@@ -183,7 +180,6 @@ QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
 	QUARK_TEST_VERIFY(is_whitespace('\n') == true);
 }
-
 
 
 std::string skip_whitespace_ends(const std::string& s){
@@ -210,10 +206,7 @@ QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
 }
 
 
-
 //////////////////////////////////////////////////		BALANCING PARANTHESES, BRACKETS
-
-
 
 
 std::pair<std::string, seq_t> get_balanced(const seq_t& s){
@@ -258,7 +251,6 @@ QUARK_UNIT_TEST("", "get_balanced()", "", ""){
 //	QUARK_TEST_VERIFY(get_balanced("{\n\t\t\t\treturn 4 < 5;\n\t\t\t}\n\t\t") == seq("((abc)[])", xyz));
 
 
-
 std::pair<std::string, seq_t> read_enclosed_in_parantheses(const seq_t& pos){
 	const auto pos2 = skip_whitespace(pos);
 	read_required(pos2, "(");
@@ -273,7 +265,6 @@ QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
 QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
 	QUARK_UT_VERIFY((	read_enclosed_in_parantheses(seq_t(" ( abc )xyz")) == std::pair<std::string, seq_t>{" abc ", seq_t("xyz") } 	));
 }
-
 
 
 const auto open_close2 = deinterleave_string(bracket_pairs);
@@ -313,15 +304,12 @@ QUARK_UNIT_TEST("", "read_until_toplevel_match()", "", ""){
 ///### TESTS
 
 
-
 //////////////////////////////////////		BASIC STRING
 
 
 std::string reverse(const std::string& s){
 	return std::string(s.rbegin(), s.rend());
 }
-
-
 
 
 //////////////////////////////////////		IDENTIFIER
@@ -346,10 +334,7 @@ QUARK_UNIT_TESTQ("read_required_identifier()", ""){
 }
 
 
-
-
 //////////////////////////////////////		TYPES
-
 
 
 std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
@@ -597,7 +582,6 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 */
 
 
-
 pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 	const auto type_pos = read_type(s);
 	if(type_pos.first == nullptr){
@@ -605,11 +589,6 @@ pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 	}
 	return { *type_pos.first, type_pos.second };
 }
-
-
-
-
-
 
 
 }	//	floyd
