@@ -26,6 +26,74 @@ interpreter_context_t make_test_context(){
 	return context;
 }
 
+interpreter_context_t make_verbose_context(){
+	const auto t = quark::trace_context_t(true, quark::get_trace());
+	interpreter_context_t context{ t };
+	return context;
+}
+
+
+
+string number_fmt(unsigned long long n, char sep) {
+    std::stringstream fmt;
+    fmt << n;
+    std::string s = fmt.str();
+    s.reserve(s.length() + s.length() / 3);
+
+    // loop until the end of the string and use j to keep track of every
+    // third loop starting taking into account the leading x digits (this probably
+    // can be rewritten in terms of just i, but it seems more clear when you use
+    // a seperate variable)
+    for (int i = 0, j = 3 - s.length() % 3; i < s.length(); ++i, ++j)
+        if (i != 0 && j % 3 == 0)
+            s.insert(i++, 1, sep);
+
+    return s;
+}
+
+
+
+std::string format_ns(int64_t value){
+	const auto s = std::string(20, ' ') + number_fmt(value, ' ');
+	return s.substr(s.size() - 16, 16);
+}
+
+
+
+
+void trace_result(const bench_result_t& result){
+	const auto cpp_str = format_ns(result._cpp_ns);
+	const auto floyd_str = format_ns(result._floyd_ns);
+
+	double cpp_iteration_time = (double)result._cpp_ns;
+	double floyd_iteration_time = (double)result._floyd_ns;
+
+	double k = floyd_iteration_time / cpp_iteration_time;
+
+	std::cout << "Test: " << result._name << std::endl;
+	std::cout << "\tC++  :" << cpp_str << " ns" <<std::endl;
+	std::cout << "\tFloyd:" << floyd_str << " ns"  << std::endl;
+	std::cout << "\tRel  : " << k << std::endl;
+}
+
+int64_t measure_floyd_function_f(const interpreter_context_t& context, const std::string& floyd_program){
+	const auto ast = program_to_ast2(context, floyd_program);
+	interpreter_t vm(ast);
+	const auto f = find_global_symbol2(vm, "f");
+	QUARK_ASSERT(f != nullptr);
+
+	const auto floyd_ns = measure_execution_time_ns(
+		[&] {
+			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
+		}
+	);
+	return floyd_ns;
+}
+
+
+
+
+
 
 //	Returns time in nanoseconds
 std::int64_t measure_execution_time_ns(std::function<void (void)> func){
