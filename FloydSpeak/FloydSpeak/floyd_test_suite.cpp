@@ -31,12 +31,15 @@ interpreter_context_t make_test_interpreter_context(){
 }
 
 
+std::vector<std::string> program_recording;
+
 ///////////////////////////////////////////////////////////////////////////////////////
 //	FLOYD LANGUAGE TEST SUITE
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-value_t run_return_result(const std::string& program, const std::vector<value_t>& args){
+value_t test__run_return_result(const std::string& program, const std::vector<value_t>& args){
+	program_recording.push_back(program);
 	const auto context = make_test_interpreter_context();
 
 	const auto r = run_main(context, program, args);
@@ -46,21 +49,22 @@ value_t run_return_result(const std::string& program, const std::vector<value_t>
 }
 
 void test__run_init__check_result(const std::string& program, const value_t& expected_result){
-	const auto result = run_return_result(program, {});
+	const auto result = test__run_return_result(program, {});
 	ut_compare_jsons(
 		expression_to_json(expression_t::make_literal(result))._value,
 		expression_to_json(expression_t::make_literal(expected_result))._value
 	);
 }
-std::shared_ptr<interpreter_t> test__run_global(const std::string& program){
-	const auto context = make_test_interpreter_context();
 
+std::shared_ptr<interpreter_t> test__run_global(const std::string& program){
+	program_recording.push_back(program);
+	const auto context = make_test_interpreter_context();
 	const auto result = run_global(context, program);
 	return result;
 }
 
-
 void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
+	program_recording.push_back(program);
 	const auto context = make_test_interpreter_context();
 
 	const auto result = run_main(context, program, args);
@@ -69,6 +73,10 @@ void test__run_main(const std::string& program, const vector<floyd::value_t>& ar
 		expression_to_json(expression_t::make_literal(expected_return))._value
 	);
 }
+
+
+
+
 
 void ut_compare_stringvects(const vector<string>& result, const vector<string>& expected){
 	if(result != expected){
@@ -934,7 +942,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			result = typeof(145);
 		)", {}
@@ -942,7 +950,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_int()));
 }
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			result = to_string(typeof(145));
 		)", {}
@@ -951,7 +959,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			result = typeof("hello");
 		)", {}
@@ -960,7 +968,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			result = to_string(typeof("hello"));
 		)", {}
@@ -969,7 +977,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			result = typeof([1,2,3]);
 		)", {}
@@ -977,7 +985,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_compare_values(result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
 }
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			result = to_string(typeof([1,2,3]));
 		)", {}
@@ -988,7 +996,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 /*
 //??? add support for typeof(int)
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			result = typeof(int);
 		)", {}
@@ -1120,7 +1128,7 @@ QUARK_UNIT_TEST("", "write_text_file()", "", ""){
 /*
 ??? Support when we can make "t = typeof(1234)" a const-symbol
 QUARK_UNIT_TEST("run_global()", "", "", ""){
-	const auto result = run_return_result(
+	const auto result = test__run_return_result(
 		R"(
 			t = typeof(1234);
 			result = instantiate_from_typeid(t, 3);
@@ -1141,7 +1149,7 @@ QUARK_UNIT_TEST("run_global()", "", "", ""){
 */
 
 OFF_QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it works too", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		struct pos_t { float x; float y; }
 		a = instantiate_from_typeid(pos_t, 100.0, 3.0);
 		result = a.x + a.y;
@@ -1452,7 +1460,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 
 QUARK_UNIT_TEST("null", "", "", "0"){
 //	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			result = null;
 		)", {});
 /*
@@ -2251,14 +2259,14 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 
 
 QUARK_UNIT_TEST("json_value-string", "deduce json_value::string", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value result = "hello";
 	)", {});
 	ut_compare_values(result, value_t::make_json_value("hello"));
 }
 
 QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value a = "hello";
 		result = size(a);
 	)", {});
@@ -2266,48 +2274,48 @@ QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value result = 13;
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(13));
 }
 
 QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value result = true;
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(true));
 }
 QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value result = false;
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(false));
 }
 
 QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value result = ["hello", "bye"];
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t::make_array(vector<json_t>{"hello", "bye"})));
 }
 
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value a = ["hello", "bye"];
 		result = string(a[0]) + string(a[1]);
 	)", {});
 	ut_compare_values(result, value_t::make_string("hellobye"));
 }
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value a = ["hello", "bye"];
 		result = a[0];
 	)", {});
 	ut_compare_values(result, value_t::make_json_value("hello"));
 }
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value a = ["hello", "bye"];
 		result = a[1];
 	)", {});
@@ -2315,7 +2323,7 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value a = ["a", "b", "c", "d"];
 		result = size(a)
 	)", {});
@@ -2387,7 +2395,7 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 
 
 QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value result = null;
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t()));
@@ -2397,7 +2405,7 @@ QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 //////////////////////////////////////////		TEST TYPE DEDUCING
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		json_value result = {};
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t::make_object()));
@@ -2407,44 +2415,44 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = get_json_type(json_value({}))
 	)", {});
 	ut_compare_values(result, value_t::make_int(1));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "[]", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = get_json_type(json_value([]))
 	)", {});
 	ut_compare_values(result, value_t::make_int(2));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "string", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = get_json_type(json_value("hello"))
 	)", {});
 	ut_compare_values(result, value_t::make_int(3));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = get_json_type(json_value(13))
 	)", {});
 	ut_compare_values(result, value_t::make_int(4));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = get_json_type(json_value(true))
 	)", {});
 	ut_compare_values(result, value_t::make_int(5));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = get_json_type(json_value(false))
 	)", {});
 	ut_compare_values(result, value_t::make_int(6));
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = get_json_type(json_value(null))
 	)", {});
 	ut_compare_values(result, value_t::make_int(7));
@@ -2491,7 +2499,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		a = pixel_t(100.0, 200.0);
 		result = a.x;
@@ -2501,7 +2509,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)];
 		result = c[1].y
@@ -2511,7 +2519,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 QUARK_UNIT_TEST("", "", "", ""){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			struct pixel_t { float x; float y; }
 
 			//	c is a json_value::object
@@ -2529,7 +2537,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "decode_json()", "", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = decode_json("\"genelec\"");
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t("genelec")));
@@ -2577,33 +2585,33 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "bool", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json(true);
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(true)));
 }
 QUARK_UNIT_TEST("", "flatten_to_json()", "bool", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json(false);
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(false)));
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "int", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json(789);
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(789.0)));
 }
 QUARK_UNIT_TEST("", "flatten_to_json()", "int", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json(-987);
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(-987.0)));
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "float", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json(-0.125);
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(-0.125)));
@@ -2611,21 +2619,21 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "float", ""){
 
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "string", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json("fanta");
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t("fanta")));
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "typeid", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json(typeof([2,2,3]));
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t::make_array(vector<json_t>{ "vector", "int"})));
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "[]", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json([1,2,3]);
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(
@@ -2634,7 +2642,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[]", ""){
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "{}", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = flatten_to_json({"ten": 10, "eleven": 11});
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(
@@ -2643,7 +2651,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "{}", ""){
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		c = pixel_t(100.0, 200.0);
 		a = flatten_to_json(c);
@@ -2653,7 +2661,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
 }
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		struct pixel_t { float x; float y; }
 		c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)];
 		a = flatten_to_json(c);
@@ -2667,41 +2675,41 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(true), bool);
 	)", {});
 	ut_compare_values(result, value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(false), bool);
 	)", {});
 	ut_compare_values(result, value_t::make_bool(false));
 }
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(91), int);
 	)", {});
 	ut_compare_values(result, value_t::make_int(91));
 }
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "float", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(-0.125), float);
 	)", {});
 	ut_compare_values(result, value_t::make_float(-0.125));
 }
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json(""), string);
 	)", {});
 	ut_compare_values(result, value_t::make_string(""));
 }
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json("cola"), string);
 	)", {});
 	ut_compare_values(result, value_t::make_string("cola"));
@@ -2711,7 +2719,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 /*
 Need better way to specify typeid
 QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = unflatten_from_json(flatten_to_json([1,2,3]), typeof([1]));
 	)", {});
 	ut_compare_values(
@@ -2729,7 +2737,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 			member_t(typeid_t::make_float(), "y")
 		}
 	);
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		struct point_t { float x; float y; }
 		result = unflatten_from_json(flatten_to_json(point_t(1.0, 3.0)), point_t);
 	)", {});
@@ -2743,7 +2751,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 
 QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			if("not a bool"){
 			}
 			else{
@@ -2759,7 +2767,7 @@ QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
 
 QUARK_UNIT_TEST("Edge case", "", "assign to immutable local", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			int a = 10;
 			int a = 11;
 		)", {});
@@ -2771,7 +2779,7 @@ QUARK_UNIT_TEST("Edge case", "", "assign to immutable local", "exception"){
 }
 QUARK_UNIT_TEST("Edge case", "", "Define struct with colliding name", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			int a = 10;
 			struct a { int x; }
 		)", {});
@@ -2784,7 +2792,7 @@ QUARK_UNIT_TEST("Edge case", "", "Define struct with colliding name", "exception
 
 QUARK_UNIT_TEST("Edge case", "", "Access unknown struct member", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			struct a { int x; }
 			b = a(13);
 			print(b.y);
@@ -2798,7 +2806,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access unknown struct member", "exception"){
 
 QUARK_UNIT_TEST("Edge case", "", "Access unknown member in non-struct", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = 10;
 			print(a.y);
 		)", {});
@@ -2811,7 +2819,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access unknown member in non-struct", "excepti
 
 QUARK_UNIT_TEST("Edge case", "", "Lookup in string using non-int", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			string a = "test string";
 			print(a["not an integer"]);
 		)", {});
@@ -2824,7 +2832,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in string using non-int", "exception"){
 
 QUARK_UNIT_TEST("Edge case", "", "Lookup in vector using non-int", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			[string] a = ["one", "two", "three"];
 			print(a["not an integer"]);
 		)", {});
@@ -2837,7 +2845,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in vector using non-int", "exception"){
 
 QUARK_UNIT_TEST("Edge case", "", "Lookup in dict using non-string key", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = { "one": 1, "two": 2 };
 			print(a[3]);
 		)", {});
@@ -2850,7 +2858,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in dict using non-string key", "excepti
 
 QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			print(a);
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2862,7 +2870,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
 
 QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			int f(int a){ return a + 1; }
 			a = f(1, 2);
 		)", {});
@@ -2876,7 +2884,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "
 
 QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructor", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			struct pos { float x; float y;}
 			a = pos(3);
 		)", {});
@@ -2889,7 +2897,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructo
 
 QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			struct pos { float x; float y;}
 			a = pos(3, "hello");
 		)", {});
@@ -2902,7 +2910,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor"
 
 QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = int();
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2914,7 +2922,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor",
 
 QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = 3();
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2927,7 +2935,7 @@ QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "e
 //??? check dict too
 QUARK_UNIT_TEST("Edge case", "", "Vector can not hold elements of different types.", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = [3, bool];
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2940,7 +2948,7 @@ QUARK_UNIT_TEST("Edge case", "", "Vector can not hold elements of different type
 
 QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = 3 < "hello";
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2952,7 +2960,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 
 QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = 3 * 3.2;
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2962,19 +2970,19 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 	}
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = false + true;
 	)", {});
 	QUARK_ASSERT(result.get_bool_value() == true);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = false + false;
 	)", {});
 	QUARK_ASSERT(result.get_bool_value() == false);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	const auto result = run_return_result(R"(
+	const auto result = test__run_return_result(R"(
 		result = true + true;
 	)", {});
 	QUARK_ASSERT(result.get_bool_value() == true);
@@ -2982,7 +2990,7 @@ QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 
 QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 	try{
-		const auto result = run_return_result(R"(
+		const auto result = test__run_return_result(R"(
 			a = 3[0];
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2992,4 +3000,36 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 	}
 }
 
+QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
+	const auto t = quark::trace_context_t(false, quark::get_trace());
+	interpreter_context_t context{ t };
+
+	int instruction_count_total = 0;
+	int symbol_count_total = 0;
+
+	for(const auto& s: program_recording){
+		try{
+		const auto bc = compile_to_bytecode(context, s);
+		int instruction_count_sum = static_cast<int>(bc._globals._instrs2.size());
+		int symbol_count_sum = static_cast<int>(bc._globals._symbols.size());
+
+		for(const auto& f: bc._function_defs){
+			if(f._frame_ptr != nullptr){
+				const auto instruction_count = f._frame_ptr->_instrs2.size();
+				const auto symbol_count = f._frame_ptr->_symbols.size();
+				instruction_count_sum += instruction_count;
+				symbol_count_sum += symbol_count;
+			}
+		}
+
+		instruction_count_total += instruction_count_sum;
+		symbol_count_total += symbol_count_sum;
+		QUARK_TRACE_SS(instruction_count_sum << "\t" <<symbol_count_sum);
+		}
+		catch(...){
+		}
+	}
+
+	QUARK_TRACE_SS("TOTAL: " << instruction_count_total << "\t" <<symbol_count_total);
+}
 
