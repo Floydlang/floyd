@@ -15,14 +15,20 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "ast_value.h"//??? remove
-#include "ast_typeid.h"//??? remove
+#include "ast_value.h"
+#include "ast_typeid.h"
 #include "json_support.h"
 #include "statement.h"
 
 //??? remove usage of symbol_t
 //??? remove usage of typeid_t
 //??? remove usage of value_t
+
+//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
+
+//??? remove all make-functions -- just use constructors.
+//??? remove all use of typeid_t -- clients will allocate them even if we don't keep the instances!
+//??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
 
 namespace floyd {
 	struct value_t;
@@ -33,7 +39,6 @@ namespace floyd {
 
 
 	typedef value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const std::vector<value_t>& args);
-
 	typedef int16_t bc_typeid_t;
 
 
@@ -252,7 +257,6 @@ namespace floyd {
 			}
 		}
 
-
 		//	??? very slow?
 		//	Will this type of value require an ext ? bc_value_object_t to be used?
 		inline static bool is_bc_ext(base_type basetype){
@@ -265,7 +269,6 @@ namespace floyd {
 				|| basetype == base_type::k_dict
 				;
 		}
-
 
 		public: bc_value_t() :
 #if DEBUG
@@ -632,7 +635,7 @@ namespace floyd {
 
 		//////////////////////////////////////		vector
 
-		//??? remove all use of typeid_t -- clients will allocate them even if we don't keep the instances!
+
 		public: inline static bc_value_t make_vector_value(const typeid_t& element_type, const std::vector<bc_value_t>& elements){
 			return bc_value_t{element_type, elements};
 		}
@@ -654,7 +657,7 @@ namespace floyd {
 
 		//////////////////////////////////////		dict
 
-		//??? remove all make-functions -- just use constructors.
+
 		public: inline static bc_value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries){
 			return bc_value_t{value_type, entries};
 		}
@@ -741,12 +744,6 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////		COMPARE
-
-
-	int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
-
-
 	//////////////////////////////////////		bc_opcode
 
 
@@ -754,14 +751,12 @@ namespace floyd {
 		k_nop = 0,
 
 		/*
-			TYPE: ---
 			A: Register: where to put result
 			B: IMMEDIATE: global index
 			C: ---
 		*/
 		k_load_global_obj,
 		/*
-			TYPE: ---
 			A: Register: where to put result
 			B: IMMEDIATE: global index
 			C: ---
@@ -769,10 +764,7 @@ namespace floyd {
 		k_load_global_intern,
 
 
-
-
 		/*
-			TYPE: ---
 			A: IMMEDIATE: global index
 			B: Register: source reg
 			C: ---
@@ -780,24 +772,19 @@ namespace floyd {
 		k_store_global_obj,
 
 		/*
-			TYPE: ---
 			A: IMMEDIATE: global index
 			B: Register: source reg
 			C: ---
 		*/
 		k_store_global_intern,
 
-
-
 		/*
-			TYPE: ---
 			A: Register: where to put result
 			B: Register: parent
 			C: ---
 		*/
 		k_store_local_intern,
 		/*
-			TYPE: ---
 			A: Register: where to put result
 			B: Register: parent
 			C: ---
@@ -806,16 +793,13 @@ namespace floyd {
 
 
 		/*
-			TYPE: ---
 			A: Register: where to put result
 			B: Register: struct object
 			C: IMMEDIATE: member-index
 		*/
 		k_get_struct_member,
 
-
 		/*
-			TYPE: ---
 			A: Register: where to put result
 			B: Register: string object/vector object/json_value/dict
 			C: Register: index (int)
@@ -845,7 +829,6 @@ namespace floyd {
 		k_call,
 
 		/*
-			TYPE: ---
 			A: Register: where to put result
 			B: Register: lhs
 			C: Register: rhs
@@ -875,15 +858,12 @@ namespace floyd {
 		//////////////////////////////////////		COMPARISON
 
 		//??? Remove all conditions. Only have conditional branches.
-		//??? Remove all >= -- just swap registers and use <.
 		/*
 			The type-unspecific version is a fallback to handles all types not special-cased.
-			TYPE: ----
 			A: Register: where to put result BOOL
 			B: Register: lhs
 			C: Register: rhs
 
-			TYPE: ---
 			A: Register: where to put result BOOL
 			B: Register: lhs
 			C: Register: rhs
@@ -900,7 +880,6 @@ namespace floyd {
 
 
 		/*
-			TYPE: ---
 			A: Register: where to put resulting value
 			B: IMMEDIATE: Target type - type to create.
 			C: IMMEDIATE: Source itype
@@ -910,7 +889,6 @@ namespace floyd {
 		k_new_1,
 
 		/*
-			TYPE: ---
 			A: Register: where to put resulting value
 			B: IMMEDIATE: itype T = [E], describing output type of vector, like [int] or [my_pixel].
 			C: IMMEDIATE: Argument count.
@@ -920,7 +898,6 @@ namespace floyd {
 		k_new_vector,
 
 		/*
-			TYPE: ---
 			A: Register: where to put resulting value
 			B: IMMEDIATE: itype T = [string:V], describing output type of dict, like [string:int] or [string:my_pixel].
 			C: IMMEDIATE: Argument count. Each dict entry becomes TWO arguments: (string, V).
@@ -939,7 +916,6 @@ namespace floyd {
 		k_new_dict,
 
 		/*
-			TYPE: ---
 			A: Register: where to put resulting value
 			B: IMMEDIATE: itype T of the struct
 			C: IMMEDIATE: Argument count.
@@ -950,7 +926,6 @@ namespace floyd {
 		k_new_struct,
 
 		/*
-			TYPE: ---.
 			A: Register: value to return
 			B: ---
 			C: ---
@@ -958,7 +933,6 @@ namespace floyd {
 		k_return,
 
 		/*
-			TYPE: ---
 			A: ---
 			B: ---
 			C: ---
@@ -970,7 +944,6 @@ namespace floyd {
 
 		/*
 			Pushes the VM frame info to stack.
-			TYPE: ---
 			A: ---
 			B: ---
 			C: ---
@@ -981,7 +954,6 @@ namespace floyd {
 
 		/*
 			Pops the VM frame info to stack -- this changes the VM's frame pos & frame ptr.
-			TYPE: ---
 			A: ---
 			B: ---
 			C: ---
@@ -990,12 +962,9 @@ namespace floyd {
 		*/
 		k_pop_frame_ptr,
 
-
 		///??? Could optimize by pushing 3 values with ONE instruction -- use A B C.
 		///??? Could optimize by using a byte-stack and only pushing minimal number of bytes. Bool needs 1 byte only.
-
 		/*
-			TYPE: ---
 			A: Register: where to read V
 			B: ---
 			C: ---
@@ -1006,7 +975,6 @@ namespace floyd {
 
 		/*
 			NOTICE: This function bumps the RC of the pushed V-object. This represents the stack-entry co-owning V.
-			TYPE: ---
 			A: Register: where to read V
 			B: ---
 			C: ---
@@ -1016,7 +984,6 @@ namespace floyd {
 		k_push_obj,
 
 		/*
-			TYPE: ---
 			A: IMMEDIATE: arg count. 0 to 32.
 			B: IMMEDIATE: extbits. bit 0 maps to the next value to be popped from stack.
 			C: ---
@@ -1040,17 +1007,15 @@ namespace floyd {
 
 
 		/*
-			TYPE: ---
 			A: Register: input to test
 			B: IMMEDIATE: branch offset (added to PC) on branch.
 			C: ---
-			NOTICE: These have their own conditions, instead of check bool from k_comparison_smaller. Bad???
+			NOTICE: These have their own conditions, instead of check bool from k_comparison_smaller.
 		*/
 		k_branch_false_bool,
 		k_branch_true_bool,
 		k_branch_zero_int,
 		k_branch_notzero_int,
-
 
 		/*
 			A: Register: lhs
@@ -1061,7 +1026,6 @@ namespace floyd {
 		k_branch_smaller_or_equal_int,
 
 		/*
-			TYPE: ---
 			A: ---
 			B: IMMEDIATE: branch offset (added to PC) on branch.
 			C: ---
@@ -1096,9 +1060,7 @@ namespace floyd {
 	extern const std::map<bc_opcode, opcode_info_t> k_opcode_info;
 
 
-
 	//////////////////////////////////////		bc_instruction2_t
-
 
 	/*
 		??? IDEA for encoding:
@@ -1144,6 +1106,7 @@ namespace floyd {
 
 
 		//////////////////////////////////////		STATE
+
 		bc_opcode _opcode;
 		uint8_t _pad8;
 		int16_t _a;
@@ -1152,6 +1115,8 @@ namespace floyd {
 	};
 
 
+	//////////////////////////////////////		reg_flags_t
+
 
 	struct reg_flags_t {
 		bool _type;
@@ -1159,8 +1124,8 @@ namespace floyd {
 		bool _b;
 		bool _c;
 	};
-	reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
 
+	reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
 
 
 
@@ -1169,7 +1134,7 @@ namespace floyd {
 
 	struct bc_frame_t {
 		bc_frame_t(const std::vector<bc_instruction2_t>& instrs2, const std::vector<std::pair<std::string, symbol_t>>& symbols, const std::vector<typeid_t>& args);
-		public: bool check_invariant() const;
+		bool check_invariant() const;
 
 
 		//////////////////////////////////////		STATE
@@ -1191,7 +1156,6 @@ namespace floyd {
 	//////////////////////////////////////		bc_function_definition_t
 
 
-	//???	All functions should be function values: host-functions and Floyd functions. This means _host_function_id should be in the VALUE not function definition!
 	struct bc_function_definition_t {
 		bc_function_definition_t(
 			const typeid_t& function_type,
@@ -1209,7 +1173,6 @@ namespace floyd {
 			_dyn_arg_count = count_function_dynamic_args(function_type);
 		}
 
-
 #if DEBUG
 		public: bool check_invariant() const {
 			return true;
@@ -1218,7 +1181,6 @@ namespace floyd {
 
 		//////////////////////////////////////		STATE
 
-		//??? store more optimzation stuff here!
 		typeid_t _function_type;
 		std::vector<member_t> _args;
 		std::shared_ptr<bc_frame_t> _frame_ptr;
@@ -1249,7 +1211,6 @@ namespace floyd {
 
 
 
-
 	//////////////////////////////////////		frame_pos_t
 
 
@@ -1261,7 +1222,6 @@ namespace floyd {
 	inline bool operator==(const frame_pos_t& lhs, const frame_pos_t& rhs){
 		return lhs._frame_pos == rhs._frame_pos && lhs._frame_ptr == rhs._frame_ptr;
 	}
-
 
 
 	//////////////////////////////////////		interpreter_stack_t
@@ -1327,7 +1287,6 @@ namespace floyd {
 		}
 
 		public: interpreter_stack_t(const interpreter_stack_t& other) = delete;
-
 		public: interpreter_stack_t& operator=(const interpreter_stack_t& other) = delete;
 
 /*
@@ -1385,17 +1344,14 @@ namespace floyd {
 		//////////////////////////////////////		FRAME
 
 
-		public: int read_prev_frame_pos(int frame_pos) const;
-		public: frame_pos_t read_prev_frame_pos2(int frame_pos) const;
-
-		public: const bc_frame_t* read_prev_frame(int frame_pos) const;
+		private: int read_prev_frame_pos(int frame_pos) const;
+		private: const bc_frame_t* read_prev_frame(int frame_pos) const;
 #if DEBUG
 		public: bool check_stack_frame(int frame_pos, const bc_frame_t* frame) const;
 #endif
 
 		//	??? DYN values /returns needs TWO registers.
-		//	??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generatet instructions to do this in the VM?
-		//	Returns new frame-pos, same as vm._current_stack_frame.
+		//	??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generate instructions to do this in the VM?
 		public: void open_frame(const bc_frame_t& frame, int values_already_on_stack){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(frame.check_invariant());
@@ -1437,22 +1393,6 @@ namespace floyd {
 
 		public: std::vector<std::pair<int, int>> get_stack_frames(int frame_pos) const;
 
-		public: inline frame_pos_t find_frame_pos(int parent_step) const{
-			QUARK_ASSERT(check_invariant());
-
-			QUARK_ASSERT(parent_step == 0 || parent_step == -1);
-			if(parent_step == 0){
-				return { _current_frame_pos, _current_frame_ptr};
-			}
-			else if(parent_step == -1){
-				return frame_pos_t{k_frame_overhead, _global_frame};
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-		}
-
 		public: bool check_reg(int reg) const{
 			QUARK_ASSERT(reg >= 0 && reg < _current_frame_ptr->_symbols.size());
 			return true;
@@ -1466,19 +1406,6 @@ namespace floyd {
 			return &_current_frame_ptr->_symbols[reg];
 		}
 
-
-		public: inline const bc_pod_value_t& peek_register(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-
-			return _current_frame_entry_ptr[reg];
-		}
-		public: inline const void write_register_pod(const int reg, const bc_pod_value_t& pod) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-
-			_current_frame_entry_ptr[reg] = pod;
-		}
 
 		public: bc_value_t read_register(const int reg) const{
 			QUARK_ASSERT(check_invariant());
@@ -1514,49 +1441,6 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-/*
-		public: bc_value_t read_register_intern(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
-
-#if DEBUG
-			return bc_value_t(_debug_types[_current_frame_pos + reg], _current_frame_entry_ptr[reg], false);
-#else
-			return bc_value_t(_current_frame_entry_ptr[reg], false);
-#endif
-		}
-
-		public: void write_register_intern(const int reg, const bc_value_t& value){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-			QUARK_ASSERT(value.check_invariant());
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == value._debug_type);
-		#endif
-
-			_current_frame_entry_ptr[reg] = value._pod;
-		}
-
-		//??? use const bc_value_object_t* peek_register_obj()
-		public: bc_value_t read_register_obj(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == true);
-		#endif
-
-#if DEBUG
-			return bc_value_t(_debug_types[_current_frame_pos + reg], _current_frame_entry_ptr[reg], true);
-#else
-			return bc_value_t(_current_frame_entry_ptr[reg], true);
-#endif
-		}
-*/
 		public: void write_register_obj(const int reg, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
@@ -1574,29 +1458,6 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-
-/*
-		public: bool read_register_bool(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
-		#endif
-
-			return _current_frame_entry_ptr[reg]._bool;
-		}
-		public: void write_register_bool(const int reg, bool value){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == typeid_t::make_bool());
-		#endif
-
-			_current_frame_entry_ptr[reg]._bool = value;
-		}
-*/
 
 		#if DEBUG
 		public: bool check_reg_any(const int reg) const{
@@ -1697,45 +1558,6 @@ namespace floyd {
 		}
 		#endif
 
-/*
-		public: int read_register_int_xxx(const int reg) const{
-			QUARK_ASSERT(check_register_int_access(reg));
-
-			return _current_frame_entry_ptr[reg]._int;
-		}
-		public: void write_register_int_xxx(const int reg, int value){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == typeid_t::make_int());
-		#endif
-
-			_current_frame_entry_ptr[reg]._int = value;
-		}
-
-		public: void write_register_float(const int reg, float value){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == typeid_t::make_float());
-		#endif
-
-			_current_frame_entry_ptr[reg]._float = value;
-		}
-
-		public: const std::string& peek_register_string(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type == typeid_t::make_string());
-		#endif
-
-			return _current_frame_entry_ptr[reg]._ext->_string;
-		}
-*/
 
 		public: void write_register_string(const int reg, const std::string& value){
 			QUARK_ASSERT(check_invariant());
@@ -1763,27 +1585,8 @@ namespace floyd {
 			return _current_frame_entry_ptr[reg]._function_id;
 		}
 
-/*
-		public: const std::vector<bc_value_t>* peek_register_vector(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_vector);
-		#endif
-
-			return &_current_frame_entry_ptr[reg]._ext->_vector_elements;
-		}
-*/
-
-
-
-
-
 
 		//////////////////////////////////////		STACK
-
-
 
 
 		public: void save_frame(){
@@ -1807,7 +1610,6 @@ namespace floyd {
 		}
 
 
-
 		//////////////////////////////////////		STACK
 
 
@@ -1829,22 +1631,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-/*
-		private: inline void push_intq(int value){
-			QUARK_ASSERT(check_invariant());
 
-			//??? Can write directly into entry, no need to construct e.
-			bc_pod_value_t e;
-			e._int = value;
-			_entries[_stack_size] = e;
-			_stack_size++;
-#if DEBUG
-			_debug_types.push_back(typeid_t::make_int());
-#endif
-
-			QUARK_ASSERT(check_invariant());
-		}
-*/
 		private: inline void push_obj(const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
@@ -1913,20 +1700,7 @@ namespace floyd {
 #endif
 			return result;
 		}
-/*
-		public: inline bc_value_t load_obj(int pos) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == true);
 
-#if DEBUG
-			const auto result = bc_value_t(_debug_types[pos], _entries[pos], true);
-#else
-			const auto result = bc_value_t(_entries[pos], true);
-#endif
-			return result;
-		}
-*/
 		public: inline int load_intq(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -1941,23 +1715,6 @@ namespace floyd {
 
 			return _entries[pos]._frame_ptr;
 		}
-/*
-		private: inline void push_frame_ptr(const bc_frame_t* frame_ptr){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(frame_ptr != nullptr && frame_ptr->check_invariant());
-
-			const auto value = bc_value_t(frame_ptr);
-			_entries[_stack_size] = value._pod;
-			_stack_size++;
-#if DEBUG
-			_debug_types.push_back(value._debug_type);
-#endif
-
-		}
-*/
-
-		//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
-
 
 		public: inline void replace_intern(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
@@ -1972,16 +1729,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-/*
-		public: inline void replace_pod(int pos, const bc_pod_value_t& pod){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 
-			_entries[pos] = pod;
-
-			QUARK_ASSERT(check_invariant());
-		}
-*/
 		public: inline void replace_obj(int pos, const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
@@ -1998,17 +1746,6 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-/*
-		private: inline void replace_int(int pos, const int& value){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-			QUARK_ASSERT(_debug_types[pos] == typeid_t::make_int());
-
-			_entries[pos]._int = value;
-
-			QUARK_ASSERT(check_invariant());
-		}
-*/
 
 		//	extbits[0] tells if the first popped value has ext. etc.
 		//	bit 0 maps to the next value to be popped from stack
@@ -2065,16 +1802,6 @@ namespace floyd {
 		}
 #endif
 
-/*
-#if DEBUG
-		public: typeid_t debug_get_type(int pos) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-			return _debug_types[pos];
-		}
-#endif
-*/
-
 		public: frame_pos_t get_current_frame_pos() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -2099,14 +1826,6 @@ namespace floyd {
 
 		public: const bc_frame_t* _global_frame;
 	};
-
-
-
-
-int get_global_n_pos(int n);
-
-
-
 
 
 	//////////////////////////////////////		interpreter_imm_t
@@ -2148,6 +1867,7 @@ int get_global_n_pos(int n);
 	};
 
 
+	int get_global_n_pos(int n);
 
 	value_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t>& args);
 	value_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);

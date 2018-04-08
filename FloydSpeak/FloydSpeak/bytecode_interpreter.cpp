@@ -30,24 +30,23 @@ using std::make_shared;
 
 #define ASSERT QUARK_ASSERT
 
-
-
-
-
-
-
-
-
 //??? should use itype internaly, not typeid_t.
 
+	int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
 
-inline const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type){
+inline const typeid_t& lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
-inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
+inline const base_type lookup_full_basetype(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type].get_base_type();
 }
 
+int get_global_n_pos(int n){
+	return k_frame_overhead + n;
+}
+int get_local_n_pos(int frame_pos, int n){
+	return frame_pos + n;
+}
 
 //	??? move VM into separate source file.
 
@@ -604,9 +603,7 @@ bool bc_frame_t::check_invariant() const {
 }
 
 
-
-//////////////////////////////////////////		STACK FRAME SUPPORT
-
+//////////////////////////////////////////		interpreter_stack_t
 
 
 int interpreter_stack_t::read_prev_frame_pos(int frame_pos) const{
@@ -627,27 +624,6 @@ const bc_frame_t* interpreter_stack_t::read_prev_frame(int frame_pos) const{
 	QUARK_ASSERT(v != nullptr);
 	QUARK_ASSERT(v->check_invariant());
 	return v;
-}
-
-frame_pos_t interpreter_stack_t::read_prev_frame_pos2(int frame_pos) const{
-	QUARK_ASSERT(frame_pos >= k_frame_overhead);
-
-	const auto pos = load_intq(frame_pos - 2);
-	QUARK_ASSERT(pos < frame_pos);
-	QUARK_ASSERT(pos >= 0);
-
-	const auto ptr = load_frame_ptr(frame_pos - 1);
-	QUARK_ASSERT(ptr != nullptr);
-	QUARK_ASSERT(ptr->check_invariant());
-	return frame_pos_t{pos, ptr};
-}
-
-
-int get_global_n_pos(int n){
-	return k_frame_overhead + n;
-}
-int get_local_n_pos(int frame_pos, int n){
-	return frame_pos + n;
 }
 
 #if DEBUG
@@ -679,7 +655,6 @@ bool interpreter_stack_t::check_stack_frame(int frame_pos, const bc_frame_t* fra
 	}
 }
 #endif
-
 
 //	#0 is top of stack, last element is bottom.
 //	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
@@ -958,11 +933,11 @@ void execute_new_1(interpreter_t& vm, const bc_instruction2_t& instruction){
 	const auto target_itype = instruction._b;
 	const auto source_itype = instruction._c;
 
-	const auto& target_type = get_type(vm, target_itype);
+	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && target_type.is_struct() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - 1;
-	const auto input_value_type = get_type(vm, source_itype);
+	const auto input_value_type = lookup_full_type(vm, source_itype);
 	const auto input_value = vm._stack.load_value_slow(arg0_stack_pos + 0, input_value_type);
 
 	const bc_value_t result = [&]{
@@ -1000,7 +975,7 @@ void execute_new_vector(interpreter_t& vm, const bc_instruction2_t& instruction)
 	const auto target_itype = instruction._b;
 	const auto arg_count = instruction._c;
 
-	const auto& target_type = get_type(vm, target_itype);
+	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector());
 
 	const auto& element_type = target_type.get_vector_element_type();
@@ -1028,7 +1003,7 @@ void execute_new_dict(interpreter_t& vm, const bc_instruction2_t& instruction){
 	const auto target_itype = instruction._b;
 	const auto arg_count = instruction._c;
 
-	const auto& target_type = get_type(vm, target_itype);
+	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_dict());
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
@@ -1061,7 +1036,7 @@ void execute_new_struct(interpreter_t& vm, const bc_instruction2_t& instruction)
 	const auto target_itype = instruction._b;
 	const auto arg_count = instruction._c;
 
-	const auto& target_type = get_type(vm, target_itype);
+	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_struct());
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
@@ -1623,7 +1598,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 					const auto& func_arg_type = function_def._args[i]._type;
 					if(func_arg_type.is_internal_dynamic()){
 						const auto arg_itype = stack.load_intq(stack_pos);
-						const auto& arg_type = get_type(vm, static_cast<int16_t>(arg_itype));
+						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
 						const auto arg_bc = stack.load_value_slow(stack_pos + 1, arg_type);
 
 						const auto arg_value = bc_to_value(arg_bc, arg_type);
@@ -2025,6 +2000,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 //////////////////////////////////////////		FUNCTIONS
 
 
+
 std::string opcode_to_string(bc_opcode opcode){
 	return k_opcode_info.at(opcode)._as_text;
 }
@@ -2040,9 +2016,6 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		{ "callstack", stack }
 	});
 }
-
-
-
 
 json_t frame_to_json(const bc_frame_t& frame){
 	vector<json_t> exts;
@@ -2097,7 +2070,6 @@ json_t functiondef_to_json(const bc_function_definition_t& def){
 		json_t(def._host_function_id)
 	});
 }
-
 
 json_t bcprogram_to_json(const bc_program_t& program){
 	vector<json_t> callstack;
