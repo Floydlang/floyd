@@ -62,7 +62,7 @@ static void cpp_runner(){
 	volatile int result1 = 0;
 	volatile int result2 = 0;
 	volatile int result3 = 0;
-	for(int i = 0 ; i < 10000000 ; i++){
+	for(int i = 0 ; i < 50000000 ; i++){
 		result1 = result1 + i * 2;
 		result2 = result2 + result1 * 2;
 		result3 = result3 + result1 + result1;
@@ -74,7 +74,7 @@ static const std::string floyd_str = R"(
 		mutable int result1 = 0;
 		mutable int result2 = 0;
 		mutable int result3 = 0;
-		for(i in 0 ..< 10000000){
+		for(i in 0 ..< 50000000){
 			result1 = result1 + i * 2;
 			result2 = result2 + result1 * 2;
 			result3 = result3 + result1 + result1;
@@ -82,7 +82,7 @@ static const std::string floyd_str = R"(
 	}
 )";
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
+QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++",
 		[&] {

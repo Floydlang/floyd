@@ -13,7 +13,6 @@
 #include "ast_value.h"
 #include "pass2.h"
 #include "pass3.h"
-#include "bytecode_gen.h"
 #include "json_support.h"
 #include "json_parser.h"
 
@@ -28,6 +27,9 @@
 #include <fstream>
 #include "text_parser.h"
 #include "host_functions.hpp"
+
+//??? Bad dependency!
+#include "bytecode_gen.h"
 
 namespace floyd {
 
@@ -47,6 +49,438 @@ inline const typeid_t& get_type(const interpreter_t& vm, const bc_typeid_t& type
 inline const base_type get_basetype(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type].get_base_type();
 }
+
+
+
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto pod_size = sizeof(bc_pod_value_t);
+	QUARK_ASSERT(pod_size == 8);
+/*
+	union bc_pod_value_t {
+		bool _bool;
+		int _int;
+		float _float;
+		int _function_id;
+		bc_value_object_t* _ext;
+		const bc_frame_t* _frame_ptr;
+	};
+*/
+
+
+	const auto value_size = sizeof(bc_value_t);
+	QUARK_ASSERT(value_size == 64);
+
+
+	struct mockup_value_t {
+		private: bool _is_ext;
+		public: bc_pod_value_t _pod;
+	};
+
+	const auto mockup_value_size = sizeof(mockup_value_t);
+	QUARK_ASSERT(mockup_value_size == 16);
+
+	const auto instruction_size = sizeof(bc_instruction_t);
+	QUARK_ASSERT(instruction_size == 32);
+
+
+	const auto instruction2_size = sizeof(bc_instruction2_t);
+	QUARK_ASSERT(instruction2_size == 8);
+}
+
+
+
+
+
+
+
+	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+		std::vector<bc_value_t> result;
+		for(const auto e: values){
+			result.push_back(value_to_bc(e));
+		}
+		return result;
+	}
+
+	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type){
+		std::vector<value_t> result;
+		for(const auto e: values){
+			result.push_back(bc_to_value(e, shared_type));
+		}
+		return result;
+	}
+
+	value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
+		QUARK_ASSERT(value.check_invariant());
+		QUARK_ASSERT(type.check_invariant());
+
+		const auto basetype = type.get_base_type();
+
+		if(basetype == base_type::k_internal_undefined){
+			return value_t::make_undefined();
+		}
+		else if(basetype == base_type::k_internal_dynamic){
+			return value_t::make_internal_dynamic();
+		}
+		else if(basetype == base_type::k_void){
+			return value_t::make_void();
+		}
+		else if(basetype == base_type::k_bool){
+			return value_t::make_bool(value.get_bool_value());
+		}
+		else if(basetype == base_type::k_int){
+			return value_t::make_int(value.get_int_value());
+		}
+		else if(basetype == base_type::k_float){
+			return value_t::make_float(value.get_float_value());
+		}
+		else if(basetype == base_type::k_string){
+			return value_t::make_string(value.get_string_value());
+		}
+		else if(basetype == base_type::k_json_value){
+			return value_t::make_json_value(value.get_json_value());
+		}
+		else if(basetype == base_type::k_typeid){
+			return value_t::make_typeid_value(value.get_typeid_value());
+		}
+		else if(basetype == base_type::k_struct){
+			const auto& struct_def = type.get_struct();
+			const auto& members = value.get_struct_value();
+			std::vector<value_t> members2;
+			for(int i = 0 ; i < members.size() ; i++){
+				const auto& member_type = struct_def._members[i]._type;
+				const auto& member_value = members[i];
+				const auto& member_value2 = bc_to_value(member_value, member_type);
+				members2.push_back(member_value2);
+			}
+			return value_t::make_struct_value(type, members2);
+		}
+		else if(basetype == base_type::k_vector){
+			const auto& element_type  = type.get_vector_element_type();
+			return value_t::make_vector_value(element_type, bcs_to_values__same_types(*value.get_vector_value(), element_type));
+		}
+		else if(basetype == base_type::k_dict){
+			const auto value_type = type.get_dict_value_type();
+			const auto entries = value.get_dict_value();
+			std::map<std::string, value_t> entries2;
+			for(const auto& e: entries){
+				entries2.insert({e.first, bc_to_value(e.second, value_type)});
+			}
+			return value_t::make_dict_value(value_type, entries2);
+		}
+		else if(basetype == base_type::k_function){
+			return value_t::make_function_value(type, value.get_function_value());
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	}
+
+	bc_value_t value_to_bc(const value_t& value){
+		QUARK_ASSERT(value.check_invariant());
+
+		return bc_value_t::from_value(value);
+	}
+
+/*
+	std::string to_compact_string2(const bc_value_t& value) {
+		QUARK_ASSERT(value.check_invariant());
+
+		return "xxyyzz";
+//		return to_compact_string2(value._backstore);
+	}
+*/
+
+
+
+
+extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
+	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
+
+	{ bc_opcode::k_load_global_obj, { "load_global_obj", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_load_global_intern, { "load_global_intern", opcode_info_t::encoding::k_k_0ri0 } },
+
+	{ bc_opcode::k_store_global_obj, { "store_global_obj", opcode_info_t::encoding::k_r_0ir0 } },
+	{ bc_opcode::k_store_global_intern, { "store_global_intern", opcode_info_t::encoding::k_r_0ir0 } },
+
+	{ bc_opcode::k_store_local_intern, { "store_local_intern", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_store_local_obj, { "store_local_obj", opcode_info_t::encoding::k_q_0rr0 } },
+
+	{ bc_opcode::k_get_struct_member, { "get_struct_member", opcode_info_t::encoding::k_s_0rri } },
+
+	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_vector, { "lookup_element_vector", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_o_0rrr } },
+
+	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
+
+	{ bc_opcode::k_add_bool, { "arithmetic_add_bool", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_int, { "arithmetic_add_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_float, { "arithmetic_add_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_string, { "arithmetic_add_string", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_vector, { "arithmetic_add_vector", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_subtract_float, { "arithmetic_subtract_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_subtract_int, { "arithmetic_subtract_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_multiply_float, { "arithmetic_multiply_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_multiply_int, { "arithmetic_multiply_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_divide_float, { "arithmetic_divide_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_divide_int, { "arithmetic_divide_int", opcode_info_t::encoding::k_o_0rrr } },
+//	{ bc_opcode::k_remainder, { "arithmetic_remainder", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_remainder_int, { "arithmetic_remainder_int", opcode_info_t::encoding::k_o_0rrr } },
+
+	{ bc_opcode::k_logical_and_bool, { "logical_and_bool", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_and_int, { "logical_and_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_and_float, { "logical_and_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_or_bool, { "logical_or_bool", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_or_int, { "logical_or_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_or_float, { "logical_or_float", opcode_info_t::encoding::k_o_0rrr } },
+
+
+
+	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_comparison_smaller_or_equal_int, { "comparison_smaller_or_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+
+	{ bc_opcode::k_comparison_smaller, { "comparison_smaller", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_comparison_smaller_int, { "comparison_smaller_int", opcode_info_t::encoding::k_o_0rrr } },
+
+	{ bc_opcode::k_logical_equal, { "logical_equal", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_equal_int, { "logical_equal_int", opcode_info_t::encoding::k_o_0rrr } },
+
+	{ bc_opcode::k_logical_nonequal, { "logical_nonequal", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_nonequal_int, { "logical_nonequal_int", opcode_info_t::encoding::k_o_0rrr } },
+
+
+
+	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_vector, { "new_vector", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_dict, { "new_dict", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
+
+	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_stop, { "stop", opcode_info_t::encoding::k_e_0000 } },
+
+	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
+	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
+	{ bc_opcode::k_push_intern, { "push_intern", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_push_obj, { "push_obj", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_0ii0 } },
+
+	{ bc_opcode::k_branch_false_bool, { "branch_false_bool", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_branch_true_bool, { "branch_true_bool", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_branch_zero_int, { "branch_zero_int", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_branch_notzero_int, { "branch_notzero_int", opcode_info_t::encoding::k_k_0ri0 } },
+
+	{ bc_opcode::k_branch_always, { "branch_always", opcode_info_t::encoding::k_l_00i0 } }
+
+
+};
+
+
+
+
+
+
+
+int bc_compare_string(const std::string& left, const std::string& right){
+	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
+	return bc_limit(std::strcmp(left.c_str(), right.c_str()), -1, 1);
+}
+
+QUARK_UNIT_TESTQ("bc_compare_string()", ""){
+	QUARK_TEST_VERIFY(bc_compare_string("", "") == 0);
+}
+QUARK_UNIT_TESTQ("bc_compare_string()", ""){
+	QUARK_TEST_VERIFY(bc_compare_string("aaa", "aaa") == 0);
+}
+QUARK_UNIT_TESTQ("bc_compare_string()", ""){
+	QUARK_TEST_VERIFY(bc_compare_string("b", "a") == 1);
+}
+
+//??? Slow!.
+int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const typeid_t& type){
+	const auto& struct_def = type.get_struct();
+
+	for(int i = 0 ; i < struct_def._members.size() ; i++){
+		const auto& member_type = struct_def._members[i]._type;
+
+		int diff = bc_compare_value_true_deep(left[i], right[i], member_type);
+		if(diff != 0){
+			return diff;
+		}
+	}
+	return 0;
+}
+
+//	Compare vector element by element.
+//	### Think more of equality when vectors have different size and shared elements are equal.
+int bc_compare_vector_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const typeid_t& type){
+//	QUARK_ASSERT(left.check_invariant());
+//	QUARK_ASSERT(right.check_invariant());
+//	QUARK_ASSERT(left._element_type == right._element_type);
+
+	const auto& shared_count = std::min(left.size(), right.size());
+	const auto& element_type = typeid_t(type.get_vector_element_type());
+	for(int i = 0 ; i < shared_count ; i++){
+		const auto element_result = bc_compare_value_true_deep(left[i], right[i], element_type);
+		if(element_result != 0){
+			return element_result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+template <typename Map>
+bool bc_map_compare (Map const &lhs, Map const &rhs) {
+    // No predicate needed because there is operator== for pairs already.
+    return lhs.size() == rhs.size()
+        && std::equal(lhs.begin(), lhs.end(),
+                      rhs.begin());
+}
+
+
+int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right, const typeid_t& type){
+	const auto& element_type = typeid_t(type.get_dict_value_type());
+
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		const auto key_result = bc_compare_string(left_it->first, right_it->first);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		const auto element_result = bc_compare_value_true_deep(left_it->second, right_it->second, element_type);
+		if(element_result != 0){
+			return element_result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	throw std::exception();
+}
+
+int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
+	if(lhs == rhs){
+		return 0;
+	}
+	else{
+		// ??? implement compare.
+		assert(false);
+	}
+}
+
+int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type0){
+	QUARK_ASSERT(left._debug_type == right._debug_type);
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
+
+	const auto type = type0;
+	if(type.is_undefined()){
+		return 0;
+	}
+	else if(type.is_bool()){
+		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
+	}
+	else if(type.is_int()){
+		return bc_limit(left.get_int_value() - right.get_int_value(), -1, 1);
+	}
+	else if(type.is_float()){
+		const auto a = left.get_float_value();
+		const auto b = right.get_float_value();
+		if(a > b){
+			return 1;
+		}
+		else if(a < b){
+			return -1;
+		}
+		else{
+			return 0;
+		}
+	}
+	else if(type.is_string()){
+		return bc_compare_string(left.get_string_value(), right.get_string_value());
+	}
+	else if(type.is_json_value()){
+		return bc_compare_json_values(left.get_json_value(), right.get_json_value());
+	}
+	else if(type.is_typeid()){
+	//???
+		if(left.get_typeid_value() == right.get_typeid_value()){
+			return 0;
+		}
+		else{
+			return -1;//??? Hack -- should return +1 depending on values.
+		}
+	}
+	else if(type.is_struct()){
+		//	Make sure the EXACT struct types are the same -- not only that they are both structs
+//		if(left.get_type() != right.get_type()){
+//			throw std::runtime_error("Cannot compare structs of different type.");
+//		}
+
+/*
+		//	Shortcut: same obejct == we know values are same without having to check them.
+		if(left.get_struct_value() == right.get_struct_value()){
+			return 0;
+		}
+		else{
+*/
+			return bc_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value(), type0);
+//		}
+	}
+	else if(type.is_vector()){
+		//	Make sure the EXACT types are the same -- not only that they are both vectors.
+//		if(left.get_type() != right.get_type()){
+
+		const auto& left_vec = left.get_vector_value();
+		const auto& right_vec = right.get_vector_value();
+		return bc_compare_vector_true_deep(*left_vec, *right_vec, type0);
+	}
+	else if(type.is_dict()){
+		//	Make sure the EXACT types are the same -- not only that they are both dicts.
+//		if(left.get_type() != right.get_type()){
+		const auto& left2 = left.get_dict_value();
+		const auto& right2 = right.get_dict_value();
+		return bc_compare_dict_true_deep(left2, right2, type0);
+	}
+	else if(type.is_function()){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
 
 
 
@@ -648,13 +1082,11 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 	bc_pod_value_t* registers = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
 
-
 	const typeid_t* type_lookup = &vm._imm->_program._types[0];
 	const auto type_count = vm._imm->_program._types.size();
 
 //	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(stack.stack_to_json()));
 
-	const auto instruction_count = instructions.size();
 	int pc = 0;
 	while(true){
 /*
@@ -663,8 +1095,8 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		}
 */
 		QUARK_ASSERT(pc >= 0);
-		QUARK_ASSERT(pc < instruction_count);
-		const auto& instruction = instructions[pc];
+		QUARK_ASSERT(pc < instructions.size());
+		const auto instruction = instructions[pc];
 
 		QUARK_ASSERT(vm.check_invariant());
 		QUARK_ASSERT(instruction.check_invariant());
@@ -1214,7 +1646,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-			long diff = bc_value_t::compare_value_true_deep(left, right, type);
+			long diff = bc_compare_value_true_deep(left, right, type);
 
 			registers[instruction._a]._bool = diff <= 0;
 			pc++;
@@ -1239,7 +1671,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-			long diff = bc_value_t::compare_value_true_deep(left, right, type);
+			long diff = bc_compare_value_true_deep(left, right, type);
 
 			registers[instruction._a]._bool = diff < 0;
 			pc++;
@@ -1264,7 +1696,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-			long diff = bc_value_t::compare_value_true_deep(left, right, type);
+			long diff = bc_compare_value_true_deep(left, right, type);
 
 			registers[instruction._a]._bool = diff == 0;
 			pc++;
@@ -1289,7 +1721,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			QUARK_ASSERT(type.is_int() == false);
 			const auto left = stack.read_register(instruction._b);
 			const auto right = stack.read_register(instruction._c);
-			long diff = bc_value_t::compare_value_true_deep(left, right, type);
+			long diff = bc_compare_value_true_deep(left, right, type);
 
 			registers[instruction._a]._bool = diff != 0;
 			pc++;
@@ -1682,4 +2114,116 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const interpreter
 }
 
 
+
+
+
+
+//////////////////////////////////////		globals
+
+
+
+std::string opcode_to_string(bc_opcode opcode){
+	return k_opcode_info.at(opcode)._as_text;
+}
+
+json_t reg_to_json(const variable_address_t& reg){
+	const auto i = json_t::make_array({
+		reg._parent_steps,
+		reg._index,
+	});
+	return i;
+}
+
+json_t frame_to_json(const bc_frame_t& frame){
+	vector<json_t> exts;
+	for(int i = 0 ; i < frame._exts.size() ; i++){
+		const auto& e = frame._exts[i];
+		exts.push_back(json_t::make_array({
+			json_t(i),
+			json_t(e)
+		}));
+	}
+
+	vector<json_t> instructions;
+	int pc = 0;
+	for(const auto& e: frame._instrs2){
+		const auto i = json_t::make_array({
+			pc,
+			opcode_to_string(e._opcode),
+			json_t(e._a),
+			json_t(e._b),
+			json_t(e._c)
+		});
+		instructions.push_back(i);
+		pc++;
+	}
+
+	return json_t::make_object({
+		{ "symbols", json_t::make_array(symbols_to_json(frame._symbols)) },
+		{ "instructions", json_t::make_array(instructions) },
+		{ "exts", json_t::make_array(exts) }
+	});
+}
+
+json_t types_to_json(const std::vector<const typeid_t>& types){
+	vector<json_t> r;
+	int id = 0;
+	for(const auto& e: types){
+		const auto i = json_t::make_array({
+			id,
+			typeid_to_ast_json(e, json_tags::k_plain)._value
+		});
+		r.push_back(i);
+		id++;
+	}
+	return json_t::make_array(r);
+}
+
+json_t functiondef_to_json(const bc_function_definition_t& def){
+	return json_t::make_array({
+		json_t(typeid_to_compact_string(def._function_type)),
+		members_to_json(def._args),
+		def._frame_ptr ? frame_to_json(*def._frame_ptr) : json_t(),
+		json_t(def._host_function_id)
+	});
+}
+
+
+json_t bcprogram_to_json(const bc_program_t& program){
+	vector<json_t> callstack;
+/*
+	for(int env_index = 0 ; env_index < vm._call_stack.size() ; env_index++){
+		const auto e = &vm._call_stack[vm._call_stack.size() - 1 - env_index];
+
+		const auto local_end = (env_index == (vm._call_stack.size() - 1)) ? vm._value_stack.size() : vm._call_stack[vm._call_stack.size() - 1 - env_index + 1]._values_offset;
+		const auto local_count = local_end - e->_values_offset;
+		std::vector<json_t> values;
+		for(int local_index = 0 ; local_index < local_count ; local_index++){
+			const auto& v = vm._value_stack[e->_values_offset + local_index];
+			const auto& a = value_and_type_to_ast_json(v);
+			values.push_back(a._value);
+		}
+
+		const auto& env = json_t::make_object({
+			{ "values", values }
+		});
+		callstack.push_back(env);
+	}
+*/
+	vector<json_t> function_defs;
+	for(int i = 0 ; i < program._function_defs.size() ; i++){
+		const auto& function_def = program._function_defs[i];
+		function_defs.push_back(json_t::make_array({
+			json_t(i),
+			functiondef_to_json(function_def)
+		}));
+	}
+
+	return json_t::make_object({
+		{ "globals", frame_to_json(program._globals) },
+		{ "types", types_to_json(program._types) },
+		{ "function_defs", json_t::make_array(function_defs) }
+//		{ "callstack", json_t::make_array(callstack) }
+	});
+}
 }	//	floyd
