@@ -639,6 +639,7 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 
 std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 
 	interpreter_stack_t& stack = vm._stack;
 	const bc_frame_t* frame_ptr = stack._current_frame_ptr;
@@ -656,9 +657,11 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 	const auto instruction_count = instructions.size();
 	int pc = 0;
 	while(true){
+/*
 		if(pc == instruction_count){
 			return { false, bc_value_t::make_undefined() };
 		}
+*/
 		QUARK_ASSERT(pc >= 0);
 		QUARK_ASSERT(pc < instruction_count);
 		const auto& instruction = instructions[pc];
@@ -758,6 +761,10 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 #else
 			return { true, bc_value_t(registers[instruction._a], is_ext) };
 #endif
+		}
+
+		case bc_opcode::k_stop: {
+			return { false, bc_value_t::make_undefined() };
 		}
 
 		case bc_opcode::k_push_frame_ptr: {

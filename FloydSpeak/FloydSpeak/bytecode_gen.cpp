@@ -73,7 +73,8 @@ struct expr_info_t {
 };
 
 expr_info_t bcgen_expression(bgenerator_t& vm, const expression_t& e, const bc_body_t& body);
-bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body);
+bc_body_t bcgen_body_top(bgenerator_t& vm, const body_t& body);
+bc_body_t bcgen_body_block(bgenerator_t& vm, const body_t& body);
 
 variable_address_t add_local_temp(bc_body_t& body_acc, const typeid_t& type, const std::string& name){
 	int id = add_temp(body_acc._symbols, name, type);
@@ -309,6 +310,7 @@ static const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
 
 	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_stop, { "stop", opcode_info_t::encoding::k_e_0000 } },
 
 	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
 	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
@@ -765,7 +767,7 @@ bc_body_t bcgen_block_statement(bgenerator_t& vm, const statement_t::block_state
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto body_acc = bcgen_body(vm, statement._body);
+	const auto body_acc = bcgen_body_block(vm, statement._body);
 	return flatten_body(vm, body, body_acc);
 }
 
@@ -790,8 +792,8 @@ bc_body_t bcgen_ifelse_statement(bgenerator_t& vm, const statement_t::ifelse_sta
 	body_acc = condition_expr._body;
 	QUARK_ASSERT(statement._condition.get_output_type().is_bool());
 
-	const auto& then_expr = bcgen_body(vm, statement._then_body);
-	const auto& else_expr = bcgen_body(vm, statement._else_body);
+	const auto& then_expr = bcgen_body_block(vm, statement._then_body);
+	const auto& else_expr = bcgen_body_block(vm, statement._else_body);
 
 	body_acc._instrs.push_back(
 		bc_instruction_t(
@@ -834,7 +836,7 @@ bc_body_t bcgen_for_statement(bgenerator_t& vm, const statement_t::for_statement
 	const auto const1_reg = add_local_const(body_acc, value_t::make_int(1), "integer 1, to decrement with");
 	const auto flag_reg = add_local_temp(body_acc, typeid_t::make_bool(), "while-flag");
 
-	const auto& loop_body = bcgen_body(vm, statement._body);
+	const auto& loop_body = bcgen_body_block(vm, statement._body);
 	int body_instr_count = static_cast<int>(loop_body._instrs.size());
 
 	//	Iterator register is the FIRST symbol of the loop body's symbol table.
@@ -863,7 +865,7 @@ bc_body_t bcgen_while_statement(bgenerator_t& vm, const statement_t::while_state
 
 	auto body_acc = body;
 
-	const auto& loop_body = bcgen_body(vm, statement._body);
+	const auto& loop_body = bcgen_body_block(vm, statement._body);
 
 	int body_instr_count = static_cast<int>(loop_body._instrs.size());
 
@@ -887,52 +889,70 @@ bc_body_t bcgen_expression_statement(bgenerator_t& vm, const statement_t::expres
 	return body_acc;
 }
 
-bc_body_t bcgen_body(bgenerator_t& vm, const body_t& body){
+bc_body_t bcgen_body_block(bgenerator_t& vm, const body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = bc_body_t({}, body._symbols);
-	vm._call_stack.push_back(bcgen_environment_t{ &body_acc });
+	if(body._statements.empty() == false){
+		vm._call_stack.push_back(bcgen_environment_t{ &body_acc });
 
-	for(const auto& s: body._statements){
-		const auto& statement = *s;
-		QUARK_ASSERT(statement.check_invariant());
+		for(const auto& s: body._statements){
+			const auto& statement = *s;
+			QUARK_ASSERT(statement.check_invariant());
 
-		if(statement._store2){
-			body_acc = bcgen_store2_statement(vm, *statement._store2, body_acc);
-			QUARK_ASSERT(body_acc.check_invariant());
+			if(statement._store2){
+				body_acc = bcgen_store2_statement(vm, *statement._store2, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
+			else if(statement._block){
+				body_acc = bcgen_block_statement(vm, *statement._block, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
+			else if(statement._return){
+				body_acc = bcgen_return_statement(vm, *statement._return, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
+			else if(statement._if){
+				body_acc = bcgen_ifelse_statement(vm, *statement._if, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
+			else if(statement._for){
+				body_acc = bcgen_for_statement(vm, *statement._for, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
+			else if(statement._while){
+				body_acc = bcgen_while_statement(vm, *statement._while, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
+			else if(statement._expression){
+				body_acc = bcgen_expression_statement(vm, *statement._expression, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
+			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
+			}
 		}
-		else if(statement._block){
-			body_acc = bcgen_block_statement(vm, *statement._block, body_acc);
-			QUARK_ASSERT(body_acc.check_invariant());
-		}
-		else if(statement._return){
-			body_acc = bcgen_return_statement(vm, *statement._return, body_acc);
-			QUARK_ASSERT(body_acc.check_invariant());
-		}
-		else if(statement._if){
-			body_acc = bcgen_ifelse_statement(vm, *statement._if, body_acc);
-			QUARK_ASSERT(body_acc.check_invariant());
-		}
-		else if(statement._for){
-			body_acc = bcgen_for_statement(vm, *statement._for, body_acc);
-			QUARK_ASSERT(body_acc.check_invariant());
-		}
-		else if(statement._while){
-			body_acc = bcgen_while_statement(vm, *statement._while, body_acc);
-			QUARK_ASSERT(body_acc.check_invariant());
-		}
-		else if(statement._expression){
-			body_acc = bcgen_expression_statement(vm, *statement._expression, body_acc);
-			QUARK_ASSERT(body_acc.check_invariant());
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
+
+		vm._call_stack.pop_back();
 	}
 
-	vm._call_stack.pop_back();
+	QUARK_ASSERT(body_acc.check_invariant());
+	QUARK_ASSERT(vm.check_invariant());
+	return body_acc;
+}
+
+bc_body_t bcgen_body_top(bgenerator_t& vm, const body_t& body){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
+	auto body_acc = bcgen_body_block(vm, body);
+
+	//	Append a stop to make sure execution doesn't leave instruction vector.
+	if(body_acc._instrs.empty() == true || body_acc._instrs.back()._opcode != bc_opcode::k_return){
+		body_acc._instrs.push_back(bc_instruction_t(bc_opcode::k_stop, k_no_bctypeid, {}, {}, {}));
+	}
 
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(vm.check_invariant());
@@ -1886,7 +1906,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 
 	bgenerator_t a(pass3._checked_ast);
 
-	const auto global_body = bcgen_body(a, a._imm->_ast_pass3._globals);
+	const auto global_body = bcgen_body_top(a, a._imm->_ast_pass3._globals);
 	const auto globals2 = bc_frame_t(global_body, {});
 	a._call_stack.push_back(bcgen_environment_t{ &global_body });
 
@@ -1904,7 +1924,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 			function_defs2.push_back(function_def2);
 		}
 		else{
-			const auto body2 = function_def._body ? bcgen_body(a, *function_def._body) : bc_body_t({});
+			const auto body2 = function_def._body ? bcgen_body_top(a, *function_def._body) : bc_body_t({});
 			const auto frame = bc_frame_t(body2, function_def._function_type.get_function_args());
 			const auto function_def2 = bc_function_definition_t{
 				function_def._function_type,

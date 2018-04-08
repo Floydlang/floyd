@@ -1177,7 +1177,7 @@ OFF_QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it wo
 
 
 
-QUARK_UNIT_TESTQ("run_init()", "Empty block"){
+QUARK_UNIT_TEST("run_init()", "Empty block", "", ""){
 	test__run_global(
 		"{}"
 	);

@@ -1101,12 +1101,20 @@ inline int bc_limit(int value, int min, int max){
 
 
 		/*
-			TYPE: itype of output value.
+			TYPE: ---.
 			A: Register: value to return
 			B: ---
 			C: ---
 		*/
 		k_return,
+
+		/*
+			TYPE: ---
+			A: ---
+			B: ---
+			C: ---
+		*/
+		k_stop,
 
 
 		//////////////////////////////////////		STACK
