@@ -1072,7 +1072,7 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
 
-std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions){
+std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions) throw(){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 

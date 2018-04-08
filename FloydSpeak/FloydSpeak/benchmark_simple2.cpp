@@ -82,7 +82,7 @@ static const std::string floyd_str = R"(
 	}
 )";
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
+QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		"C++",
 		[&] {
@@ -106,7 +106,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Simple", "", ""){
 
 	double cpp_iteration_time = (double)cpp_ns;
 	double floyd_iteration_time = (double)floyd_ns;
-	double k = cpp_iteration_time / floyd_iteration_time;
+	double k = floyd_iteration_time / cpp_iteration_time;
 	std::cout << "Floyd performance: " << k << std::endl;
 }
 

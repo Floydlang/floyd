@@ -2235,7 +2235,7 @@ namespace floyd {
 	json_t interpreter_to_json(const interpreter_t& vm);
 
 
-	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions);
+	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction2_t>& instructions) throw();
 
 
 
