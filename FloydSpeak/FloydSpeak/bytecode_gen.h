@@ -45,6 +45,36 @@ namespace floyd {
 
 
 
+	//////////////////////////////////////		bc_body_t
+
+
+
+	struct bc_body_t {
+		bc_body_t(const std::vector<bc_instruction_t>& s) :
+			_instrs(s),
+			_symbols{}
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		bc_body_t(const std::vector<bc_instruction_t>& instructions, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
+			_instrs(instructions),
+			_symbols(symbols)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+
+		public: bool check_invariant() const;
+
+
+		//////////////////////////////////////		STATE
+
+		std::vector<std::pair<std::string, symbol_t>> _symbols;
+		std::vector<bc_instruction_t> _instrs;
+	};
+
+	bc_frame_t make_frame(const bc_body_t& body, const std::vector<typeid_t>& args);
+
 
 	//////////////////////////////////////		bcgen_context_t
 

@@ -109,69 +109,6 @@ reg_t flatten_reg(const reg_t& r, int offset){
 		return reg_t::make_variable_address(r._parent_steps - 1, r._index);
 	}
 }
-//??? Use enum with register / immediate / unused.
-
-struct reg_flags_t {
-	bool _type;
-	bool _a;
-	bool _b;
-	bool _c;
-};
-reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
-	if(e == opcode_info_t::encoding::k_e_0000){
-		return { false,		false, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_f_trr0){
-		return { true,		true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_g_trri){
-		return { true,		true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_h_trrr){
-		return { true,		true, true, true };
-	}
-	else if(e == opcode_info_t::encoding::k_i_trii){
-		return { true,		true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_j_tr00){
-		return { true,		true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_k_0ri0){
-		return { false,		true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_l_00i0){
-		return { false,		false, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_m_tr00){
-		return { true,		true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_n_0ii0){
-		return { false,		false, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_o_0rrr){
-		return { false,		true, true, true };
-	}
-	else if(e == opcode_info_t::encoding::k_p_0r00){
-		return { false,		true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_q_0rr0){
-		return { false,		true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_r_0ir0){
-		return { false,		false, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_s_0rri){
-		return { false,		true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_t_0rii){
-		return { false,		true, false, false };
-	}
-
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
 
 bool check_register(const reg_t& reg, bool is_reg){
 	if(is_reg){
@@ -1230,8 +1167,9 @@ bool bc_instruction2_t::check_invariant() const {
 
 
 
-
 //////////////////////////////////////		bc_frame_t
+
+
 
 bc_instruction2_t squeeze_instruction(const bc_instruction_t& instruction){
 	QUARK_ASSERT(instruction._instr_type == k_no_bctypeid);
@@ -1259,79 +1197,20 @@ bc_instruction2_t squeeze_instruction(const bc_instruction_t& instruction){
 	return result;
 }
 
-
-bc_frame_t::bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args) :
-	_symbols(body._symbols),
-	_args(args)
-{
-
+bc_frame_t make_frame(const bc_body_t& body, const std::vector<typeid_t>& args){
+	QUARK_ASSERT(body.check_invariant());
+	std::vector<bc_instruction2_t> instrs2;
 
 	for(const auto& e: body._instrs){
-		_instrs2.push_back(squeeze_instruction(e));
+		instrs2.push_back(squeeze_instruction(e));
 	}
 
-
-	const auto parameter_count = static_cast<int>(_args.size());
-
-	for(int i = 0 ; i < _symbols.size() ; i++){
-		const auto basetype = _symbols[i].second._value_type.get_base_type();
-		const bool ext = bc_value_t::is_bc_ext(basetype);
-		_exts.push_back(ext);
-	}
-
-	//	Process the locals & temps. They go after any parameters, which already sits on stack.
-	for(vector<bc_value_t>::size_type i = parameter_count ; i < _symbols.size() ; i++){
-		const auto& symbol = _symbols[i];
-		bool is_ext = _exts[i];
-
-		_locals_exts.push_back(is_ext);
-
-		//	Variable slot.
-		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
-		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
-		//	Use a placeholder object of correct type.
-		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
-			if(is_ext){
-				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
-				_locals.push_back(value);
-			}
-			else{
-				const auto value = make_def(symbol.second._value_type);
-				const auto bc = value_to_bc(value);
-				_locals.push_back(bc);
-			}
-		}
-
-		//	Constant.
-		else{
-			_locals.push_back(value_to_bc(symbol.second._const_value));
-		}
-	}
-
-
-
-	QUARK_ASSERT(check_invariant());
-}
-
-bool bc_frame_t::check_invariant() const {
-//	QUARK_ASSERT(_body.check_invariant());
-	QUARK_ASSERT(_symbols.size() == _exts.size());
-
-	for(const auto& e: _instrs2){
-		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
-		const auto reg_flags = encoding_to_reg_flags(encoding);
-
-/*
-		QUARK_ASSERT(check_register__local(e._reg_a, reg_flags._a));
-		QUARK_ASSERT(check_register__local(e._reg_b, reg_flags._b));
-		QUARK_ASSERT(check_register__local(e._reg_c, reg_flags._c));
-*/
-
-	}
-	return true;
+	return bc_frame_t(instrs2, body._symbols, args);
 }
 
 
+
+//////////////////////////////////////		bgenerator_t
 
 
 /*
@@ -1390,7 +1269,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 	bgenerator_t a(pass3._checked_ast);
 
 	const auto global_body = bcgen_body_top(a, a._imm->_ast_pass3._globals);
-	const auto globals2 = bc_frame_t(global_body, {});
+	const auto globals2 = make_frame(global_body, {});
 	a._call_stack.push_back(bcgen_environment_t{ &global_body });
 
 	std::vector<const bc_function_definition_t> function_defs2;
@@ -1408,7 +1287,7 @@ bc_program_t run_bggen(const quark::trace_context_t& tracer, const semantic_ast_
 		}
 		else{
 			const auto body2 = function_def._body ? bcgen_body_top(a, *function_def._body) : bc_body_t({});
-			const auto frame = bc_frame_t(body2, function_def._function_type.get_function_args());
+			const auto frame = make_frame(body2, function_def._function_type.get_function_args());
 			const auto function_def2 = bc_function_definition_t{
 				function_def._function_type,
 				function_def._args,

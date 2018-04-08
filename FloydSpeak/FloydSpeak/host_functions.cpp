@@ -887,7 +887,6 @@ value_t host__unflatten_from_json(interpreter_t& vm, const std::vector<value_t>&
 	}
 }
 
-
 value_t host__get_json_type(interpreter_t& vm, const std::vector<value_t>& args){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -935,31 +934,6 @@ value_t host__get_json_type(interpreter_t& vm, const std::vector<value_t>& args)
 	}
 }
 
-
-/*
-	o: typeid,
-	1... -- arguments to constructor.
-*/
-/*
-value_t host__instantiate_from_typeid(interpreter_t& vm, const std::vector<value_t>& args){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(args.size() == 0){
-		throw std::runtime_error("instantiate_from_typeid() requires 1 argument or more!");
-	}
-	else if(args[0].is_typeid() == false){
-		throw std::runtime_error("instantiate_from_typeid() requires argument 1 to be the typeid of type to instantiate!");
-	}
-	else{
-		const auto type_to_construct = args[0].get_typeid_value();
-		const std::vector<value_t> init_args(args.begin() + 1, args.end());
-		const auto result = construct_value_from_typeid(vm, type_to_construct, type_to_construct, values_to_bcs(init_args));
-		return bc_to_value(result, type_to_construct);
-	}
-}
-*/
-
-
 std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	const auto VOID = typeid_t::make_void();
 	const auto DYN = typeid_t::make_internal_dynamic();
@@ -997,15 +971,6 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	};
 	return temp;
 }
-
-
-/*
-	struct host_function_t {
-		host_function_signature_t _signature;
-		HOST_FUNCTION_PTR _f;
-	}
-*/
-
 
 
 std::map<int,  host_function_t> get_host_functions(){

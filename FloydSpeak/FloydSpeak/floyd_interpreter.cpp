@@ -284,7 +284,136 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 };
 
+//??? Use enum with register / immediate / unused.
 
+reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
+	if(e == opcode_info_t::encoding::k_e_0000){
+		return { false,		false, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_f_trr0){
+		return { true,		true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_g_trri){
+		return { true,		true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_h_trrr){
+		return { true,		true, true, true };
+	}
+	else if(e == opcode_info_t::encoding::k_i_trii){
+		return { true,		true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_j_tr00){
+		return { true,		true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_k_0ri0){
+		return { false,		true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_l_00i0){
+		return { false,		false, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_m_tr00){
+		return { true,		true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_n_0ii0){
+		return { false,		false, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_o_0rrr){
+		return { false,		true, true, true };
+	}
+	else if(e == opcode_info_t::encoding::k_p_0r00){
+		return { false,		true, false, false };
+	}
+	else if(e == opcode_info_t::encoding::k_q_0rr0){
+		return { false,		true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_r_0ir0){
+		return { false,		false, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_s_0rri){
+		return { false,		true, true, false };
+	}
+	else if(e == opcode_info_t::encoding::k_t_0rii){
+		return { false,		true, false, false };
+	}
+
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+//////////////////////////////////////////		bc_frame_t
+
+
+
+
+bc_frame_t::bc_frame_t(const std::vector<bc_instruction2_t>& instrs2, const std::vector<std::pair<std::string, symbol_t>>& symbols, const std::vector<typeid_t>& args) :
+	_instrs2(instrs2),
+	_symbols(symbols),
+	_args(args)
+{
+	const auto parameter_count = static_cast<int>(_args.size());
+
+	for(int i = 0 ; i < _symbols.size() ; i++){
+		const auto basetype = _symbols[i].second._value_type.get_base_type();
+		const bool ext = bc_value_t::is_bc_ext(basetype);
+		_exts.push_back(ext);
+	}
+
+	//	Process the locals & temps. They go after any parameters, which already sits on stack.
+	for(vector<bc_value_t>::size_type i = parameter_count ; i < _symbols.size() ; i++){
+		const auto& symbol = _symbols[i];
+		bool is_ext = _exts[i];
+
+		_locals_exts.push_back(is_ext);
+
+		//	Variable slot.
+		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
+		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
+		//	Use a placeholder object of correct type.
+		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
+			if(is_ext){
+				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
+				_locals.push_back(value);
+			}
+			else{
+				const auto value = make_def(symbol.second._value_type);
+				const auto bc = value_to_bc(value);
+				_locals.push_back(bc);
+			}
+		}
+
+		//	Constant.
+		else{
+			_locals.push_back(value_to_bc(symbol.second._const_value));
+		}
+	}
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bool bc_frame_t::check_invariant() const {
+//	QUARK_ASSERT(_body.check_invariant());
+	QUARK_ASSERT(_symbols.size() == _exts.size());
+
+	for(const auto& e: _instrs2){
+		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
+		const auto reg_flags = encoding_to_reg_flags(encoding);
+
+/*
+		QUARK_ASSERT(check_register__local(e._reg_a, reg_flags._a));
+		QUARK_ASSERT(check_register__local(e._reg_b, reg_flags._b));
+		QUARK_ASSERT(check_register__local(e._reg_c, reg_flags._c));
+*/
+
+	}
+	return true;
+}
+
+
+
+//////////////////////////////////////////		COMPARE
 
 
 
@@ -351,7 +480,6 @@ bool bc_map_compare (Map const &lhs, Map const &rhs) {
         && std::equal(lhs.begin(), lhs.end(),
                       rhs.begin());
 }
-
 
 int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right, const typeid_t& type){
 	const auto& element_type = typeid_t(type.get_dict_value_type());

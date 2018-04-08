@@ -15,8 +15,12 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "ast_value.h"
-#include "host_functions.hpp"
+#include "ast_value.h"	//??? remove
+#include "statement.h"	//?? remove
+
+//??? remove usage of symbol_t
+//??? remove usage of typeid_t
+//??? remove usage of value_t
 
 namespace floyd {
 	struct value_t;
@@ -24,14 +28,16 @@ namespace floyd {
 	struct interpreter_t;
 	struct bc_program_t;
 	struct bc_frame_t;
-	struct bc_body_t;
+
+
+	typedef value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const std::vector<value_t>& args);
+
 
 	typedef int16_t bc_typeid_t;
 
 	bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const std::vector<bc_value_t>& arg_values);
 
 	struct value_entry_t;
-
 
 
 	value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
@@ -1190,39 +1196,26 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////		bc_body_t
-
-	//??? move to bcgen
-
-	struct bc_body_t {
-		std::vector<std::pair<std::string, symbol_t>> _symbols;
-		std::vector<bc_instruction_t> _instrs;
-
-
-		bc_body_t(const std::vector<bc_instruction_t>& s) :
-			_instrs(s),
-			_symbols{}
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-		bc_body_t(const std::vector<bc_instruction_t>& instructions, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
-			_instrs(instructions),
-			_symbols(symbols)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
-
-		public: bool check_invariant() const;
+	struct reg_flags_t {
+		bool _type;
+		bool _a;
+		bool _b;
+		bool _c;
 	};
+	reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
+
+
 
 
 	//////////////////////////////////////		bc_frame_t
 
 
 	struct bc_frame_t {
-		bc_frame_t(const bc_body_t& body, const std::vector<typeid_t>& args);
+		bc_frame_t(const std::vector<bc_instruction2_t>& instrs2, const std::vector<std::pair<std::string, symbol_t>>& symbols, const std::vector<typeid_t>& args);
 		public: bool check_invariant() const;
+
+
+		//////////////////////////////////////		STATE
 
 		std::vector<bc_instruction2_t> _instrs2;
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
@@ -1235,6 +1228,8 @@ namespace floyd {
 		std::vector<bool> _locals_exts;
 		std::vector<bc_value_t> _locals;
 	};
+
+
 
 	//////////////////////////////////////		bc_function_definition_t
 
@@ -1264,12 +1259,13 @@ namespace floyd {
 		}
 #endif
 
+		//////////////////////////////////////		STATE
+
 		//??? store more optimzation stuff here!
 		typeid_t _function_type;
 		std::vector<member_t> _args;
 		std::shared_ptr<bc_frame_t> _frame_ptr;
 		int _host_function_id;
-
 
 		int _dyn_arg_count;
 		bool _return_is_ext;

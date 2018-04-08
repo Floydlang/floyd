@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "ast.h"
-#include "ast_value.h"
+#include "ast_typeid.h"
+#include "floyd_interpreter.h"
 
 namespace floyd {
 	struct expression_t;
@@ -33,8 +33,6 @@ namespace floyd {
 
 
 
-	typedef value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const std::vector<value_t>& args);
-
 	struct host_function_t {
 		host_function_signature_t _signature;
 		std::string _name;
@@ -46,4 +44,3 @@ namespace floyd {
 
 
 #endif /* host_functions_hpp */
-
