@@ -35,6 +35,9 @@ namespace floyd {
 		{
 		}
 
+		public: bool is_empty() const {
+			return _parent_steps == -1 && _index == -1;
+		}
 		public: bool check_invariant() const {
 			return true;
 		}

@@ -80,8 +80,13 @@ void trace_result(const bench_result_t& result){
 }
 
 int64_t measure_floyd_function_f(const interpreter_context_t& context, const std::string& floyd_program, int count){
-	const auto ast = compile_to_bytecode(context, floyd_program);
-	interpreter_t vm(ast);
+	const auto program = compile_to_bytecode(context, floyd_program);
+
+
+	const auto s = json_to_pretty_string(bcprogram_to_json(program));
+	std::cout << s << std::endl;
+
+	interpreter_t vm(program);
 	const auto f = find_global_symbol2(vm, "f");
 	QUARK_ASSERT(f != nullptr);
 

@@ -113,8 +113,9 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 	);
 
 	interpreter_context_t context = make_benchmark_context();
-	const auto ast = compile_to_bytecode(context, gol_floyd_str);
-	interpreter_t vm(ast);
+	const auto program = compile_to_bytecode(context, gol_floyd_str);
+
+	interpreter_t vm(program);
 	const auto f = find_global_symbol2(vm, "f");
 	QUARK_ASSERT(f != nullptr);
 
@@ -128,7 +129,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 #endif
 
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
+QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 //	interpreter_context_t context = make_benchmark_context();
 	interpreter_context_t context = make_verbose_context();
 
@@ -190,7 +191,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		});
 	}
 
-	if(0){
+	if(1){
 		const auto cpp_func = [] {
 			volatile int result1 = 0;
 			volatile int result2 = 0;
