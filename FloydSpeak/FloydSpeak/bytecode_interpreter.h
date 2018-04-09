@@ -778,13 +778,13 @@ namespace floyd {
 			B: Register: source value
 			C: ---
 		*/
-		k_store_local_intern,
+		k_copy_reg_intern,
 		/*
 			A: Register: where to put result
 			B: Register: source value
 			C: ---
 		*/
-		k_store_local_obj,
+		k_copy_reg_obj,
 
 
 		/*

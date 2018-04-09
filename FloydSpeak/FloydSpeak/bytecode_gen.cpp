@@ -237,7 +237,7 @@ bcgen_body_t copy_value(bcgenerator_t& vm, const typeid_t& type, const reg_t& de
 	}
 	//	local <= local
 	else{
-		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_store_local_obj : bc_opcode::k_store_local_intern, dest_reg, source_reg, {}));
+		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_copy_reg_obj : bc_opcode::k_copy_reg_intern, dest_reg, source_reg, {}));
 	}
 
 	QUARK_ASSERT(body_acc.check_invariant());
@@ -366,7 +366,7 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& vm, const statement_t::for_state
 
 	//	IMPORTANT: Iterator register is the FIRST symbol of the loop body's symbol table.
 	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols.size()));
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_store_local_intern, counter_reg, start_expr._out, {}));
+	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_copy_reg_intern, counter_reg, start_expr._out, {}));
 
 	// Reuse start value as our counter.
 	// Notice: we need to store iterator value in body's first register.

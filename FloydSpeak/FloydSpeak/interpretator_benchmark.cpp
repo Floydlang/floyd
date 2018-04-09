@@ -133,7 +133,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 //	interpreter_context_t context = make_benchmark_context();
 	interpreter_context_t context = make_verbose_context();
 
-	if(0){
+	if(1){
 		const auto cpp_func = [] {
 			volatile int result = 0;
 			for(int i = 0 ; i < 50000000 ; i++){
@@ -222,7 +222,7 @@ QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 		});
 	}
 
-	if(0){
+	if(1){
 		struct dummy_y {
 			static int fibonacci(int n) {
 				if (n <= 1){

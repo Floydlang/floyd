@@ -71,6 +71,61 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+	//////////////////////////////////////		Packblob
+
+
+#if 0
+
+
+function: host-function
+	int function_id
+
+	Support DYN values.
+	Unpacks args to value_t
+
+
+function: floyd-function
+	Unpacks args to bc_pod_value_t temp[].
+	Uses open_stack_frame2_nobump() / execute_instructions() / close_stack_frame()
+
+k_construct_value
+	value_t: dest value type
+	[value_t]: constructor arguments.
+
+
+
+
+# Packblob.
+These come in some static sizes. They can hold one or serveral values. Are immutable.
+They handle RC of any contained objects.
+They know where every field sits.
+
+struct packblob_8_t {
+}
+
+struct packblob_8_t {
+}
+
+struct packblob_16_t {
+}
+
+struct packblob_element_layout_ {
+	typeid_t _field_type;
+	bc_typeid_t _field_itype;
+	int _start_pos;
+	int _shift;
+	int _mask;
+}
+
+struct packblob_64_t {
+	uint32_t _values[16];
+}
+
+
+#endif
+
+
+
 	//////////////////////////////////////		value_t -- helpers
 
 
@@ -393,8 +448,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_store_global_obj, { "store_global_obj", opcode_info_t::encoding::k_r_0ir0 } },
 	{ bc_opcode::k_store_global_intern, { "store_global_intern", opcode_info_t::encoding::k_r_0ir0 } },
 
-	{ bc_opcode::k_store_local_intern, { "store_local_intern", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_store_local_obj, { "store_local_obj", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_copy_reg_intern, { "copy_reg_intern", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_copy_reg_obj, { "copy_reg_obj", opcode_info_t::encoding::k_q_0rr0 } },
 
 	{ bc_opcode::k_get_struct_member, { "get_struct_member", opcode_info_t::encoding::k_s_0rri } },
 
@@ -405,19 +460,18 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
-	{ bc_opcode::k_add_bool, { "arithmetic_add_bool", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_int, { "arithmetic_add_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_float, { "arithmetic_add_float", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_string, { "arithmetic_add_string", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_vector, { "arithmetic_add_vector", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_subtract_float, { "arithmetic_subtract_float", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_subtract_int, { "arithmetic_subtract_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_multiply_float, { "arithmetic_multiply_float", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_multiply_int, { "arithmetic_multiply_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_divide_float, { "arithmetic_divide_float", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_divide_int, { "arithmetic_divide_int", opcode_info_t::encoding::k_o_0rrr } },
-//	{ bc_opcode::k_remainder, { "arithmetic_remainder", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_remainder_int, { "arithmetic_remainder_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_bool, { "add_bool", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_int, { "add_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_float, { "add_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_string, { "add_string", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_vector, { "add_vector", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_subtract_float, { "subtract_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_subtract_int, { "subtract_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_multiply_float, { "multiply_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_multiply_int, { "multiply_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_divide_float, { "divide_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_divide_int, { "divide_int", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_remainder_int, { "remainder_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_logical_and_bool, { "logical_and_bool", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_and_int, { "logical_and_int", opcode_info_t::encoding::k_o_0rrr } },
@@ -1132,6 +1186,9 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		const auto opcode = i._opcode;
 		switch(opcode){
 
+		case bc_opcode::k_nop:
+			break;
+
 
 		//////////////////////////////////////////		ACCESS GLOBALS
 
@@ -1144,14 +1201,12 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_load_global_intern: {
 			ASSERT(stack.check_reg_intern(i._a));
 
 			regs[i._a] = globals[i._b];
-			pc++;
 			break;
 		}
 
@@ -1164,7 +1219,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			const auto& new_value_pod = regs[i._b];
 			globals[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_store_global_intern: {
@@ -1172,7 +1226,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_intern(i._b));
 
 			globals[i._a] = regs[i._b];
-			pc++;
 			break;
 		}
 
@@ -1180,15 +1233,14 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		//////////////////////////////////////////		ACCESS LOCALS
 
 
-		case bc_opcode::k_store_local_intern: {
+		case bc_opcode::k_copy_reg_intern: {
 			ASSERT(stack.check_reg_intern(i._a));
 			ASSERT(stack.check_reg_intern(i._b));
 
 			regs[i._a] = regs[i._b];
-			pc++;
 			break;
 		}
-		case bc_opcode::k_store_local_obj: {
+		case bc_opcode::k_copy_reg_obj: {
 			ASSERT(stack.check_reg_obj(i._a));
 			ASSERT(stack.check_reg_obj(i._b));
 
@@ -1196,7 +1248,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
-			pc++;
 			break;
 		}
 
@@ -1234,7 +1285,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			stack._debug_types.push_back(typeid_t::make_void());
 #endif
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
@@ -1268,7 +1318,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(frame_ptr == stack._current_frame_ptr);
 			ASSERT(regs == stack._current_frame_entry_ptr);
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
@@ -1285,7 +1334,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			stack._debug_types.push_back(stack._debug_types[frame_pos + i._a]);
 #endif
 			ASSERT(stack.check_invariant());
-			pc++;
 			break;
 		}
 		case bc_opcode::k_push_obj: {
@@ -1298,7 +1346,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 #if DEBUG
 			stack._debug_types.push_back(stack._debug_types[frame_pos + i._a]);
 #endif
-			pc++;
 			break;
 		}
 
@@ -1330,7 +1377,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			stack._stack_size -= n;
 
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
@@ -1341,43 +1387,50 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 		case bc_opcode::k_branch_false_bool: {
 			ASSERT(stack.check_reg_bool(i._a));
 
-			pc = regs[i._a]._bool ? pc + 1 : pc + i._b;
+			//	Notice that pc will be incremented too, hence the - 1.
+			pc = regs[i._a]._bool ? pc : pc + i._b - 1;
 			break;
 		}
 		case bc_opcode::k_branch_true_bool: {
 			ASSERT(stack.check_reg_bool(i._a));
 
-			pc = regs[i._a]._bool ? pc + i._b : pc + 1;
+			//	Notice that pc will be incremented too, hence the - 1.
+			pc = regs[i._a]._bool ? pc + i._b - 1: pc;
 			break;
 		}
 		case bc_opcode::k_branch_zero_int: {
 			ASSERT(stack.check_reg_int(i._a));
 
-			pc = regs[i._a]._int == 0 ? pc + i._b : pc + 1;
+			//	Notice that pc will be incremented too, hence the - 1.
+			pc = regs[i._a]._int == 0 ? pc + i._b - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_notzero_int: {
 			ASSERT(stack.check_reg_int(i._a));
 
-			pc = regs[i._a]._int == 0 ? pc + 1 : pc + i._b;
+			//	Notice that pc will be incremented too, hence the - 1.
+			pc = regs[i._a]._int == 0 ? pc : pc + i._b - 1;
 			break;
 		}
 		case bc_opcode::k_branch_smaller_int: {
 			ASSERT(stack.check_reg_int(i._a));
 			ASSERT(stack.check_reg_int(i._b));
 
-			pc = regs[i._a]._int < regs[i._b]._int ? pc + i._c : pc + 1;
+			//	Notice that pc will be incremented too, hence the - 1.
+			pc = regs[i._a]._int < regs[i._b]._int ? pc + i._c - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_smaller_or_equal_int: {
 			ASSERT(stack.check_reg_int(i._a));
 			ASSERT(stack.check_reg_int(i._b));
 
-			pc = regs[i._a]._int <= regs[i._b]._int ? pc + i._c : pc + 1;
+			//	Notice that pc will be incremented too, hence the - 1.
+			pc = regs[i._a]._int <= regs[i._b]._int ? pc + i._c - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_always: {
-			pc = pc + i._a;
+			//	Notice that pc will be incremented too, hence the - 1.
+			pc = pc + i._a - 1;
 			break;
 		}
 
@@ -1399,7 +1452,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			}
 			regs[i._a] = value_pod;
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
@@ -1426,7 +1478,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				regs[i._a] = value2._pod;
 			}
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
@@ -1476,7 +1527,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
 			}
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
@@ -1508,7 +1558,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				regs[i._a] = value._pod;
 			}
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
@@ -1534,7 +1583,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				}
 				regs[i._a] = value._pod;
 			}
-			pc++;
 			break;
 		}
 
@@ -1642,30 +1690,25 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(frame_ptr == stack._current_frame_ptr);
 			ASSERT(regs == stack._current_frame_entry_ptr);
 			ASSERT(vm.check_invariant());
-			pc++;
 			break;
 		}
 
 		case bc_opcode::k_new_1: {
 			execute_new_1(vm, i);
-			pc++;
 			break;
 		}
 
 		case bc_opcode::k_new_vector: {
 			execute_new_vector(vm, i);
-			pc++;
 			break;
 		}
 
 		case bc_opcode::k_new_dict: {
 			execute_new_dict(vm, i);
-			pc++;
 			break;
 		}
 		case bc_opcode::k_new_struct: {
 			execute_new_struct(vm, i);
-			pc++;
 			break;
 		}
 
@@ -1686,7 +1729,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			long diff = bc_compare_value_true_deep(left, right, type);
 
 			regs[i._a]._bool = diff <= 0;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_or_equal_int: {
@@ -1695,7 +1737,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._bool = regs[i._b]._int <= regs[i._c]._int;
-			pc++;
 			break;
 		}
 
@@ -1711,7 +1752,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			long diff = bc_compare_value_true_deep(left, right, type);
 
 			regs[i._a]._bool = diff < 0;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_int: ASSERT(stack.check_reg_bool(i._a)); ASSERT(stack.check_reg_int(i._b)); ASSERT(stack.check_reg_int(i._c)); regs[i._a]._bool = regs[i._b]._int < regs[i._c]._int; pc++; break;
@@ -1728,7 +1768,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			long diff = bc_compare_value_true_deep(left, right, type);
 
 			regs[i._a]._bool = diff == 0;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_equal_int: {
@@ -1737,7 +1776,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._bool = regs[i._b]._int == regs[i._c]._int;
-			pc++;
 			break;
 		}
 
@@ -1753,7 +1791,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			long diff = bc_compare_value_true_deep(left, right, type);
 
 			regs[i._a]._bool = diff != 0;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_nonequal_int: {
@@ -1762,7 +1799,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._bool = regs[i._b]._int != regs[i._c]._int;
-			pc++;
 			break;
 		}
 
@@ -1777,7 +1813,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_bool(i._c));
 
 			regs[i._a]._bool = regs[i._b]._bool + regs[i._c]._bool;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_add_int: {
@@ -1786,7 +1821,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._int = regs[i._b]._int + regs[i._c]._int;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_add_float: {
@@ -1795,7 +1829,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_float(i._c));
 
 			regs[i._a]._float = regs[i._b]._float + regs[i._c]._float;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_add_string: {
@@ -1805,7 +1838,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 
 			//??? inline
 			stack.write_register_string(i._a, regs[i._b]._ext->_string + regs[i._c]._ext->_string);
-			pc++;
 			break;
 		}
 
@@ -1825,7 +1857,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			elements2.insert(elements2.end(), right_elements.begin(), right_elements.end());
 			const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
 			stack.write_register_obj(i._a, value2);
-			pc++;
 			break;
 		}
 
@@ -1835,7 +1866,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_float(i._c));
 
 			regs[i._a]._float = regs[i._b]._float - regs[i._c]._float;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_subtract_int: {
@@ -1844,7 +1874,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._int = regs[i._b]._int - regs[i._c]._int;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_multiply_float: {
@@ -1853,7 +1882,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_float(i._c));
 
 			regs[i._a]._float = regs[i._b]._float * regs[i._c]._float;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_multiply_int: {
@@ -1862,7 +1890,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._int = regs[i._b]._int * regs[i._c]._int;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_divide_float: {
@@ -1875,7 +1902,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			regs[i._a]._float = regs[i._b]._float / right;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_divide_int: {
@@ -1888,7 +1914,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			regs[i._a]._int = regs[i._b]._int / right;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_remainder_int: {
@@ -1901,7 +1926,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			regs[i._a]._int = regs[i._b]._int % right;
-			pc++;
 			break;
 		}
 
@@ -1913,7 +1937,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_bool(i._c));
 
 			regs[i._a]._bool = regs[i._b]._bool  && regs[i._c]._bool;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_and_int: {
@@ -1922,7 +1945,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._bool = (regs[i._b]._int != 0) && (regs[i._c]._int != 0);
-			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_and_float: {
@@ -1931,7 +1953,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_float(i._c));
 
 			regs[i._a]._bool = (regs[i._b]._float != 0) && (regs[i._c]._float != 0);
-			pc++;
 			break;
 		}
 
@@ -1941,7 +1962,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_bool(i._c));
 
 			regs[i._a]._bool = regs[i._b]._bool || regs[i._c]._bool;
-			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_or_int: {
@@ -1950,7 +1970,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_int(i._c));
 
 			regs[i._a]._bool = (regs[i._b]._int != 0) || (regs[i._c]._int != 0);
-			pc++;
 			break;
 		}
 		case bc_opcode::k_logical_or_float: {
@@ -1959,7 +1978,6 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(stack.check_reg_float(i._c));
 
 			regs[i._a]._bool = (regs[i._b]._float != 0.0f) || (regs[i._c]._float != 0.0f);
-			pc++;
 			break;
 		}
 
@@ -1971,6 +1989,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			ASSERT(false);
 			throw std::exception();
 		}
+		pc++;
 	}
 	return { false, bc_value_t::make_undefined() };
 }
