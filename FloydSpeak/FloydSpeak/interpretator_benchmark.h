@@ -9,5 +9,6 @@
 #ifndef interpretator_benchmark_hpp
 #define interpretator_benchmark_hpp
 
+void floyd_benchmark();
 
 #endif /* interpretator_benchmark_hpp */

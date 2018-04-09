@@ -4,25 +4,30 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>FloydSpeak UT.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 		<key>FloydSpeak.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
-		<key>Max Performance.xcscheme</key>
+		<key>OLD Run In Terminal.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
-		</dict>
-		<key>Run In Terminal.xcscheme</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>3</integer>
+			<integer>2</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>2C1D84DC1CA765A90042F0A8</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>2C78AD40207B50AB00839E3E</key>
 		<dict>
 			<key>primary</key>
 			<true/>

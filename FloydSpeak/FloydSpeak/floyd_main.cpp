@@ -24,6 +24,7 @@
 #include "pass2.h"
 #include "ast_basics.h"
 #include "text_parser.h"
+#include "interpretator_benchmark.h"
 
 
 //////////////////////////////////////////////////		main()
@@ -179,8 +180,8 @@ void run_repl(){
 	floyd::interpreter_context_t context{ quark::make_default_tracer() };
 
 	int print_pos = 0;
-	auto ast = floyd::compile_to_bytecode(context, "");
-	auto vm = std::make_shared<floyd::interpreter_t>(ast);
+	auto program = floyd::compile_to_bytecode(context, "");
+	auto vm = std::make_shared<floyd::interpreter_t>(program);
 
 	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;
 	std::cout << R"(Type "help", "copyright" or "license" for more informations!)" << std::endl;
@@ -191,14 +192,12 @@ Python 2.7.10 (default, Jul 15 2017, 17:16:57)
 Type "help", "copyright", "credits" or "license" for more information.
 */
 
-/*
-??? fix REPL!
 	while(true){
 		try {
 			const auto line = get_command();
 
 			if(line == "vm"){
-				std::cout << json_to_pretty_string(floyd::interpreter_to_json(vm)) << std::endl;
+				std::cout << json_to_pretty_string(floyd::interpreter_to_json(*vm)) << std::endl;
 			}
 			else if(line == ""){
 			}
@@ -217,7 +216,11 @@ Type "help", "copyright", "credits" or "license" for more information.
 					context._tracer,
 					floyd::ast_json_t{json_t::make_array({ast_json_pos.first._value})}
 				);
-				const auto b = floyd::execute_statements(vm, statements);
+
+/*
+//??? fix REPL!
+
+				const auto b = execute_instructions(vm, const std::vector<bc_instruction_t>& instructions);
 				while(print_pos < vm._print_output.size()){
 					std::cout << vm._print_output[print_pos] << std::endl;
 					print_pos++;
@@ -225,6 +228,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 				if(b._output.is_undefined() == false){
 					std::cout << to_compact_string2(b._output) << std::endl;
 				}
+*/
 			}
 		}
 		catch(const std::runtime_error& e){
@@ -234,8 +238,6 @@ Type "help", "copyright", "credits" or "license" for more information.
 			std::cout << "Runtime error." << std::endl;
 		}
 	}
-*/
-
 }
 
 void run_file(const std::vector<std::string>& args){
@@ -411,7 +413,11 @@ int main(int argc, const char * argv[]) {
 	floyd_quark_runtime q("");
 	quark::set_runtime(&q);
 
-	if(true && QUARK_UNIT_TESTS_ON){
+	bool runtests = std::find(args.begin(), args.end(), "runtests") != args.end();
+	bool benchmark = std::find(args.begin(), args.end(), "benchmark") != args.end();
+	bool run_as_tool = runtests == false && benchmark == false;
+
+	if(runtests && QUARK_UNIT_TESTS_ON){
 		try {
 			run_tests();
 		}
@@ -420,22 +426,22 @@ int main(int argc, const char * argv[]) {
 			return -1;
 		}
 	}
+	else if(benchmark){
+		floyd_benchmark();
+	}
 
-	if(false){
-		if(argc == 1){
-			if(false){
-				const std::vector<std::string> args2 = {
-					"floyd-exe",
-					"/Users/marcus/Repositories/Floyd/examples/test1.floyd"
-				};
-				run_file(args2);
-			}
-			trace_on = false;
-			run_repl();
+	else if(run_as_tool){
+		trace_on = false;
+
+		//	Run provided script file.
+		if(args.size() == 2){
+			const auto floyd_args = std::vector<std::string>(args.begin() + 1, args.end());
+			run_file(floyd_args);
 		}
+
+		//	Run REPL
 		else{
-			trace_on = false;
-			run_file(args);
+			run_repl();
 		}
 	}
 

@@ -1754,7 +1754,7 @@ std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::v
 			regs[i._a]._bool = diff < 0;
 			break;
 		}
-		case bc_opcode::k_comparison_smaller_int: ASSERT(stack.check_reg_bool(i._a)); ASSERT(stack.check_reg_int(i._b)); ASSERT(stack.check_reg_int(i._c)); regs[i._a]._bool = regs[i._b]._int < regs[i._c]._int; pc++; break;
+		case bc_opcode::k_comparison_smaller_int: ASSERT(stack.check_reg_bool(i._a)); ASSERT(stack.check_reg_int(i._b)); ASSERT(stack.check_reg_int(i._c)); regs[i._a]._bool = regs[i._b]._int < regs[i._c]._int; break;
 
 		case bc_opcode::k_logical_equal: {
 			ASSERT(stack.check_reg_bool(i._a));
