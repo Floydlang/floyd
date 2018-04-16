@@ -22,7 +22,6 @@
 
 //??? remove usage of symbol_t
 //??? remove usage of typeid_t
-//??? remove usage of value_t
 
 //??? We could have support simple sumtype called DYN that holds a value_t at runtime.
 
@@ -31,7 +30,6 @@
 //??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
 
 namespace floyd {
-	struct value_t;
 	struct bc_value_t;
 	struct interpreter_t;
 	struct bc_program_t;
@@ -42,17 +40,7 @@ namespace floyd {
 	typedef int16_t bc_typeid_t;
 
 
-	//////////////////////////////////////		value_t -- helpers
-
-
-	value_t bc_to_value(const bc_value_t& value, const typeid_t& type);
-	bc_value_t value_to_bc(const value_t& value);
-
-	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
-	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type);
-
 	json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags);
-
 	int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
 
 
@@ -1807,7 +1795,7 @@ namespace floyd {
 
 	int get_global_n_pos(int n);
 
-	value_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
+	bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, const bc_typed_value_t args[], int arg_count);
 	json_t interpreter_to_json(const interpreter_t& vm);
 	std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
 

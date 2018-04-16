@@ -125,176 +125,21 @@ struct packblob_64_t {
 
 
 
-	//////////////////////////////////////		value_t -- helpers
-
-
-	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type){
-		std::vector<value_t> result;
-		for(const auto e: values){
-			result.push_back(bc_to_value(e, shared_type));
-		}
-		return result;
-	}
-
-	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
-		std::vector<bc_value_t> result;
-		for(const auto e: values){
-			result.push_back(value_to_bc(e));
-		}
-		return result;
-	}
-
-	value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
-		QUARK_ASSERT(value.check_invariant());
-		QUARK_ASSERT(type.check_invariant());
-
-		const auto basetype = type.get_base_type();
-
-		if(basetype == base_type::k_internal_undefined){
-			return value_t::make_undefined();
-		}
-		else if(basetype == base_type::k_internal_dynamic){
-			return value_t::make_internal_dynamic();
-		}
-		else if(basetype == base_type::k_void){
-			return value_t::make_void();
-		}
-		else if(basetype == base_type::k_bool){
-			return value_t::make_bool(value.get_bool_value());
-		}
-		else if(basetype == base_type::k_int){
-			return value_t::make_int(value.get_int_value());
-		}
-		else if(basetype == base_type::k_float){
-			return value_t::make_float(value.get_float_value());
-		}
-		else if(basetype == base_type::k_string){
-			return value_t::make_string(value.get_string_value());
-		}
-		else if(basetype == base_type::k_json_value){
-			return value_t::make_json_value(value.get_json_value());
-		}
-		else if(basetype == base_type::k_typeid){
-			return value_t::make_typeid_value(value.get_typeid_value());
-		}
-		else if(basetype == base_type::k_struct){
-			const auto& struct_def = type.get_struct();
-			const auto& members = value.get_struct_value();
-			std::vector<value_t> members2;
-			for(int i = 0 ; i < members.size() ; i++){
-				const auto& member_type = struct_def._members[i]._type;
-				const auto& member_value = members[i];
-				const auto& member_value2 = bc_to_value(member_value, member_type);
-				members2.push_back(member_value2);
-			}
-			return value_t::make_struct_value(type, members2);
-		}
-		else if(basetype == base_type::k_vector){
-			const auto& element_type  = type.get_vector_element_type();
-			return value_t::make_vector_value(element_type, bcs_to_values__same_types(*value.get_vector_value(), element_type));
-		}
-		else if(basetype == base_type::k_dict){
-			const auto value_type = type.get_dict_value_type();
-			const auto entries = value.get_dict_value();
-			std::map<std::string, value_t> entries2;
-			for(const auto& e: entries){
-				entries2.insert({e.first, bc_to_value(e.second, value_type)});
-			}
-			return value_t::make_dict_value(value_type, entries2);
-		}
-		else if(basetype == base_type::k_function){
-			return value_t::make_function_value(type, value.get_function_value());
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-
-	bc_value_t value_to_bc(const value_t& value){
-		QUARK_ASSERT(value.check_invariant());
-
-		const auto basetype = value.get_basetype();
-		if(basetype == base_type::k_internal_undefined){
-			return bc_value_t::make_undefined();
-		}
-		else if(basetype == base_type::k_internal_dynamic){
-			return bc_value_t::make_internal_dynamic();
-		}
-		else if(basetype == base_type::k_void){
-			return bc_value_t::make_void();
-		}
-		else if(basetype == base_type::k_bool){
-			return bc_value_t::make_bool(value.get_bool_value());
-		}
-		else if(basetype == base_type::k_bool){
-			return bc_value_t::make_bool(value.get_bool_value());
-		}
-		else if(basetype == base_type::k_int){
-			return bc_value_t::make_int(value.get_int_value());
-		}
-		else if(basetype == base_type::k_float){
-			return bc_value_t::make_float(value.get_float_value());
-		}
-
-		else if(basetype == base_type::k_string){
-			return bc_value_t::make_string(value.get_string_value());
-		}
-		else if(basetype == base_type::k_json_value){
-			return bc_value_t::make_json_value(value.get_json_value());
-		}
-		else if(basetype == base_type::k_typeid){
-			return bc_value_t::make_typeid_value(value.get_typeid_value());
-		}
-		else if(basetype == base_type::k_struct){
-			return bc_value_t::make_struct_value(value.get_type(), values_to_bcs(value.get_struct_value()->_member_values));
-		}
-
-		else if(basetype == base_type::k_vector){
-			return bc_value_t::make_vector_value(value.get_type().get_vector_element_type(), values_to_bcs(value.get_vector_value()));
-		}
-		else if(basetype == base_type::k_dict){
-			const auto elements = value.get_dict_value();
-			std::map<std::string, bc_value_t> entries2;
-			for(const auto e: elements){
-				entries2.insert({e.first, value_to_bc(e.second)});
-			}
-			return bc_value_t::make_dict_value(value.get_type().get_dict_value_type(), entries2);
-		}
-		else if(basetype == base_type::k_function){
-			return bc_value_t::make_function_value(value.get_type(), value.get_function_value());
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	}
-
-
-/*
-	std::string to_compact_string2(const bc_value_t& value) {
-		QUARK_ASSERT(value.check_invariant());
-
-		return "xxyyzz";
-//		return to_compact_string2(value._backstore);
-	}
-*/
-
 
 //////////////////////////////////////////		COMPARE
 
 
-	inline int bc_limit(int value, int min, int max){
-		if(value < min){
-			return min;
-		}
-		else if(value > max){
-			return max;
-		}
-		else{
-			return value;
-		}
+inline int bc_limit(int value, int min, int max){
+	if(value < min){
+		return min;
 	}
+	else if(value > max){
+		return max;
+	}
+	else{
+		return value;
+	}
+}
 
 int bc_compare_string(const std::string& left, const std::string& right){
 	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
@@ -310,6 +155,7 @@ QUARK_UNIT_TESTQ("bc_compare_string()", ""){
 QUARK_UNIT_TESTQ("bc_compare_string()", ""){
 	QUARK_TEST_VERIFY(bc_compare_string("b", "a") == 1);
 }
+
 
 //??? Slow!.
 int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const typeid_t& type){
@@ -354,10 +200,8 @@ int bc_compare_vector_true_deep(const std::vector<bc_value_t>& left, const std::
 
 template <typename Map>
 bool bc_map_compare (Map const &lhs, Map const &rhs) {
-    // No predicate needed because there is operator== for pairs already.
-    return lhs.size() == rhs.size()
-        && std::equal(lhs.begin(), lhs.end(),
-                      rhs.begin());
+	// No predicate needed because there is operator== for pairs already.
+	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right, const typeid_t& type){
@@ -452,31 +296,14 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 	}
 	else if(type.is_struct()){
 		//	Make sure the EXACT struct types are the same -- not only that they are both structs
-//		if(left.get_type() != right.get_type()){
-//			throw std::runtime_error("Cannot compare structs of different type.");
-//		}
-
-/*
-		//	Shortcut: same obejct == we know values are same without having to check them.
-		if(left.get_struct_value() == right.get_struct_value()){
-			return 0;
-		}
-		else{
-*/
-			return bc_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value(), type0);
-//		}
+		return bc_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value(), type0);
 	}
 	else if(type.is_vector()){
-		//	Make sure the EXACT types are the same -- not only that they are both vectors.
-//		if(left.get_type() != right.get_type()){
-
 		const auto& left_vec = left.get_vector_value();
 		const auto& right_vec = right.get_vector_value();
 		return bc_compare_vector_true_deep(*left_vec, *right_vec, type0);
 	}
 	else if(type.is_dict()){
-		//	Make sure the EXACT types are the same -- not only that they are both dicts.
-//		if(left.get_type() != right.get_type()){
 		const auto& left2 = left.get_dict_value();
 		const auto& right2 = right.get_dict_value();
 		return bc_compare_dict_true_deep(left2, right2, type0);
@@ -490,7 +317,6 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		throw std::exception();
 	}
 }
-
 
 extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
@@ -574,6 +400,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 };
 
+
 //??? Use enum with register / immediate / unused.
 
 reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
@@ -649,6 +476,7 @@ bool bc_instruction_t::check_invariant() const {
 	return true;
 }
 #endif
+
 
 //////////////////////////////////////////		bc_frame_t
 
@@ -861,16 +689,16 @@ inline const bc_function_definition_t& get_function_def(const interpreter_t& vm,
 }
 
 
-//??? split into bc_types_value_t thae lives here, and value_t based for floyd_interpreter.
-value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+//??? Use bc_value_t:s instead -- types are known via function-signature.
+bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, const bc_typed_value_t args[], int arg_count){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
-	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
-	QUARK_ASSERT(f.is_function());
+	for(int i = 0 ; i < arg_count ; i++){ QUARK_ASSERT(args[i].check_invariant()); };
+	QUARK_ASSERT(f._type.is_function());
 #endif
 
-	const auto& function_def = get_function_def(vm, f.get_function_value());
+	const auto& function_def = get_function_def(vm, f._value.get_function_value());
 	if(function_def._host_function_id != 0){
 		const auto host_function_id = function_def._host_function_id;
 		QUARK_ASSERT(host_function_id >= 0);
@@ -879,22 +707,19 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 
 		//	arity
 	//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
-		vector<bc_typed_value_t> args2;
-		for(const auto& e: args){
-			args2.push_back(bc_typed_value_t{value_to_bc(e), e.get_type()});
-		}
-		const auto& result = (host_function)(vm, &args2[0], static_cast<int>(args.size()));
-		return bc_to_value(result._value,result._type);
+
+		const auto& result = (host_function)(vm, &args[0], arg_count);
+		return result;
 	}
 	else{
 #if DEBUG
-		const auto& arg_types = f.get_type().get_function_args();
+		const auto& arg_types = f._type.get_function_args();
 
 		//	arity
-		QUARK_ASSERT(args.size() == arg_types.size());
+		QUARK_ASSERT(arg_count == arg_types.size());
 
-		for(int i = 0 ; i < args.size() ; i++){
-			if(args[i].get_type() != arg_types[i]){
+		for(int i = 0 ; i < arg_count; i++){
+			if(args[i]._type != arg_types[i]){
 				QUARK_ASSERT(false);
 			}
 		}
@@ -905,24 +730,24 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 		//??? use exts-info inside function_def.
 		//	We push the values to the stack = the stack will take RC ownership of the values.
 		vector<bool> exts;
-		for(int i = 0 ; i < args.size() ; i++){
-			const auto bc = value_to_bc(args[i]);
-			bool is_ext = bc_value_t::is_bc_ext(args[i].get_basetype());
+		for(int i = 0 ; i < arg_count ; i++){
+			const auto& bc = args[i]._value;
+			bool is_ext = bc_value_t::is_bc_ext(args[i]._type.get_base_type());
 			exts.push_back(is_ext);
 			vm._stack.push_value(bc, is_ext);
 		}
 
-		vm._stack.open_frame(*function_def._frame_ptr, static_cast<int>(args.size()));
+		vm._stack.open_frame(*function_def._frame_ptr, arg_count);
 		const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
 		vm._stack.close_frame(*function_def._frame_ptr);
 		vm._stack.pop_batch(exts);
 		vm._stack.restore_frame();
 
 		if(vm._imm->_program._types[result.first].is_void() == false){
-			return bc_to_value(result.second, f.get_type().get_function_return());
+			return { result.second, f._type.get_function_return() };
 		}
 		else{
-			return value_t::make_undefined();
+			return { bc_value_t::make_undefined(), typeid_t::make_void() };
 		}
 	}
 }
@@ -1269,7 +1094,6 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 #endif
 
 
-//??? use type of the register/frame, not the instruction!! Fix for all instructions!
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
 
@@ -1291,11 +1115,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 	int pc = 0;
 	while(true){
-/*
-		if(pc == instruction_count){
-			return { false, bc_value_t::make_undefined() };
-		}
-*/
 		ASSERT(pc >= 0);
 		ASSERT(pc < instructions.size());
 		const auto i = instructions[pc];
@@ -1486,7 +1305,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			uint32_t bits = extbits;
 			int pos = static_cast<int>(stack._stack_size) - 1;
-			for(int i = 0 ; i < n ; i++){
+			for(int m = 0 ; m < n ; m++){
 				bool ext = (bits & 1) ? true : false;
 
 				ASSERT(bc_value_t::is_bc_ext(stack._debug_types.back().get_base_type()) == ext);
@@ -1751,8 +1570,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
 				const auto function_def_arg_count = function_def._args.size();
 				std::vector<value_t> arg_values;
-				for(int i = 0 ; i < function_def_arg_count ; i++){
-					const auto& func_arg_type = function_def._args[i]._type;
+				for(int a = 0 ; a < function_def_arg_count ; a++){
+					const auto& func_arg_type = function_def._args[a]._type;
 					if(func_arg_type.is_internal_dynamic()){
 						const auto arg_itype = stack.load_intq(stack_pos);
 						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));

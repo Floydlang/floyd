@@ -25,6 +25,156 @@ using std::shared_ptr;
 using std::make_shared;
 
 
+
+
+
+//////////////////////////////////////		value_t -- helpers
+
+
+std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(bc_to_value(e, shared_type));
+	}
+	return result;
+}
+
+std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+	std::vector<bc_value_t> result;
+	for(const auto e: values){
+		result.push_back(value_to_bc(e));
+	}
+	return result;
+}
+
+value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto basetype = type.get_base_type();
+
+	if(basetype == base_type::k_internal_undefined){
+		return value_t::make_undefined();
+	}
+	else if(basetype == base_type::k_internal_dynamic){
+		return value_t::make_internal_dynamic();
+	}
+	else if(basetype == base_type::k_void){
+		return value_t::make_void();
+	}
+	else if(basetype == base_type::k_bool){
+		return value_t::make_bool(value.get_bool_value());
+	}
+	else if(basetype == base_type::k_int){
+		return value_t::make_int(value.get_int_value());
+	}
+	else if(basetype == base_type::k_float){
+		return value_t::make_float(value.get_float_value());
+	}
+	else if(basetype == base_type::k_string){
+		return value_t::make_string(value.get_string_value());
+	}
+	else if(basetype == base_type::k_json_value){
+		return value_t::make_json_value(value.get_json_value());
+	}
+	else if(basetype == base_type::k_typeid){
+		return value_t::make_typeid_value(value.get_typeid_value());
+	}
+	else if(basetype == base_type::k_struct){
+		const auto& struct_def = type.get_struct();
+		const auto& members = value.get_struct_value();
+		std::vector<value_t> members2;
+		for(int i = 0 ; i < members.size() ; i++){
+			const auto& member_type = struct_def._members[i]._type;
+			const auto& member_value = members[i];
+			const auto& member_value2 = bc_to_value(member_value, member_type);
+			members2.push_back(member_value2);
+		}
+		return value_t::make_struct_value(type, members2);
+	}
+	else if(basetype == base_type::k_vector){
+		const auto& element_type  = type.get_vector_element_type();
+		return value_t::make_vector_value(element_type, bcs_to_values__same_types(*value.get_vector_value(), element_type));
+	}
+	else if(basetype == base_type::k_dict){
+		const auto value_type = type.get_dict_value_type();
+		const auto entries = value.get_dict_value();
+		std::map<std::string, value_t> entries2;
+		for(const auto& e: entries){
+			entries2.insert({e.first, bc_to_value(e.second, value_type)});
+		}
+		return value_t::make_dict_value(value_type, entries2);
+	}
+	else if(basetype == base_type::k_function){
+		return value_t::make_function_value(type, value.get_function_value());
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+bc_value_t value_to_bc(const value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto basetype = value.get_basetype();
+	if(basetype == base_type::k_internal_undefined){
+		return bc_value_t::make_undefined();
+	}
+	else if(basetype == base_type::k_internal_dynamic){
+		return bc_value_t::make_internal_dynamic();
+	}
+	else if(basetype == base_type::k_void){
+		return bc_value_t::make_void();
+	}
+	else if(basetype == base_type::k_bool){
+		return bc_value_t::make_bool(value.get_bool_value());
+	}
+	else if(basetype == base_type::k_bool){
+		return bc_value_t::make_bool(value.get_bool_value());
+	}
+	else if(basetype == base_type::k_int){
+		return bc_value_t::make_int(value.get_int_value());
+	}
+	else if(basetype == base_type::k_float){
+		return bc_value_t::make_float(value.get_float_value());
+	}
+
+	else if(basetype == base_type::k_string){
+		return bc_value_t::make_string(value.get_string_value());
+	}
+	else if(basetype == base_type::k_json_value){
+		return bc_value_t::make_json_value(value.get_json_value());
+	}
+	else if(basetype == base_type::k_typeid){
+		return bc_value_t::make_typeid_value(value.get_typeid_value());
+	}
+	else if(basetype == base_type::k_struct){
+		return bc_value_t::make_struct_value(value.get_type(), values_to_bcs(value.get_struct_value()->_member_values));
+	}
+
+	else if(basetype == base_type::k_vector){
+		return bc_value_t::make_vector_value(value.get_type().get_vector_element_type(), values_to_bcs(value.get_vector_value()));
+	}
+	else if(basetype == base_type::k_dict){
+		const auto elements = value.get_dict_value();
+		std::map<std::string, bc_value_t> entries2;
+		for(const auto e: elements){
+			entries2.insert({e.first, value_to_bc(e.second)});
+		}
+		return bc_value_t::make_dict_value(value.get_type().get_dict_value_type(), entries2);
+	}
+	else if(basetype == base_type::k_function){
+		return bc_value_t::make_function_value(value.get_type(), value.get_function_value());
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+
+
 #if 0
 bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
 	QUARK_ASSERT(vm.check_invariant());
@@ -150,6 +300,24 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 	else{
 		return bc_to_value(result->_value, result->_symbol._value_type);
 	}
+}
+
+value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+#if DEBUG
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+	QUARK_ASSERT(f.is_function());
+#endif
+
+	const auto f2 = bc_typed_value_t{ value_to_bc(f), f.get_type() };
+	vector<bc_typed_value_t> args2;
+	for(const auto& e: args){
+		args2.push_back(bc_typed_value_t{value_to_bc(e), e.get_type()});
+	}
+
+	const auto result = call_function_bc(vm, f2, &args2[0], static_cast<int>(args2.size()));
+	return bc_to_value(result._value, result._type);
 }
 
 bc_program_t compile_to_bytecode(const interpreter_context_t& context, const string& program){
