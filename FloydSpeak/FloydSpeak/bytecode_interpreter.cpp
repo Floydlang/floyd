@@ -866,7 +866,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 		vm._stack.pop_batch(exts);
 		vm._stack.restore_frame();
 
-		if(result.first){
+		if(vm._imm->_program._types[result.first].is_void() == false){
 			return bc_to_value(result.second, f.get_type().get_function_return());
 		}
 		else{
@@ -1148,7 +1148,7 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
 
-std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
+std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	ASSERT(vm.check_invariant());
 	ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 

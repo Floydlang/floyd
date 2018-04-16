@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2C78AD40207B50AB00839E3E"
-               BuildableName = "FloydSpeak UT"
+               BuildableName = "floydut"
                BlueprintName = "FloydSpeak UT"
                ReferencedContainer = "container:FloydSpeak.xcodeproj">
             </BuildableReference>
@@ -33,7 +33,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C78AD40207B50AB00839E3E"
-            BuildableName = "FloydSpeak UT"
+            BuildableName = "floydut"
             BlueprintName = "FloydSpeak UT"
             ReferencedContainer = "container:FloydSpeak.xcodeproj">
          </BuildableReference>
@@ -56,7 +56,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C78AD40207B50AB00839E3E"
-            BuildableName = "FloydSpeak UT"
+            BuildableName = "floydut"
             BlueprintName = "FloydSpeak UT"
             ReferencedContainer = "container:FloydSpeak.xcodeproj">
          </BuildableReference>
@@ -81,7 +81,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C78AD40207B50AB00839E3E"
-            BuildableName = "FloydSpeak UT"
+            BuildableName = "floydut"
             BlueprintName = "FloydSpeak UT"
             ReferencedContainer = "container:FloydSpeak.xcodeproj">
          </BuildableReference>

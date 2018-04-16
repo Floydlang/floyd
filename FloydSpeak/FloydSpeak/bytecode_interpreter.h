@@ -1110,6 +1110,8 @@ namespace floyd {
 		//////////////////////////////////////		STATE
 
 		std::vector<bc_instruction_t> _instrs2;
+
+		//??? Optimize how we store this data for quick access + compactness.
 		std::vector<std::pair<std::string, symbol_t>> _symbols;
 		std::vector<typeid_t> _args;
 
@@ -1839,7 +1841,7 @@ namespace floyd {
 	value_t call_host_function(interpreter_t& vm, int function_id, const std::vector<value_t>& args);
 	value_t call_function(interpreter_t& vm, const value_t& f, const std::vector<value_t>& args);
 	json_t interpreter_to_json(const interpreter_t& vm);
-	std::pair<bool, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
+	std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
 
 } //	floyd
 

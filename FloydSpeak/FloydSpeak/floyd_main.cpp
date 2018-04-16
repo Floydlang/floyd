@@ -174,12 +174,50 @@ std::string get_command(){
 std::string floyd_version_string = "0.3";
 
 
+
+int handle_repl_input(floyd::interpreter_context_t& context, int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_mut, const std::string& line){
+	const auto& program1 = vm_mut->_imm->_program;
+
+	const auto blank_program = floyd::compile_to_bytecode(context, "");
+	const auto program2 = floyd::compile_to_bytecode(context, line);
+
+	//	Copy the new symbols, compared to a blank program.
+	const auto new_symbol_count = program2._globals._symbols.size() - blank_program._globals._symbols.size();
+	const auto new_symbols = std::vector<std::pair<std::string, floyd::symbol_t>>(program2._globals._symbols.end() - new_symbol_count, program2._globals._symbols.end());
+
+	const auto new_instruction_count = program2._globals._instrs2.size() - blank_program._globals._instrs2.size();
+	const auto new_instructions = std::vector<floyd::bc_instruction_t>(program2._globals._instrs2.end() - new_instruction_count, program2._globals._instrs2.end());
+
+	const auto globals2 = floyd::bc_frame_t(
+		program1._globals._instrs2,
+		program1._globals._symbols + new_symbols,
+		program1._globals._args
+	);
+
+	const auto program3 = floyd::bc_program_t{ globals2, program1._function_defs, program1._types };
+	auto imm2 = std::make_shared<floyd::interpreter_imm_t>(floyd::interpreter_imm_t{vm_mut->_imm->_start_time, program3, vm_mut->_imm->_host_functions});
+
+	vm_mut->_imm.swap(imm2);
+
+	const auto b = floyd::execute_instructions(*vm_mut, new_instructions);
+	while(print_pos < vm_mut->_print_output.size()){
+		std::cout << vm_mut->_print_output[print_pos] << std::endl;
+		print_pos++;
+	}
+	const auto return_value_type = vm_mut->_imm->_program._types[b.first];
+	if(return_value_type.is_void() == false){
+		const auto result_value = floyd::bc_to_value(b.second, return_value_type);
+		std::cout << to_compact_string2(result_value) << std::endl;
+	}
+	return print_pos;
+}
+
+
 void run_repl(){
 	init_terminal();
 
 	floyd::interpreter_context_t context{ quark::make_default_tracer() };
 
-	int print_pos = 0;
 	auto program = floyd::compile_to_bytecode(context, "");
 	auto vm = std::make_shared<floyd::interpreter_t>(program);
 
@@ -192,6 +230,7 @@ Python 2.7.10 (default, Jul 15 2017, 17:16:57)
 Type "help", "copyright", "credits" or "license" for more information.
 */
 
+	int print_pos = 0;
 	while(true){
 		try {
 			const auto line = get_command();
@@ -211,24 +250,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 				std::cout << "MIT license." << std::endl;
 			}
 			else{
-				const auto ast_json_pos = floyd::parse_statement(seq_t(line));
-				const auto statements = floyd::astjson_to_statements(
-					context._tracer,
-					floyd::ast_json_t{json_t::make_array({ast_json_pos.first._value})}
-				);
-
-/*
-//??? fix REPL!
-
-				const auto b = execute_instructions(vm, const std::vector<bc_instruction_t>& instructions);
-				while(print_pos < vm._print_output.size()){
-					std::cout << vm._print_output[print_pos] << std::endl;
-					print_pos++;
-				}
-				if(b._output.is_undefined() == false){
-					std::cout << to_compact_string2(b._output) << std::endl;
-				}
-*/
+				const auto print_pos2 = handle_repl_input(context, print_pos, vm, line);
+				print_pos = print_pos2;
 			}
 		}
 		catch(const std::runtime_error& e){
@@ -441,7 +464,7 @@ int main(int argc, const char * argv[]) {
 
 		//	Run REPL
 		else{
-			run_repl();
+//			run_repl();
 		}
 	}
 
