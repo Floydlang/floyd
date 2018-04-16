@@ -39,14 +39,14 @@ using std::pair;
 using std::shared_ptr;
 using std::make_shared;
 
-
+//??? Remove usage of value_t
 value_t flatten_to_json(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
 	value_t json_value = value_t::make_json_value(j._value);
 	return json_value;
 }
 
-
+//??? removeusage of value_t
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
 	QUARK_ASSERT(v.check_invariant());
 
@@ -161,99 +161,90 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 
 
 //	Records all output to interpreter
-value_t host__print(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__print(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("assert() requires 1 argument!");
 	}
 
 	const auto& value = args[0];
+	const auto s = to_compact_string2(bc_to_value(value._value, value._type));
+	printf("%s\n", s.c_str());
+	vm._print_output.push_back(s);
 
-#if 0
-	if(value.is_struct() && value.get_struct_value()->_def == *json_value___struct_def){
-		const auto s = json_value__to_compact_string(value);
-		vm2._print_output.push_back(s);
-	}
-	else
-#endif
-	{
-		const auto s = to_compact_string2(value);
-		printf("%s\n", s.c_str());
-		vm._print_output.push_back(s);
-	}
-
-	return value_t::make_undefined();
+	return { bc_value_t::make_undefined(), typeid_t::make_undefined() };
 }
 
-value_t host__assert(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__assert(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("assert() requires 1 argument!");
 	}
 
 	const auto& value = args[0];
-	if(value.is_bool() == false){
+	if(value._type.is_bool() == false){
 		throw std::runtime_error("First argument to assert() must be of type bool.");
 	}
-	bool ok = value.get_bool_value();
+	bool ok = value._value.get_bool_value();
 	if(!ok){
 		vm._print_output.push_back("Assertion failed.");
 		throw std::runtime_error("Floyd assertion failed.");
 	}
-	return value_t::make_undefined();
+	return { bc_value_t::make_undefined(), typeid_t::make_undefined() };
 }
 
 //	string to_string(value_t)
-value_t host__to_string(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__to_string(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("to_string() requires 1 argument!");
 	}
 
 	const auto& value = args[0];
-	const auto a = to_compact_string2(value);
-	return value_t::make_string(a);
+	const auto a = to_compact_string2(bc_to_value(value._value, value._type));
+	return { bc_value_t::make_string(a), typeid_t::make_string() };
 }
-value_t host__to_pretty_string(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__to_pretty_string(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("to_pretty_string() requires 1 argument!");
 	}
 
 	const auto& value = args[0];
-	const auto json = value_to_ast_json(value, json_tags::k_plain);
-	const auto s = json_to_pretty_string(json._value, 0, pretty_t{80, 4});
-	return value_t::make_string(s);
+	const auto json = bcvalue_to_json(value, json_tags::k_plain);
+	const auto s = json_to_pretty_string(json, 0, pretty_t{80, 4});
+	return { bc_value_t::make_string(s), typeid_t::make_string() };
 }
 
-value_t host__typeof(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__typeof(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("typeof() requires 1 argument!");
 	}
 
 	const auto& value = args[0];
-	const auto type = value.get_type();
+	const auto type = value._type;
 	const auto result = value_t::make_typeid_value(type);
-	return result;
+	return { value_to_bc(result), result.get_type() };
 }
 
-value_t host__get_time_of_day(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__get_time_of_day(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 0){
+	if(arg_count != 0){
 		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
 	}
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
 	const auto ms = elapsed_seconds.count() * 1000.0;
-	return value_t::make_int(int(ms));
+	const auto result = value_t::make_int(int(ms));
+	return { value_to_bc(result), result.get_type() };
 }
 
 QUARK_UNIT_TESTQ("sizeof(int)", ""){
@@ -274,47 +265,35 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 	//??? The update mechanism uses strings == slow.
-	value_t update_struct_member_shallow(interpreter_t& vm, const value_t& obj, const std::string& member_name, const value_t& new_value){
+	bc_typed_value_t update_struct_member_shallow(interpreter_t& vm, const bc_typed_value_t& obj, const std::string& member_name, const bc_value_t& new_value){
 		QUARK_ASSERT(obj.check_invariant());
-		QUARK_ASSERT(obj.is_struct());
+		QUARK_ASSERT(obj._type.is_struct());
 		QUARK_ASSERT(member_name.empty() == false);
 		QUARK_ASSERT(new_value.check_invariant());
 
-		const auto& struct_typeid = obj.get_type();
-		const auto& s = obj.get_struct_value();
-		const auto& struct_def = s->_def;
+		const auto& values = obj._value.get_struct_value();
+		const auto& struct_def = obj._type.get_struct();
 
-		int member_index = find_struct_member_index(*struct_def, member_name);
+		int member_index = find_struct_member_index(struct_def, member_name);
 		if(member_index == -1){
 			throw std::runtime_error("Unknown member.");
 		}
 
 #if DEBUG
+		QUARK_TRACE(typeid_to_compact_string(new_value._debug_type));
+		QUARK_TRACE(typeid_to_compact_string(struct_def._members[member_index]._type));
 
-		QUARK_TRACE(typeid_to_compact_string(new_value.get_type()));
-		QUARK_TRACE(typeid_to_compact_string(struct_def->_members[member_index]._type));
-
-		const auto dest_member_entry = struct_def->_members[member_index];
-
-/*
-		auto dest_member_resolved_type = dest_member_entry._type;
-
-		//?? why is runtime resolve needed?
-		dest_member_resolved_type = find_type_by_name(vm, dest_member_entry._type);
-
-		QUARK_ASSERT(new_value.get_type() == dest_member_resolved_type);
-*/
+		const auto dest_member_entry = struct_def._members[member_index];
 #endif
 
-		const auto& values = s->_member_values;
 		auto values2 = values;
 		values2[member_index] = new_value;
 
-		auto s2 = value_t::make_struct_value(struct_typeid, values2);
-		return s2;
+		auto s2 = bc_value_t::make_struct_value(obj._type, values2);
+		return { s2, obj._type };
 	}
 
-	value_t update_struct_member_deep(interpreter_t& vm, const value_t& obj, const std::vector<std::string>& path, const value_t& new_value){
+	bc_typed_value_t update_struct_member_deep(interpreter_t& vm, const bc_typed_value_t& obj, const std::vector<std::string>& path, const bc_value_t& new_value){
 		QUARK_ASSERT(obj.check_invariant());
 		QUARK_ASSERT(path.empty() == false);
 		QUARK_ASSERT(new_value.check_invariant());
@@ -326,25 +305,26 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 			vector<string> subpath = path;
 			subpath.erase(subpath.begin());
 
-			const auto s = obj.get_struct_value();
-			const auto def = s->_def;
-			int member_index = find_struct_member_index(*def, path[0]);
+			const auto& values = obj._value.get_struct_value();
+			const auto& struct_def = obj._type.get_struct();
+			int member_index = find_struct_member_index(struct_def, path[0]);
 			if(member_index == -1){
 				throw std::runtime_error("Unknown member.");
 			}
 
-			const auto child_value = s->_member_values[member_index];
-			if(child_value.is_struct() == false){
+			const auto& child_value = values[member_index];
+			const auto& child_type = struct_def._members[member_index]._type;
+			if(child_type.is_struct() == false){
 				throw std::runtime_error("Value type not matching struct member type.");
 			}
 
-			const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
-			const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2);
+			const auto child2 = update_struct_member_deep(vm, { child_value, child_type }, subpath, new_value);
+			const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2._value);
 			return obj2;
 		}
 	}
 
-value_t host__update(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__update(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
@@ -353,37 +333,37 @@ value_t host__update(interpreter_t& vm, const std::vector<value_t>& args){
 	const auto& lookup_key = args[1];
 	const auto& new_value = args[2];
 
-	if(args.size() != 3){
+	if(arg_count != 3){
 		throw std::runtime_error("update() needs 3 arguments.");
 	}
 	else{
-		if(obj1.is_string()){
-			if(lookup_key.is_int() == false){
+		if(obj1._type.is_string()){
+			if(lookup_key._type.is_int() == false){
 				throw std::runtime_error("String lookup using integer index only.");
 			}
 			else{
 				const auto obj = obj1;
-				const auto v = obj.get_string_value();
+				const auto v = obj._value.get_string_value();
 
-				if((new_value.get_type().is_string() && new_value.get_string_value().size() == 1) == false){
+				if((new_value._type.is_string() && new_value._value.get_string_value().size() == 1) == false){
 					throw std::runtime_error("Update element must be a 1-character string.");
 				}
 				else{
-					const int lookup_index = lookup_key.get_int_value();
+					const int lookup_index = lookup_key._value.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v.size()){
 						throw std::runtime_error("String lookup out of bounds.");
 					}
 					else{
 						string v2 = v;
-						v2[lookup_index] = new_value.get_string_value()[0];
+						v2[lookup_index] = new_value._value.get_string_value()[0];
 						const auto s2 = value_t::make_string(v2);
-						return s2;
+						return { value_to_bc(s2), s2.get_type() };
 					}
 				}
 			}
 		}
-		else if(obj1.is_json_value()){
-			const auto json_value0 = obj1.get_json_value();
+		else if(obj1._type.is_json_value()){
+			const auto json_value0 = obj1._value.get_json_value();
 			if(json_value0.is_array()){
 				assert(false);
 			}
@@ -394,66 +374,66 @@ value_t host__update(interpreter_t& vm, const std::vector<value_t>& args){
 				throw std::runtime_error("Can only update string, vector, dict or struct.");
 			}
 		}
-		else if(obj1.is_vector()){
-			if(lookup_key.is_int() == false){
+		else if(obj1._type.is_vector()){
+			if(lookup_key._type.is_int() == false){
 				throw std::runtime_error("Vector lookup using integer index only.");
 			}
 			else{
 				const auto obj = obj1;
-				auto v2 = obj.get_vector_value();
-				const auto element_type = obj.get_type().get_vector_element_type();
+				auto v2 = *obj._value.get_vector_value();
+				const auto element_type = obj._type.get_vector_element_type();
 
-				if(element_type != new_value.get_type()){
+				if(element_type != new_value._type){
 					throw std::runtime_error("Update element must match vector type.");
 				}
 				else{
-					const int lookup_index = lookup_key.get_int_value();
+					const int lookup_index = lookup_key._value.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v2.size()){
 						throw std::runtime_error("Vector lookup out of bounds.");
 					}
 					else{
-						v2[lookup_index] = new_value;
-						const auto s2 = value_t::make_vector_value(element_type, v2);
-						return s2;
+						v2[lookup_index] = new_value._value;
+						const auto s2 = bc_value_t::make_vector_value(element_type, v2);
+						return { s2, obj1._type };
 					}
 				}
 			}
 		}
-		else if(obj1.is_dict()){
-			if(lookup_key.is_string() == false){
+		else if(obj1._type.is_dict()){
+			if(lookup_key._type.is_string() == false){
 				throw std::runtime_error("Dict lookup using string key only.");
 			}
 			else{
 				const auto obj = obj1;
-				const auto entries = obj.get_dict_value();
-				const auto value_type = obj.get_type().get_dict_value_type();
-				if(value_type != new_value.get_type()){
+				const auto entries = obj._value.get_dict_value();
+				const auto value_type = obj._type.get_dict_value_type();
+				if(value_type != new_value._type){
 					throw std::runtime_error("Update element must match dict value type.");
 				}
 				else{
-					const string key = lookup_key.get_string_value();
+					const string key = lookup_key._value.get_string_value();
 					auto entries2 = entries;
-					entries2[key] = new_value;
-					const auto value2 = value_t::make_dict_value(value_type, entries2);
-					return value2;
+					entries2[key] = new_value._value;
+					const auto value2 = bc_value_t::make_dict_value(value_type, entries2);
+					return { value2, obj1._type };
 				}
 			}
 		}
-		else if(obj1.is_struct()){
-			if(lookup_key.is_string() == false){
+		else if(obj1._type.is_struct()){
+			if(lookup_key._type.is_string() == false){
 				throw std::runtime_error("You must specify structure member using string.");
 			}
 			else{
 				const auto obj = obj1;
 
 				//### Does simple check for "." -- we should use vector of strings instead.
-				const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value()), ".");
+				const auto nodes = split_on_chars(seq_t(lookup_key._value.get_string_value()), ".");
 				if(nodes.empty()){
 					throw std::runtime_error("You must specify structure member using string.");
 				}
 
-				const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value);
-				return s2;
+				const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value._value);
+				return { s2._value, s2._type };
 			}
 		}
 		else {
@@ -462,142 +442,133 @@ value_t host__update(interpreter_t& vm, const std::vector<value_t>& args){
 	}
 }
 
-value_t host__size(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__size(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("find requires 2 arguments");
 	}
 
 	const auto obj = args[0];
-	if(obj.is_string()){
-		const auto size = obj.get_string_value().size();
-		return value_t::make_int(static_cast<int>(size));
+	if(obj._type.is_string()){
+		const auto size = obj._value.get_string_value().size();
+		return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 	}
-	else if(obj.is_json_value()){
-		const auto value = obj.get_json_value();
+	else if(obj._type.is_json_value()){
+		const auto value = obj._value.get_json_value();
 		if(value.is_object()){
 			const auto size = value.get_object_size();
-			return value_t::make_int(static_cast<int>(size));
+			return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 		}
 		else if(value.is_array()){
 			const auto size = value.get_array_size();
-			return value_t::make_int(static_cast<int>(size));
+			return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 		}
 		else if(value.is_string()){
 			const auto size = value.get_string().size();
-			return value_t::make_int(static_cast<int>(size));
+			return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 		}
 		else{
 			throw std::runtime_error("Calling size() on unsupported type of value.");
 		}
 	}
-	else if(obj.is_vector()){
-		const auto size = obj.get_vector_value().size();
-		return value_t::make_int(static_cast<int>(size));
+	else if(obj._type.is_vector()){
+		const auto size = obj._value.get_vector_value()->size();
+		return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 	}
-	else if(obj.is_dict()){
-		const auto size = obj.get_dict_value().size();
-		return value_t::make_int(static_cast<int>(size));
+	else if(obj._type.is_dict()){
+		const auto size = obj._value.get_dict_value().size();
+		return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 	}
 	else{
 		throw std::runtime_error("Calling size() on unsupported type of value.");
 	}
 }
 
-value_t host__find(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__find(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 2){
+	if(arg_count != 2){
 		throw std::runtime_error("find requires 2 arguments");
 	}
 
 	const auto obj = args[0];
 	const auto wanted = args[1];
 
-	if(obj.is_string()){
-		const auto str = obj.get_string_value();
-		const auto wanted2 = wanted.get_string_value();
+	if(obj._type.is_string()){
+		const auto str = obj._value.get_string_value();
+		const auto wanted2 = wanted._value.get_string_value();
 
 		const auto r = str.find(wanted2);
-		if(r == std::string::npos){
-			return value_t::make_int(static_cast<int>(-1));
-		}
-		else{
-			return value_t::make_int(static_cast<int>(r));
-		}
+		int result = r == std::string::npos ? -1 : static_cast<int>(r);
+		return { bc_value_t::make_int(result), typeid_t::make_int() };
 	}
-	else if(obj.is_vector()){
-		const auto vec = obj.get_vector_value();
-		const auto element_type = obj.get_type().get_vector_element_type();
-		if(wanted.get_type() != element_type){
+	else if(obj._type.is_vector()){
+		const auto& vec = *obj._value.get_vector_value();
+		const auto element_type = obj._type.get_vector_element_type();
+		if(wanted._type != element_type){
 			throw std::runtime_error("Type mismatch.");
 		}
 		const auto size = vec.size();
 		int index = 0;
-		while(index < size && vec[index] != wanted){
+		while(index < size && bc_compare_value_true_deep(vec[index], wanted._value, element_type) != 0){
 			index++;
 		}
-		if(index == size){
-			return value_t::make_int(static_cast<int>(-1));
-		}
-		else{
-			return value_t::make_int(static_cast<int>(index));
-		}
+
+		int result = index == size ? -1 : static_cast<int>(index);
+		return { bc_value_t::make_int(result), typeid_t::make_int() };
 	}
 	else{
 		throw std::runtime_error("Calling find() on unsupported type of value.");
 	}
 }
 
-value_t host__exists(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__exists(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 2){
+	if(arg_count != 2){
 		throw std::runtime_error("find requires 2 arguments");
 	}
 
 	const auto obj = args[0];
 	const auto key = args[1];
 
-	if(obj.is_dict()){
-		if(key.get_type().is_string() == false){
+	if(obj._type.is_dict()){
+		if(key._type.is_string() == false){
 			throw std::runtime_error("Key must be string.");
 		}
-		const auto key_string = key.get_string_value();
-		const auto entries = obj.get_dict_value();
+		const auto key_string = key._value.get_string_value();
+		const auto entries = obj._value.get_dict_value();
 
 		const auto found_it = entries.find(key_string);
 		const bool exists = found_it != entries.end();
-		return value_t::make_bool(exists);
+		return { bc_value_t::make_bool(exists), typeid_t::make_bool() };
 	}
 	else{
 		throw std::runtime_error("Calling exist() on unsupported type of value.");
 	}
 }
 
-value_t host__erase(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__erase(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 2){
+	if(arg_count != 2){
 		throw std::runtime_error("find requires 2 arguments");
 	}
 
 	const auto obj = args[0];
 	const auto key = args[1];
 
-	if(obj.is_dict()){
-		if(key.get_type().is_string() == false){
+	if(obj._type.is_dict()){
+		if(key._type.is_string() == false){
 			throw std::runtime_error("Key must be string.");
 		}
-		const auto key_string = key.get_string_value();
-		const auto entries = obj.get_dict_value();
-
-		std::map<string, value_t> entries2 = entries;
+		const auto key_string = key._value.get_string_value();
+		auto entries2 = obj._value.get_dict_value();
 		entries2.erase(key_string);
-		const auto value_type = obj.get_type().get_dict_value_type();
-		const auto value2 = value_t::make_dict_value(value_type, entries2);
-		return value2;
+		const auto value_type = obj._type.get_dict_value_type();
+		const auto value2 = bc_value_t::make_dict_value(value_type, entries2);
+		return { value2, obj._type };
 	}
 	else{
 		throw std::runtime_error("Calling exist() on unsupported type of value.");
@@ -606,33 +577,31 @@ value_t host__erase(interpreter_t& vm, const std::vector<value_t>& args){
 
 
 //	assert(push_back(["one","two"], "three") == ["one","two","three"])
-value_t host__push_back(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__push_back(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 2){
+	if(arg_count != 2){
 		throw std::runtime_error("find requires 2 arguments");
 	}
 
 	const auto obj = args[0];
 	const auto element = args[1];
-	if(obj.is_string()){
-		const auto str = obj.get_string_value();
-		const auto ch = element.get_string_value();
-
+	if(obj._type.is_string()){
+		const auto str = obj._value.get_string_value();
+		const auto ch = element._value.get_string_value();
 		auto str2 = str + ch;
-		const auto v = value_t::make_string(str2);
-		return v;
+		return { bc_value_t::make_string(str2), typeid_t::make_string() };
 	}
-	else if(obj.is_vector()){
-		const auto vec = obj.get_vector_value();
-		const auto element_type = obj.get_type().get_vector_element_type();
-		if(element.get_type() != element_type){
+	else if(obj._type.is_vector()){
+		const auto vec = *obj._value.get_vector_value();
+		const auto element_type = obj._type.get_vector_element_type();
+		if(element._type != element_type){
 			throw std::runtime_error("Type mismatch.");
 		}
 		auto elements2 = vec;
-		elements2.push_back(element);
-		const auto v = value_t::make_vector_value(element_type, elements2);
-		return v;
+		elements2.push_back(element._value);
+		const auto v = bc_value_t::make_vector_value(element_type, elements2);
+		return { v, obj._type };
 	}
 	else{
 		throw std::runtime_error("Calling push_back() on unsupported type of value.");
@@ -640,27 +609,27 @@ value_t host__push_back(interpreter_t& vm, const std::vector<value_t>& args){
 }
 
 //	assert(subset("abc", 1, 3) == "bc");
-value_t host__subset(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__subset(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 3){
+	if(arg_count != 3){
 		throw std::runtime_error("subset() requires 3 arguments");
 	}
 
 	const auto obj = args[0];
 
-	if(args[1].is_int() == false || args[2].is_int() == false){
+	if(args[1]._type.is_int() == false || args[2]._type.is_int() == false){
 		throw std::runtime_error("subset() requires start and end to be integers.");
 	}
 
-	const auto start = args[1].get_int_value();
-	const auto end = args[2].get_int_value();
+	const auto start = args[1]._value.get_int_value();
+	const auto end = args[2]._value.get_int_value();
 	if(start < 0 || end < 0){
 		throw std::runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	if(obj.is_string()){
-		const auto str = obj.get_string_value();
+	if(obj._type.is_string()){
+		const auto str = obj._value.get_string_value();
 		const auto start2 = std::min(start, static_cast<int>(str.size()));
 		const auto end2 = std::min(end, static_cast<int>(str.size()));
 
@@ -668,20 +637,20 @@ value_t host__subset(interpreter_t& vm, const std::vector<value_t>& args){
 		for(int i = start2 ; i < end2 ; i++){
 			str2.push_back(str[i]);
 		}
-		const auto v = value_t::make_string(str2);
-		return v;
+		const auto v = bc_value_t::make_string(str2);
+		return { v, obj._type };
 	}
-	else if(obj.is_vector()){
-		const auto vec = obj.get_vector_value();
-		const auto element_type = obj.get_type().get_vector_element_type();
+	else if(obj._type.is_vector()){
+		const auto vec = *obj._value.get_vector_value();
+		const auto element_type = obj._type.get_vector_element_type();
 		const auto start2 = std::min(start, static_cast<int>(vec.size()));
 		const auto end2 = std::min(end, static_cast<int>(vec.size()));
-		vector<value_t> elements2;
+		vector<bc_value_t> elements2;
 		for(int i = start2 ; i < end2 ; i++){
 			elements2.push_back(vec[i]);
 		}
-		const auto v = value_t::make_vector_value(element_type, elements2);
-		return v;
+		const auto v = bc_value_t::make_vector_value(element_type, elements2);
+		return { v, obj._type };
 	}
 	else{
 		throw std::runtime_error("Calling push_back() on unsupported type of value.");
@@ -690,65 +659,64 @@ value_t host__subset(interpreter_t& vm, const std::vector<value_t>& args){
 
 
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
-value_t host__replace(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__replace(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 4){
+	if(arg_count != 4){
 		throw std::runtime_error("replace() requires 4 arguments");
 	}
 
 	const auto obj = args[0];
 
-	if(args[1].is_int() == false || args[2].is_int() == false){
+	if(args[1]._type.is_int() == false || args[2]._type.is_int() == false){
 		throw std::runtime_error("replace() requires start and end to be integers.");
 	}
 
-	const auto start = args[1].get_int_value();
-	const auto end = args[2].get_int_value();
+	const auto start = args[1]._value.get_int_value();
+	const auto end = args[2]._value.get_int_value();
 	if(start < 0 || end < 0){
 		throw std::runtime_error("replace() requires start and end to be non-negative.");
 	}
-	if(args[3].get_type() != args[0].get_type()){
+	if(args[3]._type != args[0]._type){
 		throw std::runtime_error("replace() requires 4th arg to be same as argument 0.");
 	}
 
-	if(obj.is_string()){
-		const auto str = obj.get_string_value();
+	if(obj._type.is_string()){
+		const auto str = obj._value.get_string_value();
 		const auto start2 = std::min(start, static_cast<int>(str.size()));
 		const auto end2 = std::min(end, static_cast<int>(str.size()));
-		const auto new_bits = args[3].get_string_value();
+		const auto new_bits = args[3]._value.get_string_value();
 
 		string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
-		const auto v = value_t::make_string(str2);
-		return v;
+		const auto v = bc_value_t::make_string(str2);
+		return { v, obj._type };
 	}
-	else if(obj.is_vector()){
-		const auto vec = obj.get_vector_value();
-		const auto element_type = obj.get_type().get_vector_element_type();
+	else if(obj._type.is_vector()){
+		const auto& vec = *obj._value.get_vector_value();
+		const auto element_type = obj._type.get_vector_element_type();
 		const auto start2 = std::min(start, static_cast<int>(vec.size()));
 		const auto end2 = std::min(end, static_cast<int>(vec.size()));
-		const auto new_bits = args[3].get_vector_value();
+		const auto& new_bits = *args[3]._value.get_vector_value();
 
-
-		const auto string_left = vector<value_t>(vec.begin(), vec.begin() + start2);
-		const auto string_right = vector<value_t>(vec.begin() + end2, vec.end());
+		const auto string_left = vector<bc_value_t>(vec.begin(), vec.begin() + start2);
+		const auto string_right = vector<bc_value_t>(vec.begin() + end2, vec.end());
 
 		auto result = string_left;
 		result.insert(result.end(), new_bits.begin(), new_bits.end());
 		result.insert(result.end(), string_right.begin(), string_right.end());
 
-		const auto v = value_t::make_vector_value(element_type, result);
-		return v;
+		const auto v = bc_value_t::make_vector_value(element_type, result);
+		return { v, obj._type };
 	}
 	else{
 		throw std::runtime_error("Calling replace() on unsupported type of value.");
 	}
 }
 
-value_t host__get_env_path(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__get_env_path(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 0){
+	if(arg_count != 0){
 		throw std::runtime_error("get_env_path() requires 0 arguments!");
 	}
 
@@ -756,20 +724,21 @@ value_t host__get_env_path(interpreter_t& vm, const std::vector<value_t>& args){
     const std::string env_path(homeDir);
 //	const std::string env_path = "~/Desktop/";
 
-	return value_t::make_string(env_path);
+	const auto v = bc_value_t::make_string(env_path);
+	return { v, typeid_t::make_string() };
 }
 
-value_t host__read_text_file(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__read_text_file(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("read_text_file() requires 1 arguments!");
 	}
-	if(args[0].is_string() == false){
+	if(args[0]._type.is_string() == false){
 		throw std::runtime_error("read_text_file() requires a file path as a string.");
 	}
 
-	const string source_path = args[0].get_string_value();
+	const string source_path = args[0]._value.get_string_value();
 	std::string file_contents;
 	{
 		std::ifstream f (source_path);
@@ -782,143 +751,136 @@ value_t host__read_text_file(interpreter_t& vm, const std::vector<value_t>& args
 		}
 		f.close();
 	}
-	return value_t::make_string(file_contents);
+	const auto v = bc_value_t::make_string(file_contents);
+	return { v, typeid_t::make_string() };
 }
 
-value_t host__write_text_file(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__write_text_file(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 2){
+	if(arg_count != 2){
 		throw std::runtime_error("write_text_file() requires 2 arguments!");
 	}
-	else if(args[0].is_string() == false){
+	else if(args[0]._type.is_string() == false){
 		throw std::runtime_error("write_text_file() requires a file path as a string.");
 	}
-	else if(args[1].is_string() == false){
+	else if(args[1]._type.is_string() == false){
 		throw std::runtime_error("write_text_file() requires a file path as a string.");
 	}
 	else{
-		const string path = args[0].get_string_value();
-		const string file_contents = args[1].get_string_value();
+		const string path = args[0]._value.get_string_value();
+		const string file_contents = args[1]._value.get_string_value();
 
 		std::ofstream outputFile;
 		outputFile.open(path);
 		outputFile << file_contents;
 		outputFile.close();
-		return value_t();
+		return { bc_value_t(), typeid_t::make_void() };
 	}
 }
 
 /*
 	Reads json from a text string, returning an unpacked json_value.
 */
-value_t host__decode_json(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__decode_json(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("decode_json_value() requires 1 argument!");
 	}
-	else if(args[0].is_string() == false){
+	else if(args[0]._type.is_string() == false){
 		throw std::runtime_error("decode_json_value() requires string argument.");
 	}
 	else{
-		const string s = args[0].get_string_value();
+		const string s = args[0]._value.get_string_value();
 		std::pair<json_t, seq_t> result = parse_json(seq_t(s));
-		value_t json_value = value_t::make_json_value(result.first);
-		return json_value;
+		const auto json_value = bc_value_t::make_json_value(result.first);
+		return { json_value, typeid_t::make_json_value() };
 	}
 }
 
-value_t host__encode_json(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__encode_json(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("encode_json() requires 1 argument!");
 	}
-	else if(args[0].is_json_value()== false){
+	else if(args[0]._type.is_json_value()== false){
 		throw std::runtime_error("encode_json() requires argument to be json_value.");
 	}
 	else{
-		const auto value0 = args[0].get_json_value();
+		const auto value0 = args[0]._value.get_json_value();
 		const string s = json_to_compact_string(value0);
-
-		return value_t::make_string(s);
+		return { bc_value_t::make_string(s), typeid_t::make_string() };
 	}
 }
 
 
-value_t host__flatten_to_json(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__flatten_to_json(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("flatten_to_json() requires 1 argument!");
 	}
 	else{
 		const auto value = args[0];
-		const auto result = flatten_to_json(value);
-		return result;
+		const auto value2 = bc_to_value(args[0]._value, args[0]._type);
+		const auto result = flatten_to_json(value2);
+		return { value_to_bc(result), result.get_type() };
 	}
 }
 
-value_t host__unflatten_from_json(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__unflatten_from_json(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 2){
+	if(arg_count != 2){
 		throw std::runtime_error("unflatten_from_json() requires 2 argument!");
 	}
-	else if(args[0].is_json_value() == false){
+	else if(args[0]._type.is_json_value() == false){
 		throw std::runtime_error("unflatten_from_json() requires string argument.");
 	}
-	else if(args[1].is_typeid()== false){
+	else if(args[1]._type.is_typeid()== false){
 		throw std::runtime_error("unflatten_from_json() requires string argument.");
 	}
 	else{
-		const auto json_value = args[0].get_json_value();
-		const auto target_type = args[1].get_typeid_value();
-		const auto value = unflatten_json_to_specific_type(json_value, target_type);
-		return value;
+		const auto json_value = args[0]._value.get_json_value();
+		const auto target_type = args[1]._value.get_typeid_value();
+		const auto result = unflatten_json_to_specific_type(json_value, target_type);
+		return { value_to_bc(result), result.get_type() };
 	}
 }
 
-value_t host__get_json_type(interpreter_t& vm, const std::vector<value_t>& args){
+bc_typed_value_t host__get_json_type(interpreter_t& vm, const bc_typed_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(args.size() != 1){
+	if(arg_count != 1){
 		throw std::runtime_error("get_json_type() requires 1 argument!");
 	}
-	else if(args[0].is_json_value() == false){
+	else if(args[0]._type.is_json_value() == false){
 		throw std::runtime_error("get_json_type() requires json_value argument.");
 	}
 	else{
-		const auto json_value = args[0].get_json_value();
-
+		const auto json_value = args[0]._value.get_json_value();
 		if(json_value.is_object()){
-			return value_t::make_int(1);
-//			return { vm, value_t::make_typeid_value(typeid_t::make_dict(typeid_t::make_json_value())) };
+			return { bc_value_t::make_int(1), typeid_t::make_int() };
 		}
 		else if(json_value.is_array()){
-			return value_t::make_int(2);
-//			return { vm, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_json_value())) };
+		return { bc_value_t::make_int(2), typeid_t::make_int() };
 		}
 		else if(json_value.is_string()){
-			return value_t::make_int(3);
-//			return { vm, value_t::make_typeid_value(typeid_t::make_string()) };
+		return { bc_value_t::make_int(3), typeid_t::make_int() };
 		}
 		else if(json_value.is_number()){
-			return value_t::make_int(4);
-//			return { vm, value_t::make_typeid_value(typeid_t::make_float()) };
+		return { bc_value_t::make_int(4), typeid_t::make_int() };
 		}
 		else if(json_value.is_true()){
-			return value_t::make_int(5);
-//			return { vm, value_t::make_typeid_value(typeid_t::make_bool()) };
+		return { bc_value_t::make_int(5), typeid_t::make_int() };
 		}
 		else if(json_value.is_false()){
-			return value_t::make_int(6);
-//			return { vm, value_t::make_typeid_value(typeid_t::make_bool()) };
+		return { bc_value_t::make_int(6), typeid_t::make_int() };
 		}
 		else if(json_value.is_null()){
-			return value_t::make_int(7);
-//			return { vm, value_t::make_typeid_value(typeid_t::make_undefined()) };
+		return { bc_value_t::make_int(7), typeid_t::make_int() };
 		}
 		else{
 			QUARK_ASSERT(false);
