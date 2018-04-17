@@ -1566,10 +1566,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 				int stack_pos = arg0_stack_pos;
 
-				//??? We can now access parameters using regs!
 				//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
 				const auto function_def_arg_count = function_def._args.size();
-				std::vector<value_t> arg_values;
+				std::vector<bc_typed_value_t> arg_values;
 				for(int a = 0 ; a < function_def_arg_count ; a++){
 					const auto& func_arg_type = function_def._args[a]._type;
 					if(func_arg_type.is_internal_dynamic()){
@@ -1577,25 +1576,19 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
 						const auto arg_bc = stack.load_value_slow(stack_pos + 1, arg_type);
 
-						const auto arg_value = bc_to_value(arg_bc, arg_type);
+						const auto arg_value = bc_typed_value_t{ arg_bc, arg_type };
 						arg_values.push_back(arg_value);
 						stack_pos += 2;
 					}
 					else{
 						const auto arg_bc = stack.load_value_slow(stack_pos + 0, func_arg_type);
-						const auto arg_value = bc_to_value(arg_bc, func_arg_type);
+						const auto arg_value = bc_typed_value_t{ arg_bc, func_arg_type };
 						arg_values.push_back(arg_value);
 						stack_pos++;
 					}
 				}
 
-			//??? Lots of redudant conversions
-				vector<bc_typed_value_t> args2;
-				for(const auto& e: arg_values){
-					args2.push_back(bc_typed_value_t{value_to_bc(e), e.get_type()});
-				}
-
-				const auto& result = (host_function)(vm, &args2[0], static_cast<int>(args2.size()));
+				const auto& result = (host_function)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
 				const auto bc_result = result._value;
 
 				if(function_return_type.is_void() == true){
@@ -1616,7 +1609,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				stack.open_frame(*function_def._frame_ptr, callee_arg_count);
 				const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
 				stack.close_frame(*function_def._frame_ptr);
-
 
 				//	Update our cached pointers.
 				frame_ptr = stack._current_frame_ptr;
