@@ -67,8 +67,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-
-
 //////////////////////////////////////////		COMPARE
 
 
@@ -499,7 +497,7 @@ frame_pos_t interpreter_stack_t::read_prev_frame(int frame_pos) const{
 	QUARK_ASSERT(v < frame_pos);
 	QUARK_ASSERT(v >= 0);
 
-	const auto ptr = load_frame_ptr(frame_pos - k_frame_overhead + 1);
+	const auto ptr = _entries[frame_pos - k_frame_overhead + 1]._frame_ptr;
 	QUARK_ASSERT(ptr != nullptr);
 	QUARK_ASSERT(ptr->check_invariant());
 
@@ -1195,9 +1193,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_push_intern: {
 			ASSERT(stack.check_reg_intern(i._a));
 #if DEBUG
-			const auto info = stack.get_register_info2(i._a);
-			ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
-
 			const auto debug_type = stack._debug_types[stack.get_current_frame_start() + i._a];
 #endif
 
@@ -1609,6 +1604,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto& type = frame_ptr->_symbols[i._b].second._value_type;
 			ASSERT(type.is_int() == false);
+
 			const auto left = stack.read_register(i._b);
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
@@ -1720,9 +1716,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_string(i._a));
 			ASSERT(stack.check_reg_string(i._b));
 			ASSERT(stack.check_reg_string(i._c));
-
-			//??? inline
-//			stack.write_register_string(i._a, regs[i._b]._ext->_string + regs[i._c]._ext->_string);
 
 			//	??? No need to create bc_value_t here.
 			const auto s = regs[i._b]._ext->_string + regs[i._c]._ext->_string;
