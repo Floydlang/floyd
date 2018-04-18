@@ -42,7 +42,6 @@ namespace floyd {
 
 
 
-
 	//////////////////////////////////////		bc_value_object_t
 
 	/*
@@ -1187,7 +1186,7 @@ namespace floyd {
 		4	[local2]
 
 		5	[int = 1] //	prev stack frame pos
-		1	[symbols_ptr frame #1]
+		6	[symbols_ptr frame #1]
 		7	[local1]		<- stack frame #1
 		8	[local2]
 		9	[local3]
@@ -1270,6 +1269,9 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		GLOBAL VARIABLES
+
+
 		public: bool check_global_access_obj(const int global_index) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(global_index >= 0 && global_index < (k_frame_overhead + _global_frame->_symbols.size()));
@@ -1284,7 +1286,7 @@ namespace floyd {
 		}
 
 
-		//////////////////////////////////////		FRAME & REGISTERS
+		//////////////////////////////////////		FRAMES & REGISTERS
 
 
 		private: int read_prev_frame_pos(int frame_pos) const;
@@ -1527,9 +1529,6 @@ namespace floyd {
 		}
 
 
-		//////////////////////////////////////		STACK
-
-
 		public: void save_frame(){
 			const auto frame_pos = bc_value_t::make_int(get_current_frame_start());
 			push_intern(frame_pos);
@@ -1551,29 +1550,11 @@ namespace floyd {
 		}
 
 
+
 		//////////////////////////////////////		STACK
 
 
-		public: inline void push_value(const bc_value_t& value, bool is_ext){
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(value.check_invariant());
-#if DEBUG
-			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == is_ext);
-#endif
-
-			if(is_ext){
-				value._pod._ext->_rc++;
-			}
-			_entries[_stack_size] = value._pod;
-			_stack_size++;
-#if DEBUG
-			_debug_types.push_back(value._debug_type);
-#endif
-
-			QUARK_ASSERT(check_invariant());
-		}
-
-		private: inline void push_obj(const bc_value_t& value){
+		public: inline void push_obj(const bc_value_t& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if DEBUG
@@ -1605,9 +1586,8 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-
 		//	returned value will have ownership of obj, if it's an obj.
-		public: inline bc_value_t load_value_slow(int pos, const typeid_t& type) const{
+		public: inline bc_value_t load_value(int pos, const typeid_t& type) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 			QUARK_ASSERT(type.check_invariant());
@@ -1615,7 +1595,6 @@ namespace floyd {
 
 			const auto& e = _entries[pos];
 			bool is_ext = bc_value_t::is_bc_ext(type.get_base_type());
-
 #if DEBUG
 			const auto result = bc_value_t(type, e, is_ext);
 #else
@@ -1627,6 +1606,8 @@ namespace floyd {
 		public: inline const bc_pod_value_t& load_pod(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
+			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == false);
+
 			return _entries[pos];
 		}
 		public: inline bc_value_t load_intern_value(int pos) const{
@@ -1645,7 +1626,7 @@ namespace floyd {
 		public: inline int load_intq(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types[pos].get_base_type()) == false);
+			QUARK_ASSERT(_debug_types[pos].is_int());
 
 			return _entries[pos]._int;
 		}

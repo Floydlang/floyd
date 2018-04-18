@@ -676,7 +676,12 @@ bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, 
 			const auto& bc = args[i]._value;
 			bool is_ext = bc_value_t::is_bc_ext(args[i]._type.get_base_type());
 			exts.push_back(is_ext);
-			vm._stack.push_value(bc, is_ext);
+			if(is_ext){
+				vm._stack.push_obj(bc);
+			}
+			else{
+				vm._stack.push_intern(bc);
+			}
 		}
 
 		vm._stack.open_frame(*function_def._frame_ptr, arg_count);
@@ -885,7 +890,7 @@ void execute_new_1(interpreter_t& vm, const bc_instruction_t& instruction){
 
 	const int arg0_stack_pos = vm._stack.size() - 1;
 	const auto input_value_type = lookup_full_type(vm, source_itype);
-	const auto input_value = vm._stack.load_value_slow(arg0_stack_pos + 0, input_value_type);
+	const auto input_value = vm._stack.load_value(arg0_stack_pos + 0, input_value_type);
 
 	const bc_value_t result = [&]{
 		if(target_type.is_bool() || target_type.is_int() || target_type.is_float() || target_type.is_typeid()){
@@ -911,6 +916,7 @@ void execute_new_1(interpreter_t& vm, const bc_instruction_t& instruction){
 	vm._stack.write_register(dest_reg, result);
 }
 
+
 //??? Split out instruction unpacking to client.
 //	IMPORTANT: NO arguments are passed as DYN arguments.
 void execute_new_vector(interpreter_t& vm, const bc_instruction_t& instruction){
@@ -929,11 +935,18 @@ void execute_new_vector(interpreter_t& vm, const bc_instruction_t& instruction){
 	QUARK_ASSERT(target_type.is_undefined() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
+	bool is_element_ext = bc_value_t::is_bc_ext(element_type.get_base_type());
+
 	std::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
-		//??? Replace load_value_slow().
-		const auto arg_bc = vm._stack.load_value_slow(arg0_stack_pos + i, element_type);
-		elements2.push_back(arg_bc);
+		const auto pos = arg0_stack_pos + i;
+		QUARK_ASSERT(vm._stack._debug_types[pos] == element_type);
+#if DEBUG
+		const auto result = bc_value_t(element_type, vm._stack._entries[pos], is_element_ext);
+#else
+		const auto result = bc_value_t(vm._stack._entries[pos], is_element_ext);
+#endif
+		elements2.push_back(result);
 	}
 
 	const auto result = bc_value_t::make_vector_value(element_type, elements2);
@@ -963,9 +976,8 @@ void execute_new_dict(interpreter_t& vm, const bc_instruction_t& instruction){
 	std::map<string, bc_value_t> elements2;
 	int dict_element_count = arg_count / 2;
 	for(auto i = 0 ; i < dict_element_count ; i++){
-		//??? Replace load_value_slow().
-		const auto key = vm._stack.load_value_slow(arg0_stack_pos + i * 2 + 0, string_type);
-		const auto value = vm._stack.load_value_slow(arg0_stack_pos + i * 2 + 1, element_type);
+		const auto key = vm._stack.load_value(arg0_stack_pos + i * 2 + 0, string_type);
+		const auto value = vm._stack.load_value(arg0_stack_pos + i * 2 + 1, element_type);
 		const auto key2 = key.get_string_value();
 		elements2.insert({ key2, value });
 	}
@@ -991,7 +1003,7 @@ void execute_new_struct(interpreter_t& vm, const bc_instruction_t& instruction){
 	std::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto member_type = struct_def._members[i]._type;
-		const auto value = vm._stack.load_value_slow(arg0_stack_pos + i, member_type);
+		const auto value = vm._stack.load_value(arg0_stack_pos + i, member_type);
 		elements2.push_back(value);
 	}
 
@@ -1515,14 +1527,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 					if(func_arg_type.is_internal_dynamic()){
 						const auto arg_itype = stack.load_intq(stack_pos);
 						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
-						const auto arg_bc = stack.load_value_slow(stack_pos + 1, arg_type);
+						const auto arg_bc = stack.load_value(stack_pos + 1, arg_type);
 
 						const auto arg_value = bc_typed_value_t{ arg_bc, arg_type };
 						arg_values.push_back(arg_value);
 						stack_pos += 2;
 					}
 					else{
-						const auto arg_bc = stack.load_value_slow(stack_pos + 0, func_arg_type);
+						const auto arg_bc = stack.load_value(stack_pos + 0, func_arg_type);
 						const auto arg_value = bc_typed_value_t{ arg_bc, func_arg_type };
 						arg_values.push_back(arg_value);
 						stack_pos++;
@@ -1896,7 +1908,7 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
 		QUARK_ASSERT(pos >= 0 && pos < vm._stack.size());
 
 		const auto value_entry = value_entry_t{
-			vm._stack.load_value_slow(pos, it->second._value_type),
+			vm._stack.load_value(pos, it->second._value_type),
 			it->first,
 			it->second,
 			static_cast<int>(index)
