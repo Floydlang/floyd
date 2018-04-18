@@ -561,7 +561,7 @@ vector<std::pair<int, int>> interpreter_stack_t::get_stack_frames(int frame_pos)
 json_t interpreter_stack_t::stack_to_json() const{
 	const int size = static_cast<int>(_stack_size);
 
-	const auto stack_frames = get_stack_frames(get_current_frame_pos()._frame_pos);
+	const auto stack_frames = get_stack_frames(get_current_frame_start());
 
 	vector<json_t> frames;
 	for(int i = 0 ; i < stack_frames.size() ; i++){
@@ -1054,7 +1054,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 	interpreter_stack_t& stack = vm._stack;
 	const bc_frame_t* frame_ptr = stack._current_frame_ptr;
-	auto frame_pos = stack._current_frame_pos;
 
 	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
@@ -1073,7 +1072,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		ASSERT(vm.check_invariant());
 		ASSERT(i.check_invariant());
 
-		ASSERT(frame_pos == stack._current_frame_pos);
 		ASSERT(frame_ptr == stack._current_frame_ptr);
 		ASSERT(regs == stack._current_frame_entry_ptr);
 
@@ -1172,7 +1170,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(vm.check_invariant());
 			ASSERT((stack._stack_size + 2) < stack._allocated_count)
 
-			stack._entries[stack._stack_size + 0]._int = frame_pos;
+			stack._entries[stack._stack_size + 0]._int = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]);
 			stack._entries[stack._stack_size + 1]._frame_ptr = frame_ptr;
 			stack._stack_size += 2;
 #if DEBUG
@@ -1183,13 +1181,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? don't keep frame_pos around in stack and here as a local: instead
-		//	calculate using (_current_frame_entry_ptr - _current_frame_ptr)
 		case bc_opcode::k_pop_frame_ptr: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack._stack_size >= 2);
 
-			frame_pos = stack._entries[stack._stack_size - 2]._int;
+			const auto frame_pos = stack._entries[stack._stack_size - 2]._int;
 			frame_ptr = stack._entries[stack._stack_size - 1]._frame_ptr;
 			stack._stack_size -= 2;
 
@@ -1202,14 +1198,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			//??? do we need stack._current_frame_ptr, stack._current_frame_pos? Only use local variables to track these?
 			stack._current_frame_ptr = frame_ptr;
-			stack._current_frame_pos = frame_pos;
 			stack._current_frame_entry_ptr = regs;
 
 			frame_ptr = stack._current_frame_ptr;
-			frame_pos = stack._current_frame_pos;
 			regs = stack._current_frame_entry_ptr;
 
-			ASSERT(frame_pos == stack._current_frame_pos);
 			ASSERT(frame_ptr == stack._current_frame_ptr);
 			ASSERT(regs == stack._current_frame_entry_ptr);
 			ASSERT(vm.check_invariant());
@@ -1221,12 +1214,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 #if DEBUG
 			const auto info = stack.get_register_info2(i._a);
 			ASSERT(bc_value_t::is_bc_ext(info->second._value_type.get_base_type()) == false);
+
+			const auto debug_type = stack._debug_types[stack.get_current_frame_start() + i._a];
 #endif
 
 			stack._entries[stack._stack_size] = regs[i._a];
 			stack._stack_size++;
 #if DEBUG
-			stack._debug_types.push_back(stack._debug_types[frame_pos + i._a]);
+			stack._debug_types.push_back(debug_type);
 #endif
 			ASSERT(stack.check_invariant());
 			break;
@@ -1234,12 +1229,16 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_push_obj: {
 			ASSERT(stack.check_reg_obj(i._a));
 
+#if DEBUG
+			const auto debug_type = stack._debug_types[stack.get_current_frame_start() + i._a];
+#endif
+
 			const auto& new_value_pod = regs[i._a];
 			new_value_pod._ext->_rc++;
 			stack._entries[stack._stack_size] = new_value_pod;
 			stack._stack_size++;
 #if DEBUG
-			stack._debug_types.push_back(stack._debug_types[frame_pos + i._a]);
+			stack._debug_types.push_back(debug_type);
 #endif
 			break;
 		}
@@ -1546,7 +1545,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				ASSERT(function_def_dynamic_arg_count == 0);
 
 				//	We need to remember the global pos where to store return value, since we're switching frame to call function.
-				int result_reg_pos = stack._current_frame_pos + i._a;
+				int result_reg_pos = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]) + i._a;
 
 				stack.open_frame(*function_def._frame_ptr, callee_arg_count);
 				const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
@@ -1554,7 +1553,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				//	Update our cached pointers.
 				frame_ptr = stack._current_frame_ptr;
-				frame_pos = stack._current_frame_pos;
 				regs = stack._current_frame_entry_ptr;
 
 				ASSERT(result.first);
@@ -1570,7 +1568,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				}
 			}
 
-			ASSERT(frame_pos == stack._current_frame_pos);
 			ASSERT(frame_ptr == stack._current_frame_ptr);
 			ASSERT(regs == stack._current_frame_entry_ptr);
 			ASSERT(vm.check_invariant());
