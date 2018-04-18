@@ -18,12 +18,9 @@
 #include "ast_typeid.h"
 #include "json_support.h"
 
-//??? remove usage of typeid_t
-
-//??? We could have support simple sumtype called DYN that holds a value_t at runtime.
+//??? remove usage of typeid_t. Use itype & types[]?
 
 //??? remove all make-functions -- just use constructors.
-//??? remove all use of typeid_t -- clients will allocate them even if we don't keep the instances!
 //??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
 
 namespace floyd {
@@ -1092,6 +1089,7 @@ namespace floyd {
 		std::vector<typeid_t> _args;
 
 		//	True if equivalent symbol is an ext.
+		//??? unify with _locals_exts.
 		std::vector<bool> _exts;
 
 		//	This doesn't count arguments.
@@ -1289,10 +1287,9 @@ namespace floyd {
 		//////////////////////////////////////		FRAMES & REGISTERS
 
 
-		private: int read_prev_frame_pos(int frame_pos) const;
-		private: const bc_frame_t* read_prev_frame(int frame_pos) const;
+		private: frame_pos_t read_prev_frame(int frame_pos) const;
 #if DEBUG
-		public: bool check_stack_frame(int frame_pos, const bc_frame_t* frame) const;
+		public: bool check_stack_frame(const frame_pos_t& in_frame) const;
 #endif
 
 		//	??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generate instructions to do this in the VM?
@@ -1481,6 +1478,14 @@ namespace floyd {
 			return true;
 		}
 		#endif
+		#if DEBUG
+		public: bool check_reg_function(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_debug_types[get_current_frame_start() + reg].is_function());
+			return true;
+		}
+		#endif
 
 
 		#if DEBUG
@@ -1501,7 +1506,7 @@ namespace floyd {
 		}
 		#endif
 
-
+/*
 		public: void write_register_string(const int reg, const std::string& value){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
@@ -1516,18 +1521,7 @@ namespace floyd {
 
 			QUARK_ASSERT(check_invariant());
 		}
-
-		public: inline int read_register_function(const int reg) const{
-			QUARK_ASSERT(check_invariant());
-			QUARK_ASSERT(check_reg(reg));
-		#if DEBUG
-			const auto info = get_register_info2(reg);
-			QUARK_ASSERT(info->second._value_type.get_base_type() == base_type::k_function);
-		#endif
-
-			return _current_frame_entry_ptr[reg]._function_id;
-		}
-
+*/
 
 		public: void save_frame(){
 			const auto frame_pos = bc_value_t::make_int(get_current_frame_start());

@@ -490,48 +490,44 @@ bool bc_frame_t::check_invariant() const {
 //////////////////////////////////////////		interpreter_stack_t
 
 
-int interpreter_stack_t::read_prev_frame_pos(int frame_pos) const{
+
+frame_pos_t interpreter_stack_t::read_prev_frame(int frame_pos) const{
 //	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(frame_pos >= k_frame_overhead);
 
-	const auto v = load_intq(frame_pos - 2);
+	const auto v = load_intq(frame_pos - k_frame_overhead + 0);
 	QUARK_ASSERT(v < frame_pos);
 	QUARK_ASSERT(v >= 0);
-	return v;
-}
 
-const bc_frame_t* interpreter_stack_t::read_prev_frame(int frame_pos) const{
-//	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(frame_pos >= k_frame_overhead);
+	const auto ptr = load_frame_ptr(frame_pos - k_frame_overhead + 1);
+	QUARK_ASSERT(ptr != nullptr);
+	QUARK_ASSERT(ptr->check_invariant());
 
-	const auto v = load_frame_ptr(frame_pos - 1);
-	QUARK_ASSERT(v != nullptr);
-	QUARK_ASSERT(v->check_invariant());
-	return v;
+	return frame_pos_t{ v, ptr };
 }
 
 #if DEBUG
-bool interpreter_stack_t::check_stack_frame(int frame_pos, const bc_frame_t* frame) const{
-	if(frame_pos == 0){
+bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
+	QUARK_ASSERT(in_frame._frame_ptr != nullptr && in_frame._frame_ptr->check_invariant());
+
+	if(in_frame._frame_pos == 0){
 		return true;
 	}
 	else{
-		const auto prev_frame = read_prev_frame(frame_pos);
-		const auto prev_frame_pos = read_prev_frame_pos(frame_pos);
-		QUARK_ASSERT(frame != nullptr && frame->check_invariant());
-		QUARK_ASSERT(prev_frame_pos >= 0 && prev_frame_pos < frame_pos);
-
-		for(int i = 0 ; i < frame->_symbols.size() ; i++){
-			const auto& symbol = frame->_symbols[i];
+		for(int i = 0 ; i < in_frame._frame_ptr->_symbols.size() ; i++){
+			const auto& symbol = in_frame._frame_ptr->_symbols[i];
 
 			bool symbol_ext = bc_value_t::is_bc_ext(symbol.second._value_type.get_base_type());
-			int local_pos = get_local_n_pos(frame_pos, i);
+			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
 
 			bool stack_ext = is_ext(local_pos);
 			QUARK_ASSERT(symbol_ext == stack_ext);
 		}
-		if(prev_frame_pos > 2){
-			return check_stack_frame(prev_frame_pos, prev_frame);
+
+		const auto prev_frame = read_prev_frame(in_frame._frame_pos);
+		QUARK_ASSERT(prev_frame._frame_pos >= 0 && prev_frame._frame_pos < in_frame._frame_pos);
+		if(prev_frame._frame_pos > k_frame_overhead){
+			return check_stack_frame(prev_frame);
 		}
 		else{
 			return true;
@@ -540,20 +536,19 @@ bool interpreter_stack_t::check_stack_frame(int frame_pos, const bc_frame_t* fra
 }
 #endif
 
-//	#0 is top of stack, last element is bottom.
-//	first: frame_pos, second: framesize-1. Does not include the first slot, which is the prev_frame_pos.
 vector<std::pair<int, int>> interpreter_stack_t::get_stack_frames(int frame_pos) const{
 	QUARK_ASSERT(check_invariant());
 
-	//	We use the entire current stack to calc top frame's size. This can be wrong, if someone pushed more stuff there. Same goes with the previous stack frames too..
+	//	We use the entire current stack to calc top frame's size. This can be wrong, if
+	//	someone pushed more stuff there. Same goes with the previous stack frames too..
 	vector<std::pair<int, int>> result{ { frame_pos, static_cast<int>(size()) - frame_pos }};
 
-	while(frame_pos > 2){
-		const auto prev_frame_pos = read_prev_frame_pos(frame_pos);
-		const auto prev_size = (frame_pos - k_frame_overhead) - prev_frame_pos;
+	while(frame_pos > k_frame_overhead){
+		const auto prev_frame = read_prev_frame(frame_pos);
+		const auto prev_size = (frame_pos - k_frame_overhead) - prev_frame._frame_pos;
 		result.push_back(std::pair<int, int>{ frame_pos, prev_size });
 
-		frame_pos = prev_frame_pos;
+		frame_pos = prev_frame._frame_pos;
 	}
 	return result;
 }
@@ -1046,7 +1041,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 	interpreter_stack_t& stack = vm._stack;
 	const bc_frame_t* frame_ptr = stack._current_frame_ptr;
-
 	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
 
@@ -1160,11 +1154,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_push_frame_ptr: {
 			ASSERT(vm.check_invariant());
-			ASSERT((stack._stack_size + 2) < stack._allocated_count)
+			ASSERT((stack._stack_size + k_frame_overhead) < stack._allocated_count)
 
 			stack._entries[stack._stack_size + 0]._int = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]);
 			stack._entries[stack._stack_size + 1]._frame_ptr = frame_ptr;
-			stack._stack_size += 2;
+			stack._stack_size += k_frame_overhead;
 #if DEBUG
 			stack._debug_types.push_back(typeid_t::make_int());
 			stack._debug_types.push_back(typeid_t::make_void());
@@ -1175,11 +1169,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_pop_frame_ptr: {
 			ASSERT(vm.check_invariant());
-			ASSERT(stack._stack_size >= 2);
+			ASSERT(stack._stack_size >= k_frame_overhead);
 
-			const auto frame_pos = stack._entries[stack._stack_size - 2]._int;
-			frame_ptr = stack._entries[stack._stack_size - 1]._frame_ptr;
-			stack._stack_size -= 2;
+			const auto frame_pos = stack._entries[stack._stack_size - k_frame_overhead + 0]._int;
+			frame_ptr = stack._entries[stack._stack_size - k_frame_overhead + 1]._frame_ptr;
+			stack._stack_size -= k_frame_overhead;
 
 #if DEBUG
 			stack._debug_types.pop_back();
@@ -1191,9 +1185,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			//??? do we need stack._current_frame_ptr, stack._current_frame_pos? Only use local variables to track these?
 			stack._current_frame_ptr = frame_ptr;
 			stack._current_frame_entry_ptr = regs;
-
-			frame_ptr = stack._current_frame_ptr;
-			regs = stack._current_frame_entry_ptr;
 
 			ASSERT(frame_ptr == stack._current_frame_ptr);
 			ASSERT(regs == stack._current_frame_entry_ptr);
@@ -1479,11 +1470,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 		case bc_opcode::k_call: {
 			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_function(i._b));
 
+			const int function_id = regs[i._b]._function_id;
 			const int callee_arg_count = i._c;
-
-			const int function_id = stack.read_register_function(i._b);
 			ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
+
 			const auto& function_def = vm._imm->_program._function_defs[function_id];
 			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
 			const auto& function_return_type = function_def._function_type.get_function_return();
@@ -1511,7 +1503,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 						const auto arg_value = bc_typed_value_t{ arg_bc, arg_type };
 						arg_values.push_back(arg_value);
-						stack_pos += 2;
+						stack_pos += k_frame_overhead;
 					}
 					else{
 						const auto arg_bc = stack.load_value(stack_pos + 0, func_arg_type);
@@ -1730,7 +1722,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_string(i._c));
 
 			//??? inline
-			stack.write_register_string(i._a, regs[i._b]._ext->_string + regs[i._c]._ext->_string);
+//			stack.write_register_string(i._a, regs[i._b]._ext->_string + regs[i._c]._ext->_string);
+
+			//	??? No need to create bc_value_t here.
+			const auto s = regs[i._b]._ext->_string + regs[i._c]._ext->_string;
+			const auto value = bc_value_t::make_string(s);
+			auto prev_copy = regs[i._a];
+			value._pod._ext->_rc++;
+			regs[i._a] = value._pod;
+			bc_value_t::release_ext_pod(prev_copy);
 			break;
 		}
 
