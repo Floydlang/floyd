@@ -1193,13 +1193,26 @@ bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 
 bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args){
 	QUARK_ASSERT(body.check_invariant());
-	std::vector<bc_instruction_t> instrs2;
 
+	std::vector<bc_instruction_t> instrs2;
 	for(const auto& e: body._instrs){
 		instrs2.push_back(squeeze_instruction(e));
 	}
 
-	return bc_frame_t(instrs2, body._symbols, args);
+	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
+	for(const auto& e: body._symbols){
+		const auto e2 = std::pair<std::string, bc_symbol_t>{
+			e.first,
+			bc_symbol_t{
+				e.second._symbol_type == symbol_t::immutable_local ? bc_symbol_t::immutable_local : bc_symbol_t::mutable_local,
+				e.second._value_type,
+				bc_typed_value_t{value_to_bc(e.second._const_value), e.second._const_value.get_type() }
+			}
+		};
+		symbols2.push_back(e2);
+	}
+
+	return bc_frame_t(instrs2, symbols2, args);
 }
 
 bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const semantic_ast_t& pass3){

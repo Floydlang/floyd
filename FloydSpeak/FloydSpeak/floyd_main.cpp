@@ -174,7 +174,7 @@ std::string get_command(){
 std::string floyd_version_string = "0.3";
 
 
-
+#if 0
 int handle_repl_input(floyd::interpreter_context_t& context, int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_mut, const std::string& line){
 	const auto& program1 = vm_mut->_imm->_program;
 
@@ -211,7 +211,7 @@ int handle_repl_input(floyd::interpreter_context_t& context, int print_pos, std:
 	}
 	return print_pos;
 }
-
+#endif
 
 void run_repl(){
 	init_terminal();
@@ -250,8 +250,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 				std::cout << "MIT license." << std::endl;
 			}
 			else{
-				const auto print_pos2 = handle_repl_input(context, print_pos, vm, line);
-				print_pos = print_pos2;
+//				const auto print_pos2 = handle_repl_input(context, print_pos, vm, line);
+//				print_pos = print_pos2;
 			}
 		}
 		catch(const std::runtime_error& e){

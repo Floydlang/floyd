@@ -256,34 +256,6 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 #endif
 
 
-std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(s.size() > 0);
-
-	const auto& symbols = vm._imm->_program._globals._symbols;
-    const auto& it = std::find_if(
-    	symbols.begin(),
-    	symbols.end(),
-    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
-	);
-	if(it != symbols.end()){
-		const auto index = static_cast<int>(it - symbols.begin());
-		const auto pos = get_global_n_pos(index);
-		QUARK_ASSERT(pos >= 0 && pos < vm._stack.size());
-
-		const auto value_entry = value_entry_t{
-			vm._stack.load_value_slow(pos, it->second._value_type),
-			it->first,
-			it->second,
-			variable_address_t::make_variable_address(-1, static_cast<int>(index))
-		};
-		return make_shared<value_entry_t>(value_entry);
-	}
-	else{
-		return nullptr;
-	}
-}
-
 floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	QUARK_ASSERT(vm.check_invariant());
 

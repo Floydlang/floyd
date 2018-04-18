@@ -215,7 +215,7 @@ bc_typed_value_t host__to_pretty_string(interpreter_t& vm, const bc_typed_value_
 	}
 
 	const auto& value = args[0];
-	const auto json = bcvalue_to_json(value, json_tags::k_plain);
+	const auto json = bcvalue_to_json(value);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{80, 4});
 	return { bc_value_t::make_string(s), typeid_t::make_string() };
 }

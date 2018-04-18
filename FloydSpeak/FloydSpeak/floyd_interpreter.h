@@ -17,7 +17,6 @@
 
 #include <string>
 #include <vector>
-#include <map>
 
 
 namespace floyd {
@@ -28,17 +27,6 @@ namespace floyd {
 
 	struct interpreter_context_t {
 		public: quark::trace_context_t _tracer;
-	};
-
-
-	//////////////////////////////////////		value_entry_t
-
-
-	struct value_entry_t {
-		bc_value_t _value;
-		std::string _symbol_name;
-		symbol_t _symbol;
-		variable_address_t _address;
 	};
 
 
@@ -55,7 +43,6 @@ namespace floyd {
 	//////////////////////////////////////		Free functions
 
 
-	std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);
 	value_t find_global_symbol(const interpreter_t& vm, const std::string& s);
 	value_t get_global(const interpreter_t& vm, const std::string& name);
 

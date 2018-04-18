@@ -30,7 +30,6 @@ using std::make_shared;
 
 #define ASSERT QUARK_ASSERT
 
-//??? should use itype internaly, not typeid_t.
 
 
 inline const typeid_t& lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
@@ -46,8 +45,6 @@ int get_global_n_pos(int n){
 int get_local_n_pos(int frame_pos, int n){
 	return frame_pos + n;
 }
-
-//	??? move VM into separate source file.
 
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -68,60 +65,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 	const auto instruction2_size = sizeof(bc_instruction_t);
 	QUARK_ASSERT(instruction2_size == 8);
 }
-
-
-	//////////////////////////////////////		Packblob
-
-
-#if 0
-
-
-function: host-function
-	int function_id
-
-	Support DYN values.
-	Unpacks args to value_t
-
-
-function: floyd-function
-	Unpacks args to bc_pod_value_t temp[].
-	Uses open_stack_frame2_nobump() / execute_instructions() / close_stack_frame()
-
-k_construct_value
-	value_t: dest value type
-	[value_t]: constructor arguments.
-
-
-
-
-# Packblob.
-These come in some static sizes. They can hold one or serveral values. Are immutable.
-They handle RC of any contained objects.
-They know where every field sits.
-
-struct packblob_8_t {
-}
-
-struct packblob_8_t {
-}
-
-struct packblob_16_t {
-}
-
-struct packblob_element_layout_ {
-	typeid_t _field_type;
-	bc_typeid_t _field_itype;
-	int _start_pos;
-	int _shift;
-	int _mask;
-}
-
-struct packblob_64_t {
-	uint32_t _values[16];
-}
-
-
-#endif
 
 
 
@@ -286,7 +229,6 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		return bc_compare_json_values(left.get_json_value(), right.get_json_value());
 	}
 	else if(type.is_typeid()){
-	//???
 		if(left.get_typeid_value() == right.get_typeid_value()){
 			return 0;
 		}
@@ -401,7 +343,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 };
 
 
-//??? Use enum with register / immediate / unused.
+//??? Use enum with register / immediate / unused, current info is not enough.
 
 reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	if(e == opcode_info_t::encoding::k_e_0000){
@@ -481,7 +423,7 @@ bool bc_instruction_t::check_invariant() const {
 //////////////////////////////////////////		bc_frame_t
 
 
-bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, symbol_t>>& symbols, const std::vector<typeid_t>& args) :
+bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<typeid_t>& args) :
 	_instrs2(instrs2),
 	_symbols(symbols),
 	_args(args)
@@ -505,7 +447,7 @@ bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
 		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
 		//	Use a placeholder object of correct type.
-		if(symbol.second._const_value.get_basetype() == base_type::k_internal_undefined){
+		if(symbol.second._const_value._type.get_base_type() == base_type::k_internal_undefined){
 			if(is_ext){
 				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
 				_locals.push_back(value);
@@ -519,7 +461,7 @@ bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::
 
 		//	Constant.
 		else{
-			_locals.push_back(value_to_bc(symbol.second._const_value));
+			_locals.push_back(symbol.second._const_value._value);
 		}
 	}
 
@@ -662,7 +604,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 		auto a = json_t::make_array({
 			json_t(i),
 			typeid_to_ast_json(debug_type, json_tags::k_plain)._value,
-			unwritten ? json_t("UNWRITTEN") : bcvalue_to_json(bc_typed_value_t{bc, debug_type}, json_tags::k_plain)
+			unwritten ? json_t("UNWRITTEN") : bcvalue_to_json(bc_typed_value_t{bc, debug_type})
 		});
 		elements.push_back(a);
 #endif
@@ -689,7 +631,7 @@ inline const bc_function_definition_t& get_function_def(const interpreter_t& vm,
 }
 
 
-//??? Use bc_value_t:s instead -- types are known via function-signature.
+//??? Use bc_value_t:s instead of bc_typed_value_t -- types are known via function-signature.
 bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, const bc_typed_value_t args[], int arg_count){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
@@ -753,7 +695,7 @@ bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, 
 }
 
 
-json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags){
+json_t bcvalue_to_json(const bc_typed_value_t& v){
 	if(v._type.is_undefined()){
 		return json_t();
 	}
@@ -779,7 +721,7 @@ json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags){
 		return v._value.get_json_value();
 	}
 	else if(v._type.is_typeid()){
-		return typeid_to_ast_json(v._value.get_typeid_value(), tags)._value;
+		return typeid_to_ast_json(v._value.get_typeid_value(), json_tags::k_plain)._value;
 	}
 	else if(v._type.is_struct()){
 		const auto& struct_value = v._value.get_struct_value();
@@ -790,7 +732,7 @@ json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags){
 			const auto& key = member._name;
 			const auto& type = member._type;
 			const auto& value = struct_value[i];
-			const auto& value2 = bcvalue_to_json(bc_typed_value_t{value, type}, tags);
+			const auto& value2 = bcvalue_to_json(bc_typed_value_t{value, type});
 			obj2[key] = value2;
 		}
 		return json_t::make_object(obj2);
@@ -801,7 +743,7 @@ json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags){
 		for(int i = 0 ; i < vec->size() ; i++){
 			const auto element_value = vec->operator[](i);
 			const auto element_value2 = bc_typed_value_t{element_value, v._type.get_vector_element_type()};
-			result.push_back(bcvalue_to_json(element_value2, tags));
+			result.push_back(bcvalue_to_json(element_value2));
 		}
 		return result;
 	}
@@ -810,14 +752,14 @@ json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags){
 		std::map<string, json_t> result;
 		for(const auto& e: entries){
 			const auto value2 = bc_typed_value_t{e.second, v._type.get_dict_value_type()};
-			result[e.first] = bcvalue_to_json(value2, tags);
+			result[e.first] = bcvalue_to_json(value2);
 		}
 		return result;
 	}
 	else if(v._type.is_function()){
 		return json_t::make_object(
 			{
-				{ "funtyp", typeid_to_ast_json(v._type, tags)._value }
+				{ "funtyp", typeid_to_ast_json(v._type, json_tags::k_plain)._value }
 			}
 		);
 	}
@@ -825,6 +767,15 @@ json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags){
 		throw std::exception();
 	}
 }
+
+
+json_t bcvalue_and_type_to_json(const bc_typed_value_t& v){
+	return json_t::make_array({
+		typeid_to_ast_json(v._type, json_tags::k_plain)._value,
+		bcvalue_to_json(bc_typed_value_t{v._value, v._type})
+	});
+}
+
 
 
 //////////////////////////////////////////		interpreter_t
@@ -949,7 +900,7 @@ void execute_new_1(interpreter_t& vm, const bc_instruction_t& instruction){
 			}
 		}
 		else if(target_type.is_json_value()){
-			const auto arg = bcvalue_to_json(bc_typed_value_t{input_value, input_value_type}, json_tags::k_plain);
+			const auto arg = bcvalue_to_json(bc_typed_value_t{input_value, input_value_type});
 			return bc_value_t::make_json_value(arg);
 		}
 		else{
@@ -1534,15 +1485,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			??? Make stub bc_frame_t for each host function to make call conventions same as Floyd functions.
 		*/
 
-		/*
-			Performs call to a function
-			1) Reads arguments from (leaves them there).
-			2) Sets up stack frame for new function and puts argments into its locals.
-			3) Runs the instructions in the function.
-			4) Destroys functions stack frame.
-			5) Writes the function return via the call-instruction's output register.
-		*/
-
 		//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
 		case bc_opcode::k_call: {
 			ASSERT(vm.check_invariant());
@@ -1940,6 +1882,36 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 //////////////////////////////////////////		FUNCTIONS
 
 
+
+std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s.size() > 0);
+
+	const auto& symbols = vm._imm->_program._globals._symbols;
+    const auto& it = std::find_if(
+    	symbols.begin(),
+    	symbols.end(),
+    	[&s](const std::pair<std::string, bc_symbol_t>& e) { return e.first == s; }
+	);
+	if(it != symbols.end()){
+		const auto index = static_cast<int>(it - symbols.begin());
+		const auto pos = get_global_n_pos(index);
+		QUARK_ASSERT(pos >= 0 && pos < vm._stack.size());
+
+		const auto value_entry = value_entry_t{
+			vm._stack.load_value_slow(pos, it->second._value_type),
+			it->first,
+			it->second,
+			static_cast<int>(index)
+		};
+		return make_shared<value_entry_t>(value_entry);
+	}
+	else{
+		return nullptr;
+	}
+}
+
+
 std::string opcode_to_string(bc_opcode opcode){
 	return k_opcode_info.at(opcode)._as_text;
 }
@@ -1954,6 +1926,40 @@ json_t interpreter_to_json(const interpreter_t& vm){
 		{ "ast", bcprogram_to_json(vm._imm->_program) },
 		{ "callstack", stack }
 	});
+}
+
+std::vector<json_t> bc_symbols_to_json(const std::vector<std::pair<std::string, bc_symbol_t>>& symbols){
+	std::vector<json_t> r;
+	int symbol_index = 0;
+	for(const auto& e: symbols){
+		const auto& symbol = e.second;
+		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+
+		if(symbol._const_value._type.is_undefined() == false){
+			const auto e2 = json_t::make_array({
+				symbol_index,
+				e.first,
+				"CONST",
+				bcvalue_and_type_to_json(symbol._const_value)
+			});
+			r.push_back(e2);
+		}
+		else{
+			const auto e2 = json_t::make_array({
+				symbol_index,
+				e.first,
+				"LOCAL",
+				json_t::make_object({
+					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state)._value },
+					{ "type", symbol_type_str }
+				})
+			});
+			r.push_back(e2);
+		}
+
+		symbol_index++;
+	}
+	return r;
 }
 
 json_t frame_to_json(const bc_frame_t& frame){
@@ -1981,7 +1987,7 @@ json_t frame_to_json(const bc_frame_t& frame){
 	}
 
 	return json_t::make_object({
-		{ "symbols", json_t::make_array(symbols_to_json(frame._symbols)) },
+		{ "symbols", json_t::make_array(bc_symbols_to_json(frame._symbols)) },
 		{ "instructions", json_t::make_array(instructions) },
 		{ "exts", json_t::make_array(exts) }
 	});

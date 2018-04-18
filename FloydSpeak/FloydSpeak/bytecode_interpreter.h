@@ -17,9 +17,7 @@
 #include <map>
 #include "ast_typeid.h"
 #include "json_support.h"
-#include "statement.h"
 
-//??? remove usage of symbol_t
 //??? remove usage of typeid_t
 
 //??? We could have support simple sumtype called DYN that holds a value_t at runtime.
@@ -39,8 +37,10 @@ namespace floyd {
 	typedef int16_t bc_typeid_t;
 
 
-	json_t bcvalue_to_json(const bc_typed_value_t& v, json_tags tags);
+	json_t bcvalue_to_json(const bc_typed_value_t& v);
 	int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
+
+
 
 
 	//////////////////////////////////////		bc_value_object_t
@@ -695,6 +695,27 @@ namespace floyd {
 
 
 
+	//////////////////////////////////////		bc_symbol_t
+
+
+	struct bc_symbol_t {
+		enum type {
+			immutable_local = 10,
+			mutable_local
+		};
+
+		type _symbol_type;
+		floyd::typeid_t _value_type;
+		floyd::bc_typed_value_t _const_value;
+
+
+		public: bool check_invariant() const {
+			QUARK_ASSERT(_const_value._type.is_undefined() || _const_value._type == _value_type);
+			return true;
+		}
+	};
+
+
 	//////////////////////////////////////		bc_opcode
 
 
@@ -1057,7 +1078,7 @@ namespace floyd {
 	struct bc_frame_t {
 		bc_frame_t(
 			const std::vector<bc_instruction_t>& instrs2,
-			const std::vector<std::pair<std::string, symbol_t>>& symbols,
+			const std::vector<std::pair<std::string, bc_symbol_t>>& symbols,
 			const std::vector<typeid_t>& args
 		);
 		bool check_invariant() const;
@@ -1068,7 +1089,7 @@ namespace floyd {
 		std::vector<bc_instruction_t> _instrs2;
 
 		//??? Optimize how we store this data for quick access + compactness.
-		std::vector<std::pair<std::string, symbol_t>> _symbols;
+		std::vector<std::pair<std::string, bc_symbol_t>> _symbols;
 		std::vector<typeid_t> _args;
 
 		//	True if equivalent symbol is an ext.
@@ -1276,7 +1297,6 @@ namespace floyd {
 		public: bool check_stack_frame(int frame_pos, const bc_frame_t* frame) const;
 #endif
 
-		//	??? DYN values /returns needs TWO registers.
 		//	??? This function should just allocate a block for frame, then have a list of writes. ALTERNATIVELY: generate instructions to do this in the VM?
 		public: void open_frame(const bc_frame_t& frame, int values_already_on_stack){
 			QUARK_ASSERT(check_invariant());
@@ -1324,7 +1344,7 @@ namespace floyd {
 			return true;
 		}
 
-		public: const std::pair<std::string, symbol_t>* get_register_info2(int reg) const{
+		public: const std::pair<std::string, bc_symbol_t>* get_register_info2(int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(reg >= 0 && reg < _current_frame_ptr->_symbols.size());
@@ -1758,10 +1778,22 @@ namespace floyd {
 
 
 	struct interpreter_imm_t {
+
 		////////////////////////		STATE
 		public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 		public: const bc_program_t _program;
 		public: const std::map<int, HOST_FUNCTION_PTR> _host_functions;
+	};
+
+
+	//////////////////////////////////////		value_entry_t
+
+
+	struct value_entry_t {
+		bc_value_t _value;
+		std::string _symbol_name;
+		bc_symbol_t _symbol;
+		int _global_index;
 	};
 
 
@@ -1797,6 +1829,8 @@ namespace floyd {
 	bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, const bc_typed_value_t args[], int arg_count);
 	json_t interpreter_to_json(const interpreter_t& vm);
 	std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions);
+
+	std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);
 
 } //	floyd
 
