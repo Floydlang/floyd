@@ -877,13 +877,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 //	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_1(interpreter_t& vm, const bc_instruction_t& instruction){
+void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t source_itype){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(instruction.check_invariant());
-
-	const auto dest_reg = instruction._a;
-	const auto target_itype = instruction._b;
-	const auto source_itype = instruction._c;
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && target_type.is_struct() == false);
@@ -917,15 +912,9 @@ void execute_new_1(interpreter_t& vm, const bc_instruction_t& instruction){
 }
 
 
-//??? Split out instruction unpacking to client.
 //	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_vector(interpreter_t& vm, const bc_instruction_t& instruction){
+void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(instruction.check_invariant());
-
-	const auto dest_reg = instruction._a;
-	const auto target_itype = instruction._b;
-	const auto arg_count = instruction._c;
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector());
@@ -953,14 +942,10 @@ void execute_new_vector(interpreter_t& vm, const bc_instruction_t& instruction){
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
-//	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_dict(interpreter_t& vm, const bc_instruction_t& instruction){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(instruction.check_invariant());
 
-	const auto dest_reg = instruction._a;
-	const auto target_itype = instruction._b;
-	const auto arg_count = instruction._c;
+//	IMPORTANT: NO arguments are passed as DYN arguments.
+void execute_new_dict(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
+	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_dict());
@@ -986,13 +971,8 @@ void execute_new_dict(interpreter_t& vm, const bc_instruction_t& instruction){
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
-void execute_new_struct(interpreter_t& vm, const bc_instruction_t& instruction){
+void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(instruction.check_invariant());
-
-	const auto dest_reg = instruction._a;
-	const auto target_itype = instruction._b;
-	const auto arg_count = instruction._c;
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_struct());
@@ -1587,21 +1567,41 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_new_1: {
-			execute_new_1(vm, i);
+			const auto dest_reg = i._a;
+			const auto target_itype = i._b;
+			const auto source_itype = i._c;
+			const auto& target_type = lookup_full_type(vm, target_itype);
+			QUARK_ASSERT(target_type.is_vector() == false && target_type.is_dict() == false && target_type.is_struct() == false);
+			execute_new_1(vm, dest_reg, target_itype, source_itype);
 			break;
 		}
 
 		case bc_opcode::k_new_vector: {
-			execute_new_vector(vm, i);
+			const auto dest_reg = i._a;
+			const auto target_itype = i._b;
+			const auto arg_count = i._c;
+			const auto& target_type = lookup_full_type(vm, target_itype);
+			QUARK_ASSERT(target_type.is_vector());
+			execute_new_vector(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
 
 		case bc_opcode::k_new_dict: {
-			execute_new_dict(vm, i);
+			const auto dest_reg = i._a;
+			const auto target_itype = i._b;
+			const auto arg_count = i._c;
+			const auto& target_type = lookup_full_type(vm, target_itype);
+			QUARK_ASSERT(target_type.is_dict());
+			execute_new_dict(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
 		case bc_opcode::k_new_struct: {
-			execute_new_struct(vm, i);
+			const auto dest_reg = i._a;
+			const auto target_itype = i._b;
+			const auto arg_count = i._c;
+			const auto& target_type = lookup_full_type(vm, target_itype);
+			QUARK_ASSERT(target_type.is_struct());
+			execute_new_struct(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
 
