@@ -1034,17 +1034,32 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 			return conv_opcode.at(e._operation);
 		}
 		else if(type.is_vector()){
-			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_vector },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+			if(type.get_vector_element_type().is_int()){
+				static const std::map<expression_type, bc_opcode> conv_opcode = {
+					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_int },
+					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
 
-				{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-				{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-			};
-			return conv_opcode.at(e._operation);
+					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
+					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+				};
+				return conv_opcode.at(e._operation);
+			}
+			else{
+				static const std::map<expression_type, bc_opcode> conv_opcode = {
+					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors },
+					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+
+					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
+					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+				};
+				return conv_opcode.at(e._operation);
+			}
 		}
 		else{
 			QUARK_ASSERT(false);

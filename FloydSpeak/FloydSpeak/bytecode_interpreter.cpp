@@ -331,7 +331,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_add_int, { "add_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_float, { "add_float", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_string, { "add_string", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_vector, { "add_vector", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_concat_vectors, { "concat_vectors", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_concat_vectors_int, { "concat_vectors_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_float, { "subtract_float", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "subtract_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply_float, { "multiply_float", opcode_info_t::encoding::k_o_0rrr } },
@@ -1842,36 +1843,43 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		//??? inline.
-		//???make special opcode for int-vectors.
 		//??? Use itypes.
-		case bc_opcode::k_add_vector: {
+		case bc_opcode::k_concat_vectors: {
 			ASSERT(stack.check_reg_vector(i._a));
 			ASSERT(stack.check_reg_vector(i._b));
 			ASSERT(stack.check_reg_vector(i._c));
 
 			const auto& element_type = frame_ptr->_symbols[i._a].second._value_type.get_vector_element_type();
-			if(element_type.is_int()){
-				//	Copy left into new vector.
-				immer::vector<int> elements2 = regs[i._b]._ext->_vector_ints;
+			ASSERT(element_type.is_int() == false);
 
-				const auto& right_elements = regs[i._c]._ext->_vector_ints;
-				for(const auto& e: right_elements){
-					elements2 = elements2.push_back(e);
-				}
-				const auto& value2 = make_vector_int_value(elements2);
-				stack.write_register_obj(i._a, value2);
-			}
-			else{
-				//	Copy left into new vector.
-				immer::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
+			//	Copy left into new vector.
+			immer::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
 
-				const auto& right_elements = regs[i._c]._ext->_vector_elements;
-				for(const auto& e: right_elements){
-					elements2 = elements2.push_back(e);
-				}
-				const auto& value2 = make_vector_value(element_type, elements2);
-				stack.write_register_obj(i._a, value2);
+			const auto& right_elements = regs[i._c]._ext->_vector_elements;
+			for(const auto& e: right_elements){
+				elements2 = elements2.push_back(e);
 			}
+			const auto& value2 = make_vector_value(element_type, elements2);
+			stack.write_register_obj(i._a, value2);
+			break;
+		}
+		case bc_opcode::k_concat_vectors_int: {
+			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_vector(i._c));
+
+			const auto& element_type = frame_ptr->_symbols[i._a].second._value_type.get_vector_element_type();
+			ASSERT(element_type.is_int());
+
+			//	Copy left into new vector.
+			immer::vector<int> elements2 = regs[i._b]._ext->_vector_ints;
+
+			const auto& right_elements = regs[i._c]._ext->_vector_ints;
+			for(const auto& e: right_elements){
+				elements2 = elements2.push_back(e);
+			}
+			const auto& value2 = make_vector_int_value(elements2);
+			stack.write_register_obj(i._a, value2);
 			break;
 		}
 
