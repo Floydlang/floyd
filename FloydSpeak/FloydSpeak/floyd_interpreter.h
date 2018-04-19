@@ -37,14 +37,6 @@ namespace floyd {
 	value_t bc_to_value(const bc_value_t& value);
 	bc_value_t value_to_bc(const value_t& value);
 
-	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
-	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values);
-
-	immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values);
-	immer::vector<int> values_to_ints(const std::vector<value_t>& values);
-	std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values);
-	std::vector<value_t> ints_to_values(const immer::vector<int>& values);
-
 
 	//////////////////////////////////////		Free functions
 
