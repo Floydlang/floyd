@@ -830,6 +830,7 @@ namespace floyd {
 		k_lookup_element_string,
 		k_lookup_element_json_value,
 		k_lookup_element_vector,
+		k_lookup_element_vector_int,
 		k_lookup_element_dict,
 
 		/*

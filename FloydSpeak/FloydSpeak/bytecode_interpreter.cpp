@@ -322,6 +322,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_vector, { "lookup_element_vector", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_vector_int, { "lookup_element_vector_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
@@ -1471,39 +1472,46 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._c));
 
 			const auto& element_type = frame_ptr->_symbols[i._b].second._value_type.get_vector_element_type();
+			QUARK_ASSERT(element_type.is_int() == false);
 
-			//	Make separate opcode for lookup-int.
-			if(element_type.is_int()){
-				ASSERT(stack.check_reg_int(i._a));
-
-				const auto* vec = &regs[i._b]._ext->_vector_ints;
-				const auto lookup_index = regs[i._c]._int;
-				if(lookup_index < 0 || lookup_index >= (*vec).size()){
-					throw std::runtime_error("Lookup in vector: out of bounds.");
-				}
-				else{
-					regs[i._a]._int = (*vec)[lookup_index];
-				}
+			const auto* vec = &regs[i._b]._ext->_vector_elements;
+			const auto lookup_index = regs[i._c]._int;
+			if(lookup_index < 0 || lookup_index >= (*vec).size()){
+				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
-				const auto* vec = &regs[i._b]._ext->_vector_elements;
-				const auto lookup_index = regs[i._c]._int;
-				if(lookup_index < 0 || lookup_index >= (*vec).size()){
-					throw std::runtime_error("Lookup in vector: out of bounds.");
-				}
-				else{
-					const bc_value_t& value = (*vec)[lookup_index];
+				const bc_value_t& value = (*vec)[lookup_index];
 
-					//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
-					ASSERT(value._type == frame_ptr->_symbols[i._a].second._value_type);
+				//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
+				ASSERT(value._type == frame_ptr->_symbols[i._a].second._value_type);
 
-					bool is_ext = frame_ptr->_exts[i._a];
-					if(is_ext){
-						bc_value_t::release_ext_pod(regs[i._a]);
-						value._pod._ext->_rc++;
-					}
-					regs[i._a] = value._pod;
+				bool is_ext = frame_ptr->_exts[i._a];
+				if(is_ext){
+					bc_value_t::release_ext_pod(regs[i._a]);
+					value._pod._ext->_rc++;
 				}
+				regs[i._a] = value._pod;
+			}
+			ASSERT(vm.check_invariant());
+			break;
+		}
+		case bc_opcode::k_lookup_element_vector_int: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_int(i._c));
+#if DEBUG
+			const auto& element_type = frame_ptr->_symbols[i._b].second._value_type.get_vector_element_type();
+			QUARK_ASSERT(element_type.is_int() == true);
+#endif
+
+			const auto& vec = regs[i._b]._ext->_vector_ints;
+			const auto lookup_index = regs[i._c]._int;
+			if(lookup_index < 0 || lookup_index >= vec.size()){
+				throw std::runtime_error("Lookup in vector: out of bounds.");
+			}
+			else{
+				regs[i._a]._int = vec[lookup_index];
 			}
 			ASSERT(vm.check_invariant());
 			break;

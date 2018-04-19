@@ -536,7 +536,12 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 			return bc_opcode::k_lookup_element_json_value;
 		}
 		else if(parent_type.is_vector()){
-			return bc_opcode::k_lookup_element_vector;
+			if(parent_type.get_vector_element_type().is_int()){
+				return bc_opcode::k_lookup_element_vector_int;
+			}
+			else{
+				return bc_opcode::k_lookup_element_vector;
+			}
 		}
 		else if(parent_type.is_dict()){
 			return bc_opcode::k_lookup_element_dict;
