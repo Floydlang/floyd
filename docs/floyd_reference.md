@@ -1,11 +1,12 @@
+![alt text](./floyd_logo.png "Floyd Logo")
 
 # FLOYD SCRIPT REFERENCE
 
 Floyd Script is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
 
-It's focus is composability, minimalism and proven programming techniques, like pure functions and immutability.
+It's focus is composability, minimalism and robust programming techniques, like pure functions and immutability.
 
-It as a unique concept to handle mutation of data, control of the outside world (files, network, UI) and controlling time.
+It has a unique concept to handle mutation of data, control over the outside world (files, network, UI) and controlling time.
 
 Functions and classes are pure. A pure function can only call pure functions. Mutable data can exist locally inside a function, but never leak out of the function. 
 
@@ -21,20 +22,11 @@ Here is hello world, as expected:
 	print("Hello, World!");
 
 
-Trying the floyd REPL:
-
-	marcus$ ./floyd 
-	Floyd 0.3 MIT.
-	Type "help", "copyright" or "license" for more informations!
-	>>>print("Hello, world!");
-	Hello, world!
-
-
 Executing a floyd program:
 
 	marcus$ floyd my_program.floyd file1.txt file2.txt
 
-This will runt the program my_program.floyd and call it's main(string args) with the arguments ["file1.txt", "file2.text"].
+This will run the program my_program.floyd and call it's main(string args) with the arguments ["file1.txt", "file2.text"].
 
 
 ### GOALS
@@ -70,39 +62,24 @@ Features that break composabiity is limited and carefully controlled in the lang
 To easy composability, the basic wiring between libraries and subsystems is built-in and standardized - this like common datatypes, error propagation between libraries, logging and asserts, memory handling and streaming data. All built-in and composable.
 
 
-# BASIC TYPES
+# TYPES
 
 These are the primitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
 
-- __bool__			__true__ or __false__
-- __int__			Same as int64
-- __float__			32-bit floating point number
-- __string__		built-in string type. 8bit pure (supports embedded nulls).
-					Use for machine strings, basic UI. Not localizable.
-- __typeid__		Describes the *type* of a value.
-- __function__		A function value. Functions can be Floyd functions or C functions. They are callable.
-
-
-# COMPOSITE TYPES
-
-These are composites and collections of other types.
-
-- __struct__		like C struct or classes or tuples.
-- __vector__		a continous array of elements addressed via indexes.
-- __dictionary__	lookup values using string keys.
-- __json_value__	a value that holds a json-compatible value, can be a big JSON tree.
+|Type		  	| Use
+|---				|---	
+|__bool__			|__true__ or __false__
+|__int__			| Signed 64 bit integer
+|__float__		| 32-bit floating point number
+|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable.
+|__typeid__		| Describes the *type* of a value.
+|__function__		| A function value. Functions can be Floyd functions or C functions. They are callable.
+|__struct__		| Like C struct or classes or tuples. A value object.
+|__vector__		| A continous array of elements addressed via indexes.
+|__dictionary__	| Lookup values using string keys.
+|__json_value__	| A value that holds a json-compatible value, can be a big JSON tree.
 
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [] etc.
-
-# CORE TYPE FEATURES
-
-These are features built into every type: integer, string, struct, collections etc.
-
-- __a = b__ 							This true-deep copies the value b to the new name a.
-- __a == b__							Compares the two values, deeply.
-- __a != b__							Derivated of a == b.
-- __a < b__								Tests all member data in the order they appear in the struct.
-- __a <= b__, __a > b__, __a >= b__	These are derivated of a < b
 
 
 # TRUE DEEP
@@ -112,10 +89,24 @@ True-deep is a Floyd term that means that all values and sub-values are always c
 The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
 
 
+# CORE TYPE FEATURES
+
+These are features built into every type: integer, string, struct, dictionary etc. They are true-deep.
+
+|Expression		| Explanation
+|---				|---	
+|__a = b__ 		| This true-deep copies the value b to the new name a.
+|__a == b__		| a exactly the same as b
+|__a != b__		| a different to b
+|__a < b__		| a smaller than b
+|__a <= b__ 		| a smaller or equal to b
+|__a > b__ 		| a larger than b
+|__a >= b__ 		| a larger or equal to b
+
+
 # ENCODING
 
 Floyd script files are always utf-8 files with no BOM.
-
 
 
 # VALUES, VARIABLES AND CONSTANTS
@@ -315,7 +306,7 @@ In each body you can write any statements. There is no "break" keyword.
 
 # FOR LOOPS
 
-For-loops are used to evaluate its body many times, with a range of input values. The entire condition expression is evaluated *before* the first time the body is called. This means the program already decided the number of loops to run before running the first time.
+For-loops are used to execute a body of statements many times. The number of times is calculated while the program runs. The entire condition expression is evaluated *before* the first time the body is called. This means the program already decided the number of loops to run before running the first loop iteration.
 
 Closed range that starts with 1 and ends with 5:
 
@@ -338,7 +329,6 @@ You can use expressions for range:
 	for (tickMark in a..<string.size()) {
 	}
 ```
-
 
 
 Above snippet simulates the for loop of the C language but it works a little differently. There is always exactly ONE loop variable and it is defined and inited in the first section, checked in the condition section and incremented / updated in the third section. It must be the same symbol.
@@ -414,7 +404,7 @@ You can append to strings together using the + operation.
 
 A typeid is tells the type of a value.
 
-When you reference one of the built in primitve types by name, you are accessing a variable of type typeid.
+When you reference one of the built in primitive types by name, you are accessing a variable of type typeid.
 
 - bool
 - int
@@ -458,25 +448,15 @@ Notice that json_value can contain an entire huge json file, with a big tree of 
 
 ### JSON LITERALS
 
-Embedd json inside source code file. Simple / no escaping needed. Use to paste data, test values etc. Round trip.
+You can directly embedd json inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values etc. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings etc. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
 
-Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings etc. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown (TBD).
-
-This all means you can write Floyd code that generate all or parts of the JSON.
-Also: you can nest JSONs in eachother.
-
-Support pasting JSON directly into source file, including any escapes, UTF-8 etc.
-
+This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in eachother.
 
 Example json:
 
 	json_value a = 13;
 	json_value b = "Hello!";
 	json_value c = {"hello": 1, "bye": 3};
-
-	//	Notice that json objects are more lax than Floyd: you can
-	//	mix different types of values in the same object or array. Floyd hold one value-type only.
-
 	json_value d = { "pigcount": 3, "pigcolor": "pink" };
 
 	assert(a == 13);
@@ -484,7 +464,6 @@ Example json:
 	assert(c["hello"] == 1);
 	assert(c["bye"] == 3);
 	assert(size(c) == 2);
-
 
 	test_json2 = json_value(
 		{
@@ -497,6 +476,8 @@ Example json:
 			"seven": false,
 		}
 	)
+
+Notice that json objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
 
 
 

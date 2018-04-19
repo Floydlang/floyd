@@ -1,6 +1,6 @@
 ![alt text](./docs/floyd_logo.png "Floyd Logo")
 
-License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is to change license to MIT.
+License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is to change license to MIT or similar.
 
 # WHAT IS FLOYD?
 
@@ -8,15 +8,43 @@ Floyd is a new programming language design that is designed to have ready made a
 
 It feels familiar to Javascript / C / Java / C++ programmers but gets rid of some of core troublesome features and replaces it with new and better features.
 
-**FEATURES:** Functions, structs, strings, vectors, dictionaries, deep JSON integration.
+**FEATURES:** Functions, structs as value objects, strings, vectors, dictionaries, deep JSON integration, static typing, type deducing, automatic deep behaviour of all types, like comparison and copying.
 
-**REMOVED:** Freely altering data, pointers and references and aliasing, null, inheritance, memory management, header files.
+**REMOVED:** Pointers and references and aliasing, null, classes with mutation and aliasing, inheritance, memory management, header files, constructors and manual lifetime operators.
 
-**TO COME:** protocols, sumtype, double-type, file system access, clocks & channels, HAMT collection backend.
+**COMING SOON:** protocols, sumtype, double-type, file system access, clocks & channels, HAMT collection backend.
 
 Floyd consists of the language specification, a compiler and a byte code interpreter. Floyd is written in portable C++ 11.
 
-For details, read the [Floyd reference docs](./docs/Floyd reference.md).
+For details, read the [Floyd reference docs](./docs/floyd_reference.md).
+
+# CHEAT SHEET
+
+![alt text](./docs/floyd_cheat_sheet2.png "Floyd Cheat Sheet")
+
+# EXAMPLE
+
+	//  Make simple, ready-for use struct.
+	struct photo {
+		int width;
+		int height;
+		[float] pixels;
+	};
+
+	//  Try the new struct.
+	a = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
+	assert(a.width == 1);
+	assert(a.height == 3);
+	assert(a.pixels[2] == 2.0);
+
+	b = photo(0, 3, []);
+	c = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
+
+	//	Try automatic features for equality
+	asset(a == a);
+	asset(a != b);
+	asset(a == c);
+	asset(c > b);
 
 
 # INSTALLATION
