@@ -76,7 +76,7 @@ namespace floyd {
 		k_function,
 
 		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-		k_internal_unresolved_type_identifier,
+		k_internal_unresolved_type_identifier
 	};
 
 	std::string base_type_to_string(const base_type t);

@@ -24,6 +24,7 @@
 //??? remove all make-functions -- just use constructors.
 //??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
 
+
 namespace floyd {
 	struct interpreter_t;
 	struct bc_program_t;
@@ -33,7 +34,6 @@ namespace floyd {
 	union bc_pod_value_t;
 	typedef bc_typed_value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const bc_typed_value_t args[], int arg_count);
 	typedef int16_t bc_typeid_t;
-
 
 
 	//////////////////////////////////////		bc_pod_value_t
@@ -53,31 +53,95 @@ namespace floyd {
 	};
 
 	enum class value_runtime_encoding {
-		k_string_obj,
-		k_json_value_obj,
-		k_typeid_obj,
-		k_struct_obj,
+		k_none,
+		k_bool,
+		k_int,
+		k_float,
+		k_string,
+		k_json_value,
 
-		k_vector64,
-		k_vector_full,
+		//	This is a type that specifies another type.
+		k_typeid,
 
-		k_dict_full
+		k_struct,
+		k_vector,
+		k_vector_uint64,
+		k_dict,
+		k_function,
 	};
 
-
-	inline bool is_encoded_as_vector64(const typeid_t& type){
-		if(type.is_vector() == false){
-			return false;
+	inline value_runtime_encoding type_to_encoding(const typeid_t& type){
+		const auto basetype = type.get_base_type();
+		if(false){
 		}
-		else{
+		else if(basetype == base_type::k_internal_undefined){
+			return value_runtime_encoding::k_none;
+		}
+		else if(basetype == base_type::k_internal_dynamic){
+			return value_runtime_encoding::k_none;
+		}
+		else if(basetype == base_type::k_void){
+			return value_runtime_encoding::k_none;
+		}
+		else if(basetype == base_type::k_bool){
+			return value_runtime_encoding::k_bool;
+		}
+		else if(basetype == base_type::k_int){
+			return value_runtime_encoding::k_int;
+		}
+		else if(basetype == base_type::k_float){
+			return value_runtime_encoding::k_float;
+		}
+		else if(basetype == base_type::k_string){
+			return value_runtime_encoding::k_string;
+		}
+		else if(basetype == base_type::k_json_value){
+			return value_runtime_encoding::k_json_value;
+		}
+		else if(basetype == base_type::k_typeid){
+			return value_runtime_encoding::k_typeid;
+		}
+		else if(basetype == base_type::k_struct){
+			return value_runtime_encoding::k_struct;
+		}
+		else if(basetype == base_type::k_vector){
 			const auto& element_type = type.get_vector_element_type().get_base_type();
 			if(element_type == base_type::k_bool || element_type == base_type::k_int || element_type == base_type::k_float){
-				return true;
+				return value_runtime_encoding::k_vector_uint64;
 			}
 			else{
-				return false;
+				return value_runtime_encoding::k_vector;
 			}
 		}
+		else if(basetype == base_type::k_dict){
+			return value_runtime_encoding::k_dict;
+		}
+		else if(basetype == base_type::k_function){
+			return value_runtime_encoding::k_function;
+		}
+		else if(basetype == base_type::k_internal_unresolved_type_identifier){
+		}
+		else if(basetype == base_type::k_function){
+			return value_runtime_encoding::k_function;
+		}
+		else{
+		}
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+
+	//	??? very slow?
+	//	Will this type of value require an ext ? bc_value_object_t to be used?
+	inline bool is_encoded_as_ext(value_runtime_encoding encoding){
+		return false
+			|| encoding == value_runtime_encoding::k_string
+			|| encoding == value_runtime_encoding::k_json_value
+			|| encoding == value_runtime_encoding::k_typeid
+			|| encoding == value_runtime_encoding::k_struct
+			|| encoding == value_runtime_encoding::k_vector
+			|| encoding == value_runtime_encoding::k_vector_uint64
+			|| encoding == value_runtime_encoding::k_dict
+			;
 	}
 
 	//	??? very slow?
@@ -375,7 +439,6 @@ namespace floyd {
 			return true;
 		}
 	};
-
 
 
 
@@ -944,7 +1007,7 @@ namespace floyd {
 
 			Arguments are put on stack. No DYN arguments. All arguments are of type uint64.
 		*/
-		k_new_vector64,
+		k_new_vector_uint64,
 
 		/*
 			A: Register: where to put resulting value

@@ -1601,7 +1601,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_new_vector64: {
+		case bc_opcode::k_new_vector_uint64: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_vector(i._a));
 			ASSERT(i._c >= 0);
