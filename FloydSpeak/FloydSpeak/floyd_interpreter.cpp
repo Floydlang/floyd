@@ -27,14 +27,12 @@ using std::make_shared;
 
 
 
-
 //////////////////////////////////////		value_t -- helpers
 
 
 
 value_t bc_to_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
-
 
 	const auto& type = value._type;
 	const auto basetype = value._type.get_base_type();
@@ -80,7 +78,12 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
-		return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value)));
+		if(element_type.is_int()){
+			return value_t::make_vector_value(element_type, ints_to_values(value._pod._ext->_vector_ints));
+		}
+		else{
+			return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value)));
+		}
 	}
 	else if(basetype == base_type::k_dict){
 		const auto value_type = type.get_dict_value_type();
@@ -140,7 +143,13 @@ bc_value_t value_to_bc(const value_t& value){
 	}
 
 	else if(basetype == base_type::k_vector){
-		return make_vector_value(value.get_type().get_vector_element_type(), values_to_bcs2(value.get_vector_value()));
+		const auto element_type = value.get_type().get_vector_element_type();
+		if(element_type.is_int()){
+			return make_vector_int_value(values_to_ints(value.get_vector_value()));
+		}
+		else{
+			return make_vector_value(element_type, values_to_bcs2(value.get_vector_value()));
+		}
 	}
 	else if(basetype == base_type::k_dict){
 		const auto elements = value.get_dict_value();
@@ -183,10 +192,25 @@ immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values){
 	}
 	return result;
 }
+immer::vector<int> values_to_ints(const std::vector<value_t>& values){
+	immer::vector<int> result;
+	for(const auto e: values){
+		result.push_back(e.get_int_value());
+	}
+	return result;
+}
+
 std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values){
 	std::vector<value_t> result;
 	for(const auto e: values){
 		result.push_back(bc_to_value(e));
+	}
+	return result;
+}
+std::vector<value_t> ints_to_values(const immer::vector<int>& values){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(value_t::make_int(e));
 	}
 	return result;
 }

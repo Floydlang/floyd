@@ -4,15 +4,15 @@ License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is
 
 # WHAT IS FLOYD?
 
-Floyd is a new programming language design that is designed to have ready made answers for how to do great, roboust and composable programs, both small programs and huge systems.
+Floyd is a new programming language designed to have ready made answers for how to do great, robust and composable programs, both small programs and huge systems.
 
-It feels familiar to Javascript / C / Java / C++ programmers but gets rid of some of core troublesome features and replaces it with new and better features.
+It feels familiar to Javascript / C / Java / C++ programmers but gets rid of a lot of the troublesome features and replaces it with new and better ways.
 
-**FEATURES:** Functions, structs as value objects, strings, vectors, dictionaries, deep JSON integration, static typing, type deducing, automatic deep behaviour of all types, like comparison and copying.
+**FEATURES:** Functions, structs as immutable value objects, immutable strings, immutable vectors, immutable dictionaries, deep and immutable JSON integration, static typing, type deducing, automatic deep behaviour of all types, like comparison and copying.
 
-**REMOVED:** Pointers and references and aliasing, null, classes with mutation and aliasing, inheritance, memory management, header files, constructors and manual lifetime operators.
+**REMOVED:** Pointers and references and aliasing, null, classes with mutation and aliasing, inheritance, memory management, header files, constructors and manual lifetime operators, dynamic types, dynamic members of objects.
 
-**COMING SOON:** protocols, sumtype, double-type, file system access, clocks & channels, HAMT collection backend.
+**COMING SOON:** protocols, sumtype, double-type, file system access, clocks & channels.
 
 Floyd consists of the language specification, a compiler and a byte code interpreter. Floyd is written in portable C++ 11.
 

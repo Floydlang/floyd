@@ -747,12 +747,22 @@ expr_info_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_a
 	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: construct value result") : target_reg;
 
 	if(target_type.is_vector()){
-		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_new_vector,
-			target_reg2,
-			make_imm_int(target_itype),
-			make_imm_int(arg_count)
-		));
+		if(target_type.get_vector_element_type().is_int()){
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_vector_int,
+				target_reg2,
+				make_imm_int(0),
+				make_imm_int(arg_count)
+			));
+		}
+		else{
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_vector,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
 	}
 	else if(target_type.is_dict()){
 		body_acc._instrs.push_back(bcgen_instruction_t(

@@ -111,6 +111,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			throw std::runtime_error("Invalid json schema for Floyd struct, expected JSON object.");
 		}
 	}
+
 	else if(target_type.is_vector()){
 		if(v.is_array()){
 			const auto target_element_type = target_type.get_vector_element_type();
@@ -375,18 +376,30 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			}
 		}
 		else if(obj1._type.is_vector()){
+			const auto element_type = obj1._type.get_vector_element_type();
 			if(lookup_key._type.is_int() == false){
 				throw std::runtime_error("Vector lookup using integer index only.");
 			}
+			else if(element_type != new_value._type){
+				throw std::runtime_error("Update element must match vector type.");
+			}
 			else{
-				const auto obj = obj1;
-				auto v2 = *get_vector_value(obj);
-				const auto element_type = obj._type.get_vector_element_type();
+				if(obj1._type.get_vector_element_type().is_int()){
+					auto v2 = obj1._pod._ext->_vector_ints;
 
-				if(element_type != new_value._type){
-					throw std::runtime_error("Update element must match vector type.");
+					const int lookup_index = lookup_key.get_int_value();
+					if(lookup_index < 0 || lookup_index >= v2.size()){
+						throw std::runtime_error("Vector lookup out of bounds.");
+					}
+					else{
+						v2 = v2.set(lookup_index, new_value._pod._int);
+						const auto s2 = make_vector_int_value(v2);
+						return s2;
+					}
 				}
 				else{
+					const auto obj = obj1;
+					auto v2 = *get_vector_value(obj);
 					const int lookup_index = lookup_key.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v2.size()){
 						throw std::runtime_error("Vector lookup out of bounds.");
@@ -472,8 +485,14 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		}
 	}
 	else if(obj._type.is_vector()){
-		const auto size = get_vector_value(obj)->size();
-		return bc_value_t::make_int(static_cast<int>(size));
+		if(obj._type.get_vector_element_type().is_int()){
+			const auto size = obj._pod._ext->_vector_ints.size();
+			return bc_value_t::make_int(static_cast<int>(size));
+		}
+		else{
+			const auto size = get_vector_value(obj)->size();
+			return bc_value_t::make_int(static_cast<int>(size));
+		}
 	}
 	else if(obj._type.is_dict()){
 		const auto size = get_dict_value(obj).size();
@@ -503,19 +522,35 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		return bc_value_t::make_int(result);
 	}
 	else if(obj._type.is_vector()){
-		const auto& vec = *get_vector_value(obj);
-		const auto element_type = obj._type.get_vector_element_type();
-		if(wanted._type != element_type){
-			throw std::runtime_error("Type mismatch.");
-		}
-		const auto size = vec.size();
-		int index = 0;
-		while(index < size && bc_compare_value_true_deep(vec[index], wanted, element_type) != 0){
-			index++;
-		}
+		if(obj._type.get_vector_element_type().is_int()){
+			if(wanted._type.is_int() == false){
+				throw std::runtime_error("Type mismatch.");
+			}
+			const auto& vec = obj._pod._ext->_vector_ints;
+			int index = 0;
+			const auto size = vec.size();
+			while(index < size && vec[index] != wanted._pod._int){
+				index++;
+			}
 
-		int result = index == size ? -1 : static_cast<int>(index);
-		return bc_value_t::make_int(result);
+			int result = index == size ? -1 : static_cast<int>(index);
+			return bc_value_t::make_int(result);
+		}
+		else{
+			const auto& vec = *get_vector_value(obj);
+			const auto element_type = obj._type.get_vector_element_type();
+			if(wanted._type != element_type){
+				throw std::runtime_error("Type mismatch.");
+			}
+			const auto size = vec.size();
+			int index = 0;
+			while(index < size && bc_compare_value_true_deep(vec[index], wanted, element_type) != 0){
+				index++;
+			}
+
+			int result = index == size ? -1 : static_cast<int>(index);
+			return bc_value_t::make_int(result);
+		}
 	}
 	else{
 		throw std::runtime_error("Calling find() on unsupported type of value.");
@@ -592,14 +627,22 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		return bc_value_t::make_string(str2);
 	}
 	else if(obj._type.is_vector()){
-		const auto vec = *get_vector_value(obj);
 		const auto element_type = obj._type.get_vector_element_type();
 		if(element._type != element_type){
 			throw std::runtime_error("Type mismatch.");
 		}
-		auto elements2 = vec.push_back(element);
-		const auto v = make_vector_value(element_type, elements2);
-		return v;
+
+		if(obj._type.get_vector_element_type().is_int()){
+			auto elements2 = obj._pod._ext->_vector_ints.push_back(element._pod._int);
+			const auto v = make_vector_int_value(elements2);
+			return v;
+		}
+		else{
+			const auto vec = *get_vector_value(obj);
+			auto elements2 = vec.push_back(element);
+			const auto v = make_vector_value(element_type, elements2);
+			return v;
+		}
 	}
 	else{
 		throw std::runtime_error("Calling push_back() on unsupported type of value.");
@@ -639,16 +682,29 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		return v;
 	}
 	else if(obj._type.is_vector()){
-		const auto vec = *get_vector_value(obj);
-		const auto element_type = obj._type.get_vector_element_type();
-		const auto start2 = std::min(start, static_cast<int>(vec.size()));
-		const auto end2 = std::min(end, static_cast<int>(vec.size()));
-		immer::vector<bc_value_t> elements2;
-		for(int i = start2 ; i < end2 ; i++){
-			elements2 = elements2.push_back(vec[i]);
+		if(obj._type.get_vector_element_type().is_int()){
+			const auto& vec = obj._pod._ext->_vector_ints;
+			const auto start2 = std::min(start, static_cast<int>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int>(vec.size()));
+			immer::vector<int> elements2;
+			for(int i = start2 ; i < end2 ; i++){
+				elements2 = elements2.push_back(vec[i]);
+			}
+			const auto v = make_vector_int_value(elements2);
+			return v;
 		}
-		const auto v = make_vector_value(element_type, elements2);
-		return v;
+		else{
+			const auto vec = *get_vector_value(obj);
+			const auto element_type = obj._type.get_vector_element_type();
+			const auto start2 = std::min(start, static_cast<int>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int>(vec.size()));
+			immer::vector<bc_value_t> elements2;
+			for(int i = start2 ; i < end2 ; i++){
+				elements2 = elements2.push_back(vec[i]);
+			}
+			const auto v = make_vector_value(element_type, elements2);
+			return v;
+		}
 	}
 	else{
 		throw std::runtime_error("Calling push_back() on unsupported type of value.");
@@ -690,21 +746,40 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 		return v;
 	}
 	else if(obj._type.is_vector()){
-		const auto& vec = *get_vector_value(obj);
-		const auto element_type = obj._type.get_vector_element_type();
-		const auto start2 = std::min(start, static_cast<int>(vec.size()));
-		const auto end2 = std::min(end, static_cast<int>(vec.size()));
-		const auto& new_bits = *get_vector_value(args[3]);
+		if(obj._type.get_vector_element_type().is_int()){
+			const auto& vec = obj._pod._ext->_vector_ints;
+			const auto element_type = obj._type.get_vector_element_type();
+			const auto start2 = std::min(start, static_cast<int>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int>(vec.size()));
+			const auto& new_bits = args[3]._pod._ext->_vector_ints;
 
-		auto result = immer::vector<bc_value_t>(vec.begin(), vec.begin() + start2);
-		for(int i = 0 ; i < new_bits.size() ; i++){
-			result = result.push_back(new_bits[i]);
+			auto result = immer::vector<int>(vec.begin(), vec.begin() + start2);
+			for(int i = 0 ; i < new_bits.size() ; i++){
+				result = result.push_back(new_bits[i]);
+			}
+			for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
+				result = result.push_back(vec[end2 + i]);
+			}
+			const auto v = make_vector_int_value(result);
+			return v;
 		}
-		for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
-			result = result.push_back(vec[end2 + i]);
+		else{
+			const auto& vec = *get_vector_value(obj);
+			const auto element_type = obj._type.get_vector_element_type();
+			const auto start2 = std::min(start, static_cast<int>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int>(vec.size()));
+			const auto& new_bits = *get_vector_value(args[3]);
+
+			auto result = immer::vector<bc_value_t>(vec.begin(), vec.begin() + start2);
+			for(int i = 0 ; i < new_bits.size() ; i++){
+				result = result.push_back(new_bits[i]);
+			}
+			for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
+				result = result.push_back(vec[end2 + i]);
+			}
+			const auto v = make_vector_value(element_type, result);
+			return v;
 		}
-		const auto v = make_vector_value(element_type, result);
-		return v;
 	}
 	else{
 		throw std::runtime_error("Calling replace() on unsupported type of value.");

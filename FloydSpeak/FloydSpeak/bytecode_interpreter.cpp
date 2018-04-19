@@ -114,13 +114,11 @@ QUARK_UNIT_TESTQ("bc_compare_string()", ""){
 }
 
 
-//??? Slow!.
 int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const typeid_t& type){
 	const auto& struct_def = type.get_struct();
 
 	for(int i = 0 ; i < struct_def._members.size() ; i++){
 		const auto& member_type = struct_def._members[i]._type;
-
 		int diff = bc_compare_value_true_deep(left[i], right[i], member_type);
 		if(diff != 0){
 			return diff;
@@ -129,12 +127,9 @@ int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::
 	return 0;
 }
 
-//	Compare vector element by element.
-//	### Think more of equality when vectors have different size and shared elements are equal.
-int bc_compare_vector_true_deep(const immer::vector<bc_value_t>& left, const immer::vector<bc_value_t>& right, const typeid_t& type){
-//	QUARK_ASSERT(left.check_invariant());
-//	QUARK_ASSERT(right.check_invariant());
-//	QUARK_ASSERT(left._element_type == right._element_type);
+int bc_compare_vectors(const immer::vector<bc_value_t>& left, const immer::vector<bc_value_t>& right, const typeid_t& type){
+	QUARK_ASSERT(type.is_vector());
+	QUARK_ASSERT(type.get_vector_element_type().is_int() == false);
 
 	const auto& shared_count = std::min(left.size(), right.size());
 	const auto& element_type = typeid_t(type.get_vector_element_type());
@@ -154,6 +149,34 @@ int bc_compare_vector_true_deep(const immer::vector<bc_value_t>& left, const imm
 		return +1;
 	}
 }
+
+/*
+	const auto encoding = type_to_encoding(type);
+	QUARK_ASSERT(encoding == value_runtime_encoding::k_ext_vector || encoding == value_runtime_encoding::k_ext_vector_int);
+
+	if(encoding == value_runtime_encoding::k_ext_vector){
+*/
+
+int bc_compare_vector_ints(const immer::vector<int>& left, const immer::vector<int>& right){
+	const auto& shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		const auto element_result = bc_limit(left[i] - right[i], -1, 1);
+		if(element_result != 0){
+			return element_result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+
 
 template <typename Map>
 bool bc_map_compare (Map const &lhs, Map const &rhs) {
@@ -258,9 +281,14 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		return bc_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value(), type0);
 	}
 	else if(type.is_vector()){
-		const auto& left_vec = get_vector_value(left);
-		const auto& right_vec = get_vector_value(right);
-		return bc_compare_vector_true_deep(*left_vec, *right_vec, type0);
+		if(type.get_vector_element_type().is_int()){
+			return bc_compare_vector_ints(left._pod._ext->_vector_ints, right._pod._ext->_vector_ints);
+		}
+		else{
+			const auto& left_vec = get_vector_value(left);
+			const auto& right_vec = get_vector_value(right);
+			return bc_compare_vectors(*left_vec, *right_vec, type0);
+		}
 	}
 	else if(type.is_dict()){
 		const auto& left2 = get_dict_value(left);
@@ -334,6 +362,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_vector, { "new_vector", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_vector_int, { "new_vector_int", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_dict, { "new_dict", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
 
@@ -755,13 +784,23 @@ json_t bcvalue_to_json(const bc_value_t& v){
 		return json_t::make_object(obj2);
 	}
 	else if(v._type.is_vector()){
-		const auto vec = get_vector_value(v);
-		std::vector<json_t> result;
-		for(int i = 0 ; i < vec->size() ; i++){
-			const auto element_value2 = vec->operator[](i);
-			result.push_back(bcvalue_to_json(element_value2));
+		if(v._type.get_vector_element_type().is_int()){
+			std::vector<json_t> result;
+			for(int i = 0 ; i < v._pod._ext->_vector_ints.size() ; i++){
+				const auto element_value2 = v._pod._ext->_vector_ints[i];
+				result.push_back(json_t(element_value2));
+			}
+			return result;
 		}
-		return result;
+		else{
+			const auto vec = get_vector_value(v);
+			std::vector<json_t> result;
+			for(int i = 0 ; i < vec->size() ; i++){
+				const auto element_value2 = vec->operator[](i);
+				result.push_back(bcvalue_to_json(element_value2));
+			}
+			return result;
+		}
 	}
 	else if(v._type.is_dict()){
 		const auto entries = get_dict_value(v);
@@ -933,6 +972,7 @@ void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	const auto& element_type = target_type.get_vector_element_type();
 	QUARK_ASSERT(element_type.is_undefined() == false);
 	QUARK_ASSERT(target_type.is_undefined() == false);
+	QUARK_ASSERT(target_type.is_int() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 	bool is_element_ext = is_encoded_as_ext(element_type);
@@ -1430,25 +1470,40 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_vector(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-//			const auto& element_type = frame_ptr->_symbols[i._b].second._value_type.get_vector_element_type();
+			const auto& element_type = frame_ptr->_symbols[i._b].second._value_type.get_vector_element_type();
 
-			const auto* vec = &regs[i._b]._ext->_vector_elements;
-			const auto lookup_index = regs[i._c]._int;
-			if(lookup_index < 0 || lookup_index >= (*vec).size()){
-				throw std::runtime_error("Lookup in vector: out of bounds.");
+			//	Make separate opcode for lookup-int.
+			if(element_type.is_int()){
+				ASSERT(stack.check_reg_int(i._a));
+
+				const auto* vec = &regs[i._b]._ext->_vector_ints;
+				const auto lookup_index = regs[i._c]._int;
+				if(lookup_index < 0 || lookup_index >= (*vec).size()){
+					throw std::runtime_error("Lookup in vector: out of bounds.");
+				}
+				else{
+					regs[i._a]._int = (*vec)[lookup_index];
+				}
 			}
 			else{
-				const bc_value_t& value = (*vec)[lookup_index];
-
-				//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
-				ASSERT(value._type == frame_ptr->_symbols[i._a].second._value_type);
-
-				bool is_ext = frame_ptr->_exts[i._a];
-				if(is_ext){
-					bc_value_t::release_ext_pod(regs[i._a]);
-					value._pod._ext->_rc++;
+				const auto* vec = &regs[i._b]._ext->_vector_elements;
+				const auto lookup_index = regs[i._c]._int;
+				if(lookup_index < 0 || lookup_index >= (*vec).size()){
+					throw std::runtime_error("Lookup in vector: out of bounds.");
 				}
-				regs[i._a] = value._pod;
+				else{
+					const bc_value_t& value = (*vec)[lookup_index];
+
+					//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
+					ASSERT(value._type == frame_ptr->_symbols[i._a].second._value_type);
+
+					bool is_ext = frame_ptr->_exts[i._a];
+					if(is_ext){
+						bc_value_t::release_ext_pod(regs[i._a]);
+						value._pod._ext->_rc++;
+					}
+					regs[i._a] = value._pod;
+				}
 			}
 			ASSERT(vm.check_invariant());
 			break;
@@ -1593,29 +1648,31 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto arg_count = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
 			QUARK_ASSERT(target_type.is_vector());
+			QUARK_ASSERT(target_type.get_vector_element_type().is_int() == false);
 			execute_new_vector(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
 
-		case bc_opcode::k_new_vector_uint64: {
+		case bc_opcode::k_new_vector_int: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(i._b == 0);
 			ASSERT(i._c >= 0);
 
 			const auto dest_reg = i._a;
 			const auto arg_count = i._c;
 
 			const int arg0_stack_pos = vm._stack.size() - arg_count;
-			immer::vector<uint64_t> elements2;
+			immer::vector<int> elements2;
 			for(int a = 0 ; a < arg_count ; a++){
 				const auto pos = arg0_stack_pos + a;
-				elements2 = elements2.push_back(stack._entries[pos]._value64);
+				elements2 = elements2.push_back(stack._entries[pos]._int);
 			}
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = type.get_vector_element_type();
 
-			const auto result = make_vector64_value(element_type, elements2);
+			const auto result = make_vector_int_value(elements2);
 			vm._stack.write_register_obj(dest_reg, result);
 
 			ASSERT(vm.check_invariant());
@@ -1776,7 +1833,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? inline
+		//??? inline.
+		//???make special opcode for int-vectors.
 		//??? Use itypes.
 		case bc_opcode::k_add_vector: {
 			ASSERT(stack.check_reg_vector(i._a));
@@ -1784,16 +1842,28 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_vector(i._c));
 
 			const auto& element_type = frame_ptr->_symbols[i._a].second._value_type.get_vector_element_type();
+			if(element_type.is_int()){
+				//	Copy left into new vector.
+				immer::vector<int> elements2 = regs[i._b]._ext->_vector_ints;
 
-			//	Copy left into new vector.
-			immer::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
-
-			const auto& right_elements = regs[i._c]._ext->_vector_elements;
-			for(const auto& e: right_elements){
-				elements2 = elements2.push_back(e);
+				const auto& right_elements = regs[i._c]._ext->_vector_ints;
+				for(const auto& e: right_elements){
+					elements2 = elements2.push_back(e);
+				}
+				const auto& value2 = make_vector_int_value(elements2);
+				stack.write_register_obj(i._a, value2);
 			}
-			const auto& value2 = make_vector_value(element_type, elements2);
-			stack.write_register_obj(i._a, value2);
+			else{
+				//	Copy left into new vector.
+				immer::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
+
+				const auto& right_elements = regs[i._c]._ext->_vector_elements;
+				for(const auto& e: right_elements){
+					elements2 = elements2.push_back(e);
+				}
+				const auto& value2 = make_vector_value(element_type, elements2);
+				stack.write_register_obj(i._a, value2);
+			}
 			break;
 		}
 

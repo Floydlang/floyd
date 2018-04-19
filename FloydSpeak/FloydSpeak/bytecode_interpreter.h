@@ -49,7 +49,7 @@ namespace floyd {
 		int _function_id;
 		bc_value_object_t* _ext;
 		const bc_frame_t* _frame_ptr;
-		uint64_t _value64;
+//		uint64_t _value64;
 	};
 
 
@@ -69,7 +69,7 @@ namespace floyd {
 
 		k_ext_struct,
 		k_ext_vector,
-		k_ext_vector_uint64,
+		k_ext_vector_int,
 		k_ext_dict,
 		k_inline_function,
 	};
@@ -110,8 +110,9 @@ namespace floyd {
 		}
 		else if(basetype == base_type::k_vector){
 			const auto& element_type = type.get_vector_element_type().get_base_type();
-			if(element_type == base_type::k_bool || element_type == base_type::k_int || element_type == base_type::k_float){
-				return value_runtime_encoding::k_ext_vector_uint64;
+//			if(element_type == base_type::k_bool || element_type == base_type::k_int || element_type == base_type::k_float){
+			if(element_type == base_type::k_int){
+				return value_runtime_encoding::k_ext_vector_int;
 			}
 			else{
 				return value_runtime_encoding::k_ext_vector;
@@ -140,7 +141,7 @@ namespace floyd {
 			|| encoding == value_runtime_encoding::k_ext_typeid
 			|| encoding == value_runtime_encoding::k_ext_struct
 			|| encoding == value_runtime_encoding::k_ext_vector
-			|| encoding == value_runtime_encoding::k_ext_vector_uint64
+			|| encoding == value_runtime_encoding::k_ext_vector_int
 			|| encoding == value_runtime_encoding::k_ext_dict
 			;
 	}
@@ -425,78 +426,79 @@ namespace floyd {
 			QUARK_ASSERT(_debug_type.check_invariant());
 			QUARK_ASSERT(_typeid_value.check_invariant());
 
-			const auto base_type = _debug_type.get_base_type();
-			if(base_type == base_type::k_string){
+			const auto encoding = type_to_encoding(_debug_type);
+			if(encoding == value_runtime_encoding::k_ext_string){
 //				QUARK_ASSERT(_string);
 				QUARK_ASSERT(_json_value == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_vector64_elements.empty());
+				QUARK_ASSERT(_vector_ints.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
-			else if(base_type == base_type::k_json_value){
+			else if(encoding == value_runtime_encoding::k_ext_json_value){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value != nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_vector64_elements.empty());
+				QUARK_ASSERT(_vector_ints.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_json_value->check_invariant());
 			}
-			else if(base_type == base_type::k_typeid){
+			else if(encoding == value_runtime_encoding::k_ext_typeid){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
 		//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_vector64_elements.empty());
+				QUARK_ASSERT(_vector_ints.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_typeid_value.check_invariant());
 			}
-			else if(base_type == base_type::k_struct){
+			else if(encoding == value_runtime_encoding::k_ext_struct){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_vector64_elements.empty());
+				QUARK_ASSERT(_vector_ints.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
-			else if(base_type == base_type::k_vector){
+			else if(encoding == value_runtime_encoding::k_ext_vector){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 		//		QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_vector64_elements.empty());
+				QUARK_ASSERT(_vector_ints.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
-			else if(base_type == base_type::k_dict){
+			else if(encoding == value_runtime_encoding::k_ext_vector_int){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_vector64_elements.empty());
+		//		QUARK_ASSERT(_vector_ints.empty());
+				QUARK_ASSERT(_dict_entries.size() == 0);
+			}
+			else if(encoding == value_runtime_encoding::k_ext_dict){
+				QUARK_ASSERT(_string.empty());
+				QUARK_ASSERT(_json_value == nullptr);
+				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+				QUARK_ASSERT(_struct_members.empty());
+				QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector_ints.empty());
 		//		QUARK_ASSERT(_dict_entries.empty());
-			}
-			else if(base_type == base_type::k_function){
-				QUARK_ASSERT(_string.empty());
-				QUARK_ASSERT(_json_value == nullptr);
-				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
-				QUARK_ASSERT(_struct_members.empty());
-				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_vector64_elements.empty());
-				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else {
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			return true;
 		}
@@ -543,10 +545,10 @@ namespace floyd {
 		{
 			QUARK_ASSERT(check_invariant());
 		}
-		public: bc_value_object_t(const typeid_t& type, const immer::vector<uint64_t>& s) :
+		public: bc_value_object_t(const typeid_t& type, const immer::vector<int>& s) :
 			_rc(1),
 			_debug_type(type),
-			_vector64_elements(s)
+			_vector_ints(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -571,7 +573,7 @@ namespace floyd {
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::vector<bc_value_t> _struct_members;
 		public: immer::vector<bc_value_t> _vector_elements;
-		public: immer::vector<uint64_t> _vector64_elements;
+		public: immer::vector<int> _vector_ints;
 		public: immer::map<std::string, bc_value_t> _dict_entries;
 	};
 
@@ -655,6 +657,9 @@ namespace floyd {
 
 
 		inline  const std::vector<bc_value_t>& bc_value_t::get_struct_value() const {
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(_type.is_struct());
+
 			return _pod._ext->_struct_members;
 		}
 		inline  bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
@@ -668,10 +673,14 @@ namespace floyd {
 
 		inline const immer::vector<bc_value_t>* get_vector_value(const bc_value_t& value){
 			QUARK_ASSERT(value.check_invariant());
+			QUARK_ASSERT(value._type.is_vector());
+			QUARK_ASSERT(value._type.get_vector_element_type().is_int() == false);
 
 			return &value._pod._ext->_vector_elements;
 		}
 		inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_value_t>& elements){
+			QUARK_ASSERT(element_type.is_int() == false);
+
 			bc_value_t temp;
 			temp._type = typeid_t::make_vector(element_type);
 			temp._is_ext = true;
@@ -682,11 +691,11 @@ namespace floyd {
 
 
 
-		inline bc_value_t make_vector64_value(const typeid_t& element_type, const immer::vector<uint64_t>& elements){
+		inline bc_value_t make_vector_int_value(const immer::vector<int>& elements){
 			bc_value_t temp;
-			temp._type = typeid_t::make_vector(element_type);
+			temp._type = typeid_t::make_vector(typeid_t::make_int());
 			temp._is_ext = true;
-			temp._pod._ext = new bc_value_object_t{typeid_t::make_vector(element_type), elements};
+			temp._pod._ext = new bc_value_object_t{temp._type, elements};
 			QUARK_ASSERT(temp.check_invariant());
 			return temp;
 		}
@@ -913,12 +922,12 @@ namespace floyd {
 
 		/*
 			A: Register: where to put resulting value
-			B: IMMEDIATE: ---.
+			B: IMMEDIATE: 0
 			C: IMMEDIATE: Argument count.
 
-			Arguments are put on stack. No DYN arguments. All arguments are of type uint64.
+			Arguments are put on stack. All arguments are of type int.
 		*/
-		k_new_vector_uint64,
+		k_new_vector_int,
 
 		/*
 			A: Register: where to put resulting value
