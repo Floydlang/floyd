@@ -54,15 +54,15 @@ Floyd is distributed as C++ source code.
 
 # PLANNED LANGUAGE FEATURES
 
-- Closures
-- Add explicit language features for binary / text protocols. Protocol buffers.
-- Add runtime-concepts -- a way to layer systems on top of others.
 - Map, filter, reduce, lambda.
 - Struct encapsulation
-- Support integers with range.
 - Bit manipulation.
 - Text type and basic toolkit.
+- Support integers with range.
+- Add explicit language features for binary / text protocols. Protocol buffers.
 - High-level constructs, also generates docs. https://trello.com/c/cIYePtrb/669-impose-high-level-structure-of-the-code-base-above-classes
+- Add runtime-concepts -- a way to layer systems on top of others.
+- Closures
 
 # PLANNED TOOLS & RUNTIME
 
