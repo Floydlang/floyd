@@ -51,6 +51,28 @@ namespace floyd {
 		const bc_frame_t* _frame_ptr;
 	};
 
+	enum class value_runtime_encoding {
+		k_vector64,
+		k_vector_full
+	};
+
+	inline bool is_encoded_as_vector64(const typeid_t& type){
+		return false;
+	}
+
+	//	??? very slow?
+	//	Will this type of value require an ext ? bc_value_object_t to be used?
+	inline bool is_encoded_as_ext(base_type basetype){
+		return false
+			|| basetype == base_type::k_string
+			|| basetype == base_type::k_json_value
+			|| basetype == base_type::k_typeid
+			|| basetype == base_type::k_struct
+			|| basetype == base_type::k_vector
+			|| basetype == base_type::k_dict
+			;
+	}
+
 
 
 	//////////////////////////////////////		bc_value_t
@@ -63,19 +85,6 @@ namespace floyd {
 		public: static void add_ext_ref(const bc_value_t& value);
 		public: static void release_ext(bc_value_t& value);
 		public: static void release_ext_pod(bc_pod_value_t& value);
-
-		//	??? very slow?
-		//	Will this type of value require an ext ? bc_value_object_t to be used?
-		inline static bool is_bc_ext(base_type basetype){
-			return false
-				|| basetype == base_type::k_string
-				|| basetype == base_type::k_json_value
-				|| basetype == base_type::k_typeid
-				|| basetype == base_type::k_struct
-				|| basetype == base_type::k_vector
-				|| basetype == base_type::k_dict
-				;
-		}
 
 		public: bc_value_t() :
 #if DEBUG
@@ -1129,7 +1138,7 @@ namespace floyd {
 			_frame_ptr(frame),
 			_host_function_id(host_function_id),
 			_dyn_arg_count(-1),
-			_return_is_ext(bc_value_t::is_bc_ext(_function_type.get_function_return().get_base_type()))
+			_return_is_ext(is_encoded_as_ext(_function_type.get_function_return().get_base_type()))
 		{
 			_dyn_arg_count = count_function_dynamic_args(function_type);
 		}
@@ -1545,7 +1554,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
+			QUARK_ASSERT(is_encoded_as_ext(value._debug_type.get_base_type()) == true);
 #endif
 
 			value._pod._ext->_rc++;
@@ -1561,7 +1570,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == false);
+			QUARK_ASSERT(is_encoded_as_ext(value._debug_type.get_base_type()) == false);
 #endif
 
 			_entries[_stack_size] = value._pod;
@@ -1581,7 +1590,7 @@ namespace floyd {
 			QUARK_ASSERT(type == _debug_types[pos]);
 
 			const auto& e = _entries[pos];
-			bool is_ext = bc_value_t::is_bc_ext(type.get_base_type());
+			bool is_ext = is_encoded_as_ext(type.get_base_type());
 #if DEBUG
 			const auto result = bc_value_t(type, e, is_ext);
 #else
@@ -1603,7 +1612,7 @@ namespace floyd {
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 #if FLOYD_BC_VALUE_DEBUG_TYPE
-			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == false);
+			QUARK_ASSERT(is_encoded_as_ext(value._debug_type.get_base_type()) == false);
 #endif
 			QUARK_ASSERT(_debug_types[pos] == value._debug_type);
 
@@ -1617,7 +1626,7 @@ namespace floyd {
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 #if FLOYD_BC_VALUE_DEBUG_TYPE
-			QUARK_ASSERT(bc_value_t::is_bc_ext(value._debug_type.get_base_type()) == true);
+			QUARK_ASSERT(is_encoded_as_ext(value._debug_type.get_base_type()) == true);
 #endif
 			QUARK_ASSERT(_debug_types[pos] == value._debug_type);
 
@@ -1644,7 +1653,7 @@ namespace floyd {
 		private: inline void pop(bool ext){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_stack_size > 0);
-			QUARK_ASSERT(bc_value_t::is_bc_ext(_debug_types.back().get_base_type()) == ext);
+			QUARK_ASSERT(is_encoded_as_ext(_debug_types.back().get_base_type()) == ext);
 
 			auto copy = _entries[_stack_size - 1];
 			_stack_size--;
@@ -1662,7 +1671,7 @@ namespace floyd {
 		private: bool is_ext(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-			return bc_value_t::is_bc_ext(_debug_types[pos].get_base_type());
+			return is_encoded_as_ext(_debug_types[pos].get_base_type());
 		}
 #endif
 

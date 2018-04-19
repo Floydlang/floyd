@@ -449,7 +449,7 @@ bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::
 
 	for(int i = 0 ; i < _symbols.size() ; i++){
 		const auto basetype = _symbols[i].second._value_type.get_base_type();
-		const bool ext = bc_value_t::is_bc_ext(basetype);
+		const bool ext = is_encoded_as_ext(basetype);
 		_exts.push_back(ext);
 	}
 
@@ -534,7 +534,7 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 		for(int i = 0 ; i < in_frame._frame_ptr->_symbols.size() ; i++){
 			const auto& symbol = in_frame._frame_ptr->_symbols[i];
 
-			bool symbol_ext = bc_value_t::is_bc_ext(symbol.second._value_type.get_base_type());
+			bool symbol_ext = is_encoded_as_ext(symbol.second._value_type.get_base_type());
 			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
 
 			bool stack_ext = is_ext(local_pos);
@@ -602,7 +602,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 #if DEBUG
 #if DEBUG
 		const auto debug_type = _debug_types[i];
-		const auto ext = bc_value_t::is_bc_ext(debug_type.get_base_type());
+		const auto ext = is_encoded_as_ext(debug_type.get_base_type());
 #endif
 		const auto bc_pod = _entries[i];
 #if DEBUG
@@ -686,7 +686,7 @@ bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, 
 		vector<bool> exts;
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& bc = args[i]._value;
-			bool is_ext = bc_value_t::is_bc_ext(args[i]._type.get_base_type());
+			bool is_ext = is_encoded_as_ext(args[i]._type.get_base_type());
 			exts.push_back(is_ext);
 			if(is_ext){
 				vm._stack.push_obj(bc);
@@ -936,7 +936,7 @@ void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	QUARK_ASSERT(target_type.is_undefined() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
-	bool is_element_ext = bc_value_t::is_bc_ext(element_type.get_base_type());
+	bool is_element_ext = is_encoded_as_ext(element_type.get_base_type());
 
 	immer::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
@@ -1255,7 +1255,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			for(int m = 0 ; m < n ; m++){
 				bool ext = (bits & 1) ? true : false;
 
-				ASSERT(bc_value_t::is_bc_ext(stack._debug_types.back().get_base_type()) == ext);
+				ASSERT(is_encoded_as_ext(stack._debug_types.back().get_base_type()) == ext);
 	#if DEBUG
 				stack._debug_types.pop_back();
 	#endif
