@@ -115,7 +115,7 @@ int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::
 
 //	Compare vector element by element.
 //	### Think more of equality when vectors have different size and shared elements are equal.
-int bc_compare_vector_true_deep(const std::vector<bc_value_t>& left, const std::vector<bc_value_t>& right, const typeid_t& type){
+int bc_compare_vector_true_deep(const immer::vector<bc_value_t>& left, const immer::vector<bc_value_t>& right, const typeid_t& type){
 //	QUARK_ASSERT(left.check_invariant());
 //	QUARK_ASSERT(right.check_invariant());
 //	QUARK_ASSERT(left._element_type == right._element_type);
@@ -239,8 +239,8 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		return bc_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value(), type0);
 	}
 	else if(type.is_vector()){
-		const auto& left_vec = left.get_vector_value();
-		const auto& right_vec = right.get_vector_value();
+		const auto& left_vec = get_vector_value(left);
+		const auto& right_vec = get_vector_value(right);
 		return bc_compare_vector_true_deep(*left_vec, *right_vec, type0);
 	}
 	else if(type.is_dict()){
@@ -736,7 +736,7 @@ json_t bcvalue_to_json(const bc_typed_value_t& v){
 		return json_t::make_object(obj2);
 	}
 	else if(v._type.is_vector()){
-		const auto vec = v._value.get_vector_value();
+		const auto vec = get_vector_value(v._value);
 		std::vector<json_t> result;
 		for(int i = 0 ; i < vec->size() ; i++){
 			const auto element_value = vec->operator[](i);
@@ -919,19 +919,19 @@ void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 	bool is_element_ext = bc_value_t::is_bc_ext(element_type.get_base_type());
 
-	std::vector<bc_value_t> elements2;
+	immer::vector<bc_value_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto pos = arg0_stack_pos + i;
 		QUARK_ASSERT(vm._stack._debug_types[pos] == element_type);
 #if DEBUG
 		const auto result = bc_value_t(element_type, vm._stack._entries[pos], is_element_ext);
 #else
-		const auto result = bc_value_t(vm._stack._entries[pos], is_element_ext);
+		const auto result = bc_value_t(vm._stack._entries[pos], is_element_ext);add
 #endif
-		elements2.push_back(result);
+		elements2 = elements2.push_back(result);
 	}
 
-	const auto result = bc_value_t::make_vector_value(element_type, elements2);
+	const auto result = make_vector_value(element_type, elements2);
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
@@ -1074,7 +1074,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_obj(i._a));
 			ASSERT(stack.check_global_access_obj(i._b));
 
-			bc_value_t::release_ext(regs[i._a]._ext);
+			bc_value_t::release_ext_pod(regs[i._a]);
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
@@ -1092,7 +1092,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_global_access_obj(i._a));
 			ASSERT(stack.check_reg_obj(i._b));
 
-			bc_value_t::release_ext(globals[i._a]._ext);
+			bc_value_t::release_ext_pod(globals[i._a]);
 			const auto& new_value_pod = regs[i._b];
 			globals[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
@@ -1121,7 +1121,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_obj(i._a));
 			ASSERT(stack.check_reg_obj(i._b));
 
-			bc_value_t::release_ext(regs[i._a]._ext);
+			bc_value_t::release_ext_pod(regs[i._a]);
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
 			new_value_pod._ext->_rc++;
@@ -1241,7 +1241,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				stack._debug_types.pop_back();
 	#endif
 				if(ext){
-					bc_value_t::release_ext(stack._entries[pos]._ext);
+					bc_value_t::release_ext_pod(stack._entries[pos]);
 				}
 				pos--;
 				bits = bits >> 1;
@@ -1319,7 +1319,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& value_pod = regs[i._b]._ext->_struct_members[i._c]._pod;
 			bool ext = frame_ptr->_exts[i._a];
 			if(ext){
-				bc_value_t::release_ext(regs[i._a]._ext);
+				bc_value_t::release_ext_pod(regs[i._a]);
 				value_pod._ext->_rc++;
 			}
 			regs[i._a] = value_pod;
@@ -1346,7 +1346,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				const auto value2 = bc_value_t::make_string(str2);
 
 				value2._pod._ext->_rc++;
-				bc_value_t::release_ext(regs[i._a]._ext);
+				bc_value_t::release_ext_pod(regs[i._a]);
 				regs[i._a] = value2._pod;
 			}
 			ASSERT(vm.check_invariant());
@@ -1374,7 +1374,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				const auto value2 = bc_value_t::make_json_value(value);
 
 				value2._pod._ext->_rc++;
-				bc_value_t::release_ext(regs[i._a]._ext);
+				bc_value_t::release_ext_pod(regs[i._a]);
 				regs[i._a] = value2._pod;
 			}
 			else if(parent_json_value->is_array()){
@@ -1391,7 +1391,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 					const auto value2 = bc_value_t::make_json_value(value);
 
 					value2._pod._ext->_rc++;
-					bc_value_t::release_ext(regs[i._a]._ext);
+					bc_value_t::release_ext_pod(regs[i._a]);
 					regs[i._a] = value2._pod;
 				}
 			}
@@ -1424,7 +1424,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				bool is_ext = frame_ptr->_exts[i._a];
 				if(is_ext){
-					bc_value_t::release_ext(regs[i._a]._ext);
+					bc_value_t::release_ext_pod(regs[i._a]);
 					value._pod._ext->_rc++;
 				}
 				regs[i._a] = value._pod;
@@ -1450,7 +1450,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				bool is_ext = frame_ptr->_exts[i._a];
 				if(is_ext){
-					bc_value_t::release_ext(regs[i._a]._ext);
+					bc_value_t::release_ext_pod(regs[i._a]);
 					value._pod._ext->_rc++;
 				}
 				regs[i._a] = value._pod;
@@ -1737,11 +1737,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& element_type = frame_ptr->_symbols[i._a].second._value_type.get_vector_element_type();
 
 			//	Copy left into new vector.
-			std::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
+			immer::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
 
 			const auto& right_elements = regs[i._c]._ext->_vector_elements;
-			elements2.insert(elements2.end(), right_elements.begin(), right_elements.end());
-			const auto& value2 = bc_value_t::make_vector_value(element_type, elements2);
+			for(const auto& e: right_elements){
+				elements2 = elements2.push_back(e);
+			}
+			const auto& value2 = make_vector_value(element_type, elements2);
 			stack.write_register_obj(i._a, value2);
 			break;
 		}

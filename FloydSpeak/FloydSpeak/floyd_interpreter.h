@@ -13,6 +13,7 @@
 
 #include "bytecode_interpreter.h"
 #include "ast_value.h"
+#include "immer/vector.hpp"
 #include "statement.h"
 
 #include <string>
@@ -37,7 +38,9 @@ namespace floyd {
 	bc_value_t value_to_bc(const value_t& value);
 
 	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
+	immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values);
 	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type);
+	immer::vector<value_t> bcs_to_values__same_types2(const std::vector<bc_value_t>& values, const typeid_t& shared_type);
 
 
 	//////////////////////////////////////		Free functions

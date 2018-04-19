@@ -205,6 +205,7 @@
 		2CEB5744207106560005AC7A /* benchmark_game_of_life.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_game_of_life.cpp; sourceTree = "<group>"; };
 		2CEB57462071069B0005AC7A /* benchmark_basics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_basics.cpp; sourceTree = "<group>"; };
 		2CEB5748207106C60005AC7A /* benchmark_basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = benchmark_basics.h; sourceTree = "<group>"; };
+		2CFD2EE12088AF0900774170 /* immer */ = {isa = PBXFileReference; lastKnownFileType = folder; name = immer; path = "immer-master/immer"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -328,6 +329,7 @@
 		2CBCA7D81D569C6D000FAE81 /* parts */ = {
 			isa = PBXGroup;
 			children = (
+				2CFD2EE12088AF0900774170 /* immer */,
 				2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */,
 				2C40A71E1D76E179003245E3 /* immutable_ref_value.h */,
 				2C5F60CC1D5E3345006E0A89 /* json_for_modern_cpp.h */,
@@ -591,6 +593,7 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_PROFILING_CODE = YES;
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/FloydSpeak/parts/immer-master/**";
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
 			};
@@ -642,6 +645,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/FloydSpeak/parts/immer-master/**";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 			};
@@ -679,6 +683,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/FloydSpeak/parts/immer-master/**";
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
 			};

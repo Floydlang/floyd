@@ -38,9 +38,23 @@ std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& va
 	}
 	return result;
 }
+std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values, const typeid_t& shared_type){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(bc_to_value(e, shared_type));
+	}
+	return result;
+}
 
 std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
 	std::vector<bc_value_t> result;
+	for(const auto e: values){
+		result.push_back(value_to_bc(e));
+	}
+	return result;
+}
+immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values){
+	immer::vector<bc_value_t> result;
 	for(const auto e: values){
 		result.push_back(value_to_bc(e));
 	}
@@ -94,7 +108,7 @@ value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
-		return value_t::make_vector_value(element_type, bcs_to_values__same_types(*value.get_vector_value(), element_type));
+		return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value), element_type));
 	}
 	else if(basetype == base_type::k_dict){
 		const auto value_type = type.get_dict_value_type();
@@ -154,7 +168,7 @@ bc_value_t value_to_bc(const value_t& value){
 	}
 
 	else if(basetype == base_type::k_vector){
-		return bc_value_t::make_vector_value(value.get_type().get_vector_element_type(), values_to_bcs(value.get_vector_value()));
+		return make_vector_value(value.get_type().get_vector_element_type(), values_to_bcs2(value.get_vector_value()));
 	}
 	else if(basetype == base_type::k_dict){
 		const auto elements = value.get_dict_value();

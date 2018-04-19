@@ -380,7 +380,7 @@ bc_typed_value_t host__update(interpreter_t& vm, const bc_typed_value_t args[], 
 			}
 			else{
 				const auto obj = obj1;
-				auto v2 = *obj._value.get_vector_value();
+				auto v2 = *get_vector_value(obj._value);
 				const auto element_type = obj._type.get_vector_element_type();
 
 				if(element_type != new_value._type){
@@ -392,8 +392,8 @@ bc_typed_value_t host__update(interpreter_t& vm, const bc_typed_value_t args[], 
 						throw std::runtime_error("Vector lookup out of bounds.");
 					}
 					else{
-						v2[lookup_index] = new_value._value;
-						const auto s2 = bc_value_t::make_vector_value(element_type, v2);
+						v2 = v2.set(lookup_index, new_value._value);
+						const auto s2 = make_vector_value(element_type, v2);
 						return { s2, obj1._type };
 					}
 				}
@@ -473,7 +473,7 @@ bc_typed_value_t host__size(interpreter_t& vm, const bc_typed_value_t args[], in
 		}
 	}
 	else if(obj._type.is_vector()){
-		const auto size = obj._value.get_vector_value()->size();
+		const auto size = get_vector_value(obj._value)->size();
 		return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 	}
 	else if(obj._type.is_dict()){
@@ -504,7 +504,7 @@ bc_typed_value_t host__find(interpreter_t& vm, const bc_typed_value_t args[], in
 		return { bc_value_t::make_int(result), typeid_t::make_int() };
 	}
 	else if(obj._type.is_vector()){
-		const auto& vec = *obj._value.get_vector_value();
+		const auto& vec = *get_vector_value(obj._value);
 		const auto element_type = obj._type.get_vector_element_type();
 		if(wanted._type != element_type){
 			throw std::runtime_error("Type mismatch.");
@@ -593,14 +593,13 @@ bc_typed_value_t host__push_back(interpreter_t& vm, const bc_typed_value_t args[
 		return { bc_value_t::make_string(str2), typeid_t::make_string() };
 	}
 	else if(obj._type.is_vector()){
-		const auto vec = *obj._value.get_vector_value();
+		const auto vec = *get_vector_value(obj._value);
 		const auto element_type = obj._type.get_vector_element_type();
 		if(element._type != element_type){
 			throw std::runtime_error("Type mismatch.");
 		}
-		auto elements2 = vec;
-		elements2.push_back(element._value);
-		const auto v = bc_value_t::make_vector_value(element_type, elements2);
+		auto elements2 = vec.push_back(element._value);
+		const auto v = make_vector_value(element_type, elements2);
 		return { v, obj._type };
 	}
 	else{
@@ -641,15 +640,15 @@ bc_typed_value_t host__subset(interpreter_t& vm, const bc_typed_value_t args[], 
 		return { v, obj._type };
 	}
 	else if(obj._type.is_vector()){
-		const auto vec = *obj._value.get_vector_value();
+		const auto vec = *get_vector_value(obj._value);
 		const auto element_type = obj._type.get_vector_element_type();
 		const auto start2 = std::min(start, static_cast<int>(vec.size()));
 		const auto end2 = std::min(end, static_cast<int>(vec.size()));
-		vector<bc_value_t> elements2;
+		immer::vector<bc_value_t> elements2;
 		for(int i = start2 ; i < end2 ; i++){
-			elements2.push_back(vec[i]);
+			elements2 = elements2.push_back(vec[i]);
 		}
-		const auto v = bc_value_t::make_vector_value(element_type, elements2);
+		const auto v = make_vector_value(element_type, elements2);
 		return { v, obj._type };
 	}
 	else{
@@ -692,20 +691,20 @@ bc_typed_value_t host__replace(interpreter_t& vm, const bc_typed_value_t args[],
 		return { v, obj._type };
 	}
 	else if(obj._type.is_vector()){
-		const auto& vec = *obj._value.get_vector_value();
+		const auto& vec = *get_vector_value(obj._value);
 		const auto element_type = obj._type.get_vector_element_type();
 		const auto start2 = std::min(start, static_cast<int>(vec.size()));
 		const auto end2 = std::min(end, static_cast<int>(vec.size()));
-		const auto& new_bits = *args[3]._value.get_vector_value();
+		const auto& new_bits = *get_vector_value(args[3]._value);
 
-		const auto string_left = vector<bc_value_t>(vec.begin(), vec.begin() + start2);
-		const auto string_right = vector<bc_value_t>(vec.begin() + end2, vec.end());
-
-		auto result = string_left;
-		result.insert(result.end(), new_bits.begin(), new_bits.end());
-		result.insert(result.end(), string_right.begin(), string_right.end());
-
-		const auto v = bc_value_t::make_vector_value(element_type, result);
+		auto result = immer::vector<bc_value_t>(vec.begin(), vec.begin() + start2);
+		for(int i = 0 ; i < new_bits.size() ; i++){
+			result = result.push_back(new_bits[i]);
+		}
+		for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
+			result = result.push_back(vec[end2 + i]);
+		}
+		const auto v = make_vector_value(element_type, result);
 		return { v, obj._type };
 	}
 	else{
