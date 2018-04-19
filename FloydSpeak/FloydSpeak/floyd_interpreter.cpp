@@ -31,41 +31,13 @@ using std::make_shared;
 //////////////////////////////////////		value_t -- helpers
 
 
-std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values, const typeid_t& shared_type){
-	std::vector<value_t> result;
-	for(const auto e: values){
-		result.push_back(bc_to_value(e, shared_type));
-	}
-	return result;
-}
-std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values, const typeid_t& shared_type){
-	std::vector<value_t> result;
-	for(const auto e: values){
-		result.push_back(bc_to_value(e, shared_type));
-	}
-	return result;
-}
 
-std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
-	std::vector<bc_value_t> result;
-	for(const auto e: values){
-		result.push_back(value_to_bc(e));
-	}
-	return result;
-}
-immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values){
-	immer::vector<bc_value_t> result;
-	for(const auto e: values){
-		result.push_back(value_to_bc(e));
-	}
-	return result;
-}
-
-value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
+value_t bc_to_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
 
-	const auto basetype = type.get_base_type();
+
+	const auto& type = value._type;
+	const auto basetype = value._type.get_base_type();
 
 	if(basetype == base_type::k_internal_undefined){
 		return value_t::make_undefined();
@@ -101,21 +73,21 @@ value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
 		for(int i = 0 ; i < members.size() ; i++){
 			const auto& member_type = struct_def._members[i]._type;
 			const auto& member_value = members[i];
-			const auto& member_value2 = bc_to_value(member_value, member_type);
+			const auto& member_value2 = bc_to_value(member_value);
 			members2.push_back(member_value2);
 		}
 		return value_t::make_struct_value(type, members2);
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
-		return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value), element_type));
+		return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value)));
 	}
 	else if(basetype == base_type::k_dict){
 		const auto value_type = type.get_dict_value_type();
 		const auto entries = get_dict_value(value);
 		std::map<std::string, value_t> entries2;
 		for(const auto& e: entries){
-			entries2.insert({e.first, bc_to_value(e.second, value_type)});
+			entries2.insert({e.first, bc_to_value(e.second)});
 		}
 		return value_t::make_dict_value(value_type, entries2);
 	}
@@ -186,6 +158,40 @@ bc_value_t value_to_bc(const value_t& value){
 		throw std::exception();
 	}
 }
+
+
+std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+	std::vector<bc_value_t> result;
+	for(const auto e: values){
+		result.push_back(value_to_bc(e));
+	}
+	return result;
+}
+std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(bc_to_value(e));
+	}
+	return result;
+}
+
+
+immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values){
+	immer::vector<bc_value_t> result;
+	for(const auto e: values){
+		result.push_back(value_to_bc(e));
+	}
+	return result;
+}
+std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(bc_to_value(e));
+	}
+	return result;
+}
+
+
 
 
 
@@ -284,7 +290,7 @@ value_t get_global(const interpreter_t& vm, const std::string& name){
 		throw std::runtime_error("Cannot find global.");
 	}
 	else{
-		return bc_to_value(result->_value, result->_symbol._value_type);
+		return bc_to_value(result->_value);
 	}
 }
 
@@ -296,14 +302,14 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 	QUARK_ASSERT(f.is_function());
 #endif
 
-	const auto f2 = bc_typed_value_t{ value_to_bc(f), f.get_type() };
-	vector<bc_typed_value_t> args2;
+	const auto f2 = value_to_bc(f);
+	vector<bc_value_t> args2;
 	for(const auto& e: args){
-		args2.push_back(bc_typed_value_t{value_to_bc(e), e.get_type()});
+		args2.push_back(value_to_bc(e));
 	}
 
 	const auto result = call_function_bc(vm, f2, &args2[0], static_cast<int>(args2.size()));
-	return bc_to_value(result._value, result._type);
+	return bc_to_value(result);
 }
 
 bc_program_t compile_to_bytecode(const interpreter_context_t& context, const string& program){
@@ -324,7 +330,7 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const interpreter
 
 	const auto& main_func = find_global_symbol2(*vm, "main");
 	if(main_func != nullptr){
-		const auto& r = call_function(*vm, bc_to_value(main_func->_value, main_func->_symbol._value_type), args);
+		const auto& r = call_function(*vm, bc_to_value(main_func->_value), args);
 		return { vm, r };
 	}
 	else{
@@ -348,7 +354,7 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const interpreter_co
 
 	const auto& main_function = find_global_symbol2(*vm, "main");
 	if(main_function != nullptr){
-		const auto& result = call_function(*vm, bc_to_value(main_function->_value, main_function->_symbol._value_type), args);
+		const auto& result = call_function(*vm, bc_to_value(main_function->_value), args);
 		return { vm, result };
 	}
 	else{

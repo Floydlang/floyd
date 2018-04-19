@@ -1206,7 +1206,7 @@ bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& arg
 			bc_symbol_t{
 				e.second._symbol_type == symbol_t::immutable_local ? bc_symbol_t::immutable_local : bc_symbol_t::mutable_local,
 				e.second._value_type,
-				bc_typed_value_t{value_to_bc(e.second._const_value), e.second._const_value.get_type() }
+				value_to_bc(e.second._const_value)
 			}
 		};
 		symbols2.push_back(e2);

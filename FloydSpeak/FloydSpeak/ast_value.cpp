@@ -1136,6 +1136,9 @@ value_t make_def(const typeid_t& type){
 	else if(bt == base_type::k_internal_undefined){
 		return value_t::make_undefined();
 	}
+	else if(bt == base_type::k_internal_dynamic){
+		return value_t::make_internal_dynamic();
+	}
 	else{
 	}
 

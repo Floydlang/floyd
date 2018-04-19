@@ -237,7 +237,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
 
 	const auto floyd_ns = measure_execution_time_ns(
 		[&] {
-			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
+			const auto result = call_function(vm, bc_to_value(f->_value), {});
 		}
 	);
 

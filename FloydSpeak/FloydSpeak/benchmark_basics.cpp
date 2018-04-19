@@ -92,7 +92,7 @@ int64_t measure_floyd_function_f(const interpreter_context_t& context, const std
 
 	const auto floyd_ns = measure_execution_time_ns(
 		[&] {
-			const auto result = call_function(vm, bc_to_value(f->_value, f->_symbol._value_type), {});
+			const auto result = call_function(vm, bc_to_value(f->_value), {});
 		},
 		count
 	);

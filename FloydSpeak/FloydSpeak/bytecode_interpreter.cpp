@@ -212,7 +212,7 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 }
 
 int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type0){
-	QUARK_ASSERT(left._debug_type == right._debug_type);
+	QUARK_ASSERT(left._type == right._type);
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -478,7 +478,7 @@ bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::
 
 		//	Constant.
 		else{
-			_locals.push_back(symbol.second._const_value._value);
+			_locals.push_back(symbol.second._const_value);
 		}
 	}
 
@@ -616,7 +616,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 		auto a = json_t::make_array({
 			json_t(i),
 			typeid_to_ast_json(debug_type, json_tags::k_plain)._value,
-			unwritten ? json_t("UNWRITTEN") : bcvalue_to_json(bc_typed_value_t{bc, debug_type})
+			unwritten ? json_t("UNWRITTEN") : bcvalue_to_json(bc_value_t{bc})
 		});
 		elements.push_back(a);
 #endif
@@ -643,8 +643,8 @@ inline const bc_function_definition_t& get_function_def(const interpreter_t& vm,
 }
 
 
-//??? Use bc_value_t:s instead of bc_typed_value_t -- types are known via function-signature.
-bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, const bc_typed_value_t args[], int arg_count){
+//??? Use bc_value_t:s instead of bc_value_t -- types are known via function-signature.
+bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_value_t args[], int arg_count){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
@@ -652,7 +652,7 @@ bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, 
 	QUARK_ASSERT(f._type.is_function());
 #endif
 
-	const auto& function_def = get_function_def(vm, f._value.get_function_value());
+	const auto& function_def = get_function_def(vm, f.get_function_value());
 	if(function_def._host_function_id != 0){
 		const auto host_function_id = function_def._host_function_id;
 		QUARK_ASSERT(host_function_id >= 0);
@@ -685,7 +685,7 @@ bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, 
 		//	We push the values to the stack = the stack will take RC ownership of the values.
 		vector<bool> exts;
 		for(int i = 0 ; i < arg_count ; i++){
-			const auto& bc = args[i]._value;
+			const auto& bc = args[i];
 			bool is_ext = is_encoded_as_ext(args[i]._type.get_base_type());
 			exts.push_back(is_ext);
 			if(is_ext){
@@ -703,16 +703,16 @@ bc_typed_value_t call_function_bc(interpreter_t& vm, const bc_typed_value_t& f, 
 		vm._stack.restore_frame();
 
 		if(vm._imm->_program._types[result.first].is_void() == false){
-			return { result.second, f._type.get_function_return() };
+			return result.second;
 		}
 		else{
-			return { bc_value_t::make_undefined(), typeid_t::make_void() };
+			return bc_value_t::make_undefined();
 		}
 	}
 }
 
 
-json_t bcvalue_to_json(const bc_typed_value_t& v){
+json_t bcvalue_to_json(const bc_value_t& v){
 	if(v._type.is_undefined()){
 		return json_t();
 	}
@@ -723,25 +723,25 @@ json_t bcvalue_to_json(const bc_typed_value_t& v){
 		return json_t();
 	}
 	else if(v._type.is_bool()){
-		return json_t(v._value.get_bool_value());
+		return json_t(v.get_bool_value());
 	}
 	else if(v._type.is_int()){
-		return json_t(static_cast<double>(v._value.get_int_value()));
+		return json_t(static_cast<double>(v.get_int_value()));
 	}
 	else if(v._type.is_float()){
-		return json_t(static_cast<double>(v._value.get_float_value()));
+		return json_t(static_cast<double>(v.get_float_value()));
 	}
 	else if(v._type.is_string()){
-		return json_t(v._value.get_string_value());
+		return json_t(v.get_string_value());
 	}
 	else if(v._type.is_json_value()){
-		return v._value.get_json_value();
+		return v.get_json_value();
 	}
 	else if(v._type.is_typeid()){
-		return typeid_to_ast_json(v._value.get_typeid_value(), json_tags::k_plain)._value;
+		return typeid_to_ast_json(v.get_typeid_value(), json_tags::k_plain)._value;
 	}
 	else if(v._type.is_struct()){
-		const auto& struct_value = v._value.get_struct_value();
+		const auto& struct_value = v.get_struct_value();
 		std::map<string, json_t> obj2;
 		const auto& struct_def = v._type.get_struct();
 		for(int i = 0 ; i < struct_def._members.size() ; i++){
@@ -749,26 +749,25 @@ json_t bcvalue_to_json(const bc_typed_value_t& v){
 			const auto& key = member._name;
 			const auto& type = member._type;
 			const auto& value = struct_value[i];
-			const auto& value2 = bcvalue_to_json(bc_typed_value_t{value, type});
+			const auto& value2 = bcvalue_to_json(value);
 			obj2[key] = value2;
 		}
 		return json_t::make_object(obj2);
 	}
 	else if(v._type.is_vector()){
-		const auto vec = get_vector_value(v._value);
+		const auto vec = get_vector_value(v);
 		std::vector<json_t> result;
 		for(int i = 0 ; i < vec->size() ; i++){
-			const auto element_value = vec->operator[](i);
-			const auto element_value2 = bc_typed_value_t{element_value, v._type.get_vector_element_type()};
+			const auto element_value2 = vec->operator[](i);
 			result.push_back(bcvalue_to_json(element_value2));
 		}
 		return result;
 	}
 	else if(v._type.is_dict()){
-		const auto entries = get_dict_value(v._value);
+		const auto entries = get_dict_value(v);
 		std::map<string, json_t> result;
 		for(const auto& e: entries){
-			const auto value2 = bc_typed_value_t{e.second, v._type.get_dict_value_type()};
+			const auto value2 = e.second;
 			result[e.first] = bcvalue_to_json(value2);
 		}
 		return result;
@@ -786,10 +785,10 @@ json_t bcvalue_to_json(const bc_typed_value_t& v){
 }
 
 
-json_t bcvalue_and_type_to_json(const bc_typed_value_t& v){
+json_t bcvalue_and_type_to_json(const bc_value_t& v){
 	return json_t::make_array({
 		typeid_to_ast_json(v._type, json_tags::k_plain)._value,
-		bcvalue_to_json(bc_typed_value_t{v._value, v._type})
+		bcvalue_to_json(v)
 	});
 }
 
@@ -912,7 +911,7 @@ void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, in
 			}
 		}
 		else if(target_type.is_json_value()){
-			const auto arg = bcvalue_to_json(bc_typed_value_t{input_value, input_value_type});
+			const auto arg = bcvalue_to_json(input_value);
 			return bc_value_t::make_json_value(arg);
 		}
 		else{
@@ -1442,7 +1441,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				const bc_value_t& value = (*vec)[lookup_index];
 
 				//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
-				ASSERT(value._debug_type == frame_ptr->_symbols[i._a].second._value_type);
+				ASSERT(value._type == frame_ptr->_symbols[i._a].second._value_type);
 
 				bool is_ext = frame_ptr->_exts[i._a];
 				if(is_ext){
@@ -1510,28 +1509,25 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				//	Notice that dynamic functions will have each DYN argument with a leading itype as an extra argument.
 				const auto function_def_arg_count = function_def._args.size();
-				std::vector<bc_typed_value_t> arg_values;
+				std::vector<bc_value_t> arg_values;
 				for(int a = 0 ; a < function_def_arg_count ; a++){
 					const auto& func_arg_type = function_def._args[a]._type;
 					if(func_arg_type.is_internal_dynamic()){
 						const auto arg_itype = stack.load_intq(stack_pos);
 						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
-						const auto arg_bc = stack.load_value(stack_pos + 1, arg_type);
-
-						const auto arg_value = bc_typed_value_t{ arg_bc, arg_type };
+						const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
 						arg_values.push_back(arg_value);
 						stack_pos += k_frame_overhead;
 					}
 					else{
-						const auto arg_bc = stack.load_value(stack_pos + 0, func_arg_type);
-						const auto arg_value = bc_typed_value_t{ arg_bc, func_arg_type };
+						const auto arg_value = stack.load_value(stack_pos + 0, func_arg_type);
 						arg_values.push_back(arg_value);
 						stack_pos++;
 					}
 				}
 
 				const auto& result = (host_function)(vm, &arg_values[0], static_cast<int>(arg_values.size()));
-				const auto bc_result = result._value;
+				const auto bc_result = result;
 
 				if(function_return_type.is_void() == true){
 				}
