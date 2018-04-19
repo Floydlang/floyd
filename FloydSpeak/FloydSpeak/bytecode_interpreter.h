@@ -146,7 +146,8 @@ namespace floyd {
 
 	//	??? very slow?
 	//	Will this type of value require an ext ? bc_value_object_t to be used?
-	inline bool is_encoded_as_ext(base_type basetype){
+	inline bool is_encoded_as_ext(const typeid_t& type){
+		const auto basetype = type.get_base_type();
 		return false
 			|| basetype == base_type::k_string
 			|| basetype == base_type::k_json_value
@@ -1168,7 +1169,7 @@ namespace floyd {
 			_frame_ptr(frame),
 			_host_function_id(host_function_id),
 			_dyn_arg_count(-1),
-			_return_is_ext(is_encoded_as_ext(_function_type.get_function_return().get_base_type()))
+			_return_is_ext(is_encoded_as_ext(_function_type.get_function_return()))
 		{
 			_dyn_arg_count = count_function_dynamic_args(function_type);
 		}
@@ -1584,7 +1585,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-			QUARK_ASSERT(is_encoded_as_ext(value._type.get_base_type()) == true);
+			QUARK_ASSERT(is_encoded_as_ext(value._type) == true);
 #endif
 
 			value._pod._ext->_rc++;
@@ -1600,7 +1601,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-			QUARK_ASSERT(is_encoded_as_ext(value._type.get_base_type()) == false);
+			QUARK_ASSERT(is_encoded_as_ext(value._type) == false);
 #endif
 
 			_entries[_stack_size] = value._pod;
@@ -1620,7 +1621,7 @@ namespace floyd {
 			QUARK_ASSERT(type == _debug_types[pos]);
 
 			const auto& e = _entries[pos];
-			bool is_ext = is_encoded_as_ext(type.get_base_type());
+			bool is_ext = is_encoded_as_ext(type);
 #if DEBUG
 			const auto result = bc_value_t(type, e, is_ext);
 #else
@@ -1683,7 +1684,7 @@ namespace floyd {
 		private: inline void pop(bool ext){
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(_stack_size > 0);
-			QUARK_ASSERT(is_encoded_as_ext(_debug_types.back().get_base_type()) == ext);
+			QUARK_ASSERT(is_encoded_as_ext(_debug_types.back()) == ext);
 
 			auto copy = _entries[_stack_size - 1];
 			_stack_size--;
@@ -1701,7 +1702,7 @@ namespace floyd {
 		private: bool is_ext(int pos) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-			return is_encoded_as_ext(_debug_types[pos].get_base_type());
+			return is_encoded_as_ext(_debug_types[pos]);
 		}
 #endif
 

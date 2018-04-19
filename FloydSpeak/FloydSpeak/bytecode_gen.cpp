@@ -214,7 +214,7 @@ bcgen_body_t copy_value(bcgenerator_t& vm, const typeid_t& type, const reg_t& de
 	QUARK_ASSERT(source_reg.check_invariant());
 
 	auto body_acc = body;
-	bool is_ext = is_encoded_as_ext(type.get_base_type());
+	bool is_ext = is_encoded_as_ext(type);
 
 	//	If this asserts, we should special-case and do nothing.
 	QUARK_ASSERT(!(dest_reg == source_reg));
@@ -657,7 +657,7 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 		}
 
 		const auto arg_type_full = vm._types[callee_arg_type];
-		bool ext = is_encoded_as_ext(arg_type_full.get_base_type());
+		bool ext = is_encoded_as_ext(arg_type_full);
 		if(ext){
 			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_obj, arg_reg, {}, {} ));
 			exts.push_back(true);
