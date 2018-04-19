@@ -8,7 +8,7 @@ Floyd is a new programming language design that is designed to have ready made a
 
 It feels familiar to Javascript / C / Java / C++ programmers but gets rid of some of core troublesome features and replaces it with new and better features.
 
-**FEATURES:** Functions, structs, strings, vectors, dictionaries, JSON.
+**FEATURES:** Functions, structs, strings, vectors, dictionaries, deep JSON integration.
 
 **REMOVED:** Freely altering data, pointers and references and aliasing, null, inheritance, memory management, header files.
 
