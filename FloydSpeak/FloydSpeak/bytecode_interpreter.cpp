@@ -945,7 +945,7 @@ void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 #if DEBUG
 		const auto result = bc_value_t(element_type, vm._stack._entries[pos], is_element_ext);
 #else
-		const auto result = bc_value_t(vm._stack._entries[pos], is_element_ext);add
+		const auto result = bc_value_t(vm._stack._entries[pos], is_element_ext);
 #endif
 		elements2 = elements2.push_back(result);
 	}
@@ -1576,6 +1576,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_new_1: {
+			ASSERT(stack.check_reg(i._a));
+
 			const auto dest_reg = i._a;
 			const auto target_itype = i._b;
 			const auto source_itype = i._c;
@@ -1586,12 +1588,41 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_new_vector: {
+			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(i._b >= 0);
+			ASSERT(i._c >= 0);
+
 			const auto dest_reg = i._a;
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
 			QUARK_ASSERT(target_type.is_vector());
 			execute_new_vector(vm, dest_reg, target_itype, arg_count);
+			break;
+		}
+
+		case bc_opcode::k_new_vector64: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(i._c >= 0);
+
+			const auto dest_reg = i._a;
+			const auto arg_count = i._c;
+
+			const int arg0_stack_pos = vm._stack.size() - arg_count;
+			immer::vector<uint64_t> elements2;
+			for(int a = 0 ; a < arg_count ; a++){
+				const auto pos = arg0_stack_pos + a;
+				elements2 = elements2.push_back(stack._entries[pos]._value64);
+			}
+
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& element_type = type.get_vector_element_type();
+
+			const auto result = make_vector64_value(element_type, elements2);
+			vm._stack.write_register_obj(dest_reg, result);
+
+			ASSERT(vm.check_invariant());
 			break;
 		}
 

@@ -49,15 +49,35 @@ namespace floyd {
 		int _function_id;
 		bc_value_object_t* _ext;
 		const bc_frame_t* _frame_ptr;
+		uint64_t _value64;
 	};
 
 	enum class value_runtime_encoding {
+		k_string_obj,
+		k_json_value_obj,
+		k_typeid_obj,
+		k_struct_obj,
+
 		k_vector64,
-		k_vector_full
+		k_vector_full,
+
+		k_dict_full
 	};
 
+
 	inline bool is_encoded_as_vector64(const typeid_t& type){
-		return false;
+		if(type.is_vector() == false){
+			return false;
+		}
+		else{
+			const auto& element_type = type.get_vector_element_type().get_base_type();
+			if(element_type == base_type::k_bool || element_type == base_type::k_int || element_type == base_type::k_float){
+				return true;
+			}
+			else{
+				return false;
+			}
+		}
 	}
 
 	//	??? very slow?
@@ -383,6 +403,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector64_elements.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else if(base_type == base_type::k_json_value){
@@ -391,6 +412,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector64_elements.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_json_value->check_invariant());
@@ -401,6 +423,7 @@ namespace floyd {
 		//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector64_elements.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_typeid_value.check_invariant());
@@ -411,6 +434,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector64_elements.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
@@ -421,6 +445,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 		//		QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector64_elements.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else if(base_type == base_type::k_dict){
@@ -429,6 +454,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector64_elements.empty());
 		//		QUARK_ASSERT(_dict_entries.empty());
 			}
 			else if(base_type == base_type::k_function){
@@ -437,6 +463,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
+				QUARK_ASSERT(_vector64_elements.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else {
@@ -497,6 +524,15 @@ namespace floyd {
 		{
 			QUARK_ASSERT(check_invariant());
 		}
+		public: bc_value_object_t(const typeid_t& type, const immer::vector<uint64_t>& s) :
+			_rc(1),
+#if DEBUG
+			_debug_type(type),
+#endif
+			_vector64_elements(s)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
 		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_value_t>& s) :
 			_rc(1),
 #if DEBUG
@@ -520,11 +556,12 @@ namespace floyd {
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::vector<bc_value_t> _struct_members;
 		public: immer::vector<bc_value_t> _vector_elements;
+		public: immer::vector<uint64_t> _vector64_elements;
 		public: immer::map<std::string, bc_value_t> _dict_entries;
 	};
 
 
-
+//??? Can we use immer::vector<> and keep track of value references from the outside?
 
 
 
@@ -657,6 +694,17 @@ namespace floyd {
 		}
 
 
+
+		inline bc_value_t make_vector64_value(const typeid_t& element_type, const immer::vector<uint64_t>& elements){
+			bc_value_t temp;
+#if DEBUG
+			temp._debug_type = typeid_t::make_vector(element_type);
+#endif
+			temp._is_ext = true;
+			temp._pod._ext = new bc_value_object_t{typeid_t::make_vector(element_type), elements};
+			QUARK_ASSERT(temp.check_invariant());
+			return temp;
+		}
 
 
 		inline const immer::map<std::string, bc_value_t>& get_dict_value(const bc_value_t& value){
@@ -888,6 +936,15 @@ namespace floyd {
 			Arguments are put on stack. No DYN arguments. All arguments are of type E.
 		*/
 		k_new_vector,
+
+		/*
+			A: Register: where to put resulting value
+			B: IMMEDIATE: ---.
+			C: IMMEDIATE: Argument count.
+
+			Arguments are put on stack. No DYN arguments. All arguments are of type uint64.
+		*/
+		k_new_vector64,
 
 		/*
 			A: Register: where to put resulting value
