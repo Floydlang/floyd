@@ -938,22 +938,22 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 			return bc_value_t::make_int(1);
 		}
 		else if(json_value.is_array()){
-		return bc_value_t::make_int(2);
+			return bc_value_t::make_int(2);
 		}
 		else if(json_value.is_string()){
-		return bc_value_t::make_int(3);
+			return bc_value_t::make_int(3);
 		}
 		else if(json_value.is_number()){
-		return bc_value_t::make_int(4);
+			return bc_value_t::make_int(4);
 		}
 		else if(json_value.is_true()){
-		return bc_value_t::make_int(5);
+			return bc_value_t::make_int(5);
 		}
 		else if(json_value.is_false()){
-		return bc_value_t::make_int(6);
+			return bc_value_t::make_int(6);
 		}
 		else if(json_value.is_null()){
-		return bc_value_t::make_int(7);
+			return bc_value_t::make_int(7);
 		}
 		else{
 			QUARK_ASSERT(false);
