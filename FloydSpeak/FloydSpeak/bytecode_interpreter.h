@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include "immer/vector.hpp"
+#include "immer/map.hpp"
 #include <map>
 #include "ast_typeid.h"
 #include "json_support.h"
@@ -289,26 +290,17 @@ namespace floyd {
 		private: inline  explicit bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
 
 
-		//////////////////////////////////////		vector
-
 /*
-		public: inline static bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_value_t>& elements){
-			return bc_value_t{element_type, elements};
-		}
-		public: inline const immer::vector<bc_value_t>* get_vector_value() const;
-		private: inline explicit bc_value_t(const typeid_t& element_type, const immer::vector<bc_value_t>& values);
-*/
-
 		//////////////////////////////////////		dict
 
 
-		public: inline static bc_value_t make_dict_value(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries){
+		public: inline static bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_value_t>& entries){
 			return bc_value_t{value_type, entries};
 		}
 
 		public: inline const std::map<std::string, bc_value_t>& get_dict_value() const;
 		private: inline explicit bc_value_t(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries);
-
+*/
 
 		//////////////////////////////////////		function
 
@@ -394,7 +386,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_dict_entries.empty());
+				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else if(base_type == base_type::k_json_value){
 				QUARK_ASSERT(_string.empty());
@@ -402,7 +394,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_dict_entries.empty());
+				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_json_value->check_invariant());
 			}
@@ -412,7 +404,7 @@ namespace floyd {
 		//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_dict_entries.empty());
+				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_typeid_value.check_invariant());
 			}
@@ -422,7 +414,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_dict_entries.empty());
+				QUARK_ASSERT(_dict_entries.size() == 0);
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
@@ -432,7 +424,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 		//		QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_dict_entries.empty());
+				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else if(base_type == base_type::k_dict){
 				QUARK_ASSERT(_string.empty());
@@ -448,7 +440,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_elements.empty());
-				QUARK_ASSERT(_dict_entries.empty());
+				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -508,7 +500,7 @@ namespace floyd {
 		{
 			QUARK_ASSERT(check_invariant());
 		}
-		public: bc_value_object_t(const typeid_t& type, const std::map<std::string, bc_value_t>& s) :
+		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_value_t>& s) :
 			_rc(1),
 #if DEBUG
 			_debug_type(type),
@@ -531,7 +523,7 @@ namespace floyd {
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::vector<bc_value_t> _struct_members;
 		public: immer::vector<bc_value_t> _vector_elements;
-		public: std::map<std::string, bc_value_t> _dict_entries;
+		public: immer::map<std::string, bc_value_t> _dict_entries;
 	};
 
 
@@ -668,19 +660,23 @@ namespace floyd {
 		}
 
 
-		inline const std::map<std::string, bc_value_t>& bc_value_t::get_dict_value() const{
-			QUARK_ASSERT(check_invariant());
 
-			return _pod._ext->_dict_entries;
+
+		inline const immer::map<std::string, bc_value_t>& get_dict_value(const bc_value_t& value){
+			QUARK_ASSERT(value.check_invariant());
+
+			return value._pod._ext->_dict_entries;
 		}
-		inline bc_value_t::bc_value_t(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries) :
+
+		inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_value_t>& entries){
+			bc_value_t temp;
 #if DEBUG
-			_debug_type(typeid_t::make_dict(value_type)),
+			temp._debug_type = typeid_t::make_dict(value_type);
 #endif
-			_is_ext(true)
-		{
-			_pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
-			QUARK_ASSERT(check_invariant());
+			temp._is_ext = true;
+			temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
+			QUARK_ASSERT(temp.check_invariant());
+			return temp;
 		}
 
 

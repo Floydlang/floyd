@@ -405,16 +405,15 @@ bc_typed_value_t host__update(interpreter_t& vm, const bc_typed_value_t args[], 
 			}
 			else{
 				const auto obj = obj1;
-				const auto entries = obj._value.get_dict_value();
+				const auto entries = get_dict_value(obj._value);
 				const auto value_type = obj._type.get_dict_value_type();
 				if(value_type != new_value._type){
 					throw std::runtime_error("Update element must match dict value type.");
 				}
 				else{
 					const string key = lookup_key._value.get_string_value();
-					auto entries2 = entries;
-					entries2[key] = new_value._value;
-					const auto value2 = bc_value_t::make_dict_value(value_type, entries2);
+					auto entries2 = entries.set(key, new_value._value);
+					const auto value2 = make_dict_value(value_type, entries2);
 					return { value2, obj1._type };
 				}
 			}
@@ -477,7 +476,7 @@ bc_typed_value_t host__size(interpreter_t& vm, const bc_typed_value_t args[], in
 		return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 	}
 	else if(obj._type.is_dict()){
-		const auto size = obj._value.get_dict_value().size();
+		const auto size = get_dict_value(obj._value).size();
 		return { bc_value_t::make_int(static_cast<int>(size)), typeid_t::make_int() };
 	}
 	else{
@@ -538,10 +537,10 @@ bc_typed_value_t host__exists(interpreter_t& vm, const bc_typed_value_t args[], 
 			throw std::runtime_error("Key must be string.");
 		}
 		const auto key_string = key._value.get_string_value();
-		const auto entries = obj._value.get_dict_value();
+		const auto entries = get_dict_value(obj._value);
 
-		const auto found_it = entries.find(key_string);
-		const bool exists = found_it != entries.end();
+		const auto found_ptr = entries.find(key_string);
+		const bool exists = found_ptr != nullptr;
 		return { bc_value_t::make_bool(exists), typeid_t::make_bool() };
 	}
 	else{
@@ -564,10 +563,10 @@ bc_typed_value_t host__erase(interpreter_t& vm, const bc_typed_value_t args[], i
 			throw std::runtime_error("Key must be string.");
 		}
 		const auto key_string = key._value.get_string_value();
-		auto entries2 = obj._value.get_dict_value();
-		entries2.erase(key_string);
+		auto entries2 = get_dict_value(obj._value);
+		entries2 = entries2.erase(key_string);
 		const auto value_type = obj._type.get_dict_value_type();
-		const auto value2 = bc_value_t::make_dict_value(value_type, entries2);
+		const auto value2 = make_dict_value(value_type, entries2);
 		return { value2, obj._type };
 	}
 	else{

@@ -112,7 +112,7 @@ value_t bc_to_value(const bc_value_t& value, const typeid_t& type){
 	}
 	else if(basetype == base_type::k_dict){
 		const auto value_type = type.get_dict_value_type();
-		const auto entries = value.get_dict_value();
+		const auto entries = get_dict_value(value);
 		std::map<std::string, value_t> entries2;
 		for(const auto& e: entries){
 			entries2.insert({e.first, bc_to_value(e.second, value_type)});
@@ -172,11 +172,11 @@ bc_value_t value_to_bc(const value_t& value){
 	}
 	else if(basetype == base_type::k_dict){
 		const auto elements = value.get_dict_value();
-		std::map<std::string, bc_value_t> entries2;
+		immer::map<std::string, bc_value_t> entries2;
 		for(const auto e: elements){
 			entries2.insert({e.first, value_to_bc(e.second)});
 		}
-		return bc_value_t::make_dict_value(value.get_type().get_dict_value_type(), entries2);
+		return make_dict_value(value.get_type().get_dict_value_type(), entries2);
 	}
 	else if(basetype == base_type::k_function){
 		return bc_value_t::make_function_value(value.get_type(), value.get_function_value());

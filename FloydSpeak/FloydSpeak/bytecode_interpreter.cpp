@@ -145,7 +145,7 @@ bool bc_map_compare (Map const &lhs, Map const &rhs) {
 	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
-int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, const std::map<std::string, bc_value_t>& right, const typeid_t& type){
+int bc_compare_dict_true_deep(const immer::map<std::string, bc_value_t>& left, const immer::map<std::string, bc_value_t>& right, const typeid_t& type){
 	const auto& element_type = typeid_t(type.get_dict_value_type());
 
 	auto left_it = left.begin();
@@ -155,12 +155,15 @@ int bc_compare_dict_true_deep(const std::map<std::string, bc_value_t>& left, con
 	auto right_end_it = right.end();
 
 	while(left_it != left_end_it && right_it != right_end_it){
-		const auto key_result = bc_compare_string(left_it->first, right_it->first);
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
 		if(key_result != 0){
 			return key_result;
 		}
 
-		const auto element_result = bc_compare_value_true_deep(left_it->second, right_it->second, element_type);
+		const auto element_result = bc_compare_value_true_deep((*left_it).second, (*right_it).second, element_type);
 		if(element_result != 0){
 			return element_result;
 		}
@@ -244,8 +247,8 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		return bc_compare_vector_true_deep(*left_vec, *right_vec, type0);
 	}
 	else if(type.is_dict()){
-		const auto& left2 = left.get_dict_value();
-		const auto& right2 = right.get_dict_value();
+		const auto& left2 = get_dict_value(left);
+		const auto& right2 = get_dict_value(right);
 		return bc_compare_dict_true_deep(left2, right2, type0);
 	}
 	else if(type.is_function()){
@@ -746,7 +749,7 @@ json_t bcvalue_to_json(const bc_typed_value_t& v){
 		return result;
 	}
 	else if(v._type.is_dict()){
-		const auto entries = v._value.get_dict_value();
+		const auto entries = get_dict_value(v._value);
 		std::map<string, json_t> result;
 		for(const auto& e: entries){
 			const auto value2 = bc_typed_value_t{e.second, v._type.get_dict_value_type()};
@@ -951,16 +954,16 @@ void execute_new_dict(interpreter_t& vm, int16_t dest_reg, int16_t target_itype,
 
 	const auto string_type = typeid_t::make_string();
 
-	std::map<string, bc_value_t> elements2;
+	immer::map<string, bc_value_t> elements2;
 	int dict_element_count = arg_count / 2;
 	for(auto i = 0 ; i < dict_element_count ; i++){
 		const auto key = vm._stack.load_value(arg0_stack_pos + i * 2 + 0, string_type);
 		const auto value = vm._stack.load_value(arg0_stack_pos + i * 2 + 1, element_type);
 		const auto key2 = key.get_string_value();
-		elements2.insert({ key2, value });
+		elements2 = elements2.insert({ key2, value });
 	}
 
-	const auto result = bc_value_t::make_dict_value(element_type, elements2);
+	const auto result = make_dict_value(element_type, elements2);
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
@@ -1441,12 +1444,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto& entries = regs[i._b]._ext->_dict_entries;
 			const auto& lookup_key = regs[i._c]._ext->_string;
-			const auto& found_it = entries.find(lookup_key);
-			if(found_it == entries.end()){
+			const auto found_ptr = entries.find(lookup_key);
+			if(found_ptr == nullptr){
 				throw std::runtime_error("Lookup in dict: key not found.");
 			}
 			else{
-				const bc_value_t value = found_it->second;
+				const bc_value_t& value = *found_ptr;
 
 				bool is_ext = frame_ptr->_exts[i._a];
 				if(is_ext){
