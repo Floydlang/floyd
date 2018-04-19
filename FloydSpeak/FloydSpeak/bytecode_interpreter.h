@@ -52,22 +52,26 @@ namespace floyd {
 		uint64_t _value64;
 	};
 
+
+	//////////////////////////////////////		Encodings
+
+
 	enum class value_runtime_encoding {
 		k_none,
-		k_bool,
-		k_int,
-		k_float,
-		k_string,
-		k_json_value,
+		k_inline_bool,
+		k_inline_int,
+		k_inline_float,
+		k_ext_string,
+		k_ext_json_value,
 
 		//	This is a type that specifies another type.
-		k_typeid,
+		k_ext_typeid,
 
-		k_struct,
-		k_vector,
-		k_vector_uint64,
-		k_dict,
-		k_function,
+		k_ext_struct,
+		k_ext_vector,
+		k_ext_vector_uint64,
+		k_ext_dict,
+		k_inline_function,
 	};
 
 	inline value_runtime_encoding type_to_encoding(const typeid_t& type){
@@ -84,45 +88,42 @@ namespace floyd {
 			return value_runtime_encoding::k_none;
 		}
 		else if(basetype == base_type::k_bool){
-			return value_runtime_encoding::k_bool;
+			return value_runtime_encoding::k_inline_bool;
 		}
 		else if(basetype == base_type::k_int){
-			return value_runtime_encoding::k_int;
+			return value_runtime_encoding::k_inline_int;
 		}
 		else if(basetype == base_type::k_float){
-			return value_runtime_encoding::k_float;
+			return value_runtime_encoding::k_inline_float;
 		}
 		else if(basetype == base_type::k_string){
-			return value_runtime_encoding::k_string;
+			return value_runtime_encoding::k_ext_string;
 		}
 		else if(basetype == base_type::k_json_value){
-			return value_runtime_encoding::k_json_value;
+			return value_runtime_encoding::k_ext_json_value;
 		}
 		else if(basetype == base_type::k_typeid){
-			return value_runtime_encoding::k_typeid;
+			return value_runtime_encoding::k_ext_typeid;
 		}
 		else if(basetype == base_type::k_struct){
-			return value_runtime_encoding::k_struct;
+			return value_runtime_encoding::k_ext_struct;
 		}
 		else if(basetype == base_type::k_vector){
 			const auto& element_type = type.get_vector_element_type().get_base_type();
 			if(element_type == base_type::k_bool || element_type == base_type::k_int || element_type == base_type::k_float){
-				return value_runtime_encoding::k_vector_uint64;
+				return value_runtime_encoding::k_ext_vector_uint64;
 			}
 			else{
-				return value_runtime_encoding::k_vector;
+				return value_runtime_encoding::k_ext_vector;
 			}
 		}
 		else if(basetype == base_type::k_dict){
-			return value_runtime_encoding::k_dict;
+			return value_runtime_encoding::k_ext_dict;
 		}
 		else if(basetype == base_type::k_function){
-			return value_runtime_encoding::k_function;
+			return value_runtime_encoding::k_inline_function;
 		}
 		else if(basetype == base_type::k_internal_unresolved_type_identifier){
-		}
-		else if(basetype == base_type::k_function){
-			return value_runtime_encoding::k_function;
 		}
 		else{
 		}
@@ -134,13 +135,13 @@ namespace floyd {
 	//	Will this type of value require an ext ? bc_value_object_t to be used?
 	inline bool is_encoded_as_ext(value_runtime_encoding encoding){
 		return false
-			|| encoding == value_runtime_encoding::k_string
-			|| encoding == value_runtime_encoding::k_json_value
-			|| encoding == value_runtime_encoding::k_typeid
-			|| encoding == value_runtime_encoding::k_struct
-			|| encoding == value_runtime_encoding::k_vector
-			|| encoding == value_runtime_encoding::k_vector_uint64
-			|| encoding == value_runtime_encoding::k_dict
+			|| encoding == value_runtime_encoding::k_ext_string
+			|| encoding == value_runtime_encoding::k_ext_json_value
+			|| encoding == value_runtime_encoding::k_ext_typeid
+			|| encoding == value_runtime_encoding::k_ext_struct
+			|| encoding == value_runtime_encoding::k_ext_vector
+			|| encoding == value_runtime_encoding::k_ext_vector_uint64
+			|| encoding == value_runtime_encoding::k_ext_dict
 			;
 	}
 
@@ -157,7 +158,6 @@ namespace floyd {
 			|| basetype == base_type::k_dict
 			;
 	}
-
 
 
 	//////////////////////////////////////		bc_value_t
