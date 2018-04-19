@@ -293,6 +293,7 @@ struct json_t {
 
 	/////////////////////////////////////		STATE
 	//	??? Make this fast to copy = move map/ vector into shared_ptr.
+	//	??? Should use union.
 	private: std::string __debug;
 	private: etype _type = k_null;
 	private: std::map<std::string, json_t> _object;

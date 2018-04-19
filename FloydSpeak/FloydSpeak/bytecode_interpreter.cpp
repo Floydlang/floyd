@@ -64,6 +64,22 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 	const auto instruction2_size = sizeof(bc_instruction_t);
 	QUARK_ASSERT(instruction2_size == 8);
+
+
+	const auto immer_vec_bool_size = sizeof(immer::vector<bool>);
+	const auto immer_vec_int_size = sizeof(immer::vector<int>);
+	const auto immer_vec_string_size = sizeof(immer::vector<string>);
+
+	QUARK_ASSERT(immer_vec_bool_size == 32);
+	QUARK_ASSERT(immer_vec_int_size == 32);
+	QUARK_ASSERT(immer_vec_string_size == 32);
+
+
+	const auto immer_stringkey_map_size = sizeof(immer::map<std::string, float>);
+	QUARK_ASSERT(immer_stringkey_map_size == 16);
+
+	const auto immer_intkey_map_size = sizeof(immer::map<uint32_t, float>);
+	QUARK_ASSERT(immer_intkey_map_size == 16);
 }
 
 
@@ -1374,6 +1390,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				//	get_object_element() throws if key can't be found.
 				const auto& value = parent_json_value->get_object_element(lookup_key);
+
+				//??? no need to create full bc_value_t here! We only need pod.
 				const auto value2 = bc_value_t::make_json_value(value);
 
 				value2._pod._ext->_rc++;
@@ -1391,6 +1409,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 					const auto& value = parent_json_value->get_array_n(lookup_index);
 
 					//??? value2 will soon go out of scope - avoid creating bc_value_t all together.
+					//??? no need to create full bc_value_t here! We only need pod.
 					const auto value2 = bc_value_t::make_json_value(value);
 
 					value2._pod._ext->_rc++;

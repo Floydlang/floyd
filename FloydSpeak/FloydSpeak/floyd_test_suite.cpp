@@ -3000,7 +3000,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 	}
 }
 
-QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
+OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 	const auto t = quark::trace_context_t(false, quark::get_trace());
 	interpreter_context_t context{ t };
 

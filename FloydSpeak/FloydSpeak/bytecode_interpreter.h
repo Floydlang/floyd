@@ -290,18 +290,6 @@ namespace floyd {
 		private: inline  explicit bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
 
 
-/*
-		//////////////////////////////////////		dict
-
-
-		public: inline static bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_value_t>& entries){
-			return bc_value_t{value_type, entries};
-		}
-
-		public: inline const std::map<std::string, bc_value_t>& get_dict_value() const;
-		private: inline explicit bc_value_t(const typeid_t& value_type, const std::map<std::string, bc_value_t>& entries);
-*/
-
 		//////////////////////////////////////		function
 
 
