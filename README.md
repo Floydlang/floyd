@@ -1,4 +1,4 @@
-![alt text](./docs/floyd logo.png "Floyd Logo")
+![alt text](./docs/floyd_logo.png "Floyd Logo")
 
 License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is to change license to MIT.
 
