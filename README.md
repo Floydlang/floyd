@@ -20,7 +20,7 @@ For details, read the [Floyd reference docs](./docs/floyd_reference.md).
 
 # CHEAT SHEET
 
-![alt text](./docs/floyd_cheat_sheet2.png "Floyd Cheat Sheet")
+![alt text](./docs/floyd_cheat_sheet3.png "Floyd Cheat Sheet")
 
 # EXAMPLE
 
