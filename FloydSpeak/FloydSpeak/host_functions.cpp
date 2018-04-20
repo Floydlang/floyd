@@ -350,7 +350,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 					throw std::runtime_error("Update element must be a 1-character string.");
 				}
 				else{
-					const int lookup_index = lookup_key.get_int_value();
+					const auto lookup_index = lookup_key.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v.size()){
 						throw std::runtime_error("String lookup out of bounds.");
 					}
@@ -385,22 +385,22 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			}
 			else{
 				if(obj1._type.get_vector_element_type().is_int()){
-					auto v2 = obj1._pod._ext->_vector_ints;
+					auto v2 = obj1._pod._ext->_vector_int64s;
 
-					const int lookup_index = lookup_key.get_int_value();
+					const auto lookup_index = lookup_key.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v2.size()){
 						throw std::runtime_error("Vector lookup out of bounds.");
 					}
 					else{
-						v2 = v2.set(lookup_index, new_value._pod._int);
-						const auto s2 = make_vector_int_value(v2);
+						v2 = v2.set(lookup_index, new_value._pod._uint64);
+						const auto s2 = make_vector_int64_value(v2);
 						return s2;
 					}
 				}
 				else{
 					const auto obj = obj1;
 					auto v2 = *get_vector_value(obj);
-					const int lookup_index = lookup_key.get_int_value();
+					const auto lookup_index = lookup_key.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v2.size()){
 						throw std::runtime_error("Vector lookup out of bounds.");
 					}
@@ -486,7 +486,7 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	}
 	else if(obj._type.is_vector()){
 		if(obj._type.get_vector_element_type().is_int()){
-			const auto size = obj._pod._ext->_vector_ints.size();
+			const auto size = obj._pod._ext->_vector_int64s.size();
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
@@ -526,10 +526,10 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			if(wanted._type.is_int() == false){
 				throw std::runtime_error("Type mismatch.");
 			}
-			const auto& vec = obj._pod._ext->_vector_ints;
+			const auto& vec = obj._pod._ext->_vector_int64s;
 			int index = 0;
 			const auto size = vec.size();
-			while(index < size && vec[index] != wanted._pod._int){
+			while(index < size && vec[index] != wanted._pod._uint64){
 				index++;
 			}
 
@@ -633,8 +633,8 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		}
 
 		if(obj._type.get_vector_element_type().is_int()){
-			auto elements2 = obj._pod._ext->_vector_ints.push_back(element._pod._int);
-			const auto v = make_vector_int_value(elements2);
+			auto elements2 = obj._pod._ext->_vector_int64s.push_back(element._pod._uint64);
+			const auto v = make_vector_int64_value(elements2);
 			return v;
 		}
 		else{
@@ -671,11 +671,11 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 	if(obj._type.is_string()){
 		const auto str = obj.get_string_value();
-		const auto start2 = std::min(start, static_cast<int>(str.size()));
-		const auto end2 = std::min(end, static_cast<int>(str.size()));
+		const auto start2 = std::min(start, static_cast<int64_t>(str.size()));
+		const auto end2 = std::min(end, static_cast<int64_t>(str.size()));
 
 		string str2;
-		for(int i = start2 ; i < end2 ; i++){
+		for(auto i = start2 ; i < end2 ; i++){
 			str2.push_back(str[i]);
 		}
 		const auto v = bc_value_t::make_string(str2);
@@ -683,23 +683,23 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	}
 	else if(obj._type.is_vector()){
 		if(obj._type.get_vector_element_type().is_int()){
-			const auto& vec = obj._pod._ext->_vector_ints;
-			const auto start2 = std::min(start, static_cast<int>(vec.size()));
-			const auto end2 = std::min(end, static_cast<int>(vec.size()));
-			immer::vector<int> elements2;
-			for(int i = start2 ; i < end2 ; i++){
+			const auto& vec = obj._pod._ext->_vector_int64s;
+			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
+			immer::vector<uint64_t> elements2;
+			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
-			const auto v = make_vector_int_value(elements2);
+			const auto v = make_vector_int64_value(elements2);
 			return v;
 		}
 		else{
 			const auto vec = *get_vector_value(obj);
 			const auto element_type = obj._type.get_vector_element_type();
-			const auto start2 = std::min(start, static_cast<int>(vec.size()));
-			const auto end2 = std::min(end, static_cast<int>(vec.size()));
+			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			immer::vector<bc_value_t> elements2;
-			for(int i = start2 ; i < end2 ; i++){
+			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
 			const auto v = make_vector_value(element_type, elements2);
@@ -737,8 +737,8 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 
 	if(obj._type.is_string()){
 		const auto str = obj.get_string_value();
-		const auto start2 = std::min(start, static_cast<int>(str.size()));
-		const auto end2 = std::min(end, static_cast<int>(str.size()));
+		const auto start2 = std::min(start, static_cast<int64_t>(str.size()));
+		const auto end2 = std::min(end, static_cast<int64_t>(str.size()));
 		const auto new_bits = args[3].get_string_value();
 
 		string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
@@ -747,27 +747,27 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	}
 	else if(obj._type.is_vector()){
 		if(obj._type.get_vector_element_type().is_int()){
-			const auto& vec = obj._pod._ext->_vector_ints;
+			const auto& vec = obj._pod._ext->_vector_int64s;
 			const auto element_type = obj._type.get_vector_element_type();
-			const auto start2 = std::min(start, static_cast<int>(vec.size()));
-			const auto end2 = std::min(end, static_cast<int>(vec.size()));
-			const auto& new_bits = args[3]._pod._ext->_vector_ints;
+			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
+			const auto& new_bits = args[3]._pod._ext->_vector_int64s;
 
-			auto result = immer::vector<int>(vec.begin(), vec.begin() + start2);
+			auto result = immer::vector<uint64_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){
 				result = result.push_back(new_bits[i]);
 			}
 			for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
 				result = result.push_back(vec[end2 + i]);
 			}
-			const auto v = make_vector_int_value(result);
+			const auto v = make_vector_int64_value(result);
 			return v;
 		}
 		else{
 			const auto& vec = *get_vector_value(obj);
 			const auto element_type = obj._type.get_vector_element_type();
-			const auto start2 = std::min(start, static_cast<int>(vec.size()));
-			const auto end2 = std::min(end, static_cast<int>(vec.size()));
+			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			const auto& new_bits = *get_vector_value(args[3]);
 
 			auto result = immer::vector<bc_value_t>(vec.begin(), vec.begin() + start2);

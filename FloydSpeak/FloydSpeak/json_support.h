@@ -93,6 +93,13 @@ struct json_t {
 		__debug = json_to_compact_string(*this);
 		QUARK_ASSERT(check_invariant());
 	}
+	public: json_t(int64_t number) :
+		_type(k_number),
+		_number((double)number)
+	{
+		__debug = json_to_compact_string(*this);
+		QUARK_ASSERT(check_invariant());
+	}
 
 	public: json_t(bool value) :
 		_type(value ? k_true : k_false)

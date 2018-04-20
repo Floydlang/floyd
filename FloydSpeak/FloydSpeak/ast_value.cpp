@@ -202,7 +202,7 @@ namespace floyd {
 		}
 
 
-int limit(int value, int min, int max){
+int64_t limit(int64_t value, int64_t min, int64_t max){
 	if(value < min){
 		return min;
 	}
@@ -839,6 +839,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: false");
 }
 
+//??? test full range of int64
 QUARK_UNIT_TESTQ("value_t()", "int"){
 	const auto a = value_t::make_int(13);
 	QUARK_TEST_VERIFY(!a.is_undefined());

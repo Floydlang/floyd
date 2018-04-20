@@ -314,7 +314,7 @@ namespace floyd {
 		//------------------------------------------------		int
 
 
-static value_t make_int(int value){
+static value_t make_int(int64_t value){
 	return value_t(value);
 }
 		public: bool is_int() const {
@@ -322,7 +322,7 @@ static value_t make_int(int value){
 
 			return _basetype == base_type::k_int;
 		}
-		public: int get_int_value() const{
+		public: int64_t get_int_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_int()){
 				throw std::runtime_error("Type mismatch!");
@@ -331,7 +331,7 @@ static value_t make_int(int value){
 			return _value_internals._int;
 		}
 
-		public: int get_int_value_quick() const{
+		public: int64_t get_int_value_quick() const{
 			return _value_internals._int;
 		}
 
@@ -596,7 +596,7 @@ static value_t make_int(int value){
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: explicit value_t(int value) :
+		private: explicit value_t(int64_t value) :
 			_basetype(base_type::k_int)
 		{
 			_value_internals._int = value;
@@ -633,7 +633,7 @@ static value_t make_int(int value){
 
 		private: union value_internals_t {
 			bool _bool;
-			int _int;
+			int64_t _int;
 			float _float;
 			value_ext_t* _ext;
 		};

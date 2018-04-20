@@ -30,13 +30,31 @@ using std::make_shared;
 //////////////////////////////////////		value_t -- helpers
 
 
-	std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values);
-	std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values);
 
-	immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values);
-	immer::vector<int> values_to_ints(const std::vector<value_t>& values);
-	std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values);
-	std::vector<value_t> ints_to_values(const immer::vector<int>& values);
+std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+	std::vector<bc_value_t> result;
+	for(const auto e: values){
+		result.push_back(value_to_bc(e));
+	}
+	return result;
+}
+
+
+std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(bc_to_value(e));
+	}
+	return result;
+}
+std::vector<value_t> int64s_to_values(const immer::vector<uint64_t>& values){
+	std::vector<value_t> result;
+	for(const auto e: values){
+		result.push_back(value_t::make_int(e));
+	}
+	return result;
+}
+
 
 value_t bc_to_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
@@ -86,7 +104,7 @@ value_t bc_to_value(const bc_value_t& value){
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
 		if(element_type.is_int()){
-			return value_t::make_vector_value(element_type, ints_to_values(value._pod._ext->_vector_ints));
+			return value_t::make_vector_value(element_type, int64s_to_values(value._pod._ext->_vector_int64s));
 		}
 		else{
 			return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value)));
@@ -151,11 +169,20 @@ bc_value_t value_to_bc(const value_t& value){
 
 	else if(basetype == base_type::k_vector){
 		const auto element_type = value.get_type().get_vector_element_type();
+		const auto& vec = value.get_vector_value();
 		if(element_type.is_int()){
-			return make_vector_int_value(values_to_ints(value.get_vector_value()));
+			immer::vector<uint64_t> vec2;
+			for(const auto e: vec){
+				vec2.push_back(e.get_int_value());
+			}
+			return make_vector_int64_value(vec2);
 		}
 		else{
-			return make_vector_value(element_type, values_to_bcs2(value.get_vector_value()));
+			immer::vector<bc_value_t> vec2;
+			for(const auto e: vec){
+				vec2.push_back(value_to_bc(e));
+			}
+			return make_vector_value(element_type, vec2);
 		}
 	}
 	else if(basetype == base_type::k_dict){
@@ -173,53 +200,6 @@ bc_value_t value_to_bc(const value_t& value){
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-}
-
-
-std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
-	std::vector<bc_value_t> result;
-	for(const auto e: values){
-		result.push_back(value_to_bc(e));
-	}
-	return result;
-}
-std::vector<value_t> bcs_to_values__same_types(const std::vector<bc_value_t>& values){
-	std::vector<value_t> result;
-	for(const auto e: values){
-		result.push_back(bc_to_value(e));
-	}
-	return result;
-}
-
-
-immer::vector<bc_value_t> values_to_bcs2(const std::vector<value_t>& values){
-	immer::vector<bc_value_t> result;
-	for(const auto e: values){
-		result.push_back(value_to_bc(e));
-	}
-	return result;
-}
-immer::vector<int> values_to_ints(const std::vector<value_t>& values){
-	immer::vector<int> result;
-	for(const auto e: values){
-		result.push_back(e.get_int_value());
-	}
-	return result;
-}
-
-std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values){
-	std::vector<value_t> result;
-	for(const auto e: values){
-		result.push_back(bc_to_value(e));
-	}
-	return result;
-}
-std::vector<value_t> ints_to_values(const immer::vector<int>& values){
-	std::vector<value_t> result;
-	for(const auto e: values){
-		result.push_back(value_t::make_int(e));
-	}
-	return result;
 }
 
 

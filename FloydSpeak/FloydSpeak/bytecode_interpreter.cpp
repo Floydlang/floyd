@@ -48,6 +48,9 @@ int get_local_n_pos(int frame_pos, int n){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
+	const auto int_size = sizeof(int);
+	QUARK_ASSERT(int_size == 4);
+
 	const auto pod_size = sizeof(bc_pod_value_t);
 	QUARK_ASSERT(pod_size == 8);
 
@@ -86,7 +89,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 //////////////////////////////////////////		COMPARE
 
 
-inline int bc_limit(int value, int min, int max){
+inline int64_t bc_limit(int64_t value, int64_t min, int64_t max){
 	if(value < min){
 		return min;
 	}
@@ -157,12 +160,16 @@ int bc_compare_vectors(const immer::vector<bc_value_t>& left, const immer::vecto
 	if(encoding == value_runtime_encoding::k_ext_vector){
 */
 
-int bc_compare_vector_ints(const immer::vector<int>& left, const immer::vector<int>& right){
+int bc_compare_vector_int64s(const immer::vector<uint64_t>& left, const immer::vector<uint64_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		const auto element_result = bc_limit(left[i] - right[i], -1, 1);
-		if(element_result != 0){
-			return element_result;
+		auto left2 = static_cast<int64_t>(left[i]);
+		auto right2 = static_cast<int64_t>(right[i]);
+		if(left2 < right2){
+			return -1;
+		}
+		else if(left2 > right2){
+			return 1;
 		}
 	}
 	if(left.size() == right.size()){
@@ -282,7 +289,7 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 	}
 	else if(type.is_vector()){
 		if(type.get_vector_element_type().is_int()){
-			return bc_compare_vector_ints(left._pod._ext->_vector_ints, right._pod._ext->_vector_ints);
+			return bc_compare_vector_int64s(left._pod._ext->_vector_int64s, right._pod._ext->_vector_int64s);
 		}
 		else{
 			const auto& left_vec = get_vector_value(left);
@@ -610,7 +617,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 	const auto stack_frames = get_stack_frames(get_current_frame_start());
 
 	vector<json_t> frames;
-	for(int i = 0 ; i < stack_frames.size() ; i++){
+	for(int64_t i = 0 ; i < stack_frames.size() ; i++){
 		auto a = json_t::make_array({
 			json_t(i),
 			json_t(stack_frames[i].first),
@@ -620,7 +627,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 	}
 
 	vector<json_t> elements;
-	for(int i = 0 ; i < size ; i++){
+	for(int64_t i = 0 ; i < size ; i++){
 		const auto& frame_it = std::find_if(
 			stack_frames.begin(),
 			stack_frames.end(),
@@ -791,8 +798,8 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	else if(v._type.is_vector()){
 		if(v._type.get_vector_element_type().is_int()){
 			std::vector<json_t> result;
-			for(int i = 0 ; i < v._pod._ext->_vector_ints.size() ; i++){
-				const auto element_value2 = v._pod._ext->_vector_ints[i];
+			for(int i = 0 ; i < v._pod._ext->_vector_int64s.size() ; i++){
+				const auto element_value2 = static_cast<int64_t>(v._pod._ext->_vector_int64s[i]);
 				result.push_back(json_t(element_value2));
 			}
 			return result;
@@ -1218,7 +1225,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(vm.check_invariant());
 			ASSERT((stack._stack_size + k_frame_overhead) < stack._allocated_count)
 
-			stack._entries[stack._stack_size + 0]._int = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]);
+			stack._entries[stack._stack_size + 0]._uint64 = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]);
 			stack._entries[stack._stack_size + 1]._frame_ptr = frame_ptr;
 			stack._stack_size += k_frame_overhead;
 #if DEBUG
@@ -1233,7 +1240,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(vm.check_invariant());
 			ASSERT(stack._stack_size >= k_frame_overhead);
 
-			const auto frame_pos = stack._entries[stack._stack_size - k_frame_overhead + 0]._int;
+			const auto frame_pos = stack._entries[stack._stack_size - k_frame_overhead + 0]._uint64;
 			frame_ptr = stack._entries[stack._stack_size - k_frame_overhead + 1]._frame_ptr;
 			stack._stack_size -= k_frame_overhead;
 
@@ -1338,14 +1345,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
-			pc = regs[i._a]._int == 0 ? pc + i._b - 1 : pc;
+			pc = regs[i._a]._uint64 == 0 ? pc + i._b - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_notzero_int: {
 			ASSERT(stack.check_reg_int(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
-			pc = regs[i._a]._int == 0 ? pc : pc + i._b - 1;
+			pc = regs[i._a]._uint64 == 0 ? pc : pc + i._b - 1;
 			break;
 		}
 		case bc_opcode::k_branch_smaller_int: {
@@ -1353,7 +1360,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 
 			//	Notice that pc will be incremented too, hence the - 1.
-			pc = regs[i._a]._int < regs[i._b]._int ? pc + i._c - 1 : pc;
+			pc = regs[i._a]._uint64 < regs[i._b]._uint64 ? pc + i._c - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_smaller_or_equal_int: {
@@ -1361,7 +1368,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 
 			//	Notice that pc will be incremented too, hence the - 1.
-			pc = regs[i._a]._int <= regs[i._b]._int ? pc + i._c - 1 : pc;
+			pc = regs[i._a]._uint64 <= regs[i._b]._uint64 ? pc + i._c - 1 : pc;
 			break;
 		}
 		case bc_opcode::k_branch_always: {
@@ -1399,7 +1406,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._c));
 
 			const auto& s = regs[i._b]._ext->_string;
-			const auto lookup_index = regs[i._c]._int;
+			const auto lookup_index = regs[i._c]._uint64;
 
 			if(lookup_index < 0 || lookup_index >= s.size()){
 				throw std::runtime_error("Lookup in string: out of bounds.");
@@ -1446,7 +1453,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			else if(parent_json_value->is_array()){
 				ASSERT(stack.check_reg_int(i._c));
 
-				const auto lookup_index = regs[i._c]._int;
+				const auto lookup_index = regs[i._c]._uint64;
 				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
 					throw std::runtime_error("Lookup in json_value array: out of bounds.");
 				}
@@ -1480,7 +1487,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(element_type.is_int() == false);
 
 			const auto* vec = &regs[i._b]._ext->_vector_elements;
-			const auto lookup_index = regs[i._c]._int;
+			const auto lookup_index = regs[i._c]._uint64;
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
@@ -1510,13 +1517,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(element_type.is_int() == true);
 #endif
 
-			const auto& vec = regs[i._b]._ext->_vector_ints;
-			const auto lookup_index = regs[i._c]._int;
+			const auto& vec = regs[i._b]._ext->_vector_int64s;
+			const auto lookup_index = regs[i._c]._uint64;
 			if(lookup_index < 0 || lookup_index >= vec.size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
-				regs[i._a]._int = vec[lookup_index];
+				regs[i._a]._uint64 = vec[lookup_index];
 			}
 			ASSERT(vm.check_invariant());
 			break;
@@ -1558,7 +1565,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(element_type.is_int() == true);
 #endif
 
-			regs[i._a]._int = static_cast<int>(regs[i._b]._ext->_vector_ints.size());
+			regs[i._a]._uint64 = static_cast<int>(regs[i._b]._ext->_vector_int64s.size());
 			ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1573,8 +1580,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(element_type.is_int() == true);
 #endif
 
-			auto elements2 = regs[i._b]._ext->_vector_ints.push_back(regs[i._c]._int);
-			const auto vec = make_vector_int_value(elements2);
+			auto elements2 = regs[i._b]._ext->_vector_int64s.push_back(regs[i._c]._uint64);
+			const auto vec = make_vector_int64_value(elements2);
 			vm._stack.write_register_obj(i._a, vec);
 			ASSERT(vm.check_invariant());
 			break;
@@ -1710,16 +1717,16 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto arg_count = i._c;
 
 			const int arg0_stack_pos = vm._stack.size() - arg_count;
-			immer::vector<int> elements2;
+			immer::vector<uint64_t> elements2;
 			for(int a = 0 ; a < arg_count ; a++){
 				const auto pos = arg0_stack_pos + a;
-				elements2 = elements2.push_back(stack._entries[pos]._int);
+				elements2 = elements2.push_back(stack._entries[pos]._uint64);
 			}
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = type.get_vector_element_type();
 
-			const auto result = make_vector_int_value(elements2);
+			const auto result = make_vector_int64_value(elements2);
 			vm._stack.write_register_obj(dest_reg, result);
 
 			ASSERT(vm.check_invariant());
@@ -1770,7 +1777,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = regs[i._b]._int <= regs[i._c]._int;
+			regs[i._a]._bool = regs[i._b]._uint64 <= regs[i._c]._uint64;
 			break;
 		}
 
@@ -1788,7 +1795,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			regs[i._a]._bool = diff < 0;
 			break;
 		}
-		case bc_opcode::k_comparison_smaller_int: ASSERT(stack.check_reg_bool(i._a)); ASSERT(stack.check_reg_int(i._b)); ASSERT(stack.check_reg_int(i._c)); regs[i._a]._bool = regs[i._b]._int < regs[i._c]._int; break;
+		case bc_opcode::k_comparison_smaller_int: ASSERT(stack.check_reg_bool(i._a)); ASSERT(stack.check_reg_int(i._b)); ASSERT(stack.check_reg_int(i._c)); regs[i._a]._bool = regs[i._b]._uint64 < regs[i._c]._uint64; break;
 
 		case bc_opcode::k_logical_equal: {
 			ASSERT(stack.check_reg_bool(i._a));
@@ -1809,7 +1816,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = regs[i._b]._int == regs[i._c]._int;
+			regs[i._a]._bool = regs[i._b]._uint64 == regs[i._c]._uint64;
 			break;
 		}
 
@@ -1832,7 +1839,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = regs[i._b]._int != regs[i._c]._int;
+			regs[i._a]._bool = regs[i._b]._uint64 != regs[i._c]._uint64;
 			break;
 		}
 
@@ -1854,7 +1861,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._int = regs[i._b]._int + regs[i._c]._int;
+			regs[i._a]._uint64 = regs[i._b]._uint64 + regs[i._c]._uint64;
 			break;
 		}
 		case bc_opcode::k_add_float: {
@@ -1910,13 +1917,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(element_type.is_int());
 
 			//	Copy left into new vector.
-			immer::vector<int> elements2 = regs[i._b]._ext->_vector_ints;
+			auto elements2 = regs[i._b]._ext->_vector_int64s;
 
-			const auto& right_elements = regs[i._c]._ext->_vector_ints;
+			const auto& right_elements = regs[i._c]._ext->_vector_int64s;
 			for(const auto& e: right_elements){
 				elements2 = elements2.push_back(e);
 			}
-			const auto& value2 = make_vector_int_value(elements2);
+			const auto& value2 = make_vector_int64_value(elements2);
 			stack.write_register_obj(i._a, value2);
 			break;
 		}
@@ -1934,7 +1941,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._int = regs[i._b]._int - regs[i._c]._int;
+			regs[i._a]._uint64 = regs[i._b]._uint64 - regs[i._c]._uint64;
 			break;
 		}
 		case bc_opcode::k_multiply_float: {
@@ -1950,7 +1957,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._c));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._int = regs[i._b]._int * regs[i._c]._int;
+			regs[i._a]._uint64 = regs[i._b]._uint64 * regs[i._c]._uint64;
 			break;
 		}
 		case bc_opcode::k_divide_float: {
@@ -1970,11 +1977,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			const auto right = regs[i._c]._int;
+			const auto right = regs[i._c]._uint64;
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			regs[i._a]._int = regs[i._b]._int / right;
+			regs[i._a]._uint64 = regs[i._b]._uint64 / right;
 			break;
 		}
 		case bc_opcode::k_remainder_int: {
@@ -1982,11 +1989,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			const auto right = regs[i._c]._int;
+			const auto right = regs[i._c]._uint64;
 			if(right == 0){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			regs[i._a]._int = regs[i._b]._int % right;
+			regs[i._a]._uint64 = regs[i._b]._uint64 % right;
 			break;
 		}
 
@@ -2005,7 +2012,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = (regs[i._b]._int != 0) && (regs[i._c]._int != 0);
+			regs[i._a]._bool = (regs[i._b]._uint64 != 0) && (regs[i._c]._uint64 != 0);
 			break;
 		}
 		case bc_opcode::k_logical_and_float: {
@@ -2030,7 +2037,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = (regs[i._b]._int != 0) || (regs[i._c]._int != 0);
+			regs[i._a]._bool = (regs[i._b]._uint64 != 0) || (regs[i._c]._uint64 != 0);
 			break;
 		}
 		case bc_opcode::k_logical_or_float: {
