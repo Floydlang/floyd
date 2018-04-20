@@ -608,7 +608,7 @@ frame_pos_t interpreter_stack_t::read_prev_frame(int frame_pos) const{
 	QUARK_ASSERT(v < frame_pos);
 	QUARK_ASSERT(v >= 0);
 
-	const auto ptr = _entries[frame_pos - k_frame_overhead + 1]._frame_ptr;
+	const auto ptr = _entries[frame_pos - k_frame_overhead + 1]._pod64._frame_ptr;
 	QUARK_ASSERT(ptr != nullptr);
 	QUARK_ASSERT(ptr->check_invariant());
 
@@ -1293,7 +1293,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT((stack._stack_size + k_frame_overhead) < stack._allocated_count)
 
 			stack._entries[stack._stack_size + 0]._pod64._int64 = static_cast<int64_t>(stack._current_frame_entry_ptr - &stack._entries[0]);
-			stack._entries[stack._stack_size + 1]._frame_ptr = frame_ptr;
+			stack._entries[stack._stack_size + 1]._pod64._frame_ptr = frame_ptr;
 			stack._stack_size += k_frame_overhead;
 #if DEBUG
 			stack._debug_types.push_back(typeid_t::make_int());
@@ -1308,7 +1308,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack._stack_size >= k_frame_overhead);
 
 			const auto frame_pos = stack._entries[stack._stack_size - k_frame_overhead + 0]._pod64._int64;
-			frame_ptr = stack._entries[stack._stack_size - k_frame_overhead + 1]._frame_ptr;
+			frame_ptr = stack._entries[stack._stack_size - k_frame_overhead + 1]._pod64._frame_ptr;
 			stack._stack_size -= k_frame_overhead;
 
 #if DEBUG
@@ -1665,7 +1665,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_function(i._b));
 
-			const int function_id = regs[i._b]._function_id;
+			const int function_id = regs[i._b]._pod64._function_id;
 			const int callee_arg_count = i._c;
 			ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 

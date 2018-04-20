@@ -43,6 +43,9 @@ namespace floyd {
 		bool _bool;
 		float _float;
 		int64_t _int64;
+
+		int _function_id;
+		const bc_frame_t* _frame_ptr;
 	};
 
 
@@ -53,9 +56,7 @@ namespace floyd {
 
 
 	union bc_pod_value_t {
-		int _function_id;
 		bc_value_object_t* _ext;
-		const bc_frame_t* _frame_ptr;
 		bc_pod64_t _pod64;
 	};
 
@@ -258,7 +259,7 @@ namespace floyd {
 			_type(typeid_t::make_void()),
 			_is_ext(false)
 		{
-			_pod._frame_ptr = frame_ptr;
+			_pod._pod64._frame_ptr = frame_ptr;
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -400,13 +401,13 @@ namespace floyd {
 		public: inline int get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 
-			return _pod._function_id;
+			return _pod._pod64._function_id;
 		}
 		private: inline explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
 			_type(function_type),
 			_is_ext(false)
 		{
-			_pod._function_id = function_id;
+			_pod._pod64._function_id = function_id;
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -1608,7 +1609,7 @@ namespace floyd {
 			QUARK_ASSERT(_stack_size >= k_frame_overhead);
 
 			const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0]._pod64._int64;
-			const auto frame_ptr = _entries[_stack_size - k_frame_overhead + 1]._frame_ptr;
+			const auto frame_ptr = _entries[_stack_size - k_frame_overhead + 1]._pod64._frame_ptr;
 			_stack_size -= k_frame_overhead;
 #if DEBUG
 			_debug_types.pop_back();
