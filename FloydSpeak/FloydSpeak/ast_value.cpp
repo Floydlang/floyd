@@ -11,6 +11,7 @@
 #include "statement.h"
 #include "text_parser.h"
 #include "pass2.h"
+#include <cinttypes>
 
 using std::string;
 using std::make_shared;
@@ -486,7 +487,7 @@ std::string to_compact_string2(const value_t& value) {
 	}
 	else if(base_type == base_type::k_int){
 		char temp[200 + 1];//### Use C++ function instead.
-		sprintf(temp, "%d", value.get_int_value());
+		sprintf(temp, "%" PRId64, value.get_int_value());
 		return std::string(temp);
 	}
 	else if(base_type == base_type::k_float){

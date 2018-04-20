@@ -1232,7 +1232,7 @@ namespace floyd {
 
 
 	struct frame_pos_t {
-		int64_t _frame_pos;
+		int _frame_pos;
 		const bc_frame_t* _frame_ptr;
 	};
 

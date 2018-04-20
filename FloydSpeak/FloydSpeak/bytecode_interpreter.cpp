@@ -89,21 +89,21 @@ QUARK_UNIT_TEST("", "", "", ""){
 //////////////////////////////////////////		COMPARE
 
 
-inline int64_t bc_limit(int64_t value, int64_t min, int64_t max){
-	if(value < min){
-		return min;
+inline int compare(int64_t value){
+	if(value < 0){
+		return -1;
 	}
-	else if(value > max){
-		return max;
+	else if(value > 0){
+		return 1;
 	}
 	else{
-		return value;
+		return 0;
 	}
 }
 
 int bc_compare_string(const std::string& left, const std::string& right){
 	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
-	return bc_limit(std::strcmp(left.c_str(), right.c_str()), -1, 1);
+	return compare(std::strcmp(left.c_str(), right.c_str()));
 }
 
 QUARK_UNIT_TESTQ("bc_compare_string()", ""){
@@ -254,7 +254,7 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
 	}
 	else if(type.is_int()){
-		return bc_limit(left.get_int_value() - right.get_int_value(), -1, 1);
+		return compare(left.get_int_value() - right.get_int_value());
 	}
 	else if(type.is_float()){
 		const auto a = left.get_float_value();
@@ -561,7 +561,7 @@ frame_pos_t interpreter_stack_t::read_prev_frame(int frame_pos) const{
 	QUARK_ASSERT(ptr != nullptr);
 	QUARK_ASSERT(ptr->check_invariant());
 
-	return frame_pos_t{ v, ptr };
+	return frame_pos_t{ static_cast<int>(v), ptr };
 }
 
 #if DEBUG
@@ -1406,7 +1406,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._c));
 
 			const auto& s = regs[i._b]._ext->_string;
-			const auto lookup_index = regs[i._c]._uint64;
+			const auto lookup_index = static_cast<int64_t>(regs[i._c]._uint64);
 
 			if(lookup_index < 0 || lookup_index >= s.size()){
 				throw std::runtime_error("Lookup in string: out of bounds.");
@@ -1453,7 +1453,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			else if(parent_json_value->is_array()){
 				ASSERT(stack.check_reg_int(i._c));
 
-				const auto lookup_index = regs[i._c]._uint64;
+				const auto lookup_index = static_cast<int64_t>(regs[i._c]._uint64);
 				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
 					throw std::runtime_error("Lookup in json_value array: out of bounds.");
 				}
@@ -1487,7 +1487,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(element_type.is_int() == false);
 
 			const auto* vec = &regs[i._b]._ext->_vector_elements;
-			const auto lookup_index = regs[i._c]._uint64;
+			const auto lookup_index = static_cast<int64_t>(regs[i._c]._uint64);
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
@@ -1518,7 +1518,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 #endif
 
 			const auto& vec = regs[i._b]._ext->_vector_int64s;
-			const auto lookup_index = regs[i._c]._uint64;
+			const auto lookup_index = static_cast<int64_t>(regs[i._c]._uint64);
 			if(lookup_index < 0 || lookup_index >= vec.size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
