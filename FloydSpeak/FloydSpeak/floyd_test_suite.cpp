@@ -1604,24 +1604,25 @@ QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 	}
 }
 
+QUARK_UNIT_TEST("vector", "+", "add empty vectors", ""){
+	try{
+		test_result(R"(		[int] a = [] + []; result = a == [];		)", R"(	)");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
+	}
+}
+
 
 //////////////////////////////////////////		vector-string
 
 
 QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
-	const auto vm = test__run_global(R"(
-		[string] a = ["alpha", "beta"];
-		assert(a[0] == "alpha");
-		assert(a[1] == "beta");
-	)");
+	test_result(R"(		[string] result = ["alpha", "beta"];		)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
 QUARK_UNIT_TEST("vector-string", "literal expression, computed element", "", ""){
-	const auto vm = test__run_global(R"(
-		string get_beta(){ return "beta"; }
-		[string] a = ["alpha", get_beta()];
-		assert(a[0] == "alpha");
-		assert(a[1] == "beta");
-	)");
+	test_result(R"(		string get_beta(){ return "beta"; } 	[string] result = ["alpha", get_beta()];	)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
 QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
 	const auto vm = test__run_global(R"(
@@ -1671,18 +1672,6 @@ QUARK_UNIT_TEST("vector-string", "size()", "2", ""){
 		assert(size(a) == 2);
 	)");
 }
-QUARK_UNIT_TEST("vector-string", "+", "add empty vectors", ""){
-	try{
-		const auto vm = test__run_global(R"(
-			[string] a = [] + [];
-			assert(a == []);
-		)");
-		QUARK_UT_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
-	}
-}
 QUARK_UNIT_TEST("vector-string", "+", "non-empty vectors", ""){
 	const auto vm = test__run_global(R"(
 		[string] a = ["one"] + ["two"];
@@ -1697,17 +1686,14 @@ QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
 }
 
 
-
 //////////////////////////////////////////		vector-int
 
 
-
-
 QUARK_UNIT_TEST("vector-int", "literal expression", "", ""){
-	test_result(R"(		[int] result = [10, 20, 30];		)", R"(		[[ "vector", "^int" ], [10,20,30]]		)");
+	test_result(R"(		[int] result = [10, 20, 30];		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "=", "copy", ""){
-	test_result(R"(		a = [10, 20, 30]; result = a;		)", R"(		[[ "vector", "^int" ], [10,20,30]]		)");
+	test_result(R"(		a = [10, 20, 30]; result = a;		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "==", "same values", ""){
 	test_result(R"(		result = [1, 2] == [1, 2];		)", R"(		[ "^bool", true]		)");
@@ -1725,22 +1711,48 @@ QUARK_UNIT_TEST("vector-int", "size()", "empty", "0"){
 	test_result(R"(		[int] a = []; result = size(a);		)", R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("vector-int", "size()", "2", ""){
-	test_result(R"(		[int] a = [1,2,3]; result = size(a);		)", R"(		[ "^int", 3]		)");
-}
-QUARK_UNIT_TEST("vector-int", "+", "add empty vectors", ""){
-	try{
-		test_result(R"(		[int] a = [] + []; result = a == [];		)", R"(	)");
-		QUARK_UT_VERIFY(false);
-	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot resolve type.");
-	}
+	test_result(R"(		[int] a = [1, 2, 3]; result = size(a);		)", R"(		[ "^int", 3]		)");
 }
 QUARK_UNIT_TEST("vector-int", "+", "non-empty vectors", ""){
-	test_result(R"(		[int] result = [1, 2] + [3, 4];		)", R"(		[[ "vector", "^int" ], [1,2,3,4]]		)");
+	test_result(R"(		[int] result = [1, 2] + [3, 4];		)", R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
-	test_result(R"(		[int] result = push_back([1, 2], 3);		)", R"(		[[ "vector", "^int" ], [1,2,3]]		)");
+	test_result(R"(		[int] result = push_back([1, 2], 3);		)", R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
+}
+
+
+//////////////////////////////////////////		vector-float
+
+
+QUARK_UNIT_TEST("vector-float", "literal expression", "", ""){
+	test_result(R"(		[float] result = [10.5, 20.5, 30.5];		)", R"(		[[ "vector", "^float" ], [10.5, 20.5, 30.5]]		)");
+}
+QUARK_UNIT_TEST("vector-float", "=", "copy", ""){
+	test_result(R"(		a = [10.5, 20.5, 30.5]; result = a;		)", R"(		[[ "vector", "^float" ], [10.5, 20.5, 30.5]]		)");
+}
+QUARK_UNIT_TEST("vector-float", "==", "same values", ""){
+	test_result(R"(		result = [1.5, 2.5] == [1.5, 2.5];		)", R"(		[ "^bool", true]		)");
+}
+QUARK_UNIT_TEST("vector-float", "==", "different values", ""){
+	test_result(R"(		result = [1.5, 3.5] == [1.5, 2.5];		)", R"(		[ "^bool", false]		)");
+}
+QUARK_UNIT_TEST("vector-float", "<", "", ""){
+	test_result(R"(		result = [1.5, 2.5] < [1.5, 2.5];		)", R"(		[ "^bool", false]	)");
+}
+QUARK_UNIT_TEST("vector-float", "<", "different values", ""){
+	test_result(R"(		result = [1.5, 2.5] < [1.5, 3.5];		)", R"(		[ "^bool", true]		)");
+}
+QUARK_UNIT_TEST("vector-float", "size()", "empty", "0"){
+	test_result(R"(		[float] a = []; result = size(a);		)", R"(		[ "^int", 0]		)");
+}
+QUARK_UNIT_TEST("vector-float", "size()", "2", ""){
+	test_result(R"(		[float] a = [1.5, 2.5, 3.5]; result = size(a);		)", R"(		[ "^int", 3]		)");
+}
+QUARK_UNIT_TEST("vector-float", "+", "non-empty vectors", ""){
+	test_result(R"(		[float] result = [1.5, 2.5] + [3.5, 4.5];		)", R"(		[[ "vector", "^float" ], [1.5, 2.5, 3.5, 4.5]]		)");
+}
+QUARK_UNIT_TEST("vector-float", "push_back()", "", ""){
+	test_result(R"(		[float] result = push_back([1.5, 2.5], 3.5);		)", R"(		[[ "vector", "^float" ], [1.5, 2.5, 3.5]]		)");
 }
 
 

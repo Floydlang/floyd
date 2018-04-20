@@ -315,9 +315,11 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		else if(type.get_vector_element_type().is_int()){
 			return bc_compare_vector_ints(left._pod._ext->_vector_64bit, right._pod._ext->_vector_64bit);
 		}
+/*
 		else if(type.get_vector_element_type().is_float()){
 			return bc_compare_vector_floats(left._pod._ext->_vector_64bit, right._pod._ext->_vector_64bit);
 		}
+*/
 		else{
 			const auto& left_vec = get_vector_value(left);
 			const auto& right_vec = get_vector_value(right);
