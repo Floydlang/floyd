@@ -61,6 +61,7 @@ namespace floyd {
 	};
 
 
+
 	//////////////////////////////////////		Encodings
 
 
@@ -429,6 +430,22 @@ namespace floyd {
 	};
 
 
+	//////////////////////////////////////		bc_owning_t
+
+
+	//	Owns and RC:s a bc_value_object_t safely and automatically.
+
+	struct bc_owning_t {
+		bc_owning_t(const bc_owning_t& other);
+		bc_owning_t(bc_value_object_t* ext);
+		void swap(bc_owning_t& other);
+		bc_owning_t operator=(const bc_owning_t& other);
+		~bc_owning_t();
+
+
+		//////////////////////////////////////		STATE
+		bc_value_object_t* _ext;
+	};
 
 	//////////////////////////////////////		bc_value_object_t
 
@@ -598,8 +615,43 @@ namespace floyd {
 	};
 
 
-//??? Can we use immer::vector<> and keep track of value references from the outside?
 
+
+
+
+		inline bc_owning_t::bc_owning_t(const bc_owning_t& other) :
+			_ext(other._ext)
+		{
+			_ext->_rc++;
+		}
+		inline bc_owning_t::bc_owning_t(bc_value_object_t* ext) :
+			_ext(ext)
+		{
+			_ext->_rc++;
+		}
+
+		inline void bc_owning_t::swap(bc_owning_t& other){
+			std::swap(_ext, other._ext);
+		}
+
+		inline bc_owning_t bc_owning_t::operator=(const bc_owning_t& other){
+			auto temp = *this;
+			swap(temp);
+			return *this;
+		}
+
+		inline bc_owning_t::~bc_owning_t(){
+			_ext->_rc--;
+			if(_ext->_rc == 0){
+				delete _ext;
+				_ext = nullptr;
+			}
+		}
+
+
+
+
+//??? Can we use immer::vector<> and keep track of value references from the outside?
 
 
 	inline void bc_value_t::release_ext(bc_value_t& value){
