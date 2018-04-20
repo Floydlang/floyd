@@ -679,6 +679,24 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 	return { body_acc, exts, stack_count };
 }
 
+int get_host_function_id(bcgenerator_t& vm, const expression_t& e){
+	if(e._input_exprs[0]._operation == expression_type::k_load2 && e._input_exprs[0]._address._parent_steps == -1){
+		const auto global_index = e._input_exprs[0]._address._index;
+		const auto& global_symbol = vm._call_stack[0]._body_ptr->_symbols[global_index];
+		if(global_symbol.second._const_value.is_function()){
+			const auto function_id = global_symbol.second._const_value.get_function_value();
+			const auto& function_def = vm._imm->_ast_pass3._function_defs[function_id];
+			return function_def->_host_function_id;
+		}
+		else{
+			return -1;
+		}
+	}
+	else{
+		return -1;
+	}
+}
+
 expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -686,42 +704,62 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 
 	auto body_acc = body;
 
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_frame_ptr, {}, {}, {} ));
-
 	//	_input_exprs[0] is callee, rest are arguments.
-	const auto& callee_expr = bcgen_expression(vm, {}, e._input_exprs[0], body_acc);
-	body_acc = callee_expr._body;
 	const auto callee_arg_count = static_cast<int>(e._input_exprs.size()) - 1;
 
 	const auto function_type = e._input_exprs[0].get_output_type();
 	const auto function_def_arg_types = function_type.get_function_args();
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
-
 	const auto return_type = e.get_output_type();
 
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 	const auto arg_count = callee_arg_count;
 
-	const auto call_setup = gen_call_setup(vm, function_def_arg_types, &e._input_exprs[1], callee_arg_count, body_acc);
-	body_acc = call_setup._body;
+	int host_function_id = get_host_function_id(vm, e);
+	if(host_function_id == 1007 && e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_int())){
+		const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
+		body_acc = arg1_expr._body;
 
-	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: call return") : target_reg;
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_get_size_vector_int") : target_reg;
 
-	//??? No need to allocate return register if functions returns void.
-	QUARK_ASSERT(return_type.is_internal_dynamic() == false && return_type.is_undefined() == false)
-	body_acc._instrs.push_back(bcgen_instruction_t(
-		bc_opcode::k_call,
-		target_reg2,
-		callee_expr._out,
-		make_imm_int(arg_count)
-	));
+		QUARK_ASSERT(arg_count == 1);
 
-	const auto extbits = pack_bools(call_setup._exts);
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_pop_frame_ptr, {}, {}, {} ));
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_get_size_vector_int,
+			target_reg2,
+			arg1_expr._out,
+			make_imm_int(0)
+		));
+		QUARK_ASSERT(body_acc.check_invariant());
+		return { body_acc, target_reg2, intern_type(vm, return_type) };
+	}
+	else{
+		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_frame_ptr, {}, {}, {} ));
 
-	QUARK_ASSERT(body_acc.check_invariant());
-	return { body_acc, target_reg2, intern_type(vm, return_type) };
+		const auto& callee_expr = bcgen_expression(vm, {}, e._input_exprs[0], body_acc);
+		body_acc = callee_expr._body;
+
+		const auto call_setup = gen_call_setup(vm, function_def_arg_types, &e._input_exprs[1], callee_arg_count, body_acc);
+		body_acc = call_setup._body;
+
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: call return") : target_reg;
+
+		//??? No need to allocate return register if functions returns void.
+		QUARK_ASSERT(return_type.is_internal_dynamic() == false && return_type.is_undefined() == false)
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_call,
+			target_reg2,
+			callee_expr._out,
+			make_imm_int(arg_count)
+		));
+
+		const auto extbits = pack_bools(call_setup._exts);
+		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_pop_frame_ptr, {}, {}, {} ));
+
+		QUARK_ASSERT(body_acc.check_invariant());
+		return { body_acc, target_reg2, intern_type(vm, return_type) };
+	}
 }
 
 //??? Submit dest-register to all gen-functions = minimize temps.

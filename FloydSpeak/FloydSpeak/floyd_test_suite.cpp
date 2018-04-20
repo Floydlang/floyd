@@ -3079,6 +3079,19 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 	}
 }
 
+
+QUARK_UNIT_TEST_VIP("vector-int", "size()", "3", ""){
+	const auto result = test__run_return_result(R"(
+		[int] a = [1, 2, 3];
+		result = size(a);
+	)", {});
+	ut_compare_values(result, value_t::make_int(3));
+}
+
+
+
+
+
 OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 	const auto t = quark::trace_context_t(false, quark::get_trace());
 	interpreter_context_t context{ t };
@@ -3111,4 +3124,6 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 	QUARK_TRACE_SS("TOTAL: " << instruction_count_total << "\t" <<symbol_count_total);
 }
+
+
 

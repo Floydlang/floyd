@@ -325,6 +325,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_lookup_element_vector_int, { "lookup_element_vector_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_o_0rrr } },
 
+	{ bc_opcode::k_get_size_vector_int, { "get_size_vector_int", opcode_info_t::encoding::k_q_0rr0 } },
+
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
 	{ bc_opcode::k_add_bool, { "add_bool", opcode_info_t::encoding::k_o_0rrr } },
@@ -1090,6 +1092,7 @@ bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_express
 #endif
 
 
+
 //??? pass returns value(s) via parameters instead.
 //???	Future: support dynamic Floyd functions too.
 
@@ -1542,6 +1545,23 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			}
 			break;
 		}
+
+
+		case bc_opcode::k_get_size_vector_int: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(i._c == 0);
+#if DEBUG
+			const auto& element_type = frame_ptr->_symbols[i._b].second._value_type.get_vector_element_type();
+			QUARK_ASSERT(element_type.is_int() == true);
+#endif
+
+			regs[i._a]._int = static_cast<int>(regs[i._b]._ext->_vector_ints.size());
+			ASSERT(vm.check_invariant());
+			break;
+		}
+
 
 		/*
 			??? Make stub bc_frame_t for each host function to make call conventions same as Floyd functions.

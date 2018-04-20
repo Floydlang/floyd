@@ -837,9 +837,9 @@ namespace floyd {
 			TYPE: itype of object
 			A: Register: where to put result: integer
 			B: Register: object
-			C: ---
+			C: 0
 		*/
-//		k_size,
+		k_get_size_vector_int,
 
 		/*
 			TYPE: itype of function output
