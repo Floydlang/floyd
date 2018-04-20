@@ -3080,12 +3080,18 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 }
 
 
-QUARK_UNIT_TEST_VIP("vector-int", "size()", "3", ""){
+QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 	const auto result = test__run_return_result(R"(
 		[int] a = [1, 2, 3];
 		result = size(a);
 	)", {});
 	ut_compare_values(result, value_t::make_int(3));
+}
+QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
+	const auto result = test__run_return_result(R"(
+		result = push_back([1, 2], 3);
+		assert(result == [1, 2, 3]);
+	)", {});
 }
 
 

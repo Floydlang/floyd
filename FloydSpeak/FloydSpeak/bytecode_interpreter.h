@@ -842,6 +842,14 @@ namespace floyd {
 		k_get_size_vector_int,
 
 		/*
+			TYPE: itype of object
+			A: Register: where to put result: integer
+			B: Register: object
+			C: Register: value
+		*/
+		k_pushback_vector_int,
+
+		/*
 			TYPE: itype of function output
 			A: Register: tells where to put function return
 			B: Register: function value to call

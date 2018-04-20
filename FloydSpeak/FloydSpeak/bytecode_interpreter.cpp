@@ -326,6 +326,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_get_size_vector_int, { "get_size_vector_int", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_pushback_vector_int, { "pushback_vector_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
@@ -1558,6 +1559,23 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 #endif
 
 			regs[i._a]._int = static_cast<int>(regs[i._b]._ext->_vector_ints.size());
+			ASSERT(vm.check_invariant());
+			break;
+		}
+
+		case bc_opcode::k_pushback_vector_int: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_int(i._c));
+#if DEBUG
+			const auto& element_type = frame_ptr->_symbols[i._b].second._value_type.get_vector_element_type();
+			QUARK_ASSERT(element_type.is_int() == true);
+#endif
+
+			auto elements2 = regs[i._b]._ext->_vector_ints.push_back(regs[i._c]._int);
+			const auto vec = make_vector_int_value(elements2);
+			vm._stack.write_register_obj(i._a, vec);
 			ASSERT(vm.check_invariant());
 			break;
 		}

@@ -733,6 +733,28 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, target_reg2, intern_type(vm, return_type) };
 	}
+	else if(host_function_id == 1011 && e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_int())){
+		const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
+		body_acc = arg1_expr._body;
+
+		const auto& arg2_expr = bcgen_expression(vm, {}, e._input_exprs[2], body_acc);
+		body_acc = arg2_expr._body;
+
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_pushback_vector_int") : target_reg;
+
+		QUARK_ASSERT(arg_count == 2);
+		QUARK_ASSERT(e.get_output_type() == typeid_t::make_vector(typeid_t::make_int()));
+		QUARK_ASSERT(e._input_exprs[2].get_output_type().is_int());
+
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_pushback_vector_int,
+			target_reg2,
+			arg1_expr._out,
+			arg2_expr._out
+		));
+		QUARK_ASSERT(body_acc.check_invariant());
+		return { body_acc, target_reg2, intern_type(vm, return_type) };
+	}
 	else{
 		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_frame_ptr, {}, {}, {} ));
 
