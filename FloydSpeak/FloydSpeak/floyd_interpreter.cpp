@@ -96,7 +96,14 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
-		if(element_type.is_int()){
+		if(element_type.is_bool()){
+			std::vector<value_t> vec2;
+			for(const auto e: value._pod._ext->_vector_64bit){
+				vec2.push_back(value_t::make_bool(e._bool));
+			}
+			return value_t::make_vector_value(element_type, vec2);
+		}
+		else if(element_type.is_int()){
 			std::vector<value_t> vec2;
 			for(const auto e: value._pod._ext->_vector_64bit){
 				vec2.push_back(value_t::make_int(e._int64));

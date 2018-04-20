@@ -159,6 +159,28 @@ int bc_compare_vectors(const immer::vector<bc_value_t>& left, const immer::vecto
 	if(encoding == value_runtime_encoding::k_ext_vector){
 */
 
+int bc_compare_vector_bools(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+	const auto& shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		auto left2 = left[i]._bool ? 1 : 0;
+		auto right2 = right[i]._bool ? 1 : 0;
+		if(left2 < right2){
+			return -1;
+		}
+		else if(left2 > right2){
+			return 1;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
 int bc_compare_vector_ints(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
@@ -310,6 +332,9 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 	}
 	else if(type.is_vector()){
 		if(false){
+		}
+		else if(type.get_vector_element_type().is_bool()){
+			return bc_compare_vector_bools(left._pod._ext->_vector_64bit, right._pod._ext->_vector_64bit);
 		}
 		else if(type.get_vector_element_type().is_int()){
 			return bc_compare_vector_ints(left._pod._ext->_vector_64bit, right._pod._ext->_vector_64bit);
@@ -822,7 +847,15 @@ json_t bcvalue_to_json(const bc_value_t& v){
 		return json_t::make_object(obj2);
 	}
 	else if(v._type.is_vector()){
-		if(v._type.get_vector_element_type().is_int()){
+		if(v._type.get_vector_element_type().is_bool()){
+			std::vector<json_t> result;
+			for(int i = 0 ; i < v._pod._ext->_vector_64bit.size() ; i++){
+				const auto element_value2 = v._pod._ext->_vector_64bit[i]._bool;
+				result.push_back(json_t(element_value2));
+			}
+			return result;
+		}
+		else if(v._type.get_vector_element_type().is_int()){
 			std::vector<json_t> result;
 			for(int i = 0 ; i < v._pod._ext->_vector_64bit.size() ; i++){
 				const auto element_value2 = v._pod._ext->_vector_64bit[i]._int64;
@@ -1365,14 +1398,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_bool(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
-			pc = regs[i._a]._bool ? pc : pc + i._b - 1;
+			pc = regs[i._a]._pod64._bool ? pc : pc + i._b - 1;
 			break;
 		}
 		case bc_opcode::k_branch_true_bool: {
 			ASSERT(stack.check_reg_bool(i._a));
 
 			//	Notice that pc will be incremented too, hence the - 1.
-			pc = regs[i._a]._bool ? pc + i._b - 1: pc;
+			pc = regs[i._a]._pod64._bool ? pc + i._b - 1: pc;
 			break;
 		}
 		case bc_opcode::k_branch_zero_int: {
@@ -1806,7 +1839,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			regs[i._a]._bool = diff <= 0;
+			regs[i._a]._pod64._bool = diff <= 0;
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_or_equal_int: {
@@ -1814,7 +1847,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = regs[i._b]._pod64._int64 <= regs[i._c]._pod64._int64;
+			regs[i._a]._pod64._bool = regs[i._b]._pod64._int64 <= regs[i._c]._pod64._int64;
 			break;
 		}
 
@@ -1829,7 +1862,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			regs[i._a]._bool = diff < 0;
+			regs[i._a]._pod64._bool = diff < 0;
 			break;
 		}
 		case bc_opcode::k_comparison_smaller_int:
@@ -1837,7 +1870,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = regs[i._b]._pod64._int64 < regs[i._c]._pod64._int64;
+			regs[i._a]._pod64._bool = regs[i._b]._pod64._int64 < regs[i._c]._pod64._int64;
 			break;
 
 		case bc_opcode::k_logical_equal: {
@@ -1851,7 +1884,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			regs[i._a]._bool = diff == 0;
+			regs[i._a]._pod64._bool = diff == 0;
 			break;
 		}
 		case bc_opcode::k_logical_equal_int: {
@@ -1859,7 +1892,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = regs[i._b]._pod64._int64 == regs[i._c]._pod64._int64;
+			regs[i._a]._pod64._bool = regs[i._b]._pod64._int64 == regs[i._c]._pod64._int64;
 			break;
 		}
 
@@ -1874,7 +1907,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto right = stack.read_register(i._c);
 			long diff = bc_compare_value_true_deep(left, right, type);
 
-			regs[i._a]._bool = diff != 0;
+			regs[i._a]._pod64._bool = diff != 0;
 			break;
 		}
 		case bc_opcode::k_logical_nonequal_int: {
@@ -1882,7 +1915,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = regs[i._b]._pod64._int64 != regs[i._c]._pod64._int64;
+			regs[i._a]._pod64._bool = regs[i._b]._pod64._int64 != regs[i._c]._pod64._int64;
 			break;
 		}
 
@@ -1896,7 +1929,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_bool(i._b));
 			ASSERT(stack.check_reg_bool(i._c));
 
-			regs[i._a]._bool = regs[i._b]._bool + regs[i._c]._bool;
+			regs[i._a]._pod64._bool = regs[i._b]._pod64._bool + regs[i._c]._pod64._bool;
 			break;
 		}
 		case bc_opcode::k_add_int: {
@@ -2049,7 +2082,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_bool(i._b));
 			ASSERT(stack.check_reg_bool(i._c));
 
-			regs[i._a]._bool = regs[i._b]._bool  && regs[i._c]._bool;
+			regs[i._a]._pod64._bool = regs[i._b]._pod64._bool  && regs[i._c]._pod64._bool;
 			break;
 		}
 		case bc_opcode::k_logical_and_int: {
@@ -2057,7 +2090,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = (regs[i._b]._pod64._int64 != 0) && (regs[i._c]._pod64._int64 != 0);
+			regs[i._a]._pod64._bool = (regs[i._b]._pod64._int64 != 0) && (regs[i._c]._pod64._int64 != 0);
 			break;
 		}
 		case bc_opcode::k_logical_and_float: {
@@ -2065,7 +2098,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_float(i._b));
 			ASSERT(stack.check_reg_float(i._c));
 
-			regs[i._a]._bool = (regs[i._b]._pod64._float != 0) && (regs[i._c]._pod64._float != 0);
+			regs[i._a]._pod64._bool = (regs[i._b]._pod64._float != 0) && (regs[i._c]._pod64._float != 0);
 			break;
 		}
 
@@ -2074,7 +2107,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_bool(i._b));
 			ASSERT(stack.check_reg_bool(i._c));
 
-			regs[i._a]._bool = regs[i._b]._bool || regs[i._c]._bool;
+			regs[i._a]._pod64._bool = regs[i._b]._pod64._bool || regs[i._c]._pod64._bool;
 			break;
 		}
 		case bc_opcode::k_logical_or_int: {
@@ -2082,7 +2115,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_int(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			regs[i._a]._bool = (regs[i._b]._pod64._int64 != 0) || (regs[i._c]._pod64._int64 != 0);
+			regs[i._a]._pod64._bool = (regs[i._b]._pod64._int64 != 0) || (regs[i._c]._pod64._int64 != 0);
 			break;
 		}
 		case bc_opcode::k_logical_or_float: {
@@ -2090,7 +2123,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_float(i._b));
 			ASSERT(stack.check_reg_float(i._c));
 
-			regs[i._a]._bool = (regs[i._b]._pod64._float != 0.0f) || (regs[i._c]._pod64._float != 0.0f);
+			regs[i._a]._pod64._bool = (regs[i._b]._pod64._float != 0.0f) || (regs[i._c]._pod64._float != 0.0f);
 			break;
 		}
 

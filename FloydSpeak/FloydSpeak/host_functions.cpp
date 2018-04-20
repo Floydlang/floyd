@@ -526,6 +526,16 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		if(wanted._type != element_type){
 			throw std::runtime_error("Type mismatch.");
 		}
+		else if(obj._type.get_vector_element_type().is_bool()){
+			const auto& vec = obj._pod._ext->_vector_64bit;
+			int index = 0;
+			const auto size = vec.size();
+			while(index < size && vec[index]._bool != wanted._pod._pod64._bool){
+				index++;
+			}
+			int result = index == size ? -1 : static_cast<int>(index);
+			return bc_value_t::make_int(result);
+		}
 		else if(obj._type.get_vector_element_type().is_int()){
 			const auto& vec = obj._pod._ext->_vector_64bit;
 			int index = 0;

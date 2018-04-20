@@ -1686,6 +1686,41 @@ QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
 }
 
 
+//////////////////////////////////////////		vector-bool
+
+
+QUARK_UNIT_TEST("vector-bool", "literal expression", "", ""){
+	test_result(R"(		[bool] result = [true, false, true];		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "=", "copy", ""){
+	test_result(R"(		a = [true, false, true]; result = a;		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "==", "same values", ""){
+	test_result(R"(		result = [true, false] == [true, false];		)", R"(		[ "^bool", true]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "==", "different values", ""){
+	test_result(R"(		result = [false, false] == [true, false];		)", R"(		[ "^bool", false]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "<", "", ""){
+	test_result(R"(		result = [true, true] < [true, true];		)", R"(		[ "^bool", false]	)");
+}
+QUARK_UNIT_TEST("vector-bool", "<", "different values", ""){
+	test_result(R"(		result = [true, false] < [true, true];		)", R"(		[ "^bool", true]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "size()", "empty", "0"){
+	test_result(R"(		[bool] a = []; result = size(a);		)", R"(		[ "^int", 0]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "size()", "2", ""){
+	test_result(R"(		[bool] a = [true, false, true]; result = size(a);		)", R"(		[ "^int", 3]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "+", "non-empty vectors", ""){
+	test_result(R"(		[bool] result = [true, false] + [true, true];		)", R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)");
+}
+QUARK_UNIT_TEST("vector-bool", "push_back()", "", ""){
+	test_result(R"(		[bool] result = push_back([true, false], true);		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+}
+
+
 //////////////////////////////////////////		vector-int
 
 

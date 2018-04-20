@@ -40,7 +40,7 @@ namespace floyd {
 
 
 	union bc_pod64_t {
-//		bool _bool;
+		bool _bool;
 		float _float;
 		int64_t _int64;
 	};
@@ -53,12 +53,9 @@ namespace floyd {
 
 
 	union bc_pod_value_t {
-		bool _bool;
-//		float _float;
 		int _function_id;
 		bc_value_object_t* _ext;
 		const bc_frame_t* _frame_ptr;
-//		int64_t _int64;
 		bc_pod64_t _pod64;
 	};
 
@@ -79,14 +76,14 @@ namespace floyd {
 
 		k_ext_struct,
 		k_ext_vector,
-		k_ext_vector_uint64,
+		k_ext_vector_pod64,
 		k_ext_dict,
 		k_inline_function,
 	};
 
 
 	inline bool encode_as_pod64(const typeid_t& type){
-		return type.is_int() || type.is_float();
+		return type.is_bool() || type.is_int() || type.is_float();
 	}
 	inline bool encode_as_vector_pod64(const typeid_t& type){
 		return type.is_vector() && encode_as_pod64(type.get_vector_element_type());
@@ -128,12 +125,14 @@ namespace floyd {
 		}
 		else if(basetype == base_type::k_vector){
 			const auto& element_type = type.get_vector_element_type().get_base_type();
-//			if(element_type == base_type::k_bool || element_type == base_type::k_int || element_type == base_type::k_float){
-			if(element_type == base_type::k_int){
-				return value_runtime_encoding::k_ext_vector_uint64;
+			if(element_type == base_type::k_bool){
+				return value_runtime_encoding::k_ext_vector_pod64;
+			}
+			else if(element_type == base_type::k_int){
+				return value_runtime_encoding::k_ext_vector_pod64;
 			}
 			else if(element_type == base_type::k_float){
-				return value_runtime_encoding::k_ext_vector_uint64;
+				return value_runtime_encoding::k_ext_vector_pod64;
 			}
 			else{
 				return value_runtime_encoding::k_ext_vector;
@@ -162,7 +161,7 @@ namespace floyd {
 			|| encoding == value_runtime_encoding::k_ext_typeid
 			|| encoding == value_runtime_encoding::k_ext_struct
 			|| encoding == value_runtime_encoding::k_ext_vector
-			|| encoding == value_runtime_encoding::k_ext_vector_uint64
+			|| encoding == value_runtime_encoding::k_ext_vector_pod64
 			|| encoding == value_runtime_encoding::k_ext_dict
 			;
 	}
@@ -301,13 +300,13 @@ namespace floyd {
 		public: inline bool get_bool_value() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _pod._bool;
+			return _pod._pod64._bool;
 		}
 		private: inline explicit bc_value_t(bool value) :
 			_type(typeid_t::make_bool()),
 			_is_ext(false)
 		{
-			_pod._bool = value;
+			_pod._pod64._bool = value;
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -499,7 +498,7 @@ namespace floyd {
 				QUARK_ASSERT(_vector_64bit.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
-			else if(encoding == value_runtime_encoding::k_ext_vector_uint64){
+			else if(encoding == value_runtime_encoding::k_ext_vector_pod64){
 				QUARK_ASSERT(_string.empty());
 				QUARK_ASSERT(_json_value == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());

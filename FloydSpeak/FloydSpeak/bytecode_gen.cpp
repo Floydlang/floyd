@@ -523,7 +523,6 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 	const auto& parent_expr = bcgen_expression(vm, {}, e._input_exprs[0], body_acc);
 	body_acc = parent_expr._body;
 
-	const auto key_temp_reg = add_local_temp(body_acc, e._input_exprs[1].get_output_type(), "temp: lookup key");
 	const auto& key_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 	body_acc = key_expr._body;
 
@@ -536,7 +535,7 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 			return bc_opcode::k_lookup_element_json_value;
 		}
 		else if(parent_type.is_vector()){
-			if(parent_type.get_vector_element_type().is_int() || parent_type.get_vector_element_type().is_float()){
+			if(encode_as_vector_pod64(parent_type)){
 				return bc_opcode::k_lookup_element_vector_pod64;
 			}
 			else{
@@ -718,13 +717,13 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 	int host_function_id = get_host_function_id(vm, e);
 
 	//	a = size(b)
-	if(host_function_id == 1007 && e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_int())){
+	if(host_function_id == 1007 && encode_as_vector_pod64(e._input_exprs[1].get_output_type())){
+		QUARK_ASSERT(arg_count == 1);
+
 		const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 		body_acc = arg1_expr._body;
 
-		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_get_size_vector_int") : target_reg;
-
-		QUARK_ASSERT(arg_count == 1);
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_get_size_vector_pod64") : target_reg;
 
 		body_acc._instrs.push_back(bcgen_instruction_t(
 			bc_opcode::k_get_size_vector_pod64,
@@ -737,7 +736,11 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 	}
 
 	//	a = push_back(b, c)
-	else if(host_function_id == 1011 && (e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_int()) || e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_float()))){
+	else if(host_function_id == 1011 && encode_as_vector_pod64(e._input_exprs[1].get_output_type())){
+		QUARK_ASSERT(arg_count == 2);
+		QUARK_ASSERT(e.get_output_type() == e._input_exprs[1].get_output_type());
+		QUARK_ASSERT(e._input_exprs[2].get_output_type() == e.get_output_type().get_vector_element_type());
+
 		const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 		body_acc = arg1_expr._body;
 
@@ -745,10 +748,6 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		body_acc = arg2_expr._body;
 
 		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_pushback_vector_pod64") : target_reg;
-
-		QUARK_ASSERT(arg_count == 2);
-		QUARK_ASSERT(e.get_output_type() == e._input_exprs[1].get_output_type());
-		QUARK_ASSERT(e._input_exprs[2].get_output_type() == e.get_output_type().get_vector_element_type());
 
 		body_acc._instrs.push_back(bcgen_instruction_t(
 			bc_opcode::k_pushback_vector_pod64,
@@ -818,9 +817,7 @@ expr_info_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_a
 	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: construct value result") : target_reg;
 
 	if(target_type.is_vector()){
-		if(target_type.get_vector_element_type().is_int()
-		|| target_type.get_vector_element_type().is_float()
-		){
+		if(encode_as_vector_pod64(target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
 				bc_opcode::k_new_vector_pod64,
 				target_reg2,
@@ -1102,20 +1099,7 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 			return conv_opcode.at(e._operation);
 		}
 		else if(type.is_vector()){
-			if(type.get_vector_element_type().is_int()){
-				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_pod64 },
-					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-				};
-				return conv_opcode.at(e._operation);
-			}
-			else if(type.get_vector_element_type().is_float()){
+			if(encode_as_vector_pod64(type)){
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
 					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_pod64 },
 					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
