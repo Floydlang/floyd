@@ -725,7 +725,7 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		QUARK_ASSERT(arg_count == 1);
 
 		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_get_size_vector_int,
+			bc_opcode::k_get_size_vector_pod64,
 			target_reg2,
 			arg1_expr._out,
 			make_imm_int(0)
@@ -1096,7 +1096,7 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 		else if(type.is_vector()){
 			if(type.get_vector_element_type().is_int()){
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_int },
+					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_pod64 },
 					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },

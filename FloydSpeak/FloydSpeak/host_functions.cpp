@@ -385,14 +385,14 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			}
 			else{
 				if(obj1._type.get_vector_element_type().is_int()){
-					auto v2 = obj1._pod._ext->_vector_int64s;
+					auto v2 = obj1._pod._ext->_vector_64bit;
 
 					const auto lookup_index = lookup_key.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v2.size()){
 						throw std::runtime_error("Vector lookup out of bounds.");
 					}
 					else{
-						v2 = v2.set(lookup_index, new_value._pod._uint64);
+						v2 = v2.set(lookup_index, bc_pod64_t{ ._int64 = new_value._pod._int64 });
 						const auto s2 = make_vector_int64_value(v2);
 						return s2;
 					}
@@ -486,7 +486,7 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	}
 	else if(obj._type.is_vector()){
 		if(obj._type.get_vector_element_type().is_int()){
-			const auto size = obj._pod._ext->_vector_int64s.size();
+			const auto size = obj._pod._ext->_vector_64bit.size();
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
@@ -526,10 +526,10 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			if(wanted._type.is_int() == false){
 				throw std::runtime_error("Type mismatch.");
 			}
-			const auto& vec = obj._pod._ext->_vector_int64s;
+			const auto& vec = obj._pod._ext->_vector_64bit;
 			int index = 0;
 			const auto size = vec.size();
-			while(index < size && vec[index] != wanted._pod._uint64){
+			while(index < size && vec[index]._int64 != wanted._pod._int64){
 				index++;
 			}
 
@@ -633,7 +633,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		}
 
 		if(obj._type.get_vector_element_type().is_int()){
-			auto elements2 = obj._pod._ext->_vector_int64s.push_back(element._pod._uint64);
+			auto elements2 = obj._pod._ext->_vector_64bit.push_back(bc_pod64_t{._int64 = element._pod._int64});
 			const auto v = make_vector_int64_value(elements2);
 			return v;
 		}
@@ -683,10 +683,11 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	}
 	else if(obj._type.is_vector()){
 		if(obj._type.get_vector_element_type().is_int()){
-			const auto& vec = obj._pod._ext->_vector_int64s;
+			const auto& vec = obj._pod._ext->_vector_64bit;
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			immer::vector<uint64_t> elements2;
+			immer::vector<bc_pod64_t> elements2;
+//??? works for all contents of vector 64bit!
 			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
@@ -747,13 +748,13 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	}
 	else if(obj._type.is_vector()){
 		if(obj._type.get_vector_element_type().is_int()){
-			const auto& vec = obj._pod._ext->_vector_int64s;
+			const auto& vec = obj._pod._ext->_vector_64bit;
 			const auto element_type = obj._type.get_vector_element_type();
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			const auto& new_bits = args[3]._pod._ext->_vector_int64s;
+			const auto& new_bits = args[3]._pod._ext->_vector_64bit;
 
-			auto result = immer::vector<uint64_t>(vec.begin(), vec.begin() + start2);
+			auto result = immer::vector<bc_pod64_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){
 				result = result.push_back(new_bits[i]);
 			}

@@ -12,6 +12,8 @@
 #include "floyd_interpreter.h"
 #include "ast_value.h"
 #include "expression.h"
+#include "json_parser.h"
+#include "text_parser.h"
 
 #include <string>
 #include <vector>
@@ -74,6 +76,12 @@ void test__run_main(const std::string& program, const vector<floyd::value_t>& ar
 	);
 }
 
+void test_result(const std::string& program, const std::string& expected_json){
+	const auto result = test__run_return_result(program, {});
+	const auto expected_json2 = parse_json(seq_t(expected_json));
+	const auto result_json = value_and_type_to_ast_json(result)._value;
+	ut_compare_jsons(result_json, expected_json2.first);
+}
 
 
 
@@ -1597,7 +1605,7 @@ QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 }
 
 
-
+//////////////////////////////////////////		vector-string
 
 
 QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
@@ -1690,70 +1698,38 @@ QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
 
 
 
-
-
-
+//////////////////////////////////////////		vector-int
 
 
 
 
 QUARK_UNIT_TEST("vector-int", "literal expression", "", ""){
-	const auto vm = test__run_global(R"(
-		[int] a = [10, 20, 30];
-		assert(a[0] == 10);
-		assert(a[1] == 20);
-		assert(a[2] == 30);
-	)");
+	test_result(R"(		[int] result = [10, 20, 30];		)", R"(		[[ "vector", "^int" ], [10,20,30]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "=", "copy", ""){
-	const auto vm = test__run_global(R"(
-		a = [10, 20, 30];
-		b = a;
-		assert(b[0] == 10);
-		assert(b[1] == 20);
-		assert(b[2] == 30);
-	)");
+	test_result(R"(		a = [10, 20, 30]; result = a;		)", R"(		[[ "vector", "^int" ], [10,20,30]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "==", "same values", ""){
-	const auto vm = test__run_global(R"(
-		assert(([1, 2] == [1, 2]) == true);
-	)");
+	test_result(R"(		result = [1, 2] == [1, 2];		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-int", "==", "different values", ""){
-	const auto vm = test__run_global(R"(
-		assert(([1, 3] == [1, 2]) == false);
-	)");
+	test_result(R"(		result = [1, 3] == [1, 2];		)", R"(		[ "^bool", false]		)");
 }
-
-QUARK_UNIT_TEST("vector-int", "<", "same values", ""){
-	const auto vm = test__run_global(R"(
-		assert(([1, 2] < [1, 2]) == false);
-	)");
+QUARK_UNIT_TEST("vector-int", "<", "", ""){
+	test_result(R"(		result = [1, 2] < [1, 2];		)", R"(		[ "^bool", false]	)");
 }
-
 QUARK_UNIT_TEST("vector-int", "<", "different values", ""){
-	const auto vm = test__run_global(R"(
-		assert(([1, 2] < [1, 3]) == true);
-	)");
+	test_result(R"(		result = [1, 2] < [1, 3];		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-int", "size()", "empty", "0"){
-	const auto vm = test__run_global(R"(
-		[int] a = [];
-		assert(size(a) == 0);
-	)");
+	test_result(R"(		[int] a = []; result = size(a);		)", R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("vector-int", "size()", "2", ""){
-	const auto vm = test__run_global(R"(
-		[int] a = [1, 2, 3];
-		assert(size(a) == 3);
-	)");
+	test_result(R"(		[int] a = [1,2,3]; result = size(a);		)", R"(		[ "^int", 3]		)");
 }
 QUARK_UNIT_TEST("vector-int", "+", "add empty vectors", ""){
 	try{
-		const auto vm = test__run_global(R"(
-			[int] a = [] + [];
-			assert(a == []);
-		)");
+		test_result(R"(		[int] a = [] + []; result = a == [];		)", R"(	)");
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1761,16 +1737,10 @@ QUARK_UNIT_TEST("vector-int", "+", "add empty vectors", ""){
 	}
 }
 QUARK_UNIT_TEST("vector-int", "+", "non-empty vectors", ""){
-	const auto vm = test__run_global(R"(
-		[int] a = [1, 2] + [3, 4];
-		assert(a == [1, 2, 3, 4]);
-	)");
+	test_result(R"(		[int] result = [1, 2] + [3, 4];		)", R"(		[[ "vector", "^int" ], [1,2,3,4]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
-	const auto vm = test__run_global(R"(
-		[int] a = push_back([1, 2], 3);
-		assert(a == [1, 2, 3]);
-	)");
+	test_result(R"(		[int] result = push_back([1, 2], 3);		)", R"(		[[ "vector", "^int" ], [1,2,3]]		)");
 }
 
 
