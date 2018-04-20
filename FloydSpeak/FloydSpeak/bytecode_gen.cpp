@@ -539,7 +539,7 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 				return bc_opcode::k_lookup_element_vector_pod64;
 			}
 			else{
-				return bc_opcode::k_lookup_element_vector;
+				return bc_opcode::k_lookup_element_vector_obj;
 			}
 		}
 		else if(parent_type.is_dict()){
@@ -827,7 +827,7 @@ expr_info_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_a
 		}
 		else{
 			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector,
+				bc_opcode::k_new_vector_obj,
 				target_reg2,
 				make_imm_int(target_itype),
 				make_imm_int(arg_count)
@@ -1114,7 +1114,7 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 			}
 			else{
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors },
+					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_obj },
 					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },

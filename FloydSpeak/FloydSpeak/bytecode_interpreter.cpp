@@ -383,7 +383,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_vector, { "lookup_element_vector", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_vector_obj, { "lookup_element_vector_obj", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_vector_pod64, { "lookup_element_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_o_0rrr } },
 
@@ -396,7 +396,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_add_int, { "add_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_float, { "add_float", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_string, { "add_string", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_concat_vectors, { "concat_vectors", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_concat_vectors_obj, { "concat_vectors_obj", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_concat_vectors_pod64, { "concat_vectors_pod64", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_float, { "subtract_float", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "subtract_int", opcode_info_t::encoding::k_o_0rrr } },
@@ -428,7 +428,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 
 	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_vector, { "new_vector", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_vector_obj, { "new_vector_obj", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_vector_pod64, { "new_vector_pod64", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_dict, { "new_dict", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
@@ -1543,34 +1543,30 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? Make obj/intern version.
-		case bc_opcode::k_lookup_element_vector: {
+		case bc_opcode::k_lookup_element_vector_obj: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_any(i._a));
 			ASSERT(stack.check_reg_vector(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
+			//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
+			ASSERT(frame_ptr->_exts[i._a]);
+
+#if DEBUG
 			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
-
 			const auto& element_type = vector_type.get_vector_element_type();
-			const auto* vec = &regs[i._b]._ext->_vector_objects;
+#endif
+			const auto& vec = regs[i._b]._ext->_vector_objects;
 			const auto lookup_index = regs[i._c]._pod64._int64;
-			if(lookup_index < 0 || lookup_index >= (*vec).size()){
+			if(lookup_index < 0 || lookup_index >= vec.size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
-				const bc_value_t& value = bc_value_t(element_type, (*vec)[lookup_index]);
-
-				//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
-				ASSERT(value._type == frame_ptr->_symbols[i._a].second._value_type);
-
-				bool is_ext = frame_ptr->_exts[i._a];
-				if(is_ext){
-					bc_value_t::release_ext_pod(regs[i._a]);
-					value._pod._ext->_rc++;
-				}
-				regs[i._a] = value._pod;
+				auto handle = vec[lookup_index];
+				handle._ext->_rc++;
+				regs[i._a]._ext = handle._ext;
+				bc_value_t::release_ext_pod(regs[i._a]);
 			}
 			ASSERT(vm.check_invariant());
 			break;
@@ -1761,7 +1757,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_new_vector: {
+		case bc_opcode::k_new_vector_obj: {
 			ASSERT(stack.check_reg_vector(i._a));
 			ASSERT(i._b >= 0);
 			ASSERT(i._c >= 0);
@@ -1964,9 +1960,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? inline.
 		//??? Use itypes.
-		case bc_opcode::k_concat_vectors: {
+		case bc_opcode::k_concat_vectors_obj: {
 			ASSERT(stack.check_reg_vector(i._a));
 			ASSERT(stack.check_reg_vector(i._b));
 			ASSERT(stack.check_reg_vector(i._c));

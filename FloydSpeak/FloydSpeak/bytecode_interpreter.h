@@ -924,7 +924,7 @@ namespace floyd {
 		*/
 		k_lookup_element_string,
 		k_lookup_element_json_value,
-		k_lookup_element_vector,
+		k_lookup_element_vector_obj,
 		k_lookup_element_vector_pod64,
 		k_lookup_element_dict,
 
@@ -964,8 +964,13 @@ namespace floyd {
 		k_add_int,
 		k_add_float,
 		k_add_string,
-		k_concat_vectors,
+
+		//	appends two vectors of object-elements.
+		k_concat_vectors_obj,
+
+		//	appends two vectors of pod64 elements.
 		k_concat_vectors_pod64,
+
 		k_subtract_float,
 		k_subtract_int,
 		k_multiply_float,
@@ -1017,13 +1022,15 @@ namespace floyd {
 		k_new_1,
 
 		/*
+			Creates a new vector containing object-elements, like strings, structs etc.
+
 			A: Register: where to put resulting value
 			B: IMMEDIATE: itype T = [E], describing output type of vector, like [int] or [my_pixel].
 			C: IMMEDIATE: Argument count.
 
 			Arguments are put on stack. No DYN arguments. All arguments are of type E.
 		*/
-		k_new_vector,
+		k_new_vector_obj,
 
 		/*
 			A: Register: where to put resulting value
