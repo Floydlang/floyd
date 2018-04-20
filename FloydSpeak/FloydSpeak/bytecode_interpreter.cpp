@@ -130,13 +130,13 @@ int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::
 	return 0;
 }
 
-int bc_compare_vectors(const immer::vector<bc_value_t>& left, const immer::vector<bc_value_t>& right, const typeid_t& type){
+int bc_compare_vectors(const immer::vector<bc_object_handle_t>& left, const immer::vector<bc_object_handle_t>& right, const typeid_t& type){
 	QUARK_ASSERT(type.is_vector());
 
 	const auto& shared_count = std::min(left.size(), right.size());
 	const auto& element_type = typeid_t(type.get_vector_element_type());
 	for(int i = 0 ; i < shared_count ; i++){
-		const auto element_result = bc_compare_value_true_deep(left[i], right[i], element_type);
+		const auto element_result = bc_compare_value_true_deep(bc_value_t(element_type, left[i]), bc_value_t(element_type, right[i]), element_type);
 		if(element_result != 0){
 			return element_result;
 		}
@@ -282,6 +282,10 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 		// ??? implement compare.
 		assert(false);
 	}
+}
+
+int bc_compare_value_exts(const bc_object_handle_t& left, const bc_object_handle_t& right, const typeid_t& type){
+	return bc_compare_value_true_deep(bc_value_t::make_object2(type, left._ext), bc_value_t::make_object2(type, right._ext), type);
 }
 
 int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type0){
@@ -872,11 +876,12 @@ json_t bcvalue_to_json(const bc_value_t& v){
 			return result;
 		}
 		else{
+			const auto element_type = v._type.get_vector_element_type();
 			const auto vec = get_vector_value(v);
 			std::vector<json_t> result;
 			for(int i = 0 ; i < vec->size() ; i++){
 				const auto element_value2 = vec->operator[](i);
-				result.push_back(bcvalue_to_json(element_value2));
+				result.push_back(bcvalue_to_json(bc_value_t(element_type, element_value2)));
 			}
 			return result;
 		}
@@ -1056,16 +1061,12 @@ void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 	bool is_element_ext = is_encoded_as_ext(element_type);
 
-	immer::vector<bc_value_t> elements2;
+	immer::vector<bc_object_handle_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto pos = arg0_stack_pos + i;
 		QUARK_ASSERT(vm._stack._debug_types[pos] == element_type);
-#if DEBUG
-		const auto result = bc_value_t(element_type, vm._stack._entries[pos], is_element_ext);
-#else
-		const auto result = bc_value_t(vm._stack._entries[pos], is_element_ext);
-#endif
-		elements2 = elements2.push_back(result);
+		const auto e = bc_object_handle_t(vm._stack._entries[pos]._ext);
+		elements2 = elements2.push_back(e);
 	}
 
 	const auto result = make_vector_value(element_type, elements2);
@@ -1553,13 +1554,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
 
 			const auto& element_type = vector_type.get_vector_element_type();
-			const auto* vec = &regs[i._b]._ext->_vector_elements;
+			const auto* vec = &regs[i._b]._ext->_vector_objects;
 			const auto lookup_index = regs[i._c]._pod64._int64;
 			if(lookup_index < 0 || lookup_index >= (*vec).size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
-				const bc_value_t& value = (*vec)[lookup_index];
+				const bc_value_t& value = bc_value_t(element_type, (*vec)[lookup_index]);
 
 				//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
 				ASSERT(value._type == frame_ptr->_symbols[i._a].second._value_type);
@@ -1975,9 +1976,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
 
 			//	Copy left into new vector.
-			immer::vector<bc_value_t> elements2 = regs[i._b]._ext->_vector_elements;
+			immer::vector<bc_object_handle_t> elements2 = regs[i._b]._ext->_vector_objects;
 
-			const auto& right_elements = regs[i._c]._ext->_vector_elements;
+			const auto& right_elements = regs[i._c]._ext->_vector_objects;
 			for(const auto& e: right_elements){
 				elements2 = elements2.push_back(e);
 			}

@@ -40,13 +40,6 @@ std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
 }
 
 
-std::vector<value_t> bcs_to_values__same_types2(const immer::vector<bc_value_t>& values){
-	std::vector<value_t> result;
-	for(const auto e: values){
-		result.push_back(bc_to_value(e));
-	}
-	return result;
-}
 
 
 value_t bc_to_value(const bc_value_t& value){
@@ -118,7 +111,11 @@ value_t bc_to_value(const bc_value_t& value){
 			return value_t::make_vector_value(element_type, vec2);
 		}
 		else{
-			return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value)));
+			std::vector<value_t> vec2;
+			for(const auto e: value._pod._ext->_vector_objects){
+				vec2.push_back(bc_to_value(bc_value_t::make_object2(element_type, e._ext)));
+			}
+			return value_t::make_vector_value(element_type, vec2);
 		}
 	}
 	else if(basetype == base_type::k_dict){
@@ -189,9 +186,11 @@ bc_value_t value_to_bc(const value_t& value){
 			return make_vector_int64_value(element_type, vec2);
 		}
 		else{
-			immer::vector<bc_value_t> vec2;
+			immer::vector<bc_object_handle_t> vec2;
 			for(const auto e: vec){
-				vec2.push_back(value_to_bc(e));
+				const auto bc = value_to_bc(e);
+				const auto hand = bc_object_handle_t(bc);
+				vec2.push_back(hand);
 			}
 			return make_vector_value(element_type, vec2);
 		}
