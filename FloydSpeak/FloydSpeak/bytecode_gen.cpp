@@ -536,8 +536,8 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 			return bc_opcode::k_lookup_element_json_value;
 		}
 		else if(parent_type.is_vector()){
-			if(parent_type.get_vector_element_type().is_int()){
-				return bc_opcode::k_lookup_element_vector_int;
+			if(parent_type.get_vector_element_type().is_int() || parent_type.get_vector_element_type().is_float()){
+				return bc_opcode::k_lookup_element_vector_pod64;
 			}
 			else{
 				return bc_opcode::k_lookup_element_vector;
@@ -716,6 +716,8 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 	const auto arg_count = callee_arg_count;
 
 	int host_function_id = get_host_function_id(vm, e);
+
+	//	a = size(b)
 	if(host_function_id == 1007 && e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_int())){
 		const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 		body_acc = arg1_expr._body;
@@ -733,21 +735,23 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, target_reg2, intern_type(vm, return_type) };
 	}
-	else if(host_function_id == 1011 && e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_int())){
+
+	//	a = push_back(b, c)
+	else if(host_function_id == 1011 && (e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_int()) || e._input_exprs[1].get_output_type() == typeid_t::make_vector(typeid_t::make_float()))){
 		const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 		body_acc = arg1_expr._body;
 
 		const auto& arg2_expr = bcgen_expression(vm, {}, e._input_exprs[2], body_acc);
 		body_acc = arg2_expr._body;
 
-		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_pushback_vector_int") : target_reg;
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_pushback_vector_pod64") : target_reg;
 
 		QUARK_ASSERT(arg_count == 2);
-		QUARK_ASSERT(e.get_output_type() == typeid_t::make_vector(typeid_t::make_int()));
-		QUARK_ASSERT(e._input_exprs[2].get_output_type().is_int());
+		QUARK_ASSERT(e.get_output_type() == e._input_exprs[1].get_output_type());
+		QUARK_ASSERT(e._input_exprs[2].get_output_type() == e.get_output_type().get_vector_element_type());
 
 		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_pushback_vector_int,
+			bc_opcode::k_pushback_vector_pod64,
 			target_reg2,
 			arg1_expr._out,
 			arg2_expr._out
@@ -755,6 +759,8 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, target_reg2, intern_type(vm, return_type) };
 	}
+
+	//	Normal function call.
 	else{
 		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_frame_ptr, {}, {}, {} ));
 
@@ -812,9 +818,11 @@ expr_info_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_a
 	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: construct value result") : target_reg;
 
 	if(target_type.is_vector()){
-		if(target_type.get_vector_element_type().is_int()){
+		if(target_type.get_vector_element_type().is_int()
+		|| target_type.get_vector_element_type().is_float()
+		){
 			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector_int,
+				bc_opcode::k_new_vector_pod64,
 				target_reg2,
 				make_imm_int(0),
 				make_imm_int(arg_count)
@@ -964,7 +972,7 @@ expr_info_t bcgen_comparison_expression(bcgenerator_t& vm, const variable_addres
 	const auto& left_expr = bcgen_expression(vm, {}, e._input_exprs[0], body_acc);
 	body_acc = left_expr._body;
 
-	const auto right_value_reg = add_local_temp(body_acc, e._input_exprs[1].get_output_type(), "temp: left value");
+//	const auto right_value_reg = add_local_temp(body_acc, e._input_exprs[1].get_output_type(), "temp: left value");
 	const auto& right_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 	body_acc = right_expr._body;
 
@@ -1095,6 +1103,19 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 		}
 		else if(type.is_vector()){
 			if(type.get_vector_element_type().is_int()){
+				static const std::map<expression_type, bc_opcode> conv_opcode = {
+					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_pod64 },
+					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+
+					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
+					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+				};
+				return conv_opcode.at(e._operation);
+			}
+			else if(type.get_vector_element_type().is_float()){
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
 					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_pod64 },
 					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },

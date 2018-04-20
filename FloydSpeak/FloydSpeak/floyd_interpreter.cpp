@@ -103,6 +103,13 @@ value_t bc_to_value(const bc_value_t& value){
 			}
 			return value_t::make_vector_value(element_type, vec2);
 		}
+		else if(element_type.is_float()){
+			std::vector<value_t> vec2;
+			for(const auto e: value._pod._ext->_vector_64bit){
+				vec2.push_back(value_t::make_float(e._float));
+			}
+			return value_t::make_vector_value(element_type, vec2);
+		}
 		else{
 			return value_t::make_vector_value(element_type, bcs_to_values__same_types2(*get_vector_value(value)));
 		}
@@ -172,7 +179,7 @@ bc_value_t value_to_bc(const value_t& value){
 			for(const auto e: vec){
 				vec2.push_back(bc_pod64_t{._int64 = e.get_int_value()});
 			}
-			return make_vector_int64_value(vec2);
+			return make_vector_int64_value(element_type, vec2);
 		}
 		else{
 			immer::vector<bc_value_t> vec2;
