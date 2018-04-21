@@ -42,8 +42,8 @@ namespace floyd {
 
 	union bc_pod64_t {
 		bool _bool;
-		float _float;
 		int64_t _int64;
+		float _float;
 
 		int _function_id;
 		const bc_frame_t* _frame_ptr;
@@ -196,8 +196,7 @@ namespace floyd {
 		public: static void release_ext_pod(bc_pod_value_t& value);
 
 		public: bc_value_t() :
-			_type(typeid_t::make_undefined()),
-			_is_ext(false)
+			_type(typeid_t::make_undefined())
 		{
 			_pod._ext = nullptr;
 			QUARK_ASSERT(check_invariant());
@@ -206,19 +205,18 @@ namespace floyd {
 		public: ~bc_value_t(){
 			QUARK_ASSERT(check_invariant());
 
-			if(_is_ext){
+			if(is_encoded_as_ext(_type)){
 				release_ext_pod(_pod);
 			}
 		}
 
 		public: bc_value_t(const bc_value_t& other) :
 			_type(other._type),
-			_is_ext(other._is_ext),
 			_pod(other._pod)
 		{
 			QUARK_ASSERT(other.check_invariant());
 
-			if(_is_ext){
+			if(is_encoded_as_ext(_type)){
 				add_ext_ref(*this);
 			}
 
@@ -242,7 +240,6 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 
 			std::swap(_type, other._type);
-			std::swap(_is_ext, other._is_ext);
 			std::swap(_pod, other._pod);
 
 			QUARK_ASSERT(other.check_invariant());
@@ -258,8 +255,7 @@ namespace floyd {
 #endif
 
 		public: explicit bc_value_t(const bc_frame_t* frame_ptr) :
-			_type(typeid_t::make_void()),
-			_is_ext(false)
+			_type(typeid_t::make_void())
 		{
 			_pod._pod64._frame_ptr = frame_ptr;
 			QUARK_ASSERT(check_invariant());
@@ -306,8 +302,7 @@ namespace floyd {
 			return _pod._pod64._bool;
 		}
 		private: inline explicit bc_value_t(bool value) :
-			_type(typeid_t::make_bool()),
-			_is_ext(false)
+			_type(typeid_t::make_bool())
 		{
 			_pod._pod64._bool = value;
 			QUARK_ASSERT(check_invariant());
@@ -326,8 +321,7 @@ namespace floyd {
 			return _pod._pod64._int64;
 		}
 		private: inline explicit bc_value_t(int64_t value) :
-			_type(typeid_t::make_int()),
-			_is_ext(false)
+			_type(typeid_t::make_int())
 		{
 			_pod._pod64._int64 = value;
 			QUARK_ASSERT(check_invariant());
@@ -346,8 +340,7 @@ namespace floyd {
 			return _pod._pod64._float;
 		}
 		private: inline  explicit bc_value_t(float value) :
-			_type(typeid_t::make_float()),
-			_is_ext(false)
+			_type(typeid_t::make_float())
 		{
 			_pod._pod64._float = value;
 			QUARK_ASSERT(check_invariant());
@@ -406,25 +399,21 @@ namespace floyd {
 			return _pod._pod64._function_id;
 		}
 		private: inline explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
-			_type(function_type),
-			_is_ext(false)
+			_type(function_type)
 		{
 			_pod._pod64._function_id = function_id;
 			QUARK_ASSERT(check_invariant());
 		}
 
 		//	Bumps RC.
-		public: inline static bc_value_t make_object2(const typeid_t& type, const bc_value_object_t* ext);
+		public: inline explicit bc_value_t(const typeid_t& type, const bc_pod_value_t& internals);
 
-		//	YES bump.
-		public: inline explicit bc_value_t(const typeid_t& type, const bc_pod_value_t& internals, bool is_ext);
-
+		//	Bumps RC.
 		public: inline explicit bc_value_t(const typeid_t& type, const bc_object_handle_t& handle);
 
 
 		//////////////////////////////////////		STATE
 		public: typeid_t _type;
-		public: bool _is_ext;
 		public: bc_pod_value_t _pod;
 	};
 
@@ -617,8 +606,6 @@ namespace floyd {
 
 
 
-
-
 		inline bc_object_handle_t::bc_object_handle_t(const bc_object_handle_t& other) :
 			_ext(other._ext)
 		{
@@ -659,9 +646,6 @@ namespace floyd {
 
 
 
-//??? Can we use immer::vector<> and keep track of value references from the outside?
-
-
 	inline void bc_value_t::release_ext(bc_value_t& value){
 		value._pod._ext->_rc--;
 		if(value._pod._ext->_rc == 0){
@@ -691,8 +675,7 @@ namespace floyd {
 		return _pod._ext->_string;
 	}
 	inline  bc_value_t::bc_value_t(const std::string value) :
-		_type(typeid_t::make_string()),
-		_is_ext(true)
+		_type(typeid_t::make_string())
 	{
 		_pod._ext = new bc_value_object_t{value};
 		QUARK_ASSERT(check_invariant());
@@ -704,8 +687,7 @@ namespace floyd {
 			return *_pod._ext->_json_value.get();
 		}
 		inline  bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
-			_type(typeid_t::make_json_value()),
-			_is_ext(true)
+			_type(typeid_t::make_json_value())
 		{
 			_pod._ext = new bc_value_object_t{value};
 			QUARK_ASSERT(check_invariant());
@@ -713,8 +695,7 @@ namespace floyd {
 
 
 		inline  bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
-			_type(type),
-			_is_ext(true)
+			_type(type)
 		{
 			auto temp = new bc_value_object_t{"UNWRITTEN EXT VALUE"};
 			temp->_is_unwritten_ext_value = true;
@@ -729,8 +710,7 @@ namespace floyd {
 			return _pod._ext->_typeid_value;
 		}
 		inline  bc_value_t::bc_value_t(const typeid_t& type_id) :
-			_type(typeid_t::make_typeid()),
-			_is_ext(true)
+			_type(typeid_t::make_typeid())
 		{
 			_pod._ext = new bc_value_object_t{type_id};
 			QUARK_ASSERT(check_invariant());
@@ -744,8 +724,7 @@ namespace floyd {
 			return _pod._ext->_struct_members;
 		}
 		inline  bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
-			_type(struct_type),
-			_is_ext(true)
+			_type(struct_type)
 		{
 			_pod._ext = new bc_value_object_t{struct_type, values, true};
 			QUARK_ASSERT(check_invariant());
@@ -765,7 +744,6 @@ namespace floyd {
 
 			bc_value_t temp;
 			temp._type = vector_type;
-			temp._is_ext = true;
 			temp._pod._ext = new bc_value_object_t{vector_type, elements};
 			QUARK_ASSERT(temp.check_invariant());
 			return temp;
@@ -779,7 +757,6 @@ namespace floyd {
 
 			bc_value_t temp;
 			temp._type = vector_type;
-			temp._is_ext = true;
 			temp._pod._ext = new bc_value_object_t{vector_type, elements};
 			QUARK_ASSERT(temp.check_invariant());
 			return temp;
@@ -795,40 +772,23 @@ namespace floyd {
 		inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_value_t>& entries){
 			bc_value_t temp;
 			temp._type = typeid_t::make_dict(value_type);
-			temp._is_ext = true;
 			temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
 			QUARK_ASSERT(temp.check_invariant());
 			return temp;
 		}
 
-
-
-
-		//	Bumps RC.
-		inline bc_value_t bc_value_t::make_object2(const typeid_t& type, const bc_value_object_t* ext){
-			bc_value_t temp;
-			temp._type = type;
-			temp._is_ext = true;
-			ext->_rc++;
-			temp._pod._ext = ext;
-			return temp;
-		}
-
-		//	YES bump.
-		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals, bool is_ext) :
+		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals) :
 			_type(type),
-			_pod(internals),
-			_is_ext(is_ext)
+			_pod(internals)
 		{
-			if(_is_ext){
+			if(is_encoded_as_ext(_type)){
 				_pod._ext->_rc++;
 			}
 		}
 
 		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_object_handle_t& handle) :
 			_type(type),
-			_pod{._ext = handle._ext},
-			_is_ext(true)
+			_pod{._ext = handle._ext}
 		{
 			_pod._ext->_rc++;
 		}
@@ -1528,7 +1488,7 @@ namespace floyd {
 
 			bool is_ext = _current_frame_ptr->_exts[reg];
 #if DEBUG
-			const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg], is_ext);
+			const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg]);
 #else
 			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
 #endif
@@ -1742,12 +1702,7 @@ namespace floyd {
 			QUARK_ASSERT(type == _debug_types[pos]);
 
 			const auto& e = _entries[pos];
-			bool is_ext = is_encoded_as_ext(type);
-#if DEBUG
-			const auto result = bc_value_t(type, e, is_ext);
-#else
-			const auto result = bc_value_t(e, is_ext);
-#endif
+			const auto result = bc_value_t(type, e);
 			return result;
 		}
 

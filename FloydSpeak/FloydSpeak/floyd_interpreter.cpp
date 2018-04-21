@@ -113,7 +113,7 @@ value_t bc_to_value(const bc_value_t& value){
 		else{
 			std::vector<value_t> vec2;
 			for(const auto e: value._pod._ext->_vector_objects){
-				vec2.push_back(bc_to_value(bc_value_t::make_object2(element_type, e._ext)));
+				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
 			return value_t::make_vector_value(element_type, vec2);
 		}

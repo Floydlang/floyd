@@ -54,8 +54,11 @@ QUARK_UNIT_TEST("", "", "", ""){
 	const auto pod_size = sizeof(bc_pod_value_t);
 	QUARK_ASSERT(pod_size == 8);
 
-	const auto value_size = sizeof(bc_value_t);
-	QUARK_ASSERT(value_size == 64);
+	const auto value_object_size = sizeof(bc_value_object_t);
+	QUARK_ASSERT(value_object_size >= 8);
+
+	const auto bcvalue_size = sizeof(bc_value_t);
+	QUARK_ASSERT(bcvalue_size == 56);
 
 	struct mockup_value_t {
 		private: bool _is_ext;
@@ -285,7 +288,7 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 }
 
 int bc_compare_value_exts(const bc_object_handle_t& left, const bc_object_handle_t& right, const typeid_t& type){
-	return bc_compare_value_true_deep(bc_value_t::make_object2(type, left._ext), bc_value_t::make_object2(type, right._ext), type);
+	return bc_compare_value_true_deep(bc_value_t(type, left), bc_value_t(type, right), type);
 }
 
 int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type0){
@@ -696,16 +699,10 @@ json_t interpreter_stack_t::stack_to_json() const{
 		}
 
 #if DEBUG
-#if DEBUG
 		const auto debug_type = _debug_types[i];
 		const auto ext = is_encoded_as_ext(debug_type);
-#endif
 		const auto bc_pod = _entries[i];
-#if DEBUG
-		const auto bc = bc_value_t(debug_type, bc_pod, ext);
-#else
-		const auto bc = bc_value_t(bc_pod, ext);
-#endif
+		const auto bc = bc_value_t(debug_type, bc_pod);
 
 		bool unwritten = ext && bc._pod._ext->_is_unwritten_ext_value;
 
@@ -1278,11 +1275,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				|| (!is_ext && stack.check_reg_intern(i._a))
 			);
 
-#if DEBUG
-			return { true, bc_value_t(frame_ptr->_symbols[i._a].second._value_type, regs[i._a], is_ext) };
-#else
-			return { true, bc_value_t(regs[i._a], is_ext) };
-#endif
+			return { true, bc_value_t(frame_ptr->_symbols[i._a].second._value_type, regs[i._a]) };
 		}
 
 		case bc_opcode::k_stop: {
