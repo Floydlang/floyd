@@ -460,7 +460,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
-				QUARK_ASSERT(_vector_64bit.empty());
+				QUARK_ASSERT(_vector_pod64.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else if(encoding == value_runtime_encoding::k_ext_json_value){
@@ -469,7 +469,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
-				QUARK_ASSERT(_vector_64bit.empty());
+				QUARK_ASSERT(_vector_pod64.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_json_value->check_invariant());
@@ -480,7 +480,7 @@ namespace floyd {
 		//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
-				QUARK_ASSERT(_vector_64bit.empty());
+				QUARK_ASSERT(_vector_pod64.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 				QUARK_ASSERT(_typeid_value.check_invariant());
@@ -491,7 +491,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_objects.empty());
-				QUARK_ASSERT(_vector_64bit.empty());
+				QUARK_ASSERT(_vector_pod64.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
@@ -502,7 +502,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 		//		QUARK_ASSERT(_vector_objects.empty());
-				QUARK_ASSERT(_vector_64bit.empty());
+				QUARK_ASSERT(_vector_pod64.empty());
 				QUARK_ASSERT(_dict_entries.size() == 0);
 			}
 			else if(encoding == value_runtime_encoding::k_ext_vector_pod64){
@@ -519,7 +519,7 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
-				QUARK_ASSERT(_vector_64bit.empty());
+				QUARK_ASSERT(_vector_pod64.empty());
 		//		QUARK_ASSERT(_dict_entries.empty());
 			}
 			else {
@@ -574,7 +574,7 @@ namespace floyd {
 		public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_pod64_t>& s) :
 			_rc(1),
 			_debug_type(type),
-			_vector_64bit(s)
+			_vector_pod64(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -599,7 +599,7 @@ namespace floyd {
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::vector<bc_value_t> _struct_members;
 		public: immer::vector<bc_object_handle_t> _vector_objects;
-		public: immer::vector<bc_pod64_t> _vector_64bit;
+		public: immer::vector<bc_pod64_t> _vector_pod64;
 		public: immer::map<std::string, bc_value_t> _dict_entries;
 	};
 

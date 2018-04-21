@@ -341,13 +341,13 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		if(false){
 		}
 		else if(type.get_vector_element_type().is_bool()){
-			return bc_compare_vector_bools(left._pod._ext->_vector_64bit, right._pod._ext->_vector_64bit);
+			return bc_compare_vector_bools(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
 		else if(type.get_vector_element_type().is_int()){
-			return bc_compare_vector_ints(left._pod._ext->_vector_64bit, right._pod._ext->_vector_64bit);
+			return bc_compare_vector_ints(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
 		else if(type.get_vector_element_type().is_float()){
-			return bc_compare_vector_floats(left._pod._ext->_vector_64bit, right._pod._ext->_vector_64bit);
+			return bc_compare_vector_floats(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
 		else{
 			const auto& left_vec = get_vector_value(left);
@@ -850,24 +850,24 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	else if(v._type.is_vector()){
 		if(v._type.get_vector_element_type().is_bool()){
 			std::vector<json_t> result;
-			for(int i = 0 ; i < v._pod._ext->_vector_64bit.size() ; i++){
-				const auto element_value2 = v._pod._ext->_vector_64bit[i]._bool;
+			for(int i = 0 ; i < v._pod._ext->_vector_pod64.size() ; i++){
+				const auto element_value2 = v._pod._ext->_vector_pod64[i]._bool;
 				result.push_back(json_t(element_value2));
 			}
 			return result;
 		}
 		else if(v._type.get_vector_element_type().is_int()){
 			std::vector<json_t> result;
-			for(int i = 0 ; i < v._pod._ext->_vector_64bit.size() ; i++){
-				const auto element_value2 = v._pod._ext->_vector_64bit[i]._int64;
+			for(int i = 0 ; i < v._pod._ext->_vector_pod64.size() ; i++){
+				const auto element_value2 = v._pod._ext->_vector_pod64[i]._int64;
 				result.push_back(json_t(element_value2));
 			}
 			return result;
 		}
 		else if(v._type.get_vector_element_type().is_float()){
 			std::vector<json_t> result;
-			for(int i = 0 ; i < v._pod._ext->_vector_64bit.size() ; i++){
-				const auto element_value2 = v._pod._ext->_vector_64bit[i]._float;
+			for(int i = 0 ; i < v._pod._ext->_vector_pod64.size() ; i++){
+				const auto element_value2 = v._pod._ext->_vector_pod64[i]._float;
 				result.push_back(json_t(element_value2));
 			}
 			return result;
@@ -1574,7 +1574,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
 #endif
 
-			const auto& vec = regs[i._b]._ext->_vector_64bit;
+			const auto& vec = regs[i._b]._ext->_vector_pod64;
 			const auto lookup_index = regs[i._c]._pod64._int64;
 			if(lookup_index < 0 || lookup_index >= vec.size()){
 				throw std::runtime_error("Lookup in vector: out of bounds.");
@@ -1622,7 +1622,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
 #endif
 
-			regs[i._a]._pod64._int64 = regs[i._b]._ext->_vector_64bit.size();
+			regs[i._a]._pod64._int64 = regs[i._b]._ext->_vector_pod64.size();
 			ASSERT(vm.check_invariant());
 			break;
 		}
@@ -1638,7 +1638,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& element_type = vector_type.get_vector_element_type();
 #endif
 
-			auto elements2 = regs[i._b]._ext->_vector_64bit.push_back(regs[i._c]._pod64);
+			auto elements2 = regs[i._b]._ext->_vector_pod64.push_back(regs[i._c]._pod64);
 			const auto vec = make_vector_int64_value(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec);
 			ASSERT(vm.check_invariant());
@@ -1984,9 +1984,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
 
 			//	Copy left into new vector.
-			auto elements2 = regs[i._b]._ext->_vector_64bit;
+			auto elements2 = regs[i._b]._ext->_vector_pod64;
 
-			const auto& right_elements = regs[i._c]._ext->_vector_64bit;
+			const auto& right_elements = regs[i._c]._ext->_vector_pod64;
 			for(const auto& e: right_elements){
 				elements2 = elements2.push_back(e);
 			}

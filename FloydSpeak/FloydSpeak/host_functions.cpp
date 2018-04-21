@@ -385,7 +385,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			}
 			else{
 				if(encode_as_vector_pod64(obj1._type)){
-					auto v2 = obj1._pod._ext->_vector_64bit;
+					auto v2 = obj1._pod._ext->_vector_pod64;
 
 					const auto lookup_index = lookup_key.get_int_value();
 					if(lookup_index < 0 || lookup_index >= v2.size()){
@@ -492,7 +492,7 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	}
 	else if(obj._type.is_vector()){
 		if(encode_as_vector_pod64(obj._type)){
-			const auto size = obj._pod._ext->_vector_64bit.size();
+			const auto size = obj._pod._ext->_vector_pod64.size();
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
@@ -533,7 +533,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			throw std::runtime_error("Type mismatch.");
 		}
 		else if(obj._type.get_vector_element_type().is_bool()){
-			const auto& vec = obj._pod._ext->_vector_64bit;
+			const auto& vec = obj._pod._ext->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._bool != wanted._pod._pod64._bool){
@@ -543,7 +543,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			return bc_value_t::make_int(result);
 		}
 		else if(obj._type.get_vector_element_type().is_int()){
-			const auto& vec = obj._pod._ext->_vector_64bit;
+			const auto& vec = obj._pod._ext->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._int64 != wanted._pod._pod64._int64){
@@ -553,7 +553,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			return bc_value_t::make_int(result);
 		}
 		else if(obj._type.get_vector_element_type().is_float()){
-			const auto& vec = obj._pod._ext->_vector_64bit;
+			const auto& vec = obj._pod._ext->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._float != wanted._pod._pod64._float){
@@ -653,7 +653,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 			throw std::runtime_error("Type mismatch.");
 		}
 		else if(encode_as_vector_pod64(obj._type)){
-			auto elements2 = obj._pod._ext->_vector_64bit.push_back(element._pod._pod64);
+			auto elements2 = obj._pod._ext->_vector_pod64.push_back(element._pod._pod64);
 			const auto v = make_vector_int64_value(element_type, elements2);
 			return v;
 		}
@@ -704,7 +704,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	else if(obj._type.is_vector()){
 		if(encode_as_vector_pod64(obj._type)){
 			const auto& element_type = obj._type.get_vector_element_type();
-			const auto& vec = obj._pod._ext->_vector_64bit;
+			const auto& vec = obj._pod._ext->_vector_pod64;
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			immer::vector<bc_pod64_t> elements2;
@@ -768,11 +768,11 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	}
 	else if(obj._type.is_vector()){
 		if(encode_as_vector_pod64(obj._type)){
-			const auto& vec = obj._pod._ext->_vector_64bit;
+			const auto& vec = obj._pod._ext->_vector_pod64;
 			const auto element_type = obj._type.get_vector_element_type();
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			const auto& new_bits = args[3]._pod._ext->_vector_64bit;
+			const auto& new_bits = args[3]._pod._ext->_vector_pod64;
 
 			auto result = immer::vector<bc_pod64_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){
