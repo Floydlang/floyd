@@ -36,6 +36,8 @@ value_t flatten_to_json(const value_t& value){
 	return json_value;
 }
 
+
+
 //??? removeusage of value_t
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
 	QUARK_ASSERT(v.check_invariant());
@@ -315,6 +317,72 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 		}
 	}
 
+
+
+bc_value_t update_string(interpreter_t& vm, const bc_value_t s, int64_t lookup_index, int64_t ch){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s._type.is_string());
+	QUARK_ASSERT(lookup_index >= 0 && lookup_index < s.get_string_value().size());
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	string s2 = s.get_string_value();
+	if(lookup_index < 0 || lookup_index >= s2.size()){
+		throw std::runtime_error("String lookup out of bounds.");
+	}
+	else{
+		s2[lookup_index] = static_cast<char>(ch);
+		const auto s3 = value_t::make_string(s2);
+		return value_to_bc(s3);
+	}
+}
+
+bc_value_t update_vector(interpreter_t& vm, const bc_value_t vec, int64_t lookup_index, const bc_value_t& value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(vec._type.is_vector());
+//	QUARK_ASSERT(lookup_index >= 0 && lookup_index < vec.get_v().size());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(vec._type.get_vector_element_type() == value._type);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	const auto element_type = vec._type.get_vector_element_type();
+	if(encode_as_vector_pod64(vec._type)){
+		auto v2 = vec._pod._ext->_vector_pod64;
+
+		if(lookup_index < 0 || lookup_index >= v2.size()){
+			throw std::runtime_error("Vector lookup out of bounds.");
+		}
+		else{
+			v2 = v2.set(lookup_index, value._pod._pod64);
+			const auto s2 = make_vector_int64_value(element_type, v2);
+			return s2;
+		}
+	}
+	else{
+		const auto obj = vec;
+		auto v2 = *get_vector_value(obj);
+		if(lookup_index < 0 || lookup_index >= v2.size()){
+			throw std::runtime_error("Vector lookup out of bounds.");
+		}
+		else{
+//			QUARK_TRACE_SS("bc1:  " << json_to_pretty_string(bcvalue_to_json(obj)));
+
+			QUARK_ASSERT(is_encoded_as_ext(value._type));
+			const auto e = bc_object_handle_t(value);
+			v2 = v2.set(lookup_index, e);
+			const auto s2 = make_vector_value(element_type, v2);
+
+//			QUARK_TRACE_SS("bc2:  " << json_to_pretty_string(bcvalue_to_json(s2)));
+			return s2;
+		}
+	}
+}
+
+
+
+
 bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -333,23 +401,13 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 				throw std::runtime_error("String lookup using integer index only.");
 			}
 			else{
-				const auto obj = obj1;
-				const auto v = obj.get_string_value();
-
+				const auto v = obj1.get_string_value();
 				if(new_value._type.is_int() == false){
 					throw std::runtime_error("Update element must be a character in an int.");
 				}
 				else{
 					const auto lookup_index = lookup_key.get_int_value();
-					if(lookup_index < 0 || lookup_index >= v.size()){
-						throw std::runtime_error("String lookup out of bounds.");
-					}
-					else{
-						string v2 = v;
-						v2[lookup_index] = static_cast<char>(new_value.get_int_value());
-						const auto s2 = value_t::make_string(v2);
-						return value_to_bc(s2);
-					}
+					return update_string(vm, obj1, lookup_index, new_value.get_int_value());
 				}
 			}
 		}
@@ -374,38 +432,8 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 				throw std::runtime_error("Update element must match vector type.");
 			}
 			else{
-				if(encode_as_vector_pod64(obj1._type)){
-					auto v2 = obj1._pod._ext->_vector_pod64;
-
-					const auto lookup_index = lookup_key.get_int_value();
-					if(lookup_index < 0 || lookup_index >= v2.size()){
-						throw std::runtime_error("Vector lookup out of bounds.");
-					}
-					else{
-						v2 = v2.set(lookup_index, new_value._pod._pod64);
-						const auto s2 = make_vector_int64_value(element_type, v2);
-						return s2;
-					}
-				}
-				else{
-					const auto obj = obj1;
-					auto v2 = *get_vector_value(obj);
-					const auto lookup_index = lookup_key.get_int_value();
-					if(lookup_index < 0 || lookup_index >= v2.size()){
-						throw std::runtime_error("Vector lookup out of bounds.");
-					}
-					else{
-//						QUARK_TRACE_SS("bc1:  " << json_to_pretty_string(bcvalue_to_json(obj)));
-
-						QUARK_ASSERT(is_encoded_as_ext(new_value._type));
-						const auto e = bc_object_handle_t(new_value);
-						v2 = v2.set(lookup_index, e);
-						const auto s2 = make_vector_value(element_type, v2);
-
-//						QUARK_TRACE_SS("bc2:  " << json_to_pretty_string(bcvalue_to_json(s2)));
-						return s2;
-					}
-				}
+				const auto lookup_index = lookup_key.get_int_value();
+				return update_vector(vm, obj1, lookup_index, new_value);
 			}
 		}
 		else if(obj1._type.is_dict()){
