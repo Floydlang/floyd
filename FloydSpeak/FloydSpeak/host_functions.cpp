@@ -8,11 +8,12 @@
 
 #include "host_functions.hpp"
 
-#include "parser_primitives.h"
-#include "parse_expression.h"
-#include "parse_statement.h"
+#include "floyd_parser/parser_primitives.h"
+#include "floyd_parser/parse_expression.h"
+#include "floyd_parser/parse_statement.h"
+#include "floyd_parser/floyd_parser.h"
+
 #include "statement.h"
-#include "floyd_parser.h"
 #include "ast_value.h"
 #include "pass2.h"
 #include "pass3.h"

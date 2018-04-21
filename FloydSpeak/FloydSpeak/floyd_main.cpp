@@ -18,7 +18,7 @@
 #include "game_of_life3.h"
 
 #include "floyd_interpreter.h"
-#include "floyd_parser.h"
+#include "floyd_parser/floyd_parser.h"
 #include "ast_value.h"
 #include "json_support.h"
 #include "pass2.h"

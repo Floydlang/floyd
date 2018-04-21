@@ -8,7 +8,7 @@
 
 #include "ast_typeid.h"
 
-#include "parser_primitives.h"
+#include "floyd_parser/parser_primitives.h"
 #include "ast_value.h"
 #include "json_parser.h"
 #include "utils.h"
