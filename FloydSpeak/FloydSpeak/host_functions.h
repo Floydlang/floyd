@@ -12,7 +12,6 @@
 #include "quark.h"
 
 #include <string>
-#include <vector>
 #include <map>
 #include "ast_typeid.h"
 #include "floyd_interpreter.h"

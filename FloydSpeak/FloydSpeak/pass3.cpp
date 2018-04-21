@@ -16,7 +16,7 @@
 #include "utils.h"
 #include "json_support.h"
 #include "json_parser.h"
-#include "host_functions.hpp"
+#include "host_functions.h"
 #include <fstream>
 
 namespace floyd {

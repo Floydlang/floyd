@@ -6,17 +6,8 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#include "host_functions.hpp"
+#include "host_functions.h"
 
-#include "floyd_parser/parser_primitives.h"
-#include "floyd_parser/parse_expression.h"
-#include "floyd_parser/parse_statement.h"
-#include "floyd_parser/floyd_parser.h"
-
-#include "statement.h"
-#include "ast_value.h"
-#include "pass2.h"
-#include "pass3.h"
 #include "json_support.h"
 #include "json_parser.h"
 
@@ -29,8 +20,6 @@
 #include <iostream>
 #include <fstream>
 #include "text_parser.h"
-
-#include "floyd_interpreter.h"
 
 namespace floyd {
 

@@ -10,7 +10,7 @@
 
 #include "ast_value.h"
 #include "json_support.h"
-#include "host_functions.hpp"
+#include "host_functions.h"
 
 #include <cmath>
 #include <sys/time.h>

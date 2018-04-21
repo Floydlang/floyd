@@ -162,7 +162,7 @@
 		2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_interpreter.h; sourceTree = "<group>"; };
 		2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_interpreter.cpp; sourceTree = "<group>"; };
 		2C557C362040173E006F6818 /* host_functions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = host_functions.cpp; sourceTree = "<group>"; };
-		2C557C372040173E006F6818 /* host_functions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = host_functions.hpp; sourceTree = "<group>"; };
+		2C557C372040173E006F6818 /* host_functions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = host_functions.h; sourceTree = "<group>"; };
 		2C574E48203107D80035EA62 /* ast_typeid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ast_typeid.cpp; sourceTree = "<group>"; };
 		2C574E49203107D80035EA62 /* ast_typeid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ast_typeid.h; sourceTree = "<group>"; };
 		2C5F60CC1D5E3345006E0A89 /* json_for_modern_cpp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_for_modern_cpp.h; sourceTree = "<group>"; };
@@ -300,7 +300,7 @@
 				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
 				2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */,
 				2C557C362040173E006F6818 /* host_functions.cpp */,
-				2C557C372040173E006F6818 /* host_functions.hpp */,
+				2C557C372040173E006F6818 /* host_functions.h */,
 				2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */,
 				2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */,
 				2CBCA7D81D569C6D000FAE81 /* parts */,
