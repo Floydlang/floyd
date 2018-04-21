@@ -1899,6 +1899,8 @@ namespace floyd {
 
 	std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);
 
+	bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_value_t& lookup_key, const bc_value_t& new_value);
+
 } //	floyd
 
 

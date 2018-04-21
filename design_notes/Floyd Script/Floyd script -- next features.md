@@ -13,7 +13,7 @@
 | Example										| Result |
 |:--											| :--
 | int, string, float etc.						| IMPLEMENTED
-| struct										| IMPLEMENTED
+| struct										| IMPLEMENTED phase 1
 | function										| IMPLEMENTED
 | dictionary									| IMPLEMENTED
 | set											| FUTURE
@@ -21,7 +21,7 @@
 | enum											| TBD
 | tagged union									| TBD, ???
 | typedef										| TBD
-| json_value									| IN PROGRESS
+| json_value									| IMPLEMENTED
 
 
 ### typeid and composite types

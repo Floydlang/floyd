@@ -11,6 +11,7 @@
 #include "ast_value.h"
 #include "json_support.h"
 #include "host_functions.h"
+#include "text_parser.h"
 
 #include <cmath>
 #include <sys/time.h>
@@ -89,7 +90,254 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+
+
+//////////////////////////////////////////		UPDATE
+
+
+
+
+//??? The update mechanism uses strings == slow.
+bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj, const std::string& member_name, const bc_value_t& new_value){
+	QUARK_ASSERT(obj.check_invariant());
+	QUARK_ASSERT(obj._type.is_struct());
+	QUARK_ASSERT(member_name.empty() == false);
+	QUARK_ASSERT(new_value.check_invariant());
+
+	const auto& values = obj.get_struct_value();
+	const auto& struct_def = obj._type.get_struct();
+
+	int member_index = find_struct_member_index(struct_def, member_name);
+	if(member_index == -1){
+		throw std::runtime_error("Unknown member.");
+	}
+
+#if DEBUG
+	QUARK_TRACE(typeid_to_compact_string(new_value._type));
+	QUARK_TRACE(typeid_to_compact_string(struct_def._members[member_index]._type));
+
+	const auto dest_member_entry = struct_def._members[member_index];
+#endif
+
+	auto values2 = values;
+	values2[member_index] = new_value;
+
+	auto s2 = bc_value_t::make_struct_value(obj._type, values2);
+	return s2;
+}
+
+bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, const std::vector<std::string>& path, const bc_value_t& new_value){
+	QUARK_ASSERT(obj.check_invariant());
+	QUARK_ASSERT(path.empty() == false);
+	QUARK_ASSERT(new_value.check_invariant());
+
+	if(path.size() == 1){
+		return update_struct_member_shallow(vm, obj, path[0], new_value);
+	}
+	else{
+		vector<string> subpath = path;
+		subpath.erase(subpath.begin());
+
+		const auto& values = obj.get_struct_value();
+		const auto& struct_def = obj._type.get_struct();
+		int member_index = find_struct_member_index(struct_def, path[0]);
+		if(member_index == -1){
+			throw std::runtime_error("Unknown member.");
+		}
+
+		const auto& child_value = values[member_index];
+		const auto& child_type = struct_def._members[member_index]._type;
+		if(child_type.is_struct() == false){
+			throw std::runtime_error("Value type not matching struct member type.");
+		}
+
+		const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
+		const auto obj2 = update_struct_member_shallow(vm, obj, path[0], child2);
+		return obj2;
+	}
+}
+
+bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t lookup_index, int64_t ch){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(s._type.is_string());
+	QUARK_ASSERT(lookup_index >= 0 && lookup_index < s.get_string_value().size());
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	string s2 = s.get_string_value();
+	if(lookup_index < 0 || lookup_index >= s2.size()){
+		throw std::runtime_error("String lookup out of bounds.");
+	}
+	else{
+		s2[lookup_index] = static_cast<char>(ch);
+		const auto s3 = value_t::make_string(s2);
+		return value_to_bc(s3);
+	}
+}
+
+bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_t lookup_index, const bc_value_t& value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(vec._type.is_vector());
+	QUARK_ASSERT(lookup_index >= 0);
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(vec._type.get_vector_element_type() == value._type);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	const auto element_type = vec._type.get_vector_element_type();
+	if(encode_as_vector_pod64(vec._type)){
+		auto v2 = vec._pod._ext->_vector_pod64;
+
+		if(lookup_index < 0 || lookup_index >= v2.size()){
+			throw std::runtime_error("Vector lookup out of bounds.");
+		}
+		else{
+			v2 = v2.set(lookup_index, value._pod._pod64);
+			const auto s2 = make_vector_int64_value(element_type, v2);
+			return s2;
+		}
+	}
+	else{
+		const auto obj = vec;
+		auto v2 = *get_vector_value(obj);
+		if(lookup_index < 0 || lookup_index >= v2.size()){
+			throw std::runtime_error("Vector lookup out of bounds.");
+		}
+		else{
+//			QUARK_TRACE_SS("bc1:  " << json_to_pretty_string(bcvalue_to_json(obj)));
+
+			QUARK_ASSERT(is_encoded_as_ext(value._type));
+			const auto e = bc_object_handle_t(value);
+			v2 = v2.set(lookup_index, e);
+			const auto s2 = make_vector_value(element_type, v2);
+
+//			QUARK_TRACE_SS("bc2:  " << json_to_pretty_string(bcvalue_to_json(s2)));
+			return s2;
+		}
+	}
+}
+
+bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std::string& key, const bc_value_t& value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(dict.check_invariant());
+	QUARK_ASSERT(dict._type.is_dict());
+	QUARK_ASSERT(key.empty() == false);
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(dict._type.get_dict_value_type() == value._type);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	const auto value_type = dict._type.get_dict_value_type();
+
+	if(encode_as_dict_pod64(dict._type)){
+		auto entries2 = dict._pod._ext->_dict_pod64.set(key, value._pod._pod64);
+		const auto value2 = make_dict_value(value_type, entries2);
+		return value2;
+	}
+	else{
+		const auto entries = get_dict_value(dict);
+		auto entries2 = entries.set(key, bc_object_handle_t(value));
+		const auto value2 = make_dict_value(value_type, entries2);
+		return value2;
+	}
+}
+
+bc_value_t update_struct_member(interpreter_t& vm, const bc_value_t str, const std::vector<std::string>& path, const bc_value_t& value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(str.check_invariant());
+	QUARK_ASSERT(str._type.is_struct());
+	QUARK_ASSERT(path.empty() == false);
+	QUARK_ASSERT(value.check_invariant());
+//	QUARK_ASSERT(str._type.get_struct_ref()->_members[member_index]._type == value._type);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	return update_struct_member_deep(vm, str, path, value);
+}
+
+bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_value_t& lookup_key, const bc_value_t& new_value){
+	QUARK_ASSERT(vm.check_invariant());
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	if(obj1._type.is_string()){
+		if(lookup_key._type.is_int() == false){
+			throw std::runtime_error("String lookup using integer index only.");
+		}
+		else{
+			const auto v = obj1.get_string_value();
+			if(new_value._type.is_int() == false){
+				throw std::runtime_error("Update element must be a character in an int.");
+			}
+			else{
+				const auto lookup_index = lookup_key.get_int_value();
+				return update_string_char(vm, obj1, lookup_index, new_value.get_int_value());
+			}
+		}
+	}
+	else if(obj1._type.is_json_value()){
+		const auto json_value0 = obj1.get_json_value();
+		if(json_value0.is_array()){
+			assert(false);
+		}
+		else if(json_value0.is_object()){
+			assert(false);
+		}
+		else{
+			throw std::runtime_error("Can only update string, vector, dict or struct.");
+		}
+	}
+	else if(obj1._type.is_vector()){
+		const auto element_type = obj1._type.get_vector_element_type();
+		if(lookup_key._type.is_int() == false){
+			throw std::runtime_error("Vector lookup using integer index only.");
+		}
+		else if(element_type != new_value._type){
+			throw std::runtime_error("Update element must match vector type.");
+		}
+		else{
+			const auto lookup_index = lookup_key.get_int_value();
+			return update_vector_element(vm, obj1, lookup_index, new_value);
+		}
+	}
+	else if(obj1._type.is_dict()){
+		if(lookup_key._type.is_string() == false){
+			throw std::runtime_error("Dict lookup using string key only.");
+		}
+		else{
+			const auto obj = obj1;
+			const auto value_type = obj._type.get_dict_value_type();
+			if(value_type != new_value._type){
+				throw std::runtime_error("Update element must match dict value type.");
+			}
+			else{
+				const string key = lookup_key.get_string_value();
+				return update_dict_entry(vm, obj1, key, new_value);
+			}
+		}
+	}
+	else if(obj1._type.is_struct()){
+		if(lookup_key._type.is_string() == false){
+			throw std::runtime_error("You must specify structure member using string.");
+		}
+		else{
+			const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value()), ".");
+			if(nodes.empty()){
+				throw std::runtime_error("You must specify structure member using string.");
+			}
+			return update_struct_member(vm, obj1, nodes, new_value);
+		}
+	}
+	else {
+		throw std::runtime_error("Can only update string, vector, dict or struct.");
+	}
+}
+
+
+
 //////////////////////////////////////////		COMPARE
+
 
 
 inline int compare(int64_t value){

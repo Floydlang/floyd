@@ -19,7 +19,6 @@
 # C TYPES
 **C**			**Floyd**
 float 			float
-double			float80
 int				always int32
 int8_t			int8
 int16_t			int16
@@ -517,7 +516,7 @@ x_ram
 x_socket
 x_persistent_storage
 
-# More about excpetions
+# More about exceptions
 EXCEPTIONS vs normal program flow
 Where to draw the line?
 
