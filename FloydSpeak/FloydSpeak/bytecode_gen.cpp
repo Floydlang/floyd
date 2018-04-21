@@ -717,7 +717,7 @@ bc_opcode convert_call_to_sizeopcode(const typeid_t& arg1_type){
 		return bc_opcode::k_nop;
 	}
 	else if(arg1_type.is_string()){
-		return bc_opcode::k_nop;
+		return bc_opcode::k_get_size_string;
 	}
 	else{
 		return bc_opcode::k_nop;

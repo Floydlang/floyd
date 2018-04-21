@@ -923,6 +923,7 @@ namespace floyd {
 		*/
 		k_get_size_vector_obj,
 		k_get_size_vector_pod64,
+		k_get_size_string,
 
 		/*
 			TYPE: itype of object
