@@ -319,7 +319,7 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 
-bc_value_t update_string(interpreter_t& vm, const bc_value_t s, int64_t lookup_index, int64_t ch){
+bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t lookup_index, int64_t ch){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s._type.is_string());
 	QUARK_ASSERT(lookup_index >= 0 && lookup_index < s.get_string_value().size());
@@ -337,11 +337,11 @@ bc_value_t update_string(interpreter_t& vm, const bc_value_t s, int64_t lookup_i
 	}
 }
 
-bc_value_t update_vector(interpreter_t& vm, const bc_value_t vec, int64_t lookup_index, const bc_value_t& value){
+bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_t lookup_index, const bc_value_t& value){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(vec._type.is_vector());
-//	QUARK_ASSERT(lookup_index >= 0 && lookup_index < vec.get_v().size());
+	QUARK_ASSERT(lookup_index >= 0);
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(vec._type.get_vector_element_type() == value._type);
 
@@ -381,7 +381,43 @@ bc_value_t update_vector(interpreter_t& vm, const bc_value_t vec, int64_t lookup
 }
 
 
+bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std::string& key, const bc_value_t& value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(dict.check_invariant());
+	QUARK_ASSERT(dict._type.is_dict());
+	QUARK_ASSERT(key.empty() == false);
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(dict._type.get_dict_value_type() == value._type);
 
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	const auto value_type = dict._type.get_dict_value_type();
+
+	if(encode_as_dict_pod64(dict._type)){
+		auto entries2 = dict._pod._ext->_dict_pod64.set(key, value._pod._pod64);
+		const auto value2 = make_dict_value(value_type, entries2);
+		return value2;
+	}
+	else{
+		const auto entries = get_dict_value(dict);
+		auto entries2 = entries.set(key, bc_object_handle_t(value));
+		const auto value2 = make_dict_value(value_type, entries2);
+		return value2;
+	}
+}
+
+bc_value_t update_struct_member(interpreter_t& vm, const bc_value_t str, const std::vector<std::string>& path, const bc_value_t& value){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(str.check_invariant());
+	QUARK_ASSERT(str._type.is_struct());
+	QUARK_ASSERT(path.empty() == false);
+	QUARK_ASSERT(value.check_invariant());
+//	QUARK_ASSERT(str._type.get_struct_ref()->_members[member_index]._type == value._type);
+
+	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+
+	return update_struct_member_deep(vm, str, path, value);
+}
 
 bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -407,7 +443,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 				}
 				else{
 					const auto lookup_index = lookup_key.get_int_value();
-					return update_string(vm, obj1, lookup_index, new_value.get_int_value());
+					return update_string_char(vm, obj1, lookup_index, new_value.get_int_value());
 				}
 			}
 		}
@@ -433,7 +469,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			}
 			else{
 				const auto lookup_index = lookup_key.get_int_value();
-				return update_vector(vm, obj1, lookup_index, new_value);
+				return update_vector_element(vm, obj1, lookup_index, new_value);
 			}
 		}
 		else if(obj1._type.is_dict()){
@@ -448,17 +484,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 				}
 				else{
 					const string key = lookup_key.get_string_value();
-					if(encode_as_dict_pod64(obj1._type)){
-						auto entries2 = obj._pod._ext->_dict_pod64.set(key, new_value._pod._pod64);
-						const auto value2 = make_dict_value(value_type, entries2);
-						return value2;
-					}
-					else{
-						const auto entries = get_dict_value(obj);
-						auto entries2 = entries.set(key, bc_object_handle_t(new_value));
-						const auto value2 = make_dict_value(value_type, entries2);
-						return value2;
-					}
+					return update_dict_entry(vm, obj1, key, new_value);
 				}
 			}
 		}
@@ -467,16 +493,11 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 				throw std::runtime_error("You must specify structure member using string.");
 			}
 			else{
-				const auto obj = obj1;
-
-				//### Does simple check for "." -- we should use vector of strings instead.
 				const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value()), ".");
 				if(nodes.empty()){
 					throw std::runtime_error("You must specify structure member using string.");
 				}
-
-				const auto s2 = update_struct_member_deep(vm, obj, nodes, new_value);
-				return s2;
+				return update_struct_member(vm, obj1, nodes, new_value);
 			}
 		}
 		else {
